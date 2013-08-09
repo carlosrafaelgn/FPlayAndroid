@@ -1,4 +1,4 @@
 FPlayAndroid
 ============
 
-Simple and straightforward Android music player, with equalizer
+Placeholder... for now... ;)
