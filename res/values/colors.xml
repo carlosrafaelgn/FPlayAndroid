@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- These are the few colors from UI.java that must also be in a XML file -->
+    <color name="color_transparent">#00000000</color>
+    <color name="color_text">#ffffffff</color>
+    <color name="color_text_selected">#ff000000</color>
+    <color name="color_selected_pressed">#ffcfe1ff</color>
+    <color name="color_selected_pressed_border">#ff4981b0</color>
+    
+</resources>

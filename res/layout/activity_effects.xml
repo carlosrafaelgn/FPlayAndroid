@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:baselineAligned="false"
+    android:orientation="vertical"
+    tools:context=".ActivityHost" >
+
+    <RelativeLayout
+        android:id="@+id/panelTop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp" >
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnGoBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:contentDescription="@string/go_back"
+            android:nextFocusDown="@+id/barBass"
+            android:nextFocusForward="@+id/chkEnable"
+            android:nextFocusLeft="@+id/btnChangeEffect"
+            android:nextFocusRight="@+id/chkEnable"
+            android:nextFocusUp="@+id/btnChangeEffect" >
+
+            <requestFocus />
+        </br.com.carlosrafaelgn.fplay.ui.BgButton>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgCheckBox
+            android:id="@+id/chkEnable"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@+id/btnMenu"
+            android:maxLines="2"
+            android:nextFocusDown="@+id/barBass"
+            android:nextFocusForward="@+id/btnMenu"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/btnMenu"
+            android:nextFocusUp="@+id/btnChangeEffect"
+            android:text="@string/enable_equalizer" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnMenu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="8dp"
+            android:contentDescription="@string/menu"
+            android:nextFocusDown="@+id/barBass"
+            android:nextFocusForward="@+id/barBass"
+            android:nextFocusLeft="@+id/chkEnable"
+            android:nextFocusRight="@+id/barBass"
+            android:nextFocusUp="@+id/btnChangeEffect"
+            android:visibility="gone" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/panelControls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
+            android:id="@+id/barBass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/btnChangeEffect"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:nextFocusDown="@+id/btnChangeEffect"
+            android:nextFocusForward="@+id/btnChangeEffect"
+            android:nextFocusLeft="@+id/chkEnable"
+            android:nextFocusRight="@+id/btnChangeEffect"
+            android:nextFocusUp="@+id/btnMenu"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@id/lblMsg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:padding="16dp"
+            android:visibility="gone" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnChangeEffect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:maxLines="2"
+            android:nextFocusDown="@+id/btnGoBack"
+            android:nextFocusForward="@+id/btnGoBack"
+            android:nextFocusLeft="@+id/barBass"
+            android:nextFocusRight="@+id/btnGoBack"
+            android:nextFocusUp="@+id/barBass"
+            android:text="@string/goto_bass_boost" />
+    </RelativeLayout>
+
+</LinearLayout>

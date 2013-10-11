@@ -1,0 +1,100 @@
+//
+// FPlayAndroid is distributed under the FreeBSD License
+//
+// Copyright (c) 2013, Carlos Rafael Gimenes das Neves
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met: 
+//
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer. 
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution. 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// The views and conclusions contained in the software and documentation are those
+// of the authors and should not be interpreted as representing official policies, 
+// either expressed or implied, of the FreeBSD Project.
+//
+// https://github.com/carlosrafaelgn/FPlayAndroid
+//
+package br.com.carlosrafaelgn.fplay;
+
+import android.content.pm.PackageInfo;
+import android.text.util.Linkify;
+import android.util.TypedValue;
+import android.view.View;
+import android.widget.TextView;
+import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
+import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+
+public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
+	private BgButton btnGoBack;
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	protected void onCreateLayout(boolean firstCreation) {
+		setContentView(R.layout.activity_about);
+		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack.setOnClickListener(this);
+		btnGoBack.setIcon(UI.ICON_GOBACK);
+		findViewById(R.id.list).setBackgroundDrawable(new BorderDrawable(false));
+		((TextView)findViewById(R.id.lblTitle)).setText("FPlay");
+		try {
+			final PackageInfo inf = getApplication().getPackageManager().getPackageInfo(getApplication().getPackageName(), 0);
+			((TextView)findViewById(R.id.lblVersion)).setText("v" + inf.versionName);
+		} catch (Throwable e) {
+		}
+		final TextView lblMsg = (TextView)findViewById(R.id.lblMsg);
+		final StringBuilder sb = new StringBuilder(1024);
+		sb.append(getText(R.string.app_more_info));
+		sb.append("\n\nFolder/Disc icons:\nhttp://www.24psd.com/ubuntu+icon+pack\n\nPhone icon:\nhttp://www.psdgraphics.com/graphics/photoshop-recreation-of-google-nexus-one-smartphone-download-psd\n\nSD card icon:\nhttp://artofapogee.blogspot.com.br/2010/02/sd-card-icon.html");
+		sb.append(getText(R.string.app_more_info2));
+		lblMsg.setAutoLinkMask(Linkify.ALL);
+		lblMsg.setLinksClickable(true);
+		lblMsg.setText(sb.toString());
+		lblMsg.setLinkTextColor(UI.color_selected_grad_dk);
+		lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
+		if (UI.isLowDpiScreen)
+			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
+		else if (UI.isLargeScreen)
+			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+	}
+	
+	@Override
+	protected void onPause() {
+		SongAddingMonitor.stop();
+	}
+	
+	@Override
+	protected void onResume() {
+		SongAddingMonitor.start(getHostActivity());
+	}
+	
+	@Override
+	protected void onCleanupLayout() {
+		btnGoBack = null;
+	}
+	
+	@Override
+	public void onClick(View view) {
+		if (view == btnGoBack) {
+			finish();
+		}
+	}
+}

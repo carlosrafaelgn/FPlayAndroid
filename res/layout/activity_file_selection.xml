@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".ActivityHost" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:id="@+id/panelControls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp" >
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnGoBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="8dp"
+                android:contentDescription="@string/go_back"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/list"
+                android:nextFocusLeft="@+id/list"
+                android:nextFocusRight="@+id/list"
+                android:nextFocusUp="@+id/list" />
+
+            <TextView
+                android:id="@+id/lblTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/btnGoBack"
+                android:gravity="right"
+                android:padding="2dp"
+                android:visibility="gone" />
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnMenu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="8dp"
+                android:contentDescription="@string/menu"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/list"
+                android:nextFocusLeft="@+id/btnGoBack"
+                android:nextFocusRight="@+id/list"
+                android:nextFocusUp="@+id/list"
+                android:visibility="gone" />
+        </RelativeLayout>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgListView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:nextFocusForward="@+id/btnGoBack" >
+
+            <requestFocus />
+        </br.com.carlosrafaelgn.fplay.ui.BgListView>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/panelLoading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:baselineAligned="false"
+        android:orientation="vertical"
+        android:visibility="gone" >
+
+        <ProgressBar
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:indeterminate="true" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:gravity="center"
+            android:padding="2dp"
+            android:singleLine="true"
+            android:text="@string/loading"
+            android:textAppearance="@style/LargeText" />
+    </LinearLayout>
+
+</merge>

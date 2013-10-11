@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="br.com.carlosrafaelgn.fplay"
+    android:installLocation="auto"
+    android:versionCode="1"
+    android:versionName="0.64" >
+
+    <uses-sdk
+        android:minSdkVersion="10"
+        android:targetSdkVersion="18" />
+
+    <!-- For http playback -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- For android.media.audiofx.Visualizer -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- <uses-permission android:name="android.permission.BROADCAST_STICKY" /> -->
+    <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!--
+         In order to use Context.getExternalFilesDir() the following permission MUST be added,
+    	 as Context.getExternalFilesDir() returns a directory private to the app
+    -->
+    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+
+    <application
+        android:allowBackup="true"
+        android:allowClearUserData="true"
+        android:description="@string/app_description"
+        android:icon="@drawable/ic_launcher"
+        android:label="FPlay"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
+            android:clearTaskOnLaunch="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
+            android:label="FPlay"
+            android:launchMode="singleTask"
+            android:multiprocess="false"
+            android:screenOrientation="unspecified"
+            android:stateNotNeeded="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
+            android:hardwareAccelerated="true"
+            android:label="FPlay Visualizer"
+            android:multiprocess="false"
+            android:parentActivityName="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
+            android:screenOrientation="unspecified"
+            android:stateNotNeeded="true" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="br.com.carlosrafaelgn.fplay.activity.ActivityHost" />
+        </activity>
+
+        <service
+            android:name="br.com.carlosrafaelgn.fplay.playback.Player"
+            android:enabled="true"
+            android:exported="false"
+            android:label="Player"
+            android:stopWithTask="false" />
+
+        <receiver
+            android:name="br.com.carlosrafaelgn.fplay.WidgetMain"
+            android:label="FPlay" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/main_widget_info" />
+        </receiver>
+        <receiver android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver" >
+            <intent-filter>
+                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
