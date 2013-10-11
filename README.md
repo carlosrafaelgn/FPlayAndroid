@@ -3,9 +3,7 @@ FPlayAndroid
 
 FPlay for Android is a simple and straightforward music player, with equalizer and bass boost.
 
-Is is remotely based on my old J2ME player FPlay, also available on GitHub: https://github.com/carlosrafaelgn/FPlay
-
-The main goal of this project is to provide the users with a fully functional music player based on lists and folders. The player itself does not consume too much memory.
+The main goal of this project is to provide the users with a fully functional music player based on lists and folders. The player itself does not consume too much memory, and respects WCAG 2.0 accessibility guidelines for colors and contrast, being friendly for color blind people as well as for people with mild visual impairments.
 
 Moreover, this source code can be used as an example on how to do a few common tasks in Android:
 - Extract ID3v1 and ID3v2 information from MP3 and AAC files without android.media.MediaMetadataRetriever
@@ -22,6 +20,8 @@ Moreover, this source code can be used as an example on how to do a few common t
 - Create custom ListView with support for multiple selection and item reordering
 
 The player is still in a "beta stage", so there may be unknown bugs yet ;)
+
+* FPlay for Android is somewhat based on my old J2ME player FPlay, also available on GitHub: https://github.com/carlosrafaelgn/FPlay
 
 ----
 
