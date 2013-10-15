@@ -15,6 +15,7 @@ Moreover, this source code can be used as an example on how to do a few common t
 - Handle physical media buttons as well as Bluetooth commands
 - Send track information via A2DP Bluetooth (using com.android.music.playbackcomplete, com.android.music.playstatechanged and com.android.music.metachanged intents)
 - Use custom fonts as vector icons instead of bitmap files
+- Detect different display sizes (such as tablets and handhelds)
 - Create custom menus
 - Create custom views
 - Create custom ListView with support for multiple selection and item reordering
