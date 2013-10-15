@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
@@ -48,6 +49,7 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextUtils.TruncateAt;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
@@ -175,7 +177,7 @@ public final class UI {
 	
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen;
-	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, defaultControlContentsSize, defaultControlSize;
+	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight;
 	private static int _1dpStroke;
 	private static float _1dpInset;
 	
@@ -207,15 +209,59 @@ public final class UI {
 		textPaint.measureText("FPlay");
 	}
 	
-	public static void initialize(Context context, DisplayMetrics metrics) {
+	private static void initializeScreenDimensions(Activity activity, Display display, DisplayMetrics outDisplayMetrics) {
+		display.getMetrics(outDisplayMetrics);
+		screenWidth = outDisplayMetrics.widthPixels;
+		screenHeight = outDisplayMetrics.heightPixels;
+		usableScreenWidth = screenWidth;
+		usableScreenHeight = screenHeight;
+	}
+	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private static void initializeScreenDimensions14(Activity activity, Display display, DisplayMetrics outDisplayMetrics) {
+		try {
+			screenWidth = (Integer)Display.class.getMethod("getRawWidth").invoke(display);
+			screenHeight = (Integer)Display.class.getMethod("getRawHeight").invoke(display);
+		} catch (Throwable ex) {
+			initializeScreenDimensions(activity, display, outDisplayMetrics);
+			return;
+		}
+		display.getMetrics(outDisplayMetrics);
+		usableScreenWidth = outDisplayMetrics.widthPixels;
+		usableScreenHeight = outDisplayMetrics.heightPixels;
+	}
+	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+	private static void initializeScreenDimensions17(Activity activity, Display display, DisplayMetrics outDisplayMetrics) {
+		display.getMetrics(outDisplayMetrics);
+		usableScreenWidth = outDisplayMetrics.widthPixels;
+		usableScreenHeight = outDisplayMetrics.heightPixels;
+		display.getRealMetrics(outDisplayMetrics);
+		screenWidth = outDisplayMetrics.widthPixels;
+		screenHeight = outDisplayMetrics.heightPixels;
+	}
+	
+	public static void initialize(Activity activity) {
 		if (iconsTypeface == null)
-			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
-		density = metrics.density;
-		scaledDensity = metrics.scaledDensity;
-		xdpi_1_72 = metrics.xdpi * (1.0f / 72.0f);
-		isLargeScreen = (metrics.densityDpi < 240 && (metrics.heightPixels > 600 || metrics.widthPixels > 600));
-		isLandscape = (metrics.widthPixels >= metrics.heightPixels);
-		isLowDpiScreen = (metrics.densityDpi < 160);
+			iconsTypeface = Typeface.createFromAsset(activity.getAssets(), "fonts/icons.ttf");
+		final Display display = activity.getWindowManager().getDefaultDisplay();
+		final DisplayMetrics displayMetrics = new DisplayMetrics();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
+			initializeScreenDimensions17(activity, display, displayMetrics);
+		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+			initializeScreenDimensions14(activity, display, displayMetrics);
+		else
+			initializeScreenDimensions(activity, display, displayMetrics);
+		density = displayMetrics.density;
+		scaledDensity = displayMetrics.scaledDensity;
+		xdpi_1_72 = displayMetrics.xdpi * (1.0f / 72.0f);
+		//improved detection for tablets, based on:
+		//http://developer.android.com/guide/practices/screens_support.html#DeclaringTabletLayouts
+		//(There is also the solution at http://stackoverflow.com/questions/11330363/how-to-detect-device-is-android-phone-or-android-tablet
+		//but the former link says it is deprecated...)
+		isLargeScreen = ((screenWidth >= dpToPxI(600)) && (screenHeight >= dpToPxI(600)));
+		isLandscape = (screenWidth >= screenHeight);
+		isLowDpiScreen = (displayMetrics.densityDpi < 160);
 		_1dp = dpToPxI(1);
 		if (_1dp == 1) {
 			_1dpStroke = 2;
@@ -251,7 +297,7 @@ public final class UI {
 		textPaint.getFontMetrics(fm);
 		_14spBox = (int)(fm.descent - fm.ascent + 0.5f);
 		_14spYinBox = _14spBox - (int)(fm.descent);
-		emptyListString = context.getText(R.string.empty_list).toString();
+		emptyListString = activity.getText(R.string.empty_list).toString();
 		emptyListStringHalfWidth = measureText(emptyListString, _18sp) >> 1;
 	}
 	

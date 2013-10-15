@@ -43,6 +43,7 @@ import android.view.View;
 import android.view.View.OnCreateContextMenuListener;
 
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener {
 	ActivityHost activity;
@@ -50,24 +51,14 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	int requestCode;
 	boolean finished;
 	
-	@SuppressWarnings("deprecation")
-	public final int getDefaultDisplayWidth() {
-		return activity.getWindowManager().getDefaultDisplay().getWidth();
-	}
-	
-	@SuppressWarnings("deprecation")
-	public final int getDefaultDisplayHeight() {
-		return activity.getWindowManager().getDefaultDisplay().getHeight();
-	}
-	
 	public final int getDecorViewWidth() {
 		final int w = activity.getWindow().getDecorView().getWidth();
-		return ((w <= 0) ? getDefaultDisplayWidth() : w);
+		return ((w > 0) ? w : UI.usableScreenWidth);
 	}
 	
 	public final int getDecorViewHeight() {
 		final int h = activity.getWindow().getDecorView().getHeight();
-		return ((h <= 0) ? getDefaultDisplayHeight() : h);
+		return ((h > 0) ? h : UI.usableScreenHeight);
 	}
 	
 	public final void addWindowFlags(int flags) {

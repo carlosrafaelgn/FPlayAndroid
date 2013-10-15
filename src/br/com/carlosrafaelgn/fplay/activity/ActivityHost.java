@@ -154,7 +154,7 @@ public final class ActivityHost extends Activity {
 	protected final void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setupActionBar();
-		UI.initialize(this, getResources().getDisplayMetrics());
+		UI.initialize(this);
 		MainHandler.initialize(getApplication());
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_window));
 		if (top == null) {
@@ -171,7 +171,7 @@ public final class ActivityHost extends Activity {
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		final boolean i = UI.isLandscape;
-		UI.initialize(this, getResources().getDisplayMetrics());
+		UI.initialize(this);
 		if (i != UI.isLandscape) {
 			if (top != null) {
 				top.onOrientationChanged();

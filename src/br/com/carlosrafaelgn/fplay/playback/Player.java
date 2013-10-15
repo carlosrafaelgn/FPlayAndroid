@@ -170,6 +170,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static void initialize(Context context) {
 		if (!initialized) {
 			initialized = true;
+			MainHandler.initialize(context);
 			if (notificationManager == null)
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			if (audioManager == null)
