@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string name="fplay">FPlay</string>
     <string name="app_by">by Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Simple and straightforward Android music player, with equalizer</string>
     <string name="app_more_info">Looking for more info?\nMaybe the source code?\nHave a request?\nFound a bug?!?\nJust want to contact me? :)\n\nDrop me an e-mail:\ndev@carlosrafaelgn.com.br\nor visit the application\'s project site on GitHub:\nhttps://github.com/carlosrafaelgn/FPlayAndroid\n\nFree third-party resources used in the application:</string>

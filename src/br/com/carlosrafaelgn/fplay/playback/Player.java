@@ -50,6 +50,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.view.KeyEvent;
+import android.widget.RemoteViews;
 import br.com.carlosrafaelgn.fplay.ExternalReceiver;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.WidgetMain;
@@ -408,14 +409,58 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
-	@SuppressWarnings("deprecation")
-	private static Notification getNotification() {
-		final Intent intent = new Intent(thePlayer, ActivityHost.class);
+	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
+		if (currentSongPreparing)
+			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
+		else if (currentSong == null)
+			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
+		else
+			views.setTextViewText(R.id.lblTitle, currentSong.title);
+		
+		if (prepareButtons) {
+			if (notification) {
+				UI.prepareNotificationPlaybackIcons(context);
+				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
+				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
+				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
+			} else {
+				UI.preparePlaybackIcons(context);
+				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
+				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
+				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
+			}
+			
+			Intent intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_PREVIOUS);
+			views.setOnClickPendingIntent(R.id.btnPrev, PendingIntent.getService(context, 0, intent, 0));
+			
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_PLAY_PAUSE);
+			views.setOnClickPendingIntent(R.id.btnPlay, PendingIntent.getService(context, 0, intent, 0));
+			
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_NEXT);
+			views.setOnClickPendingIntent(R.id.btnNext, PendingIntent.getService(context, 0, intent, 0));
+		}		
+		return views;
+	}
+	
+	public static PendingIntent getPendingIntent(Context context) {
+		final Intent intent = new Intent(context, ActivityHost.class);
 		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		final Song s = Player.getCurrentSong();
-		final Notification notification = new Notification(R.drawable.ic_notification, "FPlay", 0);//System.currentTimeMillis());
+		return PendingIntent.getActivity(context, 0, intent, 0);
+	}
+	
+	private static Notification getNotification() {
+		final Notification notification = new Notification();
+		notification.icon = R.drawable.ic_notification;
+		notification.when = 0;
 		notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
-		notification.setLatestEventInfo(thePlayer, "FPlay", (s == null) ? thePlayer.getText(R.string.nothing_playing) : s.title, PendingIntent.getActivity(thePlayer, 0, intent, 0));
+		notification.contentIntent = getPendingIntent(thePlayer);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification), true, true);
+		else
+			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification_simple), false, true);
 		return notification;
 	}
 	
@@ -423,8 +468,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		if (thePlayer != null) {
 			if (newCurrentSong != null)
 				currentSong = newCurrentSong;
-			if (!onlyPauseChanged)
-				notificationManager.notify(1, getNotification());
+			notificationManager.notify(1, getNotification());
 			WidgetMain.updateWidgets(thePlayer, onlyPauseChanged);
 			broadcastStateChange(onlyPauseChanged);
 			if (ex != null) {

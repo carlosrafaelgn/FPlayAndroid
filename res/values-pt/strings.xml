@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string name="fplay">FPlay</string>
     <string name="app_by">por Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Reprodutor de música simples e direto para Android, com equalizador</string>
     <string name="app_more_info">Procurando por mais informações?\nTalvez o código fonte?\nTem um pedido?\nEncontrou um bug?!?\nSó quer entrar em contato comigo? :)\n\nMande-me um e-mail:\ndev@carlosrafaelgn.com.br\nou visite o site do projeto do aplicativo no GitHub:\nhttps://github.com/carlosrafaelgn/FPlayAndroid\n\nRecursos gratuitos de terceiros utilizados no aplicativo:</string>

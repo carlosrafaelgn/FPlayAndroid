@@ -35,7 +35,6 @@ package br.com.carlosrafaelgn.fplay.ui.drawable;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
-import android.graphics.Paint.FontMetrics;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -44,7 +43,6 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public class TextIconDrawable extends Drawable {
 	private static final TextPaint paint;
-	private static int refY, lastBox;
 	private int[] stateSet;
 	private int state, size, y;
 	private final boolean outsideMenu;
@@ -60,22 +58,6 @@ public class TextIconDrawable extends Drawable {
 		paint.setColor(UI.color_text_menu_icon);
 	}
 	
-	private static int getYForSize(int size) {
-		paint.setTextSize(size);
-		final FontMetrics fm = paint.getFontMetrics();
-		paint.getFontMetrics(fm);
-		final int box = (int)(fm.descent - fm.ascent + 0.5f);
-		final int yInBox = box - (int)(fm.descent);
-		return yInBox - (box >> 1);
-	}
-	
-	private static void refreshRefY() {
-		if (lastBox != UI._22spBox) {
-			lastBox = UI._22spBox;
-			refY = getYForSize(UI._22spBox);
-		}
-	}
-	
 	public static void drawIcon(Canvas canvas, String icon, int x, int y, int size, int color) {
 		paint.setColor(color);
 		paint.setTextSize(size);
@@ -83,20 +65,18 @@ public class TextIconDrawable extends Drawable {
 	}
 	
 	public TextIconDrawable(String icon) {
-		refreshRefY();
 		this.icon = icon;
 		this.size = UI._22spBox;
-		this.y = refY;
+		this.y = UI._22spBox >> 1;
 		this.outsideMenu = false;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, UI._22spBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._22spBox);
 	}
 	
 	public TextIconDrawable(String icon, boolean outsideMenu) {
-		refreshRefY();
 		this.icon = icon;
 		this.size = UI._22spBox;
-		this.y = refY;
+		this.y = UI._22spBox >> 1;
 		this.outsideMenu = outsideMenu;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, UI._22spBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._22spBox);
@@ -104,14 +84,8 @@ public class TextIconDrawable extends Drawable {
 	
 	public TextIconDrawable(String icon, boolean outsideMenu, int size) {
 		this.icon = icon;
-		if (size == UI._22spBox) {
-			refreshRefY();
-			this.size = UI._22spBox;
-			this.y = refY;
-		} else {
-			this.size = size;
-			this.y = getYForSize(size);
-		}
+		this.size = size;
+		this.y = size >> 1;
 		this.outsideMenu = outsideMenu;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), size);

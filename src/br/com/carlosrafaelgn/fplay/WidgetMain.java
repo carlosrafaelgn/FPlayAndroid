@@ -32,15 +32,11 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.widget.RemoteViews;
-import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
-import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class WidgetMain extends AppWidgetProvider {
@@ -49,34 +45,8 @@ public final class WidgetMain extends AppWidgetProvider {
 	
 	private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId, boolean onlyPauseChanged) {
 		final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.main_widget);
-		final Song s = Player.getCurrentSong();
-		
-		if (Player.isCurrentSongPreparing())
-			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
-		else if (s == null)
-			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
-		else
-			views.setTextViewText(R.id.lblTitle, s.title);
-		
-		views.setImageViewResource(R.id.btnPlay, Player.isPlaying() ? R.drawable.ic_pause : R.drawable.ic_play);		
-		
-		Intent intent = new Intent(context, ActivityHost.class);
-		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		views.setOnClickPendingIntent(R.id.lblTitle, PendingIntent.getActivity(context, 0, intent, 0));
-		
-		intent = new Intent(context, Player.class);
-		intent.setAction(Player.ACTION_PREVIOUS);
-		views.setOnClickPendingIntent(R.id.btnPrev, PendingIntent.getService(context, 0, intent, 0));
-		
-		intent = new Intent(context, Player.class);
-		intent.setAction(Player.ACTION_PLAY_PAUSE);
-		views.setOnClickPendingIntent(R.id.btnPlay, PendingIntent.getService(context, 0, intent, 0));
-		
-		intent = new Intent(context, Player.class);
-		intent.setAction(Player.ACTION_NEXT);
-		views.setOnClickPendingIntent(R.id.btnNext, PendingIntent.getService(context, 0, intent, 0));
-		
-		appWidgetManager.updateAppWidget(appWidgetId, views);
+		views.setOnClickPendingIntent(R.id.lblTitle, Player.getPendingIntent(context));
+		appWidgetManager.updateAppWidget(appWidgetId, Player.prepareRemoteViews(context, views, true, false));
 	}
 	
 	public static void updateWidgets(Context context, boolean onlyPauseChanged) {

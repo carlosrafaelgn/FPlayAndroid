@@ -33,9 +33,9 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
@@ -54,6 +54,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 import br.com.carlosrafaelgn.fplay.R;
@@ -177,6 +178,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight;
+	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif;
 	private static int _1dpStroke;
 	private static float _1dpInset;
 	
@@ -208,7 +210,7 @@ public final class UI {
 		textPaint.measureText("FPlay");
 	}
 	
-	private static void initializeScreenDimensions(Activity activity, Display display, DisplayMetrics outDisplayMetrics) {
+	private static void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
 		display.getMetrics(outDisplayMetrics);
 		screenWidth = outDisplayMetrics.widthPixels;
 		screenHeight = outDisplayMetrics.heightPixels;
@@ -217,12 +219,12 @@ public final class UI {
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	private static void initializeScreenDimensions14(Activity activity, Display display, DisplayMetrics outDisplayMetrics) {
+	private static void initializeScreenDimensions14(Display display, DisplayMetrics outDisplayMetrics) {
 		try {
 			screenWidth = (Integer)Display.class.getMethod("getRawWidth").invoke(display);
 			screenHeight = (Integer)Display.class.getMethod("getRawHeight").invoke(display);
 		} catch (Throwable ex) {
-			initializeScreenDimensions(activity, display, outDisplayMetrics);
+			initializeScreenDimensions(display, outDisplayMetrics);
 			return;
 		}
 		display.getMetrics(outDisplayMetrics);
@@ -231,7 +233,7 @@ public final class UI {
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-	private static void initializeScreenDimensions17(Activity activity, Display display, DisplayMetrics outDisplayMetrics) {
+	private static void initializeScreenDimensions17(Display display, DisplayMetrics outDisplayMetrics) {
 		display.getMetrics(outDisplayMetrics);
 		usableScreenWidth = outDisplayMetrics.widthPixels;
 		usableScreenHeight = outDisplayMetrics.heightPixels;
@@ -240,17 +242,17 @@ public final class UI {
 		screenHeight = outDisplayMetrics.heightPixels;
 	}
 	
-	public static void initialize(Activity activity) {
+	public static void initialize(Context context) {
 		if (iconsTypeface == null)
-			iconsTypeface = Typeface.createFromAsset(activity.getAssets(), "fonts/icons.ttf");
-		final Display display = activity.getWindowManager().getDefaultDisplay();
+			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
+		final Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 		final DisplayMetrics displayMetrics = new DisplayMetrics();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
-			initializeScreenDimensions17(activity, display, displayMetrics);
+			initializeScreenDimensions17(display, displayMetrics);
 		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-			initializeScreenDimensions14(activity, display, displayMetrics);
+			initializeScreenDimensions14(display, displayMetrics);
 		else
-			initializeScreenDimensions(activity, display, displayMetrics);
+			initializeScreenDimensions(display, displayMetrics);
 		density = displayMetrics.density;
 		scaledDensity = displayMetrics.scaledDensity;
 		xdpi_1_72 = displayMetrics.xdpi * (1.0f / 72.0f);
@@ -296,8 +298,62 @@ public final class UI {
 		textPaint.getFontMetrics(fm);
 		_14spBox = (int)(fm.descent - fm.ascent + 0.5f);
 		_14spYinBox = _14spBox - (int)(fm.descent);
-		emptyListString = activity.getText(R.string.empty_list).toString();
+		emptyListString = context.getText(R.string.empty_list).toString();
 		emptyListStringHalfWidth = measureText(emptyListString, _18sp) >> 1;
+	}
+	
+	public static void preparePlaybackIcons(Context context) {
+		if (icPrev != null)
+			return;
+		if (iconsTypeface == null)
+			initialize(context);
+	    final Canvas c = new Canvas();
+	    textPaint.setTypeface(iconsTypeface);
+		textPaint.setColor(0xff000000);
+		textPaint.setTextSize(defaultControlContentsSize);
+		icPrev = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icPrev);
+	    c.drawText(ICON_PREV, 0, defaultControlContentsSize, textPaint);
+	    icPlay = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icPlay);
+	    c.drawText(ICON_PLAY, 0, defaultControlContentsSize, textPaint);
+	    icPause = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icPause);
+	    c.drawText(ICON_PAUSE, 0, defaultControlContentsSize, textPaint);
+	    icNext = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icNext);
+	    c.drawText(ICON_NEXT, 0, defaultControlContentsSize, textPaint);
+	    //reset to the original state
+	    textPaint.setTypeface(Typeface.SANS_SERIF);
+		textPaint.setColor(color_text);
+		textPaint.measureText("FPlay");
+	}
+	
+	public static void prepareNotificationPlaybackIcons(Context context) {
+		if (icPrevNotif != null)
+			return;
+		if (iconsTypeface == null)
+			initialize(context);
+	    final Canvas c = new Canvas();
+	    textPaint.setTypeface(iconsTypeface);
+		textPaint.setColor(0xffffffff);
+		textPaint.setTextSize(defaultControlContentsSize);
+		icPrevNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icPrevNotif);
+	    c.drawText(ICON_PREV, 0, defaultControlContentsSize, textPaint);
+	    icPlayNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icPlayNotif);
+	    c.drawText(ICON_PLAY, 0, defaultControlContentsSize, textPaint);
+	    icPauseNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icPauseNotif);
+	    c.drawText(ICON_PAUSE, 0, defaultControlContentsSize, textPaint);
+	    icNextNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icNextNotif);
+	    c.drawText(ICON_NEXT, 0, defaultControlContentsSize, textPaint);
+	    //reset to the original state
+	    textPaint.setTypeface(Typeface.SANS_SERIF);
+		textPaint.setColor(color_text);
+		textPaint.measureText("FPlay");
 	}
 	
 	public static float pxToDp(float px) {

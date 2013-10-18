@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:minHeight="64dp" >
+
+    <ImageView
+        android:id="@+id/imgIcon"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:contentDescription="@string/fplay"
+        android:padding="4dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_launcher" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/lblTitle"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/imgIcon"
+        android:paddingTop="4dp" >
+
+        <ImageButton
+            android:id="@+id/btnPrev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@+id/btnPlay"
+            android:padding="2dp"
+            android:background="@drawable/bg_notification_button"
+            android:contentDescription="@string/previous"
+            android:focusable="true"
+            android:scaleType="centerInside" />
+
+        <ImageButton
+            android:id="@+id/btnPlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="32dp"
+            android:layout_marginRight="32dp"
+            android:padding="2dp"
+            android:background="@drawable/bg_notification_button"
+            android:contentDescription="@string/play_pause"
+            android:focusable="true"
+            android:scaleType="centerInside" />
+
+        <ImageButton
+            android:id="@+id/btnNext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/btnPlay"
+            android:padding="2dp"
+            android:background="@drawable/bg_notification_button"
+            android:contentDescription="@string/next"
+            android:focusable="true"
+            android:scaleType="centerInside" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/lblTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp"
+        android:layout_toRightOf="@+id/imgIcon"
+        android:ellipsize="marquee"
+        android:fadingEdge="horizontal"
+        android:gravity="center"
+        android:singleLine="true"
+        android:textAppearance="@android:style/TextAppearance.StatusBar.EventContent" />
+
+</RelativeLayout>

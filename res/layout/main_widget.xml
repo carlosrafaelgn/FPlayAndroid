@@ -25,7 +25,7 @@
             android:nextFocusRight="@+id/btnPrev"
             android:text="@string/nothing_playing"
             android:textAppearance="@style/MediumText"
-            android:textColor="@color/color_text_selected" />
+            android:textColor="@color/color_widget_text" />
 
         <ImageButton
             android:id="@+id/btnPrev"
@@ -39,8 +39,7 @@
             android:nextFocusForward="@+id/btnPlay"
             android:nextFocusLeft="@+id/lblTitle"
             android:nextFocusRight="@+id/btnPlay"
-            android:padding="8dp"
-            android:src="@drawable/ic_prev" />
+            android:padding="8dp" />
 
         <ImageButton
             android:id="@+id/btnPlay"
@@ -54,8 +53,7 @@
             android:nextFocusForward="@+id/btnNext"
             android:nextFocusLeft="@+id/btnPrev"
             android:nextFocusRight="@+id/btnNext"
-            android:padding="8dp"
-            android:src="@drawable/ic_play" />
+            android:padding="8dp" />
 
         <ImageButton
             android:id="@+id/btnNext"
@@ -66,8 +64,7 @@
             android:contentDescription="@string/next"
             android:focusable="true"
             android:nextFocusLeft="@+id/btnPlay"
-            android:padding="8dp"
-            android:src="@drawable/ic_next" />
+            android:padding="8dp" />
     </RelativeLayout>
 
 </FrameLayout>
