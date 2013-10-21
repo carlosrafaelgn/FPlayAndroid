@@ -9,7 +9,7 @@ Moreover, this source code can be used as an example on how to do a few common t
 - Extract ID3v1 and ID3v2 information from MP3 and AAC files without android.media.MediaMetadataRetriever
 - Reduce the latency between consecutive tracks using setNextMediaPlayer()
 - Apply audio effects to music (equalizer and bass boost)
-- Use android.media.audiofx.Visualizer and getFft()\
+- Use android.media.audiofx.Visualizer and getFft()
 - Use keyboard for navigation and control
 - Handle different screen sizes and densities
 - Handle physical media buttons as well as Bluetooth commands
@@ -19,6 +19,7 @@ Moreover, this source code can be used as an example on how to do a few common t
 - Create custom menus
 - Create custom views
 - Create custom ListView with support for multiple selection and item reordering
+- Create resizable widgets
 
 The player is still in a "beta stage", so there may be unknown bugs yet ;)
 
