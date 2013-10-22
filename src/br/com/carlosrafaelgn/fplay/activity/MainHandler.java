@@ -38,6 +38,10 @@ import android.os.Handler;
 public final class MainHandler {
 	private static Handler handler;
 	
+	public static Handler getHandler() {
+		return handler;
+	}
+	
 	public static void initialize(Context context) {
 		if (handler == null)
 			handler = new Handler(context.getMainLooper());

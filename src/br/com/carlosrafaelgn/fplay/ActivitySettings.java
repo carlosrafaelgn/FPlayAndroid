@@ -55,11 +55,25 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class ActivitySettings extends ClientActivity implements View.OnClickListener {
 	private BgButton btnGoBack, btnAbout;
-	private SettingView optKeepScreenOn, optDisplayVolumeInDB, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optKeepScreenOn, optVolumeControlType, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		if (view == optForceOrientation) {
+		if (view == optVolumeControlType) {
+			lastMenuView = optVolumeControlType;
+			UI.prepare(menu);
+			final int o = (Player.isVolumeControlGlobal() ? 0 : (Player.displayVolumeInDB ? 1 : 2));
+			menu.add(0, 0, 0, R.string.volume_control_type_integrated)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			UI.separator(menu, 0, 1);
+			menu.add(1, 1, 0, R.string.volume_control_type_decibels)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, 2, 1, R.string.volume_control_type_percentage)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optForceOrientation) {
 			lastMenuView = optForceOrientation;
 			UI.prepare(menu);
 			final int o = Player.forcedOrientation;
@@ -95,7 +109,22 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
-		if (lastMenuView == optForceOrientation) {
+		if (lastMenuView == optVolumeControlType) {
+			switch (item.getItemId()) {
+			case 0:
+				Player.setVolumeControlGlobal(getApplication(), true);
+				break;
+			case 1:
+				Player.setVolumeControlGlobal(getApplication(), false);
+				Player.displayVolumeInDB = true;
+				break;
+			case 2:
+				Player.setVolumeControlGlobal(getApplication(), false);
+				Player.displayVolumeInDB = false;
+				break;
+			}
+			optVolumeControlType.setSecondaryText(getVolumeString());
+		} else if (lastMenuView == optForceOrientation) {
 			Player.forcedOrientation = item.getItemId();
 			if (Player.forcedOrientation == 0)
 				getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
@@ -117,32 +146,26 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		lastMenuView = null;
 		return true;
 	}
-		
+	
+	private String getVolumeString() {
+		return getText(Player.isVolumeControlGlobal() ? R.string.volume_control_type_integrated : (Player.displayVolumeInDB ? R.string.volume_control_type_decibels : R.string.volume_control_type_percentage)).toString();
+	}
+	
 	private String getOrientationString() {
 		final int o = Player.forcedOrientation;
-		if (o == 0)
-			return getText(R.string.none).toString();
-		if (o < 0)
-			return getText(R.string.landscape).toString();
-		return getText(R.string.portrait).toString();
+		return getText((o == 0) ? R.string.none : ((o < 0) ? R.string.landscape : R.string.portrait)).toString();
 	}
 	
 	private String getFadeInString(int duration) {
-		if (duration >= 250)
-			return getText(R.string.dshort).toString();
-		if (duration >= 125)
-			return getText(R.string.dmedium).toString();
-		if (duration > 0)
-			return getText(R.string.dlong).toString();
-		return getText(R.string.none).toString();
+		return getText((duration >= 250) ? R.string.dshort : ((duration >= 125) ? R.string.dmedium : ((duration > 0) ? R.string.dlong : R.string.none))).toString();
 	}
 	
 	private void addSeparator(LinearLayout panelSettings, Context context) {
 		final TextView t = new TextView(context);
-		final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, UI._1dp);
-		p.setMargins(UI._8dp, UI._4sp, UI._8dp, UI._4sp);
+		final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
+		p.setMargins(UI._8dp, 0, UI._8dp, 0);
 		t.setLayoutParams(p);
-		t.setBackgroundColor(UI.color_selected_border);
+		t.setBackgroundColor(UI.color_current);//UI.color_selected_border);
 		t.setEnabled(false);
 		panelSettings.addView(t);
 	}
@@ -166,8 +189,10 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		
 		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, Player.keepScreenOn);
 		optKeepScreenOn.setOnClickListener(this);
-		optDisplayVolumeInDB = new SettingView(ctx, getText(R.string.opt_display_volume_in_db).toString(), null, true, Player.displayVolumeInDB);
-		optDisplayVolumeInDB.setOnClickListener(this);
+		optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false);
+		optVolumeControlType.setOnClickListener(this);
+		optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, Player.blockBackKey);
+		optBlockBackKey.setOnClickListener(this);
 		optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, Player.doubleClickMode);
 		optDoubleClickMode.setOnClickListener(this);
 		optMarqueeTitle = new SettingView(ctx, getText(R.string.opt_marquee_title).toString(), null, true, Player.marqueeTitle);
@@ -185,6 +210,7 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		optFadeInOther = new SettingView(ctx, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false);
 		optFadeInOther.setOnClickListener(this);
 		
+		CustomContextMenu.registerForContextMenu(optVolumeControlType, this);
 		CustomContextMenu.registerForContextMenu(optForceOrientation, this);
 		CustomContextMenu.registerForContextMenu(optFadeInFocus, this);
 		CustomContextMenu.registerForContextMenu(optFadeInPause, this);
@@ -192,7 +218,9 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		
 		panelSettings.addView(optKeepScreenOn);
 		addSeparator(panelSettings, ctx);
-		panelSettings.addView(optDisplayVolumeInDB);
+		panelSettings.addView(optVolumeControlType);
+		addSeparator(panelSettings, ctx);
+		panelSettings.addView(optBlockBackKey);
 		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optDoubleClickMode);
 		addSeparator(panelSettings, ctx);
@@ -232,7 +260,7 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		btnGoBack = null;
 		btnAbout = null;
 		optKeepScreenOn = null;
-		optDisplayVolumeInDB = null;
+		optVolumeControlType = null;
 		optDoubleClickMode = null;
 		optMarqueeTitle = null;
 		optPrepareNext = null;
@@ -256,8 +284,8 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 				addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 			else
 				clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		} else if (view == optDisplayVolumeInDB) {
-			Player.displayVolumeInDB = optDisplayVolumeInDB.isChecked();
+		} else if (view == optBlockBackKey) {
+			Player.blockBackKey = optBlockBackKey.isChecked();
 		} else if (view == optDoubleClickMode) {
 			Player.doubleClickMode = optDoubleClickMode.isChecked();
 		} else if (view == optMarqueeTitle) {
@@ -266,7 +294,7 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 			Player.nextPreparationEnabled = optPrepareNext.isChecked();
 		} else if (view == optClearListWhenPlayingFolders) {
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
-		} else if (view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
+		} else if (view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
 		}
 	}

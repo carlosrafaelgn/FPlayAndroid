@@ -138,7 +138,7 @@ public final class UI {
 	
 	public static final ColorStateList colorState_text_normal = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
 	public static final ColorStateList colorState_text_sel = ColorStateList.valueOf(color_text_selected);
-	public static final ColorStateList colorState_text_highlight = ColorStateList.valueOf(color_selected_border);
+	public static final ColorStateList colorState_text_highlight = ColorStateList.valueOf(color_current);//color_selected_border);
 	
 	public static Typeface iconsTypeface;
 	

@@ -43,6 +43,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.audiofx.Visualizer;
 import android.os.Build;
 import android.os.Bundle;
@@ -291,6 +292,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		//whenever the activity is being displayed, the volume keys must control
+		//the music volume and nothing else!
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		
 		setupActionBar();
 		
@@ -492,6 +496,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	public void onPlayerControlModeChanged(boolean controlMode) {
+	}
+	
+	@Override
+	public void onPlayerGlobalVolumeChanged(int volume) {
+		
 	}
 	
 	@Override

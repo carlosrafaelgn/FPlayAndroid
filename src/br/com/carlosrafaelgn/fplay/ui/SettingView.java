@@ -58,7 +58,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		super(context);
 		super.setOnClickListener(this);
 		setFocusable(true);
-		setPadding(UI._8dp, UI._8sp, UI._8dp, UI._8sp);
+		setPadding(UI._8dp, UI._8sp << 1, UI._8dp, UI._8sp << 1);
 		setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 		p.addRule(ALIGN_PARENT_LEFT, TRUE);

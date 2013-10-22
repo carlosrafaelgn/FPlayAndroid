@@ -242,6 +242,8 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			} catch (Throwable ex) {
 			}
 		}
+		if (path == null)
+			modificationVersion = 1;
 		return true;
 	}
 	

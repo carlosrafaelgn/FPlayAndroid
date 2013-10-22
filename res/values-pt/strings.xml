@@ -34,8 +34,9 @@
     <string name="msg_add">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas.</string>
     <string name="msg_play">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas, e inicia sua reprodução.</string>
     <string name="opt_keep_screen_on">Manter a tela sempre ligada</string>
-    <string name="opt_display_volume_in_db">Mostrar o volume em decibéis</string>
-	<string name="opt_double_click_mode">Usar dois cliques/toques para tocar as músicas da lista</string>
+    <string name="opt_volume_control_type">Tipo do controle de volume:</string>
+	<string name="opt_block_back_key">Impedir que a tecla Voltar retorne à tela inicial</string>
+    <string name="opt_double_click_mode">Usar dois cliques/toques para tocar as músicas da lista</string>
 	<string name="opt_marquee_title">Girar o título da música atual quando não couber na tela</string>
 	<string name="opt_prepare_next">Pré-carregar a próxima música para tentar diminuir o intervalos entre músicas consecutivas</string>
     <string name="opt_clear_list_when_playing_folders">Limpar a lista existente antes de tocar uma pasta, uma nova lista ou um álbum</string>
@@ -43,6 +44,9 @@
     <string name="opt_fade_in_focus">Duração do fade in do volume depois de uma chamada, ou de outra interrupção externa:</string>
     <string name="opt_fade_in_pause">Duração do fade in do volume ao retomar depois de um pause:</string>
     <string name="opt_fade_in_other">Duração do fade in do volume ao iniciar novas músicas quando estiver em silêncio:</string>
+    <string name="volume_control_type_integrated">Integrado com o sistema</string>
+    <string name="volume_control_type_decibels">Decibéis</string>
+    <string name="volume_control_type_percentage">Percentual</string>
     <string name="none">Nenhuma</string>
     <string name="portrait">Retrato</string>
     <string name="landscape">Paisagem</string>

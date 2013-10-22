@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
+import android.media.AudioManager;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -138,39 +139,50 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 		}
 	}
 	
-	private String volumeDBToString() {
-		int volumeDB = Player.getVolumeDB();
-		if (Player.displayVolumeInDB) {
+	private String volumeToString() {
+		if (Player.isVolumeControlGlobal()) {
+			return Integer.toString(Player.getGlobalVolume());
+		} else {
+			int volumeDB = Player.getVolumeDB();
+			if (Player.displayVolumeInDB) {
+				if (volumeDB <= Player.MIN_VOLUME_DB)
+					return "-\u221E dB";
+				if (volumeDB >= 0)
+					return "-0.00 dB";
+				volumeDB = -volumeDB;
+				volumeBuilder.delete(0, volumeBuilder.length());
+				volumeBuilder.append('-');
+				volumeBuilder.append(volumeDB / 100);
+				volumeBuilder.append('.');
+				volumeDB %= 100;
+				if (volumeDB < 10)
+					volumeBuilder.append('0');
+				volumeBuilder.append(volumeDB);
+				volumeBuilder.append(" dB");
+				return volumeBuilder.toString();
+			}
 			if (volumeDB <= Player.MIN_VOLUME_DB)
-				return "-\u221E dB";
+				return "0%";
 			if (volumeDB >= 0)
-				return "-0.00 dB";
-			volumeDB = -volumeDB;
+				return "100%";
 			volumeBuilder.delete(0, volumeBuilder.length());
-			volumeBuilder.append('-');
-			volumeBuilder.append(volumeDB / 100);
-			volumeBuilder.append('.');
-			volumeDB %= 100;
-			if (volumeDB < 10)
-				volumeBuilder.append('0');
-			volumeBuilder.append(volumeDB);
-			volumeBuilder.append(" dB");
+			volumeBuilder.append(((Player.MIN_VOLUME_DB - volumeDB) * 100) / Player.MIN_VOLUME_DB);
+			volumeBuilder.append('%');
 			return volumeBuilder.toString();
 		}
-		if (volumeDB <= Player.MIN_VOLUME_DB)
-			return "0%";
-		if (volumeDB >= 0)
-			return "100%";
-		volumeBuilder.delete(0, volumeBuilder.length());
-		volumeBuilder.append(((Player.MIN_VOLUME_DB - volumeDB) * 100) / Player.MIN_VOLUME_DB);
-		volumeBuilder.append('%');
-		return volumeBuilder.toString();
 	}
 	
 	private void setVolumeIcon() {
 		if (btnVolume != null) {
-			final int max = -Player.MIN_VOLUME_DB;
-			final int v = max + Player.getVolumeDB();
+			final int max;
+			final int v;
+			if (Player.isVolumeControlGlobal()) {
+				max = Player.getGlobalMaxVolume();
+				v = Player.getGlobalVolume();
+			} else {
+				max = -Player.MIN_VOLUME_DB;
+				v = max + Player.getVolumeDB();
+			}
 			if (v == max)
 				btnVolume.setText(UI.ICON_VOLUME4);
 			else if (v == 0)
@@ -181,6 +193,15 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 				btnVolume.setText(UI.ICON_VOLUME2);
 			else
 				btnVolume.setText(UI.ICON_VOLUME1);
+		}
+	}
+	
+	private void updateVolumeDisplay() {
+		if (barVolume != null) {
+			barVolume.setValue(Player.isVolumeControlGlobal() ? Player.getGlobalVolume() : ((Player.getVolumeDB() - Player.MIN_VOLUME_DB) / 5));
+			barVolume.setText(volumeToString());
+		} else {
+			setVolumeIcon();
 		}
 	}
 	
@@ -335,6 +356,11 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 	}
 	
 	@Override
+	public void onPlayerGlobalVolumeChanged(int volume) {
+		updateVolumeDisplay();
+	}
+	
+	@Override
 	public View getNullContextMenuView() {
 		return ((!Player.songs.selecting && !Player.songs.moving) ? btnMenu : null);
 	}
@@ -444,10 +470,16 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 		} else if (view == btnCancelSel) {
 			cancelSelection(false);
 		} else if (view == btnDecreaseVolume) {
-			Player.setVolumeDB(Player.getVolumeDB() - 200, true);
+			if (Player.isVolumeControlGlobal())
+				Player.decreaseGlobalVolume();
+			else
+				Player.setVolumeDB(Player.getVolumeDB() - 200, true);
 			setVolumeIcon();
 		} else if (view == btnIncreaseVolume) {
-			Player.setVolumeDB(Player.getVolumeDB() + 200, true);
+			if (Player.isVolumeControlGlobal())
+				Player.increaseGlobalVolume();
+			else
+				Player.setVolumeDB(Player.getVolumeDB() + 200, true);
 			setVolumeIcon();
 		} else if (view == lblTitle) {
 			if (Player.isControlMode()) {
@@ -521,7 +553,7 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 			cancelSelection(false);
 			return true;
 		}
-		return false;
+		return Player.blockBackKey;
 	}
 	
 	@Override
@@ -538,6 +570,9 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		//whenever the activity is being displayed, the volume keys must control
+		//the music volume and nothing else!
+		getHostActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		Player.songs.selecting = false;
 		Player.songs.moving = false;
 		firstSel = -1;
@@ -653,9 +688,9 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 			
 			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
 			barVolume.setOnBgSeekBarChangeListener(this);
-			barVolume.setMax(-Player.MIN_VOLUME_DB / 5);
+			barVolume.setMax(Player.isVolumeControlGlobal() ? Player.getGlobalMaxVolume() : (-Player.MIN_VOLUME_DB / 5));
 			barVolume.setVertical(UI.isLandscape && !Player.isControlMode());
-			barVolume.setKeyIncrement(20);
+			barVolume.setKeyIncrement(Player.isVolumeControlGlobal() ? 1 : 20);
 			barVolume.setEmptySpaceColor(UI.color_window);
 			
 	        if (!Player.marqueeTitle) {
@@ -848,12 +883,7 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 	private void resume(boolean selectCurrent) {
 		Player.songs.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
-		if (barVolume != null) {
-			barVolume.setValue((Player.getVolumeDB() - Player.MIN_VOLUME_DB) / 5);
-			barVolume.setText(volumeDBToString());
-		} else {
-			setVolumeIcon();
-		}
+		updateVolumeDisplay();
 		if (list != null) {
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
@@ -1005,8 +1035,11 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
 		if (fromUser) {
 			if (seekBar == barVolume) {
-				Player.setVolumeDB((value * 5) + Player.MIN_VOLUME_DB, true);
-				seekBar.setText(volumeDBToString());
+				if (Player.isVolumeControlGlobal())
+					Player.setGlobalVolume(value);
+				else
+					Player.setVolumeDB((value * 5) + Player.MIN_VOLUME_DB, true);
+				seekBar.setText(volumeToString());
 			} else if (seekBar == barSeek) {
 				value = getMSFromBarValue(value);
 				if (value < 0) {

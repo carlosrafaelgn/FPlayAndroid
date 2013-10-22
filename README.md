@@ -20,6 +20,7 @@ Moreover, this source code can be used as an example on how to do a few common t
 - Create custom views
 - Create custom ListView with support for multiple selection and item reordering
 - Create resizable widgets
+- Control and monitor device's volume changes
 
 The player is still in a "beta stage", so there may be unknown bugs yet ;)
 

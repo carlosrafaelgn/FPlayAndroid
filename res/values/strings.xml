@@ -34,8 +34,9 @@
     <string name="msg_add">This button adds to the playlist all songs in the folder and in its subfolders.</string>
     <string name="msg_play">This button adds to the playlist all songs in the folder and in its subfolders, and starts the playback.</string>
     <string name="opt_keep_screen_on">Keep screen always on</string>
-    <string name="opt_display_volume_in_db">Display volume in decibels</string>
-	<string name="opt_double_click_mode">Use two clicks/touches to play songs in the playlist</string>
+    <string name="opt_volume_control_type">Volume control type:</string>
+	<string name="opt_block_back_key">Prevent the Back key from returning to the home screen</string>
+    <string name="opt_double_click_mode">Use two clicks/touches to play songs in the playlist</string>
 	<string name="opt_marquee_title">Spin current song\'s title when it does not fit on the screen</string>
 	<string name="opt_prepare_next">Preload next song in order to try to reduce the gap between consecutive songs</string>
     <string name="opt_clear_list_when_playing_folders">Clear existing list before playing a folder, a new list or an album</string>
@@ -43,6 +44,9 @@
     <string name="opt_fade_in_focus">Volume fade in\'s duration after a call, or another external interruption:</string>
     <string name="opt_fade_in_pause">Volume fade in\'s duration when unpausing:</string>
     <string name="opt_fade_in_other">Volume fade in\'s duration when starting new songs after silence:</string>
+    <string name="volume_control_type_integrated">Integrated with the system</string>
+    <string name="volume_control_type_decibels">Decibels</string>
+    <string name="volume_control_type_percentage">Percentage</string>
     <string name="none">None</string>
     <string name="portrait">Portrait</string>
     <string name="landscape">Landscape</string>

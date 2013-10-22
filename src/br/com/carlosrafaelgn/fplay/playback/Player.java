@@ -44,6 +44,7 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -99,6 +100,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static interface PlayerObserver {
 		public void onPlayerChanged(boolean onlyPauseChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
+		public void onPlayerGlobalVolumeChanged(int volume);
 	}
 	
 	private static class TimeoutException extends Exception {
@@ -111,6 +113,86 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static class FocusException extends Exception {
 		private static final long serialVersionUID = 6158088015763157546L;
+	}
+	
+	private static class GlobalVolumeObserver extends ContentObserver {
+		private static int volume = 0, max = 15;
+		private static GlobalVolumeObserver theObserver;
+		
+		public static void registerObserver(Context context) {
+			if (theObserver != null)
+				unregisterObserver(context);
+			theObserver = new GlobalVolumeObserver();
+			context.getApplicationContext().getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, theObserver);
+		}
+		
+		public static void unregisterObserver(Context context) {
+			if (theObserver == null)
+				return;
+			context.getApplicationContext().getContentResolver().unregisterContentObserver(theObserver);
+			theObserver = null;
+		}
+		
+		private GlobalVolumeObserver() {
+			super(MainHandler.getHandler());
+			if (audioManager != null) {
+				try {
+					volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+					max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+				} catch (Throwable ex) {
+					volume = 0;
+					max = 15;
+				}
+			}
+		}
+		
+		public static int getMaxVolume() {
+			return max;
+		}
+		
+		public static void decreaseVolume() {
+			volume = ((volume <= 1) ? 0 : (volume - 1));
+			try {
+				if (audioManager != null)
+					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
+			} catch (Throwable ex) {
+			}
+		}
+		
+		public static void increaseVolume() {
+			volume = ((volume >= max) ? max : (volume + 1));
+			try {
+				if (audioManager != null)
+					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
+			} catch (Throwable ex) {
+			}
+		}
+		
+		public static int getVolume() {
+			return volume;
+		}
+		
+		public static void setVolume(int volume) {
+			GlobalVolumeObserver.volume = ((volume < 0) ? 0 : ((volume > max) ? max : volume));
+			try {
+				if (audioManager != null)
+					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
+			} catch (Throwable ex) {
+			}
+		}
+		
+		@Override
+		public void onChange(boolean selfChange) {
+			super.onChange(selfChange);
+			if (audioManager == null)
+				return;
+			final int v = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+			if (volume != v) {
+				volume = v;
+				if (observer != null)
+					observer.onPlayerGlobalVolumeChanged(v);
+			}
+		}
 	}
 	
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
@@ -137,12 +219,15 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_MSGPLAYSHOWN = 0x0011;
 	private static final int OPT_MSGSTARTUPSHOWN = 0x0012;
 	private static final int OPT_MARQUEETITLE = 0x0013;
+	private static final int OPT_VOLUMECONTROLGLOBAL = 0x0014;
+	private static final int OPT_BLOCKBACKKEY = 0x0015;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
-	private static boolean playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode, startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume, listLoaded, reviveAlreadyRetried;
+	private static boolean playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode, volumeControlGlobal,
+		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume, listLoaded, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
 	private static int volumeDB, lastTime = -1, lastHow, silenceMode;
 	private static Player thePlayer;
@@ -165,7 +250,89 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static HashSet<String> favoriteFolders;
 	public static String path, originalPath;
 	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, forcedOrientation;
-	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, keepScreenOn, displayVolumeInDB, doubleClickMode, marqueeTitle, msgAddShown, msgPlayShown, msgStartupShown;
+	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, keepScreenOn, displayVolumeInDB, doubleClickMode,
+		marqueeTitle, blockBackKey, msgAddShown, msgPlayShown, msgStartupShown;
+	
+	public static void loadConfig(Context context) {
+		SerializableMap opts = SerializableMap.deserialize(context, "_Player");
+		if (opts == null)
+			opts = new SerializableMap();
+		setVolumeDB(opts.getInt(OPT_VOLUME), true);
+		controlMode = opts.getBoolean(OPT_CONTROLMODE);
+		path = opts.getString(OPT_PATH);
+		originalPath = opts.getString(OPT_ORIGINALPATH);
+		lastTime = opts.getInt(OPT_LASTTIME, -1);
+		bassBoostMode = opts.getBoolean(OPT_BASSBOOSTMODE);
+		fadeInIncrementOnFocus = opts.getInt(OPT_FADEININCREMENTONFOCUS, 125);
+		fadeInIncrementOnPause = opts.getInt(OPT_FADEININCREMENTONPAUSE, 125);
+		fadeInIncrementOnOther = opts.getInt(OPT_FADEININCREMENTONOTHER, 0);
+		nextPreparationEnabled = opts.getBoolean(OPT_NEXTPREPARATION, true);
+		clearListWhenPlayingFolders = opts.getBoolean(OPT_PLAYFOLDERCLEARSLIST);
+		keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
+		forcedOrientation = opts.getInt(OPT_FORCEDORIENTATION);
+		displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
+		doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
+		marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
+		setVolumeControlGlobal(context, opts.getBoolean(OPT_VOLUMECONTROLGLOBAL, false));
+		blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
+		msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
+		msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
+		msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
+		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
+		if (count > 0) {
+			if (count > 128)
+				count = 128;
+			favoriteFolders = new HashSet<String>(count);
+			for (int i = count - 1; i >= 0; i--) {
+				final String f = opts.getString(OPT_FAVORITEFOLDER0 + i);
+				if (f != null && f.length() > 1)
+					favoriteFolders.add(f);
+			}
+		}
+		Equalizer.loadConfig(opts);
+		BassBoost.loadConfig(opts);
+		if (favoriteFolders == null)
+			favoriteFolders = new HashSet<String>(8);
+	}
+	
+	public static void saveConfig(Context context) {
+		final SerializableMap opts = new SerializableMap(32);
+		opts.put(OPT_VOLUME, volumeDB);
+		opts.put(OPT_CONTROLMODE, controlMode);
+		opts.put(OPT_PATH, path);
+		opts.put(OPT_ORIGINALPATH, originalPath);
+		opts.put(OPT_LASTTIME, lastTime);
+		opts.put(OPT_BASSBOOSTMODE, bassBoostMode);
+		opts.put(OPT_FADEININCREMENTONFOCUS, fadeInIncrementOnFocus);
+		opts.put(OPT_FADEININCREMENTONPAUSE, fadeInIncrementOnPause);
+		opts.put(OPT_FADEININCREMENTONOTHER, fadeInIncrementOnOther);
+		opts.put(OPT_NEXTPREPARATION, nextPreparationEnabled);
+		opts.put(OPT_PLAYFOLDERCLEARSLIST, clearListWhenPlayingFolders);
+		opts.put(OPT_KEEPSCREENON, keepScreenOn);
+		opts.put(OPT_FORCEDORIENTATION, forcedOrientation);
+		opts.put(OPT_DISPLAYVOLUMEINDB, displayVolumeInDB);
+		opts.put(OPT_DOUBLECLICKMODE, doubleClickMode);
+		opts.put(OPT_MARQUEETITLE, marqueeTitle);
+		opts.put(OPT_VOLUMECONTROLGLOBAL, volumeControlGlobal);
+		opts.put(OPT_BLOCKBACKKEY, blockBackKey);
+		opts.put(OPT_MSGADDSHOWN, msgAddShown);
+		opts.put(OPT_MSGPLAYSHOWN, msgPlayShown);
+		opts.put(OPT_MSGSTARTUPSHOWN, msgStartupShown);
+		if (favoriteFolders != null && favoriteFolders.size() > 0) {
+			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
+			int i = 0;
+			for (String f : favoriteFolders) {
+				opts.put(OPT_FAVORITEFOLDER0 + i, f);
+				i++;
+			}
+		} else {
+			opts.put(OPT_FAVORITEFOLDERCOUNT, 0);
+		}
+		Equalizer.saveConfig(opts);
+		BassBoost.saveConfig(opts);
+		opts.serialize(context, "_Player");
+		songs.serialize(context, null);
+	}
 	
 	private static void initialize(Context context) {
 		if (!initialized) {
@@ -175,43 +342,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			if (audioManager == null)
 				audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
-			SerializableMap opts = SerializableMap.deserialize(context, "_Player");
-			if (opts == null)
-				opts = new SerializableMap();
-			setVolumeDB(opts.getInt(OPT_VOLUME), true);
-			controlMode = opts.getBoolean(OPT_CONTROLMODE);
-			path = opts.getString(OPT_PATH);
-			originalPath = opts.getString(OPT_ORIGINALPATH);
-			lastTime = opts.getInt(OPT_LASTTIME, -1);
-			bassBoostMode = opts.getBoolean(OPT_BASSBOOSTMODE);
-			fadeInIncrementOnFocus = opts.getInt(OPT_FADEININCREMENTONFOCUS, 125);
-			fadeInIncrementOnPause = opts.getInt(OPT_FADEININCREMENTONPAUSE, 125);
-			fadeInIncrementOnOther = opts.getInt(OPT_FADEININCREMENTONOTHER, 0);
-			nextPreparationEnabled = opts.getBoolean(OPT_NEXTPREPARATION, true);
-			clearListWhenPlayingFolders = opts.getBoolean(OPT_PLAYFOLDERCLEARSLIST);
-			keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
-			forcedOrientation = opts.getInt(OPT_FORCEDORIENTATION);
-			displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
-			doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
-			marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
-			msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
-			msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
-			msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
-			int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
-			if (count > 0) {
-				if (count > 128)
-					count = 128;
-				favoriteFolders = new HashSet<String>(count);
-				for (int i = count - 1; i >= 0; i--) {
-					final String f = opts.getString(OPT_FAVORITEFOLDER0 + i);
-					if (f != null && f.length() > 1)
-						favoriteFolders.add(f);
-				}
-			}
-			Equalizer.loadConfig(opts);
-			BassBoost.loadConfig(opts);
-			if (favoriteFolders == null)
-				favoriteFolders = new HashSet<String>(8);
+			loadConfig(context);
 		}
 		if (thePlayer != null) {
 			registerMediaButtonEventReceiver();
@@ -250,40 +381,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				volumeTimer = null;
 			}
 			initialized = false;
-			SerializableMap opts = new SerializableMap(32);
-			opts.put(OPT_VOLUME, volumeDB);
-			opts.put(OPT_CONTROLMODE, controlMode);
-			opts.put(OPT_PATH, path);
-			opts.put(OPT_ORIGINALPATH, originalPath);
-			opts.put(OPT_LASTTIME, lastTime);
-			opts.put(OPT_BASSBOOSTMODE, bassBoostMode);
-			opts.put(OPT_FADEININCREMENTONFOCUS, fadeInIncrementOnFocus);
-			opts.put(OPT_FADEININCREMENTONPAUSE, fadeInIncrementOnPause);
-			opts.put(OPT_FADEININCREMENTONOTHER, fadeInIncrementOnOther);
-			opts.put(OPT_NEXTPREPARATION, nextPreparationEnabled);
-			opts.put(OPT_PLAYFOLDERCLEARSLIST, clearListWhenPlayingFolders);
-			opts.put(OPT_KEEPSCREENON, keepScreenOn);
-			opts.put(OPT_FORCEDORIENTATION, forcedOrientation);
-			opts.put(OPT_DISPLAYVOLUMEINDB, displayVolumeInDB);
-			opts.put(OPT_DOUBLECLICKMODE, doubleClickMode);
-			opts.put(OPT_MARQUEETITLE, marqueeTitle);
-			opts.put(OPT_MSGADDSHOWN, msgAddShown);
-			opts.put(OPT_MSGPLAYSHOWN, msgPlayShown);
-			opts.put(OPT_MSGSTARTUPSHOWN, msgStartupShown);
-			if (favoriteFolders != null && favoriteFolders.size() > 0) {
-				opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
-				int i = 0;
-				for (String f : favoriteFolders) {
-					opts.put(OPT_FAVORITEFOLDER0 + i, f);
-					i++;
-				}
-			} else {
-				opts.put(OPT_FAVORITEFOLDERCOUNT, 0);
-			}
-			Equalizer.saveConfig(opts);
-			BassBoost.saveConfig(opts);
-			opts.serialize(context, "_Player");
-			songs.serialize(context, null);
+			saveConfig(context);
 			abandonFocus();
 		}
 	}
@@ -809,7 +907,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return volumeDB;
 	}
 	
-	public static void setVolumeDB(int volumeDB, boolean applyActualEqualizerVolume) {
+	public static void setVolumeDB(int volumeDB, boolean applyActualVolume) {
 		if (volumeDB <= MIN_VOLUME_DB) {
 			volume = 0;
 			Player.volumeDB = MIN_VOLUME_DB;
@@ -827,12 +925,51 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			volumeTimer.stop();
 		//when dimmed, decreased the volume by 20dB
 		actualVolume = (dimmedVolume ? (volume * 0.1f) : volume);
-		if (applyActualEqualizerVolume) {
+		if (applyActualVolume) {
 			try {
 				if (currentPlayer != null && currentSongLoaded)
 					currentPlayer.setVolume(actualVolume, actualVolume);
 			} catch (Throwable ex) {
 			}
+		}
+	}
+	
+	public static int getGlobalMaxVolume() {
+		return GlobalVolumeObserver.getMaxVolume();
+	}
+	
+	public static void decreaseGlobalVolume() {
+		GlobalVolumeObserver.decreaseVolume();
+	}
+	
+	public static void increaseGlobalVolume() {
+		GlobalVolumeObserver.increaseVolume();
+	}
+	
+	public static int getGlobalVolume() {
+		return GlobalVolumeObserver.getVolume();
+	}
+	
+	public static void setGlobalVolume(int volume) {
+		GlobalVolumeObserver.setVolume(volume);
+	}
+	
+	public static boolean isVolumeControlGlobal() {
+		return volumeControlGlobal;
+	}
+	
+	public static void setVolumeControlGlobal(Context context, boolean volumeControlGlobal) {
+		Player.volumeControlGlobal = volumeControlGlobal;
+		try {
+			if (volumeControlGlobal) {
+				GlobalVolumeObserver.registerObserver(context);
+				setVolumeDB(0, true);
+			} else {
+				GlobalVolumeObserver.unregisterObserver(context);
+			}
+		} catch (Throwable ex) {
+			Player.volumeControlGlobal = false;
+			GlobalVolumeObserver.unregisterObserver(context);
 		}
 	}
 	
@@ -894,11 +1031,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			releaseInternal();
 			updateState(false, null); //to update the widget
 			unregisterMediaButtonEventReceiver();
-			if (thePlayer != null) {
-				thePlayer.stopForeground(true);
-				thePlayer.stopSelf();
-				terminate(thePlayer);
-			}
+			GlobalVolumeObserver.unregisterObserver(thePlayer);
+			thePlayer.stopForeground(true);
+			thePlayer.stopSelf();
+			terminate(thePlayer);
 			thePlayer = null;
 		}
 	}
