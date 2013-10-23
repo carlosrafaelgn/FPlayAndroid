@@ -32,8 +32,15 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.os.Environment;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -104,6 +111,135 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 			menu.add(1, 62, 2, R.string.dlong)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(((d > 0) && (d < 125)) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		}
+	}
+	
+	private void loadSettings() {
+		Player.loadConfig(getApplication());
+		optKeepScreenOn.setChecked(Player.keepScreenOn);
+		if (Player.keepScreenOn)
+			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		else
+			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		optBlockBackKey.setChecked(Player.blockBackKey);
+		optDoubleClickMode.setChecked(Player.doubleClickMode);
+		optMarqueeTitle.setChecked(Player.marqueeTitle);
+		optPrepareNext.setChecked(Player.nextPreparationEnabled);
+		optClearListWhenPlayingFolders.setChecked(Player.clearListWhenPlayingFolders);
+		
+		optVolumeControlType.setSecondaryText(getVolumeString());
+		if (Player.forcedOrientation == 0)
+			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+		else if (Player.forcedOrientation < 0)
+			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+		else
+			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		optForceOrientation.setSecondaryText(getOrientationString());
+		optFadeInFocus.setSecondaryText(getFadeInString(Player.fadeInIncrementOnFocus));
+		optFadeInPause.setSecondaryText(getFadeInString(Player.fadeInIncrementOnPause));
+		optFadeInOther.setSecondaryText(getFadeInString(Player.fadeInIncrementOnOther));
+	}
+	
+	private boolean saveFile(ZipOutputStream zo, File f, String name) {
+		FileInputStream fi = null;
+		final int length = (int)f.length();
+		if (length <= 0 || !f.exists()) {
+			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+			return false;
+		}
+		try {
+			fi = new FileInputStream(f);
+			final byte[] buffer = new byte[length];
+			if (fi.read(buffer) != length) {
+				UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+				return false;
+			}
+			zo.putNextEntry(new ZipEntry(name));
+			zo.write(buffer);
+			zo.closeEntry();
+			return true;
+		} catch (Throwable ex) {
+			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+			return false;
+		} finally {
+			if (fi != null) {
+				try {
+					fi.close();
+				} catch (Throwable ex) {
+				}
+			}
+		}
+	}
+	
+	private void saveSettings() {
+		final Context ctx = getApplication();
+		Player.saveConfig(ctx);
+		File of = null;
+		int i;
+		boolean error = false;
+		String downloadPath;
+		FileOutputStream fo = null;
+		ZipOutputStream zo = null;
+		try {
+			try {
+				of = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+				if (of != null && of.exists() && of.isDirectory()) {
+					downloadPath = of.getAbsolutePath();
+					if (downloadPath.charAt(downloadPath.length() - 1) != File.separatorChar)
+						downloadPath += File.separator;
+				} else {
+					UI.toast(getApplication(), R.string.msg_error_download_path);
+					return;
+				}
+			} catch (Throwable ex) {
+				UI.toast(getApplication(), R.string.msg_error_download_path);
+				return;
+			}
+			i = 0;
+			do {
+				of = new File(downloadPath + "FPlay" + ((i == 0) ? ".zip" : " (" + i + ").zip"));
+				i++;
+			} while (of.exists());
+			
+			fo = new FileOutputStream(of);
+			zo = new ZipOutputStream(fo);
+			/*if (!saveFile(zo, ctx.getFileStreamPath("_Player"), "_Player")) {
+				error = true;
+				return;
+			}
+			if (!saveFile(zo, ctx.getFileStreamPath("_List"), "_List")) {
+				error = true;
+				return;
+			}*/
+			final String[] fileList = ctx.fileList();
+			for (i = fileList.length - 1; i >= 0; i--) {
+				if (!saveFile(zo, ctx.getFileStreamPath(fileList[i]), fileList[i])) {
+					error = true;
+					return;
+				}
+			}
+		} catch (Throwable ex) {
+			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+			error = true;
+		} finally {
+			if (zo != null) {
+				try {
+					zo.close();
+				} catch (Throwable ex) {
+				}
+			}
+			if (fo != null) {
+				try {
+					fo.close();
+				} catch (Throwable ex) {
+				}
+			}
+			try {
+				if (error && of != null && of.exists())
+					of.delete();
+			} catch (Throwable ex) {
+				
+			}
 		}
 	}
 	
@@ -238,9 +374,9 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optFadeInOther);
 		
-		if (UI.isLowDpiScreen)
+		if (UI.isLowDpiScreen && !UI.isLargeScreen)
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
-		if (UI.isLargeScreen || !UI.isLowDpiScreen)
+		else
 			btnAbout.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		btnAbout.setDefaultHeight();
 	}

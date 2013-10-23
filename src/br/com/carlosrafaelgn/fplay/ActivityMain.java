@@ -64,6 +64,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.util.Timer.TimerHandler;
 
 //
 //How to create a ListView using ArrayAdapter in Android
@@ -87,14 +88,14 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //Maintain/Save/Restore scroll position when returning to a ListView
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
-public final class ActivityMain extends ClientActivity implements Runnable, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener {
+public final class ActivityMain extends ClientActivity implements TimerHandler, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_EFFECTS = 105, MNU_VISUALIZER = 106, MNU_SETTINGS = 107, MNU_EXIT = 108;
 	private TextView lblTitle, lblMsgSelMove, lblTime;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
 	private BgButton btnPrev, btnPlay, btnNext, btnMenu, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
 	private BgListView list;
-	private Timer tmrSong;
+	private Timer tmrSong, tmrUpdateVolumeDisplay;
 	private ColorDrawable windowDrawable;
 	private CharSequence lastTitleText;
 	private int firstSel, lastSel;
@@ -340,7 +341,7 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 			}
 		}
 		lastTime = -2;
-		run();
+		handleTimer(tmrSong, null);
 	}
 	
 	@Override
@@ -356,8 +357,18 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 	}
 	
 	@Override
-	public void onPlayerGlobalVolumeChanged(int volume) {
+	public void onPlayerGlobalVolumeChanged() {
 		updateVolumeDisplay();
+	}
+	
+	@Override
+	public void onPlayerAudioSourceChanged() {
+		//when changing the output, the global volume usually changes
+		if (Player.isVolumeControlGlobal()) {
+			if (barVolume != null)
+				barVolume.setMax(Player.getGlobalMaxVolume());
+			tmrUpdateVolumeDisplay.start(750, true);
+		}
 	}
 	
 	@Override
@@ -580,9 +591,11 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 		lastTime = -2;
 		timeBuilder = new StringBuilder(16);
 		volumeBuilder = new StringBuilder(16);
-		tmrSong = new Timer(this);
+		tmrSong = new Timer(this, "Song Timer");
 		tmrSong.setCompensatingForDelays(true);
 		tmrSong.setHandledOnMain(true);
+		tmrUpdateVolumeDisplay = new Timer(this, "Update Volume Display Timer");
+		tmrUpdateVolumeDisplay.setHandledOnMain(true);
 	}
 	
 	@Override
@@ -653,7 +666,7 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 			btnMenu.setLayoutParams(rp);
 			
 			int lds = 0;
-			if (UI.isLowDpiScreen) {
+			if (UI.isLowDpiScreen && !UI.isLargeScreen) {
 				lds = (UI.isLandscape ? UI.dpToPxI(12) : UI._8dp);
 				btnDecreaseVolume.setPadding(lds, lds, lds, lds);
 				btnIncreaseVolume.setPadding(lds, lds, lds, lds);
@@ -936,6 +949,7 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 		if (list != null)
 			list.setOnKeyDownObserver(null);
 		tmrSong.stop();
+		tmrUpdateVolumeDisplay.stop();
 		SongAddingMonitor.stop();
 		if (Player.songs.selecting || Player.songs.moving)
 			cancelSelection(false);
@@ -972,19 +986,26 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 		list = null;
 		if (tmrSong != null)
 			tmrSong.stop();
+		if (tmrUpdateVolumeDisplay != null)
+			tmrUpdateVolumeDisplay.stop();
 		SongAddingMonitor.stop();
 	}
 	
 	@Override
 	protected void onDestroy() {
 		tmrSong = null;
+		tmrUpdateVolumeDisplay = null;
 		timeBuilder = null;
 		volumeBuilder = null;
 		windowDrawable = null;
 	}
 	
 	@Override
-	public void run() {
+	public void handleTimer(Timer timer, Object param) {
+		if (timer == tmrUpdateVolumeDisplay) {
+			updateVolumeDisplay();
+			return;
+		}
 		if (Player.isCurrentSongPreparing()) {
 			if (!alwaysShowSecondary && lblTime != null)
 				lblTime.setText(R.string.loading);
@@ -1070,14 +1091,16 @@ public final class ActivityMain extends ClientActivity implements Runnable, Play
 	
 	@Override
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
-		if (seekBar == barSeek) {
+		if (seekBar == barVolume && Player.isVolumeControlGlobal()) {
+			updateVolumeDisplay();
+		} else if (seekBar == barSeek) {
 			if (Player.getCurrentSong() != null) {
 				final int ms = getMSFromBarValue(seekBar.getValue());
 				if (cancelled || ms < 0) {
 					if (playingBeforeSeek) {
 						Player.playPause();
 					} else {
-						run();
+						handleTimer(tmrSong, null);
 					}
 				} else {
 					Player.seekTo(ms, playingBeforeSeek);

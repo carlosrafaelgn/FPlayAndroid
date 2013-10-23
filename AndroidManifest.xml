@@ -16,7 +16,7 @@
         android:normalScreens="true"
         android:smallScreens="true"
         android:xlargeScreens="true" />
-    
+
     <!-- For Google Drive -->
     <!-- uses-permission android:name="android.permission.GET_ACCOUNTS" -->
     <!-- For http playback -->
@@ -24,14 +24,14 @@
     <!-- For android.media.audiofx.Visualizer -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- <uses-permission android:name="android.permission.BROADCAST_STICKY" /> -->
+    <!--
+         <uses-permission android:name="android.permission.BROADCAST_STICKY" 
+		/>
+    -->
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <!--
-         In order to use Context.getExternalFilesDir() the following permission MUST be added,
-    	 as Context.getExternalFilesDir() returns a directory private to the app
-    -->
-    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+    <!-- For exporting files/settings -->
+    <!--  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
 
     <application
         android:allowBackup="true"
@@ -92,6 +92,7 @@
             <intent-filter>
                 <action android:name="android.media.AUDIO_BECOMING_NOISY" />
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="android.intent.action.HEADSET_PLUG" />
             </intent-filter>
         </receiver>
     </application>

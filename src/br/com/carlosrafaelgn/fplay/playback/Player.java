@@ -44,9 +44,11 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.MediaRouter;
+import android.media.MediaRouter.RouteGroup;
+import android.media.MediaRouter.RouteInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -100,7 +102,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static interface PlayerObserver {
 		public void onPlayerChanged(boolean onlyPauseChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
-		public void onPlayerGlobalVolumeChanged(int volume);
+		public void onPlayerGlobalVolumeChanged();
+		public void onPlayerAudioSourceChanged();
 	}
 	
 	private static class TimeoutException extends Exception {
@@ -113,86 +116,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static class FocusException extends Exception {
 		private static final long serialVersionUID = 6158088015763157546L;
-	}
-	
-	private static class GlobalVolumeObserver extends ContentObserver {
-		private static int volume = 0, max = 15;
-		private static GlobalVolumeObserver theObserver;
-		
-		public static void registerObserver(Context context) {
-			if (theObserver != null)
-				unregisterObserver(context);
-			theObserver = new GlobalVolumeObserver();
-			context.getApplicationContext().getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, theObserver);
-		}
-		
-		public static void unregisterObserver(Context context) {
-			if (theObserver == null)
-				return;
-			context.getApplicationContext().getContentResolver().unregisterContentObserver(theObserver);
-			theObserver = null;
-		}
-		
-		private GlobalVolumeObserver() {
-			super(MainHandler.getHandler());
-			if (audioManager != null) {
-				try {
-					volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-					max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-				} catch (Throwable ex) {
-					volume = 0;
-					max = 15;
-				}
-			}
-		}
-		
-		public static int getMaxVolume() {
-			return max;
-		}
-		
-		public static void decreaseVolume() {
-			volume = ((volume <= 1) ? 0 : (volume - 1));
-			try {
-				if (audioManager != null)
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
-			} catch (Throwable ex) {
-			}
-		}
-		
-		public static void increaseVolume() {
-			volume = ((volume >= max) ? max : (volume + 1));
-			try {
-				if (audioManager != null)
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
-			} catch (Throwable ex) {
-			}
-		}
-		
-		public static int getVolume() {
-			return volume;
-		}
-		
-		public static void setVolume(int volume) {
-			GlobalVolumeObserver.volume = ((volume < 0) ? 0 : ((volume > max) ? max : volume));
-			try {
-				if (audioManager != null)
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
-			} catch (Throwable ex) {
-			}
-		}
-		
-		@Override
-		public void onChange(boolean selfChange) {
-			super.onChange(selfChange);
-			if (audioManager == null)
-				return;
-			final int v = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-			if (volume != v) {
-				volume = v;
-				if (observer != null)
-					observer.onPlayerGlobalVolumeChanged(v);
-			}
-		}
 	}
 	
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
@@ -229,7 +152,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static boolean playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode, volumeControlGlobal,
 		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume, listLoaded, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static int volumeDB, lastTime = -1, lastHow, silenceMode;
+	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15;
 	private static Player thePlayer;
 	private static Song currentSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
@@ -237,6 +160,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static AudioManager audioManager;
 	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer;
 	private static ComponentName mediaButtonEventReceiver;
+	private static Object mediaRouterCallback;
 	public static PlayerObserver observer;
 	public static final SongList songs = SongList.getInstance();
 	//keep these instances here to prevent MainHandler, Equalizer and BassBoost
@@ -273,7 +197,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
 		doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
 		marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
-		setVolumeControlGlobal(context, opts.getBoolean(OPT_VOLUMECONTROLGLOBAL, false));
+		setVolumeControlGlobal(context, opts.getBoolean(OPT_VOLUMECONTROLGLOBAL, true));
 		blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
 		msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
 		msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
@@ -334,6 +258,53 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		songs.serialize(context, null);
 	}
 	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	private static void registerMediaRouter(Context context) {
+		final MediaRouter mr = (MediaRouter)context.getSystemService(MEDIA_ROUTER_SERVICE);
+		if (mr != null) {
+			mediaRouterCallback = new MediaRouter.Callback() {
+				@Override
+				public void onRouteVolumeChanged(MediaRouter router, RouteInfo info) {
+				}
+				@Override
+				public void onRouteUnselected(MediaRouter router, int type, RouteInfo info) {
+				}
+				@Override
+				public void onRouteUngrouped(MediaRouter router, RouteInfo info, RouteGroup group) {
+				}
+				@Override
+				public void onRouteSelected(MediaRouter router, int type, RouteInfo info) {
+				}
+				@Override
+				public void onRouteRemoved(MediaRouter router, RouteInfo info) {
+				}
+				@Override
+				public void onRouteGrouped(MediaRouter router, RouteInfo info, RouteGroup group, int index) {
+				}
+				@Override
+				public void onRouteChanged(MediaRouter router, RouteInfo info) {
+					if (info.getPlaybackStream() == AudioManager.STREAM_MUSIC) {
+						globalMaxVolume = info.getVolumeMax();
+						if (observer != null)
+							observer.onPlayerAudioSourceChanged();
+					}
+				}
+				@Override
+				public void onRouteAdded(MediaRouter router, RouteInfo info) {
+				}
+			};
+			mr.addCallback(MediaRouter.ROUTE_TYPE_LIVE_AUDIO | MediaRouter.ROUTE_TYPE_USER, (MediaRouter.Callback)mediaRouterCallback);
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	private static void unregisterMediaRouter(Context context) {
+		final MediaRouter mr = (MediaRouter)context.getSystemService(MEDIA_ROUTER_SERVICE);
+		if (mediaRouterCallback != null && mr != null)
+			mr.removeCallback((MediaRouter.Callback)mediaRouterCallback);
+		mediaRouterCallback = null;
+	}
+	
 	private static void initialize(Context context) {
 		if (!initialized) {
 			initialized = true;
@@ -346,6 +317,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 		if (thePlayer != null) {
 			registerMediaButtonEventReceiver();
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+				registerMediaRouter(context);
 			if (focusDelayTimer == null) {
 				focusDelayTimer = new Timer(thePlayer, "Player Focus Delay Timer");
 				focusDelayTimer.setHandledOnMain(true);
@@ -825,6 +798,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			playPause();
 		stopInternal(currentSong);
 		releaseInternal();
+		if (observer != null)
+			observer.onPlayerAudioSourceChanged();
+	}
+	
+	public static void headsetPlugged() {
+		if (observer != null)
+			observer.onPlayerAudioSourceChanged();
 	}
 	
 	public static void previous() {
@@ -935,23 +915,44 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	public static int getGlobalMaxVolume() {
-		return GlobalVolumeObserver.getMaxVolume();
+		return globalMaxVolume;
 	}
 	
 	public static void decreaseGlobalVolume() {
-		GlobalVolumeObserver.decreaseVolume();
+		try {
+			if (audioManager != null) {
+				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume <= 1) ? 0 : (volume - 1)), 0);
+			}
+		} catch (Throwable ex) {
+		}
 	}
 	
 	public static void increaseGlobalVolume() {
-		GlobalVolumeObserver.increaseVolume();
+		try {
+			if (audioManager != null) {
+				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume >= globalMaxVolume) ? globalMaxVolume : (volume + 1)), 0);
+			}
+		} catch (Throwable ex) {
+		}
 	}
 	
 	public static int getGlobalVolume() {
-		return GlobalVolumeObserver.getVolume();
+		try {
+			if (audioManager != null)
+				return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		} catch (Throwable ex) {
+		}
+		return 0;
 	}
 	
 	public static void setGlobalVolume(int volume) {
-		GlobalVolumeObserver.setVolume(volume);
+		try {
+			if (audioManager != null)
+				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume < 0) ? 0 : ((volume > globalMaxVolume) ? globalMaxVolume : volume)), 0);
+		} catch (Throwable ex) {
+		}
 	}
 	
 	public static boolean isVolumeControlGlobal() {
@@ -960,16 +961,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	public static void setVolumeControlGlobal(Context context, boolean volumeControlGlobal) {
 		Player.volumeControlGlobal = volumeControlGlobal;
-		try {
-			if (volumeControlGlobal) {
-				GlobalVolumeObserver.registerObserver(context);
+		if (volumeControlGlobal) {
+			try {
+				if (audioManager != null)
+					globalMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 				setVolumeDB(0, true);
-			} else {
-				GlobalVolumeObserver.unregisterObserver(context);
+			} catch (Throwable ex) {
+				Player.volumeControlGlobal = false;
 			}
-		} catch (Throwable ex) {
-			Player.volumeControlGlobal = false;
-			GlobalVolumeObserver.unregisterObserver(context);
 		}
 	}
 	
@@ -1031,7 +1030,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			releaseInternal();
 			updateState(false, null); //to update the widget
 			unregisterMediaButtonEventReceiver();
-			GlobalVolumeObserver.unregisterObserver(thePlayer);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+				unregisterMediaRouter(thePlayer);
 			thePlayer.stopForeground(true);
 			thePlayer.stopSelf();
 			terminate(thePlayer);
@@ -1112,6 +1112,22 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
 			previous();
 			break;
+		case KeyEvent.KEYCODE_VOLUME_DOWN:
+			if (volumeControlGlobal) {
+				decreaseGlobalVolume();
+				if (observer != null)
+					observer.onPlayerGlobalVolumeChanged();
+				break;
+			}
+			return false;
+		case KeyEvent.KEYCODE_VOLUME_UP:
+			if (volumeControlGlobal) {
+				increaseGlobalVolume();
+				if (observer != null)
+					observer.onPlayerGlobalVolumeChanged();
+				break;
+			}
+			return false;
 		default:
 			return false;
 		}

@@ -26,7 +26,7 @@
             android:nextFocusLeft="@+id/lblMsg"
             android:nextFocusRight="@+id/lblMsg"
             android:nextFocusUp="@+id/lblMsg" />
-        
+
         <ImageView
             android:id="@+id/imgIcon"
             android:layout_width="wrap_content"
@@ -98,6 +98,16 @@
                 android:textAppearance="@style/SmallText" >
 
                 <requestFocus />
+            </TextView>
+
+            <TextView
+                android:id="@+id/lblDbg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:focusable="false"
+                android:gravity="right"
+                android:textAppearance="@style/SmallText" >
             </TextView>
         </LinearLayout>
     </ScrollView>

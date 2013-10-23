@@ -222,17 +222,17 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 		barBass.setVertical(true);
 		barBass.setOnBgSeekBarChangeListener(this);
 		lblMsg = (TextView)findViewById(R.id.lblMsg);
-		if (UI.isLowDpiScreen) {
+		if (UI.isLargeScreen) {
+			chkEnable.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+		} else if (UI.isLowDpiScreen) {
 			findViewById(R.id.panelTop).setPadding(0, 0, 0, 0);
 			chkEnable.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			barBass.setTextSizeIndex(1);
 		} else {
-			if (UI.isLargeScreen) {
-				chkEnable.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			}
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		}
 		
@@ -455,7 +455,7 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 						bar.setKeyIncrement(20);
 						bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 5) : ((level - min) / 5));
 						bar.setOnBgSeekBarChangeListener(this);
-						if (UI.isLowDpiScreen)
+						if (UI.isLowDpiScreen && !UI.isLargeScreen)
 							bar.setTextSizeIndex(1);
 						bars[i] = bar;
 						bar.setId(i + 1);

@@ -185,7 +185,7 @@ public final class UI {
 	private static String emptyListString;
     private static int emptyListStringHalfWidth;
 	
-	private static float density, scaledDensity, xdpi_1_72;
+	public static float density, scaledDensity, xdpi_1_72;
 	
 	private static final Paint strokePaint, fillPaint;
 	private static final TextPaint textPaint;

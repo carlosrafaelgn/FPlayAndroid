@@ -70,10 +70,32 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblMsg.setText(sb.toString());
 		lblMsg.setLinkTextColor(UI.color_selected_grad_dk);
 		lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
+		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
+		sb.delete(0, sb.length());
+		sb.append(getText(R.string.system_info));
+		sb.append("\nDPI: ");
+		sb.append(UI.density);
+		sb.append("\nScaled DPI: ");
+		sb.append(UI.scaledDensity);
+		sb.append("\nResolution (px): ");
+		sb.append(UI.screenWidth);
+		sb.append(" x ");
+		sb.append(UI.screenHeight);
+		sb.append("\nResolution (dp): ");
+		sb.append(UI.pxToDp(UI.screenWidth));
+		sb.append(" x ");
+		sb.append(UI.pxToDp(UI.screenHeight));
 		if (UI.isLowDpiScreen)
-			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
-		else if (UI.isLargeScreen)
+			sb.append("\nLDPI");
+		if (UI.isLargeScreen)
+			sb.append("\nLarge Screen");
+		lblDbg.setTextColor(UI.color_selected_grad_dk);
+		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.spToPxI(12));
+		lblDbg.setText(sb.toString());
+		if (UI.isLargeScreen)
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		else if (UI.isLowDpiScreen)
+			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
 	}
 	
 	@Override

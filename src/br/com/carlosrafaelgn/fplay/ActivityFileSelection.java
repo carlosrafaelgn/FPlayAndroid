@@ -368,7 +368,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		list = (BgListView)findViewById(R.id.list);
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
-		if (UI.isLowDpiScreen) {
+		if (UI.isLowDpiScreen && !UI.isLargeScreen) {
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
 			//lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 		}

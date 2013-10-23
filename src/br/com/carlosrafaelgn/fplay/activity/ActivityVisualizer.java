@@ -499,8 +499,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	@Override
-	public void onPlayerGlobalVolumeChanged(int volume) {
-		
+	public void onPlayerGlobalVolumeChanged() {
+	}
+	
+	@Override
+	public void onPlayerAudioSourceChanged() {
 	}
 	
 	@Override

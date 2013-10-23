@@ -44,6 +44,43 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 //http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
 //
 public final class ExternalReceiver extends BroadcastReceiver {
+	private static final int BECOMING_NOISY = 1;
+	private static final int HEADSET_PLUGGED = 2;
+	private static final int MEDIA_KEY = 3;
+	
+	private void handleEvent(final int event, final int extra) {
+		if (!MainHandler.isOnMainThread()) {
+			MainHandler.post(new Runnable() {
+				@Override
+				public void run() {
+					handleEvent(event, extra);
+				}
+			});
+			return;
+		}
+		switch (event) {
+		case BECOMING_NOISY:
+			if (Player.isFocused()) {
+				//don't abort this broadcast, as this is not an ordered broadcast
+				//abortBroadcast();
+				Player.registerMediaButtonEventReceiver();
+			}
+			Player.becomingNoisy();
+			break;
+		case HEADSET_PLUGGED:
+			if (Player.isFocused()) {
+				//don't abort this broadcast, as this is not an ordered broadcast
+				//abortBroadcast();
+				Player.registerMediaButtonEventReceiver();
+			}
+			Player.headsetPlugged();
+			break;
+		case MEDIA_KEY:
+			Player.handleMediaButton(extra);
+			break;
+		}
+	}
+	
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if (intent == null || !Player.isInitialized())
@@ -51,21 +88,19 @@ public final class ExternalReceiver extends BroadcastReceiver {
 		final String a = intent.getAction();
 		if (a == null)
 			return;
-		if (a.equals(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {
-			if (Player.isFocused()) {
-				abortBroadcast();
-				Player.registerMediaButtonEventReceiver();
+		if (a.equals(Intent.ACTION_HEADSET_PLUG)) {
+			//this is for Android < 16 (for Android >= 16, MediaRouter is used)
+			//http://developer.android.com/reference/android/content/Intent.html#ACTION_HEADSET_PLUG
+			switch (intent.getExtras().getInt("state", -1)) {
+			case 0:
+				handleEvent(BECOMING_NOISY, 0);
+				break;
+			case 1:
+				handleEvent(HEADSET_PLUGGED, 0);
+				break;
 			}
-			if (MainHandler.isOnMainThread()) {
-				Player.becomingNoisy();
-			} else {
-				MainHandler.post(new Runnable() {
-					@Override
-					public void run() {
-						Player.becomingNoisy();
-					}
-				});
-			}
+		} else if (a.equals(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {
+			handleEvent(BECOMING_NOISY, 0);
 		} else if (a.equals(Intent.ACTION_MEDIA_BUTTON)) {
 			final Object o = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 			if (o == null || !(o instanceof KeyEvent))
@@ -73,17 +108,7 @@ public final class ExternalReceiver extends BroadcastReceiver {
 			final KeyEvent e = (KeyEvent)o;
 			if (e.getAction() != KeyEvent.ACTION_DOWN) //ACTION_MULTIPLE...?
 				return;
-			final int k = e.getKeyCode();
-			if (MainHandler.isOnMainThread()) {
-				Player.handleMediaButton(k);
-			} else {
-				MainHandler.post(new Runnable() {
-					@Override
-					public void run() {
-						Player.handleMediaButton(k);
-					}
-				});
-			}
+			handleEvent(MEDIA_KEY, e.getKeyCode());
 		}
 	}
 }

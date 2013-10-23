@@ -46,7 +46,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 
 public class SongAddingMonitor implements Runnable {
 	private static TextView notification;
-	private static final Timer timer = new Timer(new SongAddingMonitor());
+	private static final Timer timer = new Timer(new SongAddingMonitor(), "Song Adding Monitor Timer");
 	
 	private SongAddingMonitor() {
 	}

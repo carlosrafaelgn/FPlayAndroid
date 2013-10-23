@@ -523,12 +523,12 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
-		if (UI.isLowDpiScreen) {
-			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
-			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		} else if (UI.isLargeScreen) {
+		if (UI.isLargeScreen) {
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
+		} else if (UI.isLowDpiScreen) {
+			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
+			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
 		CustomContextMenu.registerForContextMenu(btnMenu, this);
 		navigateTo(Player.path, null);
