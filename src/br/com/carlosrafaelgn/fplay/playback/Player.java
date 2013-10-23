@@ -44,6 +44,7 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRouter;
@@ -158,6 +159,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static MediaPlayer currentPlayer, nextPlayer;
 	private static NotificationManager notificationManager;
 	private static AudioManager audioManager;
+	private static ExternalReceiver externalReceiver;
 	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer;
 	private static ComponentName mediaButtonEventReceiver;
 	private static Object mediaRouterCallback;
@@ -332,6 +334,16 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				volumeTimer.setHandledOnMain(true);
 				volumeTimer.setCompensatingForDelays(true);
 			}
+			if (externalReceiver == null) {
+				final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
+				filter.addAction("android.intent.action.MEDIA_BUTTON");
+				filter.addAction("android.intent.action.HEADSET_PLUG");
+				filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
+				filter.addAction("android.bluetooth.adapter.action.CONNECTION_STATE_CHANGED");
+				filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
+				externalReceiver = new ExternalReceiver();
+				context.getApplicationContext().registerReceiver(externalReceiver, filter);
+			}
 			if (!deserialized) {
 				deserialized = true;
 				songs.startDeserializing(context, null, true, false, false);
@@ -352,6 +364,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			if (volumeTimer != null) {
 				volumeTimer.stop();
 				volumeTimer = null;
+			}
+			if (externalReceiver != null) {
+				context.getApplicationContext().unregisterReceiver(externalReceiver);
+				externalReceiver = null;
 			}
 			initialized = false;
 			saveConfig(context);
@@ -802,7 +818,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			observer.onPlayerAudioSourceChanged();
 	}
 	
-	public static void headsetPlugged() {
+	public static void audioSourceChanged() {
 		if (observer != null)
 			observer.onPlayerAudioSourceChanged();
 	}

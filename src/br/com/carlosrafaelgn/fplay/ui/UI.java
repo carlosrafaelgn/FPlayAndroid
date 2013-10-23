@@ -177,7 +177,7 @@ public final class UI {
 	
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen;
-	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight;
+	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif;
 	private static int _1dpStroke;
 	private static float _1dpInset;
@@ -254,6 +254,7 @@ public final class UI {
 		else
 			initializeScreenDimensions(display, displayMetrics);
 		density = displayMetrics.density;
+		densityDpi = displayMetrics.densityDpi;
 		scaledDensity = displayMetrics.scaledDensity;
 		xdpi_1_72 = displayMetrics.xdpi * (1.0f / 72.0f);
 		//improved detection for tablets, based on:

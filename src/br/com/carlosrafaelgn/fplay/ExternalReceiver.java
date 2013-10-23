@@ -45,7 +45,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 //
 public final class ExternalReceiver extends BroadcastReceiver {
 	private static final int BECOMING_NOISY = 1;
-	private static final int HEADSET_PLUGGED = 2;
+	private static final int AUDIO_SOURCE_CHANGED = 2;
 	private static final int MEDIA_KEY = 3;
 	
 	private void handleEvent(final int event, final int extra) {
@@ -67,13 +67,13 @@ public final class ExternalReceiver extends BroadcastReceiver {
 			}
 			Player.becomingNoisy();
 			break;
-		case HEADSET_PLUGGED:
+		case AUDIO_SOURCE_CHANGED:
 			if (Player.isFocused()) {
 				//don't abort this broadcast, as this is not an ordered broadcast
 				//abortBroadcast();
 				Player.registerMediaButtonEventReceiver();
 			}
-			Player.headsetPlugged();
+			Player.audioSourceChanged();
 			break;
 		case MEDIA_KEY:
 			Player.handleMediaButton(extra);
@@ -88,20 +88,9 @@ public final class ExternalReceiver extends BroadcastReceiver {
 		final String a = intent.getAction();
 		if (a == null)
 			return;
-		if (a.equals(Intent.ACTION_HEADSET_PLUG)) {
-			//this is for Android < 16 (for Android >= 16, MediaRouter is used)
-			//http://developer.android.com/reference/android/content/Intent.html#ACTION_HEADSET_PLUG
-			switch (intent.getExtras().getInt("state", -1)) {
-			case 0:
-				handleEvent(BECOMING_NOISY, 0);
-				break;
-			case 1:
-				handleEvent(HEADSET_PLUGGED, 0);
-				break;
-			}
-		} else if (a.equals(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {
+		if (a.equals("android.media.AUDIO_BECOMING_NOISY")) {
 			handleEvent(BECOMING_NOISY, 0);
-		} else if (a.equals(Intent.ACTION_MEDIA_BUTTON)) {
+		} else if (a.equals("android.intent.action.MEDIA_BUTTON")) {
 			final Object o = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 			if (o == null || !(o instanceof KeyEvent))
 				return;
@@ -109,6 +98,21 @@ public final class ExternalReceiver extends BroadcastReceiver {
 			if (e.getAction() != KeyEvent.ACTION_DOWN) //ACTION_MULTIPLE...?
 				return;
 			handleEvent(MEDIA_KEY, e.getKeyCode());
+		} else if (a.equals("android.intent.action.HEADSET_PLUG")) {
+			//this is for Android < 16 (for Android >= 16, MediaRouter is used)
+			//http://developer.android.com/reference/android/content/Intent.html#ACTION_HEADSET_PLUG
+			switch (intent.getExtras().getInt("state", -1)) {
+			case 0:
+				handleEvent(BECOMING_NOISY, 0);
+				break;
+			case 1:
+				handleEvent(AUDIO_SOURCE_CHANGED, 0);
+				break;
+			}
+		} else if (a.equals("android.media.SCO_AUDIO_STATE_CHANGED") ||
+				a.equals("android.bluetooth.adapter.action.CONNECTION_STATE_CHANGED") ||
+				a.equals("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED")) {
+			handleEvent(AUDIO_SOURCE_CHANGED, 0);
 		}
 	}
 }

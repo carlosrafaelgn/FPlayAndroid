@@ -26,12 +26,12 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!--
          <uses-permission android:name="android.permission.BROADCAST_STICKY" 
-		/>
+		/>
     -->
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- For exporting files/settings -->
-    <!--  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
 
     <application
         android:allowBackup="true"
@@ -87,13 +87,6 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/main_widget_info" />
-        </receiver>
-        <receiver android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver" >
-            <intent-filter>
-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-                <action android:name="android.intent.action.HEADSET_PLUG" />
-            </intent-filter>
         </receiver>
     </application>
 

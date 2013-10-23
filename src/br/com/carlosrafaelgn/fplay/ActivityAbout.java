@@ -74,8 +74,10 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));
 		sb.append("\nDPI: ");
+		sb.append(UI.densityDpi);
+		sb.append("\ndp: ");
 		sb.append(UI.density);
-		sb.append("\nScaled DPI: ");
+		sb.append("\nsp: ");
 		sb.append(UI.scaledDensity);
 		sb.append("\nResolution (px): ");
 		sb.append(UI.screenWidth);
