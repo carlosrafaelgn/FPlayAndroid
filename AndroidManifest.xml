@@ -24,10 +24,9 @@
     <!-- For android.media.audiofx.Visualizer -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!--
-         <uses-permission android:name="android.permission.BROADCAST_STICKY" 
-		/>
-    -->
+    <!-- See this: http://developer.android.com/reference/android/bluetooth/BluetoothHeadset.html#ACTION_AUDIO_STATE_CHANGED -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <!-- <uses-permission android:name="android.permission.BROADCAST_STICKY"  /> -->
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- For exporting files/settings -->
@@ -87,6 +86,12 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/main_widget_info" />
+        </receiver>
+        <receiver android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver" >
+            <intent-filter>
+                <!-- MEDIA_BUTTON broadcast action MUST be declared in the application manifest!!! -->
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
         </receiver>
     </application>
 

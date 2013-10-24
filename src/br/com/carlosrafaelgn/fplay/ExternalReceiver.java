@@ -110,8 +110,9 @@ public final class ExternalReceiver extends BroadcastReceiver {
 				break;
 			}
 		} else if (a.equals("android.media.SCO_AUDIO_STATE_CHANGED") ||
-				a.equals("android.bluetooth.adapter.action.CONNECTION_STATE_CHANGED") ||
-				a.equals("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED")) {
+				a.equals("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED") ||
+				a.equals("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED") ||
+				a.equals("android.bluetooth.intent.action.HEADSET_STATE_CHANGED")) {
 			handleEvent(AUDIO_SOURCE_CHANGED, 0);
 		}
 	}

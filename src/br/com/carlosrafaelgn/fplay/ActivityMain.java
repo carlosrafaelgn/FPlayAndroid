@@ -365,6 +365,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	public void onPlayerAudioSourceChanged() {
 		//when changing the output, the global volume usually changes
 		if (Player.isVolumeControlGlobal()) {
+			updateVolumeDisplay();
 			if (barVolume != null)
 				barVolume.setMax(Player.getGlobalMaxVolume());
 			tmrUpdateVolumeDisplay.start(750, true);

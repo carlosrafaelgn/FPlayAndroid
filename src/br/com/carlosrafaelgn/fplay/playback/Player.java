@@ -307,6 +307,18 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		mediaRouterCallback = null;
 	}
 	
+	public static void registerMediaButtonEventReceiver() {
+		if (mediaButtonEventReceiver == null)
+			mediaButtonEventReceiver = new ComponentName("br.com.carlosrafaelgn.fplay", "br.com.carlosrafaelgn.fplay.ExternalReceiver");
+		if (audioManager != null)
+			audioManager.registerMediaButtonEventReceiver(mediaButtonEventReceiver);
+	}
+	
+	public static void unregisterMediaButtonEventReceiver() {
+		if (mediaButtonEventReceiver != null && audioManager != null)
+			audioManager.unregisterMediaButtonEventReceiver(mediaButtonEventReceiver);
+	}
+	
 	private static void initialize(Context context) {
 		if (!initialized) {
 			initialized = true;
@@ -335,12 +347,23 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				volumeTimer.setCompensatingForDelays(true);
 			}
 			if (externalReceiver == null) {
+				//These broadcast actions are registered here, instead of in the manifest file,
+				//because a few tests showed that some devices will produce the notifications
+				//faster this way, specially AUDIO_BECOMING_NOISY. Moreover, by registering here,
+				//only one BroadcastReceiver is instantiated and used throughout the entire
+				//application's lifecycle, whereas when the manifest is used, a different instance
+				//is created to handle every notification! :)
+				//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
+				//in the application manifest according to the documentation of the method
+				//registerMediaButtonEventReceiver!!! :(
 				final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
-				filter.addAction("android.intent.action.MEDIA_BUTTON");
+				//filter.addAction("android.intent.action.MEDIA_BUTTON");
 				filter.addAction("android.intent.action.HEADSET_PLUG");
 				filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
-				filter.addAction("android.bluetooth.adapter.action.CONNECTION_STATE_CHANGED");
+				filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
 				filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
+				//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
+				filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
 				externalReceiver = new ExternalReceiver();
 				context.getApplicationContext().registerReceiver(externalReceiver, filter);
 			}
@@ -1108,14 +1131,16 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	public static boolean handleMediaButton(int keyCode) {
 		switch (keyCode) {
+		//There are a few weird bluetooth headsets that despite having only one physical
+		//play/pause button, will try to simulate individual PLAY and PAUSE events,
+		//instead of sending the proper event PLAY_PAUSE... The problem is, they are not
+		//always correct about the actual player state, and therefore, the user ends up
+		//having to press that button twice for something to happen! :(
 		case KeyEvent.KEYCODE_MEDIA_PLAY:
-			if (!playing)
-				playPause();
-			break;
 		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+		case KeyEvent.KEYCODE_MEDIA_PAUSE:
 			playPause();
 			break;
-		case KeyEvent.KEYCODE_MEDIA_PAUSE:
 		case KeyEvent.KEYCODE_MEDIA_STOP:
 			if (playing)
 				playPause();
@@ -1148,18 +1173,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			return false;
 		}
 		return true;
-	}
-	
-	public static void registerMediaButtonEventReceiver() {
-		if (mediaButtonEventReceiver == null)
-			mediaButtonEventReceiver = new ComponentName((thePlayer == null) ? "br.com.carlosrafaelgn.fplay" : thePlayer.getPackageName(), ExternalReceiver.class.getName());
-		if (audioManager != null)
-			audioManager.registerMediaButtonEventReceiver(mediaButtonEventReceiver);
-	}
-	
-	public static void unregisterMediaButtonEventReceiver() {
-		if (mediaButtonEventReceiver != null && audioManager != null)
-			audioManager.unregisterMediaButtonEventReceiver(mediaButtonEventReceiver);
 	}
 	
 	private static void processFocusGain() {
