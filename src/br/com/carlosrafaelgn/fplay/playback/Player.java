@@ -105,6 +105,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		public void onPlayerControlModeChanged(boolean controlMode);
 		public void onPlayerGlobalVolumeChanged();
 		public void onPlayerAudioSourceChanged();
+		public void onPlayerMediaButtonPrevious();
+		public void onPlayerMediaButtonNext();
 	}
 	
 	private static class TimeoutException extends Exception {
@@ -1148,10 +1150,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
 		case KeyEvent.KEYCODE_MEDIA_NEXT:
 			next();
+			if (observer != null)
+				observer.onPlayerMediaButtonNext();
 			break;
 		case KeyEvent.KEYCODE_MEDIA_REWIND:
 		case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
 			previous();
+			if (observer != null)
+				observer.onPlayerMediaButtonPrevious();
 			break;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 			if (volumeControlGlobal) {

@@ -507,6 +507,16 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	@Override
+	public void onPlayerMediaButtonPrevious() {
+		
+	}
+	
+	@Override
+	public void onPlayerMediaButtonNext() {
+		
+	}
+	
+	@Override
 	public void onClick(View view) {
 		if (view == btnPrev)
 			Player.previous();

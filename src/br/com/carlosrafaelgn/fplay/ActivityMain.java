@@ -373,6 +373,18 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	@Override
+	public void onPlayerMediaButtonPrevious() {
+		if (!Player.isControlMode())
+			bringCurrentIntoView();
+	}
+	
+	@Override
+	public void onPlayerMediaButtonNext() {
+		if (!Player.isControlMode())
+			bringCurrentIntoView();
+	}
+	
+	@Override
 	public View getNullContextMenuView() {
 		return ((!Player.songs.selecting && !Player.songs.moving) ? btnMenu : null);
 	}
