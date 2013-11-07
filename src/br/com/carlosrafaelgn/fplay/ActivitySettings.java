@@ -38,18 +38,23 @@ import java.io.FileOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.os.Environment;
+import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.LinearLayout.LayoutParams;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -60,13 +65,32 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivitySettings extends ClientActivity implements View.OnClickListener {
+public final class ActivitySettings extends ClientActivity implements Player.TurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener {
 	private BgButton btnGoBack, btnAbout;
-	private SettingView optKeepScreenOn, optVolumeControlType, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private EditText txtCustomMinutes;
+	private SettingView optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		if (view == optVolumeControlType) {
+		if (view == optAutoTurnOff) {
+			lastMenuView = optAutoTurnOff;
+			UI.prepare(menu);
+			menu.add(0, 0, 0, R.string.never)
+				.setOnMenuItemClickListener(this);
+			UI.separator(menu, 0, 1);
+			menu.add(1, Player.getTurnOffTimerCustomMinutes(), 0, getMinuteString(Player.getTurnOffTimerCustomMinutes()))
+				.setOnMenuItemClickListener(this);
+			UI.separator(menu, 1, 1);
+			menu.add(2, 60, 0, getMinuteString(60))
+				.setOnMenuItemClickListener(this);
+			menu.add(2, 90, 1, getMinuteString(90))
+				.setOnMenuItemClickListener(this);
+			menu.add(2, 120, 2, getMinuteString(120))
+				.setOnMenuItemClickListener(this);
+			UI.separator(menu, 2, 4);
+			menu.add(3, -2, 0, R.string.custom)
+				.setOnMenuItemClickListener(this);
+		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
 			final int o = (Player.isVolumeControlGlobal() ? 0 : (Player.displayVolumeInDB ? 1 : 2));
@@ -116,6 +140,7 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 	
 	private void loadSettings() {
 		Player.loadConfig(getApplication());
+		optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 		optKeepScreenOn.setChecked(Player.keepScreenOn);
 		if (Player.keepScreenOn)
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -245,7 +270,36 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
-		if (lastMenuView == optVolumeControlType) {
+		if (lastMenuView == optAutoTurnOff) {
+			if (item.getItemId() >= 0) {
+				Player.setTurnOffTimer(item.getItemId(), false);
+				optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+			} else {
+				final Context ctx = getHostActivity();
+				final LinearLayout l = new LinearLayout(ctx);
+				l.setOrientation(LinearLayout.VERTICAL);
+				l.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+				TextView lbl = new TextView(ctx);
+				lbl.setText(R.string.msg_turn_off);
+				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+				l.addView(lbl);
+				txtCustomMinutes = new EditText(ctx);
+				txtCustomMinutes.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+				txtCustomMinutes.setInputType(InputType.TYPE_CLASS_NUMBER);
+				txtCustomMinutes.setSingleLine();
+				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+				p.topMargin = UI._8dp;
+				txtCustomMinutes.setLayoutParams(p);
+				txtCustomMinutes.setText(Integer.toString(Player.getTurnOffTimerCustomMinutes()));
+				l.addView(txtCustomMinutes);
+				(new AlertDialog.Builder(getHostActivity()))
+				.setTitle(R.string.msg_turn_off_title)
+				.setView(l)
+				.setPositiveButton(R.string.ok, this)
+				.setNegativeButton(R.string.cancel, this)
+				.show();
+			}
+		} else if (lastMenuView == optVolumeControlType) {
 			switch (item.getItemId()) {
 			case 0:
 				Player.setVolumeControlGlobal(getApplication(), true);
@@ -281,6 +335,18 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		}
 		lastMenuView = null;
 		return true;
+	}
+	
+	private String getMinuteString(int minutes) {
+		if (minutes <= 0)
+			return getText(R.string.never).toString();
+		if (minutes == 1)
+			return "1 " + getText(R.string.minute).toString();
+		return minutes + " " + getText(R.string.minutes).toString();
+	}
+	
+	private String getAutoTurnOffString() {
+		return getMinuteString(Player.getTurnOffTimerMinutesLeft());
 	}
 	
 	private String getVolumeString() {
@@ -323,6 +389,8 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		list.setBackgroundDrawable(new BorderDrawable(false));
 		final LinearLayout panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		
+		optAutoTurnOff = new SettingView(ctx, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false);
+		optAutoTurnOff.setOnClickListener(this);
 		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, Player.keepScreenOn);
 		optKeepScreenOn.setOnClickListener(this);
 		optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false);
@@ -352,6 +420,8 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 		CustomContextMenu.registerForContextMenu(optFadeInPause, this);
 		CustomContextMenu.registerForContextMenu(optFadeInOther, this);
 		
+		panelSettings.addView(optAutoTurnOff);
+		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optKeepScreenOn);
 		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optVolumeControlType);
@@ -384,17 +454,20 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 	@Override
 	protected void onPause() {
 		SongAddingMonitor.stop();
+		Player.removeTurnOffTimerObserver(this);
 	}
 	
 	@Override
 	protected void onResume() {
 		SongAddingMonitor.start(getHostActivity());
+		Player.addTurnOffTimerObserver(this);
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
 		btnGoBack = null;
 		btnAbout = null;
+		optAutoTurnOff = null;
 		optKeepScreenOn = null;
 		optVolumeControlType = null;
 		optDoubleClickMode = null;
@@ -430,8 +503,29 @@ public final class ActivitySettings extends ClientActivity implements View.OnCli
 			Player.nextPreparationEnabled = optPrepareNext.isChecked();
 		} else if (view == optClearListWhenPlayingFolders) {
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
-		} else if (view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
+		} else if (view == optAutoTurnOff || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
 		}
+	}
+
+	@Override
+	public void onClick(DialogInterface dialog, int whichButton) {
+		if (whichButton == AlertDialog.BUTTON_POSITIVE && txtCustomMinutes != null) {
+			try {
+				int m = Integer.parseInt(txtCustomMinutes.getText().toString());
+				if (m > 0) {
+					Player.setTurnOffTimer(m, true);
+					optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+				}
+			} catch (Throwable ex) {
+			}
+			txtCustomMinutes = null;
+		}
+	}
+	
+	@Override
+	public void onTurnOffTimerTick(boolean turningOff) {
+		if (optAutoTurnOff != null)
+			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 	}
 }

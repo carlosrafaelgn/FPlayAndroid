@@ -385,7 +385,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	@Override
-	public View getNullContextMenuView() {
+ 	public View getNullContextMenuView() {
 		return ((!Player.songs.selecting && !Player.songs.moving) ? btnMenu : null);
 	}
 	

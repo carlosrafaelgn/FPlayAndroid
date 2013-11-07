@@ -54,7 +54,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity {
+public final class ActivityHost extends Activity implements Player.TurnOffTimerObserver {
 	private ClientActivity top;
 	private boolean exitOnDestroy;
 	
@@ -81,10 +81,8 @@ public final class ActivityHost extends Activity {
 	}
 	
 	public void finishActivity(ClientActivity activity, int code) {
-		if (activity.finished)
+		if (activity.finished || activity != top)
 			return;
-		if (activity != top)
-			throw new IllegalStateException("Impossible to finish an activity other than the top most one");
 		activity.finished = true;
 		activity.onPause();
 		activity.onCleanupLayout();
@@ -169,6 +167,7 @@ public final class ActivityHost extends Activity {
 		top.previousActivity = null;
 		top.onCreate();
 		top.onCreateLayout(true);
+		Player.addTurnOffTimerObserver(this);
 	}
 	
 	@Override
@@ -204,8 +203,7 @@ public final class ActivityHost extends Activity {
 			top.onResume();
 	}
 	
-	@Override
-	protected void onDestroy() {
+	private void finalCleanup() {
 		ClientActivity c = top, p;
 		top = null;
 		while (c != null) {
@@ -218,8 +216,22 @@ public final class ActivityHost extends Activity {
 			c.previousActivity = null;
 			c = p;
 		}
+	}
+	
+	@Override
+	protected void onDestroy() {
+		Player.removeTurnOffTimerObserver(this);
+		finalCleanup();
 		super.onDestroy();
 		if (exitOnDestroy)
 			System.exit(0);
+	}
+	
+	@Override
+	public void onTurnOffTimerTick(boolean turningOff) {
+		if (turningOff) {
+			finish();
+			finalCleanup();
+		}
 	}
 }

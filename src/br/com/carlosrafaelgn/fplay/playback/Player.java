@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.playback;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import android.annotation.TargetApi;
@@ -109,6 +110,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		public void onPlayerMediaButtonNext();
 	}
 	
+	public static interface TurnOffTimerObserver {
+		public void onTurnOffTimerTick(boolean turningOff);
+	}
+	
 	private static class TimeoutException extends Exception {
 		private static final long serialVersionUID = 4571328670214281144L;
 	}
@@ -147,24 +152,27 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_MARQUEETITLE = 0x0013;
 	private static final int OPT_VOLUMECONTROLGLOBAL = 0x0014;
 	private static final int OPT_BLOCKBACKKEY = 0x0015;
+	private static final int OPT_TURNOFFTIMERCUSTOMMINUTES = 0x0016;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
 	private static boolean playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode, volumeControlGlobal,
-		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume, listLoaded, reviveAlreadyRetried;
+		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
+		listLoaded, reviveAlreadyRetried, turnOffTimerTriggered;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15;
+	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes;
 	private static Player thePlayer;
 	private static Song currentSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
 	private static NotificationManager notificationManager;
 	private static AudioManager audioManager;
 	private static ExternalReceiver externalReceiver;
-	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer;
+	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, turnOffTimer;
 	private static ComponentName mediaButtonEventReceiver;
 	private static Object mediaRouterCallback;
+	private static ArrayList<TurnOffTimerObserver> turnOffTimerObservers;
 	public static PlayerObserver observer;
 	public static final SongList songs = SongList.getInstance();
 	//keep these instances here to prevent MainHandler, Equalizer and BassBoost
@@ -203,6 +211,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
 		setVolumeControlGlobal(context, opts.getBoolean(OPT_VOLUMECONTROLGLOBAL, true));
 		blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
+		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
+		if (turnOffTimerCustomMinutes < 1)
+			turnOffTimerCustomMinutes = 1;
 		msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
 		msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
 		msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
@@ -243,6 +254,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_MARQUEETITLE, marqueeTitle);
 		opts.put(OPT_VOLUMECONTROLGLOBAL, volumeControlGlobal);
 		opts.put(OPT_BLOCKBACKKEY, blockBackKey);
+		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);
 		opts.put(OPT_MSGADDSHOWN, msgAddShown);
 		opts.put(OPT_MSGPLAYSHOWN, msgPlayShown);
 		opts.put(OPT_MSGSTARTUPSHOWN, msgStartupShown);
@@ -329,6 +341,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			if (audioManager == null)
 				audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
+			if (turnOffTimerObservers == null)
+				turnOffTimerObservers = new ArrayList<Player.TurnOffTimerObserver>(8);
 			loadConfig(context);
 		}
 		if (thePlayer != null) {
@@ -347,6 +361,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				volumeTimer = new Timer(thePlayer, "Player Volume Timer");
 				volumeTimer.setHandledOnMain(true);
 				volumeTimer.setCompensatingForDelays(true);
+			}
+			if (turnOffTimer == null) {
+				turnOffTimer = new Timer(thePlayer, "Turn Off Timer");
+				turnOffTimer.setHandledOnMain(true);
 			}
 			if (externalReceiver == null) {
 				//These broadcast actions are registered here, instead of in the manifest file,
@@ -389,6 +407,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			if (volumeTimer != null) {
 				volumeTimer.stop();
 				volumeTimer = null;
+			}
+			if (turnOffTimer != null) {
+				turnOffTimer.stop();
+				turnOffTimer = null;
+			}
+			if (turnOffTimerObservers != null) {
+				turnOffTimerObservers.clear();
+				turnOffTimerObservers = null;
 			}
 			if (externalReceiver != null) {
 				context.getApplicationContext().unregisterReceiver(externalReceiver);
@@ -1013,6 +1039,37 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
+	public static void addTurnOffTimerObserver(TurnOffTimerObserver observer) {
+		if (turnOffTimerObservers != null && !turnOffTimerObservers.contains(observer))
+			turnOffTimerObservers.add(observer);
+	}
+	
+	public static void removeTurnOffTimerObserver(TurnOffTimerObserver observer) {
+		if (turnOffTimerObservers != null)
+			turnOffTimerObservers.remove(observer);
+	}
+	
+	public static void setTurnOffTimer(int minutes, boolean saveCustom) {
+		if (turnOffTimer != null) {
+			turnOffTimerMinutesLeft = 0;
+			turnOffTimer.stop();
+			if (minutes > 0) {
+				if (saveCustom)
+					turnOffTimerCustomMinutes = minutes;
+				turnOffTimerMinutesLeft = minutes;
+				turnOffTimer.start(60000, false);
+			}
+		}
+	}
+	
+	public static int getTurnOffTimerMinutesLeft() {
+		return turnOffTimerMinutesLeft;
+	}
+	
+	public static int getTurnOffTimerCustomMinutes() {
+		return turnOffTimerCustomMinutes;
+	}
+	
 	public static boolean isInitialized() {
 		return initialized;
 	}
@@ -1099,6 +1156,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public void onDestroy() {
 		stopService();
 		super.onDestroy();
+		if (turnOffTimerTriggered)
+			System.exit(0);
 	}
 	
 	private static void executeStartCommand(int forcePlayIdx) {
@@ -1278,6 +1337,20 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				try {
 					currentPlayer.setVolume(actualVolume, actualVolume);
 				} catch (Throwable ex) {
+				}
+			}
+		} else if (timer == turnOffTimer) {
+			if (turnOffTimerMinutesLeft <= 0) {
+				turnOffTimer.stop();
+			} else {
+				turnOffTimerMinutesLeft--;
+				if (turnOffTimerObservers != null) {
+					for (int i = turnOffTimerObservers.size() - 1; i >= 0; i--)
+						turnOffTimerObservers.get(i).onTurnOffTimerTick(turnOffTimerMinutesLeft <= 0);
+				}
+				if (turnOffTimerMinutesLeft <= 0) {
+					turnOffTimerTriggered = true;
+					stopService();
 				}
 			}
 		}

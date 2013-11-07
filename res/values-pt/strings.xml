@@ -13,6 +13,7 @@
     <string name="loading">Carregando&#8230;</string>
     <string name="empty_list">[Vazio]</string>
     <string name="error">Erro:</string>
+    <string name="ok">OK</string>
     <string name="cancel">Cancelar</string>
     <string name="done">Pronto</string>
     <string name="got_it">Entendi!</string>
@@ -25,6 +26,8 @@
     <string name="msg_select_favorite_remove">Por favor, selecione um favorito para remover</string>
     <string name="msg_select_item_load">Selecione uma %s para abrir</string>
     <string name="msg_select_item_save">Selecione uma %s para sobrescrever, ou crie uma nova</string>
+    <string name="msg_turn_off_title">Desligamento automático</string>
+    <string name="msg_turn_off">Desligar o player depois de quantos minutos?</string>
     <string name="msg_enter_name">Digite um nome para a nova %s&#58;</string>
     <string name="msg_confirm_overwrite">Quer mesmo sobrescrever a %1$s \"%2$s\"?</string>
     <string name="msg_confirm_delete">Quer mesmo excluir a %1$s \"%2$s\"?</string>
@@ -36,6 +39,7 @@
     <string name="msg_play">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas, e inicia sua reprodução.</string>
     <string name="msg_error_download_path">Não foi possível acessar a pasta de downloads :(</string>
     <string name="msg_error_exporting_settings">Algo deu errado durante a exportação das configurações :(</string>
+    <string name="opt_auto_turn_off">Desligar o player automaticamente em:</string>
     <string name="opt_keep_screen_on">Manter a tela sempre ligada</string>
     <string name="opt_volume_control_type">Tipo do controle de volume:</string>
 	<string name="opt_block_back_key">Impedir que a tecla Voltar retorne à tela inicial</string>
@@ -50,6 +54,10 @@
     <string name="volume_control_type_integrated">Integrado com o sistema</string>
     <string name="volume_control_type_decibels">Decibéis</string>
     <string name="volume_control_type_percentage">Percentual</string>
+    <string name="custom">Personalizado&#8230;</string>
+    <string name="never">Nunca</string>
+    <string name="minute">minuto</string>
+    <string name="minutes">minutos</string>
     <string name="none">Nenhuma</string>
     <string name="portrait">Retrato</string>
     <string name="landscape">Paisagem</string>

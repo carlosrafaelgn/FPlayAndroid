@@ -13,6 +13,7 @@
     <string name="loading">Loading&#8230;</string>
     <string name="empty_list">[Empty]</string>
     <string name="error">Error:</string>
+    <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="done">Done</string>
     <string name="got_it">Got it!</string>
@@ -25,6 +26,8 @@
     <string name="msg_select_favorite_remove">Please, select a favorite to remove</string>
     <string name="msg_select_item_load">Select a %s to load</string>
     <string name="msg_select_item_save">Select a %s to overwrite or create a new one</string>
+    <string name="msg_turn_off_title">Automatic shutdown</string>
+    <string name="msg_turn_off">Turn off the player after how many minutes?</string>
     <string name="msg_enter_name">Enter a name for the new %s&#58;</string>
     <string name="msg_confirm_overwrite">Do you really want to overwrite the %1$s \"%2$s\"?</string>
     <string name="msg_confirm_delete">Do you really want to delete the %1$s \"%2$s\"?</string>
@@ -36,6 +39,7 @@
     <string name="msg_play">This button adds to the playlist all songs in the folder and in its subfolders, and starts the playback.</string>
     <string name="msg_error_download_path">It was not possible to access the download folder :(</string>
     <string name="msg_error_exporting_settings">Something went wrong while exporting the settings :(</string>
+    <string name="opt_auto_turn_off">Automatically turn off the player after:</string>
     <string name="opt_keep_screen_on">Keep screen always on</string>
     <string name="opt_volume_control_type">Volume control type:</string>
 	<string name="opt_block_back_key">Prevent the Back key from returning to the home screen</string>
@@ -50,6 +54,10 @@
     <string name="volume_control_type_integrated">Integrated with the system</string>
     <string name="volume_control_type_decibels">Decibels</string>
     <string name="volume_control_type_percentage">Percentage</string>
+    <string name="custom">Custom&#8230;</string>
+    <string name="never">Never</string>
+    <string name="minute">minute</string>
+    <string name="minutes">minutes</string>
     <string name="none">None</string>
     <string name="portrait">Portrait</string>
     <string name="landscape">Landscape</string>

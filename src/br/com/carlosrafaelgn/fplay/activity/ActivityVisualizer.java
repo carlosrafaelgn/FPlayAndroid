@@ -62,7 +62,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public final class ActivityVisualizer extends Activity implements Runnable, Player.PlayerObserver, View.OnClickListener {
+public final class ActivityVisualizer extends Activity implements Runnable, Player.PlayerObserver, Player.TurnOffTimerObserver, View.OnClickListener {
 	private static class VisualizerView extends View implements Runnable {
 		//based on my WebAudio visualizer ;)
 		//https://github.com/carlosrafaelgn/GraphicalFilterEditor/blob/master/Analyzer.js
@@ -296,6 +296,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		//the music volume and nothing else!
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		
+		Player.addTurnOffTimerObserver(this);
+		
 		setupActionBar();
 		
 		final DisplayMetrics metrics = getResources().getDisplayMetrics();
@@ -418,6 +420,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+		Player.removeTurnOffTimerObserver(this);
 		timer.stopAndWait();
 		timer = null;
 		if (visualizer != null) {
@@ -514,6 +517,12 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	@Override
 	public void onPlayerMediaButtonNext() {
 		
+	}
+	
+	@Override
+	public void onTurnOffTimerTick(boolean turningOff) {
+		if (turningOff)
+			finish();
 	}
 	
 	@Override
