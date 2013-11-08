@@ -19,8 +19,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/lblTitle"
-        android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/btnExit"
         android:layout_toRightOf="@+id/imgIcon"
         android:paddingTop="4dp" >
 
@@ -30,10 +30,10 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_toLeftOf="@+id/btnPlay"
-            android:padding="2dp"
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/previous"
             android:focusable="true"
+            android:padding="2dp"
             android:scaleType="centerInside" />
 
         <ImageButton
@@ -44,10 +44,10 @@
             android:layout_centerHorizontal="true"
             android:layout_marginLeft="32dp"
             android:layout_marginRight="32dp"
-            android:padding="2dp"
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/play_pause"
             android:focusable="true"
+            android:padding="2dp"
             android:scaleType="centerInside" />
 
         <ImageButton
@@ -56,10 +56,10 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_toRightOf="@+id/btnPlay"
-            android:padding="2dp"
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/next"
             android:focusable="true"
+            android:padding="2dp"
             android:scaleType="centerInside" />
     </RelativeLayout>
 
@@ -68,14 +68,28 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginTop="2dp"
+        android:layout_toLeftOf="@+id/btnExit"
         android:layout_marginBottom="2dp"
+        android:layout_marginTop="2dp"
         android:layout_toRightOf="@+id/imgIcon"
         android:ellipsize="marquee"
         android:fadingEdge="horizontal"
         android:gravity="center"
         android:singleLine="true"
         android:textAppearance="@android:style/TextAppearance.StatusBar.EventContent" />
+    
+    <ImageButton
+        android:id="@+id/btnExit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bg_notification_button"
+        android:contentDescription="@string/exit"
+        android:focusable="true"
+        android:padding="2dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginRight="4dp"
+        android:scaleType="centerInside" />
 
 </RelativeLayout>

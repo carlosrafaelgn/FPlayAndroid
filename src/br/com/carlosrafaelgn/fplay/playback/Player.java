@@ -110,8 +110,12 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		public void onPlayerMediaButtonNext();
 	}
 	
-	public static interface TurnOffTimerObserver {
-		public void onTurnOffTimerTick(boolean turningOff);
+	public static interface PlayerTurnOffTimerObserver {
+		public void onPlayerTurnOffTimerTick();
+	}
+	
+	public static interface PlayerDestroyedObserver {
+		public void onPlayerDestroyed();
 	}
 	
 	private static class TimeoutException extends Exception {
@@ -129,6 +133,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
+	public static final String ACTION_EXIT = "br.com.carlosrafaelgn.FPlay.EXIT";
 	public static final int MIN_VOLUME_DB = -4000;
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
@@ -160,7 +165,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static String startCommand;
 	private static boolean playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode, volumeControlGlobal,
 		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
-		listLoaded, reviveAlreadyRetried, turnOffTimerTriggered;
+		listLoaded, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
 	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes;
 	private static Player thePlayer;
@@ -172,7 +177,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, turnOffTimer;
 	private static ComponentName mediaButtonEventReceiver;
 	private static Object mediaRouterCallback;
-	private static ArrayList<TurnOffTimerObserver> turnOffTimerObservers;
+	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
+	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
 	public static PlayerObserver observer;
 	public static final SongList songs = SongList.getInstance();
 	//keep these instances here to prevent MainHandler, Equalizer and BassBoost
@@ -341,8 +347,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			if (audioManager == null)
 				audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
-			if (turnOffTimerObservers == null)
-				turnOffTimerObservers = new ArrayList<Player.TurnOffTimerObserver>(8);
+			if (destroyedObservers == null)
+				destroyedObservers = new ArrayList<Player.PlayerDestroyedObserver>(4);
 			loadConfig(context);
 		}
 		if (thePlayer != null) {
@@ -396,6 +402,21 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static void terminate(Context context) {
 		if (initialized) {
+			setLastTime();
+			fullCleanup(null);
+			releaseInternal();
+			updateState(false, null); //to update the widget
+			unregisterMediaButtonEventReceiver();
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+				unregisterMediaRouter(thePlayer);
+			thePlayer.stopForeground(true);
+			thePlayer.stopSelf();
+			if (destroyedObservers != null) {
+				for (int i = destroyedObservers.size() - 1; i >= 0; i--)
+					destroyedObservers.get(i).onPlayerDestroyed();
+				destroyedObservers.clear();
+				destroyedObservers = null;
+			}
 			if (focusDelayTimer != null) {
 				focusDelayTimer.stop();
 				focusDelayTimer = null;
@@ -412,17 +433,23 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				turnOffTimer.stop();
 				turnOffTimer = null;
 			}
-			if (turnOffTimerObservers != null) {
-				turnOffTimerObservers.clear();
-				turnOffTimerObservers = null;
-			}
 			if (externalReceiver != null) {
 				context.getApplicationContext().unregisterReceiver(externalReceiver);
 				externalReceiver = null;
 			}
 			initialized = false;
 			saveConfig(context);
-			abandonFocus();
+			thePlayer = null;
+			observer = null;
+			turnOffTimerObserver = null;
+			notificationManager = null;
+			audioManager = null;
+			externalReceiver = null;
+			mediaButtonEventReceiver = null;
+			if (favoriteFolders != null) {
+				favoriteFolders.clear();
+				favoriteFolders = null;
+			}
 		}
 	}
 	
@@ -561,6 +588,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
+				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
 			} else {
 				UI.preparePlaybackIcons(context);
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
@@ -579,6 +607,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			intent = new Intent(context, Player.class);
 			intent.setAction(Player.ACTION_NEXT);
 			views.setOnClickPendingIntent(R.id.btnNext, PendingIntent.getService(context, 0, intent, 0));
+			
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_EXIT);
+			views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
 		}		
 		return views;
 	}
@@ -855,7 +887,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		unpaused = false;
 		silenceMode = SILENCE_NORMAL;
 		stopInternal(newCurrentSong);
-		Player.abandonFocus();
+		abandonFocus();
 	}
 	
 	public static void becomingNoisy() {
@@ -1039,14 +1071,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
-	public static void addTurnOffTimerObserver(TurnOffTimerObserver observer) {
-		if (turnOffTimerObservers != null && !turnOffTimerObservers.contains(observer))
-			turnOffTimerObservers.add(observer);
+	public static void addDestroyedObserver(PlayerDestroyedObserver observer) {
+		if (destroyedObservers != null && !destroyedObservers.contains(observer))
+			destroyedObservers.add(observer);
 	}
 	
-	public static void removeTurnOffTimerObserver(TurnOffTimerObserver observer) {
-		if (turnOffTimerObservers != null)
-			turnOffTimerObservers.remove(observer);
+	public static void removeDestroyedObserver(PlayerDestroyedObserver observer) {
+		if (destroyedObservers != null)
+			destroyedObservers.remove(observer);
 	}
 	
 	public static void setTurnOffTimer(int minutes, boolean saveCustom) {
@@ -1123,17 +1155,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static void stopService() {
 		if (!stopRequested) {
 			stopRequested = true;
-			setLastTime();
-			fullCleanup(null);
-			releaseInternal();
-			updateState(false, null); //to update the widget
-			unregisterMediaButtonEventReceiver();
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-				unregisterMediaRouter(thePlayer);
-			thePlayer.stopForeground(true);
-			thePlayer.stopSelf();
 			terminate(thePlayer);
-			thePlayer = null;
 		}
 	}
 	
@@ -1156,8 +1178,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public void onDestroy() {
 		stopService();
 		super.onDestroy();
-		if (turnOffTimerTriggered)
-			System.exit(0);
+		System.exit(0);
 	}
 	
 	private static void executeStartCommand(int forcePlayIdx) {
@@ -1171,6 +1192,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				playPause();
 			else if (startCommand.equals(ACTION_NEXT))
 				next();
+			else if (startCommand.equals(ACTION_EXIT))
+				stopService();
 			startCommand = null;
 		}
 	}
@@ -1344,14 +1367,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				turnOffTimer.stop();
 			} else {
 				turnOffTimerMinutesLeft--;
-				if (turnOffTimerObservers != null) {
-					for (int i = turnOffTimerObservers.size() - 1; i >= 0; i--)
-						turnOffTimerObservers.get(i).onTurnOffTimerTick(turnOffTimerMinutesLeft <= 0);
-				}
-				if (turnOffTimerMinutesLeft <= 0) {
-					turnOffTimerTriggered = true;
+				if (turnOffTimerObserver != null)
+					turnOffTimerObserver.onPlayerTurnOffTimerTick();
+				if (turnOffTimerMinutesLeft <= 0)
 					stopService();
-				}
 			}
 		}
 	}

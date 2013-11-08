@@ -65,7 +65,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivitySettings extends ClientActivity implements Player.TurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener {
+public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener {
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private SettingView optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
@@ -454,13 +454,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Tur
 	@Override
 	protected void onPause() {
 		SongAddingMonitor.stop();
-		Player.removeTurnOffTimerObserver(this);
+		Player.turnOffTimerObserver = null;
 	}
 	
 	@Override
 	protected void onResume() {
 		SongAddingMonitor.start(getHostActivity());
-		Player.addTurnOffTimerObserver(this);
+		Player.turnOffTimerObserver = this;
+		if (optAutoTurnOff != null)
+			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 	}
 	
 	@Override
@@ -524,7 +526,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Tur
 	}
 	
 	@Override
-	public void onTurnOffTimerTick(boolean turningOff) {
+	public void onPlayerTurnOffTimerTick() {
 		if (optAutoTurnOff != null)
 			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 	}

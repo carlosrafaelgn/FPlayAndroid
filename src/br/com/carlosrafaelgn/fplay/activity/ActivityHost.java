@@ -54,7 +54,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity implements Player.TurnOffTimerObserver {
+public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver {
 	private ClientActivity top;
 	private boolean exitOnDestroy;
 	
@@ -167,7 +167,7 @@ public final class ActivityHost extends Activity implements Player.TurnOffTimerO
 		top.previousActivity = null;
 		top.onCreate();
 		top.onCreateLayout(true);
-		Player.addTurnOffTimerObserver(this);
+		Player.addDestroyedObserver(this);
 	}
 	
 	@Override
@@ -220,7 +220,7 @@ public final class ActivityHost extends Activity implements Player.TurnOffTimerO
 	
 	@Override
 	protected void onDestroy() {
-		Player.removeTurnOffTimerObserver(this);
+		Player.removeDestroyedObserver(this);
 		finalCleanup();
 		super.onDestroy();
 		if (exitOnDestroy)
@@ -228,10 +228,8 @@ public final class ActivityHost extends Activity implements Player.TurnOffTimerO
 	}
 	
 	@Override
-	public void onTurnOffTimerTick(boolean turningOff) {
-		if (turningOff) {
-			finish();
-			finalCleanup();
-		}
+	public void onPlayerDestroyed() {
+		finalCleanup();
+		finish();
 	}
 }

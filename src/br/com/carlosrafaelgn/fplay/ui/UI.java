@@ -178,7 +178,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi;
-	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif;
+	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	private static int _1dpStroke;
 	private static float _1dpInset;
 	
@@ -356,6 +356,9 @@ public final class UI {
 	    icNextNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
 	    c.setBitmap(icNextNotif);
 	    c.drawText(ICON_NEXT, 0, defaultControlContentsSize, textPaint);
+	    icExitNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
+	    c.setBitmap(icExitNotif);
+	    c.drawText(ICON_EXIT, 0, defaultControlContentsSize, textPaint);
 	    //reset to the original state
 	    textPaint.setTypeface(Typeface.SANS_SERIF);
 		textPaint.setColor(color_text);

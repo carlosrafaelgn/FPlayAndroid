@@ -466,8 +466,6 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			break;
 		case MNU_EXIT:
 			Player.stopService();
-			setExitOnDestroy(true);
-			finish();
 			break;
 		}
 		return true;
