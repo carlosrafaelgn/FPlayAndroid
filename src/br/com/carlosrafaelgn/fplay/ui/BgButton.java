@@ -90,23 +90,24 @@ public final class BgButton extends Button {
 		super.setPadding(0, 0, 0, 0);
 	}
 	
-	public void setIcon(String icon, boolean changeWidth) {
+	public void setIcon(String icon, boolean changeWidth, boolean changeHeight) {
 		LayoutParams p = getLayoutParams();
 		if (p == null)
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 		if (changeWidth)
 			p.width = UI.defaultControlSize;
-		p.height = UI.defaultControlSize;
+		if (changeHeight)
+			p.height = UI.defaultControlSize;
 		super.setLayoutParams(p);
 		setIconNoChanges(icon);
 	}
 	
 	public void setIcon(String icon) {
-		setIcon(icon, true);
+		setIcon(icon, true, true);
 	}
 	
 	public void setIcon(String iconChecked, String iconUnchecked, boolean checked) {
-		setIcon(checked ? iconChecked : iconUnchecked, true);
+		setIcon(checked ? iconChecked : iconUnchecked, true, true);
 		this.iconChecked = iconChecked;
 		this.iconUnchecked = iconUnchecked;
 		this.checkable = true;

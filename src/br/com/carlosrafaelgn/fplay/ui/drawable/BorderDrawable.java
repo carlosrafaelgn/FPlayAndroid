@@ -57,8 +57,8 @@ public final class BorderDrawable extends Drawable {
 		this.top = (top ? 0 : -(UI._1dp << 1));
 		this.right = (right ? 0 : (UI._1dp << 1));
 		this.bottom = (bottom ? 0 : (UI._1dp << 1));
-		final int a = (fillColor & 0xFF000000);
-		this.opacity = ((a == 0xFF000000) ? PixelFormat.OPAQUE : ((a == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		final int a = (fillColor & 0xff000000);
+		this.opacity = ((a == 0xff000000) ? PixelFormat.OPAQUE : ((a == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 	}
 	
 	@Override

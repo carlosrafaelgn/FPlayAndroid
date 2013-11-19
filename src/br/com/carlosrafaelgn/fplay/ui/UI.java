@@ -73,9 +73,11 @@ public final class UI {
 	public static final int STATE_CHECKED = 32;
 	//Some of these colos are also duplicated in colors.xml
 	public static final int color_transparent = 0x00000000;
-	public static final int color_window = 0xff252525;
-	public static final int color_bg = 0xff000000;
+	public static final int color_window = 0xff303030;
+	public static final int color_bg = 0xff080808;
+	public static final int color_bg_control_mode = 0xff000000;
 	public static final int color_bg_menu = 0xffffffff;
+	public static final int color_divider = 0xff464646;
 	public static final int color_text = 0xffffffff;
 	public static final int color_text_secondary = 0xff959595;
 	public static final int color_text_selected = 0xff000000;
@@ -176,8 +178,10 @@ public final class UI {
 	}
 	
 	public static final Rect rect = new Rect();
-	public static boolean isLandscape, isLargeScreen, isLowDpiScreen;
-	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi;
+	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
+		marqueeTitle, blockBackKey, msgAddShown, msgPlayShown, msgStartupShown;
+	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
+		dividerHeight, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	private static int _1dpStroke;
 	private static float _1dpInset;
@@ -277,6 +281,7 @@ public final class UI {
 			_1dpStroke = _1dp;
 			_1dpInset = ((float)_1dp * 0.5f);
 		}
+		dividerHeight = (_1dp + 1) >> 1;
 		_2dp = dpToPxI(2);
 		_4dp = dpToPxI(4);
 		_8dp = dpToPxI(8);
@@ -284,6 +289,7 @@ public final class UI {
 		_2sp = spToPxI(2);
 		_4sp = spToPxI(4);
 		_8sp = spToPxI(8);
+		_16sp = spToPxI(16);
 		_22sp = spToPxI(22);
 		_18sp = spToPxI(18);
 		_14sp = spToPxI(14);
@@ -305,7 +311,7 @@ public final class UI {
 		_14spBox = (int)(fm.descent - fm.ascent + 0.5f);
 		_14spYinBox = _14spBox - (int)(fm.descent);
 		emptyListString = context.getText(R.string.empty_list).toString();
-		emptyListStringHalfWidth = measureText(emptyListString, _18sp) >> 1;
+		emptyListStringHalfWidth = measureText(emptyListString, _22sp) >> 1;
 	}
 	
 	public static void preparePlaybackIcons(Context context) {
@@ -420,7 +426,7 @@ public final class UI {
 	public static void drawEmptyListString(Canvas canvas) {
 		//top and left must be 0 for this to work correctly
 		textPaint.setColor(color_text_secondary);
-		textPaint.setTextSize(_18sp);
+		textPaint.setTextSize(_22sp);
 		canvas.drawText(emptyListString, (UI.rect.right >> 1) - emptyListStringHalfWidth, (UI.rect.bottom >> 1) - (_18spBox >> 1) + _18spYinBox, textPaint);
 	}
 	
@@ -465,9 +471,20 @@ public final class UI {
 		}
 	}
 	
+	private static void drawDivider(Canvas canvas, Rect rect) {
+		fillPaint.setColor(color_divider);
+		final int top = rect.top;
+		rect.top = rect.bottom - dividerHeight;
+		canvas.drawRect(rect, fillPaint);
+		rect.top = top;
+	}
+	
 	public static void drawBg(Canvas canvas, int state, Rect rect, boolean sideBorders) {
-		if (state == 0)
+		if (state == 0) {
+			if (!sideBorders && isDividerVisible)
+				drawDivider(canvas, rect);
 			return;
+		}
 		if ((state & STATE_PRESSED) != 0) {
 			fillPaint.setColor(((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_pressed : color_selected_pressed);
 			canvas.drawRect(rect, fillPaint);
@@ -481,35 +498,35 @@ public final class UI {
 				rect.left += (_1dp << 1);
 				rect.right -= (_1dp << 1);
 			}
-		} else {
-			if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				//rect.top MUST be 0 for the gradient to work properly
-				fillPaint.setShader(Gradient.getGradient((state & (STATE_FOCUSED | STATE_CURRENT)) != 0, false, rect.bottom));
-				canvas.drawRect(rect, fillPaint);
-				fillPaint.setShader(null);
-				strokePaint.setColor(0xffffffff);
-				final float t = (float)(rect.top + _1dp) + _1dpInset;
-				if (!sideBorders)
-					canvas.drawLine(rect.left, t, rect.right, t, strokePaint);
-				else
-					canvas.drawLine((float)(rect.left + _1dp), t, (float)(rect.right - _1dp), t, strokePaint);
-				strokePaint.setColor(((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_border : color_selected_border);
-				if (!sideBorders) {
-					rect.left -= (_1dp << 1);
-					rect.right += (_1dp << 1);
-				}
-				canvas.drawRect((float)rect.left + _1dpInset, (float)rect.top + _1dpInset, (float)rect.right - _1dpInset, (float)rect.bottom - _1dpInset, strokePaint);
-				if (!sideBorders) {
-					rect.left += (_1dp << 1);
-					rect.right -= (_1dp << 1);
-				}
-			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillPaint.setColor(((state & STATE_CURRENT) != 0) ? color_current_multi : color_selected_multi);
-				canvas.drawRect(rect, fillPaint);
-			} else if ((state & STATE_CURRENT) != 0) {
-				fillPaint.setColor(color_current_darker);
-				canvas.drawRect(rect, fillPaint);
+		} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+			//rect.top MUST be 0 for the gradient to work properly
+			fillPaint.setShader(Gradient.getGradient((state & (STATE_FOCUSED | STATE_CURRENT)) != 0, false, rect.bottom));
+			canvas.drawRect(rect, fillPaint);
+			fillPaint.setShader(null);
+			strokePaint.setColor(0xffffffff);
+			final float t = (float)(rect.top + _1dp) + _1dpInset;
+			if (!sideBorders)
+				canvas.drawLine(rect.left, t, rect.right, t, strokePaint);
+			else
+				canvas.drawLine((float)(rect.left + _1dp), t, (float)(rect.right - _1dp), t, strokePaint);
+			strokePaint.setColor(((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_border : color_selected_border);
+			if (!sideBorders) {
+				rect.left -= (_1dp << 1);
+				rect.right += (_1dp << 1);
 			}
+			canvas.drawRect((float)rect.left + _1dpInset, (float)rect.top + _1dpInset, (float)rect.right - _1dpInset, (float)rect.bottom - _1dpInset, strokePaint);
+			if (!sideBorders) {
+				rect.left += (_1dp << 1);
+				rect.right -= (_1dp << 1);
+			}
+		} else if ((state & STATE_MULTISELECTED) != 0) {
+			fillPaint.setColor(((state & STATE_CURRENT) != 0) ? color_current_multi : color_selected_multi);
+			canvas.drawRect(rect, fillPaint);
+		} else if ((state & STATE_CURRENT) != 0) {
+			fillPaint.setColor(color_current_darker);
+			canvas.drawRect(rect, fillPaint);
+		} else if (!sideBorders && isDividerVisible) {
+			drawDivider(canvas, rect);
 		}
 	}
 	

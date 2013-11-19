@@ -58,7 +58,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		super(context);
 		super.setOnClickListener(this);
 		setFocusable(true);
-		setPadding(UI._8dp, UI._8sp << 1, UI._8dp, UI._8sp << 1);
+		refreshVerticalMargin();
 		setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 		p.addRule(ALIGN_PARENT_LEFT, TRUE);
@@ -120,6 +120,10 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		addView(textView);
 		if (secondaryTextView != null)
 			addView(secondaryTextView);
+	}
+	
+	public void refreshVerticalMargin() {
+		setPadding(UI._8dp, UI.isVerticalMarginLarge ? UI._16sp : UI._8sp, UI._8dp, UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 	}
 	
 	@Override
@@ -236,7 +240,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state, UI.rect, true);
+		UI.drawBg(canvas, state, UI.rect, false);
 		super.dispatchDraw(canvas);
 	}
 	

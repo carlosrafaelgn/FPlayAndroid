@@ -49,7 +49,7 @@ import br.com.carlosrafaelgn.fplay.list.FileSt;
 
 public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener {
 	private ActivityFileView observerActivity;
-	private final int height;
+	private final int height, verticalMargin;
 	private final Bitmap closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
 	private Bitmap bitmap;
 	private final BgButton btnAdd, btnPlay;
@@ -70,23 +70,30 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		this.favoriteIcon = ((favoriteIcon == null) ? null : ((BitmapDrawable)favoriteIcon).getBitmap());
 		this.artistIcon = ((artistIcon == null) ? null : ((BitmapDrawable)artistIcon).getBitmap());
 		this.albumIcon = ((albumIcon == null) ? null : ((BitmapDrawable)albumIcon).getBitmap());
-		height = UI.defaultControlSize;
+		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		height = UI.defaultControlContentsSize + (verticalMargin << 1);
 		if (hasButtons) {
 			btnAdd = new BgButton(context);
-			btnAdd.setIcon(UI.ICON_ADD);
+			LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+			btnAdd.setLayoutParams(p);
+			btnAdd.setIcon(UI.ICON_ADD, true, false);
 			btnAdd.setContentDescription(context.getText(R.string.add));
 			btnAdd.setOnClickListener(this);
 			btnAdd.setForceBlack(true);
 			addView(btnAdd);
 			btnPlay = new BgButton(context);
-			final LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI._8dp;
 			btnPlay.setLayoutParams(p);
-			btnPlay.setIcon(UI.ICON_PLAY);
+			btnPlay.setIcon(UI.ICON_PLAY, true, false);
 			btnPlay.setContentDescription(context.getText(R.string.play));
 			btnPlay.setOnClickListener(this);
 			btnPlay.setForceBlack(true);
 			addView(btnPlay);
+			if (UI.isVerticalMarginLarge) {
+				btnAdd.setHeight(height);
+				btnPlay.setHeight(height);
+			}
 		} else {
 			btnAdd = null;
 			btnPlay = null;
@@ -226,7 +233,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		getDrawingRect(UI.rect);
 		UI.drawBg(canvas, state, UI.rect, false);
 		if (bitmap != null)
-			canvas.drawBitmap(bitmap, UI._8dp, UI._8sp, null);
+			canvas.drawBitmap(bitmap, UI._8dp, verticalMargin, null);
 		UI.drawText(canvas, ellipsizedName, (state == 0) ? UI.color_text : UI.color_text_selected, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		super.dispatchDraw(canvas);
 	}

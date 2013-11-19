@@ -42,12 +42,13 @@ import android.view.ViewDebug.ExportedProperty;
 
 public final class SongView extends View {
 	private String title, length, artist, ellipsizedTitle, ellipsizedArtist;
-	private final int height;
+	private final int height, verticalMargin;
 	private int state, width, lengthWidth;
 	
 	public SongView(Context context) {
 		super(context);
-		height = (UI._1dp << 1) + (UI._8sp << 1) + UI._22spBox + UI._14spBox;
+		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		height = (UI._1dp << 1) + (verticalMargin << 1) + UI._22spBox + UI._14spBox;
 	}
 	
 	private void processEllipsis() {
@@ -146,8 +147,8 @@ public final class SongView extends View {
 		final int txtColor = ((state == 0) ? UI.color_text : UI.color_text_selected);
 		getDrawingRect(UI.rect);
 		UI.drawBg(canvas, state, UI.rect, false);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, UI._8sp + UI._22spYinBox);
-		UI.drawText(canvas, length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, UI._8sp + UI._14spYinBox);
-		UI.drawText(canvas, ellipsizedArtist, txtColor, UI._14sp, UI._8dp, UI._8sp + UI._1dp + UI._22spBox + UI._14spYinBox);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
+		UI.drawText(canvas, length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
+		UI.drawText(canvas, ellipsizedArtist, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
 	}
 }

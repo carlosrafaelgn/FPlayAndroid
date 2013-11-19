@@ -100,7 +100,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	private CharSequence lastTitleText;
 	private int firstSel, lastSel;
 	private int lastTime;
-	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, blackBackground;
+	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, controlModeBackground;
 	private StringBuilder timeBuilder, volumeBuilder;
 	
 	private void saveListViewPosition() {
@@ -145,7 +145,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			return Integer.toString(Player.getGlobalVolume());
 		} else {
 			int volumeDB = Player.getVolumeDB();
-			if (Player.displayVolumeInDB) {
+			if (UI.displayVolumeInDB) {
 				if (volumeDB <= Player.MIN_VOLUME_DB)
 					return "-\u221E dB";
 				if (volumeDB >= 0)
@@ -534,7 +534,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		} else if (Player.songs.moving) {
 			Player.songs.moveSelection(position);
 		} else {
-			if (Player.doubleClickMode) {
+			if (UI.doubleClickMode) {
 				if (Player.songs.getFirstSelectedPosition() == position) {
 					if (Player.songs.getItemT(position) == Player.getCurrentSong() && !Player.isPlaying())
 						Player.playPause();
@@ -575,20 +575,20 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			cancelSelection(false);
 			return true;
 		}
-		return Player.blockBackKey;
+		return UI.blockBackKey;
 	}
 	
 	@Override
 	protected void onCreate() {
 		Player.startService(getApplication());
 		addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-		if (Player.keepScreenOn)
+		if (UI.keepScreenOn)
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else
 			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		if (Player.forcedOrientation == 0)
+		if (UI.forcedOrientation == 0)
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-		else if (Player.forcedOrientation < 0)
+		else if (UI.forcedOrientation < 0)
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -717,7 +717,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			barVolume.setKeyIncrement(Player.isVolumeControlGlobal() ? 1 : 20);
 			barVolume.setEmptySpaceColor(UI.color_window);
 			
-	        if (!Player.marqueeTitle) {
+	        if (!UI.marqueeTitle) {
 	        	lblTitle.setEllipsize(TruncateAt.END);
 	        	lblTitle.setHorizontallyScrolling(false);
 	        }
@@ -742,10 +742,10 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
 			btnMoveSel = (BgButton)findViewById(R.id.btnMoveSel);
 			btnMoveSel.setOnClickListener(this);
-			btnMoveSel.setIcon(UI.ICON_MOVE, !UI.isLandscape);
+			btnMoveSel.setIcon(UI.ICON_MOVE, !UI.isLandscape, true);
 			btnRemoveSel = (BgButton)findViewById(R.id.btnRemoveSel);
 			btnRemoveSel.setOnClickListener(this);
-			btnRemoveSel.setIcon(UI.ICON_DELETE, !UI.isLandscape);
+			btnRemoveSel.setIcon(UI.ICON_DELETE, !UI.isLandscape, true);
 			btnCancelSel = (BgButton)findViewById(R.id.btnCancelSel);
 			btnCancelSel.setOnClickListener(this);
 			alwaysShowSecondary = true;
@@ -892,14 +892,14 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		if (windowDrawable == null)
 			windowDrawable = new ColorDrawable(UI.color_window);
 		if (pausing || !Player.isControlMode()) {
-			if (blackBackground) {
-				blackBackground = false;
+			if (controlModeBackground) {
+				controlModeBackground = false;
 				windowDrawable.change(UI.color_window);
 				getHostActivity().getWindow().setBackgroundDrawable(windowDrawable);
 			}
-		} else if (!blackBackground) {
-			blackBackground = true;
-			windowDrawable.change(UI.color_bg);
+		} else if (!controlModeBackground) {
+			controlModeBackground = true;
+			windowDrawable.change(UI.color_bg_control_mode);
 			getHostActivity().getWindow().setBackgroundDrawable(windowDrawable);
 		}
 	}

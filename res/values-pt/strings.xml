@@ -42,7 +42,9 @@
     <string name="opt_auto_turn_off">Desligar o player automaticamente em:</string>
     <string name="opt_keep_screen_on">Manter a tela sempre ligada</string>
     <string name="opt_volume_control_type">Tipo do controle de volume:</string>
-	<string name="opt_block_back_key">Impedir que a tecla Voltar retorne à tela inicial</string>
+    <string name="opt_is_divider_visible">Mostrar divisão entre os itens das listas</string>
+    <string name="opt_is_vertical_margin_large">Usar espaçamento largo entre os itens das listas</string>
+    <string name="opt_block_back_key">Impedir que a tecla Voltar retorne à tela inicial</string>
     <string name="opt_double_click_mode">Usar dois cliques/toques para tocar as músicas da lista</string>
 	<string name="opt_marquee_title">Girar o título da música atual quando não couber na tela</string>
 	<string name="opt_prepare_next">Pré-carregar a próxima música para tentar diminuir o intervalos entre músicas consecutivas</string>

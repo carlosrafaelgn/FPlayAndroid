@@ -68,7 +68,8 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener {
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
-	private SettingView optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private LinearLayout panelSettings;
+	private SettingView optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
@@ -93,7 +94,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
-			final int o = (Player.isVolumeControlGlobal() ? 0 : (Player.displayVolumeInDB ? 1 : 2));
+			final int o = (Player.isVolumeControlGlobal() ? 0 : (UI.displayVolumeInDB ? 1 : 2));
 			menu.add(0, 0, 0, R.string.volume_control_type_integrated)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
@@ -107,7 +108,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optForceOrientation) {
 			lastMenuView = optForceOrientation;
 			UI.prepare(menu);
-			final int o = Player.forcedOrientation;
+			final int o = UI.forcedOrientation;
 			menu.add(0, 0, 0, R.string.none)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
@@ -141,21 +142,21 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private void loadSettings() {
 		Player.loadConfig(getApplication());
 		optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
-		optKeepScreenOn.setChecked(Player.keepScreenOn);
-		if (Player.keepScreenOn)
+		optKeepScreenOn.setChecked(UI.keepScreenOn);
+		if (UI.keepScreenOn)
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else
 			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		optBlockBackKey.setChecked(Player.blockBackKey);
-		optDoubleClickMode.setChecked(Player.doubleClickMode);
-		optMarqueeTitle.setChecked(Player.marqueeTitle);
+		optBlockBackKey.setChecked(UI.blockBackKey);
+		optDoubleClickMode.setChecked(UI.doubleClickMode);
+		optMarqueeTitle.setChecked(UI.marqueeTitle);
 		optPrepareNext.setChecked(Player.nextPreparationEnabled);
 		optClearListWhenPlayingFolders.setChecked(Player.clearListWhenPlayingFolders);
 		
 		optVolumeControlType.setSecondaryText(getVolumeString());
-		if (Player.forcedOrientation == 0)
+		if (UI.forcedOrientation == 0)
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-		else if (Player.forcedOrientation < 0)
+		else if (UI.forcedOrientation < 0)
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else
 			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -306,19 +307,19 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				break;
 			case 1:
 				Player.setVolumeControlGlobal(getApplication(), false);
-				Player.displayVolumeInDB = true;
+				UI.displayVolumeInDB = true;
 				break;
 			case 2:
 				Player.setVolumeControlGlobal(getApplication(), false);
-				Player.displayVolumeInDB = false;
+				UI.displayVolumeInDB = false;
 				break;
 			}
 			optVolumeControlType.setSecondaryText(getVolumeString());
 		} else if (lastMenuView == optForceOrientation) {
-			Player.forcedOrientation = item.getItemId();
-			if (Player.forcedOrientation == 0)
+			UI.forcedOrientation = item.getItemId();
+			if (UI.forcedOrientation == 0)
 				getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-			else if (Player.forcedOrientation < 0)
+			else if (UI.forcedOrientation < 0)
 				getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 			else
 				getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -350,26 +351,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 	
 	private String getVolumeString() {
-		return getText(Player.isVolumeControlGlobal() ? R.string.volume_control_type_integrated : (Player.displayVolumeInDB ? R.string.volume_control_type_decibels : R.string.volume_control_type_percentage)).toString();
+		return getText(Player.isVolumeControlGlobal() ? R.string.volume_control_type_integrated : (UI.displayVolumeInDB ? R.string.volume_control_type_decibels : R.string.volume_control_type_percentage)).toString();
 	}
 	
 	private String getOrientationString() {
-		final int o = Player.forcedOrientation;
+		final int o = UI.forcedOrientation;
 		return getText((o == 0) ? R.string.none : ((o < 0) ? R.string.landscape : R.string.portrait)).toString();
 	}
 	
 	private String getFadeInString(int duration) {
 		return getText((duration >= 250) ? R.string.dshort : ((duration >= 125) ? R.string.dmedium : ((duration > 0) ? R.string.dlong : R.string.none))).toString();
-	}
-	
-	private void addSeparator(LinearLayout panelSettings, Context context) {
-		final TextView t = new TextView(context);
-		final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
-		p.setMargins(UI._8dp, 0, UI._8dp, 0);
-		t.setLayoutParams(p);
-		t.setBackgroundColor(UI.color_current);//UI.color_selected_border);
-		t.setEnabled(false);
-		panelSettings.addView(t);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -387,19 +378,23 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		
 		final ScrollView list = (ScrollView)findViewById(R.id.list);
 		list.setBackgroundDrawable(new BorderDrawable(false));
-		final LinearLayout panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
+		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		
 		optAutoTurnOff = new SettingView(ctx, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false);
 		optAutoTurnOff.setOnClickListener(this);
-		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, Player.keepScreenOn);
+		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn);
 		optKeepScreenOn.setOnClickListener(this);
 		optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false);
 		optVolumeControlType.setOnClickListener(this);
-		optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, Player.blockBackKey);
+		optIsDividerVisible = new SettingView(ctx, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible);
+		optIsDividerVisible.setOnClickListener(this);
+		optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge);
+		optIsVerticalMarginLarge.setOnClickListener(this);
+		optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey);
 		optBlockBackKey.setOnClickListener(this);
-		optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, Player.doubleClickMode);
+		optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, UI.doubleClickMode);
 		optDoubleClickMode.setOnClickListener(this);
-		optMarqueeTitle = new SettingView(ctx, getText(R.string.opt_marquee_title).toString(), null, true, Player.marqueeTitle);
+		optMarqueeTitle = new SettingView(ctx, getText(R.string.opt_marquee_title).toString(), null, true, UI.marqueeTitle);
 		optMarqueeTitle.setOnClickListener(this);
 		optPrepareNext = new SettingView(ctx, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled);
 		optPrepareNext.setOnClickListener(this);
@@ -421,27 +416,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		CustomContextMenu.registerForContextMenu(optFadeInOther, this);
 		
 		panelSettings.addView(optAutoTurnOff);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optKeepScreenOn);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optVolumeControlType);
-		addSeparator(panelSettings, ctx);
+		panelSettings.addView(optIsDividerVisible);
+		panelSettings.addView(optIsVerticalMarginLarge);
 		panelSettings.addView(optBlockBackKey);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optDoubleClickMode);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optMarqueeTitle);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optPrepareNext);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optClearListWhenPlayingFolders);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optForceOrientation);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optFadeInFocus);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optFadeInPause);
-		addSeparator(panelSettings, ctx);
 		panelSettings.addView(optFadeInOther);
 		
 		if (UI.isLowDpiScreen && !UI.isLargeScreen)
@@ -469,9 +455,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	protected void onCleanupLayout() {
 		btnGoBack = null;
 		btnAbout = null;
+		panelSettings = null;
 		optAutoTurnOff = null;
 		optKeepScreenOn = null;
 		optVolumeControlType = null;
+		optIsDividerVisible = null;
+		optIsVerticalMarginLarge = null;
+		optBlockBackKey = null;
 		optDoubleClickMode = null;
 		optMarqueeTitle = null;
 		optPrepareNext = null;
@@ -490,17 +480,32 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == btnAbout) {
 			startActivity(new ActivityAbout());
 		} else if (view == optKeepScreenOn) {
-			Player.keepScreenOn = optKeepScreenOn.isChecked();
-			if (Player.keepScreenOn)
+			UI.keepScreenOn = optKeepScreenOn.isChecked();
+			if (UI.keepScreenOn)
 				addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 			else
 				clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		} else if (view == optIsDividerVisible) {
+			UI.isDividerVisible = optIsDividerVisible.isChecked();
+			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
+				final View v = panelSettings.getChildAt(i);
+				if (v != null && (v instanceof SettingView))
+					((SettingView)v).invalidate();
+			}
+		} else if (view == optIsVerticalMarginLarge) {
+			UI.isVerticalMarginLarge = optIsVerticalMarginLarge.isChecked();
+			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
+				final View v = panelSettings.getChildAt(i);
+				if (v != null && (v instanceof SettingView))
+					((SettingView)v).refreshVerticalMargin();
+			}
+			panelSettings.requestLayout();
 		} else if (view == optBlockBackKey) {
-			Player.blockBackKey = optBlockBackKey.isChecked();
+			UI.blockBackKey = optBlockBackKey.isChecked();
 		} else if (view == optDoubleClickMode) {
-			Player.doubleClickMode = optDoubleClickMode.isChecked();
+			UI.doubleClickMode = optDoubleClickMode.isChecked();
 		} else if (view == optMarqueeTitle) {
-			Player.marqueeTitle = optMarqueeTitle.isChecked();
+			UI.marqueeTitle = optMarqueeTitle.isChecked();
 		} else if (view == optPrepareNext) {
 			Player.nextPreparationEnabled = optPrepareNext.isChecked();
 		} else if (view == optClearListWhenPlayingFolders) {

@@ -158,6 +158,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_VOLUMECONTROLGLOBAL = 0x0014;
 	private static final int OPT_BLOCKBACKKEY = 0x0015;
 	private static final int OPT_TURNOFFTIMERCUSTOMMINUTES = 0x0016;
+	private static final int OPT_ISDIVIDERVISIBLE = 0x0017;
+	private static final int OPT_ISVERTICALMARGINLARGE = 0x0018;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -181,8 +183,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
 	public static PlayerObserver observer;
 	public static final SongList songs = SongList.getInstance();
-	//keep these instances here to prevent MainHandler, Equalizer and BassBoost
+	//keep these instances here to prevent UI, MainHandler, Equalizer and BassBoost
 	//classes from being garbage collected...
+	public static final UI _ui = new UI();
 	public static final MainHandler _mainHandler = new MainHandler();
 	public static final Equalizer _equalizer = new Equalizer();
 	public static final BassBoost _bassBoost = new BassBoost();
@@ -191,9 +194,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	//(and even the class garbage collection)
 	private static HashSet<String> favoriteFolders;
 	public static String path, originalPath;
-	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, forcedOrientation;
-	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, msgAddShown, msgPlayShown, msgStartupShown;
+	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
+	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders;
 	
 	public static void loadConfig(Context context) {
 		SerializableMap opts = SerializableMap.deserialize(context, "_Player");
@@ -210,19 +212,21 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		fadeInIncrementOnOther = opts.getInt(OPT_FADEININCREMENTONOTHER, 0);
 		nextPreparationEnabled = opts.getBoolean(OPT_NEXTPREPARATION, true);
 		clearListWhenPlayingFolders = opts.getBoolean(OPT_PLAYFOLDERCLEARSLIST);
-		keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
-		forcedOrientation = opts.getInt(OPT_FORCEDORIENTATION);
-		displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
-		doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
-		marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
+		UI.keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
+		UI.forcedOrientation = opts.getInt(OPT_FORCEDORIENTATION);
+		UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
+		UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
+		UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
 		setVolumeControlGlobal(context, opts.getBoolean(OPT_VOLUMECONTROLGLOBAL, true));
-		blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
+		UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
 		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
 		if (turnOffTimerCustomMinutes < 1)
 			turnOffTimerCustomMinutes = 1;
-		msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
-		msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
-		msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
+		UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
+		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, !UI.isLowDpiScreen);
+		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
+		UI.msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
+		UI.msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -253,17 +257,19 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_FADEININCREMENTONOTHER, fadeInIncrementOnOther);
 		opts.put(OPT_NEXTPREPARATION, nextPreparationEnabled);
 		opts.put(OPT_PLAYFOLDERCLEARSLIST, clearListWhenPlayingFolders);
-		opts.put(OPT_KEEPSCREENON, keepScreenOn);
-		opts.put(OPT_FORCEDORIENTATION, forcedOrientation);
-		opts.put(OPT_DISPLAYVOLUMEINDB, displayVolumeInDB);
-		opts.put(OPT_DOUBLECLICKMODE, doubleClickMode);
-		opts.put(OPT_MARQUEETITLE, marqueeTitle);
+		opts.put(OPT_KEEPSCREENON, UI.keepScreenOn);
+		opts.put(OPT_FORCEDORIENTATION, UI.forcedOrientation);
+		opts.put(OPT_DISPLAYVOLUMEINDB, UI.displayVolumeInDB);
+		opts.put(OPT_DOUBLECLICKMODE, UI.doubleClickMode);
+		opts.put(OPT_MARQUEETITLE, UI.marqueeTitle);
 		opts.put(OPT_VOLUMECONTROLGLOBAL, volumeControlGlobal);
-		opts.put(OPT_BLOCKBACKKEY, blockBackKey);
+		opts.put(OPT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);
-		opts.put(OPT_MSGADDSHOWN, msgAddShown);
-		opts.put(OPT_MSGPLAYSHOWN, msgPlayShown);
-		opts.put(OPT_MSGSTARTUPSHOWN, msgStartupShown);
+		opts.put(OPT_ISDIVIDERVISIBLE, UI.isDividerVisible);
+		opts.put(OPT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
+		opts.put(OPT_MSGADDSHOWN, UI.msgAddShown);
+		opts.put(OPT_MSGPLAYSHOWN, UI.msgPlayShown);
+		opts.put(OPT_MSGSTARTUPSHOWN, UI.msgStartupShown);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

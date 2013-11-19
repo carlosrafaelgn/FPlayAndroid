@@ -48,7 +48,6 @@ import android.media.audiofx.Visualizer;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.WindowManager;
@@ -137,16 +136,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			rect.top = (h >> 1) - (barH >> 1);
 			rect.right = rect.left + size;
 			rect.bottom = rect.top + barH;
-			/*paint.setStrokeWidth(2);
-			paint.setShader(new LinearGradient(0, 0, 0, size,
-					new int[] {
-						0xffff0000, 0xffffff00, 0xff26b000,
-						0xff000000,
-						0x5526b000, 0x55ffff00, 0x55ff0000
-					}, new float[] {
-						0, 0.25f, 0.375f,
-						0.5f,
-						0.625f, 0.75f, 1 }, Shader.TileMode.CLAMP));*/
 		}
 		
 		public void release() {
@@ -160,7 +149,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		protected void onDraw(Canvas canvas) {
 			final int[] pts = acquirePoints(true);
 			if (pts != null) {
-				canvas.drawColor(0xff000000);
+				canvas.drawColor(UI.color_bg);
 				final int w = barW, h = barH;
 				final Rect r = rectBar;
 				final Paint p = paint;
@@ -224,12 +213,12 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	private Visualizer visualizer;
 	private RelativeLayout container, buttonContainer;
-	private BgButton btnPrev, btnPlay, btnNext;
+	private BgButton btnPrev, btnPlay, btnNext, btnBack;
 	private VisualizerView visualizerView;
 	private Timer timer;
 	private byte[] bfft;
 	private float[] fft, multiplier;
-	private boolean landscape, lowDpi;
+	private boolean landscape, lowDpi, visualizerFailed;
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void setupActionBar() {
@@ -241,10 +230,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	private void prepareViews() {
-		if (lowDpi)
-			buttonContainer.setPadding(0, 0, 0, 0);
-		else
-			buttonContainer.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		RelativeLayout.LayoutParams p, pv;
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
@@ -276,19 +261,47 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		buttonContainer.setLayoutParams(p);
 	}
 	
-	@SuppressWarnings("deprecation")
+	private void initVisualizer(boolean startNow) {
+		if (visualizer != null || visualizerFailed)
+			return;
+		try {
+			int g = Player.getAudioSessionId();
+			if (g < 0)
+				return;
+			visualizer = new Visualizer(g);
+		} catch (Throwable ex) {
+			visualizerFailed = true;
+			UI.toast(getApplication(), R.string.visualizer_not_supported);
+		}
+		if (visualizer != null) {
+			try {
+				visualizer.setCaptureSize(1024);
+				if (startNow) {
+					visualizer.setEnabled(true);
+					timer.start(16, false);
+				}
+			} catch (Throwable ex) {
+				visualizerFailed = true;
+				visualizer.release();
+				visualizer = null;
+				UI.toast(getApplication(), R.string.visualizer_not_supported);
+			}
+		}
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_bg));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-		if (Player.keepScreenOn)
+		if (UI.keepScreenOn)
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else
 			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		if (Player.forcedOrientation == 0)
+		if (UI.forcedOrientation == 0)
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-		else if (Player.forcedOrientation < 0)
+		else if (UI.forcedOrientation < 0)
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -307,20 +320,41 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		container = new RelativeLayout(getApplication());
 		container.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 		
+		btnBack = new BgButton(getApplication());
+		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
+		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+		if (!UI.isLowDpiScreen) {
+			p.leftMargin = UI._8dp;
+			p.topMargin = UI._8dp;
+			p.rightMargin = UI._8dp;
+		}
+		btnBack.setLayoutParams(p);
+		btnBack.setIcon(UI.ICON_GOBACK);
+		btnBack.setOnClickListener(this);
+		btnBack.setId(5);
+		btnBack.setNextFocusUpId(4);
+		btnBack.setNextFocusLeftId(4);
+		btnBack.setNextFocusDownId(2);
+		btnBack.setNextFocusRightId(2);
+		UI.setNextFocusForwardId(btnBack, 2);
 		buttonContainer = new RelativeLayout(getApplication());
 		buttonContainer.setId(1);
-		buttonContainer.setBackgroundDrawable(new ColorDrawable(0xff000000));
+		if (lowDpi)
+			buttonContainer.setPadding(0, 0, 0, 0);
+		else
+			buttonContainer.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		btnPrev = new BgButton(getApplication());
-		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 		btnPrev.setLayoutParams(p);
 		btnPrev.setIcon(UI.ICON_PREV);
 		btnPrev.setOnClickListener(this);
 		btnPrev.setId(2);
-		btnPrev.setNextFocusUpId(2);
-		btnPrev.setNextFocusDownId(2);
-		btnPrev.setNextFocusLeftId(4);
+		btnPrev.setNextFocusUpId(5);
+		btnPrev.setNextFocusLeftId(5);
+		btnPrev.setNextFocusDownId(3);
 		btnPrev.setNextFocusRightId(3);
 		UI.setNextFocusForwardId(btnPrev, 3);
 		btnPlay = new BgButton(getApplication());
@@ -330,21 +364,22 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnPlay.setIcon(UI.ICON_PLAY);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setId(3);
-		btnPlay.setNextFocusUpId(3);
-		btnPlay.setNextFocusDownId(3);
+		btnPlay.setNextFocusUpId(2);
 		btnPlay.setNextFocusLeftId(2);
+		btnPlay.setNextFocusDownId(4);
 		btnPlay.setNextFocusRightId(4);
 		UI.setNextFocusForwardId(btnPlay, 4);
 		btnNext = new BgButton(getApplication());
 		btnNext.setOnClickListener(this);
 		btnNext.setId(4);
-		btnNext.setNextFocusUpId(4);
-		btnNext.setNextFocusDownId(4);
+		btnNext.setNextFocusUpId(3);
 		btnNext.setNextFocusLeftId(3);
-		btnNext.setNextFocusRightId(2);
-		UI.setNextFocusForwardId(btnNext, 2);
+		btnNext.setNextFocusDownId(5);
+		btnNext.setNextFocusRightId(5);
+		UI.setNextFocusForwardId(btnNext, 5);
 		
 		visualizerView = new VisualizerView(getApplication());
+		visualizerFailed = false;
 		
 		buttonContainer.addView(btnPrev);
 		buttonContainer.addView(btnPlay);
@@ -353,6 +388,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		prepareViews();
 		
 		container.addView(visualizerView);
+		container.addView(btnBack);
 		container.addView(buttonContainer);
 		setContentView(container);
 		
@@ -364,21 +400,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		//the 0.25 below is the counterpart of the 0.75 in run()
 		for (int i = 0; i < 256; i++)
 			multiplier[i] = (float)((((double)i + 100.0) / 101.0) * Math.exp(i / 300.0) * 0.25);
-		try {
-			int g = Player.getAudioSessionId();
-			visualizer = new Visualizer(g);
-		} catch (Throwable ex) {
-			UI.toast(getApplication(), R.string.visualizer_not_supported);
-		}
-		if (visualizer != null) {
-			try {
-				visualizer.setCaptureSize(1024);
-			} catch (Throwable ex) {
-				visualizer.release();
-				visualizer = null;
-				UI.toast(getApplication(), R.string.visualizer_not_supported);
-			}
-		}
+		
+		initVisualizer(false);
 		
 		if (!btnPrev.isInTouchMode())
 			btnPrev.requestFocus();
@@ -439,7 +462,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		super.onDestroy();
 	}
 	
-	@Override
+	/*@Override
 	public boolean onTouchEvent(MotionEvent event) {
 	    switch (event.getAction()) {
 	    case MotionEvent.ACTION_DOWN:
@@ -453,7 +476,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			break;
 	    }
 		return super.onTouchEvent(event);
-	}
+	}*/
 	
 	@Override
 	public void run() {
@@ -535,11 +558,17 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	public void onClick(View view) {
-		if (view == btnPrev)
+		if (view == btnPrev) {
 			Player.previous();
-		else if (view == btnPlay)
+			initVisualizer(true);
+		} else if (view == btnPlay) {
 			Player.playPause();
-		else if (view == btnNext)
+			initVisualizer(true);
+		} else if (view == btnNext) {
 			Player.next();
+			initVisualizer(true);
+		} else if (view == btnBack) {
+			finish();
+		}
 	}
 }
