@@ -44,7 +44,6 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -156,21 +155,15 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 			Player.bassBoostMode = !Player.bassBoostMode;
 			prepareViewForMode();
 		} else if (view == chkEnable) {
-			final boolean equalizer = (Player.bassBoostMode ? Equalizer.isEnabled() : chkEnable.isChecked());
-			final boolean bassboost = (Player.bassBoostMode ? chkEnable.isChecked() : BassBoost.isEnabled());
+			final boolean enableEqualizer = (Player.bassBoostMode ? Equalizer.isEnabled() : chkEnable.isChecked());
+			final boolean enableBassBoost = (Player.bassBoostMode ? chkEnable.isChecked() : BassBoost.isEnabled());
 			//don't even ask.......
 			//(a few devices won't disable one effect while the other effect is enabled)
 			Equalizer.setEnabled(false);
 			BassBoost.setEnabled(false);
-			Equalizer.release();
-			BassBoost.release();
-			MainHandler.post(new Runnable() {
+			Player.resetEffects(enableEqualizer, enableBassBoost, new Runnable() {
 				@Override
 				public void run() {
-					Equalizer.setEnabled(equalizer);
-					BassBoost.setEnabled(bassboost);
-					Equalizer.initialize(Integer.MIN_VALUE);
-					BassBoost.initialize(Integer.MIN_VALUE);
 					if (Player.bassBoostMode) {
 						//something might have gone wrong...
 						if (chkEnable.isChecked() != BassBoost.isEnabled())

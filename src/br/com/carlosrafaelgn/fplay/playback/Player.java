@@ -510,6 +510,26 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
+	public static void resetEffects() {
+		resetEffects(Equalizer.isEnabled(), BassBoost.isEnabled(), null);
+	}
+	
+	public static void resetEffects(final boolean enableEqualizer, final boolean enableBassBoost, final Runnable callback) {
+		Equalizer.release();
+		BassBoost.release();
+		MainHandler.post(new Runnable() {
+			@Override
+			public void run() {
+				Equalizer.setEnabled(enableEqualizer);
+				BassBoost.setEnabled(enableBassBoost);
+				Equalizer.initialize((currentPlayer == null) ? Integer.MIN_VALUE : currentPlayer.getAudioSessionId());
+				BassBoost.initialize((currentPlayer == null) ? Integer.MIN_VALUE : currentPlayer.getAudioSessionId());
+				if (callback != null)
+					callback.run();
+			}
+		});
+	}
+	
 	private static void initializePlayers() {
 		if (currentPlayer == null) {
 			currentPlayer = createPlayer();
@@ -523,10 +543,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			nextPlayer = createPlayer();
 			nextPlayer.setAudioSessionId(currentPlayer.getAudioSessionId());
 		}
-		Equalizer.release();
-		BassBoost.release();
-		Equalizer.initialize(currentPlayer.getAudioSessionId());
-		BassBoost.initialize(currentPlayer.getAudioSessionId());
+		resetEffects();
 	}
 	
 	private static boolean requestFocus() {
@@ -1283,6 +1300,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		if (wasPlayingBeforeFocusLoss) {
 			//if (currentPlayer == null || !currentSongLoaded) {
 				playInternal(SongList.HOW_CURRENT);
+				if (currentPlayer != null && nextPlayer != null)
+					resetEffects();
 			//} else {
 			//	try {
 			//		playing = true;
