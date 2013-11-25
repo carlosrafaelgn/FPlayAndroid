@@ -42,7 +42,7 @@ public final class Equalizer {
 	private static final int OPT_PRESET = 0x0101;
 	private static final int OPT_LEVELCOUNT = 0x0102;
 	private static final int OPT_LEVEL0 = 0x20000;
-	private static int sessionId = -1, minBandLevel, maxBandLevel, preset;
+	private static int sessionId = Integer.MIN_VALUE, minBandLevel, maxBandLevel, preset;
 	private static boolean enabled;
 	private static int[] bandLevels, bandFrequencies;
 	private static android.media.audiofx.Equalizer theEqualizer;
@@ -114,12 +114,10 @@ public final class Equalizer {
 			minBandLevel = (int)l[0];
 			maxBandLevel = (int)l[1];
 		}
-		setEnabled(enabled);
 	}
 	
 	public static void release() {
 		if (theEqualizer != null) {
-			//theEqualizer.setEnabled(false);
 			theEqualizer.release();
 			theEqualizer = null;
 		}
@@ -166,29 +164,18 @@ public final class Equalizer {
 	
 	public static void setEnabled(boolean enabled) {
 		Equalizer.enabled = enabled;
-		if (!enabled) {
-			if (theEqualizer != null) {
-				System.out.println(theEqualizer.setEnabled(false));
-				Equalizer.enabled = theEqualizer.getEnabled();
-				//theEqualizer.release();
-				//theEqualizer = null;
-			}
-		} else if (sessionId >= 0) {
-			//if (theEqualizer == null) {
-			//	try {
-			//		theEqualizer = new android.media.audiofx.Equalizer(0, sessionId);
-			//	} catch (Throwable ex) {
-			//		return;
-			//	}
-			//}
-			if (theEqualizer != null) {
+		if (theEqualizer != null) {
+			if (!enabled) {
+				theEqualizer.setEnabled(false);
+			} else if (sessionId != Integer.MIN_VALUE) {
 				try {
 					applyAllBandSettings();
-					System.out.println(theEqualizer.setEnabled(true));
+					theEqualizer.setEnabled(true);
+					//applyAllBandSettings();
 				} catch (Throwable ex) {
 				}
-				Equalizer.enabled = theEqualizer.getEnabled();
 			}
+			Equalizer.enabled = theEqualizer.getEnabled();
 		}
 	}
 	

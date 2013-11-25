@@ -537,7 +537,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	@Override
-	public void onPlayerAudioSourceChanged() {
+	public void onPlayerAudioSinkChanged(int audioSink) {
 	}
 	
 	@Override

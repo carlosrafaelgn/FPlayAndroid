@@ -69,7 +69,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
@@ -147,6 +147,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else
 			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		optIsDividerVisible.setChecked(UI.isDividerVisible);
+		optIsVerticalMarginLarge.setChecked(UI.isVerticalMarginLarge);
+		optHandleCallKey.setChecked(Player.handleCallKey);
+		optPlayWhenHeadsetPlugged.setChecked(Player.playWhenHeadsetPlugged);
 		optBlockBackKey.setChecked(UI.blockBackKey);
 		optDoubleClickMode.setChecked(UI.doubleClickMode);
 		optMarqueeTitle.setChecked(UI.marqueeTitle);
@@ -390,6 +394,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsDividerVisible.setOnClickListener(this);
 		optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge);
 		optIsVerticalMarginLarge.setOnClickListener(this);
+		optHandleCallKey = new SettingView(ctx, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey);
+		optHandleCallKey.setOnClickListener(this);
+		optPlayWhenHeadsetPlugged = new SettingView(ctx, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged);
+		optPlayWhenHeadsetPlugged.setOnClickListener(this);
 		optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey);
 		optBlockBackKey.setOnClickListener(this);
 		optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, UI.doubleClickMode);
@@ -420,6 +428,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		panelSettings.addView(optVolumeControlType);
 		panelSettings.addView(optIsDividerVisible);
 		panelSettings.addView(optIsVerticalMarginLarge);
+		panelSettings.addView(optHandleCallKey);
+		panelSettings.addView(optPlayWhenHeadsetPlugged);
 		panelSettings.addView(optBlockBackKey);
 		panelSettings.addView(optDoubleClickMode);
 		panelSettings.addView(optMarqueeTitle);
@@ -461,6 +471,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optVolumeControlType = null;
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
+		optHandleCallKey = null;
+		optPlayWhenHeadsetPlugged = null;
 		optBlockBackKey = null;
 		optDoubleClickMode = null;
 		optMarqueeTitle = null;
@@ -500,6 +512,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					((SettingView)v).refreshVerticalMargin();
 			}
 			panelSettings.requestLayout();
+		} else if (view == optHandleCallKey) {
+			Player.handleCallKey = optHandleCallKey.isChecked();
+		} else if (view == optPlayWhenHeadsetPlugged) {
+			Player.playWhenHeadsetPlugged = optPlayWhenHeadsetPlugged.isChecked();
 		} else if (view == optBlockBackKey) {
 			UI.blockBackKey = optBlockBackKey.isChecked();
 		} else if (view == optDoubleClickMode) {

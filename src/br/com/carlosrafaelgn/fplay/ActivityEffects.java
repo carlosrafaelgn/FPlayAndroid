@@ -159,11 +159,11 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 			final boolean enableBassBoost = (Player.bassBoostMode ? chkEnable.isChecked() : BassBoost.isEnabled());
 			//don't even ask.......
 			//(a few devices won't disable one effect while the other effect is enabled)
-			Equalizer.setEnabled(false);
-			BassBoost.setEnabled(false);
-			Player.resetEffects(enableEqualizer, enableBassBoost, new Runnable() {
-				@Override
-				public void run() {
+			Player.releaseEffects();
+			//MainHandler.post(new Runnable() {
+			//	@Override
+			//	public void run() {
+					Player.initializeEffects(enableEqualizer, enableBassBoost);
 					if (Player.bassBoostMode) {
 						//something might have gone wrong...
 						if (chkEnable.isChecked() != BassBoost.isEnabled())
@@ -173,8 +173,8 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 						if (chkEnable.isChecked() != Equalizer.isEnabled())
 							chkEnable.setChecked(Equalizer.isEnabled());
 					}
-				}
-			});
+			//	}
+			//});
 		}
 	}
 	

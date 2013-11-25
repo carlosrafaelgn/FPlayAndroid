@@ -362,7 +362,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	@Override
-	public void onPlayerAudioSourceChanged() {
+	public void onPlayerAudioSinkChanged(int audioSink) {
 		//when changing the output, the global volume usually changes
 		if (Player.isVolumeControlGlobal()) {
 			updateVolumeDisplay();

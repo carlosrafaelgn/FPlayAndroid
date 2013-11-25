@@ -38,7 +38,7 @@ public final class BassBoost {
 	//values 0x01xx are shared among all effects
 	private static final int OPT_ENABLED = 0x0110;
 	private static final int OPT_STRENGTH = 0x0111;
-	private static int sessionId = -1, strength;
+	private static int sessionId = Integer.MIN_VALUE, strength;
 	private static boolean enabled, strengthSupported, supported;
 	private static android.media.audiofx.BassBoost theBooster;
 	
@@ -58,16 +58,15 @@ public final class BassBoost {
 		try {
 			theBooster = new android.media.audiofx.BassBoost(0, sessionId);
 		} catch (Throwable ex) {
+			supported = false;
 			return;
 		}
 		supported = true;
 		strengthSupported = theBooster.getStrengthSupported();
-		setEnabled(enabled);
 	}
 	
 	public static void release() {
 		if (theBooster != null) {
-			//theBooster.setEnabled(false);
 			theBooster.release();
 			theBooster = null;
 		}
@@ -87,30 +86,20 @@ public final class BassBoost {
 	
 	public static void setEnabled(boolean enabled) {
 		BassBoost.enabled = enabled;
-		if (!enabled) {
-			if (theBooster != null) {
-				System.out.println(theBooster.setEnabled(false));
-				BassBoost.enabled = theBooster.getEnabled();
-				//theBooster.release();
-				//theBooster = null;
-			}
-		} else if (sessionId >= 0) {
-			if (!strengthSupported)
-				strength = 1000;
-			//if (theBooster == null) {
-			//	try {
-			//		theBooster = new android.media.audiofx.BassBoost(0, sessionId);
-			//	} catch (Throwable ex) {
-			//	}
-			//}
-			if (theBooster != null) {
+		if (theBooster != null) {
+			if (!enabled) {
+				theBooster.setEnabled(false);
+			} else if (sessionId != Integer.MIN_VALUE) {
+				if (!strengthSupported)
+					strength = 1000;
 				try {
 					setStrength(strength, true);
-					System.out.println(theBooster.setEnabled(true));
+					theBooster.setEnabled(true);
+					//setStrength(strength, true);
 				} catch (Throwable ex) {
 				}
-				BassBoost.enabled = theBooster.getEnabled();
 			}
+			BassBoost.enabled = theBooster.getEnabled();
 		}
 	}
 	

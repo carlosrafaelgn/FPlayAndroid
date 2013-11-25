@@ -105,7 +105,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		public void onPlayerChanged(boolean onlyPauseChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
 		public void onPlayerGlobalVolumeChanged();
-		public void onPlayerAudioSourceChanged();
+		public void onPlayerAudioSinkChanged(int audioSink);
 		public void onPlayerMediaButtonPrevious();
 		public void onPlayerMediaButtonNext();
 	}
@@ -130,6 +130,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		private static final long serialVersionUID = 6158088015763157546L;
 	}
 	
+	public static final int AUDIO_SINK_DEVICE = 1;
+	public static final int AUDIO_SINK_WIRE = 2;
+	public static final int AUDIO_SINK_BT = 4;
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
@@ -160,6 +163,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_TURNOFFTIMERCUSTOMMINUTES = 0x0016;
 	private static final int OPT_ISDIVIDERVISIBLE = 0x0017;
 	private static final int OPT_ISVERTICALMARGINLARGE = 0x0018;
+	private static final int OPT_HANDLECALLKEY = 0x0019;
+	private static final int OPT_PLAYWHENHEADSETPLUGGED = 0x001A;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -169,7 +174,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
 		listLoaded, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes;
+	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink = 0;
 	private static Player thePlayer;
 	private static Song currentSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
@@ -195,7 +200,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static HashSet<String> favoriteFolders;
 	public static String path, originalPath;
 	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
-	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders;
+	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged;
 	
 	public static void loadConfig(Context context) {
 		SerializableMap opts = SerializableMap.deserialize(context, "_Player");
@@ -224,6 +229,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			turnOffTimerCustomMinutes = 1;
 		UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
 		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, !UI.isLowDpiScreen);
+		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
+		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
 		UI.msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
 		UI.msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
@@ -267,6 +274,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);
 		opts.put(OPT_ISDIVIDERVISIBLE, UI.isDividerVisible);
 		opts.put(OPT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
+		opts.put(OPT_HANDLECALLKEY, handleCallKey);
+		opts.put(OPT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
 		opts.put(OPT_MSGADDSHOWN, UI.msgAddShown);
 		opts.put(OPT_MSGPLAYSHOWN, UI.msgPlayShown);
 		opts.put(OPT_MSGSTARTUPSHOWN, UI.msgStartupShown);
@@ -312,9 +321,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				@Override
 				public void onRouteChanged(MediaRouter router, RouteInfo info) {
 					if (info.getPlaybackStream() == AudioManager.STREAM_MUSIC) {
+						//this actually works... nonetheless, I was not able to detected
+						//which is the audio sink used by this route.... :(
 						globalMaxVolume = info.getVolumeMax();
-						if (observer != null)
-							observer.onPlayerAudioSourceChanged();
+						audioSinkChanged(false);
 					}
 				}
 				@Override
@@ -390,8 +400,12 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				//registerMediaButtonEventReceiver!!! :(
 				final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
 				//filter.addAction("android.intent.action.MEDIA_BUTTON");
+				filter.addAction("android.intent.action.CALL_BUTTON");
 				filter.addAction("android.intent.action.HEADSET_PLUG");
-				filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+					filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
+				else
+					filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
 				filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
 				filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
 				//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
@@ -510,27 +524,24 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
-	public static void resetEffects() {
-		resetEffects(Equalizer.isEnabled(), BassBoost.isEnabled(), null);
-	}
-	
-	public static void resetEffects(final boolean enableEqualizer, final boolean enableBassBoost, final Runnable callback) {
+	public static void releaseEffects() {
 		Equalizer.release();
 		BassBoost.release();
-		MainHandler.post(new Runnable() {
-			@Override
-			public void run() {
-				Equalizer.setEnabled(enableEqualizer);
-				BassBoost.setEnabled(enableBassBoost);
-				Equalizer.initialize((currentPlayer == null) ? Integer.MIN_VALUE : currentPlayer.getAudioSessionId());
-				BassBoost.initialize((currentPlayer == null) ? Integer.MIN_VALUE : currentPlayer.getAudioSessionId());
-				if (callback != null)
-					callback.run();
-			}
-		});
 	}
 	
-	private static void initializePlayers() {
+	public static void initializeEffects(boolean enableEqualizer, boolean enableBassBoost) {
+		if (currentPlayer != null) {
+			final int sessionId = currentPlayer.getAudioSessionId();
+			if (enableEqualizer)
+				Equalizer.initialize(sessionId);
+			if (enableBassBoost)
+				BassBoost.initialize(sessionId);
+		}
+		Equalizer.setEnabled(enableEqualizer);
+		BassBoost.setEnabled(enableBassBoost);
+	}
+	
+	private static void initializePlayers(boolean forceAllEffectsPreparation) {
 		if (currentPlayer == null) {
 			currentPlayer = createPlayer();
 			if (nextPlayer != null) {
@@ -543,7 +554,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			nextPlayer = createPlayer();
 			nextPlayer.setAudioSessionId(currentPlayer.getAudioSessionId());
 		}
-		resetEffects();
+		if (forceAllEffectsPreparation) {
+			final int sessionId = currentPlayer.getAudioSessionId();
+			Equalizer.initialize(sessionId);
+			Equalizer.release();
+			BassBoost.initialize(sessionId);
+			BassBoost.release();
+		}
+		initializeEffects(Equalizer.isEnabled(), BassBoost.isEnabled());
 	}
 	
 	private static boolean requestFocus() {
@@ -766,8 +784,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static void releaseInternal() {
-		Equalizer.release();
-		BassBoost.release();
+		releaseEffects();
 		currentSongLoaded = false;
 		if (currentPlayer != null) {
 			releasePlayer(currentPlayer);
@@ -834,7 +851,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			return;
 		}
 		if (currentPlayer == null || nextPlayer == null)
-			initializePlayers();
+			initializePlayers(false);
 		boolean prepareNext = false;
 		if (nextSong == s && how != SongList.HOW_CURRENT) {
 			boolean ok = false;
@@ -913,20 +930,73 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		abandonFocus();
 	}
 	
-	public static void becomingNoisy() {
+	@SuppressWarnings("deprecation")
+	private static void checkAudioSink(boolean wiredHeadsetJustPlugged, boolean triggerNoisy) {
+		final int oldAudioSink = audioSink;
+		//let the guessing begin!!! really, it is NOT possible to rely solely on
+		//these AudioManager.isXXX() methods, neither on MediaRouter...
+		//I would really be happy if things were as easy as the docs say... :(
+		//https://developer.android.com/training/managing-audio/audio-output.html
+		boolean ok = false;
+		try {
+			//isSpeakerphoneOn has not actually worked on any devices I have tested so far, but....
+			if (audioManager.isSpeakerphoneOn()) {
+				audioSink = AUDIO_SINK_DEVICE;
+				ok = true;
+			}
+		} catch (Throwable ex) {
+		}
+		try {
+			//apparently, devices tend to use the wired headset over bluetooth headsets
+			if (!ok && (wiredHeadsetJustPlugged || audioManager.isWiredHeadsetOn())) {
+				audioSink = AUDIO_SINK_WIRE;
+				ok = true;
+			}
+		} catch (Throwable ex) {
+		}
+		try {
+			if (!ok && audioManager.isBluetoothA2dpOn()) {
+				audioSink = AUDIO_SINK_BT;
+				ok = true;
+			}
+		} catch (Throwable ex) {
+		}
+		if (!ok)
+			audioSink = AUDIO_SINK_DEVICE;
+		if (oldAudioSink != audioSink && oldAudioSink != 0) {
+			switch (audioSink) {
+			case AUDIO_SINK_WIRE:
+				if (!playing && playWhenHeadsetPlugged)
+					playPause();
+				break;
+			case AUDIO_SINK_DEVICE:
+				if (triggerNoisy)
+					becomingNoisyInternal();
+				break;
+			}
+		}
+		//I am calling the observer even if no changes have been detected, because
+		//I myself don't trust this code will correctly work as expected on every device....
+		if (observer != null)
+			observer.onPlayerAudioSinkChanged(audioSink);
+	}
+	
+	private static void becomingNoisyInternal() {
 		//this cleanup must be done, as sometimes, when changing between two output types,
 		//the effects are lost...
 		if (playing)
 			playPause();
 		stopInternal(currentSong);
 		releaseInternal();
-		if (observer != null)
-			observer.onPlayerAudioSourceChanged();
 	}
 	
-	public static void audioSourceChanged() {
-		if (observer != null)
-			observer.onPlayerAudioSourceChanged();
+	public static void becomingNoisy() {
+		becomingNoisyInternal();
+		checkAudioSink(false, false);
+	}
+	
+	public static void audioSinkChanged(boolean wiredHeadsetJustPlugged) {
+		checkAudioSink(wiredHeadsetJustPlugged, true);
 	}
 	
 	public static void previous() {
@@ -1192,7 +1262,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		stopRequested = false;
 		thePlayer = this;
 		initialize(this);
-		initializePlayers();
+		initializePlayers(true);
 		startForeground(1, getNotification());
 		super.onCreate();
 	}
@@ -1241,8 +1311,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		//There are a few weird bluetooth headsets that despite having only one physical
 		//play/pause button, will try to simulate individual PLAY and PAUSE events,
 		//instead of sending the proper event PLAY_PAUSE... The problem is, they are not
-		//always correct about the actual player state, and therefore, the user ends up
-		//having to press that button twice for something to happen! :(
+		//always synchronized with the actual player state, and therefore, the user ends
+		//up having to press that button twice for something to happen! :(
 		case KeyEvent.KEYCODE_MEDIA_PLAY:
 		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
 		case KeyEvent.KEYCODE_MEDIA_PAUSE:
@@ -1251,6 +1321,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case KeyEvent.KEYCODE_MEDIA_STOP:
 			if (playing)
 				playPause();
+			break;
+		case KeyEvent.KEYCODE_CALL:
+			if (!handleCallKey)
+				return false;
+			playPause();
 			break;
 		case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
 		case KeyEvent.KEYCODE_MEDIA_NEXT:
@@ -1290,39 +1365,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		//this method is called only when the player has recovered the focus,
 		//and in this scenario, currentPlayer will be null
 		//someone else may have changed our values if the engine is shared
-		//final boolean equalizer = Equalizer.isEnabled();
-		//final boolean bassboost = BassBoost.isEnabled();
-		//Equalizer.setEnabled(false);
-		//BassBoost.setEnabled(false);
-		//Equalizer.setEnabled(equalizer);
-		//BassBoost.setEnabled(bassboost);
 		registerMediaButtonEventReceiver();
-		if (wasPlayingBeforeFocusLoss) {
-			//if (currentPlayer == null || !currentSongLoaded) {
-				playInternal(SongList.HOW_CURRENT);
-				if (currentPlayer != null && nextPlayer != null)
-					resetEffects();
-			//} else {
-			//	try {
-			//		playing = true;
-			//		wasSeekingTo = lastTime;
-			//		if (lastTime < 0) {
-			//			startPlayer(currentPlayer);
-			//		} else {
-			//			playOnUserSeek = 0;
-			//			currentSongPreparing = true;
-			//			currentPlayer.seekTo(lastTime);
-			//		}
-			//		lastTime = -1;
-			//	} catch (Throwable ex) {
-			//		playing = false;
-			//		wasPlaying = false;
-			//		updateState(false, ex);
-			//		return;
-			//	}
-			//	updateState(false, null);
-			//}
-		}
+		if (wasPlayingBeforeFocusLoss)
+			playInternal(SongList.HOW_CURRENT);
 	}
 	
 	private static void processPreparation() {
