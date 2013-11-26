@@ -493,7 +493,7 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 	}
 	
 	@Override
-	public void OnFileSelected(int id, String path, String name) {
+	public void onFileSelected(int id, String path, String name) {
 		if (id == MNU_LOADPRESET) {
 			final SerializableMap opts = SerializableMap.deserialize(getApplication(), path);
 			if (opts != null) {
@@ -509,10 +509,10 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 	}
 	
 	@Override
-	public void OnAddClicked(int id, String path, String name) {
+	public void onAddClicked(int id, String path, String name) {
 	}
 	
 	@Override
-	public void OnPlayClicked(int id, String path, String name) {
+	public void onPlayClicked(int id, String path, String name) {
 	}
 }

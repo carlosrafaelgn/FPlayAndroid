@@ -46,9 +46,14 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 
 public final class BgButton extends Button {
+	public static interface OnPressingChangeListener {
+		public void onPressingChanged(BgButton button, boolean pressed);
+	}
+	
 	private int state;
 	private boolean checkable, checked, stretchable;
 	private String iconChecked, iconUnchecked;
+	private OnPressingChangeListener pressingChangeListener;
 	
 	public BgButton(Context context) {
 		super(context);
@@ -116,6 +121,14 @@ public final class BgButton extends Button {
 	
 	public void setForceBlack(boolean forceBlack) {
 		super.setTextColor(forceBlack ? UI.colorState_text_sel : UI.colorState_text_normal);
+	}
+	
+	public OnPressingChangeListener getOnPressingChangeListener() {
+		return pressingChangeListener;
+	}
+	
+	public void setOnPressingChangeListener(OnPressingChangeListener pressingChangeListener) {
+		this.pressingChangeListener = pressingChangeListener;
 	}
 	
 	private void fixTextSize(int w, int h) {
@@ -205,7 +218,10 @@ public final class BgButton extends Button {
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
+		final int old = (state & UI.STATE_PRESSED);
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		if (pressingChangeListener != null && (state & UI.STATE_PRESSED) != old)
+			pressingChangeListener.onPressingChanged(this, old == 0);
 	}
 	
 	@Override

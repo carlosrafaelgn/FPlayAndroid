@@ -88,18 +88,18 @@ import br.com.carlosrafaelgn.fplay.util.Timer.TimerHandler;
 //Maintain/Save/Restore scroll position when returning to a ListView
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
-public final class ActivityMain extends ClientActivity implements TimerHandler, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener {
+public final class ActivityMain extends ClientActivity implements TimerHandler, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_EFFECTS = 105, MNU_VISUALIZER = 106, MNU_SETTINGS = 107, MNU_EXIT = 108;
 	private TextView lblTitle, lblMsgSelMove, lblTime;
+	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
 	private BgButton btnPrev, btnPlay, btnNext, btnMenu, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
 	private BgListView list;
-	private Timer tmrSong, tmrUpdateVolumeDisplay;
+	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private ColorDrawable windowDrawable;
 	private CharSequence lastTitleText;
-	private int firstSel, lastSel;
-	private int lastTime;
+	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay;
 	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, controlModeBackground;
 	private StringBuilder timeBuilder, volumeBuilder;
 	
@@ -188,9 +188,9 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				btnVolume.setText(UI.ICON_VOLUME4);
 			else if (v == 0)
 				btnVolume.setText(UI.ICON_VOLUME0);
-			else if (v > ((max << 1) / 3))
+			else if (v > ((max + 1) >> 1))
 				btnVolume.setText(UI.ICON_VOLUME3);
-			else if (v > (max / 3))
+			else if (v > (max >> 2))
 				btnVolume.setText(UI.ICON_VOLUME2);
 			else
 				btnVolume.setText(UI.ICON_VOLUME1);
@@ -303,12 +303,30 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		}
 	}
 	
+	private boolean decreaseVolume() {
+		final boolean ret = (Player.isVolumeControlGlobal() ?
+				Player.decreaseGlobalVolume() :
+				Player.setVolumeDB(Player.getVolumeDB() - 200));
+		setVolumeIcon();
+		return ret;
+	}
+	
+	private boolean increaseVolume() {
+		final boolean ret = (Player.isVolumeControlGlobal() ?
+				Player.increaseGlobalVolume() :
+					Player.setVolumeDB(Player.getVolumeDB() + 200));
+		setVolumeIcon();
+		return ret;
+	}
+	
 	@Override
 	public void onPlayerChanged(boolean onlyPauseChanged, Throwable ex) {
 		final Song s = Player.getCurrentSong();
 		if (s == null || ex != null) {
 			if (btnPlay != null)
 				btnPlay.setText(UI.ICON_PLAY);
+			if (lblTitleIcon != null)
+				lblTitleIcon.setIcon(UI.ICON_PLAY);
 			if (lblTitle != null) {
 				//there is no need to use equals(), as it is just a way to prevent
 				//the same song's title from being set to the control
@@ -323,8 +341,11 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				barSeek.setEnabled(false);
 			tmrSong.stop();
 		} else {
+			final String icon = (Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
 			if (btnPlay != null)
-				btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
+				btnPlay.setText(icon);
+			if (lblTitleIcon != null)
+				lblTitleIcon.setIcon(icon);
 			//same as above...
 			if (lblTitle != null && lastTitleText != s.title) {
 				lastTitleText = s.title;
@@ -492,17 +513,13 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		} else if (view == btnCancelSel) {
 			cancelSelection(false);
 		} else if (view == btnDecreaseVolume) {
-			if (Player.isVolumeControlGlobal())
-				Player.decreaseGlobalVolume();
-			else
-				Player.setVolumeDB(Player.getVolumeDB() - 200, true);
-			setVolumeIcon();
+			//this click will only actually perform an action when triggered by keys
+			if (volumeButtonPressed == 0)
+				decreaseVolume();
 		} else if (view == btnIncreaseVolume) {
-			if (Player.isVolumeControlGlobal())
-				Player.increaseGlobalVolume();
-			else
-				Player.setVolumeDB(Player.getVolumeDB() + 200, true);
-			setVolumeIcon();
+			//this click will only actually perform an action when triggered by keys
+			if (volumeButtonPressed == 0)
+				increaseVolume();
 		} else if (view == lblTitle) {
 			if (Player.isControlMode()) {
 				Player.playPause();
@@ -607,6 +624,8 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		tmrSong.setHandledOnMain(true);
 		tmrUpdateVolumeDisplay = new Timer(this, "Update Volume Display Timer");
 		tmrUpdateVolumeDisplay.setHandledOnMain(true);
+		tmrVolume = new Timer(this, "Volume Timer");
+		tmrVolume.setHandledOnMain(true);
 	}
 	
 	@Override
@@ -629,12 +648,15 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			btnNext.setIconStretchable(true);
 			btnMenu.setIconStretchable(true);
 			
+			volumeButtonPressed = 0;
 			btnDecreaseVolume = (BgButton)findViewById(R.id.btnDecreaseVolume);
 			btnDecreaseVolume.setOnClickListener(this);
+			btnDecreaseVolume.setOnPressingChangeListener(this);
 			btnDecreaseVolume.setIconNoChanges(UI.ICON_DECREASE_VOLUME);
 			btnDecreaseVolume.setIconStretchable(true);
 			btnIncreaseVolume = (BgButton)findViewById(R.id.btnIncreaseVolume);
 			btnIncreaseVolume.setOnClickListener(this);
+			btnIncreaseVolume.setOnPressingChangeListener(this);
 			btnIncreaseVolume.setIconNoChanges(UI.ICON_INCREASE_VOLUME);
 			btnIncreaseVolume.setIconStretchable(true);
 			btnVolume = (BgButton)findViewById(R.id.btnVolume);
@@ -676,6 +698,9 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			btnMenu.setLayoutParams(rp);
 			
+			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, true, panelH >> 1);
+			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
+			
 			int lds = 0;
 			if (UI.isLowDpiScreen && !UI.isLargeScreen) {
 				lds = (UI.isLandscape ? UI.dpToPxI(12) : UI._8dp);
@@ -691,7 +716,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			}
 			
 			if (UI.isLandscape) {
-				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (min * 10) / 100);
+				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (min * 9) / 100);
 				final int pa = (min * 7) / 100;
 				btnPrev.setPadding(pa, pa, pa, pa);
 				btnNext.setPadding(pa, pa, pa, pa);
@@ -700,7 +725,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				p2.topMargin = UI._16dp;
 				p2.bottomMargin = UI._16dp;
 				lblTitle.setLayoutParams(p2);
-				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (max * 6) / 100);
+				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (max * 5) / 100);
 				final int ph = (min * 12) / 100, pv = (max * 12) / 100;
 				btnPrev.setPadding(ph, pv, ph, pv);
 				btnNext.setPadding(ph, pv, ph, pv);
@@ -961,6 +986,8 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			list.setOnKeyDownObserver(null);
 		tmrSong.stop();
 		tmrUpdateVolumeDisplay.stop();
+		tmrVolume.stop();
+		volumeButtonPressed = 0;
 		SongAddingMonitor.stop();
 		if (Player.songs.selecting || Player.songs.moving)
 			cancelSelection(false);
@@ -976,6 +1003,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	protected void onCleanupLayout() {
 		saveListViewPosition();
 		lblTitle = null;
+		lblTitleIcon = null;
 		lastTitleText = null;
 		lblMsgSelMove = null;
 		lblTime = null;
@@ -999,6 +1027,8 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			tmrSong.stop();
 		if (tmrUpdateVolumeDisplay != null)
 			tmrUpdateVolumeDisplay.stop();
+		if (tmrVolume != null)
+			tmrVolume.stop();
 		SongAddingMonitor.stop();
 	}
 	
@@ -1006,6 +1036,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	protected void onDestroy() {
 		tmrSong = null;
 		tmrUpdateVolumeDisplay = null;
+		tmrVolume = null;
 		timeBuilder = null;
 		volumeBuilder = null;
 		windowDrawable = null;
@@ -1013,7 +1044,26 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
-		if (timer == tmrUpdateVolumeDisplay) {
+		if (timer == tmrVolume) {
+			if (tmrVolumeInitialDelay > 0) {
+				tmrVolumeInitialDelay--;
+			} else {
+				switch (volumeButtonPressed) {
+				case 1:
+					if (!decreaseVolume())
+						tmrVolume.stop();
+					break;
+				case 2:
+					if (!increaseVolume())
+						tmrVolume.stop();
+					break;
+				default:
+					tmrVolume.stop();
+					break;
+				}
+			}
+			return;
+		} else if (timer == tmrUpdateVolumeDisplay) {
 			updateVolumeDisplay();
 			return;
 		}
@@ -1070,7 +1120,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				if (Player.isVolumeControlGlobal())
 					Player.setGlobalVolume(value);
 				else
-					Player.setVolumeDB((value * 5) + Player.MIN_VOLUME_DB, true);
+					Player.setVolumeDB((value * 5) + Player.MIN_VOLUME_DB);
 				seekBar.setText(volumeToString());
 			} else if (seekBar == barSeek) {
 				value = getMSFromBarValue(value);
@@ -1122,7 +1172,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	@Override
-	public void OnFileSelected(int id, String path, String name) {
+	public void onFileSelected(int id, String path, String name) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
 			Player.songs.startDeserializing(getApplication(), path, true, false, false);
@@ -1133,7 +1183,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	@Override
-	public void OnAddClicked(int id, String path, String name) {
+	public void onAddClicked(int id, String path, String name) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializing(getApplication(), path, false, true, false);
 			SongAddingMonitor.start(getHostActivity());
@@ -1141,10 +1191,40 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	@Override
-	public void OnPlayClicked(int id, String path, String name) {
+	public void onPlayClicked(int id, String path, String name) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializing(getApplication(), path, false, !Player.clearListWhenPlayingFolders, true);
 			SongAddingMonitor.start(getHostActivity());
+		}
+	}
+	
+
+	@Override
+	public void onPressingChanged(BgButton button, boolean pressed) {
+		if (button == btnDecreaseVolume) {
+			if (pressed) {
+				volumeButtonPressed = 1;
+				tmrVolumeInitialDelay = 3;
+				if (decreaseVolume())
+					tmrVolume.start(175, false);
+				else
+					tmrVolume.stop();
+			} else if (volumeButtonPressed == 1) {
+				volumeButtonPressed = 0;
+				tmrVolume.stop();
+			}
+		} else if (button == btnIncreaseVolume) {
+			if (pressed) {
+				volumeButtonPressed = 2;
+				tmrVolumeInitialDelay = 3;
+				if (increaseVolume())
+					tmrVolume.start(175, false);
+				else
+					tmrVolume.stop();
+			} else if (volumeButtonPressed == 2) {
+				volumeButtonPressed = 0;
+				tmrVolume.stop();
+			}
 		}
 	}
 }

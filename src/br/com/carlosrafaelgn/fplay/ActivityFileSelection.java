@@ -61,9 +61,9 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class ActivityFileSelection extends ActivityFileView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
 	public static interface OnFileSelectionListener {
-		public void OnFileSelected(int id, String path, String name);
-		public void OnAddClicked(int id, String path, String name);
-		public void OnPlayClicked(int id, String path, String name);
+		public void onFileSelected(int id, String path, String name);
+		public void onAddClicked(int id, String path, String name);
+		public void onPlayClicked(int id, String path, String name);
 	}
 	
 	private static final int MNU_LOAD = 100, MNU_SAVE = 101, MNU_SAVEAS = 102, MNU_DELETE = 103;
@@ -165,9 +165,9 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 			return;
 		final FileSt f = fileList.getItemT(position);
 		if (add)
-			listener.OnAddClicked(id, f.path, f.name);
+			listener.onAddClicked(id, f.path, f.name);
 		else
-			listener.OnPlayClicked(id, f.path, f.name);
+			listener.onPlayClicked(id, f.path, f.name);
 	}
 	
 	private void confirm(final String path, final String name, final boolean delete) {
@@ -185,7 +185,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 					}
 				} else {
 					finish();
-					listener.OnFileSelected(ActivityFileSelection.this.id, path, name);
+					listener.onFileSelected(ActivityFileSelection.this.id, path, name);
 				}
 			}
 		})
@@ -202,7 +202,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 				return;
 			}
 			finish();
-			listener.OnFileSelected(id, f.path, f.name);
+			listener.onFileSelected(id, f.path, f.name);
 		} else {
 			fileList.setSelection(position, true);
 		}
@@ -343,7 +343,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 				}
 			}
 			finish();
-			listener.OnFileSelected(ActivityFileSelection.this.id, n + fileType, n);
+			listener.onFileSelected(ActivityFileSelection.this.id, n + fileType, n);
 		}
 		txtSaveAsName = null;
 	}

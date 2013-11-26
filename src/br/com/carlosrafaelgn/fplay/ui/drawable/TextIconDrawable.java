@@ -41,12 +41,12 @@ import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
-public class TextIconDrawable extends Drawable {
+public final class TextIconDrawable extends Drawable {
 	private static final TextPaint paint;
 	private int[] stateSet;
 	private int state, size, y;
 	private final boolean outsideMenu;
-	private final String icon;
+	private String icon;
 	
 	static {
 		paint = new TextPaint();
@@ -89,6 +89,15 @@ public class TextIconDrawable extends Drawable {
 		this.outsideMenu = outsideMenu;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), size);
+	}
+	
+	public String getIcon() {
+		return icon;
+	}
+	
+	public void setIcon(String icon) {
+		this.icon = icon;
+		invalidateSelf();
 	}
 	
 	@Override

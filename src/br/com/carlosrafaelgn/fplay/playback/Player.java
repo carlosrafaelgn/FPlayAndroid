@@ -54,6 +54,7 @@ import android.media.MediaRouter.RouteInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
 import br.com.carlosrafaelgn.fplay.ExternalReceiver;
@@ -174,16 +175,19 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
 		listLoaded, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink = 0;
+	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink, audioSinkBeforeFocusLoss;
 	private static Player thePlayer;
 	private static Song currentSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
 	private static NotificationManager notificationManager;
 	private static AudioManager audioManager;
+	private static TelephonyManager telephonyManager;
 	private static ExternalReceiver externalReceiver;
 	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, turnOffTimer;
 	private static ComponentName mediaButtonEventReceiver;
 	private static Object mediaRouterCallback;
+	//private static BluetoothAdapter bluetoothAdapter;
+	//private static BluetoothA2dp bluetoothA2dpProxy;
 	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
 	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
 	public static PlayerObserver observer;
@@ -206,7 +210,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		SerializableMap opts = SerializableMap.deserialize(context, "_Player");
 		if (opts == null)
 			opts = new SerializableMap();
-		setVolumeDB(opts.getInt(OPT_VOLUME), true);
+		setVolumeDB(opts.getInt(OPT_VOLUME));
 		controlMode = opts.getBoolean(OPT_CONTROLMODE);
 		path = opts.getString(OPT_PATH);
 		originalPath = opts.getString(OPT_ORIGINALPATH);
@@ -295,6 +299,65 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		songs.serialize(context, null);
 	}
 	
+	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private static void registerA2dpObserver(Context context) {
+		bluetoothAdapter = null;
+		bluetoothA2dpProxy = null;
+		try {
+			bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		} catch (Throwable ex) {
+		}
+		if (bluetoothAdapter == null)
+			return;
+		try {
+			bluetoothAdapter.getProfileProxy(context, new BluetoothProfile.ServiceListener() {
+				@Override
+				public void onServiceDisconnected(int profile) {
+				}
+				@Override
+				public void onServiceConnected(int profile, BluetoothProfile proxy) {
+					if (profile != BluetoothProfile.A2DP)
+						return;
+					if (bluetoothA2dpProxy != null) {
+						try {
+							bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dpProxy);
+						} catch (Throwable ex) {
+						}
+						bluetoothA2dpProxy = null;
+					}
+					bluetoothA2dpProxy = (BluetoothA2dp)proxy;
+				}
+			}, BluetoothProfile.A2DP);
+		} catch (Throwable ex) {
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private static boolean isA2dpPlaying() {
+		if (bluetoothA2dpProxy == null)
+			return false;
+		try {
+			final List<BluetoothDevice> l = bluetoothA2dpProxy.getConnectedDevices();
+			for (int i = l.size() - 1; i >= 0; i--) {
+				if (bluetoothA2dpProxy.isA2dpPlaying(l.get(i)))
+					return true;
+			}
+		} catch (Throwable ex) {
+		}
+		return false;
+	}
+	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private static void unregisterA2dpObserver(Context context) {
+		try {
+			if (bluetoothAdapter != null && bluetoothA2dpProxy != null)
+				bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dpProxy);
+		} catch (Throwable ex) {
+		}
+		bluetoothAdapter = null;
+		bluetoothA2dpProxy = null;
+	}*/
+	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private static void registerMediaRouter(Context context) {
 		final MediaRouter mr = (MediaRouter)context.getSystemService(MEDIA_ROUTER_SERVICE);
@@ -363,6 +426,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			if (audioManager == null)
 				audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
+			if (telephonyManager == null)
+				telephonyManager = (TelephonyManager)context.getSystemService(TELEPHONY_SERVICE);
 			if (destroyedObservers == null)
 				destroyedObservers = new ArrayList<Player.PlayerDestroyedObserver>(4);
 			loadConfig(context);
@@ -370,7 +435,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		if (thePlayer != null) {
 			registerMediaButtonEventReceiver();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-				registerMediaRouter(context);
+				registerMediaRouter(thePlayer);
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			//	registerA2dpObserver(thePlayer);
+			checkAudioSink(false, false);
 			if (focusDelayTimer == null) {
 				focusDelayTimer = new Timer(thePlayer, "Player Focus Delay Timer");
 				focusDelayTimer.setHandledOnMain(true);
@@ -429,6 +497,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			unregisterMediaButtonEventReceiver();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 				unregisterMediaRouter(thePlayer);
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			//	unregisterA2dpObserver(thePlayer);
 			thePlayer.stopForeground(true);
 			thePlayer.stopSelf();
 			if (destroyedObservers != null) {
@@ -464,6 +534,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			turnOffTimerObserver = null;
 			notificationManager = null;
 			audioManager = null;
+			telephonyManager = null;
 			externalReceiver = null;
 			mediaButtonEventReceiver = null;
 			if (favoriteFolders != null) {
@@ -837,8 +908,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
 			playing = false;
-			wasPlayingBeforeFocusLoss = false;
-			currentSongLoaded = false;
 			updateState(false, new FocusException());
 			return;
 		}
@@ -935,39 +1004,56 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		final int oldAudioSink = audioSink;
 		//let the guessing begin!!! really, it is NOT possible to rely solely on
 		//these AudioManager.isXXX() methods, neither on MediaRouter...
-		//I would really be happy if things were as easy as the docs say... :(
+		//I would really be happy if things were as easy as the doc says... :(
 		//https://developer.android.com/training/managing-audio/audio-output.html
-		boolean ok = false;
+		audioSink = 0;
 		try {
-			//isSpeakerphoneOn has not actually worked on any devices I have tested so far, but....
-			if (audioManager.isSpeakerphoneOn()) {
+			//isSpeakerphoneOn() has not actually returned true on any devices
+			//I have tested so far, anyway....
+			if (audioManager.isSpeakerphoneOn())
 				audioSink = AUDIO_SINK_DEVICE;
-				ok = true;
-			}
 		} catch (Throwable ex) {
 		}
 		try {
 			//apparently, devices tend to use the wired headset over bluetooth headsets
-			if (!ok && (wiredHeadsetJustPlugged || audioManager.isWiredHeadsetOn())) {
+			if (audioSink == 0 && (wiredHeadsetJustPlugged || audioManager.isWiredHeadsetOn()))
 				audioSink = AUDIO_SINK_WIRE;
-				ok = true;
-			}
 		} catch (Throwable ex) {
 		}
 		try {
-			if (!ok && audioManager.isBluetoothA2dpOn()) {
+			//this whole A2dp thing is still not enough, as isA2dpPlaying()
+			//will return false if there is nothing playing, even in scenarios
+			//A2dp will certainly be used for playback later...
+			/*if (audioManager.isBluetoothA2dpOn()) {
+				//the device being on is not enough! we must be sure
+				//if it is actually being used for transmission...
+				if (thePlayer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+					if (audioSink == 0)
+						audioSink = AUDIO_SINK_BT;
+				} else {
+					if (audioSink == 0 || isA2dpPlaying())
+						audioSink = AUDIO_SINK_BT;
+				}
+			}*/
+			if (audioSink == 0 && audioManager.isBluetoothA2dpOn())
 				audioSink = AUDIO_SINK_BT;
-				ok = true;
-			}
 		} catch (Throwable ex) {
 		}
-		if (!ok)
+		if (audioSink == 0)
 			audioSink = AUDIO_SINK_DEVICE;
 		if (oldAudioSink != audioSink && oldAudioSink != 0) {
 			switch (audioSink) {
 			case AUDIO_SINK_WIRE:
-				if (!playing && playWhenHeadsetPlugged)
+				if (!playing && playWhenHeadsetPlugged) {
+					if (!hasFocus) {
+						try {
+							if (telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
+								break;
+						} catch (Throwable ex) {
+						}
+					}
 					playPause();
+				}
 				break;
 			case AUDIO_SINK_DEVICE:
 				if (triggerNoisy)
@@ -1079,55 +1165,62 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return volumeDB;
 	}
 	
-	public static void setVolumeDB(int volumeDB, boolean applyActualVolume) {
+	public static boolean setVolumeDB(int volumeDB) {
+		final boolean ret;
 		if (volumeDB <= MIN_VOLUME_DB) {
 			volume = 0;
 			Player.volumeDB = MIN_VOLUME_DB;
+			ret = false;
 		} else if (volumeDB >= 0) {
 			volume = 1;
 			Player.volumeDB = 0;
+			ret = false;
 		} else {
 			//magnitude = 10 ^ (dB/20)
 			//x^p = a ^ (p * log a (x))
 			//10^p = e ^ (p * log e (10))
 			volume = (float)Math.exp((double)volumeDB * 2.3025850929940456840179914546844 / 2000.0);
 			Player.volumeDB = volumeDB;
+			ret = true;
 		}
 		if (volumeTimer != null)
 			volumeTimer.stop();
 		//when dimmed, decreased the volume by 20dB
 		actualVolume = (dimmedVolume ? (volume * 0.1f) : volume);
-		if (applyActualVolume) {
-			try {
-				if (currentPlayer != null && currentSongLoaded)
-					currentPlayer.setVolume(actualVolume, actualVolume);
-			} catch (Throwable ex) {
-			}
+		try {
+			if (currentPlayer != null && currentSongLoaded)
+				currentPlayer.setVolume(actualVolume, actualVolume);
+		} catch (Throwable ex) {
 		}
+		return ret;
 	}
 	
 	public static int getGlobalMaxVolume() {
 		return globalMaxVolume;
 	}
 	
-	public static void decreaseGlobalVolume() {
+	public static boolean decreaseGlobalVolume() {
 		try {
 			if (audioManager != null) {
 				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume <= 1) ? 0 : (volume - 1)), 0);
+				return (volume > 1);
 			}
 		} catch (Throwable ex) {
 		}
+		return false;
 	}
 	
-	public static void increaseGlobalVolume() {
+	public static boolean increaseGlobalVolume() {
 		try {
 			if (audioManager != null) {
 				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume >= globalMaxVolume) ? globalMaxVolume : (volume + 1)), 0);
+				return (volume < (globalMaxVolume- 1));
 			}
 		} catch (Throwable ex) {
 		}
+		return false;
 	}
 	
 	public static int getGlobalVolume() {
@@ -1157,7 +1250,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			try {
 				if (audioManager != null)
 					globalMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-				setVolumeDB(0, true);
+				setVolumeDB(0);
 			} catch (Throwable ex) {
 				Player.volumeControlGlobal = false;
 			}
@@ -1366,8 +1459,15 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		//and in this scenario, currentPlayer will be null
 		//someone else may have changed our values if the engine is shared
 		registerMediaButtonEventReceiver();
-		if (wasPlayingBeforeFocusLoss)
-			playInternal(SongList.HOW_CURRENT);
+		if (wasPlayingBeforeFocusLoss) {
+			//do not restart playback in scenarios like this (it really scares people!):
+			//the person has answered a call, removed the headset, ended the call without
+			//the headset plugged in, and then the focus came back to us
+			if (audioSinkBeforeFocusLoss != AUDIO_SINK_DEVICE && audioSink == AUDIO_SINK_DEVICE)
+				requestFocus();
+			else
+				playInternal(SongList.HOW_CURRENT);
+		}
 	}
 	
 	private static void processPreparation() {
@@ -1472,6 +1572,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case AudioManager.AUDIOFOCUS_LOSS:
 		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
 			wasPlayingBeforeFocusLoss = playing;
+			audioSinkBeforeFocusLoss = audioSink;
 			hasFocus = false;
 			setLastTime();
 			stopInternal(currentSong);
