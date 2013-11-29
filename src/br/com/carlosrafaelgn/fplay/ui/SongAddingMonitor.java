@@ -67,7 +67,7 @@ public class SongAddingMonitor implements Runnable {
 				p.bottomMargin = UI._8dp;
 				p.gravity = Gravity.LEFT | Gravity.BOTTOM;
 				notification.setLayoutParams(p);
-				notification.setTextAppearance(activity, R.style.SmallText);
+				UI.smallText(notification);
 				notification.setText(R.string.msg_adding);
 				notification.setBackgroundDrawable(new BorderDrawable(UI.color_current_border, UI.color_current, true, true, true, true));
 				notification.setTextColor(UI.colorState_text_sel);

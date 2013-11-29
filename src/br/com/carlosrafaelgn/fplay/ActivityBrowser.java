@@ -134,21 +134,21 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		if (fileList.getItemT(position).isDirectory) {
 			if (add) {
 				if (!UI.msgAddShown) {
-					(new AlertDialog.Builder(getHostActivity()))
+					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 					.setTitle(getText(R.string.add))
 					.setMessage(getText(R.string.msg_add))
 					.setPositiveButton(R.string.got_it, null)
-					.show();
+					.create());
 					UI.msgAddShown = true;
 					//return;
 				}
 			} else {
 				if (!UI.msgPlayShown) {
-					(new AlertDialog.Builder(getHostActivity()))
+					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 					.setTitle(getText(R.string.play))
 					.setMessage(getText(R.string.msg_play))
 					.setPositiveButton(R.string.got_it, null)
-					.show();
+					.create());
 					UI.msgPlayShown = true;
 					//return;
 				}
@@ -226,6 +226,8 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 						Player.songs.addingStarted();
 						SongAddingMonitor.start(getHostActivity());
 						FileFetcher.fetchFiles(f.path, Player.songs, false, (id == MNU_ADDFOLDERSUB) || (id == MNU_PLAYFOLDERSUB), true, play);
+						if (play && Player.goBackWhenPlayingFolders)
+							finish();
 					} catch (Throwable ex) {
 						Player.songs.addingEnded();
 						UI.toast(getApplication(), ex.getMessage());
@@ -406,12 +408,12 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			p.topMargin = UI._8dp;
 			txtTitle.setLayoutParams(p);
 			l.addView(txtTitle);
-			(new AlertDialog.Builder(ctx))
+			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
 			.setTitle(getText(R.string.add_url_title))
 			.setView(l)
 			.setPositiveButton(R.string.add, this)
 			.setNegativeButton(R.string.cancel, this)
-			.show();
+			.create());
 		} else if (view == chkFavorite) {
 			if (Player.path.length() <= 1)
 				return;
@@ -497,9 +499,11 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_browser);
+		UI.largeTextAndColor((TextView)findViewById(R.id.lblLoading));
 		lblPath = (TextView)findViewById(R.id.lblPath);
 		lblPath.setText(Player.path);
 		lblPath.setTextColor(UI.colorState_text_sel);
+		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_current));
 		list = (BgListView)findViewById(R.id.list);
 		fileList.setObserver(list);

@@ -19,8 +19,7 @@
         android:paddingTop="2dp"
         android:scrollHorizontally="true"
         android:singleLine="true"
-        android:text="@string/nothing_playing"
-        android:textAppearance="@style/LargeText" />
+        android:text="@string/nothing_playing" />
 
     <TextView
         android:id="@+id/lblMsgSelMove"
@@ -35,7 +34,6 @@
         android:scrollHorizontally="true"
         android:singleLine="true"
         android:text="@string/msg_sel"
-        android:textAppearance="@style/LargeText"
         android:visibility="gone" />
 
     <LinearLayout

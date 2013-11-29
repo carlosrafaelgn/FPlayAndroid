@@ -49,20 +49,19 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="left|bottom"
                 android:layout_marginRight="8dp"
-                android:singleLine="true"
-                android:textAppearance="@style/LargeText" />
+                android:singleLine="true" />
 
             <TextView
                 android:id="@+id/lblVersion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="left|bottom"
-                android:singleLine="true"
-                android:textAppearance="@style/SmallText" />
+                android:singleLine="true" />
         </LinearLayout>
     </RelativeLayout>
 
     <TextView
+        android:id="@+id/lblAppBy"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -70,8 +69,7 @@
         android:layout_marginRight="8dp"
         android:layout_marginTop="0dp"
         android:gravity="right"
-        android:text="@string/app_by"
-        android:textAppearance="@style/SmallText" />
+        android:text="@string/app_by" />
 
     <ScrollView
         android:id="@+id/list"
@@ -94,8 +92,7 @@
                 android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/btnGoBack"
                 android:nextFocusRight="@+id/btnGoBack"
-                android:nextFocusUp="@+id/btnGoBack"
-                android:textAppearance="@style/SmallText" >
+                android:nextFocusUp="@+id/btnGoBack" >
 
                 <requestFocus />
             </TextView>
@@ -106,8 +103,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:focusable="false"
-                android:gravity="right"
-                android:textAppearance="@style/SmallText" >
+                android:gravity="right" >
             </TextView>
         </LinearLayout>
     </ScrollView>

@@ -164,14 +164,17 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		if (!hasButtons)
 			return;
 		final FileSt f = fileList.getItemT(position);
-		if (add)
+		if (add) {
 			listener.onAddClicked(id, f.path, f.name);
-		else
+		} else {
 			listener.onPlayClicked(id, f.path, f.name);
+			if (Player.goBackWhenPlayingFolders)
+				finish();
+		}
 	}
 	
 	private void confirm(final String path, final String name, final boolean delete) {
-		(new AlertDialog.Builder(getHostActivity()))
+		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 		.setTitle(getText(R.string.oops))
 		.setMessage(format(delete ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, name))
 		.setPositiveButton(delete ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
@@ -190,7 +193,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 			}
 		})
 		.setNegativeButton(R.string.cancel, this)
-		.show();
+		.create());
 	}
 	
 	@Override
@@ -245,12 +248,12 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 			if (s >= 0)
 				txtSaveAsName.setText(fileList.getItemT(s).name);
 			l.addView(txtSaveAsName);
-			(new AlertDialog.Builder(getHostActivity()))
+			UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 			.setTitle(format(R.string.msg_create_new_title, itemType))
 			.setView(l)
 			.setPositiveButton(R.string.create, this)
 			.setNegativeButton(R.string.cancel, this)
-			.show();
+			.create());
 			break;
 		case MNU_DELETE:
 			if (s >= 0) {
@@ -357,6 +360,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_file_selection);
+		UI.largeTextAndColor((TextView)findViewById(R.id.lblLoading));
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);

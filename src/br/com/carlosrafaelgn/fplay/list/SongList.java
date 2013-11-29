@@ -322,7 +322,8 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			int n = current + 1;
 			if (n < 0 || n >= count)
 				n = 0;
-			Player.nextMayHaveChanged(items[n]);
+			if (n < count)
+				Player.nextMayHaveChanged(items[n]);
 		}
 	}
 	

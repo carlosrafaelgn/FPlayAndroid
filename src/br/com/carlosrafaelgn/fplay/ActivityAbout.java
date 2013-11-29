@@ -54,12 +54,17 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
 		findViewById(R.id.list).setBackgroundDrawable(new BorderDrawable(false));
-		((TextView)findViewById(R.id.lblTitle)).setText("FPlay");
+		final TextView lblTitle = (TextView)findViewById(R.id.lblTitle);
+		lblTitle.setText("FPlay");
+		UI.largeTextAndColor(lblTitle);
+		final TextView lblVersion = (TextView)findViewById(R.id.lblVersion);
+		UI.smallTextAndColor(lblVersion);
 		try {
 			final PackageInfo inf = getApplication().getPackageManager().getPackageInfo(getApplication().getPackageName(), 0);
-			((TextView)findViewById(R.id.lblVersion)).setText("v" + inf.versionName);
+			lblVersion.setText("v" + inf.versionName);
 		} catch (Throwable e) {
 		}
+		UI.smallTextAndColor((TextView)findViewById(R.id.lblAppBy));
 		final TextView lblMsg = (TextView)findViewById(R.id.lblMsg);
 		final StringBuilder sb = new StringBuilder(1024);
 		sb.append(getText(R.string.app_more_info));
@@ -69,7 +74,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblMsg.setLinksClickable(true);
 		lblMsg.setText(sb.toString());
 		lblMsg.setLinkTextColor(UI.color_selected_grad_dk);
-		lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
+		UI.smallTextAndColor(lblMsg);
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));
@@ -91,6 +96,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 			sb.append("\nLDPI");
 		if (UI.isLargeScreen)
 			sb.append("\nLarge Screen");
+		lblDbg.setTypeface(UI.defaultTypeface);
 		lblDbg.setTextColor(UI.color_selected_grad_dk);
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.spToPxI(12));
 		lblDbg.setText(sb.toString());

@@ -166,6 +166,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_ISVERTICALMARGINLARGE = 0x0018;
 	private static final int OPT_HANDLECALLKEY = 0x0019;
 	private static final int OPT_PLAYWHENHEADSETPLUGGED = 0x001A;
+	private static final int OPT_USEALTERNATETYPEFACE = 0x001B;
+	private static final int OPT_GOBACKWHENPLAYINGFOLDERS = 0x001C;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -204,7 +206,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static HashSet<String> favoriteFolders;
 	public static String path, originalPath;
 	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
-	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged;
+	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged;
 	
 	public static void loadConfig(Context context) {
 		SerializableMap opts = SerializableMap.deserialize(context, "_Player");
@@ -235,6 +237,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, !UI.isLowDpiScreen);
 		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
+		UI.setUsingAlternateTypeface(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false));
+		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
 		UI.msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
 		UI.msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
@@ -280,6 +284,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
 		opts.put(OPT_HANDLECALLKEY, handleCallKey);
 		opts.put(OPT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
+		opts.put(OPT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
+		opts.put(OPT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
 		opts.put(OPT_MSGADDSHOWN, UI.msgAddShown);
 		opts.put(OPT_MSGPLAYSHOWN, UI.msgPlayShown);
 		opts.put(OPT_MSGSTARTUPSHOWN, UI.msgStartupShown);
@@ -670,10 +676,15 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		//http://stackoverflow.com/questions/15527614/send-track-informations-via-a2dp-avrcp
 		//http://stackoverflow.com/questions/14536597/how-does-the-android-lockscreen-get-playing-song
 		//http://stackoverflow.com/questions/10510292/how-to-get-current-music-track-info
+		//
+		//https://android.googlesource.com/platform/packages/apps/Bluetooth/+/android-4.3_r0.9.1/src/com/android/bluetooth/a2dp/Avrcp.java
+		//
 		if (currentSong == null) {
 			thePlayer.sendBroadcast(new Intent("com.android.music.playbackcomplete"));
 		} else {
-			final Intent i = new Intent(onlyPauseChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
+			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
+			//final Intent i = new Intent(onlyPauseChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
+			final Intent i = new Intent("com.android.music.playstatechanged");
 			i.putExtra("id", currentSong.id);
 			i.putExtra("songid", currentSong.id);
 	        i.putExtra("artist", currentSong.artist);
@@ -823,7 +834,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static void startPlayer(MediaPlayer mp) {
-		if (silenceMode != SILENCE_NONE) {
+		if (silenceMode != SILENCE_NONE && volumeTimer != null) {
 			final int incr = (unpaused ? fadeInIncrementOnPause : ((silenceMode == SILENCE_FOCUS) ? fadeInIncrementOnFocus : fadeInIncrementOnOther));
 			if (incr > 30) {
 				actualVolume = 0;
@@ -1009,7 +1020,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		audioSink = 0;
 		try {
 			//isSpeakerphoneOn() has not actually returned true on any devices
-			//I have tested so far, anyway....
+			//I have tested so far, anyway.... leaving this here won't hurt...
 			if (audioManager.isSpeakerphoneOn())
 				audioSink = AUDIO_SINK_DEVICE;
 		} catch (Throwable ex) {
@@ -1463,15 +1474,17 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			//do not restart playback in scenarios like this (it really scares people!):
 			//the person has answered a call, removed the headset, ended the call without
 			//the headset plugged in, and then the focus came back to us
-			if (audioSinkBeforeFocusLoss != AUDIO_SINK_DEVICE && audioSink == AUDIO_SINK_DEVICE)
+			if (audioSinkBeforeFocusLoss != AUDIO_SINK_DEVICE && audioSink == AUDIO_SINK_DEVICE) {
+				wasPlayingBeforeFocusLoss = false;
 				requestFocus();
-			else
+			} else {
 				playInternal(SongList.HOW_CURRENT);
+			}
 		}
 	}
 	
 	private static void processPreparation() {
-		if (nextSong != null && !nextSong.isHttp && nextPreparationEnabled && currentSong.lengthMS > 10000 && nextSong.lengthMS > 10000)
+		if (prepareDelayTimer != null && currentSong != null && nextSong != null && !nextSong.isHttp && nextPreparationEnabled && currentSong.lengthMS > 10000 && nextSong.lengthMS > 10000)
 			prepareDelayTimer.start(5000, true, nextSong);
 	}
 	
@@ -1557,7 +1570,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case AudioManager.AUDIOFOCUS_GAIN:
 			if (!hasFocus) {
 				hasFocus = true;
-				focusDelayTimer.start(1500, true);
+				if (focusDelayTimer != null)
+					focusDelayTimer.start(1500, true);
 			} else {
 				//processFocusGain();
 				//came here from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK

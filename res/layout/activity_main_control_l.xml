@@ -93,8 +93,7 @@
             android:nextFocusRight="@+id/btnNext"
             android:nextFocusUp="@+id/btnIncreaseVolume"
             android:padding="2dp"
-            android:text="@string/nothing_playing"
-            android:textAppearance="@style/LargeText" />
+            android:text="@string/nothing_playing" />
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnNext"

@@ -84,14 +84,14 @@
             android:indeterminate="true" />
 
         <TextView
+            android:id="@+id/lblLoading"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:gravity="center"
             android:padding="2dp"
             android:singleLine="true"
-            android:text="@string/loading"
-            android:textAppearance="@style/LargeText" />
+            android:text="@string/loading" />
     </LinearLayout>
 
 </merge>

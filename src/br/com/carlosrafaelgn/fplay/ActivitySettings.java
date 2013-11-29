@@ -52,9 +52,9 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.LinearLayout.LayoutParams;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -63,13 +63,14 @@ import br.com.carlosrafaelgn.fplay.ui.SettingView;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener {
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
@@ -141,6 +142,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	private void loadSettings() {
 		Player.loadConfig(getApplication());
+		onCleanupLayout();
+		onCreateLayout(false);
+		System.gc();
+		optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface());
 		optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 		optKeepScreenOn.setChecked(UI.keepScreenOn);
 		if (UI.keepScreenOn)
@@ -156,6 +161,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optMarqueeTitle.setChecked(UI.marqueeTitle);
 		optPrepareNext.setChecked(Player.nextPreparationEnabled);
 		optClearListWhenPlayingFolders.setChecked(Player.clearListWhenPlayingFolders);
+		optGoBackWhenPlayingFolders.setChecked(Player.goBackWhenPlayingFolders);
 		
 		optVolumeControlType.setSecondaryText(getVolumeString());
 		if (UI.forcedOrientation == 0)
@@ -297,12 +303,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				txtCustomMinutes.setLayoutParams(p);
 				txtCustomMinutes.setText(Integer.toString(Player.getTurnOffTimerCustomMinutes()));
 				l.addView(txtCustomMinutes);
-				(new AlertDialog.Builder(getHostActivity()))
+				UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 				.setTitle(R.string.msg_turn_off_title)
 				.setView(l)
 				.setPositiveButton(R.string.ok, this)
 				.setNegativeButton(R.string.cancel, this)
-				.show();
+				.create());
 			}
 		} else if (lastMenuView == optVolumeControlType) {
 			switch (item.getItemId()) {
@@ -368,6 +374,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 	
 	@SuppressWarnings("deprecation")
+	private void addHeader(Context ctx, int resId) {
+		final TextView hdr = new TextView(ctx);
+		hdr.setText(resId);
+		hdr.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		hdr.setMaxLines(3);
+		hdr.setPadding(UI._8dp, UI._8sp, UI._8dp, UI._8sp);
+		if (UI.isLargeScreen)
+			UI.largeText(hdr);
+		else
+			UI.mediumText(hdr);
+		hdr.setTextColor(UI.colorState_text_sel);
+		hdr.setBackgroundDrawable(new ColorDrawable(UI.color_current));
+		panelSettings.addView(hdr);
+	}
+	
+	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_settings);
@@ -384,6 +406,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setBackgroundDrawable(new BorderDrawable(false));
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		
+		optUseAlternateTypeface = new SettingView(ctx, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface());
+		optUseAlternateTypeface.setOnClickListener(this);
 		optAutoTurnOff = new SettingView(ctx, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false);
 		optAutoTurnOff.setOnClickListener(this);
 		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn);
@@ -408,6 +432,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optPrepareNext.setOnClickListener(this);
 		optClearListWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders);
 		optClearListWhenPlayingFolders.setOnClickListener(this);
+		optGoBackWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders);
+		optGoBackWhenPlayingFolders.setOnClickListener(this);
 		optForceOrientation = new SettingView(ctx, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false);
 		optForceOrientation.setOnClickListener(this);
 		optFadeInFocus = new SettingView(ctx, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false);
@@ -424,21 +450,26 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		CustomContextMenu.registerForContextMenu(optFadeInOther, this);
 		
 		panelSettings.addView(optAutoTurnOff);
+		addHeader(ctx, R.string.hdr_display);
 		panelSettings.addView(optKeepScreenOn);
-		panelSettings.addView(optVolumeControlType);
+		panelSettings.addView(optUseAlternateTypeface);
+		panelSettings.addView(optForceOrientation);
 		panelSettings.addView(optIsDividerVisible);
 		panelSettings.addView(optIsVerticalMarginLarge);
-		panelSettings.addView(optHandleCallKey);
+		addHeader(ctx, R.string.hdr_playback);
 		panelSettings.addView(optPlayWhenHeadsetPlugged);
+		panelSettings.addView(optHandleCallKey);
+		panelSettings.addView(optVolumeControlType);
+		panelSettings.addView(optFadeInFocus);
+		panelSettings.addView(optFadeInPause);
+		panelSettings.addView(optFadeInOther);
+		addHeader(ctx, R.string.hdr_behavior);
+		panelSettings.addView(optClearListWhenPlayingFolders);
+		panelSettings.addView(optGoBackWhenPlayingFolders);
 		panelSettings.addView(optBlockBackKey);
 		panelSettings.addView(optDoubleClickMode);
 		panelSettings.addView(optMarqueeTitle);
 		panelSettings.addView(optPrepareNext);
-		panelSettings.addView(optClearListWhenPlayingFolders);
-		panelSettings.addView(optForceOrientation);
-		panelSettings.addView(optFadeInFocus);
-		panelSettings.addView(optFadeInPause);
-		panelSettings.addView(optFadeInOther);
 		
 		if (UI.isLowDpiScreen && !UI.isLargeScreen)
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
@@ -466,6 +497,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		btnGoBack = null;
 		btnAbout = null;
 		panelSettings = null;
+		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
 		optKeepScreenOn = null;
 		optVolumeControlType = null;
@@ -478,6 +510,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optMarqueeTitle = null;
 		optPrepareNext = null;
 		optClearListWhenPlayingFolders = null;
+		optGoBackWhenPlayingFolders = null;
 		optForceOrientation = null;
 		optFadeInFocus = null;
 		optFadeInPause = null;
@@ -491,6 +524,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			finish();
 		} else if (view == btnAbout) {
 			startActivity(new ActivityAbout());
+		} else if (view == optUseAlternateTypeface) {
+			final boolean desired = optUseAlternateTypeface.isChecked();
+			UI.setUsingAlternateTypeface(getHostActivity(), desired);
+			if (UI.isUsingAlternateTypeface() != desired) {
+				optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface());
+			} else {
+				onCleanupLayout();
+				onCreateLayout(false);
+				System.gc();
+			}
 		} else if (view == optKeepScreenOn) {
 			UI.keepScreenOn = optKeepScreenOn.isChecked();
 			if (UI.keepScreenOn)
@@ -526,6 +569,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.nextPreparationEnabled = optPrepareNext.isChecked();
 		} else if (view == optClearListWhenPlayingFolders) {
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
+		} else if (view == optGoBackWhenPlayingFolders) {
+			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
 		} else if (view == optAutoTurnOff || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
 		}

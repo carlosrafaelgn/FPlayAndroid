@@ -33,7 +33,9 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -49,12 +51,15 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextUtils.TruncateAt;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import br.com.carlosrafaelgn.fplay.R;
@@ -139,10 +144,11 @@ public final class UI {
 	public static final String ICON_GRIP = "G";
 	
 	public static final ColorStateList colorState_text_normal = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
+	public static final ColorStateList colorState_text = ColorStateList.valueOf(color_text);
 	public static final ColorStateList colorState_text_sel = ColorStateList.valueOf(color_text_selected);
 	public static final ColorStateList colorState_text_highlight = ColorStateList.valueOf(color_current);//color_selected_border);
 	
-	public static Typeface iconsTypeface;
+	public static Typeface iconsTypeface, defaultTypeface;
 	
 	private static class Gradient {
 		private static final Gradient[] gradients = new Gradient[16];
@@ -188,6 +194,7 @@ public final class UI {
 	
 	private static String emptyListString;
     private static int emptyListStringHalfWidth;
+    private static boolean alternateTypefaceActive, useAlternateTypeface;
 	
 	public static float density, scaledDensity, xdpi_1_72;
 	
@@ -208,10 +215,34 @@ public final class UI {
 		textPaint.setDither(false);
 		textPaint.setAntiAlias(true);
 		textPaint.setStyle(Paint.Style.FILL);
-		textPaint.setTypeface(Typeface.SANS_SERIF);
+		textPaint.setTypeface(Typeface.DEFAULT);
 		textPaint.setTextAlign(Paint.Align.LEFT);
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
+	}
+	
+	public static boolean isUsingAlternateTypeface() {
+		return useAlternateTypeface;
+	}
+	
+	public static void setUsingAlternateTypeface(Context context, boolean useAlternateTypeface) {
+		UI.useAlternateTypeface = useAlternateTypeface;
+		if (useAlternateTypeface) {
+			if (defaultTypeface == null || !alternateTypefaceActive) {
+				alternateTypefaceActive = true;
+				try {
+					defaultTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/OpenDyslexicRegular.otf");
+				} catch (Throwable ex) {
+					UI.useAlternateTypeface = false;
+					alternateTypefaceActive = false;
+					defaultTypeface = Typeface.DEFAULT;
+				}
+			}
+		} else {
+			alternateTypefaceActive = false;
+			defaultTypeface = Typeface.DEFAULT;
+		}
+		textPaint.setTypeface(defaultTypeface);
 	}
 	
 	private static void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
@@ -249,6 +280,7 @@ public final class UI {
 	public static void initialize(Context context) {
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
+		setUsingAlternateTypeface(context, useAlternateTypeface);
 		final Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 		final DisplayMetrics displayMetrics = new DisplayMetrics();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -336,7 +368,7 @@ public final class UI {
 	    c.setBitmap(icNext);
 	    c.drawText(ICON_NEXT, 0, defaultControlContentsSize, textPaint);
 	    //reset to the original state
-	    textPaint.setTypeface(Typeface.SANS_SERIF);
+	    textPaint.setTypeface(defaultTypeface);
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
 	}
@@ -366,7 +398,7 @@ public final class UI {
 	    c.setBitmap(icExitNotif);
 	    c.drawText(ICON_EXIT, 0, defaultControlContentsSize, textPaint);
 	    //reset to the original state
-	    textPaint.setTypeface(Typeface.SANS_SERIF);
+	    textPaint.setTypeface(defaultTypeface);
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
 	}
@@ -552,6 +584,39 @@ public final class UI {
 		return state;
 	}
 	
+	public static void smallText(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _14sp);
+		view.setTypeface(defaultTypeface);
+	}
+	
+	public static void smallTextAndColor(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _14sp);
+		view.setTextColor(colorState_text);
+		view.setTypeface(defaultTypeface);
+	}
+	
+	public static void mediumText(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _18sp);
+		view.setTypeface(defaultTypeface);
+	}
+	
+	public static void mediumTextAndColor(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _18sp);
+		view.setTextColor(colorState_text);
+		view.setTypeface(defaultTypeface);
+	}
+	
+	public static void largeText(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _22sp);
+		view.setTypeface(defaultTypeface);
+	}
+	
+	public static void largeTextAndColor(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _22sp);
+		view.setTextColor(colorState_text);
+		view.setTypeface(defaultTypeface);
+	}
+	
 	public static void toast(Context context, Throwable ex) {
 		String s = ex.getMessage();
 		if (s != null && s.length() > 0)
@@ -569,7 +634,7 @@ public final class UI {
 	public static void toast(Context context, String text) {
 		final Toast t = new Toast(context);
 		final TextView v = new TextView(context);
-		v.setTextAppearance(context, R.style.MediumText);
+		mediumText(v);
 		v.setTextColor(UI.colorState_text_sel);
 		v.setBackgroundDrawable(new BorderDrawable(color_current_border, color_current, true, true, true, true));
 		v.setGravity(Gravity.CENTER);
@@ -602,5 +667,40 @@ public final class UI {
 	public static void setNextFocusForwardId(View view, int nextFocusForwardId) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			view.setNextFocusForwardId(nextFocusForwardId);
+	}
+	
+	public static void prepareDialogAndShow(final AlertDialog dialog) {
+		if (alternateTypefaceActive) {
+			//https://code.google.com/p/android/issues/detail?id=6360
+			dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+				private void scanChildren(ViewGroup parent) {
+					for (int i = parent.getChildCount(); i >= 0; i--) {
+						final View v = parent.getChildAt(i);
+						if (v instanceof ViewGroup)
+							scanChildren((ViewGroup)v);
+						else if (v instanceof TextView)
+							((TextView)v).setTypeface(defaultTypeface);
+					}
+				}
+				
+				@Override
+				public void onShow(DialogInterface dlg) {
+					View v = dialog.findViewById(android.R.id.content);
+					if (v != null && (v instanceof ViewGroup)) {
+						scanChildren((ViewGroup)v);
+					} else {
+						//at least try to change the buttons...
+						Button btn;
+						if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
+							btn.setTypeface(defaultTypeface);
+						if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
+							btn.setTypeface(defaultTypeface);
+						if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
+							btn.setTypeface(defaultTypeface);
+					}
+				}
+			});
+		}
+		dialog.show();
 	}
 }

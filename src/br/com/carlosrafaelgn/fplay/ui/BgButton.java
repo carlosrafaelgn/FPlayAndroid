@@ -35,7 +35,6 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
@@ -73,7 +72,7 @@ public final class BgButton extends Button {
 	private void init() {
 		super.setBackgroundResource(0);
 		super.setTextColor(UI.colorState_text_normal);
-		super.setTypeface(Typeface.SANS_SERIF);
+		super.setTypeface(UI.defaultTypeface);
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		super.setGravity(Gravity.CENTER);
 		super.setPadding(UI._8sp, UI._8sp, UI._8sp, UI._8sp);

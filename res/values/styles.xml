@@ -27,18 +27,8 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
-    <style name="LargeText" parent="@android:style/TextAppearance.Large">
-        <item name="android:textSize">22sp</item>
-        <item name="android:textColor">@color/color_text</item>
-    </style>
-
     <style name="MediumText" parent="@android:style/TextAppearance.Medium">
         <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/color_text</item>
-    </style>
-
-    <style name="SmallText" parent="@android:style/TextAppearance.Small">
-        <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/color_text</item>
     </style>
 

@@ -24,8 +24,7 @@
         android:paddingTop="2dp"
         android:scrollHorizontally="true"
         android:singleLine="true"
-        android:text="@string/nothing_playing"
-        android:textAppearance="@style/LargeText" />
+        android:text="@string/nothing_playing" />
 
     <TextView
         android:id="@+id/lblMsgSelMove"
@@ -40,7 +39,6 @@
         android:scrollHorizontally="true"
         android:singleLine="true"
         android:text="@string/msg_sel"
-        android:textAppearance="@style/LargeText"
         android:visibility="gone" />
 
     <LinearLayout
@@ -63,7 +61,6 @@
             android:padding="2dp"
             android:singleLine="true"
             android:text="@string/no_time"
-            android:textAppearance="@style/LargeText"
             android:visibility="gone" />
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton

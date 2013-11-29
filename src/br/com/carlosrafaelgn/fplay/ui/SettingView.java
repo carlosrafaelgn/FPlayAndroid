@@ -37,7 +37,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
@@ -106,15 +105,12 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		} else {
 			checkBox = null;
 		}
-		if (UI.isLargeScreen) {
-			textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			if (secondaryTextView != null)
-				secondaryTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		} else {
-			textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			if (secondaryTextView != null)
-				secondaryTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		}
+		if (UI.isLargeScreen)
+			UI.largeText(textView);
+		else
+			UI.mediumText(textView);
+		if (secondaryTextView != null)
+			UI.mediumText(secondaryTextView);
 		setText(text);
 		setSecondaryText(secondaryText);
 		addView(textView);

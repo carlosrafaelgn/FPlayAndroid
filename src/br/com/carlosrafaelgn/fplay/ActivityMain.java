@@ -641,6 +641,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		btnMenu.setOnClickListener(this);
 		CustomContextMenu.registerForContextMenu(btnMenu, this);
 		if (Player.isControlMode()) {
+			UI.largeText(lblTitle);
 			btnPrev.setIconNoChanges(UI.ICON_PREV);
 			btnNext.setIconNoChanges(UI.ICON_NEXT);
 			btnMenu.setIconNoChanges(UI.ICON_MENU);
@@ -731,6 +732,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				btnNext.setPadding(ph, pv, ph, pv);
 			}
 		} else {
+			UI.largeText(lblTitle);
 			btnPrev.setIcon(UI.ICON_PREV);
 			btnNext.setIcon(UI.ICON_NEXT);
 			btnMenu.setIcon(UI.ICON_MENU);
@@ -748,6 +750,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	        }
 	        
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
+			UI.largeTextAndColor(lblMsgSelMove);
 			barSeek = (BgSeekBar)findViewById(R.id.barSeek);
 			barSeek.setOnBgSeekBarChangeListener(this);
 			barSeek.setMax(MAX_SEEK);
@@ -792,7 +795,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				alwaysShowSecondary = false;
 				lblTime = (TextView)findViewById(R.id.lblTime);
 				lblTime.setVisibility(View.VISIBLE);
-				lblTime.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+				UI.mediumTextAndColor(lblTime);
 				panelControls.setPadding(0, 0, 0, 0);
 				panelSecondary.setVisibility(View.GONE);
 				panelSecondary.setPadding(0, 0, 0, 0);
@@ -1198,7 +1201,6 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		}
 	}
 	
-
 	@Override
 	public void onPressingChanged(BgButton button, boolean pressed) {
 		if (button == btnDecreaseVolume) {
