@@ -71,7 +71,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		this.artistIcon = ((artistIcon == null) ? null : ((BitmapDrawable)artistIcon).getBitmap());
 		this.albumIcon = ((albumIcon == null) ? null : ((BitmapDrawable)albumIcon).getBitmap());
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = UI.defaultControlContentsSize + (verticalMargin << 1);
+		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
 		if (hasButtons) {
 			btnAdd = new BgButton(context);
 			LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
@@ -233,7 +233,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		getDrawingRect(UI.rect);
 		UI.drawBg(canvas, state, UI.rect, false);
 		if (bitmap != null)
-			canvas.drawBitmap(bitmap, UI._8dp, verticalMargin, null);
+			canvas.drawBitmap(bitmap, UI._8dp, (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1), null);
 		UI.drawText(canvas, ellipsizedName, (state == 0) ? UI.color_text : UI.color_text_selected, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		super.dispatchDraw(canvas);
 	}

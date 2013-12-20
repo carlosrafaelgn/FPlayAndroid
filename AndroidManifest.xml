@@ -3,11 +3,11 @@
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
     android:versionCode="13"
-    android:versionName="0.81" >
+    android:versionName="0.82" >
 
     <uses-sdk
         android:minSdkVersion="10"
-        android:targetSdkVersion="18" />
+        android:targetSdkVersion="19" />
 
     <!-- http://developer.android.com/guide/topics/manifest/supports-screens-element.html -->
     <supports-screens

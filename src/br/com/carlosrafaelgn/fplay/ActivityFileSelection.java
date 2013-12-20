@@ -248,7 +248,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 			if (s >= 0)
 				txtSaveAsName.setText(fileList.getItemT(s).name);
 			l.addView(txtSaveAsName);
-			UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
+			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
 			.setTitle(format(R.string.msg_create_new_title, itemType))
 			.setView(l)
 			.setPositiveButton(R.string.create, this)

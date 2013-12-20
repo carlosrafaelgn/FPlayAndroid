@@ -66,20 +66,20 @@ public final class TextIconDrawable extends Drawable {
 	
 	public TextIconDrawable(String icon) {
 		this.icon = icon;
-		this.size = UI._22spBox;
-		this.y = UI._22spBox >> 1;
+		this.size = UI._IconBox;
+		this.y = UI._IconBox >> 1;
 		this.outsideMenu = false;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, UI._22spBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._22spBox);
+		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._IconBox);
 	}
 	
 	public TextIconDrawable(String icon, boolean outsideMenu) {
 		this.icon = icon;
-		this.size = UI._22spBox;
-		this.y = UI._22spBox >> 1;
+		this.size = UI._IconBox;
+		this.y = UI._IconBox >> 1;
 		this.outsideMenu = outsideMenu;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, UI._22spBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._22spBox);
+		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._IconBox);
 	}
 	
 	public TextIconDrawable(String icon, boolean outsideMenu, int size) {

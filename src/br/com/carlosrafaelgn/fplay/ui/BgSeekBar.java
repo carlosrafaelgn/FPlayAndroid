@@ -55,7 +55,7 @@ public final class BgSeekBar extends View {
 	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textBgY, textSize, textSizeIdx, emptySpaceColor, keyIncrement;
 	private float delta;
 	private boolean forceBlack, vertical, tracking, drawTextFirst;
-	private int state;
+	private int state, thumbWidth;
 	private OnBgSeekBarChangeListener listener;
 	
 	public BgSeekBar(Context context) {
@@ -77,6 +77,7 @@ public final class BgSeekBar extends View {
 		state = UI.STATE_SELECTED;
 		max = 100;
 		textSizeIdx = 0;
+		thumbWidth = (UI._IconBox * 90) / 100;
 		setTextSizeIndex(2);
 		setEmptySpaceColor(UI.color_bg);
 		super.setClickable(true);
@@ -159,12 +160,12 @@ public final class BgSeekBar extends View {
 	
 	private void updateTextX() {
 		final int s = (vertical ? height : width);
-		if (filledSize < textWidth && filledSize < ((s >> 1) - (UI._18spBox >> 1))) {
+		if (filledSize < textWidth && filledSize < ((s >> 1) - (thumbWidth >> 1))) {
 			drawTextFirst = false;
 			textColor = UI.color_text;
 			textX = s - textWidth;
-			if (textX < filledSize + UI._18spBox)
-				textX = filledSize + UI._18spBox;
+			if (textX < filledSize + thumbWidth)
+				textX = filledSize + thumbWidth;
 		} else {
 			drawTextFirst = true;
 			textColor = UI.color_text_selected;
@@ -231,7 +232,7 @@ public final class BgSeekBar extends View {
 	}
 	
 	private void updateBar() {
-		final int total = (vertical ? height : width) - (UI._18spBox);
+		final int total = (vertical ? height : width) - thumbWidth;
 		//filledSize = ((total > 0) ? (int)((float)(total * value) / (float)max) : 0);
 		filledSize = ((total > 0) ? (int)((float)(total * value) / (float)max) : 0);
 		updateTextX();
@@ -335,7 +336,7 @@ public final class BgSeekBar extends View {
 	}
 	
 	private void trackTouchEvent(float position) {
-		final float total = (vertical ? height : width) - (UI._18spBox);
+		final float total = (vertical ? height : width) - thumbWidth;
 		if (total <= 0)
 			return;
 		if (vertical)
@@ -361,7 +362,7 @@ public final class BgSeekBar extends View {
 			tracking = true;
 			setPressed(true);
 			final float p = (vertical ? event.getY() : event.getX());
-			delta = ((p >= filledSize && p < (filledSize + UI._18spBox)) ? (p - filledSize) : (UI._18spBox >> 1));
+			delta = ((p >= filledSize && p < (filledSize + thumbWidth)) ? (p - filledSize) : (thumbWidth >> 1));
 			trackTouchEvent(p);
 			break;
 	    case MotionEvent.ACTION_MOVE:
@@ -481,7 +482,7 @@ public final class BgSeekBar extends View {
 			UI.drawText(canvas, text, forceBlack ? UI.color_text_selected : textColor, textSize, textX, textY);
 		UI.rect.left = filledSize;
 		UI.rect.top = 0;
-		UI.rect.right = filledSize + UI._18spBox;
+		UI.rect.right = filledSize + thumbWidth;
 		UI.rect.bottom = bottom;
 		UI.drawRect(canvas, 0, color, UI.rect);
 		UI.rect.left += UI._1dp;
@@ -489,7 +490,7 @@ public final class BgSeekBar extends View {
 		UI.rect.right -= UI._1dp;
 		UI.rect.bottom -= UI._1dp;
 		UI.drawBgBorderless(canvas, state, UI.rect);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (UI._18spBox >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (thumbWidth >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
 		if (vertical)
 			canvas.restore();
 	}

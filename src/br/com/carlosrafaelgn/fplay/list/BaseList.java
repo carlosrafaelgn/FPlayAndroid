@@ -45,17 +45,19 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 //NEED TO SYNCHRONIZE THE ACCESS TO THE ITEMS
 //
 public abstract class BaseList<E extends BaseItem> implements ListAdapter {
-	private static final int LIST_DELTA = 32;
+	protected static final int LIST_DELTA = 32;
 	
 	protected static final int SELECTION_CHANGED = 0;
-	protected static final int CONTENTS_CHANGED = 1;
-	protected static final int LIST_CLEARED = 2;
+	protected static final int LIST_CLEARED = 1;
+	protected static final int CONTENT_MOVED = 2;
+	protected static final int CONTENT_ADDED = 3;
+	protected static final int CONTENT_REMOVED = 4;
 	
 	protected BgListView listObserver;
 	protected DataSetObserver observer;
 	protected final Object sync;
 	protected E[] items;
-	protected int count, current, firstSel, lastSel, originalSel, lastDeleted, modificationVersion;
+	protected int count, current, firstSel, lastSel, originalSel, indexOfPreviouslyDeletedCurrentItem, modificationVersion;
 	
 	@SuppressWarnings("unchecked")
 	public BaseList(Class<E> c) {
@@ -65,21 +67,18 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 		this.firstSel = -1;
 		this.lastSel = -1;
 		this.originalSel = -1;
-		this.lastDeleted = -1;
+		this.indexOfPreviouslyDeletedCurrentItem = -1;
 	}
 	
+	protected void addingItems(int position, int count) { }
+	
+	protected void removingItems(int position, int count) { }
+	
+	protected void clearingItems() { }
+	
 	private void setCapacity(int capacity) {
-		if (capacity < count)
-			return;
-		
-		if (capacity > items.length ||
-			capacity <= (items.length - (2 * LIST_DELTA))) {
-			capacity += LIST_DELTA;
-		} else {
-			return;
-		}
-		
-		items = Arrays.copyOf(items, capacity);
+		if (capacity >= count && (capacity > items.length || capacity <= (items.length - (2 * LIST_DELTA))))
+			items = Arrays.copyOf(items, capacity + LIST_DELTA);
 	}
 	
 	public final void add(E item, int position) {
@@ -105,9 +104,10 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 				firstSel++;
 			if (lastSel >= position)
 				lastSel++;
+			addingItems(position, 1);
 		//}
 		
-		notifyDataSetChanged(-1, CONTENTS_CHANGED);
+		notifyDataSetChanged(-1, CONTENT_ADDED);
 	}
 	
 	public final void add(E[] items, int position, int count) {
@@ -135,13 +135,16 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 				lastSel += count;
 			if (originalSel >= position)
 				originalSel += count;
+			addingItems(position, count);
 		//}
 		
-		notifyDataSetChanged(-1, CONTENTS_CHANGED);
+		notifyDataSetChanged(-1, CONTENT_ADDED);
 	}	
 	
 	public final void clear() {
 		//synchronized (sync) {
+			clearingItems();
+			
 			modificationVersion++;
 			for (int i = items.length - 1; i >= 0; i--)
 				items[i] = null;
@@ -150,7 +153,7 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 			firstSel = -1;
 			lastSel = -1;
 			originalSel = -1;
-			lastDeleted = -1;
+			indexOfPreviouslyDeletedCurrentItem = -1;
 		//}
 		notifyDataSetChanged(-1, LIST_CLEARED);
 	}
@@ -169,6 +172,8 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 			setSelection(firstSel, firstSel, false, false);
 		
 		//synchronized (sync) {
+			removingItems(position, count);
+			
 			modificationVersion++;
 			final int tot = position + count;
 			for (int i = position; i < tot; i++)
@@ -176,9 +181,9 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 			
 			System.arraycopy(items, position + count, items, position, (this.count - position - count));
 			this.count -= count;
-			lastDeleted = -1;
+			indexOfPreviouslyDeletedCurrentItem = -1;
 			if (current >= position && current < (position + count)) {
-				lastDeleted = position;
+				indexOfPreviouslyDeletedCurrentItem = position;
 				current = -1;
 			} else if (current > position) {
 				current -= count;
@@ -199,7 +204,7 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 		//}
 		setCapacity(this.count);
 		
-		notifyDataSetChanged(originalSel, CONTENTS_CHANGED);
+		notifyDataSetChanged(originalSel, CONTENT_REMOVED);
 		
 		return true;
 	}
@@ -247,7 +252,7 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 			lastSel += delta;
 			originalSel = to;
 		//}
-		notifyDataSetChanged(-1, CONTENTS_CHANGED);
+		notifyDataSetChanged(-1, CONTENT_MOVED);
 	}
 	
 	public final int getSelection() {

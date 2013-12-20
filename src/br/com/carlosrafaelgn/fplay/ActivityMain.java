@@ -89,7 +89,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer.TimerHandler;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ClientActivity implements TimerHandler, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_EFFECTS = 105, MNU_VISUALIZER = 106, MNU_SETTINGS = 107, MNU_EXIT = 108;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109;
 	private TextView lblTitle, lblMsgSelMove, lblTime;
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
@@ -437,7 +437,13 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			s = menu.addSubMenu(2, 0, 1, R.string.more)
 					.setIcon(new TextIconDrawable(UI.ICON_MENU));
 			UI.prepare(s);
+			s.add(2, MNU_TOGGLERANDOMMODE, 0, Player.songs.isInRandomMode() ? R.string.random_list :  R.string.normal_list)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_SHUFFLE));
 		} else {
+			menu.add(2, MNU_TOGGLERANDOMMODE, 1, Player.songs.isInRandomMode() ? R.string.random_list :  R.string.normal_list)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_SHUFFLE));
 			UI.separator(menu, 2, 1);
 			s = menu;
 		}
@@ -475,6 +481,9 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			break;
 		case MNU_TOGGLECONTROLMODE:
 			Player.setControlMode(!Player.isControlMode());
+			break;
+		case MNU_TOGGLERANDOMMODE:
+			Player.songs.setRandomMode(!Player.songs.isInRandomMode());
 			break;
 		case MNU_EFFECTS:
 			startActivity(new ActivityEffects());

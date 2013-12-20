@@ -168,13 +168,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_PLAYWHENHEADSETPLUGGED = 0x001A;
 	private static final int OPT_USEALTERNATETYPEFACE = 0x001B;
 	private static final int OPT_GOBACKWHENPLAYINGFOLDERS = 0x001C;
+	private static final int OPT_RANDOMMODE = 0x001D;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
 	private static boolean playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode, volumeControlGlobal,
-		startRequested, stopRequested, prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
+		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
 		listLoaded, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
 	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink, audioSinkBeforeFocusLoss;
@@ -239,6 +240,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.setUsingAlternateTypeface(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
+		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
 		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
 		UI.msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
 		UI.msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
@@ -286,6 +288,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
 		opts.put(OPT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
 		opts.put(OPT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
+		opts.put(OPT_RANDOMMODE, songs.isInRandomMode());
 		opts.put(OPT_MSGADDSHOWN, UI.msgAddShown);
 		opts.put(OPT_MSGPLAYSHOWN, UI.msgPlayShown);
 		opts.put(OPT_MSGSTARTUPSHOWN, UI.msgStartupShown);
@@ -496,17 +499,20 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static void terminate(Context context) {
 		if (initialized) {
+			initialized = false;
 			setLastTime();
 			fullCleanup(null);
 			releaseInternal();
 			updateState(false, null); //to update the widget
 			unregisterMediaButtonEventReceiver();
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
 				unregisterMediaRouter(thePlayer);
-			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && thePlayer != null)
 			//	unregisterA2dpObserver(thePlayer);
-			thePlayer.stopForeground(true);
-			thePlayer.stopSelf();
+			if (thePlayer != null) {
+				thePlayer.stopForeground(true);
+				thePlayer.stopSelf();
+			}
 			if (destroyedObservers != null) {
 				for (int i = destroyedObservers.size() - 1; i >= 0; i--)
 					destroyedObservers.get(i).onPlayerDestroyed();
@@ -533,7 +539,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				context.getApplicationContext().unregisterReceiver(externalReceiver);
 				externalReceiver = null;
 			}
-			initialized = false;
 			saveConfig(context);
 			thePlayer = null;
 			observer = null;
@@ -1342,18 +1347,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	public static void startService(Context context) {
-		if (thePlayer == null && !startRequested) {
-			startRequested = true;
+		if (thePlayer == null && !initialized) {
 			initialize(context);
 			context.startService(new Intent(context, Player.class));
 		}
 	}
 	
 	public static void stopService() {
-		if (!stopRequested) {
-			stopRequested = true;
-			terminate(thePlayer);
-		}
+		terminate(thePlayer);
 	}
 	
 	public static Service getService() {
@@ -1362,8 +1363,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	@Override
 	public void onCreate() {
-		startRequested = false;
-		stopRequested = false;
 		thePlayer = this;
 		initialize(this);
 		initializePlayers(true);

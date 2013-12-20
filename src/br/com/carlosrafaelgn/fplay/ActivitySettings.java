@@ -443,12 +443,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInOther = new SettingView(ctx, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false);
 		optFadeInOther.setOnClickListener(this);
 		
-		CustomContextMenu.registerForContextMenu(optVolumeControlType, this);
-		CustomContextMenu.registerForContextMenu(optForceOrientation, this);
-		CustomContextMenu.registerForContextMenu(optFadeInFocus, this);
-		CustomContextMenu.registerForContextMenu(optFadeInPause, this);
-		CustomContextMenu.registerForContextMenu(optFadeInOther, this);
-		
 		panelSettings.addView(optAutoTurnOff);
 		addHeader(ctx, R.string.hdr_display);
 		panelSettings.addView(optKeepScreenOn);

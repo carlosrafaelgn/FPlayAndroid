@@ -186,7 +186,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
 		marqueeTitle, blockBackKey, msgAddShown, msgPlayShown, msgStartupShown;
-	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
+	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
 		dividerHeight, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	private static int _1dpStroke;
@@ -243,6 +243,23 @@ public final class UI {
 			defaultTypeface = Typeface.DEFAULT;
 		}
 		textPaint.setTypeface(defaultTypeface);
+		//Font Metrics in Java OR How, the hell, Should I Position This Font?!
+		//http://blog.evendanan.net/2011/12/Font-Metrics-in-Java-OR-How-the-hell-Should-I-Position-This-Font
+		textPaint.setTextSize(_22sp);
+		final FontMetrics fm = textPaint.getFontMetrics();
+		_22spBox = (int)(fm.descent - fm.ascent + 0.5f);
+		_22spYinBox = _22spBox - (int)(fm.descent);
+		textPaint.setTextSize(_18sp);
+		textPaint.getFontMetrics(fm);
+		_18spBox = (int)(fm.descent - fm.ascent + 0.5f);
+		_18spYinBox = _18spBox - (int)(fm.descent);
+		textPaint.setTextSize(_14sp);
+		textPaint.getFontMetrics(fm);
+		_14spBox = (int)(fm.descent - fm.ascent + 0.5f);
+		_14spYinBox = _14spBox - (int)(fm.descent);
+		emptyListString = context.getText(R.string.empty_list).toString();
+		emptyListStringHalfWidth = measureText(emptyListString, _22sp) >> 1;
+		_IconBox = Math.min(spToPxI(24), _22spBox); //both descent and ascent of iconsTypeface are 0!
 	}
 	
 	private static void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
@@ -280,7 +297,6 @@ public final class UI {
 	public static void initialize(Context context) {
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
-		setUsingAlternateTypeface(context, useAlternateTypeface);
 		final Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 		final DisplayMetrics displayMetrics = new DisplayMetrics();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -328,22 +344,7 @@ public final class UI {
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
 		strokePaint.setStrokeWidth(_1dpStroke);
-		//Font Metrics in Java OR How, the hell, Should I Position This Font?!
-		//http://blog.evendanan.net/2011/12/Font-Metrics-in-Java-OR-How-the-hell-Should-I-Position-This-Font
-		textPaint.setTextSize(_22sp);
-		final FontMetrics fm = textPaint.getFontMetrics();
-		_22spBox = (int)(fm.descent - fm.ascent + 0.5f);
-		_22spYinBox = _22spBox - (int)(fm.descent);
-		textPaint.setTextSize(_18sp);
-		textPaint.getFontMetrics(fm);
-		_18spBox = (int)(fm.descent - fm.ascent + 0.5f);
-		_18spYinBox = _18spBox - (int)(fm.descent);
-		textPaint.setTextSize(_14sp);
-		textPaint.getFontMetrics(fm);
-		_14spBox = (int)(fm.descent - fm.ascent + 0.5f);
-		_14spYinBox = _14spBox - (int)(fm.descent);
-		emptyListString = context.getText(R.string.empty_list).toString();
-		emptyListStringHalfWidth = measureText(emptyListString, _22sp) >> 1;
+		setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
 	
 	public static void preparePlaybackIcons(Context context) {

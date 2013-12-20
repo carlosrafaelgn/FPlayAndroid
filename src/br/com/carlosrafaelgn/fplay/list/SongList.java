@@ -38,6 +38,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
+import java.util.Random;
 
 import android.content.Context;
 import android.view.View;
@@ -57,8 +59,9 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public static final int HOW_PREVIOUS = -3;
 	public static final int HOW_NEXT_MANUAL = -2;
 	public static final int HOW_NEXT_AUTO = -1;
-	private int adding;
+	private int adding, currentShuffledItemIndex, shuffledItemsAlreadyPlayed;
 	public boolean selecting, moving;
+	private Song[] shuffledList;
 	private static final SongList theSongList = new SongList();
 	
 	private SongList() {
@@ -282,23 +285,94 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		Player.onSongListDeserialized((positionToSelect >= 0) ? items[positionToSelect] : null, ((play && positionToSelect >= 0) ? positionToSelect : -1), positionToSelect, ex);
 	}
 	
-	public Song getSongAndSetCurrent(int how) {
+	private Song getRandomSongAndSetCurrent(int how) {
+		if (shuffledItemsAlreadyPlayed >= count)
+			setRandomMode(true);
+		int i;
+		Song s = null;
 		if (how == HOW_CURRENT) {
-			how = ((lastDeleted != -1) ? lastDeleted : current);
+			how = currentShuffledItemIndex;
+			if (how < 0) {
+				how = current;
+				if (how < 0 || how >= count) {
+					how = 0;
+				} else {
+					s = items[how];
+					for (i = count - 1; i >= 0; i--) {
+						if (shuffledList[i] == s) {
+							current = how;
+							currentShuffledItemIndex = i;
+							break;
+						}
+					}
+				}
+			} else if (how >= count) {
+				how = count - 1;
+			}
+		} else if (how == HOW_PREVIOUS) {
+			how = currentShuffledItemIndex - 1;
+			if (how < 0 || how >= count)
+				how = count - 1;
+		} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
+			how = currentShuffledItemIndex + 1;
+			if (how < 0 || how >= count)
+				how = 0;
+		} else if (how >= 0 && how < count) {
+			s = items[how];
+			for (i = count - 1; i >= 0; i--) {
+				if (shuffledList[i] == s) {
+					current = how;
+					currentShuffledItemIndex = i;
+					break;
+				}
+			}
+		}
+		indexOfPreviouslyDeletedCurrentItem = -1;
+		if (how < 0 || how >= count)
+			return null;
+		if (s == null) {
+			s = shuffledList[how];
+			for (i = count - 1; i >= 0; i--) {
+				if (items[i] == s) {
+					current = i;
+					currentShuffledItemIndex = how;
+					break;
+				}
+			}
+		}
+		if (!s.alreadyPlayed) {
+			s.alreadyPlayed = true;
+			shuffledItemsAlreadyPlayed++;
+		}
+		s.possibleNextSong = null;
+		if (!selecting && !moving) {
+			firstSel = current;
+			lastSel = current;
+			originalSel = current;
+		}
+		notifyDataSetChanged(-1, SELECTION_CHANGED);
+		return s;
+	}
+	
+	public Song getSongAndSetCurrent(int how) {
+		if (shuffledList != null)
+			return getRandomSongAndSetCurrent(how);
+		if (how == HOW_CURRENT) {
+			how = ((indexOfPreviouslyDeletedCurrentItem != -1) ? indexOfPreviouslyDeletedCurrentItem : current);
 			if (how < 0)
 				how = 0;
 			else if (how >= count)
 				how = count - 1;
 		} else if (how == HOW_PREVIOUS) {
-			how = ((lastDeleted != -1) ? lastDeleted : current) - 1;
+			how = ((indexOfPreviouslyDeletedCurrentItem != -1) ? indexOfPreviouslyDeletedCurrentItem : current) - 1;
 			if (how < 0 || how >= count)
 				how = count - 1;
 		} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
-			how = ((lastDeleted != -1) ? lastDeleted : (current + 1));
+			how = ((indexOfPreviouslyDeletedCurrentItem != -1) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
 			if (how < 0 || how >= count)
 				how = 0;
 		}
-		lastDeleted = -1;
+		indexOfPreviouslyDeletedCurrentItem = -1;
 		if (how < 0 || how >= count)
 			return null;
 		current = how;
@@ -313,12 +387,106 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		return s;
 	}
 	
+	private void setShuffledCapacity(int capacity) {
+		if (capacity >= count) {
+			if (shuffledList == null)
+				shuffledList = new Song[capacity + LIST_DELTA];
+			else if (capacity > shuffledList.length || capacity <= (shuffledList.length - (2 * LIST_DELTA)))
+				shuffledList = Arrays.copyOf(shuffledList, capacity + LIST_DELTA);
+		}
+	}
+	
+	public boolean isInRandomMode() {
+		return (shuffledList != null);
+	}
+	
+	public void setRandomMode(boolean randomMode) {
+		if ((shuffledList != null) == randomMode && !randomMode)
+			return;
+		int i;
+		if (!randomMode) {
+			for (i = count - 1; i >= 0; i--)
+				shuffledList[i] = null;
+			shuffledList = null;
+		} else {
+			setShuffledCapacity(count);
+			for (i = count - 1; i >= 0; i--) {
+				final Song s = items[i];
+				s.alreadyPlayed = false;
+				shuffledList[i] = s;
+			}
+			final Random r = new Random();
+			for (i = (count - 1) >> 1; i >= 0; i--) {
+				final int a = r.nextInt(count);
+				final int b = r.nextInt(count);
+				final Song s = shuffledList[a];
+				shuffledList[a] = shuffledList[b];
+				shuffledList[b] = s;
+			}
+		}
+		currentShuffledItemIndex = -1;
+		shuffledItemsAlreadyPlayed = 0;
+	}
+	
+	@Override
+	protected void addingItems(int position, int count) {
+		if (shuffledList == null)
+			return;
+		setShuffledCapacity(this.count);
+		final int initial = this.count - count;
+		int i, j;
+		for (i = position + count - 1, j = initial; i >= position; i--, j++) {
+			final Song s = items[i];
+			s.alreadyPlayed = false;
+			shuffledList[j] = s;
+		}
+		final Random r = new Random();
+		for (i = initial + ((count - 1) >> 1); i >= initial; i--) {
+			final int a = initial + r.nextInt(count);
+			final int b = initial + r.nextInt(count);
+			final Song s = shuffledList[a];
+			shuffledList[a] = shuffledList[b];
+			shuffledList[b] = s;
+		}
+	}
+	
+	@Override
+	protected void removingItems(int position, int count) {
+		if (shuffledList == null)
+			return;
+		int shuffledCount = this.count;
+		count += position;
+		while (position < count) {
+			final Song s = items[position];
+			for (int i = shuffledCount - 1; i >= 0; i--) {
+				if (shuffledList[i] == s) {
+					shuffledCount--;
+					for (; i < shuffledCount; i++)
+						shuffledList[i] = shuffledList[i + 1];
+					if (s.alreadyPlayed)
+						shuffledItemsAlreadyPlayed--;
+					break;
+				}
+			}
+		}
+	}
+	
+	@Override
+	protected void clearingItems() {
+		if (shuffledList != null) {
+			for (int i = count - 1; i >= 0; i--)
+				shuffledList[i] = null;
+			currentShuffledItemIndex = -1;
+			shuffledItemsAlreadyPlayed = 0;
+		}
+	}
+	
 	@Override
 	protected void notifyDataSetChanged(int gotoPosition, int whatHappened) {
 		super.notifyDataSetChanged(gotoPosition, whatHappened);
 		if (whatHappened == LIST_CLEARED) {
 			Player.listCleared();
-		} else if (whatHappened != SELECTION_CHANGED && current >= 0 && current < count) {
+		} else if (whatHappened != SELECTION_CHANGED && shuffledList == null && current >= 0 && current < count) {
 			int n = current + 1;
 			if (n < 0 || n >= count)
 				n = 0;
