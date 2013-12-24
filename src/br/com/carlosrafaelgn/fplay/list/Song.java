@@ -49,7 +49,7 @@ public final class Song extends BaseItem {
 	public Song possibleNextSong;
 	public boolean alreadyPlayed, selected;
 	
-	private Song(String path, String title, String artist, String album, int track, int lengthMS, int flags) {
+	private Song(String path, String title, String artist, String album, int track, int lengthMS) {
 		this.path = path;
 		this.isHttp = (path.startsWith("http://") || path.startsWith("https://"));
 		this.title = title;
@@ -57,7 +57,6 @@ public final class Song extends BaseItem {
 		this.album = album;
 		this.track = track;
 		this.lengthMS = lengthMS;
-		this.alreadyPlayed = ((flags & 0x01) != 0);
 		validateFields(null);
 	}
 	
@@ -138,22 +137,22 @@ public final class Song extends BaseItem {
 		Serializer.serializeString(os, album);
 		Serializer.serializeInt(os, track);
 		Serializer.serializeInt(os, lengthMS);
-		Serializer.serializeInt(os, alreadyPlayed ? 1 : 0); //flags
+		Serializer.serializeInt(os, 0); //flags
 		Serializer.serializeInt(os, 0); //flags
 	}
 	
 	public static Song deserialize(InputStream is) throws IOException {
 		String path, title, artist, album;
-		int track, lengthMS, flags;
+		int track, lengthMS;
 		path = Serializer.deserializeString(is);
 		title = Serializer.deserializeString(is);
 		artist = Serializer.deserializeString(is);
 		album = Serializer.deserializeString(is);
 		track = Serializer.deserializeInt(is);
 		lengthMS = Serializer.deserializeInt(is);
-		flags = Serializer.deserializeInt(is); //flags
 		Serializer.deserializeInt(is); //flags
-		return new Song(path, title, artist, album, track, lengthMS, flags);
+		Serializer.deserializeInt(is); //flags
+		return new Song(path, title, artist, album, track, lengthMS);
 	}
 	
 	public static String formatTime(int timeMS) {

@@ -175,13 +175,22 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 			removingItems(position, count);
 			
 			modificationVersion++;
-			final int tot = position + count;
-			for (int i = position; i < tot; i++)
-				items[i] = null;
 			
 			System.arraycopy(items, position + count, items, position, (this.count - position - count));
+			
+			final int oldCount = this.count;
 			this.count -= count;
-			indexOfPreviouslyDeletedCurrentItem = -1;
+			for (int i = this.count; i < oldCount; i++)
+				items[i] = null;
+			
+			if (indexOfPreviouslyDeletedCurrentItem >= 0) {
+				if (indexOfPreviouslyDeletedCurrentItem >= position && indexOfPreviouslyDeletedCurrentItem < (position + count))
+					indexOfPreviouslyDeletedCurrentItem = position;
+				else if (indexOfPreviouslyDeletedCurrentItem > position)
+					indexOfPreviouslyDeletedCurrentItem -= count;
+				if (indexOfPreviouslyDeletedCurrentItem >= this.count)
+					indexOfPreviouslyDeletedCurrentItem = -1;
+			}
 			if (current >= position && current < (position + count)) {
 				indexOfPreviouslyDeletedCurrentItem = position;
 				current = -1;

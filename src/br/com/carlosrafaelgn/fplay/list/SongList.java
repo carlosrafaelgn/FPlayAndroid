@@ -59,7 +59,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public static final int HOW_PREVIOUS = -3;
 	public static final int HOW_NEXT_MANUAL = -2;
 	public static final int HOW_NEXT_AUTO = -1;
-	private int adding, currentShuffledItemIndex, shuffledItemsAlreadyPlayed;
+	private int adding, currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem;
 	public boolean selecting, moving;
 	private Song[] shuffledList;
 	private static final SongList theSongList = new SongList();
@@ -67,6 +67,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	private SongList() {
 		super(Song.class);
 		this.adding = 0;
+		this.indexOfPreviouslyDeletedCurrentShuffledItem = -1;
 	}
 	
 	public static SongList getInstance() {
@@ -291,7 +292,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		int i;
 		Song s = null;
 		if (how == HOW_CURRENT) {
-			how = currentShuffledItemIndex;
+			how = ((indexOfPreviouslyDeletedCurrentShuffledItem >= 0) ? indexOfPreviouslyDeletedCurrentShuffledItem : currentShuffledItemIndex);
 			if (how < 0) {
 				how = current;
 				if (how < 0 || how >= count) {
@@ -310,11 +311,11 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 				how = count - 1;
 			}
 		} else if (how == HOW_PREVIOUS) {
-			how = currentShuffledItemIndex - 1;
+			how = ((indexOfPreviouslyDeletedCurrentShuffledItem >= 0) ? indexOfPreviouslyDeletedCurrentShuffledItem : currentShuffledItemIndex) - 1;
 			if (how < 0 || how >= count)
 				how = count - 1;
 		} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
-			how = currentShuffledItemIndex + 1;
+			how = ((indexOfPreviouslyDeletedCurrentShuffledItem >= 0) ? indexOfPreviouslyDeletedCurrentShuffledItem : (currentShuffledItemIndex + 1));
 			if (how < 0 || how >= count)
 				how = 0;
 		} else if (how >= 0 && how < count) {
@@ -328,6 +329,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			}
 		}
 		indexOfPreviouslyDeletedCurrentItem = -1;
+		indexOfPreviouslyDeletedCurrentShuffledItem = -1;
 		if (how < 0 || how >= count)
 			return null;
 		if (s == null) {
@@ -358,21 +360,22 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		if (shuffledList != null)
 			return getRandomSongAndSetCurrent(how);
 		if (how == HOW_CURRENT) {
-			how = ((indexOfPreviouslyDeletedCurrentItem != -1) ? indexOfPreviouslyDeletedCurrentItem : current);
+			how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
 			if (how < 0)
 				how = 0;
 			else if (how >= count)
 				how = count - 1;
 		} else if (how == HOW_PREVIOUS) {
-			how = ((indexOfPreviouslyDeletedCurrentItem != -1) ? indexOfPreviouslyDeletedCurrentItem : current) - 1;
+			how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current) - 1;
 			if (how < 0 || how >= count)
 				how = count - 1;
 		} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
-			how = ((indexOfPreviouslyDeletedCurrentItem != -1) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
+			how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
 			if (how < 0 || how >= count)
 				how = 0;
 		}
 		indexOfPreviouslyDeletedCurrentItem = -1;
+		indexOfPreviouslyDeletedCurrentShuffledItem = -1;
 		if (how < 0 || how >= count)
 			return null;
 		current = how;
@@ -436,14 +439,9 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			return;
 		setShuffledCapacity(this.count);
 		final int initial = this.count - count;
-		int i, j;
-		for (i = position + count - 1, j = initial; i >= position; i--, j++) {
-			final Song s = items[i];
-			s.alreadyPlayed = false;
-			shuffledList[j] = s;
-		}
+		System.arraycopy(items, position, shuffledList, initial, count);
 		final Random r = new Random();
-		for (i = initial + ((count - 1) >> 1); i >= initial; i--) {
+		for (int i = initial + ((count - 1) >> 1); i >= initial; i--) {
 			final int a = initial + r.nextInt(count);
 			final int b = initial + r.nextInt(count);
 			final Song s = shuffledList[a];
@@ -463,8 +461,24 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			for (int i = shuffledCount - 1; i >= 0; i--) {
 				if (shuffledList[i] == s) {
 					shuffledCount--;
-					for (; i < shuffledCount; i++)
-						shuffledList[i] = shuffledList[i + 1];
+					if (indexOfPreviouslyDeletedCurrentShuffledItem >= 0) {
+						if (indexOfPreviouslyDeletedCurrentShuffledItem == i)
+							indexOfPreviouslyDeletedCurrentShuffledItem = i;
+						else if (indexOfPreviouslyDeletedCurrentShuffledItem > i)
+							indexOfPreviouslyDeletedCurrentShuffledItem--;
+						if (indexOfPreviouslyDeletedCurrentShuffledItem >= shuffledCount)
+							indexOfPreviouslyDeletedCurrentShuffledItem = -1;
+					}
+					if (currentShuffledItemIndex == i) {
+						indexOfPreviouslyDeletedCurrentShuffledItem = i;
+						currentShuffledItemIndex = -1;
+					} else if (currentShuffledItemIndex > i) {
+						currentShuffledItemIndex--;
+					}
+					if (currentShuffledItemIndex >= shuffledCount)
+						currentShuffledItemIndex = -1;
+					System.arraycopy(shuffledList, i + 1, shuffledList, i, shuffledCount - i);
+					shuffledList[shuffledCount] = null;
 					if (s.alreadyPlayed)
 						shuffledItemsAlreadyPlayed--;
 					break;
@@ -482,6 +496,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			shuffledList[i] = null;
 		currentShuffledItemIndex = -1;
 		shuffledItemsAlreadyPlayed = 0;
+		indexOfPreviouslyDeletedCurrentShuffledItem = -1;
 	}
 	
 	@Override
