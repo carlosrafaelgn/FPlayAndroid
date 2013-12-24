@@ -141,6 +141,8 @@ public final class UI {
 	public static final String ICON_DELETE = "D";
 	public static final String ICON_RADIOCHK = "x";
 	public static final String ICON_RADIOUNCHK = "o";
+	public static final String ICON_OPTCHK = "q";
+	public static final String ICON_OPTUNCHK = "Q";
 	public static final String ICON_GRIP = "G";
 	
 	public static final ColorStateList colorState_text_normal = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });

@@ -108,8 +108,7 @@
     <string name="bass_boost_not_supported">Your device does not support bass boost :(</string>
     <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment :(</string>
     <string name="visualizer">Visualizer</string>
-    <string name="normal_list">Normal list</string>
-    <string name="random_list">Random list</string>
+    <string name="random_list">Random mode</string>
     <string name="settings">Settings</string>
     <string name="about">About&#8230;</string>
     <string name="exit">Exit</string>

@@ -108,8 +108,7 @@
     <string name="bass_boost_not_supported">Seu dispositivo não suporta reforço de graves :(</string>
     <string name="bass_boost_strength_not_supported">Seu dispositivo não suporta ajuste fino de reforço de graves :(</string>
     <string name="visualizer">Visualizador</string>
-    <string name="normal_list">Lista normal</string>
-    <string name="random_list">Lista aleatória</string>
+    <string name="random_mode">Modo aleatório</string>
     <string name="settings">Opções</string>
     <string name="about">Sobre&#8230;</string>
     <string name="exit">Sair</string>

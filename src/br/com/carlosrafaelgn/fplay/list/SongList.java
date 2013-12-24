@@ -405,9 +405,11 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			return;
 		int i;
 		if (!randomMode) {
-			for (i = count - 1; i >= 0; i--)
-				shuffledList[i] = null;
-			shuffledList = null;
+			if (shuffledList != null) {
+				for (i = count - 1; i >= 0; i--)
+					shuffledList[i] = null;
+				shuffledList = null;
+			}
 		} else {
 			setShuffledCapacity(count);
 			for (i = count - 1; i >= 0; i--) {
@@ -468,17 +470,18 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 					break;
 				}
 			}
+			position++;
 		}
 	}
 	
 	@Override
 	protected void clearingItems() {
-		if (shuffledList != null) {
-			for (int i = count - 1; i >= 0; i--)
-				shuffledList[i] = null;
-			currentShuffledItemIndex = -1;
-			shuffledItemsAlreadyPlayed = 0;
-		}
+		if (shuffledList == null)
+			return;
+		for (int i = count - 1; i >= 0; i--)
+			shuffledList[i] = null;
+		currentShuffledItemIndex = -1;
+		shuffledItemsAlreadyPlayed = 0;
 	}
 	
 	@Override

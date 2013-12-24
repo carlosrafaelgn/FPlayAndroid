@@ -430,33 +430,33 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SAVE));
 		UI.separator(menu, 1, 1);
-		menu.add(2, MNU_TOGGLECONTROLMODE, 0, Player.isControlMode() ? R.string.leave_control_mode : R.string.control_mode)
+		menu.add(2, MNU_TOGGLECONTROLMODE, 0, R.string.control_mode)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_NEXT));
+			.setIcon(new TextIconDrawable(Player.isControlMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
 		if (UI.isLandscape && !UI.isLargeScreen) {
 			s = menu.addSubMenu(2, 0, 1, R.string.more)
 					.setIcon(new TextIconDrawable(UI.ICON_MENU));
 			UI.prepare(s);
-			s.add(2, MNU_TOGGLERANDOMMODE, 0, Player.songs.isInRandomMode() ? R.string.random_list :  R.string.normal_list)
+			s.add(2, MNU_TOGGLERANDOMMODE, 0, R.string.random_mode)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_SHUFFLE));
+				.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
 		} else {
-			menu.add(2, MNU_TOGGLERANDOMMODE, 1, Player.songs.isInRandomMode() ? R.string.random_list :  R.string.normal_list)
+			menu.add(2, MNU_TOGGLERANDOMMODE, 0, R.string.random_mode)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_SHUFFLE));
+				.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
 			UI.separator(menu, 2, 1);
 			s = menu;
 		}
-		s.add(2, MNU_EFFECTS, 2, R.string.audio_effects)
+		s.add(2, MNU_EFFECTS, 3, R.string.audio_effects)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_EQUALIZER));
-		s.add(2, MNU_VISUALIZER, 3, R.string.visualizer)
+		s.add(2, MNU_VISUALIZER, 4, R.string.visualizer)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s.add(2, MNU_SETTINGS, 4, R.string.settings)
+		s.add(2, MNU_SETTINGS, 5, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
-		UI.separator(menu, 2, 4);
+		UI.separator(menu, 2, 6);
 		menu.add(3, MNU_EXIT, 0, R.string.exit)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_EXIT));
