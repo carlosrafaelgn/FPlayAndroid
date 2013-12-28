@@ -149,6 +149,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	protected final void onCreate(Bundle savedInstanceState) {
+		//StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+		//	.detectAll()
+		//	.penaltyLog()
+		//	.build());
+		//StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+		//	.detectAll()
+		//	.penaltyLog()
+		//	.build());
 		//top is null everytime onCreate is called, which means
 		//everytime a new ActivityMain is created
 		//if top == any ClientActivity other than ActivityMain when

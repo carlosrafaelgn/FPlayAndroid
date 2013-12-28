@@ -522,6 +522,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public void onClick(View view) {
+		if (viewItems == null)
+			return;
 		final Item i = viewItems.get(view);
 		if (i != null && i.enabled) {
 			if (i.subMenu != null) {
