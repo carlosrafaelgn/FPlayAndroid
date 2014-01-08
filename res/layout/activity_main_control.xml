@@ -28,8 +28,9 @@
             android:id="@+id/btnVolume"
             android:layout_width="100dp"
             android:layout_height="match_parent"
-            android:layout_toRightOf="@+id/btnDecreaseVolume" />
-        
+            android:layout_toRightOf="@+id/btnDecreaseVolume"
+            android:contentDescription="@string/volume" />
+
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnIncreaseVolume"
             android:layout_width="100dp"
@@ -41,8 +42,7 @@
             android:nextFocusLeft="@+id/btnDecreaseVolume"
             android:nextFocusRight="@+id/btnMenu"
             android:nextFocusUp="@+id/btnPrev" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnMenu"
             android:layout_width="100dp"
             android:layout_height="match_parent"

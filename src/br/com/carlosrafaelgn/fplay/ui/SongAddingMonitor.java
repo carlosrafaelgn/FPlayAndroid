@@ -39,14 +39,13 @@ import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.R;
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public class SongAddingMonitor implements Runnable {
+public class SongAddingMonitor implements Timer.TimerHandler {
 	private static TextView notification;
-	private static final Timer timer = new Timer(new SongAddingMonitor(), "Song Adding Monitor Timer");
+	private static final Timer timer = new Timer(new SongAddingMonitor(), "Song Adding Monitor Timer", false, true, false);
 	
 	private SongAddingMonitor() {
 	}
@@ -90,12 +89,8 @@ public class SongAddingMonitor implements Runnable {
 	}
 	
 	@Override
-	public void run() {
-		if (!Player.songs.isAdding()) {
-			if (MainHandler.isOnMainThread())
-				stop();
-			else
-				MainHandler.post(this);
-		}
+	public void handleTimer(Timer timer, Object param) {
+		if (!Player.songs.isAdding())
+			stop();
 	}
 }

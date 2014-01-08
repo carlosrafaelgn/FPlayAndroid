@@ -639,7 +639,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			notifying = true;
 			if (notifyFromMain) {
 				notifyE = e;
-				MainHandler.post(this);
+				MainHandler.postToMainThread(this);
 			} else {
 				listener.onFilesFetched(this, e);
 			}

@@ -368,7 +368,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		if (MainHandler.isOnMainThread())
 			mnu.run();
 		else
-			MainHandler.post(mnu);
+			MainHandler.postToMainThread(mnu);
 	}
 	
 	public static void openContextMenu(View view, View.OnCreateContextMenuListener listener, Activity closeListener) {
@@ -376,7 +376,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		if (MainHandler.isOnMainThread())
 			mnu.run();
 		else
-			MainHandler.post(mnu);
+			MainHandler.postToMainThread(mnu);
 	}
 	
 	@Override

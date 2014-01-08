@@ -47,12 +47,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.MediaRouter;
+import android.media.RemoteControlClient;
 import android.media.MediaRouter.RouteGroup;
 import android.media.MediaRouter.RouteInfo;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.PowerManager;
 import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
@@ -101,9 +104,9 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //Allowing applications to play nice(r) with each other: Handling remote control buttons
 //http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
 //
-public final class Player extends Service implements Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
+public final class Player extends Service implements MainHandler.Callback, Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
 	public static interface PlayerObserver {
-		public void onPlayerChanged(boolean onlyPauseChanged, Throwable ex);
+		public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
 		public void onPlayerGlobalVolumeChanged();
 		public void onPlayerAudioSinkChanged(int audioSink);
@@ -134,11 +137,16 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static final int AUDIO_SINK_DEVICE = 1;
 	public static final int AUDIO_SINK_WIRE = 2;
 	public static final int AUDIO_SINK_BT = 4;
+	public static final int VOLUME_CONTROL_DB = 0;
+	public static final int VOLUME_CONTROL_STREAM = 1;
+	public static final int VOLUME_CONTROL_NONE = 2;
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
 	public static final String ACTION_EXIT = "br.com.carlosrafaelgn.FPlay.EXIT";
 	public static final int MIN_VOLUME_DB = -4000;
+	private static final int MSG_UPDATE_STATE = 0x0100;
+	private static final int MSG_PLAY_NEXT_AUTO = 0x0101;
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
 	private static final int OPT_LASTTIME = 0x0002;
@@ -159,7 +167,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_MSGPLAYSHOWN = 0x0011;
 	private static final int OPT_MSGSTARTUPSHOWN = 0x0012;
 	private static final int OPT_MARQUEETITLE = 0x0013;
-	private static final int OPT_VOLUMECONTROLGLOBAL = 0x0014;
+	private static final int OPT_VOLUMECONTROLTYPE = 0x0014;
 	private static final int OPT_BLOCKBACKKEY = 0x0015;
 	private static final int OPT_TURNOFFTIMERCUSTOMMINUTES = 0x0016;
 	private static final int OPT_ISDIVIDERVISIBLE = 0x0017;
@@ -174,13 +182,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
-	private static boolean playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode, volumeControlGlobal,
+	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode,
 		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
 		listLoaded, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink, audioSinkBeforeFocusLoss;
+	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
 	private static Player thePlayer;
-	private static Song currentSong, nextSong, firstError;
+	private static Song lastSong, currentSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
 	private static NotificationManager notificationManager;
 	private static AudioManager audioManager;
@@ -188,6 +196,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static ExternalReceiver externalReceiver;
 	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, turnOffTimer;
 	private static ComponentName mediaButtonEventReceiver;
+	private static RemoteControlClient remoteControlClient;
 	private static Object mediaRouterCallback;
 	//private static BluetoothAdapter bluetoothAdapter;
 	//private static BluetoothA2dp bluetoothA2dpProxy;
@@ -198,7 +207,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	//keep these instances here to prevent UI, MainHandler, Equalizer and BassBoost
 	//classes from being garbage collected...
 	public static final UI _ui = new UI();
-	public static final MainHandler _mainHandler = new MainHandler();
+	public static MainHandler _mainHandler;
 	public static final Equalizer _equalizer = new Equalizer();
 	public static final BassBoost _bassBoost = new BassBoost();
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
@@ -229,7 +238,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
 		UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
 		UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
-		setVolumeControlGlobal(context, opts.getBoolean(OPT_VOLUMECONTROLGLOBAL, true));
+		setVolumeControlType(context, opts.getInt(OPT_VOLUMECONTROLTYPE, VOLUME_CONTROL_STREAM));
 		UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
 		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
 		if (turnOffTimerCustomMinutes < 1)
@@ -279,7 +288,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_DISPLAYVOLUMEINDB, UI.displayVolumeInDB);
 		opts.put(OPT_DOUBLECLICKMODE, UI.doubleClickMode);
 		opts.put(OPT_MARQUEETITLE, UI.marqueeTitle);
-		opts.put(OPT_VOLUMECONTROLGLOBAL, volumeControlGlobal);
+		opts.put(OPT_VOLUMECONTROLTYPE, volumeControlType);
 		opts.put(OPT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);
 		opts.put(OPT_ISDIVIDERVISIBLE, UI.isDividerVisible);
@@ -415,22 +424,51 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		mediaRouterCallback = null;
 	}
 	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private static void registerRemoteControlClient() {
+		try {
+			if (remoteControlClient == null) {
+				final Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+				mediaButtonIntent.setComponent(mediaButtonEventReceiver);
+				final PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(thePlayer, 0, mediaButtonIntent, 0);
+				remoteControlClient = new RemoteControlClient(mediaPendingIntent);
+				remoteControlClient.setTransportControlFlags(RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS | RemoteControlClient.FLAG_KEY_MEDIA_NEXT | RemoteControlClient.FLAG_KEY_MEDIA_PLAY | RemoteControlClient.FLAG_KEY_MEDIA_PAUSE | RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE | RemoteControlClient.FLAG_KEY_MEDIA_STOP);
+			}
+			audioManager.registerRemoteControlClient(remoteControlClient);
+		} catch (Throwable ex) {
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private static void unregisterRemoteControlClient() {
+		try {
+			audioManager.unregisterRemoteControlClient(remoteControlClient);
+		} catch (Throwable ex) {
+		}
+	}
+	
 	public static void registerMediaButtonEventReceiver() {
 		if (mediaButtonEventReceiver == null)
 			mediaButtonEventReceiver = new ComponentName("br.com.carlosrafaelgn.fplay", "br.com.carlosrafaelgn.fplay.ExternalReceiver");
-		if (audioManager != null)
+		if (audioManager != null) {
 			audioManager.registerMediaButtonEventReceiver(mediaButtonEventReceiver);
+			if (thePlayer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				registerRemoteControlClient();
+		}
 	}
 	
 	public static void unregisterMediaButtonEventReceiver() {
-		if (mediaButtonEventReceiver != null && audioManager != null)
+		if (mediaButtonEventReceiver != null && audioManager != null) {
+			if (remoteControlClient != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				unregisterRemoteControlClient();
 			audioManager.unregisterMediaButtonEventReceiver(mediaButtonEventReceiver);
+		}
 	}
 	
 	private static void initialize(Context context) {
 		if (!initialized) {
 			initialized = true;
-			MainHandler.initialize(context);
+			_mainHandler = MainHandler.initialize(context);
 			if (notificationManager == null)
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			if (audioManager == null)
@@ -448,23 +486,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			//	registerA2dpObserver(thePlayer);
 			checkAudioSink(false, false);
-			if (focusDelayTimer == null) {
-				focusDelayTimer = new Timer(thePlayer, "Player Focus Delay Timer");
-				focusDelayTimer.setHandledOnMain(true);
-			}
-			if (prepareDelayTimer == null) {
-				prepareDelayTimer = new Timer(thePlayer, "Player Prepare Delay Timer");
-				prepareDelayTimer.setHandledOnMain(true);
-			}
-			if (volumeTimer == null) {
-				volumeTimer = new Timer(thePlayer, "Player Volume Timer");
-				volumeTimer.setHandledOnMain(true);
-				volumeTimer.setCompensatingForDelays(true);
-			}
-			if (turnOffTimer == null) {
-				turnOffTimer = new Timer(thePlayer, "Turn Off Timer");
-				turnOffTimer.setHandledOnMain(true);
-			}
+			if (focusDelayTimer == null)
+				focusDelayTimer = new Timer(thePlayer, "Player Focus Delay Timer", true, true, false);
+			if (prepareDelayTimer == null)
+				prepareDelayTimer = new Timer(thePlayer, "Player Prepare Delay Timer", true, true, false);
+			if (volumeTimer == null)
+				volumeTimer = new Timer(thePlayer, "Player Volume Timer", false, true, true);
+			if (turnOffTimer == null)
+				turnOffTimer = new Timer(thePlayer, "Turn Off Timer", true, true, false);
 			if (externalReceiver == null) {
 				//These broadcast actions are registered here, instead of in the manifest file,
 				//because a few tests showed that some devices will produce the notifications
@@ -503,7 +532,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			setLastTime();
 			fullCleanup(null);
 			releaseInternal();
-			updateState(false, null); //to update the widget
+			updateState(null); //to update the widget
 			unregisterMediaButtonEventReceiver();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
 				unregisterMediaRouter(thePlayer);
@@ -548,6 +577,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			telephonyManager = null;
 			externalReceiver = null;
 			mediaButtonEventReceiver = null;
+			remoteControlClient = null;
 			if (favoriteFolders != null) {
 				favoriteFolders.clear();
 				favoriteFolders = null;
@@ -670,11 +700,31 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
-	private static void broadcastStateChange(boolean onlyPauseChanged) {
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private static void broadcastStateChangeToRemoteControl(boolean songHasChanged) {
+		try {
+			if (currentSong == null) {
+				remoteControlClient.setPlaybackState(RemoteControlClient.PLAYSTATE_STOPPED);
+			} else {
+				remoteControlClient.setPlaybackState(playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED);
+				if (songHasChanged) {
+					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, currentSong.title);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, currentSong.artist);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, currentSong.album);
+					ed.putLong(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER, currentSong.track);
+					ed.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, currentSong.lengthMS);
+					ed.putLong(MediaMetadataRetriever.METADATA_KEY_YEAR, currentSong.year);
+					ed.apply();
+				}
+			}
+		} catch (Throwable ex) {
+		}
+	}
+	
+	private static void broadcastStateChange(boolean playbackHasChanged, boolean songHasChanged) {
 		//
-		//perhaps, one day we should implement RemoteControlClient
-		//for better Bluetooth support...? (as of Aug/2013, the native
-		//player did not seem to implement it...)
+		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
 		//http://developer.android.com/reference/android/media/RemoteControlClient.html
 		//https://android.googlesource.com/platform/packages/apps/Music/+/master/src/com/android/music/MediaPlaybackService.java
 		//
@@ -685,21 +735,24 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		//https://android.googlesource.com/platform/packages/apps/Bluetooth/+/android-4.3_r0.9.1/src/com/android/bluetooth/a2dp/Avrcp.java
 		//
 		if (currentSong == null) {
-			thePlayer.sendBroadcast(new Intent("com.android.music.playbackcomplete"));
+			thePlayer.sendStickyBroadcast(new Intent("com.android.music.playbackcomplete"));
 		} else {
 			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
-			//final Intent i = new Intent(onlyPauseChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
-			final Intent i = new Intent("com.android.music.playstatechanged");
+			final Intent i = new Intent(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
+			//final Intent i = new Intent("com.android.music.playstatechanged");
 			i.putExtra("id", currentSong.id);
 			i.putExtra("songid", currentSong.id);
+	        i.putExtra("track", currentSong.title);
 	        i.putExtra("artist", currentSong.artist);
 	        i.putExtra("album", currentSong.album);
-	        i.putExtra("track", currentSong.title);
 	        i.putExtra("duration", (long)currentSong.lengthMS);
 	        i.putExtra("position", (long)0);
 	        i.putExtra("playing", playing);
-	        thePlayer.sendBroadcast(i);
+	        //thePlayer.sendBroadcast(i);
+	        thePlayer.sendStickyBroadcast(i);
 		}
+		if (remoteControlClient != null)
+			broadcastStateChangeToRemoteControl(songHasChanged);
 	}
 	
 	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
@@ -711,20 +764,35 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			views.setTextViewText(R.id.lblTitle, currentSong.title);
 		
 		if (prepareButtons) {
+			Intent intent;
+			
 			if (notification) {
 				UI.prepareNotificationPlaybackIcons(context);
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
 				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
+				
+				intent = new Intent(context, Player.class);
+				intent.setAction(Player.ACTION_EXIT);
+				views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
 			} else {
+				if (currentSongPreparing || currentSong == null)
+					views.setTextViewText(R.id.lblArtist, "-");
+				else
+					views.setTextViewText(R.id.lblArtist, currentSong.artist);
+				
+				final PendingIntent p = getPendingIntent(context);
+				views.setOnClickPendingIntent(R.id.lblTitle, p);
+				views.setOnClickPendingIntent(R.id.lblArtist, p);
+				
 				UI.preparePlaybackIcons(context);
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
 			}
 			
-			Intent intent = new Intent(context, Player.class);
+			intent = new Intent(context, Player.class);
 			intent.setAction(Player.ACTION_PREVIOUS);
 			views.setOnClickPendingIntent(R.id.btnPrev, PendingIntent.getService(context, 0, intent, 0));
 			
@@ -735,10 +803,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			intent = new Intent(context, Player.class);
 			intent.setAction(Player.ACTION_NEXT);
 			views.setOnClickPendingIntent(R.id.btnNext, PendingIntent.getService(context, 0, intent, 0));
-			
-			intent = new Intent(context, Player.class);
-			intent.setAction(Player.ACTION_EXIT);
-			views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
 		}		
 		return views;
 	}
@@ -762,13 +826,19 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return notification;
 	}
 	
-	public static void onPlayerChanged(boolean onlyPauseChanged, Song newCurrentSong, Throwable ex) {
+	public static void onPlayerChanged(Song newCurrentSong, Throwable ex) {
 		if (thePlayer != null) {
 			if (newCurrentSong != null)
 				currentSong = newCurrentSong;
+			final boolean songHasChanged = (lastSong != currentSong);
+			final boolean playbackHasChanged = (lastPlaying != playing);
+			if (!songHasChanged && !playbackHasChanged)
+				return;
+			lastSong = currentSong;
+			lastPlaying = playing;
 			notificationManager.notify(1, getNotification());
-			WidgetMain.updateWidgets(thePlayer, onlyPauseChanged);
-			broadcastStateChange(onlyPauseChanged);
+			WidgetMain.updateWidgets(thePlayer);
+			broadcastStateChange(playbackHasChanged, songHasChanged);
 			if (ex != null) {
 				final String msg = ex.getMessage();
 				if (ex instanceof IllegalStateException) {
@@ -792,29 +862,23 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				}
 			}
 			if (observer != null)
-				observer.onPlayerChanged(onlyPauseChanged, ex);
+				observer.onPlayerChanged(currentSong, songHasChanged, ex);
 		}
 	}
 	
 	public static void onSongListDeserialized(Song newCurrentSong, int forcePlayIdx, int positionToSelect, Throwable ex) {
 		if (positionToSelect >= 0)
 			setSelectionAfterAdding(positionToSelect);
-		onPlayerChanged(false, newCurrentSong, ex);
+		onPlayerChanged(newCurrentSong, ex);
 		listLoaded = true;
 		executeStartCommand(forcePlayIdx);
 	}
 	
-	private static void updateState(final boolean onlyPauseChanged, final Throwable ex) {
-		if (MainHandler.isOnMainThread()) {
-			onPlayerChanged(onlyPauseChanged, null, ex);
-		} else {
-			MainHandler.post(new Runnable() {
-				@Override
-				public void run() {
-					onPlayerChanged(onlyPauseChanged, null, ex);
-				}
-			});
-		}
+	private static void updateState(Throwable ex) {
+		if (MainHandler.isOnMainThread())
+			onPlayerChanged(null, ex);
+		else
+			MainHandler.sendMessage(thePlayer, MSG_UPDATE_STATE, ex);
 	}
 	
 	private static MediaPlayer createPlayer() {
@@ -844,7 +908,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			if (incr > 30) {
 				actualVolume = 0;
 				volumeDBMultiplier = MIN_VOLUME_DB;
-				volumeTimer.start(50, false, incr);
+				volumeTimer.start(50, incr);
 			}
 		}
 		unpaused = false;
@@ -888,17 +952,12 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static void nextFailed(Song failedSong, int how, Throwable ex) {
 		if (firstError == failedSong || how != SongList.HOW_NEXT_AUTO) {
 			firstError = null;
-			updateState(false, ex);
+			updateState(ex);
 		} else {
 			if (firstError == null)
 				firstError = failedSong;
-			updateState(false, null);
-			MainHandler.post(new Runnable() {
-				@Override
-				public void run() {
-					playInternal(SongList.HOW_NEXT_AUTO);
-				}
-			});
+			updateState(null);
+			MainHandler.sendMessage(thePlayer, MSG_PLAY_NEXT_AUTO);
 		}
 	}
 	
@@ -924,7 +983,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
 			playing = false;
-			updateState(false, new FocusException());
+			updateState(new FocusException());
 			return;
 		}
 		final Song s = songs.getSongAndSetCurrent(how);
@@ -932,7 +991,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			lastTime = -1;
 			firstError = null;
 			fullCleanup(null);
-			updateState(false, null);
+			updateState(null);
 			return;
 		}
 		if (currentPlayer == null || nextPlayer == null)
@@ -986,7 +1045,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			processPreparation();
 		playing = currentSongLoaded;
 		//wasPlaying = true;
-		updateState(false, null);
+		updateState(null);
 	}
 	
 	private static void stopInternal(Song newCurrentSong) {
@@ -1127,10 +1186,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				//wasPlaying = playing;
 			} catch (Throwable ex) {
 				fullCleanup(currentSong);
-				updateState(false, ex);
+				updateState(ex);
 				return;
 			}
-			updateState(true, null);
+			updateState(null);
 		}
 	}
 	
@@ -1154,14 +1213,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			playAfterSeek = play;
 			currentSongPreparing = true;
 			currentPlayer.seekTo(timeMS);
-			updateState(false, null);
+			updateState(null);
 		}
 	}
 	
 	public static void listCleared() {
 		fullCleanup(null);
 		lastTime = -1;
-		updateState(false, null);
+		updateState(null);
 	}
 	
 	public static void nextMayHaveChanged(Song possibleNextSong) {
@@ -1211,11 +1270,19 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return ret;
 	}
 	
-	public static int getGlobalMaxVolume() {
+	public static int getStreamMaxVolume() {
 		return globalMaxVolume;
 	}
 	
-	public static boolean decreaseGlobalVolume() {
+	public static void showStreamVolumeUI() {
+		try {
+			if (audioManager != null)
+				audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI);
+		} catch (Throwable ex) {
+		}
+	}
+	
+	public static boolean decreaseStreamVolume() {
 		try {
 			if (audioManager != null) {
 				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -1227,7 +1294,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return false;
 	}
 	
-	public static boolean increaseGlobalVolume() {
+	public static boolean increaseStreamVolume() {
 		try {
 			if (audioManager != null) {
 				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -1239,7 +1306,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return false;
 	}
 	
-	public static int getGlobalVolume() {
+	public static int getStreamVolume() {
 		try {
 			if (audioManager != null)
 				return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -1248,28 +1315,34 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return 0;
 	}
 	
-	public static void setGlobalVolume(int volume) {
+	public static void setStreamVolume(int volume) {
 		try {
-			if (audioManager != null)
+			if (audioManager != null) {
 				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume < 0) ? 0 : ((volume > globalMaxVolume) ? globalMaxVolume : volume)), 0);
+			}
 		} catch (Throwable ex) {
 		}
 	}
 	
-	public static boolean isVolumeControlGlobal() {
-		return volumeControlGlobal;
+	public static int getVolumeControlType() {
+		return volumeControlType;
 	}
 	
-	public static void setVolumeControlGlobal(Context context, boolean volumeControlGlobal) {
-		Player.volumeControlGlobal = volumeControlGlobal;
-		if (volumeControlGlobal) {
+	public static void setVolumeControlType(Context context, int volumeControlType) {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_NONE:
+			Player.volumeControlType = volumeControlType;
+			break;
+		default:
 			try {
 				if (audioManager != null)
 					globalMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 				setVolumeDB(0);
+				Player.volumeControlType = VOLUME_CONTROL_STREAM;
 			} catch (Throwable ex) {
-				Player.volumeControlGlobal = false;
 			}
+			break;
 		}
 	}
 	
@@ -1291,7 +1364,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				if (saveCustom)
 					turnOffTimerCustomMinutes = minutes;
 				turnOffTimerMinutesLeft = minutes;
-				turnOffTimer.start(60000, false);
+				turnOffTimer.start(60000);
 			}
 		}
 	}
@@ -1427,6 +1500,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case KeyEvent.KEYCODE_MEDIA_PLAY:
 		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
 		case KeyEvent.KEYCODE_MEDIA_PAUSE:
+		case KeyEvent.KEYCODE_HEADSETHOOK:
 			playPause();
 			break;
 		case KeyEvent.KEYCODE_MEDIA_STOP:
@@ -1451,16 +1525,16 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				observer.onPlayerMediaButtonPrevious();
 			break;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
-			if (volumeControlGlobal) {
-				decreaseGlobalVolume();
+			if (volumeControlType == VOLUME_CONTROL_STREAM) {
+				decreaseStreamVolume();
 				if (observer != null)
 					observer.onPlayerGlobalVolumeChanged();
 				break;
 			}
 			return false;
 		case KeyEvent.KEYCODE_VOLUME_UP:
-			if (volumeControlGlobal) {
-				increaseGlobalVolume();
+			if (volumeControlType == VOLUME_CONTROL_STREAM) {
+				increaseStreamVolume();
 				if (observer != null)
 					observer.onPlayerGlobalVolumeChanged();
 				break;
@@ -1492,7 +1566,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static void processPreparation() {
 		if (prepareDelayTimer != null && currentSong != null && nextSong != null && !nextSong.isHttp && nextPreparationEnabled && currentSong.lengthMS > 10000 && nextSong.lengthMS > 10000)
-			prepareDelayTimer.start(5000, true, nextSong);
+			prepareDelayTimer.start(5000, nextSong);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -1513,6 +1587,19 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		} catch (Throwable ex) {
 			
 		}
+	}
+	
+	@Override
+	public boolean handleMessage(Message msg) {
+		switch (msg.what) {
+		case MSG_UPDATE_STATE:
+			onPlayerChanged(null, (Throwable)msg.obj);
+			break;
+		case MSG_PLAY_NEXT_AUTO:
+			playInternal(SongList.HOW_NEXT_AUTO);
+			break;
+		}
+		return true;
 	}
 	
 	@Override
@@ -1553,14 +1640,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				}
 			}
 		} else if (timer == turnOffTimer) {
-			if (turnOffTimerMinutesLeft <= 0) {
-				turnOffTimer.stop();
-			} else {
+			if (turnOffTimerMinutesLeft > 0) {
 				turnOffTimerMinutesLeft--;
 				if (turnOffTimerObserver != null)
 					turnOffTimerObserver.onPlayerTurnOffTimerTick();
 				if (turnOffTimerMinutesLeft <= 0)
 					stopService();
+				else
+					turnOffTimer.start(60000);
 			}
 		}
 	}
@@ -1578,7 +1665,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			if (!hasFocus) {
 				hasFocus = true;
 				if (focusDelayTimer != null)
-					focusDelayTimer.start(1500, true);
+					focusDelayTimer.start(1500);
 			} else {
 				//processFocusGain();
 				//came here from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
@@ -1599,7 +1686,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			stopInternal(currentSong);
 			silenceMode = SILENCE_FOCUS;
 			releaseInternal();
-			updateState(false, null);
+			updateState(null);
 			break;
 		//sometimes, the player will give a MEDIA_ERROR_TIMED_OUT when gaining focus
 		//back again after excuting the code below... Therefore, I decided to handle
@@ -1641,7 +1728,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				releaseInternal();
 				if (reviveAlreadyRetried) {
 					reviveAlreadyRetried = false;
-					updateState(false, new MediaServerDiedException());
+					updateState(new MediaServerDiedException());
 				} else {
 					reviveAlreadyRetried = true;
 					playInternal(SongList.HOW_CURRENT);
@@ -1652,13 +1739,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				nextPrepared = false;
 			} else {
 				fullCleanup(currentSong);
-				updateState(false, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
+				updateState((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
 			}
 		} else {
 			System.err.println("Invalid MediaPlayer");
 			fullCleanup(currentSong);
 			releaseInternal();
-			updateState(false, new Exception("Invalid MediaPlayer"));
+			updateState(new Exception("Invalid MediaPlayer"));
 		}
 		return true;
 	}
@@ -1689,7 +1776,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				//wasPlaying = true;
 				currentSongLoaded = true;
 				firstError = null;
-				updateState(false, null);
+				updateState(null);
 				if (!prepareNextOnSeek)
 					processPreparation();
 			} catch (Throwable ex) {
@@ -1699,7 +1786,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		} else {
 			System.err.println("Invalid MediaPlayer");
 			fullCleanup(currentSong);
-			updateState(false, new Exception("Invalid MediaPlayer"));
+			updateState(new Exception("Invalid MediaPlayer"));
 		}
 	}
 	
@@ -1714,14 +1801,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					reviveAlreadyRetried = false;
 					//wasPlaying = true;
 				}
-				updateState(false, null);
+				updateState(null);
 				if (prepareNextOnSeek) {
 					prepareNextOnSeek = false;
 					processPreparation();
 				}
 			} catch (Throwable ex) {
 				fullCleanup(currentSong);
-				updateState(false, ex);
+				updateState(ex);
 			}
 		}
 	}

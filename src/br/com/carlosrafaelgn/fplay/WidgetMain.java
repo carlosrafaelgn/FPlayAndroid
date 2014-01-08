@@ -43,13 +43,11 @@ public final class WidgetMain extends AppWidgetProvider {
 	private static AppWidgetManager appWidgetManager;
 	private static ComponentName widgetComponent;
 	
-	private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId, boolean onlyPauseChanged) {
-		final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.main_widget);
-		views.setOnClickPendingIntent(R.id.lblTitle, Player.getPendingIntent(context));
-		appWidgetManager.updateAppWidget(appWidgetId, Player.prepareRemoteViews(context, views, true, false));
+	private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+		appWidgetManager.updateAppWidget(appWidgetId, Player.prepareRemoteViews(context, new RemoteViews(context.getPackageName(), R.layout.main_widget), true, false));
 	}
 	
-	public static void updateWidgets(Context context, boolean onlyPauseChanged) {
+	public static void updateWidgets(Context context) {
 		if (appWidgetManager == null)
 			appWidgetManager = AppWidgetManager.getInstance(context);
 		if (widgetComponent == null)
@@ -58,12 +56,12 @@ public final class WidgetMain extends AppWidgetProvider {
 		if (appWidgetIds == null)
 			return;
 		for (int i = appWidgetIds.length - 1; i >= 0; i--)
-			updateAppWidget(context, appWidgetManager, appWidgetIds[i], onlyPauseChanged);
+			updateAppWidget(context, appWidgetManager, appWidgetIds[i]);
 	}
 	
 	@Override
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
 		for (int i = appWidgetIds.length - 1; i >= 0; i--)
-			updateAppWidget(context, appWidgetManager, appWidgetIds[i], false);
+			updateAppWidget(context, appWidgetManager, appWidgetIds[i]);
 	}
 }

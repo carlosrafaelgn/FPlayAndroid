@@ -46,8 +46,12 @@ public final class BorderDrawable extends Drawable {
 		init(strokeColor, fillColor, left, top, right, bottom);
 	}
 	
-	public BorderDrawable(boolean sideBorders) {
-		init(UI.color_current, UI.color_bg, sideBorders, true, false, false);
+	public BorderDrawable() {
+    	init(UI.color_current, UI.color_bg, false, true, false, false);
+	}
+	
+	public BorderDrawable(boolean left, boolean top, boolean right, boolean bottom) {
+		init(UI.color_current, UI.color_bg, left, top, right, bottom);
 	}
 	
 	private void init(int strokeColor, int fillColor, boolean left, boolean top, boolean right, boolean bottom) {

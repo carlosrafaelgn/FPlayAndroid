@@ -36,6 +36,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.media.AudioManager;
+import android.os.Message;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -64,7 +65,6 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.util.Timer.TimerHandler;
 
 //
 //How to create a ListView using ArrayAdapter in Android
@@ -88,9 +88,10 @@ import br.com.carlosrafaelgn.fplay.util.Timer.TimerHandler;
 //Maintain/Save/Restore scroll position when returning to a ListView
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
-public final class ActivityMain extends ClientActivity implements TimerHandler, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
+public final class ActivityMain extends ClientActivity implements MainHandler.Callback,  Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109;
-	private TextView lblTitle, lblMsgSelMove, lblTime;
+	private View vwVolume;
+	private TextView lblTitle, lblArtist, lblAlbum, lblLength, lblMsgSelMove, lblTime;
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
@@ -98,9 +99,8 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private ColorDrawable windowDrawable;
-	private CharSequence lastTitleText;
-	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay;
-	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, controlModeBackground;
+	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
+	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, controlModeBackground, largeMode;
 	private StringBuilder timeBuilder, volumeBuilder;
 	
 	private void saveListViewPosition() {
@@ -141,8 +141,8 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	private String volumeToString() {
-		if (Player.isVolumeControlGlobal()) {
-			return Integer.toString(Player.getGlobalVolume());
+		if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) {
+			return Integer.toString(Player.getStreamVolume());
 		} else {
 			int volumeDB = Player.getVolumeDB();
 			if (UI.displayVolumeInDB) {
@@ -177,12 +177,18 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		if (btnVolume != null) {
 			final int max;
 			final int v;
-			if (Player.isVolumeControlGlobal()) {
-				max = Player.getGlobalMaxVolume();
-				v = Player.getGlobalVolume();
-			} else {
+			switch (Player.getVolumeControlType()) {
+			case Player.VOLUME_CONTROL_STREAM:
+				max = Player.getStreamMaxVolume();
+				v = Player.getStreamVolume();
+				break;
+			case Player.VOLUME_CONTROL_DB:
 				max = -Player.MIN_VOLUME_DB;
 				v = max + Player.getVolumeDB();
+				break;
+			default:
+				btnVolume.setText(UI.ICON_VOLUME4);
+				return;
 			}
 			if (v == max)
 				btnVolume.setText(UI.ICON_VOLUME4);
@@ -199,7 +205,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	
 	private void updateVolumeDisplay() {
 		if (barVolume != null) {
-			barVolume.setValue(Player.isVolumeControlGlobal() ? Player.getGlobalVolume() : ((Player.getVolumeDB() - Player.MIN_VOLUME_DB) / 5));
+			barVolume.setValue((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamVolume() : ((Player.getVolumeDB() - Player.MIN_VOLUME_DB) / 5));
 			barVolume.setText(volumeToString());
 		} else {
 			setVolumeIcon();
@@ -208,7 +214,13 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	
 	private void startSelecting() {
 		if (firstSel >= 0) {
-			if (!UI.isLandscape && alwaysShowSecondary) {
+			if (largeMode) {
+				final ViewGroup.LayoutParams p = lblMsgSelMove.getLayoutParams();
+				if (p.height != UI.defaultControlSize) {
+					p.height = UI.defaultControlSize;
+					lblMsgSelMove.setLayoutParams(p);
+				}
+			} else if (!UI.isLandscape && alwaysShowSecondary) {
 				final int h = panelControls.getHeight() + panelSecondary.getHeight();
 				final int ph = UI.defaultControlSize + UI._8dp;
 				final ViewGroup.LayoutParams p = panelSelection.getLayoutParams();
@@ -224,10 +236,14 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			panelSecondary.setVisibility(View.GONE);
 			panelSelection.setVisibility(View.VISIBLE);
 			lblMsgSelMove.setText(R.string.msg_sel);
-			lblTitle.setVisibility(View.GONE);
+			if (!largeMode)
+				lblTitle.setVisibility(View.GONE);
 			lblMsgSelMove.setVisibility(View.VISIBLE);
 			lblMsgSelMove.setSelected(true);
-			if (UI.isLandscape) {
+			if (largeMode) {
+				btnCancelSel.setNextFocusLeftId(R.id.btnRemoveSel);
+				UI.setNextFocusForwardId(list, R.id.btnMoveSel);
+			} else if (UI.isLandscape) {
 				btnCancelSel.setNextFocusUpId(R.id.btnRemoveSel);
 				UI.setNextFocusForwardId(list, R.id.btnMoveSel);
 			} else {
@@ -248,7 +264,9 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			btnCancelSel.setText(R.string.done);
 			lblMsgSelMove.setText(R.string.msg_move);
 			lblMsgSelMove.setSelected(true);
-			if (UI.isLandscape) {
+			if (largeMode) {
+				btnCancelSel.setNextFocusLeftId(R.id.list);
+			} else if (UI.isLandscape) {
 				btnCancelSel.setNextFocusUpId(R.id.list);
 			} else {
 				btnCancelSel.setNextFocusRightId(R.id.list);
@@ -281,11 +299,12 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		firstSel = -1;
 		lastSel = -1;
 		lblMsgSelMove.setVisibility(View.GONE);
-		lblTitle.setVisibility(View.VISIBLE);
+		if (!largeMode)
+			lblTitle.setVisibility(View.VISIBLE);
 		lblTitle.setSelected(true);
 		panelSelection.setVisibility(View.GONE);
-		if (UI.isLandscape || alwaysShowSecondary) {
-			UI.setNextFocusForwardId(list, R.id.btnPrev);
+		if (largeMode || UI.isLandscape || alwaysShowSecondary) {
+			UI.setNextFocusForwardId(list, largeMode ? vwVolumeId : R.id.btnPrev);
 			panelControls.setVisibility(View.VISIBLE);
 			panelSecondary.setVisibility(View.VISIBLE);
 		} else {
@@ -304,62 +323,47 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	}
 	
 	private boolean decreaseVolume() {
-		final boolean ret = (Player.isVolumeControlGlobal() ?
-				Player.decreaseGlobalVolume() :
-				Player.setVolumeDB(Player.getVolumeDB() - 200));
+		final boolean ret = ((Player.getVolumeControlType() == Player.VOLUME_CONTROL_DB) ?
+				Player.setVolumeDB(Player.getVolumeDB() - 200) :
+				Player.decreaseStreamVolume());
 		setVolumeIcon();
 		return ret;
 	}
 	
 	private boolean increaseVolume() {
-		final boolean ret = (Player.isVolumeControlGlobal() ?
-				Player.increaseGlobalVolume() :
-					Player.setVolumeDB(Player.getVolumeDB() + 200));
+		final boolean ret = ((Player.getVolumeControlType() == Player.VOLUME_CONTROL_DB) ?
+				Player.setVolumeDB(Player.getVolumeDB() + 200) :
+				Player.increaseStreamVolume());
 		setVolumeIcon();
 		return ret;
 	}
 	
 	@Override
-	public void onPlayerChanged(boolean onlyPauseChanged, Throwable ex) {
-		final Song s = Player.getCurrentSong();
-		if (s == null || ex != null) {
-			if (btnPlay != null)
-				btnPlay.setText(UI.ICON_PLAY);
-			if (lblTitleIcon != null)
-				lblTitleIcon.setIcon(UI.ICON_PLAY);
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+		final String icon = (Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
+		if (btnPlay != null)
+			btnPlay.setText(icon);
+		if (lblTitleIcon != null)
+			lblTitleIcon.setIcon(icon);
+		if (songHasChanged) {
 			if (lblTitle != null) {
-				//there is no need to use equals(), as it is just a way to prevent
-				//the same song's title from being set to the control
-				final CharSequence txt = ((s == null) ? getText(R.string.nothing_playing) : s.title);
-				if (lastTitleText != txt) {
-					lastTitleText = txt;
-					lblTitle.setText(txt);
-					lblTitle.setSelected(true);
-				}
-			}
-			if (barSeek != null)
-				barSeek.setEnabled(false);
-			tmrSong.stop();
-		} else {
-			final String icon = (Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
-			if (btnPlay != null)
-				btnPlay.setText(icon);
-			if (lblTitleIcon != null)
-				lblTitleIcon.setIcon(icon);
-			//same as above...
-			if (lblTitle != null && lastTitleText != s.title) {
-				lastTitleText = s.title;
-				lblTitle.setText(s.title);
+				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 				lblTitle.setSelected(true);
 			}
-			if (barSeek != null)
-				barSeek.setEnabled(true);
-			if (Player.isPlaying() && !Player.isControlMode()) {
-				if (!tmrSong.isAlive())
-					tmrSong.start(250, false);
-			} else {
-				tmrSong.stop();
-			}
+			if (lblArtist != null)
+				lblArtist.setText((currentSong == null) ? "-" : currentSong.artist);
+			if (lblAlbum != null)
+				lblAlbum.setText((currentSong == null) ? "-" : currentSong.album);
+			if (lblLength != null)
+				lblLength.setText((currentSong == null) ? "-" : currentSong.length);
+		}
+		if (barSeek != null)
+			barSeek.setEnabled(true);
+		if (Player.isPlaying() && !Player.isControlMode()) {
+			if (!tmrSong.isAlive())
+				tmrSong.start(250);
+		} else {
+			tmrSong.stop();
 		}
 		lastTime = -2;
 		handleTimer(tmrSong, null);
@@ -385,11 +389,11 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	@Override
 	public void onPlayerAudioSinkChanged(int audioSink) {
 		//when changing the output, the global volume usually changes
-		if (Player.isVolumeControlGlobal()) {
+		if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) {
 			updateVolumeDisplay();
 			if (barVolume != null)
-				barVolume.setMax(Player.getGlobalMaxVolume());
-			tmrUpdateVolumeDisplay.start(750, true);
+				barVolume.setMax(Player.getStreamMaxVolume());
+			tmrUpdateVolumeDisplay.start(750);
 		}
 	}
 	
@@ -523,12 +527,18 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			cancelSelection(false);
 		} else if (view == btnDecreaseVolume) {
 			//this click will only actually perform an action when triggered by keys
-			if (volumeButtonPressed == 0)
+			if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE)
+				Player.showStreamVolumeUI();
+			else if (volumeButtonPressed == 0)
 				decreaseVolume();
 		} else if (view == btnIncreaseVolume) {
 			//this click will only actually perform an action when triggered by keys
-			if (volumeButtonPressed == 0)
+			if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE)
+				Player.showStreamVolumeUI();
+			else if (volumeButtonPressed == 0)
 				increaseVolume();
+		} else if (view == btnVolume) {
+			Player.showStreamVolumeUI();
 		} else if (view == lblTitle) {
 			if (Player.isControlMode()) {
 				Player.playPause();
@@ -542,9 +552,9 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 					panelControls.setVisibility(View.VISIBLE);
 				} else {
 					showSecondary = true;
-					lblTitle.setNextFocusRightId(R.id.barVolume);
-					lblTitle.setNextFocusDownId(R.id.barVolume);
-					UI.setNextFocusForwardId(lblTitle, R.id.barVolume);
+					lblTitle.setNextFocusRightId(vwVolumeId);
+					lblTitle.setNextFocusDownId(vwVolumeId);
+					UI.setNextFocusForwardId(lblTitle, vwVolumeId);
 					panelControls.setVisibility(View.GONE);
 					panelSecondary.setVisibility(View.VISIBLE);
 				}
@@ -628,13 +638,9 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		lastTime = -2;
 		timeBuilder = new StringBuilder(16);
 		volumeBuilder = new StringBuilder(16);
-		tmrSong = new Timer(this, "Song Timer");
-		tmrSong.setCompensatingForDelays(true);
-		tmrSong.setHandledOnMain(true);
-		tmrUpdateVolumeDisplay = new Timer(this, "Update Volume Display Timer");
-		tmrUpdateVolumeDisplay.setHandledOnMain(true);
-		tmrVolume = new Timer(this, "Volume Timer");
-		tmrVolume.setHandledOnMain(true);
+		tmrSong = new Timer(this, "Song Timer", false, true, true);
+		tmrUpdateVolumeDisplay = new Timer(this, "Update Volume Display Timer", true, true, false);
+		tmrVolume = new Timer(this, "Volume Timer", false, true, true);
 	}
 	
 	@Override
@@ -746,24 +752,28 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			btnNext.setIcon(UI.ICON_NEXT);
 			btnMenu.setIcon(UI.ICON_MENU);
 			
-			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
-			barVolume.setOnBgSeekBarChangeListener(this);
-			barVolume.setMax(Player.isVolumeControlGlobal() ? Player.getGlobalMaxVolume() : (-Player.MIN_VOLUME_DB / 5));
-			barVolume.setVertical(UI.isLandscape && !Player.isControlMode());
-			barVolume.setKeyIncrement(Player.isVolumeControlGlobal() ? 1 : 20);
-			barVolume.setEmptySpaceColor(UI.color_window);
-			
 	        if (!UI.marqueeTitle) {
 	        	lblTitle.setEllipsize(TruncateAt.END);
 	        	lblTitle.setHorizontallyScrolling(false);
+	        } else {
+	        	lblTitle.setHorizontalFadingEdgeEnabled(false);
+	        	lblTitle.setVerticalFadingEdgeEnabled(false);
+	        	lblTitle.setFadingEdgeLength(0);
 	        }
-	        
+			
+	        lblArtist = (TextView)findViewById(R.id.lblArtist);
+			largeMode = (lblArtist != null);
+			
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
-			UI.largeTextAndColor(lblMsgSelMove);
+			UI.largeText(lblMsgSelMove);
+			lblMsgSelMove.setTextColor(UI.color_current);
+			lblMsgSelMove.setHorizontalFadingEdgeEnabled(false);
+			lblMsgSelMove.setVerticalFadingEdgeEnabled(false);
+			lblMsgSelMove.setFadingEdgeLength(0);
 			barSeek = (BgSeekBar)findViewById(R.id.barSeek);
 			barSeek.setOnBgSeekBarChangeListener(this);
 			barSeek.setMax(MAX_SEEK);
-			barSeek.setVertical(UI.isLandscape);
+			barSeek.setVertical(UI.isLandscape && !largeMode);
 			barSeek.setFocusable(false);
 			barSeek.setEmptySpaceColor(UI.color_window);
 			btnPlay = (BgButton)findViewById(R.id.btnPlay);
@@ -772,35 +782,101 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			list = (BgListView)findViewById(R.id.list);
 			list.setOnItemClickListener(this);
 			list.setOnItemLongClickListener(this);
-			if (UI.isLandscape)
-				list.setSideBorders();
 			panelControls = (ViewGroup)findViewById(R.id.panelControls);
 			panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
 			btnMoveSel = (BgButton)findViewById(R.id.btnMoveSel);
 			btnMoveSel.setOnClickListener(this);
-			btnMoveSel.setIcon(UI.ICON_MOVE, !UI.isLandscape, true);
+			btnMoveSel.setIcon(UI.ICON_MOVE, largeMode || !UI.isLandscape, true);
 			btnRemoveSel = (BgButton)findViewById(R.id.btnRemoveSel);
 			btnRemoveSel.setOnClickListener(this);
-			btnRemoveSel.setIcon(UI.ICON_DELETE, !UI.isLandscape, true);
+			btnRemoveSel.setIcon(UI.ICON_DELETE, largeMode || !UI.isLandscape, true);
 			btnCancelSel = (BgButton)findViewById(R.id.btnCancelSel);
 			btnCancelSel.setOnClickListener(this);
 			alwaysShowSecondary = true;
 			lblTime = null;
-			if (UI.isLowDpiScreen) {
+			
+			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
+			btnVolume = (BgButton)findViewById(R.id.btnVolume);
+			
+			if (UI.isLowDpiScreen && !UI.isLargeScreen) {
 				barVolume.setTextSizeIndex(1);
 				barSeek.setTextSizeIndex(1);
-			}
-			if (UI.isLargeScreen || !UI.isLowDpiScreen) {
-				if (UI.isLargeScreen) {
-					if (lblTitle != null)
-						lblTitle.setPadding(UI._8dp, UI._4dp, UI._4dp, UI._8dp);
-					if (lblMsgSelMove != null)
-						lblMsgSelMove.setPadding(UI._8dp, UI._4dp, UI._4dp, UI._8dp);
-				}
+			} else {
 				btnCancelSel.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			}
-			if (UI.isLowDpiScreen && !UI.isLandscape) {
+			
+			if (largeMode) {
+				UI.mediumTextAndColor((TextView)findViewById(R.id.lblTitleStatic));
+				UI.mediumTextAndColor((TextView)findViewById(R.id.lblArtistStatic));
+				UI.mediumTextAndColor((TextView)findViewById(R.id.lblAlbumStatic));
+				UI.mediumTextAndColor((TextView)findViewById(R.id.lblLengthStatic));
+				lblArtist.setTextColor(UI.color_current);
+				UI.largeText(lblArtist);
+				lblAlbum = (TextView)findViewById(R.id.lblAlbum);
+				lblAlbum.setTextColor(UI.color_current);
+				UI.largeText(lblAlbum);
+				lblLength = (TextView)findViewById(R.id.lblLength);
+				lblLength.setTextColor(UI.color_current);
+				UI.largeText(lblLength);
+			} else {
+				lblAlbum = null;
+				lblLength = null;
+			}
+			
+			if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE) {
+				panelSecondary.removeView(barVolume);
+				barVolume = null;
+				btnVolume.setVisibility(View.VISIBLE);
+				btnVolume.setOnClickListener(this);
+				btnVolume.setIcon(UI.ICON_VOLUME4, true, true);
+				vwVolume = btnVolume;
+				vwVolumeId = R.id.btnVolume;
+				if (largeMode) {
+					UI.setNextFocusForwardId(list, R.id.btnVolume);
+					UI.setNextFocusForwardId(barSeek, R.id.btnVolume);
+					barSeek.setNextFocusRightId(R.id.btnVolume);
+					btnPrev.setNextFocusLeftId(R.id.btnVolume);
+					btnPrev.setNextFocusUpId(R.id.btnVolume);
+					btnPlay.setNextFocusUpId(R.id.btnVolume);
+					btnNext.setNextFocusUpId(R.id.btnVolume);
+					btnMenu.setNextFocusUpId(R.id.btnVolume);
+				} else {
+					if (UI.isLandscape) {
+						btnPrev.setNextFocusRightId(R.id.btnVolume);
+						btnPlay.setNextFocusRightId(R.id.btnVolume);
+						btnNext.setNextFocusRightId(R.id.btnVolume);
+					} else {
+						btnPrev.setNextFocusDownId(R.id.btnVolume);
+						btnPlay.setNextFocusDownId(R.id.btnVolume);
+						btnNext.setNextFocusDownId(R.id.btnVolume);
+					}
+					UI.setNextFocusForwardId(btnMenu, R.id.btnVolume);
+					btnMenu.setNextFocusRightId(R.id.btnVolume);
+					btnMenu.setNextFocusDownId(R.id.btnVolume);
+				}
+			} else {
+				panelSecondary.removeView(btnVolume);
+				btnVolume = null;
+				barVolume.setOnBgSeekBarChangeListener(this);
+				barVolume.setMax((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamMaxVolume() : (-Player.MIN_VOLUME_DB / 5));
+				barVolume.setVertical(UI.isLandscape && !largeMode);
+				barVolume.setKeyIncrement((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? 1 : 20);
+				barVolume.setEmptySpaceColor(UI.color_window);
+				vwVolume = barVolume;
+				vwVolumeId = R.id.barVolume;
+			}
+			
+			if (UI.isLandscape) {
+				if (largeMode)
+					list.setRightBorder();
+				else
+					list.setTopLeftBorders();
+			} else {
+				if (largeMode)
+					list.setBottomBorder();
+			}
+			if (UI.isLowDpiScreen && !UI.isLargeScreen && !UI.isLandscape) {
 				alwaysShowSecondary = false;
 				lblTime = (TextView)findViewById(R.id.lblTime);
 				lblTime.setVisibility(View.VISIBLE);
@@ -809,14 +885,20 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				panelSecondary.setVisibility(View.GONE);
 				panelSecondary.setPadding(0, 0, 0, 0);
 				panelSelection.setPadding(0, 0, 0, 0);
+				if (btnVolume != null) {
+					final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)btnVolume.getLayoutParams();
+					p.rightMargin = 0;
+					btnVolume.setLayoutParams(p);
+				}
 				lblTitle.setClickable(true);
 				lblTitle.setFocusable(true);
 				lblTitle.setOnClickListener(this);
 				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_current }));
 				lblTitle.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, true, UI._18spBox), null, null, null);
-				barVolume.setNextFocusUpId(R.id.lblTitle);
-				barVolume.setNextFocusDownId(R.id.list);
-				UI.setNextFocusForwardId(barVolume, R.id.list);
+				vwVolume.setNextFocusLeftId(R.id.lblTitle);
+				vwVolume.setNextFocusUpId(R.id.lblTitle);
+				vwVolume.setNextFocusDownId(R.id.list);
+				UI.setNextFocusForwardId(vwVolume, R.id.list);
 				btnPrev.setNextFocusLeftId(R.id.lblTitle);
 				btnPrev.setNextFocusUpId(R.id.lblTitle);
 				btnPrev.setNextFocusDownId(R.id.list);
@@ -855,26 +937,28 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_DPAD_LEFT:
-			if (Player.songs.selecting) {
-				(UI.isLandscape ? btnMoveSel : btnRemoveSel).requestFocus();
-			} else if (Player.songs.moving) {
+			if (Player.songs.selecting)
+				(largeMode ? btnCancelSel : (UI.isLandscape ? btnMoveSel : btnRemoveSel)).requestFocus();
+			else if (Player.songs.moving)
 				btnCancelSel.requestFocus();
-			} else if (UI.isLandscape || alwaysShowSecondary || showSecondary) {
-				barVolume.requestFocus();
-			} else {
+			else if (largeMode)
 				btnMenu.requestFocus();
-			}
+			else if (UI.isLandscape || alwaysShowSecondary || showSecondary)
+				vwVolume.requestFocus();
+			else
+				btnMenu.requestFocus();
 			return true;
 		case KeyEvent.KEYCODE_DPAD_RIGHT:
-			if (Player.songs.selecting) {
-				(UI.isLandscape ? btnMoveSel : btnCancelSel).requestFocus();
-			} else if (Player.songs.moving) {
+			if (Player.songs.selecting)
+				((largeMode || UI.isLandscape) ? btnMoveSel : btnCancelSel).requestFocus();
+			else if (Player.songs.moving)
 				btnCancelSel.requestFocus();
-			} else if (!UI.isLandscape && !alwaysShowSecondary) {
+			else if (largeMode)
+				vwVolume.requestFocus();
+			else if (!UI.isLandscape && !alwaysShowSecondary)
 				lblTitle.requestFocus();
-			} else {
+			else
 				btnPrev.requestFocus();
-			}
 			return true;
 		}
 		final int s = Player.songs.getSelection();
@@ -950,29 +1034,17 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 			list.notifyMeWhenFirstAttached(this);
 			list.setOnKeyDownObserver(this);
 			list.requestFocus();
-			MainHandler.post(new Runnable() {
-				@Override
-				public void run() {
-					//run this again on next frame...
-					if (list != null)
-						list.requestFocus();
-				}
-			});
+			//run this again on next frame...
+			MainHandler.sendMessage(this, 1);
 		} else if (Player.isControlMode()) {
 			if (!btnMenu.isInTouchMode()) {
 				btnMenu.requestFocus();
-				MainHandler.post(new Runnable() {
-					@Override
-					public void run() {
-						//run this again on next frame...
-						if (btnMenu != null)
-							btnMenu.requestFocus();
-					}
-				});
+				//run this again on next frame...
+				MainHandler.sendMessage(this, 2);
 			}
 		}
 		prepareWindowBg(false);
-		onPlayerChanged(false, null);
+		onPlayerChanged(Player.getCurrentSong(), true, null);
 	}
 	
 	@Override
@@ -1015,12 +1087,15 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	protected void onCleanupLayout() {
 		saveListViewPosition();
 		lblTitle = null;
+		lblArtist = null;
+		lblAlbum = null;
+		lblLength = null;
 		lblTitleIcon = null;
-		lastTitleText = null;
 		lblMsgSelMove = null;
 		lblTime = null;
 		barSeek = null;
 		barVolume = null;
+		vwVolume = null;
 		btnPrev = null;
 		btnPlay = null;
 		btnNext = null;
@@ -1052,6 +1127,21 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		timeBuilder = null;
 		volumeBuilder = null;
 		windowDrawable = null;
+	}
+	
+	@Override
+	public boolean handleMessage(Message msg) {
+		switch (msg.what) {
+		case 1:
+			if (list != null)
+				list.requestFocus();
+			break;
+		case 2:
+			if (btnMenu != null)
+				btnMenu.requestFocus();
+			break;
+		}
+		return true;
 	}
 	
 	@Override
@@ -1094,9 +1184,9 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 		lastTime = t;
 		if (t < 0) {
 			if (!alwaysShowSecondary && lblTime != null)
-				lblTime.setText(R.string.no_time);
+				lblTime.setText(R.string.no_info);
 			if (barSeek != null && !barSeek.isTracking()) {
-				barSeek.setText(R.string.no_time);
+				barSeek.setText(R.string.no_info);
 				barSeek.setValue(0);
 			}
 		} else {
@@ -1129,15 +1219,15 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
 		if (fromUser) {
 			if (seekBar == barVolume) {
-				if (Player.isVolumeControlGlobal())
-					Player.setGlobalVolume(value);
+				if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM)
+					Player.setStreamVolume(value);
 				else
 					Player.setVolumeDB((value * 5) + Player.MIN_VOLUME_DB);
 				seekBar.setText(volumeToString());
 			} else if (seekBar == barSeek) {
 				value = getMSFromBarValue(value);
 				if (value < 0) {
-					seekBar.setText(R.string.no_time);
+					seekBar.setText(R.string.no_info);
 					seekBar.setValue(0);
 				} else {
 					Song.formatTime(value, timeBuilder);
@@ -1154,7 +1244,8 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 				playingBeforeSeek = Player.isPlaying();
 				if (playingBeforeSeek)
 					Player.playPause();
-				barVolume.setVisibility(View.GONE);
+				if (!largeMode)
+					vwVolume.setVisibility(View.GONE);
 				return true;
 			}
 			return false;
@@ -1164,7 +1255,7 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	
 	@Override
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
-		if (seekBar == barVolume && Player.isVolumeControlGlobal()) {
+		if (seekBar == barVolume && Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) {
 			updateVolumeDisplay();
 		} else if (seekBar == barSeek) {
 			if (Player.getCurrentSong() != null) {
@@ -1179,7 +1270,8 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 					Player.seekTo(ms, playingBeforeSeek);
 				}
 			}
-			barVolume.setVisibility(View.VISIBLE);
+			if (!largeMode)
+				vwVolume.setVisibility(View.VISIBLE);
 		}
 	}
 	
@@ -1214,24 +1306,34 @@ public final class ActivityMain extends ClientActivity implements TimerHandler, 
 	public void onPressingChanged(BgButton button, boolean pressed) {
 		if (button == btnDecreaseVolume) {
 			if (pressed) {
-				volumeButtonPressed = 1;
-				tmrVolumeInitialDelay = 3;
-				if (decreaseVolume())
-					tmrVolume.start(175, false);
-				else
+				if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE) {
+					Player.showStreamVolumeUI();
 					tmrVolume.stop();
+				} else {
+					volumeButtonPressed = 1;
+					tmrVolumeInitialDelay = 3;
+					if (decreaseVolume())
+						tmrVolume.start(175);
+					else
+						tmrVolume.stop();
+				}
 			} else if (volumeButtonPressed == 1) {
 				volumeButtonPressed = 0;
 				tmrVolume.stop();
 			}
 		} else if (button == btnIncreaseVolume) {
 			if (pressed) {
-				volumeButtonPressed = 2;
-				tmrVolumeInitialDelay = 3;
-				if (increaseVolume())
-					tmrVolume.start(175, false);
-				else
+				if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE) {
+					Player.showStreamVolumeUI();
 					tmrVolume.stop();
+				} else {
+					volumeButtonPressed = 2;
+					tmrVolumeInitialDelay = 3;
+					if (increaseVolume())
+						tmrVolume.start(175);
+					else
+						tmrVolume.stop();
+				}
 			} else if (volumeButtonPressed == 2) {
 				volumeButtonPressed = 0;
 				tmrVolume.stop();

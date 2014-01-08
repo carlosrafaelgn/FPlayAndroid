@@ -32,49 +32,42 @@
 //
 package br.com.carlosrafaelgn.fplay.util;
 
+import android.os.Message;
 import android.os.SystemClock;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 
-public class Timer {
+public class Timer implements MainHandler.Callback {
 	public static interface TimerHandler {
 		public void handleTimer(Timer timer, Object param);
 	}
 	
+	private static final int MSG_ONESHOT = 0x0200;
+	private static final int MSG_INTERVAL = 0x0201;
 	private final Object sync;
 	private final Runnable runnable;
 	private final TimerHandler timerHandler;
 	private final String name;
+	private final boolean oneShot, handledOnMain, compensatingForDelays;
 	private volatile int interval, version;
-	private volatile boolean handledOnMain, compensatingForDelays;
 	private volatile TimerThread thread;
+	private volatile boolean alive;
+	private volatile Object param;
+	private long nextTime;
 	
 	private class TimerThread extends Thread {
 		private final int myVersion;
-		private final boolean oneShot;
-		private final Object param;
 		
-		public TimerThread(int myVersion, boolean oneShot, String name, Object param) {
+		public TimerThread(int myVersion, String name) {
 			super((name == null) ? "Timer Thread" : name);
 			this.myVersion = myVersion;
-			this.oneShot = oneShot;
-			this.param = param;
 		}
 		
 		@Override
 		public void run() {
-			if (MainHandler.isOnMainThread()) {
-				if (version == myVersion) {
-					if (runnable != null)
-						runnable.run();
-					else
-						timerHandler.handleTimer(Timer.this, param);
-				}
-				return;
-			}
-			long lastTime = SystemClock.elapsedRealtime();
+			long lastTime = SystemClock.uptimeMillis();
 			while (version == myVersion) {
 				if (compensatingForDelays) {
-					final long now = SystemClock.elapsedRealtime();
+					final long now = SystemClock.uptimeMillis();
 					final int actualInterval = interval - ((int)now - (int)lastTime);
 					lastTime = now;
 					if (actualInterval > 0) {
@@ -99,14 +92,10 @@ public class Timer {
 				}
 				try {
 					if (version == myVersion) {
-						if (handledOnMain) {
-							MainHandler.post(this);
-						} else {
-							if (runnable != null)
-								runnable.run();
-							else
-								timerHandler.handleTimer(Timer.this, param);
-						}
+						if (runnable != null)
+							runnable.run();
+						else
+							timerHandler.handleTimer(Timer.this, param);
 					}
 				} catch (Throwable ex) {
 					System.err.println(ex);
@@ -117,88 +106,197 @@ public class Timer {
 			}
 			if (version == myVersion) {
 				synchronized (sync) {
-					if (version == myVersion)
+					if (version == myVersion) {
 						thread = null;
+						alive = false;
+					}
 				}
 			}
 		}
 	}
 	
-	public Timer(Runnable runnable) {
+	public Timer(Runnable runnable, boolean oneShot) {
 		this.sync = new Object();
 		this.runnable = runnable;
 		this.timerHandler = null;
 		this.name = null;
+		this.oneShot = oneShot;
+		this.handledOnMain = false;
+		this.compensatingForDelays = false;
 	}
 	
-	public Timer(Runnable runnable, String name) {
+	public Timer(Runnable runnable, String name, boolean oneShot) {
 		this.sync = new Object();
 		this.runnable = runnable;
 		this.timerHandler = null;
 		this.name = name;
+		this.oneShot = oneShot;
+		this.handledOnMain = false;
+		this.compensatingForDelays = false;
 	}
 	
-	public Timer(TimerHandler timerHandler) {
+	public Timer(Runnable runnable, String name, boolean oneShot, boolean handledOnMain, boolean compensatingForDelays) {
+		this.sync = new Object();
+		this.runnable = runnable;
+		this.timerHandler = null;
+		this.name = name;
+		this.oneShot = oneShot;
+		this.handledOnMain = handledOnMain;
+		this.compensatingForDelays = compensatingForDelays;
+	}
+	
+	public Timer(TimerHandler timerHandler, boolean oneShot) {
 		this.sync = new Object();
 		this.runnable = null;
 		this.timerHandler = timerHandler;
 		this.name = null;
+		this.oneShot = oneShot;
+		this.handledOnMain = false;
+		this.compensatingForDelays = false;
 	}
 	
-	public Timer(TimerHandler timerHandler, String name) {
+	public Timer(TimerHandler timerHandler, String name, boolean oneShot) {
 		this.sync = new Object();
 		this.runnable = null;
 		this.timerHandler = timerHandler;
 		this.name = name;
+		this.oneShot = oneShot;
+		this.handledOnMain = false;
+		this.compensatingForDelays = false;
 	}
 	
-	public void start(int interval, boolean oneShot) {
-		synchronized (sync) {
-			this.version++;
+	public Timer(TimerHandler timerHandler, String name, boolean oneShot, boolean handledOnMain, boolean compensatingForDelays) {
+		this.sync = new Object();
+		this.runnable = null;
+		this.timerHandler = timerHandler;
+		this.name = name;
+		this.oneShot = oneShot;
+		this.handledOnMain = handledOnMain;
+		this.compensatingForDelays = compensatingForDelays;
+	}
+	
+	public void start(int interval) {
+		if (handledOnMain) {
+			version++;
 			this.interval = interval;
-			this.thread = new TimerThread(version, oneShot, name, null);
-			this.thread.start();
+			param = null;
+			alive = true;
+			thread = null;
+			if (oneShot) {
+				MainHandler.sendMessageDelayed(this, MSG_ONESHOT, version, 0, interval);
+			} else {
+				if (compensatingForDelays)
+					nextTime = SystemClock.uptimeMillis() + interval;
+				MainHandler.sendMessageDelayed(this, MSG_INTERVAL, version, 0, interval);
+			}
+		} else {
+			synchronized (sync) {
+				version++;
+				this.interval = interval;
+				param = null;
+				alive = true;
+				thread = new TimerThread(version, name);
+				thread.start();
+			}
 		}
 	}
 	
-	public void start(int interval, boolean oneShot, Object param) {
-		synchronized (sync) {
-			this.version++;
+	public void start(int interval, Object param) {
+		if (handledOnMain) {
+			version++;
 			this.interval = interval;
-			this.thread = new TimerThread(version, oneShot, name, param);
-			this.thread.start();
+			this.param = param;
+			alive = true;
+			thread = null;
+			if (oneShot) {
+				MainHandler.sendMessageDelayed(this, MSG_ONESHOT, version, 0, interval);
+			} else {
+				if (compensatingForDelays)
+					nextTime = SystemClock.uptimeMillis() + interval;
+				MainHandler.sendMessageDelayed(this, MSG_INTERVAL, version, 0, interval);
+			}
+		} else {
+			synchronized (sync) {
+				version++;
+				this.interval = interval;
+				this.param = param;
+				alive = true;
+				thread = new TimerThread(version, name);
+				thread.start();
+			}
 		}
 	}
 	
 	public void stop() {
-		if (thread != null) {
-			synchronized (sync) {
-				if (thread != null) {
+		if (alive) {
+			if (handledOnMain) {
+				version++;
+			} else {
+				synchronized (sync) {
 					version++;
-					sync.notifyAll();
-					thread = null;
+					if (thread != null) {
+						sync.notifyAll();
+						thread = null;
+					}
 				}
 			}
+			alive = false;
 		}
 	}
 	
 	public void stopAndWait() {
-		if (thread != null) {
-			Thread t;
-			synchronized (sync) {
-				t = thread;
-				if (thread != null) {
+		if (alive) {
+			if (handledOnMain) {
+				version++;
+			} else {
+				Thread t;
+				synchronized (sync) {
 					version++;
-					sync.notifyAll();
-					thread = null;
+					t = thread;
+					if (thread != null) {
+						sync.notifyAll();
+						thread = null;
+					}
+				}
+				if (t != null) {
+					try {
+						t.join();
+					} catch (InterruptedException e) { }
 				}
 			}
-			if (t != null) {
-				try {
-					t.join();
-				} catch (InterruptedException e) { }
+			alive = false;
+		}
+	}
+	
+	@Override
+	public boolean handleMessage(Message msg) {
+		if (msg.arg1 == version) {
+			switch (msg.what) {
+			case MSG_INTERVAL:
+				if (runnable != null)
+					runnable.run();
+				else
+					timerHandler.handleTimer(this, param);
+				if (alive) {
+					if (compensatingForDelays) {
+						final long now = SystemClock.uptimeMillis(), next = nextTime + interval;
+						nextTime = ((next < now) ? now : next);
+						MainHandler.sendMessageAtTime(this, MSG_INTERVAL, version, 0, nextTime);
+					} else {
+						MainHandler.sendMessageDelayed(this, MSG_INTERVAL, version, 0, interval);
+					}
+				}
+				break;
+			case MSG_ONESHOT:
+				alive = false;
+				if (runnable != null)
+					runnable.run();
+				else
+					timerHandler.handleTimer(this, param);
+				break;
 			}
 		}
+		return true;
 	}
 	
 	public int getInterval() {
@@ -206,22 +304,14 @@ public class Timer {
 	}
 	
 	public boolean isAlive() {
-		return (thread != null);
+		return alive;
 	}
 	
 	public boolean isCompensatingForDelays() {
 		return compensatingForDelays;
 	}
 	
-	public void setCompensatingForDelays(boolean compensatingForDelays) {
-		this.compensatingForDelays = compensatingForDelays;
-	}
-	
 	public boolean isHandledOnMain() {
 		return handledOnMain;
-	}
-	
-	public void setHandledOnMain(boolean handledOnMain) {
-		this.handledOnMain = handledOnMain;
 	}
 }

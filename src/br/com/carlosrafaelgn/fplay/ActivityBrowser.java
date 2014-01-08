@@ -131,7 +131,8 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	public void processItemButtonClick(int position, boolean add) {
-		if (fileList.getItemT(position).isDirectory) {
+		final FileSt file = fileList.getItemT(position);
+		if (file.isDirectory) {
 			if (add) {
 				if (!UI.msgAddShown) {
 					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
@@ -161,10 +162,10 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	public void processItemClick(int position) {
-		final FileSt f = fileList.getItemT(position);
 		if (fileList.getSelection() == position) {
-			if (f.isDirectory)
-				navigateTo(f.path, null);
+			final FileSt file = fileList.getItemT(position);
+			if (file.isDirectory)
+				navigateTo(file.path, null);
 			else
 				processMenuItemClick(MNU_PLAYSONG);
 		} else {

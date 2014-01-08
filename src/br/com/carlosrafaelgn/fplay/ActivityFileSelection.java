@@ -163,11 +163,11 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	public void processItemButtonClick(int position, boolean add) {
 		if (!hasButtons)
 			return;
-		final FileSt f = fileList.getItemT(position);
+		final FileSt file = fileList.getItemT(position);
 		if (add) {
-			listener.onAddClicked(id, f.path, f.name);
+			listener.onAddClicked(id, file.path, file.name);
 		} else {
-			listener.onPlayClicked(id, f.path, f.name);
+			listener.onPlayClicked(id, file.path, file.name);
 			if (Player.goBackWhenPlayingFolders)
 				finish();
 		}
@@ -198,14 +198,14 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	public void processItemClick(int position) {
-		final FileSt f = fileList.getItemT(position);
 		if (fileList.getSelection() == position) {
+			final FileSt file = fileList.getItemT(position);
 			if (save) {
-				confirm(f.path, f.name, false);
+				confirm(file.path, file.name, false);
 				return;
 			}
 			finish();
-			listener.onFileSelected(id, f.path, f.name);
+			listener.onFileSelected(id, file.path, file.name);
 		} else {
 			fileList.setSelection(position, true);
 		}

@@ -132,6 +132,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 	}
 	
+	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		//
@@ -159,7 +160,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//	.build());
 		//top is null everytime onCreate is called, which means
 		//everytime a new ActivityMain is created
-		//if top == any ClientActivity other than ActivityMain when
+		//if top was any ClientActivity other than ActivityMain when
 		//onSaveInstanceState was called, then the android:viewHierarchyState
 		//in the savedInstanceState Bundle will not match the actual view
 		//structure that belongs to ActivityMain
@@ -199,16 +200,16 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	protected void onPause() {
+		super.onPause();
 		if (top != null)
 			top.onPause();
-		super.onPause();
 	}
 	
 	@Override
 	protected void onResume() {
-		super.onResume();
 		if (top != null)
 			top.onResume();
+		super.onResume();
 	}
 	
 	private void finalCleanup() {

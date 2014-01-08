@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import br.com.carlosrafaelgn.fplay.list.Song;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -41,7 +42,8 @@ import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
 public final class SongView extends View {
-	private String title, length, artist, ellipsizedTitle, ellipsizedArtist;
+	private Song song;
+	private String ellipsizedTitle, ellipsizedArtist;
 	private final int height, verticalMargin;
 	private int state, width, lengthWidth;
 	
@@ -52,21 +54,19 @@ public final class SongView extends View {
 	}
 	
 	private void processEllipsis() {
-		ellipsizedTitle = UI.ellipsizeText(title, UI._22sp, width - (UI._8dp << 1) - UI._8dp - lengthWidth);
-		ellipsizedArtist = UI.ellipsizeText(artist, UI._14sp, width - (UI._8dp << 1));
+		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._8dp - lengthWidth);
+		ellipsizedArtist = UI.ellipsizeText(song.artist, UI._14sp, width - (UI._8dp << 1));
 	}
 	
-	public void setItemState(String title, String length, String artist, int state) {
+	public void setItemState(Song song, int state) {
 		final int w = getWidth();
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
-		//watch out, DO NOT use equals()!
-		if (this.title == title && this.length == length && this.artist == artist && width == w)
+		//watch out, DO NOT use equals() in favor of speed!
+		if (this.song == song && width == w)
 			return;
+		this.song = song;
 		this.width = w;
-		this.title = title;
-		this.length = length;
-		lengthWidth = UI.measureText(length, UI._14sp);
-		this.artist = artist;
+		lengthWidth = UI.measureText(song.length, UI._14sp);
 		processEllipsis();
 	}
 	
@@ -148,7 +148,7 @@ public final class SongView extends View {
 		getDrawingRect(UI.rect);
 		UI.drawBg(canvas, state, UI.rect, false);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
-		UI.drawText(canvas, length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
+		UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
 		UI.drawText(canvas, ellipsizedArtist, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
 	}
 }

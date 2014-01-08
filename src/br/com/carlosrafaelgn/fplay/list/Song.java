@@ -44,12 +44,12 @@ public final class Song extends BaseItem {
 	public final String path;
 	public final boolean isHttp;
 	public String title, artist, album;
-	public int track, lengthMS;
+	public int track, lengthMS, year;
 	public String length;
 	public Song possibleNextSong;
 	public boolean alreadyPlayed, selected;
 	
-	private Song(String path, String title, String artist, String album, int track, int lengthMS) {
+	private Song(String path, String title, String artist, String album, int track, int lengthMS, int year) {
 		this.path = path;
 		this.isHttp = (path.startsWith("http://") || path.startsWith("https://"));
 		this.title = title;
@@ -57,6 +57,7 @@ public final class Song extends BaseItem {
 		this.album = album;
 		this.track = track;
 		this.lengthMS = lengthMS;
+		this.year = year;
 		validateFields(null);
 	}
 	
@@ -73,35 +74,64 @@ public final class Song extends BaseItem {
 		
 		//MediaMetadataRetriever simply returns null for all keys, except METADATA_KEY_DURATION,
 		//on several devices, even though the file has the metadata... :(
-		//So, trust our MetadataExtractor, and only call MediaMetadataRetriever afterwards
+		//So, trust our MetadataExtractor, and only call MediaMetadataRetriever for unsupported file types
 		
 		final String[] fields = MetadataExtractor.extract(fileSt, tmpPtr);
 		
-		final MediaMetadataRetriever retr = new MediaMetadataRetriever();
-		try {
-			retr.setDataSource(fileSt.path);
-			String s;
+		if (fields != null) {
+			this.title = fields[MetadataExtractor.TITLE];
+			this.artist = fields[MetadataExtractor.ARTIST];
+			this.album = fields[MetadataExtractor.ALBUM];
+			if (fields[MetadataExtractor.TRACK] != null) {
+				try {
+					this.track = Integer.parseInt(fields[MetadataExtractor.TRACK]);
+				} catch (Throwable ex) { }
+			}
+			if (fields[MetadataExtractor.YEAR] != null) {
+				try {
+					this.year = Integer.parseInt(fields[MetadataExtractor.YEAR]);
+				} catch (Throwable ex) { }
+			}
+			if (fields[MetadataExtractor.LENGTH] != null) {
+				try {
+					this.lengthMS = Integer.parseInt(fields[MetadataExtractor.LENGTH]);
+				} catch (Throwable ex) { }
+			}
+		}
+		if (fields == null || this.lengthMS <= 0) {
+			final MediaMetadataRetriever retr = new MediaMetadataRetriever();
 			try {
-				this.title = ((fields != null && fields[MetadataExtractor.TITLE] != null) ? fields[MetadataExtractor.TITLE] : retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE));
+				retr.setDataSource(fileSt.path);
+				String s;
+				if (fields == null) {
+					try {
+						this.title = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+					} catch (Throwable ex) { }
+					try {
+						this.artist = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+					} catch (Throwable ex) { }
+					try {
+						this.album = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+					} catch (Throwable ex) { }
+					try {
+						s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER);
+						if (s != null && s.length() > 0)
+							this.track = Integer.parseInt(s);
+					} catch (Throwable ex) { }
+					try {
+						s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR);
+						if (s != null && s.length() > 0)
+							this.year = Integer.parseInt(s);
+					} catch (Throwable ex) { }
+				}
+				try {
+					s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+					if (s != null && s.length() > 0)
+						this.lengthMS = Integer.parseInt(s);
+				} catch (Throwable ex) { }
 			} catch (Throwable ex) { }
-			try {
-				this.artist = ((fields != null && fields[MetadataExtractor.ARTIST] != null) ? fields[MetadataExtractor.ARTIST] : retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST));
-			} catch (Throwable ex) { }
-			try {
-				this.album = ((fields != null && fields[MetadataExtractor.ALBUM] != null) ? fields[MetadataExtractor.ALBUM] : retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM));
-			} catch (Throwable ex) { }
-			try {
-				s = ((fields != null && fields[MetadataExtractor.TRACK] != null) ? fields[MetadataExtractor.TRACK] : retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER));
-				if (s != null && s.length() > 0)
-					this.track = Integer.parseInt(s);
-			} catch (Throwable ex) { }
-			try {
-				s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-				if (s != null && s.length() > 0)
-					this.lengthMS = Integer.parseInt(s);
-			} catch (Throwable ex) { }
-		} catch (Throwable ex) { }
-		retr.release();
+			retr.release();
+		}
 		validateFields(fileSt.name);
 	}
 	
@@ -122,6 +152,8 @@ public final class Song extends BaseItem {
 			this.track = -1;
 		if (this.lengthMS <= 0)
 			this.lengthMS = -1;
+		if (this.year <= 0)
+			this.year = -1;
 		this.length = formatTime(this.lengthMS);
 	}
 	
@@ -131,28 +163,30 @@ public final class Song extends BaseItem {
 	}
 	
 	public void serialize(OutputStream os) throws IOException {
+		//NEVER change this order! (changing will destroy existing lists)
 		Serializer.serializeString(os, path);
 		Serializer.serializeString(os, title);
 		Serializer.serializeString(os, artist);
 		Serializer.serializeString(os, album);
 		Serializer.serializeInt(os, track);
 		Serializer.serializeInt(os, lengthMS);
-		Serializer.serializeInt(os, 0); //flags
+		Serializer.serializeInt(os, year);
 		Serializer.serializeInt(os, 0); //flags
 	}
 	
 	public static Song deserialize(InputStream is) throws IOException {
 		String path, title, artist, album;
-		int track, lengthMS;
+		int track, lengthMS, year;
+		//NEVER change this order! (changing will destroy existing lists)
 		path = Serializer.deserializeString(is);
 		title = Serializer.deserializeString(is);
 		artist = Serializer.deserializeString(is);
 		album = Serializer.deserializeString(is);
 		track = Serializer.deserializeInt(is);
 		lengthMS = Serializer.deserializeInt(is);
+		year = Serializer.deserializeInt(is);
 		Serializer.deserializeInt(is); //flags
-		Serializer.deserializeInt(is); //flags
-		return new Song(path, title, artist, album, track, lengthMS);
+		return new Song(path, title, artist, album, track, lengthMS, year);
 	}
 	
 	public static String formatTime(int timeMS) {

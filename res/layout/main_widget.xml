@@ -12,7 +12,30 @@
         <TextView
             android:id="@+id/lblTitle"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/lblArtist"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@+id/btnPrev"
+            android:background="@drawable/bg_widget_button"
+            android:clickable="true"
+            android:ellipsize="end"
+            android:focusable="true"
+            android:gravity="center"
+            android:nextFocusForward="@+id/btnPrev"
+            android:nextFocusRight="@+id/btnPrev"
+            android:paddingLeft="2dp"
+            android:paddingRight="2dp"
+            android:paddingTop="2dp"
+            android:text="@string/nothing_playing"
+            android:textAppearance="@style/MediumText"
+            android:textColor="@color/color_widget_text" />
+
+        <TextView
+            android:id="@+id/lblArtist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
             android:layout_toLeftOf="@+id/btnPrev"
             android:background="@drawable/bg_widget_button"
@@ -20,11 +43,12 @@
             android:ellipsize="end"
             android:focusable="true"
             android:gravity="center"
-            android:maxLines="3"
             android:nextFocusForward="@+id/btnPrev"
             android:nextFocusRight="@+id/btnPrev"
-            android:text="@string/nothing_playing"
-            android:textAppearance="@style/MediumText"
+            android:padding="2dp"
+            android:singleLine="true"
+            android:text="@string/no_info"
+            android:textAppearance="@style/SmallText"
             android:textColor="@color/color_widget_text" />
 
         <ImageButton

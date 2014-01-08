@@ -324,7 +324,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		if (!UI.isLowDpiScreen) {
+		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
 			p.leftMargin = UI._8dp;
 			p.topMargin = UI._8dp;
 			p.rightMargin = UI._8dp;
@@ -392,8 +392,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		container.addView(buttonContainer);
 		setContentView(container);
 		
-		timer = new Timer(this, "Visualizer Timer");
-		timer.setCompensatingForDelays(true);
+		timer = new Timer(this, "Visualizer Timer", false, false, true);
 		bfft = new byte[1024];
 		fft = new float[256];
 		multiplier = new float[256];
@@ -431,13 +430,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	protected void onResume() {
-		super.onResume();
 		Player.observer = this;
 		if (visualizer != null) {
 			visualizer.setEnabled(true);
 			timer.start(16, false);
 		}
-		onPlayerChanged(false, null);
+		onPlayerChanged(Player.getCurrentSong(), true, null);
+		super.onResume();
 	}
 	
 	private void finalCleanup() {
@@ -512,20 +511,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 				pts[i] = v;
 			}
 			visualizerView.releasePoints(false);
-			MainHandler.post(visualizerView);
+			MainHandler.postToMainThread(visualizerView);
 		}
 	}
 	
 	@Override
-	public void onPlayerChanged(boolean onlyPauseChanged, Throwable ex) {
-		final Song s = Player.getCurrentSong();
-		if (s == null || ex != null) {
-			if (btnPlay != null)
-				btnPlay.setText(UI.ICON_PLAY);
-		} else {
-			if (btnPlay != null)
-				btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
-		}
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+		if (btnPlay != null)
+			btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
 	}
 	
 	@Override

@@ -79,7 +79,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public void startDeserializing(final Context context, final String path, final boolean entireListBeingLoaded, final boolean append, final boolean play) {
 		try {
 			addingStarted();
-			(new Thread(new Runnable() {
+			(new Thread("List Deserializer Thread") {
 				private boolean done;
 				private int current;
 				private Song[] songs;
@@ -106,14 +106,14 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							}
 							done = true;
 							addingEnded();
-							MainHandler.post(this);
+							MainHandler.postToMainThread(this);
 						} catch (Throwable ex) {
 							songs = null;
 							done = true;
 							if (!(ex instanceof FileNotFoundException))
 								this.ex = ex;
 							addingEnded();
-							MainHandler.post(this);
+							MainHandler.postToMainThread(this);
 						} finally {
 							try {
 								if (fs != null)
@@ -123,7 +123,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 						}
 					}
 				}
-			}, "List Deserializer Thread")).start();
+			}).start();
 		} catch (Throwable ex) {
 			addingEnded();
 		}
@@ -149,7 +149,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public void onFilesFetched(FileFetcher fetcher, final Throwable e) {
 		if (e != null) {
 			addingEnded();
-			MainHandler.post(new Runnable() {
+			MainHandler.postToMainThread(new Runnable() {
 				@Override
 				public void run() {
 					try {
@@ -182,7 +182,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		}
 		addingEnded();
 		final int songCount = f;
-		MainHandler.post(new Runnable() {
+		MainHandler.postToMainThread(new Runnable() {
 			@Override
 			public void run() {
 				if (play && isAddingFolder && Player.clearListWhenPlayingFolders)
@@ -516,8 +516,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	@Override
     public View getView(int position, View convertView, ViewGroup parent) {
 		final SongView view = ((convertView == null) ? new SongView(Player.getService()) : (SongView)convertView);
-		final Song s = items[position];
-		view.setItemState(s.title, s.length, s.artist, getItemState(position));
+		view.setItemState(items[position], getItemState(position));
 		return view;
 	}
 }

@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="15"
-    android:versionName="0.83" >
+    android:versionCode="16"
+    android:versionName="0.84" >
 
     <uses-sdk
         android:minSdkVersion="10"
@@ -26,7 +26,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- See this: http://developer.android.com/reference/android/bluetooth/BluetoothHeadset.html#ACTION_AUDIO_STATE_CHANGED -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <!-- <uses-permission android:name="android.permission.BROADCAST_STICKY"  /> -->
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- For exporting files/settings -->

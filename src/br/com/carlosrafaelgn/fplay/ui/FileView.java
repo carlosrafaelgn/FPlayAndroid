@@ -52,11 +52,12 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private final int height, verticalMargin;
 	private final Bitmap closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
 	private Bitmap bitmap;
+	private FileSt file;
 	private final BgButton btnAdd, btnPlay;
-	private String name, ellipsizedName;
-	private boolean isDirectory, buttonsVisible;
+	private String ellipsizedName;
+	private boolean buttonsVisible;
 	private final boolean hasButtons;
-	private int state, position, width;
+	private int state, width, position;
 	
 	public FileView(Context context, ActivityFileView observerActivity, Drawable closedFolderIcon, Drawable internalIcon, Drawable externalIcon, Drawable favoriteIcon, Drawable artistIcon, Drawable albumIcon, boolean hasButtons) {
 		super(context);
@@ -103,20 +104,20 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(name, UI._22sp, width - ((bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp) - (buttonsVisible ? ((UI.defaultControlContentsSize << 1) + UI._8dp + (UI._8dp << 2)) : 0) - UI._8dp);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - ((bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp) - (buttonsVisible ? ((UI.defaultControlContentsSize << 1) + UI._8dp + (UI._8dp << 2)) : 0) - UI._8dp);
 	}
 	
-	public void setItemState(String name, boolean isDirectory, int specialType, int position, int state) {
+	public void setItemState(FileSt file, int position, int state) {
 		final int w = getWidth();
+		final int specialType = file.specialType;
 		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM)) && ((state & UI.STATE_SELECTED) != 0));
-		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
-		//watch out, DO NOT use equals()!
-		if (this.name == name && this.isDirectory == isDirectory && buttonsVisible == showButtons && width == w)
-			return;
-		this.width = w;
-		this.name = name;
-		this.isDirectory = isDirectory;
 		this.position = position;
+		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
+		//watch out, DO NOT use equals() in favor of speed!
+		if (this.file == file && buttonsVisible == showButtons && width == w)
+			return;
+		this.file = file;
+		this.width = w;
 		if (buttonsVisible != showButtons) {
 			buttonsVisible = showButtons;
 			if (btnAdd != null)
@@ -124,7 +125,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			if (btnPlay != null)
 				btnPlay.setVisibility(showButtons ? View.VISIBLE : View.GONE);
 		}
-		if (isDirectory) {
+		if (file.isDirectory) {
 			switch (specialType) {
 			case FileSt.TYPE_INTERNAL_STORAGE:
 				bitmap = internalIcon;

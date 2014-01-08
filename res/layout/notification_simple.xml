@@ -22,9 +22,7 @@
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
         android:layout_toRightOf="@+id/imgIcon"
-        android:ellipsize="marquee"
-        android:fadingEdge="horizontal"
-        android:singleLine="true"
+        android:ellipsize="end"
         android:gravity="center"
         android:textAppearance="@android:style/TextAppearance.StatusBar.EventContent.Title" />
 
