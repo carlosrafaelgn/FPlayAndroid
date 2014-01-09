@@ -351,7 +351,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		this.parentMenu = parentMenu;
 	}
 	
-	public static void registerForContextMenu(View view, final View.OnCreateContextMenuListener listener) {
+	/*public static void registerForContextMenu(View view, final View.OnCreateContextMenuListener listener) {
 		if (!view.isLongClickable())
 			view.setLongClickable(true);
 		view.setOnLongClickListener(new View.OnLongClickListener() {
@@ -361,7 +361,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 				return true;
 			}
 		});
-	}
+	}*/
 	
 	public static void openContextMenu(View view, View.OnCreateContextMenuListener listener) {
 		final CustomContextMenu mnu = new CustomContextMenu(view, listener, null, null, null);

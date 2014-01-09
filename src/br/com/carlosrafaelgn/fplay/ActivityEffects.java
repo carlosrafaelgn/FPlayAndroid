@@ -203,7 +203,7 @@ public class ActivityEffects extends ClientActivity implements View.OnClickListe
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
-		CustomContextMenu.registerForContextMenu(btnMenu, this);
+		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		btnChangeEffect = (BgButton)findViewById(R.id.btnChangeEffect);
 		btnChangeEffect.setOnClickListener(this);
 		btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, true), null, null, null);

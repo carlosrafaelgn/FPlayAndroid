@@ -273,21 +273,19 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		final int i = fileList.getSelection();
 		UI.prepare(menu);
+		if (save)
+			menu.add(0, MNU_SAVEAS, 0, format(R.string.msg_create_new, itemType))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_SAVE));
 		if (i >= 0) {
 			if (save)
-				menu.add(0, MNU_SAVE, 0, format(R.string.msg_overwrite, itemType, fileList.getItemT(i).name))
+				menu.add(0, MNU_SAVE, 1, format(R.string.msg_overwrite, itemType, fileList.getItemT(i).name))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable(UI.ICON_SAVE));
 			else
 				menu.add(0, MNU_LOAD, 0, R.string.load)
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable(UI.ICON_LOAD));
-		}
-		if (save)
-			menu.add(0, MNU_SAVEAS, 1, format(R.string.msg_create_new, itemType))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_SAVE));
-		if (i >= 0) {
 			UI.separator(menu, 1, 0);
 			menu.add(1, MNU_DELETE, 1, format(R.string.msg_delete, itemType, fileList.getItemT(i).name))
 				.setOnMenuItemClickListener(this)
@@ -384,7 +382,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		//		lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		//	}
 		//}
-		CustomContextMenu.registerForContextMenu(btnMenu, this);
+		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		fileList.setPrivateFileType(fileType);
 	}
 	

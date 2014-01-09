@@ -535,7 +535,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
-		CustomContextMenu.registerForContextMenu(btnMenu, this);
+		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		navigateTo(Player.path, null);
 	}
 	

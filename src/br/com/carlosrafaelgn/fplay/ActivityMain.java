@@ -654,7 +654,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 		btnNext.setOnClickListener(this);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
-		CustomContextMenu.registerForContextMenu(btnMenu, this);
+		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		if (Player.isControlMode()) {
 			UI.largeText(lblTitle);
 			btnPrev.setIconNoChanges(UI.ICON_PREV);
