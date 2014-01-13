@@ -177,6 +177,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_USEALTERNATETYPEFACE = 0x001B;
 	private static final int OPT_GOBACKWHENPLAYINGFOLDERS = 0x001C;
 	private static final int OPT_RANDOMMODE = 0x001D;
+	private static final int OPT_FORCEDLOCALE = 0x001E;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -218,8 +219,12 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
 	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged;
 	
-	public static void loadConfig(Context context) {
-		SerializableMap opts = SerializableMap.deserialize(context, "_Player");
+	public static SerializableMap loadConfigFromFile(Context context) {
+		return SerializableMap.deserialize(context, "_Player");
+	}
+	
+	private static void loadConfig(Context context) {
+		SerializableMap opts = loadConfigFromFile(context);
 		if (opts == null)
 			opts = new SerializableMap();
 		setVolumeDB(opts.getInt(OPT_VOLUME));
@@ -250,6 +255,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		UI.setUsingAlternateTypeface(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
+		UI.setForcedLocale(context, opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
 		UI.msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
 		UI.msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
@@ -270,7 +276,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			favoriteFolders = new HashSet<String>(8);
 	}
 	
-	public static void saveConfig(Context context) {
+	private static void saveConfig(Context context) {
 		final SerializableMap opts = new SerializableMap(32);
 		opts.put(OPT_VOLUME, volumeDB);
 		opts.put(OPT_CONTROLMODE, controlMode);
@@ -298,6 +304,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
 		opts.put(OPT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
 		opts.put(OPT_RANDOMMODE, songs.isInRandomMode());
+		opts.put(OPT_FORCEDLOCALE, UI.getForcedLocale());
 		opts.put(OPT_MSGADDSHOWN, UI.msgAddShown);
 		opts.put(OPT_MSGPLAYSHOWN, UI.msgPlayShown);
 		opts.put(OPT_MSGSTARTUPSHOWN, UI.msgStartupShown);

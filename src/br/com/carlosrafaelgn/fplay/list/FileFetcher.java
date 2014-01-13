@@ -189,7 +189,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 				} else {
 					files[count] = new FileSt(addedPath, s.getText(R.string.internal_storage).toString(), FileSt.TYPE_INTERNAL_STORAGE);
 				}
-				addedPath = addedPath.toLowerCase(Locale.ENGLISH);
+				addedPath = addedPath.toLowerCase(Locale.US);
 				count++;
 			}
 		} catch (Throwable ex) {
@@ -217,7 +217,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 					String element = line.substring(start + 1, end);
 					if (element.contains(":"))
 						element = element.substring(0, element.indexOf(":"));
-					final String elementLC = element.toLowerCase(Locale.ENGLISH);
+					final String elementLC = element.toLowerCase(Locale.US);
 					if (!elementLC.contains("usb") && !addedPath.equals(elementLC))
 						vold.add(element);
 				}

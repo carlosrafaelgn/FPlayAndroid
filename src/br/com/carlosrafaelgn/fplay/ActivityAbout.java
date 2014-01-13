@@ -75,6 +75,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		sb.append(getText(R.string.app_more_info));
 		sb.append("\n\nFolder/Disc icons:\nhttp://www.24psd.com/ubuntu+icon+pack\n\nPhone icon:\nhttp://www.psdgraphics.com/graphics/photoshop-recreation-of-google-nexus-one-smartphone-download-psd\n\nSD card icon:\nhttp://artofapogee.blogspot.com.br/2010/02/sd-card-icon.html");
 		sb.append(getText(R.string.app_more_info2));
+		sb.append(getText(R.string.app_license));
 		lblMsg.setAutoLinkMask(Linkify.ALL);
 		lblMsg.setLinksClickable(true);
 		lblMsg.setText(sb.toString());
@@ -89,11 +90,11 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		sb.append(UI.density);
 		sb.append("\nsp: ");
 		sb.append(UI.scaledDensity);
-		sb.append("\nResolution (px): ");
+		sb.append("\n" + getText(R.string.resolution) + " (px): ");
 		sb.append(UI.screenWidth);
 		sb.append(" x ");
 		sb.append(UI.screenHeight);
-		sb.append("\nResolution (dp): ");
+		sb.append("\n" + getText(R.string.resolution) + " (dp): ");
 		sb.append(UI.pxToDp(UI.screenWidth));
 		sb.append(" x ");
 		sb.append(UI.pxToDp(UI.screenHeight));

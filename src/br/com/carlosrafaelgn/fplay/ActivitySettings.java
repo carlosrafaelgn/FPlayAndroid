@@ -32,17 +32,10 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
-import android.os.Environment;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -70,7 +63,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
@@ -92,6 +85,24 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.separator(menu, 2, 4);
 			menu.add(3, -2, 0, R.string.custom)
 				.setOnMenuItemClickListener(this);
+		} else if (view == optForcedLocale) {
+			final Context ctx = getApplication();
+			final int o = UI.getForcedLocale();
+			lastMenuView = optForcedLocale;
+			UI.prepare(menu);
+			menu.add(0, UI.LOCALE_NONE, 0, R.string.standard_language)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			UI.separator(menu, 0, 1);
+			menu.add(1, UI.LOCALE_US, 0, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_US))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_US) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_PTBR, 1, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_PTBR))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_PTBR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_RU, 2, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_RU))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
@@ -146,144 +157,144 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 	}
 	
-	private void loadSettings() {
-		Player.loadConfig(getApplication());
-		onCleanupLayout();
-		onCreateLayout(false);
-		System.gc();
-		optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface());
-		optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
-		optKeepScreenOn.setChecked(UI.keepScreenOn);
-		if (UI.keepScreenOn)
-			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		else
-			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		optIsDividerVisible.setChecked(UI.isDividerVisible);
-		optIsVerticalMarginLarge.setChecked(UI.isVerticalMarginLarge);
-		optHandleCallKey.setChecked(Player.handleCallKey);
-		optPlayWhenHeadsetPlugged.setChecked(Player.playWhenHeadsetPlugged);
-		optBlockBackKey.setChecked(UI.blockBackKey);
-		optDoubleClickMode.setChecked(UI.doubleClickMode);
-		optMarqueeTitle.setChecked(UI.marqueeTitle);
-		optPrepareNext.setChecked(Player.nextPreparationEnabled);
-		optClearListWhenPlayingFolders.setChecked(Player.clearListWhenPlayingFolders);
-		optGoBackWhenPlayingFolders.setChecked(Player.goBackWhenPlayingFolders);
-		
-		optVolumeControlType.setSecondaryText(getVolumeString());
-		if (UI.forcedOrientation == 0)
-			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-		else if (UI.forcedOrientation < 0)
-			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-		else
-			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		optForceOrientation.setSecondaryText(getOrientationString());
-		optFadeInFocus.setSecondaryText(getFadeInString(Player.fadeInIncrementOnFocus));
-		optFadeInPause.setSecondaryText(getFadeInString(Player.fadeInIncrementOnPause));
-		optFadeInOther.setSecondaryText(getFadeInString(Player.fadeInIncrementOnOther));
-	}
-	
-	private boolean saveFile(ZipOutputStream zo, File f, String name) {
-		FileInputStream fi = null;
-		final int length = (int)f.length();
-		if (length <= 0 || !f.exists()) {
-			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-			return false;
-		}
-		try {
-			fi = new FileInputStream(f);
-			final byte[] buffer = new byte[length];
-			if (fi.read(buffer) != length) {
-				UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-				return false;
-			}
-			zo.putNextEntry(new ZipEntry(name));
-			zo.write(buffer);
-			zo.closeEntry();
-			return true;
-		} catch (Throwable ex) {
-			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-			return false;
-		} finally {
-			if (fi != null) {
-				try {
-					fi.close();
-				} catch (Throwable ex) {
-				}
-			}
-		}
-	}
-	
-	private void saveSettings() {
-		final Context ctx = getApplication();
-		Player.saveConfig(ctx);
-		File of = null;
-		int i;
-		boolean error = false;
-		String downloadPath;
-		FileOutputStream fo = null;
-		ZipOutputStream zo = null;
-		try {
-			try {
-				of = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-				if (of != null && of.exists() && of.isDirectory()) {
-					downloadPath = of.getAbsolutePath();
-					if (downloadPath.charAt(downloadPath.length() - 1) != File.separatorChar)
-						downloadPath += File.separator;
-				} else {
-					UI.toast(getApplication(), R.string.msg_error_download_path);
-					return;
-				}
-			} catch (Throwable ex) {
-				UI.toast(getApplication(), R.string.msg_error_download_path);
-				return;
-			}
-			i = 0;
-			do {
-				of = new File(downloadPath + "FPlay" + ((i == 0) ? ".zip" : " (" + i + ").zip"));
-				i++;
-			} while (of.exists());
-			
-			fo = new FileOutputStream(of);
-			zo = new ZipOutputStream(fo);
-			/*if (!saveFile(zo, ctx.getFileStreamPath("_Player"), "_Player")) {
-				error = true;
-				return;
-			}
-			if (!saveFile(zo, ctx.getFileStreamPath("_List"), "_List")) {
-				error = true;
-				return;
-			}*/
-			final String[] fileList = ctx.fileList();
-			for (i = fileList.length - 1; i >= 0; i--) {
-				if (!saveFile(zo, ctx.getFileStreamPath(fileList[i]), fileList[i])) {
-					error = true;
-					return;
-				}
-			}
-		} catch (Throwable ex) {
-			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-			error = true;
-		} finally {
-			if (zo != null) {
-				try {
-					zo.close();
-				} catch (Throwable ex) {
-				}
-			}
-			if (fo != null) {
-				try {
-					fo.close();
-				} catch (Throwable ex) {
-				}
-			}
-			try {
-				if (error && of != null && of.exists())
-					of.delete();
-			} catch (Throwable ex) {
-				
-			}
-		}
-	}
+//	private void loadSettings() {
+//		Player.loadConfig(getApplication());
+//		onCleanupLayout();
+//		onCreateLayout(false);
+//		System.gc();
+//		optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface());
+//		optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+//		optKeepScreenOn.setChecked(UI.keepScreenOn);
+//		if (UI.keepScreenOn)
+//			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+//		else
+//			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+//		optIsDividerVisible.setChecked(UI.isDividerVisible);
+//		optIsVerticalMarginLarge.setChecked(UI.isVerticalMarginLarge);
+//		optHandleCallKey.setChecked(Player.handleCallKey);
+//		optPlayWhenHeadsetPlugged.setChecked(Player.playWhenHeadsetPlugged);
+//		optBlockBackKey.setChecked(UI.blockBackKey);
+//		optDoubleClickMode.setChecked(UI.doubleClickMode);
+//		optMarqueeTitle.setChecked(UI.marqueeTitle);
+//		optPrepareNext.setChecked(Player.nextPreparationEnabled);
+//		optClearListWhenPlayingFolders.setChecked(Player.clearListWhenPlayingFolders);
+//		optGoBackWhenPlayingFolders.setChecked(Player.goBackWhenPlayingFolders);
+//		
+//		optVolumeControlType.setSecondaryText(getVolumeString());
+//		if (UI.forcedOrientation == 0)
+//			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+//		else if (UI.forcedOrientation < 0)
+//			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+//		else
+//			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+//		optForceOrientation.setSecondaryText(getOrientationString());
+//		optFadeInFocus.setSecondaryText(getFadeInString(Player.fadeInIncrementOnFocus));
+//		optFadeInPause.setSecondaryText(getFadeInString(Player.fadeInIncrementOnPause));
+//		optFadeInOther.setSecondaryText(getFadeInString(Player.fadeInIncrementOnOther));
+//	}
+//	
+//	private boolean saveFile(ZipOutputStream zo, File f, String name) {
+//		FileInputStream fi = null;
+//		final int length = (int)f.length();
+//		if (length <= 0 || !f.exists()) {
+//			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+//			return false;
+//		}
+//		try {
+//			fi = new FileInputStream(f);
+//			final byte[] buffer = new byte[length];
+//			if (fi.read(buffer) != length) {
+//				UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+//				return false;
+//			}
+//			zo.putNextEntry(new ZipEntry(name));
+//			zo.write(buffer);
+//			zo.closeEntry();
+//			return true;
+//		} catch (Throwable ex) {
+//			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+//			return false;
+//		} finally {
+//			if (fi != null) {
+//				try {
+//					fi.close();
+//				} catch (Throwable ex) {
+//				}
+//			}
+//		}
+//	}
+//	
+//	private void saveSettings() {
+//		final Context ctx = getApplication();
+//		Player.saveConfig(ctx);
+//		File of = null;
+//		int i;
+//		boolean error = false;
+//		String downloadPath;
+//		FileOutputStream fo = null;
+//		ZipOutputStream zo = null;
+//		try {
+//			try {
+//				of = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+//				if (of != null && of.exists() && of.isDirectory()) {
+//					downloadPath = of.getAbsolutePath();
+//					if (downloadPath.charAt(downloadPath.length() - 1) != File.separatorChar)
+//						downloadPath += File.separator;
+//				} else {
+//					UI.toast(getApplication(), R.string.msg_error_download_path);
+//					return;
+//				}
+//			} catch (Throwable ex) {
+//				UI.toast(getApplication(), R.string.msg_error_download_path);
+//				return;
+//			}
+//			i = 0;
+//			do {
+//				of = new File(downloadPath + "FPlay" + ((i == 0) ? ".zip" : " (" + i + ").zip"));
+//				i++;
+//			} while (of.exists());
+//			
+//			fo = new FileOutputStream(of);
+//			zo = new ZipOutputStream(fo);
+//			/*if (!saveFile(zo, ctx.getFileStreamPath("_Player"), "_Player")) {
+//				error = true;
+//				return;
+//			}
+//			if (!saveFile(zo, ctx.getFileStreamPath("_List"), "_List")) {
+//				error = true;
+//				return;
+//			}*/
+//			final String[] fileList = ctx.fileList();
+//			for (i = fileList.length - 1; i >= 0; i--) {
+//				if (!saveFile(zo, ctx.getFileStreamPath(fileList[i]), fileList[i])) {
+//					error = true;
+//					return;
+//				}
+//			}
+//		} catch (Throwable ex) {
+//			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
+//			error = true;
+//		} finally {
+//			if (zo != null) {
+//				try {
+//					zo.close();
+//				} catch (Throwable ex) {
+//				}
+//			}
+//			if (fo != null) {
+//				try {
+//					fo.close();
+//				} catch (Throwable ex) {
+//				}
+//			}
+//			try {
+//				if (error && of != null && of.exists())
+//					of.delete();
+//			} catch (Throwable ex) {
+//				
+//			}
+//		}
+//	}
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
@@ -315,6 +326,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setPositiveButton(R.string.ok, this)
 				.setNegativeButton(R.string.cancel, this)
 				.create());
+			}
+		} else if (lastMenuView == optForcedLocale) {
+			if (item.getItemId() != UI.getForcedLocale()) {
+				UI.setForcedLocale(getApplication(), item.getItemId());
+				onCleanupLayout();
+				onCreateLayout(false);
+				System.gc();
 			}
 		} else if (lastMenuView == optVolumeControlType) {
 			switch (item.getItemId()) {
@@ -437,6 +455,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsDividerVisible.setOnClickListener(this);
 		optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge);
 		optIsVerticalMarginLarge.setOnClickListener(this);
+		optForcedLocale = new SettingView(ctx, getText(R.string.language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false);
+		optForcedLocale.setOnClickListener(this);
 		optHandleCallKey = new SettingView(ctx, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey);
 		optHandleCallKey.setOnClickListener(this);
 		optPlayWhenHeadsetPlugged = new SettingView(ctx, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged);
@@ -469,6 +489,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		panelSettings.addView(optForceOrientation);
 		panelSettings.addView(optIsDividerVisible);
 		panelSettings.addView(optIsVerticalMarginLarge);
+		panelSettings.addView(optForcedLocale);
 		addHeader(ctx, R.string.hdr_playback);
 		panelSettings.addView(optPlayWhenHeadsetPlugged);
 		panelSettings.addView(optHandleCallKey);
@@ -516,6 +537,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optVolumeControlType = null;
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
+		optForcedLocale = null;
 		optHandleCallKey = null;
 		optPlayWhenHeadsetPlugged = null;
 		optBlockBackKey = null;
@@ -584,7 +606,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
-		} else if (view == optAutoTurnOff || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
+		} else if (view == optAutoTurnOff || view == optForcedLocale || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
 		}
 	}

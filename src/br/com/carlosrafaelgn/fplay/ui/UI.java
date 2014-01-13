@@ -32,11 +32,15 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import java.util.Locale;
+
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -63,13 +67,20 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 //
 //Unit conversions are based on:
 //http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/util/TypedValue.java
 //
 public final class UI {
+	public static final int LOCALE_NONE = 0;
+	public static final int LOCALE_MAX = 3;
+	public static final int LOCALE_US = 1;
+	public static final int LOCALE_PTBR = 2;
+	public static final int LOCALE_RU = 3;
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
 	public static final int STATE_CURRENT = 4;
@@ -195,8 +206,8 @@ public final class UI {
 	private static float _1dpInset;
 	
 	private static String emptyListString;
-    private static int emptyListStringHalfWidth;
-    private static boolean alternateTypefaceActive, useAlternateTypeface;
+    private static int emptyListStringHalfWidth, forcedLocale;
+    private static boolean alternateTypefaceActive, useAlternateTypeface, fullyInitialized;
 	
 	public static float density, scaledDensity, xdpi_1_72;
 	
@@ -264,6 +275,60 @@ public final class UI {
 		_IconBox = Math.min(spToPxI(24), _22spBox); //both descent and ascent of iconsTypeface are 0!
 	}
 	
+	public static Locale getLocaleFromCode(int localeCode) {
+		final Locale l = Locale.getDefault();
+		switch (localeCode) {
+		case LOCALE_US:
+			if (!l.equals(Locale.US))
+				return Locale.US;
+			break;
+		case LOCALE_PTBR:
+			if (!"pt".equals(l.getLanguage()))
+				return new Locale("pt", "BR");
+			break;
+		case LOCALE_RU:
+			if (!"ru".equals(l.getLanguage()))
+				return new Locale("ru");
+			break;
+		}
+		return l;
+	}
+	
+	public static String getLocaleDescriptionFromCode(Context context, int localeCode) {
+		switch (localeCode) {
+		case LOCALE_US:
+			return "English";
+		case LOCALE_PTBR:
+			return "Português (Brasil)";
+		case LOCALE_RU:
+			return "Русский";
+		}
+		return context.getText(R.string.standard_language).toString();
+	}
+	
+	public static int getForcedLocale() {
+		return forcedLocale;
+	}
+	
+	public static void setForcedLocale(Context context, int localeCode) {
+		if (localeCode < 0 || localeCode > LOCALE_MAX)
+			localeCode = LOCALE_NONE;
+		if (forcedLocale == localeCode)
+			return;
+		try {
+			final Locale l = getLocaleFromCode(localeCode);
+			final Resources res = context.getResources();
+			final Configuration cfg = new Configuration(res.getConfiguration());
+			cfg.locale = l;
+			res.updateConfiguration(cfg, res.getDisplayMetrics());
+			forcedLocale = localeCode;
+		} catch (Throwable ex) {
+			return;
+		}
+		if (fullyInitialized)
+			setUsingAlternateTypeface(context, useAlternateTypeface);
+	}
+	
 	private static void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
 		display.getMetrics(outDisplayMetrics);
 		screenWidth = outDisplayMetrics.widthPixels;
@@ -296,7 +361,16 @@ public final class UI {
 		screenHeight = outDisplayMetrics.heightPixels;
 	}
 	
+	public static void loadWidgetRelatedSettings(Context context) {
+		if (fullyInitialized)
+			return;
+		final SerializableMap opts = Player.loadConfigFromFile(context);
+		//I know, this is ugly... I'll fix it one day...
+		setForcedLocale(context, opts.getInt(0x001E, LOCALE_NONE));
+	}
+	
 	public static void initialize(Context context) {
+		fullyInitialized = true;
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
 		final Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();

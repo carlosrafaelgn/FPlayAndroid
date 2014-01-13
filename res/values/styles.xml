@@ -27,7 +27,7 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
-    <style name="SmallText" parent="@android:style/TextAppearance.Medium">
+    <style name="SmallText" parent="@android:style/TextAppearance.Small">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/color_text</item>
     </style>

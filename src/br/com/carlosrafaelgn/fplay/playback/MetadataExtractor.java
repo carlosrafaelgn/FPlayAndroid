@@ -297,7 +297,7 @@ public final class MetadataExtractor {
 		int i = file.path.lastIndexOf('.');
 		if (i < 0)
 			return null;
-		final String ext = file.path.substring(i + 1).toLowerCase(Locale.ENGLISH);
+		final String ext = file.path.substring(i + 1).toLowerCase(Locale.US);
 		//the only two formats supported for now... I hope to add ogg soon ;)
 		if (!ext.equals("mp3") && !ext.equals("aac"))
 			return null;

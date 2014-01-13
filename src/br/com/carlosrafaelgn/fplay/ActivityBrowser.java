@@ -459,7 +459,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			String url = txtURL.getText().toString().trim();
 			if (url.length() >= 4) {
 				int s = 7;
-				final String urlLC = url.toLowerCase(Locale.ENGLISH);
+				final String urlLC = url.toLowerCase(Locale.US);
 				if (urlLC.startsWith("http://")) {
 					url = "http://" + url.substring(7);
 				} else if (urlLC.startsWith("https://")) {

@@ -38,6 +38,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.widget.RemoteViews;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class WidgetMain extends AppWidgetProvider {
 	private static AppWidgetManager appWidgetManager;
@@ -61,6 +62,7 @@ public final class WidgetMain extends AppWidgetProvider {
 	
 	@Override
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+		UI.loadWidgetRelatedSettings(context);
 		for (int i = appWidgetIds.length - 1; i >= 0; i--)
 			updateAppWidget(context, appWidgetManager, appWidgetIds[i]);
 	}
