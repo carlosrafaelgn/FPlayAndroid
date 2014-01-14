@@ -252,10 +252,9 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, !UI.isLowDpiScreen);
 		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
-		UI.setUsingAlternateTypeface(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false));
+		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
-		UI.setForcedLocale(context, opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
 		UI.msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
 		UI.msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);

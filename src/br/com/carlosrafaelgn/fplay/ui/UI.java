@@ -206,7 +206,7 @@ public final class UI {
 	private static float _1dpInset;
 	
 	private static String emptyListString;
-    private static int emptyListStringHalfWidth, forcedLocale;
+    private static int emptyListStringHalfWidth, forcedLocale, currentLocale;
     private static boolean alternateTypefaceActive, useAlternateTypeface, fullyInitialized;
 	
 	public static float density, scaledDensity, xdpi_1_72;
@@ -240,7 +240,7 @@ public final class UI {
 	
 	public static void setUsingAlternateTypeface(Context context, boolean useAlternateTypeface) {
 		UI.useAlternateTypeface = useAlternateTypeface;
-		if (useAlternateTypeface) {
+		if (useAlternateTypeface && currentLocale != LOCALE_RU) {
 			if (defaultTypeface == null || !alternateTypefaceActive) {
 				alternateTypefaceActive = true;
 				try {
@@ -288,7 +288,7 @@ public final class UI {
 			break;
 		case LOCALE_RU:
 			if (!"ru".equals(l.getLanguage()))
-				return new Locale("ru");
+				return new Locale("ru", "RU");
 			break;
 		}
 		return l;
@@ -306,26 +306,50 @@ public final class UI {
 		return context.getText(R.string.standard_language).toString();
 	}
 	
+	public static int getCurrentLocale(Context context) {
+		try {
+			final String l = context.getResources().getConfiguration().locale.getLanguage().toLowerCase(Locale.US);
+			if ("pt".equals(l))
+				return LOCALE_PTBR;
+			if ("ru".equals(l))
+				return LOCALE_RU;
+		} catch (Throwable ex) {
+		}
+		return LOCALE_US;
+	}
+	
 	public static int getForcedLocale() {
 		return forcedLocale;
 	}
 	
-	public static void setForcedLocale(Context context, int localeCode) {
+	public static boolean setForcedLocale(Context context, int localeCode) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
-		if (forcedLocale == localeCode)
-			return;
+		final Resources res = context.getResources();
+		if (forcedLocale == 0 && localeCode == 0) {
+			currentLocale = getCurrentLocale(context);
+			return false;
+		}
 		try {
 			final Locale l = getLocaleFromCode(localeCode);
-			final Resources res = context.getResources();
 			final Configuration cfg = new Configuration(res.getConfiguration());
 			cfg.locale = l;
 			res.updateConfiguration(cfg, res.getDisplayMetrics());
 			forcedLocale = localeCode;
+			currentLocale = ((localeCode == 0) ? getCurrentLocale(context) : localeCode);
 		} catch (Throwable ex) {
-			return;
+			currentLocale = getCurrentLocale(context);
 		}
-		if (fullyInitialized)
+		if (fullyInitialized) {
+			setUsingAlternateTypeface(context, useAlternateTypeface);
+			return true;
+		}
+		return false;
+	}
+	
+	public static void setUsingAlternateTypefaceAndForcedLocale(Context context, boolean useAlternateTypeface, int localeCode) {
+		UI.useAlternateTypeface = useAlternateTypeface;
+		if (!setForcedLocale(context, localeCode))
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
 	
@@ -420,7 +444,8 @@ public final class UI {
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
 		strokePaint.setStrokeWidth(_1dpStroke);
-		setUsingAlternateTypeface(context, useAlternateTypeface);
+		if (!setForcedLocale(context, forcedLocale))
+			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
 	
 	public static void preparePlaybackIcons(Context context) {
