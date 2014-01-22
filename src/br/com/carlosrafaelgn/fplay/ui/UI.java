@@ -77,10 +77,11 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	public static final int LOCALE_NONE = 0;
-	public static final int LOCALE_MAX = 3;
 	public static final int LOCALE_US = 1;
 	public static final int LOCALE_PTBR = 2;
 	public static final int LOCALE_RU = 3;
+	public static final int LOCALE_UK = 4;
+	public static final int LOCALE_MAX = 4;
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
 	public static final int STATE_CURRENT = 4;
@@ -240,7 +241,7 @@ public final class UI {
 	
 	public static void setUsingAlternateTypeface(Context context, boolean useAlternateTypeface) {
 		UI.useAlternateTypeface = useAlternateTypeface;
-		if (useAlternateTypeface && currentLocale != LOCALE_RU) {
+		if (useAlternateTypeface && !isCurrentLocaleCyrillic()) {
 			if (defaultTypeface == null || !alternateTypefaceActive) {
 				alternateTypefaceActive = true;
 				try {
@@ -290,6 +291,10 @@ public final class UI {
 			if (!"ru".equals(l.getLanguage()))
 				return new Locale("ru", "RU");
 			break;
+		case LOCALE_UK:
+			if (!"uk".equals(l.getLanguage()))
+				return new Locale("uk");
+			break;
 		}
 		return l;
 	}
@@ -302,6 +307,8 @@ public final class UI {
 			return "Português (Brasil)";
 		case LOCALE_RU:
 			return "Русский";
+		case LOCALE_UK:
+			return "Українська";
 		}
 		return context.getText(R.string.standard_language).toString();
 	}
@@ -313,9 +320,15 @@ public final class UI {
 				return LOCALE_PTBR;
 			if ("ru".equals(l))
 				return LOCALE_RU;
+			if ("uk".equals(l))
+				return LOCALE_UK;
 		} catch (Throwable ex) {
 		}
 		return LOCALE_US;
+	}
+	
+	public static boolean isCurrentLocaleCyrillic() {
+		return ((currentLocale == LOCALE_RU) || (currentLocale == LOCALE_UK));
 	}
 	
 	public static int getForcedLocale() {

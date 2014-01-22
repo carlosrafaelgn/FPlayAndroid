@@ -103,6 +103,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.LOCALE_RU, 2, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_RU))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_UK, 3, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_UK))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
@@ -443,8 +446,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setBackgroundDrawable(new BorderDrawable());
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		
-		optUseAlternateTypeface = new SettingView(ctx, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface());
-		optUseAlternateTypeface.setOnClickListener(this);
+		if (!UI.isCurrentLocaleCyrillic()) {
+			optUseAlternateTypeface = new SettingView(ctx, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface());
+			optUseAlternateTypeface.setOnClickListener(this);
+		}
 		optAutoTurnOff = new SettingView(ctx, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false);
 		optAutoTurnOff.setOnClickListener(this);
 		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn);
@@ -485,7 +490,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		panelSettings.addView(optAutoTurnOff);
 		addHeader(ctx, R.string.hdr_display);
 		panelSettings.addView(optKeepScreenOn);
-		panelSettings.addView(optUseAlternateTypeface);
+		if (!UI.isCurrentLocaleCyrillic())
+			panelSettings.addView(optUseAlternateTypeface);
 		panelSettings.addView(optForceOrientation);
 		panelSettings.addView(optIsDividerVisible);
 		panelSettings.addView(optIsVerticalMarginLarge);
@@ -559,7 +565,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			finish();
 		} else if (view == btnAbout) {
 			startActivity(new ActivityAbout());
-		} else if (view == optUseAlternateTypeface) {
+		} else if (!UI.isCurrentLocaleCyrillic() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
 			UI.setUsingAlternateTypeface(getHostActivity(), desired);
 			if (UI.isUsingAlternateTypeface() != desired) {
