@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="18"
-    android:versionName="0.86" >
+    android:versionCode="19"
+    android:versionName="0.87" >
 
     <uses-sdk
         android:minSdkVersion="10"
@@ -63,7 +63,7 @@
             android:name="br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:hardwareAccelerated="true"
-            android:label="FPlay Visualizer"
+            android:label="@string/visualizer"
             android:multiprocess="false"
             android:parentActivityName="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
             android:screenOrientation="unspecified"

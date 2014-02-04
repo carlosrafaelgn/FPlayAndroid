@@ -87,6 +87,22 @@ public final class MainHandler extends Handler {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, new ObjHolder(callback, obj)), SystemClock.uptimeMillis());
 	}
 	
+	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what) {
+		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, callback));
+	}
+	
+	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what, Object obj) {
+		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, new ObjHolder(callback, obj)));
+	}
+	
+	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what, int arg1, int arg2) {
+		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, arg1, arg2, callback));
+	}
+	
+	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what, int arg1, int arg2, Object obj) {
+		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, arg1, arg2, new ObjHolder(callback, obj)));
+	}
+	
 	public static void sendMessageDelayed(MainHandler.Callback callback, int what, long delayMillis) {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, callback), SystemClock.uptimeMillis() + delayMillis);
 	}

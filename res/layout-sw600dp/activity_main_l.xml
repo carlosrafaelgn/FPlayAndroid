@@ -186,7 +186,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginRight="16dp"
-                    android:contentDescription="@string/play_pause"
+                    android:contentDescription="@string/play"
                     android:nextFocusDown="@+id/list"
                     android:nextFocusForward="@+id/btnNext"
                     android:nextFocusLeft="@+id/btnPrev"

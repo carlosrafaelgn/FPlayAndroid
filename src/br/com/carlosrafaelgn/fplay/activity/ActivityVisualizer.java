@@ -332,6 +332,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnBack.setLayoutParams(p);
 		btnBack.setIcon(UI.ICON_GOBACK);
 		btnBack.setOnClickListener(this);
+		btnBack.setContentDescription(getText(R.string.go_back));
 		btnBack.setId(5);
 		btnBack.setNextFocusUpId(4);
 		btnBack.setNextFocusLeftId(4);
@@ -351,6 +352,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnPrev.setLayoutParams(p);
 		btnPrev.setIcon(UI.ICON_PREV);
 		btnPrev.setOnClickListener(this);
+		btnPrev.setContentDescription(getText(R.string.previous));
 		btnPrev.setId(2);
 		btnPrev.setNextFocusUpId(5);
 		btnPrev.setNextFocusLeftId(5);
@@ -363,6 +365,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnPlay.setLayoutParams(p);
 		btnPlay.setIcon(UI.ICON_PLAY);
 		btnPlay.setOnClickListener(this);
+		btnPlay.setContentDescription(getText(R.string.play));
 		btnPlay.setId(3);
 		btnPlay.setNextFocusUpId(2);
 		btnPlay.setNextFocusLeftId(2);
@@ -371,6 +374,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		UI.setNextFocusForwardId(btnPlay, 4);
 		btnNext = new BgButton(getApplication());
 		btnNext.setOnClickListener(this);
+		btnNext.setContentDescription(getText(R.string.next));
 		btnNext.setId(4);
 		btnNext.setNextFocusUpId(3);
 		btnNext.setNextFocusLeftId(3);
@@ -517,8 +521,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
-		if (btnPlay != null)
+		if (btnPlay != null) {
 			btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
+			btnPlay.setContentDescription(getText(Player.isPlaying() ? R.string.pause : R.string.play));
+		}
 	}
 	
 	@Override

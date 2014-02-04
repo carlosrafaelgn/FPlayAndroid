@@ -460,7 +460,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsDividerVisible.setOnClickListener(this);
 		optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge);
 		optIsVerticalMarginLarge.setOnClickListener(this);
-		optForcedLocale = new SettingView(ctx, getText(R.string.language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false);
+		optForcedLocale = new SettingView(ctx, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false);
 		optForcedLocale.setOnClickListener(this);
 		optHandleCallKey = new SettingView(ctx, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey);
 		optHandleCallKey.setOnClickListener(this);

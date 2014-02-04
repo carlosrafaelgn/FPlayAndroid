@@ -45,6 +45,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 
 public class SongAddingMonitor implements Timer.TimerHandler {
 	private static TextView notification;
+	private static int lastMsg;
 	private static final Timer timer = new Timer(new SongAddingMonitor(), "Song Adding Monitor Timer", false, true, false);
 	
 	private SongAddingMonitor() {
@@ -52,7 +53,7 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 	
 	@SuppressWarnings("deprecation")
 	public static void start(Activity activity) {
-		if (Player.songs.isAdding()) {
+		if (Player.songs.isAdding() || Player.getState() != Player.STATE_INITIALIZED) {
 			stop();
 			//...the parent of an activity's content view is always a FrameLayout.
 			//http://android-developers.blogspot.com.br/2009/03/android-layout-tricks-3-optimize-by.html
@@ -67,17 +68,19 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 				p.gravity = Gravity.LEFT | Gravity.BOTTOM;
 				notification.setLayoutParams(p);
 				UI.smallText(notification);
-				notification.setText(R.string.msg_adding);
+				lastMsg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.msg_loading : R.string.msg_adding);
+				notification.setText(lastMsg);
 				notification.setBackgroundDrawable(new BorderDrawable(UI.color_current_border, UI.color_current, true, true, true, true));
 				notification.setTextColor(UI.colorState_text_sel);
 				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
 				((FrameLayout)parent).addView(notification);
-				timer.start(500, false);
+				timer.start(250);
 			}
 		}
 	}
 	
 	public static void stop() {
+		lastMsg = 0;
 		if (notification != null) {
 			notification.setVisibility(View.GONE);
 			final ViewParent p = notification.getParent();
@@ -90,7 +93,14 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
-		if (!Player.songs.isAdding())
+		int msg = 0;
+		if (Player.songs.isAdding() || Player.getState() != Player.STATE_INITIALIZED)
+			msg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.msg_loading : R.string.msg_adding);
+		if (msg == 0) {
 			stop();
+		} else if (lastMsg != msg) {
+			lastMsg = msg;
+			notification.setText(msg);
+		}
 	}
 }

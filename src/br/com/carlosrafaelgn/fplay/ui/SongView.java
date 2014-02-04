@@ -67,6 +67,7 @@ public final class SongView extends View {
 		this.song = song;
 		this.width = w;
 		lengthWidth = UI.measureText(song.length, UI._14sp);
+		setContentDescription(song.title);
 		processEllipsis();
 	}
 	

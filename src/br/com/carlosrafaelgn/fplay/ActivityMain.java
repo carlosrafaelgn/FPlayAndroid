@@ -341,8 +341,10 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
 		final String icon = (Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
-		if (btnPlay != null)
+		if (btnPlay != null) {
 			btnPlay.setText(icon);
+			btnPlay.setContentDescription(getText(Player.isPlaying() ? R.string.pause : R.string.play));
+		}
 		if (lblTitleIcon != null)
 			lblTitleIcon.setIcon(icon);
 		if (songHasChanged) {
@@ -411,7 +413,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	
 	@Override
  	public View getNullContextMenuView() {
-		return ((!Player.songs.selecting && !Player.songs.moving) ? btnMenu : null);
+		return ((!Player.songs.selecting && !Player.songs.moving && (Player.getState() == Player.STATE_INITIALIZED)) ? btnMenu : null);
 	}
 	
 	@Override
@@ -470,27 +472,35 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	public boolean onMenuItemClick(MenuItem item) {
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
-			Player.alreadySelected = false;
-			startActivity(new ActivityBrowser());
+			if (Player.getState() == Player.STATE_INITIALIZED) {
+				Player.alreadySelected = false;
+				startActivity(new ActivityBrowser());
+			}
 			break;
 		case MNU_CLEARLIST:
-			Player.songs.clear();
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				Player.songs.clear();
 			break;
 		case MNU_LOADLIST:
-			Player.alreadySelected = false;
-			startActivity(new ActivityFileSelection(MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this));
+			if (Player.getState() == Player.STATE_INITIALIZED) {
+				Player.alreadySelected = false;
+				startActivity(new ActivityFileSelection(MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this));
+			}
 			break;
 		case MNU_SAVELIST:
-			startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this));
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this));
 			break;
 		case MNU_TOGGLECONTROLMODE:
 			Player.setControlMode(!Player.isControlMode());
 			break;
 		case MNU_TOGGLERANDOMMODE:
-			Player.songs.setRandomMode(!Player.songs.isInRandomMode());
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				Player.songs.setRandomMode(!Player.songs.isInRandomMode());
 			break;
 		case MNU_EFFECTS:
-			startActivity(new ActivityEffects());
+			if (Player.getState() == Player.STATE_INITIALIZED) 
+				startActivity(new ActivityEffects());
 			break;
 		case MNU_VISUALIZER:
 			getHostActivity().startActivity(new Intent(getApplication(), ActivityVisualizer.class));
@@ -499,6 +509,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			startActivity(new ActivitySettings());
 			break;
 		case MNU_EXIT:
+			finish();
 			Player.stopService();
 			break;
 		}
@@ -508,14 +519,12 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	@Override
 	public void onClick(View view) {
 		if (view == btnPrev) {
-			Player.previous();
-			if (!Player.isControlMode())
+			if (Player.previous() && !Player.isControlMode())
 				bringCurrentIntoView();
 		} else if (view == btnPlay) {
 			Player.playPause();
 		} else if (view == btnNext) {
-			Player.next();
-			if (!Player.isControlMode())
+			if (Player.next() && !Player.isControlMode())
 				bringCurrentIntoView();
 		} else if (view == btnMenu) {
 			CustomContextMenu.openContextMenu(btnMenu, this);
@@ -616,6 +625,8 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	
 	@Override
 	protected void onCreate() {
+		if (Player.getState() > Player.STATE_INITIALIZED)
+			return;
 		Player.startService(getApplication());
 		addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
@@ -645,6 +656,10 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
+		if (Player.getState() > Player.STATE_INITIALIZED) {
+			finish();
+			return;
+		}
 		showSecondary = false;
 		setContentView(Player.isControlMode() ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? R.layout.activity_main_l : R.layout.activity_main));
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
@@ -763,6 +778,8 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			
 	        lblArtist = (TextView)findViewById(R.id.lblArtist);
 			largeMode = (lblArtist != null);
+			if (UI.isLargeScreen != largeMode)
+				UI.isLargeScreen = largeMode;
 			
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
 			UI.largeText(lblMsgSelMove);

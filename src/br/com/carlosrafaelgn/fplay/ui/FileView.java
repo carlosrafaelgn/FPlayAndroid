@@ -151,6 +151,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		} else {
 			bitmap = null;
 		}
+		setContentDescription(file.name);
 		processEllipsis();
 	}
 	

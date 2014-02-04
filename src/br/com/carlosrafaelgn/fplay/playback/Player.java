@@ -134,6 +134,14 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		private static final long serialVersionUID = 6158088015763157546L;
 	}
 	
+	public static final int STATE_NEW = 0;
+	public static final int STATE_INITIALIZING = 1;
+	public static final int STATE_INITIALIZING_PENDING_LIST = 2;
+	public static final int STATE_INITIALIZING_PENDING_ACTIONS = 3;
+	public static final int STATE_INITIALIZED = 4;
+	public static final int STATE_PREPARING_PLAYBACK = 5;
+	public static final int STATE_TERMINATING = 6;
+	public static final int STATE_TERMINATED = 7;
 	public static final int AUDIO_SINK_DEVICE = 1;
 	public static final int AUDIO_SINK_WIRE = 2;
 	public static final int AUDIO_SINK_BT = 4;
@@ -147,6 +155,23 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	public static final int MIN_VOLUME_DB = -4000;
 	private static final int MSG_UPDATE_STATE = 0x0100;
 	private static final int MSG_PLAY_NEXT_AUTO = 0x0101;
+	private static final int MSG_INITIALIZATION_0 = 0x102;
+	private static final int MSG_INITIALIZATION_1 = 0x103;
+	private static final int MSG_INITIALIZATION_2 = 0x104;
+	private static final int MSG_INITIALIZATION_3 = 0x105;
+	private static final int MSG_INITIALIZATION_4 = 0x106;
+	private static final int MSG_INITIALIZATION_5 = 0x107;
+	private static final int MSG_INITIALIZATION_6 = 0x108;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0 = 0x0109;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1 = 0x010A;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2 = 0x010B;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3 = 0x010C;
+	private static final int MSG_PREPARE_PLAYBACK_0 = 0x10D;
+	private static final int MSG_PREPARE_PLAYBACK_1 = 0x10E;
+	private static final int MSG_PREPARE_PLAYBACK_2 = 0x10F;
+	private static final int MSG_TERMINATION_0 = 0x110;
+	private static final int MSG_TERMINATION_1 = 0x111;
+	private static final int MSG_TERMINATION_2 = 0x112;
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
 	private static final int OPT_LASTTIME = 0x0002;
@@ -184,10 +209,9 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
 	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode,
-		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, initialized, deserialized, hasFocus, dimmedVolume,
-		listLoaded, reviveAlreadyRetried;
+		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, hasFocus, dimmedVolume, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static int volumeDB, lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
+	private static int volumeDB, lastTime = -1, lastHow, state, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
 	private static Player thePlayer;
 	private static Song lastSong, currentSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
@@ -220,13 +244,12 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged;
 	
 	public static SerializableMap loadConfigFromFile(Context context) {
-		return SerializableMap.deserialize(context, "_Player");
+		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");
+		return ((opts == null) ? new SerializableMap() : opts);
 	}
 	
 	private static void loadConfig(Context context) {
-		SerializableMap opts = loadConfigFromFile(context);
-		if (opts == null)
-			opts = new SerializableMap();
+		final SerializableMap opts = loadConfigFromFile(context);
 		setVolumeDB(opts.getInt(OPT_VOLUME));
 		controlMode = opts.getBoolean(OPT_CONTROLMODE);
 		path = opts.getString(OPT_PATH);
@@ -249,7 +272,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		if (turnOffTimerCustomMinutes < 1)
 			turnOffTimerCustomMinutes = 1;
 		UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
-		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, !UI.isLowDpiScreen);
+		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen);
 		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
@@ -472,8 +495,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	}
 	
 	private static void initialize(Context context) {
-		if (!initialized) {
-			initialized = true;
+		if (state == STATE_NEW) {
+			state = STATE_INITIALIZING;
 			_mainHandler = MainHandler.initialize(context);
 			if (notificationManager == null)
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
@@ -500,94 +523,16 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				volumeTimer = new Timer(thePlayer, "Player Volume Timer", false, true, true);
 			if (turnOffTimer == null)
 				turnOffTimer = new Timer(thePlayer, "Turn Off Timer", true, true, false);
-			if (externalReceiver == null) {
-				//These broadcast actions are registered here, instead of in the manifest file,
-				//because a few tests showed that some devices will produce the notifications
-				//faster this way, specially AUDIO_BECOMING_NOISY. Moreover, by registering here,
-				//only one BroadcastReceiver is instantiated and used throughout the entire
-				//application's lifecycle, whereas when the manifest is used, a different instance
-				//is created to handle every notification! :)
-				//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
-				//in the application manifest according to the documentation of the method
-				//registerMediaButtonEventReceiver!!! :(
-				final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
-				//filter.addAction("android.intent.action.MEDIA_BUTTON");
-				filter.addAction("android.intent.action.CALL_BUTTON");
-				filter.addAction("android.intent.action.HEADSET_PLUG");
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-					filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
-				else
-					filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
-				filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
-				filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
-				//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
-				filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
-				externalReceiver = new ExternalReceiver();
-				context.getApplicationContext().registerReceiver(externalReceiver, filter);
-			}
-			if (!deserialized) {
-				deserialized = true;
-				songs.startDeserializing(context, null, true, false, false);
-			}
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_0);
 		}
 	}
 	
-	private static void terminate(Context context) {
-		if (initialized) {
-			initialized = false;
+	private static void terminate() {
+		if ((state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) && !songs.isAdding()) {
+			state = STATE_TERMINATING;
 			setLastTime();
 			fullCleanup(null);
-			releaseInternal();
-			updateState(null); //to update the widget
-			unregisterMediaButtonEventReceiver();
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
-				unregisterMediaRouter(thePlayer);
-			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && thePlayer != null)
-			//	unregisterA2dpObserver(thePlayer);
-			if (thePlayer != null) {
-				thePlayer.stopForeground(true);
-				thePlayer.stopSelf();
-			}
-			if (destroyedObservers != null) {
-				for (int i = destroyedObservers.size() - 1; i >= 0; i--)
-					destroyedObservers.get(i).onPlayerDestroyed();
-				destroyedObservers.clear();
-				destroyedObservers = null;
-			}
-			if (focusDelayTimer != null) {
-				focusDelayTimer.stop();
-				focusDelayTimer = null;
-			}
-			if (prepareDelayTimer != null) {
-				prepareDelayTimer.stop();
-				prepareDelayTimer = null;
-			}
-			if (volumeTimer != null) {
-				volumeTimer.stop();
-				volumeTimer = null;
-			}
-			if (turnOffTimer != null) {
-				turnOffTimer.stop();
-				turnOffTimer = null;
-			}
-			if (externalReceiver != null) {
-				context.getApplicationContext().unregisterReceiver(externalReceiver);
-				externalReceiver = null;
-			}
-			saveConfig(context);
-			thePlayer = null;
-			observer = null;
-			turnOffTimerObserver = null;
-			notificationManager = null;
-			audioManager = null;
-			telephonyManager = null;
-			externalReceiver = null;
-			mediaButtonEventReceiver = null;
-			remoteControlClient = null;
-			if (favoriteFolders != null) {
-				favoriteFolders.clear();
-				favoriteFolders = null;
-			}
+			MainHandler.sendMessage(thePlayer, MSG_TERMINATION_0);
 		}
 	}
 	
@@ -642,24 +587,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		}
 	}
 	
-	public static void releaseEffects() {
-		Equalizer.release();
-		BassBoost.release();
-	}
-	
-	public static void initializeEffects(boolean enableEqualizer, boolean enableBassBoost) {
-		if (currentPlayer != null) {
-			final int sessionId = currentPlayer.getAudioSessionId();
-			if (enableEqualizer)
-				Equalizer.initialize(sessionId);
-			if (enableBassBoost)
-				BassBoost.initialize(sessionId);
-		}
-		Equalizer.setEnabled(enableEqualizer);
-		BassBoost.setEnabled(enableBassBoost);
-	}
-	
-	private static void initializePlayers(boolean forceAllEffectsPreparation) {
+	private static void initializePlayers() {
 		if (currentPlayer == null) {
 			currentPlayer = createPlayer();
 			if (nextPlayer != null) {
@@ -672,14 +600,6 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			nextPlayer = createPlayer();
 			nextPlayer.setAudioSessionId(currentPlayer.getAudioSessionId());
 		}
-		if (forceAllEffectsPreparation) {
-			final int sessionId = currentPlayer.getAudioSessionId();
-			Equalizer.initialize(sessionId);
-			Equalizer.release();
-			BassBoost.initialize(sessionId);
-			BassBoost.release();
-		}
-		initializeEffects(Equalizer.isEnabled(), BassBoost.isEnabled());
 	}
 	
 	private static boolean requestFocus() {
@@ -838,7 +758,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				currentSong = newCurrentSong;
 			final boolean songHasChanged = (lastSong != currentSong);
 			final boolean playbackHasChanged = (lastPlaying != playing);
-			if (!songHasChanged && !playbackHasChanged)
+			if (!songHasChanged && !playbackHasChanged && ex == null)
 				return;
 			lastSong = currentSong;
 			lastPlaying = playing;
@@ -876,15 +796,22 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		if (positionToSelect >= 0)
 			setSelectionAfterAdding(positionToSelect);
 		onPlayerChanged(newCurrentSong, ex);
-		listLoaded = true;
+		switch (state) {
+		case STATE_INITIALIZING_PENDING_LIST:
+			state = STATE_INITIALIZED;
+			break;
+		case STATE_INITIALIZING:
+			state = STATE_INITIALIZING_PENDING_ACTIONS;
+			break;
+		}
 		executeStartCommand(forcePlayIdx);
 	}
 	
 	private static void updateState(Throwable ex) {
-		if (MainHandler.isOnMainThread())
-			onPlayerChanged(null, ex);
-		else
-			MainHandler.sendMessage(thePlayer, MSG_UPDATE_STATE, ex);
+		//if (MainHandler.isOnMainThread())
+		//	onPlayerChanged(null, ex);
+		//else
+		MainHandler.sendMessage(thePlayer, MSG_UPDATE_STATE, ex);
 	}
 	
 	private static MediaPlayer createPlayer() {
@@ -941,7 +868,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	}
 	
 	private static void releaseInternal() {
-		releaseEffects();
+		Equalizer.release();
+		BassBoost.release();
 		currentSongLoaded = false;
 		if (currentPlayer != null) {
 			releasePlayer(currentPlayer);
@@ -985,25 +913,14 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		return true;
 	}
 	
-	private static void playInternal(int how) {
-		if (!hasFocus && !requestFocus()) {
-			unpaused = false;
-			playing = false;
-			updateState(new FocusException());
+	private static void playInternal0(int how, Song song) {
+		if (!hasFocus) {
+			if (state == STATE_PREPARING_PLAYBACK)
+				state = STATE_INITIALIZED;
 			return;
 		}
-		final Song s = songs.getSongAndSetCurrent(how);
-		if (s == null) {
-			lastTime = -1;
-			firstError = null;
-			fullCleanup(null);
-			updateState(null);
-			return;
-		}
-		if (currentPlayer == null || nextPlayer == null)
-			initializePlayers(false);
 		boolean prepareNext = false;
-		if (nextSong == s && how != SongList.HOW_CURRENT) {
+		if (nextSong == song && how != SongList.HOW_CURRENT) {
 			boolean ok = false;
 			lastTime = -1;
 			if (nextPrepared) {
@@ -1022,9 +939,9 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					ok = true;
 					currentSongPreparing = false;
 				} catch (Throwable ex) {
-					s.possibleNextSong = null;
-					fullCleanup(s);
-					nextFailed(s, how, ex);
+					song.possibleNextSong = null;
+					fullCleanup(song);
+					nextFailed(song, how, ex);
 					return;
 				}
 			} else if (nextPreparing) {
@@ -1033,18 +950,38 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				currentSongPreparing = true;
 				ok = true;
 			}
-			currentSong = s;
+			currentSong = song;
 			final MediaPlayer p = currentPlayer;
 			currentPlayer = nextPlayer;
 			nextPlayer = p;
-			if (!ok && !doPlayInternal(how, s))
-				return;
+			MainHandler.sendMessageAtFrontOfQueue(thePlayer, MSG_PREPARE_PLAYBACK_1, how, (ok ? 0 : 1) | (prepareNext ? 2 : 0), song);
 		} else {
-			if (!doPlayInternal(how, s))
-				return;
+			MainHandler.sendMessageAtFrontOfQueue(thePlayer, MSG_PREPARE_PLAYBACK_1, how, 1 | (prepareNext ? 2 : 0), song);
 		}
-		nextSong = s.possibleNextSong;
-		s.possibleNextSong = null;
+	}
+	
+	private static void playInternal1(boolean doInternal, boolean prepareNext, int how, Song song) {
+		if (!hasFocus) {
+			if (state == STATE_PREPARING_PLAYBACK)
+				state = STATE_INITIALIZED;
+			return;
+		}
+		if (doInternal) {
+			if (!doPlayInternal(how, song))
+				return;
+			MainHandler.sendMessageAtFrontOfQueue(thePlayer, MSG_PREPARE_PLAYBACK_2, prepareNext ? 1 : 0, 0, song);
+		} else {
+			playInternal2(prepareNext, song);
+		}
+	}
+	
+	private static void playInternal2(boolean prepareNext, Song song) {
+		if (state == STATE_PREPARING_PLAYBACK)
+			state = STATE_INITIALIZED;
+		if (!hasFocus)
+			return;
+		nextSong = song.possibleNextSong;
+		song.possibleNextSong = null;
 		if (nextSong == currentSong)
 			nextSong = null;
 		else if (prepareNext)
@@ -1052,6 +989,34 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		playing = currentSongLoaded;
 		//wasPlaying = true;
 		updateState(null);
+	}
+	
+	private static void playInternal(int how) {
+		if (!hasFocus && !requestFocus()) {
+			unpaused = false;
+			playing = false;
+			updateState(new FocusException());
+			return;
+		}
+		//we must set this to false here, as the user could have manually
+		//started playback before the focus timer had the chance to trigger
+		wasPlayingBeforeFocusLoss = false;
+		final Song s = songs.getSongAndSetCurrent(how);
+		if (s == null) {
+			lastTime = -1;
+			firstError = null;
+			fullCleanup(null);
+			updateState(null);
+			return;
+		}
+		if (currentPlayer == null || nextPlayer == null) {
+			initializePlayers();
+			state = STATE_PREPARING_PLAYBACK;
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0, how, 0, s);
+		} else {
+			state = STATE_PREPARING_PLAYBACK;
+			playInternal0(how, s);
+		}
 	}
 	
 	private static void stopInternal(Song newCurrentSong) {
@@ -1073,6 +1038,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	}
 	
 	private static void fullCleanup(Song newCurrentSong) {
+		if (state == STATE_PREPARING_PLAYBACK)
+			state = STATE_INITIALIZED;
 		wasPlayingBeforeFocusLoss = false;
 		unpaused = false;
 		silenceMode = SILENCE_NORMAL;
@@ -1166,20 +1133,24 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		checkAudioSink(wiredHeadsetJustPlugged, true);
 	}
 	
-	public static void previous() {
-		if (thePlayer == null)
-			return;
+	public static boolean previous() {
+		if (thePlayer == null || state != STATE_INITIALIZED)
+			return false;
 		playInternal(SongList.HOW_PREVIOUS);
+		return true;
 	}
 	
-	public static void playPause() {
-		if (thePlayer == null)
-			return;
+	public static boolean playPause() {
+		if (thePlayer == null || state != STATE_INITIALIZED)
+			return false;
 		if (currentSong == null || !currentSongLoaded || !hasFocus) {
 			unpaused = true;
 			playInternal(SongList.HOW_CURRENT);
 		} else {
 			try {
+				//we must set this to false here, as the user could have manually
+				//started playback before the focus timer had the chance to trigger
+				wasPlayingBeforeFocusLoss = false;
 				if (playing) {
 					currentPlayer.pause();
 					silenceMode = SILENCE_NORMAL;
@@ -1193,25 +1164,30 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			} catch (Throwable ex) {
 				fullCleanup(currentSong);
 				updateState(ex);
-				return;
+				return false;
 			}
 			updateState(null);
 		}
+		return true;
 	}
 	
-	public static void play(int index) {
-		if (thePlayer == null)
-			return;
+	public static boolean play(int index) {
+		if (thePlayer == null || state != STATE_INITIALIZED)
+			return false;
 		playInternal(index);
+		return true;
 	}
 	
-	public static void next() {
-		if (thePlayer == null)
-			return;
+	public static boolean next() {
+		if (thePlayer == null || state != STATE_INITIALIZED)
+			return false;
 		playInternal(SongList.HOW_NEXT_MANUAL);
+		return true;
 	}
 	
-	public static void seekTo(int timeMS, boolean play) {
+	public static boolean seekTo(int timeMS, boolean play) {
+		if (thePlayer == null || state != STATE_INITIALIZED)
+			return false;
 		if (!currentSongLoaded) {
 			lastTime = timeMS;
 		} else if (currentPlayer != null) {
@@ -1221,6 +1197,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			currentPlayer.seekTo(timeMS);
 			updateState(null);
 		}
+		return true;
 	}
 	
 	public static void listCleared() {
@@ -1383,8 +1360,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		return turnOffTimerCustomMinutes;
 	}
 	
-	public static boolean isInitialized() {
-		return initialized;
+	public static int getState() {
+		return state;
 	}
 	
 	public static boolean isPlaying() {
@@ -1400,7 +1377,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	}
 	
 	public static boolean isCurrentSongPreparing() {
-		return currentSongPreparing;
+		return (currentSongPreparing || (state == STATE_PREPARING_PLAYBACK));
 	}
 	
 	public static Song getCurrentSong() {
@@ -1426,14 +1403,17 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	}
 	
 	public static void startService(Context context) {
-		if (thePlayer == null && !initialized) {
+		if (thePlayer == null && state == STATE_NEW) {
 			initialize(context);
 			context.startService(new Intent(context, Player.class));
 		}
 	}
 	
 	public static void stopService() {
-		terminate(thePlayer);
+		//if the service is requested to stop, even before it gets a chance to fully initialize
+		//itself, then schedule its termination as a startCommand
+		startCommand = ACTION_EXIT;
+		terminate();
 	}
 	
 	public static Service getService() {
@@ -1452,14 +1432,12 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		//	.build());
 		thePlayer = this;
 		initialize(this);
-		initializePlayers(true);
 		startForeground(1, getNotification());
 		super.onCreate();
 	}
 	
 	@Override
 	public void onDestroy() {
-		stopService();
 		super.onDestroy();
 		System.exit(0);
 	}
@@ -1468,7 +1446,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		if (forcePlayIdx >= 0) {
 			play(forcePlayIdx);
 			startCommand = null;
-		} else if (startCommand != null && listLoaded) {
+		} else if (startCommand != null && state == STATE_INITIALIZED) {
 			if (startCommand.equals(ACTION_PREVIOUS))
 				previous();
 			else if (startCommand.equals(ACTION_PLAY_PAUSE))
@@ -1564,7 +1542,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			if (audioSinkBeforeFocusLoss != AUDIO_SINK_DEVICE && audioSink == AUDIO_SINK_DEVICE) {
 				wasPlayingBeforeFocusLoss = false;
 				requestFocus();
-			} else {
+			} else if (state == STATE_INITIALIZED && !playing) {
 				playInternal(SongList.HOW_CURRENT);
 			}
 		}
@@ -1604,12 +1582,206 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		case MSG_PLAY_NEXT_AUTO:
 			playInternal(SongList.HOW_NEXT_AUTO);
 			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			Equalizer.release();
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			BassBoost.release();
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			try {
+				if (Equalizer.isEnabled() && currentPlayer != null) {
+					Equalizer.initialize(currentPlayer.getAudioSessionId());
+					Equalizer.setEnabled(true);
+				}
+			} catch (Throwable ex) {
+			}
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			try {
+				if (BassBoost.isEnabled() && currentPlayer != null) {
+					BassBoost.initialize(currentPlayer.getAudioSessionId());
+					BassBoost.setEnabled(true);
+				}
+			} catch (Throwable ex) {
+			}
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_PLAYBACK_0, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_PLAYBACK_0:
+			playInternal0(msg.arg1, (Song)msg.obj);
+			break;
+		case MSG_PREPARE_PLAYBACK_1:
+			playInternal1((msg.arg2 & 1) != 0, (msg.arg2 & 2) != 0, msg.arg1, (Song)msg.obj);
+			break;
+		case MSG_PREPARE_PLAYBACK_2:
+			playInternal2(msg.arg1 != 0, (Song)msg.obj);
+			break;
+		case MSG_INITIALIZATION_0:
+			if (externalReceiver == null) {
+				//These broadcast actions are registered here, instead of in the manifest file,
+				//because a few tests showed that some devices will produce the notifications
+				//faster this way, specially AUDIO_BECOMING_NOISY. Moreover, by registering here,
+				//only one BroadcastReceiver is instantiated and used throughout the entire
+				//application's lifecycle, whereas when the manifest is used, a different instance
+				//is created to handle every notification! :)
+				//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
+				//in the application manifest according to the documentation of the method
+				//registerMediaButtonEventReceiver!!! :(
+				final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
+				//filter.addAction("android.intent.action.MEDIA_BUTTON");
+				filter.addAction("android.intent.action.CALL_BUTTON");
+				filter.addAction("android.intent.action.HEADSET_PLUG");
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+					filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
+				else
+					filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
+				filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
+				filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
+				//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
+				filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
+				externalReceiver = new ExternalReceiver();
+				thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter);
+			}
+			if (!deserialized) {
+				deserialized = true;
+				songs.startDeserializing(thePlayer, null, true, false, false);
+			}
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_1);
+			break;
+		case MSG_INITIALIZATION_1:
+			initializePlayers();
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_2);
+			break;
+		case MSG_INITIALIZATION_2:
+			if (currentPlayer != null)
+				Equalizer.initialize(currentPlayer.getAudioSessionId());
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_3);
+			break;
+		case MSG_INITIALIZATION_3:
+			if (!Equalizer.isEnabled())
+				Equalizer.release();
+			else
+				Equalizer.setEnabled(true);
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_4);
+			break;
+		case MSG_INITIALIZATION_4:
+			if (currentPlayer != null)
+				BassBoost.initialize(currentPlayer.getAudioSessionId());
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_5);
+			break;
+		case MSG_INITIALIZATION_5:
+			if (!BassBoost.isEnabled())
+				BassBoost.release();
+			else
+				BassBoost.setEnabled(true);
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_6);
+			break;
+		case MSG_INITIALIZATION_6:
+			switch (state) {
+			case STATE_INITIALIZING_PENDING_ACTIONS:
+				state = STATE_INITIALIZED;
+				break;
+			case STATE_INITIALIZING:
+				state = STATE_INITIALIZING_PENDING_LIST;
+				break;
+			}
+			executeStartCommand(-1);
+			break;
+		case MSG_TERMINATION_0:
+			releaseInternal();
+			MainHandler.sendMessage(thePlayer, MSG_TERMINATION_1);
+			break;
+		case MSG_TERMINATION_1:
+			onPlayerChanged(null, null); //to update the widget
+			unregisterMediaButtonEventReceiver();
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
+				unregisterMediaRouter(thePlayer);
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && thePlayer != null)
+			//	unregisterA2dpObserver(thePlayer);
+			MainHandler.sendMessage(thePlayer, MSG_TERMINATION_2);
+			break;
+		case MSG_TERMINATION_2:
+			if (destroyedObservers != null) {
+				for (int i = destroyedObservers.size() - 1; i >= 0; i--)
+					destroyedObservers.get(i).onPlayerDestroyed();
+				destroyedObservers.clear();
+				destroyedObservers = null;
+			}
+			if (focusDelayTimer != null) {
+				focusDelayTimer.stop();
+				focusDelayTimer = null;
+			}
+			if (prepareDelayTimer != null) {
+				prepareDelayTimer.stop();
+				prepareDelayTimer = null;
+			}
+			if (volumeTimer != null) {
+				volumeTimer.stop();
+				volumeTimer = null;
+			}
+			if (turnOffTimer != null) {
+				turnOffTimer.stop();
+				turnOffTimer = null;
+			}
+			if (thePlayer != null) {
+				if (externalReceiver != null) {
+					thePlayer.getApplicationContext().unregisterReceiver(externalReceiver);
+					externalReceiver = null;
+				}
+				saveConfig(thePlayer);
+			}
+			observer = null;
+			turnOffTimerObserver = null;
+			notificationManager = null;
+			audioManager = null;
+			telephonyManager = null;
+			externalReceiver = null;
+			mediaButtonEventReceiver = null;
+			remoteControlClient = null;
+			if (favoriteFolders != null) {
+				favoriteFolders.clear();
+				favoriteFolders = null;
+			}
+			state = STATE_TERMINATED;
+			if (thePlayer != null) {
+				thePlayer.stopForeground(true);
+				thePlayer.stopSelf();
+				thePlayer = null;
+			} else {
+				System.exit(0);
+			}
+			break;
 		}
 		return true;
 	}
 	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
+		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+			return;
 		if (timer == focusDelayTimer) {
 			if (thePlayer != null && hasFocus)
 				processFocusGain();
@@ -1660,6 +1832,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	
 	@Override
 	public void onAudioFocusChange(int focusChange) {
+		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+			return;
 		if (focusDelayTimer != null)
 			focusDelayTimer.stop();
 		if (volumeTimer != null)
@@ -1671,7 +1845,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			if (!hasFocus) {
 				hasFocus = true;
 				if (focusDelayTimer != null)
-					focusDelayTimer.start(1500);
+					focusDelayTimer.start(5000);//1500);
 			} else {
 				//processFocusGain();
 				//came here from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
@@ -1685,7 +1859,13 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			break;
 		case AudioManager.AUDIOFOCUS_LOSS:
 		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-			wasPlayingBeforeFocusLoss = playing;
+			if (state == STATE_PREPARING_PLAYBACK)
+				state = STATE_INITIALIZED;
+			//we just cannot replace wasPlayingBeforeFocusLoss's value with
+			//playing, because if a second focus loss occurred BEFORE focusDelayTimer
+			//had a chance to trigger, then playing would be false, when infact,
+			//we want wasPlayingBeforeFocusLoss to remain true
+			wasPlayingBeforeFocusLoss |= playing;
 			audioSinkBeforeFocusLoss = audioSink;
 			hasFocus = false;
 			setLastTime();
@@ -1727,6 +1907,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
+		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+			return true;
 		if (mp == nextPlayer || mp == currentPlayer) {
 			if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
 				setLastTime();
@@ -1748,7 +1930,6 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				updateState((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
 			}
 		} else {
-			System.err.println("Invalid MediaPlayer");
 			fullCleanup(currentSong);
 			releaseInternal();
 			updateState(new Exception("Invalid MediaPlayer"));
@@ -1758,6 +1939,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	
 	@Override
 	public void onPrepared(MediaPlayer mp) {
+		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+			return;
 		if (mp == nextPlayer) {
 			nextPreparing = false;
 			nextPrepared = true;
@@ -1765,6 +1948,11 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				setNextPlayer();
 		} else if (mp == currentPlayer) {
 			try {
+				if (!hasFocus) {
+					fullCleanup(currentSong);
+					updateState(null);
+					return;
+				}
 				mp.setVolume(actualVolume, actualVolume);
 				if (lastTime < 0 || currentSong.isHttp) {
 					prepareNextOnSeek = false;
@@ -1790,7 +1978,6 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				nextFailed(currentSong, lastHow, ex);
 			}
 		} else {
-			System.err.println("Invalid MediaPlayer");
 			fullCleanup(currentSong);
 			updateState(new Exception("Invalid MediaPlayer"));
 		}
@@ -1798,6 +1985,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	
 	@Override
 	public void onSeekComplete(MediaPlayer mp) {
+		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+			return;
 		if (mp == currentPlayer) {
 			try {
 				currentSongPreparing = false;
@@ -1821,6 +2010,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	
 	@Override
 	public void onCompletion(MediaPlayer mp) {
+		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+			return;
 		if (playing)
 			playInternal(SongList.HOW_NEXT_AUTO);
 	}

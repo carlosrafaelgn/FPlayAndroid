@@ -17,10 +17,13 @@
     <string name="ok">Гаразд</string>
     <string name="cancel">Відміна</string>
     <string name="done">Виконано</string>
+    <string name="yes">Да</string>
+    <string name="no">Ні</string>
     <string name="got_it">Готово!</string>
     <string name="volume">Гучність</string>
     <string name="msg_sel">Натисніть, щоб обрати декілька елементів</string>
     <string name="msg_move">Натисніть, щоб перемістити вибрані елементи</string>
+    <string name="msg_loading">Загрузка&#8230;</string>
     <string name="msg_adding">Додавання композицій&#8230;</string>
     <string name="msg_select_song">Будь ласка, виберіть композицію для додавання</string>
     <string name="msg_select_folder_add">Будь ласка, виберіть директорію для додавання</string>
@@ -39,6 +42,7 @@
     <string name="msg_play">Ця кнопка додає в список відтворення всі композиції в папці та її підпапках і починає відтворення.</string>
     <string name="msg_error_download_path">Відсутня можливість отримати доступ до папки завантаження :(</string>
     <string name="msg_error_exporting_settings">Щось пішло не так при експорті налаштувань :(</string>
+    <string name="opt_language">Мова:</string>
     <string name="opt_use_alternate_typeface">Використовувати діслексичний шрифт (опція не доступна для даної мови)</string>
     <string name="opt_auto_turn_off">Автоматично вимкнути плеєр після:</string>
     <string name="opt_keep_screen_on">Тримати екран постійно включеним</string>
@@ -127,7 +131,7 @@
     <string name="play_album">Відтворити альбом</string>
     <string name="remove_favorite">Видалити обране</string>
     <string name="previous">Попередня</string>
-    <string name="play_pause">Відтворення/Пауза</string>
+    <string name="pause">Пауза</string>
     <string name="next">Наступна</string>
     <string name="play">Відтворення</string>
     <string name="add">Додати</string>
@@ -138,7 +142,6 @@
 	<string name="length">Тривалість</string>
 	<string name="year">рік</string>
 	<string name="no_info">-</string>
-    <string name="language">Мова</string>
     <string name="standard_language">Стандартна мова</string>
 	<string name="artists">Виконавці</string>
     <string name="albums">Альбоми</string>

@@ -17,10 +17,13 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancelar</string>
     <string name="done">Pronto</string>
+    <string name="yes">Sim</string>
+    <string name="no">Não</string>
     <string name="got_it">Entendi!</string>
     <string name="volume">Volume</string>
     <string name="msg_sel">Toque para selecionar mais</string>
     <string name="msg_move">Toque para mover a seleção</string>
+    <string name="msg_loading">Carregando&#8230;</string>
     <string name="msg_adding">Adicionando músicas&#8230;</string>
     <string name="msg_select_song">Por favor, selecione uma música para adicionar</string>
     <string name="msg_select_folder_add">Por favor, selecione uma pasta para adicionar</string>
@@ -39,6 +42,7 @@
     <string name="msg_play">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas, e inicia sua reprodução.</string>
     <string name="msg_error_download_path">Não foi possível acessar a pasta de downloads :(</string>
     <string name="msg_error_exporting_settings">Algo deu errado durante a exportação das configurações :(</string>
+    <string name="opt_language">Idioma:</string>
     <string name="opt_use_alternate_typeface">Usar fonte amigável para dislexia</string>
     <string name="opt_auto_turn_off">Desligar o player automaticamente em:</string>
     <string name="opt_keep_screen_on">Manter a tela sempre ligada</string>
@@ -127,7 +131,7 @@
     <string name="play_album">Tocar álbum</string>
     <string name="remove_favorite">Remover favorito</string>
     <string name="previous">Anterior</string>
-    <string name="play_pause">Play/Pause</string>
+    <string name="pause">Pause</string>
     <string name="next">Próxima</string>
     <string name="play">Tocar</string>
     <string name="add">Adicionar</string>
@@ -138,7 +142,6 @@
 	<string name="length">Duração</string>
 	<string name="year">Ano</string>
 	<string name="no_info">-</string>
-    <string name="language">Idioma</string>
     <string name="standard_language">Idioma padrão</string>
 	<string name="artists">Artistas</string>
     <string name="albums">Álbuns</string>

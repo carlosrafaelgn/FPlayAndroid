@@ -70,7 +70,7 @@
                 android:layout_alignParentLeft="true"
                 android:layout_below="@+id/btnPrev"
                 android:layout_marginBottom="16dp"
-                android:contentDescription="@string/play_pause"
+                android:contentDescription="@string/play"
                 android:nextFocusDown="@+id/btnNext"
                 android:nextFocusForward="@+id/btnNext"
                 android:nextFocusLeft="@+id/list"

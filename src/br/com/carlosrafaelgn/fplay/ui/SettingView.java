@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import br.com.carlosrafaelgn.fplay.R;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -116,6 +117,14 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		addView(textView);
 		if (secondaryTextView != null)
 			addView(secondaryTextView);
+		updateContentDescription();
+	}
+	
+	private void updateContentDescription() {
+		if (secondaryTextView != null)
+			setContentDescription(text + " " + secondaryText);
+		else
+			setContentDescription(text + ": " + getContext().getText(checked ? R.string.yes : R.string.no));
 	}
 	
 	public void refreshVerticalMargin() {
@@ -150,6 +159,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 				secondaryTextView.setPadding(0, UI._4sp, 0, 0);
 				secondaryTextView.setText(secondaryText);
 			}
+			updateContentDescription();
 		}
 	}
 	
@@ -164,6 +174,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	public void setChecked(boolean checked) {
 		if (checkBox != null) {
 			this.checked = checked;
+			updateContentDescription();
 		}
 	}
 	

@@ -45,7 +45,7 @@
             android:layout_marginLeft="32dp"
             android:layout_marginRight="32dp"
             android:background="@drawable/bg_notification_button"
-            android:contentDescription="@string/play_pause"
+            android:contentDescription="@string/play"
             android:focusable="true"
             android:padding="2dp"
             android:scaleType="centerInside" />

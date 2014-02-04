@@ -156,6 +156,7 @@ public final class UI {
 	public static final String ICON_OPTCHK = "q";
 	public static final String ICON_OPTUNCHK = "Q";
 	public static final String ICON_GRIP = "G";
+	public static final String ICON_ICON = "♫";
 	
 	public static final ColorStateList colorState_text_normal = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
 	public static final ColorStateList colorState_text = ColorStateList.valueOf(color_text);
@@ -209,6 +210,7 @@ public final class UI {
 	private static String emptyListString;
     private static int emptyListStringHalfWidth, forcedLocale, currentLocale;
     private static boolean alternateTypefaceActive, useAlternateTypeface, fullyInitialized;
+	private static Toast internalToast;
 	
 	public static float density, scaledDensity, xdpi_1_72;
 	
@@ -747,18 +749,21 @@ public final class UI {
 	
 	@SuppressWarnings("deprecation")
 	public static void toast(Context context, String text) {
-		final Toast t = new Toast(context);
-		final TextView v = new TextView(context);
-		mediumText(v);
-		v.setTextColor(UI.colorState_text_sel);
-		v.setBackgroundDrawable(new BorderDrawable(color_current_border, color_current, true, true, true, true));
-		v.setGravity(Gravity.CENTER);
-		v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-		v.setPadding(_8dp, _8dp, _8dp, _8dp);
-		v.setText(text);
-		t.setView(v);
-		t.setDuration(Toast.LENGTH_LONG);
-		t.show();
+		if (internalToast == null) {
+			final Toast t = new Toast(context);
+			final TextView v = new TextView(context);
+			mediumText(v);
+			v.setTextColor(UI.colorState_text_sel);
+			v.setBackgroundDrawable(new BorderDrawable(color_current_border, color_current, true, true, true, true));
+			v.setGravity(Gravity.CENTER);
+			v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+			v.setPadding(_8dp, _8dp, _8dp, _8dp);
+			t.setView(v);
+			t.setDuration(Toast.LENGTH_LONG);
+			internalToast = t;
+		}
+		((TextView)internalToast.getView()).setText(text);
+		internalToast.show();
 	}
 	
 	public static void prepare(Menu menu) {

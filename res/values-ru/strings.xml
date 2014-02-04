@@ -17,10 +17,13 @@
     <string name="ok">Готово</string>
     <string name="cancel">Отмена</string>
     <string name="done">Выполнено</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
     <string name="got_it">Готово!</string>
     <string name="volume">Громкость</string>
     <string name="msg_sel">Нажмите, чтобы выбрать несколько элементов</string>
     <string name="msg_move">Нажмите, чтобы переместить выбранные элементы</string>
+    <string name="msg_loading">Загрузка&#8230;</string>
     <string name="msg_adding">Добавление композиций&#8230;</string>
     <string name="msg_select_song">Пожалуйста, выберите композицию для добавления</string>
     <string name="msg_select_folder_add">Пожалуйста, выберите директорию для добавления</string>
@@ -39,6 +42,7 @@
     <string name="msg_play">Эта кнопка добавляет в список воспроизведения все композиции в папке и её подпапках и начинает воспроизведение.</string>
     <string name="msg_error_download_path">Отсутствует возможность получить доступ к папке загрузки :(</string>
     <string name="msg_error_exporting_settings">Что-то пошло не так при экспорте настроек :(</string>
+    <string name="opt_language">Язык:</string>
     <string name="opt_use_alternate_typeface">Использовать дислексический шрифт (опция недоступна для данного языка)</string>
     <string name="opt_auto_turn_off">Автоматически выключить плеер после:</string>
     <string name="opt_keep_screen_on">Держать экран постоянно включённым</string>
@@ -127,7 +131,7 @@
     <string name="play_album">Воспроизвести альбом</string>
     <string name="remove_favorite">Удалить избранное</string>
     <string name="previous">Предыдущая</string>
-    <string name="play_pause">Воспроизведение/Пауза</string>
+    <string name="pause">Пауза</string>
     <string name="next">Следующая</string>
     <string name="play">Воспроизведение</string>
     <string name="add">Добавить</string>
@@ -138,7 +142,6 @@
 	<string name="length">Продолжительность</string>
 	<string name="year">год</string>
 	<string name="no_info">-</string>
-    <string name="language">Язык</string>
     <string name="standard_language">Стандартный язык</string>
 	<string name="artists">Исполнители</string>
     <string name="albums">Альбомы</string>
