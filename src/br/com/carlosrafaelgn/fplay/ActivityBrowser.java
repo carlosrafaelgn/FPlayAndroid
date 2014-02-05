@@ -503,9 +503,9 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		UI.largeTextAndColor((TextView)findViewById(R.id.lblLoading));
 		lblPath = (TextView)findViewById(R.id.lblPath);
 		lblPath.setText(Player.path);
-		lblPath.setTextColor(UI.colorState_text_sel);
+		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.mediumText(lblPath);
-		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_current));
+		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		list = (BgListView)findViewById(R.id.list);
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
@@ -518,7 +518,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, true), null, null, null);
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
-		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false);
+		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, false);
 		btnHome = (BgButton)findViewById(R.id.btnHome);
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);

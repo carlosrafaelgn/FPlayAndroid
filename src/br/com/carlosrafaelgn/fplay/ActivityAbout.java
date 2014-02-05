@@ -79,7 +79,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblMsg.setAutoLinkMask(Linkify.ALL);
 		lblMsg.setLinksClickable(true);
 		lblMsg.setText(sb.toString());
-		lblMsg.setLinkTextColor(UI.color_selected_grad_dk);
+		lblMsg.setLinkTextColor(UI.color_highlight);
 		UI.smallTextAndColor(lblMsg);
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
 		sb.delete(0, sb.length());
@@ -103,7 +103,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		if (UI.isLargeScreen)
 			sb.append("\nLarge Screen");
 		lblDbg.setTypeface(UI.defaultTypeface);
-		lblDbg.setTextColor(UI.color_selected_grad_dk);
+		lblDbg.setTextColor(UI.color_highlight);
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.spToPxI(12));
 		lblDbg.setText(sb.toString());
 		if (UI.isLargeScreen)

@@ -5,8 +5,6 @@
     <color name="color_widget_pressed">#ffcccccc</color>
     <color name="color_widget_pressed_border">#ff999999</color>
     <color name="color_notification_pressed">#ff555555</color>
-    
-    <!-- These are the few colors from UI.java that must also be in a XML file -->
     <color name="color_transparent">#00000000</color>
     <color name="color_text">#ffffffff</color>
 

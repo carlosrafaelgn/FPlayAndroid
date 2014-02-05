@@ -203,6 +203,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_GOBACKWHENPLAYINGFOLDERS = 0x001C;
 	private static final int OPT_RANDOMMODE = 0x001D;
 	private static final int OPT_FORCEDLOCALE = 0x001E;
+	private static final int OPT_THEME = 0x001F;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -276,6 +277,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+		UI.setTheme(opts.getInt(OPT_THEME));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
 		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
@@ -324,6 +326,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_HANDLECALLKEY, handleCallKey);
 		opts.put(OPT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
 		opts.put(OPT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
+		opts.put(OPT_THEME, UI.getTheme());
 		opts.put(OPT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
 		opts.put(OPT_RANDOMMODE, songs.isInRandomMode());
 		opts.put(OPT_FORCEDLOCALE, UI.getForcedLocale());
@@ -1845,7 +1848,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			if (!hasFocus) {
 				hasFocus = true;
 				if (focusDelayTimer != null)
-					focusDelayTimer.start(5000);//1500);
+					focusDelayTimer.start(1500);
 			} else {
 				//processFocusGain();
 				//came here from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK

@@ -83,9 +83,9 @@ public final class StateDrawable extends Drawable {
 	
 	private Drawable computeCurrent() {
 		if (hasChecks && ((state & UI.STATE_CHECKED) != 0))
-			current = (((state & (UI.STATE_SELECTED | UI.STATE_FOCUSED)) != 0) ? checkedAltered : checked);
+			current = (((state & (UI.STATE_SELECTED | UI.STATE_FOCUSED | UI.STATE_PRESSED)) != 0) ? checkedAltered : checked);
 		else
-			current = (((state & (UI.STATE_SELECTED | UI.STATE_FOCUSED)) != 0) ? altered : normal);
+			current = (((state & (UI.STATE_SELECTED | UI.STATE_FOCUSED | UI.STATE_PRESSED)) != 0) ? altered : normal);
 		opacity = ((current == null) ? PixelFormat.TRANSPARENT : current.getOpacity());
 		return current;
 	}
@@ -105,20 +105,22 @@ public final class StateDrawable extends Drawable {
 	public boolean setState(int[] stateSet) {
 		this.stateSet = stateSet;
 		int newState = 0;
-		for (int i = stateSet.length - 1; i >= 0; i--) {
-			switch (stateSet[i]) {
-			case android.R.attr.state_selected:
-				newState |= UI.STATE_SELECTED;
-				break;
-			case android.R.attr.state_focused:
-				newState |= UI.STATE_FOCUSED;
-				break;
-			case android.R.attr.state_pressed:
-				newState |= UI.STATE_PRESSED;
-				break;
-			case android.R.attr.state_checked:
-				newState |= UI.STATE_CHECKED;
-				break;
+		if (stateSet != null) {
+			for (int i = stateSet.length - 1; i >= 0; i--) {
+				switch (stateSet[i]) {
+				case android.R.attr.state_selected:
+					newState |= UI.STATE_SELECTED;
+					break;
+				case android.R.attr.state_focused:
+					newState |= UI.STATE_FOCUSED;
+					break;
+				case android.R.attr.state_pressed:
+					newState |= UI.STATE_PRESSED;
+					break;
+				case android.R.attr.state_checked:
+					newState |= UI.STATE_CHECKED;
+					break;
+				}
 			}
 		}
 		if (state == newState)

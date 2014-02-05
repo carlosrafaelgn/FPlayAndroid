@@ -149,7 +149,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		protected void onDraw(Canvas canvas) {
 			final int[] pts = acquirePoints(true);
 			if (pts != null) {
-				canvas.drawColor(UI.color_bg);
+				canvas.drawColor(UI.color_list);
 				final int w = barW, h = barH;
 				final Rect r = rectBar;
 				final Paint p = paint;
@@ -293,7 +293,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_bg));
+		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

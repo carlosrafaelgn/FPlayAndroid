@@ -50,7 +50,6 @@ import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
-import br.com.carlosrafaelgn.fplay.ui.BgCheckBox;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
@@ -67,7 +66,7 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
 	private RelativeLayout panelControls;
 	private LinearLayout container;
-	private BgCheckBox chkEnable;
+	private BgButton chkEnable;
 	private BgButton btnGoBack, btnMenu, btnChangeEffect;
 	private TextView lblMsg;
 	private int min, max;
@@ -189,8 +188,9 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		chkEnable = (BgCheckBox)findViewById(R.id.chkEnable);
+		chkEnable = (BgButton)findViewById(R.id.chkEnable);
 		chkEnable.setOnClickListener(this);
+		chkEnable.setBehavingAsCheckBox(true);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);

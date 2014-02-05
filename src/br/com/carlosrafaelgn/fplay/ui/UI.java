@@ -88,33 +88,6 @@ public final class UI {
 	public static final int STATE_SELECTED = 8;
 	public static final int STATE_MULTISELECTED = 16;
 	public static final int STATE_CHECKED = 32;
-	//Some of these colos are also duplicated in colors.xml
-	public static final int color_transparent = 0x00000000;
-	public static final int color_window = 0xff303030;
-	public static final int color_bg = 0xff080808;
-	public static final int color_bg_control_mode = 0xff000000;
-	public static final int color_bg_menu = 0xffffffff;
-	public static final int color_divider = 0xff464646;
-	public static final int color_text = 0xffffffff;
-	public static final int color_text_secondary = 0xff959595;
-	public static final int color_text_selected = 0xff000000;
-	public static final int color_text_menu = 0xff000000;
-	public static final int color_text_menu_icon = 0xff555555;
-	public static final int color_selected = 0xffadd6fd;
-	public static final int color_selected_multi = 0xff779aba;//60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
-	public static final int color_selected_grad_lt = 0xffd1e8ff;
-	public static final int color_selected_grad_dk = 0xff5da2e3;//80bffa;
-	public static final int color_selected_border = 0xff518ec2;
-	public static final int color_selected_pressed = 0xffcfe1ff;
-	public static final int color_selected_pressed_border = 0xff4981b0;//darker version of #518ec2
-	public static final int color_current = 0xfffad35a;
-	public static final int color_current_darker = 0xffaf943f;//70% #fad35a over #000000
-	public static final int color_current_multi = 0xffadbbb1;//60% #add6fd over 70% #fad35a over #000000
-	public static final int color_current_grad_lt = 0xfff7eb6a;
-	public static final int color_current_grad_dk = 0xfffeb645;
-	public static final int color_current_border = 0xffad9040;
-	public static final int color_current_pressed = 0xffffeed4;//ffd99e;//db9f42;//f0a42d;//feb645;
-	public static final int color_current_pressed_border = 0xff94671e;//darker version of #ad9040
 	
 	public static final String ICON_PREV = "<";
 	public static final String ICON_PLAY = "P";
@@ -158,32 +131,63 @@ public final class UI {
 	public static final String ICON_GRIP = "G";
 	public static final String ICON_ICON = "♫";
 	
-	public static final ColorStateList colorState_text_normal = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
-	public static final ColorStateList colorState_text = ColorStateList.valueOf(color_text);
-	public static final ColorStateList colorState_text_sel = ColorStateList.valueOf(color_text_selected);
-	public static final ColorStateList colorState_text_highlight = ColorStateList.valueOf(color_current);//color_selected_border);
+	public static final int color_transparent = 0x00000000;
+	public static int color_window;
+	public static int color_control_mode;
+	public static int color_list;
+	public static int color_menu;
+	public static int color_menu_icon;
+	public static int color_divider;
+	public static int color_highlight;
+	public static int color_text_highlight;
+	public static int color_text;
+	public static int color_text_disabled;
+	public static int color_text_listitem;
+	public static int color_text_selected;
+	public static int color_text_menu;
+	public static int color_selected;
+	public static int color_selected_multi;
+	public static int color_selected_grad_lt;
+	public static int color_selected_grad_dk;
+	public static int color_selected_border;
+	public static int color_selected_pressed;
+	public static int color_selected_pressed_border;
+	public static int color_focused;
+	public static int color_focused_grad_lt;
+	public static int color_focused_grad_dk;
+	public static int color_focused_border;
+	public static int color_focused_pressed;
+	public static int color_focused_pressed_border;
+	public static ColorStateList colorState_text_white_reactive;
+	public static ColorStateList colorState_text_menu_reactive;
+	public static ColorStateList colorState_text_reactive;
+	public static ColorStateList colorState_text_static;
+	public static ColorStateList colorState_text_listitem_static;
+	public static ColorStateList colorState_text_selected_static;
+	public static ColorStateList colorState_highlight_static;
+	public static ColorStateList colorState_text_highlight_static;
 	
 	public static Typeface iconsTypeface, defaultTypeface;
 	
 	private static class Gradient {
 		private static final Gradient[] gradients = new Gradient[16];
 		private static int pos, count;
-		public final boolean current, vertical;
+		public final boolean focused, vertical;
 		public final int size;
 		public final LinearGradient gradient;
 		
-		private Gradient(boolean current, boolean vertical, int size) {
-			this.current = current;
+		private Gradient(boolean focused, boolean vertical, int size) {
+			this.focused = focused;
 			this.vertical = vertical;
 			this.size = size;
-			this.gradient = (current ? new LinearGradient(0, 0, (vertical ? size : 0), (vertical ? 0 : size), color_current_grad_lt, color_current_grad_dk, Shader.TileMode.CLAMP) :
+			this.gradient = (focused ? new LinearGradient(0, 0, (vertical ? size : 0), (vertical ? 0 : size), color_focused_grad_lt, color_focused_grad_dk, Shader.TileMode.CLAMP) :
 				new LinearGradient(0, 0, (vertical ? size : 0), (vertical ? 0 : size), color_selected_grad_lt, color_selected_grad_dk, Shader.TileMode.CLAMP));
 		}
 		
-		public static LinearGradient getGradient(boolean current, boolean vertical, int size) {
+		public static LinearGradient getGradient(boolean focused, boolean vertical, int size) {
 			//a LRU algorithm could be implemented here...
 			for (int i = count - 1; i >= 0; i--) {
-				if (gradients[i].size == size && gradients[i].current == current && gradients[i].vertical == vertical)
+				if (gradients[i].size == size && gradients[i].focused == focused && gradients[i].vertical == vertical)
 					return gradients[i].gradient;
 			}
 			if (count < 16) {
@@ -192,7 +196,7 @@ public final class UI {
 			} else {
 				pos = (pos + 1) & 15;
 			}
-			final Gradient g = new Gradient(current, vertical, size);
+			final Gradient g = new Gradient(focused, vertical, size);
 			gradients[pos] = g;
 			return g.gradient;
 		}
@@ -208,7 +212,7 @@ public final class UI {
 	private static float _1dpInset;
 	
 	private static String emptyListString;
-    private static int emptyListStringHalfWidth, forcedLocale, currentLocale;
+    private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme;
     private static boolean alternateTypefaceActive, useAlternateTypeface, fullyInitialized;
 	private static Toast internalToast;
 	
@@ -235,6 +239,7 @@ public final class UI {
 		textPaint.setTextAlign(Paint.Align.LEFT);
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
+		loadLightTheme();
 	}
 	
 	public static boolean isUsingAlternateTypeface() {
@@ -408,6 +413,160 @@ public final class UI {
 		setForcedLocale(context, opts.getInt(0x001E, LOCALE_NONE));
 	}
 	
+	private static void finishLoadingTheme() {
+		colorState_text_white_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, 0xffffffff });
+		colorState_text_menu_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text_menu });
+		colorState_text_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
+		colorState_text_static = ColorStateList.valueOf(color_text);
+		colorState_text_listitem_static = ColorStateList.valueOf(color_text_listitem);
+		colorState_text_selected_static = ColorStateList.valueOf(color_text_selected);
+		colorState_highlight_static = ColorStateList.valueOf(color_highlight);
+		colorState_text_highlight_static = ColorStateList.valueOf(color_text_highlight);
+	}
+	
+	public static void loadDarkBlueOrangeTheme() {
+		color_window = 0xff303030;
+		color_control_mode = 0xff000000;
+		color_list = 0xff080808;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff464646;
+		color_highlight = 0xfffad35a;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xffffffff;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		color_selected = 0xffadd6fd;
+		color_selected_multi = 0xff779aba;//60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xffd1e8ff;
+		color_selected_grad_dk = 0xff5da2e3;//80bffa;
+		color_selected_border = 0xff518ec2;
+		color_selected_pressed = 0xffcfe1ff;
+		color_selected_pressed_border = 0xff4981b0;//darker version of #518ec2
+		color_focused = 0xfffad35a;
+		color_focused_grad_lt = 0xfff7eb6a;
+		color_focused_grad_dk = 0xfffeb645;
+		color_focused_border = 0xffad9040;
+		color_focused_pressed = 0xffffeed4;//ffd99e;//db9f42;//f0a42d;//feb645;
+		color_focused_pressed_border = 0xff94671e;//darker version of #ad9040
+		finishLoadingTheme();
+	}
+	
+	public static void loadDarkBlueTheme() {
+		color_window = 0xff303030;
+		color_control_mode = 0xff000000;
+		color_list = 0xff080808;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff464646;
+		color_highlight = 0xff94c0ff;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xffffffff;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		color_selected = 0xffadd6fd;
+		color_selected_multi = 0xff779aba;//60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xffd1e8ff;
+		color_selected_grad_dk = 0xff5da2e3;//80bffa;
+		color_selected_border = 0xff518ec2;
+		color_selected_pressed = 0xffcfe1ff;
+		color_selected_pressed_border = 0xff4981b0;//darker version of #518ec2
+		color_focused = 0xfffad35a;
+		color_focused_grad_lt = 0xfff7eb6a;
+		color_focused_grad_dk = 0xfffeb645;
+		color_focused_border = 0xffad9040;
+		color_focused_pressed = 0xffffeed4;//ffd99e;//db9f42;//f0a42d;//feb645;
+		color_focused_pressed_border = 0xff94671e;//darker version of #ad9040
+		finishLoadingTheme();
+	}
+	
+	public static void loadDarkOrangeTheme() {
+		color_window = 0xff303030;
+		color_control_mode = 0xff000000;
+		color_list = 0xff080808;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff464646;
+		color_highlight = 0xfffad35a;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xffffffff;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		color_selected = 0xfffad35a;
+		color_selected_multi = 0xffad954e; //60% #fad35a over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xfff7eb6a;
+		color_selected_grad_dk = 0xfffeb645;
+		color_selected_border = 0xffad9040;
+		color_selected_pressed = 0xffffeed4;
+		color_selected_pressed_border = 0xff94671e; //darker version of #ad9040
+		color_focused = 0xffadd6fd;
+		color_focused_grad_lt = 0xffd1e8ff;
+		color_focused_grad_dk = 0xff5da2e3;
+		color_focused_border = 0xff518ec2;
+		color_focused_pressed = 0xffcfe1ff;
+		color_focused_pressed_border = 0xff4981b0; //darker version of #518ec2
+		finishLoadingTheme();
+	}
+	
+	public static void loadLightTheme() {
+		color_window = 0xffe3e3e3;
+		color_control_mode = 0xffe3e3e3;
+		color_list = 0xfff2f2f2;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff888888;
+		color_highlight = 0xff0045e0;
+		color_text_highlight = 0xffffffff;
+		color_text = 0xff000000;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xff000000;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		color_selected = 0xffadd6fd;
+		color_selected_multi = 0xffc8e1f8; //60% #add6fd over #f2f2f2 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xffd1e8ff;
+		color_selected_grad_dk = 0xff5da2e3;
+		color_selected_border = 0xff518ec2;
+		color_selected_pressed = 0xffcfe1ff;
+		color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
+		color_focused = 0xfffad35a;
+		color_focused_grad_lt = 0xfff7eb6a;
+		color_focused_grad_dk = 0xfffeb645;
+		color_focused_border = 0xffad9040;
+		color_focused_pressed = 0xffffeed4;
+		color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
+		finishLoadingTheme();
+	}
+	
+	public static int getTheme() {
+		return theme;
+	}
+	
+	public static void setTheme(int theme) {
+		UI.theme = theme;
+		switch (theme) {
+		case 1:
+			loadDarkBlueOrangeTheme();
+			break;
+		case 2:
+			loadDarkBlueTheme();
+			break;
+		case 3:
+			loadDarkOrangeTheme();
+			break;
+		default:
+			UI.theme = 0;
+			loadLightTheme();
+			break;
+		}
+	}
+	
 	public static void initialize(Context context) {
 		fullyInitialized = true;
 		if (iconsTypeface == null)
@@ -574,7 +733,7 @@ public final class UI {
 	
 	public static void drawEmptyListString(Canvas canvas) {
 		//top and left must be 0 for this to work correctly
-		textPaint.setColor(color_text_secondary);
+		textPaint.setColor(color_text_disabled);
 		textPaint.setTextSize(_22sp);
 		canvas.drawText(emptyListString, (UI.rect.right >> 1) - emptyListStringHalfWidth, (UI.rect.bottom >> 1) - (_18spBox >> 1) + _18spYinBox, textPaint);
 	}
@@ -592,9 +751,11 @@ public final class UI {
 	
 	public static int getBorderColor(int state) {
 		if ((state & STATE_PRESSED) != 0)
-			return (((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_pressed_border : color_selected_pressed_border);
-		if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0)
-			return (((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_border : color_selected_border);
+			return (((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border);
+		if ((state & STATE_FOCUSED) != 0)
+			return color_focused_border;
+		if ((state & STATE_SELECTED) != 0)
+			return color_selected_border;
 		return 0;
 	}
 	
@@ -602,19 +763,16 @@ public final class UI {
 		if (state == 0)
 			return;
 		if ((state & STATE_PRESSED) != 0) {
-			fillPaint.setColor(((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_pressed : color_selected_pressed);
+			fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 			canvas.drawRect(rect, fillPaint);
 		} else {
 			if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
 				//rect.top MUST be 0 for the gradient to work properly
-				fillPaint.setShader(Gradient.getGradient((state & (STATE_FOCUSED | STATE_CURRENT)) != 0, false, rect.bottom));
+				fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
 				canvas.drawRect(rect, fillPaint);
 				fillPaint.setShader(null);
 			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillPaint.setColor(((state & STATE_CURRENT) != 0) ? color_current_multi : color_selected_multi);
-				canvas.drawRect(rect, fillPaint);
-			} else if ((state & STATE_CURRENT) != 0) {
-				fillPaint.setColor(color_current_darker);
+				fillPaint.setColor(color_selected_multi);
 				canvas.drawRect(rect, fillPaint);
 			}
 		}
@@ -635,9 +793,9 @@ public final class UI {
 			return;
 		}
 		if ((state & STATE_PRESSED) != 0) {
-			fillPaint.setColor(((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_pressed : color_selected_pressed);
+			fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 			canvas.drawRect(rect, fillPaint);
-			strokePaint.setColor(((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_pressed_border : color_selected_pressed_border);
+			strokePaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border);
 			if (!sideBorders) {
 				rect.left -= (_1dp << 1);
 				rect.right += (_1dp << 1);
@@ -649,7 +807,7 @@ public final class UI {
 			}
 		} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
 			//rect.top MUST be 0 for the gradient to work properly
-			fillPaint.setShader(Gradient.getGradient((state & (STATE_FOCUSED | STATE_CURRENT)) != 0, false, rect.bottom));
+			fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
 			canvas.drawRect(rect, fillPaint);
 			fillPaint.setShader(null);
 			strokePaint.setColor(0xffffffff);
@@ -658,7 +816,7 @@ public final class UI {
 				canvas.drawLine(rect.left, t, rect.right, t, strokePaint);
 			else
 				canvas.drawLine((float)(rect.left + _1dp), t, (float)(rect.right - _1dp), t, strokePaint);
-			strokePaint.setColor(((state & (STATE_FOCUSED | STATE_CURRENT)) != 0) ? color_current_border : color_selected_border);
+			strokePaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border);
 			if (!sideBorders) {
 				rect.left -= (_1dp << 1);
 				rect.right += (_1dp << 1);
@@ -669,10 +827,7 @@ public final class UI {
 				rect.right -= (_1dp << 1);
 			}
 		} else if ((state & STATE_MULTISELECTED) != 0) {
-			fillPaint.setColor(((state & STATE_CURRENT) != 0) ? color_current_multi : color_selected_multi);
-			canvas.drawRect(rect, fillPaint);
-		} else if ((state & STATE_CURRENT) != 0) {
-			fillPaint.setColor(color_current_darker);
+			fillPaint.setColor(color_selected_multi);
 			canvas.drawRect(rect, fillPaint);
 		} else if (!sideBorders && isDividerVisible) {
 			drawDivider(canvas, rect);
@@ -708,7 +863,7 @@ public final class UI {
 	
 	public static void smallTextAndColor(TextView view) {
 		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _14sp);
-		view.setTextColor(colorState_text);
+		view.setTextColor(colorState_text_static);
 		view.setTypeface(defaultTypeface);
 	}
 	
@@ -719,7 +874,7 @@ public final class UI {
 	
 	public static void mediumTextAndColor(TextView view) {
 		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _18sp);
-		view.setTextColor(colorState_text);
+		view.setTextColor(colorState_text_static);
 		view.setTypeface(defaultTypeface);
 	}
 	
@@ -730,7 +885,7 @@ public final class UI {
 	
 	public static void largeTextAndColor(TextView view) {
 		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _22sp);
-		view.setTextColor(colorState_text);
+		view.setTextColor(colorState_text_static);
 		view.setTypeface(defaultTypeface);
 	}
 	
@@ -753,8 +908,8 @@ public final class UI {
 			final Toast t = new Toast(context);
 			final TextView v = new TextView(context);
 			mediumText(v);
-			v.setTextColor(UI.colorState_text_sel);
-			v.setBackgroundDrawable(new BorderDrawable(color_current_border, color_current, true, true, true, true));
+			v.setTextColor(UI.colorState_text_selected_static);
+			v.setBackgroundDrawable(new BorderDrawable(color_focused_border, color_focused, true, true, true, true));
 			v.setGravity(Gravity.CENTER);
 			v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 			v.setPadding(_8dp, _8dp, _8dp, _8dp);
@@ -772,10 +927,10 @@ public final class UI {
 			mnu.setItemClassConstructor(BgButton.class.getConstructor(Context.class));
 		} catch (NoSuchMethodException e) {
 		}
-		mnu.setBackground(new BorderDrawable(color_selected_border, color_bg_menu, true, true, true, true));
+		mnu.setBackground(new BorderDrawable(color_selected_border, color_menu, true, true, true, true));
 		mnu.setPadding(0);//_1dp + _2dp);
 		mnu.setItemTextSizeInPixels(_22sp);
-		mnu.setItemTextColor(colorState_text_sel);
+		mnu.setItemTextColor(colorState_text_menu_reactive);
 		mnu.setItemGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 	}
 	

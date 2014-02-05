@@ -60,6 +60,7 @@ public final class BgListView extends ListView {
 	private OnAttachedObserver attachedObserver;
 	private OnBgListViewKeyDownObserver keyDownObserver;
 	private boolean notified, attached, measured, sized, ignoreTouchMode;
+	int extraState;
 	
 	public BgListView(Context context) {
 		super(context);
@@ -81,13 +82,13 @@ public final class BgListView extends ListView {
     	super.setSelector(new NullDrawable());
     	super.setDivider(null);
     	super.setDividerHeight(0);
-    	super.setCacheColorHint(UI.color_bg);
+    	super.setCacheColorHint(UI.color_list);
     	super.setHorizontalFadingEdgeEnabled(false);
     	super.setVerticalFadingEdgeEnabled(false);
     	super.setFadingEdgeLength(0);
-    	super.setBackgroundDrawable(new BorderDrawable(UI.color_current, UI.color_bg, false, true, false, false));
+    	super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, false, true, false, false));
     	super.setFocusable(true);
-    	super.setFocusableInTouchMode(true);
+    	super.setFocusableInTouchMode(false);
     	//List color turns black while Scrolling
         //http://stackoverflow.com/questions/8531006/list-color-turns-black-while-scrolling
         //Remove shadow from top and bottom of ListView in android?
@@ -149,15 +150,39 @@ public final class BgListView extends ListView {
 		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.3_r1/android/widget/ListView.java
 		//if previouslyFocusedRect is null and the control is in touch mode,
 		//nothing is done, and therefore, the scroll does not happen ;)
+		extraState = (gainFocus ? UI.STATE_SELECTED : 0);
 		ignoreTouchMode = true;
 		super.onFocusChanged(gainFocus, direction, gainFocus ? null : previouslyFocusedRect);
+		int s;
+		final BaseList<?> a = (BaseList<?>)getAdapter();
+		if (a != null) {
+			final int count = a.getCount();
+			s = a.getSelection();
+			if (gainFocus) {
+				if (s < 0 || s >= count) {
+					s = getFirstVisiblePosition();
+					if (s < 0)
+						s = 0;
+					if (s < count) {
+						a.setSelection(s, true);
+						if (s <= getFirstVisiblePosition() || s >= getLastVisiblePosition())
+							centerItem(s, false);
+					}
+				}
+			}
+			if (s >= 0 && (s >= getFirstVisiblePosition() && s <= getLastVisiblePosition())) {
+				final int c = s - getFirstVisiblePosition();
+				if (c >= 0 && c < getChildCount())
+					getChildAt(c).invalidate();
+			}
+		}
 		ignoreTouchMode = false;
 	}
 	
 	@Override
 	@ExportedProperty
 	public boolean isInTouchMode() {
-		return (ignoreTouchMode ? true : super.isInTouchMode());
+		return (ignoreTouchMode | super.isInTouchMode());
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)

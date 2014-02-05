@@ -54,7 +54,7 @@ public final class BgSeekBar extends View {
 	private String text;
 	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textBgY, textSize, textSizeIdx, emptySpaceColor, keyIncrement;
 	private float delta;
-	private boolean forceBlack, vertical, tracking, drawTextFirst;
+	private boolean forceTextSelected, vertical, tracking, drawTextFirst;
 	private int state, thumbWidth;
 	private OnBgSeekBarChangeListener listener;
 	
@@ -79,13 +79,14 @@ public final class BgSeekBar extends View {
 		textSizeIdx = 0;
 		thumbWidth = (UI._IconBox * 90) / 100;
 		setTextSizeIndex(2);
-		setEmptySpaceColor(UI.color_bg);
+		setEmptySpaceColor(UI.color_list);
 		super.setClickable(true);
 		super.setFocusable(true);
+		super.setFocusableInTouchMode(false);
 	}
 	
-	public void setForceBlack(boolean forceBlack) {
-		this.forceBlack = forceBlack;
+	public void setForceTextSelected(boolean forceTextSelected) {
+		this.forceTextSelected = forceTextSelected;
 		invalidate();
 	}
 	
@@ -474,12 +475,12 @@ public final class BgSeekBar extends View {
 		UI.rect.bottom -= UI._1dp;
 		UI.drawBgBorderless(canvas, state, UI.rect);
 		if (drawTextFirst)
-			UI.drawText(canvas, text, forceBlack ? UI.color_text_selected : textColor, textSize, textX, textY);
+			UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
 		UI.rect.left = UI.rect.right;
 		UI.rect.right = right - UI._1dp;
 		UI.drawRect(canvas, 0, emptySpaceColor, UI.rect);
 		if (!drawTextFirst)
-			UI.drawText(canvas, text, forceBlack ? UI.color_text_selected : textColor, textSize, textX, textY);
+			UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
 		UI.rect.left = filledSize;
 		UI.rect.top = 0;
 		UI.rect.right = filledSize + thumbWidth;

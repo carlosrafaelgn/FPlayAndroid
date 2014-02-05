@@ -80,7 +80,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnAdd.setIcon(UI.ICON_ADD, true, false);
 			btnAdd.setContentDescription(context.getText(R.string.add));
 			btnAdd.setOnClickListener(this);
-			btnAdd.setForceBlack(true);
+			btnAdd.setForceTextSelected(true);
 			addView(btnAdd);
 			btnPlay = new BgButton(context);
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
@@ -89,7 +89,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnPlay.setIcon(UI.ICON_PLAY, true, false);
 			btnPlay.setContentDescription(context.getText(R.string.play));
 			btnPlay.setOnClickListener(this);
-			btnPlay.setForceBlack(true);
+			btnPlay.setForceTextSelected(true);
 			addView(btnPlay);
 			if (UI.isVerticalMarginLarge) {
 				btnAdd.setHeight(height);
@@ -233,11 +233,15 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state, UI.rect, false);
+		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false);
 		if (bitmap != null)
 			canvas.drawBitmap(bitmap, UI._8dp, (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1), null);
-		UI.drawText(canvas, ellipsizedName, (state == 0) ? UI.color_text : UI.color_text_selected, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
+		UI.drawText(canvas, ellipsizedName, (state == 0) ? UI.color_text_listitem : UI.color_text_selected, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		super.dispatchDraw(canvas);
+	}
+	
+	@Override
+	protected void dispatchSetPressed(boolean pressed) {
 	}
 	
 	@Override

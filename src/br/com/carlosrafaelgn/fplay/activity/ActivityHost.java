@@ -169,13 +169,13 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		setupActionBar();
 		UI.initialize(this);
 		MainHandler.initialize(getApplication());
-		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_window));
 		top = new ActivityMain();
 		top.finished = false;
 		top.activity = this;
 		top.previousActivity = null;
 		top.onCreate();
 		top.onCreateLayout(true);
+		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_window));
 		Player.addDestroyedObserver(this);
 	}
 	

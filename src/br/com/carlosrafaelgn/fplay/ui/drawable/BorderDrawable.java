@@ -47,11 +47,11 @@ public final class BorderDrawable extends Drawable {
 	}
 	
 	public BorderDrawable() {
-    	init(UI.color_current, UI.color_bg, false, true, false, false);
+    	init(UI.color_highlight, UI.color_list, false, true, false, false);
 	}
 	
 	public BorderDrawable(boolean left, boolean top, boolean right, boolean bottom) {
-		init(UI.color_current, UI.color_bg, left, top, right, bottom);
+		init(UI.color_highlight, UI.color_list, left, top, right, bottom);
 	}
 	
 	private void init(int strokeColor, int fillColor, boolean left, boolean top, boolean right, boolean bottom) {
@@ -99,5 +99,10 @@ public final class BorderDrawable extends Drawable {
 	
 	@Override
 	public void setColorFilter(ColorFilter cf) {
+	}
+	
+	@Override
+	public boolean isStateful() {
+		return false;
 	}
 }

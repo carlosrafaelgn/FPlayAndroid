@@ -29,7 +29,7 @@
             <requestFocus />
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
 
-        <br.com.carlosrafaelgn.fplay.ui.BgCheckBox
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/chkEnable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

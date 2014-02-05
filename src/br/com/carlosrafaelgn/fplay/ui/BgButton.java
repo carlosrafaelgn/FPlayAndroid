@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -52,6 +53,7 @@ public final class BgButton extends Button {
 	private int state;
 	private boolean checkable, checked, stretchable;
 	private String iconChecked, iconUnchecked;
+	private TextIconDrawable checkBox;
 	private OnPressingChangeListener pressingChangeListener;
 	
 	public BgButton(Context context) {
@@ -71,11 +73,13 @@ public final class BgButton extends Button {
 	
 	private void init() {
 		super.setBackgroundResource(0);
-		super.setTextColor(UI.colorState_text_normal);
+		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		super.setGravity(Gravity.CENTER);
 		super.setPadding(UI._8sp, UI._8sp, UI._8sp, UI._8sp);
+		super.setFocusable(true);
+		super.setFocusableInTouchMode(false);
 	}
 	
 	public void setDefaultHeight() {
@@ -110,16 +114,34 @@ public final class BgButton extends Button {
 		setIcon(icon, true, true);
 	}
 	
-	public void setIcon(String iconChecked, String iconUnchecked, boolean checked) {
+	public void setIcon(String iconChecked, String iconUnchecked, boolean checked, boolean small) {
 		setIcon(checked ? iconChecked : iconUnchecked, true, true);
+		if (small)
+			super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._IconBox);
 		this.iconChecked = iconChecked;
 		this.iconUnchecked = iconUnchecked;
 		this.checkable = true;
 		this.checked = checked;
 	}
 	
-	public void setForceBlack(boolean forceBlack) {
-		super.setTextColor(forceBlack ? UI.colorState_text_sel : UI.colorState_text_normal);
+	public boolean isBehavingAsCheckBox() {
+		return (checkBox != null);
+	}
+	
+	public void setBehavingAsCheckBox(boolean behavingAsCheckBox) {
+		if (!behavingAsCheckBox) {
+			super.setCompoundDrawables(null, null, null, null);
+			checkBox = null;
+			checkable = false;
+		} else {
+			checkable = true;
+			checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, true);
+			super.setCompoundDrawables(checkBox, null, null, null);
+		}
+	}
+	
+	public void setForceTextSelected(boolean forceTextSelected) {
+		super.setTextColor(forceTextSelected ? UI.colorState_text_selected_static : UI.colorState_text_reactive);
 	}
 	
 	public OnPressingChangeListener getOnPressingChangeListener() {
@@ -170,7 +192,12 @@ public final class BgButton extends Button {
 		checkable = true;
 		if (this.checked != checked) {
 			this.checked = checked;
-			super.setText(checked ? iconChecked : iconUnchecked);
+			if (checkBox != null) {
+				checkBox.setIcon(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK);
+				invalidate();
+			} else {
+				super.setText(checked ? iconChecked : iconUnchecked);
+			}
 		}
 	}
 	

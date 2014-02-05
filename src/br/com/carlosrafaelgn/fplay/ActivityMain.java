@@ -783,7 +783,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
 			UI.largeText(lblMsgSelMove);
-			lblMsgSelMove.setTextColor(UI.color_current);
+			lblMsgSelMove.setTextColor(UI.colorState_highlight_static);
 			lblMsgSelMove.setHorizontalFadingEdgeEnabled(false);
 			lblMsgSelMove.setVerticalFadingEdgeEnabled(false);
 			lblMsgSelMove.setFadingEdgeLength(0);
@@ -828,13 +828,13 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblArtistStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblAlbumStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblLengthStatic));
-				lblArtist.setTextColor(UI.color_current);
+				lblArtist.setTextColor(UI.colorState_highlight_static);
 				UI.largeText(lblArtist);
 				lblAlbum = (TextView)findViewById(R.id.lblAlbum);
-				lblAlbum.setTextColor(UI.color_current);
+				lblAlbum.setTextColor(UI.colorState_highlight_static);
 				UI.largeText(lblAlbum);
 				lblLength = (TextView)findViewById(R.id.lblLength);
-				lblLength.setTextColor(UI.color_current);
+				lblLength.setTextColor(UI.colorState_highlight_static);
 				UI.largeText(lblLength);
 			} else {
 				lblAlbum = null;
@@ -910,7 +910,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 				lblTitle.setClickable(true);
 				lblTitle.setFocusable(true);
 				lblTitle.setOnClickListener(this);
-				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_current }));
+				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_highlight }));
 				lblTitle.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, true, UI._18spBox), null, null, null);
 				vwVolume.setNextFocusLeftId(R.id.lblTitle);
 				vwVolume.setNextFocusUpId(R.id.lblTitle);
@@ -933,7 +933,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 				p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 				btnCancelSel.setLayoutParams(p);
 			} else {
-				lblTitle.setTextColor(UI.color_current);
+				lblTitle.setTextColor(UI.colorState_highlight_static);
 			}
 			btnCancelSel.setDefaultHeight();
 			final boolean m = Player.songs.moving;
@@ -1037,7 +1037,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			}
 		} else if (!controlModeBackground) {
 			controlModeBackground = true;
-			windowDrawable.change(UI.color_bg_control_mode);
+			windowDrawable.change(UI.color_control_mode);
 			getHostActivity().getWindow().setBackgroundDrawable(windowDrawable);
 		}
 	}
@@ -1050,15 +1050,17 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
 			list.setOnKeyDownObserver(this);
-			list.requestFocus();
-			//run this again on next frame...
-			MainHandler.sendMessage(this, 1);
+			//if (!list.isInTouchMode()) {
+				list.requestFocus();
+				//run this again on the next frame...
+				MainHandler.sendMessage(this, 1);
+			//}
 		} else if (Player.isControlMode()) {
-			if (!btnMenu.isInTouchMode()) {
+			//if (!btnMenu.isInTouchMode()) {
 				btnMenu.requestFocus();
-				//run this again on next frame...
+				//run this again on the next frame...
 				MainHandler.sendMessage(this, 2);
-			}
+			//}
 		}
 		prepareWindowBg(false);
 		onPlayerChanged(Player.getCurrentSong(), true, null);

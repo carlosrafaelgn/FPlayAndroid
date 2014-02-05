@@ -81,4 +81,9 @@ public final class ColorDrawable extends Drawable {
 	@Override
 	public void setColorFilter(ColorFilter cf) {
 	}
+	
+	@Override
+	public boolean isStateful() {
+		return false;
+	}
 }

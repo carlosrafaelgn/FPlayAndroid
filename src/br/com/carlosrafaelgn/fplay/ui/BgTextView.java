@@ -61,12 +61,13 @@ public class BgTextView extends TextView {
 	
 	private void init() {
 		super.setBackgroundResource(0);
-		super.setTextColor(UI.colorState_text_normal);
+		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
+		super.setFocusableInTouchMode(false);
 	}
 	
-	public void setForceBlack(boolean forceBlack) {
-		super.setTextColor(forceBlack ? UI.colorState_text_sel : UI.colorState_text_normal);
+	public void setForceTextSelected(boolean forceTextSelected) {
+		super.setTextColor(forceTextSelected ? UI.colorState_text_selected_static : UI.colorState_text_reactive);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)

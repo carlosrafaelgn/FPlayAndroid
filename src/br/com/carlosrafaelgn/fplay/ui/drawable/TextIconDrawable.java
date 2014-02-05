@@ -46,6 +46,7 @@ public final class TextIconDrawable extends Drawable {
 	private int[] stateSet;
 	private int state, size, y;
 	private final boolean outsideMenu;
+	private boolean forceTextSelected;
 	private String icon;
 	
 	static {
@@ -55,7 +56,7 @@ public final class TextIconDrawable extends Drawable {
 		paint.setStyle(Paint.Style.FILL);
 		paint.setTypeface(UI.iconsTypeface);
 		paint.setTextAlign(Paint.Align.LEFT);
-		paint.setColor(UI.color_text_menu_icon);
+		paint.setColor(UI.color_menu_icon);
 	}
 	
 	public static void drawIcon(Canvas canvas, String icon, int x, int y, int size, int color) {
@@ -91,6 +92,20 @@ public final class TextIconDrawable extends Drawable {
 		super.setBounds(0, 0, size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), size);
 	}
 	
+	public TextIconDrawable(String icon, boolean outsideMenu, boolean forceTextSelected) {
+		this.icon = icon;
+		this.size = UI._IconBox;
+		this.y = UI._IconBox >> 1;
+		this.outsideMenu = outsideMenu;
+		this.forceTextSelected = forceTextSelected;
+		this.stateSet = super.getState();
+		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._IconBox);
+	}
+	
+	public void setForceTextSelected(boolean forceTextSelected) {
+		this.forceTextSelected = forceTextSelected;
+	}
+	
 	public String getIcon() {
 		return icon;
 	}
@@ -123,10 +138,7 @@ public final class TextIconDrawable extends Drawable {
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
-		if (outsideMenu)
-			paint.setColor((outsideMenu && (state == 0)) ? UI.color_text : UI.color_text_selected);
-		else
-			paint.setColor(UI.color_text_menu_icon);
+		paint.setColor(((state == 0) && !forceTextSelected) ? (outsideMenu ? UI.color_text : UI.color_menu_icon) : UI.color_text_selected);
 		paint.setTextSize(size);
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top) >> 1) + y, paint);
 		if (!outsideMenu) {
@@ -134,7 +146,7 @@ public final class TextIconDrawable extends Drawable {
 			UI.rect.right = UI.rect.left + 1;
 			UI.rect.top = rect.top + UI._2dp;
 			UI.rect.bottom = rect.bottom - UI._2dp;
-			paint.setColor(UI.color_selected_border);
+			paint.setColor((state == 0) ? UI.color_selected_border : UI.color_text_selected);
 			canvas.drawRect(UI.rect, paint);
 		}
 	}
@@ -147,8 +159,8 @@ public final class TextIconDrawable extends Drawable {
 	@Override
 	public boolean setState(int[] stateSet) {
 		this.stateSet = stateSet;
-		if (outsideMenu) {
-			int newState = 0;
+		int newState = 0;
+		if (stateSet != null) {
 			for (int i = stateSet.length - 1; i >= 0; i--) {
 				switch (stateSet[i]) {
 				case android.R.attr.state_focused:
@@ -159,11 +171,11 @@ public final class TextIconDrawable extends Drawable {
 					break;
 				}
 			}
-			if (state == newState)
-				return false;
-			state = newState;
-			invalidateSelf();
 		}
+		if (state == newState)
+			return false;
+		state = newState;
+		invalidateSelf();
 		return true;
 	}
 	
@@ -182,6 +194,6 @@ public final class TextIconDrawable extends Drawable {
 	
 	@Override
 	public boolean isStateful() {
-		return outsideMenu;
+		return true;
 	}
 }

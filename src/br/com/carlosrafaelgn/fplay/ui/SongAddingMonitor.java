@@ -70,8 +70,8 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 				UI.smallText(notification);
 				lastMsg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.msg_loading : R.string.msg_adding);
 				notification.setText(lastMsg);
-				notification.setBackgroundDrawable(new BorderDrawable(UI.color_current_border, UI.color_current, true, true, true, true));
-				notification.setTextColor(UI.colorState_text_sel);
+				notification.setBackgroundDrawable(new BorderDrawable(UI.color_focused_border, UI.color_focused, true, true, true, true));
+				notification.setTextColor(UI.colorState_text_selected_static);
 				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
 				((FrameLayout)parent).addView(notification);
 				timer.start(250);

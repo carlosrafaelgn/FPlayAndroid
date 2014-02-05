@@ -421,8 +421,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.largeText(hdr);
 		else
 			UI.mediumText(hdr);
-		hdr.setTextColor(UI.colorState_text_sel);
-		hdr.setBackgroundDrawable(new ColorDrawable(UI.color_current));
+		hdr.setTextColor(UI.colorState_text_highlight_static);
+		hdr.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		panelSettings.addView(hdr);
 	}
 	
