@@ -40,7 +40,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 
 public final class ColorDrawable extends Drawable {
-	private int color, opacity;
+	private int color, opacity, alpha;
 	private Rect bounds;
 	
 	public ColorDrawable(int color) {
@@ -49,8 +49,8 @@ public final class ColorDrawable extends Drawable {
 	
 	public void change(int color) {
 		this.color = color;
-		final int a = (color & 0xff000000);
-		this.opacity = ((a == 0xff000000) ? PixelFormat.OPAQUE : ((a == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		this.alpha = ((color >>> 24) & 0xff);
+		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 	}
 	
 	@Override
@@ -66,7 +66,7 @@ public final class ColorDrawable extends Drawable {
 		if (bounds == null)
 			canvas.drawColor(color);
 		else
-			UI.drawRect(canvas, 0, color, bounds);
+			UI.fillRect(canvas, color, bounds);
 	}
 	
 	@Override
@@ -85,5 +85,25 @@ public final class ColorDrawable extends Drawable {
 	@Override
 	public boolean isStateful() {
 		return false;
+	}
+	
+	@Override
+	public int getAlpha() {
+		return alpha;
+	}
+	
+	@Override
+	public boolean isAutoMirrored() {
+		return true;
+	}
+	
+	@Override
+	public int getMinimumWidth() {
+		return 0;
+	}
+	
+	@Override
+	public int getMinimumHeight() {
+		return 0;
 	}
 }

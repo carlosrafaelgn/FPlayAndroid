@@ -411,7 +411,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 	
 	@SuppressWarnings("deprecation")
-	private void addHeader(Context ctx, int resId) {
+	private void addHeader(Context ctx, int resId, SettingView previousControl) {
 		final TextView hdr = new TextView(ctx);
 		hdr.setText(resId);
 		hdr.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -424,6 +424,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		hdr.setTextColor(UI.colorState_text_highlight_static);
 		hdr.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		panelSettings.addView(hdr);
+		previousControl.setHidingSeparator(true);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -443,7 +444,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setHorizontalFadingEdgeEnabled(false);
     	list.setVerticalFadingEdgeEnabled(false);
     	list.setFadingEdgeLength(0);
-		list.setBackgroundDrawable(new BorderDrawable());
+		list.setBackgroundDrawable(new BorderDrawable(0, UI._1dp, 0, 0));
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		
 		if (!UI.isCurrentLocaleCyrillic()) {
@@ -488,7 +489,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInOther.setOnClickListener(this);
 		
 		panelSettings.addView(optAutoTurnOff);
-		addHeader(ctx, R.string.hdr_display);
+		addHeader(ctx, R.string.hdr_display, optAutoTurnOff);
 		panelSettings.addView(optKeepScreenOn);
 		if (!UI.isCurrentLocaleCyrillic())
 			panelSettings.addView(optUseAlternateTypeface);
@@ -496,14 +497,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		panelSettings.addView(optIsDividerVisible);
 		panelSettings.addView(optIsVerticalMarginLarge);
 		panelSettings.addView(optForcedLocale);
-		addHeader(ctx, R.string.hdr_playback);
+		addHeader(ctx, R.string.hdr_playback, optForcedLocale);
 		panelSettings.addView(optPlayWhenHeadsetPlugged);
 		panelSettings.addView(optHandleCallKey);
 		panelSettings.addView(optVolumeControlType);
 		panelSettings.addView(optFadeInFocus);
 		panelSettings.addView(optFadeInPause);
 		panelSettings.addView(optFadeInOther);
-		addHeader(ctx, R.string.hdr_behavior);
+		addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
 		panelSettings.addView(optClearListWhenPlayingFolders);
 		panelSettings.addView(optGoBackWhenPlayingFolders);
 		panelSettings.addView(optBlockBackKey);

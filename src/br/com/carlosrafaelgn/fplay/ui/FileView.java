@@ -233,7 +233,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false);
+		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false, true);
 		if (bitmap != null)
 			canvas.drawBitmap(bitmap, UI._8dp, (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1), null);
 		UI.drawText(canvas, ellipsizedName, (state == 0) ? UI.color_text_listitem : UI.color_text_selected, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);

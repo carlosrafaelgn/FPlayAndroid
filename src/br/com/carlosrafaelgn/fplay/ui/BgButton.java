@@ -260,7 +260,7 @@ public final class BgButton extends Button {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state, UI.rect, true);
+		UI.drawBg(canvas, state, UI.rect, true, false);
 		super.onDraw(canvas);
 	}
 }

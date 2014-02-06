@@ -45,7 +45,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Paint.Cap;
 import android.graphics.Paint.FontMetrics;
 import android.graphics.Rect;
 import android.graphics.Shader;
@@ -206,10 +205,8 @@ public final class UI {
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
 		marqueeTitle, blockBackKey, msgAddShown, msgPlayShown, msgStartupShown;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
-		dividerHeight, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation;
+		strokeSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
-	private static int _1dpStroke;
-	private static float _1dpInset;
 	
 	private static String emptyListString;
     private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme;
@@ -218,15 +215,10 @@ public final class UI {
 	
 	public static float density, scaledDensity, xdpi_1_72;
 	
-	private static final Paint strokePaint, fillPaint;
+	public static final Paint fillPaint;
 	private static final TextPaint textPaint;
 	
 	static {
-		strokePaint = new Paint();
-		strokePaint.setDither(false);
-		strokePaint.setAntiAlias(false);
-		strokePaint.setStyle(Paint.Style.STROKE);
-		strokePaint.setStrokeCap(Cap.BUTT);
 		fillPaint = new Paint();
 		fillPaint.setDither(false);
 		fillPaint.setAntiAlias(false);
@@ -439,18 +431,18 @@ public final class UI {
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
 		color_selected = 0xffadd6fd;
-		color_selected_multi = 0xff779aba;//60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
 		color_selected_grad_lt = 0xffd1e8ff;
-		color_selected_grad_dk = 0xff5da2e3;//80bffa;
+		color_selected_grad_dk = 0xff5da2e3;
 		color_selected_border = 0xff518ec2;
 		color_selected_pressed = 0xffcfe1ff;
-		color_selected_pressed_border = 0xff4981b0;//darker version of #518ec2
+		color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
 		color_focused = 0xfffad35a;
 		color_focused_grad_lt = 0xfff7eb6a;
 		color_focused_grad_dk = 0xfffeb645;
 		color_focused_border = 0xffad9040;
-		color_focused_pressed = 0xffffeed4;//ffd99e;//db9f42;//f0a42d;//feb645;
-		color_focused_pressed_border = 0xff94671e;//darker version of #ad9040
+		color_focused_pressed = 0xffffeed4;
+		color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
 		finishLoadingTheme();
 	}
 	
@@ -469,18 +461,18 @@ public final class UI {
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
 		color_selected = 0xffadd6fd;
-		color_selected_multi = 0xff779aba;//60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
 		color_selected_grad_lt = 0xffd1e8ff;
-		color_selected_grad_dk = 0xff5da2e3;//80bffa;
+		color_selected_grad_dk = 0xff5da2e3;
 		color_selected_border = 0xff518ec2;
 		color_selected_pressed = 0xffcfe1ff;
-		color_selected_pressed_border = 0xff4981b0;//darker version of #518ec2
+		color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
 		color_focused = 0xfffad35a;
 		color_focused_grad_lt = 0xfff7eb6a;
 		color_focused_grad_dk = 0xfffeb645;
 		color_focused_border = 0xffad9040;
-		color_focused_pressed = 0xffffeed4;//ffd99e;//db9f42;//f0a42d;//feb645;
-		color_focused_pressed_border = 0xff94671e;//darker version of #ad9040
+		color_focused_pressed = 0xffffeed4;
+		color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
 		finishLoadingTheme();
 	}
 	
@@ -515,12 +507,12 @@ public final class UI {
 	}
 	
 	public static void loadLightTheme() {
-		color_window = 0xffe3e3e3;
-		color_control_mode = 0xffe3e3e3;
+		color_window = 0xffe0e0e0;
+		color_control_mode = 0xffe0e0e0;
 		color_list = 0xfff2f2f2;
 		color_menu = 0xffffffff;
 		color_menu_icon = 0xff555555;
-		color_divider = 0xff888888;
+		color_divider = 0xff9f9f9f;
 		color_highlight = 0xff0045e0;
 		color_text_highlight = 0xffffffff;
 		color_text = 0xff000000;
@@ -529,7 +521,7 @@ public final class UI {
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
 		color_selected = 0xffadd6fd;
-		color_selected_multi = 0xffc8e1f8; //60% #add6fd over #f2f2f2 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_multi = 0xff5da2e3; //60% #add6fd over #f2f2f2 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
 		color_selected_grad_lt = 0xffd1e8ff;
 		color_selected_grad_dk = 0xff5da2e3;
 		color_selected_border = 0xff518ec2;
@@ -552,17 +544,17 @@ public final class UI {
 		UI.theme = theme;
 		switch (theme) {
 		case 1:
-			loadDarkBlueOrangeTheme();
-			break;
-		case 2:
 			loadDarkBlueTheme();
 			break;
-		case 3:
+		case 2:
 			loadDarkOrangeTheme();
+			break;
+		case 3:
+			loadLightTheme();
 			break;
 		default:
 			UI.theme = 0;
-			loadLightTheme();
+			loadDarkBlueOrangeTheme();
 			break;
 		}
 	}
@@ -596,14 +588,7 @@ public final class UI {
 		isLandscape = (screenWidth >= screenHeight);
 		isLowDpiScreen = (displayMetrics.densityDpi < 160);
 		_1dp = dpToPxI(1);
-		if (_1dp == 1) {
-			_1dpStroke = 2;
-			_1dpInset = 0;
-		} else {
-			_1dpStroke = _1dp;
-			_1dpInset = ((float)_1dp * 0.5f);
-		}
-		dividerHeight = (_1dp + 1) >> 1;
+		strokeSize = (_1dp + 1) >> 1;
 		_2dp = dpToPxI(2);
 		_4dp = dpToPxI(4);
 		_8dp = dpToPxI(8);
@@ -617,7 +602,6 @@ public final class UI {
 		_14sp = spToPxI(14);
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
-		strokePaint.setStrokeWidth(_1dpStroke);
 		if (!setForcedLocale(context, forcedLocale))
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
@@ -732,21 +716,40 @@ public final class UI {
 	}
 	
 	public static void drawEmptyListString(Canvas canvas) {
-		//top and left must be 0 for this to work correctly
 		textPaint.setColor(color_text_disabled);
 		textPaint.setTextSize(_22sp);
 		canvas.drawText(emptyListString, (UI.rect.right >> 1) - emptyListStringHalfWidth, (UI.rect.bottom >> 1) - (_18spBox >> 1) + _18spYinBox, textPaint);
 	}
 	
-	public static void drawRect(Canvas canvas, int strokeColor, int fillColor, Rect rect) {
-		if (fillColor != 0) {
-			fillPaint.setColor(fillColor);
-			canvas.drawRect(rect, fillPaint);
-		}
-		if (strokeColor != 0) {
-			strokePaint.setColor(strokeColor);
-			canvas.drawRect((float)rect.left + _1dpInset, (float)rect.top + _1dpInset, (float)rect.right - _1dpInset, (float)rect.bottom - _1dpInset, strokePaint);
-		}
+	public static void fillRect(Canvas canvas, int fillColor, Rect rect) {
+		fillPaint.setColor(fillColor);
+		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+	}
+	
+	public static void fillRect(Canvas canvas, int fillColor, Rect rect, int insetX, int insetY) {
+		fillPaint.setColor(fillColor);
+		canvas.drawRect(rect.left + insetX, rect.top + insetY, rect.right - insetX, rect.bottom - insetY, fillPaint);
+	}
+	
+	public static void fillRect(Canvas canvas, Shader shader, Rect rect) {
+		fillPaint.setShader(shader);
+		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+		fillPaint.setShader(null);
+	}
+	
+	public static void fillRect(Canvas canvas, Shader shader, Rect rect, int insetX, int insetY) {
+		fillPaint.setShader(shader);
+		canvas.drawRect(rect.left + insetX, rect.top + insetY, rect.right - insetX, rect.bottom - insetY, fillPaint);
+		fillPaint.setShader(null);
+	}
+	
+	public static void strokeRect(Canvas canvas, int strokeColor, Rect rect, int thickness) {
+		fillPaint.setColor(strokeColor);
+		final int l = rect.left, t = rect.top, r = rect.right, b = rect.bottom;
+		canvas.drawRect(l, t, r, t + thickness, fillPaint);
+		canvas.drawRect(l, b - thickness, r, b, fillPaint);
+		canvas.drawRect(l, t + thickness, l + thickness, b - thickness, fillPaint);
+		canvas.drawRect(r - thickness, t + thickness, r, b - thickness, fillPaint);
 	}
 	
 	public static int getBorderColor(int state) {
@@ -760,78 +763,44 @@ public final class UI {
 	}
 	
 	public static void drawBgBorderless(Canvas canvas, int state, Rect rect) {
-		if (state == 0)
-			return;
-		if ((state & STATE_PRESSED) != 0) {
-			fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
-			canvas.drawRect(rect, fillPaint);
-		} else {
-			if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				//rect.top MUST be 0 for the gradient to work properly
-				fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
-				canvas.drawRect(rect, fillPaint);
-				fillPaint.setShader(null);
-			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillPaint.setColor(color_selected_multi);
-				canvas.drawRect(rect, fillPaint);
-			}
+		if ((state & ~STATE_CURRENT) != 0) {
+			if ((state & STATE_PRESSED) != 0)
+				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, rect);
+			else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0)
+				fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
+			else if ((state & STATE_MULTISELECTED) != 0)
+				fillRect(canvas, color_selected_multi, rect);
 		}
 	}
 	
 	private static void drawDivider(Canvas canvas, Rect rect) {
 		fillPaint.setColor(color_divider);
 		final int top = rect.top;
-		rect.top = rect.bottom - dividerHeight;
+		rect.top = rect.bottom - strokeSize;
 		canvas.drawRect(rect, fillPaint);
 		rect.top = top;
 	}
 	
-	public static void drawBg(Canvas canvas, int state, Rect rect, boolean sideBorders) {
-		if (state == 0) {
-			if (!sideBorders && isDividerVisible)
-				drawDivider(canvas, rect);
-			return;
+	public static void drawBg(Canvas canvas, int state, Rect rect, boolean squareItem, boolean dividerAllowed) {
+		dividerAllowed &= isDividerVisible;
+		if ((state & ~STATE_CURRENT) != 0) {
+			if ((state & STATE_PRESSED) != 0) {
+				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, rect, strokeSize);
+				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, rect, strokeSize, strokeSize);
+				return;
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+				if (squareItem) {
+					strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, rect, strokeSize);
+					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect, strokeSize, strokeSize);
+				} else {
+					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
+				}
+			} else if ((state & STATE_MULTISELECTED) != 0) {
+				fillRect(canvas, color_selected_multi, rect);
+			}
 		}
-		if ((state & STATE_PRESSED) != 0) {
-			fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
-			canvas.drawRect(rect, fillPaint);
-			strokePaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border);
-			if (!sideBorders) {
-				rect.left -= (_1dp << 1);
-				rect.right += (_1dp << 1);
-			}
-			canvas.drawRect((float)rect.left + _1dpInset, (float)rect.top + _1dpInset, (float)rect.right - _1dpInset, (float)rect.bottom - _1dpInset, strokePaint);
-			if (!sideBorders) {
-				rect.left += (_1dp << 1);
-				rect.right -= (_1dp << 1);
-			}
-		} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-			//rect.top MUST be 0 for the gradient to work properly
-			fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
-			canvas.drawRect(rect, fillPaint);
-			fillPaint.setShader(null);
-			strokePaint.setColor(0xffffffff);
-			final float t = (float)(rect.top + _1dp) + _1dpInset;
-			if (!sideBorders)
-				canvas.drawLine(rect.left, t, rect.right, t, strokePaint);
-			else
-				canvas.drawLine((float)(rect.left + _1dp), t, (float)(rect.right - _1dp), t, strokePaint);
-			strokePaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border);
-			if (!sideBorders) {
-				rect.left -= (_1dp << 1);
-				rect.right += (_1dp << 1);
-			}
-			canvas.drawRect((float)rect.left + _1dpInset, (float)rect.top + _1dpInset, (float)rect.right - _1dpInset, (float)rect.bottom - _1dpInset, strokePaint);
-			if (!sideBorders) {
-				rect.left += (_1dp << 1);
-				rect.right -= (_1dp << 1);
-			}
-		} else if ((state & STATE_MULTISELECTED) != 0) {
-			fillPaint.setColor(color_selected_multi);
-			canvas.drawRect(rect, fillPaint);
-		} else if (!sideBorders && isDividerVisible) {
+		if (!squareItem && dividerAllowed)
 			drawDivider(canvas, rect);
-		}
 	}
 	
 	public static int handleStateChanges(int state, boolean pressed, boolean focused, View view) {
@@ -928,14 +897,14 @@ public final class UI {
 		} catch (NoSuchMethodException e) {
 		}
 		mnu.setBackground(new BorderDrawable(color_selected_border, color_menu, true, true, true, true));
-		mnu.setPadding(0);//_1dp + _2dp);
+		mnu.setPadding(0);
 		mnu.setItemTextSizeInPixels(_22sp);
 		mnu.setItemTextColor(colorState_text_menu_reactive);
 		mnu.setItemGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 	}
 	
 	public static void separator(Menu menu, int groupId, int order) {
-		((CustomContextMenu)menu).addSeparator(groupId, order, color_selected_border, _1dp, _8dp, _2dp, _8dp, _2dp);		
+		((CustomContextMenu)menu).addSeparator(groupId, order, color_selected_border, strokeSize, _8dp, _2dp, _8dp, _2dp);		
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)

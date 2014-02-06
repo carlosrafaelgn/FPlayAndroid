@@ -61,4 +61,19 @@ public final class NullDrawable extends Drawable {
 	public boolean isStateful() {
 		return false;
 	}
+	
+	@Override
+	public boolean isAutoMirrored() {
+		return true;
+	}
+	
+	@Override
+	public int getMinimumWidth() {
+		return 0;
+	}
+	
+	@Override
+	public int getMinimumHeight() {
+		return 0;
+	}
 }

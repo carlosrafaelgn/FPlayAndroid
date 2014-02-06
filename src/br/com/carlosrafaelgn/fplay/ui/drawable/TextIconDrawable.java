@@ -99,7 +99,7 @@ public final class TextIconDrawable extends Drawable {
 		this.outsideMenu = outsideMenu;
 		this.forceTextSelected = forceTextSelected;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._IconBox);
+		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + UI.strokeSize)), UI._IconBox);
 	}
 	
 	public void setForceTextSelected(boolean forceTextSelected) {
@@ -116,26 +116,6 @@ public final class TextIconDrawable extends Drawable {
 	}
 	
 	@Override
-	public int getIntrinsicWidth() {
-		return size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1));
-	}
-	
-	@Override
-	public int getIntrinsicHeight() {
-		return size;
-	}
-	
-	@Override
-	public int getMinimumWidth() {
-		return size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1));
-	}
-	
-	@Override
-	public int getMinimumHeight() {
-		return size;
-	}
-	
-	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
 		paint.setColor(((state == 0) && !forceTextSelected) ? (outsideMenu ? UI.color_text : UI.color_menu_icon) : UI.color_text_selected);
@@ -143,7 +123,7 @@ public final class TextIconDrawable extends Drawable {
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top) >> 1) + y, paint);
 		if (!outsideMenu) {
 			UI.rect.left = rect.right - UI._8dp - 1;
-			UI.rect.right = UI.rect.left + 1;
+			UI.rect.right = UI.rect.left + UI.strokeSize;
 			UI.rect.top = rect.top + UI._2dp;
 			UI.rect.bottom = rect.bottom - UI._2dp;
 			paint.setColor((state == 0) ? UI.color_selected_border : UI.color_text_selected);
@@ -195,5 +175,35 @@ public final class TextIconDrawable extends Drawable {
 	@Override
 	public boolean isStateful() {
 		return true;
+	}
+	
+	@Override
+	public int getAlpha() {
+		return 255;
+	}
+	
+	@Override
+	public boolean isAutoMirrored() {
+		return true;
+	}
+	
+	@Override
+	public int getIntrinsicWidth() {
+		return size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1));
+	}
+	
+	@Override
+	public int getIntrinsicHeight() {
+		return size;
+	}
+	
+	@Override
+	public int getMinimumWidth() {
+		return size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1));
+	}
+	
+	@Override
+	public int getMinimumHeight() {
+		return size;
 	}
 }

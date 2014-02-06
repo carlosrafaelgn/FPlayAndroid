@@ -86,7 +86,7 @@ public final class BgListView extends ListView {
     	super.setHorizontalFadingEdgeEnabled(false);
     	super.setVerticalFadingEdgeEnabled(false);
     	super.setFadingEdgeLength(0);
-    	super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, false, true, false, false));
+    	super.setBackgroundDrawable(new BorderDrawable(0, UI._1dp, 0, 0));
     	super.setFocusable(true);
     	super.setFocusableInTouchMode(false);
     	//List color turns black while Scrolling
@@ -99,17 +99,17 @@ public final class BgListView extends ListView {
     
     @SuppressWarnings("deprecation")
     public void setTopLeftBorders() {
-    	super.setBackgroundDrawable(new BorderDrawable(true, true, false, false));
+    	super.setBackgroundDrawable(new BorderDrawable(UI._1dp, UI._1dp, 0, 0));
     }
     
     @SuppressWarnings("deprecation")
     public void setRightBorder() {
-    	super.setBackgroundDrawable(new BorderDrawable(false, false, true, false));
+    	super.setBackgroundDrawable(new BorderDrawable(0, 0, UI._1dp, 0));
     }
     
     @SuppressWarnings("deprecation")
     public void setBottomBorder() {
-    	super.setBackgroundDrawable(new BorderDrawable(false, false, false, true));
+    	super.setBackgroundDrawable(new BorderDrawable(0, 0, 0, UI._1dp));
     }
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)

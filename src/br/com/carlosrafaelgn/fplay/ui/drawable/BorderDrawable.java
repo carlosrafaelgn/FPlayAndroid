@@ -40,51 +40,62 @@ import android.graphics.drawable.Drawable;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class BorderDrawable extends Drawable {
-	private int strokeColor, fillColor, left, top, right, bottom, opacity;
+	private int strokeColor, fillColor, leftSize, topSize, rightSize, bottomSize, opacity, alpha;
 	
 	public BorderDrawable(int strokeColor, int fillColor, boolean left, boolean top, boolean right, boolean bottom) {
-		init(strokeColor, fillColor, left, top, right, bottom);
+		init(strokeColor, fillColor, left ? UI.strokeSize : 0, top ? UI.strokeSize : 0, right ? UI.strokeSize : 0, bottom ? UI.strokeSize : 0);
+	}
+	
+	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
+		init(strokeColor, fillColor, leftSize, topSize, rightSize, bottomSize);
 	}
 	
 	public BorderDrawable() {
-    	init(UI.color_highlight, UI.color_list, false, true, false, false);
+    	init(UI.color_highlight, UI.color_list, 0, UI.strokeSize, 0, 0);
 	}
 	
 	public BorderDrawable(boolean left, boolean top, boolean right, boolean bottom) {
-		init(UI.color_highlight, UI.color_list, left, top, right, bottom);
+		init(UI.color_highlight, UI.color_list, left ? UI.strokeSize : 0, top ? UI.strokeSize : 0, right ? UI.strokeSize : 0, bottom ? UI.strokeSize : 0);
 	}
 	
-	private void init(int strokeColor, int fillColor, boolean left, boolean top, boolean right, boolean bottom) {
+	public BorderDrawable(int leftSize, int topSize, int rightSize, int bottomSize) {
+		init(UI.color_highlight, UI.color_list, leftSize, topSize, rightSize, bottomSize);
+	}
+	
+	private void init(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
 		this.strokeColor = strokeColor;
 		this.fillColor = fillColor;
-		this.left = (left ? 0 : -(UI._1dp << 1));
-		this.top = (top ? 0 : -(UI._1dp << 1));
-		this.right = (right ? 0 : (UI._1dp << 1));
-		this.bottom = (bottom ? 0 : (UI._1dp << 1));
-		final int a = (fillColor & 0xff000000);
-		this.opacity = ((a == 0xff000000) ? PixelFormat.OPAQUE : ((a == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		this.leftSize = leftSize;
+		this.topSize = topSize;
+		this.rightSize = rightSize;
+		this.bottomSize = bottomSize;
+		this.alpha = ((fillColor >>> 24) & 0xff);
+		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 	}
 	
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
-		rect.left += left;
-		rect.top += top;
-		rect.right += right;
-		rect.bottom += bottom;
-		UI.drawRect(canvas, strokeColor, fillColor, rect);
-		rect.left -= left;
-		rect.top -= top;
-		rect.right -= right;
-		rect.bottom -= bottom;
+		UI.fillPaint.setColor(strokeColor);
+		final int l = rect.left, t = rect.top, r = rect.right, b = rect.bottom;
+		if (topSize != 0)
+			canvas.drawRect(l, t, r, t + topSize, UI.fillPaint);
+		if (bottomSize != 0)
+			canvas.drawRect(l, b - bottomSize, r, b, UI.fillPaint);
+		if (leftSize != 0)
+			canvas.drawRect(l, t + topSize, l + leftSize, b - bottomSize, UI.fillPaint);
+		if (rightSize != 0)
+			canvas.drawRect(r - rightSize, t + topSize, r, b - bottomSize, UI.fillPaint);
+		UI.fillPaint.setColor(fillColor);
+		canvas.drawRect(l + leftSize, t + topSize, r - rightSize, b - bottomSize, UI.fillPaint);
 	}
 	
 	@Override
 	public boolean getPadding(Rect padding) {
-		padding.left = ((left == 0) ? UI._1dp : 0);
-		padding.top = ((top == 0) ? UI._1dp : 0);
-		padding.right = ((right == 0) ? UI._1dp : 0);
-		padding.bottom = ((bottom == 0) ? UI._1dp : 0);
+		padding.left = leftSize;
+		padding.top = topSize;
+		padding.right = rightSize;
+		padding.bottom = bottomSize;
 		return true;
 	}
 	
@@ -104,5 +115,25 @@ public final class BorderDrawable extends Drawable {
 	@Override
 	public boolean isStateful() {
 		return false;
+	}
+	
+	@Override
+	public int getAlpha() {
+		return alpha;
+	}
+	
+	@Override
+	public boolean isAutoMirrored() {
+		return (leftSize == rightSize);
+	}
+	
+	@Override
+	public int getMinimumWidth() {
+		return leftSize + rightSize;
+	}
+	
+	@Override
+	public int getMinimumHeight() {
+		return topSize + bottomSize;
 	}
 }

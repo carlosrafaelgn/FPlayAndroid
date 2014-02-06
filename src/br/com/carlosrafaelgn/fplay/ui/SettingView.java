@@ -50,7 +50,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	private final TextView textView, secondaryTextView;
 	private final BgButton checkBox;
 	private String text, secondaryText;
-	private boolean checked;
+	private boolean checked, hidingSeparator;
 	private int state;
 	
 	public SettingView(Context context, String text, String secondaryText, boolean checkable, boolean checked) {
@@ -180,6 +180,14 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		}
 	}
 	
+	public boolean isHidingSeparator() {
+		return hidingSeparator;
+	}
+	
+	public void setHidingSeparator(boolean hidingSeparator) {
+		this.hidingSeparator = hidingSeparator;
+	}
+	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
 	public void setBackground(Drawable background) {
@@ -247,7 +255,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state, UI.rect, false);
+		UI.drawBg(canvas, state, UI.rect, false, !hidingSeparator);
 		super.dispatchDraw(canvas);
 	}
 	

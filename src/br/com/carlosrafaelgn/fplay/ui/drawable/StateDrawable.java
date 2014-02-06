@@ -32,12 +32,14 @@
 //
 package br.com.carlosrafaelgn.fplay.ui.drawable;
 
+import android.annotation.TargetApi;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.StateSet;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
@@ -203,6 +205,21 @@ public final class StateDrawable extends Drawable {
 	}
 	
 	@Override
+	public void clearColorFilter() {
+		if (this.cf != null) {
+			this.cf = null;
+			if (normal != null)
+				normal.clearColorFilter();
+			if (altered != null)
+				altered.clearColorFilter();
+			if (checked != null)
+				checked.clearColorFilter();
+			if (checkedAltered != null)
+				checkedAltered.clearColorFilter();
+		}
+	}
+	
+	@Override
 	public Drawable getCurrent() {
 		return current;
 	}
@@ -256,5 +273,16 @@ public final class StateDrawable extends Drawable {
 	@Override
 	public boolean isStateful() {
 		return true;
+	}
+	
+	@Override
+	public int getAlpha() {
+		return alpha;
+	}
+	
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	@Override
+	public boolean isAutoMirrored() {
+		return ((current == null) ? true : current.isAutoMirrored());
 	}
 }

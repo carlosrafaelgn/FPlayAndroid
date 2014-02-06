@@ -184,7 +184,7 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
-		panelControls.setBackgroundDrawable(new BorderDrawable());
+		panelControls.setBackgroundDrawable(new BorderDrawable(0, UI._1dp, 0, 0));
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);

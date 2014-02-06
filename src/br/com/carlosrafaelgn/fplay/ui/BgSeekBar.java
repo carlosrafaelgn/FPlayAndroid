@@ -466,30 +466,28 @@ public final class BgSeekBar extends View {
 		final int color = UI.getBorderColor(state);
 		UI.rect.top = UI._8dp;
 		UI.rect.bottom -= UI._8dp;
-		//don't even ask.... I know! But what can I do?!? I HATE smoothed 1px lines...
-		//and some devices just CAN'T DRAW 1PX STROKES!!!
-		UI.drawRect(canvas, 0, color, UI.rect);
-		UI.rect.left = UI._1dp;
-		UI.rect.top += UI._1dp;
-		UI.rect.right = UI._1dp + filledSize;
-		UI.rect.bottom -= UI._1dp;
+		UI.strokeRect(canvas, color, UI.rect, UI.strokeSize);
+		UI.rect.left = UI.strokeSize;
+		UI.rect.top += UI.strokeSize;
+		UI.rect.right = UI.strokeSize + filledSize;
+		UI.rect.bottom -= UI.strokeSize;
 		UI.drawBgBorderless(canvas, state, UI.rect);
 		if (drawTextFirst)
 			UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
 		UI.rect.left = UI.rect.right;
-		UI.rect.right = right - UI._1dp;
-		UI.drawRect(canvas, 0, emptySpaceColor, UI.rect);
+		UI.rect.right = right - UI.strokeSize;
+		UI.fillRect(canvas, emptySpaceColor, UI.rect);
 		if (!drawTextFirst)
 			UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
 		UI.rect.left = filledSize;
 		UI.rect.top = 0;
 		UI.rect.right = filledSize + thumbWidth;
 		UI.rect.bottom = bottom;
-		UI.drawRect(canvas, 0, color, UI.rect);
-		UI.rect.left += UI._1dp;
-		UI.rect.top += UI._1dp;
-		UI.rect.right -= UI._1dp;
-		UI.rect.bottom -= UI._1dp;
+		UI.fillRect(canvas, color, UI.rect);
+		UI.rect.left += UI.strokeSize;
+		UI.rect.top += UI.strokeSize;
+		UI.rect.right -= UI.strokeSize;
+		UI.rect.bottom -= UI.strokeSize;
 		UI.drawBgBorderless(canvas, state, UI.rect);
 		TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (thumbWidth >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
 		if (vertical)
