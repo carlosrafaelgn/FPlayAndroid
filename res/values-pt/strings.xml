@@ -21,6 +21,7 @@
     <string name="no">Não</string>
     <string name="got_it">Entendi!</string>
     <string name="volume">Volume</string>
+    <string name="go_to">Ir para</string>
     <string name="msg_sel">Toque para selecionar mais</string>
     <string name="msg_move">Toque para mover a seleção</string>
     <string name="msg_loading">Carregando&#8230;</string>
@@ -53,8 +54,8 @@
     <string name="opt_play_when_headset_plugged">Tocar automaticamente quando um fone de ouvido com fio for conectado (beta)</string>
     <string name="opt_block_back_key">Impedir que a tecla Voltar retorne à tela inicial</string>
     <string name="opt_double_click_mode">Usar dois cliques/toques para tocar as músicas da lista</string>
-	<string name="opt_marquee_title">Girar o título da música atual quando não couber na tela</string>
-	<string name="opt_prepare_next">Pré-carregar a próxima música para tentar diminuir o intervalos entre músicas consecutivas</string>
+    <string name="opt_marquee_title">Girar o título da música atual quando não couber na tela</string>
+    <string name="opt_prepare_next">Pré-carregar a próxima música para tentar diminuir o intervalos entre músicas consecutivas</string>
     <string name="opt_clear_list_when_playing_folders">Limpar a lista existente antes de tocar uma pasta, uma nova lista ou um álbum</string>
     <string name="opt_go_back_when_playing_folders">Voltar para a lista ao tocar uma pasta, uma nova lista ou um álbum</string>
     <string name="opt_force_orientation">Forçar orientação da tela como:</string>
@@ -98,14 +99,14 @@
     <string name="more">Mais&#8230;</string>
     <string name="visualizer_not_supported">Seu dispositivo não suporta visualização :(</string>
     <string name="audio_effects">Efeitos de áudio</string>
-    <string name="goto_equalizer">Ir para equalizador&#8230;</string>
+    <string name="go_to_equalizer">Ir para equalizador&#8230;</string>
     <string name="enable_equalizer">Habilitar equalizador</string>
     <string name="equalizer_not_supported">Seu dispositivo não suporta equalizador :(</string>
     <string name="zero_preset">Zerar definição</string>
     <string name="load_preset">Abrir definição</string>
     <string name="save_preset">Salvar definição</string>
     <string name="item_preset">definição</string>
-    <string name="goto_bass_boost">Ir para reforço de graves&#8230;</string>
+    <string name="go_to_bass_boost">Ir para reforço de graves&#8230;</string>
     <string name="enable_bass_boost">Habilitar reforço de graves</string>
     <string name="bass_boost_not_supported">Seu dispositivo não suporta reforço de graves :(</string>
     <string name="bass_boost_strength_not_supported">Seu dispositivo não suporta ajuste fino de reforço de graves :(</string>
@@ -138,12 +139,12 @@
     <string name="unknownArtist">[Artista Desconhecido]</string>
     <string name="title">Título</string>
     <string name="artist">Artista</string>
-	<string name="album">Álbum</string>
-	<string name="length">Duração</string>
-	<string name="year">Ano</string>
-	<string name="no_info">-</string>
+    <string name="album">Álbum</string>
+    <string name="duration">Duração</string>
+    <string name="year">Ano</string>
+    <string name="no_info">-</string>
     <string name="standard_language">Idioma padrão</string>
-	<string name="artists">Artistas</string>
+    <string name="artists">Artistas</string>
     <string name="albums">Álbuns</string>
     <string name="music">Música</string>
     <string name="downloads">Downloads</string>
@@ -158,5 +159,10 @@
     <string name="error_timeout">Desculpe, mas o tempo para acessar os dados expirou durante a reprodução :(</string>
     <string name="error_server_died">Desculpe, mas o servidor de mídia morreu de repente durante a reprodução :(</string>
     <string name="error_security">Desculpe, mas ocorreu um problema de segurança durante a reprodução :(</string>
+    <string name="opt_theme">Esquema de cores:</string>
+    <string name="blue_orange">Azul/Laranja</string>
+    <string name="blue">Azul</string>
+    <string name="orange">Laranja</string>
+    <string name="light">Claro</string>
 
 </resources>

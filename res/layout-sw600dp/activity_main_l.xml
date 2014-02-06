@@ -97,7 +97,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:singleLine="true"
-                    android:text="@string/length" />
+                    android:text="@string/duration" />
 
                 <TextView
                     android:id="@+id/lblLength"

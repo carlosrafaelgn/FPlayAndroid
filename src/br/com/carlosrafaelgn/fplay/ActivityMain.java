@@ -47,12 +47,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
-import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -62,7 +60,6 @@ import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
-import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
@@ -88,7 +85,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //Maintain/Save/Restore scroll position when returning to a ListView
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
-public final class ActivityMain extends ClientActivity implements MainHandler.Callback,  Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
+public final class ActivityMain extends ActivityItemView implements MainHandler.Callback,  Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblAlbum, lblLength, lblMsgSelMove, lblTime;
@@ -98,9 +95,8 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	private BgButton btnPrev, btnPlay, btnNext, btnMenu, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
-	private ColorDrawable windowDrawable;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, controlModeBackground, largeMode;
+	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, largeMode;
 	private StringBuilder timeBuilder, volumeBuilder;
 	
 	private void saveListViewPosition() {
@@ -572,7 +568,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	}
 	
 	@Override
-	public void onItemClick(AdapterView<?> parentView, View childView, int position, long id) {
+	public void processItemClick(int position) {
 		if (Player.songs.selecting) {
 			lastSel = position;
 			Player.songs.setSelection(firstSel, position, position, true, true);
@@ -599,7 +595,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 	}
 	
 	@Override
-	public boolean onItemLongClick(AdapterView<?> parentView, View childView, int position, long id) {
+	public void processItemLongClick(int position) {
 		if (!Player.songs.selecting && !Player.songs.moving) {
 			//select the clicked item before opening the menu
 			if (!Player.songs.isSelected(position))
@@ -608,7 +604,6 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			lastSel = firstSel;
 			startSelecting();
 		}
-		return true;
 	}
 	
 	@Override
@@ -788,6 +783,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			lblMsgSelMove.setVerticalFadingEdgeEnabled(false);
 			lblMsgSelMove.setFadingEdgeLength(0);
 			barSeek = (BgSeekBar)findViewById(R.id.barSeek);
+			barSeek.setAdditionalContentDescription(getText(R.string.go_to).toString());
 			barSeek.setOnBgSeekBarChangeListener(this);
 			barSeek.setMax(MAX_SEEK);
 			barSeek.setVertical(UI.isLandscape && !largeMode);
@@ -797,8 +793,6 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
 			list = (BgListView)findViewById(R.id.list);
-			list.setOnItemClickListener(this);
-			list.setOnItemLongClickListener(this);
 			panelControls = (ViewGroup)findViewById(R.id.panelControls);
 			panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
@@ -875,6 +869,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 			} else {
 				panelSecondary.removeView(btnVolume);
 				btnVolume = null;
+				barVolume.setAdditionalContentDescription(getText(R.string.volume).toString());
 				barVolume.setOnBgSeekBarChangeListener(this);
 				barVolume.setMax((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamMaxVolume() : (-Player.MIN_VOLUME_DB / 5));
 				barVolume.setVertical(UI.isLandscape && !largeMode);
@@ -1026,24 +1021,9 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 		return false;
 	}
 	
-	private void prepareWindowBg(boolean pausing) {
-		if (windowDrawable == null)
-			windowDrawable = new ColorDrawable(UI.color_window);
-		if (pausing || !Player.isControlMode()) {
-			if (controlModeBackground) {
-				controlModeBackground = false;
-				windowDrawable.change(UI.color_window);
-				getHostActivity().getWindow().setBackgroundDrawable(windowDrawable);
-			}
-		} else if (!controlModeBackground) {
-			controlModeBackground = true;
-			windowDrawable.change(UI.color_control_mode);
-			getHostActivity().getWindow().setBackgroundDrawable(windowDrawable);
-		}
-	}
-	
 	private void resume(boolean selectCurrent) {
 		Player.songs.setObserver(list);
+		Player.songs.observerActivity = this;
 		SongAddingMonitor.start(getHostActivity());
 		updateVolumeDisplay();
 		if (list != null) {
@@ -1062,7 +1042,7 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 				MainHandler.sendMessage(this, 2);
 			//}
 		}
-		prepareWindowBg(false);
+		getHostActivity().setWindowColor(Player.isControlMode() ? UI.color_control_mode : UI.color_window);
 		onPlayerChanged(Player.getCurrentSong(), true, null);
 	}
 	
@@ -1095,11 +1075,12 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 		if (Player.songs.selecting || Player.songs.moving)
 			cancelSelection(false);
 		Player.songs.setObserver(null);
+		Player.songs.observerActivity = null;
 		Player.observer = null;
 		lastTime = -2;
 		if (!Player.isControlMode())
 			Player.lastCurrent = Player.songs.getCurrentPosition();
-		prepareWindowBg(true);
+		getHostActivity().setWindowColor(UI.color_window);
 	}
 	
 	@Override
@@ -1145,7 +1126,6 @@ public final class ActivityMain extends ClientActivity implements MainHandler.Ca
 		tmrVolume = null;
 		timeBuilder = null;
 		volumeBuilder = null;
-		windowDrawable = null;
 	}
 	
 	@Override

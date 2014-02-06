@@ -184,7 +184,7 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
-		panelControls.setBackgroundDrawable(new BorderDrawable(0, UI._1dp, 0, 0));
+		panelControls.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
@@ -324,7 +324,7 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 		if (Player.bassBoostMode) {
 			if (container != null)
 				container.setVisibility(View.GONE);
-			btnChangeEffect.setText(R.string.goto_equalizer);
+			btnChangeEffect.setText(R.string.go_to_equalizer);
 			chkEnable.setMaxWidth(getDecorViewWidth() - UI.defaultControlSize - (UI._8dp * 3));
 			rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 			rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
@@ -380,7 +380,7 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 			}
 		} else {
 			barBass.setVisibility(View.GONE);
-			btnChangeEffect.setText(R.string.goto_bass_boost);
+			btnChangeEffect.setText(R.string.go_to_bass_boost);
 			final int bandCount = Equalizer.getBandCount();
 			if (!Equalizer.isSupported()) {
 				if (container != null)

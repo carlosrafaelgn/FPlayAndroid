@@ -254,11 +254,17 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				observerActivity.processItemClick(position);
 		}
 	}
-
+	
 	@Override
 	public boolean onLongClick(View view) {
 		if (observerActivity != null)
 			observerActivity.processItemLongClick(position);
 		return true;
+	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		observerActivity = null;
+		super.onDetachedFromWindow();
 	}
 }

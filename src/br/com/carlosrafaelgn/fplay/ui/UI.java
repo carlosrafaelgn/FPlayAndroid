@@ -68,6 +68,7 @@ import android.widget.Toast;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 //
@@ -128,7 +129,7 @@ public final class UI {
 	public static final String ICON_OPTCHK = "q";
 	public static final String ICON_OPTUNCHK = "Q";
 	public static final String ICON_GRIP = "G";
-	public static final String ICON_ICON = "♫";
+	public static final String ICON_FPLAY = "♫";
 	
 	public static final int color_transparent = 0x00000000;
 	public static int color_window;
@@ -205,7 +206,7 @@ public final class UI {
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
 		marqueeTitle, blockBackKey, msgAddShown, msgPlayShown, msgStartupShown;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
-		strokeSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation;
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	
 	private static String emptyListString;
@@ -405,7 +406,16 @@ public final class UI {
 		setForcedLocale(context, opts.getInt(0x001E, LOCALE_NONE));
 	}
 	
+	private static void finishLoadingCustomTheme() {
+		color_selected = ColorUtils.blend(color_selected_grad_lt, color_selected_grad_dk, 0.5f);
+		color_focused = ColorUtils.blend(color_focused_grad_lt, color_focused_grad_dk, 0.5f);
+		finishLoadingTheme();
+	}
+	
 	private static void finishLoadingTheme() {
+		color_selected_multi = ColorUtils.blend(color_selected, color_list, 0.7f);
+		color_selected_pressed_border = color_selected_border;
+		color_focused_pressed_border = color_focused_border;
 		colorState_text_white_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, 0xffffffff });
 		colorState_text_menu_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text_menu });
 		colorState_text_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
@@ -430,19 +440,19 @@ public final class UI {
 		color_text_listitem = 0xffffffff;
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
-		color_selected = 0xffadd6fd;
-		color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected = 0xff99c6f2; //0xffadd6fd;
+		//color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
 		color_selected_grad_lt = 0xffd1e8ff;
 		color_selected_grad_dk = 0xff5da2e3;
 		color_selected_border = 0xff518ec2;
 		color_selected_pressed = 0xffcfe1ff;
-		color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
+		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
 		color_focused = 0xfffad35a;
 		color_focused_grad_lt = 0xfff7eb6a;
 		color_focused_grad_dk = 0xfffeb645;
 		color_focused_border = 0xffad9040;
 		color_focused_pressed = 0xffffeed4;
-		color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
+		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
 		finishLoadingTheme();
 	}
 	
@@ -460,19 +470,19 @@ public final class UI {
 		color_text_listitem = 0xffffffff;
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
-		color_selected = 0xffadd6fd;
-		color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected = 0xff99c6f2; //0xffadd6fd;
+		//color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
 		color_selected_grad_lt = 0xffd1e8ff;
 		color_selected_grad_dk = 0xff5da2e3;
 		color_selected_border = 0xff518ec2;
 		color_selected_pressed = 0xffcfe1ff;
-		color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
+		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
 		color_focused = 0xfffad35a;
 		color_focused_grad_lt = 0xfff7eb6a;
 		color_focused_grad_dk = 0xfffeb645;
 		color_focused_border = 0xffad9040;
 		color_focused_pressed = 0xffffeed4;
-		color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
+		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
 		finishLoadingTheme();
 	}
 	
@@ -491,13 +501,13 @@ public final class UI {
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
 		color_selected = 0xfffad35a;
-		color_selected_multi = 0xffad954e; //60% #fad35a over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		//color_selected_multi = 0xffad954e; //60% #fad35a over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
 		color_selected_grad_lt = 0xfff7eb6a;
 		color_selected_grad_dk = 0xfffeb645;
 		color_selected_border = 0xffad9040;
 		color_selected_pressed = 0xffffeed4;
 		color_selected_pressed_border = 0xff94671e; //darker version of #ad9040
-		color_focused = 0xffadd6fd;
+		color_focused = 0xff99c6f2; //0xffadd6fd;
 		color_focused_grad_lt = 0xffd1e8ff;
 		color_focused_grad_dk = 0xff5da2e3;
 		color_focused_border = 0xff518ec2;
@@ -520,20 +530,35 @@ public final class UI {
 		color_text_listitem = 0xff000000;
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
-		color_selected = 0xffadd6fd;
-		color_selected_multi = 0xff5da2e3; //60% #add6fd over #f2f2f2 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected = 0xff99c6f2; //0xffadd6fd;
+		//color_selected_multi = 0xff5da2e3; //60% #add6fd over #f2f2f2 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
 		color_selected_grad_lt = 0xffd1e8ff;
 		color_selected_grad_dk = 0xff5da2e3;
 		color_selected_border = 0xff518ec2;
 		color_selected_pressed = 0xffcfe1ff;
-		color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
+		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
 		color_focused = 0xfffad35a;
 		color_focused_grad_lt = 0xfff7eb6a;
 		color_focused_grad_dk = 0xfffeb645;
 		color_focused_border = 0xffad9040;
 		color_focused_pressed = 0xffffeed4;
-		color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
+		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
 		finishLoadingTheme();
+	}
+	
+	public static String getThemeString(Context context, int theme) {
+		switch (theme) {
+		//case -1:
+		//	return context.getText(R.string.custom).toString();
+		case 1:
+			return context.getText(R.string.blue).toString();
+		case 2:
+			return context.getText(R.string.orange).toString();
+		case 3:
+			return context.getText(R.string.light).toString();
+		default:
+			return context.getText(R.string.blue_orange).toString();
+		}
 	}
 	
 	public static int getTheme() {
@@ -543,6 +568,9 @@ public final class UI {
 	public static void setTheme(int theme) {
 		UI.theme = theme;
 		switch (theme) {
+		//case -1:
+		//	//custom
+		//	break;
 		case 1:
 			loadDarkBlueTheme();
 			break;
@@ -589,6 +617,7 @@ public final class UI {
 		isLowDpiScreen = (displayMetrics.densityDpi < 160);
 		_1dp = dpToPxI(1);
 		strokeSize = (_1dp + 1) >> 1;
+		thickDividerSize = ((_1dp >= 2) ? _1dp : 2);
 		_2dp = dpToPxI(2);
 		_4dp = dpToPxI(4);
 		_8dp = dpToPxI(8);
@@ -872,13 +901,17 @@ public final class UI {
 	}
 	
 	@SuppressWarnings("deprecation")
+	public static void prepareNotificationViewColors(TextView view) {
+		view.setTextColor(UI.colorState_text_highlight_static);
+		view.setBackgroundDrawable(new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, true, true, true, true));
+	}
+	
 	public static void toast(Context context, String text) {
 		if (internalToast == null) {
 			final Toast t = new Toast(context);
 			final TextView v = new TextView(context);
 			mediumText(v);
-			v.setTextColor(UI.colorState_text_selected_static);
-			v.setBackgroundDrawable(new BorderDrawable(color_focused_border, color_focused, true, true, true, true));
+			prepareNotificationViewColors(v);
 			v.setGravity(Gravity.CENTER);
 			v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 			v.setPadding(_8dp, _8dp, _8dp, _8dp);

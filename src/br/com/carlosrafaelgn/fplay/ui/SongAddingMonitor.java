@@ -40,7 +40,6 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
 public class SongAddingMonitor implements Timer.TimerHandler {
@@ -51,7 +50,6 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 	private SongAddingMonitor() {
 	}
 	
-	@SuppressWarnings("deprecation")
 	public static void start(Activity activity) {
 		if (Player.songs.isAdding() || Player.getState() != Player.STATE_INITIALIZED) {
 			stop();
@@ -68,10 +66,9 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 				p.gravity = Gravity.LEFT | Gravity.BOTTOM;
 				notification.setLayoutParams(p);
 				UI.smallText(notification);
+				UI.prepareNotificationViewColors(notification);
 				lastMsg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.msg_loading : R.string.msg_adding);
 				notification.setText(lastMsg);
-				notification.setBackgroundDrawable(new BorderDrawable(UI.color_focused_border, UI.color_focused, true, true, true, true));
-				notification.setTextColor(UI.colorState_text_selected_static);
 				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
 				((FrameLayout)parent).addView(notification);
 				timer.start(250);

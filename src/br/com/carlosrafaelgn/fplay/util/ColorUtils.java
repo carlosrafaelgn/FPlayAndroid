@@ -30,12 +30,32 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay;
+package br.com.carlosrafaelgn.fplay.util;
 
-import br.com.carlosrafaelgn.fplay.ui.FileView;
-
-public abstract class ActivityFileView extends ActivityItemView {
-	public abstract void showNotification(boolean show);
-	public abstract FileView createFileView();
-	public abstract void processItemButtonClick(int position, boolean add);
+public final class ColorUtils {
+	public static int blend(int rgb1, int rgb2, float perc1) {
+		int r1 = (rgb1 >>> 16) & 0xFF;
+		final int r2 = (rgb2 >>> 16) & 0xFF;
+		int g1 = (rgb1 >>> 8) & 0xFF;
+		final int g2 = (rgb2 >>> 8) & 0xFF;
+		int b1 = rgb1 & 0xFF;
+		final int b2 = rgb2 & 0xFF;
+		final float perc2 = 1.0f - perc1;
+		r1 = (int)(((float)r1 * perc1) + ((float)r2 * perc2));
+		g1 = (int)(((float)g1 * perc1) + ((float)g2 * perc2));
+		b1 = (int)(((float)b1 * perc1) + ((float)b2 * perc2));
+		if (r1 > 255)
+			r1 = 255;
+		else if (r1 < 0)
+			r1 = 0;
+		if (g1 > 255)
+			g1 = 255;
+		else if (g1 < 0)
+			g1 = 0;
+		if (b1 > 255)
+			b1 = 255;
+		else if (b1 < 0)
+			b1 = 0;
+		return 0xFF000000 | (r1 << 16) | (g1 << 8) | b1;
+	}
 }

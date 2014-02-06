@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -76,7 +75,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		return activity.getApplication();
 	}
 	
-	public final Activity getHostActivity() {
+	public final ActivityHost getHostActivity() {
 		return activity;
 	}
 	

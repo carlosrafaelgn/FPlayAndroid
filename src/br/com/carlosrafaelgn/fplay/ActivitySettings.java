@@ -63,7 +63,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
@@ -106,6 +106,23 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.LOCALE_UK, 3, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_UK))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optTheme) {
+			final Context ctx = getApplication();
+			final int o = UI.getTheme();
+			lastMenuView = optTheme;
+			UI.prepare(menu);
+			menu.add(0, 0, 0, UI.getThemeString(ctx, 0))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o <= 0 || o > 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, 1, 1, UI.getThemeString(ctx, 1))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, 2, 2, UI.getThemeString(ctx, 2))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, 3, 3, UI.getThemeString(ctx, 3))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
@@ -337,6 +354,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				onCreateLayout(false);
 				System.gc();
 			}
+		} else if (lastMenuView == optTheme) {
+			UI.setTheme(item.getItemId());
+			getHostActivity().setWindowColor(UI.color_window);
+			onCleanupLayout();
+			onCreateLayout(false);
+			System.gc();
 		} else if (lastMenuView == optVolumeControlType) {
 			switch (item.getItemId()) {
 			case Player.VOLUME_CONTROL_STREAM:
@@ -444,7 +467,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setHorizontalFadingEdgeEnabled(false);
     	list.setVerticalFadingEdgeEnabled(false);
     	list.setFadingEdgeLength(0);
-		list.setBackgroundDrawable(new BorderDrawable(0, UI._1dp, 0, 0));
+		list.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		
 		if (!UI.isCurrentLocaleCyrillic()) {
@@ -455,6 +478,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optAutoTurnOff.setOnClickListener(this);
 		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn);
 		optKeepScreenOn.setOnClickListener(this);
+		optTheme = new SettingView(ctx, getText(R.string.opt_theme).toString(), UI.getThemeString(ctx, UI.getTheme()), false, false);
+		optTheme.setOnClickListener(this);
 		optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false);
 		optVolumeControlType.setOnClickListener(this);
 		optIsDividerVisible = new SettingView(ctx, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible);
@@ -493,6 +518,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		panelSettings.addView(optKeepScreenOn);
 		if (!UI.isCurrentLocaleCyrillic())
 			panelSettings.addView(optUseAlternateTypeface);
+		panelSettings.addView(optTheme);
 		panelSettings.addView(optForceOrientation);
 		panelSettings.addView(optIsDividerVisible);
 		panelSettings.addView(optIsVerticalMarginLarge);
@@ -541,6 +567,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
 		optKeepScreenOn = null;
+		optTheme = null;
 		optVolumeControlType = null;
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
@@ -613,11 +640,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
-		} else if (view == optAutoTurnOff || view == optForcedLocale || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
+		} else if (view == optAutoTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
 		}
 	}
-
+	
 	@Override
 	public void onClick(DialogInterface dialog, int whichButton) {
 		if (whichButton == AlertDialog.BUTTON_POSITIVE && txtCustomMinutes != null) {

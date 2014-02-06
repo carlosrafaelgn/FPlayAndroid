@@ -21,6 +21,7 @@
     <string name="no">No</string>
     <string name="got_it">Got it!</string>
     <string name="volume">Volume</string>
+    <string name="go_to">Go to</string>
     <string name="msg_sel">Click to select more items</string>
     <string name="msg_move">Click to move selected items</string>
     <string name="msg_loading">Loading&#8230;</string>
@@ -51,10 +52,10 @@
     <string name="opt_is_vertical_margin_large">Use large spacing between items in lists</string>
     <string name="opt_handle_call_key">Use Call/Dial key as Play/Pause (beta)</string>
     <string name="opt_play_when_headset_plugged">Automatically play when a wired headset is plugged in (beta)</string>
-	<string name="opt_block_back_key">Prevent the Back key from returning to the home screen</string>
+    <string name="opt_block_back_key">Prevent the Back key from returning to the home screen</string>
     <string name="opt_double_click_mode">Use two clicks/touches to play songs in the playlist</string>
-	<string name="opt_marquee_title">Spin current song\'s title when it does not fit on the screen</string>
-	<string name="opt_prepare_next">Preload next song in order to try to reduce the gap between consecutive songs</string>
+    <string name="opt_marquee_title">Spin current song\'s title when it does not fit on the screen</string>
+    <string name="opt_prepare_next">Preload next song in order to try to reduce the gap between consecutive songs</string>
     <string name="opt_clear_list_when_playing_folders">Clear existing list before playing a folder, a new list or an album</string>
     <string name="opt_go_back_when_playing_folders">Return to the list when playing a folder, a new list or an album</string>
     <string name="opt_force_orientation">Force screen orientation as:</string>
@@ -98,14 +99,14 @@
     <string name="more">More&#8230;</string>
     <string name="visualizer_not_supported">Your device does not support visualization :(</string>
     <string name="audio_effects">Audio effects</string>
-    <string name="goto_equalizer">Go to equalizer&#8230;</string>
+    <string name="go_to_equalizer">Go to equalizer&#8230;</string>
     <string name="enable_equalizer">Enable equalizer</string>
     <string name="equalizer_not_supported">Your device does not support equalizer :(</string>
     <string name="zero_preset">Zero out preset</string>
     <string name="load_preset">Load preset</string>
     <string name="save_preset">Save preset</string>
     <string name="item_preset">preset</string>
-    <string name="goto_bass_boost">Go to bass boost&#8230;</string>
+    <string name="go_to_bass_boost">Go to bass boost&#8230;</string>
     <string name="enable_bass_boost">Enable bass boost</string>
     <string name="bass_boost_not_supported">Your device does not support bass boost :(</string>
     <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment :(</string>
@@ -138,12 +139,12 @@
     <string name="unknownArtist">[Unknown Artist]</string>
     <string name="title">Title</string>
     <string name="artist">Artist</string>
-	<string name="album">Album</string>
-	<string name="length">Duration</string>
-	<string name="year">Year</string>
-	<string name="no_info">-</string>
+    <string name="album">Album</string>
+    <string name="duration">Duration</string>
+    <string name="year">Year</string>
+    <string name="no_info">-</string>
     <string name="standard_language">Standard language</string>
-	<string name="artists">Artists</string>
+    <string name="artists">Artists</string>
     <string name="albums">Albums</string>
     <string name="music">Music</string>
     <string name="downloads">Downloads</string>
@@ -158,5 +159,10 @@
     <string name="error_timeout">Sorry, but the time to access song data has expired during the playback :(</string>
     <string name="error_server_died">Sorry, but the media server suddenly died during the playback :(</string>
     <string name="error_security">Sorry, but a security problem has happened during the playback :(</string>
+    <string name="opt_theme">Color scheme:</string>
+    <string name="blue_orange">Blue/Orange</string>
+    <string name="blue">Blue</string>
+    <string name="orange">Orange</string>
+    <string name="light">Light</string>
 
 </resources>

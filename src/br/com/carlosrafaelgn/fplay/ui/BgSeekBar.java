@@ -51,9 +51,8 @@ public final class BgSeekBar extends View {
 		public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled);
 	}
 	
-	private String text;
+	private String additionalContentDescription, text;
 	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textBgY, textSize, textSizeIdx, emptySpaceColor, keyIncrement;
-	private float delta;
 	private boolean forceTextSelected, vertical, tracking, drawTextFirst;
 	private int state, thumbWidth;
 	private OnBgSeekBarChangeListener listener;
@@ -145,6 +144,27 @@ public final class BgSeekBar extends View {
 		updateTextWidth();
 	}
 	
+	private void refreshContentDescription() {
+		String d = "";
+		if (additionalContentDescription != null)
+			d = additionalContentDescription;
+		if (text != null) {
+			if (d.length() > 0)
+				d += ": ";
+			d += text;
+		}
+		setContentDescription(d);
+	}
+	
+	public String getAdditionalContentDescription() {
+		return additionalContentDescription;
+	}
+	
+	public void setAdditionalContentDescription(String additionalContentDescription) {
+		this.additionalContentDescription = additionalContentDescription;
+		refreshContentDescription();
+	}
+	
 	public String getText() {
 		return text;
 	}
@@ -152,6 +172,7 @@ public final class BgSeekBar extends View {
 	public void setText(String text) {
 		this.text = text;
 		updateTextWidth();
+		refreshContentDescription();
 	}
 	
 	public void setText(int resId) {
@@ -341,9 +362,9 @@ public final class BgSeekBar extends View {
 		if (total <= 0)
 			return;
 		if (vertical)
-			position = (float)height - position - delta;
+			position = (float)(height - (thumbWidth >> 1)) - position;
 		else
-			position -= delta;
+			position -= (float)(thumbWidth >> 1);
 		setValue((int)(((float)max * position) / total), true, false);
 	}
 	
@@ -362,9 +383,7 @@ public final class BgSeekBar extends View {
 			}
 			tracking = true;
 			setPressed(true);
-			final float p = (vertical ? event.getY() : event.getX());
-			delta = ((p >= filledSize && p < (filledSize + thumbWidth)) ? (p - filledSize) : (thumbWidth >> 1));
-			trackTouchEvent(p);
+			trackTouchEvent(vertical ? event.getY() : event.getX());
 			break;
 	    case MotionEvent.ACTION_MOVE:
 	    	if (!tracking)

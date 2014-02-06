@@ -32,7 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -41,14 +43,18 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
-public final class SongView extends View {
+public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
+	private ActivityItemView observerActivity;
 	private Song song;
 	private String ellipsizedTitle, ellipsizedArtist;
 	private final int height, verticalMargin;
-	private int state, width, lengthWidth;
+	private int state, width, lengthWidth, position;
 	
-	public SongView(Context context) {
+	public SongView(Context context, ActivityItemView observerActivity) {
 		super(context);
+		this.observerActivity = observerActivity;
+		setOnClickListener(this);
+		setOnLongClickListener(this);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		height = (UI._1dp << 1) + (verticalMargin << 1) + UI._22spBox + UI._14spBox;
 	}
@@ -58,9 +64,10 @@ public final class SongView extends View {
 		ellipsizedArtist = UI.ellipsizeText(song.artist, UI._14sp, width - (UI._8dp << 1));
 	}
 	
-	public void setItemState(Song song, int state) {
+	public void setItemState(Song song, int position, int state) {
 		final int w = getWidth();
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
+		this.position = position;
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.song == song && width == w)
 			return;
@@ -110,7 +117,7 @@ public final class SongView extends View {
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return (state != 0);
+		return ((state & ~UI.STATE_CURRENT) != 0);
 	}
 	
 	@Override
@@ -148,8 +155,33 @@ public final class SongView extends View {
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		getDrawingRect(UI.rect);
 		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false, true);
+		if ((state & UI.STATE_CURRENT) != 0)
+			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI._4dp, UI.rect.bottom - UI.defaultControlContentsSize - UI._4dp, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_highlight : UI.color_text_selected);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
 		UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
 		UI.drawText(canvas, ellipsizedArtist, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
+	}
+	
+	@Override
+	protected void dispatchSetPressed(boolean pressed) {
+	}
+	
+	@Override
+	public void onClick(View view) {
+		if (observerActivity != null)
+			observerActivity.processItemClick(position);
+	}
+	
+	@Override
+	public boolean onLongClick(View view) {
+		if (observerActivity != null)
+			observerActivity.processItemLongClick(position);
+		return true;
+	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		observerActivity = null;
+		super.onDetachedFromWindow();
 	}
 }

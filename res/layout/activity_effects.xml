@@ -98,7 +98,7 @@
             android:nextFocusLeft="@+id/barBass"
             android:nextFocusRight="@+id/btnGoBack"
             android:nextFocusUp="@+id/barBass"
-            android:text="@string/goto_bass_boost" />
+            android:text="@string/go_to_bass_boost" />
     </RelativeLayout>
 
 </LinearLayout>

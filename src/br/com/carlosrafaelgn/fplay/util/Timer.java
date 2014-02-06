@@ -98,7 +98,7 @@ public class Timer implements MainHandler.Callback {
 							timerHandler.handleTimer(Timer.this, param);
 					}
 				} catch (Throwable ex) {
-					System.err.println(ex);
+					ex.printStackTrace();
 					break;
 				}
 				if (oneShot)

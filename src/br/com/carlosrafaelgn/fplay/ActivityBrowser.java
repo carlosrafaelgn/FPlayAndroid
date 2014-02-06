@@ -570,7 +570,6 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	protected void onDestroy() {
-		fileList.observerActivity = null;
 		fileList.cancel();
 		fileList = null;
 		ic_closed_folder = null;

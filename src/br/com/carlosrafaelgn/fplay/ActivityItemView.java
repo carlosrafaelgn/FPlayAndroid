@@ -32,10 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import br.com.carlosrafaelgn.fplay.ui.FileView;
+import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 
-public abstract class ActivityFileView extends ActivityItemView {
-	public abstract void showNotification(boolean show);
-	public abstract FileView createFileView();
-	public abstract void processItemButtonClick(int position, boolean add);
+public abstract class ActivityItemView extends ClientActivity {
+	public abstract void processItemClick(int position);
+	public abstract void processItemLongClick(int position);
 }

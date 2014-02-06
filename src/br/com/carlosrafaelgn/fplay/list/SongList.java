@@ -44,6 +44,7 @@ import java.util.Random;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.SongView;
@@ -62,6 +63,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	private int adding, currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem;
 	public boolean selecting, moving;
 	private Song[] shuffledList;
+	public ActivityItemView observerActivity;
 	private static final SongList theSongList = new SongList();
 	
 	private SongList() {
@@ -515,8 +517,8 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	
 	@Override
     public View getView(int position, View convertView, ViewGroup parent) {
-		final SongView view = ((convertView == null) ? new SongView(Player.getService()) : (SongView)convertView);
-		view.setItemState(items[position], getItemState(position));
+		final SongView view = ((convertView == null) ? new SongView(Player.getService(), observerActivity) : (SongView)convertView);
+		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}
 }

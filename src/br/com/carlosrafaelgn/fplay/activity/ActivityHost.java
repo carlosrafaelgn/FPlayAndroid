@@ -57,6 +57,8 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver {
 	private ClientActivity top;
 	private boolean exitOnDestroy;
+	private int windowColor;
+	private ColorDrawable windowColorDrawable;
 	
 	public ClientActivity getTopActivity() {
 		return top;
@@ -148,6 +150,18 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		return super.onKeyDown(keyCode, event);
 	}
 	
+	public void setWindowColor(int color) {
+		if (windowColorDrawable == null) {
+			windowColor = color;
+			windowColorDrawable = new ColorDrawable(color);
+			getWindow().setBackgroundDrawable(windowColorDrawable);
+		} else if (windowColor != color) {
+			windowColor = color;
+			windowColorDrawable.change(color);
+			getWindow().setBackgroundDrawable(windowColorDrawable);
+		}
+	}
+	
 	@Override
 	protected final void onCreate(Bundle savedInstanceState) {
 		//StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
@@ -175,7 +189,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		top.previousActivity = null;
 		top.onCreate();
 		top.onCreateLayout(true);
-		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_window));
+		setWindowColor(UI.color_window);
 		Player.addDestroyedObserver(this);
 	}
 	
@@ -231,6 +245,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	protected void onDestroy() {
 		Player.removeDestroyedObserver(this);
 		finalCleanup();
+		windowColorDrawable = null;
 		super.onDestroy();
 		if (exitOnDestroy)
 			System.exit(0);

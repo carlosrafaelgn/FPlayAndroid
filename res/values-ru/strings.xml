@@ -21,6 +21,7 @@
     <string name="no">Нет</string>
     <string name="got_it">Готово!</string>
     <string name="volume">Громкость</string>
+    <string name="go_to">Перейти к</string>
     <string name="msg_sel">Нажмите, чтобы выбрать несколько элементов</string>
     <string name="msg_move">Нажмите, чтобы переместить выбранные элементы</string>
     <string name="msg_loading">Загрузка&#8230;</string>
@@ -51,10 +52,10 @@
     <string name="opt_is_vertical_margin_large">Использовать большее расстояние между элементами в списках</string>
     <string name="opt_handle_call_key">Использовать клавишу "Позвонить/Набор" как "Воспроизведение/Пауза"</string>
     <string name="opt_play_when_headset_plugged">Автоматически включать воспроизведение при подключении гарнитуры</string>
-	<string name="opt_block_back_key">Заблокировать кнопку "Назад", которая возвращает на главный экран</string>
+    <string name="opt_block_back_key">Заблокировать кнопку "Назад", которая возвращает на главный экран</string>
     <string name="opt_double_click_mode">Использовать двойное нажатие для воспроизведения песен в плейлисте</string>
-	<string name="opt_marquee_title">Прокручивать заголовок текущей песни, если он не помещается на экран</string>
-	<string name="opt_prepare_next">Предварительно загружать следующую песню для того, чтобы сократить разрыв между песнями</string>
+    <string name="opt_marquee_title">Прокручивать заголовок текущей песни, если он не помещается на экран</string>
+    <string name="opt_prepare_next">Предварительно загружать следующую песню для того, чтобы сократить разрыв между песнями</string>
     <string name="opt_clear_list_when_playing_folders">Очистка существующего списка, перед проигрыванием папки, нового списка или альбома</string>
     <string name="opt_go_back_when_playing_folders">Вернуться к списку при воспроизведении папки, нового списка или альбома</string>
     <string name="opt_force_orientation">Принудительная ориентация экрана:</string>
@@ -98,14 +99,14 @@
     <string name="more">Подробнее&#8230;</string>
     <string name="visualizer_not_supported">Ваше устройство не поддерживает визуализацию :(</string>
     <string name="audio_effects">Звуковые эффекты</string>
-    <string name="goto_equalizer">Перейти к настройкам эквалайзера&#8230;</string>
+    <string name="go_to_equalizer">Перейти к настройкам эквалайзера&#8230;</string>
     <string name="enable_equalizer">Включить эквалайзер</string>
     <string name="equalizer_not_supported">Ваше устройство не поддерживает эквалайзер :(</string>
     <string name="zero_preset">Сбросить предустановку</string>
     <string name="load_preset">Загрузить предустановку</string>
     <string name="save_preset">Сохранить предустановку</string>
     <string name="item_preset">предустановка</string>
-    <string name="goto_bass_boost">Перейти к настройкам басов&#8230;</string>
+    <string name="go_to_bass_boost">Перейти к настройкам басов&#8230;</string>
     <string name="enable_bass_boost">Включить усиление басов</string>
     <string name="bass_boost_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
     <string name="bass_boost_strength_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
@@ -138,12 +139,12 @@
     <string name="unknownArtist">[Неизвестный исполнитель]</string>
     <string name="title">Название</string>
     <string name="artist">Исполнитель</string>
-	<string name="album">Альбом</string>
-	<string name="length">Продолжительность</string>
-	<string name="year">год</string>
-	<string name="no_info">-</string>
+    <string name="album">Альбом</string>
+    <string name="duration">Продолжительность</string>
+    <string name="year">год</string>
+    <string name="no_info">-</string>
     <string name="standard_language">Стандартный язык</string>
-	<string name="artists">Исполнители</string>
+    <string name="artists">Исполнители</string>
     <string name="albums">Альбомы</string>
     <string name="music">Музыка</string>
     <string name="downloads">Загрузки</string>
@@ -158,5 +159,10 @@
     <string name="error_timeout">Извините, но время доступа к данным истекло во время воспроизведения :(</string>
     <string name="error_server_died">Извините, но медиа-сервер был аварийно остановлен во время воспроизведения :(</string>
     <string name="error_security">Извините, но возникла проблема с безопасностью во время воспроизведения :(</string>
+    <string name="opt_theme">Цветовая схема:</string>
+    <string name="blue_orange">Синий/Оранжевый</string>
+    <string name="blue">Синий</string>
+    <string name="orange">Оранжевый</string>
+    <string name="light">Светлый</string>
 
 </resources>
