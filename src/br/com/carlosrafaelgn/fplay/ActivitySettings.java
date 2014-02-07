@@ -111,18 +111,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			final int o = UI.getTheme();
 			lastMenuView = optTheme;
 			UI.prepare(menu);
-			menu.add(0, 0, 0, UI.getThemeString(ctx, 0))
+			menu.add(0, UI.THEME_CUSTOM, 0, UI.getThemeString(ctx, UI.THEME_CUSTOM))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o <= 0 || o > 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(0, 1, 1, UI.getThemeString(ctx, 1))
+				.setIcon(new TextIconDrawable(UI.ICON_RADIOUNCHK));
+			UI.separator(menu, 0, 1);
+			menu.add(1, UI.THEME_BLUE_ORANGE, 0, UI.getThemeString(ctx, UI.THEME_BLUE_ORANGE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(0, 2, 2, UI.getThemeString(ctx, 2))
+				.setIcon(new TextIconDrawable((o <= UI.THEME_BLUE_ORANGE || o > UI.THEME_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.THEME_BLUE, 1, UI.getThemeString(ctx, UI.THEME_BLUE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(0, 3, 3, UI.getThemeString(ctx, 3))
+				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.THEME_ORANGE, 2, UI.getThemeString(ctx, UI.THEME_ORANGE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.THEME_LIGHT, 3, UI.getThemeString(ctx, UI.THEME_LIGHT))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.THEME_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
@@ -355,6 +359,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				System.gc();
 			}
 		} else if (lastMenuView == optTheme) {
+			if (item.getItemId() == UI.THEME_CUSTOM) {
+				UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
+				.setTitle(R.string.oops)
+				.setMessage(R.string.coming_soon)
+				.setPositiveButton(R.string.got_it, null)
+				.create());
+				return true;
+			}
 			UI.setTheme(item.getItemId());
 			getHostActivity().setWindowColor(UI.color_window);
 			onCleanupLayout();
@@ -478,7 +490,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optAutoTurnOff.setOnClickListener(this);
 		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn);
 		optKeepScreenOn.setOnClickListener(this);
-		optTheme = new SettingView(ctx, getText(R.string.opt_theme).toString(), UI.getThemeString(ctx, UI.getTheme()), false, false);
+		optTheme = new SettingView(ctx, getText(R.string.color_scheme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false);
 		optTheme.setOnClickListener(this);
 		optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false);
 		optVolumeControlType.setOnClickListener(this);

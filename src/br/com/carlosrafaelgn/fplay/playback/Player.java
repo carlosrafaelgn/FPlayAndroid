@@ -188,9 +188,10 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_FORCEDORIENTATION = 0x000D;
 	private static final int OPT_DISPLAYVOLUMEINDB = 0x000E;
 	private static final int OPT_DOUBLECLICKMODE = 0x000F;
-	private static final int OPT_MSGADDSHOWN = 0x0010;
-	private static final int OPT_MSGPLAYSHOWN = 0x0011;
-	private static final int OPT_MSGSTARTUPSHOWN = 0x0012;
+	//these will no longer be used!
+	//private static final int OPT_MSGADDSHOWN = 0x0010;
+	//private static final int OPT_MSGPLAYSHOWN = 0x0011;
+	//private static final int OPT_MSGSTARTUPSHOWN = 0x0012;
 	private static final int OPT_MARQUEETITLE = 0x0013;
 	private static final int OPT_VOLUMECONTROLTYPE = 0x0014;
 	private static final int OPT_BLOCKBACKKEY = 0x0015;
@@ -204,6 +205,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_RANDOMMODE = 0x001D;
 	private static final int OPT_FORCEDLOCALE = 0x001E;
 	private static final int OPT_THEME = 0x001F;
+	private static final int OPT_MSGS = 0x0020;
+	private static final int OPT_MSGSTARTUP = 0x0021;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -277,12 +280,11 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
-		UI.setTheme(opts.getInt(OPT_THEME));
+		UI.setTheme(opts.getInt(OPT_THEME, UI.THEME_LIGHT));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
-		UI.msgAddShown = opts.getBoolean(OPT_MSGADDSHOWN);
-		UI.msgPlayShown = opts.getBoolean(OPT_MSGPLAYSHOWN);
-		UI.msgStartupShown = opts.getBoolean(OPT_MSGSTARTUPSHOWN);
+		UI.msgs = opts.getInt(OPT_MSGS, 0);
+		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -330,9 +332,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
 		opts.put(OPT_RANDOMMODE, songs.isInRandomMode());
 		opts.put(OPT_FORCEDLOCALE, UI.getForcedLocale());
-		opts.put(OPT_MSGADDSHOWN, UI.msgAddShown);
-		opts.put(OPT_MSGPLAYSHOWN, UI.msgPlayShown);
-		opts.put(OPT_MSGSTARTUPSHOWN, UI.msgStartupShown);
+		opts.put(OPT_MSGS, UI.msgs);
+		opts.put(OPT_MSGSTARTUP, UI.msgStartup);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

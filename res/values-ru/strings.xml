@@ -159,10 +159,15 @@
     <string name="error_timeout">Извините, но время доступа к данным истекло во время воспроизведения :(</string>
     <string name="error_server_died">Извините, но медиа-сервер был аварийно остановлен во время воспроизведения :(</string>
     <string name="error_security">Извините, но возникла проблема с безопасностью во время воспроизведения :(</string>
-    <string name="opt_theme">Цветовая схема:</string>
+    <string name="coming_soon">Скоро&#8230; ;)</string>
     <string name="blue_orange">Синий/Оранжевый</string>
     <string name="blue">Синий</string>
     <string name="orange">Оранжевый</string>
     <string name="light">Светлый</string>
-
+    <string name="new_">Новое!</string>
+    <string name="new_setting">Новая настройка!</string>
+    <string name="there_is_a_new_setting">Существует новый параметр в меню \"Настройки\":</string>
+    <string name="check_it_out">Перевірте це :)</string>
+    <string name="color_scheme">Цветовая схема</string>
+    
 </resources>

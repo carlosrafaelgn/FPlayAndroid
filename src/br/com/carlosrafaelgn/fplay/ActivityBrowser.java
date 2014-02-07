@@ -133,27 +133,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	public void processItemButtonClick(int position, boolean add) {
 		final FileSt file = fileList.getItemT(position);
 		if (file.isDirectory) {
-			if (add) {
-				if (!UI.msgAddShown) {
-					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-					.setTitle(getText(R.string.add))
-					.setMessage(getText(R.string.msg_add))
-					.setPositiveButton(R.string.got_it, null)
-					.create());
-					UI.msgAddShown = true;
-					//return;
-				}
-			} else {
-				if (!UI.msgPlayShown) {
-					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-					.setTitle(getText(R.string.play))
-					.setMessage(getText(R.string.msg_play))
-					.setPositiveButton(R.string.got_it, null)
-					.create());
-					UI.msgPlayShown = true;
-					//return;
-				}
-			}
+			UI.showMsg(getHostActivity(), add ? UI.MSG_ADD : UI.MSG_PLAY);
 			processMenuItemClick(add ? MNU_ADDFOLDERSUB : MNU_PLAYFOLDERSUB);
 		} else {
 			processMenuItemClick(add ? MNU_ADDSONG : MNU_PLAYSONG);

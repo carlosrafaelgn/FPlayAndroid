@@ -1052,6 +1052,7 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 		Player.observer = this;
 		Player.registerMediaButtonEventReceiver();
 		resume(true);
+		UI.showNextStartupMsg(getHostActivity());
 	}
 	
 	@Override

@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import java.util.Locale;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -76,18 +77,28 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/util/TypedValue.java
 //
 public final class UI {
-	public static final int LOCALE_NONE = 0;
-	public static final int LOCALE_US = 1;
-	public static final int LOCALE_PTBR = 2;
-	public static final int LOCALE_RU = 3;
-	public static final int LOCALE_UK = 4;
-	public static final int LOCALE_MAX = 4;
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
 	public static final int STATE_CURRENT = 4;
 	public static final int STATE_SELECTED = 8;
 	public static final int STATE_MULTISELECTED = 16;
 	public static final int STATE_CHECKED = 32;
+	
+	public static final int LOCALE_NONE = 0;
+	public static final int LOCALE_US = 1;
+	public static final int LOCALE_PTBR = 2;
+	public static final int LOCALE_RU = 3;
+	public static final int LOCALE_UK = 4;
+	public static final int LOCALE_MAX = 4;
+	
+	public static final int THEME_CUSTOM = -1;
+	public static final int THEME_BLUE_ORANGE = 0;
+	public static final int THEME_BLUE = 1;
+	public static final int THEME_ORANGE = 2;
+	public static final int THEME_LIGHT = 3;
+	
+	public static final int MSG_ADD = 0x0001;
+	public static final int MSG_PLAY = 0x0002;
 	
 	public static final String ICON_PREV = "<";
 	public static final String ICON_PLAY = "P";
@@ -184,6 +195,13 @@ public final class UI {
 				new LinearGradient(0, 0, (vertical ? size : 0), (vertical ? 0 : size), color_selected_grad_lt, color_selected_grad_dk, Shader.TileMode.CLAMP));
 		}
 		
+		public static void purgeAll() {
+			for (int i = gradients.length - 1; i >= 0; i--)
+				gradients[i] = null;
+			pos = 0;
+			count = 0;
+		}
+		
 		public static LinearGradient getGradient(boolean focused, boolean vertical, int size) {
 			//a LRU algorithm could be implemented here...
 			for (int i = count - 1; i >= 0; i--) {
@@ -204,9 +222,9 @@ public final class UI {
 	
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, msgAddShown, msgPlayShown, msgStartupShown;
+		marqueeTitle, blockBackKey;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation;
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	
 	private static String emptyListString;
@@ -406,187 +424,6 @@ public final class UI {
 		setForcedLocale(context, opts.getInt(0x001E, LOCALE_NONE));
 	}
 	
-	private static void finishLoadingCustomTheme() {
-		color_selected = ColorUtils.blend(color_selected_grad_lt, color_selected_grad_dk, 0.5f);
-		color_focused = ColorUtils.blend(color_focused_grad_lt, color_focused_grad_dk, 0.5f);
-		finishLoadingTheme();
-	}
-	
-	private static void finishLoadingTheme() {
-		color_selected_multi = ColorUtils.blend(color_selected, color_list, 0.7f);
-		color_selected_pressed_border = color_selected_border;
-		color_focused_pressed_border = color_focused_border;
-		colorState_text_white_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, 0xffffffff });
-		colorState_text_menu_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text_menu });
-		colorState_text_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
-		colorState_text_static = ColorStateList.valueOf(color_text);
-		colorState_text_listitem_static = ColorStateList.valueOf(color_text_listitem);
-		colorState_text_selected_static = ColorStateList.valueOf(color_text_selected);
-		colorState_highlight_static = ColorStateList.valueOf(color_highlight);
-		colorState_text_highlight_static = ColorStateList.valueOf(color_text_highlight);
-	}
-	
-	public static void loadDarkBlueOrangeTheme() {
-		color_window = 0xff303030;
-		color_control_mode = 0xff000000;
-		color_list = 0xff080808;
-		color_menu = 0xffffffff;
-		color_menu_icon = 0xff555555;
-		color_divider = 0xff464646;
-		color_highlight = 0xfffad35a;
-		color_text_highlight = 0xff000000;
-		color_text = 0xffffffff;
-		color_text_disabled = 0xff959595;
-		color_text_listitem = 0xffffffff;
-		color_text_selected = 0xff000000;
-		color_text_menu = 0xff000000;
-		color_selected = 0xff99c6f2; //0xffadd6fd;
-		//color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
-		color_selected_grad_lt = 0xffd1e8ff;
-		color_selected_grad_dk = 0xff5da2e3;
-		color_selected_border = 0xff518ec2;
-		color_selected_pressed = 0xffcfe1ff;
-		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
-		color_focused = 0xfffad35a;
-		color_focused_grad_lt = 0xfff7eb6a;
-		color_focused_grad_dk = 0xfffeb645;
-		color_focused_border = 0xffad9040;
-		color_focused_pressed = 0xffffeed4;
-		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
-		finishLoadingTheme();
-	}
-	
-	public static void loadDarkBlueTheme() {
-		color_window = 0xff303030;
-		color_control_mode = 0xff000000;
-		color_list = 0xff080808;
-		color_menu = 0xffffffff;
-		color_menu_icon = 0xff555555;
-		color_divider = 0xff464646;
-		color_highlight = 0xff94c0ff;
-		color_text_highlight = 0xff000000;
-		color_text = 0xffffffff;
-		color_text_disabled = 0xff959595;
-		color_text_listitem = 0xffffffff;
-		color_text_selected = 0xff000000;
-		color_text_menu = 0xff000000;
-		color_selected = 0xff99c6f2; //0xffadd6fd;
-		//color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
-		color_selected_grad_lt = 0xffd1e8ff;
-		color_selected_grad_dk = 0xff5da2e3;
-		color_selected_border = 0xff518ec2;
-		color_selected_pressed = 0xffcfe1ff;
-		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
-		color_focused = 0xfffad35a;
-		color_focused_grad_lt = 0xfff7eb6a;
-		color_focused_grad_dk = 0xfffeb645;
-		color_focused_border = 0xffad9040;
-		color_focused_pressed = 0xffffeed4;
-		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
-		finishLoadingTheme();
-	}
-	
-	public static void loadDarkOrangeTheme() {
-		color_window = 0xff303030;
-		color_control_mode = 0xff000000;
-		color_list = 0xff080808;
-		color_menu = 0xffffffff;
-		color_menu_icon = 0xff555555;
-		color_divider = 0xff464646;
-		color_highlight = 0xfffad35a;
-		color_text_highlight = 0xff000000;
-		color_text = 0xffffffff;
-		color_text_disabled = 0xff959595;
-		color_text_listitem = 0xffffffff;
-		color_text_selected = 0xff000000;
-		color_text_menu = 0xff000000;
-		color_selected = 0xfffad35a;
-		//color_selected_multi = 0xffad954e; //60% #fad35a over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
-		color_selected_grad_lt = 0xfff7eb6a;
-		color_selected_grad_dk = 0xfffeb645;
-		color_selected_border = 0xffad9040;
-		color_selected_pressed = 0xffffeed4;
-		color_selected_pressed_border = 0xff94671e; //darker version of #ad9040
-		color_focused = 0xff99c6f2; //0xffadd6fd;
-		color_focused_grad_lt = 0xffd1e8ff;
-		color_focused_grad_dk = 0xff5da2e3;
-		color_focused_border = 0xff518ec2;
-		color_focused_pressed = 0xffcfe1ff;
-		color_focused_pressed_border = 0xff4981b0; //darker version of #518ec2
-		finishLoadingTheme();
-	}
-	
-	public static void loadLightTheme() {
-		color_window = 0xffe0e0e0;
-		color_control_mode = 0xffe0e0e0;
-		color_list = 0xfff2f2f2;
-		color_menu = 0xffffffff;
-		color_menu_icon = 0xff555555;
-		color_divider = 0xff9f9f9f;
-		color_highlight = 0xff0045e0;
-		color_text_highlight = 0xffffffff;
-		color_text = 0xff000000;
-		color_text_disabled = 0xff959595;
-		color_text_listitem = 0xff000000;
-		color_text_selected = 0xff000000;
-		color_text_menu = 0xff000000;
-		color_selected = 0xff99c6f2; //0xffadd6fd;
-		//color_selected_multi = 0xff5da2e3; //60% #add6fd over #f2f2f2 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
-		color_selected_grad_lt = 0xffd1e8ff;
-		color_selected_grad_dk = 0xff5da2e3;
-		color_selected_border = 0xff518ec2;
-		color_selected_pressed = 0xffcfe1ff;
-		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
-		color_focused = 0xfffad35a;
-		color_focused_grad_lt = 0xfff7eb6a;
-		color_focused_grad_dk = 0xfffeb645;
-		color_focused_border = 0xffad9040;
-		color_focused_pressed = 0xffffeed4;
-		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
-		finishLoadingTheme();
-	}
-	
-	public static String getThemeString(Context context, int theme) {
-		switch (theme) {
-		//case -1:
-		//	return context.getText(R.string.custom).toString();
-		case 1:
-			return context.getText(R.string.blue).toString();
-		case 2:
-			return context.getText(R.string.orange).toString();
-		case 3:
-			return context.getText(R.string.light).toString();
-		default:
-			return context.getText(R.string.blue_orange).toString();
-		}
-	}
-	
-	public static int getTheme() {
-		return theme;
-	}
-	
-	public static void setTheme(int theme) {
-		UI.theme = theme;
-		switch (theme) {
-		//case -1:
-		//	//custom
-		//	break;
-		case 1:
-			loadDarkBlueTheme();
-			break;
-		case 2:
-			loadDarkOrangeTheme();
-			break;
-		case 3:
-			loadLightTheme();
-			break;
-		default:
-			UI.theme = 0;
-			loadDarkBlueOrangeTheme();
-			break;
-		}
-	}
-	
 	public static void initialize(Context context) {
 		fullyInitialized = true;
 		if (iconsTypeface == null)
@@ -726,6 +563,238 @@ public final class UI {
 	
 	public static int ptToPxI(float pt) {
 		return (int)((pt * xdpi_1_72) + 0.5f);
+	}
+	
+	private static void finishLoadingTheme() {
+		color_selected = ColorUtils.blend(color_selected_grad_lt, color_selected_grad_dk, 0.5f);
+		color_focused = ColorUtils.blend(color_focused_grad_lt, color_focused_grad_dk, 0.5f);
+		color_selected_multi = ColorUtils.blend(color_selected, color_list, 0.7f);
+		color_selected_pressed_border = color_selected_border;
+		color_focused_pressed_border = color_focused_border;
+		colorState_text_white_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, 0xffffffff });
+		colorState_text_menu_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text_menu });
+		colorState_text_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
+		colorState_text_static = ColorStateList.valueOf(color_text);
+		colorState_text_listitem_static = ColorStateList.valueOf(color_text_listitem);
+		colorState_text_selected_static = ColorStateList.valueOf(color_text_selected);
+		colorState_highlight_static = ColorStateList.valueOf(color_highlight);
+		colorState_text_highlight_static = ColorStateList.valueOf(color_text_highlight);
+	}
+	
+	public static void loadBlueOrangeTheme() {
+		color_window = 0xff303030;
+		color_control_mode = 0xff000000;
+		color_list = 0xff080808;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff464646;
+		color_highlight = 0xfffad35a;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xffffffff;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		//color_selected = 0xff99c6f2; //0xffadd6fd;
+		//color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xffd1e8ff;
+		color_selected_grad_dk = 0xff5da2e3;
+		color_selected_border = 0xff518ec2;
+		color_selected_pressed = 0xffcfe1ff;
+		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
+		//color_focused = 0xfffad35a;
+		color_focused_grad_lt = 0xfff7eb6a;
+		color_focused_grad_dk = 0xfffeb645;
+		color_focused_border = 0xffad9040;
+		color_focused_pressed = 0xffffeed4;
+		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
+		finishLoadingTheme();
+	}
+	
+	public static void loadBlueTheme() {
+		color_window = 0xff303030;
+		color_control_mode = 0xff000000;
+		color_list = 0xff080808;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff464646;
+		color_highlight = 0xff94c0ff;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xffffffff;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		//color_selected = 0xff99c6f2; //0xffadd6fd;
+		//color_selected_multi = 0xff779aba; //60% #add6fd over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xffd1e8ff;
+		color_selected_grad_dk = 0xff5da2e3;
+		color_selected_border = 0xff518ec2;
+		color_selected_pressed = 0xffcfe1ff;
+		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
+		//color_focused = 0xfffad35a;
+		color_focused_grad_lt = 0xfff7eb6a;
+		color_focused_grad_dk = 0xfffeb645;
+		color_focused_border = 0xffad9040;
+		color_focused_pressed = 0xffffeed4;
+		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
+		finishLoadingTheme();
+	}
+	
+	public static void loadOrangeTheme() {
+		color_window = 0xff303030;
+		color_control_mode = 0xff000000;
+		color_list = 0xff080808;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff464646;
+		color_highlight = 0xfffad35a;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xffffffff;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		//color_selected = 0xfffad35a;
+		//color_selected_multi = 0xffad954e; //60% #fad35a over #000000 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xfff7eb6a;
+		color_selected_grad_dk = 0xfffeb645;
+		color_selected_border = 0xffad9040;
+		color_selected_pressed = 0xffffeed4;
+		//color_selected_pressed_border = 0xff94671e; //darker version of #ad9040
+		//color_focused = 0xff99c6f2; //0xffadd6fd;
+		color_focused_grad_lt = 0xffd1e8ff;
+		color_focused_grad_dk = 0xff5da2e3;
+		color_focused_border = 0xff518ec2;
+		color_focused_pressed = 0xffcfe1ff;
+		//color_focused_pressed_border = 0xff4981b0; //darker version of #518ec2
+		finishLoadingTheme();
+	}
+	
+	public static void loadLightTheme() {
+		color_window = 0xffe0e0e0;
+		color_control_mode = 0xffe0e0e0;
+		color_list = 0xfff2f2f2;
+		color_menu = 0xffffffff;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xff9f9f9f;
+		color_highlight = 0xff0045e0;
+		color_text_highlight = 0xffffffff;
+		color_text = 0xff000000;
+		color_text_disabled = 0xff959595;
+		color_text_listitem = 0xff000000;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		//color_selected = 0xff99c6f2; //0xffadd6fd;
+		//color_selected_multi = 0xff5da2e3; //60% #add6fd over #f2f2f2 (adjusted to comply with minimum contrast ratio according to WCAG 2.0)
+		color_selected_grad_lt = 0xffd1e8ff;
+		color_selected_grad_dk = 0xff5da2e3;
+		color_selected_border = 0xff518ec2;
+		color_selected_pressed = 0xffcfe1ff;
+		//color_selected_pressed_border = 0xff4981b0; //darker version of #518ec2
+		//color_focused = 0xfffad35a;
+		color_focused_grad_lt = 0xfff7eb6a;
+		color_focused_grad_dk = 0xfffeb645;
+		color_focused_border = 0xffad9040;
+		color_focused_pressed = 0xffffeed4;
+		//color_focused_pressed_border = 0xff94671e; //darker version of #ad9040
+		finishLoadingTheme();
+	}
+	
+	public static String getThemeString(Context context, int theme) {
+		switch (theme) {
+		case THEME_CUSTOM:
+			return context.getText(R.string.custom).toString();
+		case THEME_BLUE:
+			return context.getText(R.string.blue).toString();
+		case THEME_ORANGE:
+			return context.getText(R.string.orange).toString();
+		case THEME_LIGHT:
+			return context.getText(R.string.light).toString();
+		default:
+			return context.getText(R.string.blue_orange).toString();
+		}
+	}
+	
+	public static int getTheme() {
+		return theme;
+	}
+	
+	public static void setTheme(int theme) {
+		UI.theme = theme;
+		Gradient.purgeAll();
+		switch (theme) {
+		//case THEME_CUSTOM:
+		//	//custom
+		//	break;
+		case THEME_BLUE:
+			loadBlueTheme();
+			break;
+		case THEME_ORANGE:
+			loadOrangeTheme();
+			break;
+		case THEME_LIGHT:
+			loadLightTheme();
+			break;
+		default:
+			UI.theme = THEME_BLUE_ORANGE;
+			loadBlueOrangeTheme();
+			break;
+		}
+	}
+	
+	public static void showNextStartupMsg(final Activity activity) {
+		if (msgStartup >= 1) {
+			msgStartup = 1;
+			return;
+		}
+		int title = R.string.new_setting;
+		String content = "";
+		if (msgStartup <= 0) {
+			msgStartup = 1;
+			content = activity.getText(R.string.there_is_a_new_setting).toString() + " " + activity.getText(R.string.color_scheme).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		}
+		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
+		.setTitle(activity.getText(title))
+		.setMessage(content)
+		.setPositiveButton(R.string.got_it, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				showNextStartupMsg(activity);
+			}
+		})
+		.setOnCancelListener(new DialogInterface.OnCancelListener() {
+			@Override
+			public void onCancel(DialogInterface dialog) {
+				showNextStartupMsg(activity);
+			}
+		})
+		.create());
+	}
+	
+	public static boolean showMsg(Activity activity, int msg) {
+		if ((msgs & msg) != 0)
+			return false;
+		int title, content;
+		switch (msg) {
+		case MSG_ADD:
+			title = R.string.add;
+			content = R.string.msg_add;
+			break;
+		case MSG_PLAY:
+			title = R.string.play;
+			content = R.string.msg_play;
+			break;
+		default:
+			return false;
+		}
+		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
+		.setTitle(activity.getText(title))
+		.setMessage(activity.getText(content))
+		.setPositiveButton(R.string.got_it, null)
+		.create());
+		msgs |= msg;
+		return true;
 	}
 	
 	public static String ellipsizeText(String text, int size, int width) {

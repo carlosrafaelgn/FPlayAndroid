@@ -159,10 +159,14 @@
     <string name="error_timeout">Desculpe, mas o tempo para acessar os dados expirou durante a reprodução :(</string>
     <string name="error_server_died">Desculpe, mas o servidor de mídia morreu de repente durante a reprodução :(</string>
     <string name="error_security">Desculpe, mas ocorreu um problema de segurança durante a reprodução :(</string>
-    <string name="opt_theme">Esquema de cores:</string>
+    <string name="coming_soon">Em breve&#8230; ;)</string>
     <string name="blue_orange">Azul/Laranja</string>
     <string name="blue">Azul</string>
     <string name="orange">Laranja</string>
     <string name="light">Claro</string>
-
+    <string name="new_setting">Nova opção!</string>
+    <string name="there_is_a_new_setting">Há uma nova opção disponível no menu \"Opções\":</string>
+    <string name="check_it_out">Dê uma olhada :)</string>
+    <string name="color_scheme">Esquema de cores</string>
+    
 </resources>

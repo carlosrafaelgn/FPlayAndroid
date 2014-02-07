@@ -159,10 +159,14 @@
     <string name="error_timeout">Sorry, but the time to access song data has expired during the playback :(</string>
     <string name="error_server_died">Sorry, but the media server suddenly died during the playback :(</string>
     <string name="error_security">Sorry, but a security problem has happened during the playback :(</string>
-    <string name="opt_theme">Color scheme:</string>
+    <string name="coming_soon">Coming soon&#8230; ;)</string>
     <string name="blue_orange">Blue/Orange</string>
     <string name="blue">Blue</string>
     <string name="orange">Orange</string>
     <string name="light">Light</string>
-
+    <string name="new_setting">New setting!</string>
+    <string name="there_is_a_new_setting">There is a new setting available in the \"Settings\" menu:</string>
+    <string name="check_it_out">Check it out :)</string>
+    <string name="color_scheme">Color scheme</string>
+    
 </resources>
