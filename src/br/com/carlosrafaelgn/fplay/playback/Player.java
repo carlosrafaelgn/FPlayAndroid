@@ -1548,6 +1548,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				requestFocus();
 			} else if (state == STATE_INITIALIZED && !playing) {
 				playInternal(SongList.HOW_CURRENT);
+			} else {
+				wasPlayingBeforeFocusLoss = false;
 			}
 		}
 	}
