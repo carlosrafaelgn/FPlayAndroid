@@ -1795,7 +1795,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			if (thePlayer != null && hasFocus && nextSong == param) {
 				nextPreparing = false;
 				nextPrepared = false;
-				if (nextSong != null && !nextSong.isHttp) {
+				if (nextPlayer != null && nextSong != null && !nextSong.isHttp) {
 					try {
 						preparePlayer(nextPlayer, nextSong);
 						nextPreparing = true;
@@ -1806,7 +1806,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				}
 			}
 		} else if (timer == volumeTimer) {
-			volumeDBMultiplier += ((Integer)param).intValue();
+			volumeDBMultiplier += ((param == null) ? 125 : ((Integer)param).intValue());
 			if (volumeDBMultiplier >= 0) {
 				timer.stop();
 				volumeDBMultiplier = 0;
