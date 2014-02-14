@@ -45,18 +45,18 @@
     <string name="msg_error_exporting_settings">Что-то пошло не так при экспорте настроек :(</string>
     <string name="opt_language">Язык:</string>
     <string name="opt_use_alternate_typeface">Использовать дислексический шрифт (опция недоступна для данного языка)</string>
-    <string name="opt_auto_turn_off">Автоматически выключить плеер после:</string>
+    <string name="opt_auto_turn_off">Выключить плеер автоматически после:</string>
     <string name="opt_keep_screen_on">Держать экран постоянно включённым</string>
     <string name="opt_volume_control_type">Тип регулятора громкости:</string>
     <string name="opt_is_divider_visible">Показывать границу между элементами в списках</string>
     <string name="opt_is_vertical_margin_large">Использовать большее расстояние между элементами в списках</string>
     <string name="opt_handle_call_key">Использовать клавишу "Позвонить/Набор" как "Воспроизведение/Пауза"</string>
-    <string name="opt_play_when_headset_plugged">Автоматически включать воспроизведение при подключении гарнитуры</string>
+    <string name="opt_play_when_headset_plugged">Начинать воспроизведение при подключении гарнитуры</string>
     <string name="opt_block_back_key">Заблокировать кнопку "Назад", которая возвращает на главный экран</string>
     <string name="opt_double_click_mode">Использовать двойное нажатие для воспроизведения песен в плейлисте</string>
-    <string name="opt_marquee_title">Прокручивать заголовок текущей песни, если он не помещается на экран</string>
-    <string name="opt_prepare_next">Предварительно загружать следующую песню для того, чтобы сократить разрыв между песнями</string>
-    <string name="opt_clear_list_when_playing_folders">Очистка существующего списка, перед проигрыванием папки, нового списка или альбома</string>
+    <string name="opt_marquee_title">Прокручивать заголовок текущей песни, если он не помещается на экране</string>
+    <string name="opt_prepare_next">Предварительно загружать следующую песню для сокращения разрыва между песнями</string>
+    <string name="opt_clear_list_when_playing_folders">Очистка существующего списка перед проигрыванием папки, нового списка или альбома</string>
     <string name="opt_go_back_when_playing_folders">Вернуться к списку при воспроизведении папки, нового списка или альбома</string>
     <string name="opt_force_orientation">Принудительная ориентация экрана:</string>
     <string name="opt_fade_in_focus">Уменьшение громкости при звонке или другом прерывании извне:</string>
@@ -160,14 +160,13 @@
     <string name="error_server_died">Извините, но медиа-сервер был аварийно остановлен во время воспроизведения :(</string>
     <string name="error_security">Извините, но возникла проблема с безопасностью во время воспроизведения :(</string>
     <string name="coming_soon">Скоро&#8230; ;)</string>
-    <string name="blue_orange">Синий/Оранжевый</string>
-    <string name="blue">Синий</string>
-    <string name="orange">Оранжевый</string>
-    <string name="light">Светлый</string>
-    <string name="new_">Новое!</string>
+    <string name="blue_orange">Сине-оранжевая</string>
+    <string name="blue">Синяя</string>
+    <string name="orange">Оранжевая</string>
+    <string name="light">Светлая</string>
     <string name="new_setting">Новая настройка!</string>
     <string name="there_is_a_new_setting">Существует новый параметр в меню \"Настройки\":</string>
     <string name="check_it_out">Перевірте це :)</string>
     <string name="color_scheme">Цветовая схема</string>
-    
+
 </resources>
