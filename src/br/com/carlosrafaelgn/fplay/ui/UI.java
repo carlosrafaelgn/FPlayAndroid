@@ -141,6 +141,7 @@ public final class UI {
 	public static final String ICON_OPTUNCHK = "Q";
 	public static final String ICON_GRIP = "G";
 	public static final String ICON_FPLAY = "♫";
+	public static final String ICON_SLIDER = "\'";
 	
 	public static final int color_transparent = 0x00000000;
 	public static int color_window;

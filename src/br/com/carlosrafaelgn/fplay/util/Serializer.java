@@ -105,21 +105,21 @@ public final class Serializer {
 	}
 	
 	public static int deserializeInt(InputStream is) throws IOException {
-		return ((is.read() & 0xFF) | ((is.read() & 0xFF) << 8) | ((is.read() & 0xFF) << 16) | ((is.read() & 0xFF) << 24));
+		return ((is.read() & 0xff) | ((is.read() & 0xff) << 8) | ((is.read() & 0xff) << 16) | ((is.read() & 0xff) << 24));
 	}
 	
 	public static int deserializeInt(byte[] input, int offset) {
-		return (int)(input[offset] & 0xFF) | ((int)(input[offset + 1] & 0xFF) << 8) | ((int)(input[offset + 2] & 0xFF) << 16) | ((int)(input[offset + 3] & 0xFF) << 24);
+		return (int)(input[offset] & 0xff) | ((int)(input[offset + 1] & 0xff) << 8) | ((int)(input[offset + 2] & 0xff) << 16) | ((int)(input[offset + 3] & 0xff) << 24);
 	}
 	
 	public static long deserializeLong(InputStream is) throws IOException {
-		return ((long)(is.read() & 0xFF) | (long)((is.read() & 0xFF) << 8) | (long)((is.read() & 0xFF) << 16) | (long)((is.read() & 0xFF) << 24) |
-				(long)((is.read() & 0xFF) << 32) | (long)((is.read() & 0xFF) << 40) | (long)((is.read() & 0xFF) << 48) | (long)((is.read() & 0xFF) << 56));
+		return ((long)(is.read() & 0xff) | (long)((is.read() & 0xff) << 8) | (long)((is.read() & 0xff) << 16) | (long)((is.read() & 0xff) << 24) |
+				(long)((is.read() & 0xff) << 32) | (long)((is.read() & 0xff) << 40) | (long)((is.read() & 0xff) << 48) | (long)((is.read() & 0xff) << 56));
 	}
 	
 	public static long deserializeLong(byte[] input, int offset) {
-		return (long)(input[offset] & 0xFF) | ((long)(input[offset + 1] & 0xFF) << 8) | ((long)(input[offset + 2] & 0xFF) << 16) | ((long)(input[offset + 3] & 0xFF) << 24) |
-				((long)(input[offset + 4] & 0xFF) << 32) | ((long)(input[offset + 5] & 0xFF) << 40) | ((long)(input[offset + 6] & 0xFF) << 48) | ((long)(input[offset + 7] & 0xFF) << 56);
+		return (long)(input[offset] & 0xff) | ((long)(input[offset + 1] & 0xff) << 8) | ((long)(input[offset + 2] & 0xff) << 16) | ((long)(input[offset + 3] & 0xff) << 24) |
+				((long)(input[offset + 4] & 0xff) << 32) | ((long)(input[offset + 5] & 0xff) << 40) | ((long)(input[offset + 6] & 0xff) << 48) | ((long)(input[offset + 7] & 0xff) << 56);
 	}
 	
 	public static float deserializeFloat(InputStream is) throws IOException {

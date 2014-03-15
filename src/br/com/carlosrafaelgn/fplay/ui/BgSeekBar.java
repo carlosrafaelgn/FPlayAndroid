@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
@@ -51,11 +52,17 @@ public final class BgSeekBar extends View {
 		public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled);
 	}
 	
+	public static interface OnBgSeekBarDrawListener {
+		public void onSizeChanged(BgSeekBar seekBar, int width, int height);
+		public void onDraw(Canvas canvas, BgSeekBar seekBar, Rect rect, int filledSize);
+	}
+	
 	private String additionalContentDescription, text;
 	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textBgY, textSize, textSizeIdx, emptySpaceColor, keyIncrement;
-	private boolean forceTextSelected, vertical, tracking, drawTextFirst;
+	private boolean forceTextSelected, vertical, tracking, drawTextFirst, pointMode;
 	private int state, thumbWidth;
 	private OnBgSeekBarChangeListener listener;
+	private OnBgSeekBarDrawListener drawListener;
 	
 	public BgSeekBar(Context context) {
 		super(context);
@@ -76,12 +83,21 @@ public final class BgSeekBar extends View {
 		state = UI.STATE_SELECTED;
 		max = 100;
 		textSizeIdx = 0;
+		pointMode = false;
 		thumbWidth = (UI._IconBox * 90) / 100;
 		setTextSizeIndex(2);
 		setEmptySpaceColor(UI.color_list);
 		super.setClickable(true);
 		super.setFocusable(true);
 		super.setFocusableInTouchMode(false);
+	}
+	
+	public void setPointMode(boolean pointMode) {
+		this.pointMode = pointMode;
+		this.thumbWidth = (pointMode ? (UI.strokeSize << 1) : ((UI._IconBox * 90) / 100));
+		setTextSizeIndex(textSizeIdx);
+		updateBar();
+		invalidate();
 	}
 	
 	public void setForceTextSelected(boolean forceTextSelected) {
@@ -95,6 +111,14 @@ public final class BgSeekBar extends View {
 	
 	public void setOnBgSeekBarChangeListener(OnBgSeekBarChangeListener listener) {
 		this.listener = listener;
+	}
+	
+	public OnBgSeekBarDrawListener getOnBgSeekBarDrawListener() {
+		return drawListener;
+	}
+	
+	public void setOnBgSeekBarDrawListener(OnBgSeekBarDrawListener listener) {
+		this.drawListener = listener;
 	}
 	
 	public int getEmptySpaceColor() {
@@ -119,25 +143,23 @@ public final class BgSeekBar extends View {
 	}
 	
 	public void setTextSizeIndex(int index) {
-		if (textSizeIdx == index)
-			return;
 		switch (index) {
 		case 2:
 			textSizeIdx = 2;
 			textSize = UI._22sp;
-			textBgY = (UI.defaultControlSize >> 1) - (UI._22spBox >> 1);
+			textBgY = ((UI.defaultControlSize - (pointMode ? UI._16dp: 0)) >> 1) - (UI._22spBox >> 1);
 			textY = textBgY + UI._22spYinBox;
 			break;
 		case 1:
 			textSizeIdx = 1;
 			textSize = UI._18sp;
-			textBgY = (UI.defaultControlSize >> 1) - (UI._18spBox >> 1);
+			textBgY = ((UI.defaultControlSize - (pointMode ? UI._16dp: 0)) >> 1) - (UI._18spBox >> 1);
 			textY = textBgY + UI._18spYinBox;
 			break;
 		default:
 			textSizeIdx = 0;
 			textSize = UI._14sp;
-			textBgY = (UI.defaultControlSize >> 1) - (UI._14spBox >> 1);
+			textBgY = ((UI.defaultControlSize - (pointMode ? UI._16dp: 0)) >> 1) - (UI._14spBox >> 1);
 			textY = textBgY + UI._14spYinBox;
 			break;
 		}
@@ -355,6 +377,8 @@ public final class BgSeekBar extends View {
 		width = w;
 		height = h;
 		updateBar();
+		if (drawListener != null)
+			drawListener.onSizeChanged(this, w, h);
 	}
 	
 	private void trackTouchEvent(float position) {
@@ -480,35 +504,48 @@ public final class BgSeekBar extends View {
 			UI.rect.right = UI.rect.bottom;
 			UI.rect.bottom = tmp;
 		}
-		final int right = UI.rect.right;
-		final int bottom = UI.rect.bottom;
-		final int color = UI.getBorderColor(state);
-		UI.rect.top = UI._8dp;
-		UI.rect.bottom -= UI._8dp;
-		UI.strokeRect(canvas, color, UI.rect, UI.strokeSize);
-		UI.rect.left = UI.strokeSize;
-		UI.rect.top += UI.strokeSize;
-		UI.rect.right = UI.strokeSize + filledSize;
-		UI.rect.bottom -= UI.strokeSize;
-		UI.drawBgBorderless(canvas, state, UI.rect);
-		if (drawTextFirst)
-			UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
-		UI.rect.left = UI.rect.right;
-		UI.rect.right = right - UI.strokeSize;
-		UI.fillRect(canvas, emptySpaceColor, UI.rect);
-		if (!drawTextFirst)
-			UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
-		UI.rect.left = filledSize;
-		UI.rect.top = 0;
-		UI.rect.right = filledSize + thumbWidth;
-		UI.rect.bottom = bottom;
-		UI.fillRect(canvas, color, UI.rect);
-		UI.rect.left += UI.strokeSize;
-		UI.rect.top += UI.strokeSize;
-		UI.rect.right -= UI.strokeSize;
-		UI.rect.bottom -= UI.strokeSize;
-		UI.drawBgBorderless(canvas, state, UI.rect);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (thumbWidth >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
+		if (drawListener != null) {
+			drawListener.onDraw(canvas, this, UI.rect, filledSize);
+		} else {
+			final int right = UI.rect.right;
+			final int bottom = UI.rect.bottom;
+			final int color = UI.getBorderColor(state);
+			if (!pointMode) {
+				UI.rect.top = UI._8dp;
+				UI.rect.bottom -= UI._8dp;
+			} else {
+				UI.rect.bottom -= UI._16dp;
+			}
+			UI.strokeRect(canvas, color, UI.rect, UI.strokeSize);
+			UI.rect.left = UI.strokeSize;
+			UI.rect.top += UI.strokeSize;
+			UI.rect.bottom -= UI.strokeSize;
+			UI.rect.right = UI.strokeSize + filledSize;
+			UI.drawBgBorderless(canvas, state, UI.rect);
+			if (drawTextFirst)
+				UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
+			UI.rect.left = UI.rect.right;
+			UI.rect.right = right - UI.strokeSize;
+			if (UI.rect.left < right)
+				UI.fillRect(canvas, emptySpaceColor, UI.rect);
+			if (!drawTextFirst)
+				UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
+			if (pointMode) {
+				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDER, filledSize + (thumbWidth >> 1) - UI._16dp, bottom - UI._16dp, UI._16dp << 1, color);
+			} else {
+				UI.rect.left = filledSize;
+				UI.rect.top = 0;
+				UI.rect.right = filledSize + thumbWidth;
+				UI.rect.bottom = bottom;
+				UI.fillRect(canvas, color, UI.rect);
+				UI.rect.left += UI.strokeSize;
+				UI.rect.top += UI.strokeSize;
+				UI.rect.right -= UI.strokeSize;
+				UI.rect.bottom -= UI.strokeSize;
+				UI.drawBgBorderless(canvas, state, UI.rect);
+				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (thumbWidth >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
+			}
+		}
 		if (vertical)
 			canvas.restore();
 	}

@@ -47,8 +47,8 @@ public final class MetadataExtractor {
 	public static final int YEAR = 4;
 	public static final int LENGTH = 5;
 	
-	private static final int ALL_B = 0x3F;
-	private static final int ALL_BUT_LENGTH_B = 0x1F;
+	private static final int ALL_B = 0x3f;
+	private static final int ALL_BUT_LENGTH_B = 0x1f;
 	private static final int TITLE_B = 0x01;
 	private static final int ARTIST_B = 0x02;
 	private static final int ALBUM_B = 0x04;
@@ -92,7 +92,7 @@ public final class MetadataExtractor {
 			break;
 		case 3: //UTF-8 encoded Unicode, in ID3v2.4
 			//BOM
-			ret = ((tmp[0] == 0xEF && tmp[1] == 0xBB && tmp[2] == 0xBF) ?
+			ret = ((tmp[0] == 0xef && tmp[1] == 0xbb && tmp[2] == 0xbf) ?
 					new String(tmp, 3, frameSize - 3, "UTF-8") :
 					new String(tmp, 0, frameSize, "UTF-8"));
 			break;
@@ -161,7 +161,7 @@ public final class MetadataExtractor {
 					fields[MetadataExtractor.YEAR] = new String(tmp, 3 + 30 + 30 + 30, c, "ISO-8859-1");
 			}
 			if ((found & TRACK_B) == 0 && tmp[128 - 3] == 0 && tmp[128 - 2] != 0)
-				fields[MetadataExtractor.TRACK] = Integer.toString((int)tmp[128 - 2] & 0xFF);
+				fields[MetadataExtractor.TRACK] = Integer.toString((int)tmp[128 - 2] & 0xff);
 		} catch (Throwable ex) {
 			//ignore all exceptions while reading ID3v1, in favor of
 			//everything that has already been read in ID3v2
@@ -180,7 +180,7 @@ public final class MetadataExtractor {
 		
 		//readInt() reads a big-endian 32-bit integer
 		final int hdr = f.readInt();
-		if ((hdr & 0xFFFFFF00) != 0x49443300) //ID3
+		if ((hdr & 0xffffff00) != 0x49443300) //ID3
 			return null;
 		final int hdrRev = f.read();
 		final int flags = f.read();
@@ -190,12 +190,12 @@ public final class MetadataExtractor {
 		final int sizeBytes3 = f.read();
 		int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
 		(
-			(sizeBytes3 & 0x7F) |
-			((sizeBytes2 & 0x7F) << 7) |
-			((sizeBytes1 & 0x7F) << 14) |
-			((sizeBytes0 & 0x7F) << 21)
+			(sizeBytes3 & 0x7f) |
+			((sizeBytes2 & 0x7f) << 7) |
+			((sizeBytes1 & 0x7f) << 14) |
+			((sizeBytes0 & 0x7f) << 21)
 		);
-		if ((hdr & 0xFF) > 2 || hdrRev != 0) { //only rev 3 or greater supported
+		if ((hdr & 0xff) > 2 || hdrRev != 0) { //only rev 3 or greater supported
 			//http://id3.org/id3v2.3.0
 			//http://id3.org/id3v2.4.0-structure
 			//http://id3.org/id3v2.4.0-frames
@@ -233,7 +233,7 @@ public final class MetadataExtractor {
 						f.skipBytes(frameSize);
 					}
 					break;
-				case 0x54414C42: //album - TALB
+				case 0x54414c42: //album - TALB
 					if ((found & ALBUM_B) == 0) {
 						fields[ALBUM] = readV2Frame(f, frameSize, tmpPtr);
 						if (fields[ALBUM] != null)
@@ -242,7 +242,7 @@ public final class MetadataExtractor {
 						f.skipBytes(frameSize);
 					}
 					break;
-				case 0x5452434B: //track - TRCK
+				case 0x5452434b: //track - TRCK
 					if ((found & TRACK_B) == 0) {
 						fields[TRACK] = readV2Frame(f, frameSize, tmpPtr);
 						if (fields[TRACK] != null)
@@ -272,7 +272,7 @@ public final class MetadataExtractor {
 						f.skipBytes(frameSize);
 					}
 					break;
-				case 0x544C454E: //length - TLEN
+				case 0x544c454e: //length - TLEN
 					if ((found & LENGTH_B) == 0) {
 						fields[LENGTH] = readV2Frame(f, frameSize, tmpPtr);
 						if (fields[LENGTH] != null)
