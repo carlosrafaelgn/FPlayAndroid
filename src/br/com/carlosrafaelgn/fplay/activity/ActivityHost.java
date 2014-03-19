@@ -157,7 +157,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			getWindow().setBackgroundDrawable(windowColorDrawable);
 		} else if (windowColor != color) {
 			windowColor = color;
-			windowColorDrawable.change(color);
+			windowColorDrawable.setColor(color);
 			getWindow().setBackgroundDrawable(windowColorDrawable);
 		}
 	}

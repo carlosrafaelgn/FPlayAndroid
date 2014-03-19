@@ -45,7 +45,7 @@ public final class WidgetMain extends AppWidgetProvider {
 	private static ComponentName widgetComponent;
 	
 	private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-		appWidgetManager.updateAppWidget(appWidgetId, Player.prepareRemoteViews(context, new RemoteViews(context.getPackageName(), R.layout.main_widget), true, false));
+		appWidgetManager.updateAppWidget(appWidgetId, Player.prepareRemoteViews(context, new RemoteViews(context.getPackageName(), UI.widgetTransparentBg ? R.layout.main_widget_transparent : R.layout.main_widget), true, false));
 	}
 	
 	public static void updateWidgets(Context context) {

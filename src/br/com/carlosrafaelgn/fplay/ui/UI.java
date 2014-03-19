@@ -141,7 +141,8 @@ public final class UI {
 	public static final String ICON_OPTUNCHK = "Q";
 	public static final String ICON_GRIP = "G";
 	public static final String ICON_FPLAY = "♫";
-	public static final String ICON_SLIDER = "\'";
+	public static final String ICON_SLIDERTOP = "\"";
+	public static final String ICON_SLIDERBOTTOM = "\'";
 	
 	public static final int color_transparent = 0x00000000;
 	public static int color_window;
@@ -223,13 +224,14 @@ public final class UI {
 	
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey;
+		marqueeTitle, blockBackKey, widgetTransparentBg;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup;
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
+    public static byte[] customColors;
 	
 	private static String emptyListString;
-    private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme;
+    private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme, createdWidgetIconColor;
     private static boolean alternateTypefaceActive, useAlternateTypeface, fullyInitialized;
 	private static Toast internalToast;
 	
@@ -423,6 +425,9 @@ public final class UI {
 		final SerializableMap opts = Player.loadConfigFromFile(context);
 		//I know, this is ugly... I'll fix it one day...
 		setForcedLocale(context, opts.getInt(0x001E, LOCALE_NONE));
+		widgetTransparentBg = opts.getBoolean(0x0022, false);
+		widgetTextColor = opts.getInt(0x0023, 0xff000000);
+		widgetIconColor = opts.getInt(0x0024, 0xff000000);
 	}
 	
 	public static void initialize(Context context) {
@@ -473,14 +478,32 @@ public final class UI {
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
 	
-	public static void preparePlaybackIcons(Context context) {
+	public static void prepareWidgetPlaybackIcons(Context context) {
+		if (widgetIconColor != createdWidgetIconColor) {
+			if (icPrev != null) {
+				icPrev.recycle();
+				icPrev = null;
+			}
+			if (icPlay != null) {
+				icPlay.recycle();
+				icPlay = null;
+			}
+			if (icPause != null) {
+				icPause.recycle();
+				icPause = null;
+			}
+			if (icNext != null) {
+				icNext.recycle();
+				icNext = null;
+			}
+		}
 		if (icPrev != null)
 			return;
 		if (iconsTypeface == null)
 			initialize(context);
 	    final Canvas c = new Canvas();
 	    textPaint.setTypeface(iconsTypeface);
-		textPaint.setColor(0xff000000);
+		textPaint.setColor(widgetIconColor);
 		textPaint.setTextSize(defaultControlContentsSize);
 		icPrev = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
 	    c.setBitmap(icPrev);
@@ -494,6 +517,7 @@ public final class UI {
 	    icNext = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
 	    c.setBitmap(icNext);
 	    c.drawText(ICON_NEXT, 0, defaultControlContentsSize, textPaint);
+	    createdWidgetIconColor = widgetIconColor;
 	    //reset to the original state
 	    textPaint.setTypeface(defaultTypeface);
 		textPaint.setColor(color_text);
@@ -566,6 +590,122 @@ public final class UI {
 		return (int)((pt * xdpi_1_72) + 0.5f);
 	}
 	
+	public static CharSequence getThemeColorDescription(Context context, int idx) {
+		switch (idx) {
+		case 0:
+			return context.getText(R.string.color_window);
+		case 1:
+			return context.getText(R.string.color_control_mode);
+		case 2:
+			return context.getText(R.string.color_list);
+		case 3:
+			return context.getText(R.string.color_menu);
+		case 4:
+			return context.getText(R.string.color_menu_icon);
+		case 5:
+			return context.getText(R.string.color_divider);
+		case 6:
+			return context.getText(R.string.color_highlight);
+		case 7:
+			return context.getText(R.string.color_text_highlight);
+		case 8:
+			return context.getText(R.string.color_text);
+		case 9:
+			return context.getText(R.string.color_text_disabled);
+		case 10:
+			return context.getText(R.string.color_text_listitem);
+		case 11:
+			return context.getText(R.string.color_text_selected);
+		case 12:
+			return context.getText(R.string.color_text_menu);
+		case 13:
+			return context.getText(R.string.color_selected_grad_lt);
+		case 14:
+			return context.getText(R.string.color_selected_grad_dk);
+		case 15:
+			return context.getText(R.string.color_selected_border);
+		case 16:
+			return context.getText(R.string.color_selected_pressed);
+		case 17:
+			return context.getText(R.string.color_focused_grad_lt);
+		case 18:
+			return context.getText(R.string.color_focused_grad_dk);
+		case 19:
+			return context.getText(R.string.color_focused_border);
+		case 20:
+			return context.getText(R.string.color_focused_pressed);
+		}
+		return context.getText(R.string.no_info);
+	}
+	
+	public static void serializeThemeColor(byte[] colors, int idx, int color) {
+		colors[idx] = (byte)color;
+		colors[idx + 1] = (byte)(color >> 8);
+		colors[idx + 2] = (byte)(color >> 16);
+	}
+	
+	public static int deserializeThemeColor(byte[] colors, int idx) {
+		return 0xff000000 | (int)(colors[idx] & 0xff) | (int)((colors[idx + 1] & 0xff) << 8) | (int)((colors[idx + 2] & 0xff) << 16);
+	}
+	
+	public static byte[] serializeThemeToArray() {
+		final byte[] colors = new byte[64];
+		serializeThemeColor(colors, 0, color_window);
+		serializeThemeColor(colors, 3, color_control_mode);
+		serializeThemeColor(colors, 6, color_list);
+		serializeThemeColor(colors, 9, color_menu);
+		serializeThemeColor(colors, 12, color_menu_icon);
+		serializeThemeColor(colors, 15, color_divider);
+		serializeThemeColor(colors, 18, color_highlight);
+		serializeThemeColor(colors, 21, color_text_highlight);
+		serializeThemeColor(colors, 24, color_text);
+		serializeThemeColor(colors, 27, color_text_disabled);
+		serializeThemeColor(colors, 30, color_text_listitem);
+		serializeThemeColor(colors, 33, color_text_selected);
+		serializeThemeColor(colors, 36, color_text_menu);
+		serializeThemeColor(colors, 39, color_selected_grad_lt);
+		serializeThemeColor(colors, 42, color_selected_grad_dk);
+		serializeThemeColor(colors, 45, color_selected_border);
+		serializeThemeColor(colors, 48, color_selected_pressed);
+		serializeThemeColor(colors, 51, color_focused_grad_lt);
+		serializeThemeColor(colors, 54, color_focused_grad_dk);
+		serializeThemeColor(colors, 57, color_focused_border);
+		serializeThemeColor(colors, 60, color_focused_pressed);
+		return colors;
+	}
+	
+	private static boolean deserializeThemeFromArray(byte[] colors) {
+		if (colors == null || colors.length < 64)
+			return false;
+		color_window = deserializeThemeColor(colors, 0);
+		color_control_mode = deserializeThemeColor(colors, 3);
+		color_list = deserializeThemeColor(colors, 6);
+		color_menu = deserializeThemeColor(colors, 9);
+		color_menu_icon = deserializeThemeColor(colors, 12);
+		color_divider = deserializeThemeColor(colors, 15);
+		color_highlight = deserializeThemeColor(colors, 18);
+		color_text_highlight = deserializeThemeColor(colors, 21);
+		color_text = deserializeThemeColor(colors, 24);
+		color_text_disabled = deserializeThemeColor(colors, 27);
+		color_text_listitem = deserializeThemeColor(colors, 30);
+		color_text_selected = deserializeThemeColor(colors, 33);
+		color_text_menu = deserializeThemeColor(colors, 36);
+		color_selected_grad_lt = deserializeThemeColor(colors, 39);
+		color_selected_grad_dk = deserializeThemeColor(colors, 42);
+		color_selected_border = deserializeThemeColor(colors, 45);
+		color_selected_pressed = deserializeThemeColor(colors, 48);
+		color_focused_grad_lt = deserializeThemeColor(colors, 51);
+		color_focused_grad_dk = deserializeThemeColor(colors, 54);
+		color_focused_border = deserializeThemeColor(colors, 57);
+		color_focused_pressed = deserializeThemeColor(colors, 60);
+		if (customColors != colors) {
+			if (customColors == null || customColors.length != 64)
+				customColors = new byte[64];
+			System.arraycopy(colors, 0, customColors, 0, 64);
+		}
+		return true;
+	}
+	
 	private static void finishLoadingTheme() {
 		color_selected = ColorUtils.blend(color_selected_grad_lt, color_selected_grad_dk, 0.5f);
 		color_focused = ColorUtils.blend(color_focused_grad_lt, color_focused_grad_dk, 0.5f);
@@ -580,6 +720,16 @@ public final class UI {
 		colorState_text_selected_static = ColorStateList.valueOf(color_text_selected);
 		colorState_highlight_static = ColorStateList.valueOf(color_highlight);
 		colorState_text_highlight_static = ColorStateList.valueOf(color_text_highlight);
+	}
+	
+	public static boolean loadCustomTheme() {
+		if (!deserializeThemeFromArray(customColors)) {
+			customColors = null;
+			loadLightTheme();
+			return false;
+		}
+		finishLoadingTheme();
+		return true;
 	}
 	
 	public static void loadBlueOrangeTheme() {
@@ -706,14 +856,14 @@ public final class UI {
 		switch (theme) {
 		case THEME_CUSTOM:
 			return context.getText(R.string.custom).toString();
+		case THEME_BLUE_ORANGE:
+			return context.getText(R.string.blue_orange).toString();
 		case THEME_BLUE:
 			return context.getText(R.string.blue).toString();
 		case THEME_ORANGE:
 			return context.getText(R.string.orange).toString();
-		case THEME_LIGHT:
-			return context.getText(R.string.light).toString();
 		default:
-			return context.getText(R.string.blue_orange).toString();
+			return context.getText(R.string.light).toString();
 		}
 	}
 	
@@ -725,21 +875,21 @@ public final class UI {
 		UI.theme = theme;
 		Gradient.purgeAll();
 		switch (theme) {
-		//case THEME_CUSTOM:
-		//	//custom
-		//	break;
+		case THEME_CUSTOM:
+			loadCustomTheme();
+			break;
+		case THEME_BLUE_ORANGE:
+			loadBlueOrangeTheme();
+			break;
 		case THEME_BLUE:
 			loadBlueTheme();
 			break;
 		case THEME_ORANGE:
 			loadOrangeTheme();
 			break;
-		case THEME_LIGHT:
-			loadLightTheme();
-			break;
 		default:
-			UI.theme = THEME_BLUE_ORANGE;
-			loadBlueOrangeTheme();
+			UI.theme = THEME_LIGHT;
+			loadLightTheme();
 			break;
 		}
 	}

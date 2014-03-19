@@ -263,4 +263,14 @@ public final class BgButton extends Button {
 		UI.drawBg(canvas, state, UI.rect, true, false);
 		super.onDraw(canvas);
 	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		iconChecked = null;
+		iconUnchecked = null;
+		checkBox = null;
+		pressingChangeListener = null;
+		super.setCompoundDrawables(null, null, null, null);
+		super.onDetachedFromWindow();
+	}
 }

@@ -51,6 +51,7 @@ import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.ColorPickerView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SettingView;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
@@ -59,11 +60,19 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener {
+public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener {
+	private final boolean colorMode;
+	private boolean changed, checkingReturn;
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView[] colorViews;
+	private int lastColorView;
+	
+	public ActivitySettings(boolean colorMode) {
+		this.colorMode = colorMode;
+	}
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
@@ -113,11 +122,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.prepare(menu);
 			menu.add(0, UI.THEME_CUSTOM, 0, UI.getThemeString(ctx, UI.THEME_CUSTOM))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_CUSTOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
 			menu.add(1, UI.THEME_BLUE_ORANGE, 0, UI.getThemeString(ctx, UI.THEME_BLUE_ORANGE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o <= UI.THEME_BLUE_ORANGE || o > UI.THEME_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			menu.add(1, UI.THEME_BLUE, 1, UI.getThemeString(ctx, UI.THEME_BLUE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
@@ -181,145 +190,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 	}
 	
-//	private void loadSettings() {
-//		Player.loadConfig(getApplication());
-//		onCleanupLayout();
-//		onCreateLayout(false);
-//		System.gc();
-//		optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface());
-//		optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
-//		optKeepScreenOn.setChecked(UI.keepScreenOn);
-//		if (UI.keepScreenOn)
-//			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-//		else
-//			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-//		optIsDividerVisible.setChecked(UI.isDividerVisible);
-//		optIsVerticalMarginLarge.setChecked(UI.isVerticalMarginLarge);
-//		optHandleCallKey.setChecked(Player.handleCallKey);
-//		optPlayWhenHeadsetPlugged.setChecked(Player.playWhenHeadsetPlugged);
-//		optBlockBackKey.setChecked(UI.blockBackKey);
-//		optDoubleClickMode.setChecked(UI.doubleClickMode);
-//		optMarqueeTitle.setChecked(UI.marqueeTitle);
-//		optPrepareNext.setChecked(Player.nextPreparationEnabled);
-//		optClearListWhenPlayingFolders.setChecked(Player.clearListWhenPlayingFolders);
-//		optGoBackWhenPlayingFolders.setChecked(Player.goBackWhenPlayingFolders);
-//		
-//		optVolumeControlType.setSecondaryText(getVolumeString());
-//		if (UI.forcedOrientation == 0)
-//			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-//		else if (UI.forcedOrientation < 0)
-//			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-//		else
-//			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-//		optForceOrientation.setSecondaryText(getOrientationString());
-//		optFadeInFocus.setSecondaryText(getFadeInString(Player.fadeInIncrementOnFocus));
-//		optFadeInPause.setSecondaryText(getFadeInString(Player.fadeInIncrementOnPause));
-//		optFadeInOther.setSecondaryText(getFadeInString(Player.fadeInIncrementOnOther));
-//	}
-//	
-//	private boolean saveFile(ZipOutputStream zo, File f, String name) {
-//		FileInputStream fi = null;
-//		final int length = (int)f.length();
-//		if (length <= 0 || !f.exists()) {
-//			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-//			return false;
-//		}
-//		try {
-//			fi = new FileInputStream(f);
-//			final byte[] buffer = new byte[length];
-//			if (fi.read(buffer) != length) {
-//				UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-//				return false;
-//			}
-//			zo.putNextEntry(new ZipEntry(name));
-//			zo.write(buffer);
-//			zo.closeEntry();
-//			return true;
-//		} catch (Throwable ex) {
-//			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-//			return false;
-//		} finally {
-//			if (fi != null) {
-//				try {
-//					fi.close();
-//				} catch (Throwable ex) {
-//				}
-//			}
-//		}
-//	}
-//	
-//	private void saveSettings() {
-//		final Context ctx = getApplication();
-//		Player.saveConfig(ctx);
-//		File of = null;
-//		int i;
-//		boolean error = false;
-//		String downloadPath;
-//		FileOutputStream fo = null;
-//		ZipOutputStream zo = null;
-//		try {
-//			try {
-//				of = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-//				if (of != null && of.exists() && of.isDirectory()) {
-//					downloadPath = of.getAbsolutePath();
-//					if (downloadPath.charAt(downloadPath.length() - 1) != File.separatorChar)
-//						downloadPath += File.separator;
-//				} else {
-//					UI.toast(getApplication(), R.string.msg_error_download_path);
-//					return;
-//				}
-//			} catch (Throwable ex) {
-//				UI.toast(getApplication(), R.string.msg_error_download_path);
-//				return;
-//			}
-//			i = 0;
-//			do {
-//				of = new File(downloadPath + "FPlay" + ((i == 0) ? ".zip" : " (" + i + ").zip"));
-//				i++;
-//			} while (of.exists());
-//			
-//			fo = new FileOutputStream(of);
-//			zo = new ZipOutputStream(fo);
-//			/*if (!saveFile(zo, ctx.getFileStreamPath("_Player"), "_Player")) {
-//				error = true;
-//				return;
-//			}
-//			if (!saveFile(zo, ctx.getFileStreamPath("_List"), "_List")) {
-//				error = true;
-//				return;
-//			}*/
-//			final String[] fileList = ctx.fileList();
-//			for (i = fileList.length - 1; i >= 0; i--) {
-//				if (!saveFile(zo, ctx.getFileStreamPath(fileList[i]), fileList[i])) {
-//					error = true;
-//					return;
-//				}
-//			}
-//		} catch (Throwable ex) {
-//			UI.toast(getApplication(), R.string.msg_error_exporting_settings);
-//			error = true;
-//		} finally {
-//			if (zo != null) {
-//				try {
-//					zo.close();
-//				} catch (Throwable ex) {
-//				}
-//			}
-//			if (fo != null) {
-//				try {
-//					fo.close();
-//				} catch (Throwable ex) {
-//				}
-//			}
-//			try {
-//				if (error && of != null && of.exists())
-//					of.delete();
-//			} catch (Throwable ex) {
-//				
-//			}
-//		}
-//	}
-	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
 		if (lastMenuView == optAutoTurnOff) {
@@ -360,11 +230,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optTheme) {
 			if (item.getItemId() == UI.THEME_CUSTOM) {
-				UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-				.setTitle(R.string.oops)
-				.setMessage(R.string.coming_soon)
-				.setPositiveButton(R.string.got_it, null)
-				.create());
+				startActivity(new ActivitySettings(true));
 				return true;
 			}
 			UI.setTheme(item.getItemId());
@@ -459,7 +325,79 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		hdr.setTextColor(UI.colorState_text_highlight_static);
 		hdr.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		panelSettings.addView(hdr);
-		previousControl.setHidingSeparator(true);
+		if (previousControl != null)
+			previousControl.setHidingSeparator(true);
+	}
+	
+	private boolean cancelGoBack() {
+		if (colorMode && changed) {
+			checkingReturn = true;
+			UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
+			.setTitle(R.string.oops)
+			.setMessage(R.string.discard_theme)
+			.setPositiveButton(R.string.ok, this)
+			.setNegativeButton(R.string.cancel, null)
+			.create());
+			return true;
+		}
+		return false;
+	}
+	
+	private int validate() {
+		//hard = -1
+		//impossible = -2
+		return 0;
+	}
+	
+	private void applyTheme() {
+		final byte[] colors = UI.serializeThemeToArray();
+		for (int i = 0; i < colorViews.length; i++)
+			UI.serializeThemeColor(colors, i * 3, colorViews[i].getColor());
+		UI.customColors = colors;
+		UI.setTheme(UI.THEME_CUSTOM);
+		getHostActivity().setWindowColor(UI.color_window);
+		changed = false;
+		finish();
+	}
+	
+	private void loadColors(boolean createControls, boolean forceCurrent) {
+		final Context ctx = getHostActivity();
+		final int[] colorOrder = new int[] { 1, 5, 7, 6, 8, 9, 0, 12, 4, 3, 10, 2, 11, 15, 13, 14, 16, 19, 17, 18, 20 };
+		final byte[] colors = ((UI.customColors != null && UI.customColors.length >= 63 && !forceCurrent) ? UI.customColors : UI.serializeThemeToArray());
+		if (createControls)
+			colorViews = new SettingView[colorOrder.length];
+		for (int i = 0; i < colorOrder.length; i++) {
+			final int idx = colorOrder[i];
+			if (createControls)
+				colorViews[idx] = new SettingView(ctx, UI.getThemeColorDescription(ctx, idx).toString(), null, false, false, true);
+			colorViews[idx].setColor(UI.deserializeThemeColor(colors, idx * 3));
+			colorViews[idx].setOnClickListener(this);
+		}
+		if (createControls) {
+			optLoadCurrentTheme = new SettingView(ctx, getText(R.string.load_colors_from_current_theme).toString(), null, false, false, false);
+			optLoadCurrentTheme.setOnClickListener(this);
+			panelSettings.addView(optLoadCurrentTheme);
+			for (int i = 0; i < colorOrder.length; i++) {
+				final int idx = colorOrder[i];
+				switch (i) {
+				case 0:
+					addHeader(ctx, R.string.general, optLoadCurrentTheme);
+					break;
+				case 12:
+					addHeader(ctx, R.string.selection, colorViews[colorOrder[i - 1]]);
+					break;
+				case 17:
+					addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]]);
+					break;
+				}
+				panelSettings.addView(colorViews[idx]);
+			}
+		}
+	}
+	
+	@Override
+	public boolean onBackPressed() {
+		return cancelGoBack();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -471,7 +409,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		btnGoBack.setIcon(UI.ICON_GOBACK);
 		btnAbout = (BgButton)findViewById(R.id.btnAbout);
 		btnAbout.setOnClickListener(this);
-		btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, true), null, null, null);
+		if (!colorMode)
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, true), null, null, null);
+		else
+			btnAbout.setText(R.string.apply_theme);
+		lastColorView = -1;
 		
 		final Context ctx = getHostActivity();
 		
@@ -482,73 +424,89 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		
-		if (!UI.isCurrentLocaleCyrillic()) {
-			optUseAlternateTypeface = new SettingView(ctx, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface());
-			optUseAlternateTypeface.setOnClickListener(this);
+		if (colorMode) {
+			loadColors(true, false);
+		} else {
+			if (!UI.isCurrentLocaleCyrillic()) {
+				optUseAlternateTypeface = new SettingView(ctx, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface(), false);
+				optUseAlternateTypeface.setOnClickListener(this);
+			}
+			optAutoTurnOff = new SettingView(ctx, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
+			optAutoTurnOff.setOnClickListener(this);
+			optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
+			optKeepScreenOn.setOnClickListener(this);
+			optTheme = new SettingView(ctx, getText(R.string.color_scheme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
+			optTheme.setOnClickListener(this);
+			optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
+			optVolumeControlType.setOnClickListener(this);
+			optIsDividerVisible = new SettingView(ctx, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible, false);
+			optIsDividerVisible.setOnClickListener(this);
+			optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge, false);
+			optIsVerticalMarginLarge.setOnClickListener(this);
+			optForcedLocale = new SettingView(ctx, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false, false);
+			optForcedLocale.setOnClickListener(this);
+			optWidgetTransparentBg = new SettingView(ctx, getText(R.string.transparent_background).toString(), null, true, UI.widgetTransparentBg, false);
+			optWidgetTransparentBg.setOnClickListener(this);
+			optWidgetTextColor = new SettingView(ctx, getText(R.string.text_color).toString(), null, false, false, true);
+			optWidgetTextColor.setOnClickListener(this);
+			optWidgetTextColor.setColor(UI.widgetTextColor);
+			optWidgetIconColor = new SettingView(ctx, getText(R.string.icon_color).toString(), null, false, false, true);
+			optWidgetIconColor.setOnClickListener(this);
+			optWidgetIconColor.setColor(UI.widgetIconColor);
+			optHandleCallKey = new SettingView(ctx, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey, false);
+			optHandleCallKey.setOnClickListener(this);
+			optPlayWhenHeadsetPlugged = new SettingView(ctx, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
+			optPlayWhenHeadsetPlugged.setOnClickListener(this);
+			optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
+			optBlockBackKey.setOnClickListener(this);
+			optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, UI.doubleClickMode, false);
+			optDoubleClickMode.setOnClickListener(this);
+			optMarqueeTitle = new SettingView(ctx, getText(R.string.opt_marquee_title).toString(), null, true, UI.marqueeTitle, false);
+			optMarqueeTitle.setOnClickListener(this);
+			optPrepareNext = new SettingView(ctx, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled, false);
+			optPrepareNext.setOnClickListener(this);
+			optClearListWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders, false);
+			optClearListWhenPlayingFolders.setOnClickListener(this);
+			optGoBackWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
+			optGoBackWhenPlayingFolders.setOnClickListener(this);
+			optForceOrientation = new SettingView(ctx, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
+			optForceOrientation.setOnClickListener(this);
+			optFadeInFocus = new SettingView(ctx, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false, false);
+			optFadeInFocus.setOnClickListener(this);
+			optFadeInPause = new SettingView(ctx, getText(R.string.opt_fade_in_pause).toString(), getFadeInString(Player.fadeInIncrementOnPause), false, false, false);
+			optFadeInPause.setOnClickListener(this);
+			optFadeInOther = new SettingView(ctx, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
+			optFadeInOther.setOnClickListener(this);
+			
+			panelSettings.addView(optAutoTurnOff);
+			addHeader(ctx, R.string.hdr_display, optAutoTurnOff);
+			panelSettings.addView(optKeepScreenOn);
+			if (!UI.isCurrentLocaleCyrillic())
+				panelSettings.addView(optUseAlternateTypeface);
+			panelSettings.addView(optTheme);
+			panelSettings.addView(optForceOrientation);
+			panelSettings.addView(optIsDividerVisible);
+			panelSettings.addView(optIsVerticalMarginLarge);
+			panelSettings.addView(optForcedLocale);
+			addHeader(ctx, R.string.widget, optForcedLocale);
+			panelSettings.addView(optWidgetTransparentBg);
+			panelSettings.addView(optWidgetTextColor);
+			panelSettings.addView(optWidgetIconColor);
+			addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
+			panelSettings.addView(optPlayWhenHeadsetPlugged);
+			panelSettings.addView(optHandleCallKey);
+			panelSettings.addView(optVolumeControlType);
+			panelSettings.addView(optFadeInFocus);
+			panelSettings.addView(optFadeInPause);
+			panelSettings.addView(optFadeInOther);
+			addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
+			panelSettings.addView(optClearListWhenPlayingFolders);
+			panelSettings.addView(optGoBackWhenPlayingFolders);
+			panelSettings.addView(optBlockBackKey);
+			panelSettings.addView(optDoubleClickMode);
+			panelSettings.addView(optMarqueeTitle);
+			panelSettings.addView(optPrepareNext);
 		}
-		optAutoTurnOff = new SettingView(ctx, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false);
-		optAutoTurnOff.setOnClickListener(this);
-		optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn);
-		optKeepScreenOn.setOnClickListener(this);
-		optTheme = new SettingView(ctx, getText(R.string.color_scheme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false);
-		optTheme.setOnClickListener(this);
-		optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false);
-		optVolumeControlType.setOnClickListener(this);
-		optIsDividerVisible = new SettingView(ctx, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible);
-		optIsDividerVisible.setOnClickListener(this);
-		optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge);
-		optIsVerticalMarginLarge.setOnClickListener(this);
-		optForcedLocale = new SettingView(ctx, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false);
-		optForcedLocale.setOnClickListener(this);
-		optHandleCallKey = new SettingView(ctx, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey);
-		optHandleCallKey.setOnClickListener(this);
-		optPlayWhenHeadsetPlugged = new SettingView(ctx, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged);
-		optPlayWhenHeadsetPlugged.setOnClickListener(this);
-		optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey);
-		optBlockBackKey.setOnClickListener(this);
-		optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, UI.doubleClickMode);
-		optDoubleClickMode.setOnClickListener(this);
-		optMarqueeTitle = new SettingView(ctx, getText(R.string.opt_marquee_title).toString(), null, true, UI.marqueeTitle);
-		optMarqueeTitle.setOnClickListener(this);
-		optPrepareNext = new SettingView(ctx, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled);
-		optPrepareNext.setOnClickListener(this);
-		optClearListWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders);
-		optClearListWhenPlayingFolders.setOnClickListener(this);
-		optGoBackWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders);
-		optGoBackWhenPlayingFolders.setOnClickListener(this);
-		optForceOrientation = new SettingView(ctx, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false);
-		optForceOrientation.setOnClickListener(this);
-		optFadeInFocus = new SettingView(ctx, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false);
-		optFadeInFocus.setOnClickListener(this);
-		optFadeInPause = new SettingView(ctx, getText(R.string.opt_fade_in_pause).toString(), getFadeInString(Player.fadeInIncrementOnPause), false, false);
-		optFadeInPause.setOnClickListener(this);
-		optFadeInOther = new SettingView(ctx, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false);
-		optFadeInOther.setOnClickListener(this);
-		
-		panelSettings.addView(optAutoTurnOff);
-		addHeader(ctx, R.string.hdr_display, optAutoTurnOff);
-		panelSettings.addView(optKeepScreenOn);
-		if (!UI.isCurrentLocaleCyrillic())
-			panelSettings.addView(optUseAlternateTypeface);
-		panelSettings.addView(optTheme);
-		panelSettings.addView(optForceOrientation);
-		panelSettings.addView(optIsDividerVisible);
-		panelSettings.addView(optIsVerticalMarginLarge);
-		panelSettings.addView(optForcedLocale);
-		addHeader(ctx, R.string.hdr_playback, optForcedLocale);
-		panelSettings.addView(optPlayWhenHeadsetPlugged);
-		panelSettings.addView(optHandleCallKey);
-		panelSettings.addView(optVolumeControlType);
-		panelSettings.addView(optFadeInFocus);
-		panelSettings.addView(optFadeInPause);
-		panelSettings.addView(optFadeInOther);
-		addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
-		panelSettings.addView(optClearListWhenPlayingFolders);
-		panelSettings.addView(optGoBackWhenPlayingFolders);
-		panelSettings.addView(optBlockBackKey);
-		panelSettings.addView(optDoubleClickMode);
-		panelSettings.addView(optMarqueeTitle);
-		panelSettings.addView(optPrepareNext);
 		
 		if (UI.isLowDpiScreen && !UI.isLargeScreen)
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
@@ -576,6 +534,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		btnGoBack = null;
 		btnAbout = null;
 		panelSettings = null;
+		optLoadCurrentTheme = null;
 		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
 		optKeepScreenOn = null;
@@ -584,6 +543,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
 		optForcedLocale = null;
+		optWidgetTransparentBg = null;
+		optWidgetTextColor = null;
+		optWidgetIconColor = null;
 		optHandleCallKey = null;
 		optPlayWhenHeadsetPlugged = null;
 		optBlockBackKey = null;
@@ -597,14 +559,54 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInPause = null;
 		optFadeInOther = null;
 		lastMenuView = null;
+		if (colorViews != null) {
+			for (int i = colorViews.length - 1; i >= 0; i--)
+				colorViews[i] = null;
+			colorViews = null;
+		}
 	}
 	
 	@Override
 	public void onClick(View view) {
+		if (colorViews != null) {
+			for (int i = colorViews.length - 1; i >= 0; i--) {
+				if (view == colorViews[i]) {
+					lastColorView = i;
+					ColorPickerView.showDialog(getHostActivity(), colorViews[i].getColor(), null, this);
+					return;
+				}
+			}
+		}
 		if (view == btnGoBack) {
-			finish();
+			if (!cancelGoBack())
+				finish();
+		} else if (view == optLoadCurrentTheme) {
+			if (colorMode)
+				loadColors(false, true);
 		} else if (view == btnAbout) {
-			startActivity(new ActivityAbout());
+			if (colorMode) {
+				checkingReturn = false;
+				switch (validate()) {
+				case -1:
+					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
+					.setTitle(R.string.oops)
+					.setMessage(R.string.hard_theme)
+					.setPositiveButton(R.string.ok, this)
+					.setNegativeButton(R.string.cancel, null)
+					.create());
+					return;
+				case -2:
+					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
+					.setTitle(R.string.oops)
+					.setMessage(R.string.unreadable_theme)
+					.setPositiveButton(R.string.got_it, null)
+					.create());
+					return;
+				}
+				applyTheme();
+			} else {
+				startActivity(new ActivityAbout());
+			}
 		} else if (!UI.isCurrentLocaleCyrillic() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
 			UI.setUsingAlternateTypeface(getHostActivity(), desired);
@@ -640,6 +642,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.handleCallKey = optHandleCallKey.isChecked();
 		} else if (view == optPlayWhenHeadsetPlugged) {
 			Player.playWhenHeadsetPlugged = optPlayWhenHeadsetPlugged.isChecked();
+		} else if (view == optWidgetTransparentBg) {
+			UI.widgetTransparentBg = optWidgetTransparentBg.isChecked();
+			WidgetMain.updateWidgets(getApplication());
+		} else if (view == optWidgetTextColor) {
+			ColorPickerView.showDialog(getHostActivity(), UI.widgetTextColor, view, this);
+		} else if (view == optWidgetIconColor) {
+			ColorPickerView.showDialog(getHostActivity(), UI.widgetIconColor, view, this);
 		} else if (view == optBlockBackKey) {
 			UI.blockBackKey = optBlockBackKey.isChecked();
 		} else if (view == optDoubleClickMode) {
@@ -658,17 +667,26 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 	
 	@Override
-	public void onClick(DialogInterface dialog, int whichButton) {
-		if (whichButton == AlertDialog.BUTTON_POSITIVE && txtCustomMinutes != null) {
-			try {
-				int m = Integer.parseInt(txtCustomMinutes.getText().toString());
-				if (m > 0) {
-					Player.setTurnOffTimer(m, true);
-					optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+	public void onClick(DialogInterface dialog, int which) {
+		if (which == AlertDialog.BUTTON_POSITIVE) {
+			if (colorMode) {
+				if (checkingReturn) {
+					changed = false;
+					finish();
+				} else {
+					applyTheme();
 				}
-			} catch (Throwable ex) {
+			} else if (txtCustomMinutes != null) {
+				try {
+					int m = Integer.parseInt(txtCustomMinutes.getText().toString());
+					if (m > 0) {
+						Player.setTurnOffTimer(m, true);
+						optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+					}
+				} catch (Throwable ex) {
+				}
+				txtCustomMinutes = null;
 			}
-			txtCustomMinutes = null;
 		}
 	}
 	
@@ -676,5 +694,24 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public void onPlayerTurnOffTimerTick() {
 		if (optAutoTurnOff != null)
 			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+	}
+	
+	@Override
+	public void onColorPicked(ColorPickerView picker, View parentView, int color) {
+		if (colorMode && lastColorView >= 0) {
+			if (colorViews[lastColorView].getColor() != color) {
+				changed = true;
+				colorViews[lastColorView].setColor(color);
+			}
+			lastColorView = -1;
+		} else if (parentView == optWidgetTextColor) {
+			UI.widgetTextColor = color;
+			optWidgetTextColor.setColor(color);
+			WidgetMain.updateWidgets(getApplication());
+		} else if (parentView == optWidgetIconColor) {
+			UI.widgetIconColor = color;
+			optWidgetIconColor.setColor(color);
+			WidgetMain.updateWidgets(getApplication());
+		}
 	}
 }

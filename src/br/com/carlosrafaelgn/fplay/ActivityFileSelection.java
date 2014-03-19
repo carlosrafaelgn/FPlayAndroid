@@ -178,7 +178,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		.setTitle(getText(R.string.oops))
 		.setMessage(format(delete ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, name))
 		.setPositiveButton(delete ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int whichButton) {
+			public void onClick(DialogInterface dialog, int which) {
 				if (delete) {
 					try {
 						getApplication().deleteFile(path);
@@ -329,8 +329,8 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	}
 	
 	@Override
-	public void onClick(DialogInterface dialog, int whichButton) {
-		if (whichButton == AlertDialog.BUTTON_POSITIVE) {
+	public void onClick(DialogInterface dialog, int which) {
+		if (which == AlertDialog.BUTTON_POSITIVE) {
 			String n = txtSaveAsName.getText().toString().trim();
 			if (n.length() == 0 || !FileSt.isValidPrivateFileName(n))
 				return;

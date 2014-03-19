@@ -73,6 +73,24 @@ public final class BorderDrawable extends Drawable {
 		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 	}
 	
+	public int getStrokeColor() {
+		return strokeColor;
+	}
+	
+	public void setStrokeColor(int strokeColor) {
+		this.strokeColor = strokeColor;
+	}
+	
+	public int getFillColor() {
+		return fillColor;
+	}
+	
+	public void setFillColor(int fillColor) {
+		this.fillColor = fillColor;
+		this.alpha = ((fillColor >>> 24) & 0xff);
+		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+	}
+	
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
@@ -106,6 +124,9 @@ public final class BorderDrawable extends Drawable {
 	
 	@Override
 	public void setAlpha(int alpha) {
+		fillColor = (alpha << 24) | (fillColor & 0x00ffffff);
+		this.alpha = alpha;
+		opacity = ((alpha == 0xff) ? PixelFormat.OPAQUE : ((alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 	}
 	
 	@Override

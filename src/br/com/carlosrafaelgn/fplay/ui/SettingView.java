@@ -37,6 +37,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
@@ -44,16 +45,97 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class SettingView extends RelativeLayout implements View.OnClickListener {
+	private static final class ExtraView extends TextView {
+		private int color, textColor;
+		private boolean checked;
+		
+		public ExtraView(Context context) {
+			super(context);
+		}
+		
+		public ExtraView(Context context, AttributeSet attrs, int defStyle) {
+			super(context, attrs, defStyle);
+		}
+		
+		public ExtraView(Context context, AttributeSet attrs) {
+			super(context, attrs);
+		}
+		
+		public boolean isChecked() {
+			return checked;
+		}
+		
+		public void setChecked(boolean checked) {
+			this.checked = checked;
+			invalidate();
+		}
+		
+		public int getColor() {
+			return color;
+		}
+		
+		public void setColor(int color) {
+			this.color = color;
+			invalidate();
+		}
+		
+		public void setTextColor(int textColor) {
+			this.textColor = textColor;
+			invalidate();
+		}
+		
+		@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+		@Override
+		public void setBackground(Drawable background) {
+			super.setBackground(null);
+		}
+		
+		@Override
+		@Deprecated
+		public void setBackgroundDrawable(Drawable background) {
+			super.setBackgroundDrawable(null);
+		}
+		
+		@Override
+		public void setBackgroundResource(int resid) {
+			super.setBackgroundResource(0);
+		}
+		
+		@Override
+		public void setBackgroundColor(int color) {
+			super.setBackgroundResource(0);
+		}
+		
+		@Override
+		public Drawable getBackground() {
+			return null;
+		}
+		
+		@Override
+		@ExportedProperty(category = "drawing")
+		public boolean isOpaque() {
+			return true;
+		}
+		
+		@Override
+		protected void onDraw(Canvas canvas) {
+			if (color != 0)
+				canvas.drawColor(color);
+			TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, 0, 0, getWidth(), textColor);
+		}
+	}
+	
 	private View.OnClickListener onClickListener;
-	private final TextView textView, secondaryTextView;
-	private final BgButton checkBox;
+	private TextView textView, secondaryTextView;
+	private ExtraView extraView;
 	private String text, secondaryText;
-	private boolean checked, hidingSeparator;
+	private boolean checkable, color, hidingSeparator;
 	private int state;
 	
-	public SettingView(Context context, String text, String secondaryText, boolean checkable, boolean checked) {
+	public SettingView(Context context, String text, String secondaryText, boolean checkable, boolean checked, boolean color) {
 		super(context);
 		super.setOnClickListener(this);
 		setFocusable(true);
@@ -66,6 +148,8 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			p.addRule(LEFT_OF, 3);
 		else
 			p.addRule(ALIGN_PARENT_RIGHT, TRUE);
+		this.checkable = (secondaryText == null && checkable && !color);
+		this.color = (secondaryText == null && !checkable && color);
 		textView = new TextView(context);
 		textView.setId(1);
 		textView.setLayoutParams(p);
@@ -84,49 +168,46 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			secondaryTextView.setLayoutParams(p);
 			secondaryTextView.setTextColor(UI.colorState_highlight_static);
 			secondaryTextView.setGravity(Gravity.RIGHT);
-		} else {
-			secondaryTextView = null;
-		}
-		this.checked = (checked && checkable);
-		if (checkable) {
+		} else if (this.checkable || this.color) {
 			p = new LayoutParams(UI._IconBox, UI._IconBox);
 			p.addRule(ALIGN_PARENT_RIGHT, TRUE);
 			p.addRule(CENTER_VERTICAL, TRUE);
 			p.leftMargin = UI._8dp;
 			p.rightMargin = UI._8dp;
-			checkBox = new BgButton(context);
-			checkBox.setId(3);
-			//checkBox.setBehavingAsCheckBox(true);
-			//checkBox.setChecked(checked);
-			checkBox.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, checked, true);
-			checkBox.setLayoutParams(p);
-			checkBox.setGravity(Gravity.CENTER);
-			checkBox.setFocusable(false);
-			checkBox.setOnClickListener(this);
-			checkBox.setClickable(false);
-			addView(checkBox);
-		} else {
-			checkBox = null;
+			extraView = new ExtraView(context);
+			extraView.setId(3);
+			extraView.setLayoutParams(p);
+			extraView.setFocusable(false);
+			extraView.setOnClickListener(this);
+			extraView.setClickable(false);
+			extraView.setTextColor(UI.color_text_listitem);
+			if (this.checkable) {
+				extraView.setChecked(checked);
+			}
 		}
 		if (UI.isLargeScreen)
 			UI.largeText(textView);
 		else
 			UI.mediumText(textView);
-		if (secondaryTextView != null)
+		if (secondaryTextView != null && !color)
 			UI.mediumText(secondaryTextView);
 		setText(text);
 		setSecondaryText(secondaryText);
 		addView(textView);
 		if (secondaryTextView != null)
 			addView(secondaryTextView);
+		if (extraView != null)
+			addView(extraView);
 		updateContentDescription();
 	}
 	
 	private void updateContentDescription() {
 		if (secondaryTextView != null)
 			setContentDescription(text + " " + secondaryText);
-		else
-			setContentDescription(text + ": " + getContext().getText(checked ? R.string.yes : R.string.no));
+		else if (checkable)
+			setContentDescription(text + ": " + getContext().getText(extraView.isChecked() ? R.string.yes : R.string.no));
+		else if (color)
+			setContentDescription(text);
 	}
 	
 	public void refreshVerticalMargin() {
@@ -166,16 +247,16 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	}
 	
 	public boolean isCheckable() {
-		return (checkBox != null);
+		return checkable;
 	}
 	
 	public boolean isChecked() {
-		return checked;
+		return (checkable && extraView.isChecked());
 	}
 	
 	public void setChecked(boolean checked) {
-		if (checkBox != null) {
-			this.checked = checked;
+		if (checkable) {
+			extraView.setChecked(checked);
 			updateContentDescription();
 		}
 	}
@@ -186,6 +267,15 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	
 	public void setHidingSeparator(boolean hidingSeparator) {
 		this.hidingSeparator = hidingSeparator;
+	}
+	
+	public int getColor() {
+		return (color ? extraView.getColor() : 0);
+	}
+	
+	public void setColor(int color) {
+		if (this.color)
+			extraView.setColor(color);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -235,9 +325,9 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
-		if (checkBox != null)
-			checkBox.setForceTextSelected((state & (UI.STATE_PRESSED | UI.STATE_FOCUSED)) != 0);
-		if ((state == 0) != old) {
+		if (extraView != null)
+			extraView.setTextColor(((state & (UI.STATE_PRESSED | UI.STATE_FOCUSED)) != 0) ? UI.color_text_selected : UI.color_text_listitem);
+		if ((state == 0) != old && textView != null) {
 			if (state == 0) {
 				textView.setTextColor(UI.colorState_text_listitem_static);
 				if (secondaryTextView != null)
@@ -264,15 +354,20 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	}
 	
 	@Override
+	protected void onDetachedFromWindow() {
+		onClickListener = null;
+		textView = null;
+		secondaryTextView = null;
+		extraView = null;
+		text = null;
+		secondaryText = null;
+		super.onDetachedFromWindow();
+	}
+	
+	@Override
 	public void onClick(View view) {
-		if (checkBox != null) {
-			if (view == checkBox) {
-				checked = checkBox.isChecked();
-			} else {
-				checked = !checked;
-				checkBox.setChecked(checked);
-			}
-		}
+		if (checkable)
+			extraView.setChecked(!extraView.isChecked());
 		if (onClickListener != null)
 			onClickListener.onClick(this);
 	}

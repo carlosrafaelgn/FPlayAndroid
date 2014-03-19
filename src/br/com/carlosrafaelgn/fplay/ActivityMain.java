@@ -502,7 +502,7 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 			getHostActivity().startActivity(new Intent(getApplication(), ActivityVisualizer.class));
 			break;
 		case MNU_SETTINGS:
-			startActivity(new ActivitySettings());
+			startActivity(new ActivitySettings(false));
 			break;
 		case MNU_EXIT:
 			finish();

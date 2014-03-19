@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/widget_margin" >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/btnPrev" >
+
+            <TextView
+                android:id="@+id/lblTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_widget_button"
+                android:clickable="true"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="2"
+                android:padding="2dp"
+                android:textAppearance="@style/MediumText"
+                android:textColor="@color/color_widget_text" />
+
+            <TextView
+                android:id="@+id/lblArtist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/lblTitle"
+                android:background="@drawable/bg_widget_button"
+                android:clickable="true"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:padding="2dp"
+                android:singleLine="true"
+                android:textAppearance="@style/SmallText"
+                android:textColor="@color/color_widget_text" />
+        </RelativeLayout>
+
+        <ImageButton
+            android:id="@+id/btnPrev"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@+id/btnPlay"
+            android:background="@drawable/bg_widget_button"
+            android:contentDescription="@string/previous"
+            android:focusable="true"
+            android:nextFocusForward="@+id/btnPlay"
+            android:nextFocusLeft="@+id/lblTitle"
+            android:nextFocusRight="@+id/btnPlay"
+            android:padding="8dp" />
+
+        <ImageButton
+            android:id="@+id/btnPlay"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@+id/btnNext"
+            android:background="@drawable/bg_widget_button"
+            android:contentDescription="@string/play"
+            android:focusable="true"
+            android:nextFocusForward="@+id/btnNext"
+            android:nextFocusLeft="@+id/btnPrev"
+            android:nextFocusRight="@+id/btnNext"
+            android:padding="8dp" />
+
+        <ImageButton
+            android:id="@+id/btnNext"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:background="@drawable/bg_widget_button"
+            android:contentDescription="@string/next"
+            android:focusable="true"
+            android:nextFocusLeft="@+id/btnPlay"
+            android:padding="8dp" />
+    </RelativeLayout>
+
+</FrameLayout>

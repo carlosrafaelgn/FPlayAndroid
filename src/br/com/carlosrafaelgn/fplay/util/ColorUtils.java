@@ -68,7 +68,7 @@ public final class ColorUtils {
 			}
 		}
 		
-		public int toRGB() {
+		public int toRGB(boolean invert) {
 			double h = 6.0 * this.h;
 			final double v = this.v * 255.0;
 			int hi, r, g, b, vi;
@@ -107,7 +107,8 @@ public final class ColorUtils {
 					r = vi;
 					break;
 			}
-			return 0xff000000 | (((r >= 255) ? 255 : r) << 16) | (((g >= 255) ? 255 : g) << 8) | ((b >= 255) ? 255 : b);
+			return 0xff000000 | (invert ? (((b >= 255) ? 255 : b) << 16) | (((g >= 255) ? 255 : g) << 8) | ((r >= 255) ? 255 : r) :
+					(((r >= 255) ? 255 : r) << 16) | (((g >= 255) ? 255 : g) << 8) | ((b >= 255) ? 255 : b));
 		}
 	}
 	

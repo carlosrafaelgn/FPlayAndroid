@@ -168,5 +168,38 @@
     <string name="there_is_a_new_setting">Há uma nova opção disponível no menu \"Opções\":</string>
     <string name="check_it_out">Dê uma olhada :)</string>
     <string name="color_scheme">Esquema de cores</string>
-    
+    <string name="widget">Widget</string>
+    <string name="transparent_background">Fundo transparente</string>
+    <string name="text_color">Cor do texto</string>
+    <string name="icon_color">Cor dos ícones</string>
+    <string name="apply_theme">Aplicar tema</string>
+    <string name="hard_theme">Seu tema tem pelo menos uma combinação de cores texto/fundo difícil de ler&#8230; Aplicar tema assim mesmo?</string>
+    <string name="unreadable_theme">Desculpe, mas seu tema tem pelo menos uma combinação de cores texto/fundo ilegível :(</string>
+    <string name="discard_theme">Quer mesmo descartar as alterações feitas ao tema?</string>
+    <string name="load_colors_from_current_theme">Carregar cores do tema atual</string>
+    <string name="general">Geral</string>
+    <string name="selection">Seleção</string>
+    <string name="keyboard_focus">Seleção com Foco do Teclado</string>
+    <string name="color_window">Fundo da janela</string>
+    <string name="color_control_mode">Fundo do modo controle</string>
+    <string name="color_list">Fundo da lista</string>
+    <string name="color_menu">Fundo do menu</string>
+    <string name="color_menu_icon">Ícone do menu</string>
+    <string name="color_divider">Divisor</string>
+    <string name="color_highlight">Fundo do destaque</string>
+    <string name="color_text_highlight">Texto do destaque</string>
+    <string name="color_text">Texto da janela</string>
+    <string name="color_text_disabled">Texto da janela (desabilitado)</string>
+    <string name="color_text_listitem">Texto da lista</string>
+    <string name="color_text_selected">Texto</string>
+    <string name="color_text_menu">Texto do menu</string>
+    <string name="color_selected_grad_lt">Fundo de cima</string>
+    <string name="color_selected_grad_dk">Fundo de baixo</string>
+    <string name="color_selected_border">Borda</string>
+    <string name="color_selected_pressed">Fundo pressionado</string>
+    <string name="color_focused_grad_lt">Fundo de cima</string>
+    <string name="color_focused_grad_dk">Fundo de baixo</string>
+    <string name="color_focused_border">Borda</string>
+    <string name="color_focused_pressed">Fundo pressionado</string>
+
 </resources>

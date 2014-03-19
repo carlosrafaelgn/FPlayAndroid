@@ -207,6 +207,10 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_THEME = 0x001f;
 	private static final int OPT_MSGS = 0x0020;
 	private static final int OPT_MSGSTARTUP = 0x0021;
+	private static final int OPT_WIDGETTRANSPARENTBG = 0x0022;
+	private static final int OPT_WIDGETTEXTCOLOR = 0x0023;
+	private static final int OPT_WIDGETICONCOLOR = 0x0024;
+	private static final int OPT_CUSTOMCOLORS = 0x0025;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -280,11 +284,15 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
 		UI.setTheme(opts.getInt(OPT_THEME, UI.THEME_LIGHT));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
+		UI.widgetTransparentBg = opts.getBoolean(OPT_WIDGETTRANSPARENTBG, false);
+		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
+		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -328,12 +336,16 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_HANDLECALLKEY, handleCallKey);
 		opts.put(OPT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
 		opts.put(OPT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
+		opts.put(OPT_CUSTOMCOLORS, UI.customColors);
 		opts.put(OPT_THEME, UI.getTheme());
 		opts.put(OPT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
 		opts.put(OPT_RANDOMMODE, songs.isInRandomMode());
 		opts.put(OPT_FORCEDLOCALE, UI.getForcedLocale());
 		opts.put(OPT_MSGS, UI.msgs);
 		opts.put(OPT_MSGSTARTUP, UI.msgStartup);
+		opts.put(OPT_WIDGETTRANSPARENTBG, UI.widgetTransparentBg);
+		opts.put(OPT_WIDGETTEXTCOLOR, UI.widgetTextColor);
+		opts.put(OPT_WIDGETICONCOLOR, UI.widgetIconColor);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
@@ -712,11 +724,14 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				else
 					views.setTextViewText(R.id.lblArtist, currentSong.artist);
 				
+				views.setTextColor(R.id.lblTitle, UI.widgetTextColor);
+				views.setTextColor(R.id.lblArtist, UI.widgetTextColor);
+				
 				final PendingIntent p = getPendingIntent(context);
 				views.setOnClickPendingIntent(R.id.lblTitle, p);
 				views.setOnClickPendingIntent(R.id.lblArtist, p);
 				
-				UI.preparePlaybackIcons(context);
+				UI.prepareWidgetPlaybackIcons(context);
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
@@ -923,12 +938,13 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				state = STATE_INITIALIZED;
 			return;
 		}
-		boolean prepareNext = false;
+		int prepareNext = 0;
 		if (nextSong == song && how != SongList.HOW_CURRENT) {
-			boolean ok = false;
+			int doInternal = 1;
 			lastTime = -1;
 			if (nextPrepared) {
-				//stopPlayer(currentPlayer); //####
+				if (how != SongList.HOW_NEXT_AUTO)
+					stopPlayer(currentPlayer);
 				nextPrepared = false;
 				try {
 					if (!nextAlreadySetForPlaying || how != SongList.HOW_NEXT_AUTO)
@@ -938,9 +954,10 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					nextAlreadySetForPlaying = false;
 					currentSongLoaded = true;
 					firstError = null;
-					stopPlayer(currentPlayer); //####
-					prepareNext = true;
-					ok = true;
+					if (how == SongList.HOW_NEXT_AUTO)
+						stopPlayer(currentPlayer);
+					prepareNext = 2;
+					doInternal = 0;
 					currentSongPreparing = false;
 				} catch (Throwable ex) {
 					song.possibleNextSong = null;
@@ -948,19 +965,23 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					nextFailed(song, how, ex);
 					return;
 				}
-			} else if (nextPreparing) {
-				lastHow = how;
-				currentSongLoaded = false;
-				currentSongPreparing = true;
-				ok = true;
+			} else {
+				stopPlayer(currentPlayer);
+				if (nextPreparing) {
+					lastHow = how;
+					currentSongLoaded = false;
+					currentSongPreparing = true;
+					doInternal = 0;
+				}
 			}
 			currentSong = song;
 			final MediaPlayer p = currentPlayer;
 			currentPlayer = nextPlayer;
 			nextPlayer = p;
-			MainHandler.sendMessageAtFrontOfQueue(thePlayer, MSG_PREPARE_PLAYBACK_1, how, (ok ? 0 : 1) | (prepareNext ? 2 : 0), song);
+			MainHandler.sendMessageAtFrontOfQueue(thePlayer, MSG_PREPARE_PLAYBACK_1, how, doInternal | prepareNext, song);
 		} else {
-			MainHandler.sendMessageAtFrontOfQueue(thePlayer, MSG_PREPARE_PLAYBACK_1, how, 1 | (prepareNext ? 2 : 0), song);
+			stopPlayer(currentPlayer);
+			MainHandler.sendMessageAtFrontOfQueue(thePlayer, MSG_PREPARE_PLAYBACK_1, how, 1 | prepareNext, song);
 		}
 	}
 	

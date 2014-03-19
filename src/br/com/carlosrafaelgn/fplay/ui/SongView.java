@@ -167,6 +167,15 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	}
 	
 	@Override
+	protected void onDetachedFromWindow() {
+		observerActivity = null;
+		song = null;
+		ellipsizedTitle = null;
+		ellipsizedArtist = null;
+		super.onDetachedFromWindow();
+	}
+	
+	@Override
 	public void onClick(View view) {
 		if (observerActivity != null)
 			observerActivity.processItemClick(position);
@@ -177,11 +186,5 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (observerActivity != null)
 			observerActivity.processItemLongClick(position);
 		return true;
-	}
-	
-	@Override
-	protected void onDetachedFromWindow() {
-		observerActivity = null;
-		super.onDetachedFromWindow();
 	}
 }

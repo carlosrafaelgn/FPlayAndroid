@@ -337,4 +337,11 @@ public final class BgListView extends ListView {
 			UI.drawEmptyListString(canvas);
 		}
 	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		attachedObserver = null;
+		keyDownObserver = null;
+		super.onDetachedFromWindow();
+	}
 }

@@ -41,13 +41,17 @@ import android.graphics.drawable.Drawable;
 
 public final class ColorDrawable extends Drawable {
 	private int color, opacity, alpha;
-	private Rect bounds;
+	private boolean hasBounds;
 	
 	public ColorDrawable(int color) {
-		change(color);
+		setColor(color);
 	}
 	
-	public void change(int color) {
+	public int getColor() {
+		return color;
+	}
+	
+	public void setColor(int color) {
 		this.color = color;
 		this.alpha = ((color >>> 24) & 0xff);
 		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
@@ -55,18 +59,26 @@ public final class ColorDrawable extends Drawable {
 	
 	@Override
 	public void setBounds(Rect bounds) {
-		if (this.bounds == null)
-			this.bounds = new Rect(bounds);
-		else
-			this.bounds.set(bounds);
+		if (bounds != null) {
+			hasBounds = true;
+			super.setBounds(bounds);
+		} else {
+			hasBounds = false;
+		}
+	}
+	
+	@Override
+	public void setBounds(int left, int top, int right, int bottom) {
+		hasBounds = true;
+		super.setBounds(left, top, right, bottom);
 	}
 	
 	@Override
 	public void draw(Canvas canvas) {
-		if (bounds == null)
+		if (!hasBounds)
 			canvas.drawColor(color);
 		else
-			UI.fillRect(canvas, color, bounds);
+			UI.fillRect(canvas, color, getBounds());
 	}
 	
 	@Override
@@ -76,6 +88,9 @@ public final class ColorDrawable extends Drawable {
 	
 	@Override
 	public void setAlpha(int alpha) {
+		color = (alpha << 24) | (color & 0x00ffffff);
+		this.alpha = alpha;
+		opacity = ((alpha == 0xff) ? PixelFormat.OPAQUE : ((alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 	}
 	
 	@Override

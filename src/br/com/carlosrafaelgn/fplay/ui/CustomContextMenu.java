@@ -310,7 +310,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			this.visible = visible;
 			return this;
 		}
-		
 	}
 	
 	static final class MenuDialog extends Dialog {
@@ -762,8 +761,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 					it.subMenu.parentMenu = null;
 					it.subMenu.closeListener = null; //prevent unwanted callbacks
 					it.subMenu.close();
+					it.subMenu = null;
 				}
-				it.subMenu = null;
 			}
 			items.clear();
 			items = null;

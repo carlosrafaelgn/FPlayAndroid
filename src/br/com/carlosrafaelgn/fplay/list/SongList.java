@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -96,15 +98,17 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 						ex = null;
 					} else {
 						FileInputStream fs = null;
+						BufferedInputStream bs = null;
 						try {
 							fs = context.openFileInput((path == null) ? "_List" : path);
-							current = Serializer.deserializeInt(fs);
-							final int version = Serializer.deserializeInt(fs);
-							final int count = Serializer.deserializeInt(fs);
+							bs = new BufferedInputStream(fs, 4096);
+							current = Serializer.deserializeInt(bs);
+							final int version = Serializer.deserializeInt(bs);
+							final int count = Serializer.deserializeInt(bs);
 							if (version == 0x0100 && count > 0) {
 								songs = new Song[count];
 								for (int i = 0; i < count; i++)
-									songs[i] = Song.deserialize(fs);
+									songs[i] = Song.deserialize(bs);
 							}
 							done = true;
 							addingEnded();
@@ -117,6 +121,11 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							addingEnded();
 							MainHandler.postToMainThread(this);
 						} finally {
+							try {
+								if (bs != null)
+									bs.close();
+							} catch (Throwable ex) {
+							}
 							try {
 								if (fs != null)
 									fs.close();
@@ -200,22 +209,37 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	
 	//--------------------------------------------------------------------------------------------
 	
-	private FileOutputStream fullSerialization(Context context, String path) throws IOException {
-		FileOutputStream fs = context.openFileOutput((path == null) ? "_List" : path, 0);
-		Serializer.serializeInt(fs, current);
-		Serializer.serializeInt(fs, 0x0100);
-		Serializer.serializeInt(fs, count);
-		for (int i = 0; i < count; i++)
-			items[i].serialize(fs);
-		return fs;
+	private void fullSerialization(Context context, String path) throws IOException {
+		FileOutputStream fs = null;
+		BufferedOutputStream bs = null;
+		try {
+			fs = context.openFileOutput((path == null) ? "_List" : path, 0);
+			bs = new BufferedOutputStream(fs, 4096);
+			Serializer.serializeInt(bs, current);
+			Serializer.serializeInt(bs, 0x0100);
+			Serializer.serializeInt(bs, count);
+			for (int i = 0; i < count; i++)
+				items[i].serialize(bs);
+			bs.flush();
+		} finally {
+			try {
+				if (bs != null)
+					bs.close();
+			} catch (Throwable ex) {
+			}
+			try {
+				if (fs != null)
+					fs.close();
+			} catch (Throwable ex) {
+			}
+		}
 	}
 	
 	public boolean serialize(Context context, String path) {
-		FileOutputStream fs = null;
 		RandomAccessFile rf = null;
 		try {
 			if (modificationVersion > 1 || path != null) {
-				fs = fullSerialization(context, path);
+				fullSerialization(context, path);
 			} else {
 				try {
 					final File f = context.getFileStreamPath("_List");
@@ -231,7 +255,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 					} catch (Throwable ex2) {
 					}
 					rf = null;
-					fs = fullSerialization(context, path);
+					fullSerialization(context, path);
 				}
 			}
 		} catch (Throwable ex) {
@@ -240,11 +264,6 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			try {
 				if (rf != null)
 					rf.close();
-			} catch (Throwable ex) {
-			}
-			try {
-				if (fs != null)
-					fs.close();
 			} catch (Throwable ex) {
 			}
 		}

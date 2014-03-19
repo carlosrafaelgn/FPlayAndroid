@@ -50,10 +50,10 @@ import br.com.carlosrafaelgn.fplay.list.FileSt;
 public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener {
 	private ActivityFileView observerActivity;
 	private final int height, verticalMargin;
-	private final Bitmap closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
+	private Bitmap closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
 	private Bitmap bitmap;
 	private FileSt file;
-	private final BgButton btnAdd, btnPlay;
+	private BgButton btnAdd, btnPlay;
 	private String ellipsizedName;
 	private boolean buttonsVisible;
 	private final boolean hasButtons;
@@ -245,6 +245,24 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	@Override
+	protected void onDetachedFromWindow() {
+		observerActivity = null;
+		//do not recycle these bitmaps, as they are shared!
+		closedFolderIcon = null;
+		internalIcon = null;
+		externalIcon = null;
+		favoriteIcon = null;
+		artistIcon = null;
+		albumIcon = null;
+		bitmap = null;
+		file = null;
+		btnAdd = null;
+		btnPlay = null;
+		ellipsizedName = null;
+		super.onDetachedFromWindow();
+	}
+	
+	@Override
 	public void onClick(View view) {
 		if (hasButtons && (view == btnAdd || view == btnPlay)) {
 			if (observerActivity != null)
@@ -260,11 +278,5 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (observerActivity != null)
 			observerActivity.processItemLongClick(position);
 		return true;
-	}
-	
-	@Override
-	protected void onDetachedFromWindow() {
-		observerActivity = null;
-		super.onDetachedFromWindow();
 	}
 }

@@ -59,7 +59,7 @@ public final class BgSeekBar extends View {
 	
 	private String additionalContentDescription, text;
 	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textBgY, textSize, textSizeIdx, emptySpaceColor, keyIncrement;
-	private boolean forceTextSelected, vertical, tracking, drawTextFirst, pointMode;
+	private boolean forceTextSelected, vertical, tracking, drawTextFirst, sliderMode;
 	private int state, thumbWidth;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
@@ -83,7 +83,7 @@ public final class BgSeekBar extends View {
 		state = UI.STATE_SELECTED;
 		max = 100;
 		textSizeIdx = 0;
-		pointMode = false;
+		sliderMode = false;
 		thumbWidth = (UI._IconBox * 90) / 100;
 		setTextSizeIndex(2);
 		setEmptySpaceColor(UI.color_list);
@@ -92,9 +92,9 @@ public final class BgSeekBar extends View {
 		super.setFocusableInTouchMode(false);
 	}
 	
-	public void setPointMode(boolean pointMode) {
-		this.pointMode = pointMode;
-		this.thumbWidth = (pointMode ? (UI.strokeSize << 1) : ((UI._IconBox * 90) / 100));
+	public void setSliderMode(boolean sliderMode) {
+		this.sliderMode = sliderMode;
+		this.thumbWidth = (sliderMode ? (UI.strokeSize << 1) : ((UI._IconBox * 90) / 100));
 		setTextSizeIndex(textSizeIdx);
 		updateBar();
 		invalidate();
@@ -147,19 +147,19 @@ public final class BgSeekBar extends View {
 		case 2:
 			textSizeIdx = 2;
 			textSize = UI._22sp;
-			textBgY = ((UI.defaultControlSize - (pointMode ? UI._16dp: 0)) >> 1) - (UI._22spBox >> 1);
+			textBgY = (UI.defaultControlSize >> 1) - (UI._22spBox >> 1);
 			textY = textBgY + UI._22spYinBox;
 			break;
 		case 1:
 			textSizeIdx = 1;
 			textSize = UI._18sp;
-			textBgY = ((UI.defaultControlSize - (pointMode ? UI._16dp: 0)) >> 1) - (UI._18spBox >> 1);
+			textBgY = (UI.defaultControlSize >> 1) - (UI._18spBox >> 1);
 			textY = textBgY + UI._18spYinBox;
 			break;
 		default:
 			textSizeIdx = 0;
 			textSize = UI._14sp;
-			textBgY = ((UI.defaultControlSize - (pointMode ? UI._16dp: 0)) >> 1) - (UI._14spBox >> 1);
+			textBgY = (UI.defaultControlSize >> 1) - (UI._14spBox >> 1);
 			textY = textBgY + UI._14spYinBox;
 			break;
 		}
@@ -510,12 +510,8 @@ public final class BgSeekBar extends View {
 			final int right = UI.rect.right;
 			final int bottom = UI.rect.bottom;
 			final int color = UI.getBorderColor(state);
-			if (!pointMode) {
-				UI.rect.top = UI._8dp;
-				UI.rect.bottom -= UI._8dp;
-			} else {
-				UI.rect.bottom -= UI._16dp;
-			}
+			UI.rect.top = UI._8dp;
+			UI.rect.bottom -= UI._8dp;
 			UI.strokeRect(canvas, color, UI.rect, UI.strokeSize);
 			UI.rect.left = UI.strokeSize;
 			UI.rect.top += UI.strokeSize;
@@ -530,8 +526,9 @@ public final class BgSeekBar extends View {
 				UI.fillRect(canvas, emptySpaceColor, UI.rect);
 			if (!drawTextFirst)
 				UI.drawText(canvas, text, forceTextSelected ? UI.color_text_selected : textColor, textSize, textX, textY);
-			if (pointMode) {
-				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDER, filledSize + (thumbWidth >> 1) - UI._16dp, bottom - UI._16dp, UI._16dp << 1, color);
+			if (sliderMode) {
+				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + (thumbWidth >> 1) - UI._8dp, 0, UI._16dp, color);
+				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI._8dp, bottom - UI._8dp, UI._16dp, color);
 			} else {
 				UI.rect.left = filledSize;
 				UI.rect.top = 0;
@@ -548,5 +545,14 @@ public final class BgSeekBar extends View {
 		}
 		if (vertical)
 			canvas.restore();
+	}
+	
+	@Override
+	protected void onDetachedFromWindow() {
+		additionalContentDescription = null;
+		text = null;
+		listener = null;
+		drawListener = null;
+		super.onDetachedFromWindow();
 	}
 }

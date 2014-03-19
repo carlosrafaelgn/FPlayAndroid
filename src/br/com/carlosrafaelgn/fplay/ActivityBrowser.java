@@ -434,8 +434,8 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	}
 	
 	@Override
-	public void onClick(DialogInterface dialog, int whichButton) {
-		if (whichButton == AlertDialog.BUTTON_POSITIVE) {
+	public void onClick(DialogInterface dialog, int which) {
+		if (which == AlertDialog.BUTTON_POSITIVE) {
 			String url = txtURL.getText().toString().trim();
 			if (url.length() >= 4) {
 				int s = 7;

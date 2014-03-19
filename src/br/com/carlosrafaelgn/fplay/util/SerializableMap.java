@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.util;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
@@ -58,8 +60,10 @@ public final class SerializableMap {
 	
 	public boolean serialize(Context context, String fileName) {
 		FileOutputStream fs = null;
+		BufferedOutputStream bs = null;
 		try {
 			fs = context.openFileOutput(fileName, 0);
+			bs = new BufferedOutputStream(fs, 512);
 			final byte[] buf = new byte[16];
 			for (int i = dict.size() - 1; i >= 0; i--) {
 				final int k = dict.keyAt(i);
@@ -68,19 +72,19 @@ public final class SerializableMap {
 				if (v instanceof Integer) {
 					buf[4] = TYPE_INT;
 					Serializer.serializeInt(buf, 5, (Integer)v);
-					fs.write(buf, 0, 9);
+					bs.write(buf, 0, 9);
 				} else if (v instanceof Long) {
 					buf[4] = TYPE_LONG;
 					Serializer.serializeLong(buf, 5, (Long)v);
-					fs.write(buf, 0, 13);
+					bs.write(buf, 0, 13);
 				} else if (v instanceof Float) {
 					buf[4] = TYPE_FLOAT;
 					Serializer.serializeFloat(buf, 5, (Float)v);
-					fs.write(buf, 0, 9);
+					bs.write(buf, 0, 9);
 				} else if (v instanceof Double) {
 					buf[4] = TYPE_DOUBLE;
 					Serializer.serializeDouble(buf, 5, (Double)v);
-					fs.write(buf, 0, 13);
+					bs.write(buf, 0, 13);
 				} else if (v instanceof String) {
 					final String tmpS = v.toString();
 					byte[] tmpB = null;
@@ -91,20 +95,26 @@ public final class SerializableMap {
 					}
 					buf[4] = TYPE_STRING;
 					Serializer.serializeInt(buf, 5, tmp);
-					fs.write(buf, 0, 9);
-					if (tmp != 0) fs.write(tmpB, 0, tmp);
+					bs.write(buf, 0, 9);
+					if (tmp != 0) bs.write(tmpB, 0, tmp);
 				} else {
 					final byte[] tmpB = (byte[])v;
 					final int tmp = (tmpB != null ? tmpB.length : 0);
 					buf[4] = TYPE_BUFFER;
 					Serializer.serializeInt(buf, 5, tmp);
-					fs.write(buf, 0, 9);
-					if (tmp != 0) fs.write(tmpB, 0, tmp);
+					bs.write(buf, 0, 9);
+					if (tmp != 0) bs.write(tmpB, 0, tmp);
 				}
 			}
+			bs.flush();
 			return true;
 		} catch (Throwable ex) {
 		} finally {
+			try {
+				if (bs != null)
+					bs.close();
+			} catch (Throwable ex) {
+			}
 			try {
 				if (fs != null)
 					fs.close();
@@ -113,28 +123,30 @@ public final class SerializableMap {
 		}
 		return false;
 	}
-
+	
 	public static SerializableMap deserialize(Context context, String fileName) {
 		FileInputStream fs = null;
+		BufferedInputStream bs = null;
 		try {
 			fs = context.openFileInput(fileName);
+			bs = new BufferedInputStream(fs, 512);
 			byte[] buf = new byte[16];
 			int tmp;
 			SerializableMap dict = new SerializableMap(32);
-			while (fs.read(buf, 0, 9) == 9) {
+			while (bs.read(buf, 0, 9) == 9) {
 				switch ((int)buf[4]) {
 				case TYPE_INT:
 					dict.put(Serializer.deserializeInt(buf, 0), Serializer.deserializeInt(buf, 5));
 					break;
 				case TYPE_LONG:
-					if (fs.read(buf, 9, 4) != 4) return dict;
+					if (bs.read(buf, 9, 4) != 4) return dict;
 					dict.put(Serializer.deserializeInt(buf, 0), Serializer.deserializeLong(buf, 5));
 					break;
 				case TYPE_FLOAT:
 					dict.put(Serializer.deserializeInt(buf, 0), Serializer.deserializeFloat(buf, 5));
 					break;
 				case TYPE_DOUBLE:
-					if (fs.read(buf, 9, 4) != 4) return dict;
+					if (bs.read(buf, 9, 4) != 4) return dict;
 					dict.put(Serializer.deserializeInt(buf, 0), Serializer.deserializeDouble(buf, 5));
 					break;
 				case TYPE_STRING:
@@ -143,7 +155,7 @@ public final class SerializableMap {
 						dict.put(Serializer.deserializeInt(buf, 0), "");
 					} else {
 						byte[] tmpB = new byte[tmp];
-						if (fs.read(tmpB, 0, tmp) != tmp) return dict;
+						if (bs.read(tmpB, 0, tmp) != tmp) return dict;
 						dict.put(Serializer.deserializeInt(buf, 0), new String(tmpB, 0, tmp));
 					}
 					break;
@@ -153,7 +165,7 @@ public final class SerializableMap {
 						dict.put(Serializer.deserializeInt(buf, 0), new byte[0]);
 					} else {
 						byte[] tmpB = new byte[tmp];
-						if (fs.read(tmpB, 0, tmp) != tmp) return dict;
+						if (bs.read(tmpB, 0, tmp) != tmp) return dict;
 						dict.put(Serializer.deserializeInt(buf, 0), tmpB);
 					}
 					break;
@@ -164,152 +176,156 @@ public final class SerializableMap {
 			return dict;
 		} catch (Throwable ex) {
 		} finally {
-			if (fs != null) {
-				try {
+			try {
+				if (bs != null)
+					bs.close();
+			} catch (Throwable ex) {
+			}
+			try {
+				if (fs != null)
 					fs.close();
-				} catch (Throwable ex) {
-				}
+			} catch (Throwable ex) {
 			}
 		}
 		return null;
 	}
-
+	
 	public boolean containsKey(int key) {
 		return (dict.indexOfKey(key) >= 0);
 	}
-
+	
 	public void remove(int key) {
 		dict.remove(key);
 	}
-
+	
 	public void put(int key, boolean value) {
 		dict.put(key, (value ? (int)1 : (int)0));
 	}
-
+	
 	public void put(int key, int value) {
 		dict.put(key, value);
 	}
-
+	
 	public void put(int key, long value) {
 		dict.put(key, value);
 	}
-
+	
 	public void put(int key, float value) {
 		dict.put(key, value);
 	}
-
+	
 	public void put(int key, double value) {
 		dict.put(key, value);
 	}
-
+	
 	public void put(int key, String value) {
 		dict.put(key, value);
 	}
-
+	
 	public void put(int key, byte[] value) {
 		dict.put(key, value);
 	}
-
+	
 	public Object get(int key) {
 		return dict.get(key);
 	}
-
+	
 	public Object get(int key, Object defaultValue) {
 		final Object o = dict.get(key);
 		return ((o == null) ? defaultValue : o);
 	}
-
+	
 	public boolean getBoolean(int key) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Integer))
 			return false;
 		return ((Integer)o != 0);
 	}
-
+	
 	public boolean getBoolean(int key, boolean defaultValue) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Integer))
 			return defaultValue;
 		return ((Integer)o != 0);
 	}
-
+	
 	public int getInt(int key) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Integer))
 			return 0;
 		return (Integer)o;
 	}
-
+	
 	public int getInt(int key, int defaultValue) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Integer))
 			return defaultValue;
 		return (Integer)o;
 	}
-
+	
 	public long getLong(int key) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Long))
 			return 0;
 		return (Long)o;
 	}
-
+	
 	public long getLong(int key, long defaultValue) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Long))
 			return defaultValue;
 		return (Long)o;
 	}
-
+	
 	public float getFloat(int key) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Float))
 			return 0;
 		return (Float)o;
 	}
-
+	
 	public float getFloat(int key, float defaultValue) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Float))
 			return defaultValue;
 		return (Float)o;
 	}
-
+	
 	public double getDouble(int key) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Double))
 			return 0;
 		return (Double)o;
 	}
-
+	
 	public double getDouble(int key, double defaultValue) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof Double))
 			return defaultValue;
 		return (Double)o;
 	}
-
+	
 	public String getString(int key) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof String))
 			return null;
 		return o.toString();
 	}
-
+	
 	public String getString(int key, String defaultValue) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof String))
 			return defaultValue;
 		return o.toString();
 	}
-
+	
 	public byte[] getBuffer(int key) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof byte[]))
 			return null;
 		return (byte[])o;
 	}
-
+	
 	public byte[] getBuffer(int key, byte[] defaultValue) {
 		final Object o = dict.get(key);
 		if (o == null || !(o instanceof byte[]))
