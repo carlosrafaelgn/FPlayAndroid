@@ -80,7 +80,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblMsg.setLinksClickable(true);
 		lblMsg.setText(sb.toString());
 		lblMsg.setLinkTextColor(UI.color_highlight);
-		UI.smallTextAndColor(lblMsg);
+		UI.smallText(lblMsg);
+		lblMsg.setTextColor(UI.colorState_text_listitem_static);
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));

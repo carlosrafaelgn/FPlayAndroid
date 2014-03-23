@@ -724,7 +724,7 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			btnMenu.setLayoutParams(rp);
 			
-			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, true, panelH >> 1);
+			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, TextIconDrawable.LOCATION_WINDOW, panelH >> 1);
 			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
 			
 			int lds = 0;
@@ -788,7 +788,6 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 			barSeek.setMax(MAX_SEEK);
 			barSeek.setVertical(UI.isLandscape && !largeMode);
 			barSeek.setFocusable(false);
-			barSeek.setEmptySpaceColor(UI.color_window);
 			btnPlay = (BgButton)findViewById(R.id.btnPlay);
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
@@ -874,7 +873,6 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 				barVolume.setMax((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamMaxVolume() : (-Player.MIN_VOLUME_DB / 5));
 				barVolume.setVertical(UI.isLandscape && !largeMode);
 				barVolume.setKeyIncrement((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? 1 : 20);
-				barVolume.setEmptySpaceColor(UI.color_window);
 				vwVolume = barVolume;
 				vwVolumeId = R.id.barVolume;
 			}
@@ -906,7 +904,7 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 				lblTitle.setFocusable(true);
 				lblTitle.setOnClickListener(this);
 				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_highlight }));
-				lblTitle.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, true, UI._18spBox), null, null, null);
+				lblTitle.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, TextIconDrawable.LOCATION_WINDOW, UI._18spBox), null, null, null);
 				vwVolume.setNextFocusLeftId(R.id.lblTitle);
 				vwVolume.setNextFocusUpId(R.id.lblTitle);
 				vwVolume.setNextFocusDownId(R.id.list);

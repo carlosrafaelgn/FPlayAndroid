@@ -176,6 +176,7 @@ public final class UI {
 	public static ColorStateList colorState_text_reactive;
 	public static ColorStateList colorState_text_static;
 	public static ColorStateList colorState_text_listitem_static;
+	public static ColorStateList colorState_text_listitem_reactive;
 	public static ColorStateList colorState_text_selected_static;
 	public static ColorStateList colorState_highlight_static;
 	public static ColorStateList colorState_text_highlight_static;
@@ -717,6 +718,7 @@ public final class UI {
 		colorState_text_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text });
 		colorState_text_static = ColorStateList.valueOf(color_text);
 		colorState_text_listitem_static = ColorStateList.valueOf(color_text_listitem);
+		colorState_text_listitem_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text_listitem });
 		colorState_text_selected_static = ColorStateList.valueOf(color_text_selected);
 		colorState_highlight_static = ColorStateList.valueOf(color_highlight);
 		colorState_text_highlight_static = ColorStateList.valueOf(color_text_highlight);

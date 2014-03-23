@@ -51,7 +51,7 @@ public final class BgButton extends Button {
 	}
 	
 	private int state;
-	private boolean checkable, checked, stretchable;
+	private boolean checkable, checked, stretchable, insideList, forceTextSelected;
 	private String iconChecked, iconUnchecked;
 	private TextIconDrawable checkBox;
 	private OnPressingChangeListener pressingChangeListener;
@@ -135,13 +135,19 @@ public final class BgButton extends Button {
 			checkable = false;
 		} else {
 			checkable = true;
-			checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, true);
+			checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, insideList ? TextIconDrawable.LOCATION_LIST : TextIconDrawable.LOCATION_WINDOW);
 			super.setCompoundDrawables(checkBox, null, null, null);
 		}
 	}
 	
+	public void setInsideList(boolean insideList) {
+		this.insideList = insideList;
+		setForceTextSelected(forceTextSelected);
+	}
+	
 	public void setForceTextSelected(boolean forceTextSelected) {
-		super.setTextColor(forceTextSelected ? UI.colorState_text_selected_static : UI.colorState_text_reactive);
+		this.forceTextSelected = forceTextSelected;
+		super.setTextColor(forceTextSelected ? UI.colorState_text_selected_static : (insideList ? UI.colorState_text_listitem_reactive : UI.colorState_text_reactive));
 	}
 	
 	public OnPressingChangeListener getOnPressingChangeListener() {

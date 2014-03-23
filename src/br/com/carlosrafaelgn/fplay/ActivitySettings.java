@@ -362,7 +362,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	private void loadColors(boolean createControls, boolean forceCurrent) {
 		final Context ctx = getHostActivity();
-		final int[] colorOrder = new int[] { 1, 5, 7, 6, 8, 9, 0, 12, 4, 3, 10, 2, 11, 15, 13, 14, 16, 19, 17, 18, 20 };
+		final int[] colorOrder = new int[] { 5, 7, 6, 8, 9, 0, 1, 12, 4, 3, 10, 2, 11, 15, 13, 14, 16, 19, 17, 18, 20 };
 		final byte[] colors = ((UI.customColors != null && UI.customColors.length >= 63 && !forceCurrent) ? UI.customColors : UI.serializeThemeToArray());
 		if (createControls)
 			colorViews = new SettingView[colorOrder.length];
@@ -410,7 +410,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		btnAbout = (BgButton)findViewById(R.id.btnAbout);
 		btnAbout.setOnClickListener(this);
 		if (!colorMode)
-			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, true), null, null, null);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, TextIconDrawable.LOCATION_WINDOW), null, null, null);
 		else
 			btnAbout.setText(R.string.apply_theme);
 		lastColorView = -1;

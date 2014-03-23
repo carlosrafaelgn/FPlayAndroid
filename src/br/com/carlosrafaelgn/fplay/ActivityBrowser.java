@@ -495,7 +495,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnURL = (BgButton)findViewById(R.id.btnURL);
 		btnURL.setOnClickListener(this);
 		btnURL.setDefaultHeight();
-		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, true), null, null, null);
+		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, TextIconDrawable.LOCATION_WINDOW), null, null, null);
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
 		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, false);

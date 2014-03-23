@@ -197,14 +197,16 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		btnChangeEffect = (BgButton)findViewById(R.id.btnChangeEffect);
 		btnChangeEffect.setOnClickListener(this);
-		btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, true), null, null, null);
+		btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, TextIconDrawable.LOCATION_LIST), null, null, null);
 		btnChangeEffect.setMinimumHeight(UI.defaultControlSize);
+		btnChangeEffect.setInsideList(true);
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
 		barBass.setMax(BassBoost.getMaxStrength());
 		barBass.setValue(BassBoost.getStrength());
 		barBass.setKeyIncrement(BassBoost.getMaxStrength() / 50);
 		barBass.setVertical(true);
 		barBass.setOnBgSeekBarChangeListener(this);
+		barBass.setInsideList(true);
 		lblMsg = (TextView)findViewById(R.id.lblMsg);
 		if (UI.isLargeScreen) {
 			chkEnable.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
@@ -219,7 +221,6 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 		} else {
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		}
-		
 		prepareViewForMode();
 	}
 	
@@ -439,6 +440,7 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 						bar.setKeyIncrement(20);
 						bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 5) : ((level - min) / 5));
 						bar.setOnBgSeekBarChangeListener(this);
+						bar.setInsideList(true);
 						if (UI.isLowDpiScreen && !UI.isLargeScreen)
 							bar.setTextSizeIndex(1);
 						bars[i] = bar;

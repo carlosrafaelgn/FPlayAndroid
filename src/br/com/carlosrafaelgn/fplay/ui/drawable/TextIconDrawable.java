@@ -42,9 +42,13 @@ import android.text.TextPaint;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class TextIconDrawable extends Drawable {
+	public static final int LOCATION_MENU = 0;
+	public static final int LOCATION_WINDOW = 1;
+	public static final int LOCATION_LIST = 2;
 	private static final TextPaint paint;
 	private int[] stateSet;
 	private int state, size, y;
+	private final int color;
 	private final boolean outsideMenu;
 	private boolean forceTextSelected;
 	private String icon;
@@ -65,38 +69,46 @@ public final class TextIconDrawable extends Drawable {
 		canvas.drawText(icon, x, y + size, paint);
 	}
 	
+	private static int colorFromLocation(int location) {
+		return (location == LOCATION_MENU ? UI.color_menu_icon : (location == LOCATION_WINDOW ? UI.color_text : UI.color_text_listitem));
+	}
+	
 	public TextIconDrawable(String icon) {
 		this.icon = icon;
 		this.size = UI._IconBox;
 		this.y = UI._IconBox >> 1;
 		this.outsideMenu = false;
+		this.color = UI.color_menu_icon;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._IconBox);
+		super.setBounds(0, 0, UI._IconBox + UI._8dp + UI._8dp + 1, UI._IconBox);
 	}
 	
-	public TextIconDrawable(String icon, boolean outsideMenu) {
+	public TextIconDrawable(String icon, int location) {
 		this.icon = icon;
 		this.size = UI._IconBox;
 		this.y = UI._IconBox >> 1;
-		this.outsideMenu = outsideMenu;
+		this.outsideMenu = (location != LOCATION_MENU);
+		this.color = colorFromLocation(location);
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._IconBox);
 	}
 	
-	public TextIconDrawable(String icon, boolean outsideMenu, int size) {
+	public TextIconDrawable(String icon, int location, int size) {
 		this.icon = icon;
 		this.size = size;
 		this.y = size >> 1;
-		this.outsideMenu = outsideMenu;
+		this.outsideMenu = (location != LOCATION_MENU);
+		this.color = colorFromLocation(location);
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), size);
 	}
 	
-	public TextIconDrawable(String icon, boolean outsideMenu, boolean forceTextSelected) {
+	public TextIconDrawable(String icon, int location, boolean forceTextSelected) {
 		this.icon = icon;
 		this.size = UI._IconBox;
 		this.y = UI._IconBox >> 1;
-		this.outsideMenu = outsideMenu;
+		this.outsideMenu = (location != LOCATION_MENU);
+		this.color = colorFromLocation(location);
 		this.forceTextSelected = forceTextSelected;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + UI.strokeSize)), UI._IconBox);
@@ -118,7 +130,7 @@ public final class TextIconDrawable extends Drawable {
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
-		paint.setColor(((state == 0) && !forceTextSelected) ? (outsideMenu ? UI.color_text : UI.color_menu_icon) : UI.color_text_selected);
+		paint.setColor(((state == 0) && !forceTextSelected) ? color : UI.color_text_selected);
 		paint.setTextSize(size);
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top) >> 1) + y, paint);
 		if (!outsideMenu) {
