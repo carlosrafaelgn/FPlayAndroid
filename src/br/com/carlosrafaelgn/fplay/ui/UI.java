@@ -89,6 +89,7 @@ public final class UI {
 	public static final int LOCALE_PTBR = 2;
 	public static final int LOCALE_RU = 3;
 	public static final int LOCALE_UK = 4;
+	public static final int LOCALE_ES = 5;
 	public static final int LOCALE_MAX = 4;
 	
 	public static final int THEME_CUSTOM = -1;
