@@ -897,15 +897,15 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 1) {
-			msgStartup = 1;
+		if (msgStartup >= 2) {
+			msgStartup = 2;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup <= 0) {
-			msgStartup = 1;
-			content = activity.getText(R.string.there_is_a_new_setting).toString() + " " + activity.getText(R.string.color_scheme).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		if (msgStartup < 2) {
+			msgStartup = 2;
+			content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		}
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))

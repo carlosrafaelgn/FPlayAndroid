@@ -110,7 +110,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public void setItemState(FileSt file, int position, int state) {
 		final int w = getWidth();
 		final int specialType = file.specialType;
-		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM)) && ((state & UI.STATE_SELECTED) != 0));
+		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ARTIST)) && ((state & UI.STATE_SELECTED) != 0));
 		this.position = position;
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!

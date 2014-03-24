@@ -435,7 +435,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoTurnOff.setOnClickListener(this);
 			optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
 			optKeepScreenOn.setOnClickListener(this);
-			optTheme = new SettingView(ctx, getText(R.string.color_scheme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
+			optTheme = new SettingView(ctx, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
 			optTheme.setOnClickListener(this);
 			optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
 			optVolumeControlType.setOnClickListener(this);

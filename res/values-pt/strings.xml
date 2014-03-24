@@ -167,7 +167,7 @@
     <string name="new_setting">Nova opção!</string>
     <string name="there_is_a_new_setting">Há uma nova opção disponível no menu \"Opções\":</string>
     <string name="check_it_out">Dê uma olhada :)</string>
-    <string name="color_scheme">Esquema de cores</string>
+    <string name="color_theme">Tema de cores</string>
     <string name="widget">Widget</string>
     <string name="transparent_background">Fundo transparente</string>
     <string name="text_color">Cor do texto</string>
@@ -201,5 +201,10 @@
     <string name="color_focused_grad_dk">Fundo de baixo</string>
     <string name="color_focused_border">Borda</string>
     <string name="color_focused_pressed">Fundo pressionado</string>
-
+    <string name="there_are_new_features">Há novas funcionalidades disponíveis no menu \"Opções\":</string>
+    <string name="custom_widget">Widget personalizável</string>
+    <string name="custom_color_theme">Tema de cores personalizável</string>
+    <string name="add_artist">Adicionar artista</string>
+    <string name="play_artist">Tocar artista</string>
+    
 </resources>

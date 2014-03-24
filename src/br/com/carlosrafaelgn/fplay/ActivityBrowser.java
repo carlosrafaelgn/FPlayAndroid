@@ -77,9 +77,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
 	private void refreshMenu(int count) {
-		boolean mnu = false;
-		if (count != 0 && btnURL.getVisibility() != View.VISIBLE)
-			mnu = (fileList.getItemT(0).specialType != FileSt.TYPE_ARTIST);
+		boolean mnu = (count != 0 && btnURL.getVisibility() != View.VISIBLE);
 		if (mnu) {
 			btnMenu.setVisibility(View.VISIBLE);
 			if (btnUp.getVisibility() == View.VISIBLE) {
@@ -245,11 +243,19 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		UI.prepare(menu);
 		if (i >= 0) {
 			final FileSt f = fileList.getItemT(i);
-			if (Player.path.length() != 0 && !Player.path.startsWith(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT)) {
-				if (f.specialType == FileSt.TYPE_ALBUM) {
+			if (Player.path.length() != 0) {
+				if (f.specialType == FileSt.TYPE_ARTIST) {
+					menu.add(0, MNU_ADDFOLDER, 0, R.string.add_artist)
+						.setOnMenuItemClickListener(this)
+						.setIcon(new TextIconDrawable(UI.ICON_ADD));
+					UI.separator(menu, 0, 1);
+					menu.add(1, MNU_PLAYFOLDER, 0, R.string.play_artist)
+						.setOnMenuItemClickListener(this)
+						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
+				} else if (f.specialType == FileSt.TYPE_ALBUM) {
 					menu.add(0, MNU_ADDFOLDER, 0, R.string.add_album)
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable(UI.ICON_ADD));
+						.setOnMenuItemClickListener(this)
+						.setIcon(new TextIconDrawable(UI.ICON_ADD));
 					UI.separator(menu, 0, 1);
 					menu.add(1, MNU_PLAYFOLDER, 0, R.string.play_album)
 						.setOnMenuItemClickListener(this)

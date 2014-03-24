@@ -167,7 +167,7 @@
     <string name="new_setting">Нова налаштування!</string>
     <string name="there_is_a_new_setting">Існує новий параметр в меню \"Налаштування\":</string>
     <string name="check_it_out">Проверьте это :)</string>
-    <string name="color_scheme">Колірна схема</string>
+    <string name="color_theme">Колірна схема</string>
     <string name="widget">Widget</string>
     <string name="transparent_background">Transparent background</string>
     <string name="text_color">Text color</string>
@@ -201,5 +201,10 @@
     <string name="color_focused_grad_dk">Bottom background</string>
     <string name="color_focused_border">Border</string>
     <string name="color_focused_pressed">Pressed background</string>
-
+    <string name="there_are_new_features">There are new features available in the \"Settings\" menu:</string>
+    <string name="custom_widget">Customizable widget</string>
+    <string name="custom_color_theme">Customizable color theme</string>
+    <string name="add_artist">Add artist</string>
+    <string name="play_artist">Play artist</string>
+    
 </resources>

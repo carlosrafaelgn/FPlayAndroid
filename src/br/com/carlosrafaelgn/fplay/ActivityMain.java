@@ -417,7 +417,7 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 		UI.prepare(menu);
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_ADD));
+			.setIcon(new TextIconDrawable(UI.ICON_FPLAY));
 		UI.separator(menu, 0, 1);
 		Menu s = menu.addSubMenu(1, 0, 0, R.string.list)
 				.setIcon(new TextIconDrawable(UI.ICON_LIST));
