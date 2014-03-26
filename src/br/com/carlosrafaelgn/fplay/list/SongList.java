@@ -535,7 +535,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	}
 	
 	@Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+	public View getView(int position, View convertView, ViewGroup parent) {
 		final SongView view = ((convertView == null) ? new SongView(Player.getService(), observerActivity) : (SongView)convertView);
 		view.setItemState(items[position], position, getItemState(position));
 		return view;

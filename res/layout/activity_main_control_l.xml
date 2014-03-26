@@ -53,7 +53,10 @@
             android:nextFocusForward="@+id/btnPrev"
             android:nextFocusLeft="@+id/btnIncreaseVolume"
             android:nextFocusRight="@+id/btnPrev"
-            android:nextFocusUp="@+id/btnNext" />
+            android:nextFocusUp="@+id/btnNext" >
+
+            <requestFocus />
+        </br.com.carlosrafaelgn.fplay.ui.BgButton>
     </RelativeLayout>
 
     <LinearLayout

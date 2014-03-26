@@ -36,7 +36,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.media.AudioManager;
-import android.os.Message;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -51,7 +50,6 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -85,7 +83,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //Maintain/Save/Restore scroll position when returning to a ListView
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
-public final class ActivityMain extends ActivityItemView implements MainHandler.Callback,  Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
+public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblAlbum, lblLength, lblMsgSelMove, lblTime;
@@ -247,7 +245,6 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 				UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoveSel);
 				UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 			}
-			list.requestFocus();
 			Player.songs.selecting = true;
 			Player.songs.moving = false;
 		}
@@ -307,7 +304,6 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 			UI.setNextFocusForwardId(list, R.id.lblTitle);
 			(showSecondary ? panelSecondary : panelControls).setVisibility(View.VISIBLE);
 		}
-		list.requestFocus();
 	}
 	
 	private void bringCurrentIntoView() {
@@ -762,23 +758,23 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 			btnNext.setIcon(UI.ICON_NEXT);
 			btnMenu.setIcon(UI.ICON_MENU);
 			
-	        if (!UI.marqueeTitle) {
-	        	lblTitle.setEllipsize(TruncateAt.END);
-	        	lblTitle.setHorizontallyScrolling(false);
-	        } else {
-	        	lblTitle.setHorizontalFadingEdgeEnabled(false);
-	        	lblTitle.setVerticalFadingEdgeEnabled(false);
-	        	lblTitle.setFadingEdgeLength(0);
-	        }
+			if (!UI.marqueeTitle) {
+				lblTitle.setEllipsize(TruncateAt.END);
+				lblTitle.setHorizontallyScrolling(false);
+			} else {
+				lblTitle.setHorizontalFadingEdgeEnabled(false);
+				lblTitle.setVerticalFadingEdgeEnabled(false);
+				lblTitle.setFadingEdgeLength(0);
+			}
 			
-	        lblArtist = (TextView)findViewById(R.id.lblArtist);
+			lblArtist = (TextView)findViewById(R.id.lblArtist);
 			largeMode = (lblArtist != null);
 			if (UI.isLargeScreen != largeMode)
 				UI.isLargeScreen = largeMode;
 			
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
 			UI.largeText(lblMsgSelMove);
-			lblMsgSelMove.setTextColor(UI.colorState_highlight_static);
+			lblMsgSelMove.setTextColor(UI.colorState_text_title_static);
 			lblMsgSelMove.setHorizontalFadingEdgeEnabled(false);
 			lblMsgSelMove.setVerticalFadingEdgeEnabled(false);
 			lblMsgSelMove.setFadingEdgeLength(0);
@@ -1028,17 +1024,6 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
 			list.setOnKeyDownObserver(this);
-			//if (!list.isInTouchMode()) {
-				list.requestFocus();
-				//run this again on the next frame...
-				MainHandler.sendMessage(this, 1);
-			//}
-		} else if (Player.isControlMode()) {
-			//if (!btnMenu.isInTouchMode()) {
-				btnMenu.requestFocus();
-				//run this again on the next frame...
-				MainHandler.sendMessage(this, 2);
-			//}
 		}
 		getHostActivity().setWindowColor(Player.isControlMode() ? UI.color_control_mode : UI.color_window);
 		onPlayerChanged(Player.getCurrentSong(), true, null);
@@ -1125,21 +1110,6 @@ public final class ActivityMain extends ActivityItemView implements MainHandler.
 		tmrVolume = null;
 		timeBuilder = null;
 		volumeBuilder = null;
-	}
-	
-	@Override
-	public boolean handleMessage(Message msg) {
-		switch (msg.what) {
-		case 1:
-			if (list != null)
-				list.requestFocus();
-			break;
-		case 2:
-			if (btnMenu != null)
-				btnMenu.requestFocus();
-			break;
-		}
-		return true;
 	}
 	
 	@Override

@@ -56,8 +56,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		btnGoBack.setIcon(UI.ICON_GOBACK);
 		final ScrollView list = (ScrollView)findViewById(R.id.list);
 		list.setHorizontalFadingEdgeEnabled(false);
-    	list.setVerticalFadingEdgeEnabled(false);
-    	list.setFadingEdgeLength(0);
+		list.setVerticalFadingEdgeEnabled(false);
+		list.setFadingEdgeLength(0);
 		list.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
 		final TextView lblTitle = (TextView)findViewById(R.id.lblTitle);
 		lblTitle.setText("FPlay");
@@ -79,7 +79,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblMsg.setAutoLinkMask(Linkify.ALL);
 		lblMsg.setLinksClickable(true);
 		lblMsg.setText(sb.toString());
-		lblMsg.setLinkTextColor(UI.color_highlight);
+		lblMsg.setLinkTextColor(UI.color_text_listitem_secondary);
 		UI.smallText(lblMsg);
 		lblMsg.setTextColor(UI.colorState_text_listitem_static);
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
@@ -104,7 +104,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		if (UI.isLargeScreen)
 			sb.append("\nLarge Screen");
 		lblDbg.setTypeface(UI.defaultTypeface);
-		lblDbg.setTextColor(UI.color_highlight);
+		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.spToPxI(12));
 		lblDbg.setText(sb.toString());
 		if (UI.isLargeScreen)

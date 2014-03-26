@@ -51,7 +51,7 @@ public final class BorderDrawable extends Drawable {
 	}
 	
 	public BorderDrawable() {
-    	init(UI.color_highlight, UI.color_list, 0, UI.strokeSize, 0, 0);
+		init(UI.color_highlight, UI.color_list, 0, UI.strokeSize, 0, 0);
 	}
 	
 	public BorderDrawable(boolean left, boolean top, boolean right, boolean bottom) {

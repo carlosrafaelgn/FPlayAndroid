@@ -166,7 +166,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			secondaryTextView = new TextView(context);
 			secondaryTextView.setId(2);
 			secondaryTextView.setLayoutParams(p);
-			secondaryTextView.setTextColor(UI.colorState_highlight_static);
+			secondaryTextView.setTextColor(UI.colorState_text_listitem_secondary_static);
 			secondaryTextView.setGravity(Gravity.RIGHT);
 		} else if (this.checkable || this.color) {
 			p = new LayoutParams(UI._IconBox, UI._IconBox);
@@ -331,7 +331,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			if (state == 0) {
 				textView.setTextColor(UI.colorState_text_listitem_static);
 				if (secondaryTextView != null)
-					secondaryTextView.setTextColor(UI.colorState_highlight_static);
+					secondaryTextView.setTextColor(UI.colorState_text_listitem_secondary_static);
 			} else {
 				textView.setTextColor(UI.colorState_text_selected_static);
 				if (secondaryTextView != null)

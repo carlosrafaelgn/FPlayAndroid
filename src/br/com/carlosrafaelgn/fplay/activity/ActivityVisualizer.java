@@ -149,7 +149,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		protected void onDraw(Canvas canvas) {
 			final int[] pts = acquirePoints(true);
 			if (pts != null) {
-				canvas.drawColor(UI.color_list);
+				canvas.drawColor(UI.color_visualizer);
 				final int w = barW, h = barH;
 				final Rect r = rectBar;
 				final Paint p = paint;
@@ -293,7 +293,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -323,7 +323,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnBack = new BgButton(getApplication());
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
 			p.leftMargin = UI._8dp;
 			p.topMargin = UI._8dp;
@@ -334,7 +334,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnBack.setOnClickListener(this);
 		btnBack.setContentDescription(getText(R.string.go_back));
 		btnBack.setId(5);
-		btnBack.setNextFocusUpId(4);
+		btnBack.setNextFocusUpId(2);
 		btnBack.setNextFocusLeftId(4);
 		btnBack.setNextFocusDownId(2);
 		btnBack.setNextFocusRightId(2);
@@ -356,7 +356,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnPrev.setId(2);
 		btnPrev.setNextFocusUpId(5);
 		btnPrev.setNextFocusLeftId(5);
-		btnPrev.setNextFocusDownId(3);
+		btnPrev.setNextFocusDownId(5);
 		btnPrev.setNextFocusRightId(3);
 		UI.setNextFocusForwardId(btnPrev, 3);
 		btnPlay = new BgButton(getApplication());
@@ -367,16 +367,16 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnPlay.setOnClickListener(this);
 		btnPlay.setContentDescription(getText(R.string.play));
 		btnPlay.setId(3);
-		btnPlay.setNextFocusUpId(2);
+		btnPlay.setNextFocusUpId(5);
 		btnPlay.setNextFocusLeftId(2);
-		btnPlay.setNextFocusDownId(4);
+		btnPlay.setNextFocusDownId(5);
 		btnPlay.setNextFocusRightId(4);
 		UI.setNextFocusForwardId(btnPlay, 4);
 		btnNext = new BgButton(getApplication());
 		btnNext.setOnClickListener(this);
 		btnNext.setContentDescription(getText(R.string.next));
 		btnNext.setId(4);
-		btnNext.setNextFocusUpId(3);
+		btnNext.setNextFocusUpId(5);
 		btnNext.setNextFocusLeftId(3);
 		btnNext.setNextFocusDownId(5);
 		btnNext.setNextFocusRightId(5);
@@ -406,8 +406,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		initVisualizer(false);
 		
-		if (!btnPrev.isInTouchMode())
-			btnPrev.requestFocus();
+		if (!btnBack.isInTouchMode())
+			btnBack.requestFocus();
 	}
 	
 	@Override
@@ -467,17 +467,17 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	/*@Override
 	public boolean onTouchEvent(MotionEvent event) {
-	    switch (event.getAction()) {
-	    case MotionEvent.ACTION_DOWN:
+		switch (event.getAction()) {
+		case MotionEvent.ACTION_DOWN:
 			break;
-	    case MotionEvent.ACTION_MOVE:
+		case MotionEvent.ACTION_MOVE:
 			break;
 		case MotionEvent.ACTION_UP:
-	    	//Player.playPause();
+			//Player.playPause();
 			break;
 		case MotionEvent.ACTION_CANCEL:
 			break;
-	    }
+		}
 		return super.onTouchEvent(event);
 	}*/
 	

@@ -78,8 +78,8 @@ public final class BgButton extends Button {
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		super.setGravity(Gravity.CENTER);
 		super.setPadding(UI._8sp, UI._8sp, UI._8sp, UI._8sp);
-		super.setFocusable(true);
 		super.setFocusableInTouchMode(false);
+		super.setFocusable(true);
 	}
 	
 	public void setDefaultHeight() {

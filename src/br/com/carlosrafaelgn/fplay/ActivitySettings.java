@@ -136,6 +136,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.THEME_LIGHT, 3, UI.getThemeString(ctx, UI.THEME_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.THEME_DARK_LIGHT, 4, UI.getThemeString(ctx, UI.THEME_DARK_LIGHT))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.THEME_DARK_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
@@ -362,8 +365,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	private void loadColors(boolean createControls, boolean forceCurrent) {
 		final Context ctx = getHostActivity();
-		final int[] colorOrder = new int[] { 5, 7, 6, 8, 9, 0, 1, 12, 4, 3, 10, 2, 11, 15, 13, 14, 16, 19, 17, 18, 20 };
-		final byte[] colors = ((UI.customColors != null && UI.customColors.length >= 63 && !forceCurrent) ? UI.customColors : UI.serializeThemeToArray());
+		final int[] colorOrder = new int[] { 7, 9, 8, 10, 11, 0, 1, 2, 12, 13, 3, 15, 6, 5, 4, 14, 18, 16, 17, 19, 22, 20, 21, 23 };
+		final byte[] colors = ((UI.customColors != null && UI.customColors.length >= 72 && !forceCurrent) ? UI.customColors : UI.serializeThemeToArray());
 		if (createControls)
 			colorViews = new SettingView[colorOrder.length];
 		for (int i = 0; i < colorOrder.length; i++) {
@@ -383,10 +386,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				case 0:
 					addHeader(ctx, R.string.general, optLoadCurrentTheme);
 					break;
-				case 12:
+				case 8:
+					addHeader(ctx, R.string.list2, colorViews[colorOrder[i - 1]]);
+					break;
+				case 11:
+					addHeader(ctx, R.string.menu, colorViews[colorOrder[i - 1]]);
+					break;
+				case 15:
 					addHeader(ctx, R.string.selection, colorViews[colorOrder[i - 1]]);
 					break;
-				case 17:
+				case 20:
 					addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]]);
 					break;
 				}
@@ -419,8 +428,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		
 		final ScrollView list = (ScrollView)findViewById(R.id.list);
 		list.setHorizontalFadingEdgeEnabled(false);
-    	list.setVerticalFadingEdgeEnabled(false);
-    	list.setFadingEdgeLength(0);
+		list.setVerticalFadingEdgeEnabled(false);
+		list.setFadingEdgeLength(0);
 		list.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		

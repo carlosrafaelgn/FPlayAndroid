@@ -19,8 +19,11 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:contentDescription="@string/go_back" />
-        
+            android:contentDescription="@string/go_back" >
+
+            <requestFocus />
+        </br.com.carlosrafaelgn.fplay.ui.BgButton>
+
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnAbout"
             android:layout_width="wrap_content"

@@ -138,7 +138,7 @@ public final class TextIconDrawable extends Drawable {
 			UI.rect.right = UI.rect.left + UI.strokeSize;
 			UI.rect.top = rect.top + UI._2dp;
 			UI.rect.bottom = rect.bottom - UI._2dp;
-			paint.setColor((state == 0) ? UI.color_selected_border : UI.color_text_selected);
+			paint.setColor((state == 0) ? UI.color_menu_border : UI.color_text_selected);
 			canvas.drawRect(UI.rect, paint);
 		}
 	}

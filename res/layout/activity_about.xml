@@ -25,7 +25,10 @@
             android:nextFocusForward="@+id/lblMsg"
             android:nextFocusLeft="@+id/lblMsg"
             android:nextFocusRight="@+id/lblMsg"
-            android:nextFocusUp="@+id/lblMsg" />
+            android:nextFocusUp="@+id/lblMsg" >
+
+            <requestFocus />
+        </br.com.carlosrafaelgn.fplay.ui.BgButton>
 
         <ImageView
             android:id="@+id/imgIcon"
@@ -92,10 +95,7 @@
                 android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/btnGoBack"
                 android:nextFocusRight="@+id/btnGoBack"
-                android:nextFocusUp="@+id/btnGoBack" >
-
-                <requestFocus />
-            </TextView>
+                android:nextFocusUp="@+id/btnGoBack" />
 
             <TextView
                 android:id="@+id/lblDbg"
@@ -103,8 +103,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:focusable="false"
-                android:gravity="right" >
-            </TextView>
+                android:gravity="right" />
         </LinearLayout>
     </ScrollView>
 

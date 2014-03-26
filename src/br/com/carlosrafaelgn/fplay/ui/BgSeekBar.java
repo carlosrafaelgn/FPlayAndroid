@@ -87,8 +87,8 @@ public final class BgSeekBar extends View {
 		thumbWidth = (UI._IconBox * 90) / 100;
 		setTextSizeIndex(2);
 		super.setClickable(true);
-		super.setFocusable(true);
 		super.setFocusableInTouchMode(false);
+		super.setFocusable(true);
 	}
 	
 	public void setSliderMode(boolean sliderMode) {
@@ -385,13 +385,13 @@ public final class BgSeekBar extends View {
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-	    if (!isEnabled())
-	        return false;
-	    
-	    //Based on: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/widget/AbsSeekBar.java#AbsSeekBar.onTouchEvent%28android.view.MotionEvent%29
-	    switch (event.getAction()) {
-	    case MotionEvent.ACTION_DOWN:
-	    	tracking = false;
+		if (!isEnabled())
+			return false;
+		
+		//Based on: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/widget/AbsSeekBar.java#AbsSeekBar.onTouchEvent%28android.view.MotionEvent%29
+		switch (event.getAction()) {
+		case MotionEvent.ACTION_DOWN:
+			tracking = false;
 			if (listener != null) {
 				if (!listener.onStartTrackingTouch(this))
 					return true;
@@ -400,9 +400,9 @@ public final class BgSeekBar extends View {
 			setPressed(true);
 			trackTouchEvent(vertical ? event.getY() : event.getX());
 			break;
-	    case MotionEvent.ACTION_MOVE:
-	    	if (!tracking)
-	    		return true;
+		case MotionEvent.ACTION_MOVE:
+			if (!tracking)
+				return true;
 			if (getParent() != null)
 				getParent().requestDisallowInterceptTouchEvent(true);
 			trackTouchEvent(vertical ? event.getY() : event.getX());
@@ -425,8 +425,8 @@ public final class BgSeekBar extends View {
 				tracking = false;
 			}
 			break;
-	    }
-	    return true;
+		}
+		return true;
 	}
 	
 	@Override

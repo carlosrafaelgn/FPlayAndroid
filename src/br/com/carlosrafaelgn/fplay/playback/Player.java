@@ -285,7 +285,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
-		UI.setTheme(opts.getInt(OPT_THEME, UI.THEME_LIGHT));
+		UI.setTheme(opts.getInt(OPT_THEME, UI.THEME_DARK_LIGHT));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
@@ -684,14 +684,14 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			//final Intent i = new Intent("com.android.music.playstatechanged");
 			i.putExtra("id", currentSong.id);
 			i.putExtra("songid", currentSong.id);
-	        i.putExtra("track", currentSong.title);
-	        i.putExtra("artist", currentSong.artist);
-	        i.putExtra("album", currentSong.album);
-	        i.putExtra("duration", (long)currentSong.lengthMS);
-	        i.putExtra("position", (long)0);
-	        i.putExtra("playing", playing);
-	        //thePlayer.sendBroadcast(i);
-	        thePlayer.sendStickyBroadcast(i);
+			i.putExtra("track", currentSong.title);
+			i.putExtra("artist", currentSong.artist);
+			i.putExtra("album", currentSong.album);
+			i.putExtra("duration", (long)currentSong.lengthMS);
+			i.putExtra("position", (long)0);
+			i.putExtra("playing", playing);
+			//thePlayer.sendBroadcast(i);
+			thePlayer.sendStickyBroadcast(i);
 		}
 		if (remoteControlClient != null)
 			broadcastStateChangeToRemoteControl(songHasChanged);

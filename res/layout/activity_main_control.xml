@@ -42,7 +42,8 @@
             android:nextFocusLeft="@+id/btnDecreaseVolume"
             android:nextFocusRight="@+id/btnMenu"
             android:nextFocusUp="@+id/btnPrev" />
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnMenu"
             android:layout_width="100dp"
             android:layout_height="match_parent"
@@ -52,7 +53,10 @@
             android:nextFocusForward="@+id/lblTitle"
             android:nextFocusLeft="@+id/btnIncreaseVolume"
             android:nextFocusRight="@+id/lblTitle"
-            android:nextFocusUp="@+id/btnNext" />
+            android:nextFocusUp="@+id/btnNext" >
+
+            <requestFocus />
+        </br.com.carlosrafaelgn.fplay.ui.BgButton>
     </RelativeLayout>
 
     <br.com.carlosrafaelgn.fplay.ui.BgTextView

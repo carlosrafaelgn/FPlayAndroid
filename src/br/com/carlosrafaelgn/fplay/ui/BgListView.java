@@ -77,40 +77,52 @@ public final class BgListView extends ListView {
 		init();
 	}
 	
-    @SuppressWarnings("deprecation")
+	@SuppressWarnings("deprecation")
 	private void init() {
-    	super.setSelector(new NullDrawable());
-    	super.setDivider(null);
-    	super.setDividerHeight(0);
-    	super.setCacheColorHint(UI.color_list);
-    	super.setHorizontalFadingEdgeEnabled(false);
-    	super.setVerticalFadingEdgeEnabled(false);
-    	super.setFadingEdgeLength(0);
-    	super.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
-    	super.setFocusable(true);
-    	super.setFocusableInTouchMode(false);
-    	//List color turns black while Scrolling
-        //http://stackoverflow.com/questions/8531006/list-color-turns-black-while-scrolling
-        //Remove shadow from top and bottom of ListView in android?
-        //http://stackoverflow.com/questions/7106692/remove-shadow-from-top-and-bottom-of-listview-in-android
-        //Changing the ListView shadow color and size
-        //http://stackoverflow.com/questions/5627063/changing-the-listview-shadow-color-and-size
-    }
-    
-    @SuppressWarnings("deprecation")
-    public void setTopLeftBorders() {
-    	super.setBackgroundDrawable(new BorderDrawable(UI.thickDividerSize, UI.thickDividerSize, 0, 0));
-    }
-    
-    @SuppressWarnings("deprecation")
-    public void setRightBorder() {
-    	super.setBackgroundDrawable(new BorderDrawable(0, 0, UI.thickDividerSize, 0));
-    }
-    
-    @SuppressWarnings("deprecation")
-    public void setBottomBorder() {
-    	super.setBackgroundDrawable(new BorderDrawable(0, 0, 0, UI.thickDividerSize));
-    }
+		super.setSelector(new NullDrawable());
+		super.setDivider(null);
+		super.setDividerHeight(0);
+		super.setCacheColorHint(UI.color_list);
+		super.setHorizontalFadingEdgeEnabled(false);
+		super.setVerticalFadingEdgeEnabled(false);
+		super.setFadingEdgeLength(0);
+		super.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
+		super.setFocusableInTouchMode(false);
+		super.setFocusable(true);
+		//List color turns black while Scrolling
+		//http://stackoverflow.com/questions/8531006/list-color-turns-black-while-scrolling
+		//Remove shadow from top and bottom of ListView in android?
+		//http://stackoverflow.com/questions/7106692/remove-shadow-from-top-and-bottom-of-listview-in-android
+		//Changing the ListView shadow color and size
+		//http://stackoverflow.com/questions/5627063/changing-the-listview-shadow-color-and-size
+	}
+	
+	//massive workaround!!!
+	//
+	//according to this:
+	//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/widget/AdapterView.java#AdapterView.setFocusable%28boolean%29
+	//AdapterView overrides setFocusable and setFocusableInTouchMode in a way I don't like...
+	//it calls View.setFocusable with false if the adapter is empty!!!
+	//therefore, the only way to make it focusable at any time, is to pretend to be in filtermode at all times!
+	@Override
+	protected boolean isInFilterMode() {
+		return true;
+	}
+	
+	@SuppressWarnings("deprecation")
+	public void setTopLeftBorders() {
+		super.setBackgroundDrawable(new BorderDrawable(UI.thickDividerSize, UI.thickDividerSize, 0, 0));
+	}
+	
+	@SuppressWarnings("deprecation")
+	public void setRightBorder() {
+		super.setBackgroundDrawable(new BorderDrawable(0, 0, UI.thickDividerSize, 0));
+	}
+	
+	@SuppressWarnings("deprecation")
+	public void setBottomBorder() {
+		super.setBackgroundDrawable(new BorderDrawable(0, 0, 0, UI.thickDividerSize));
+	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
