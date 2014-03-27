@@ -43,6 +43,7 @@ import android.widget.TextView;
 
 public class BgTextView extends TextView {
 	private int state;
+	private boolean insideList, forceTextSelected;
 	
 	public BgTextView(Context context) {
 		super(context);
@@ -66,8 +67,14 @@ public class BgTextView extends TextView {
 		super.setFocusableInTouchMode(false);
 	}
 	
+	public void setInsideList(boolean insideList) {
+		this.insideList = insideList;
+		setForceTextSelected(forceTextSelected);
+	}
+	
 	public void setForceTextSelected(boolean forceTextSelected) {
-		super.setTextColor(forceTextSelected ? UI.colorState_text_selected_static : UI.colorState_text_reactive);
+		this.forceTextSelected = forceTextSelected;
+		super.setTextColor(forceTextSelected ? UI.colorState_text_selected_static : (insideList ? UI.colorState_text_listitem_reactive : UI.colorState_text_reactive));
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)

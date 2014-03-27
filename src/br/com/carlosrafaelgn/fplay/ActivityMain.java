@@ -55,6 +55,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
+import br.com.carlosrafaelgn.fplay.ui.BgTextView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -751,6 +752,15 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				final int ph = (min * 12) / 100, pv = (max * 12) / 100;
 				btnPrev.setPadding(ph, pv, ph, pv);
 				btnNext.setPadding(ph, pv, ph, pv);
+			}
+			if (UI.useControlModeButtonsInsideList) {
+				btnDecreaseVolume.setInsideList(true);
+				btnVolume.setInsideList(true);
+				btnIncreaseVolume.setInsideList(true);
+				btnMenu.setInsideList(true);
+				((BgTextView)lblTitle).setInsideList(true);
+				btnPrev.setInsideList(true);
+				btnNext.setInsideList(true);
 			}
 		} else {
 			UI.largeText(lblTitle);

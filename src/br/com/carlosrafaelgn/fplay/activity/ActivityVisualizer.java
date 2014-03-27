@@ -406,6 +406,12 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		initVisualizer(false);
 		
+		if (UI.useVisualizerButtonsInsideList) {
+			btnBack.setInsideList(true);
+			btnPrev.setInsideList(true);
+			btnPlay.setInsideList(true);
+			btnNext.setInsideList(true);
+		}
 		if (!btnBack.isInTouchMode())
 			btnBack.requestFocus();
 	}

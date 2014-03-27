@@ -245,19 +245,19 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			final FileSt f = fileList.getItemT(i);
 			if (Player.path.length() != 0) {
 				if (f.specialType == FileSt.TYPE_ARTIST) {
-					menu.add(0, MNU_ADDFOLDER, 0, R.string.add_artist)
+					menu.add(0, MNU_ADDFOLDERSUB, 0, R.string.add_artist)
 						.setOnMenuItemClickListener(this)
 						.setIcon(new TextIconDrawable(UI.ICON_ADD));
 					UI.separator(menu, 0, 1);
-					menu.add(1, MNU_PLAYFOLDER, 0, R.string.play_artist)
+					menu.add(1, MNU_PLAYFOLDERSUB, 0, R.string.play_artist)
 						.setOnMenuItemClickListener(this)
 						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
 				} else if (f.specialType == FileSt.TYPE_ALBUM) {
-					menu.add(0, MNU_ADDFOLDER, 0, R.string.add_album)
+					menu.add(0, MNU_ADDFOLDERSUB, 0, R.string.add_album)
 						.setOnMenuItemClickListener(this)
 						.setIcon(new TextIconDrawable(UI.ICON_ADD));
 					UI.separator(menu, 0, 1);
-					menu.add(1, MNU_PLAYFOLDER, 0, R.string.play_album)
+					menu.add(1, MNU_PLAYFOLDERSUB, 0, R.string.play_album)
 						.setOnMenuItemClickListener(this)
 						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
 				} else if (f.isDirectory) {
@@ -486,7 +486,9 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_browser);
-		UI.largeTextAndColor((TextView)findViewById(R.id.lblLoading));
+		final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
+		UI.largeText(lblLoading);
+		lblLoading.setTextColor(UI.colorState_text_listitem_static);
 		lblPath = (TextView)findViewById(R.id.lblPath);
 		lblPath.setText(Player.path);
 		lblPath.setTextColor(UI.colorState_text_highlight_static);

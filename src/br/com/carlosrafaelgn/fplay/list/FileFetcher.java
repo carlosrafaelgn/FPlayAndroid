@@ -65,8 +65,8 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	public int count;
 	public final boolean playAfterFetching;
 	private Throwable notifyE;
-	private final Listener listener;
-	private boolean notifying, recursive;
+	private Listener listener;
+	private boolean recursive;
 	private final boolean notifyFromMain, recursiveIfFirstEmpty;
 	private volatile boolean cancelled;
 	
@@ -601,9 +601,10 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	
 	@Override
 	public void run() {
-		if (notifying) {
+		if (MainHandler.isOnMainThread()) {
 			if (listener != null && !cancelled)
 				listener.onFilesFetched(this, notifyE);
+			listener = null;
 			notifyE = null;
 			return;
 		}
@@ -619,10 +620,44 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 				} else {
 					final int p1 = path.indexOf(File.separatorChar);
 					final int p2 = path.lastIndexOf(File.separatorChar, path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR));
-					if (p2 != p1)
+					if (p2 != p1) {
 						fetchTracks(path);
-					else
+					} else {
 						fetchAlbums(path);
+						if (recursive) {
+							//we actually need to fetch all tracks from all this artist's albums...
+							final FileSt[] albums = files;
+							final ArrayList<FileSt> tracks = new ArrayList<FileSt>(albums.length * 10);
+							for (int i = 0; i < albums.length; i++) {
+								try {
+									fetchTracks(albums[i].path);
+									if (files != null && count > 0) {
+										tracks.ensureCapacity(tracks.size() + count);
+										for (int j = 0; j < count; j++) {
+											tracks.add(files[j]);
+											files[j] = null;
+										}
+										files = null;
+									}
+								} catch (Throwable ex) {
+									e = ex;
+								}
+								albums[i] = null;
+							}
+							if (tracks.size() > 0) {
+								//ignore any errors if at least one track was fetched
+								e = null;
+								count = tracks.size();
+								files = new FileSt[count];
+								tracks.toArray(files);
+								tracks.clear();
+							} else {
+								count = 0;
+								if (files == null)
+									files = new FileSt[0];
+							}
+						}
+					}
 				}
 			} else if (path.charAt(0) == FileSt.ALBUM_ROOT_CHAR) {
 				if (path.startsWith(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT))
@@ -636,12 +671,12 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			e = ex;
 		}
 		if (listener != null && !cancelled) {
-			notifying = true;
 			if (notifyFromMain) {
 				notifyE = e;
 				MainHandler.postToMainThread(this);
 			} else {
 				listener.onFilesFetched(this, e);
+				listener = null;
 			}
 		}
 	}

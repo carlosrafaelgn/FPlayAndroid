@@ -750,6 +750,16 @@ public final class UI {
 			loadLightTheme();
 			return false;
 		}
+		//check which color to use for the title in the main screen
+		if (ColorUtils.contrastRatio(color_window, color_highlight) > 6.5)
+			color_text_title = color_highlight;
+		else if (ColorUtils.contrastRatio(color_control_mode, color_text_listitem_secondary) > 6.5)
+			color_text_title = color_text_listitem_secondary;
+		else
+			color_text_title = color_text;
+		//check which color to use for the buttons in the main screen (when in control mode) and in the visualizer screen
+		useControlModeButtonsInsideList = (ColorUtils.contrastRatio(color_control_mode, color_text_listitem) > ColorUtils.contrastRatio(color_control_mode, color_text));
+		useVisualizerButtonsInsideList = (ColorUtils.contrastRatio(color_visualizer, color_text_listitem) > ColorUtils.contrastRatio(color_visualizer, color_text));
 		finishLoadingTheme(true);
 		return true;
 	}
