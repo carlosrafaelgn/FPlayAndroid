@@ -59,8 +59,10 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener {
+	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
 	private final boolean colorMode;
 	private boolean changed, checkingReturn;
 	private BgButton btnGoBack, btnAbout;
@@ -349,6 +351,32 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private int validate() {
 		//hard = -1
 		//impossible = -2
+		final int color_list = colorViews[UI.IDX_COLOR_LIST].getColor();
+		final int color_text_listitem = colorViews[UI.IDX_COLOR_TEXT_LISTITEM].getColor();
+		final int color_window = colorViews[UI.IDX_COLOR_WINDOW].getColor();
+		final int color_text = colorViews[UI.IDX_COLOR_TEXT].getColor();
+		final int color_selected_grad_lt = colorViews[UI.IDX_COLOR_SELECTED_GRAD_LT].getColor();
+		final int color_selected_grad_dk = colorViews[UI.IDX_COLOR_SELECTED_GRAD_DK].getColor();
+		final int color_text_selected = colorViews[UI.IDX_COLOR_TEXT_SELECTED].getColor();
+		final int color_menu = colorViews[UI.IDX_COLOR_MENU].getColor();
+		final int color_text_menu = colorViews[UI.IDX_COLOR_TEXT_MENU].getColor();
+		final int color_highlight = colorViews[UI.IDX_COLOR_HIGHLIGHT].getColor();
+		final int color_text_highlight = colorViews[UI.IDX_COLOR_TEXT_HIGHLIGHT].getColor();
+		final int color_text_listitem_secondary = colorViews[UI.IDX_COLOR_TEXT_LISTITEM_SECONDARY].getColor();
+		final double crList = ColorUtils.contrastRatio(color_list, color_text_listitem);
+		final double crWindow = ColorUtils.contrastRatio(color_window, color_text);
+		final double crSel = ColorUtils.contrastRatio(ColorUtils.blend(color_selected_grad_lt, color_selected_grad_dk, 0.5f), color_text_selected);
+		final double crMenu = ColorUtils.contrastRatio(color_menu, color_text_menu);
+		if (crList < MIN_THRESHOLD || crWindow < MIN_THRESHOLD || crSel < MIN_THRESHOLD || crMenu < MIN_THRESHOLD)
+			return -2;
+		if (crList < 6.5 || crWindow < 6.5 || crSel < 6.5 || crMenu < 6.5)
+			return -1;
+		//these colors are considered nonessential, therefore their thresholds are lower,
+		//and only warnings are generated when they are violated
+		final double crHighlight = ColorUtils.contrastRatio(color_highlight, color_text_highlight);
+		final double crListSecondary = ColorUtils.contrastRatio(color_list, color_text_listitem_secondary);
+		if (crHighlight < 5 || crListSecondary < 5)
+			return -1;
 		return 0;
 	}
 	
@@ -365,7 +393,31 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	private void loadColors(boolean createControls, boolean forceCurrent) {
 		final Context ctx = getHostActivity();
-		final int[] colorOrder = new int[] { 7, 9, 8, 10, 11, 0, 1, 2, 12, 13, 3, 15, 6, 5, 4, 14, 18, 16, 17, 19, 22, 20, 21, 23 };
+		final int[] colorOrder = new int[] {
+				UI.IDX_COLOR_DIVIDER,
+				UI.IDX_COLOR_TEXT_HIGHLIGHT,
+				UI.IDX_COLOR_HIGHLIGHT,
+				UI.IDX_COLOR_TEXT,
+				UI.IDX_COLOR_TEXT_DISABLED,
+				UI.IDX_COLOR_WINDOW,
+				UI.IDX_COLOR_CONTROL_MODE,
+				UI.IDX_COLOR_VISUALIZER,
+				UI.IDX_COLOR_TEXT_LISTITEM,
+				UI.IDX_COLOR_TEXT_LISTITEM_SECONDARY,
+				UI.IDX_COLOR_LIST,
+				UI.IDX_COLOR_TEXT_MENU,
+				UI.IDX_COLOR_MENU_BORDER,
+				UI.IDX_COLOR_MENU_ICON,
+				UI.IDX_COLOR_MENU,
+				UI.IDX_COLOR_TEXT_SELECTED,
+				UI.IDX_COLOR_SELECTED_BORDER,
+				UI.IDX_COLOR_SELECTED_GRAD_LT,
+				UI.IDX_COLOR_SELECTED_GRAD_DK,
+				UI.IDX_COLOR_SELECTED_PRESSED,
+				UI.IDX_COLOR_FOCUSED_BORDER,
+				UI.IDX_COLOR_FOCUSED_GRAD_LT,
+				UI.IDX_COLOR_FOCUSED_GRAD_DK,
+				UI.IDX_COLOR_FOCUSED_PRESSED };
 		final byte[] colors = ((UI.customColors != null && UI.customColors.length >= 72 && !forceCurrent) ? UI.customColors : UI.serializeThemeToArray());
 		if (createControls)
 			colorViews = new SettingView[colorOrder.length];
@@ -399,7 +451,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]]);
 					break;
 				}
-				panelSettings.addView(colorViews[idx]);
+				//don't show this to the user as it is not atually being used...
+				if (idx != UI.IDX_COLOR_TEXT_DISABLED)
+					panelSettings.addView(colorViews[idx]);
 			}
 		}
 	}
@@ -432,6 +486,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setFadingEdgeLength(0);
 		list.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
+		if (UI.isLargeScreen)
+			UI.prepareViewPaddingForLargeScreen(panelSettings);
 		
 		if (colorMode) {
 			loadColors(true, false);
@@ -536,6 +592,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		Player.turnOffTimerObserver = this;
 		if (optAutoTurnOff != null)
 			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+	}
+	
+	@Override
+	protected void onOrientationChanged() {
+		if (UI.isLargeScreen && panelSettings != null)
+			UI.prepareViewPaddingForLargeScreen(panelSettings);
 	}
 	
 	@Override
@@ -705,12 +767,39 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 	}
 	
+	private void validateColor(int idx1, int idx2) {
+		final boolean err = (ColorUtils.contrastRatio((idx1 == UI.IDX_COLOR_SELECTED_GRAD_LT) ? ColorUtils.blend(colorViews[UI.IDX_COLOR_SELECTED_GRAD_LT].getColor(), colorViews[UI.IDX_COLOR_SELECTED_GRAD_DK].getColor(), 0.5f) : colorViews[idx1].getColor(), colorViews[idx2].getColor()) < MIN_THRESHOLD);
+		colorViews[idx1].showErrorView(err);
+		colorViews[idx2].showErrorView(err);
+		if (idx1 == UI.IDX_COLOR_SELECTED_GRAD_LT)
+			colorViews[UI.IDX_COLOR_SELECTED_GRAD_DK].showErrorView(err);
+	}
+	
 	@Override
 	public void onColorPicked(ColorPickerView picker, View parentView, int color) {
 		if (colorMode && lastColorView >= 0) {
 			if (colorViews[lastColorView].getColor() != color) {
 				changed = true;
 				colorViews[lastColorView].setColor(color);
+				switch (lastColorView) {
+				case UI.IDX_COLOR_WINDOW:
+				case UI.IDX_COLOR_TEXT:
+					validateColor(UI.IDX_COLOR_WINDOW, UI.IDX_COLOR_TEXT);
+					break;
+				case UI.IDX_COLOR_LIST:
+				case UI.IDX_COLOR_TEXT_LISTITEM:
+					validateColor(UI.IDX_COLOR_LIST, UI.IDX_COLOR_TEXT_LISTITEM);
+					break;
+				case UI.IDX_COLOR_SELECTED_GRAD_LT:
+				case UI.IDX_COLOR_SELECTED_GRAD_DK:
+				case UI.IDX_COLOR_TEXT_SELECTED:
+					validateColor(UI.IDX_COLOR_SELECTED_GRAD_LT, UI.IDX_COLOR_TEXT_SELECTED);
+					break;
+				case UI.IDX_COLOR_MENU:
+				case UI.IDX_COLOR_TEXT_MENU:
+					validateColor(UI.IDX_COLOR_MENU, UI.IDX_COLOR_TEXT_MENU);
+					break;
+				}
 			}
 			lastColorView = -1;
 		} else if (parentView == optWidgetTextColor) {

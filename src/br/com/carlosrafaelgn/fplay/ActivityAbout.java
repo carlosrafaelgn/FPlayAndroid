@@ -45,6 +45,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 
 public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
+	private ScrollView list;
 	private BgButton btnGoBack;
 	
 	@SuppressWarnings("deprecation")
@@ -54,7 +55,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		final ScrollView list = (ScrollView)findViewById(R.id.list);
+		list = (ScrollView)findViewById(R.id.list);
 		list.setHorizontalFadingEdgeEnabled(false);
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
@@ -107,10 +108,12 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.spToPxI(12));
 		lblDbg.setText(sb.toString());
-		if (UI.isLargeScreen)
+		if (UI.isLargeScreen) {
+			UI.prepareViewPaddingForLargeScreen(list);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		else if (UI.isLowDpiScreen)
+		} else if (UI.isLowDpiScreen) {
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
+		}
 	}
 	
 	@Override
@@ -124,7 +127,14 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	}
 	
 	@Override
+	protected void onOrientationChanged() {
+		if (UI.isLargeScreen && list != null)
+			UI.prepareViewPaddingForLargeScreen(list);
+	}
+	
+	@Override
 	protected void onCleanupLayout() {
+		list = null;
 		btnGoBack = null;
 	}
 	

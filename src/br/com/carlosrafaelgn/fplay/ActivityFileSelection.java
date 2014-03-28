@@ -370,7 +370,9 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		list = (BgListView)findViewById(R.id.list);
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
-		if (UI.isLowDpiScreen && !UI.isLargeScreen) {
+		if (UI.isLargeScreen) {
+			UI.prepareViewPaddingForLargeScreen(list);
+		} else if (UI.isLowDpiScreen) {
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
 			//lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 		}
@@ -400,6 +402,12 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		fileList.observerActivity = this;
 		fileList.setObserver(loading ? null : list);
 		SongAddingMonitor.start(getHostActivity());
+	}
+	
+	@Override
+	protected void onOrientationChanged() {
+		if (UI.isLargeScreen && list != null)
+			UI.prepareViewPaddingForLargeScreen(list);
 	}
 	
 	@Override

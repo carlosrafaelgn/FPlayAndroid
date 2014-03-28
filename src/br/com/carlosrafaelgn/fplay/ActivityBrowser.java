@@ -517,6 +517,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
 		if (UI.isLargeScreen) {
+			UI.prepareViewPaddingForLargeScreen(list);
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
 		} else if (UI.isLowDpiScreen) {
@@ -541,6 +542,12 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		fileList.observerActivity = this;
 		fileList.setObserver(loading ? null : list);
 		SongAddingMonitor.start(getHostActivity());
+	}
+	
+	@Override
+	protected void onOrientationChanged() {
+		if (UI.isLargeScreen && list != null)
+			UI.prepareViewPaddingForLargeScreen(list);
 	}
 	
 	@Override

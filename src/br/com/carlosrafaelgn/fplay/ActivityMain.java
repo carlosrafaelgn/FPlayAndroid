@@ -827,13 +827,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblArtistStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblAlbumStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblLengthStatic));
-				lblArtist.setTextColor(UI.colorState_highlight_static);
+				lblArtist.setTextColor(UI.colorState_text_title_static);
 				UI.largeText(lblArtist);
 				lblAlbum = (TextView)findViewById(R.id.lblAlbum);
-				lblAlbum.setTextColor(UI.colorState_highlight_static);
+				lblAlbum.setTextColor(UI.colorState_text_title_static);
 				UI.largeText(lblAlbum);
 				lblLength = (TextView)findViewById(R.id.lblLength);
-				lblLength.setTextColor(UI.colorState_highlight_static);
+				lblLength.setTextColor(UI.colorState_text_title_static);
 				UI.largeText(lblLength);
 			} else {
 				lblAlbum = null;
@@ -909,7 +909,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				lblTitle.setClickable(true);
 				lblTitle.setFocusable(true);
 				lblTitle.setOnClickListener(this);
-				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_highlight }));
+				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_text_title }));
 				lblTitle.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, TextIconDrawable.LOCATION_WINDOW, UI._18spBox), null, null, null);
 				vwVolume.setNextFocusLeftId(R.id.lblTitle);
 				vwVolume.setNextFocusUpId(R.id.lblTitle);
@@ -932,7 +932,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 				btnCancelSel.setLayoutParams(p);
 			} else {
-				lblTitle.setTextColor(UI.colorState_highlight_static);
+				lblTitle.setTextColor(UI.colorState_text_title_static);
 			}
 			btnCancelSel.setDefaultHeight();
 			final boolean m = Player.songs.moving;

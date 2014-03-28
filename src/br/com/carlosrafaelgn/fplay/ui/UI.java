@@ -96,8 +96,9 @@ public final class UI {
 	public static final int THEME_BLUE_ORANGE = 0;
 	public static final int THEME_BLUE = 1;
 	public static final int THEME_ORANGE = 2;
-	public static final int THEME_LIGHT = 3;
-	public static final int THEME_DARK_LIGHT = 4;
+	//present the new dark/light theme to all those using the light theme ;)
+	public static final int THEME_LIGHT = 4;
+	public static final int THEME_DARK_LIGHT = 3;
 	
 	public static final int MSG_ADD = 0x0001;
 	public static final int MSG_PLAY = 0x0002;
@@ -145,6 +146,31 @@ public final class UI {
 	public static final String ICON_FPLAY = "♫";
 	public static final String ICON_SLIDERTOP = "\"";
 	public static final String ICON_SLIDERBOTTOM = "\'";
+	
+	public static final int IDX_COLOR_WINDOW = 0;
+	public static final int IDX_COLOR_CONTROL_MODE = 1;
+	public static final int IDX_COLOR_VISUALIZER = 2;
+	public static final int IDX_COLOR_LIST = 3;
+	public static final int IDX_COLOR_MENU = 4;
+	public static final int IDX_COLOR_MENU_ICON = 5;
+	public static final int IDX_COLOR_MENU_BORDER = 6;
+	public static final int IDX_COLOR_DIVIDER = 7;
+	public static final int IDX_COLOR_HIGHLIGHT = 8;
+	public static final int IDX_COLOR_TEXT_HIGHLIGHT = 9;
+	public static final int IDX_COLOR_TEXT = 10;
+	public static final int IDX_COLOR_TEXT_DISABLED = 11;
+	public static final int IDX_COLOR_TEXT_LISTITEM = 12;
+	public static final int IDX_COLOR_TEXT_LISTITEM_SECONDARY = 13;
+	public static final int IDX_COLOR_TEXT_SELECTED = 14;
+	public static final int IDX_COLOR_TEXT_MENU = 15;
+	public static final int IDX_COLOR_SELECTED_GRAD_LT = 16;
+	public static final int IDX_COLOR_SELECTED_GRAD_DK = 17;
+	public static final int IDX_COLOR_SELECTED_BORDER = 18;
+	public static final int IDX_COLOR_SELECTED_PRESSED = 19;
+	public static final int IDX_COLOR_FOCUSED_GRAD_LT = 20;
+	public static final int IDX_COLOR_FOCUSED_GRAD_DK = 21;
+	public static final int IDX_COLOR_FOCUSED_BORDER = 22;
+	public static final int IDX_COLOR_FOCUSED_PRESSED = 23;
 	
 	public static final int color_transparent = 0x00000000;
 	public static int color_window;
@@ -657,60 +683,60 @@ public final class UI {
 	
 	public static byte[] serializeThemeToArray() {
 		final byte[] colors = new byte[72];
-		serializeThemeColor(colors, 0, color_window);
-		serializeThemeColor(colors, 3, color_control_mode);
-		serializeThemeColor(colors, 6, color_visualizer);
-		serializeThemeColor(colors, 9, color_list);
-		serializeThemeColor(colors, 12, color_menu);
-		serializeThemeColor(colors, 15, color_menu_icon);
-		serializeThemeColor(colors, 18, color_menu_border);
-		serializeThemeColor(colors, 21, color_divider);
-		serializeThemeColor(colors, 24, color_highlight);
-		serializeThemeColor(colors, 27, color_text_highlight);
-		serializeThemeColor(colors, 30, color_text);
-		serializeThemeColor(colors, 33, color_text_disabled);
-		serializeThemeColor(colors, 36, color_text_listitem);
-		serializeThemeColor(colors, 39, color_text_listitem_secondary);
-		serializeThemeColor(colors, 42, color_text_selected);
-		serializeThemeColor(colors, 45, color_text_menu);
-		serializeThemeColor(colors, 48, color_selected_grad_lt);
-		serializeThemeColor(colors, 51, color_selected_grad_dk);
-		serializeThemeColor(colors, 54, color_selected_border);
-		serializeThemeColor(colors, 57, color_selected_pressed);
-		serializeThemeColor(colors, 60, color_focused_grad_lt);
-		serializeThemeColor(colors, 63, color_focused_grad_dk);
-		serializeThemeColor(colors, 66, color_focused_border);
-		serializeThemeColor(colors, 69, color_focused_pressed);
+		serializeThemeColor(colors, 3 * IDX_COLOR_WINDOW, color_window);
+		serializeThemeColor(colors, 3 * IDX_COLOR_CONTROL_MODE, color_control_mode);
+		serializeThemeColor(colors, 3 * IDX_COLOR_VISUALIZER, color_visualizer);
+		serializeThemeColor(colors, 3 * IDX_COLOR_LIST, color_list);
+		serializeThemeColor(colors, 3 * IDX_COLOR_MENU, color_menu);
+		serializeThemeColor(colors, 3 * IDX_COLOR_MENU_ICON, color_menu_icon);
+		serializeThemeColor(colors, 3 * IDX_COLOR_MENU_BORDER, color_menu_border);
+		serializeThemeColor(colors, 3 * IDX_COLOR_DIVIDER, color_divider);
+		serializeThemeColor(colors, 3 * IDX_COLOR_HIGHLIGHT, color_highlight);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_HIGHLIGHT, color_text_highlight);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT, color_text);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_DISABLED, color_text_disabled);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM, color_text_listitem);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM_SECONDARY, color_text_listitem_secondary);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_SELECTED, color_text_selected);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_MENU, color_text_menu);
+		serializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_GRAD_LT, color_selected_grad_lt);
+		serializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_GRAD_DK, color_selected_grad_dk);
+		serializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_BORDER, color_selected_border);
+		serializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_PRESSED, color_selected_pressed);
+		serializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_GRAD_LT, color_focused_grad_lt);
+		serializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_GRAD_DK, color_focused_grad_dk);
+		serializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_BORDER, color_focused_border);
+		serializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_PRESSED, color_focused_pressed);
 		return colors;
 	}
 	
 	private static boolean deserializeThemeFromArray(byte[] colors) {
 		if (colors == null || colors.length < 72)
 			return false;
-		color_window = deserializeThemeColor(colors, 0);
-		color_control_mode = deserializeThemeColor(colors, 3);
-		color_visualizer = deserializeThemeColor(colors, 6);
-		color_list = deserializeThemeColor(colors, 9);
-		color_menu = deserializeThemeColor(colors, 12);
-		color_menu_icon = deserializeThemeColor(colors, 15);
-		color_menu_border = deserializeThemeColor(colors, 18);
-		color_divider = deserializeThemeColor(colors, 21);
-		color_highlight = deserializeThemeColor(colors, 24);
-		color_text_highlight = deserializeThemeColor(colors, 27);
-		color_text = deserializeThemeColor(colors, 30);
-		color_text_disabled = deserializeThemeColor(colors, 33);
-		color_text_listitem = deserializeThemeColor(colors, 36);
-		color_text_listitem_secondary = deserializeThemeColor(colors, 39);
-		color_text_selected = deserializeThemeColor(colors, 42);
-		color_text_menu = deserializeThemeColor(colors, 45);
-		color_selected_grad_lt = deserializeThemeColor(colors, 48);
-		color_selected_grad_dk = deserializeThemeColor(colors, 51);
-		color_selected_border = deserializeThemeColor(colors, 54);
-		color_selected_pressed = deserializeThemeColor(colors, 57);
-		color_focused_grad_lt = deserializeThemeColor(colors, 60);
-		color_focused_grad_dk = deserializeThemeColor(colors, 63);
-		color_focused_border = deserializeThemeColor(colors, 66);
-		color_focused_pressed = deserializeThemeColor(colors, 69);
+		color_window = deserializeThemeColor(colors, 3 * IDX_COLOR_WINDOW);
+		color_control_mode = deserializeThemeColor(colors, 3 * IDX_COLOR_CONTROL_MODE);
+		color_visualizer = deserializeThemeColor(colors, 3 * IDX_COLOR_VISUALIZER);
+		color_list = deserializeThemeColor(colors, 3 * IDX_COLOR_LIST);
+		color_menu = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU);
+		color_menu_icon = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU_ICON);
+		color_menu_border = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU_BORDER);
+		color_divider = deserializeThemeColor(colors, 3 * IDX_COLOR_DIVIDER);
+		color_highlight = deserializeThemeColor(colors, 3 * IDX_COLOR_HIGHLIGHT);
+		color_text_highlight = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_HIGHLIGHT);
+		color_text = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT);
+		color_text_disabled = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_DISABLED);
+		color_text_listitem = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM);
+		color_text_listitem_secondary = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM_SECONDARY);
+		color_text_selected = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_SELECTED);
+		color_text_menu = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_MENU);
+		color_selected_grad_lt = deserializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_GRAD_LT);
+		color_selected_grad_dk = deserializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_GRAD_DK);
+		color_selected_border = deserializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_BORDER);
+		color_selected_pressed = deserializeThemeColor(colors, 3 * IDX_COLOR_SELECTED_PRESSED);
+		color_focused_grad_lt = deserializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_GRAD_LT);
+		color_focused_grad_dk = deserializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_GRAD_DK);
+		color_focused_border = deserializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_BORDER);
+		color_focused_pressed = deserializeThemeColor(colors, 3 * IDX_COLOR_FOCUSED_PRESSED);
 		if (customColors != colors) {
 			if (customColors == null || customColors.length != 72)
 				customColors = new byte[72];
@@ -737,11 +763,11 @@ public final class UI {
 		colorState_text_highlight_static = ColorStateList.valueOf(color_text_highlight);
 		if (!custom) {
 			color_text_title = color_highlight;
+			colorState_text_title_static = colorState_highlight_static;
 			color_menu_border = color_selected_border;
 			useControlModeButtonsInsideList = false;
 			useVisualizerButtonsInsideList = false;
 		}
-		colorState_text_title_static = ColorStateList.valueOf(color_text_title);
 	}
 	
 	public static boolean loadCustomTheme() {
@@ -750,17 +776,24 @@ public final class UI {
 			loadLightTheme();
 			return false;
 		}
-		//check which color to use for the title in the main screen
-		if (ColorUtils.contrastRatio(color_window, color_highlight) > 6.5)
-			color_text_title = color_highlight;
-		else if (ColorUtils.contrastRatio(color_control_mode, color_text_listitem_secondary) > 6.5)
-			color_text_title = color_text_listitem_secondary;
-		else
-			color_text_title = color_text;
 		//check which color to use for the buttons in the main screen (when in control mode) and in the visualizer screen
 		useControlModeButtonsInsideList = (ColorUtils.contrastRatio(color_control_mode, color_text_listitem) > ColorUtils.contrastRatio(color_control_mode, color_text));
 		useVisualizerButtonsInsideList = (ColorUtils.contrastRatio(color_visualizer, color_text_listitem) > ColorUtils.contrastRatio(color_visualizer, color_text));
 		finishLoadingTheme(true);
+		//check which color to use for the title in the main screen
+		final double crHighlight = ColorUtils.contrastRatio(color_window, color_highlight);
+		final double crList = ColorUtils.contrastRatio(color_window, color_text_listitem_secondary);
+		final double crText = ColorUtils.contrastRatio(color_window, color_text);
+		if (crHighlight > 6.5 || (crHighlight >= crText && crHighlight >= crList)) {
+			color_text_title = color_highlight;
+			colorState_text_title_static = colorState_highlight_static;
+		} else if (crList > 6.5 || (crList >= crText)) {
+			color_text_title = color_text_listitem_secondary;
+			colorState_text_title_static = colorState_text_listitem_secondary_static;
+		} else {
+			color_text_title = color_text;
+			colorState_text_title_static = colorState_text_static;
+		}
 		return true;
 	}
 	
@@ -1100,6 +1133,11 @@ public final class UI {
 		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _22sp);
 		view.setTextColor(colorState_text_static);
 		view.setTypeface(defaultTypeface);
+	}
+	
+	public static void prepareViewPaddingForLargeScreen(View view) {
+		final int p = ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
+		view.setPadding(p, thickDividerSize, p, 0);
 	}
 	
 	public static void toast(Context context, Throwable ex) {

@@ -50,14 +50,6 @@ public final class BorderDrawable extends Drawable {
 		init(strokeColor, fillColor, leftSize, topSize, rightSize, bottomSize);
 	}
 	
-	public BorderDrawable() {
-		init(UI.color_highlight, UI.color_list, 0, UI.strokeSize, 0, 0);
-	}
-	
-	public BorderDrawable(boolean left, boolean top, boolean right, boolean bottom) {
-		init(UI.color_highlight, UI.color_list, left ? UI.strokeSize : 0, top ? UI.strokeSize : 0, right ? UI.strokeSize : 0, bottom ? UI.strokeSize : 0);
-	}
-	
 	public BorderDrawable(int leftSize, int topSize, int rightSize, int bottomSize) {
 		init(UI.color_highlight, UI.color_list, leftSize, topSize, rightSize, bottomSize);
 	}

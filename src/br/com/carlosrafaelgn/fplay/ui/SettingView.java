@@ -38,6 +38,7 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
@@ -129,7 +130,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	}
 	
 	private View.OnClickListener onClickListener;
-	private TextView textView, secondaryTextView;
+	private TextView textView, secondaryTextView, errorView;
 	private ExtraView extraView;
 	private String text, secondaryText;
 	private boolean checkable, color, hidingSeparator;
@@ -141,15 +142,10 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		setFocusable(true);
 		refreshVerticalMargin();
 		setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-		LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-		p.addRule(ALIGN_PARENT_LEFT, TRUE);
-		p.addRule((secondaryText == null) ? CENTER_VERTICAL : ALIGN_PARENT_TOP, TRUE);
-		if (checkable)
-			p.addRule(LEFT_OF, 3);
-		else
-			p.addRule(ALIGN_PARENT_RIGHT, TRUE);
 		this.checkable = (secondaryText == null && checkable && !color);
 		this.color = (secondaryText == null && !checkable && color);
+		this.secondaryText = secondaryText;
+		LayoutParams p = getTextViewLayoutParams(false);
 		textView = new TextView(context);
 		textView.setId(1);
 		textView.setLayoutParams(p);
@@ -278,6 +274,45 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			extraView.setColor(color);
 	}
 	
+	private LayoutParams getTextViewLayoutParams(boolean showError) {
+		final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+		if (showError)
+			p.addRule(RIGHT_OF, 4);
+		else
+			p.addRule(ALIGN_PARENT_LEFT, TRUE);
+		p.addRule((secondaryText == null) ? CENTER_VERTICAL : ALIGN_PARENT_TOP, TRUE);
+		if (this.checkable || this.color)
+			p.addRule(LEFT_OF, 3);
+		else
+			p.addRule(ALIGN_PARENT_RIGHT, TRUE);
+		return p;
+	}
+	
+	public void showErrorView(boolean show) {
+		if (show) {
+			if (errorView != null)
+				return;
+			final LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			p.addRule((secondaryText == null) ? CENTER_VERTICAL : ALIGN_PARENT_TOP, TRUE);
+			p.rightMargin = UI._8dp;
+			errorView = new TextView(getContext());
+			errorView.setId(4);
+			errorView.setLayoutParams(p);
+			errorView.setTypeface(UI.iconsTypeface);
+			errorView.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._IconBox);
+			errorView.setTextColor(UI.colorState_highlight_static);
+			errorView.setText(UI.ICON_REMOVE);
+			addView(errorView);
+			textView.setLayoutParams(getTextViewLayoutParams(true));
+		} else {
+			if (errorView == null)
+				return;
+			textView.setLayoutParams(getTextViewLayoutParams(false));
+			removeView(errorView);
+			errorView = null;
+		}
+	}
+	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
 	public void setBackground(Drawable background) {
@@ -361,6 +396,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		extraView = null;
 		text = null;
 		secondaryText = null;
+		errorView = null;
 		super.onDetachedFromWindow();
 	}
 	
