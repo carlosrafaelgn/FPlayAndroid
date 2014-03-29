@@ -1239,11 +1239,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (Player.getCurrentSong() != null) {
 				final int ms = getMSFromBarValue(seekBar.getValue());
 				if (cancelled || ms < 0) {
-					if (playingBeforeSeek) {
+					if (playingBeforeSeek)
 						Player.playPause();
-					} else {
+					else
 						handleTimer(tmrSong, null);
-					}
 				} else {
 					Player.seekTo(ms, playingBeforeSeek);
 				}

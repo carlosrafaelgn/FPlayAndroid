@@ -77,6 +77,8 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 	private StringBuilder txtBuilder;
 	
 	private String format(int frequency, int level) {
+		if (txtBuilder == null)
+			return "";
 		txtBuilder.delete(0, txtBuilder.length());
 		txtBuilder.append(frequency / 1000);
 		frequency = (frequency % 1000) / 10;
@@ -102,6 +104,8 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 	}
 	
 	private String format(int strength) {
+		if (txtBuilder == null)
+			return "";
 		txtBuilder.delete(0, txtBuilder.length());
 		txtBuilder.append(strength / 10);
 		strength %= 10;
@@ -296,7 +300,7 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 			final int s = BassBoost.getStrength();
 			seekBar.setValue(s);
 			seekBar.setText(format(s));
-		} else {
+		} else if (frequencies != null && bars != null) {
 			for (int i = frequencies.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
 					Equalizer.setBandLevel(i, Equalizer.getBandLevel(i), true);
