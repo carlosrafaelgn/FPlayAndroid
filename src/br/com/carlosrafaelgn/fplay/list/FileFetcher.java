@@ -37,8 +37,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Scanner;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.database.Cursor;
 import android.os.Environment;
@@ -136,6 +136,31 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		files = Arrays.copyOf(files, capacity);
 	}
 	
+	private void addStorage(Service s, File path, boolean isExternal, int[] externalCount, int[] addedCount, String[] addedPaths) throws Throwable {
+		if (!path.exists() || !path.isDirectory())
+			return;
+		int c = addedCount[0];
+		if (c >= addedPaths.length)
+			return;
+		final String absPath = path.getCanonicalFile().getAbsolutePath();
+		final String absPathLC = absPath.toLowerCase(Locale.US);
+		for (int i = c - 1; i >= 0; i--) {
+			if (absPathLC.equals(addedPaths[i]))
+				return;
+		}
+		addedPaths[c] = absPathLC;
+		addedCount[0] = c + 1;
+		if (isExternal) {
+			c = externalCount[0] + 1;
+			files[count] = new FileSt(absPath, s.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), FileSt.TYPE_EXTERNAL_STORAGE);
+			externalCount[0] = c;
+		} else {
+			files[count] = new FileSt(absPath, s.getText(R.string.internal_storage).toString(), FileSt.TYPE_INTERNAL_STORAGE);
+		}
+		count++;
+	}
+	
+	@SuppressLint("SdCardPath")
 	private void fetchRoot() {
 		final Service s = Player.getService();
 		if (s == null)
@@ -169,6 +194,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			}
 		} catch (Throwable ex) {
 		}
+		f = null;
 		
 		files[count] = new FileSt(File.separator, s.getText(R.string.all_files).toString(), FileSt.TYPE_ALL_FILES);
 		count++;
@@ -176,81 +202,118 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		if (cancelled)
 			return;
 		
-		ArrayList<String> vold = new ArrayList<String>();
-		int eCount = 0;
-		String addedPath = "";
-		try {
-			f = Environment.getExternalStorageDirectory();
-			if (f.exists() && f.isDirectory()) {
-				addedPath = f.getAbsolutePath();
-				if (Environment.isExternalStorageRemovable()) {
-					eCount++;
-					files[count] = new FileSt(addedPath, s.getText(R.string.external_storage).toString(), FileSt.TYPE_EXTERNAL_STORAGE);
-				} else {
-					files[count] = new FileSt(addedPath, s.getText(R.string.internal_storage).toString(), FileSt.TYPE_INTERNAL_STORAGE);
-				}
-				addedPath = addedPath.toLowerCase(Locale.US);
-				count++;
-			}
-		} catch (Throwable ex) {
-		}
-		//if (!addedPath.equals("/mnt/sdcard"))
-		//	vold.add("/mnt/sdcard");
-		//if (!addedPath.equals("/mnt/extSdCard"))
-		//	vold.add("/mnt/extSdCard");
-		//the following is an improved version based on this solution: http://sapienmobile.com/?p=204
-		//
-		//this other solution is quite interesting though... http://stackoverflow.com/questions/11281010/how-can-i-get-external-sd-card-path-for-android-4-0
-		
 		int i;
-		Scanner scanner = null;
+		int[] externalCount = new int[1], addedCount = new int[1];
+		String[] addedPaths = new String[16];
+		String path;
 		
 		try {
-			scanner = new Scanner(new File("/system/etc/vold.fstab"));
-			while (!cancelled && scanner.hasNext()) {
-				final String line = scanner.nextLine();
-				if (line.startsWith("dev_mount")) {
-					final int start = line.indexOf(' ', 10); //skip "dev_mount "
-					int end = line.indexOf(' ', start + 1);
-					if (end <= start)
-						end = line.length();
-					String element = line.substring(start + 1, end);
-					if (element.contains(":"))
-						element = element.substring(0, element.indexOf(":"));
-					final String elementLC = element.toLowerCase(Locale.US);
-					if (!elementLC.contains("usb") && !addedPath.equals(elementLC))
-						vold.add(element);
-				}
-			}
+			addStorage(s, Environment.getExternalStorageDirectory(), Environment.isExternalStorageRemovable(), externalCount, addedCount, addedPaths);
 		} catch (Throwable ex) {
-		} finally {
-			if (scanner != null) {
-				try {
-					scanner.close();
-				} catch (Throwable e) {
-				}
-				scanner = null;
-			}
 		}
 		
-		for (i = vold.size() - 1; i >= 0 && !cancelled; i--) {
+		//the following is an improved version based on these ideas:
+		//http://sapienmobile.com/?p=204
+		//http://stackoverflow.com/questions/11281010/how-can-i-get-external-sd-card-path-for-android-4-0
+		
+		try {
+			path = System.getenv("SECONDARY_STORAGE");
+			if (path != null)
+				addStorage(s, new File(path), true, externalCount, addedCount, addedPaths);
+		} catch (Throwable ex) {
+		}
+		
+		if (cancelled)
+			return;
+		
+		//let's try a few hardcoded paths before going deeper...
+		final String[] paths = {
+				"/mnt/sdcard/ext_sd",
+				"/mnt/sdcard/external_sd",
+				"/mnt/external",
+				"/mnt/extSdCard"
+		};
+		for (i = paths.length - 1; i >= 0 && !cancelled; i--) {
 			try {
-				f = new File(vold.get(i));
-				if (!f.exists() || !f.isDirectory())
-					vold.remove(i);
+				addStorage(s, new File(paths[i]), true, externalCount, addedCount, addedPaths);
 			} catch (Throwable ex) {
-				vold.remove(i);
 			}
 		}
-		
-		i = 0;
-		while (!cancelled && count < files.length && i < vold.size()) {
-			eCount++;
-			files[count] = new FileSt(vold.get(i), s.getText(R.string.external_storage).toString() + ((eCount > 1) ? (" " + eCount) : ""), FileSt.TYPE_EXTERNAL_STORAGE);
-			count++;
-			i++;
-		}
-		vold.clear();
+		/*try{
+		    Runtime runtime = Runtime.getRuntime();
+		    Process proc = runtime.exec("mount");
+		    InputStream is = proc.getInputStream();
+		    InputStreamReader isr = new InputStreamReader(is);
+		    String line;
+		    String mount = new String(), ee = "";
+		    BufferedReader br = new BufferedReader(isr);
+		    while ((line = br.readLine()) != null) {
+		    	ee += line + "\n";
+		        if (line.contains("secure")) continue;
+		        if (line.contains("asec")) continue;
+		        if (line.contains("fat")) {//TF card
+		            String columns[] = line.split(" ");
+		            if (columns != null && columns.length > 1) {
+		                mount = mount.concat("*" + columns[1] + "\n");
+		            }
+		        } else if (line.contains("fuse")) {//internal storage
+		            String columns[] = line.split(" ");
+		            if (columns != null && columns.length > 1) {
+		                mount = mount.concat(columns[1] + "\n");
+		            }
+		        }
+		    }
+		    System.out.println(mount + ee);
+		} catch (Throwable ex) {
+		}*/
+		/*
+		//now try to go deeper!
+		final String[] cfgFiles = {
+				"/fstab.goldfish",
+				"/fstab.aries",
+				"/system/etc/vold",
+				"/system/etc/fstab.conf",
+				"/system/etc/fstab",
+				"/system/etc/vold.conf",
+				"/system/etc/vold.fstab"
+		};
+		for (i = cfgFiles.length - 1; i >= 0 && !cancelled; i--) {
+			Scanner scanner = null;
+			try {
+				f = new File(cfgFiles[i]);
+				if (!f.exists())
+					continue;
+				scanner = new Scanner(f);
+				while (!cancelled && scanner.hasNext()) {
+					final String line = scanner.nextLine();
+					if (line.startsWith("dev_mount")) {
+						final int start = line.indexOf(' ', 10); //skip "dev_mount "
+						int end = line.indexOf(' ', start + 1);
+						if (end <= start)
+							end = line.length();
+						String element = line.substring(start + 1, end);
+						if (element.contains(":"))
+							element = element.substring(0, element.indexOf(":"));
+						try {
+							addStorage(s, new File(element), true, externalCount, addedCount, addedPaths);
+						} catch (Throwable ex) {
+						}
+						//final String elementLC = element.toLowerCase(Locale.US);
+						//if (!elementLC.contains("usb") && !addedPath.equals(elementLC))
+						//	vold.add(element);
+					}
+				}
+			} catch (Throwable ex) {
+			} finally {
+				f = null;
+				if (scanner != null) {
+					try {
+						scanner.close();
+					} catch (Throwable e) {
+					}
+				}
+			}
+		}*/
 	}
 	
 	private void fetchArtists() {

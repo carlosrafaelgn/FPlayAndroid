@@ -323,7 +323,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnBack = new BgButton(getApplication());
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
 			p.leftMargin = UI._8dp;
 			p.topMargin = UI._8dp;
