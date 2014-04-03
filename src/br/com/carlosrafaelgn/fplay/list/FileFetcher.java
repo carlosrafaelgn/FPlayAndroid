@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Scanner;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
@@ -239,35 +240,11 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			} catch (Throwable ex) {
 			}
 		}
-		/*try{
-		    Runtime runtime = Runtime.getRuntime();
-		    Process proc = runtime.exec("mount");
-		    InputStream is = proc.getInputStream();
-		    InputStreamReader isr = new InputStreamReader(is);
-		    String line;
-		    String mount = new String(), ee = "";
-		    BufferedReader br = new BufferedReader(isr);
-		    while ((line = br.readLine()) != null) {
-		    	ee += line + "\n";
-		        if (line.contains("secure")) continue;
-		        if (line.contains("asec")) continue;
-		        if (line.contains("fat")) {//TF card
-		            String columns[] = line.split(" ");
-		            if (columns != null && columns.length > 1) {
-		                mount = mount.concat("*" + columns[1] + "\n");
-		            }
-		        } else if (line.contains("fuse")) {//internal storage
-		            String columns[] = line.split(" ");
-		            if (columns != null && columns.length > 1) {
-		                mount = mount.concat(columns[1] + "\n");
-		            }
-		        }
-		    }
-		    System.out.println(mount + ee);
-		} catch (Throwable ex) {
-		}*/
-		/*
-		//now try to go deeper!
+		
+		if (addedCount[0] >= 2)
+			return;
+		
+		//now, try to go deeper!
 		final String[] cfgFiles = {
 				"/fstab.goldfish",
 				"/fstab.aries",
@@ -294,13 +271,12 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 						String element = line.substring(start + 1, end);
 						if (element.contains(":"))
 							element = element.substring(0, element.indexOf(":"));
+						if (element.toLowerCase(Locale.US).contains("usb"))
+							continue;
 						try {
 							addStorage(s, new File(element), true, externalCount, addedCount, addedPaths);
 						} catch (Throwable ex) {
 						}
-						//final String elementLC = element.toLowerCase(Locale.US);
-						//if (!elementLC.contains("usb") && !addedPath.equals(elementLC))
-						//	vold.add(element);
 					}
 				}
 			} catch (Throwable ex) {
@@ -313,6 +289,33 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 					}
 				}
 			}
+		}
+		/*try{
+		    Runtime runtime = Runtime.getRuntime();
+		    Process proc = runtime.exec("mount");
+		    InputStream is = proc.getInputStream();
+		    InputStreamReader isr = new InputStreamReader(is);
+		    String line;
+		    String mount = new String(), ee = "";
+		    BufferedReader br = new BufferedReader(isr);
+		    while ((line = br.readLine()) != null) {
+		    	ee += line + "\n";
+		        if (line.contains("secure")) continue;
+		        if (line.contains("asec")) continue;
+		        if (line.contains("fat")) {//TF card
+		            String columns[] = line.split(" ");
+		            if (columns != null && columns.length > 1) {
+		                mount = mount.concat("*" + columns[1] + "\n");
+		            }
+		        } else if (line.contains("fuse")) {//internal storage
+		            String columns[] = line.split(" ");
+		            if (columns != null && columns.length > 1) {
+		                mount = mount.concat(columns[1] + "\n");
+		            }
+		        }
+		    }
+		    System.out.println(mount + ee);
+		} catch (Throwable ex) {
 		}*/
 	}
 	
