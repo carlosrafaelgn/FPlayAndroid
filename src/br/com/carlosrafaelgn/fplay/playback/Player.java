@@ -1890,10 +1890,13 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				state = STATE_INITIALIZED;
 			//we just cannot replace wasPlayingBeforeFocusLoss's value with
 			//playing, because if a second focus loss occurred BEFORE focusDelayTimer
-			//had a chance to trigger, then playing would be false, when infact,
-			//we want wasPlayingBeforeFocusLoss to remain true
-			wasPlayingBeforeFocusLoss |= playing;
-			audioSinkBeforeFocusLoss = audioSink;
+			//had a chance to trigger, then playing would be false, when in fact,
+			//we want wasPlayingBeforeFocusLoss to remain true (and the audio sink
+			//must be untouched)
+			if (playing) {
+				wasPlayingBeforeFocusLoss = true;
+				audioSinkBeforeFocusLoss = audioSink;
+			}
 			hasFocus = false;
 			setLastTime();
 			stopInternal(currentSong);

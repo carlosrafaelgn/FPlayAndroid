@@ -977,11 +977,17 @@ public final class UI {
 	}
 	
 	public static String ellipsizeText(String text, int size, int width) {
+		if (text == null)
+			return "";
+		if (width <= 1)
+			return text;
 		textPaint.setTextSize(size);
 		return TextUtils.ellipsize(text, textPaint, width, TruncateAt.END).toString();
 	}
 	
 	public static int measureText(String text, int size) {
+		if (text == null)
+			return 0;
 		textPaint.setTextSize(size);
 		return (int)(textPaint.measureText(text) + 0.5f);
 	}
