@@ -140,7 +140,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	public void processItemClick(int position) {
-		if (fileList.getSelection() == position) {
+		if ((!UI.doubleClickMode && (Player.path == null || Player.path.length() == 0)) || fileList.getSelection() == position) {
 			final FileSt file = fileList.getItemT(position);
 			if (file.isDirectory)
 				navigateTo(file.path, null);
@@ -467,6 +467,14 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	}
 	
 	@Override
+	protected boolean onBackPressed() {
+		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing || Player.path == null || Player.path.length() == 0)
+			return false;
+		onClick(btnUp);
+		return true;
+	}
+	
+	@Override
 	protected void onCreate() {
 		if (Player.path == null)
 			Player.path = "";
@@ -561,6 +569,12 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnHome = null;
 		btnUp = null;
 		btnMenu = null;
+		ic_closed_folder = null;
+		ic_internal = null;
+		ic_external = null;
+		ic_favorite = null;
+		ic_artist = null;
+		ic_album = null;
 	}
 	
 	@Override

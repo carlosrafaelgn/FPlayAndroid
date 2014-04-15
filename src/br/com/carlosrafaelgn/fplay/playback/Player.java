@@ -211,6 +211,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_WIDGETTEXTCOLOR = 0x0023;
 	private static final int OPT_WIDGETICONCOLOR = 0x0024;
 	private static final int OPT_CUSTOMCOLORS = 0x0025;
+	private static final int OPT_LASTVERSIONCODE = 0x0026;
+	private static final int OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 0x0027;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -293,6 +295,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		UI.widgetTransparentBg = opts.getBoolean(OPT_WIDGETTRANSPARENTBG, false);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
+		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
+		UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, false);
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -346,6 +350,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_WIDGETTRANSPARENTBG, UI.widgetTransparentBg);
 		opts.put(OPT_WIDGETTEXTCOLOR, UI.widgetTextColor);
 		opts.put(OPT_WIDGETICONCOLOR, UI.widgetIconColor);
+		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
+		opts.put(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

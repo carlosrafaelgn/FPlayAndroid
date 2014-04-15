@@ -561,6 +561,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					panelSecondary.setVisibility(View.VISIBLE);
 				}
 			}
+		} else if (view == list) {
+			if (Player.songs.getCount() == 0 && Player.getState() == Player.STATE_INITIALIZED) {
+				Player.alreadySelected = false;
+				startActivity(new ActivityBrowser());
+			}
 		}
 	}
 	
@@ -798,6 +803,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
 			list = (BgListView)findViewById(R.id.list);
+			list.setEmptyListOnClickListener(this);
+			list.setCustomEmptyText(getText(R.string.touch_to_add_songs));
 			panelControls = (ViewGroup)findViewById(R.id.panelControls);
 			panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);

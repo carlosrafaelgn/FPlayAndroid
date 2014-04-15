@@ -203,5 +203,7 @@
     <string name="custom_color_theme">Customizable color theme</string>
     <string name="add_artist">Add artist</string>
     <string name="play_artist">Play artist</string>
-    
+    <string name="touch_to_add_songs">Empty list!\n\nTouch here to add songs :)</string>
+    <string name="opt_back_key_always_returns_to_player_when_browsing">Physical Back key always returns to player when browsing songs</string>
+
 </resources>

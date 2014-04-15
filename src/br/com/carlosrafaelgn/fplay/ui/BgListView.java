@@ -38,8 +38,11 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.text.Layout.Alignment;
+import android.text.StaticLayout;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.ListAdapter;
@@ -59,6 +62,8 @@ public final class BgListView extends ListView {
 	
 	private OnAttachedObserver attachedObserver;
 	private OnBgListViewKeyDownObserver keyDownObserver;
+	private OnClickListener emptyListClickListener;
+	private StaticLayout emptyLayout;
 	private boolean notified, attached, measured, sized, ignoreTouchMode;
 	int extraState;
 	
@@ -228,6 +233,16 @@ public final class BgListView extends ListView {
 		}
 	}
 	
+	public void setEmptyListOnClickListener(OnClickListener listener) {
+		emptyListClickListener = listener;
+	}
+	
+	public void setCustomEmptyText(CharSequence text) {
+		UI.textPaint.setTextSize(UI._22sp);
+		final int w = getWidth();
+		emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI._16dp << 1)) ? 0 : (w - (UI._16dp << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
+	}
+	
 	@Override
 	protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
@@ -260,6 +275,8 @@ public final class BgListView extends ListView {
 				attachedObserver.onBgListViewAttached(this);
 				attachedObserver = null;
 			}
+			if (emptyLayout != null && emptyLayout.getWidth() != w)
+				setCustomEmptyText(emptyLayout.getText());
 		}
 	}
 	
@@ -304,6 +321,20 @@ public final class BgListView extends ListView {
 		return -1;
 	}
 	
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		switch (event.getAction()) {
+		case MotionEvent.ACTION_UP:
+			if (emptyListClickListener != null) {
+				final ListAdapter a = getAdapter();
+				if (a == null || a.getCount() == 0)
+					emptyListClickListener.onClick(this);
+			}
+			break;
+		}
+		return super.onTouchEvent(event);
+	}
+	
 	private void defaultKeyDown(int keyCode) {
 		final BaseList<?> a = (BaseList<?>)getAdapter();
 		if (a == null)
@@ -345,8 +376,18 @@ public final class BgListView extends ListView {
 		super.onDraw(canvas);
 		final ListAdapter a = getAdapter();
 		if (a == null || a.getCount() == 0) {
-			getDrawingRect(UI.rect);
-			UI.drawEmptyListString(canvas);
+			if (emptyLayout != null) {
+				final float x = (float)((getWidth() >> 1) - (emptyLayout.getWidth() >> 1));
+				final float y = (float)((getHeight() >> 1) - (emptyLayout.getHeight() >> 1));
+				canvas.translate(x, y);
+				UI.textPaint.setColor(UI.color_text_disabled);
+				UI.textPaint.setTextSize(UI._22sp);
+				emptyLayout.draw(canvas);
+				canvas.translate(-x, -y);
+			} else {
+				getDrawingRect(UI.rect);
+				UI.drawEmptyListString(canvas);
+			}
 		}
 	}
 	
@@ -354,6 +395,8 @@ public final class BgListView extends ListView {
 	protected void onDetachedFromWindow() {
 		attachedObserver = null;
 		keyDownObserver = null;
+		emptyListClickListener = null;
+		emptyLayout = null;
 		super.onDetachedFromWindow();
 	}
 }

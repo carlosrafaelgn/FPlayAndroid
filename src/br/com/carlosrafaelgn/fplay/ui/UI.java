@@ -77,6 +77,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/util/TypedValue.java
 //
 public final class UI {
+	//VERSION_CODE must be kept in sync with AndroidManifest.xml
+	public static final int VERSION_CODE = 23;
+	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
 	public static final int STATE_CURRENT = 4;
@@ -259,9 +262,9 @@ public final class UI {
 	
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor;
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
 	
@@ -273,7 +276,7 @@ public final class UI {
 	public static float density, scaledDensity, xdpi_1_72;
 	
 	public static final Paint fillPaint;
-	private static final TextPaint textPaint;
+	public static final TextPaint textPaint;
 	
 	static {
 		fillPaint = new Paint();
@@ -808,7 +811,7 @@ public final class UI {
 		color_highlight = 0xfffad35a;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
-		color_text_disabled = 0xff959595;
+		color_text_disabled = 0xff8c8c8c; //959595;
 		color_text_listitem = 0xffffffff;
 		color_text_listitem_secondary = 0xfffad35a;
 		color_text_selected = 0xff000000;

@@ -2,8 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="22"
-    android:versionName="0.90" >
+    android:versionCode="23"
+    android:versionName="0.91" >
+
+    <!-- versionCode must be kept in sync with UI.VERSION_CODE -->
 
     <uses-sdk
         android:minSdkVersion="10"
@@ -32,9 +34,14 @@
     <!-- For exporting files/settings -->
     <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
 
-    <!-- Just to make Google Play show the App even to phones without Bluetooth,
-    despite the uses-permission below! -->
-    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+
+    <!--
+    Just to make Google Play show the App even to phones without Bluetooth,
+    despite the uses-permission below!
+    -->
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -93,6 +100,7 @@
         </receiver>
         <receiver android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver" >
             <intent-filter>
+
                 <!-- MEDIA_BUTTON broadcast action MUST be declared in the application manifest!!! -->
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>

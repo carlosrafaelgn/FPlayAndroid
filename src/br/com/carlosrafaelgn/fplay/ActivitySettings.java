@@ -68,7 +68,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -524,6 +524,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optPlayWhenHeadsetPlugged.setOnClickListener(this);
 			optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
 			optBlockBackKey.setOnClickListener(this);
+			optBackKeyAlwaysReturnsToPlayerWhenBrowsing = new SettingView(ctx, getText(R.string.opt_back_key_always_returns_to_player_when_browsing).toString(), null, true, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing, false);
+			optBackKeyAlwaysReturnsToPlayerWhenBrowsing.setOnClickListener(this);
 			optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, UI.doubleClickMode, false);
 			optDoubleClickMode.setOnClickListener(this);
 			optMarqueeTitle = new SettingView(ctx, getText(R.string.opt_marquee_title).toString(), null, true, UI.marqueeTitle, false);
@@ -568,6 +570,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optClearListWhenPlayingFolders);
 			panelSettings.addView(optGoBackWhenPlayingFolders);
 			panelSettings.addView(optBlockBackKey);
+			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optDoubleClickMode);
 			panelSettings.addView(optMarqueeTitle);
 			panelSettings.addView(optPrepareNext);
@@ -620,6 +623,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optHandleCallKey = null;
 		optPlayWhenHeadsetPlugged = null;
 		optBlockBackKey = null;
+		optBackKeyAlwaysReturnsToPlayerWhenBrowsing = null;
 		optDoubleClickMode = null;
 		optMarqueeTitle = null;
 		optPrepareNext = null;
@@ -722,6 +726,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			ColorPickerView.showDialog(getHostActivity(), UI.widgetIconColor, view, this);
 		} else if (view == optBlockBackKey) {
 			UI.blockBackKey = optBlockBackKey.isChecked();
+		} else if (view == optBackKeyAlwaysReturnsToPlayerWhenBrowsing) {
+			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = optBackKeyAlwaysReturnsToPlayerWhenBrowsing.isChecked();
 		} else if (view == optDoubleClickMode) {
 			UI.doubleClickMode = optDoubleClickMode.isChecked();
 		} else if (view == optMarqueeTitle) {
