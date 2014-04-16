@@ -204,6 +204,8 @@
     <string name="add_artist">Adicionar artista</string>
     <string name="play_artist">Tocar artista</string>
     <string name="touch_to_add_songs">Lista vazia!\n\nToque aqui para adicionar músicas :)</string>
-    <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver procurando músicas</string>
+    <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
+    <string name="custom_key_behavior">Comportamento personalizável de teclas</string>
+    <string name="opt_wrap_around_list">Mover a seleção para a extremidade oposta de uma lista ao atingir sua parte superior/inferior</string>
 
 </resources>

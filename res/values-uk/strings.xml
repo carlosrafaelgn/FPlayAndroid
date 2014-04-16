@@ -205,5 +205,7 @@
     <string name="play_artist">Відтворити виконавця</string>
     <string name="touch_to_add_songs">Empty list!\nTouch here to add songs :)</string>
     <string name="opt_back_key_always_returns_to_player_when_browsing">Physical Back key always returns to player when browsing songs</string>
+    <string name="custom_key_behavior">Customizable key behavior</string>
+    <string name="opt_wrap_around_list">Move the selection to the opposite end of a list when reaching its top/bottom</string>
 
 </resources>

@@ -349,26 +349,53 @@ public final class BgListView extends ListView {
 	
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		final BaseList<?> a;
 		if (isEnabled()) {
 			switch (keyCode) {
+			case KeyEvent.KEYCODE_DPAD_UP:
+			case KeyEvent.KEYCODE_DPAD_DOWN:
+				//change the key to make sure the focus goes
+				//somewhere else when the list is empty, or when the
+				//selection is not set to wrap around and it is at
+				//the top/bottom of the list
+				a = (BaseList<?>)getAdapter();
+				if (a == null || a.getCount() == 0) {
+					keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+				} else if (!UI.wrapAroundList) {
+					if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+						if (a.getSelection() == 0)
+							keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+					} else if (a.getSelection() == (a.getCount() - 1)) {
+						keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+					}
+				}
+				break;
 			case KeyEvent.KEYCODE_ENTER:
 			case KeyEvent.KEYCODE_SPACE:
 			case KeyEvent.KEYCODE_DPAD_CENTER:
+				if (emptyListClickListener != null) {
+					a = (BaseList<?>)getAdapter();
+					if (a == null || a.getCount() == 0)
+						emptyListClickListener.onClick(this);
+				}
+				break;
 			case KeyEvent.KEYCODE_DPAD_LEFT:
-			case KeyEvent.KEYCODE_DPAD_UP:
 			case KeyEvent.KEYCODE_DPAD_RIGHT:
-			case KeyEvent.KEYCODE_DPAD_DOWN:
 			case KeyEvent.KEYCODE_FORWARD_DEL:
 			case KeyEvent.KEYCODE_PAGE_UP:
 			case KeyEvent.KEYCODE_PAGE_DOWN:
 			case KeyEvent.KEYCODE_MOVE_HOME:
 			case KeyEvent.KEYCODE_MOVE_END:
-				if (keyDownObserver == null || !keyDownObserver.onBgListViewKeyDown(this, keyCode, event))
-					defaultKeyDown(keyCode);
-				return true;
+				break;
+			default:
+				return super.onKeyDown(keyCode, event);
 			}
+			if (keyDownObserver == null || !keyDownObserver.onBgListViewKeyDown(this, keyCode, event))
+				defaultKeyDown(keyCode);
+			return true;
+		} else {
+			return super.onKeyDown(keyCode, event);
 		}
-		return super.onKeyDown(keyCode, event);
 	}
 	
 	@Override
