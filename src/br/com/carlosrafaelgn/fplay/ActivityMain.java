@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.res.ColorStateList;
 import android.media.AudioManager;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
@@ -900,12 +899,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					list.setBottomBorder();
 			}
 			if (UI.isLowDpiScreen && !UI.isLargeScreen && !UI.isLandscape) {
-				alwaysShowSecondary = false;
+				/*alwaysShowSecondary = false;
 				lblTime = (TextView)findViewById(R.id.lblTime);
 				lblTime.setVisibility(View.VISIBLE);
-				UI.mediumTextAndColor(lblTime);
+				UI.mediumTextAndColor(lblTime);*/
 				panelControls.setPadding(0, 0, 0, 0);
-				panelSecondary.setVisibility(View.GONE);
+				//panelSecondary.setVisibility(View.GONE);
 				panelSecondary.setPadding(0, 0, 0, 0);
 				panelSelection.setPadding(0, 0, 0, 0);
 				if (btnVolume != null) {
@@ -913,7 +912,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					p.rightMargin = 0;
 					btnVolume.setLayoutParams(p);
 				}
-				lblTitle.setClickable(true);
+				/*lblTitle.setClickable(true);
 				lblTitle.setFocusable(true);
 				lblTitle.setOnClickListener(this);
 				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_text_title }));
@@ -937,10 +936,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				final RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 				p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-				btnCancelSel.setLayoutParams(p);
-			} else {
+				btnCancelSel.setLayoutParams(p);*/
+			} //else {
 				lblTitle.setTextColor(UI.colorState_text_title_static);
-			}
+			//}
 			btnCancelSel.setDefaultHeight();
 			final boolean m = Player.songs.moving;
 			if (m || Player.songs.selecting)
