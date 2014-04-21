@@ -487,7 +487,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		if (UI.isLargeScreen)
-			UI.prepareViewPaddingForLargeScreen(panelSettings);
+			UI.prepareViewPaddingForLargeScreen(panelSettings, 0);
 		
 		if (colorMode) {
 			loadColors(true, false);
@@ -603,7 +603,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && panelSettings != null)
-			UI.prepareViewPaddingForLargeScreen(panelSettings);
+			UI.prepareViewPaddingForLargeScreen(panelSettings, 0);
 	}
 	
 	@Override

@@ -41,6 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Random;
 
 import android.content.Context;
@@ -169,25 +170,35 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 				}
 			});
 		} else {
-			addFiles(fetcher.files, -1, fetcher.count, fetcher.playAfterFetching, true);
+			addFiles(fetcher.files, null, -1, fetcher.count, fetcher.playAfterFetching, true);
 		}
 	}
 	
-	public void addFiles(FileSt[] files, final int position, int count, final boolean play, final boolean isAddingFolder) {
-		if (files == null || files.length == 0 || count <= 0) {
+	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, final int position, int count, final boolean play, final boolean isAddingFolder) {
+		if (((files == null || files.length == 0) && (iterator == null)) || count <= 0) {
 			addingEnded();
 			return;
 		}
-		if (count > files.length)
+		if (files != null && count > files.length)
 			count = files.length;
 		final Song[] songs = new Song[count];
 		int f = 0;
 		if (songs != null) {
 			final byte[][] tmpPtr = new byte[][] { new byte[256] };
-			for (int i = 0; i < count; i++) {
-				if (!files[i].isDirectory) {
-					songs[f] = new Song(files[i], tmpPtr);
-					f++;
+			if (files != null) {
+				for (int i = 0; i < count; i++) {
+					if (!files[i].isDirectory) {
+						songs[f] = new Song(files[i], tmpPtr);
+						f++;
+					}
+				}
+			} else {
+				while (iterator.hasNext()) {
+					final FileSt file = iterator.next();
+					if (!file.isDirectory) {
+						songs[f] = new Song(file, tmpPtr);
+						f++;
+					}
 				}
 			}
 		}

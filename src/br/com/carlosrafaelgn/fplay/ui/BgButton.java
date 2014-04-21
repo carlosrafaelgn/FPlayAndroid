@@ -114,8 +114,8 @@ public final class BgButton extends Button {
 		setIcon(icon, true, true);
 	}
 	
-	public void setIcon(String iconChecked, String iconUnchecked, boolean checked, boolean small) {
-		setIcon(checked ? iconChecked : iconUnchecked, true, true);
+	public void setIcon(String iconChecked, String iconUnchecked, boolean checked, boolean small, boolean changeWidth, boolean changeHeight) {
+		setIcon(checked ? iconChecked : iconUnchecked, changeWidth, changeHeight);
 		if (small)
 			super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._IconBox);
 		this.iconChecked = iconChecked;

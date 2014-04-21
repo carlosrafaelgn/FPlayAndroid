@@ -56,10 +56,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private BgButton btnAdd, btnPlay;
 	private String ellipsizedName;
 	private boolean buttonsVisible;
-	private final boolean hasButtons;
+	private final boolean hasButtons, buttonIsCheckbox;
 	private int state, width, position;
 	
-	public FileView(Context context, ActivityFileView observerActivity, Drawable closedFolderIcon, Drawable internalIcon, Drawable externalIcon, Drawable favoriteIcon, Drawable artistIcon, Drawable albumIcon, boolean hasButtons) {
+	public FileView(Context context, ActivityFileView observerActivity, Drawable closedFolderIcon, Drawable internalIcon, Drawable externalIcon, Drawable favoriteIcon, Drawable artistIcon, Drawable albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
 		super(context);
 		this.observerActivity = observerActivity;
 		setOnClickListener(this);
@@ -74,25 +74,33 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
 		if (hasButtons) {
-			btnAdd = new BgButton(context);
-			LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
-			btnAdd.setLayoutParams(p);
-			btnAdd.setIcon(UI.ICON_ADD, true, false);
-			btnAdd.setContentDescription(context.getText(R.string.add));
-			btnAdd.setOnClickListener(this);
-			btnAdd.setForceTextSelected(true);
-			addView(btnAdd);
+			LayoutParams p;
+			if (!buttonIsCheckbox) {
+				btnAdd = new BgButton(context);
+				p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+				btnAdd.setLayoutParams(p);
+				btnAdd.setIcon(UI.ICON_ADD, true, false);
+				btnAdd.setContentDescription(context.getText(R.string.add));
+				btnAdd.setOnClickListener(this);
+				btnAdd.setForceTextSelected(true);
+				addView(btnAdd);
+			}
 			btnPlay = new BgButton(context);
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI._8dp;
 			btnPlay.setLayoutParams(p);
-			btnPlay.setIcon(UI.ICON_PLAY, true, false);
-			btnPlay.setContentDescription(context.getText(R.string.play));
+			if (buttonIsCheckbox) {
+				btnPlay.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, false);
+			} else {
+				btnPlay.setIcon(UI.ICON_PLAY, true, false);
+				btnPlay.setContentDescription(context.getText(R.string.play));
+			}
 			btnPlay.setOnClickListener(this);
 			btnPlay.setForceTextSelected(true);
 			addView(btnPlay);
 			if (UI.isVerticalMarginLarge) {
-				btnAdd.setHeight(height);
+				if (btnAdd != null)
+					btnAdd.setHeight(height);
 				btnPlay.setHeight(height);
 			}
 		} else {
@@ -100,24 +108,27 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnPlay = null;
 		}
 		this.hasButtons = hasButtons;
+		this.buttonIsCheckbox = buttonIsCheckbox;
 		buttonsVisible = hasButtons;
 	}
 	
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - ((bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp) - (buttonsVisible ? ((UI.defaultControlContentsSize << 1) + UI._8dp + (UI._8dp << 2)) : 0) - UI._8dp);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - ((bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp) - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp);
 	}
 	
 	public void setItemState(FileSt file, int position, int state) {
 		final int w = getWidth();
 		final int specialType = file.specialType;
-		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ARTIST)) && ((state & UI.STATE_SELECTED) != 0));
+		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ARTIST)) && (buttonIsCheckbox || ((state & UI.STATE_SELECTED) != 0)));
 		this.position = position;
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!
-		if (this.file == file && buttonsVisible == showButtons && width == w)
+		if (this.file == file && buttonsVisible == showButtons && width == w && btnPlay != null && file.isChecked == btnPlay.isChecked())
 			return;
 		this.file = file;
 		this.width = w;
+		if (buttonIsCheckbox && btnPlay != null)
+			btnPlay.setChecked(file.isChecked);
 		if (buttonsVisible != showButtons) {
 			buttonsVisible = showButtons;
 			if (btnAdd != null)
@@ -265,6 +276,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	public void onClick(View view) {
 		if (hasButtons && (view == btnAdd || view == btnPlay)) {
+			if (buttonIsCheckbox && file != null && view == btnPlay)
+				file.isChecked = btnPlay.isChecked();
 			if (observerActivity != null)
 				observerActivity.processItemButtonClick(position, view == btnAdd);
 		} else {

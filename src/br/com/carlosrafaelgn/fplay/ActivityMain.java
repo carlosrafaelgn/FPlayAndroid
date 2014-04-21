@@ -466,7 +466,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		case MNU_ADDSONGS:
 			if (Player.getState() == Player.STATE_INITIALIZED) {
 				Player.alreadySelected = false;
-				startActivity(new ActivityBrowser());
+				startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
 			}
 			break;
 		case MNU_CLEARLIST:
@@ -563,7 +563,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else if (view == list) {
 			if (Player.songs.getCount() == 0 && Player.getState() == Player.STATE_INITIALIZED) {
 				Player.alreadySelected = false;
-				startActivity(new ActivityBrowser());
+				startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
 			}
 		}
 	}

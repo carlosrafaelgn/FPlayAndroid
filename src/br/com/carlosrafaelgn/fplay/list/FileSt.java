@@ -58,6 +58,7 @@ public final class FileSt extends BaseItem {
 	public final String path, name;
 	public int specialType;
 	public File file;
+	public boolean isChecked;
 	
 	public FileSt(File file, String name) {
 		this.isDirectory = file.isDirectory();

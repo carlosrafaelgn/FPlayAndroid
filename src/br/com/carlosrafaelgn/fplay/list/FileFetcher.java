@@ -108,6 +108,12 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		return f;
 	}
 	
+	public static FileFetcher fetchFilesInThisThread(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching) {
+		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching);
+		f.run();
+		return f;
+	}
+	
 	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching) {
 		this.files = new FileSt[LIST_DELTA];
 		this.path = path;
@@ -121,6 +127,10 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	
 	private void fetch() {
 		(new Thread(this, "File Fetcher Thread")).start();
+	}
+	
+	public Throwable getThrowedException() {
+		return notifyE;
 	}
 	
 	private void ensureCapacity(int capacity) {
@@ -736,13 +746,17 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		} catch (Throwable ex) {
 			e = ex;
 		}
-		if (listener != null && !cancelled) {
-			if (notifyFromMain) {
-				notifyE = e;
-				MainHandler.postToMainThread(this);
+		if (!cancelled) {
+			if (listener != null) {
+				if (notifyFromMain) {
+					notifyE = e;
+					MainHandler.postToMainThread(this);
+				} else {
+					listener.onFilesFetched(this, e);
+					listener = null;
+				}
 			} else {
-				listener.onFilesFetched(this, e);
-				listener = null;
+				notifyE = e;
 			}
 		}
 	}

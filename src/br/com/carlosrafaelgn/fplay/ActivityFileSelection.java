@@ -156,7 +156,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, null, null, null, null, null, null, hasButtons);
+		return new FileView(Player.getService(), this, null, null, null, null, null, null, hasButtons, false);
 	}
 	
 	@Override
@@ -371,7 +371,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
 		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(list);
+			UI.prepareViewPaddingForLargeScreen(list, 0);
 		} else if (UI.isLowDpiScreen) {
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
 			//lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
@@ -407,7 +407,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list);
+			UI.prepareViewPaddingForLargeScreen(list, 0);
 	}
 	
 	@Override

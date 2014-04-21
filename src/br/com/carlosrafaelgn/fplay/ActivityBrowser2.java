@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import android.app.AlertDialog;
@@ -65,44 +66,160 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivityBrowser extends ActivityFileView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
-	private static final int MNU_ADDSONG = 100, MNU_PLAYSONG = 101, MNU_ADDFOLDER = 102, MNU_ADDFOLDERSUB = 103, MNU_PLAYFOLDER = 104, MNU_PLAYFOLDERSUB = 105, MNU_GOBACK = 106, MNU_REMOVEFAVORITE = 107;
-	private TextView lblPath;
+public final class ActivityBrowser2 extends ActivityFileView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
+	private static final int MNU_REMOVEFAVORITE = 100;
+	private FileSt lastClickedFavorite;
+	private TextView lblPath, sep;
 	private BgListView list;
 	private FileList fileList;
 	private LinearLayout panelLoading;
 	private EditText txtURL, txtTitle;
-	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, btnUp, btnMenu;
-	private boolean loading;
+	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, btnChkAll, btnGoBackToPlayer, btnAdd, btnPlay;
+	private int checkedCount;
+	private boolean loading, isAtHome;
 	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
-	private void refreshMenu(int count) {
-		boolean mnu = (count != 0 && btnURL.getVisibility() != View.VISIBLE);
-		if (mnu) {
-			btnMenu.setVisibility(View.VISIBLE);
-			if (btnUp.getVisibility() == View.VISIBLE) {
+	private void refreshButtons() {
+		if (!isAtHome != (btnChkAll.getVisibility() == View.VISIBLE)) {
+			if (isAtHome) {
+				list.setTopBorder();
+				if (UI.isLargeScreen)
+					UI.prepareViewPaddingForLargeScreen(list, 0);
+				else if (!UI.isLowDpiScreen)
+					findViewById(R.id.panelSecondary).setPadding(0, 0, 0, 0);
+				btnGoBackToPlayer.setVisibility(View.GONE);
+				sep.setVisibility(View.GONE);
+				btnChkAll.setVisibility(View.GONE);
 				final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
 				rp.leftMargin = UI._8dp;
-				rp.addRule(RelativeLayout.LEFT_OF, R.id.btnMenu);
-				btnUp.setLayoutParams(rp);
-				btnUp.setNextFocusRightId(R.id.btnMenu);
-				UI.setNextFocusForwardId(btnUp, R.id.btnMenu);
-				btnMenu.setNextFocusLeftId(R.id.btnUp);
-			} else {
-				btnGoBack.setNextFocusRightId(R.id.btnMenu);
-				UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
-				btnMenu.setNextFocusLeftId(R.id.btnGoBack);
-			}
-		} else {
-			btnMenu.setVisibility(View.GONE);
-			if (btnUp.getVisibility() == View.VISIBLE) {
-				final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
-				rp.leftMargin = UI._8dp;
+				rp.rightMargin = UI._8dp;
 				rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-				btnUp.setLayoutParams(rp);
-				btnUp.setNextFocusRightId(R.id.list);
-				UI.setNextFocusForwardId(btnUp, R.id.list);
+				btnHome.setLayoutParams(rp);
+				btnHome.setNextFocusRightId(R.id.list);
+				UI.setNextFocusForwardId(btnHome, R.id.list);
+			} else {
+				list.setTopBottomBorders();
+				if (UI.isLargeScreen)
+					UI.prepareViewPaddingForLargeScreen(list, UI.thickDividerSize);
+				else if (!UI.isLowDpiScreen)
+					findViewById(R.id.panelSecondary).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+				btnGoBackToPlayer.setVisibility(View.VISIBLE);
+				sep.setVisibility(View.VISIBLE);
+				btnChkAll.setVisibility(View.VISIBLE);
+				final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
+				rp.leftMargin = UI._8dp;
+				rp.rightMargin = UI._8dp;
+				rp.addRule(RelativeLayout.LEFT_OF, R.id.sep);
+				btnHome.setLayoutParams(rp);
+				btnHome.setNextFocusRightId(R.id.btnChkAll);
+				UI.setNextFocusForwardId(btnHome, R.id.btnChkAll);
 			}
+		}
+		if ((checkedCount != 0) != (btnAdd.getVisibility() == View.VISIBLE)) {
+			if (checkedCount != 0) {
+				btnAdd.setVisibility(View.VISIBLE);
+				btnPlay.setVisibility(View.VISIBLE);
+			} else {
+				btnAdd.setVisibility(View.GONE);
+				btnPlay.setVisibility(View.GONE);
+			}
+		}
+	}
+	
+	private void selectAlbumSongs(int position) {
+		
+	}
+	
+	private void addPlaySong(FileSt file, final boolean play) {
+		try {
+			final FileSt[] fs = new FileSt[] { file };
+			Player.songs.addingStarted();
+			SongAddingMonitor.start(getHostActivity());
+			(new Thread("Single File Adder Thread") {
+				@Override
+				public void run() {
+					try {
+						Player.songs.addFiles(fs, null, -1, 1, play, false);
+					} catch (Throwable ex) {
+						Player.songs.addingEnded();
+					}
+				}
+			}).start();
+		} catch (Throwable ex) {
+			Player.songs.addingEnded();
+			UI.toast(getApplication(), ex.getMessage());
+		}
+	}
+	
+	private void addPlayFolder(FileSt file, final boolean play, final boolean sub) {
+		try {
+			Player.songs.addingStarted();
+			SongAddingMonitor.start(getHostActivity());
+			FileFetcher.fetchFiles(file.path, Player.songs, false, sub, true, play);
+			if (play && Player.goBackWhenPlayingFolders)
+				finish();
+		} catch (Throwable ex) {
+			Player.songs.addingEnded();
+			UI.toast(getApplication(), ex.getMessage());
+		}
+	}
+	
+	private void addPlayCheckedItems(final boolean play) {
+		if (checkedCount <= 0)
+			return;
+		try {
+			final FileSt[] fs = new FileSt[checkedCount];
+			for (int i = fileList.getCount() - 1, j = checkedCount - 1; i >= 0 && j >= 0; i--) {
+				final FileSt file = fileList.getItemT(i);
+				if (file.isChecked && file.specialType != FileSt.TYPE_ALBUM) {
+					fs[j] = file;
+					j--;
+				}
+			}
+			Player.songs.addingStarted();
+			SongAddingMonitor.start(getHostActivity());
+			(new Thread("Checked File Adder Thread") {
+				@Override
+				public void run() {
+					try {
+						Throwable firstException = null;
+						final ArrayList<FileSt> filesToAdd = new ArrayList<FileSt>(256);
+						for (int i = 0; i < fs.length; i++) {
+							final FileSt file = fs[i];
+							if (file == null)
+								continue;
+							if (!file.isDirectory) {
+								filesToAdd.add(file);
+							} else {
+								final FileFetcher ff = FileFetcher.fetchFilesInThisThread(file.path, null, false, true, true, false);
+								if (ff.getThrowedException() == null) {
+									if (ff.count <= 0)
+										continue;
+									filesToAdd.ensureCapacity(filesToAdd.size() + ff.count);
+									for (int j = 0; j < ff.count; j++)
+										filesToAdd.add(ff.files[j]);
+								} else {
+									if (firstException == null)
+										firstException = ff.getThrowedException();
+								}
+							}
+						}
+						if (filesToAdd.size() <= 0) {
+							if (firstException != null)
+								Player.songs.onFilesFetched(null, firstException);
+							else
+								Player.songs.addingEnded();
+						} else {
+							Player.songs.addFiles(null, filesToAdd.iterator(), -1, filesToAdd.size(), play, false);
+						}
+					} catch (Throwable ex) {
+						Player.songs.addingEnded();
+					}
+				}
+			}).start();
+		} catch (Throwable ex) {
+			Player.songs.addingEnded();
+			UI.toast(getApplication(), ex.getMessage());
 		}
 	}
 	
@@ -111,41 +228,53 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		loading = show;
 		if (panelLoading != null)
 			panelLoading.setVisibility(show ? View.VISIBLE : View.GONE);
-		int count = 0;
-		if (fileList != null) {
+		if (fileList != null)
 			fileList.setObserver(show ? null : list);
-			count = fileList.getCount();
-		}
-		if (list != null)
+		if (list != null && !list.isInTouchMode())
 			list.centerItem(fileList.getSelection(), false);
 		if (!show)
-			refreshMenu(count);
+			refreshButtons();
 	}
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, false);
+		return new FileView(Player.getService(), this, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, true);
 	}
 	
 	@Override
 	public void processItemButtonClick(int position, boolean add) {
 		final FileSt file = fileList.getItemT(position);
-		if (file.isDirectory) {
-			UI.showMsg(getHostActivity(), add ? UI.MSG_ADD : UI.MSG_PLAY);
-			processMenuItemClick(add ? MNU_ADDFOLDERSUB : MNU_PLAYFOLDERSUB);
+		if (file.specialType == FileSt.TYPE_ALBUM) {
+			selectAlbumSongs(position);
 		} else {
-			processMenuItemClick(add ? MNU_ADDSONG : MNU_PLAYSONG);
+			if (file.isChecked) {
+				checkedCount++;
+				if (checkedCount >= fileList.getCount()) {
+					checkedCount = fileList.getCount();
+					btnChkAll.setChecked(true);
+				}
+			} else {
+				checkedCount--;
+				btnChkAll.setChecked(false);
+				if (checkedCount < 0)
+					checkedCount = 0;
+			}
+			refreshButtons();
 		}
 	}
 	
 	@Override
 	public void processItemClick(int position) {
-		if ((!UI.doubleClickMode && (Player.path == null || Player.path.length() == 0)) || fileList.getSelection() == position) {
-			final FileSt file = fileList.getItemT(position);
-			if (file.isDirectory)
-				navigateTo(file.path, null);
-			else
-				processMenuItemClick(MNU_PLAYSONG);
+		final FileSt file = fileList.getItemT(position);
+		if (!UI.doubleClickMode || fileList.getSelection() == position) {
+			if (file.isDirectory) {
+				if (file.specialType == FileSt.TYPE_ALBUM)
+					addPlayFolder(file, true, true);
+				else
+					navigateTo(file.path, null);
+			} else {
+				addPlaySong(file, true);
+			}
 		} else {
 			fileList.setSelection(position, true);
 		}
@@ -153,141 +282,40 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	public void processItemLongClick(int position) {
-		if (fileList.getSelection() != position)
-			fileList.setSelection(position, true);
-		CustomContextMenu.openContextMenu(btnMenu, this);
+		lastClickedFavorite = fileList.getItemT(position);
+		if (lastClickedFavorite.specialType == FileSt.TYPE_FAVORITE)
+			CustomContextMenu.openContextMenu(btnChkAll, this);
+		else
+			lastClickedFavorite = null;
 	}
 	
-	private void processMenuItemClick(final int id) {
-		final int s = fileList.getSelection();
-		FileSt f;
+	private void processMenuItemClick(int id) {
 		switch (id) {
-		case MNU_GOBACK:
-			finish();
-			break;
-		case MNU_ADDSONG:
-		case MNU_PLAYSONG:
-			if (s >= 0) {
-				f = fileList.getItemT(s);
-				if (f.isDirectory) {
-					UI.toast(getApplication(), R.string.msg_select_song);
-				} else {
-					try {
-						final FileSt[] fs = new FileSt[] { f };
-						Player.songs.addingStarted();
-						SongAddingMonitor.start(getHostActivity());
-						(new Thread("Single File Adder Thread") {
-							@Override
-							public void run() {
-								Player.songs.addFiles(fs, null, -1, 1, id == MNU_PLAYSONG, false);
-							}
-						}).start();
-					} catch (Throwable ex) {
-						Player.songs.addingEnded();
-						UI.toast(getApplication(), ex.getMessage());
-					}
-				}
-			} else {
-				UI.toast(getApplication(), R.string.msg_select_song);
-			}
-			break;
-		case MNU_ADDFOLDER:
-		case MNU_ADDFOLDERSUB:
-		case MNU_PLAYFOLDER:
-		case MNU_PLAYFOLDERSUB:
-			final boolean play = ((id == MNU_PLAYFOLDER) || (id == MNU_PLAYFOLDERSUB));
-			if (s >= 0) {
-				f = fileList.getItemT(s);
-				if (!f.isDirectory) {
-					UI.toast(getApplication(), play ? R.string.msg_select_folder_play : R.string.msg_select_folder_add);
-				} else {
-					try {
-						Player.songs.addingStarted();
-						SongAddingMonitor.start(getHostActivity());
-						FileFetcher.fetchFiles(f.path, Player.songs, false, (id == MNU_ADDFOLDERSUB) || (id == MNU_PLAYFOLDERSUB), true, play);
-						if (play && Player.goBackWhenPlayingFolders)
-							finish();
-					} catch (Throwable ex) {
-						Player.songs.addingEnded();
-						UI.toast(getApplication(), ex.getMessage());
-					}
-				}
-			} else {
-				UI.toast(getApplication(), play ? R.string.msg_select_folder_play : R.string.msg_select_folder_add);
-			}
-			break;
 		case MNU_REMOVEFAVORITE:
-			if (s >= 0) {
-				f = fileList.getItemT(s);
-				if (f.specialType != FileSt.TYPE_FAVORITE) {
-					UI.toast(getApplication(), R.string.msg_select_favorite_remove);
-				} else {
-					Player.removeFavoriteFolder(f.path);
-					fileList.removeSelection();
-				}
+			if (lastClickedFavorite != null) {
+				Player.removeFavoriteFolder(lastClickedFavorite.path);
+				fileList.setSelection(fileList.indexOf(lastClickedFavorite), false);
+				fileList.removeSelection();
+				fileList.setSelection(-1, false);
 			} else {
 				UI.toast(getApplication(), R.string.msg_select_favorite_remove);
 			}
+			lastClickedFavorite = null;
 			break;
 		}
 	}
 	
 	@Override
 	public View getNullContextMenuView() {
-		return btnMenu;
+		return null;
 	}
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		final int i = fileList.getSelection();
 		UI.prepare(menu);
-		if (i >= 0) {
-			final FileSt f = fileList.getItemT(i);
-			if (Player.path.length() != 0) {
-				if (f.specialType == FileSt.TYPE_ARTIST) {
-					menu.add(0, MNU_ADDFOLDERSUB, 0, R.string.add_artist)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_ADD));
-					UI.separator(menu, 0, 1);
-					menu.add(1, MNU_PLAYFOLDERSUB, 0, R.string.play_artist)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
-				} else if (f.specialType == FileSt.TYPE_ALBUM) {
-					menu.add(0, MNU_ADDFOLDERSUB, 0, R.string.add_album)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_ADD));
-					UI.separator(menu, 0, 1);
-					menu.add(1, MNU_PLAYFOLDERSUB, 0, R.string.play_album)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
-				} else if (f.isDirectory) {
-					menu.add(0, MNU_ADDFOLDER, 0, R.string.add_folder)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_ADD));
-					menu.add(0, MNU_ADDFOLDERSUB, 1, R.string.add_folder_sub)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_ADD));
-					UI.separator(menu, 0, 2);
-					menu.add(1, MNU_PLAYFOLDER, 0, R.string.play_folder)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
-					menu.add(1, MNU_PLAYFOLDERSUB, 1, R.string.play_folder_sub)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
-				} else {
-					menu.add(0, MNU_ADDSONG, 0, R.string.add_song)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_ADD));
-					menu.add(0, MNU_PLAYSONG, 1, R.string.play_song)
-						.setOnMenuItemClickListener(this)
-						.setIcon(new TextIconDrawable(UI.ICON_PLAY));
-				}
-			} else if (f.specialType == FileSt.TYPE_FAVORITE) {
-				menu.add(0, MNU_REMOVEFAVORITE, 0, R.string.remove_favorite)
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable(UI.ICON_FAVORITE_OFF));
-			}
-		}
+		menu.add(0, MNU_REMOVEFAVORITE, 0, R.string.remove_favorite)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_FAVORITE_OFF));
 	}
 	
 	@Override
@@ -297,8 +325,11 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	}
 	
 	private void navigateTo(String to, String from) {
+		if (isAtHome)
+			Player.originalPath = to;
+		isAtHome = (to.length() == 0);
 		final boolean fav = ((to.length() > 1) && (to.charAt(0) == File.separatorChar));
-		final boolean others = (to.length() > 0);
+		final boolean others = !isAtHome;
 		if (fav) {
 			btnURL.setVisibility(View.GONE);
 			btnGoBack.setNextFocusRightId(R.id.chkFavorite);
@@ -307,7 +338,6 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			chkFavorite.setChecked(Player.isFavoriteFolder(to));
 			chkFavorite.setVisibility(View.VISIBLE);
 			btnHome.setVisibility(View.VISIBLE);
-			btnUp.setVisibility(View.VISIBLE);
 			lblPath.setVisibility(View.VISIBLE);
 		} else if (others) {
 			btnURL.setVisibility(View.GONE);
@@ -316,20 +346,18 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			btnHome.setNextFocusLeftId(R.id.btnGoBack);
 			chkFavorite.setVisibility(View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
-			btnUp.setVisibility(View.VISIBLE);
 			lblPath.setVisibility(View.VISIBLE);
 		} else {
-			refreshMenu(0);
 			btnURL.setVisibility(View.VISIBLE);
 			btnGoBack.setNextFocusRightId(R.id.btnURL);
 			UI.setNextFocusForwardId(btnGoBack, R.id.btnURL);
 			chkFavorite.setVisibility(View.GONE);
 			btnHome.setVisibility(View.GONE);
-			btnUp.setVisibility(View.GONE);
 			lblPath.setVisibility(View.GONE);
 		}
-		if (Player.path.length() == 0)
-			Player.originalPath = to;
+		checkedCount = 0;
+		btnChkAll.setChecked(false);
+		refreshButtons();
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
 		fileList.setPath(to, from);
@@ -341,15 +369,16 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		case KeyEvent.KEYCODE_DPAD_LEFT:
 			if (btnURL.getVisibility() == View.VISIBLE)
 				btnURL.requestFocus();
-			else if (btnMenu.getVisibility() == View.VISIBLE)
-				btnMenu.requestFocus();
-			else if (btnUp.getVisibility() == View.VISIBLE)
-				btnUp.requestFocus();
+			else if (btnChkAll.getVisibility() == View.VISIBLE)
+				btnChkAll.requestFocus();
 			else
 				btnGoBack.requestFocus();
 			return true;
 		case KeyEvent.KEYCODE_DPAD_RIGHT:
-			btnGoBack.requestFocus();
+			if (btnGoBackToPlayer.getVisibility() == View.VISIBLE)
+				btnGoBackToPlayer.requestFocus();
+			else
+				btnGoBack.requestFocus();
 			return true;
 		case KeyEvent.KEYCODE_ENTER:
 		case KeyEvent.KEYCODE_SPACE:
@@ -365,7 +394,30 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
-			finish();
+			if (Player.path.length() > 1) {
+				if (Player.path.equals(Player.originalPath)) {
+					navigateTo("", Player.path);
+					return;
+				}
+				if (Player.path.charAt(0) != File.separatorChar) {
+					final int fakePathIdx = Player.path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR);
+					final String realPath = Player.path.substring(0, fakePathIdx);
+					final String fakePath = Player.path.substring(fakePathIdx + 1);
+					int i = realPath.lastIndexOf(File.separatorChar, realPath.length() - 1);
+					if (i < 0)
+						navigateTo("", Player.path);
+					else
+						navigateTo(realPath.substring(0, i) + FileSt.FAKE_PATH_ROOT + fakePath.substring(0, fakePath.lastIndexOf(FileSt.FAKE_PATH_SEPARATOR_CHAR)), realPath + FileSt.FAKE_PATH_ROOT);
+				} else {
+					final int i = Player.path.lastIndexOf(File.separatorChar, Player.path.length() - 1);
+					final String originalPath = Player.path;
+					navigateTo((i <= 0) ? File.separator : Player.path.substring(0, i), ((i >= 0) && (i < originalPath.length())) ? originalPath.substring(i + 1) : null);
+				}
+			} else if (Player.path.length() == 1) {
+				navigateTo("", Player.path);
+			} else {
+				finish();
+			}
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = new LinearLayout(ctx);
@@ -411,31 +463,20 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		} if (view == btnHome) {
 			if (Player.path.length() > 0)
 				navigateTo("", Player.path);
-		} else if (view == btnUp) {
-			if (Player.path.length() > 1) {
-				if (Player.path.equals(Player.originalPath)) {
-					navigateTo("", Player.path);
-					return;
-				}
-				if (Player.path.charAt(0) != File.separatorChar) {
-					final int fakePathIdx = Player.path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR);
-					final String realPath = Player.path.substring(0, fakePathIdx);
-					final String fakePath = Player.path.substring(fakePathIdx + 1);
-					int i = realPath.lastIndexOf(File.separatorChar, realPath.length() - 1);
-					if (i < 0)
-						navigateTo("", Player.path);
-					else
-						navigateTo(realPath.substring(0, i) + FileSt.FAKE_PATH_ROOT + fakePath.substring(0, fakePath.lastIndexOf(FileSt.FAKE_PATH_SEPARATOR_CHAR)), realPath + FileSt.FAKE_PATH_ROOT);
-				} else {
-					final int i = Player.path.lastIndexOf(File.separatorChar, Player.path.length() - 1);
-					final String originalPath = Player.path;
-					navigateTo((i <= 0) ? File.separator : Player.path.substring(0, i), ((i >= 0) && (i < originalPath.length())) ? originalPath.substring(i + 1) : null);
-				}
-			} else if (Player.path.length() == 1) {
-				navigateTo("", Player.path);
-			}
-		} else if (view == btnMenu) {
-			CustomContextMenu.openContextMenu(btnMenu, this);
+		} else if (view == btnChkAll) {
+			final boolean ck = btnChkAll.isChecked();
+			int i = fileList.getCount() - 1;
+			checkedCount = (ck ? (i + 1) : 0);
+			for (; i >= 0; i--)
+				fileList.getItemT(i).isChecked = ck;
+			fileList.notifyCheckedChanged();
+			refreshButtons();
+		} else if (view == btnGoBackToPlayer) {
+			finish();
+		} else if (view == btnAdd) {
+			addPlayCheckedItems(false);
+		} else if (view == btnPlay) {
+			addPlayCheckedItems(true);
 		}
 	}
 	
@@ -468,9 +509,9 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	protected boolean onBackPressed() {
-		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing || Player.path == null || Player.path.length() == 0)
+		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing || isAtHome)
 			return false;
-		onClick(btnUp);
+		onClick(btnGoBack);
 		return true;
 	}
 	
@@ -480,6 +521,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			Player.path = "";
 		if (Player.originalPath == null)
 			Player.originalPath = "";
+		isAtHome = (Player.path.length() == 0);
 		fileList = new FileList();
 		fileList.observerActivity = this;
 		ic_closed_folder = getDrawable(R.drawable.ic_closed_folder);
@@ -493,7 +535,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
-		setContentView(R.layout.activity_browser);
+		setContentView(R.layout.activity_browser2);
 		final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
 		UI.largeText(lblLoading);
 		lblLoading.setTextColor(UI.colorState_text_listitem_static);
@@ -503,6 +545,8 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		list = (BgListView)findViewById(R.id.list);
+		if (!isAtHome)
+			list.setTopBottomBorders();
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
@@ -518,18 +562,38 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnHome = (BgButton)findViewById(R.id.btnHome);
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
-		btnUp = (BgButton)findViewById(R.id.btnUp);
-		btnUp.setOnClickListener(this);
-		btnUp.setIcon(UI.ICON_UP);
-		btnMenu = (BgButton)findViewById(R.id.btnMenu);
-		btnMenu.setOnClickListener(this);
-		btnMenu.setIcon(UI.ICON_MENU);
+		sep = (TextView)findViewById(R.id.sep);
+		final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.thickDividerSize, UI.defaultControlContentsSize);
+		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
+		rp.addRule(RelativeLayout.LEFT_OF, R.id.btnChkAll);
+		sep.setLayoutParams(rp);
+		sep.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
+		btnChkAll = (BgButton)findViewById(R.id.btnChkAll);
+		btnChkAll.setOnClickListener(this);
+		btnChkAll.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, true);
+		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
+		btnGoBackToPlayer.setOnClickListener(this);
+		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_FPLAY, TextIconDrawable.LOCATION_WINDOW), null, null, null);
+		btnAdd = (BgButton)findViewById(R.id.btnAdd);
+		btnAdd.setOnClickListener(this);
+		btnAdd.setIcon(UI.ICON_ADD, true, false);
+		btnPlay = (BgButton)findViewById(R.id.btnPlay);
+		btnPlay.setOnClickListener(this);
+		btnPlay.setIcon(UI.ICON_PLAY, true, false);
 		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+			UI.prepareViewPaddingForLargeScreen(list, isAtHome ? 0 : UI.thickDividerSize);
+			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
+			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+			btnURL.setLayoutParams(lp);
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
 		} else if (UI.isLowDpiScreen) {
 			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
+			findViewById(R.id.panelSecondary).setPadding(0, 0, 0, 0);
+			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
+			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+			btnURL.setLayoutParams(lp);
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
 		//CustomContextMenu.registerForContextMenu(btnMenu, this);
@@ -555,11 +619,12 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+			UI.prepareViewPaddingForLargeScreen(list, isAtHome ? 0 : UI.thickDividerSize);
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
+		lastClickedFavorite = null;
 		lblPath = null;
 		list = null;
 		panelLoading = null;
@@ -567,8 +632,11 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnURL = null;
 		chkFavorite = null;
 		btnHome = null;
-		btnUp = null;
-		btnMenu = null;
+		sep = null;
+		btnChkAll = null;
+		btnGoBackToPlayer = null;
+		btnAdd = null;
+		btnPlay = null;
 		ic_closed_folder = null;
 		ic_internal = null;
 		ic_external = null;

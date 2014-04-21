@@ -323,6 +323,22 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 			notifyDataSetChanged(byUserInteraction ? -1 : gotoPosition, SELECTION_CHANGED);
 	}
 	
+	public final int indexOf(E item) {
+		for (int i = 0; i < count; i++) {
+			if (items[i] == item)
+				return i;
+		}
+		return -1;
+	}
+	
+	public final int lastIndexOf(E item) {
+		for (int i = count - 1; i >= 0; i--) {
+			if (items[i] == item)
+				return i;
+		}
+		return -1;
+	}
+	
 	@Override
 	public final int getCount() {
 		return count;
@@ -399,6 +415,10 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 			observer.onChanged();
 		if (listObserver != null && gotoPosition >= 0)
 			listObserver.centerItem(gotoPosition, false);
+	}
+	
+	public void notifyCheckedChanged() {
+		notifyDataSetChanged(-1, SELECTION_CHANGED);
 	}
 	
 	protected final int getItemState(int position) {

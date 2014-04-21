@@ -120,6 +120,16 @@ public final class BgListView extends ListView {
 	}
 	
 	@SuppressWarnings("deprecation")
+	public void setTopBottomBorders() {
+		super.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, UI.thickDividerSize));
+	}
+	
+	@SuppressWarnings("deprecation")
+	public void setTopBorder() {
+		super.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
+	}
+	
+	@SuppressWarnings("deprecation")
 	public void setRightBorder() {
 		super.setBackgroundDrawable(new BorderDrawable(0, 0, UI.thickDividerSize, 0));
 	}
@@ -207,7 +217,20 @@ public final class BgListView extends ListView {
 		smoothScrollToPositionFromTop(position, y);
 	}
 	
+	public void scrollItemToTop(int position, boolean smoothly) {
+		final BaseList<?> a = (BaseList<?>)getAdapter();
+		if (a == null || position < 0 || position >= a.getCount())
+			return;
+		if (smoothly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			smoothScroll(position, 0);
+		else
+			setSelectionFromTop(position, 0);
+	}
+	
 	public void centerItem(int position, boolean smoothly) {
+		final BaseList<?> a = (BaseList<?>)getAdapter();
+		if (a == null || position < 0 || position >= a.getCount())
+			return;
 		final View v = getChildAt(0);
 		int y = (getHeight() >> 1);
 		final int y2 = ((v == null) ? 0 : (v.getHeight() >> 1));
