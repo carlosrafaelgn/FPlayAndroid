@@ -407,10 +407,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		initVisualizer(false);
 		
 		if (UI.useVisualizerButtonsInsideList) {
-			btnBack.setInsideList(true);
-			btnPrev.setInsideList(true);
-			btnPlay.setInsideList(true);
-			btnNext.setInsideList(true);
+			btnBack.setTextColor(UI.colorState_text_listitem_reactive);
+			btnPrev.setTextColor(UI.colorState_text_listitem_reactive);
+			btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
+			btnNext.setTextColor(UI.colorState_text_listitem_reactive);
 		}
 		if (!btnBack.isInTouchMode())
 			btnBack.requestFocus();

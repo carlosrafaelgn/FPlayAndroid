@@ -511,7 +511,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnURL = (BgButton)findViewById(R.id.btnURL);
 		btnURL.setOnClickListener(this);
 		btnURL.setDefaultHeight();
-		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, TextIconDrawable.LOCATION_WINDOW), null, null, null);
+		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
 		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, false, true, true);
@@ -529,9 +529,10 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
 		} else if (UI.isLowDpiScreen) {
-			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
+		if (UI.extraSpacing)
+			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		navigateTo(Player.path, null);
 	}

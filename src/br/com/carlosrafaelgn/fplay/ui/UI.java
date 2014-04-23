@@ -78,7 +78,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 23;
+	public static final int VERSION_CODE = 24;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -149,6 +149,7 @@ public final class UI {
 	public static final String ICON_FPLAY = "♫";
 	public static final String ICON_SLIDERTOP = "\"";
 	public static final String ICON_SLIDERBOTTOM = "\'";
+	public static final String ICON_RIGHT = "6";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
@@ -217,6 +218,7 @@ public final class UI {
 	public static ColorStateList colorState_text_title_static;
 	public static ColorStateList colorState_highlight_static;
 	public static ColorStateList colorState_text_highlight_static;
+	public static ColorStateList colorState_text_highlight_reactive;
 	
 	public static Typeface iconsTypeface, defaultTypeface;
 	
@@ -262,7 +264,7 @@ public final class UI {
 	
 	public static final Rect rect = new Rect();
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
@@ -764,6 +766,7 @@ public final class UI {
 		colorState_text_selected_static = ColorStateList.valueOf(color_text_selected);
 		colorState_highlight_static = ColorStateList.valueOf(color_highlight);
 		colorState_text_highlight_static = ColorStateList.valueOf(color_text_highlight);
+		colorState_text_highlight_reactive = new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { color_text_selected, color_text_selected, color_text_highlight });
 		if (!custom) {
 			color_text_title = color_highlight;
 			colorState_text_title_static = colorState_highlight_static;

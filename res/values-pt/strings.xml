@@ -203,10 +203,12 @@
     <string name="custom_color_theme">Tema de cores personalizável</string>
     <string name="add_artist">Adicionar artista</string>
     <string name="play_artist">Tocar artista</string>
-    <string name="touch_to_add_songs">Lista vazia!\n\nToque aqui para adicionar músicas :)</string>
-    <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
+    <string name="touch_to_add_songs">Lista vazia!\n\nToque aqui, ou no botão +, para adicionar músicas :)</string>
     <string name="custom_key_behavior">Comportamento personalizável de teclas</string>
-    <string name="opt_wrap_around_list">Mover a seleção para a extremidade oposta de uma lista ao atingir sua parte superior/inferior</string>
+    <string name="opt_wrap_around_list">Mover a seleção do teclado para a extremidade oposta de uma lista ao atingir sua parte superior/inferior</string>
+    <string name="opt_extra_spacing">Usar espaçamento largo nos cabeçalhos</string>
+    <string name="opt_old_browser_behavior">Usar comportamento antigo para adicionar músicas</string>
+    <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
 

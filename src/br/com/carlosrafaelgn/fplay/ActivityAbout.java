@@ -99,17 +99,17 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		sb.append("\nDPI: ");
 		sb.append(UI.densityDpi);
 		sb.append("\ndp: ");
-		sb.append(formatFloat("%.1f", UI.density));
+		sb.append(formatFloat("%.2f", UI.density));
 		sb.append("\nsp: ");
-		sb.append(formatFloat("%.1f", UI.scaledDensity));
+		sb.append(formatFloat("%.2f", UI.scaledDensity));
 		sb.append("\n" + getText(R.string.resolution) + " (px): ");
 		sb.append(UI.screenWidth);
 		sb.append(" x ");
 		sb.append(UI.screenHeight);
 		sb.append("\n" + getText(R.string.resolution) + " (dp): ");
-		sb.append(formatFloat("%.1f", UI.pxToDp(UI.screenWidth)));
+		sb.append(formatFloat("%.2f", UI.pxToDp(UI.screenWidth)));
 		sb.append(" x ");
-		sb.append(formatFloat("%.1f", UI.pxToDp(UI.screenHeight)));
+		sb.append(formatFloat("%.2f", UI.pxToDp(UI.screenHeight)));
 		if (UI.isLowDpiScreen)
 			sb.append("\nLDPI");
 		if (UI.isLargeScreen)
@@ -121,9 +121,9 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		if (UI.isLargeScreen) {
 			UI.prepareViewPaddingForLargeScreen(list, 0);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		} else if (UI.isLowDpiScreen) {
-			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
 		}
+		if (UI.extraSpacing)
+			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 	}
 	
 	@Override

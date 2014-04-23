@@ -68,7 +68,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -473,7 +473,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		btnAbout = (BgButton)findViewById(R.id.btnAbout);
 		btnAbout.setOnClickListener(this);
 		if (!colorMode)
-			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, TextIconDrawable.LOCATION_WINDOW), null, null, null);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		else
 			btnAbout.setText(R.string.apply_theme);
 		lastColorView = -1;
@@ -508,6 +508,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optIsDividerVisible.setOnClickListener(this);
 			optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge, false);
 			optIsVerticalMarginLarge.setOnClickListener(this);
+			optExtraSpacing = new SettingView(ctx, getText(R.string.opt_extra_spacing).toString(), null, true, UI.extraSpacing, false);
+			optExtraSpacing.setOnClickListener(this);
 			optForcedLocale = new SettingView(ctx, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false, false);
 			optForcedLocale.setOnClickListener(this);
 			optWidgetTransparentBg = new SettingView(ctx, getText(R.string.transparent_background).toString(), null, true, UI.widgetTransparentBg, false);
@@ -534,6 +536,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optMarqueeTitle.setOnClickListener(this);
 			optPrepareNext = new SettingView(ctx, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled, false);
 			optPrepareNext.setOnClickListener(this);
+			optOldBrowserBehavior = new SettingView(ctx, getText(R.string.opt_old_browser_behavior).toString(), null, true, UI.oldBrowserBehavior, false);
+			optOldBrowserBehavior.setOnClickListener(this);
 			optClearListWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders, false);
 			optClearListWhenPlayingFolders.setOnClickListener(this);
 			optGoBackWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
@@ -556,6 +560,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optForceOrientation);
 			panelSettings.addView(optIsDividerVisible);
 			panelSettings.addView(optIsVerticalMarginLarge);
+			panelSettings.addView(optExtraSpacing);
 			panelSettings.addView(optForcedLocale);
 			addHeader(ctx, R.string.widget, optForcedLocale);
 			panelSettings.addView(optWidgetTransparentBg);
@@ -569,20 +574,21 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optFadeInPause);
 			panelSettings.addView(optFadeInOther);
 			addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
+			panelSettings.addView(optOldBrowserBehavior);
+			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optClearListWhenPlayingFolders);
 			panelSettings.addView(optGoBackWhenPlayingFolders);
 			panelSettings.addView(optBlockBackKey);
-			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optWrapAroundList);
 			panelSettings.addView(optDoubleClickMode);
 			panelSettings.addView(optMarqueeTitle);
 			panelSettings.addView(optPrepareNext);
 		}
 		
-		if (UI.isLowDpiScreen && !UI.isLargeScreen)
-			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
-		else
+		if (UI.isLargeScreen)
 			btnAbout.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+		if (UI.extraSpacing)
+			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		btnAbout.setDefaultHeight();
 	}
 	
@@ -619,6 +625,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optVolumeControlType = null;
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
+		optExtraSpacing = null;
 		optForcedLocale = null;
 		optWidgetTransparentBg = null;
 		optWidgetTextColor = null;
@@ -631,6 +638,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optDoubleClickMode = null;
 		optMarqueeTitle = null;
 		optPrepareNext = null;
+		optOldBrowserBehavior = null;
 		optClearListWhenPlayingFolders = null;
 		optGoBackWhenPlayingFolders = null;
 		optForceOrientation = null;
@@ -717,6 +725,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					((SettingView)v).refreshVerticalMargin();
 			}
 			panelSettings.requestLayout();
+		} else if (view == optExtraSpacing) {
+			UI.extraSpacing = optExtraSpacing.isChecked();
+			onCleanupLayout();
+			onCreateLayout(false);
+			System.gc();
 		} else if (view == optHandleCallKey) {
 			Player.handleCallKey = optHandleCallKey.isChecked();
 		} else if (view == optPlayWhenHeadsetPlugged) {
@@ -740,6 +753,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.marqueeTitle = optMarqueeTitle.isChecked();
 		} else if (view == optPrepareNext) {
 			Player.nextPreparationEnabled = optPrepareNext.isChecked();
+		} else if (view == optOldBrowserBehavior) {
+			UI.oldBrowserBehavior = optOldBrowserBehavior.isChecked();
 		} else if (view == optClearListWhenPlayingFolders) {
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {

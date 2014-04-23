@@ -201,9 +201,9 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		btnChangeEffect = (BgButton)findViewById(R.id.btnChangeEffect);
 		btnChangeEffect.setOnClickListener(this);
-		btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, TextIconDrawable.LOCATION_LIST), null, null, null);
+		btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, UI.color_text_listitem, UI.defaultControlContentsSize), null, null, null);
 		btnChangeEffect.setMinimumHeight(UI.defaultControlSize);
-		btnChangeEffect.setInsideList(true);
+		btnChangeEffect.setTextColor(UI.colorState_text_listitem_reactive);
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
 		barBass.setMax(BassBoost.getMaxStrength());
 		barBass.setValue(BassBoost.getStrength());
@@ -217,7 +217,6 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 			btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		} else if (UI.isLowDpiScreen) {
-			findViewById(R.id.panelTop).setPadding(0, 0, 0, 0);
 			chkEnable.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
@@ -225,6 +224,8 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 		} else {
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		}
+		if (UI.extraSpacing)
+			findViewById(R.id.panelTop).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		prepareViewForMode();
 	}
 	

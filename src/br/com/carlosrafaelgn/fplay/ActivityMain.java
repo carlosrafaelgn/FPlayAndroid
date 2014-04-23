@@ -86,15 +86,15 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109;
 	private View vwVolume;
-	private TextView lblTitle, lblArtist, lblAlbum, lblLength, lblMsgSelMove, lblTime;
+	private TextView lblTitle, lblArtist, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
-	private BgButton btnPrev, btnPlay, btnNext, btnMenu, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
+	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean showSecondary, alwaysShowSecondary, playingBeforeSeek, selectCurrentWhenAttached, largeMode;
+	private boolean playingBeforeSeek, selectCurrentWhenAttached;
 	private StringBuilder timeBuilder, volumeBuilder;
 	
 	private void saveListViewPosition() {
@@ -208,13 +208,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	private void startSelecting() {
 		if (firstSel >= 0) {
-			if (largeMode) {
+			if (UI.isLargeScreen) {
 				final ViewGroup.LayoutParams p = lblMsgSelMove.getLayoutParams();
 				if (p.height != UI.defaultControlSize) {
 					p.height = UI.defaultControlSize;
 					lblMsgSelMove.setLayoutParams(p);
 				}
-			} else if (!UI.isLandscape && alwaysShowSecondary) {
+			} else if (!UI.isLandscape) {
 				final int h = panelControls.getHeight() + panelSecondary.getHeight();
 				final int ph = UI.defaultControlSize + UI._8dp;
 				final ViewGroup.LayoutParams p = panelSelection.getLayoutParams();
@@ -230,11 +230,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			panelSecondary.setVisibility(View.GONE);
 			panelSelection.setVisibility(View.VISIBLE);
 			lblMsgSelMove.setText(R.string.msg_sel);
-			if (!largeMode)
+			if (!UI.isLargeScreen)
 				lblTitle.setVisibility(View.GONE);
 			lblMsgSelMove.setVisibility(View.VISIBLE);
 			lblMsgSelMove.setSelected(true);
-			if (largeMode) {
+			if (UI.isLargeScreen) {
 				btnCancelSel.setNextFocusLeftId(R.id.btnRemoveSel);
 				UI.setNextFocusForwardId(list, R.id.btnMoveSel);
 			} else if (UI.isLandscape) {
@@ -257,7 +257,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			btnCancelSel.setText(R.string.done);
 			lblMsgSelMove.setText(R.string.msg_move);
 			lblMsgSelMove.setSelected(true);
-			if (largeMode) {
+			if (UI.isLargeScreen) {
 				btnCancelSel.setNextFocusLeftId(R.id.list);
 			} else if (UI.isLandscape) {
 				btnCancelSel.setNextFocusUpId(R.id.list);
@@ -279,31 +279,30 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private void cancelSelection(boolean removed) {
-		if (!removed && firstSel >= 0 && lastSel >= 0) {
-			//final int p = ((firstSel < lastSel) ? Player.songs.getFirstSelectedPosition() : Player.songs.getLastSelectedPosition());
-			//Player.songs.setSelection(p, p, true, p >= list.getFirstVisiblePosition() && p <= list.getLastVisiblePosition());
+		if (list.isInTouchMode()) {
+			final int p = Player.songs.getCurrentPosition();
+			if (p >= 0 && p < Player.songs.getCount())
+				Player.songs.setSelection(p, true);
+			else
+				Player.songs.setSelection(-1, true);
+		} else if (!removed && firstSel >= 0 && lastSel >= 0) {
 			int p = Player.songs.getSelection();
 			if (p < 0)
 				p = ((firstSel < lastSel) ? Player.songs.getFirstSelectedPosition() : Player.songs.getLastSelectedPosition());
-			Player.songs.setSelection(p, true);
+			Player.songs.setSelection(p, false);
 		}
 		Player.songs.selecting = false;
 		Player.songs.moving = false;
 		firstSel = -1;
 		lastSel = -1;
 		lblMsgSelMove.setVisibility(View.GONE);
-		if (!largeMode)
+		if (!UI.isLargeScreen)
 			lblTitle.setVisibility(View.VISIBLE);
 		lblTitle.setSelected(true);
 		panelSelection.setVisibility(View.GONE);
-		if (largeMode || UI.isLandscape || alwaysShowSecondary) {
-			UI.setNextFocusForwardId(list, largeMode ? vwVolumeId : R.id.btnPrev);
-			panelControls.setVisibility(View.VISIBLE);
-			panelSecondary.setVisibility(View.VISIBLE);
-		} else {
-			UI.setNextFocusForwardId(list, R.id.lblTitle);
-			(showSecondary ? panelSecondary : panelControls).setVisibility(View.VISIBLE);
-		}
+		UI.setNextFocusForwardId(list, UI.isLargeScreen ? vwVolumeId : R.id.btnPrev);
+		panelControls.setVisibility(View.VISIBLE);
+		panelSecondary.setVisibility(View.VISIBLE);
 	}
 	
 	private void bringCurrentIntoView() {
@@ -311,6 +310,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			final int p = Player.songs.getCurrentPosition();
 			if (p <= list.getFirstVisiblePosition() || p >= list.getLastVisiblePosition())
 				list.centerItem(p, true);
+		}
+	}
+	
+	private void addSongs() {
+		if (Player.getState() == Player.STATE_INITIALIZED) {
+			Player.alreadySelected = false;
+			startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
 		}
 	}
 	
@@ -413,7 +419,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		UI.prepare(menu);
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_FPLAY));
+			.setIcon(new TextIconDrawable(UI.ICON_ADD));
 		UI.separator(menu, 0, 1);
 		Menu s = menu.addSubMenu(1, 0, 0, R.string.list)
 				.setIcon(new TextIconDrawable(UI.ICON_LIST));
@@ -435,26 +441,23 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			s = menu.addSubMenu(2, 0, 1, R.string.more)
 					.setIcon(new TextIconDrawable(UI.ICON_MENU));
 			UI.prepare(s);
-			s.add(2, MNU_TOGGLERANDOMMODE, 0, R.string.random_mode)
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
 		} else {
-			menu.add(2, MNU_TOGGLERANDOMMODE, 0, R.string.random_mode)
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
-			UI.separator(menu, 2, 1);
 			s = menu;
 		}
-		s.add(2, MNU_EFFECTS, 3, R.string.audio_effects)
+		s.add(2, MNU_TOGGLERANDOMMODE, 0, R.string.random_mode)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
+		UI.separator(s, 2, 1);
+		s.add(2, MNU_EFFECTS, 2, R.string.audio_effects)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_EQUALIZER));
-		s.add(2, MNU_VISUALIZER, 4, R.string.visualizer)
+		s.add(2, MNU_VISUALIZER, 3, R.string.visualizer)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s.add(2, MNU_SETTINGS, 5, R.string.settings)
+		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
-		UI.separator(menu, 2, 6);
+		UI.separator(menu, 2, 5);
 		menu.add(3, MNU_EXIT, 0, R.string.exit)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_EXIT));
@@ -464,10 +467,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public boolean onMenuItemClick(MenuItem item) {
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
-			if (Player.getState() == Player.STATE_INITIALIZED) {
-				Player.alreadySelected = false;
-				startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
-			}
+			addSongs();
 			break;
 		case MNU_CLEARLIST:
 			if (Player.getState() == Player.STATE_INITIALIZED)
@@ -510,7 +510,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public void onClick(View view) {
-		if (view == btnPrev) {
+		if (view == btnAdd) {
+			addSongs();
+		} else if (view == btnPrev) {
 			if (Player.previous() && !Player.isControlMode())
 				bringCurrentIntoView();
 		} else if (view == btnPlay) {
@@ -541,30 +543,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else if (view == btnVolume) {
 			Player.showStreamVolumeUI();
 		} else if (view == lblTitle) {
-			if (Player.isControlMode()) {
+			if (Player.isControlMode())
 				Player.playPause();
-			} else {
-				if (showSecondary) {
-					showSecondary = false;
-					lblTitle.setNextFocusRightId(R.id.btnPrev);
-					lblTitle.setNextFocusDownId(R.id.btnPrev);
-					UI.setNextFocusForwardId(lblTitle, R.id.btnPrev);
-					panelSecondary.setVisibility(View.GONE);
-					panelControls.setVisibility(View.VISIBLE);
-				} else {
-					showSecondary = true;
-					lblTitle.setNextFocusRightId(vwVolumeId);
-					lblTitle.setNextFocusDownId(vwVolumeId);
-					UI.setNextFocusForwardId(lblTitle, vwVolumeId);
-					panelControls.setVisibility(View.GONE);
-					panelSecondary.setVisibility(View.VISIBLE);
-				}
-			}
 		} else if (view == list) {
-			if (Player.songs.getCount() == 0 && Player.getState() == Player.STATE_INITIALIZED) {
-				Player.alreadySelected = false;
-				startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
-			}
+			if (Player.songs.getCount() == 0)
+				addSongs();
 		}
 	}
 	
@@ -656,7 +639,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			finish();
 			return;
 		}
-		showSecondary = false;
 		setContentView(Player.isControlMode() ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? R.layout.activity_main_l : R.layout.activity_main));
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		btnPrev = (BgButton)findViewById(R.id.btnPrev);
@@ -665,7 +647,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		btnNext.setOnClickListener(this);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
-		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		if (Player.isControlMode()) {
 			UI.largeText(lblTitle);
 			btnPrev.setIconNoChanges(UI.ICON_PREV);
@@ -725,7 +706,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			btnMenu.setLayoutParams(rp);
 			
-			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, TextIconDrawable.LOCATION_WINDOW, panelH >> 1);
+			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.useControlModeButtonsInsideList ? UI.color_text_listitem : UI.color_text, panelH >> 1);
 			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
 			
 			int lds = 0;
@@ -758,19 +739,23 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnNext.setPadding(ph, pv, ph, pv);
 			}
 			if (UI.useControlModeButtonsInsideList) {
-				btnDecreaseVolume.setInsideList(true);
-				btnVolume.setInsideList(true);
-				btnIncreaseVolume.setInsideList(true);
-				btnMenu.setInsideList(true);
-				((BgTextView)lblTitle).setInsideList(true);
-				btnPrev.setInsideList(true);
-				btnNext.setInsideList(true);
+				btnDecreaseVolume.setTextColor(UI.colorState_text_listitem_reactive);
+				btnVolume.setTextColor(UI.colorState_text_listitem_reactive);
+				btnIncreaseVolume.setTextColor(UI.colorState_text_listitem_reactive);
+				btnMenu.setTextColor(UI.colorState_text_listitem_reactive);
+				((BgTextView)lblTitle).setTextColor(UI.colorState_text_listitem_reactive);
+				btnPrev.setTextColor(UI.colorState_text_listitem_reactive);
+				btnNext.setTextColor(UI.colorState_text_listitem_reactive);
 			}
 		} else {
 			UI.largeText(lblTitle);
 			btnPrev.setIcon(UI.ICON_PREV);
 			btnNext.setIcon(UI.ICON_NEXT);
 			btnMenu.setIcon(UI.ICON_MENU);
+			
+			btnAdd = (BgButton)findViewById(R.id.btnAdd);
+			btnAdd.setOnClickListener(this);
+			btnAdd.setIcon(UI.ICON_ADD);
 			
 			if (!UI.marqueeTitle) {
 				lblTitle.setEllipsize(TruncateAt.END);
@@ -780,11 +765,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				lblTitle.setVerticalFadingEdgeEnabled(false);
 				lblTitle.setFadingEdgeLength(0);
 			}
+			lblTitle.setTextColor(UI.colorState_text_title_static);
 			
 			lblArtist = (TextView)findViewById(R.id.lblArtist);
-			largeMode = (lblArtist != null);
-			if (UI.isLargeScreen != largeMode)
-				UI.isLargeScreen = largeMode;
+			if (UI.isLargeScreen != (lblArtist != null))
+				UI.isLargeScreen = (lblArtist != null);
 			
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
 			UI.largeText(lblMsgSelMove);
@@ -796,7 +781,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			barSeek.setAdditionalContentDescription(getText(R.string.go_to).toString());
 			barSeek.setOnBgSeekBarChangeListener(this);
 			barSeek.setMax(MAX_SEEK);
-			barSeek.setVertical(UI.isLandscape && !largeMode);
+			barSeek.setVertical(UI.isLandscape && !UI.isLargeScreen);
 			barSeek.setFocusable(false);
 			btnPlay = (BgButton)findViewById(R.id.btnPlay);
 			btnPlay.setOnClickListener(this);
@@ -809,14 +794,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
 			btnMoveSel = (BgButton)findViewById(R.id.btnMoveSel);
 			btnMoveSel.setOnClickListener(this);
-			btnMoveSel.setIcon(UI.ICON_MOVE, largeMode || !UI.isLandscape, true);
+			btnMoveSel.setIcon(UI.ICON_MOVE, UI.isLargeScreen || !UI.isLandscape, true);
 			btnRemoveSel = (BgButton)findViewById(R.id.btnRemoveSel);
 			btnRemoveSel.setOnClickListener(this);
-			btnRemoveSel.setIcon(UI.ICON_DELETE, largeMode || !UI.isLandscape, true);
+			btnRemoveSel.setIcon(UI.ICON_DELETE, UI.isLargeScreen || !UI.isLandscape, true);
 			btnCancelSel = (BgButton)findViewById(R.id.btnCancelSel);
 			btnCancelSel.setOnClickListener(this);
-			alwaysShowSecondary = true;
-			lblTime = null;
 			
 			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
 			btnVolume = (BgButton)findViewById(R.id.btnVolume);
@@ -828,7 +811,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnCancelSel.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			}
 			
-			if (largeMode) {
+			if (UI.isLargeScreen) {
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblTitleStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblArtistStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblAlbumStatic));
@@ -854,11 +837,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnVolume.setIcon(UI.ICON_VOLUME4, true, true);
 				vwVolume = btnVolume;
 				vwVolumeId = R.id.btnVolume;
-				if (largeMode) {
+				if (UI.isLargeScreen) {
 					UI.setNextFocusForwardId(list, R.id.btnVolume);
 					UI.setNextFocusForwardId(barSeek, R.id.btnVolume);
 					barSeek.setNextFocusRightId(R.id.btnVolume);
-					btnPrev.setNextFocusLeftId(R.id.btnVolume);
+					if (!UI.isLandscape)
+						btnAdd.setNextFocusLeftId(R.id.btnVolume);
+					btnAdd.setNextFocusUpId(R.id.btnVolume);
 					btnPrev.setNextFocusUpId(R.id.btnVolume);
 					btnPlay.setNextFocusUpId(R.id.btnVolume);
 					btnNext.setNextFocusUpId(R.id.btnVolume);
@@ -868,10 +853,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 						btnPrev.setNextFocusRightId(R.id.btnVolume);
 						btnPlay.setNextFocusRightId(R.id.btnVolume);
 						btnNext.setNextFocusRightId(R.id.btnVolume);
+						btnAdd.setNextFocusRightId(R.id.btnVolume);
 					} else {
 						btnPrev.setNextFocusDownId(R.id.btnVolume);
 						btnPlay.setNextFocusDownId(R.id.btnVolume);
 						btnNext.setNextFocusDownId(R.id.btnVolume);
+						btnAdd.setNextFocusDownId(R.id.btnVolume);
 					}
 					UI.setNextFocusForwardId(btnMenu, R.id.btnVolume);
 					btnMenu.setNextFocusRightId(R.id.btnVolume);
@@ -883,63 +870,34 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				barVolume.setAdditionalContentDescription(getText(R.string.volume).toString());
 				barVolume.setOnBgSeekBarChangeListener(this);
 				barVolume.setMax((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamMaxVolume() : (-Player.MIN_VOLUME_DB / 5));
-				barVolume.setVertical(UI.isLandscape && !largeMode);
+				barVolume.setVertical(UI.isLandscape && !UI.isLargeScreen);
 				barVolume.setKeyIncrement((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? 1 : 20);
 				vwVolume = barVolume;
 				vwVolumeId = R.id.barVolume;
 			}
 			
 			if (UI.isLandscape) {
-				if (largeMode)
+				if (UI.isLargeScreen)
 					list.setRightBorder();
 				else
 					list.setTopLeftBorders();
 			} else {
-				if (largeMode)
+				if (UI.isLargeScreen)
 					list.setBottomBorder();
 			}
 			if (UI.isLowDpiScreen && !UI.isLargeScreen && !UI.isLandscape) {
-				/*alwaysShowSecondary = false;
-				lblTime = (TextView)findViewById(R.id.lblTime);
-				lblTime.setVisibility(View.VISIBLE);
-				UI.mediumTextAndColor(lblTime);*/
-				panelControls.setPadding(0, 0, 0, 0);
-				//panelSecondary.setVisibility(View.GONE);
-				panelSecondary.setPadding(0, 0, 0, 0);
-				panelSelection.setPadding(0, 0, 0, 0);
+				if (!UI.extraSpacing)
+					panelControls.setPadding(0, 0, 0, 0);
 				if (btnVolume != null) {
 					final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)btnVolume.getLayoutParams();
 					p.rightMargin = 0;
 					btnVolume.setLayoutParams(p);
 				}
-				/*lblTitle.setClickable(true);
-				lblTitle.setFocusable(true);
-				lblTitle.setOnClickListener(this);
-				lblTitle.setTextColor(new ColorStateList(new int[][] { new int[] { android.R.attr.state_pressed }, new int[] { android.R.attr.state_focused }, new int[] {} }, new int[] { UI.color_text_selected, UI.color_text_selected, UI.color_text_title }));
-				lblTitle.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, TextIconDrawable.LOCATION_WINDOW, UI._18spBox), null, null, null);
-				vwVolume.setNextFocusLeftId(R.id.lblTitle);
-				vwVolume.setNextFocusUpId(R.id.lblTitle);
-				vwVolume.setNextFocusDownId(R.id.list);
-				UI.setNextFocusForwardId(vwVolume, R.id.list);
-				btnPrev.setNextFocusLeftId(R.id.lblTitle);
-				btnPrev.setNextFocusUpId(R.id.lblTitle);
-				btnPrev.setNextFocusDownId(R.id.list);
-				btnPlay.setNextFocusUpId(R.id.lblTitle);
-				btnPlay.setNextFocusDownId(R.id.list);
-				btnNext.setNextFocusUpId(R.id.lblTitle);
-				btnNext.setNextFocusDownId(R.id.list);
-				btnMenu.setNextFocusUpId(R.id.lblTitle);
-				btnMenu.setNextFocusRightId(R.id.list);
-				btnMenu.setNextFocusDownId(R.id.list);
-				UI.setNextFocusForwardId(btnMenu, R.id.list);
-				UI.setNextFocusForwardId(list, R.id.lblTitle);
-				final RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-				p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-				p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-				btnCancelSel.setLayoutParams(p);*/
-			} //else {
-				lblTitle.setTextColor(UI.colorState_text_title_static);
-			//}
+			}
+			if (UI.extraSpacing && !UI.isLargeScreen) {
+				panelControls.setPadding(UI._8dp, 0, UI.isLandscape ? 0 : UI._8dp, UI._8dp);
+				panelSelection.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
+			}
 			btnCancelSel.setDefaultHeight();
 			final boolean m = Player.songs.moving;
 			if (m || Player.songs.selecting)
@@ -960,27 +918,25 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_DPAD_LEFT:
 			if (Player.songs.selecting)
-				(largeMode ? btnCancelSel : (UI.isLandscape ? btnMoveSel : btnRemoveSel)).requestFocus();
+				(UI.isLargeScreen ? btnCancelSel : (UI.isLandscape ? btnMoveSel : btnRemoveSel)).requestFocus();
 			else if (Player.songs.moving)
 				btnCancelSel.requestFocus();
-			else if (largeMode)
+			else if (UI.isLargeScreen)
 				btnMenu.requestFocus();
-			else if (UI.isLandscape || alwaysShowSecondary || showSecondary)
-				vwVolume.requestFocus();
 			else
-				btnMenu.requestFocus();
+				vwVolume.requestFocus();
 			return true;
 		case KeyEvent.KEYCODE_DPAD_RIGHT:
 			if (Player.songs.selecting)
-				((largeMode || UI.isLandscape) ? btnMoveSel : btnCancelSel).requestFocus();
+				((UI.isLargeScreen || UI.isLandscape) ? btnMoveSel : btnCancelSel).requestFocus();
 			else if (Player.songs.moving)
 				btnCancelSel.requestFocus();
-			else if (largeMode)
+			else if (UI.isLargeScreen)
 				vwVolume.requestFocus();
-			else if (!UI.isLandscape && !alwaysShowSecondary)
-				lblTitle.requestFocus();
-			else
+			else if (UI.isLandscape)
 				btnPrev.requestFocus();
+			else
+				btnAdd.requestFocus();
 			return true;
 		}
 		final int s = Player.songs.getSelection();
@@ -1092,10 +1048,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		lblLength = null;
 		lblTitleIcon = null;
 		lblMsgSelMove = null;
-		lblTime = null;
 		barSeek = null;
 		barVolume = null;
 		vwVolume = null;
+		btnAdd = null;
 		btnPrev = null;
 		btnPlay = null;
 		btnNext = null;
@@ -1154,8 +1110,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			return;
 		}
 		if (Player.isCurrentSongPreparing()) {
-			if (!alwaysShowSecondary && lblTime != null)
-				lblTime.setText(R.string.loading);
 			if (barSeek != null && !barSeek.isTracking()) {
 				barSeek.setText(R.string.loading);
 				barSeek.setValue(0);
@@ -1167,16 +1121,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (t == lastTime) return;
 		lastTime = t;
 		if (t < 0) {
-			if (!alwaysShowSecondary && lblTime != null)
-				lblTime.setText(R.string.no_info);
 			if (barSeek != null && !barSeek.isTracking()) {
 				barSeek.setText(R.string.no_info);
 				barSeek.setValue(0);
 			}
 		} else {
 			Song.formatTimeSec(t, timeBuilder);
-			if (!alwaysShowSecondary && lblTime != null)
-				lblTime.setText(timeBuilder);
 			if (barSeek != null && !barSeek.isTracking()) {
 				final Song s = Player.getCurrentSong();
 				int v = 0;
@@ -1228,7 +1178,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				playingBeforeSeek = Player.isPlaying();
 				if (playingBeforeSeek)
 					Player.playPause();
-				if (!largeMode)
+				if (!UI.isLargeScreen)
 					vwVolume.setVisibility(View.GONE);
 				return true;
 			}
@@ -1253,7 +1203,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					Player.seekTo(ms, playingBeforeSeek);
 				}
 			}
-			if (!largeMode)
+			if (!UI.isLargeScreen)
 				vwVolume.setVisibility(View.VISIBLE);
 		}
 	}

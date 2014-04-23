@@ -12,8 +12,7 @@
         <RelativeLayout
             android:id="@+id/panelControls"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp" >
+            android:layout_height="wrap_content" >
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnGoBack"

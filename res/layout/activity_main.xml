@@ -41,37 +41,35 @@
         android:text="@string/msg_sel"
         android:visibility="gone" />
 
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/panelControls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:baselineAligned="false"
-        android:gravity="right"
-        android:orientation="horizontal"
-        android:paddingBottom="8dp"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp" >
+        android:paddingBottom="8dp" >
 
-        <TextView
-            android:id="@+id/lblTime"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:gravity="center"
-            android:padding="2dp"
-            android:singleLine="true"
-            android:text="@string/no_info"
-            android:visibility="gone" />
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginRight="16dp"
+            android:contentDescription="@string/add_songs"
+            android:nextFocusDown="@+id/barVolume"
+            android:nextFocusForward="@+id/btnPrev"
+            android:nextFocusLeft="@+id/list"
+            android:nextFocusRight="@+id/btnPrev"
+            android:nextFocusUp="@+id/list" />
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnPrev"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="16dp"
+            android:layout_toLeftOf="@+id/btnPlay"
             android:contentDescription="@string/previous"
             android:nextFocusDown="@+id/barVolume"
             android:nextFocusForward="@+id/btnPlay"
-            android:nextFocusLeft="@+id/list"
+            android:nextFocusLeft="@+id/btnAdd"
             android:nextFocusRight="@+id/btnPlay"
             android:nextFocusUp="@+id/list" />
 
@@ -80,6 +78,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="16dp"
+            android:layout_toLeftOf="@+id/btnNext"
             android:contentDescription="@string/play"
             android:nextFocusDown="@+id/barVolume"
             android:nextFocusForward="@+id/btnNext"
@@ -92,6 +91,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="16dp"
+            android:layout_toLeftOf="@+id/btnMenu"
             android:contentDescription="@string/next"
             android:nextFocusDown="@+id/barVolume"
             android:nextFocusForward="@+id/btnMenu"
@@ -103,13 +103,14 @@
             android:id="@+id/btnMenu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
             android:contentDescription="@string/menu"
             android:nextFocusDown="@+id/barVolume"
             android:nextFocusForward="@+id/barVolume"
             android:nextFocusLeft="@+id/btnNext"
             android:nextFocusRight="@+id/barVolume"
             android:nextFocusUp="@+id/list" />
-    </LinearLayout>
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/panelSecondary"
@@ -162,9 +163,6 @@
         android:id="@+id/panelSelection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="8dp"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp"
         android:visibility="gone" >
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -212,7 +210,7 @@
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:nextFocusForward="@+id/btnPrev" >
+        android:nextFocusForward="@+id/btnAdd" >
 
         <requestFocus />
     </br.com.carlosrafaelgn.fplay.ui.BgListView>

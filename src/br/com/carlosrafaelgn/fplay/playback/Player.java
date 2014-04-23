@@ -214,6 +214,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_LASTVERSIONCODE = 0x0026;
 	private static final int OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 0x0027;
 	private static final int OPT_WRAPAROUNDLIST = 0x0028;
+	private static final int OPT_EXTRASPACING = 0x0029;
+	private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -299,6 +301,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
 		UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, false);
 		UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST, false);
+		UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
+		UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR, false);
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -355,6 +359,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
 		opts.put(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing);
 		opts.put(OPT_WRAPAROUNDLIST, UI.wrapAroundList);
+		opts.put(OPT_EXTRASPACING, UI.extraSpacing);
+		opts.put(OPT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
@@ -1025,12 +1031,12 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		updateState(null);
 	}
 	
-	private static void playInternal(int how) {
+	private static Song playInternal(int how) {
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
 			playing = false;
 			updateState(new FocusException());
-			return;
+			return null;
 		}
 		//we must set this to false here, as the user could have manually
 		//started playback before the focus timer had the chance to trigger
@@ -1041,7 +1047,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			firstError = null;
 			fullCleanup(null);
 			updateState(null);
-			return;
+			return null;
 		}
 		if (currentPlayer == null || nextPlayer == null) {
 			initializePlayers();
@@ -1051,6 +1057,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			state = STATE_PREPARING_PLAYBACK;
 			playInternal0(how, s);
 		}
+		return ((how == SongList.HOW_CURRENT) ? s : null);
 	}
 	
 	private static void stopInternal(Song newCurrentSong) {
@@ -1179,7 +1186,10 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			return false;
 		if (currentSong == null || !currentSongLoaded || !hasFocus) {
 			unpaused = true;
-			playInternal(SongList.HOW_CURRENT);
+			//the user deleted the current song before it had a chance to load
+			//therefore, ignore lastTime (as the song has changed)
+			if (playInternal(SongList.HOW_CURRENT) != currentSong)
+				lastTime = -1;
 		} else {
 			try {
 				//we must set this to false here, as the user could have manually

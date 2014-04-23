@@ -82,7 +82,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				btnAdd.setIcon(UI.ICON_ADD, true, false);
 				btnAdd.setContentDescription(context.getText(R.string.add));
 				btnAdd.setOnClickListener(this);
-				btnAdd.setForceTextSelected(true);
+				btnAdd.setTextColor(UI.colorState_text_selected_static);
 				addView(btnAdd);
 			}
 			btnPlay = new BgButton(context);
@@ -91,12 +91,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnPlay.setLayoutParams(p);
 			if (buttonIsCheckbox) {
 				btnPlay.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, false);
+				btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
 			} else {
 				btnPlay.setIcon(UI.ICON_PLAY, true, false);
 				btnPlay.setContentDescription(context.getText(R.string.play));
+				btnPlay.setTextColor(UI.colorState_text_selected_static);
 			}
 			btnPlay.setOnClickListener(this);
-			btnPlay.setForceTextSelected(true);
 			addView(btnPlay);
 			if (UI.isVerticalMarginLarge) {
 				if (btnAdd != null)
@@ -211,7 +212,16 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
+		final boolean old = (state == 0);
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		if (!buttonIsCheckbox)
+			return;
+		if ((state == 0) != old && btnPlay != null) {
+			if (state == 0)
+				btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
+			else
+				btnPlay.setTextColor(UI.colorState_text_selected_static);
+		}
 	}
 	
 	@Override

@@ -132,7 +132,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
-                android:nextFocusDown="@+id/btnPrev"
+                android:nextFocusDown="@+id/btnAdd"
                 android:nextFocusForward="@+id/barVolume"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
@@ -145,9 +145,9 @@
                 android:layout_marginLeft="32dp"
                 android:layout_weight="1"
                 android:nextFocusDown="@+id/btnPrev"
-                android:nextFocusForward="@+id/btnPrev"
+                android:nextFocusForward="@+id/btnAdd"
                 android:nextFocusLeft="@+id/list"
-                android:nextFocusRight="@+id/btnPrev"
+                android:nextFocusRight="@+id/btnAdd"
                 android:nextFocusUp="@+id/list" />
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -157,30 +157,40 @@
                 android:layout_marginLeft="16dp"
                 android:contentDescription="@string/volume"
                 android:nextFocusDown="@+id/btnMenu"
-                android:nextFocusForward="@+id/btnPrev"
+                android:nextFocusForward="@+id/btnAdd"
                 android:nextFocusLeft="@+id/list"
-                android:nextFocusRight="@+id/btnPrev"
+                android:nextFocusRight="@+id/btnAdd"
                 android:nextFocusUp="@+id/list"
                 android:visibility="gone" />
         </LinearLayout>
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/panelControls"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:baselineAligned="false"
-            android:gravity="right"
-            android:orientation="horizontal" >
+            android:layout_height="wrap_content" >
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnAdd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:contentDescription="@string/add_songs"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnPrev"
+                android:nextFocusLeft="@+id/barVolume"
+                android:nextFocusRight="@+id/btnPrev"
+                android:nextFocusUp="@+id/barVolume" />
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPrev"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="16dp"
+                android:layout_toLeftOf="@+id/btnPlay"
                 android:contentDescription="@string/previous"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnPlay"
-                android:nextFocusLeft="@+id/barVolume"
+                android:nextFocusLeft="@+id/btnAdd"
                 android:nextFocusRight="@+id/btnPlay"
                 android:nextFocusUp="@+id/barVolume" />
 
@@ -189,6 +199,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="16dp"
+                android:layout_toLeftOf="@+id/btnNext"
                 android:contentDescription="@string/play"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnNext"
@@ -201,6 +212,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="32dp"
+                android:layout_toLeftOf="@+id/btnMenu"
                 android:contentDescription="@string/next"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnMenu"
@@ -212,13 +224,14 @@
                 android:id="@+id/btnMenu"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
                 android:contentDescription="@string/menu"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/list"
                 android:nextFocusLeft="@+id/btnNext"
                 android:nextFocusRight="@+id/list"
                 android:nextFocusUp="@+id/barVolume" />
-        </LinearLayout>
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/lblMsgSelMove"

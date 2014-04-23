@@ -69,10 +69,11 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 public final class ActivityBrowser2 extends ActivityFileView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
 	private static final int MNU_REMOVEFAVORITE = 100;
 	private FileSt lastClickedFavorite;
-	private TextView lblPath, sep;
+	private TextView lblPath, sep, sep2;
 	private BgListView list;
 	private FileList fileList;
 	private LinearLayout panelLoading;
+	private RelativeLayout panelSecondary;
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, btnChkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
@@ -82,11 +83,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private void refreshButtons() {
 		if (!isAtHome != (btnChkAll.getVisibility() == View.VISIBLE)) {
 			if (isAtHome) {
-				list.setTopBorder();
-				if (UI.isLargeScreen)
-					UI.prepareViewPaddingForLargeScreen(list, 0);
-				else if (!UI.isLowDpiScreen)
-					findViewById(R.id.panelSecondary).setPadding(0, 0, 0, 0);
+				if (UI.extraSpacing)
+					panelSecondary.setPadding(0, 0, 0, 0);
 				btnGoBackToPlayer.setVisibility(View.GONE);
 				sep.setVisibility(View.GONE);
 				btnChkAll.setVisibility(View.GONE);
@@ -98,11 +96,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 				btnHome.setNextFocusRightId(R.id.list);
 				UI.setNextFocusForwardId(btnHome, R.id.list);
 			} else {
-				list.setTopBottomBorders();
-				if (UI.isLargeScreen)
-					UI.prepareViewPaddingForLargeScreen(list, UI.thickDividerSize);
-				else if (!UI.isLowDpiScreen)
-					findViewById(R.id.panelSecondary).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+				if (UI.extraSpacing)
+					panelSecondary.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 				btnGoBackToPlayer.setVisibility(View.VISIBLE);
 				sep.setVisibility(View.VISIBLE);
 				btnChkAll.setVisibility(View.VISIBLE);
@@ -118,9 +113,11 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		if ((checkedCount != 0) != (btnAdd.getVisibility() == View.VISIBLE)) {
 			if (checkedCount != 0) {
 				btnAdd.setVisibility(View.VISIBLE);
+				sep2.setVisibility(View.VISIBLE);
 				btnPlay.setVisibility(View.VISIBLE);
 			} else {
 				btnAdd.setVisibility(View.GONE);
+				sep2.setVisibility(View.GONE);
 				btnPlay.setVisibility(View.GONE);
 			}
 		}
@@ -130,7 +127,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		
 	}
 	
-	private void addPlaySong(FileSt file, final boolean play) {
+	/*private void addPlaySong(FileSt file, final boolean play) {
 		try {
 			final FileSt[] fs = new FileSt[] { file };
 			Player.songs.addingStarted();
@@ -162,7 +159,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			Player.songs.addingEnded();
 			UI.toast(getApplication(), ex.getMessage());
 		}
-	}
+	}*/
 	
 	private void addPlayCheckedItems(final boolean play) {
 		if (checkedCount <= 0)
@@ -243,6 +240,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	public void processItemButtonClick(int position, boolean add) {
+		if (!add && !list.isInTouchMode())
+			fileList.setSelection(position, true);
 		final FileSt file = fileList.getItemT(position);
 		if (file.specialType == FileSt.TYPE_ALBUM) {
 			selectAlbumSongs(position);
@@ -265,15 +264,20 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	public void processItemClick(int position) {
-		final FileSt file = fileList.getItemT(position);
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
-			if (file.isDirectory) {
-				if (file.specialType == FileSt.TYPE_ALBUM)
-					addPlayFolder(file, true, true);
-				else
-					navigateTo(file.path, null);
+			final FileSt file = fileList.getItemT(position);
+			boolean navigate = file.isDirectory;
+			if (navigate) {
+				if (file.specialType == FileSt.TYPE_ALBUM) {
+					navigate = false;
+				}
+			}
+			if (navigate) {
+				navigateTo(file.path, null);
 			} else {
-				addPlaySong(file, true);
+				file.isChecked = !file.isChecked;
+				fileList.notifyCheckedChanged();
+				processItemButtonClick(position, true);
 			}
 		} else {
 			fileList.setSelection(position, true);
@@ -545,8 +549,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		list = (BgListView)findViewById(R.id.list);
-		if (!isAtHome)
-			list.setTopBottomBorders();
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
@@ -555,48 +557,62 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnURL = (BgButton)findViewById(R.id.btnURL);
 		btnURL.setOnClickListener(this);
 		btnURL.setDefaultHeight();
-		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, TextIconDrawable.LOCATION_WINDOW), null, null, null);
+		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
 		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, false, true, true);
 		btnHome = (BgButton)findViewById(R.id.btnHome);
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
+		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
+		panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		sep = (TextView)findViewById(R.id.sep);
-		final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.thickDividerSize, UI.defaultControlContentsSize);
+		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.btnChkAll);
+		rp.leftMargin = UI._8dp;
+		rp.rightMargin = UI._8dp;
 		sep.setLayoutParams(rp);
 		sep.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		btnChkAll = (BgButton)findViewById(R.id.btnChkAll);
 		btnChkAll.setOnClickListener(this);
 		btnChkAll.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, true);
 		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
+		btnGoBackToPlayer.setTextColor(UI.colorState_text_highlight_reactive);
 		btnGoBackToPlayer.setOnClickListener(this);
-		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_FPLAY, TextIconDrawable.LOCATION_WINDOW), null, null, null);
+		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_RIGHT, UI.color_text_highlight, UI.defaultControlContentsSize), null, null, null);
 		btnAdd = (BgButton)findViewById(R.id.btnAdd);
+		btnAdd.setTextColor(UI.colorState_text_highlight_reactive);
 		btnAdd.setOnClickListener(this);
 		btnAdd.setIcon(UI.ICON_ADD, true, false);
+		sep2 = (TextView)findViewById(R.id.sep2);
+		rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
+		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
+		rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
+		rp.leftMargin = UI._8dp;
+		rp.rightMargin = UI._8dp;
+		sep2.setLayoutParams(rp);
+		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_text_highlight));
 		btnPlay = (BgButton)findViewById(R.id.btnPlay);
+		btnPlay.setTextColor(UI.colorState_text_highlight_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY, true, false);
 		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(list, isAtHome ? 0 : UI.thickDividerSize);
-			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
-			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-			btnURL.setLayoutParams(lp);
+			UI.prepareViewPaddingForLargeScreen(list, 0);
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
 		} else if (UI.isLowDpiScreen) {
-			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
-			findViewById(R.id.panelSecondary).setPadding(0, 0, 0, 0);
-			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
-			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-			btnURL.setLayoutParams(lp);
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
-		//CustomContextMenu.registerForContextMenu(btnMenu, this);
+		if (UI.extraSpacing) {
+			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
+			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+			lp.rightMargin = UI._8dp;
+			btnURL.setLayoutParams(lp);
+			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, 0, UI._8dp);
+			if (!isAtHome)
+				panelSecondary.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+		}
 		navigateTo(Player.path, null);
 	}
 	
@@ -619,7 +635,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, isAtHome ? 0 : UI.thickDividerSize);
+			UI.prepareViewPaddingForLargeScreen(list, 0);
 	}
 	
 	@Override
@@ -628,6 +644,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		lblPath = null;
 		list = null;
 		panelLoading = null;
+		panelSecondary = null;
 		btnGoBack = null;
 		btnURL = null;
 		chkFavorite = null;
@@ -636,6 +653,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnChkAll = null;
 		btnGoBackToPlayer = null;
 		btnAdd = null;
+		sep2 = null;
 		btnPlay = null;
 		ic_closed_folder = null;
 		ic_internal = null;

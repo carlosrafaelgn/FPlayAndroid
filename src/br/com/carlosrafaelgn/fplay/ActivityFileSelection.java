@@ -370,21 +370,10 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		list = (BgListView)findViewById(R.id.list);
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
-		if (UI.isLargeScreen) {
+		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0);
-		} else if (UI.isLowDpiScreen) {
-			findViewById(R.id.panelControls).setPadding(0, 0, 0, 0);
-			//lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
-		}
-		//else {
-		//	if (UI.isLargeScreen) {
-		//		lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-		//		lblTitle.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
-		//	} else {
-		//		lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		//	}
-		//}
-		//CustomContextMenu.registerForContextMenu(btnMenu, this);
+		if (UI.extraSpacing)
+			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		fileList.setPrivateFileType(fileType);
 	}
 	
