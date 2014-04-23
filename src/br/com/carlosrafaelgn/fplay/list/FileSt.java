@@ -54,6 +54,7 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_ARTIST_ROOT = 8;
 	public static final int TYPE_ALBUM = 9;
 	public static final int TYPE_ALBUM_ROOT = 10;
+	public static final int TYPE_ALBUM_ITEM = 11;
 	public final boolean isDirectory;
 	public final String path, name;
 	public int specialType;

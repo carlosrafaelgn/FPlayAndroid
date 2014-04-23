@@ -47,6 +47,7 @@ import android.provider.MediaStore;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 //
@@ -64,7 +65,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	public final String path;
 	public FileSt[] files;
 	public int count;
-	public final boolean playAfterFetching;
+	public final boolean playAfterFetching, oldBrowserBehavior;
 	private Throwable notifyE;
 	private Listener listener;
 	private boolean recursive;
@@ -122,6 +123,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		this.recursive = recursive;
 		this.recursiveIfFirstEmpty = recursiveIfFirstEmpty;
 		this.playAfterFetching = playAfterFetching;
+		this.oldBrowserBehavior = UI.oldBrowserBehavior;
 		this.count = 0;
 	}
 	
@@ -700,15 +702,20 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 						fetchTracks(path);
 					} else {
 						fetchAlbums(path);
-						if (recursive) {
+						final boolean keepAlbumsAsItems = (!recursive && !oldBrowserBehavior);
+						if (recursive || keepAlbumsAsItems) {
 							//we actually need to fetch all tracks from all this artist's albums...
 							final FileSt[] albums = files;
-							final ArrayList<FileSt> tracks = new ArrayList<FileSt>(albums.length * 10);
+							final ArrayList<FileSt> tracks = new ArrayList<FileSt>(albums.length * 11);
 							for (int i = 0; i < albums.length; i++) {
 								try {
 									fetchTracks(albums[i].path);
 									if (files != null && count > 0) {
 										tracks.ensureCapacity(tracks.size() + count);
+										if (keepAlbumsAsItems) {
+											albums[i].specialType = FileSt.TYPE_ALBUM_ITEM;
+											tracks.add(albums[i]);
+										}
 										for (int j = 0; j < count; j++) {
 											tracks.add(files[j]);
 											files[j] = null;

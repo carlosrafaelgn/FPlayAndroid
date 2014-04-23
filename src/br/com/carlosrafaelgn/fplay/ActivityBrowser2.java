@@ -77,7 +77,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, btnChkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
-	private boolean loading, isAtHome;
+	private boolean isAtHome, verifyAlbumWhenChecking;
 	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
 	private void refreshButtons() {
@@ -124,7 +124,21 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	}
 	
 	private void selectAlbumSongs(int position) {
-		
+		final boolean check = fileList.getItemT(position).isChecked;
+		FileSt file;
+		position++;
+		while (position < fileList.getCount() && (file = fileList.getItemT(position)).specialType == 0) {
+			file.isChecked = check;
+			position++;
+		}
+		checkedCount = 0;
+		for (int i = fileList.getCount() - 1; i >= 0; i--) {
+			if (fileList.getItemT(i).isChecked)
+				checkedCount++;
+		}
+		btnChkAll.setChecked(checkedCount == fileList.getCount());
+		fileList.notifyCheckedChanged();
+		refreshButtons();
 	}
 	
 	/*private void addPlaySong(FileSt file, final boolean play) {
@@ -168,7 +182,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			final FileSt[] fs = new FileSt[checkedCount];
 			for (int i = fileList.getCount() - 1, j = checkedCount - 1; i >= 0 && j >= 0; i--) {
 				final FileSt file = fileList.getItemT(i);
-				if (file.isChecked && file.specialType != FileSt.TYPE_ALBUM) {
+				if (file.isChecked && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
 					fs[j] = file;
 					j--;
 				}
@@ -222,13 +236,13 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	public void showNotification(boolean show) {
-		loading = show;
 		if (panelLoading != null)
 			panelLoading.setVisibility(show ? View.VISIBLE : View.GONE);
-		if (fileList != null)
-			fileList.setObserver(show ? null : list);
-		if (list != null && !list.isInTouchMode())
-			list.centerItem(fileList.getSelection(), false);
+		if (fileList != null) {
+			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
+			if (list != null && !list.isInTouchMode())
+				list.centerItem(fileList.getSelection(), false);
+		}
 		if (!show)
 			refreshButtons();
 	}
@@ -243,16 +257,54 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		if (!add && !list.isInTouchMode())
 			fileList.setSelection(position, true);
 		final FileSt file = fileList.getItemT(position);
-		if (file.specialType == FileSt.TYPE_ALBUM) {
+		if (file.specialType == FileSt.TYPE_ALBUM_ITEM) {
 			selectAlbumSongs(position);
 		} else {
 			if (file.isChecked) {
+				if (verifyAlbumWhenChecking) {
+					//check the album if all of its songs are checked
+					while (--position >= 0) {
+						final FileSt album = fileList.getItemT(position);
+						if (album.specialType == FileSt.TYPE_ALBUM_ITEM) {
+							boolean checkAlbum = true;
+							while (++position < fileList.getCount()) {
+								final FileSt song = fileList.getItemT(position);
+								if (song.specialType != 0)
+									break;
+								if (!song.isChecked) {
+									checkAlbum = false;
+									break;
+								}
+							}
+							if (checkAlbum && !album.isChecked) {
+								album.isChecked = true;
+								checkedCount++;
+								fileList.notifyCheckedChanged();
+							}
+							break;
+						}
+					}
+				}
 				checkedCount++;
 				if (checkedCount >= fileList.getCount()) {
 					checkedCount = fileList.getCount();
 					btnChkAll.setChecked(true);
 				}
 			} else {
+				if (verifyAlbumWhenChecking) {
+					//uncheck the album
+					while (--position >= 0) {
+						final FileSt album = fileList.getItemT(position);
+						if (album.specialType == FileSt.TYPE_ALBUM_ITEM) {
+							if (album.isChecked) {
+								album.isChecked = false;
+								checkedCount--;
+								fileList.notifyCheckedChanged();
+							}
+							break;
+						}
+					}
+				}
 				checkedCount--;
 				btnChkAll.setChecked(false);
 				if (checkedCount < 0)
@@ -266,17 +318,12 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	public void processItemClick(int position) {
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
 			final FileSt file = fileList.getItemT(position);
-			boolean navigate = file.isDirectory;
-			if (navigate) {
-				if (file.specialType == FileSt.TYPE_ALBUM) {
-					navigate = false;
-				}
-			}
-			if (navigate) {
+			if (file.isDirectory && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
 				navigateTo(file.path, null);
 			} else {
 				file.isChecked = !file.isChecked;
-				fileList.notifyCheckedChanged();
+				if (file.specialType != FileSt.TYPE_ALBUM_ITEM)
+					fileList.notifyCheckedChanged();
 				processItemButtonClick(position, true);
 			}
 		} else {
@@ -565,7 +612,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
-		panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
+		panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_selected));
 		sep = (TextView)findViewById(R.id.sep);
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
@@ -578,11 +625,11 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnChkAll.setOnClickListener(this);
 		btnChkAll.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, true);
 		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
-		btnGoBackToPlayer.setTextColor(UI.colorState_text_highlight_reactive);
+		btnGoBackToPlayer.setTextColor(UI.colorState_text_selected_static);
 		btnGoBackToPlayer.setOnClickListener(this);
 		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_RIGHT, UI.color_text_highlight, UI.defaultControlContentsSize), null, null, null);
 		btnAdd = (BgButton)findViewById(R.id.btnAdd);
-		btnAdd.setTextColor(UI.colorState_text_highlight_reactive);
+		btnAdd.setTextColor(UI.colorState_text_selected_static);
 		btnAdd.setOnClickListener(this);
 		btnAdd.setIcon(UI.ICON_ADD, true, false);
 		sep2 = (TextView)findViewById(R.id.sep2);
@@ -592,9 +639,9 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		rp.leftMargin = UI._8dp;
 		rp.rightMargin = UI._8dp;
 		sep2.setLayoutParams(rp);
-		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_text_highlight));
+		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_text_selected));
 		btnPlay = (BgButton)findViewById(R.id.btnPlay);
-		btnPlay.setTextColor(UI.colorState_text_highlight_reactive);
+		btnPlay.setTextColor(UI.colorState_text_selected_static);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY, true, false);
 		if (UI.isLargeScreen) {
@@ -628,7 +675,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	protected void onResume() {
 		list.setOnKeyDownObserver(this);
 		fileList.observerActivity = this;
-		fileList.setObserver(loading ? null : list);
+		fileList.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
 	}
 	

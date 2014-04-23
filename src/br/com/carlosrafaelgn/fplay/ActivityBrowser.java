@@ -115,9 +115,9 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		if (fileList != null) {
 			fileList.setObserver(show ? null : list);
 			count = fileList.getCount();
+			if (list != null)
+				list.centerItem(fileList.getSelection(), false);
 		}
-		if (list != null)
-			list.centerItem(fileList.getSelection(), false);
 		if (!show)
 			refreshMenu(count);
 	}

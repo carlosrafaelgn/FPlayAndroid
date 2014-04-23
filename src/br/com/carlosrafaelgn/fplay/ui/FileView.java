@@ -120,16 +120,22 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public void setItemState(FileSt file, int position, int state) {
 		final int w = getWidth();
 		final int specialType = file.specialType;
-		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ARTIST)) && (buttonIsCheckbox || ((state & UI.STATE_SELECTED) != 0)));
+		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ALBUM_ITEM) || (specialType == FileSt.TYPE_ARTIST)) && (buttonIsCheckbox || ((state & UI.STATE_SELECTED) != 0)));
 		this.position = position;
+		if ((this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
+			btnPlay.setTextColor((((state & UI.STATE_SELECTED) != 0) || (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.file == file && buttonsVisible == showButtons && width == w && btnPlay != null && file.isChecked == btnPlay.isChecked())
 			return;
+		final boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != file.specialType));
 		this.file = file;
 		this.width = w;
-		if (buttonIsCheckbox && btnPlay != null)
+		if (buttonIsCheckbox && btnPlay != null) {
+			if (specialTypeChanged)
+				btnPlay.setTextColor((((state & UI.STATE_SELECTED) != 0) || (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 			btnPlay.setChecked(file.isChecked);
+		}
 		if (buttonsVisible != showButtons) {
 			buttonsVisible = showButtons;
 			if (btnAdd != null)
@@ -154,6 +160,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				break;
 			case FileSt.TYPE_ALBUM:
 			case FileSt.TYPE_ALBUM_ROOT:
+			case FileSt.TYPE_ALBUM_ITEM:
 				bitmap = albumIcon;
 				break;
 			default:
@@ -214,14 +221,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
-		if (!buttonIsCheckbox)
-			return;
-		if ((state == 0) != old && btnPlay != null) {
-			if (state == 0)
-				btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
-			else
-				btnPlay.setTextColor(UI.colorState_text_selected_static);
-		}
+		if (buttonIsCheckbox && (state == 0) != old && btnPlay != null)
+			btnPlay.setTextColor(((state != 0) || ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM))) ?  UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 	}
 	
 	@Override
@@ -254,10 +255,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
+		final boolean albumItem = ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM));
+		if (albumItem && (state == 0))
+			canvas.drawColor(UI.color_selected);
 		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false, true);
 		if (bitmap != null)
 			canvas.drawBitmap(bitmap, UI._8dp, (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1), null);
-		UI.drawText(canvas, ellipsizedName, (state == 0) ? UI.color_text_listitem : UI.color_text_selected, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
+		UI.drawText(canvas, ellipsizedName, ((state == 0) && !albumItem) ? UI.color_text_listitem : UI.color_text_selected, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		super.dispatchDraw(canvas);
 	}
 	

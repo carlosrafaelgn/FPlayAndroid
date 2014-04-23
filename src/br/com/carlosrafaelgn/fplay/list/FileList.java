@@ -97,7 +97,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 			items = fetcher.files;
 			count = fetcher.count;
 			path = fetcher.path;
-			if (listObserver != null || UI.oldBrowserBehavior) {
+			if (listObserver != null || fetcher.oldBrowserBehavior) {
 				int p = 0;
 				if (comingFrom != null && comingFrom.length() > 0) {
 					if (path == null || path.length() == 0) {
@@ -125,7 +125,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 						}
 					}
 				}
-				if (!UI.oldBrowserBehavior && listObserver != null && listObserver.isInTouchMode()) {
+				if (!fetcher.oldBrowserBehavior && listObserver != null && listObserver.isInTouchMode()) {
 					setSelection(-1, false);
 					listObserver.scrollItemToTop(p, false);
 				} else {
