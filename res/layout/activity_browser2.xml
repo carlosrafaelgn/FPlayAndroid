@@ -77,7 +77,7 @@
                 android:visibility="gone" />
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnChkAll"
+                android:id="@+id/chkAll"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
@@ -102,7 +102,7 @@
             android:id="@+id/list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:nextFocusForward="@+id/btnGoBackToPlayer" >
+            android:nextFocusForward="@+id/btnGoBack" >
 
             <requestFocus />
         </br.com.carlosrafaelgn.fplay.ui.BgListView>

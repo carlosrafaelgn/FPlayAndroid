@@ -261,9 +261,13 @@ public final class BgListView extends ListView {
 	}
 	
 	public void setCustomEmptyText(CharSequence text) {
-		UI.textPaint.setTextSize(UI._22sp);
-		final int w = getWidth();
-		emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI._16dp << 1)) ? 0 : (w - (UI._16dp << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
+		if (text == null) {
+			emptyLayout = null;
+		} else {
+			UI.textPaint.setTextSize(UI._22sp);
+			final int w = getWidth();
+			emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI._16dp << 1)) ? 0 : (w - (UI._16dp << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
+		}
 	}
 	
 	@Override
