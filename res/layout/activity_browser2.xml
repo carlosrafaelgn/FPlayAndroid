@@ -108,33 +108,32 @@
         </br.com.carlosrafaelgn.fplay.ui.BgListView>
     </LinearLayout>
 
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/panelLoading"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/panelSecondary"
-        android:baselineAligned="false"
-        android:orientation="vertical"
+        android:layout_centerInParent="true"
         android:visibility="gone" >
 
         <ProgressBar
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
+            android:id="@+id/barLoading"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
+            android:layout_centerHorizontal="true"
             android:indeterminate="true" />
 
         <TextView
             android:id="@+id/lblLoading"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
+            android:layout_below="@+id/barLoading"
+            android:layout_centerHorizontal="true"
             android:gravity="center"
             android:padding="2dp"
             android:singleLine="true"
             android:text="@string/loading" />
-    </LinearLayout>
+    </RelativeLayout>
 
     <RelativeLayout
         android:id="@+id/panelSecondary"

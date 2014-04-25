@@ -72,8 +72,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private TextView lblPath, sep, sep2;
 	private BgListView list;
 	private FileList fileList;
-	private LinearLayout panelLoading;
-	private RelativeLayout panelSecondary;
+	private RelativeLayout panelSecondary, panelLoading;
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
@@ -263,19 +262,18 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	}
 	
 	@Override
-	public void showNotification(boolean show) {
-		loading = show;
+	public void loadingProcessChanged(boolean started) {
+		loading = started;
 		if (panelLoading != null)
-			panelLoading.setVisibility(show ? View.VISIBLE : View.GONE);
+			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
 		if (fileList != null) {
-			fileList.setObserver(show ? null : list);
 			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
 			if (list != null && !list.isInTouchMode())
 				list.centerItem(fileList.getSelection(), false);
 		}
 		if (list != null)
-			list.setCustomEmptyText(show ? "" : null);
-		if (!show)
+			list.setCustomEmptyText(started ? "" : null);
+		if (!started)
 			refreshButtons();
 	}
 	
@@ -630,8 +628,9 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		list = (BgListView)findViewById(R.id.list);
+		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
-		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
+		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
@@ -702,14 +701,12 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		SongAddingMonitor.stop();
 		fileList.setObserver(null);
 		fileList.observerActivity = null;
-		list.setOnKeyDownObserver(null);
 	}
 	
 	@Override
 	protected void onResume() {
-		list.setOnKeyDownObserver(this);
 		fileList.observerActivity = this;
-		fileList.setObserver(loading ? null : list);
+		fileList.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
 	}
 	

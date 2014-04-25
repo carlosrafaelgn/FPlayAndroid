@@ -139,18 +139,18 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	}
 	
 	@Override
-	public void showNotification(boolean show) {
-		loading = show;
+	public void loadingProcessChanged(boolean started) {
+		loading = started;
 		if (panelLoading != null)
-			panelLoading.setVisibility(show ? View.VISIBLE : View.GONE);
+			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
 		int count = 0;
 		if (fileList != null) {
-			fileList.setObserver(show ? null : list);
+			fileList.setObserver(started ? null : list);
 			count = fileList.getCount();
 		}
 		if (list != null)
 			list.centerItem(fileList.getSelection(), false);
-		if (!show)
+		if (!started)
 			refreshMenu(count);
 	}
 	
@@ -368,6 +368,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
 		list = (BgListView)findViewById(R.id.list);
+		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
 		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
 		if (UI.isLargeScreen)
@@ -382,12 +383,10 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		SongAddingMonitor.stop();
 		fileList.setObserver(null);
 		fileList.observerActivity = null;
-		list.setOnKeyDownObserver(null);
 	}
 	
 	@Override
 	protected void onResume() {
-		list.setOnKeyDownObserver(this);
 		fileList.observerActivity = this;
 		fileList.setObserver(loading ? null : list);
 		SongAddingMonitor.start(getHostActivity());

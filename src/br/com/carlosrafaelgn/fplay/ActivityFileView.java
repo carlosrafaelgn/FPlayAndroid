@@ -35,7 +35,7 @@ package br.com.carlosrafaelgn.fplay;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 
 public abstract class ActivityFileView extends ActivityItemView {
-	public abstract void showNotification(boolean show);
+	public abstract void loadingProcessChanged(boolean started);
 	public abstract FileView createFileView();
 	public abstract void processItemButtonClick(int position, boolean add);
 }

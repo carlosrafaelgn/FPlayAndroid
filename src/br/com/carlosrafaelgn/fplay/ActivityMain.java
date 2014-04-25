@@ -787,6 +787,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
 			list = (BgListView)findViewById(R.id.list);
+			list.setOnKeyDownObserver(this);
 			list.setEmptyListOnClickListener(this);
 			list.setCustomEmptyText(getText(R.string.touch_to_add_songs));
 			panelControls = (ViewGroup)findViewById(R.id.panelControls);
@@ -995,7 +996,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (list != null) {
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
-			list.setOnKeyDownObserver(this);
 		}
 		getHostActivity().setWindowColor(Player.isControlMode() ? UI.color_control_mode : UI.color_window);
 		onPlayerChanged(Player.getCurrentSong(), true, null);
@@ -1021,8 +1021,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	protected void onPause() {
 		Player.isMainActiveOnTop = false;
 		saveListViewPosition();
-		if (list != null)
-			list.setOnKeyDownObserver(null);
 		tmrSong.stop();
 		tmrUpdateVolumeDisplay.stop();
 		tmrVolume.stop();

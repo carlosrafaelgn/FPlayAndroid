@@ -54,9 +54,9 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 		super(FileSt.class);
 	}
 	
-	private void showNotification(boolean show) {
+	private void loadingProcessChanged(boolean started) {
 		if (observerActivity != null)
-			observerActivity.showNotification(show);
+			observerActivity.loadingProcessChanged(started);
 	}
 	
 	public String getPath() {
@@ -66,7 +66,8 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	public void setPath(String path, String comingFrom) {
 		if (fetcher != null)
 			fetcher.cancel();
-		showNotification(true);
+		clear();
+		loadingProcessChanged(true);
 		this.comingFrom = comingFrom;
 		fetcher = FileFetcher.fetchFiles(path, this, true, false);
 	}
@@ -74,7 +75,8 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	public void setPrivateFileType(String fileType) {
 		if (fetcher != null)
 			fetcher.cancel();
-		showNotification(true);
+		clear();
+		loadingProcessChanged(true);
 		fetcher = FileFetcher.fetchFiles(fileType, this, true, false);
 	}
 	
@@ -83,7 +85,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 			fetcher.cancel();
 			fetcher = null;
 			comingFrom = null;
-			showNotification(false);
+			loadingProcessChanged(false);
 		}
 	}
 	
@@ -97,8 +99,8 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 			items = fetcher.files;
 			count = fetcher.count;
 			path = fetcher.path;
-			if (listObserver != null || fetcher.oldBrowserBehavior) {
-				int p = 0;
+			//if (listObserver != null || fetcher.oldBrowserBehavior) {
+				int p = (fetcher.oldBrowserBehavior ? 0 : -1);
 				if (comingFrom != null && comingFrom.length() > 0) {
 					if (path == null || path.length() == 0) {
 						for (int i = count - 1; i >= 0; i--) {
@@ -125,19 +127,20 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 						}
 					}
 				}
-				if (!fetcher.oldBrowserBehavior && listObserver != null && listObserver.isInTouchMode()) {
-					setSelection(-1, false);
-					listObserver.scrollItemToTop(p, false);
-				} else {
-					setSelection(p, false);
-				}
-			} else {
-				setSelection(-1, false);
-			}
+				setSelection(p, false);
+				//if (!fetcher.oldBrowserBehavior && listObserver != null && listObserver.isInTouchMode()) {
+				//	setSelection(-1, false);
+				//	listObserver.scrollItemToTop(p, false);
+				//} else {
+				//	setSelection(p, false);
+				//}
+			//} else {
+			//	setSelection(-1, false);
+			//}
 		} finally {
 			this.fetcher = null;
 			comingFrom = null;
-			showNotification(false);
+			loadingProcessChanged(false);
 		}
 	}
 	
