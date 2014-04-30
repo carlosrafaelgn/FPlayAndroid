@@ -211,5 +211,6 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Physical Back key always returns to player while adding songs</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Return to the player</string>
-
+    <string name="startup_message">There are many improvements in the way you add and play songs! You can switch back to the old way at any time in the \"Settings\" menu, though ;)</string>
+    
 </resources>

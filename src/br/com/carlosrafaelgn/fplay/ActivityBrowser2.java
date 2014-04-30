@@ -594,6 +594,15 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	protected boolean onBackPressed() {
 		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing || isAtHome)
 			return false;
+		if (chkAll != null && checkedCount != 0) {
+			chkAll.setChecked(false);
+			checkedCount = 0;
+			for (int i = fileList.getCount() - 1; i >= 0; i--)
+				fileList.getItemT(i).isChecked = false;
+			fileList.notifyCheckedChanged();
+			refreshButtons();
+			return true;
+		}
 		onClick(btnGoBack);
 		return true;
 	}

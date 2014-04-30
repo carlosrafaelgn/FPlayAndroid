@@ -11,55 +11,57 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:contentDescription="@string/fplay"
-        android:padding="4dp"
+        android:padding="2dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_launcher" />
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_above="@+id/lblTitle"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@+id/btnExit"
-        android:layout_toRightOf="@+id/imgIcon"
-        android:paddingTop="4dp" >
+        android:layout_toRightOf="@+id/imgIcon" >
 
         <ImageButton
             android:id="@+id/btnPrev"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentTop="true"
             android:layout_toLeftOf="@+id/btnPlay"
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/previous"
             android:focusable="true"
-            android:padding="2dp"
+            android:padding="4dp"
             android:scaleType="centerInside" />
 
         <ImageButton
             android:id="@+id/btnPlay"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
-            android:layout_marginLeft="32dp"
-            android:layout_marginRight="32dp"
+            android:layout_marginLeft="24dp"
+            android:layout_marginRight="24dp"
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/play"
             android:focusable="true"
-            android:padding="2dp"
+            android:padding="4dp"
             android:scaleType="centerInside" />
 
         <ImageButton
             android:id="@+id/btnNext"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentTop="true"
             android:layout_toRightOf="@+id/btnPlay"
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/next"
             android:focusable="true"
-            android:padding="2dp"
+            android:padding="4dp"
             android:scaleType="centerInside" />
     </RelativeLayout>
 
@@ -69,26 +71,25 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_toLeftOf="@+id/btnExit"
-        android:layout_marginBottom="2dp"
-        android:layout_marginTop="2dp"
         android:layout_toRightOf="@+id/imgIcon"
         android:ellipsize="end"
         android:gravity="center"
+        android:paddingBottom="2dp"
+        android:paddingTop="2dp"
         android:singleLine="true"
         android:textAppearance="@android:style/TextAppearance.StatusBar.EventContent" />
-    
+
     <ImageButton
         android:id="@+id/btnExit"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
+        android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
         android:background="@drawable/bg_notification_button"
         android:contentDescription="@string/exit"
         android:focusable="true"
-        android:padding="2dp"
-        android:layout_marginBottom="4dp"
-        android:layout_marginRight="4dp"
+        android:padding="4dp"
         android:scaleType="centerInside" />
 
 </RelativeLayout>

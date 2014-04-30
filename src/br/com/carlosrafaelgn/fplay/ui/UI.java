@@ -929,15 +929,16 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 3) {
-			msgStartup = 3;
+		if (msgStartup >= 4) {
+			msgStartup = 4;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup < 3) {
-			msgStartup = 3;
-			content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_key_behavior).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		if (msgStartup < 4) {
+			msgStartup = 4;
+			//content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_key_behavior).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+			content = activity.getText(R.string.startup_message).toString();
 		}
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
