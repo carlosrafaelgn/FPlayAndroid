@@ -118,25 +118,24 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	public void setItemState(FileSt file, int position, int state) {
+		if (file == null)
+			return;
 		final int w = getWidth();
 		final int specialType = file.specialType;
 		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ALBUM_ITEM) || (specialType == FileSt.TYPE_ARTIST)) && (buttonIsCheckbox || ((state & UI.STATE_SELECTED) != 0)));
+		final boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != specialType));
 		this.position = position;
-		//btnPlay.setTextColor((((state & UI.STATE_SELECTED) != 0) || (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
-		if ((this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
-			btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
-		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
-		//watch out, DO NOT use equals() in favor of speed!
-		if (this.file == file && buttonsVisible == showButtons && width == w && btnPlay != null && file.isChecked == btnPlay.isChecked())
-			return;
-		final boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != file.specialType));
-		this.file = file;
-		this.width = w;
 		if (buttonIsCheckbox && btnPlay != null) {
-			if (specialTypeChanged)
-				btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
+			if (specialTypeChanged || this.file != file || (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
+				btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : ((specialType == FileSt.TYPE_ALBUM_ITEM) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
 			btnPlay.setChecked(file.isChecked);
 		}
+		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
+		//watch out, DO NOT use equals() in favor of speed!
+		if (this.file == file && buttonsVisible == showButtons && width == w)
+			return;
+		this.file = file;
+		this.width = w;
 		if (buttonsVisible != showButtons) {
 			buttonsVisible = showButtons;
 			if (btnAdd != null)

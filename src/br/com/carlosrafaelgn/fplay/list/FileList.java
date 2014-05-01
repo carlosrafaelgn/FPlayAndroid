@@ -146,7 +146,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		FileView view = ((convertView == null) ? observerActivity.createFileView() : (FileView)convertView);
+		final FileView view = ((convertView == null) ? observerActivity.createFileView() : (FileView)convertView);
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}

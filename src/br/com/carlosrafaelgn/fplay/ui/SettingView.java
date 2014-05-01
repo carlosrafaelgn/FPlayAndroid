@@ -132,13 +132,14 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	private View.OnClickListener onClickListener;
 	private TextView textView, secondaryTextView, errorView;
 	private ExtraView extraView;
-	private String text, secondaryText;
+	private String icon, text, secondaryText;
 	private boolean checkable, color, hidingSeparator;
 	private int state;
 	
-	public SettingView(Context context, String text, String secondaryText, boolean checkable, boolean checked, boolean color) {
+	public SettingView(Context context, String icon, String text, String secondaryText, boolean checkable, boolean checked, boolean color) {
 		super(context);
 		super.setOnClickListener(this);
+		this.icon = icon;
 		setFocusable(true);
 		refreshVerticalMargin();
 		setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
@@ -207,7 +208,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	}
 	
 	public void refreshVerticalMargin() {
-		setPadding(UI._8dp, UI.isVerticalMarginLarge ? UI._16sp : UI._8sp, UI._8dp, UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		setPadding(UI._8dp + ((icon == null) ? 0 : (UI.defaultControlContentsSize + UI._8dp + UI._8dp)), UI.isVerticalMarginLarge ? UI._16sp : UI._8sp, UI._8dp, UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 	}
 	
 	@Override
@@ -381,6 +382,15 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	protected void dispatchDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
 		UI.drawBg(canvas, state, UI.rect, false, !hidingSeparator);
+		if (icon != null) {
+			UI.rect.top = (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1);
+			TextIconDrawable.drawIcon(canvas, icon, UI._8dp, UI.rect.top, UI.defaultControlContentsSize, (state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
+			UI.rect.left = UI._8dp + UI._8dp + UI.defaultControlContentsSize;
+			UI.rect.right = UI.rect.left + UI.strokeSize;
+			UI.rect.top += UI._2dp;
+			UI.rect.bottom = UI.rect.top + UI.defaultControlContentsSize - UI._4dp;
+			UI.fillRect(canvas, (state == 0) ? UI.color_divider : UI.color_text_selected, UI.rect);
+		}
 		super.dispatchDraw(canvas);
 	}
 	
@@ -394,6 +404,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		textView = null;
 		secondaryTextView = null;
 		extraView = null;
+		icon = null;
 		text = null;
 		secondaryText = null;
 		errorView = null;

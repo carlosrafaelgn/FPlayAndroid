@@ -424,12 +424,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		for (int i = 0; i < colorOrder.length; i++) {
 			final int idx = colorOrder[i];
 			if (createControls)
-				colorViews[idx] = new SettingView(ctx, UI.getThemeColorDescription(ctx, idx).toString(), null, false, false, true);
+				colorViews[idx] = new SettingView(ctx, null, UI.getThemeColorDescription(ctx, idx).toString(), null, false, false, true);
 			colorViews[idx].setColor(UI.deserializeThemeColor(colors, idx * 3));
 			colorViews[idx].setOnClickListener(this);
 		}
 		if (createControls) {
-			optLoadCurrentTheme = new SettingView(ctx, getText(R.string.load_colors_from_current_theme).toString(), null, false, false, false);
+			optLoadCurrentTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.load_colors_from_current_theme).toString(), null, false, false, false);
 			optLoadCurrentTheme.setOnClickListener(this);
 			panelSettings.addView(optLoadCurrentTheme);
 			for (int i = 0; i < colorOrder.length; i++) {
@@ -493,62 +493,62 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			loadColors(true, false);
 		} else {
 			if (!UI.isCurrentLocaleCyrillic()) {
-				optUseAlternateTypeface = new SettingView(ctx, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface(), false);
+				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface(), false);
 				optUseAlternateTypeface.setOnClickListener(this);
 			}
-			optAutoTurnOff = new SettingView(ctx, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
+			optAutoTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
 			optAutoTurnOff.setOnClickListener(this);
-			optKeepScreenOn = new SettingView(ctx, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
+			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
 			optKeepScreenOn.setOnClickListener(this);
-			optTheme = new SettingView(ctx, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
+			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
 			optTheme.setOnClickListener(this);
-			optVolumeControlType = new SettingView(ctx, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
+			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
 			optVolumeControlType.setOnClickListener(this);
-			optIsDividerVisible = new SettingView(ctx, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible, false);
+			optIsDividerVisible = new SettingView(ctx, UI.ICON_DIVIDER, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible, false);
 			optIsDividerVisible.setOnClickListener(this);
-			optIsVerticalMarginLarge = new SettingView(ctx, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge, false);
+			optIsVerticalMarginLarge = new SettingView(ctx, UI.ICON_SPACELIST, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge, false);
 			optIsVerticalMarginLarge.setOnClickListener(this);
-			optExtraSpacing = new SettingView(ctx, getText(R.string.opt_extra_spacing).toString(), null, true, UI.extraSpacing, false);
+			optExtraSpacing = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.opt_extra_spacing).toString(), null, true, UI.extraSpacing, false);
 			optExtraSpacing.setOnClickListener(this);
-			optForcedLocale = new SettingView(ctx, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false, false);
+			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false, false);
 			optForcedLocale.setOnClickListener(this);
-			optWidgetTransparentBg = new SettingView(ctx, getText(R.string.transparent_background).toString(), null, true, UI.widgetTransparentBg, false);
+			optWidgetTransparentBg = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.transparent_background).toString(), null, true, UI.widgetTransparentBg, false);
 			optWidgetTransparentBg.setOnClickListener(this);
-			optWidgetTextColor = new SettingView(ctx, getText(R.string.text_color).toString(), null, false, false, true);
+			optWidgetTextColor = new SettingView(ctx, UI.ICON_PALETTE, getText(R.string.text_color).toString(), null, false, false, true);
 			optWidgetTextColor.setOnClickListener(this);
 			optWidgetTextColor.setColor(UI.widgetTextColor);
-			optWidgetIconColor = new SettingView(ctx, getText(R.string.icon_color).toString(), null, false, false, true);
+			optWidgetIconColor = new SettingView(ctx, UI.ICON_PALETTE, getText(R.string.icon_color).toString(), null, false, false, true);
 			optWidgetIconColor.setOnClickListener(this);
 			optWidgetIconColor.setColor(UI.widgetIconColor);
-			optHandleCallKey = new SettingView(ctx, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey, false);
+			optHandleCallKey = new SettingView(ctx, UI.ICON_DIAL, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey, false);
 			optHandleCallKey.setOnClickListener(this);
-			optPlayWhenHeadsetPlugged = new SettingView(ctx, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
+			optPlayWhenHeadsetPlugged = new SettingView(ctx, UI.ICON_HEADSET, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
 			optPlayWhenHeadsetPlugged.setOnClickListener(this);
-			optBlockBackKey = new SettingView(ctx, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
+			optBlockBackKey = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
 			optBlockBackKey.setOnClickListener(this);
-			optBackKeyAlwaysReturnsToPlayerWhenBrowsing = new SettingView(ctx, getText(R.string.opt_back_key_always_returns_to_player_when_browsing).toString(), null, true, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing, false);
+			optBackKeyAlwaysReturnsToPlayerWhenBrowsing = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_back_key_always_returns_to_player_when_browsing).toString(), null, true, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing, false);
 			optBackKeyAlwaysReturnsToPlayerWhenBrowsing.setOnClickListener(this);
-			optWrapAroundList = new SettingView(ctx, getText(R.string.opt_wrap_around_list).toString(), null, true, UI.wrapAroundList, false);
+			optWrapAroundList = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_wrap_around_list).toString(), null, true, UI.wrapAroundList, false);
 			optWrapAroundList.setOnClickListener(this);
-			optDoubleClickMode = new SettingView(ctx, getText(R.string.opt_double_click_mode).toString(), null, true, UI.doubleClickMode, false);
+			optDoubleClickMode = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_double_click_mode).toString(), null, true, UI.doubleClickMode, false);
 			optDoubleClickMode.setOnClickListener(this);
-			optMarqueeTitle = new SettingView(ctx, getText(R.string.opt_marquee_title).toString(), null, true, UI.marqueeTitle, false);
+			optMarqueeTitle = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_marquee_title).toString(), null, true, UI.marqueeTitle, false);
 			optMarqueeTitle.setOnClickListener(this);
-			optPrepareNext = new SettingView(ctx, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled, false);
+			optPrepareNext = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled, false);
 			optPrepareNext.setOnClickListener(this);
-			optOldBrowserBehavior = new SettingView(ctx, getText(R.string.opt_old_browser_behavior).toString(), null, true, UI.oldBrowserBehavior, false);
+			optOldBrowserBehavior = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_old_browser_behavior).toString(), null, true, UI.oldBrowserBehavior, false);
 			optOldBrowserBehavior.setOnClickListener(this);
-			optClearListWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders, false);
+			optClearListWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders, false);
 			optClearListWhenPlayingFolders.setOnClickListener(this);
-			optGoBackWhenPlayingFolders = new SettingView(ctx, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
+			optGoBackWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
 			optGoBackWhenPlayingFolders.setOnClickListener(this);
-			optForceOrientation = new SettingView(ctx, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
+			optForceOrientation = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
 			optForceOrientation.setOnClickListener(this);
-			optFadeInFocus = new SettingView(ctx, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false, false);
+			optFadeInFocus = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false, false);
 			optFadeInFocus.setOnClickListener(this);
-			optFadeInPause = new SettingView(ctx, getText(R.string.opt_fade_in_pause).toString(), getFadeInString(Player.fadeInIncrementOnPause), false, false, false);
+			optFadeInPause = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_pause).toString(), getFadeInString(Player.fadeInIncrementOnPause), false, false, false);
 			optFadeInPause.setOnClickListener(this);
-			optFadeInOther = new SettingView(ctx, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
+			optFadeInOther = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
 			optFadeInOther.setOnClickListener(this);
 			
 			panelSettings.addView(optAutoTurnOff);

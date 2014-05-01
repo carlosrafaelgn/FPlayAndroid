@@ -78,7 +78,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 24;
+	public static final int VERSION_CODE = 26;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -150,6 +150,20 @@ public final class UI {
 	public static final String ICON_SLIDERTOP = "\"";
 	public static final String ICON_SLIDERBOTTOM = "\'";
 	public static final String ICON_RIGHT = "6";
+	public static final String ICON_FADE = ";";
+	public static final String ICON_DIAL = ":";
+	public static final String ICON_HEADSET = "{";
+	public static final String ICON_TRANSPARENT = "}";
+	public static final String ICON_PALETTE = "[";
+	public static final String ICON_LANGUAGE = "]";
+	public static final String ICON_THEME = "\\";
+	public static final String ICON_SPACELIST = "=";
+	public static final String ICON_SPACEHEADER = "~";
+	public static final String ICON_ORIENTATION = "@";
+	public static final String ICON_DYSLEXIA = "$";
+	public static final String ICON_SCREEN = "`";
+	public static final String ICON_CLOCK = ".";
+	public static final String ICON_DIVIDER = ",";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;

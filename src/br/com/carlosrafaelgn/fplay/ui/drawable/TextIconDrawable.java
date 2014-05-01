@@ -82,7 +82,7 @@ public final class TextIconDrawable extends Drawable {
 		this.outsideMenu = true;
 		this.color = color;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, UI._IconBox + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), UI._IconBox);
+		super.setBounds(0, 0, UI._IconBox + UI._8dp, UI._IconBox);
 	}
 	
 	public TextIconDrawable(String icon, int color, int size) {
@@ -92,7 +92,7 @@ public final class TextIconDrawable extends Drawable {
 		this.outsideMenu = true;
 		this.color = color;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, size + UI._8dp + (outsideMenu ? 0 : (UI._8dp + 1)), size);
+		super.setBounds(0, 0, size + UI._8dp, size);
 	}
 	
 	public String getIcon() {
