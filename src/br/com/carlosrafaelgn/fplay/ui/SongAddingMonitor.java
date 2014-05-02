@@ -67,7 +67,7 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 				notification.setLayoutParams(p);
 				UI.smallText(notification);
 				UI.prepareNotificationViewColors(notification);
-				lastMsg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.msg_loading : R.string.msg_adding);
+				lastMsg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.loading : R.string.adding_songs);
 				notification.setText(lastMsg);
 				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
 				((FrameLayout)parent).addView(notification);
@@ -92,7 +92,7 @@ public class SongAddingMonitor implements Timer.TimerHandler {
 	public void handleTimer(Timer timer, Object param) {
 		int msg = 0;
 		if (Player.songs.isAdding() || Player.getState() != Player.STATE_INITIALIZED)
-			msg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.msg_loading : R.string.msg_adding);
+			msg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.loading : R.string.adding_songs);
 		if (msg == 0) {
 			stop();
 		} else if (lastMsg != msg) {

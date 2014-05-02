@@ -162,16 +162,20 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int MSG_INITIALIZATION_4 = 0x106;
 	private static final int MSG_INITIALIZATION_5 = 0x107;
 	private static final int MSG_INITIALIZATION_6 = 0x108;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0 = 0x0109;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1 = 0x010a;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2 = 0x010b;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3 = 0x010c;
-	private static final int MSG_PREPARE_PLAYBACK_0 = 0x10d;
-	private static final int MSG_PREPARE_PLAYBACK_1 = 0x10e;
-	private static final int MSG_PREPARE_PLAYBACK_2 = 0x10f;
-	private static final int MSG_TERMINATION_0 = 0x110;
-	private static final int MSG_TERMINATION_1 = 0x111;
-	private static final int MSG_TERMINATION_2 = 0x112;
+	private static final int MSG_INITIALIZATION_7 = 0x109;
+	private static final int MSG_INITIALIZATION_8 = 0x10a;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0 = 0x0110;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1 = 0x0111;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2 = 0x0112;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3 = 0x0113;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4 = 0x0114;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5 = 0x0115;
+	private static final int MSG_PREPARE_PLAYBACK_0 = 0x120;
+	private static final int MSG_PREPARE_PLAYBACK_1 = 0x121;
+	private static final int MSG_PREPARE_PLAYBACK_2 = 0x122;
+	private static final int MSG_TERMINATION_0 = 0x130;
+	private static final int MSG_TERMINATION_1 = 0x131;
+	private static final int MSG_TERMINATION_2 = 0x132;
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
 	private static final int OPT_LASTTIME = 0x0002;
@@ -242,12 +246,13 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
 	public static PlayerObserver observer;
 	public static final SongList songs = SongList.getInstance();
-	//keep these instances here to prevent UI, MainHandler, Equalizer and BassBoost
+	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost and Virtualizer
 	//classes from being garbage collected...
 	public static final UI _ui = new UI();
 	public static MainHandler _mainHandler;
 	public static final Equalizer _equalizer = new Equalizer();
 	public static final BassBoost _bassBoost = new BassBoost();
+	public static final Virtualizer _virtualizer = new Virtualizer();
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
 	//so they will survive their respective activity's destruction
 	//(and even the class garbage collection)
@@ -316,6 +321,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		}
 		Equalizer.loadConfig(opts);
 		BassBoost.loadConfig(opts);
+		Virtualizer.loadConfig(opts);
 		if (favoriteFolders == null)
 			favoriteFolders = new HashSet<String>(8);
 	}
@@ -373,6 +379,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		}
 		Equalizer.saveConfig(opts);
 		BassBoost.saveConfig(opts);
+		Virtualizer.saveConfig(opts);
 		opts.serialize(context, "_Player");
 		songs.serialize(context, null);
 	}
@@ -904,6 +911,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static void releaseInternal() {
 		Equalizer.release();
 		BassBoost.release();
+		Virtualizer.release();
 		currentSongLoaded = false;
 		if (currentPlayer != null) {
 			releasePlayer(currentPlayer);
@@ -1652,13 +1660,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					state = STATE_INITIALIZED;
 				break;
 			}
-			try {
-				if (Equalizer.isEnabled() && currentPlayer != null) {
-					Equalizer.initialize(currentPlayer.getAudioSessionId());
-					Equalizer.setEnabled(true);
-				}
-			} catch (Throwable ex) {
-			}
+			Virtualizer.release();
 			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3, msg.arg1, msg.arg2, msg.obj);
 			break;
 		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3:
@@ -1668,9 +1670,39 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				break;
 			}
 			try {
+				if (Equalizer.isEnabled() && currentPlayer != null) {
+					Equalizer.initialize(currentPlayer.getAudioSessionId());
+					Equalizer.setEnabled(true);
+				}
+			} catch (Throwable ex) {
+			}
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			try {
 				if (BassBoost.isEnabled() && currentPlayer != null) {
 					BassBoost.initialize(currentPlayer.getAudioSessionId());
 					BassBoost.setEnabled(true);
+				}
+			} catch (Throwable ex) {
+			}
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			try {
+				if (Virtualizer.isEnabled() && currentPlayer != null) {
+					Virtualizer.initialize(currentPlayer.getAudioSessionId());
+					Virtualizer.setEnabled(true);
 				}
 			} catch (Throwable ex) {
 			}
@@ -1746,6 +1778,18 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_6);
 			break;
 		case MSG_INITIALIZATION_6:
+			if (currentPlayer != null)
+				Virtualizer.initialize(currentPlayer.getAudioSessionId());
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_7);
+			break;
+		case MSG_INITIALIZATION_7:
+			if (!Virtualizer.isEnabled())
+				Virtualizer.release();
+			else
+				Virtualizer.setEnabled(true);
+			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_8);
+			break;
+		case MSG_INITIALIZATION_8:
 			switch (state) {
 			case STATE_INITIALIZING_PENDING_ACTIONS:
 				state = STATE_INITIALIZED;

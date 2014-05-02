@@ -12,6 +12,7 @@
     <string name="nothing_playing">[Ничего не воспроизводится]</string>
     <string name="oops">Извините&#8230;</string>
     <string name="loading">Загрузка&#8230;</string>
+    <string name="adding_songs">Добавление композиций&#8230;</string>
     <string name="empty_list">[Пустой список]</string>
     <string name="error">Ошибка:</string>
     <string name="ok">Готово</string>
@@ -24,8 +25,6 @@
     <string name="go_to">Перейти к</string>
     <string name="msg_sel">Нажмите, чтобы выбрать несколько элементов</string>
     <string name="msg_move">Нажмите, чтобы переместить выбранные элементы</string>
-    <string name="msg_loading">Загрузка&#8230;</string>
-    <string name="msg_adding">Добавление композиций&#8230;</string>
     <string name="msg_select_song">Пожалуйста, выберите композицию для добавления</string>
     <string name="msg_select_folder_add">Пожалуйста, выберите директорию для добавления</string>
     <string name="msg_select_folder_play">Пожалуйста, выберите директорию для проигрывания</string>

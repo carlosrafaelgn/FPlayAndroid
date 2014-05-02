@@ -12,6 +12,7 @@
     <string name="nothing_playing">[Nada tocando]</string>
     <string name="oops">Oops&#8230;</string>
     <string name="loading">Carregando&#8230;</string>
+    <string name="adding_songs">Adicionando músicas&#8230;</string>
     <string name="empty_list">[Vazio]</string>
     <string name="error">Erro:</string>
     <string name="ok">OK</string>
@@ -24,8 +25,6 @@
     <string name="go_to">Ir para</string>
     <string name="msg_sel">Toque para selecionar mais</string>
     <string name="msg_move">Toque para mover a seleção</string>
-    <string name="msg_loading">Carregando&#8230;</string>
-    <string name="msg_adding">Adicionando músicas&#8230;</string>
     <string name="msg_select_song">Por favor, selecione uma música para adicionar</string>
     <string name="msg_select_folder_add">Por favor, selecione uma pasta para adicionar</string>
     <string name="msg_select_folder_play">Por favor, selecione uma música para tocar</string>

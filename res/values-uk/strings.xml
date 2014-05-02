@@ -11,7 +11,8 @@
     <string name="resolution">Дозвіл</string>
     <string name="nothing_playing">[Нічого не відтворюється]</string>
     <string name="oops">Вибачте&#8230;</string>
-    <string name="loading">Завантаження&#8230;</string>
+    <string name="loading">Загрузка&#8230;</string>
+    <string name="adding_songs">Додавання композицій&#8230;</string>
     <string name="empty_list">[Пустий список]</string>
     <string name="error">Помилка:</string>
     <string name="ok">Гаразд</string>
@@ -24,8 +25,6 @@
     <string name="go_to">Перейти до</string>
     <string name="msg_sel">Натисніть, щоб обрати декілька елементів</string>
     <string name="msg_move">Натисніть, щоб перемістити вибрані елементи</string>
-    <string name="msg_loading">Загрузка&#8230;</string>
-    <string name="msg_adding">Додавання композицій&#8230;</string>
     <string name="msg_select_song">Будь ласка, виберіть композицію для додавання</string>
     <string name="msg_select_folder_add">Будь ласка, виберіть директорію для додавання</string>
     <string name="msg_select_folder_play">Будь ласка, виберіть директорію для відтворення</string>

@@ -93,7 +93,7 @@ public final class UI {
 	public static final int LOCALE_RU = 3;
 	public static final int LOCALE_UK = 4;
 	public static final int LOCALE_ES = 5;
-	public static final int LOCALE_MAX = 4;
+	public static final int LOCALE_MAX = 5;
 	
 	public static final int THEME_CUSTOM = -1;
 	public static final int THEME_BLUE_ORANGE = 0;
@@ -355,7 +355,7 @@ public final class UI {
 		final Locale l = Locale.getDefault();
 		switch (localeCode) {
 		case LOCALE_US:
-			if (!l.equals(Locale.US))
+			if (!"en".equals(l.getLanguage()))
 				return Locale.US;
 			break;
 		case LOCALE_PTBR:
@@ -369,6 +369,10 @@ public final class UI {
 		case LOCALE_UK:
 			if (!"uk".equals(l.getLanguage()))
 				return new Locale("uk");
+			break;
+		case LOCALE_ES:
+			if (!"es".equals(l.getLanguage()))
+				return new Locale("es");
 			break;
 		}
 		return l;
@@ -384,6 +388,8 @@ public final class UI {
 			return "Русский";
 		case LOCALE_UK:
 			return "Українська";
+		case LOCALE_ES:
+			return "Español";
 		}
 		return context.getText(R.string.standard_language).toString();
 	}
@@ -397,6 +403,8 @@ public final class UI {
 				return LOCALE_RU;
 			if ("uk".equals(l))
 				return LOCALE_UK;
+			if ("es".equals(l))
+				return LOCALE_ES;
 		} catch (Throwable ex) {
 		}
 		return LOCALE_US;

@@ -49,6 +49,7 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
@@ -63,6 +64,8 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 	private static final int MSG_ENABLING_STEP_1 = 0x0301;
 	private static final int MSG_ENABLING_STEP_2 = 0x0302;
 	private static final int MSG_ENABLING_STEP_3 = 0x0303;
+	private static final int MSG_ENABLING_STEP_4 = 0x0304;
+	private static final int MSG_ENABLING_STEP_5 = 0x0305;
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
 	private RelativeLayout panelControls;
 	private LinearLayout container;
@@ -528,6 +531,10 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 			MainHandler.sendMessage(this, MSG_ENABLING_STEP_2);
 			break;
 		case MSG_ENABLING_STEP_2:
+			Virtualizer.release();
+			MainHandler.sendMessage(this, MSG_ENABLING_STEP_3);
+			break;
+		case MSG_ENABLING_STEP_3:
 			final boolean enableEqualizer = (Player.bassBoostMode ? Equalizer.isEnabled() : chkEnable.isChecked());
 			if (enableEqualizer && Player.getAudioSessionId() != -1) {
 				try {
@@ -539,9 +546,9 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 				Equalizer.setEnabled(enableEqualizer);
 			} catch (Throwable ex) {
 			}
-			MainHandler.sendMessage(this, MSG_ENABLING_STEP_3);
+			MainHandler.sendMessage(this, MSG_ENABLING_STEP_4);
 			break;
-		case MSG_ENABLING_STEP_3:
+		case MSG_ENABLING_STEP_4:
 			final boolean enableBassBoost = (Player.bassBoostMode ? chkEnable.isChecked() : BassBoost.isEnabled());
 			if (enableBassBoost && Player.getAudioSessionId() != -1) {
 				try {
@@ -553,6 +560,20 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 				BassBoost.setEnabled(enableBassBoost);
 			} catch (Throwable ex) {
 			}
+			MainHandler.sendMessage(this, MSG_ENABLING_STEP_5);
+			break;
+		case MSG_ENABLING_STEP_5:
+			/*final boolean enableVirtualizer = (Player.bassBoostMode ? chkEnable.isChecked() : Virtualizer.isEnabled());
+			if (enableVirtualizer && Player.getAudioSessionId() != -1) {
+				try {
+					Virtualizer.initialize(Player.getAudioSessionId());
+				} catch (Throwable ex) {
+				}
+			}
+			try {
+				Virtualizer.setEnabled(enableVirtualizer);
+			} catch (Throwable ex) {
+			}*/
 			if (Player.bassBoostMode) {
 				//something might have gone wrong...
 				if (chkEnable.isChecked() != BassBoost.isEnabled())

@@ -12,6 +12,7 @@
     <string name="nothing_playing">[Nothing playing]</string>
     <string name="oops">Oops&#8230;</string>
     <string name="loading">Loading&#8230;</string>
+    <string name="adding_songs">Adding songs&#8230;</string>
     <string name="empty_list">[Empty]</string>
     <string name="error">Error:</string>
     <string name="ok">OK</string>
@@ -24,8 +25,6 @@
     <string name="go_to">Go to</string>
     <string name="msg_sel">Click to select more items</string>
     <string name="msg_move">Click to move selected items</string>
-    <string name="msg_loading">Loading&#8230;</string>
-    <string name="msg_adding">Adding songs&#8230;</string>
     <string name="msg_select_song">Please, select a song to add</string>
     <string name="msg_select_folder_add">Please, select a folder to add</string>
     <string name="msg_select_folder_play">Please, select a folder to play</string>

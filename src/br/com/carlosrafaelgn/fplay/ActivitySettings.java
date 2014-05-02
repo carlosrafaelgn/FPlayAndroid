@@ -108,15 +108,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.LOCALE_US, 0, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_US))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_US) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_PTBR, 1, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_PTBR))
+			menu.add(1, UI.LOCALE_PTBR, 2, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_PTBR))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_PTBR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_RU, 2, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_RU))
+			menu.add(1, UI.LOCALE_RU, 3, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_RU))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_UK, 3, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_UK))
+			menu.add(1, UI.LOCALE_UK, 4, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_UK))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_ES, 1, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_ES))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_ES) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optTheme) {
 			final Context ctx = getApplication();
 			final int o = UI.getTheme();
