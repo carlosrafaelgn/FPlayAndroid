@@ -170,12 +170,24 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3 = 0x0113;
 	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4 = 0x0114;
 	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5 = 0x0115;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_6 = 0x0116;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_7 = 0x0117;
+	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_8 = 0x0118;
 	private static final int MSG_PREPARE_PLAYBACK_0 = 0x120;
 	private static final int MSG_PREPARE_PLAYBACK_1 = 0x121;
 	private static final int MSG_PREPARE_PLAYBACK_2 = 0x122;
-	private static final int MSG_TERMINATION_0 = 0x130;
-	private static final int MSG_TERMINATION_1 = 0x131;
-	private static final int MSG_TERMINATION_2 = 0x132;
+	private static final int MSG_RESET_EFFECTS_0 = 0x130;
+	private static final int MSG_RESET_EFFECTS_1 = 0x131;
+	private static final int MSG_RESET_EFFECTS_2 = 0x132;
+	private static final int MSG_RESET_EFFECTS_3 = 0x133;
+	private static final int MSG_RESET_EFFECTS_4 = 0x134;
+	private static final int MSG_RESET_EFFECTS_5 = 0x135;
+	private static final int MSG_RESET_EFFECTS_6 = 0x136;
+	private static final int MSG_RESET_EFFECTS_7 = 0x137;
+	private static final int MSG_RESET_EFFECTS_8 = 0x138;
+	private static final int MSG_TERMINATION_0 = 0x140;
+	private static final int MSG_TERMINATION_1 = 0x141;
+	private static final int MSG_TERMINATION_2 = 0x142;
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
 	private static final int OPT_LASTTIME = 0x0002;
@@ -240,6 +252,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static ComponentName mediaButtonEventReceiver;
 	private static RemoteControlClient remoteControlClient;
 	private static Object mediaRouterCallback;
+	private static Runnable effectsObserver;
 	//private static BluetoothAdapter bluetoothAdapter;
 	//private static BluetoothA2dp bluetoothA2dpProxy;
 	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
@@ -1627,6 +1640,13 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		}
 	}
 	
+	public static void resetEffects(Runnable observer) {
+		if (state == STATE_INITIALIZED) {
+			effectsObserver = observer;
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_0, 0, 0);
+		}
+	}
+	
 	@Override
 	public boolean handleMessage(Message msg) {
 		switch (msg.what) {
@@ -1669,13 +1689,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					state = STATE_INITIALIZED;
 				break;
 			}
-			try {
-				if (Equalizer.isEnabled() && currentPlayer != null) {
-					Equalizer.initialize(currentPlayer.getAudioSessionId());
-					Equalizer.setEnabled(true);
-				}
-			} catch (Throwable ex) {
-			}
+			if (Equalizer.isEnabled() && currentPlayer != null)
+				Equalizer.initialize(currentPlayer.getAudioSessionId());
 			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4, msg.arg1, msg.arg2, msg.obj);
 			break;
 		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4:
@@ -1684,13 +1699,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					state = STATE_INITIALIZED;
 				break;
 			}
-			try {
-				if (BassBoost.isEnabled() && currentPlayer != null) {
-					BassBoost.initialize(currentPlayer.getAudioSessionId());
-					BassBoost.setEnabled(true);
-				}
-			} catch (Throwable ex) {
-			}
+			if (Equalizer.isEnabled() && currentPlayer != null)
+				Equalizer.setEnabled(true, true);
 			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5, msg.arg1, msg.arg2, msg.obj);
 			break;
 		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5:
@@ -1699,13 +1709,38 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					state = STATE_INITIALIZED;
 				break;
 			}
-			try {
-				if (Virtualizer.isEnabled() && currentPlayer != null) {
-					Virtualizer.initialize(currentPlayer.getAudioSessionId());
-					Virtualizer.setEnabled(true);
-				}
-			} catch (Throwable ex) {
+			if (BassBoost.isEnabled() && currentPlayer != null)
+				BassBoost.initialize(currentPlayer.getAudioSessionId());
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_6, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_6:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
 			}
+			if (BassBoost.isEnabled() && currentPlayer != null)
+				BassBoost.setEnabled(true, true);
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_7, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_7:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			if (Virtualizer.isEnabled() && currentPlayer != null)
+				Virtualizer.initialize(currentPlayer.getAudioSessionId());
+			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_8, msg.arg1, msg.arg2, msg.obj);
+			break;
+		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_8:
+			if (!hasFocus) {
+				if (state == STATE_PREPARING_PLAYBACK)
+					state = STATE_INITIALIZED;
+				break;
+			}
+			if (Virtualizer.isEnabled() && currentPlayer != null)
+				Virtualizer.setEnabled(true, true);
 			MainHandler.sendMessage(thePlayer, MSG_PREPARE_PLAYBACK_0, msg.arg1, msg.arg2, msg.obj);
 			break;
 		case MSG_PREPARE_PLAYBACK_0:
@@ -1759,10 +1794,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_3);
 			break;
 		case MSG_INITIALIZATION_3:
-			if (!Equalizer.isEnabled())
-				Equalizer.release();
-			else
-				Equalizer.setEnabled(true);
+			Equalizer.release();
 			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_4);
 			break;
 		case MSG_INITIALIZATION_4:
@@ -1771,10 +1803,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_5);
 			break;
 		case MSG_INITIALIZATION_5:
-			if (!BassBoost.isEnabled())
-				BassBoost.release();
-			else
-				BassBoost.setEnabled(true);
+			BassBoost.release();
 			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_6);
 			break;
 		case MSG_INITIALIZATION_6:
@@ -1783,11 +1812,10 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_7);
 			break;
 		case MSG_INITIALIZATION_7:
-			if (!Virtualizer.isEnabled())
-				Virtualizer.release();
-			else
-				Virtualizer.setEnabled(true);
-			MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_8);
+			Virtualizer.release();
+			//now that the effects have been initialized at least once, properly
+			//create and enabled them as necessary!
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_3, 1, 0);
 			break;
 		case MSG_INITIALIZATION_8:
 			switch (state) {
@@ -1799,6 +1827,69 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				break;
 			}
 			executeStartCommand(-1);
+			break;
+		case MSG_RESET_EFFECTS_0:
+			//don't even ask.......
+			//(a few devices won't disable one effect while the other effect is enabled)
+			if (state == STATE_INITIALIZED)
+				Equalizer.release();
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_1, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_1:
+			if (state == STATE_INITIALIZED)
+				BassBoost.release();
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_2, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_2:
+			if (state == STATE_INITIALIZED)
+				Virtualizer.release();
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_3, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_3:
+			if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
+				if (Equalizer.isEnabled() && currentPlayer != null)
+					Equalizer.initialize(currentPlayer.getAudioSessionId());
+			}
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_4, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_4:
+			if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
+				if (Equalizer.isEnabled() && currentPlayer != null)
+					Equalizer.setEnabled(true, true);
+			}
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_5, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_5:
+			if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
+				if (BassBoost.isEnabled() && currentPlayer != null)
+					BassBoost.initialize(currentPlayer.getAudioSessionId());
+			}
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_6, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_6:
+			if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
+				if (BassBoost.isEnabled() && currentPlayer != null)
+					BassBoost.setEnabled(true, true);
+			}
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_7, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_7:
+			if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
+				if (Virtualizer.isEnabled() && currentPlayer != null)
+					Virtualizer.initialize(currentPlayer.getAudioSessionId());
+			}
+			MainHandler.sendMessage(thePlayer, MSG_RESET_EFFECTS_8, msg.arg1, 0);
+			break;
+		case MSG_RESET_EFFECTS_8:
+			if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
+				if (Virtualizer.isEnabled() && currentPlayer != null)
+					Virtualizer.setEnabled(true, true);
+			}
+			if (msg.arg1 != 0)
+				MainHandler.sendMessage(thePlayer, MSG_INITIALIZATION_8);
+			else if (effectsObserver != null)
+				MainHandler.postToMainThread(effectsObserver);
+			effectsObserver = null;
 			break;
 		case MSG_TERMINATION_0:
 			releaseInternal();
@@ -1851,6 +1942,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			externalReceiver = null;
 			mediaButtonEventReceiver = null;
 			remoteControlClient = null;
+			effectsObserver = null;
 			if (favoriteFolders != null) {
 				favoriteFolders.clear();
 				favoriteFolders = null;

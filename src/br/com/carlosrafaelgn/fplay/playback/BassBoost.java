@@ -57,17 +57,19 @@ public final class BassBoost {
 			sessionId = newSessionId;
 		try {
 			theBooster = new android.media.audiofx.BassBoost(0, sessionId);
+			strengthSupported = theBooster.getStrengthSupported();
+			supported = true;
 		} catch (Throwable ex) {
 			supported = false;
-			return;
 		}
-		supported = true;
-		strengthSupported = theBooster.getStrengthSupported();
 	}
 	
 	public static void release() {
 		if (theBooster != null) {
-			theBooster.release();
+			try {
+				theBooster.release();
+			} catch (Throwable ex) {
+			}
 			theBooster = null;
 		}
 	}
@@ -84,20 +86,19 @@ public final class BassBoost {
 		return enabled;
 	}
 	
-	public static void setEnabled(boolean enabled) {
+	public static void setEnabled(boolean enabled, boolean actuallyApply) {
 		BassBoost.enabled = enabled;
-		if (theBooster != null) {
-			if (!enabled) {
-				theBooster.setEnabled(false);
-			} else if (sessionId != Integer.MIN_VALUE) {
-				if (!strengthSupported)
-					strength = 1000;
-				try {
+		if (theBooster != null && actuallyApply) {
+			try {
+				if (!enabled) {
+					theBooster.setEnabled(false);
+				} else if (sessionId != Integer.MIN_VALUE) {
+					if (!strengthSupported)
+						strength = 1000;
 					setStrength(strength, true);
 					theBooster.setEnabled(true);
-					//setStrength(strength, true);
-				} catch (Throwable ex) {
 				}
+			} catch (Throwable ex) {
 			}
 			BassBoost.enabled = theBooster.getEnabled();
 		}

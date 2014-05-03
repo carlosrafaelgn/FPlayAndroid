@@ -118,7 +118,10 @@ public final class Equalizer {
 	
 	public static void release() {
 		if (theEqualizer != null) {
-			theEqualizer.release();
+			try {
+				theEqualizer.release();
+			} catch (Throwable ex) {
+			}
 			theEqualizer = null;
 		}
 	}
@@ -162,18 +165,17 @@ public final class Equalizer {
 		return enabled;
 	}
 	
-	public static void setEnabled(boolean enabled) {
+	public static void setEnabled(boolean enabled, boolean actuallyApply) {
 		Equalizer.enabled = enabled;
-		if (theEqualizer != null) {
-			if (!enabled) {
-				theEqualizer.setEnabled(false);
-			} else if (sessionId != Integer.MIN_VALUE) {
-				try {
+		if (theEqualizer != null && actuallyApply) {
+			try {
+				if (!enabled) {
+					theEqualizer.setEnabled(false);
+				} else if (sessionId != Integer.MIN_VALUE) {
 					applyAllBandSettings();
 					theEqualizer.setEnabled(true);
-					//applyAllBandSettings();
-				} catch (Throwable ex) {
 				}
+			} catch (Throwable ex) {
 			}
 			Equalizer.enabled = theEqualizer.getEnabled();
 		}

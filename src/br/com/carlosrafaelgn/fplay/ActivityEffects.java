@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay;
 
 import android.content.Context;
-import android.os.Message;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -45,11 +44,9 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
@@ -59,13 +56,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
-public class ActivityEffects extends ClientActivity implements MainHandler.Callback, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener {
-	private static final int MSG_ENABLING_STEP_0 = 0x0300;
-	private static final int MSG_ENABLING_STEP_1 = 0x0301;
-	private static final int MSG_ENABLING_STEP_2 = 0x0302;
-	private static final int MSG_ENABLING_STEP_3 = 0x0303;
-	private static final int MSG_ENABLING_STEP_4 = 0x0304;
-	private static final int MSG_ENABLING_STEP_5 = 0x0305;
+public class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener {
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
 	private RelativeLayout panelControls;
 	private LinearLayout container;
@@ -171,8 +162,19 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 			if (enablingEffect)
 				return;
 			enablingEffect = true;
-			MainHandler.sendMessage(this, MSG_ENABLING_STEP_0);
+			if (Player.bassBoostMode)
+				BassBoost.setEnabled(chkEnable.isChecked(), false);
+			else
+				Equalizer.setEnabled(chkEnable.isChecked(), false);
+			Player.resetEffects(this);
 		}
+	}
+	
+	@Override
+	public void run() {
+		//the effects have just been reset!
+		enablingEffect = false;
+		chkEnable.setChecked(Player.bassBoostMode ? BassBoost.isEnabled() : Equalizer.isEnabled());
 	}
 	
 	@Override
@@ -515,77 +517,5 @@ public class ActivityEffects extends ClientActivity implements MainHandler.Callb
 	
 	@Override
 	public void onPlayClicked(int id, String path, String name) {
-	}
-
-	@Override
-	public boolean handleMessage(Message msg) {
-		switch (msg.what) {
-		case MSG_ENABLING_STEP_0:
-			//don't even ask.......
-			//(a few devices won't disable one effect while the other effect is enabled)
-			Equalizer.release();
-			MainHandler.sendMessage(this, MSG_ENABLING_STEP_1);
-			break;
-		case MSG_ENABLING_STEP_1:
-			BassBoost.release();
-			MainHandler.sendMessage(this, MSG_ENABLING_STEP_2);
-			break;
-		case MSG_ENABLING_STEP_2:
-			Virtualizer.release();
-			MainHandler.sendMessage(this, MSG_ENABLING_STEP_3);
-			break;
-		case MSG_ENABLING_STEP_3:
-			final boolean enableEqualizer = (Player.bassBoostMode ? Equalizer.isEnabled() : chkEnable.isChecked());
-			if (enableEqualizer && Player.getAudioSessionId() != -1) {
-				try {
-					Equalizer.initialize(Player.getAudioSessionId());
-				} catch (Throwable ex) {
-				}
-			}
-			try {
-				Equalizer.setEnabled(enableEqualizer);
-			} catch (Throwable ex) {
-			}
-			MainHandler.sendMessage(this, MSG_ENABLING_STEP_4);
-			break;
-		case MSG_ENABLING_STEP_4:
-			final boolean enableBassBoost = (Player.bassBoostMode ? chkEnable.isChecked() : BassBoost.isEnabled());
-			if (enableBassBoost && Player.getAudioSessionId() != -1) {
-				try {
-					BassBoost.initialize(Player.getAudioSessionId());
-				} catch (Throwable ex) {
-				}
-			}
-			try {
-				BassBoost.setEnabled(enableBassBoost);
-			} catch (Throwable ex) {
-			}
-			MainHandler.sendMessage(this, MSG_ENABLING_STEP_5);
-			break;
-		case MSG_ENABLING_STEP_5:
-			/*final boolean enableVirtualizer = (Player.bassBoostMode ? chkEnable.isChecked() : Virtualizer.isEnabled());
-			if (enableVirtualizer && Player.getAudioSessionId() != -1) {
-				try {
-					Virtualizer.initialize(Player.getAudioSessionId());
-				} catch (Throwable ex) {
-				}
-			}
-			try {
-				Virtualizer.setEnabled(enableVirtualizer);
-			} catch (Throwable ex) {
-			}*/
-			if (Player.bassBoostMode) {
-				//something might have gone wrong...
-				if (chkEnable.isChecked() != BassBoost.isEnabled())
-					chkEnable.setChecked(BassBoost.isEnabled());
-			} else {
-				//something might have gone wrong...
-				if (chkEnable.isChecked() != Equalizer.isEnabled())
-					chkEnable.setChecked(Equalizer.isEnabled());
-			}
-			enablingEffect = false;
-			break;
-		}
-		return true;
 	}
 }

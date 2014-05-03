@@ -57,17 +57,19 @@ public final class Virtualizer {
 			sessionId = newSessionId;
 		try {
 			theVirtualizer = new android.media.audiofx.Virtualizer(0, sessionId);
+			strengthSupported = theVirtualizer.getStrengthSupported();
+			supported = true;
 		} catch (Throwable ex) {
 			supported = false;
-			return;
 		}
-		supported = true;
-		strengthSupported = theVirtualizer.getStrengthSupported();
 	}
 	
 	public static void release() {
 		if (theVirtualizer != null) {
-			theVirtualizer.release();
+			try {
+				theVirtualizer.release();
+			} catch (Throwable ex) {
+			}
 			theVirtualizer = null;
 		}
 	}
@@ -84,20 +86,19 @@ public final class Virtualizer {
 		return enabled;
 	}
 	
-	public static void setEnabled(boolean enabled) {
+	public static void setEnabled(boolean enabled, boolean actuallyApply) {
 		Virtualizer.enabled = enabled;
-		if (theVirtualizer != null) {
-			if (!enabled) {
-				theVirtualizer.setEnabled(false);
-			} else if (sessionId != Integer.MIN_VALUE) {
-				if (!strengthSupported)
-					strength = 1000;
-				try {
+		if (theVirtualizer != null && actuallyApply) {
+			try {
+				if (!enabled) {
+					theVirtualizer.setEnabled(false);
+				} else if (sessionId != Integer.MIN_VALUE) {
+					if (!strengthSupported)
+						strength = 1000;
 					setStrength(strength, true);
 					theVirtualizer.setEnabled(true);
-					//setStrength(strength, true);
-				} catch (Throwable ex) {
 				}
+			} catch (Throwable ex) {
 			}
 			Virtualizer.enabled = theVirtualizer.getEnabled();
 		}
