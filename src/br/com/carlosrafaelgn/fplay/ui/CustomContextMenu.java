@@ -412,8 +412,9 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			final int minWidth = ((context instanceof Activity) ? (((Activity)context).getWindowManager().getDefaultDisplay().getWidth() >> ((UI.isLargeScreen || UI.isLandscape) ? 2 : 1)) : 0);
 			int first = -1, last = -1;
 			for (int i = 0; i < items.length; i++) {
-				if (items[i].visible) {
-					if (items[i].actionView == null) {
+				final Item it = items[i];
+				if (it.visible) {
+					if (it.actionView == null) {
 						TextView btn;
 						if (itemClassConstructor != null) {
 							try {
@@ -444,23 +445,23 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 							btn.setTextColor(itemTextColors);
 						if (hasItemPadding)
 							btn.setPadding(itemPaddingL, itemPaddingT, itemPaddingR, itemPaddingB);
-						if (items[i].icon != null)
-							btn.setCompoundDrawables(items[i].icon, null, null, null);
-						btn.setText(items[i].title);
+						if (it.icon != null)
+							btn.setCompoundDrawables(it.icon, null, null, null);
+						btn.setText(it.title);
 						btn.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-						items[i].actionView = btn;
-						items[i].actionView.setFocusable(true);
-						items[i].actionView.setClickable(true);
-						items[i].actionView.setOnClickListener(this);
+						it.actionView = btn;
+						it.actionView.setFocusable(true);
+						it.actionView.setClickable(true);
+						it.actionView.setOnClickListener(this);
 					}
-					if (items[i].enabled) {
+					if (it.enabled) {
 						if (first < 0)
 							first = i;
 						last = i;
 					}
-					items[i].actionView.setEnabled(items[i].enabled);
-					list.addView(items[i].actionView);
-					viewItems.put(items[i].actionView, items[i]);
+					it.actionView.setEnabled(it.enabled);
+					list.addView(it.actionView);
+					viewItems.put(it.actionView, it);
 				}
 			}
 			if (first >= 0 && first != last) {
@@ -486,6 +487,14 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			scroll.setPadding(paddingL, paddingT, paddingR, paddingB);
 			scroll.addView(list);
 			menu = new MenuDialog(context, this, scroll);
+		} else {
+			//we must manually reset the drawbles here, because they are always removed
+			//from the views in their onDetachedFromWindow()
+			for (int i = items.size() - 1; i >= 0; i--) {
+				final Item it = items.get(i);
+				if (it.icon != null && it.actionView != null && (it.actionView instanceof TextView))
+					((TextView)it.actionView).setCompoundDrawables(it.icon, null, null, null);
+			}
 		}
 		menu.show();
 		/*final Window w = menu.getWindow();
