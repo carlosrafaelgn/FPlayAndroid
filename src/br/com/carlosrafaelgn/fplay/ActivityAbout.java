@@ -48,16 +48,6 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	private ScrollView list;
 	private BgButton btnGoBack;
 	
-	private String formatFloat(String format, float number) {
-		String r = null;
-		try {
-			if (UI.getForcedLocale() != UI.LOCALE_NONE)
-				r = String.format(UI.getLocaleFromCode(UI.getCurrentLocale(getApplication())), format, number);
-		} catch (Throwable ex) {
-		}
-		return ((r == null) ? String.format(format, number) : r);
-	}
-	
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
@@ -99,17 +89,17 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		sb.append("\nDPI: ");
 		sb.append(UI.densityDpi);
 		sb.append("\ndp: ");
-		sb.append(formatFloat("%.2f", UI.density));
+		sb.append(UI.formatIntAsFloat((int)(UI.density * 100.0f), true, true));
 		sb.append("\nsp: ");
-		sb.append(formatFloat("%.2f", UI.scaledDensity));
+		sb.append(UI.formatIntAsFloat((int)(UI.scaledDensity * 100.0f), true, true));
 		sb.append("\n" + getText(R.string.resolution) + " (px): ");
 		sb.append(UI.screenWidth);
 		sb.append(" x ");
 		sb.append(UI.screenHeight);
 		sb.append("\n" + getText(R.string.resolution) + " (dp): ");
-		sb.append(formatFloat("%.2f", UI.pxToDp(UI.screenWidth)));
+		sb.append(UI.formatIntAsFloat((int)(UI.pxToDp(UI.screenWidth) * 100.0f), true, true));
 		sb.append(" x ");
-		sb.append(formatFloat("%.2f", UI.pxToDp(UI.screenHeight)));
+		sb.append(UI.formatIntAsFloat((int)(UI.pxToDp(UI.screenHeight) * 100.0f), true, true));
 		if (UI.isLowDpiScreen)
 			sb.append("\nLDPI");
 		if (UI.isLargeScreen)

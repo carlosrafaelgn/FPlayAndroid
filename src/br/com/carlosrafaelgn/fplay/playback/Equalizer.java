@@ -104,7 +104,7 @@ public final class Equalizer {
 		}
 		if (copyFrequencies) {
 			for (int i = bandCount - 1; i >= 0; i--)
-				bandFrequencies[i] = theEqualizer.getCenterFreq((short)i);
+				bandFrequencies[i] = theEqualizer.getCenterFreq((short)i) / 1000;
 		}
 		short[] l = theEqualizer.getBandLevelRange();
 		if (l == null || l.length != 2) {

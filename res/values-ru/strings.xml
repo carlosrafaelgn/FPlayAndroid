@@ -97,19 +97,19 @@
     <string name="save_list">Сохранить список</string>
     <string name="item_list">список</string>
     <string name="more">Подробнее&#8230;</string>
+    <string name="more_effects">Подробнее&#8230;</string>
     <string name="visualizer_not_supported">Ваше устройство не поддерживает визуализацию :(</string>
     <string name="audio_effects">Звуковые эффекты</string>
-    <string name="go_to_equalizer">Перейти к настройкам эквалайзера&#8230;</string>
-    <string name="enable_equalizer">Включить эквалайзер</string>
     <string name="equalizer_not_supported">Ваше устройство не поддерживает эквалайзер :(</string>
     <string name="zero_preset">Сбросить предустановку</string>
     <string name="load_preset">Загрузить предустановку</string>
     <string name="save_preset">Сохранить предустановку</string>
     <string name="item_preset">предустановка</string>
-    <string name="go_to_bass_boost">Перейти к настройкам басов&#8230;</string>
-    <string name="enable_bass_boost">Включить усиление басов</string>
     <string name="bass_boost_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
     <string name="bass_boost_strength_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
+    <string name="equalizer">Эквалайзер</string>
+    <string name="bass_boost">Усиление басов</string>
+    <string name="virtualization">Виртуализация</string>
     <string name="visualizer">Визуализатор</string>
     <string name="random_mode">Случайный режим</string>
     <string name="settings">Настройки</string>
@@ -211,5 +211,5 @@
     <string name="player">Player</string>
     <string name="go_back_to_player">Return to the player</string>
     <string name="startup_message">There are many improvements in the way you add and play songs! You can switch back to the old way at any time in the \"Settings\" menu, though ;)</string>
-    
+
 </resources>

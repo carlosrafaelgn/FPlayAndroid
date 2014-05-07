@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 import android.annotation.TargetApi;
@@ -277,6 +278,7 @@ public final class UI {
 	}
 	
 	public static final Rect rect = new Rect();
+	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
@@ -308,6 +310,42 @@ public final class UI {
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
 		loadLightTheme();
+	}
+	
+	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
+		int dec;
+		if (useTwoDecimalPlaces) {
+			dec = number % 100;
+			number /= 100;
+		} else {
+			dec = number % 10;
+			number /= 10;
+		}
+		if (removeDecimalPlacesIfExact && dec == 0)
+			return Integer.toString(number);
+		if (dec < 0)
+			dec = -dec;
+		return Integer.toString(number) + decimalSeparator + ((useTwoDecimalPlaces && (dec < 10)) ? ("0" + Integer.toString(dec)) : Integer.toString(dec));
+	}
+	
+	public static void formatIntAsFloat(StringBuilder sb, int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
+		int dec;
+		if (useTwoDecimalPlaces) {
+			dec = number % 100;
+			number /= 100;
+		} else {
+			dec = number % 10;
+			number /= 10;
+		}
+		sb.append(number);
+		if (!removeDecimalPlacesIfExact || dec != 0) {
+			if (dec < 0)
+				dec = -dec;
+			sb.append(decimalSeparator);
+			if (useTwoDecimalPlaces && (dec < 10))
+				sb.append('0');
+			sb.append(dec);
+		}
 	}
 	
 	public static boolean isUsingAlternateTypeface() {
@@ -418,12 +456,22 @@ public final class UI {
 		return forcedLocale;
 	}
 	
+	private static void updateDecimalSeparator(Context context) {
+		try {
+			final DecimalFormatSymbols d = new DecimalFormatSymbols(getLocaleFromCode(currentLocale));
+			decimalSeparator = d.getDecimalSeparator();
+		} catch (Throwable ex) {
+			decimalSeparator = '.';
+		}
+	}
+	
 	public static boolean setForcedLocale(Context context, int localeCode) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
 		final Resources res = context.getResources();
 		if (forcedLocale == 0 && localeCode == 0) {
 			currentLocale = getCurrentLocale(context);
+			updateDecimalSeparator(context);
 			return false;
 		}
 		try {
@@ -436,6 +484,7 @@ public final class UI {
 		} catch (Throwable ex) {
 			currentLocale = getCurrentLocale(context);
 		}
+		updateDecimalSeparator(context);
 		if (fullyInitialized) {
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 			return true;

@@ -39,25 +39,27 @@
             android:nextFocusForward="@+id/barBass"
             android:nextFocusLeft="@+id/chkEnable"
             android:nextFocusRight="@+id/barBass"
-            android:nextFocusUp="@+id/btnChangeEffect"
-            android:visibility="gone" />
+            android:nextFocusUp="@+id/btnChangeEffect" />
     </RelativeLayout>
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/panelControls"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
-        android:layout_below="@+id/panelTop" >
+        android:layout_below="@+id/panelTop"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:weightSum="5" >
 
         <RelativeLayout
             android:id="@+id/panelEqualizer"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_above="@+id/btnChangeEffect"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true" >
+            android:layout_marginBottom="32dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginTop="32dp"
+            android:layout_weight="3" >
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/chkEqualizer"
@@ -65,7 +67,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="16dp"
                 android:nextFocusDown="@+id/btnGoBack"
                 android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/barBass"
@@ -76,10 +78,13 @@
 
         <RelativeLayout
             android:id="@+id/panelSecondary"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:visibility="gone" >
+            android:layout_marginBottom="32dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="32dp"
+            android:layout_marginTop="32dp"
+            android:layout_weight="2" >
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/chkBass"
@@ -87,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="16dp"
                 android:nextFocusDown="@+id/btnGoBack"
                 android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/barBass"
@@ -100,7 +105,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/chkBass"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="32dp"
                 android:nextFocusDown="@+id/btnChangeEffect"
                 android:nextFocusForward="@+id/btnChangeEffect"
                 android:nextFocusLeft="@+id/chkEnable"
@@ -113,7 +118,7 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/barBass"
                 android:layout_centerHorizontal="true"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="16dp"
                 android:nextFocusDown="@+id/btnGoBack"
                 android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/barBass"
@@ -132,20 +137,6 @@
                 android:nextFocusRight="@+id/btnChangeEffect"
                 android:nextFocusUp="@+id/btnMenu" />
         </RelativeLayout>
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnChangeEffect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="8dp"
-            android:nextFocusDown="@+id/btnGoBack"
-            android:nextFocusForward="@+id/btnGoBack"
-            android:nextFocusLeft="@+id/barBass"
-            android:nextFocusRight="@+id/btnGoBack"
-            android:nextFocusUp="@+id/barBass"
-            android:text="@string/more_effects" />
-    </RelativeLayout>
+    </LinearLayout>
 
 </RelativeLayout>

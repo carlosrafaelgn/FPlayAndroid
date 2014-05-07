@@ -198,7 +198,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	public void processItemClick(int position) {
-		if (fileList.getSelection() == position) {
+		if (fileList.getSelection() == position || (!UI.doubleClickMode && !hasButtons)) {
 			final FileSt file = fileList.getItemT(position);
 			if (save) {
 				confirm(file.path, file.name, false);

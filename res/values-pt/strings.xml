@@ -97,19 +97,19 @@
     <string name="save_list">Salvar lista</string>
     <string name="item_list">lista</string>
     <string name="more">Mais&#8230;</string>
+    <string name="more_effects">Mais efeitos&#8230;</string>
     <string name="visualizer_not_supported">Seu dispositivo não suporta visualização :(</string>
     <string name="audio_effects">Efeitos de áudio</string>
-    <string name="go_to_equalizer">Ir para equalizador&#8230;</string>
-    <string name="enable_equalizer">Habilitar equalizador</string>
-    <string name="equalizer_not_supported">Seu dispositivo não suporta equalizador :(</string>
+    <string name="equalizer_not_supported">Seu dispositivo não suporta o equalizador :(</string>
     <string name="zero_preset">Zerar definição</string>
     <string name="load_preset">Abrir definição</string>
     <string name="save_preset">Salvar definição</string>
     <string name="item_preset">definição</string>
-    <string name="go_to_bass_boost">Ir para reforço de graves&#8230;</string>
-    <string name="enable_bass_boost">Habilitar reforço de graves</string>
     <string name="bass_boost_not_supported">Seu dispositivo não suporta reforço de graves :(</string>
     <string name="bass_boost_strength_not_supported">Seu dispositivo não suporta ajuste fino de reforço de graves :(</string>
+    <string name="equalizer">Equalizador</string>
+    <string name="bass_boost">Reforço de graves</string>
+    <string name="virtualization">Virtualização</string>
     <string name="visualizer">Visualizador</string>
     <string name="random_mode">Modo aleatório</string>
     <string name="settings">Opções</string>
@@ -211,5 +211,5 @@
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
     <string name="startup_message">Há várias melhorias no modo como você adiciona e toca músicas! Contudo, você pode retornar ao modo antigo a qualquer momento no menu \"Opções\" ;)</string>
-    
+
 </resources>

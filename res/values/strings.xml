@@ -97,19 +97,19 @@
     <string name="save_list">Save list</string>
     <string name="item_list">list</string>
     <string name="more">More&#8230;</string>
+    <string name="more_effects">More effects&#8230;</string>
     <string name="visualizer_not_supported">Your device does not support visualization :(</string>
     <string name="audio_effects">Audio effects</string>
-    <string name="go_to_equalizer">Go to equalizer&#8230;</string>
-    <string name="enable_equalizer">Enable equalizer</string>
-    <string name="equalizer_not_supported">Your device does not support equalizer :(</string>
+    <string name="equalizer_not_supported">Your device does not support the equalizer :(</string>
     <string name="zero_preset">Zero out preset</string>
     <string name="load_preset">Load preset</string>
     <string name="save_preset">Save preset</string>
     <string name="item_preset">preset</string>
-    <string name="go_to_bass_boost">Go to bass boost&#8230;</string>
-    <string name="enable_bass_boost">Enable bass boost</string>
     <string name="bass_boost_not_supported">Your device does not support bass boost :(</string>
     <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment :(</string>
+    <string name="equalizer">Equalizer</string>
+    <string name="bass_boost">Bass boost</string>
+    <string name="virtualization">Virtualization</string>
     <string name="visualizer">Visualizer</string>
     <string name="random_mode">Random mode</string>
     <string name="settings">Settings</string>
@@ -211,5 +211,5 @@
     <string name="player">Player</string>
     <string name="go_back_to_player">Return to the player</string>
     <string name="startup_message">There are many improvements in the way you add and play songs! You can switch back to the old way at any time in the \"Settings\" menu, though ;)</string>
-    
+
 </resources>

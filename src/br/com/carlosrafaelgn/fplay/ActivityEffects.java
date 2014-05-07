@@ -36,17 +36,16 @@ import android.content.Context;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
@@ -58,41 +57,32 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener {
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
-	private RelativeLayout panelControls;
-	private LinearLayout container;
-	private BgButton chkEnable;
+	private ViewGroup panelControls;
+	private RelativeLayout panelEqualizer, panelSecondary;
+	private LinearLayout panelBars;
+	private BgButton chkEqualizer, chkBass, chkVirtualizer;
 	private BgButton btnGoBack, btnMenu, btnChangeEffect;
-	private TextView lblMsg;
 	private int min, max;
 	private int[] frequencies;
 	private boolean enablingEffect;
 	private BgSeekBar[] bars;
-	private BgSeekBar barBass;
+	private BgSeekBar barBass, barVirtualizer;
 	private StringBuilder txtBuilder;
 	
 	private String format(int frequency, int level) {
 		if (txtBuilder == null)
 			return "";
 		txtBuilder.delete(0, txtBuilder.length());
-		txtBuilder.append(frequency / 1000);
-		frequency = (frequency % 1000) / 10;
-		if (frequency != 0) {
-			txtBuilder.append('.');
-			if (frequency < 10)
-				txtBuilder.append('0');
+		if (frequency < 1000) {
 			txtBuilder.append(frequency);
+		} else {
+			UI.formatIntAsFloat(txtBuilder, frequency / 100, false, true);
+			txtBuilder.append('k');
 		}
-		txtBuilder.append("Hz / ");
-		if (level < 0) {
-			txtBuilder.append('-');
-			level = -level;
-		}
-		txtBuilder.append(level / 100);
-		txtBuilder.append('.');
-		level %= 100;
-		if (level < 10)
-			txtBuilder.append('0');
-		txtBuilder.append(level);
+		txtBuilder.append("Hz ");
+		if (level > 0)
+			txtBuilder.append('+');
+		UI.formatIntAsFloat(txtBuilder, level / 10, false, false);
 		txtBuilder.append("dB");
 		return txtBuilder.toString();
 	}
@@ -101,10 +91,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		if (txtBuilder == null)
 			return "";
 		txtBuilder.delete(0, txtBuilder.length());
-		txtBuilder.append(strength / 10);
-		strength %= 10;
-		txtBuilder.append('.');
-		txtBuilder.append(strength);
+		UI.formatIntAsFloat(txtBuilder, strength, false, false);
 		txtBuilder.append("%");
 		return txtBuilder.toString();
 	}
@@ -116,8 +103,8 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		UI.prepare(menu);
 		if (!Player.bassBoostMode) {
+			UI.prepare(menu);
 			menu.add(0, MNU_ZEROPRESET, 0, R.string.zero_preset)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_REMOVE));
@@ -158,14 +145,38 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		} else if (view == btnChangeEffect) {
 			Player.bassBoostMode = !Player.bassBoostMode;
 			prepareViewForMode();
-		} else if (view == chkEnable) {
+		} else if (view == chkEqualizer) {
 			if (enablingEffect)
 				return;
+			if (!Equalizer.isSupported()) {
+				chkEqualizer.setChecked(false);
+				UI.toast(getApplication(), R.string.equalizer_not_supported);
+				return;
+			}
 			enablingEffect = true;
-			if (Player.bassBoostMode)
-				BassBoost.setEnabled(chkEnable.isChecked(), false);
-			else
-				Equalizer.setEnabled(chkEnable.isChecked(), false);
+			Equalizer.setEnabled(chkEqualizer.isChecked(), false);
+			Player.resetEffects(this);
+		} else if (view == chkBass) {
+			if (enablingEffect)
+				return;
+			if (!BassBoost.isSupported()) {
+				chkBass.setChecked(false);
+				UI.toast(getApplication(), R.string.bass_boost_not_supported);
+				return;
+			}
+			enablingEffect = true;
+			BassBoost.setEnabled(chkBass.isChecked(), false);
+			Player.resetEffects(this);
+		} else if (view == chkVirtualizer) {
+			if (enablingEffect)
+				return;
+			if (!Virtualizer.isSupported()) {
+				chkVirtualizer.setChecked(false);
+				UI.toast(getApplication(), R.string.bass_boost_not_supported);
+				return;
+			}
+			enablingEffect = true;
+			Virtualizer.setEnabled(chkVirtualizer.isChecked(), false);
 			Player.resetEffects(this);
 		}
 	}
@@ -174,7 +185,9 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	public void run() {
 		//the effects have just been reset!
 		enablingEffect = false;
-		chkEnable.setChecked(Player.bassBoostMode ? BassBoost.isEnabled() : Equalizer.isEnabled());
+		chkEqualizer.setChecked(Equalizer.isEnabled());
+		chkBass.setChecked(BassBoost.isEnabled());
+		chkVirtualizer.setChecked(Virtualizer.isEnabled());
 	}
 	
 	@Override
@@ -192,42 +205,116 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
-		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
+		panelControls = (ViewGroup)findViewById(R.id.panelControls);
 		panelControls.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
+		panelEqualizer = (RelativeLayout)findViewById(R.id.panelEqualizer);
+		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		chkEnable = (BgButton)findViewById(R.id.chkEnable);
-		chkEnable.setOnClickListener(this);
-		chkEnable.setBehavingAsCheckBox(true);
+		chkEqualizer = (BgButton)findViewById(R.id.chkEqualizer);
+		chkEqualizer.setOnClickListener(this);
+		chkEqualizer.setTextColor(UI.colorState_text_listitem_reactive);
+		chkEqualizer.setBehavingAsCheckBox(true);
+		chkBass = (BgButton)findViewById(R.id.chkBass);
+		chkBass.setOnClickListener(this);
+		chkBass.setTextColor(UI.colorState_text_listitem_reactive);
+		chkBass.setBehavingAsCheckBox(true);
+		chkVirtualizer = (BgButton)findViewById(R.id.chkVirtualizer);
+		chkVirtualizer.setOnClickListener(this);
+		chkVirtualizer.setTextColor(UI.colorState_text_listitem_reactive);
+		chkVirtualizer.setBehavingAsCheckBox(true);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
-		//CustomContextMenu.registerForContextMenu(btnMenu, this);
 		btnChangeEffect = (BgButton)findViewById(R.id.btnChangeEffect);
-		btnChangeEffect.setOnClickListener(this);
-		btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, UI.color_text_listitem, UI.defaultControlContentsSize), null, null, null);
-		btnChangeEffect.setMinimumHeight(UI.defaultControlSize);
-		btnChangeEffect.setTextColor(UI.colorState_text_listitem_reactive);
+		if (btnChangeEffect != null) {
+			btnChangeEffect.setOnClickListener(this);
+			btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, UI.color_text_listitem, UI.defaultControlContentsSize), null, null, null);
+			btnChangeEffect.setMinimumHeight(UI.defaultControlSize);
+			btnChangeEffect.setTextColor(UI.colorState_text_listitem_reactive);
+		} else {
+			UI.isLargeScreen = true;
+			Player.bassBoostMode = false;
+		}
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
 		barBass.setMax(BassBoost.getMaxStrength());
 		barBass.setValue(BassBoost.getStrength());
 		barBass.setKeyIncrement(BassBoost.getMaxStrength() / 50);
-		barBass.setVertical(true);
 		barBass.setOnBgSeekBarChangeListener(this);
 		barBass.setInsideList(true);
-		lblMsg = (TextView)findViewById(R.id.lblMsg);
-		if (UI.isLargeScreen) {
-			chkEnable.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-		} else if (UI.isLowDpiScreen) {
-			chkEnable.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			barBass.setTextSizeIndex(1);
+		barVirtualizer = (BgSeekBar)findViewById(R.id.barVirtualizer);
+		barVirtualizer.setMax(BassBoost.getMaxStrength());
+		barVirtualizer.setValue(BassBoost.getStrength());
+		barVirtualizer.setKeyIncrement(BassBoost.getMaxStrength() / 50);
+		barVirtualizer.setOnBgSeekBarChangeListener(this);
+		barVirtualizer.setInsideList(true);
+		RelativeLayout.LayoutParams rp;
+		if (!UI.isLargeScreen && UI.isLandscape) {
+			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			if (btnChangeEffect != null) {
+				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+				rp = (RelativeLayout.LayoutParams)btnChangeEffect.getLayoutParams();
+				rp.topMargin = 0;
+				btnChangeEffect.setLayoutParams(rp);
+			}
+			rp = (RelativeLayout.LayoutParams)chkEqualizer.getLayoutParams();
+			rp.bottomMargin = 0;
+			chkEqualizer.setLayoutParams(rp);
+			rp = (RelativeLayout.LayoutParams)chkBass.getLayoutParams();
+			rp.bottomMargin = 0;
+			chkBass.setLayoutParams(rp);
+			rp = (RelativeLayout.LayoutParams)chkVirtualizer.getLayoutParams();
+			rp.bottomMargin = 0;
+			chkVirtualizer.setLayoutParams(rp);
+			rp = (RelativeLayout.LayoutParams)barBass.getLayoutParams();
+			rp.bottomMargin = UI._8dp;
+			barBass.setLayoutParams(rp);
+			rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+			rp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+			panelSecondary.setLayoutParams(rp);
+			panelControls.setPadding(UI._16dp, UI.thickDividerSize, UI._16dp, 0);
+		} else if (UI.isLargeScreen || !UI.isLowDpiScreen) {
+			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			if (btnChangeEffect != null)
+				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			if (UI.isLargeScreen) {
+				UI.prepareViewPaddingForLargeScreen(panelControls, UI._16dp);
+				if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
+					((LinearLayout)panelControls).setOrientation(LinearLayout.VERTICAL);
+					((LinearLayout)panelControls).setWeightSum(0);
+					LinearLayout.LayoutParams lp;
+					final int _32dp = (UI._16dp << 1);
+					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+					lp.leftMargin = _32dp;
+					lp.topMargin = _32dp;
+					lp.rightMargin = _32dp;
+					lp.bottomMargin = _32dp;
+					panelSecondary.setLayoutParams(lp);
+					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0);
+					lp.weight = 1;
+					lp.leftMargin = _32dp;
+					lp.topMargin = _32dp;
+					lp.rightMargin = _32dp;
+					lp.bottomMargin = _32dp;
+					panelEqualizer.setLayoutParams(lp);
+				}
+			} else {
+				panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);
+			}
 		} else {
-			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			if (btnChangeEffect != null)
+				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			barBass.setTextSizeIndex(1);
+			barVirtualizer.setTextSizeIndex(1);
+			panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);
 		}
 		if (UI.extraSpacing)
 			findViewById(R.id.panelTop).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
@@ -236,7 +323,8 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	
 	@Override
 	protected void onOrientationChanged() {
-		prepareViewForMode();
+		onCleanupLayout();
+		onCreateLayout(false);
 	}
 	
 	@Override
@@ -252,10 +340,12 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	@Override
 	protected void onCleanupLayout() {
 		panelControls = null;
-		container = null;
-		chkEnable = null;
-		barBass = null;
-		lblMsg = null;
+		panelEqualizer = null;
+		panelSecondary = null;
+		panelBars = null;
+		chkEqualizer = null;
+		chkBass = null;
+		chkVirtualizer = null;
 		btnGoBack = null;
 		btnMenu = null;
 		btnChangeEffect = null;
@@ -276,13 +366,16 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		if (seekBar == barBass) {
 			BassBoost.setStrength(value, false);
 			seekBar.setText(format(BassBoost.getStrength()));
+		} else if (seekBar == barVirtualizer) {
+			Virtualizer.setStrength(value, false);
+			seekBar.setText(format(Virtualizer.getStrength()));
 		} else {
 			for (int i = frequencies.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
-					int level = (5 * value) + min;
+					int level = (10 * value) + min;
 					if (!usingKeys && (level <= LevelThreshold) && (level >= -LevelThreshold)) {
 						level = 0;
-						seekBar.setValue(-min / 5);
+						seekBar.setValue(-min / 10);
 					}
 					Equalizer.setBandLevel(i, level, false);
 					seekBar.setText(format(frequencies[i], Equalizer.getBandLevel(i)));
@@ -306,6 +399,13 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			final int s = BassBoost.getStrength();
 			seekBar.setValue(s);
 			seekBar.setText(format(s));
+		} else if (seekBar == barVirtualizer) {
+			//call getStrength() twice, as the value may change once
+			//it is actually applied...
+			Virtualizer.setStrength(Virtualizer.getStrength(), true);
+			final int s = Virtualizer.getStrength();
+			seekBar.setValue(s);
+			seekBar.setText(format(s));
 		} else if (frequencies != null && bars != null) {
 			for (int i = frequencies.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
@@ -323,7 +423,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 				if (bar != null) {
 					final int level = Equalizer.getBandLevel(i);
 					bars[i].setText(format(frequencies[i], level));
-					bars[i].setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 5) : ((level - min) / 5));
+					bars[i].setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 10) : ((level - min) / 10));
 				}
 			}
 		}
@@ -332,166 +432,89 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	private void prepareViewForMode() {
 		RelativeLayout.LayoutParams rp;
 		final Context ctx = getApplication();
+		if (btnChangeEffect == null || Player.bassBoostMode) {
+			chkBass.setChecked(BassBoost.isEnabled());
+			barBass.setValue(BassBoost.getStrength());
+			barBass.setText(format(BassBoost.getStrength()));
+			chkVirtualizer.setChecked(Virtualizer.isEnabled());
+			barVirtualizer.setValue(Virtualizer.getStrength());
+			barVirtualizer.setText(format(Virtualizer.getStrength()));
+		}
 		if (Player.bassBoostMode) {
-			if (container != null)
-				container.setVisibility(View.GONE);
-			btnChangeEffect.setText(R.string.go_to_equalizer);
-			chkEnable.setMaxWidth(getDecorViewWidth() - UI.defaultControlSize - (UI._8dp * 3));
-			rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-			rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
-			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-			chkEnable.setLayoutParams(rp);
+			panelEqualizer.setVisibility(View.GONE);
+			panelSecondary.setVisibility(View.VISIBLE);
 			btnMenu.setVisibility(View.GONE);
-			if (!BassBoost.isSupported()) {
-				barBass.setVisibility(View.GONE);
-				chkEnable.setVisibility(View.GONE);
-				lblMsg.setText(R.string.bass_boost_not_supported);
-				lblMsg.setVisibility(View.VISIBLE);
-				
-				btnGoBack.setNextFocusRightId(R.id.btnChangeEffect);
-				btnGoBack.setNextFocusDownId(R.id.btnChangeEffect);
-				UI.setNextFocusForwardId(btnGoBack, R.id.btnChangeEffect);
-				btnChangeEffect.setNextFocusUpId(R.id.btnGoBack);
-				btnChangeEffect.setNextFocusLeftId(R.id.btnGoBack);
-			} else if (!BassBoost.isStrengthSupported()) {
-				barBass.setVisibility(View.GONE);
-				chkEnable.setVisibility(View.VISIBLE);
-				lblMsg.setText(R.string.bass_boost_strength_not_supported);
-				lblMsg.setVisibility(View.VISIBLE);
-				
-				btnGoBack.setNextFocusRightId(R.id.chkEnable);
-				btnGoBack.setNextFocusDownId(R.id.btnChangeEffect);
-				UI.setNextFocusForwardId(btnGoBack, R.id.chkEnable);
-				chkEnable.setNextFocusDownId(R.id.btnChangeEffect);
-				chkEnable.setNextFocusRightId(R.id.btnChangeEffect);
-				UI.setNextFocusForwardId(chkEnable, R.id.btnChangeEffect);
-				btnChangeEffect.setNextFocusUpId(R.id.chkEnable);
-				btnChangeEffect.setNextFocusLeftId(R.id.chkEnable);
-			} else {
-				lblMsg.setVisibility(View.GONE);
-				rp = (RelativeLayout.LayoutParams)barBass.getLayoutParams();
-				rp.topMargin = UI._8dp;
-				rp.bottomMargin = UI._8dp;
-				barBass.setLayoutParams(rp);
-				barBass.setValue(BassBoost.getStrength());
-				barBass.setText(format(BassBoost.getStrength()));
-				barBass.setVisibility(View.VISIBLE);
-				chkEnable.setText(R.string.enable_bass_boost);
-				chkEnable.setVisibility(View.VISIBLE);
-				chkEnable.setChecked(BassBoost.isEnabled());
-				
-				btnGoBack.setNextFocusRightId(R.id.chkEnable);
-				btnGoBack.setNextFocusDownId(R.id.barBass);
-				UI.setNextFocusForwardId(btnGoBack, R.id.chkEnable);
-				chkEnable.setNextFocusDownId(R.id.barBass);
-				chkEnable.setNextFocusRightId(R.id.barBass);
-				UI.setNextFocusForwardId(chkEnable, R.id.barBass);
-				btnChangeEffect.setNextFocusUpId(R.id.barBass);
-				btnChangeEffect.setNextFocusLeftId(R.id.barBass);
-			}
+			
+			/*btnGoBack.setNextFocusRightId(R.id.chkEnable);
+			btnGoBack.setNextFocusDownId(R.id.barBass);
+			UI.setNextFocusForwardId(btnGoBack, R.id.chkEnable);
+			btnChangeEffect.setNextFocusUpId(R.id.barBass);
+			btnChangeEffect.setNextFocusLeftId(R.id.barBass);*/
 		} else {
-			barBass.setVisibility(View.GONE);
-			btnChangeEffect.setText(R.string.go_to_bass_boost);
-			final int bandCount = Equalizer.getBandCount();
-			if (!Equalizer.isSupported()) {
-				if (container != null)
-					container.setVisibility(View.GONE);
-				chkEnable.setVisibility(View.GONE);
-				btnMenu.setVisibility(View.GONE);
-				lblMsg.setText(R.string.equalizer_not_supported);
-				lblMsg.setVisibility(View.VISIBLE);
-				
-				btnGoBack.setNextFocusRightId(R.id.btnChangeEffect);
-				btnGoBack.setNextFocusDownId(R.id.btnChangeEffect);
-				UI.setNextFocusForwardId(btnGoBack, R.id.btnChangeEffect);
-				btnChangeEffect.setNextFocusUpId(R.id.btnGoBack);
-				btnChangeEffect.setNextFocusLeftId(R.id.btnGoBack);
-			} else {
-				lblMsg.setVisibility(View.GONE);
-				chkEnable.setText(R.string.enable_equalizer);
-				chkEnable.setMaxWidth(getDecorViewWidth() - (UI.defaultControlSize << 1) - (UI._8dp << 2));
-				chkEnable.setVisibility(View.VISIBLE);
-				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-				rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
-				rp.addRule(RelativeLayout.LEFT_OF, R.id.btnMenu);
-				chkEnable.setLayoutParams(rp);
-				chkEnable.setChecked(Equalizer.isEnabled());
+			if (btnChangeEffect != null) {
+				panelSecondary.setVisibility(View.GONE);
+				panelEqualizer.setVisibility(View.VISIBLE);
 				btnMenu.setVisibility(View.VISIBLE);
-				int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));
-				final int screenW = getDecorViewWidth();
-				while (hMargin > 0 &&
-						((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > screenW)
-					hMargin--;
-				if (container == null) {
-					container = new LinearLayout(ctx);
-					rp = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-					rp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-					rp.addRule(RelativeLayout.ABOVE, R.id.btnChangeEffect);
-					container.setLayoutParams(rp);
-					container.setOrientation(LinearLayout.HORIZONTAL);
-					container.setGravity(Gravity.CENTER_HORIZONTAL);
-					for (int i = 0; i < bandCount; i++) {
-						final LinearLayout bandContainer = new LinearLayout(ctx);
-						bandContainer.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
-						bandContainer.setOrientation(LinearLayout.HORIZONTAL);
-						
-						final int level = Equalizer.getBandLevel(i);
-						
-						final BgSeekBar bar = new BgSeekBar(ctx);
-						bar.setVertical(true);
-						final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
-						if (i > 0)
-							p.leftMargin = hMargin;
-						p.topMargin = UI._8dp;
-						p.bottomMargin = UI._8dp;
-						bar.setLayoutParams(p);
-						bar.setMax((max - min) / 5);
-						bar.setText(format(frequencies[i], level));
-						bar.setKeyIncrement(20);
-						bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 5) : ((level - min) / 5));
-						bar.setOnBgSeekBarChangeListener(this);
-						bar.setInsideList(true);
-						if (UI.isLowDpiScreen && !UI.isLargeScreen)
-							bar.setTextSizeIndex(1);
-						bars[i] = bar;
-						bar.setId(i + 1);
-						bar.setNextFocusLeftId(i);
-						bar.setNextFocusRightId(i + 2);
-						UI.setNextFocusForwardId(bar, i + 2);
-						bar.setNextFocusDownId(R.id.btnChangeEffect);
-						bar.setNextFocusUpId(R.id.btnMenu);
-						
-						bandContainer.addView(bar);
-						container.addView(bandContainer);
-					}
-					bars[0].setNextFocusLeftId(R.id.btnMenu);
-					bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
-					UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);
-					panelControls.addView(container);
-				} else {
-					for (int i = 0; i < bandCount; i++) {
-						final BgSeekBar bar = bars[i];
-						final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
-						if (i > 0)
-							p.leftMargin = hMargin;
-						p.topMargin = UI._8dp;
-						p.bottomMargin = UI._8dp;
-						bar.setLayoutParams(p);
-					}
-					container.setVisibility(View.VISIBLE);
-				}
-				btnGoBack.setNextFocusRightId(R.id.chkEnable);
-				btnGoBack.setNextFocusDownId(1);
-				UI.setNextFocusForwardId(btnGoBack, R.id.chkEnable);
-				chkEnable.setNextFocusRightId(R.id.btnMenu);
-				chkEnable.setNextFocusDownId(1);
-				UI.setNextFocusForwardId(chkEnable, R.id.btnMenu);
-				btnMenu.setNextFocusDownId(bandCount);
-				btnMenu.setNextFocusRightId(1);
-				UI.setNextFocusForwardId(btnMenu, 1);
-				btnChangeEffect.setNextFocusUpId(bandCount);
-				btnChangeEffect.setNextFocusLeftId(bandCount);
 			}
+			chkEqualizer.setChecked(Equalizer.isEnabled());
+			
+			final int bandCount = Equalizer.getBandCount();
+			int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));
+			final int screenW = getDecorViewWidth();
+			while (hMargin > 0 && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > screenW)
+				hMargin--;
+			if (panelBars == null) {
+				panelBars = new LinearLayout(ctx);
+				rp = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
+				rp.addRule(RelativeLayout.BELOW, R.id.chkEqualizer);
+				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+				rp.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+				panelBars.setLayoutParams(rp);
+				panelBars.setOrientation(LinearLayout.HORIZONTAL);
+				
+				for (int i = 0; i < bandCount; i++) {
+					final int level = Equalizer.getBandLevel(i);
+					
+					final BgSeekBar bar = new BgSeekBar(ctx);
+					bar.setVertical(true);
+					final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
+					if (i > 0)
+						p.leftMargin = hMargin;
+					bar.setLayoutParams(p);
+					bar.setMax((max - min) / 10);
+					bar.setText(format(frequencies[i], level));
+					bar.setKeyIncrement(20);
+					bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 10) : ((level - min) / 10));
+					bar.setOnBgSeekBarChangeListener(this);
+					bar.setInsideList(true);
+					if (UI.isLowDpiScreen && !UI.isLargeScreen)
+						bar.setTextSizeIndex(1);
+					bars[i] = bar;
+					bar.setId(i + 1);
+					bar.setNextFocusLeftId(i);
+					bar.setNextFocusRightId(i + 2);
+					UI.setNextFocusForwardId(bar, i + 2);
+					bar.setNextFocusDownId(R.id.btnChangeEffect);
+					bar.setNextFocusUpId(R.id.chkEqualizer);
+					
+					panelBars.addView(bar);
+				}
+				/*bars[0].setNextFocusLeftId(R.id.btnMenu);
+				bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
+				UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);*/
+				panelEqualizer.addView(panelBars);
+			}
+			/*btnGoBack.setNextFocusRightId(R.id.chkEnable);
+			btnGoBack.setNextFocusDownId(1);
+			UI.setNextFocusForwardId(btnGoBack, R.id.chkEnable);
+			chkEnable.setNextFocusRightId(R.id.btnMenu);
+			chkEnable.setNextFocusDownId(1);
+			UI.setNextFocusForwardId(chkEnable, R.id.btnMenu);
+			btnMenu.setNextFocusDownId(bandCount);
+			btnMenu.setNextFocusRightId(1);
+			UI.setNextFocusForwardId(btnMenu, 1);
+			btnChangeEffect.setNextFocusUpId(bandCount);
+			btnChangeEffect.setNextFocusLeftId(bandCount);*/
 		}
 	}
 	
