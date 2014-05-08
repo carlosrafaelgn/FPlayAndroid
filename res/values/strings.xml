@@ -4,7 +4,7 @@
     <string name="fplay">FPlay</string>
     <string name="app_by">by Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Music player with clean interface, equalizer, bass boost and customizable colors</string>
-    <string name="app_more_info">Looking for more info?\nMaybe the source code?\nHave a request?\nFound a bug?!?\nJust want to contact me? :)\n\nDrop me an e-mail:\ndev@carlosrafaelgn.com.br\nor visit the application\'s project site on GitHub:\nhttps://github.com/carlosrafaelgn/FPlayAndroid\n\nVery special thanks to Sviat Hurskyi (sviat.hurskyi@gmail.com) for the Russian and Ukrainian translations!\n\nFree third-party resources used in the application:</string>
+    <string name="app_more_info">Looking for more info?\nMaybe the source code?\nHave a request?\nFound a bug?!?\nJust want to contact me? :)\n\nDrop me an e-mail:\ndev@carlosrafaelgn.com.br\nor visit the application\'s project site on GitHub:\nhttps://github.com/carlosrafaelgn/FPlayAndroid\n\nVery special thanks to the people who helped translating FPlay:\n\nSviat Hurskyi (sviat.hurskyi@gmail.com)\nDavid Gonzalez (redandy16@gmail.com)\n\nThanks a lot!! :D\n\nFree third-party resources used in the application:</string>
     <string name="app_more_info2">\n\nThe typeface used as the dyslexia-friendly typeface is OpenDyslexic Regular, by Abelardo Gonzalez, available at http://dyslexicfonts.com and licensed under a Creative Commons Attribution 3.0 Unported License.\n\nThe typeface used to draw the scalable icons, icons.ttf, was created using IcoMoon App, by Keyamoon, available at:\nhttp://icomoon.io/app\n\nSome of the scalable icons were created by me and some came from the IcoMoon Free icon set, by Keyamoon, licensed under the Creative Commons License 3.0.\n\nFPlay is licensed under the terms of the FreeBSD License.</string>
     <string name="app_license">\n\nCopyright &#169; 2013–2014, Carlos Rafael Gimenes das Neves\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n \n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\nThe views and conclusions contained in the software and documentation are those of the authors and should not be interpreted as representing official policies, either expressed or implied, of the FreeBSD Project.</string>
     <string name="system_info">System information</string>
@@ -100,16 +100,14 @@
     <string name="more_effects">More effects&#8230;</string>
     <string name="visualizer_not_supported">Your device does not support visualization :(</string>
     <string name="audio_effects">Audio effects</string>
-    <string name="equalizer_not_supported">Your device does not support the equalizer :(</string>
     <string name="zero_preset">Zero out preset</string>
     <string name="load_preset">Load preset</string>
     <string name="save_preset">Save preset</string>
     <string name="item_preset">preset</string>
-    <string name="bass_boost_not_supported">Your device does not support bass boost :(</string>
-    <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment :(</string>
     <string name="equalizer">Equalizer</string>
     <string name="bass_boost">Bass boost</string>
     <string name="virtualization">Virtualization</string>
+    <string name="reverb">Reverb</string>
     <string name="visualizer">Visualizer</string>
     <string name="random_mode">Random mode</string>
     <string name="settings">Settings</string>
@@ -202,6 +200,10 @@
     <string name="custom_color_theme">Customizable color theme</string>
     <string name="add_artist">Add artist</string>
     <string name="play_artist">Play artist</string>
+    <string name="effect_not_supported">Your device does not support this effect :(</string>
+    <string name="equalizer_not_supported">Your device does not support the equalizer :(</string>
+    <string name="bass_boost_not_supported">Your device does not support bass boost :(</string>
+    <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment :(</string>
     <string name="touch_to_add_songs">Empty list!\n\nTouch here, or the + button, to add songs :)</string>
     <string name="custom_key_behavior">Customizable key behavior</string>
     <string name="opt_wrap_around_list">Move keyboard selection to the opposite end of a list when reaching its top/bottom</string>
@@ -211,5 +213,5 @@
     <string name="player">Player</string>
     <string name="go_back_to_player">Return to the player</string>
     <string name="startup_message">There are many improvements in the way you add and play songs! You can switch back to the old way at any time in the \"Settings\" menu, though ;)</string>
-
+    
 </resources>

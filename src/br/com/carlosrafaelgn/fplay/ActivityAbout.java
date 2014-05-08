@@ -106,7 +106,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 			sb.append("\nLarge Screen");
 		lblDbg.setTypeface(UI.defaultTypeface);
 		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);
-		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.spToPxI(12));
+		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 		lblDbg.setText(sb.toString());
 		if (UI.isLargeScreen) {
 			UI.prepareViewPaddingForLargeScreen(list, 0);

@@ -80,6 +80,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	private LinearLayout panelLoading;
 	private BgButton btnGoBack, btnMenu;
 	private boolean loading;
+	private int lastLongClickedId;
 	
 	public ActivityFileSelection(int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
 		if (fileType.charAt(0) != FileSt.PRIVATE_FILETYPE_ID)
@@ -90,6 +91,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		this.itemType = itemType;
 		this.fileType = fileType;
 		this.listener = listener;
+		this.lastLongClickedId = -1;
 		this.formatterSB = new StringBuilder();
 		this.formatter = new Formatter(formatterSB);
 	}
@@ -147,6 +149,8 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		if (fileList != null) {
 			fileList.setObserver(started ? null : list);
 			count = fileList.getCount();
+			if (!started && count > 0 && hasButtons)
+				fileList.setSelection(0, true);
 		}
 		if (list != null)
 			list.centerItem(fileList.getSelection(), false);
@@ -213,13 +217,14 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	public void processItemLongClick(int position) {
-		if (fileList.getSelection() != position)
+		if (fileList.getSelection() != position && (UI.doubleClickMode || hasButtons))
 			fileList.setSelection(position, true);
+		lastLongClickedId = position;
 		CustomContextMenu.openContextMenu(btnMenu, this);
 	}
 	
 	private void processMenuItemClick(int id) {
-		final int s = fileList.getSelection();
+		final int s = ((lastLongClickedId < 0) ? fileList.getSelection() : lastLongClickedId);
 		switch (id) {
 		case MNU_LOAD:
 			if (s >= 0)
@@ -271,7 +276,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		final int i = fileList.getSelection();
+		final int i = ((lastLongClickedId < 0) ? fileList.getSelection() : lastLongClickedId);
 		UI.prepare(menu);
 		if (save)
 			menu.add(0, MNU_SAVEAS, 0, format(R.string.msg_create_new, itemType))
@@ -288,6 +293,11 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 					.setIcon(new TextIconDrawable(UI.ICON_LOAD));
 			UI.separator(menu, 1, 0);
 			menu.add(1, MNU_DELETE, 1, format(R.string.msg_delete, itemType, fileList.getItemT(i).name))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_DELETE));
+		} else if (!save && !UI.doubleClickMode && fileList.getCount() > 0) {
+			//just to show something when the user clicks the menu button
+			menu.add(1, MNU_DELETE, 1, format(R.string.msg_delete, itemType, fileList.getItemT(0).name))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_DELETE));
 		}
@@ -324,6 +334,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		if (view == btnGoBack) {
 			finish();
 		} if (view == btnMenu) {
+			lastLongClickedId = -1;
 			CustomContextMenu.openContextMenu(btnMenu, this);
 		}
 	}

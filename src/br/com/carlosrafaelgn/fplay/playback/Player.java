@@ -339,7 +339,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			favoriteFolders = new HashSet<String>(8);
 	}
 	
-	private static void saveConfig(Context context) {
+	public static void saveConfig(Context context, boolean saveSongs) {
 		final SerializableMap opts = new SerializableMap(32);
 		opts.put(OPT_VOLUME, volumeDB);
 		opts.put(OPT_CONTROLMODE, controlMode);
@@ -394,7 +394,8 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		BassBoost.saveConfig(opts);
 		Virtualizer.saveConfig(opts);
 		opts.serialize(context, "_Player");
-		songs.serialize(context, null);
+		if (saveSongs)
+			songs.serialize(context, null);
 	}
 	
 	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -1932,7 +1933,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 					thePlayer.getApplicationContext().unregisterReceiver(externalReceiver);
 					externalReceiver = null;
 				}
-				saveConfig(thePlayer);
+				saveConfig(thePlayer, true);
 			}
 			observer = null;
 			turnOffTimerObserver = null;

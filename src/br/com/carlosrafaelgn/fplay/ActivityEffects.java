@@ -40,7 +40,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
@@ -57,12 +58,11 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener {
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
-	private ViewGroup panelControls;
-	private RelativeLayout panelEqualizer, panelSecondary;
-	private LinearLayout panelBars;
-	private BgButton chkEqualizer, chkBass, chkVirtualizer;
+	private LinearLayout panelControls, panelEqualizer, panelBars;
+	private ViewGroup panelSecondary;
+	private BgButton chkEqualizer, chkBass, chkVirtualizer, chkReverb;
 	private BgButton btnGoBack, btnMenu, btnChangeEffect;
-	private int min, max;
+	private int min, max, barTextSizeIndex;
 	private int[] frequencies;
 	private boolean enablingEffect;
 	private BgSeekBar[] bars;
@@ -150,7 +150,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 				return;
 			if (!Equalizer.isSupported()) {
 				chkEqualizer.setChecked(false);
-				UI.toast(getApplication(), R.string.equalizer_not_supported);
+				UI.toast(getApplication(), R.string.effect_not_supported);
 				return;
 			}
 			enablingEffect = true;
@@ -161,7 +161,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 				return;
 			if (!BassBoost.isSupported()) {
 				chkBass.setChecked(false);
-				UI.toast(getApplication(), R.string.bass_boost_not_supported);
+				UI.toast(getApplication(), R.string.effect_not_supported);
 				return;
 			}
 			enablingEffect = true;
@@ -172,12 +172,15 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 				return;
 			if (!Virtualizer.isSupported()) {
 				chkVirtualizer.setChecked(false);
-				UI.toast(getApplication(), R.string.bass_boost_not_supported);
+				UI.toast(getApplication(), R.string.effect_not_supported);
 				return;
 			}
 			enablingEffect = true;
 			Virtualizer.setEnabled(chkVirtualizer.isChecked(), false);
 			Player.resetEffects(this);
+		} else if (view == chkReverb) {
+			chkReverb.setChecked(false);
+			UI.toast(getApplication(), R.string.coming_soon);
 		}
 	}
 	
@@ -205,10 +208,15 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
-		panelControls = (ViewGroup)findViewById(R.id.panelControls);
+		panelControls = (LinearLayout)findViewById(R.id.panelControls);
 		panelControls.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
-		panelEqualizer = (RelativeLayout)findViewById(R.id.panelEqualizer);
-		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
+		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
+		panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
+		if (panelSecondary instanceof ScrollView) {
+			panelSecondary.setHorizontalFadingEdgeEnabled(false);
+			panelSecondary.setVerticalFadingEdgeEnabled(false);
+			panelSecondary.setFadingEdgeLength(0);
+		}
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
@@ -224,6 +232,10 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		chkVirtualizer.setOnClickListener(this);
 		chkVirtualizer.setTextColor(UI.colorState_text_listitem_reactive);
 		chkVirtualizer.setBehavingAsCheckBox(true);
+		chkReverb = (BgButton)findViewById(R.id.chkReverb);
+		chkReverb.setOnClickListener(this);
+		chkReverb.setTextColor(UI.colorState_text_listitem_reactive);
+		chkReverb.setBehavingAsCheckBox(true);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
@@ -237,6 +249,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			UI.isLargeScreen = true;
 			Player.bassBoostMode = false;
 		}
+		barTextSizeIndex = 2;
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
 		barBass.setMax(BassBoost.getMaxStrength());
 		barBass.setValue(BassBoost.getStrength());
@@ -249,37 +262,49 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		barVirtualizer.setKeyIncrement(BassBoost.getMaxStrength() / 50);
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
-		RelativeLayout.LayoutParams rp;
+		final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
+		txtReverb.setTextColor(UI.colorState_text_listitem_static);
+		LinearLayout.LayoutParams lp;
 		if (!UI.isLargeScreen && UI.isLandscape) {
 			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			if (btnChangeEffect != null) {
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-				rp = (RelativeLayout.LayoutParams)btnChangeEffect.getLayoutParams();
-				rp.topMargin = 0;
-				btnChangeEffect.setLayoutParams(rp);
+				lp = (LinearLayout.LayoutParams)btnChangeEffect.getLayoutParams();
+				lp.topMargin = 0;
+				btnChangeEffect.setLayoutParams(lp);
 			}
-			rp = (RelativeLayout.LayoutParams)chkEqualizer.getLayoutParams();
-			rp.bottomMargin = 0;
-			chkEqualizer.setLayoutParams(rp);
-			rp = (RelativeLayout.LayoutParams)chkBass.getLayoutParams();
-			rp.bottomMargin = 0;
-			chkBass.setLayoutParams(rp);
-			rp = (RelativeLayout.LayoutParams)chkVirtualizer.getLayoutParams();
-			rp.bottomMargin = 0;
-			chkVirtualizer.setLayoutParams(rp);
-			rp = (RelativeLayout.LayoutParams)barBass.getLayoutParams();
-			rp.bottomMargin = UI._8dp;
-			barBass.setLayoutParams(rp);
-			rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-			rp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-			panelSecondary.setLayoutParams(rp);
+			barTextSizeIndex = 1;
+			barBass.setTextSizeIndex(1);
+			barVirtualizer.setTextSizeIndex(1);
+			lp = (LinearLayout.LayoutParams)chkEqualizer.getLayoutParams();
+			lp.bottomMargin = 0;
+			chkEqualizer.setLayoutParams(lp);
+			lp = (LinearLayout.LayoutParams)chkBass.getLayoutParams();
+			lp.bottomMargin = 0;
+			chkBass.setLayoutParams(lp);
+			lp = (LinearLayout.LayoutParams)chkVirtualizer.getLayoutParams();
+			lp.bottomMargin = 0;
+			chkVirtualizer.setLayoutParams(lp);
+			lp = (LinearLayout.LayoutParams)chkReverb.getLayoutParams();
+			lp.bottomMargin = 0;
+			chkReverb.setLayoutParams(lp);
+			lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
+			lp.bottomMargin = UI._8dp;
+			barBass.setLayoutParams(lp);
+			lp = (LinearLayout.LayoutParams)barVirtualizer.getLayoutParams();
+			lp.bottomMargin = UI._8dp;
+			barVirtualizer.setLayoutParams(lp);
 			panelControls.setPadding(UI._16dp, UI.thickDividerSize, UI._16dp, 0);
 		} else if (UI.isLargeScreen || !UI.isLowDpiScreen) {
 			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			if (btnChangeEffect != null)
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			if (UI.isLargeScreen) {
@@ -287,7 +312,6 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 				if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
 					((LinearLayout)panelControls).setOrientation(LinearLayout.VERTICAL);
 					((LinearLayout)panelControls).setWeightSum(0);
-					LinearLayout.LayoutParams lp;
 					final int _32dp = (UI._16dp << 1);
 					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 					lp.leftMargin = _32dp;
@@ -310,8 +334,11 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			if (btnChangeEffect != null)
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			barTextSizeIndex = 1;
 			barBass.setTextSizeIndex(1);
 			barVirtualizer.setTextSizeIndex(1);
 			panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);
@@ -346,6 +373,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		chkEqualizer = null;
 		chkBass = null;
 		chkVirtualizer = null;
+		chkReverb = null;
 		btnGoBack = null;
 		btnMenu = null;
 		btnChangeEffect = null;
@@ -430,7 +458,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	}
 	
 	private void prepareViewForMode() {
-		RelativeLayout.LayoutParams rp;
+		LinearLayout.LayoutParams lp;
 		final Context ctx = getApplication();
 		if (btnChangeEffect == null || Player.bassBoostMode) {
 			chkBass.setChecked(BassBoost.isEnabled());
@@ -445,11 +473,11 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			panelSecondary.setVisibility(View.VISIBLE);
 			btnMenu.setVisibility(View.GONE);
 			
-			/*btnGoBack.setNextFocusRightId(R.id.chkEnable);
-			btnGoBack.setNextFocusDownId(R.id.barBass);
-			UI.setNextFocusForwardId(btnGoBack, R.id.chkEnable);
-			btnChangeEffect.setNextFocusUpId(R.id.barBass);
-			btnChangeEffect.setNextFocusLeftId(R.id.barBass);*/
+			btnGoBack.setNextFocusRightId(R.id.chkBass);
+			btnGoBack.setNextFocusDownId(R.id.chkBass);
+			UI.setNextFocusForwardId(btnGoBack, R.id.chkBass);
+			btnChangeEffect.setNextFocusUpId(R.id.chkReverb);
+			btnChangeEffect.setNextFocusLeftId(R.id.chkReverb);
 		} else {
 			if (btnChangeEffect != null) {
 				panelSecondary.setVisibility(View.GONE);
@@ -465,11 +493,8 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 				hMargin--;
 			if (panelBars == null) {
 				panelBars = new LinearLayout(ctx);
-				rp = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-				rp.addRule(RelativeLayout.BELOW, R.id.chkEqualizer);
-				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-				rp.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-				panelBars.setLayoutParams(rp);
+				lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
+				panelBars.setLayoutParams(lp);
 				panelBars.setOrientation(LinearLayout.HORIZONTAL);
 				
 				for (int i = 0; i < bandCount; i++) {
@@ -483,12 +508,11 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 					bar.setLayoutParams(p);
 					bar.setMax((max - min) / 10);
 					bar.setText(format(frequencies[i], level));
-					bar.setKeyIncrement(20);
+					bar.setKeyIncrement(10);
 					bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 10) : ((level - min) / 10));
 					bar.setOnBgSeekBarChangeListener(this);
 					bar.setInsideList(true);
-					if (UI.isLowDpiScreen && !UI.isLargeScreen)
-						bar.setTextSizeIndex(1);
+					bar.setTextSizeIndex(barTextSizeIndex);
 					bars[i] = bar;
 					bar.setId(i + 1);
 					bar.setNextFocusLeftId(i);
@@ -499,22 +523,25 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 					
 					panelBars.addView(bar);
 				}
-				/*bars[0].setNextFocusLeftId(R.id.btnMenu);
-				bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
-				UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);*/
+				bars[0].setNextFocusLeftId(R.id.chkEqualizer);
 				panelEqualizer.addView(panelBars);
 			}
-			/*btnGoBack.setNextFocusRightId(R.id.chkEnable);
-			btnGoBack.setNextFocusDownId(1);
-			UI.setNextFocusForwardId(btnGoBack, R.id.chkEnable);
-			chkEnable.setNextFocusRightId(R.id.btnMenu);
-			chkEnable.setNextFocusDownId(1);
-			UI.setNextFocusForwardId(chkEnable, R.id.btnMenu);
-			btnMenu.setNextFocusDownId(bandCount);
-			btnMenu.setNextFocusRightId(1);
-			UI.setNextFocusForwardId(btnMenu, 1);
-			btnChangeEffect.setNextFocusUpId(bandCount);
-			btnChangeEffect.setNextFocusLeftId(bandCount);*/
+			if (btnChangeEffect != null) {
+				bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
+				UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);
+				btnGoBack.setNextFocusRightId(R.id.btnMenu);
+				btnGoBack.setNextFocusDownId(R.id.chkEqualizer);
+				UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
+				btnChangeEffect.setNextFocusUpId(bandCount);
+				btnChangeEffect.setNextFocusLeftId(bandCount);
+			} else {
+				bars[bandCount - 1].setNextFocusRightId(R.id.chkBass);
+				UI.setNextFocusForwardId(bars[bandCount - 1], R.id.chkBass);
+				chkBass.setNextFocusLeftId(bandCount);
+			}
+			chkEqualizer.setNextFocusRightId(1);
+			chkEqualizer.setNextFocusDownId(1);
+			UI.setNextFocusForwardId(chkEqualizer, 1);
 		}
 	}
 	

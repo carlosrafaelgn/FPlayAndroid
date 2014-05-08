@@ -49,6 +49,7 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.ColorPickerView;
@@ -61,10 +62,10 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
-public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener {
+public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, Runnable {
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
 	private final boolean colorMode;
-	private boolean changed, checkingReturn;
+	private boolean changed, checkingReturn, configsChanged;
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
@@ -239,13 +240,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optTheme) {
 			if (item.getItemId() == UI.THEME_CUSTOM) {
 				startActivity(new ActivitySettings(true));
-				return true;
+			} else {
+				UI.setTheme(item.getItemId());
+				getHostActivity().setWindowColor(UI.color_window);
+				onCleanupLayout();
+				onCreateLayout(false);
+				System.gc();
 			}
-			UI.setTheme(item.getItemId());
-			getHostActivity().setWindowColor(UI.color_window);
-			onCleanupLayout();
-			onCreateLayout(false);
-			System.gc();
 		} else if (lastMenuView == optVolumeControlType) {
 			switch (item.getItemId()) {
 			case Player.VOLUME_CONTROL_STREAM:
@@ -283,6 +284,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.fadeInIncrementOnOther = item.getItemId();
 			optFadeInOther.setSecondaryText(getFadeInString(item.getItemId()));
 		}
+		configsChanged = true;
 		lastMenuView = null;
 		return true;
 	}
@@ -657,6 +659,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 	
 	@Override
+	protected void onDestroy() {
+		if (!colorMode && configsChanged)
+			MainHandler.postToMainThread(this);
+	}
+	
+	@Override
 	public void onClick(View view) {
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--) {
@@ -764,7 +772,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
 		} else if (view == optAutoTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
+			return;
 		}
+		configsChanged = true;
 	}
 	
 	@Override
@@ -781,6 +791,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				try {
 					int m = Integer.parseInt(txtCustomMinutes.getText().toString());
 					if (m > 0) {
+						configsChanged = true;
 						Player.setTurnOffTimer(m, true);
 						optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 					}
@@ -841,5 +852,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optWidgetIconColor.setColor(color);
 			WidgetMain.updateWidgets(getApplication());
 		}
+	}
+	
+	@Override
+	public void run() {
+		if (Player.getState() != Player.STATE_TERMINATING && Player.getState() != Player.STATE_TERMINATED && Player.getService() != null)
+			Player.saveConfig(Player.getService(), false);
 	}
 }

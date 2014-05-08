@@ -4,7 +4,7 @@
     <string name="fplay">FPlay</string>
     <string name="app_by">від Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Простий і зрозумілий музичний плеєр з еквалайзером для Android</string>
-    <string name="app_more_info">Потрібна більш детальна інформація?\nМожливо цікавить сирцевий код?\nЄ пропозиція щодо розвитку проекту?\nЗнайшли помилку в програмі?!?\nПросто хочете поспілкуватися зі мною? :)\n\nПишіть на e-mail:\ndev@carlosrafaelgn.com.br\nабо відвідайте сайт програмиn\на GitHub:\nhttps://github.com/carlosrafaelgn/FPlayAndroid\n\nДуже окреме спасибі Sviat Hurskyi (sviat.hurskyi@gmail.com) для російських і українських перекладах!\n\nБезкоштовні сторонні ресурси, що використовуються у програмі:</string>
+    <string name="app_more_info">Потрібна більш детальна інформація?\nМожливо цікавить сирцевий код?\nЄ пропозиція щодо розвитку проекту?\nЗнайшли помилку в програмі?!?\nПросто хочете поспілкуватися зі мною? :)\n\nПишіть на e-mail:\ndev@carlosrafaelgn.com.br\nабо відвідайте сайт програмиn\на GitHub:\nhttps://github.com/carlosrafaelgn/FPlayAndroid\n\nДуже особливу подяку людям, які допомогли переклад FPlay:\n\nSviat Hurskyi (sviat.hurskyi@gmail.com)\nDavid Gonzalez (redandy16@gmail.com)\n\nВелике спасибі!! :D\n\nБезкоштовні сторонні ресурси, що використовуються у програмі:</string>
     <string name="app_more_info2">\n\nШрифт OpenDyslexic Regular от Abelardo Gonzalez, який використовується у якості діслексичного шрифту, доступний за посиланням: http://dyslexicfonts.com під ліцензією Creative Commons Attribution 3.0 Unported License.\n\nШрифт, що використовується для відображення масштабованих піктограм, icons.ttf, створений, використовуючи IcoMoon App, автор Keyamoon, доступний на сайті:\nhttp://icomoon.io/app\n\nДеякі з масштабованих піктограм були створені мною, частина взята з набору іконок IcoMoon Free, автор Keyamoon, під ліцензією Creative Commons License 3.0.\n\nFPlay ліцензується відповідно до умов ліцензії FreeBSD.</string>
     <string name="app_license">\n\nCopyright &#169; 2013–2014, Carlos Rafael Gimenes das Neves\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n \n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\nThe views and conclusions contained in the software and documentation are those of the authors and should not be interpreted as representing official policies, either expressed or implied, of the FreeBSD Project.</string>
     <string name="system_info">Системна інформація</string>
@@ -100,16 +100,14 @@
     <string name="more_effects">Детальніше&#8230;</string>
     <string name="visualizer_not_supported">Ваш пристрій не підтримує візуалізацію :(</string>
     <string name="audio_effects">Звукові ефекти</string>
-    <string name="equalizer_not_supported">Ваш пристрій не підтримує еквалайзер :(</string>
     <string name="zero_preset">Скинути передустановку</string>
     <string name="load_preset">Завантажити передустановку</string>
     <string name="save_preset">Зберегти передустановку</string>
     <string name="item_preset">передустановка</string>
-    <string name="bass_boost_not_supported">Ваш пристрій не підтримує посилення басів :(</string>
-    <string name="bass_boost_strength_not_supported">Ваш пристрій не підтримує посилення басів :(</string>
     <string name="equalizer">Еквалайзер</string>
     <string name="bass_boost">Посилення басів</string>
     <string name="virtualization">Віртуалізація</string>
+    <string name="reverb">Реверберації</string>
     <string name="visualizer">Візуалізатор</string>
     <string name="random_mode">Довільний режим</string>
     <string name="settings">Налаштування</string>
@@ -202,6 +200,10 @@
     <string name="custom_color_theme">Налаштовувана колірна схема</string>
     <string name="add_artist">Додати виконавця</string>
     <string name="play_artist">Відтворити виконавця</string>
+    <string name="effect_not_supported">Ваш пристрій не підтримує цей ефект :(</string>
+    <string name="equalizer_not_supported">Ваш пристрій не підтримує еквалайзер :(</string>
+    <string name="bass_boost_not_supported">Ваш пристрій не підтримує посилення басів :(</string>
+    <string name="bass_boost_strength_not_supported">Ваш пристрій не підтримує посилення басів :(</string>
     <string name="touch_to_add_songs">Empty list!\n\nTouch here, or the + button, to add songs :)</string>
     <string name="custom_key_behavior">Customizable key behavior</string>
     <string name="opt_wrap_around_list">Move keyboard selection to the opposite end of a list when reaching its top/bottom</string>
@@ -211,5 +213,5 @@
     <string name="player">Player</string>
     <string name="go_back_to_player">Return to the player</string>
     <string name="startup_message">There are many improvements in the way you add and play songs! You can switch back to the old way at any time in the \"Settings\" menu, though ;)</string>
-
+    
 </resources>

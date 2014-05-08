@@ -82,7 +82,6 @@ public final class BgSeekBar extends View {
 	private void init() {
 		state = UI.STATE_SELECTED;
 		max = 100;
-		textSizeIdx = 0;
 		sliderMode = false;
 		thumbWidth = (UI._IconBox * 90) / 100;
 		setTextSizeIndex(2);
