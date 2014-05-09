@@ -37,9 +37,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public final class Serializer {
-	private Serializer() {
-	}
-	
 	public static void serializeInt(OutputStream os, int value) throws IOException {
 		os.write(value);
 		os.write(value >>> 8);

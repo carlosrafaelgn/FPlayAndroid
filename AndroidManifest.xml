@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="26"
-    android:versionName="0.94" >
+    android:versionCode="27"
+    android:versionName="0.95" >
 
     <!-- versionCode must be kept in sync with UI.VERSION_CODE -->
 
@@ -33,6 +33,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- For exporting files/settings -->
     <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+    <!-- For android.media.audiofx.PresetReverb -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    
 
 
     <!--

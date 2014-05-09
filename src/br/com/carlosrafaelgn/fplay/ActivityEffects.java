@@ -46,6 +46,7 @@ import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.playback.PresetReverb;
 import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
@@ -179,8 +180,13 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			Virtualizer.setEnabled(chkVirtualizer.isChecked(), false);
 			Player.resetEffects(this);
 		} else if (view == chkReverb) {
-			chkReverb.setChecked(false);
-			UI.toast(getApplication(), R.string.coming_soon);
+			if (chkReverb.isChecked()) {
+				PresetReverb.setPreset(1, true);
+				chkReverb.setChecked(PresetReverb.getPreset() != 0);
+			} else {
+				PresetReverb.setPreset(0, true);
+			}
+			//UI.toast(getApplication(), R.string.coming_soon);
 		}
 	}
 	
@@ -263,7 +269,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
 		final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
-		txtReverb.setTextColor(UI.colorState_text_listitem_static);
+		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);
 		LinearLayout.LayoutParams lp;
 		if (!UI.isLargeScreen && UI.isLandscape) {
 			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
@@ -467,6 +473,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			chkVirtualizer.setChecked(Virtualizer.isEnabled());
 			barVirtualizer.setValue(Virtualizer.getStrength());
 			barVirtualizer.setText(format(Virtualizer.getStrength()));
+			chkReverb.setChecked(PresetReverb.getPreset() != 0);
 		}
 		if (Player.bassBoostMode) {
 			panelEqualizer.setVisibility(View.GONE);

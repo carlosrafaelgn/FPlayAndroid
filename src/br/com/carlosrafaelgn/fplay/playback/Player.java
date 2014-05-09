@@ -259,13 +259,14 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
 	public static PlayerObserver observer;
 	public static final SongList songs = SongList.getInstance();
-	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost and Virtualizer
-	//classes from being garbage collected...
+	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
+	//Virtualizer and PresetReverb classes from being garbage collected...
 	public static final UI _ui = new UI();
 	public static MainHandler _mainHandler;
 	public static final Equalizer _equalizer = new Equalizer();
 	public static final BassBoost _bassBoost = new BassBoost();
 	public static final Virtualizer _virtualizer = new Virtualizer();
+	public static final PresetReverb _presetReverb = new PresetReverb();
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
 	//so they will survive their respective activity's destruction
 	//(and even the class garbage collection)
@@ -335,12 +336,13 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		Equalizer.loadConfig(opts);
 		BassBoost.loadConfig(opts);
 		Virtualizer.loadConfig(opts);
+		PresetReverb.loadConfig(opts);
 		if (favoriteFolders == null)
 			favoriteFolders = new HashSet<String>(8);
 	}
 	
 	public static void saveConfig(Context context, boolean saveSongs) {
-		final SerializableMap opts = new SerializableMap(32);
+		final SerializableMap opts = new SerializableMap(96);
 		opts.put(OPT_VOLUME, volumeDB);
 		opts.put(OPT_CONTROLMODE, controlMode);
 		opts.put(OPT_PATH, path);
@@ -393,6 +395,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		Equalizer.saveConfig(opts);
 		BassBoost.saveConfig(opts);
 		Virtualizer.saveConfig(opts);
+		PresetReverb.saveConfig(opts);
 		opts.serialize(context, "_Player");
 		if (saveSongs)
 			songs.serialize(context, null);
@@ -636,6 +639,26 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				songs.setSelection(positionToSelect, false);
 			if (!isMainActiveOnTop)
 				Player.positionToSelect = positionToSelect;
+		}
+	}
+	
+	public static void applyReverbToPlayers() {
+		PresetReverb.applyToPlayer(currentPlayer);
+		PresetReverb.applyToPlayer(currentPlayer);
+	}
+	
+	public static void releaseReverbFromPlayers() {
+		if (currentPlayer != null) {
+			try {
+				currentPlayer.attachAuxEffect(0);
+			} catch (Throwable ex) {
+			}
+		}
+		if (nextPlayer != null) {
+			try {
+				nextPlayer.attachAuxEffect(0);
+			} catch (Throwable ex) {
+			}
 		}
 	}
 	
@@ -887,6 +910,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		mp.setDataSource(song.path);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 			clearNextPlayer(mp);
+		PresetReverb.applyToPlayer(mp);
 		mp.prepareAsync();
 	}
 	
@@ -926,6 +950,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		Equalizer.release();
 		BassBoost.release();
 		Virtualizer.release();
+		PresetReverb.release();
 		currentSongLoaded = false;
 		if (currentPlayer != null) {
 			releasePlayer(currentPlayer);
@@ -1682,6 +1707,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				break;
 			}
 			Virtualizer.release();
+			//@@@ PresetReverb.release();
 			MainHandler.sendMessage(thePlayer, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3, msg.arg1, msg.arg2, msg.obj);
 			break;
 		case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3:

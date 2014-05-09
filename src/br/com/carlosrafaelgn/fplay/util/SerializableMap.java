@@ -129,10 +129,10 @@ public final class SerializableMap {
 		BufferedInputStream bs = null;
 		try {
 			fs = context.openFileInput(fileName);
-			bs = new BufferedInputStream(fs, 512);
+			bs = new BufferedInputStream(fs, 1024);
 			byte[] buf = new byte[16];
 			int tmp;
-			SerializableMap dict = new SerializableMap(32);
+			SerializableMap dict = new SerializableMap(96);
 			while (bs.read(buf, 0, 9) == 9) {
 				switch ((int)buf[4]) {
 				case TYPE_INT:
