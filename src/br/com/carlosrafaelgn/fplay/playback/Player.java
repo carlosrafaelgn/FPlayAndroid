@@ -266,7 +266,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	public static final Equalizer _equalizer = new Equalizer();
 	public static final BassBoost _bassBoost = new BassBoost();
 	public static final Virtualizer _virtualizer = new Virtualizer();
-	public static final PresetReverb _presetReverb = new PresetReverb();
+	//public static final PresetReverb _presetReverb = new PresetReverb();
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
 	//so they will survive their respective activity's destruction
 	//(and even the class garbage collection)
@@ -336,7 +336,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		Equalizer.loadConfig(opts);
 		BassBoost.loadConfig(opts);
 		Virtualizer.loadConfig(opts);
-		PresetReverb.loadConfig(opts);
+		//PresetReverb.loadConfig(opts);
 		if (favoriteFolders == null)
 			favoriteFolders = new HashSet<String>(8);
 	}
@@ -395,7 +395,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		Equalizer.saveConfig(opts);
 		BassBoost.saveConfig(opts);
 		Virtualizer.saveConfig(opts);
-		PresetReverb.saveConfig(opts);
+		//PresetReverb.saveConfig(opts);
 		opts.serialize(context, "_Player");
 		if (saveSongs)
 			songs.serialize(context, null);
@@ -642,13 +642,13 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		}
 	}
 	
-	public static void applyReverbToPlayers() {
+	/*public static void applyReverbToPlayers() {
 		PresetReverb.applyToPlayer(currentPlayer);
-		PresetReverb.applyToPlayer(currentPlayer);
+		PesetReverb.applyToPlayer(currentPlayer);
 	}
 	
 	public static void releaseReverbFromPlayers() {
-		if (currentPlayer != null) {
+		/*if (currentPlayer != null) {
 			try {
 				currentPlayer.attachAuxEffect(0);
 			} catch (Throwable ex) {
@@ -660,7 +660,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			} catch (Throwable ex) {
 			}
 		}
-	}
+	}*/
 	
 	private static void initializePlayers() {
 		if (currentPlayer == null) {
@@ -910,7 +910,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		mp.setDataSource(song.path);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 			clearNextPlayer(mp);
-		PresetReverb.applyToPlayer(mp);
+		//PresetReverb.applyToPlayer(mp);
 		mp.prepareAsync();
 	}
 	
@@ -950,7 +950,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		Equalizer.release();
 		BassBoost.release();
 		Virtualizer.release();
-		PresetReverb.release();
+		//PresetReverb.release();
 		currentSongLoaded = false;
 		if (currentPlayer != null) {
 			releasePlayer(currentPlayer);

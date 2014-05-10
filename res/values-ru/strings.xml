@@ -195,7 +195,7 @@
     <string name="window_text">Текст окна</string>
     <string name="window_text_disabled">Текст окна (неактивный)</string>
     <string name="highlight_text">Выделенный текст</string>
-    <string name="there_are_new_features">Доступны новые возможности в меню "Настройки":</string>
+    <string name="there_are_new_features">Доступны новые возможности в меню \"Настройки\":</string>
     <string name="custom_widget">Настраиваемый виджет</string>
     <string name="custom_color_theme">Настраиваемая цветовая схема</string>
     <string name="add_artist">Добавить исполнителя</string>
@@ -204,14 +204,14 @@
     <string name="equalizer_not_supported">Ваше устройство не поддерживает эквалайзер :(</string>
     <string name="bass_boost_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
     <string name="bass_boost_strength_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
-    <string name="touch_to_add_songs">Empty list!\n\nTouch here, or the + button, to add songs :)</string>
-    <string name="custom_key_behavior">Customizable key behavior</string>
-    <string name="opt_wrap_around_list">Move keyboard selection to the opposite end of a list when reaching its top/bottom</string>
-    <string name="opt_extra_spacing">Use large spacing in headers</string>
-    <string name="opt_old_browser_behavior">Use old behavior to add songs</string>
-    <string name="opt_back_key_always_returns_to_player_when_browsing">Physical Back key always returns to player while adding songs</string>
-    <string name="player">Player</string>
-    <string name="go_back_to_player">Return to the player</string>
-    <string name="startup_message">There are many improvements in the way you add and play songs! You can switch back to the old way at any time in the \"Settings\" menu, though ;)</string>
+    <string name="touch_to_add_songs">Список пустой!\n\nНажмите здесь или элемент \"+\", чтобы добавить композиции :)</string>
+    <string name="custom_key_behavior">Настраиваемые поведения клавиш</string>
+    <string name="opt_wrap_around_list">Переместить курсор в противоположный конец списка при достижении его верха/низа</string>
+    <string name="opt_extra_spacing">Использовать широкий отступ в заголовках</string>
+    <string name="opt_old_browser_behavior">Использовать устаревший интерфейс для добавления композиций</string>
+    <string name="opt_back_key_always_returns_to_player_when_browsing">Кнопка \"Назад\" всегда возвращает к проигрывателю во время добавления композиций</string>
+    <string name="player">Проигрыватель</string>
+    <string name="go_back_to_player">Вернуться к проигрывателю</string>
+    <string name="startup_message">Есть много улучшений, связанных с добавлением и проигрыванием музыки! ВЫ можете вернуться к устаревшему виду в любое время через меню \"Настройки\" ;)</string>    
     
 </resources>

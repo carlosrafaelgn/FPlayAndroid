@@ -79,7 +79,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 27;
+	public static final int VERSION_CODE = 28;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -165,6 +165,7 @@ public final class UI {
 	public static final String ICON_SCREEN = "`";
 	public static final String ICON_CLOCK = ".";
 	public static final String ICON_DIVIDER = ",";
+	public static final String ICON_MIC = "m";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;

@@ -32,11 +32,11 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
-import android.media.MediaPlayer;
-import br.com.carlosrafaelgn.fplay.util.SerializableMap;
+/*import android.media.MediaPlayer;
+import br.com.carlosrafaelgn.fplay.util.SerializableMap;*/
 
 public final class PresetReverb {
-	private static final int OPT_PRESET = 0x0114;
+	/*private static final int OPT_PRESET = 0x0114;
 	//private static final int OPT_STRENGTH = 0x0115;
 	private static int preset, strength;
 	private static android.media.audiofx.PresetReverb thePresetReverb;
@@ -138,5 +138,5 @@ public final class PresetReverb {
 				}
 			}
 		}
-	}
+	}*/
 }

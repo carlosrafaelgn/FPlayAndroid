@@ -46,7 +46,6 @@ import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.playback.PresetReverb;
 import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
@@ -180,13 +179,14 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			Virtualizer.setEnabled(chkVirtualizer.isChecked(), false);
 			Player.resetEffects(this);
 		} else if (view == chkReverb) {
-			if (chkReverb.isChecked()) {
+			/*if (chkReverb.isChecked()) {
 				PresetReverb.setPreset(1, true);
 				chkReverb.setChecked(PresetReverb.getPreset() != 0);
 			} else {
 				PresetReverb.setPreset(0, true);
-			}
-			//UI.toast(getApplication(), R.string.coming_soon);
+			}*/
+			chkReverb.setChecked(false);
+			UI.toast(getApplication(), R.string.coming_soon);
 		}
 	}
 	
@@ -473,7 +473,6 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			chkVirtualizer.setChecked(Virtualizer.isEnabled());
 			barVirtualizer.setValue(Virtualizer.getStrength());
 			barVirtualizer.setText(format(Virtualizer.getStrength()));
-			chkReverb.setChecked(PresetReverb.getPreset() != 0);
 		}
 		if (Player.bassBoostMode) {
 			panelEqualizer.setVisibility(View.GONE);
