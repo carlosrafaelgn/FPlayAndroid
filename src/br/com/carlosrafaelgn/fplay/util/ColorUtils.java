@@ -33,7 +33,7 @@
 package br.com.carlosrafaelgn.fplay.util;
 
 public final class ColorUtils {
-	public static class HSV {
+	public static final class HSV {
 		public double h, s, v;
 		
 		public HSV() {

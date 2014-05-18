@@ -122,15 +122,15 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		public void onPlayerDestroyed();
 	}
 	
-	private static class TimeoutException extends Exception {
+	private static final class TimeoutException extends Exception {
 		private static final long serialVersionUID = 4571328670214281144L;
 	}
 	
-	private static class MediaServerDiedException extends Exception {
+	private static final class MediaServerDiedException extends Exception {
 		private static final long serialVersionUID = -902099312236606175L;
 	}
 	
-	private static class FocusException extends Exception {
+	private static final class FocusException extends Exception {
 		private static final long serialVersionUID = 6158088015763157546L;
 	}
 	

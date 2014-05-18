@@ -238,7 +238,7 @@ public final class UI {
 	
 	public static Typeface iconsTypeface, defaultTypeface;
 	
-	private static class Gradient {
+	private static final class Gradient {
 		private static final Gradient[] gradients = new Gradient[16];
 		private static int pos, count;
 		public final boolean focused, vertical;

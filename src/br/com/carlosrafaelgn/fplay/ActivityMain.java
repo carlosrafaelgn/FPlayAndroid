@@ -60,6 +60,8 @@ import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizer;
+import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
 //
 //How to create a ListView using ArrayAdapter in Android
@@ -495,7 +497,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				startActivity(new ActivityEffects());
 			break;
 		case MNU_VISUALIZER:
-			getHostActivity().startActivity(new Intent(getApplication(), ActivityVisualizer.class));
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizer.class.getName()));
 			break;
 		case MNU_SETTINGS:
 			startActivity(new ActivitySettings(false));
