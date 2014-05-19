@@ -1940,18 +1940,22 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 			}
 			if (focusDelayTimer != null) {
 				focusDelayTimer.stop();
+				focusDelayTimer.release();
 				focusDelayTimer = null;
 			}
 			if (prepareDelayTimer != null) {
 				prepareDelayTimer.stop();
+				prepareDelayTimer.release();
 				prepareDelayTimer = null;
 			}
 			if (volumeTimer != null) {
 				volumeTimer.stop();
+				volumeTimer.release();
 				volumeTimer = null;
 			}
 			if (turnOffTimer != null) {
 				turnOffTimer.stop();
+				turnOffTimer.release();
 				turnOffTimer = null;
 			}
 			if (thePlayer != null) {

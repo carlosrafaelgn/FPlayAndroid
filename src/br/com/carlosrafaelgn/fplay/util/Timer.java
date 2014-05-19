@@ -44,13 +44,13 @@ public class Timer implements MainHandler.Callback {
 	private static final int MSG_ONESHOT = 0x0200;
 	private static final int MSG_INTERVAL = 0x0201;
 	private final Object sync;
-	private final Runnable runnable;
-	private final TimerHandler timerHandler;
 	private final String name;
 	private final boolean oneShot, handledOnMain, compensatingForDelays;
+	private volatile Runnable runnable;
+	private volatile TimerHandler timerHandler;
 	private volatile int interval, version;
 	private volatile TimerThread thread;
-	private volatile boolean alive;
+	private volatile boolean alive, paused;
 	private volatile Object param;
 	private long nextTime;
 	
@@ -66,6 +66,15 @@ public class Timer implements MainHandler.Callback {
 		public void run() {
 			long lastTime = SystemClock.uptimeMillis();
 			while (version == myVersion) {
+				if (paused) {
+					synchronized (sync) {
+						try {
+							sync.wait();
+						} catch (InterruptedException e) { }
+					}
+					if (version != myVersion)
+						break;
+				}
 				if (compensatingForDelays) {
 					final long now = SystemClock.uptimeMillis();
 					final int actualInterval = interval - ((int)now - (int)lastTime);
@@ -90,11 +99,13 @@ public class Timer implements MainHandler.Callback {
 						} catch (InterruptedException e) { }
 					}
 				}
+				if (paused)
+					continue;
 				try {
 					if (version == myVersion) {
 						if (runnable != null)
 							runnable.run();
-						else
+						else if (timerHandler != null)
 							timerHandler.handleTimer(Timer.this, param);
 					}
 				} catch (Throwable ex) {
@@ -115,26 +126,6 @@ public class Timer implements MainHandler.Callback {
 		}
 	}
 	
-	public Timer(Runnable runnable, boolean oneShot) {
-		this.sync = new Object();
-		this.runnable = runnable;
-		this.timerHandler = null;
-		this.name = null;
-		this.oneShot = oneShot;
-		this.handledOnMain = false;
-		this.compensatingForDelays = false;
-	}
-	
-	public Timer(Runnable runnable, String name, boolean oneShot) {
-		this.sync = new Object();
-		this.runnable = runnable;
-		this.timerHandler = null;
-		this.name = name;
-		this.oneShot = oneShot;
-		this.handledOnMain = false;
-		this.compensatingForDelays = false;
-	}
-	
 	public Timer(Runnable runnable, String name, boolean oneShot, boolean handledOnMain, boolean compensatingForDelays) {
 		this.sync = new Object();
 		this.runnable = runnable;
@@ -143,26 +134,6 @@ public class Timer implements MainHandler.Callback {
 		this.oneShot = oneShot;
 		this.handledOnMain = handledOnMain;
 		this.compensatingForDelays = compensatingForDelays;
-	}
-	
-	public Timer(TimerHandler timerHandler, boolean oneShot) {
-		this.sync = new Object();
-		this.runnable = null;
-		this.timerHandler = timerHandler;
-		this.name = null;
-		this.oneShot = oneShot;
-		this.handledOnMain = false;
-		this.compensatingForDelays = false;
-	}
-	
-	public Timer(TimerHandler timerHandler, String name, boolean oneShot) {
-		this.sync = new Object();
-		this.runnable = null;
-		this.timerHandler = timerHandler;
-		this.name = name;
-		this.oneShot = oneShot;
-		this.handledOnMain = false;
-		this.compensatingForDelays = false;
 	}
 	
 	public Timer(TimerHandler timerHandler, String name, boolean oneShot, boolean handledOnMain, boolean compensatingForDelays) {
@@ -207,6 +178,7 @@ public class Timer implements MainHandler.Callback {
 			this.interval = interval;
 			this.param = param;
 			alive = true;
+			paused = false;
 			thread = null;
 			if (oneShot) {
 				MainHandler.sendMessageDelayed(this, MSG_ONESHOT, version, 0, interval);
@@ -218,16 +190,34 @@ public class Timer implements MainHandler.Callback {
 		} else {
 			synchronized (sync) {
 				version++;
+				if (paused && thread != null)
+					sync.notifyAll();
 				this.interval = interval;
 				this.param = param;
 				alive = true;
+				paused = false;
 				thread = new TimerThread(version, name);
 				thread.start();
 			}
 		}
 	}
 	
+	public void pause() {
+		if (alive && !handledOnMain)
+			paused = true;
+	}
+	
+	public void resume() {
+		if (alive && !handledOnMain && paused) {
+			paused = false;
+			synchronized (sync) {
+				sync.notifyAll();
+			}
+		}
+	}
+	
 	public void stop() {
+		paused = false;
 		if (alive) {
 			if (handledOnMain) {
 				version++;
@@ -245,6 +235,7 @@ public class Timer implements MainHandler.Callback {
 	}
 	
 	public void stopAndWait() {
+		paused = false;
 		if (alive) {
 			if (handledOnMain) {
 				version++;
@@ -268,6 +259,12 @@ public class Timer implements MainHandler.Callback {
 		}
 	}
 	
+	public void release() {
+		runnable = null;
+		timerHandler = null;
+		param = null;
+	}
+	
 	@Override
 	public boolean handleMessage(Message msg) {
 		if (msg.arg1 == version) {
@@ -275,7 +272,7 @@ public class Timer implements MainHandler.Callback {
 			case MSG_INTERVAL:
 				if (runnable != null)
 					runnable.run();
-				else
+				else if (timerHandler != null)
 					timerHandler.handleTimer(this, param);
 				if (alive) {
 					if (compensatingForDelays) {
@@ -291,7 +288,7 @@ public class Timer implements MainHandler.Callback {
 				alive = false;
 				if (runnable != null)
 					runnable.run();
-				else
+				else if (timerHandler != null)
 					timerHandler.handleTimer(this, param);
 				break;
 			}
@@ -301,6 +298,10 @@ public class Timer implements MainHandler.Callback {
 	
 	public int getInterval() {
 		return interval;
+	}
+	
+	public boolean isPaused() {
+		return paused;
 	}
 	
 	public boolean isAlive() {

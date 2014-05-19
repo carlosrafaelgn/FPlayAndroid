@@ -42,9 +42,6 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -57,24 +54,21 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
+import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.VisualizerView;
 
 public final class ActivityVisualizer extends Activity implements Runnable, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener {
-	private static final int MSG_PROCESS_FRAME = 0x01;
-	private static final int MSG_STATE_CHANGED = 0x02;
-	private static final int MSG_PLAYER_CHANGED = 0x03;
-	
 	private android.media.audiofx.Visualizer fxVisualizer;
 	private Visualizer visualizer;
 	private RelativeLayout container, buttonContainer;
 	private BgButton btnPrev, btnPlay, btnNext, btnBack;
 	private VisualizerView visualizerView;
-	private boolean alive, paused;
+	private volatile boolean alive, paused, reset, visualizerReady;
 	private boolean landscape, lowDpi, fxVisualizerFailed;
 	private int fxVisualizerAudioSessionId;
-	private Handler handler;
+	private Timer timer;
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void setupActionBar() {
@@ -298,10 +292,71 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			btnBack.requestFocus();
 		
 		alive = true;
-		paused = false;
+		reset = true;
+		paused = !Player.isPlaying();
+		visualizerReady = false;
 		fxVisualizerFailed = false;
 		fxVisualizerAudioSessionId = -1;
-		(new Thread(this, "Visualizer Thread")).start();
+		timer = new Timer(new Runnable() {
+			private int lastTime = 0;
+			@Override
+			public void run() {
+				if (alive) {
+					if (paused) {
+						try {
+							if (fxVisualizer != null)
+								fxVisualizer.setEnabled(false);
+						} catch (Throwable ex) {
+						}
+						if (timer != null)
+							timer.pause();
+						return;
+					}
+					if (reset || fxVisualizer == null) {
+						reset = false;
+						if (!initFxVisualizer()) {
+							MainHandler.postToMainThread(ActivityVisualizer.this);
+							return;
+						}
+						if (!visualizerReady && alive && visualizer != null) {
+							visualizer.init(getApplication());
+							visualizerReady = true;
+						}
+					}
+					if (fxVisualizer != null && visualizer != null) {
+						final int now = (int)SystemClock.uptimeMillis();
+						final int deltaMillis = (int)(now - lastTime);
+						lastTime = now;
+						visualizer.processFrame(fxVisualizer, ((deltaMillis >= 32) || (deltaMillis <= 0)) ? 32 : deltaMillis);
+						if (visualizerView != null)
+							MainHandler.postToMainThread(visualizerView);
+					}
+				}
+				if (!alive) {
+					timer.stop();
+					timer.release();
+					timer = null;
+					if (visualizer != null) {
+						visualizer.release();
+						visualizer = null;
+					}
+					if (fxVisualizer != null) {
+						try {
+							fxVisualizer.setEnabled(false);
+						} catch (Throwable ex) {
+						}
+						try {
+							fxVisualizer.release();
+						} catch (Throwable ex) {
+						}
+						fxVisualizer = null;
+					}
+					MainHandler.postToMainThread(ActivityVisualizer.this);
+					System.gc();
+				}
+			}
+		}, "Visualizer Thread", false, false, true);
+		timer.start(16);
 	}
 	
 	@Override
@@ -324,16 +379,15 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		super.onPause();
 		Player.observer = null;
 		paused = true;
-		if (handler != null)
-			handler.sendEmptyMessage(MSG_STATE_CHANGED);
 	}
 	
 	@Override
 	protected void onResume() {
 		Player.observer = this;
-		paused = false;
-		if (handler != null)
-			handler.sendEmptyMessage(MSG_STATE_CHANGED);
+		reset = true;
+		paused = !Player.isPlaying();
+		if (!paused && timer != null)
+			timer.resume();
 		onPlayerChanged(Player.getCurrentSong(), true, null);
 		super.onResume();
 	}
@@ -341,8 +395,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	private void finalCleanup() {
 		Player.removeDestroyedObserver(this);
 		alive = false;
-		if (handler != null)
-			handler.sendEmptyMessage(MSG_STATE_CHANGED);
+		paused = !Player.isPlaying();
+		if (timer != null)
+			timer.resume();
 	}
 	
 	@Override
@@ -353,97 +408,22 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	public void run() {
-		if (MainHandler.isOnMainThread()) {
-			if (fxVisualizerFailed) {
-				fxVisualizerFailed = false;
-				UI.toast(getApplication(), R.string.visualizer_not_supported);
-			}
-			//perform the final cleanup
-			if (!alive && visualizerView != null) {
-				visualizerView.release();
-				visualizerView = null;
-			}
-			return;
+		if (fxVisualizerFailed) {
+			fxVisualizerFailed = false;
+			UI.toast(getApplication(), R.string.visualizer_not_supported);
 		}
-		
-		Looper.prepare();
-		handler = new Handler(Looper.myLooper()) {
-			private long lastTime = 0;
-			
-			@Override
-			public void handleMessage(Message msg) {
-				if (!alive) {
-					Looper.myLooper().quit();
-					return;
-				}
-				if (paused) {
-					try {
-						fxVisualizer.setEnabled(false);
-					} catch (Throwable ex) {
-					}
-					return;
-				}
-				switch (msg.what) {
-				case MSG_PROCESS_FRAME:
-					if (fxVisualizer != null && visualizer != null) {
-						final long now = SystemClock.uptimeMillis();
-						int deltaMillis = (int)(now - lastTime);
-						if (deltaMillis > 10) {
-							lastTime = now;
-							visualizer.processFrame(fxVisualizer, (deltaMillis >= 32) ? 32 : deltaMillis);
-							if (visualizerView != null)
-								MainHandler.postToMainThread(visualizerView);
-						} else if (deltaMillis < 0) {
-							lastTime = now;
-						}
-						handler.sendEmptyMessageAtTime(MSG_PROCESS_FRAME, now + 16);
-					}
-					break;
-				case MSG_STATE_CHANGED:
-				case MSG_PLAYER_CHANGED:
-					if (alive) {
-						initFxVisualizer();
-						handler.sendEmptyMessageDelayed(MSG_PROCESS_FRAME, 16);
-					} else {
-						Looper.myLooper().quit();
-					}
-					break;
-				}
-			}
-		};
-		if (alive) {
-			initFxVisualizer();
-			if (alive) {
-				if (visualizer != null)
-					visualizer.init(getApplication());
-				if (alive) {
-					//send the first message that will start the chain of MSG_PROCESS_FRAME messages
-					handler.sendEmptyMessageDelayed(MSG_PROCESS_FRAME, 16);
-					Looper.loop();
-				}
-			}
+		//perform the final cleanup
+		if (!alive && visualizerView != null) {
+			visualizerView.release();
+			visualizerView = null;
 		}
-		if (visualizer != null) {
-			visualizer.release();
-			visualizer = null;
-		}
-		if (fxVisualizer != null) {
-			try {
-				fxVisualizer.setEnabled(false);
-			} catch (Throwable ex) {
-			}
-			try {
-				fxVisualizer.release();
-			} catch (Throwable ex) {
-			}
-			fxVisualizer = null;
-		}
-		handler = null;
-		MainHandler.postToMainThread(this);
 	}
 	
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+		paused = !Player.isPlaying();
+		if (!paused && timer != null)
+			timer.resume();
 		if (btnPlay != null) {
 			btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
 			btnPlay.setContentDescription(getText(Player.isPlaying() ? R.string.pause : R.string.play));
@@ -482,16 +462,22 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	public void onClick(View view) {
 		if (view == btnPrev) {
 			Player.previous();
-			if (handler != null)
-				handler.sendEmptyMessage(MSG_PLAYER_CHANGED);
+			reset = true;
+			paused = !Player.isPlaying();
+			if (!paused && timer != null)
+				timer.resume();
 		} else if (view == btnPlay) {
 			Player.playPause();
-			if (handler != null)
-				handler.sendEmptyMessage(MSG_PLAYER_CHANGED);
+			reset = true;
+			paused = !Player.isPlaying();
+			if (!paused && timer != null)
+				timer.resume();
 		} else if (view == btnNext) {
 			Player.next();
-			if (handler != null)
-				handler.sendEmptyMessage(MSG_PLAYER_CHANGED);
+			reset = true;
+			paused = !Player.isPlaying();
+			if (!paused && timer != null)
+				timer.resume();
 		} else if (view == btnBack) {
 			finish();
 		}

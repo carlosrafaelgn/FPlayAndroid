@@ -1077,9 +1077,18 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	protected void onDestroy() {
-		tmrSong = null;
-		tmrUpdateVolumeDisplay = null;
-		tmrVolume = null;
+		if (tmrSong != null) {
+			tmrSong.release();
+			tmrSong = null;
+		}
+		if (tmrUpdateVolumeDisplay != null) {
+			tmrUpdateVolumeDisplay.release();
+			tmrUpdateVolumeDisplay = null;
+		}
+		if (tmrVolume != null) {
+			tmrVolume.release();
+			tmrVolume = null;
+		}
 		timeBuilder = null;
 		volumeBuilder = null;
 	}
