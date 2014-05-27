@@ -199,15 +199,28 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		chkVirtualizer.setChecked(Virtualizer.isEnabled());
 	}
 	
+	private void initBarsAndFrequencies(int bandCount) {
+		clearBarsAndFrequencies();
+		min = Equalizer.getMinBandLevel();
+		max = Equalizer.getMaxBandLevel();
+		frequencies = new int[bandCount];
+		bars = new BgSeekBar[bandCount];
+		for (int i = bandCount - 1; i >= 0; i--)
+			frequencies[i] = Equalizer.getBandFrequency(i);
+	}
+	
+	private void clearBarsAndFrequencies() {
+		frequencies = null;
+		if (bars != null) {
+			for (int i = bars.length - 1; i >= 0; i--)
+				bars[i] = null;
+			bars = null;
+		}
+	}
+	
 	@Override
 	protected void onCreate() {
 		txtBuilder = new StringBuilder(32);
-		min = Equalizer.getMinBandLevel();
-		max = Equalizer.getMaxBandLevel();
-		frequencies = new int[Equalizer.getBandCount()];
-		bars = new BgSeekBar[frequencies.length];
-		for (int i = frequencies.length - 1; i >= 0; i--)
-			frequencies[i] = Equalizer.getBandFrequency(i);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -383,14 +396,14 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		btnGoBack = null;
 		btnMenu = null;
 		btnChangeEffect = null;
-		for (int i = frequencies.length - 1; i >= 0; i--)
-			bars[i] = null;
+		if (bars != null) {
+			for (int i = bars.length - 1; i >= 0; i--)
+				bars[i] = null;
+		}
 	}
 	
 	@Override
 	protected void onDestroy() {
-		frequencies = null;
-		bars = null;
 	}
 	
 	@Override
@@ -403,8 +416,8 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		} else if (seekBar == barVirtualizer) {
 			Virtualizer.setStrength(value, false);
 			seekBar.setText(format(Virtualizer.getStrength()));
-		} else {
-			for (int i = frequencies.length - 1; i >= 0; i--) {
+		} else if (bars != null && frequencies != null) {
+			for (int i = bars.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
 					int level = (10 * value) + min;
 					if (!usingKeys && (level <= LevelThreshold) && (level >= -LevelThreshold)) {
@@ -440,8 +453,8 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			final int s = Virtualizer.getStrength();
 			seekBar.setValue(s);
 			seekBar.setText(format(s));
-		} else if (frequencies != null && bars != null) {
-			for (int i = frequencies.length - 1; i >= 0; i--) {
+		} else if (bars != null) {
+			for (int i = bars.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
 					Equalizer.setBandLevel(i, Equalizer.getBandLevel(i), true);
 					return;
@@ -451,7 +464,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	}
 	
 	private void updateBars() {
-		if (bars != null) {
+		if (bars != null && frequencies != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
 				final BgSeekBar bar = bars[i];
 				if (bar != null) {
@@ -493,6 +506,8 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			chkEqualizer.setChecked(Equalizer.isEnabled());
 			
 			final int bandCount = Equalizer.getBandCount();
+			if (bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
+				initBarsAndFrequencies(bandCount);
 			int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));
 			final int screenW = getDecorViewWidth();
 			while (hMargin > 0 && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > screenW)
@@ -505,7 +520,6 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 				
 				for (int i = 0; i < bandCount; i++) {
 					final int level = Equalizer.getBandLevel(i);
-					
 					final BgSeekBar bar = new BgSeekBar(ctx);
 					bar.setVertical(true);
 					final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
@@ -529,20 +543,25 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 					
 					panelBars.addView(bar);
 				}
-				bars[0].setNextFocusLeftId(R.id.chkEqualizer);
+				if (bars != null && bars.length > 0)
+					bars[0].setNextFocusLeftId(R.id.chkEqualizer);
 				panelEqualizer.addView(panelBars);
 			}
 			if (btnChangeEffect != null) {
-				bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
-				UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);
+				if (bars != null && bars.length > 0) {
+					bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
+					UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);
+				}
 				btnGoBack.setNextFocusRightId(R.id.btnMenu);
 				btnGoBack.setNextFocusDownId(R.id.chkEqualizer);
 				UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
 				btnChangeEffect.setNextFocusUpId(bandCount);
 				btnChangeEffect.setNextFocusLeftId(bandCount);
 			} else {
-				bars[bandCount - 1].setNextFocusRightId(R.id.chkBass);
-				UI.setNextFocusForwardId(bars[bandCount - 1], R.id.chkBass);
+				if (bars != null && bars.length > 0) {
+					bars[bandCount - 1].setNextFocusRightId(R.id.chkBass);
+					UI.setNextFocusForwardId(bars[bandCount - 1], R.id.chkBass);
+				}
 				chkBass.setNextFocusLeftId(bandCount);
 			}
 			chkEqualizer.setNextFocusRightId(1);

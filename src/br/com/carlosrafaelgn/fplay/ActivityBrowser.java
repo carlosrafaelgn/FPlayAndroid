@@ -481,12 +481,30 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			Player.originalPath = "";
 		fileList = new FileList();
 		fileList.observerActivity = this;
-		ic_closed_folder = getDrawable(R.drawable.ic_closed_folder);
-		ic_internal = getDrawable(R.drawable.ic_internal);
-		ic_external = getDrawable(R.drawable.ic_external);
-		ic_favorite = getDrawable(R.drawable.ic_favorite);
-		ic_artist = getDrawable(R.drawable.ic_artist);
-		ic_album = getDrawable(R.drawable.ic_album);
+		try {
+			ic_closed_folder = getDrawable(R.drawable.ic_closed_folder);
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_internal = getDrawable(R.drawable.ic_internal);
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_external = getDrawable(R.drawable.ic_external);
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_favorite = getDrawable(R.drawable.ic_favorite);
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_artist = getDrawable(R.drawable.ic_artist);
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_album = getDrawable(R.drawable.ic_album);
+		} catch (Throwable ex) {
+		}
 	}
 	
 	@SuppressWarnings("deprecation")

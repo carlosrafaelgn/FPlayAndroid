@@ -32,12 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.Paint.Style;
-import br.com.carlosrafaelgn.fplay.ui.UI;
+import android.graphics.Rect;
 
 public final class SimpleVisualizer implements Visualizer {
 	private static final class SimpleVisualizerView extends VisualizerView {
@@ -59,7 +59,9 @@ public final class SimpleVisualizer implements Visualizer {
 			points = new int[][] { new int[256], new int[256], new int[256] };
 			writeCount = points.length;
 			paint = new Paint();
-			paint.setStyle(Style.FILL);
+			//paint.setStyle(Style.FILL);
+			paint.setStyle(Style.STROKE);
+			paint.setStrokeWidth(UI.strokeSize);
 			paint.setDither(false);
 			paint.setAntiAlias(false);
 		}
@@ -99,7 +101,10 @@ public final class SimpleVisualizer implements Visualizer {
 					final int v = pts[i];
 					r.top = r.bottom - ((v * h) >>> 15);
 					paint.setColor(COLORS[v >>> 7]);
-					canvas.drawRect(r, p);
+					//canvas.drawRect(r, p);
+					
+					canvas.drawLine(r.left, r.top, r.left, r.bottom, p);
+					
 					r.left += w;
 					r.right += w;
 				}
@@ -162,14 +167,14 @@ public final class SimpleVisualizer implements Visualizer {
 	private byte[] bfft;
 	private float[] fft, multiplier;
 	
-	public SimpleVisualizer(Context context, boolean landscape, boolean lowDpi) {
+	public SimpleVisualizer(Context context, boolean landscape) {
 		visualizerView = new SimpleVisualizerView(context);
 		bfft = new byte[1024];
 		fft = new float[256];
 		multiplier = new float[256];
 		//the 0.25 below is the counterpart of the 0.75 in run()
 		for (int i = 0; i < 256; i++)
-			multiplier[i] = (float)((((double)i + 100.0) / 101.0) * Math.exp(i / 300.0) * 0.25);
+			multiplier[i] = (float)((((double)i + 100.0) / 101.0) * Math.exp(i / 300.0) * 0.5);
 	}
 	
 	@Override
@@ -178,15 +183,33 @@ public final class SimpleVisualizer implements Visualizer {
 		return visualizerView;
 	}
 	
+	//Runs on ANY thread
+	@Override
+	public int getDesiredPointCount() {
+		return 1024;
+	}
+	
 	@Override
 	//Runs on a SECONDARY thread
-	public void init(Context context) {
+	public void load(Context context) {
+		
+	}
+	
+	//Runs on ANY thread
+	@Override
+	public boolean isLoading() {
+		return false;
+	}
+	
+	//Runs on ANY thread
+	@Override
+	public void cancelLoading() {
 		
 	}
 	
 	@Override
 	//Runs on the MAIN thread
-	public void configurationChanged(boolean landscape, boolean lowDpi) {
+	public void configurationChanged(boolean landscape) {
 		
 	}
 	
@@ -203,7 +226,7 @@ public final class SimpleVisualizer implements Visualizer {
 		//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 		visualizer.getFft(bfft);
 		//we are not drawing/analyzing the last bin (Nyquist)
-		fft[0] = (multiplier[0] * (float)bfft[0]) + (0.75f * fft[0]);
+		fft[0] = (multiplier[0] * (float)bfft[0]) + (0.5f * fft[0]);
 		//fft[i] stores values from 0 to -128/127 (inclusive)
 		//pts[i] goes from 0 to 32768 (inclusive)
 		int v = (int)(fft[0] * 256.0f);

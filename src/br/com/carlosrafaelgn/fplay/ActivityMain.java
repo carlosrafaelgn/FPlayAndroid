@@ -60,7 +60,7 @@ import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizer;
+import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
 //
@@ -497,10 +497,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				startActivity(new ActivityEffects());
 			break;
 		case MNU_VISUALIZER:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizer.class.getName()));
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
 			break;
 		case MNU_SETTINGS:
 			startActivity(new ActivitySettings(false));
+			//getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizer.class.getName()));
 			break;
 		case MNU_EXIT:
 			finish();
@@ -614,12 +615,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else
 			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		if (UI.forcedOrientation == 0)
-			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-		else if (UI.forcedOrientation < 0)
-			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-		else
-			getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!
 		getHostActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);

@@ -46,34 +46,34 @@ public abstract class VisualizerView extends View implements Runnable {
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
-	public void setBackground(Drawable background) {
+	public final void setBackground(Drawable background) {
 		super.setBackground(null);
 	}
 	
 	@Override
 	@Deprecated
-	public void setBackgroundDrawable(Drawable background) {
+	public final void setBackgroundDrawable(Drawable background) {
 		super.setBackgroundDrawable(null);
 	}
 	
 	@Override
-	public void setBackgroundResource(int resid) {
+	public final void setBackgroundResource(int resid) {
 		super.setBackgroundResource(0);
 	}
 	
 	@Override
-	public void setBackgroundColor(int color) {
+	public final void setBackgroundColor(int color) {
 		super.setBackgroundResource(0);
 	}
 	
 	@Override
-	public Drawable getBackground() {
+	public final Drawable getBackground() {
 		return null;
 	}
 	
 	@Override
 	@ExportedProperty(category = "drawing")
-	public boolean isOpaque() {
+	public final boolean isOpaque() {
 		return true;
 	}
 	

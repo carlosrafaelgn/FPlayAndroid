@@ -55,7 +55,6 @@ import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.VisualizerView;
 
@@ -66,7 +65,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	private BgButton btnPrev, btnPlay, btnNext, btnBack;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean landscape, lowDpi, fxVisualizerFailed;
+	private boolean landscape, fxVisualizerFailed;
 	private int fxVisualizerAudioSessionId;
 	private Timer timer;
 	
@@ -81,6 +80,17 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	private void prepareViews() {
 		RelativeLayout.LayoutParams p, pv;
+		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
+		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
+			p.leftMargin = UI._8dp;
+			p.topMargin = UI._8dp;
+			p.rightMargin = UI._8dp;
+			p.bottomMargin = UI._8dp;
+		}
+		btnBack.setLayoutParams(p);
+		btnBack.setIcon(UI.ICON_GOBACK);
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_BOTTOM : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -93,14 +103,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			pv.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 			pv.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-			pv.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+			pv.addRule(RelativeLayout.LEFT_OF, 5);
 			pv.addRule(RelativeLayout.RIGHT_OF, 1);
 		} else {
 			p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 			p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			
 			pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-			pv.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+			pv.addRule(RelativeLayout.BELOW, 5);
 			pv.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 			pv.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			pv.addRule(RelativeLayout.ABOVE, 1);
@@ -141,7 +151,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		}
 		if (fxVisualizer != null) {
 			try {
-				fxVisualizer.setCaptureSize(Visualizer.MAX_POINTS);
+				fxVisualizer.setCaptureSize((visualizer == null) ? Visualizer.MAX_POINTS : visualizer.getDesiredPointCount());
 				fxVisualizer.setEnabled(true);
 				return true;
 			} catch (Throwable ex) {
@@ -160,16 +170,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-		if (UI.keepScreenOn)
-			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		else
-			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		if (UI.forcedOrientation == 0)
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-		else if (UI.forcedOrientation < 0)
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-		else
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -180,7 +181,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		final DisplayMetrics metrics = getResources().getDisplayMetrics();
 		landscape = (metrics.widthPixels >= metrics.heightPixels);
-		lowDpi = (metrics.densityDpi < 160);
 		
 		container = new RelativeLayout(getApplication());
 		container.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -188,14 +188,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnBack = new BgButton(getApplication());
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
 			p.leftMargin = UI._8dp;
 			p.topMargin = UI._8dp;
 			p.rightMargin = UI._8dp;
+			p.bottomMargin = UI._8dp;
 		}
 		btnBack.setLayoutParams(p);
-		btnBack.setIcon(UI.ICON_GOBACK);
 		btnBack.setOnClickListener(this);
 		btnBack.setContentDescription(getText(R.string.go_back));
 		btnBack.setId(5);
@@ -206,7 +206,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		UI.setNextFocusForwardId(btnBack, 2);
 		buttonContainer = new RelativeLayout(getApplication());
 		buttonContainer.setId(1);
-		if (lowDpi)
+		if (UI.isLowDpiScreen && !UI.isLargeScreen)
 			buttonContainer.setPadding(0, 0, 0, 0);
 		else
 			buttonContainer.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
@@ -262,15 +262,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		}
 		if (clazz != null) {
 			try {
-				visualizer = (Visualizer)clazz.getConstructor(Context.class, boolean.class, boolean.class).newInstance(getApplication(), landscape, lowDpi);
+				visualizer = (Visualizer)clazz.getConstructor(Context.class, boolean.class).newInstance(getApplication(), landscape);
 			} catch (Throwable ex) {
 				clazz = null;
 			}
 		}
-		if (visualizer == null)
-			visualizer = new SimpleVisualizer(getApplication(), landscape, lowDpi);
 		
-		visualizerView = visualizer.getView();
+		if (visualizer != null)
+			visualizerView = visualizer.getView();
 		
 		buttonContainer.addView(btnPrev);
 		buttonContainer.addView(btnPlay);
@@ -293,7 +292,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		alive = true;
 		reset = true;
-		paused = !Player.isPlaying();
+		paused = false;
 		visualizerReady = false;
 		fxVisualizerFailed = false;
 		fxVisualizerAudioSessionId = -1;
@@ -319,7 +318,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 							return;
 						}
 						if (!visualizerReady && alive && visualizer != null) {
-							visualizer.init(getApplication());
+							visualizer.load(getApplication());
 							visualizerReady = true;
 						}
 					}
@@ -365,37 +364,55 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		final boolean i = landscape;
 		final DisplayMetrics metrics = getResources().getDisplayMetrics();
 		landscape = (metrics.widthPixels >= metrics.heightPixels);
-		lowDpi = (metrics.densityDpi < 160);
 		if (i != landscape) {
 			if (visualizer != null)
-				visualizer.configurationChanged(landscape, lowDpi);
+				visualizer.configurationChanged(landscape);
 			prepareViews();
 			container.requestLayout();
 		}
 	}
 	
+	private void resumeTimer() {
+		//I decided to keep the visualizer paused only when the Activity is paused...
+		//in all other cases, let the visualizer run free! :)
+		//this behavior is specially useful for more complex visualizations
+		paused = false;
+		if (timer != null)
+			timer.resume();
+		//paused = !Player.isPlaying();
+		//if (!paused && timer != null)
+		//	timer.resume();
+	}
+	
 	@Override
 	protected void onPause() {
-		super.onPause();
 		Player.observer = null;
 		paused = true;
+		//return to the default screen settings when paused  
+		if (UI.keepScreenOn)
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		else
+			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		super.onPause();
 	}
 	
 	@Override
 	protected void onResume() {
 		Player.observer = this;
 		reset = true;
-		paused = !Player.isPlaying();
-		if (!paused && timer != null)
-			timer.resume();
+		resumeTimer();
 		onPlayerChanged(Player.getCurrentSong(), true, null);
+		//keep the screen always on while the visualizer is active
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		super.onResume();
 	}
 	
 	private void finalCleanup() {
 		Player.removeDestroyedObserver(this);
+		if (visualizer != null)
+			visualizer.cancelLoading();
 		alive = false;
-		paused = !Player.isPlaying();
+		paused = false;
 		if (timer != null)
 			timer.resume();
 	}
@@ -421,9 +438,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
-		paused = !Player.isPlaying();
-		if (!paused && timer != null)
-			timer.resume();
+		resumeTimer();
 		if (btnPlay != null) {
 			btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
 			btnPlay.setContentDescription(getText(Player.isPlaying() ? R.string.pause : R.string.play));
@@ -463,21 +478,15 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		if (view == btnPrev) {
 			Player.previous();
 			reset = true;
-			paused = !Player.isPlaying();
-			if (!paused && timer != null)
-				timer.resume();
+			resumeTimer();
 		} else if (view == btnPlay) {
 			Player.playPause();
 			reset = true;
-			paused = !Player.isPlaying();
-			if (!paused && timer != null)
-				timer.resume();
+			resumeTimer();
 		} else if (view == btnNext) {
 			Player.next();
 			reset = true;
-			paused = !Player.isPlaying();
-			if (!paused && timer != null)
-				timer.resume();
+			resumeTimer();
 		} else if (view == btnBack) {
 			finish();
 		}

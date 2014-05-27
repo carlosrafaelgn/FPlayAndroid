@@ -41,11 +41,20 @@ public interface Visualizer {
 	//Runs on the MAIN thread
 	public VisualizerView getView();
 	
+	//Runs on ANY thread
+	public int getDesiredPointCount();
+	
 	//Runs on a SECONDARY thread
-	public void init(Context context);
+	public void load(Context context);
+	
+	//Runs on ANY thread
+	public boolean isLoading();
 	
 	//Runs on the MAIN thread
-	public void configurationChanged(boolean landscape, boolean lowDpi);
+	public void cancelLoading();
+	
+	//Runs on the MAIN thread
+	public void configurationChanged(boolean landscape);
 	
 	//Runs on a SECONDARY thread
 	public void processFrame(android.media.audiofx.Visualizer visualizer, int deltaMillis);

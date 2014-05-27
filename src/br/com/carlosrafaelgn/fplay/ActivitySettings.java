@@ -267,12 +267,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optVolumeControlType.setSecondaryText(getVolumeString());
 		} else if (lastMenuView == optForceOrientation) {
 			UI.forcedOrientation = item.getItemId();
-			if (UI.forcedOrientation == 0)
-				getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-			else if (UI.forcedOrientation < 0)
-				getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-			else
-				getHostActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 			optForceOrientation.setSecondaryText(getOrientationString());
 		} else if (lastMenuView == optFadeInFocus) {
 			Player.fadeInIncrementOnFocus = item.getItemId();
