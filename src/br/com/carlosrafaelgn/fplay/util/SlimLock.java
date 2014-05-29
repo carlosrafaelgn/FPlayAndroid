@@ -30,53 +30,35 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.visualizer;
+package br.com.carlosrafaelgn.fplay.util;
 
-import android.annotation.TargetApi;
-import android.content.Context;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
-import android.view.SurfaceView;
-import android.view.ViewDebug.ExportedProperty;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class VisualizerView extends SurfaceView {
-	public VisualizerView(Context context) {
-		super(context);
+//I know... I know... SlimLock *SHOULD* contain an AtomicInteger and not extend it...
+//Such is life.... I don't want to instantiate a new object within SlimLock :)
+public final class SlimLock extends AtomicInteger {
+	private static final long serialVersionUID = 4827458715458080067L;
+	
+	public SlimLock() {
+		super(0);
 	}
 	
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	@Override
-	public final void setBackground(Drawable background) {
-		super.setBackground(null);
+	public void lockHighPriority() {
+		addAndGet(2);
+		while ((get() & 1) != 0) {
+			Thread.yield();
+		}
 	}
 	
-	@Override
-	@Deprecated
-	public final void setBackgroundDrawable(Drawable background) {
-		super.setBackgroundDrawable(null);
+	public void releaseHighPriority() {
+		set(0);
 	}
 	
-	@Override
-	public final void setBackgroundResource(int resid) {
-		super.setBackgroundResource(0);
+	public boolean lockLowPriority() {
+		return compareAndSet(0, 1);
 	}
 	
-	@Override
-	public final void setBackgroundColor(int color) {
-		super.setBackgroundResource(0);
+	public void releaseLowPriority() {
+		decrementAndGet();
 	}
-	
-	@Override
-	public final Drawable getBackground() {
-		return null;
-	}
-	
-	@Override
-	@ExportedProperty(category = "drawing")
-	public final boolean isOpaque() {
-		return true;
-	}
-	
-	//Runs on the MAIN thread (AFTER Visualizer.release())
-	public abstract void releaseView();
 }

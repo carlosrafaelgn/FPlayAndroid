@@ -327,8 +327,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 						final int deltaMillis = (int)(now - lastTime);
 						lastTime = now;
 						visualizer.processFrame(fxVisualizer, ((deltaMillis >= 32) || (deltaMillis <= 0)) ? 32 : deltaMillis);
-						if (visualizerView != null)
-							MainHandler.postToMainThread(visualizerView);
+						//MainHandler.postToMainThread(visualizerView);
 					}
 				}
 				if (!alive) {
@@ -431,7 +430,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		}
 		//perform the final cleanup
 		if (!alive && visualizerView != null) {
-			visualizerView.release();
+			visualizerView.releaseView();
 			visualizerView = null;
 		}
 	}

@@ -149,7 +149,7 @@ public final class SimpleVisualizer implements Visualizer {
 		}
 		
 		@Override
-		public void release() {
+		public void releaseView() {
 			points[0] = null;
 			points[1] = null;
 			points[2] = null;
@@ -157,10 +157,10 @@ public final class SimpleVisualizer implements Visualizer {
 			paint = null;
 		}
 		
-		@Override
+		/*@Override
 		public void run() {
 			invalidate(rect);
-		}
+		}*/
 	}
 	
 	private SimpleVisualizerView visualizerView;

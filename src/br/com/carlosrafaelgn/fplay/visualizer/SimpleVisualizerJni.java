@@ -33,165 +33,63 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Bitmap.Config;
-import android.graphics.Rect;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public final class SimpleVisualizerJni implements Visualizer {
-	private static final class SimpleVisualizerView extends VisualizerView {
-		//based on my WebAudio visualizer ;)
-		//https://github.com/carlosrafaelgn/GraphicalFilterEditor/blob/master/Analyzer.js
-		
-		private final Rect rect;
-		private int readIdx, writeIdx, readCount, writeCount, barW, barH;
-		private int[][] points;
-		private int currentFilter;
-		private Bitmap bmp;
-		
-		public SimpleVisualizerView(Context context) {
-			super(context);
-			rect = new Rect();
-			points = new int[][] { new int[256], new int[256], new int[256] };
-			writeCount = points.length;
-			currentFilter = 0;
-			setClickable(true);
-			setFocusable(false);
-		}
-		
-		@Override
-		protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-			super.onSizeChanged(w, h, oldw, oldh);
-			
-			int size = ((w > h) ? ((w * 7) >> 3) : w);
-			barH = ((w < h) ? w : h) >> 1;
-			
-			barW = size >> 8;
-			if (barW < 1)
-				barW = 1;
-			size = barW << 8;
-			rect.left = (w >> 1) - (size >> 1);
-			if (rect.left < 0)
-				rect.left = 0;
-			rect.top = (h >> 1) - (barH >> 1);
-			rect.right = rect.left + size;
-			rect.bottom = rect.top + barH;
-			if (bmp != null) {
-				bmp.recycle();
-				bmp = null;
-			}
-			bmp = Bitmap.createBitmap(rect.width(), rect.height(), Config.ARGB_8888);
-		}
-		
-		@Override
-		protected void onDraw(Canvas canvas) {
-			final int[] pts = acquirePoints(true);
-			if (bmp != null) {
-				if (pts != null) {
-					fill(bmp, barW, pts);
-					releasePoints(true);
-				}
-				canvas.drawBitmap(bmp, rect.left, rect.top, null);
-			}
-		}
-		
-		public int[] acquirePoints(boolean read) {
-			int[] p = null;
-			synchronized (points) {
-				if (read) {
-					if (readCount > 0) {
-						p = points[readIdx];
-						readCount--;
-						readIdx++;
-						if (readIdx > 2)
-							readIdx = 0;
-					}
-				} else {
-					if (writeCount > 0) {
-						p = points[writeIdx];
-						writeCount--;
-						writeIdx++;
-						if (writeIdx > 2)
-							writeIdx = 0;
-					}
-				}
-			}
-			return p;
-		}
-		
-		public void releasePoints(boolean read) {
-			synchronized (points) {
-				if (read) {
-					if (writeCount < 3)
-						writeCount++;
-				} else {
-					if (readCount < 3)
-						readCount++;
-				}
-			}
-		}
-		
-		@Override
-		public void release() {
-			points[0] = null;
-			points[1] = null;
-			points[2] = null;
-			points = null;
-			if (bmp != null) {
-				bmp.recycle();
-				bmp = null;
-			}
-		}
-		
-		@Override
-		public void run() {
-			invalidate(rect);
-		}
-		
-		@Override
-		public boolean performClick() {
-			currentFilter++;
-			switch (currentFilter) {
-			case 1:
-				setFilter(1.0f);
-				break;
-			case 2:
-				setFilter(0.25f);
-				break;
-			case 3:
-				setFilter(0.5f);
-				break;
-			default:
-				setFilter(0.75f);
-				currentFilter = 0;
-				break;
-			}
-			return super.performClick();
-		}
-	}
-	
+public final class SimpleVisualizerJni extends VisualizerView implements SurfaceHolder.Callback, Visualizer {
 	static {
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 	
-	private static native void setFilter(float filterNew);
-	private static native void init(float filterNew);
-	private static native void process(byte[] bfft, int[] pts);
-	private static native int fill(Bitmap bmp, int barW, int[] pts);
+	private static native void setFilter(float coefNew);
+	private static native void init(float coefNew);
+	private static native int prepareSurface(Surface surface);
+	private static native void process(byte[] bfft, Surface surface, boolean lerp);
 	
-	private SimpleVisualizerView visualizerView;
 	private byte[] bfft;
+	private final SlimLock lock;
+	private int currentFilter;
+	private SurfaceHolder surfaceHolder;
+	private Surface surface;
 	
 	public SimpleVisualizerJni(Context context, boolean landscape) {
-		visualizerView = new SimpleVisualizerView(context);
+		super(context);
 		bfft = new byte[1024];
-		init(0.75f);
+		init(0.5f);
+		lock = new SlimLock();
+		currentFilter = 0;
+		setClickable(true);
+		setFocusable(false);
+		surfaceHolder = getHolder();
+		surfaceHolder.addCallback(this);
 	}
 	
 	@Override
+	public boolean performClick() {
+		currentFilter++;
+		switch (currentFilter) {
+		case 1:
+			setFilter(1.0f);
+			break;
+		case 2:
+			setFilter(0.25f);
+			break;
+		case 3:
+			setFilter(0.5f);
+			break;
+		default:
+			setFilter(0.75f);
+			currentFilter = 0;
+			break;
+		}
+		return super.performClick();
+	}
+	
 	//Runs on the MAIN thread
+	@Override
 	public VisualizerView getView() {
-		return visualizerView;
+		return this;
 	}
 	
 	//Runs on ANY thread
@@ -200,8 +98,8 @@ public final class SimpleVisualizerJni implements Visualizer {
 		return 1024;
 	}
 	
-	@Override
 	//Runs on a SECONDARY thread
+	@Override
 	public void load(Context context) {
 		
 	}
@@ -218,32 +116,66 @@ public final class SimpleVisualizerJni implements Visualizer {
 		
 	}
 	
-	@Override
 	//Runs on the MAIN thread
+	@Override
 	public void configurationChanged(boolean landscape) {
 		
 	}
 	
-	@Override
 	//Runs on a SECONDARY thread
+	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, int deltaMillis) {
-		if (visualizerView == null)
+		if (!lock.lockLowPriority())
 			return;
-		final int[] pts = visualizerView.acquirePoints(false);
-		if (pts == null)
-			return;
-		//fft format:
-		//index  0   1    2  3  4  5  ..... n-2        n-1
-		//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-		visualizer.getFft(bfft);
-		process(bfft, pts);
-		visualizerView.releasePoints(false);
+		try {
+			if (surface != null) {
+				visualizer.getFft(bfft);
+				process(bfft, surface, false);
+			}
+		} finally {
+			lock.releaseLowPriority();
+		}
+	}
+	
+	//Runs on a SECONDARY thread
+	@Override
+	public void release() {
+		bfft = null;
+	}
+	
+	//Runs on the MAIN thread (AFTER Visualizer.release())
+	@Override
+	public void releaseView() {
+		if (surfaceHolder != null) {
+			surfaceHolder.removeCallback(this);
+			surfaceHolder = null;
+		}
+		surface = null;
 	}
 	
 	@Override
-	//Runs on a SECONDARY thread
-	public void release() {
-		visualizerView = null;
-		bfft = null;
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		lock.lockHighPriority();
+		surface = null;
+		if (surfaceHolder != null) {
+			surface = surfaceHolder.getSurface();
+			if (surface != null) {
+				if (prepareSurface(surface) < 0)
+					surface = null;
+			}
+		}
+		lock.releaseHighPriority();
+	}
+	
+	@Override
+	public void surfaceCreated(SurfaceHolder holder) {
+		
+	}
+	
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		lock.lockHighPriority();
+		surface = null;
+		lock.releaseHighPriority();
 	}
 }
