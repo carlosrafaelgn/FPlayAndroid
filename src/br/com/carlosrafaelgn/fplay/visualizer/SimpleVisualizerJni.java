@@ -33,8 +33,10 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.content.Context;
+import android.graphics.Point;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
 public final class SimpleVisualizerJni extends VisualizerView implements SurfaceHolder.Callback, Visualizer {
@@ -43,12 +45,13 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	}
 	
 	private static native void setFilter(float coefNew);
-	private static native void init(float coefNew);
+	private static native void init(float coefNew, int bgColor);
 	private static native int prepareSurface(Surface surface);
 	private static native void process(byte[] bfft, Surface surface, boolean lerp);
 	
 	private byte[] bfft;
 	private final SlimLock lock;
+	private Point point;
 	private int currentFilter;
 	private SurfaceHolder surfaceHolder;
 	private Surface surface;
@@ -56,8 +59,9 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	public SimpleVisualizerJni(Context context, boolean landscape) {
 		super(context);
 		bfft = new byte[1024];
-		init(0.5f);
+		init(0.5f, UI.color_visualizer565);
 		lock = new SlimLock();
+		point = new Point();
 		currentFilter = 0;
 		setClickable(true);
 		setFocusable(false);
@@ -143,6 +147,25 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		bfft = null;
 	}
 	
+	//Runs on the MAIN thread (return value MUST always be the same)
+	@Override
+	public boolean isFullscreen() {
+		return false;
+	}
+	
+	//Runs on the MAIN thread (called only if isFullscreen() returns false)
+	public Point getDesiredSize(int availableWidth, int availableHeight) {
+		point.x = ((availableWidth > availableHeight) ? ((availableWidth * 7) >> 3) : availableWidth) >> 8;
+		point.y = ((availableWidth < availableHeight) ? availableWidth : availableHeight) >> 1;
+		if (point.x < 1)
+			point.x = 1;
+		point.x <<= 8;
+		if (point.x > availableWidth)
+			point.x = availableWidth;
+		point.y &= (~1); //make y always an even number
+		return point;
+	}
+	
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	@Override
 	public void releaseView() {
@@ -151,6 +174,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 			surfaceHolder = null;
 		}
 		surface = null;
+		point = null;
 	}
 	
 	@Override

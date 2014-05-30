@@ -39,6 +39,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.Point;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -65,7 +66,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	private BgButton btnPrev, btnPlay, btnNext, btnBack;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean landscape, fxVisualizerFailed;
+	private boolean landscape, fxVisualizerFailed, visualizerViewFullscreen;
 	private int fxVisualizerAudioSessionId;
 	private Timer timer;
 	
@@ -79,7 +80,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	private void prepareViews() {
-		RelativeLayout.LayoutParams p, pv;
+		RelativeLayout.LayoutParams p, pv = null;
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
@@ -100,23 +101,42 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 			
-			pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-			pv.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-			pv.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-			pv.addRule(RelativeLayout.LEFT_OF, 5);
-			pv.addRule(RelativeLayout.RIGHT_OF, 1);
+			if (visualizerViewFullscreen) {
+				pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+				pv.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+				pv.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+				pv.addRule(RelativeLayout.LEFT_OF, 5);
+				pv.addRule(RelativeLayout.RIGHT_OF, 1);
+			}
 		} else {
 			p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 			p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			
-			pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-			pv.addRule(RelativeLayout.BELOW, 5);
-			pv.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-			pv.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-			pv.addRule(RelativeLayout.ABOVE, 1);
+			if (visualizerViewFullscreen) {
+				pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+				pv.addRule(RelativeLayout.BELOW, 5);
+				pv.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+				pv.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+				pv.addRule(RelativeLayout.ABOVE, 1);
+			}
 		}
-		if (visualizerView != null)
+		if (visualizerView != null) {
+			if (!visualizerViewFullscreen) {
+				final int margin = (UI.defaultControlSize << 1) + ((!UI.isLowDpiScreen || UI.isLargeScreen) ? (UI._8dp << 1) : 0);
+				int w, h;
+				if (landscape) {
+					w = UI.screenWidth - margin;
+					h = UI.screenHeight;
+				} else {
+					w = UI.screenWidth;
+					h = UI.screenHeight - margin;
+				}
+				final Point pt = visualizerView.getDesiredSize(w, h);
+				pv = new RelativeLayout.LayoutParams(pt.x, pt.y);
+				pv.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+			}
 			visualizerView.setLayoutParams(pv);
+		}
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 		buttonContainer.setLayoutParams(p);
@@ -168,7 +188,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer));
+		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 		//whenever the activity is being displayed, the volume keys must control
@@ -268,8 +288,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			}
 		}
 		
-		if (visualizer != null)
+		if (visualizer != null) {
 			visualizerView = visualizer.getView();
+			visualizerViewFullscreen = visualizerView.isFullscreen();
+		}
 		
 		buttonContainer.addView(btnPrev);
 		buttonContainer.addView(btnPlay);

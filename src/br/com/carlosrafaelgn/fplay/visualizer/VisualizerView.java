@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.SurfaceView;
@@ -79,4 +80,10 @@ public abstract class VisualizerView extends SurfaceView {
 	
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	public abstract void releaseView();
+	
+	//Runs on the MAIN thread (return value MUST always be the same)
+	public abstract boolean isFullscreen();
+	
+	//Runs on the MAIN thread (called only if isFullscreen() returns false)
+	public abstract Point getDesiredSize(int availableWidth, int availableHeight);
 }

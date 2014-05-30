@@ -195,7 +195,7 @@ public final class UI {
 	public static final int color_transparent = 0x00000000;
 	public static int color_window;
 	public static int color_control_mode;
-	public static int color_visualizer;
+	public static int color_visualizer, color_visualizer565;
 	public static int color_list;
 	public static int color_menu;
 	public static int color_menu_icon;
@@ -823,6 +823,18 @@ public final class UI {
 	}
 	
 	private static void finishLoadingTheme(boolean custom) {
+		//create a "safe 565" version for the visualizer background
+		//http://stackoverflow.com/questions/2442576/how-does-one-convert-16-bit-rgb565-to-24-bit-rgb888
+		//first convert to 565
+		int r = ((color_visualizer >> 16) & 0xff) >> 3;
+		int g = ((color_visualizer >> 8) & 0xff) >> 2;
+		int b = (color_visualizer & 0xff) >> 3;
+		//now upscale back to 888
+		r = (r << 3) | (r >> 2);
+		g = (g << 2) | (g >> 3);
+		b = (b << 3) | (b >> 2);
+		color_visualizer565 = 0xff000000 | (r << 16) | (g << 8) | b;
+		
 		color_selected = ColorUtils.blend(color_selected_grad_lt, color_selected_grad_dk, 0.5f);
 		color_focused = ColorUtils.blend(color_focused_grad_lt, color_focused_grad_dk, 0.5f);
 		color_selected_multi = ColorUtils.blend(color_selected, color_list, 0.7f);
