@@ -44,7 +44,6 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -66,7 +65,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	private BgButton btnPrev, btnPlay, btnNext, btnBack;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean landscape, fxVisualizerFailed, visualizerViewFullscreen;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen;
 	private int fxVisualizerAudioSessionId;
 	private Timer timer;
 	
@@ -83,7 +82,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		RelativeLayout.LayoutParams p, pv = null;
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
 			p.leftMargin = UI._8dp;
 			p.topMargin = UI._8dp;
@@ -93,11 +92,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnBack.setLayoutParams(p);
 		btnBack.setIcon(UI.ICON_GOBACK);
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_BOTTOM : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_BOTTOM : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 		btnNext.setLayoutParams(p);
 		btnNext.setIcon(UI.ICON_NEXT);
-		if (landscape) {
+		if (UI.isLandscape) {
 			p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 			
@@ -124,12 +123,12 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			if (!visualizerViewFullscreen) {
 				final int margin = (UI.defaultControlSize << 1) + ((!UI.isLowDpiScreen || UI.isLargeScreen) ? (UI._8dp << 1) : 0);
 				int w, h;
-				if (landscape) {
-					w = UI.screenWidth - margin;
-					h = UI.screenHeight;
+				if (UI.isLandscape) {
+					w = UI.usableScreenWidth - margin;
+					h = UI.usableScreenHeight;
 				} else {
-					w = UI.screenWidth;
-					h = UI.screenHeight - margin;
+					w = UI.usableScreenWidth;
+					h = UI.usableScreenHeight - margin;
 				}
 				final Point pt = visualizerView.getDesiredSize(w, h);
 				pv = new RelativeLayout.LayoutParams(pt.x, pt.y);
@@ -199,16 +198,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		setupActionBar();
 		
-		final DisplayMetrics metrics = getResources().getDisplayMetrics();
-		landscape = (metrics.widthPixels >= metrics.heightPixels);
-		
 		container = new RelativeLayout(getApplication());
 		container.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 		
 		btnBack = new BgButton(getApplication());
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(landscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
 			p.leftMargin = UI._8dp;
 			p.topMargin = UI._8dp;
@@ -282,7 +278,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		}
 		if (clazz != null) {
 			try {
-				visualizer = (Visualizer)clazz.getConstructor(Context.class, boolean.class).newInstance(getApplication(), landscape);
+				visualizer = (Visualizer)clazz.getConstructor(Context.class, boolean.class).newInstance(getApplication(), UI.isLandscape);
 			} catch (Throwable ex) {
 				clazz = null;
 			}
@@ -382,12 +378,12 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
-		final boolean i = landscape;
-		final DisplayMetrics metrics = getResources().getDisplayMetrics();
-		landscape = (metrics.widthPixels >= metrics.heightPixels);
-		if (i != landscape) {
+		final boolean i = UI.isLandscape;
+		final int w = UI.usableScreenWidth, h = UI.usableScreenHeight;
+		UI.initialize(this);
+		if (i != UI.isLandscape || w != UI.usableScreenWidth || h != UI.usableScreenHeight) {
 			if (visualizer != null)
-				visualizer.configurationChanged(landscape);
+				visualizer.configurationChanged(UI.isLandscape);
 			prepareViews();
 			container.requestLayout();
 		}

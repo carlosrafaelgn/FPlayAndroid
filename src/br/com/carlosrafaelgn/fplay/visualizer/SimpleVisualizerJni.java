@@ -44,25 +44,26 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 	
-	private static native void setFilter(float coefNew);
-	private static native void init(float coefNew, int bgColor);
+	private static native void init(int bgColor);
+	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
 	private static native void process(byte[] bfft, Surface surface, boolean lerp);
+	private static native void processVoice(byte[] bfft, Surface surface);
 	
 	private byte[] bfft;
 	private final SlimLock lock;
 	private Point point;
-	private int currentFilter;
 	private SurfaceHolder surfaceHolder;
+	private int state;
+	private boolean voice, lerp;
 	private Surface surface;
 	
 	public SimpleVisualizerJni(Context context, boolean landscape) {
 		super(context);
-		bfft = new byte[1024];
-		init(0.5f, UI.color_visualizer565);
+		bfft = new byte[2048];
+		init(UI.color_visualizer565);
 		lock = new SlimLock();
 		point = new Point();
-		currentFilter = 0;
 		setClickable(true);
 		setFocusable(false);
 		surfaceHolder = getHolder();
@@ -71,20 +72,21 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	
 	@Override
 	public boolean performClick() {
-		currentFilter++;
-		switch (currentFilter) {
+		switch (state) {
+		case 0:
+			voice = false;
+			lerp = true;
+			state = 1;
+			break;
 		case 1:
-			setFilter(1.0f);
-			break;
-		case 2:
-			setFilter(0.25f);
-			break;
-		case 3:
-			setFilter(0.5f);
+			voice = true;
+			lerp = false;
+			state = 2;
 			break;
 		default:
-			setFilter(0.75f);
-			currentFilter = 0;
+			voice = false;
+			lerp = false;
+			state = 0;
 			break;
 		}
 		return super.performClick();
@@ -134,7 +136,10 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		try {
 			if (surface != null) {
 				visualizer.getFft(bfft);
-				process(bfft, surface, false);
+				if (!voice)
+					process(bfft, surface, lerp);
+				else
+					processVoice(bfft, surface);
 			}
 		} finally {
 			lock.releaseLowPriority();
@@ -145,6 +150,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	@Override
 	public void release() {
 		bfft = null;
+		terminate();
 	}
 	
 	//Runs on the MAIN thread (return value MUST always be the same)
@@ -175,6 +181,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		}
 		surface = null;
 		point = null;
+		terminate();
 	}
 	
 	@Override

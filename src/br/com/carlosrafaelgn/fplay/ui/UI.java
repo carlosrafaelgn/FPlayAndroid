@@ -563,6 +563,8 @@ public final class UI {
 		final float sd = context.getResources().getDisplayMetrics().scaledDensity;
 		if (sd > 0)
 			scaledDensity = sd;
+		else if (scaledDensity <= 0)
+			scaledDensity = 1.0f;
 		//improved detection for tablets, based on:
 		//http://developer.android.com/guide/practices/screens_support.html#DeclaringTabletLayouts
 		//(There is also the solution at http://stackoverflow.com/questions/11330363/how-to-detect-device-is-android-phone-or-android-tablet
