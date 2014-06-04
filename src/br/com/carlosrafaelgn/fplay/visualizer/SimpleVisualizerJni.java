@@ -44,7 +44,9 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 	
+	private static native void refreshMultiplier(boolean isVoice);
 	private static native void init(int bgColor);
+	private static native int checkNeonMode();
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
 	private static native void process(byte[] bfft, Surface surface, boolean lerp);
@@ -89,6 +91,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 			state = 0;
 			break;
 		}
+		refreshMultiplier(voice);
 		return super.performClick();
 	}
 	
@@ -107,7 +110,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {
-		
+		checkNeonMode();
 	}
 	
 	//Runs on ANY thread
