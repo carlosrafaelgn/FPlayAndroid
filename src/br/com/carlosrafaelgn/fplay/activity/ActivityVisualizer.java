@@ -382,10 +382,12 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		final int w = UI.usableScreenWidth, h = UI.usableScreenHeight;
 		UI.initialize(this);
 		if (i != UI.isLandscape || w != UI.usableScreenWidth || h != UI.usableScreenHeight) {
+			UI.pendingConfigurationChanges = true;
 			if (visualizer != null)
 				visualizer.configurationChanged(UI.isLandscape);
 			prepareViews();
 			container.requestLayout();
+			System.gc();
 		}
 	}
 	
@@ -455,6 +457,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+		if (!songHasChanged)
+			reset = true;
 		resumeTimer();
 		if (btnPlay != null) {
 			btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
@@ -472,16 +476,16 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	
 	@Override
 	public void onPlayerAudioSinkChanged(int audioSink) {
+		reset = true;
+		resumeTimer();
 	}
 	
 	@Override
 	public void onPlayerMediaButtonPrevious() {
-		
 	}
 	
 	@Override
 	public void onPlayerMediaButtonNext() {
-		
 	}
 	
 	@Override
@@ -498,8 +502,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			resumeTimer();
 		} else if (view == btnPlay) {
 			Player.playPause();
-			reset = true;
-			resumeTimer();
 		} else if (view == btnNext) {
 			Player.next();
 			reset = true;

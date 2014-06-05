@@ -1,3 +1,35 @@
+//
+// FPlayAndroid is distributed under the FreeBSD License
+//
+// Copyright (c) 2013-2014, Carlos Rafael Gimenes das Neves
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// The views and conclusions contained in the software and documentation are those
+// of the authors and should not be interpreted as representing official policies,
+// either expressed or implied, of the FreeBSD Project.
+//
+// https://github.com/carlosrafaelgn/FPlayAndroid
+//
 #include <jni.h>
 #ifdef __ARM_NEON__
 #include <stdio.h>
@@ -29,8 +61,6 @@ static unsigned short bgColor;
 static unsigned short* voice, *alignedVoice;
 #ifdef __ARM_NEON__
 static unsigned int neonMode;
-static int* computedBars, *alignedComputedBars;
-static int computedBarsWidth;
 #endif
 
 JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_refreshMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
@@ -55,8 +85,6 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	recreateVoice = 0;
 #ifdef __ARM_NEON__
 	neonMode = 0;
-	computedBars = 0;
-	computedBarsWidth = -1;
 #endif
 	const unsigned int r = ((jbgColor >> 16) & 0xff) >> 3;
 	const unsigned int g = ((jbgColor >> 8) & 0xff) >> 2;
@@ -116,11 +144,6 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	}
 #ifdef __ARM_NEON__
 	neonMode = 0;
-	if (computedBars) {
-		free(computedBars);
-		computedBars = 0;
-	}
-	computedBarsWidth = -1;
 #endif
 }
 
@@ -394,8 +417,8 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 		fft[i] = m;
 	}
 	
+	int32x4_t _0 = vld1q_s32(__0), _32768 = vld1q_s32(__32768), _barH = { barH, barH, barH, barH }, _barH2 = vshrq_n_s32(_barH, 1);
 	if (barW == 1 || !lerp) {
-		int32x4_t _0 = vld1q_s32(__0), _32768 = vld1q_s32(__32768), _barH = { barH, barH, barH, barH }, _barH2 = vshrq_n_s32(_barH, 1);
 		for (int i = 0; i < barBins; i += 4) {
 			//_v goes from 0 to 32768 (inclusive)
 			int32x4_t _v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(vld1q_f32(fft + i))));
@@ -411,7 +434,6 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 				const int v2 = __v2[j];
 				unsigned short* currentBar = (unsigned short*)inf.bits;
 				inf.bits = (void*)((unsigned short*)inf.bits + barW);
-				
 				int y = 0;
 				switch (barW) {
 				case 1:
@@ -509,73 +531,80 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 			}
 		}
 	} else {
-		if (!computedBars || computedBarsWidth < barWidthInPixels) {
-			computedBarsWidth = barWidthInPixels;
-			if (computedBars)
-				free(computedBars);
-			computedBars = (int*)malloc((barWidthInPixels << 2) + 16);
-			unsigned char* al = (unsigned char*)computedBars;
-			while (((unsigned int)al) & 15)
-				al++;
-			alignedComputedBars = (int*)al;
-		}
 		float32x4_t _invBarW = { invBarW, invBarW, invBarW, invBarW }, _prev = { 0.0f, fft[0], fft[1], fft[2] };
-		int32x4_t _0 = vld1q_s32(__0), _32768 = vld1q_s32(__32768);
-		const int barW2 = barW << 1, barW3 = barW2 + barW;
-		int c;
+		int originalBarIndex = 0;
 		for (int i = 0; i < barBins; i += 4) {
-			if (i) {
-				//alignment issues.... :( (must be tested...)
-				((float*)__tmp)[0] = fft[i - 1];
-				((float*)__tmp)[1] = fft[i];
-				((float*)__tmp)[2] = fft[i + 1];
-				((float*)__tmp)[3] = fft[i + 2];
-				_prev = vld1q_f32((float*)__tmp);
+			//process the four actual bars
+			int barIndex = originalBarIndex;
+			//_v goes from 0 to 32768 (inclusive)
+			int32x4_t _v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev)));
+			vst1q_s32(__tmp, vshrq_n_s32(_v, 7));
+			_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
+			int32x4_t _v2 = _v;
+			_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
+			vst1q_s32(__v, _v);
+			vst1q_s32(__v2, vaddq_s32(_v2, _v));
+			for (int j = 0; j < 4; j++) {
+				//v goes from 0 to 32768 (inclusive)
+				const unsigned short color = COLORS_GREEN[__tmp[j]];
+				const int v = __v[j];
+				const int v2 = __v2[j];
+				unsigned short* currentBar = (unsigned short*)inf.bits + barIndex;
+				int y = 0;
+				for (; y < v; y++) {
+					*currentBar = bgColor;
+					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
+				}
+				for (; y < v2; y++) {
+					*currentBar = color;
+					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
+				}
+				for (; y < barH; y++) {
+					*currentBar = bgColor;
+					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
+				}
+				barIndex += barW;
 			}
-			c = barW * i;
-			vst1q_s32(__tmp, vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev))));
-			alignedComputedBars[c] = __tmp[0];
-			alignedComputedBars[c + barW] = __tmp[1];
-			alignedComputedBars[c + barW2] = __tmp[2];
-			alignedComputedBars[c + barW3] = __tmp[3];
-			c++;
 			
-			float32x4_t _next = vld1q_f32(fft + i);
-			_next = vmulq_f32(vsubq_f32(_next, _prev), _invBarW); //_next is now delta
+			//now, process all the interpolated bars (the ones between the actual bars)
+			float32x4_t _delta = vmulq_f32(vsubq_f32(vld1q_f32(fft + i), _prev), _invBarW);
 			for (int b = 1; b < barW; b++) {
-				_prev = vaddq_f32(_prev, _next);
-				vst1q_s32(__tmp, vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev))));
-				alignedComputedBars[c] = __tmp[0];
-				alignedComputedBars[c + barW] = __tmp[1];
-				alignedComputedBars[c + barW2] = __tmp[2];
-				alignedComputedBars[c + barW3] = __tmp[3];
-				c++;
+				//move to the next bar
+				barIndex = originalBarIndex + b;
+				_prev = vaddq_f32(_prev, _delta);
+				//_v goes from 0 to 32768 (inclusive)
+				_v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev)));
+				vst1q_s32(__tmp, vshrq_n_s32(_v, 7));
+				_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
+				int32x4_t _v2 = _v;
+				_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
+				vst1q_s32(__v, _v);
+				vst1q_s32(__v2, vaddq_s32(_v2, _v));
+				for (int j = 0; j < 4; j++) {
+					const unsigned short color = COLORS_GREEN[__tmp[j]];
+					const int v = __v[j];
+					const int v2 = __v2[j];
+					unsigned short* currentBar = (unsigned short*)inf.bits + barIndex;
+					int y = 0;
+					for (; y < v; y++) {
+						*currentBar = bgColor;
+						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
+					}
+					for (; y < v2; y++) {
+						*currentBar = color;
+						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
+					}
+					for (; y < barH; y++) {
+						*currentBar = bgColor;
+						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
+					}
+					barIndex += barW;
+				}
 			}
-		}
-		for (int i = 0; i < barWidthInPixels; i++) {
-			//v goes from 0 to 32768 (inclusive)
-			int v = alignedComputedBars[i];
-			const unsigned short color = COLORS_GREEN[v >> 7];
-			v = ((v * barH) >> 15);
-			int v2 = v;
-			v = (barH >> 1) - (v >> 1);
-			v2 += v;
-			unsigned short* currentBar = (unsigned short*)inf.bits;
-			inf.bits = (void*)((unsigned short*)inf.bits + 1);
-			
-			int y = 0;
-			for (; y < v; y++) {
-				*currentBar = bgColor;
-				currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-			}
-			for (; y < v2; y++) {
-				*currentBar = color;
-				currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-			}
-			for (; y < barH; y++) {
-				*currentBar = bgColor;
-				currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-			}
+			originalBarIndex += (barW << 2);
+			//it is ok to load data beyond index 255, as after the first fft's 256
+			//elements there are the 256 multipliers ;)
+			_prev = vld1q_f32(fft + (i + 3));
 		}
 	}
 	ANativeWindow_unlockAndPost(wnd);

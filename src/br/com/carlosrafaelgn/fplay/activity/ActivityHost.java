@@ -204,7 +204,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		super.onConfigurationChanged(newConfig);
 		final boolean i = UI.isLandscape;
 		UI.initialize(this);
-		if (i != UI.isLandscape) {
+		if (i != UI.isLandscape || UI.pendingConfigurationChanges) {
+			UI.pendingConfigurationChanges = false;
 			if (top != null) {
 				top.onOrientationChanged();
 				System.gc();
