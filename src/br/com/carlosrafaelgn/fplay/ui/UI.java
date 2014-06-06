@@ -238,6 +238,63 @@ public final class UI {
 	
 	public static Typeface iconsTypeface, defaultTypeface;
 	
+	public static final class DisplayInfo {
+		public int usableScreenWidth, usableScreenHeight, screenWidth, screenHeight;
+		public boolean isLargeScreen, isLandscape, isLowDpiScreen;
+		public DisplayMetrics displayMetrics;
+		
+		private void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
+			display.getMetrics(outDisplayMetrics);
+			screenWidth = outDisplayMetrics.widthPixels;
+			screenHeight = outDisplayMetrics.heightPixels;
+			usableScreenWidth = screenWidth;
+			usableScreenHeight = screenHeight;
+		}
+		
+		@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+		private void initializeScreenDimensions14(Display display, DisplayMetrics outDisplayMetrics) {
+			try {
+				screenWidth = (Integer)Display.class.getMethod("getRawWidth").invoke(display);
+				screenHeight = (Integer)Display.class.getMethod("getRawHeight").invoke(display);
+			} catch (Throwable ex) {
+				initializeScreenDimensions(display, outDisplayMetrics);
+				return;
+			}
+			display.getMetrics(outDisplayMetrics);
+			usableScreenWidth = outDisplayMetrics.widthPixels;
+			usableScreenHeight = outDisplayMetrics.heightPixels;
+		}
+		
+		@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+		private void initializeScreenDimensions17(Display display, DisplayMetrics outDisplayMetrics) {
+			display.getMetrics(outDisplayMetrics);
+			usableScreenWidth = outDisplayMetrics.widthPixels;
+			usableScreenHeight = outDisplayMetrics.heightPixels;
+			display.getRealMetrics(outDisplayMetrics);
+			screenWidth = outDisplayMetrics.widthPixels;
+			screenHeight = outDisplayMetrics.heightPixels;
+		}
+		
+		public void getInfo(Context context) {
+			final Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+			displayMetrics = new DisplayMetrics();
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
+				initializeScreenDimensions17(display, displayMetrics);
+			else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				initializeScreenDimensions14(display, displayMetrics);
+			else
+				initializeScreenDimensions(display, displayMetrics);
+			//improved detection for tablets, based on:
+			//http://developer.android.com/guide/practices/screens_support.html#DeclaringTabletLayouts
+			//(There is also the solution at http://stackoverflow.com/questions/11330363/how-to-detect-device-is-android-phone-or-android-tablet
+			//but the former link says it is deprecated...)
+			final int _600dp = (int)((600.0f * displayMetrics.density) + 0.5f);
+			isLargeScreen = ((screenWidth >= _600dp) && (screenHeight >= _600dp));
+			isLandscape = (screenWidth >= screenHeight);
+			isLowDpiScreen = (displayMetrics.densityDpi < 160);
+		}
+	}
+	
 	private static final class Gradient {
 		private static final Gradient[] gradients = new Gradient[16];
 		private static int pos, count;
@@ -281,9 +338,9 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, pendingConfigurationChanges;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
 	
@@ -499,38 +556,6 @@ public final class UI {
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
 	
-	private static void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
-		display.getMetrics(outDisplayMetrics);
-		screenWidth = outDisplayMetrics.widthPixels;
-		screenHeight = outDisplayMetrics.heightPixels;
-		usableScreenWidth = screenWidth;
-		usableScreenHeight = screenHeight;
-	}
-	
-	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	private static void initializeScreenDimensions14(Display display, DisplayMetrics outDisplayMetrics) {
-		try {
-			screenWidth = (Integer)Display.class.getMethod("getRawWidth").invoke(display);
-			screenHeight = (Integer)Display.class.getMethod("getRawHeight").invoke(display);
-		} catch (Throwable ex) {
-			initializeScreenDimensions(display, outDisplayMetrics);
-			return;
-		}
-		display.getMetrics(outDisplayMetrics);
-		usableScreenWidth = outDisplayMetrics.widthPixels;
-		usableScreenHeight = outDisplayMetrics.heightPixels;
-	}
-	
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-	private static void initializeScreenDimensions17(Display display, DisplayMetrics outDisplayMetrics) {
-		display.getMetrics(outDisplayMetrics);
-		usableScreenWidth = outDisplayMetrics.widthPixels;
-		usableScreenHeight = outDisplayMetrics.heightPixels;
-		display.getRealMetrics(outDisplayMetrics);
-		screenWidth = outDisplayMetrics.widthPixels;
-		screenHeight = outDisplayMetrics.heightPixels;
-	}
-	
 	public static void loadWidgetRelatedSettings(Context context) {
 		if (fullyInitialized)
 			return;
@@ -546,18 +571,15 @@ public final class UI {
 		fullyInitialized = true;
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
-		final Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-		final DisplayMetrics displayMetrics = new DisplayMetrics();
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
-			initializeScreenDimensions17(display, displayMetrics);
-		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-			initializeScreenDimensions14(display, displayMetrics);
-		else
-			initializeScreenDimensions(display, displayMetrics);
-		density = displayMetrics.density;
-		densityDpi = displayMetrics.densityDpi;
-		scaledDensity = displayMetrics.scaledDensity;
-		xdpi_1_72 = displayMetrics.xdpi * (1.0f / 72.0f);
+		final DisplayInfo info = new DisplayInfo();
+		info.getInfo(context);
+		density = info.displayMetrics.density;
+		densityDpi = info.displayMetrics.densityDpi;
+		scaledDensity = info.displayMetrics.scaledDensity;
+		xdpi_1_72 = info.displayMetrics.xdpi * (1.0f / 72.0f);
+		isLargeScreen = info.isLargeScreen;
+		isLandscape = info.isLandscape;
+		isLowDpiScreen = info.isLowDpiScreen;
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()
 		final float sd = context.getResources().getDisplayMetrics().scaledDensity;
@@ -565,13 +587,7 @@ public final class UI {
 			scaledDensity = sd;
 		else if (scaledDensity <= 0)
 			scaledDensity = 1.0f;
-		//improved detection for tablets, based on:
-		//http://developer.android.com/guide/practices/screens_support.html#DeclaringTabletLayouts
-		//(There is also the solution at http://stackoverflow.com/questions/11330363/how-to-detect-device-is-android-phone-or-android-tablet
-		//but the former link says it is deprecated...)
-		isLargeScreen = ((screenWidth >= dpToPxI(600)) && (screenHeight >= dpToPxI(600)));
-		isLandscape = (screenWidth >= screenHeight);
-		isLowDpiScreen = (displayMetrics.densityDpi < 160);
+
 		_1dp = dpToPxI(1);
 		strokeSize = (_1dp + 1) >> 1;
 		thickDividerSize = ((_1dp >= 2) ? _1dp : 2);

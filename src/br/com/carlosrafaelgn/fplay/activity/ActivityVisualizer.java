@@ -44,30 +44,47 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnCreateContextMenuListener;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.VisualizerView;
 
-public final class ActivityVisualizer extends Activity implements Runnable, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener {
+public final class ActivityVisualizer extends Activity implements Runnable, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener {
+	private static final int MNU_ORIENTATION = 100;
 	private android.media.audiofx.Visualizer fxVisualizer;
 	private Visualizer visualizer;
-	private RelativeLayout container, buttonContainer;
-	private BgButton btnPrev, btnPlay, btnNext, btnBack;
+	private UI.DisplayInfo info;
+	private RelativeLayout panelControls, panelTop, panelBottom;
+	private LinearLayout panelSecondary;
+	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
 	private boolean fxVisualizerFailed, visualizerViewFullscreen;
 	private int fxVisualizerAudioSessionId;
 	private Timer timer;
+	
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		if (btnMenu != null)
+			CustomContextMenu.openContextMenu(btnMenu, this);
+		return false;
+	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void setupActionBar() {
@@ -79,66 +96,63 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	private void prepareViews() {
-		RelativeLayout.LayoutParams p, pv = null;
-		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
-		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
-			p.leftMargin = UI._8dp;
-			p.topMargin = UI._8dp;
-			p.rightMargin = UI._8dp;
-			p.bottomMargin = UI._8dp;
-		}
-		btnBack.setLayoutParams(p);
-		btnBack.setIcon(UI.ICON_GOBACK);
+		if (info == null)
+			return;
+		
+		RelativeLayout.LayoutParams p = (RelativeLayout.LayoutParams)panelTop.getLayoutParams();
+		p.width = (info.isLandscape ? RelativeLayout.LayoutParams.WRAP_CONTENT : RelativeLayout.LayoutParams.MATCH_PARENT);
+		p.height = (info.isLandscape ? RelativeLayout.LayoutParams.MATCH_PARENT : RelativeLayout.LayoutParams.WRAP_CONTENT);
+		panelTop.setLayoutParams(p);
+		
+		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+		p.addRule(info.isLandscape ? RelativeLayout.RIGHT_OF : RelativeLayout.BELOW, R.id.panelTop);
+		panelBottom.setLayoutParams(p);
+		
+		LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)btnPrev.getLayoutParams();
+		lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
+		lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
+		btnPrev.setLayoutParams(lp);
+		btnPrev.setIcon(UI.ICON_PREV);
+		
+		lp = (LinearLayout.LayoutParams)btnPlay.getLayoutParams();
+		lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
+		lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
+		btnPlay.setLayoutParams(lp);
+		btnPlay.setIcon(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
+		
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_BOTTOM : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		btnNext.setLayoutParams(p);
-		btnNext.setIcon(UI.ICON_NEXT);
-		if (UI.isLandscape) {
-			p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-			p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-			
-			if (visualizerViewFullscreen) {
-				pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-				pv.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-				pv.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-				pv.addRule(RelativeLayout.LEFT_OF, 5);
-				pv.addRule(RelativeLayout.RIGHT_OF, 1);
-			}
-		} else {
-			p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-			p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-			
-			if (visualizerViewFullscreen) {
-				pv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-				pv.addRule(RelativeLayout.BELOW, 5);
-				pv.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-				pv.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-				pv.addRule(RelativeLayout.ABOVE, 1);
-			}
-		}
+		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		p.addRule(info.isLandscape ? RelativeLayout.CENTER_VERTICAL : RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+		panelSecondary.setLayoutParams(p);
+		panelSecondary.setOrientation(info.isLandscape ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+		
+		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_BOTTOM : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		btnMenu.setLayoutParams(p);
+		btnMenu.setIcon(UI.ICON_MENU);
+		
 		if (visualizerView != null) {
-			if (!visualizerViewFullscreen) {
-				final int margin = (UI.defaultControlSize << 1) + ((!UI.isLowDpiScreen || UI.isLargeScreen) ? (UI._8dp << 1) : 0);
+			if (visualizerViewFullscreen) {
+				p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+			} else {
+				final int margin = UI.defaultControlSize + (UI.extraSpacing ? (UI._8dp << 1) : 0);
 				int w, h;
-				if (UI.isLandscape) {
-					w = UI.usableScreenWidth - margin;
-					h = UI.usableScreenHeight;
+				if (info.isLandscape) {
+					w = info.usableScreenWidth - margin;
+					h = info.usableScreenHeight;
 				} else {
-					w = UI.usableScreenWidth;
-					h = UI.usableScreenHeight - margin;
+					w = info.usableScreenWidth;
+					h = info.usableScreenHeight - margin;
 				}
 				final Point pt = visualizerView.getDesiredSize(w, h);
-				pv = new RelativeLayout.LayoutParams(pt.x, pt.y);
-				pv.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+				p = new RelativeLayout.LayoutParams(pt.x, pt.y);
+				p.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
 			}
-			visualizerView.setLayoutParams(pv);
+			visualizerView.setLayoutParams(p);
 		}
-		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-		buttonContainer.setLayoutParams(p);
+		
+		panelControls.requestLayout();
 	}
 	
 	private boolean initFxVisualizer() {
@@ -189,7 +203,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-		setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
+		setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -198,70 +212,30 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		setupActionBar();
 		
-		container = new RelativeLayout(getApplication());
-		container.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+		setContentView(R.layout.activity_visualizer);
 		
-		btnBack = new BgButton(getApplication());
-		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); 
-		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(UI.isLandscape ? RelativeLayout.ALIGN_PARENT_RIGHT : RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		if (!UI.isLowDpiScreen || UI.isLargeScreen) {
-			p.leftMargin = UI._8dp;
-			p.topMargin = UI._8dp;
-			p.rightMargin = UI._8dp;
-			p.bottomMargin = UI._8dp;
-		}
-		btnBack.setLayoutParams(p);
-		btnBack.setOnClickListener(this);
-		btnBack.setContentDescription(getText(R.string.go_back));
-		btnBack.setId(5);
-		btnBack.setNextFocusUpId(2);
-		btnBack.setNextFocusLeftId(4);
-		btnBack.setNextFocusDownId(2);
-		btnBack.setNextFocusRightId(2);
-		UI.setNextFocusForwardId(btnBack, 2);
-		buttonContainer = new RelativeLayout(getApplication());
-		buttonContainer.setId(1);
-		if (UI.isLowDpiScreen && !UI.isLargeScreen)
-			buttonContainer.setPadding(0, 0, 0, 0);
-		else
-			buttonContainer.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-		btnPrev = new BgButton(getApplication());
-		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		btnPrev.setLayoutParams(p);
-		btnPrev.setIcon(UI.ICON_PREV);
+		info = new UI.DisplayInfo();
+		info.getInfo(this);
+		
+		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
+		panelTop = (RelativeLayout)findViewById(R.id.panelTop);
+		panelBottom = (RelativeLayout)findViewById(R.id.panelBottom);
+		panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
+		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack.setOnClickListener(this);
+		btnGoBack.setIcon(UI.ICON_GOBACK);
+		btnPrev = (BgButton)findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);
-		btnPrev.setContentDescription(getText(R.string.previous));
-		btnPrev.setId(2);
-		btnPrev.setNextFocusUpId(5);
-		btnPrev.setNextFocusLeftId(5);
-		btnPrev.setNextFocusDownId(5);
-		btnPrev.setNextFocusRightId(3);
-		UI.setNextFocusForwardId(btnPrev, 3);
-		btnPlay = new BgButton(getApplication());
-		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-		p.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
-		btnPlay.setLayoutParams(p);
-		btnPlay.setIcon(UI.ICON_PLAY);
+		btnPlay = (BgButton)findViewById(R.id.btnPlay);
 		btnPlay.setOnClickListener(this);
-		btnPlay.setContentDescription(getText(R.string.play));
-		btnPlay.setId(3);
-		btnPlay.setNextFocusUpId(5);
-		btnPlay.setNextFocusLeftId(2);
-		btnPlay.setNextFocusDownId(5);
-		btnPlay.setNextFocusRightId(4);
-		UI.setNextFocusForwardId(btnPlay, 4);
-		btnNext = new BgButton(getApplication());
+		btnNext = (BgButton)findViewById(R.id.btnNext);
 		btnNext.setOnClickListener(this);
-		btnNext.setContentDescription(getText(R.string.next));
-		btnNext.setId(4);
-		btnNext.setNextFocusUpId(5);
-		btnNext.setNextFocusLeftId(3);
-		btnNext.setNextFocusDownId(5);
-		btnNext.setNextFocusRightId(5);
-		UI.setNextFocusForwardId(btnNext, 5);
+		btnNext.setIcon(UI.ICON_NEXT);
+		btnMenu = (BgButton)findViewById(R.id.btnMenu);
+		btnMenu.setOnClickListener(this);
+		
+		if (UI.extraSpacing)
+			panelTop.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		
 		String name = null;
 		Class<?> clazz = null;
@@ -278,7 +252,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		}
 		if (clazz != null) {
 			try {
-				visualizer = (Visualizer)clazz.getConstructor(Context.class, boolean.class).newInstance(getApplication(), UI.isLandscape);
+				visualizer = (Visualizer)clazz.getConstructor(Context.class, boolean.class).newInstance(getApplication(), info.isLandscape);
 			} catch (Throwable ex) {
 				clazz = null;
 			}
@@ -287,26 +261,21 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		if (visualizer != null) {
 			visualizerView = visualizer.getView();
 			visualizerViewFullscreen = visualizerView.isFullscreen();
+			if (visualizerView != null)
+				panelBottom.addView(visualizerView);
 		}
 		
-		buttonContainer.addView(btnPrev);
-		buttonContainer.addView(btnPlay);
-		buttonContainer.addView(btnNext);
 		prepareViews();
-		if (visualizerView != null)
-			container.addView(visualizerView);
-		container.addView(btnBack);
-		container.addView(buttonContainer);
-		setContentView(container);
 		
 		if (UI.useVisualizerButtonsInsideList) {
-			btnBack.setTextColor(UI.colorState_text_listitem_reactive);
+			btnGoBack.setTextColor(UI.colorState_text_listitem_reactive);
 			btnPrev.setTextColor(UI.colorState_text_listitem_reactive);
 			btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
 			btnNext.setTextColor(UI.colorState_text_listitem_reactive);
+			btnMenu.setTextColor(UI.colorState_text_listitem_reactive);
 		}
-		if (!btnBack.isInTouchMode())
-			btnBack.requestFocus();
+		if (!btnGoBack.isInTouchMode())
+			btnGoBack.requestFocus();
 		
 		alive = true;
 		reset = true;
@@ -345,7 +314,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 						final int deltaMillis = (int)(now - lastTime);
 						lastTime = now;
 						visualizer.processFrame(fxVisualizer, ((deltaMillis >= 32) || (deltaMillis <= 0)) ? 32 : deltaMillis);
-						//MainHandler.postToMainThread(visualizerView);
 					}
 				}
 				if (!alive) {
@@ -378,15 +346,15 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
-		final boolean i = UI.isLandscape;
-		final int w = UI.usableScreenWidth, h = UI.usableScreenHeight;
-		UI.initialize(this);
-		if (i != UI.isLandscape || w != UI.usableScreenWidth || h != UI.usableScreenHeight) {
-			UI.pendingConfigurationChanges = true;
+		if (info == null)
+			return;
+		final boolean i = info.isLandscape;
+		final int w = info.usableScreenWidth, h = info.usableScreenHeight;
+		info.getInfo(this);
+		if (i != info.isLandscape || w != info.usableScreenWidth || h != info.usableScreenHeight) {
 			if (visualizer != null)
-				visualizer.configurationChanged(UI.isLandscape);
+				visualizer.configurationChanged(info.isLandscape);
 			prepareViews();
-			container.requestLayout();
 			System.gc();
 		}
 	}
@@ -427,13 +395,27 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	private void finalCleanup() {
-		Player.removeDestroyedObserver(this);
-		if (visualizer != null)
-			visualizer.cancelLoading();
 		alive = false;
 		paused = false;
-		if (timer != null)
+		Player.removeDestroyedObserver(this);
+		if (visualizer != null) {
+			visualizer.cancelLoading();
+			visualizer = null;
+		}
+		info = null;
+		panelControls = null;
+		panelTop = null;
+		panelBottom = null;
+		panelSecondary = null;
+		btnGoBack = null;
+		btnPrev = null;
+		btnPlay = null;
+		btnNext = null;
+		btnMenu = null;
+		if (timer != null) {
 			timer.resume();
+			timer = null;
+		}
 	}
 	
 	@Override
@@ -495,8 +477,35 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	@Override
+	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
+		if (info == null)
+			return;
+		UI.prepare(menu);
+		menu.add(0, MNU_ORIENTATION, 0, (UI.visualizerOrientation == 0) ? R.string.landscape : R.string.portrait)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_ORIENTATION));
+		if (visualizer != null)
+			visualizer.onCreateContextMenu(menu);
+	}
+	
+	@Override
+	public boolean onMenuItemClick(MenuItem item) {
+		if (info == null)
+			return true;
+		switch (item.getItemId()) {
+		case MNU_ORIENTATION:
+			UI.visualizerOrientation = ((UI.visualizerOrientation == 0) ? 1 : 0);
+			setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			break;
+		}
+		return true;
+	}
+	
+	@Override
 	public void onClick(View view) {
-		if (view == btnPrev) {
+		if (view == btnGoBack) {
+			finish();
+		} else if (view == btnPrev) {
 			Player.previous();
 			reset = true;
 			resumeTimer();
@@ -506,8 +515,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			Player.next();
 			reset = true;
 			resumeTimer();
-		} else if (view == btnBack) {
-			finish();
+		} else if (view == btnMenu) {
+			onPrepareOptionsMenu(null);
 		}
 	}
 }

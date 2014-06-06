@@ -232,6 +232,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_WRAPAROUNDLIST = 0x0028;
 	private static final int OPT_EXTRASPACING = 0x0029;
 	private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
+	private static final int OPT_VISUALIZERORIENTATION = 0x002B;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -322,6 +323,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST, false);
 		UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 		UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR, false);
+		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -382,6 +384,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_WRAPAROUNDLIST, UI.wrapAroundList);
 		opts.put(OPT_EXTRASPACING, UI.extraSpacing);
 		opts.put(OPT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
+		opts.put(OPT_VISUALIZERORIENTATION, UI.visualizerOrientation);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

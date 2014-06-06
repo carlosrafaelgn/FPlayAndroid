@@ -33,13 +33,18 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.content.Context;
+import android.view.ContextMenu;
 
 public interface Visualizer {
 	public static final String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
 	public static final int MAX_POINTS = 1024;
+	public static final int MNU_VISUALIZER = 200;
 	
 	//Runs on the MAIN thread
 	public VisualizerView getView();
+	
+	//Runs on the MAIN thread
+	public void onCreateContextMenu(ContextMenu menu);
 	
 	//Runs on ANY thread
 	public int getDesiredPointCount();

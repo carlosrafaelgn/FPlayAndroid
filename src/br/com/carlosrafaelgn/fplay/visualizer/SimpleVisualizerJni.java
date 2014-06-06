@@ -34,30 +34,37 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.view.ContextMenu;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public final class SimpleVisualizerJni extends VisualizerView implements SurfaceHolder.Callback, Visualizer {
+public final class SimpleVisualizerJni extends VisualizerView implements SurfaceHolder.Callback, Visualizer, MenuItem.OnMenuItemClickListener {
+	public static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_LORES = MNU_VISUALIZER + 2, MNU_HIRES = MNU_VISUALIZER + 3, MNU_VOICEPRINT = MNU_VISUALIZER + 4;	
+	
 	static {
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 	
+	private static native void setLerpAndColorIndex(boolean lerp, int colorIndex);
 	private static native void refreshMultiplier(boolean isVoice);
 	private static native void init(int bgColor);
 	private static native int checkNeonMode();
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
-	private static native void process(byte[] bfft, Surface surface, boolean lerp);
+	private static native void process(byte[] bfft, Surface surface);
 	private static native void processVoice(byte[] bfft, Surface surface);
 	
 	private byte[] bfft;
 	private final SlimLock lock;
 	private Point point;
 	private SurfaceHolder surfaceHolder;
-	private int state;
-	private boolean voice, lerp;
+	private int state, colorIndex;
+	private boolean lerp, voice;
 	private Surface surface;
 	
 	public SimpleVisualizerJni(Context context, boolean landscape) {
@@ -70,35 +77,88 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		setFocusable(false);
 		surfaceHolder = getHolder();
 		surfaceHolder.addCallback(this);
+		state = 0;
+		colorIndex = 257;
+		lerp = false;
+		voice = false;
+		setLerpAndColorIndex(lerp, colorIndex);
 	}
 	
 	@Override
 	public boolean performClick() {
 		switch (state) {
 		case 0:
-			voice = false;
 			lerp = true;
+			voice = false;
 			state = 1;
 			break;
 		case 1:
-			voice = true;
 			lerp = false;
+			voice = true;
 			state = 2;
 			break;
 		default:
-			voice = false;
 			lerp = false;
+			voice = false;
 			state = 0;
 			break;
 		}
 		refreshMultiplier(voice);
+		setLerpAndColorIndex(lerp, colorIndex);
 		return super.performClick();
+	}
+	
+	@Override
+	public boolean onMenuItemClick(MenuItem item) {
+		switch (item.getItemId()) {
+		case MNU_COLOR:
+			colorIndex = ((colorIndex == 0) ? 257 : 0);
+			break;
+		case MNU_LORES:
+			lerp = false;
+			voice = false;
+			state = 0;
+			break;
+		case MNU_HIRES:
+			lerp = true;
+			voice = false;
+			state = 1;
+			break;
+		case MNU_VOICEPRINT:
+			lerp = false;
+			voice = true;
+			state = 2;
+			break;
+		}
+		if (item.getItemId() != MNU_COLOR)
+			refreshMultiplier(voice);
+		setLerpAndColorIndex(lerp, colorIndex);
+		return true;
 	}
 	
 	//Runs on the MAIN thread
 	@Override
 	public VisualizerView getView() {
 		return this;
+	}
+	
+	//Runs on the MAIN thread
+	@Override
+	public void onCreateContextMenu(ContextMenu menu) {
+		UI.separator(menu, 1, 0);
+		menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.blue : R.string.green)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_THEME));
+		UI.separator(menu, 1, 2);
+		menu.add(2, MNU_LORES, 0, "LoRes")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable((!voice && !lerp) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		menu.add(2, MNU_HIRES, 1, "HiRes")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(lerp ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		menu.add(2, MNU_VOICEPRINT, 2, "VoicePrint")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(voice ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 	}
 	
 	//Runs on ANY thread
@@ -140,7 +200,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 			if (surface != null) {
 				visualizer.getFft(bfft);
 				if (!voice)
-					process(bfft, surface, lerp);
+					process(bfft, surface);
 				else
 					processVoice(bfft, surface);
 			}
