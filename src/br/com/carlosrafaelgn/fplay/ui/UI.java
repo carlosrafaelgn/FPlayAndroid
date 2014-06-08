@@ -577,6 +577,10 @@ public final class UI {
 		densityDpi = info.displayMetrics.densityDpi;
 		scaledDensity = info.displayMetrics.scaledDensity;
 		xdpi_1_72 = info.displayMetrics.xdpi * (1.0f / 72.0f);
+		screenWidth = info.screenWidth;
+		screenHeight = info.screenHeight;
+		usableScreenWidth = info.usableScreenWidth;
+		usableScreenHeight = info.usableScreenHeight;
 		isLargeScreen = info.isLargeScreen;
 		isLandscape = info.isLandscape;
 		isLowDpiScreen = info.isLowDpiScreen;
