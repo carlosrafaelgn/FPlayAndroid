@@ -79,7 +79,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 28;
+	public static final int VERSION_CODE = 30;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -1035,14 +1035,14 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 4) {
-			msgStartup = 4;
+		if (msgStartup >= 5) {
+			msgStartup = 5;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup < 4) {
-			msgStartup = 4;
+		if (msgStartup < 5) {
+			msgStartup = 5;
 			//content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_key_behavior).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 			content = activity.getText(R.string.startup_message).toString();
 		}

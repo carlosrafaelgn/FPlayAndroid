@@ -317,9 +317,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 					}
 				}
 				if (!alive) {
-					timer.stop();
-					timer.release();
-					timer = null;
+					if (timer != null) {
+						timer.stop();
+						timer.release();
+						timer = null;
+					}
 					if (visualizer != null) {
 						visualizer.release();
 						visualizer = null;
@@ -395,13 +397,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	private void finalCleanup() {
-		alive = false;
-		paused = false;
 		Player.removeDestroyedObserver(this);
-		if (visualizer != null) {
+		alive = false;
+		if (visualizer != null)
 			visualizer.cancelLoading();
-			visualizer = null;
-		}
+		resumeTimer();
 		info = null;
 		panelControls = null;
 		panelTop = null;
@@ -412,10 +412,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnPlay = null;
 		btnNext = null;
 		btnMenu = null;
-		if (timer != null) {
-			timer.resume();
-			timer = null;
-		}
 	}
 	
 	@Override

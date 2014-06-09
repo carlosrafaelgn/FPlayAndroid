@@ -213,6 +213,6 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Кнопка \"Назад\" всегда возвращает к проигрывателю во время добавления композиций</string>
     <string name="player">Проигрыватель</string>
     <string name="go_back_to_player">Вернуться к проигрывателю</string>
-    <string name="startup_message">Есть много улучшений, связанных с добавлением и проигрыванием музыки! ВЫ можете вернуться к устаревшему виду в любое время через меню \"Настройки\" ;)</string>    
+    <string name="startup_message">The visualization has been improved! Give it a try! ;)</string>
     
 </resources>

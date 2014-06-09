@@ -18,3 +18,16 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+#
+# http://developer.android.com/tools/help/proguard.html
+# http://proguard.sourceforge.net/index.html#manual/examples.html
+#
+-keep public interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer {
+    public *;
+}
+-keep class * implements br.com.carlosrafaelgn.fplay.visualizer.Visualizer
+-keepclassmembers class * implements br.com.carlosrafaelgn.fplay.visualizer.Visualizer {
+    public *;
+}

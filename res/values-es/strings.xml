@@ -213,6 +213,6 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla de retroceso físico siempre regresa al reproductor mientras se van añadiendo las canciones</string>
     <string name="player">Reproductor</string>
     <string name="go_back_to_player">Volver al reproductor</string>
-    <string name="startup_message">Hay muchas mejoras en la forma de agregar y reproducir canciones! Puede volver a la vieja manera, en cualquier momento en la opcion \"Configuración\" del menú ;)</string>
+    <string name="startup_message">La visualización se ha mejorado! Pruébelo! ;)</string>
     
 </resources>

@@ -213,6 +213,6 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
-    <string name="startup_message">Há várias melhorias no modo como você adiciona e toca músicas! Contudo, você pode retornar ao modo antigo a qualquer momento no menu \"Opções\" ;)</string>
+    <string name="startup_message">A visualização foi melhorada! Experimente! ;)</string>
     
 </resources>
