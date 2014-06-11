@@ -71,15 +71,19 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	public void startActivity(ClientActivity activity) {
 		if (top != null) {
 			top.onPause();
-			top.onCleanupLayout();
+			if (top != null)
+				top.onCleanupLayout();
 		}
 		activity.finished = false;
 		activity.activity = this;
 		activity.previousActivity = top;
 		top = activity;
 		activity.onCreate();
-		activity.onCreateLayout(true);
-		activity.onResume();
+		if (!activity.finished) {
+			activity.onCreateLayout(true);
+			if (!activity.finished)
+				activity.onResume();
+		}
 	}
 	
 	public void finishActivity(ClientActivity activity, int code) {
@@ -89,15 +93,21 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		activity.onPause();
 		activity.onCleanupLayout();
 		activity.onDestroy();
-		top = top.previousActivity;
+		if (top != null)
+			top = top.previousActivity;
+		else
+			top = null;
 		activity.activity = null;
 		activity.previousActivity = null;
 		if (top == null) {
 			finish();
 		} else {
 			top.onCreateLayout(false);
-			top.onResume();
-			top.activityFinished(activity, activity.requestCode, code);
+			if (top != null && !top.finished) {
+				top.onResume();
+				if (top != null && !top.finished)
+					top.activityFinished(activity, activity.requestCode, code);
+			}
 		}
 		System.gc();
 	}
@@ -107,7 +117,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (top != null) {
 			if (top.onBackPressed())
 				return;
-			if (top.previousActivity != null) {
+			if (top != null && top.previousActivity != null) {
 				finishActivity(top, 0);
 				return;
 			}
@@ -188,9 +198,17 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		top.activity = this;
 		top.previousActivity = null;
 		top.onCreate();
-		top.onCreateLayout(true);
-		setWindowColor(UI.color_window);
-		Player.addDestroyedObserver(this);
+		if (top != null && !top.finished) {
+			top.onCreateLayout(true);
+			if (top != null && !top.finished) {
+				setWindowColor(UI.color_window);
+				Player.addDestroyedObserver(this);
+			} else {
+				finish();
+			}
+		} else {
+			finish();
+		}
 	}
 	
 	@Override

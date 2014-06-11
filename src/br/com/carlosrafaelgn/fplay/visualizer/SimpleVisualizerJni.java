@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
+import java.util.Arrays;
+
 import android.content.Context;
 import android.graphics.Point;
 import android.view.ContextMenu;
@@ -193,12 +195,17 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	
 	//Runs on a SECONDARY thread
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer, int deltaMillis) {
+	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
 		if (!lock.lockLowPriority())
 			return;
 		try {
 			if (surface != null) {
-				visualizer.getFft(bfft);
+				//WE MUST NEVER call any method from visualizer
+				//while the player is not actually playing
+				if (!playing)
+					Arrays.fill(bfft, 0, 1024, (byte)0);
+				else
+					visualizer.getFft(bfft);
 				if (!voice)
 					process(bfft, surface);
 				else

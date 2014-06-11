@@ -75,7 +75,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen, playing;
 	private int fxVisualizerAudioSessionId;
 	private Timer timer;
 	
@@ -118,7 +118,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
 		lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
 		btnPlay.setLayoutParams(lp);
-		btnPlay.setIcon(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
+		btnPlay.setIcon((playing = Player.isPlaying()) ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -313,7 +313,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 						final int now = (int)SystemClock.uptimeMillis();
 						final int deltaMillis = (int)(now - lastTime);
 						lastTime = now;
-						visualizer.processFrame(fxVisualizer, ((deltaMillis >= 32) || (deltaMillis <= 0)) ? 32 : deltaMillis);
+						visualizer.processFrame(fxVisualizer, playing, ((deltaMillis >= 32) || (deltaMillis <= 0)) ? 32 : deltaMillis);
 					}
 				}
 				if (!alive) {
@@ -438,9 +438,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		if (!songHasChanged)
 			reset = true;
 		resumeTimer();
+		playing = Player.isPlaying();
 		if (btnPlay != null) {
-			btnPlay.setText(Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
-			btnPlay.setContentDescription(getText(Player.isPlaying() ? R.string.pause : R.string.play));
+			btnPlay.setText(playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
+			btnPlay.setContentDescription(getText(playing ? R.string.pause : R.string.play));
 		}
 	}
 	

@@ -62,7 +62,7 @@ public interface Visualizer {
 	public void configurationChanged(boolean landscape);
 	
 	//Runs on a SECONDARY thread
-	public void processFrame(android.media.audiofx.Visualizer visualizer, int deltaMillis);
+	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis);
 	
 	//Runs on a SECONDARY thread
 	public void release();

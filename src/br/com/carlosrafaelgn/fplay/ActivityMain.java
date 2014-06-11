@@ -96,7 +96,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean playingBeforeSeek, selectCurrentWhenAttached;
+	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction;
 	private StringBuilder timeBuilder, volumeBuilder;
 	
 	private void saveListViewPosition() {
@@ -607,8 +607,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	protected void onCreate() {
-		if (Player.getState() > Player.STATE_INITIALIZED)
+		if (Player.getState() > Player.STATE_INITIALIZED) {
+			skipToDestruction = true;
 			return;
+		} else {
+			skipToDestruction = false;
+		}
 		Player.startService(getApplication());
 		addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
@@ -633,7 +637,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
-		if (Player.getState() > Player.STATE_INITIALIZED) {
+		if (Player.getState() > Player.STATE_INITIALIZED || skipToDestruction) {
+			skipToDestruction = true;
 			finish();
 			return;
 		}
@@ -1017,11 +1022,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	protected void onPause() {
+		if (skipToDestruction)
+			return;
 		Player.isMainActiveOnTop = false;
 		saveListViewPosition();
-		tmrSong.stop();
-		tmrUpdateVolumeDisplay.stop();
-		tmrVolume.stop();
+		if (tmrSong != null)
+			tmrSong.stop();
+		if (tmrUpdateVolumeDisplay != null)
+			tmrUpdateVolumeDisplay.stop();
+		if (tmrVolume != null)
+			tmrVolume.stop();
 		volumeButtonPressed = 0;
 		SongAddingMonitor.stop();
 		if (Player.songs.selecting || Player.songs.moving)
@@ -1073,6 +1083,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	protected void onDestroy() {
+		skipToDestruction = false;
 		if (tmrSong != null) {
 			tmrSong.release();
 			tmrSong = null;

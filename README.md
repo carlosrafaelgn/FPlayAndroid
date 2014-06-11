@@ -10,6 +10,9 @@ Moreover, this source code can be used as an example on how to do a few common t
 - Reduce the latency between consecutive tracks using setNextMediaPlayer()
 - Apply audio effects to music (equalizer and bass boost)
 - Use android.media.audiofx.Visualizer and getFft()
+- Call native code from within Java
+- Acess the surface's bytes directly using the Native Window API
+- Use NEON intrinsics to optimize native ARM code written in C++ (no need for Assembly)
 - Use keyboard for navigation and control
 - Handle different screen sizes and densities
 - Handle physical media buttons as well as Bluetooth commands
@@ -28,6 +31,12 @@ The player is still in a "beta stage", so there may be unknown bugs yet ;)
 
 ----
 
+Very special thanks to the people who helped translating FPlay:
+- Sviat Hurskyi (sviat.hurskyi@gmail.com)
+- David Gonzalez (redandy16@gmail.com)
+
+Thanks a lot!! :D
+
 Free third-party resources used in the application:
 
 Folder/Disc icons: http://www.24psd.com/ubuntu+icon+pack
@@ -35,6 +44,8 @@ Folder/Disc icons: http://www.24psd.com/ubuntu+icon+pack
 Phone icon: http://www.psdgraphics.com/graphics/photoshop-recreation-of-google-nexus-one-smartphone-download-psd
 
 SD card icon: http://artofapogee.blogspot.com.br/2010/02/sd-card-icon.html
+
+The typeface used as the dyslexia-friendly typeface is OpenDyslexic Regular, by Abelardo Gonzalez, available at http://dyslexicfonts.com and licensed under a Creative Commons Attribution 3.0 Unported License.
 
 The font used to draw the scalable icons, icons.ttf, was created using IcoMoon App, by Keyamoon, available at: http://icomoon.io/app
 
