@@ -212,6 +212,16 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 	
 	@Override
+	protected void onStart() {
+		super.onStart();
+		//when the user is returning to the app, just reset the
+		//previously stored position, allowing for the current song
+		//to be displayed instead
+		Player.listFirst = -1;
+		Player.listTop = 0;
+	}
+	
+	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		outState.clear(); //see the comments in the method above
