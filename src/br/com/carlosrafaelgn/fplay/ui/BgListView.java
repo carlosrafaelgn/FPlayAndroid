@@ -451,6 +451,7 @@ public final class BgListView extends ListView {
 		keyDownObserver = null;
 		emptyListClickListener = null;
 		emptyLayout = null;
+		setAdapter(null);
 		super.onDetachedFromWindow();
 	}
 }

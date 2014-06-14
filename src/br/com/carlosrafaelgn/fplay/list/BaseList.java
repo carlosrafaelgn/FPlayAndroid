@@ -389,10 +389,8 @@ public abstract class BaseList<E extends BaseItem> implements ListAdapter {
 	}
 	
 	public final void setObserver(BgListView list) {
-		if (listObserver != null) {
-			listObserver.setAdapter(null);
-			listObserver = null;
-		}
+		//if (listObserver != null)
+		//	listObserver.setAdapter(null);
 		listObserver = list;
 		if (list != null)
 			list.setAdapter(this);
