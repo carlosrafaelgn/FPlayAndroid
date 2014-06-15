@@ -339,6 +339,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	@Override
+	public int getDesiredWindowColor() {
+		return (Player.isControlMode() ? UI.color_control_mode : UI.color_window);
+	}
+	
+	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
 		final String icon = (Player.isPlaying() ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		if (btnPlay != null) {
@@ -377,6 +382,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			cancelSelection(false);
 		if (controlMode)
 			Player.lastCurrent = Player.songs.getCurrentPosition();
+		getHostActivity().setWindowColor(getDesiredWindowColor());
 		onCleanupLayout();
 		onCreateLayout(false);
 		resume(true);
@@ -613,7 +619,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			skipToDestruction = false;
 		}
-		Player.startService(getApplication());
 		addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1000,7 +1005,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
 		}
-		getHostActivity().setWindowColor(Player.isControlMode() ? UI.color_control_mode : UI.color_window);
 		onPlayerChanged(Player.getCurrentSong(), true, null);
 	}
 	
@@ -1042,7 +1046,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		lastTime = -2;
 		if (!Player.isControlMode())
 			Player.lastCurrent = Player.songs.getCurrentPosition();
-		getHostActivity().setWindowColor(UI.color_window);
 	}
 	
 	@Override

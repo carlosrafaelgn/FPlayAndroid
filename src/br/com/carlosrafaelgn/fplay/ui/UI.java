@@ -367,7 +367,6 @@ public final class UI {
 		textPaint.setTextAlign(Paint.Align.LEFT);
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
-		loadLightTheme();
 	}
 	
 	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {

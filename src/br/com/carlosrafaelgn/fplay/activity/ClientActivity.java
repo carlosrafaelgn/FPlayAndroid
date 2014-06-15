@@ -124,23 +124,27 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		CustomContextMenu.openContextMenu(view, this);
 	}
 	
-	public void setExitOnDestroy(boolean exitOnDestroy) {
+	public final void setExitOnDestroy(boolean exitOnDestroy) {
 		activity.setExitOnDestroy(exitOnDestroy);
 	}
 	
-	public CharSequence getText(int resId) {
+	public final CharSequence getText(int resId) {
 		return activity.getText(resId);
 	}
 	
-	public Resources getResources() {
+	public final Resources getResources() {
 		return activity.getResources();
 	}
 	
-	public Drawable getDrawable(int resId) {
+	public final Drawable getDrawable(int resId) {
 		return activity.getResources().getDrawable(resId);
 	}
 	
 	public void activityFinished(ClientActivity activity, int requestCode, int code) {
+	}
+	
+	public int getDesiredWindowColor() {
+		return UI.color_window;
 	}
 	
 	public View getNullContextMenuView() {

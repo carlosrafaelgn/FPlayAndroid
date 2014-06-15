@@ -78,6 +78,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		activity.activity = this;
 		activity.previousActivity = top;
 		top = activity;
+		setWindowColor(top.getDesiredWindowColor());
 		activity.onCreate();
 		if (!activity.finished) {
 			activity.onCreateLayout(true);
@@ -102,6 +103,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (top == null) {
 			finish();
 		} else {
+			setWindowColor(top.getDesiredWindowColor());
 			top.onCreateLayout(false);
 			if (top != null && !top.finished) {
 				top.onResume();
@@ -191,21 +193,21 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//that's why we pass null to super.onCreate!
 		super.onCreate(null);
 		setupActionBar();
-		UI.initialize(this);
+		UI.initialize(getApplication());
 		MainHandler.initialize(getApplication());
+		Player.startService(getApplication());
 		top = new ActivityMain();
 		top.finished = false;
 		top.activity = this;
 		top.previousActivity = null;
+		setWindowColor(top.getDesiredWindowColor());
 		top.onCreate();
 		if (top != null && !top.finished) {
 			top.onCreateLayout(true);
-			if (top != null && !top.finished) {
-				setWindowColor(UI.color_window);
+			if (top != null && !top.finished)
 				Player.addDestroyedObserver(this);
-			} else {
+			else
 				finish();
-			}
 		} else {
 			finish();
 		}
