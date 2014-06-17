@@ -50,6 +50,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
@@ -86,7 +87,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -441,6 +442,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s.add(0, MNU_SAVELIST, 2, R.string.save_list)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SAVE));
+		UI.separator(s, 0, 3);
+		s.add(0, MNU_SORT_BY_TITLE, 4, R.string.sort_by_title)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_MOVE));
+		s.add(0, MNU_SORT_BY_ARTIST, 5, R.string.sort_by_artist)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_MOVE));
+		s.add(0, MNU_SORT_BY_ALBUM, 6, R.string.sort_by_album)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_MOVE));
 		UI.separator(menu, 1, 1);
 		menu.add(2, MNU_TOGGLECONTROLMODE, 0, R.string.control_mode)
 			.setOnMenuItemClickListener(this)
@@ -475,7 +486,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public boolean onMenuItemClick(MenuItem item) {
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
-			addSongs();
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				addSongs();
 			break;
 		case MNU_CLEARLIST:
 			if (Player.getState() == Player.STATE_INITIALIZED)
@@ -491,6 +503,18 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (Player.getState() == Player.STATE_INITIALIZED)
 				startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this));
 			break;
+		case MNU_SORT_BY_TITLE:
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				Player.songs.sort(SongList.SORT_BY_TITLE);
+			break;
+		case MNU_SORT_BY_ARTIST:
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				Player.songs.sort(SongList.SORT_BY_ARTIST);
+			break;
+		case MNU_SORT_BY_ALBUM:
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				Player.songs.sort(SongList.SORT_BY_ALBUM);
+			break;
 		case MNU_TOGGLECONTROLMODE:
 			Player.setControlMode(!Player.isControlMode());
 			break;
@@ -499,15 +523,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				Player.songs.setRandomMode(!Player.songs.isInRandomMode());
 			break;
 		case MNU_EFFECTS:
-			if (Player.getState() == Player.STATE_INITIALIZED) 
+			if (Player.getState() == Player.STATE_INITIALIZED)
 				startActivity(new ActivityEffects());
 			break;
 		case MNU_VISUALIZER:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
 			break;
 		case MNU_SETTINGS:
-			startActivity(new ActivitySettings(false));
-			//getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizer.class.getName()));
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				startActivity(new ActivitySettings(false));
 			break;
 		case MNU_EXIT:
 			finish();

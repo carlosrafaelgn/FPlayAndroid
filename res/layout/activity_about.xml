@@ -18,7 +18,6 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
-            android:layout_marginRight="8dp"
             android:contentDescription="@string/go_back"
             android:nextFocusDown="@+id/lblMsg"
             android:nextFocusForward="@+id/lblMsg"
@@ -43,13 +42,13 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_toLeftOf="@+id/imgIcon"
+            android:gravity="right|bottom"
             android:orientation="horizontal" >
 
             <TextView
                 android:id="@+id/lblTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="left|bottom"
                 android:layout_marginRight="8dp"
                 android:singleLine="true" />
 
@@ -57,7 +56,6 @@
                 android:id="@+id/lblVersion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="left|bottom"
                 android:singleLine="true" />
         </LinearLayout>
     </RelativeLayout>

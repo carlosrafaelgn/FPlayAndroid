@@ -213,6 +213,9 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla de retroceso físico siempre regresa al reproductor mientras se van añadiendo las canciones</string>
     <string name="player">Reproductor</string>
     <string name="go_back_to_player">Volver al reproductor</string>
-    <string name="startup_message">La visualización se ha mejorado! Pruébelo! ;)</string>
+    <string name="startup_message">Hay nuevas opciones de clasificación para la lista! Además, la visualización se ha mejorado! Pruébelo! ;)</string>
+    <string name="sort_by_title">Ordenar por titulo</string>
+    <string name="sort_by_artist">Ordenar por artista</string>
+    <string name="sort_by_album">Ordenar por álbum</string>
     
 </resources>

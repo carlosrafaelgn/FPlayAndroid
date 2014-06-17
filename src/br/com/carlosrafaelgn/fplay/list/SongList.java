@@ -52,18 +52,23 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.SongView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.util.ArraySorter;
+import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 //
 //SINCE ALL CALLS MADE BY Player ARE MADE ON THE MAIN THREAD, THERE IS NO
 //NEED TO SYNCHRONIZE THE ACCESS TO THE ITEMS
 //
-public final class SongList extends BaseList<Song> implements FileFetcher.Listener {
+public final class SongList extends BaseList<Song> implements FileFetcher.Listener, Comparer<Song> {
+	public static final int SORT_BY_TITLE = 0;
+	public static final int SORT_BY_ARTIST = 1;
+	public static final int SORT_BY_ALBUM = 2;
 	public static final int HOW_CURRENT = -4;
 	public static final int HOW_PREVIOUS = -3;
 	public static final int HOW_NEXT_MANUAL = -2;
 	public static final int HOW_NEXT_AUTO = -1;
-	private int adding, currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem;
+	private int adding, currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem, sortMode;
 	public boolean selecting, moving;
 	private Song[] shuffledList;
 	public ActivityItemView observerActivity;
@@ -465,6 +470,59 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		shuffledItemsAlreadyPlayed = 0;
 	}
 	
+	public void sort(int mode) {
+		//synchronized (sync) {
+			sortMode = mode;
+			modificationVersion++;
+			final Song s = ((current >= 0 && current < count) ? items[current] : null);
+			ArraySorter.sort(items, 0, count, this);
+			current = -1;
+			firstSel = -1;
+			lastSel = -1;
+			originalSel = -1;
+			if (s != null) {
+				for (int i = count - 1; i >= 0; i--) {
+					if (items[i] == s) {
+						current = i;
+						firstSel = i;
+						lastSel = i;
+						originalSel = i;
+						break;
+					}
+				}
+			}
+			//don't mess up with suffling as it is not affected by this sorting
+		//}
+		notifyDataSetChanged(current, CONTENT_MOVED);
+	}
+	
+	@Override
+	public int compare(Song a, Song b) {
+		int r;
+		switch (sortMode) {
+		case SORT_BY_ALBUM:
+			r = a.album.compareToIgnoreCase(b.album);
+			if (r == 0)
+				r = a.track - b.track;
+			if (r == 0)
+				return a.title.compareToIgnoreCase(b.title);
+			return r;
+		case SORT_BY_ARTIST:
+			r = a.artist.compareToIgnoreCase(b.artist);
+			if (r == 0)
+				r = a.album.compareToIgnoreCase(b.album);
+			if (r == 0)
+				r = a.track - b.track;
+			if (r == 0)
+				return a.title.compareToIgnoreCase(b.title);
+			return r;
+		}
+		r = a.title.compareToIgnoreCase(b.title);
+		if (r == 0)
+			return a.track - b.track;
+		return r;
+	}
+	
 	@Override
 	protected void addingItems(int position, int count) {
 		if (shuffledList == null)
@@ -551,4 +609,5 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}
+
 }
