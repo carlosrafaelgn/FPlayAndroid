@@ -138,6 +138,7 @@
     <string name="title">Titulo</string>
     <string name="artist">Artista</string>
     <string name="album">Álbum</string>
+    <string name="track">Pista</string>
     <string name="duration">Duración</string>
     <string name="year">Year</string>
     <string name="no_info">-</string>
@@ -213,9 +214,10 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla de retroceso físico siempre regresa al reproductor mientras se van añadiendo las canciones</string>
     <string name="player">Reproductor</string>
     <string name="go_back_to_player">Volver al reproductor</string>
-    <string name="startup_message">Hay nuevas opciones de clasificación para la lista! Además, la visualización se ha mejorado! Pruébelo! ;)</string>
+    <string name="startup_message">- Nuevas opciones de clasificación de la lista\n- Nuevas opciones de visualización de las canciones\n- Visualización mejorada! Pruébala! ;)</string>
     <string name="sort_by_title">Ordenar por titulo</string>
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>
+    <string name="secondary_line_of_text">Línea secundaria de texto</string>
     
 </resources>

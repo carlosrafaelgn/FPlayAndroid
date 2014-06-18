@@ -233,6 +233,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 	private static final int OPT_EXTRASPACING = 0x0029;
 	private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
 	private static final int OPT_VISUALIZERORIENTATION = 0x002B;
+	private static final int OPT_SONGEXTRAINFOMODE = 0x002C;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -324,6 +325,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 		UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR, false);
 		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
+		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -385,6 +387,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 		opts.put(OPT_EXTRASPACING, UI.extraSpacing);
 		opts.put(OPT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
 		opts.put(OPT_VISUALIZERORIENTATION, UI.visualizerOrientation);
+		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
@@ -784,7 +787,7 @@ public final class Player extends Service implements MainHandler.Callback, Timer
 				if (currentSongPreparing || currentSong == null)
 					views.setTextViewText(R.id.lblArtist, "-");
 				else
-					views.setTextViewText(R.id.lblArtist, currentSong.artist);
+					views.setTextViewText(R.id.lblArtist, currentSong.extraInfo);
 				
 				views.setTextColor(R.id.lblTitle, UI.widgetTextColor);
 				views.setTextColor(R.id.lblArtist, UI.widgetTextColor);

@@ -138,6 +138,7 @@
     <string name="title">Título</string>
     <string name="artist">Artista</string>
     <string name="album">Álbum</string>
+    <string name="track">Faixa</string>
     <string name="duration">Duração</string>
     <string name="year">Ano</string>
     <string name="no_info">-</string>
@@ -213,9 +214,10 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
-    <string name="startup_message">Há novas opções para ordenar a lista! E também, a visualização foi melhorada! Experimente! ;)</string>
+    <string name="startup_message">- Novas opções de ordenação da lista\n- Novas opções de exibição das músicas\n- Visualização melhorada! Experimente! ;)</string>
     <string name="sort_by_title">Ordenar por título</string>
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>
+    <string name="secondary_line_of_text">Linha secundária de texto</string>
     
 </resources>

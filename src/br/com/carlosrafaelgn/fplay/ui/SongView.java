@@ -46,7 +46,7 @@ import android.view.ViewDebug.ExportedProperty;
 public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
 	private ActivityItemView observerActivity;
 	private Song song;
-	private String ellipsizedTitle, ellipsizedArtist;
+	private String ellipsizedTitle, ellipsizedExtraInfo;
 	private final int height, verticalMargin;
 	private int state, width, lengthWidth, position;
 	
@@ -61,7 +61,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	
 	private void processEllipsis() {
 		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._8dp - lengthWidth);
-		ellipsizedArtist = UI.ellipsizeText(song.artist, UI._14sp, width - (UI._8dp << 1));
+		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI._8dp << 1));
 	}
 	
 	public void setItemState(Song song, int position, int state) {
@@ -159,7 +159,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI._4dp, UI.rect.bottom - UI.defaultControlContentsSize - UI._4dp, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
 		UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
-		UI.drawText(canvas, ellipsizedArtist, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
+		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
 	}
 	
 	@Override
@@ -171,7 +171,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		observerActivity = null;
 		song = null;
 		ellipsizedTitle = null;
-		ellipsizedArtist = null;
+		ellipsizedExtraInfo = null;
 		super.onDetachedFromWindow();
 	}
 	

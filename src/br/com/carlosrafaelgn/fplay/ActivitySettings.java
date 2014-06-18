@@ -50,6 +50,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.ColorPickerView;
@@ -69,7 +70,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -165,6 +166,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(2, Player.VOLUME_CONTROL_NONE, 0, R.string.noneM)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == Player.VOLUME_CONTROL_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optExtraInfoMode) {
+			lastMenuView = optExtraInfoMode;
+			UI.prepare(menu);
+			final int o = Song.extraInfoMode;
+			for (int i = Song.EXTRA_ARTIST; i <= Song.EXTRA_TRACK_ARTIST_ALBUM; i++) {
+				menu.add(0, i, i, getExtraInfoModeString(i))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((o == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			}
 		} else if (view == optForceOrientation) {
 			lastMenuView = optForceOrientation;
 			UI.prepare(menu);
@@ -265,6 +275,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				break;
 			}
 			optVolumeControlType.setSecondaryText(getVolumeString());
+		} else if (lastMenuView == optExtraInfoMode) {
+			Song.extraInfoMode = item.getItemId();
+			optExtraInfoMode.setSecondaryText(getExtraInfoModeString(Song.extraInfoMode));
+			Player.songs.refreshExtraInfo();
+			WidgetMain.updateWidgets(getApplication());
 		} else if (lastMenuView == optForceOrientation) {
 			UI.forcedOrientation = item.getItemId();
 			getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
@@ -304,6 +319,21 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			return getText(UI.displayVolumeInDB ? R.string.volume_control_type_decibels : R.string.volume_control_type_percentage).toString();
 		default:
 			return getText(R.string.noneM).toString();
+		}
+	}
+	
+	private String getExtraInfoModeString(int extraMode) {
+		switch (extraMode) {
+		case Song.EXTRA_ARTIST:
+			return getText(R.string.artist).toString();
+		case Song.EXTRA_ALBUM:
+			return getText(R.string.album).toString();
+		case Song.EXTRA_TRACK_ARTIST:
+			return getText(R.string.track) + "/" + getText(R.string.artist);
+		case Song.EXTRA_TRACK_ALBUM:
+			return getText(R.string.track) + "/" + getText(R.string.album);
+		default:
+			return getText(R.string.track) + "/" + getText(R.string.artist) + "/" + getText(R.string.album);
 		}
 	}
 	
@@ -542,6 +572,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optClearListWhenPlayingFolders.setOnClickListener(this);
 			optGoBackWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
 			optGoBackWhenPlayingFolders.setOnClickListener(this);
+			optExtraInfoMode = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.secondary_line_of_text).toString(), getExtraInfoModeString(Song.extraInfoMode), false, false, false);
+			optExtraInfoMode.setOnClickListener(this);
 			optForceOrientation = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
 			optForceOrientation.setOnClickListener(this);
 			optFadeInFocus = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false, false);
@@ -557,6 +589,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!UI.isCurrentLocaleCyrillic())
 				panelSettings.addView(optUseAlternateTypeface);
 			panelSettings.addView(optTheme);
+			panelSettings.addView(optExtraInfoMode);
 			panelSettings.addView(optForceOrientation);
 			panelSettings.addView(optIsDividerVisible);
 			panelSettings.addView(optIsVerticalMarginLarge);
@@ -641,6 +674,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optOldBrowserBehavior = null;
 		optClearListWhenPlayingFolders = null;
 		optGoBackWhenPlayingFolders = null;
+		optExtraInfoMode = null;
 		optForceOrientation = null;
 		optFadeInFocus = null;
 		optFadeInPause = null;
@@ -765,7 +799,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
-		} else if (view == optAutoTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
+		} else if (view == optAutoTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
 			return;
 		}

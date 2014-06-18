@@ -41,9 +41,15 @@ import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class Song extends BaseItem {
+	public static final int EXTRA_ARTIST = 0;
+	public static final int EXTRA_ALBUM = 1;
+	public static final int EXTRA_TRACK_ARTIST = 2;
+	public static final int EXTRA_TRACK_ALBUM = 3;
+	public static final int EXTRA_TRACK_ARTIST_ALBUM = 4;
+	public static int extraInfoMode;
 	public final String path;
 	public final boolean isHttp;
-	public String title, artist, album;
+	public String title, artist, album, extraInfo;
 	public int track, lengthMS, year;
 	public String length;
 	public Song possibleNextSong;
@@ -62,9 +68,9 @@ public final class Song extends BaseItem {
 	}
 	
 	public Song(String url, String title) {
-		this.path = url;
+		this.path = url.trim();
 		this.isHttp = true;
-		this.title = title;
+		this.title = title.trim();
 		validateFields(null);
 	}
 	
@@ -136,30 +142,69 @@ public final class Song extends BaseItem {
 	}
 	
 	private void validateFields(String fileName) {
-		if (this.title == null || this.title.length() == 0) {
+		if (title == null || title.length() == 0) {
 			if (fileName != null) {
 				final int i = fileName.lastIndexOf('.');
-				this.title = ((i > 0) ? fileName.substring(0, i) : fileName);
+				title = ((i > 0) ? fileName.substring(0, i) : fileName);
 			}
 		}
-		if (this.title == null || this.title.length() == 0)
-			this.title = "-";
-		if (this.artist == null || this.artist.length() == 0)
-			this.artist = "-";
-		if (this.album == null || this.album.length() == 0)
-			this.album = "-";
-		if (this.track <= 0)
-			this.track = -1;
-		if (this.lengthMS <= 0)
-			this.lengthMS = -1;
-		if (this.year <= 0)
-			this.year = -1;
-		this.length = formatTime(this.lengthMS);
+		if (title == null) {
+			title = "-";
+		} else {
+			if (fileName != null)
+				title = title.trim();
+			if (title.length() == 0)
+				title = "-";
+		}
+		if (artist == null) {
+			artist = "-";
+		} else {
+			if (fileName != null)
+				artist = artist.trim();
+			if (artist.length() == 0)
+				artist = "-";
+		}
+		if (album == null) {
+			album = "-";
+		} else {
+			if (fileName != null)
+				album = album.trim();
+			if (album.length() == 0)
+				album = "-";
+		}
+		refreshExtraInfo();
+		if (track <= 0)
+			track = -1;
+		if (lengthMS <= 0)
+			lengthMS = -1;
+		if (year <= 0)
+			year = -1;
+		length = formatTime(lengthMS);
 	}
 	
 	@Override
 	public String toString() {
 		return title;
+	}
+	
+	public void refreshExtraInfo() {
+		switch (extraInfoMode) {
+		case EXTRA_ARTIST:
+			extraInfo = artist;
+			break;
+		case EXTRA_ALBUM:
+			extraInfo = album;
+			break;
+		case EXTRA_TRACK_ARTIST:
+			extraInfo = ((track > 0) ? (track + " / " + artist) : artist);
+			break;
+		case EXTRA_TRACK_ALBUM:
+			extraInfo = ((track > 0) ? (track + " / " + album) : album);
+			break;
+		default:
+			extraInfo = ((track > 0) ? (track + " / " + artist + " / " + album) : (artist + " / " + album));
+			break;
+		}
 	}
 	
 	public void serialize(OutputStream os) throws IOException {

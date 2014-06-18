@@ -138,6 +138,7 @@
     <string name="title">Название</string>
     <string name="artist">Исполнитель</string>
     <string name="album">Альбом</string>
+    <string name="track">Трек</string>
     <string name="duration">Продолжительность</string>
     <string name="year">год</string>
     <string name="no_info">-</string>
@@ -213,9 +214,10 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Кнопка \"Назад\" всегда возвращает к проигрывателю во время добавления композиций</string>
     <string name="player">Проигрыватель</string>
     <string name="go_back_to_player">Вернуться к проигрывателю</string>
-    <string name="startup_message">There are new sorting options for the list! Also, the visualization has been improved! Give it a try! ;)</string>
+    <string name="startup_message">- New sorting options for the list\n- New display options for the songs\n- Improved visualization! Give it a try! ;)</string>
     <string name="sort_by_title">Сортировать по название</string>
     <string name="sort_by_artist">Сортировать по исполнитель</string>
     <string name="sort_by_album">Сортировать по альбом</string>
+    <string name="secondary_line_of_text">Вторичный строка текста</string>
     
 </resources>

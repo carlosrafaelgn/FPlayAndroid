@@ -89,7 +89,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112;
 	private View vwVolume;
-	private TextView lblTitle, lblArtist, lblAlbum, lblLength, lblMsgSelMove;
+	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
@@ -360,6 +360,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 			if (lblArtist != null)
 				lblArtist.setText((currentSong == null) ? "-" : currentSong.artist);
+			if (lblTrack != null)
+				lblTrack.setText((currentSong == null || currentSong.track <= 0) ? "-" : Integer.toString(currentSong.track));
 			if (lblAlbum != null)
 				lblAlbum.setText((currentSong == null) ? "-" : currentSong.album);
 			if (lblLength != null)
@@ -848,10 +850,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (UI.isLargeScreen) {
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblTitleStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblArtistStatic));
+				UI.mediumTextAndColor((TextView)findViewById(R.id.lblTrackStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblAlbumStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblLengthStatic));
 				lblArtist.setTextColor(UI.colorState_text_title_static);
 				UI.largeText(lblArtist);
+				lblTrack = (TextView)findViewById(R.id.lblTrack);
+				lblTrack.setTextColor(UI.colorState_text_title_static);
+				UI.largeText(lblTrack);
 				lblAlbum = (TextView)findViewById(R.id.lblAlbum);
 				lblAlbum.setTextColor(UI.colorState_text_title_static);
 				UI.largeText(lblAlbum);
@@ -859,6 +865,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				lblLength.setTextColor(UI.colorState_text_title_static);
 				UI.largeText(lblLength);
 			} else {
+				lblTrack = null;
 				lblAlbum = null;
 				lblLength = null;
 			}
@@ -1078,6 +1085,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		saveListViewPosition();
 		lblTitle = null;
 		lblArtist = null;
+		lblTrack = null;
 		lblAlbum = null;
 		lblLength = null;
 		lblTitleIcon = null;
