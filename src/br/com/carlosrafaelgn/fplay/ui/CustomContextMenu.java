@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.ui;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import android.app.Activity;
 import android.app.Application;
@@ -333,7 +332,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	private Constructor<? extends TextView> itemClassConstructor;
 	private ColorStateList itemTextColors;
 	private boolean closed, closingByItemClick, hasItemPadding, hasBackground, hasItemBackground;
-	private HashMap<View, Item> viewItems;
 	private MenuDialog menu;
 	private Item clickedItem, parentItem;
 	private CustomContextMenu parentMenu;
@@ -345,7 +343,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		this.closeListener = closeListener;
 		this.view = view;
 		this.closed = false;
-		this.viewItems = new HashMap<View, Item>();
 		this.parentItem = parentItem;
 		this.parentMenu = parentMenu;
 	}
@@ -461,7 +458,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 					}
 					it.actionView.setEnabled(it.enabled);
 					list.addView(it.actionView);
-					viewItems.put(it.actionView, it);
 				}
 			}
 			if (first >= 0 && first != last) {
@@ -530,15 +526,24 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public void onClick(View view) {
-		if (viewItems == null)
+		if (items == null)
 			return;
-		final Item i = viewItems.get(view);
-		if (i != null && i.enabled) {
-			if (i.subMenu != null) {
-				i.subMenu.run();
+		//as there are really few elements, and clicks happen only once in a while,
+		//it was not worth keeping an extra HashMap in this class ;)
+		Item it = null;
+		for (int i = items.size() - 1; i >= 0; i--) {
+			final Item iti = items.get(i);
+			if (iti != null && iti.actionView == view) {
+				it = iti;
+				break;
+			}
+		}
+		if (it != null && it.enabled) {
+			if (it.subMenu != null) {
+				it.subMenu.run();
 				return;
 			}
-			clickedItem = i;
+			clickedItem = it;
 			closingByItemClick = true;
 			close();
 		}
@@ -783,10 +788,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		itemBackgroundDrawable = null;
 		itemClassConstructor = null;
 		itemTextColors = null;
-		if (viewItems != null) {
-			viewItems.clear();
-			viewItems = null;
-		}
 		menu = null;
 		clickedItem = null;
 		parentItem = null;
