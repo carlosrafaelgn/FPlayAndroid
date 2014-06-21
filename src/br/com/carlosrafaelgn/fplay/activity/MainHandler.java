@@ -41,16 +41,6 @@ public final class MainHandler extends Handler {
 	private static MainHandler theHandler;
 	private static Thread mainThread;
 	
-	private static final class ObjHolder {
-		public MainHandler.Callback callback;
-		public Object obj;
-		
-		public ObjHolder(MainHandler.Callback callback, Object obj) {
-			this.callback = callback;
-			this.obj = obj;
-		}
-	}
-	
 	private MainHandler(Context context) {
 		super(context.getMainLooper());
 	}
@@ -75,32 +65,8 @@ public final class MainHandler extends Handler {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, callback), SystemClock.uptimeMillis());
 	}
 	
-	public static void sendMessage(MainHandler.Callback callback, int what, Object obj) {
-		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, new ObjHolder(callback, obj)), SystemClock.uptimeMillis());
-	}
-	
 	public static void sendMessage(MainHandler.Callback callback, int what, int arg1, int arg2) {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), SystemClock.uptimeMillis());
-	}
-	
-	public static void sendMessage(MainHandler.Callback callback, int what, int arg1, int arg2, Object obj) {
-		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, new ObjHolder(callback, obj)), SystemClock.uptimeMillis());
-	}
-	
-	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what) {
-		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, callback));
-	}
-	
-	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what, Object obj) {
-		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, new ObjHolder(callback, obj)));
-	}
-	
-	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what, int arg1, int arg2) {
-		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, arg1, arg2, callback));
-	}
-	
-	public static void sendMessageAtFrontOfQueue(MainHandler.Callback callback, int what, int arg1, int arg2, Object obj) {
-		theHandler.sendMessageAtFrontOfQueue(Message.obtain(theHandler, what, arg1, arg2, new ObjHolder(callback, obj)));
 	}
 	
 	public static void sendMessageDelayed(MainHandler.Callback callback, int what, long delayMillis) {
@@ -109,10 +75,6 @@ public final class MainHandler extends Handler {
 	
 	public static void sendMessageDelayed(MainHandler.Callback callback, int what, int arg1, int arg2, long delayMillis) {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), SystemClock.uptimeMillis() + delayMillis);
-	}
-	
-	public static void sendMessageDelayed(MainHandler.Callback callback, int what, int arg1, int arg2, Object obj, long delayMillis) {
-		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, new ObjHolder(callback, obj)), SystemClock.uptimeMillis() + delayMillis);
 	}
 	
 	public static void sendMessageAtTime(MainHandler.Callback callback, int what, int arg1, int arg2, long when) {
@@ -124,17 +86,11 @@ public final class MainHandler extends Handler {
 		final Runnable r = msg.getCallback();
 		if (r != null) {
 			r.run();
-		} else if (msg.obj instanceof MainHandler.Callback) {
+			msg.obj = null;
+		} else {
 			final MainHandler.Callback c = (MainHandler.Callback)msg.obj;
 			msg.obj = null;
 			c.handleMessage(msg);
-		} else if (msg.obj instanceof ObjHolder) {
-			final ObjHolder o = (ObjHolder)msg.obj;
-			msg.obj = o.obj;
-			o.callback.handleMessage(msg);
-			o.callback = null;
-			o.obj = null;
 		}
-		msg.obj = null;
 	}
 }

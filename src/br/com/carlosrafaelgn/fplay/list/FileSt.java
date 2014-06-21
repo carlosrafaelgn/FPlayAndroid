@@ -56,7 +56,7 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_ALBUM_ROOT = 10;
 	public static final int TYPE_ALBUM_ITEM = 11;
 	public final boolean isDirectory;
-	public final String path, name;
+	public final String path, name, albumArt;
 	public int specialType;
 	public File file;
 	public boolean isChecked;
@@ -74,19 +74,22 @@ public final class FileSt extends BaseItem {
 		this.name = name;
 		this.specialType = 0;
 		this.file = file; //keep this here for MetadataExtractor...
+		this.albumArt = null;
 	}
 	
-	public FileSt(String absolutePath, String name, int specialType) {
+	public FileSt(String absolutePath, String name, String albumArt, int specialType) {
 		this.isDirectory = (specialType != 0);
 		this.path = absolutePath;
 		this.name = name;
+		this.albumArt = albumArt;
 		this.specialType = specialType;
 	}
 	
-	public FileSt(String absolutePath, String name, int specialType, boolean isDirectory) {
+	public FileSt(String absolutePath, String name, String albumArt, int specialType, boolean isDirectory) {
 		this.isDirectory = isDirectory;
 		this.path = absolutePath;
 		this.name = name;
+		this.albumArt = albumArt;
 		this.specialType = specialType;
 	}
 	

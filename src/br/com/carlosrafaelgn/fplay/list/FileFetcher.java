@@ -165,10 +165,10 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		addedCount[0] = c + 1;
 		if (isExternal) {
 			c = externalCount[0] + 1;
-			files[count] = new FileSt(absPath, s.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), FileSt.TYPE_EXTERNAL_STORAGE);
+			files[count] = new FileSt(absPath, s.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE);
 			externalCount[0] = c;
 		} else {
-			files[count] = new FileSt(absPath, s.getText(R.string.internal_storage).toString(), FileSt.TYPE_INTERNAL_STORAGE);
+			files[count] = new FileSt(absPath, s.getText(R.string.internal_storage).toString(), null, FileSt.TYPE_INTERNAL_STORAGE);
 		}
 		count++;
 	}
@@ -183,18 +183,18 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		count = files.length - 16;
 		
 		String desc = s.getText(R.string.artists).toString();
-		files[count] = new FileSt(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, FileSt.TYPE_ARTIST_ROOT);
+		files[count] = new FileSt(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ARTIST_ROOT);
 		count++;
 		
 		desc = s.getText(R.string.albums).toString();
-		files[count] = new FileSt(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, FileSt.TYPE_ALBUM_ROOT);
+		files[count] = new FileSt(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ALBUM_ROOT);
 		count++;
 		
 		File f;
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
 			if (f != null && f.exists() && f.isDirectory()) {
-				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.music).toString(), FileSt.TYPE_MUSIC);
+				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.music).toString(), null, FileSt.TYPE_MUSIC);
 				count++;
 			}
 		} catch (Throwable ex) {
@@ -202,14 +202,14 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 			if (f != null && f.exists() && f.isDirectory()) {
-				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.downloads).toString(), FileSt.TYPE_DOWNLOADS);
+				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.downloads).toString(), null, FileSt.TYPE_DOWNLOADS);
 				count++;
 			}
 		} catch (Throwable ex) {
 		}
 		f = null;
 		
-		files[count] = new FileSt(File.separator, s.getText(R.string.all_files).toString(), FileSt.TYPE_ALL_FILES);
+		files[count] = new FileSt(File.separator, s.getText(R.string.all_files).toString(), null, FileSt.TYPE_ALL_FILES);
 		count++;
 		
 		if (cancelled)
@@ -348,7 +348,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 					unknownArtist = s.getText(R.string.unknownArtist).toString();
 				name = unknownArtist;
 			}
-			tmp.add(new FileSt(root + c.getLong(0) + fakeRoot + name, name, FileSt.TYPE_ARTIST));
+			tmp.add(new FileSt(root + c.getLong(0) + fakeRoot + name, name, null, FileSt.TYPE_ARTIST));
 		}
 		c.close();
 		
@@ -394,13 +394,13 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		}
 		
 		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
-		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM };
+		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART };
 		final Cursor c = s.getContentResolver().query((artist == null) ?
 				MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI :
 				MediaStore.Audio.Artists.Albums.getContentUri("external", Long.parseLong(artist)), proj, null, null, null);
 		while (!cancelled && c.moveToNext()) {
 			final String name = c.getString(1);
-			tmp.add(new FileSt(root + c.getLong(0) + fakeRoot + name, name, FileSt.TYPE_ALBUM));
+			tmp.add(new FileSt(root + c.getLong(0) + fakeRoot + name, name, c.getString(2), FileSt.TYPE_ALBUM));
 		}
 		c.close();
 		
@@ -432,7 +432,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 				null);
 		while (!cancelled && c.moveToNext()) {
 			//temporarily use specialType as the song's track number ;)
-			tmp.add(new FileSt(c.getString(0), c.getString(1), c.getInt(2), false));
+			tmp.add(new FileSt(c.getString(0), c.getString(1), null, c.getInt(2), false));
 		}
 		c.close();
 		
@@ -656,7 +656,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		for (i = files.length - 1; i >= 0 && !cancelled; i--) {
 			final String f = files[i];
 			if (files[i].endsWith(fileType)) {
-				this.files[c] = new FileSt(f, f.substring(0, f.length() - l), 0);
+				this.files[c] = new FileSt(f, f.substring(0, f.length() - l), null, 0);
 				c++;
 			}
 		}
