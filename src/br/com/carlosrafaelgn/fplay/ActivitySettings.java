@@ -70,7 +70,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -80,24 +80,32 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		if (view == optAutoTurnOff) {
-			lastMenuView = optAutoTurnOff;
+		if (view == optAutoTurnOff || view == optAutoIdleTurnOff) {
+			lastMenuView = (SettingView)view;
 			UI.prepare(menu);
+			final int s = ((view == optAutoTurnOff) ? Player.getTurnOffTimerSelectedMinutes() : Player.getIdleTurnOffTimerSelectedMinutes());
+			final int c = ((view == optAutoTurnOff) ? Player.getTurnOffTimerCustomMinutes() : Player.getIdleTurnOffTimerCustomMinutes());
 			menu.add(0, 0, 0, R.string.never)
-				.setOnMenuItemClickListener(this);
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s <= 0 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, Player.getTurnOffTimerCustomMinutes(), 0, getMinuteString(Player.getTurnOffTimerCustomMinutes()))
-				.setOnMenuItemClickListener(this);
+			menu.add(1, c, 0, getMinuteString(c))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s == c ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 1, 1);
 			menu.add(2, 60, 0, getMinuteString(60))
-				.setOnMenuItemClickListener(this);
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s == 60 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			menu.add(2, 90, 1, getMinuteString(90))
-				.setOnMenuItemClickListener(this);
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s == 90 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			menu.add(2, 120, 2, getMinuteString(120))
-				.setOnMenuItemClickListener(this);
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s == 120 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 2, 4);
 			menu.add(3, -2, 0, R.string.custom)
-				.setOnMenuItemClickListener(this);
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optForcedLocale) {
 			final Context ctx = getApplication();
 			final int o = UI.getForcedLocale();
@@ -211,10 +219,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
-		if (lastMenuView == optAutoTurnOff) {
+		if (lastMenuView == optAutoTurnOff || lastMenuView == optAutoIdleTurnOff) {
 			if (item.getItemId() >= 0) {
-				Player.setTurnOffTimer(item.getItemId(), false);
-				optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+				if (lastMenuView == optAutoTurnOff)
+					Player.setTurnOffTimer(item.getItemId());
+				else
+					Player.setIdleTurnOffTimer(item.getItemId());
+				lastMenuView.setSecondaryText(getAutoTurnOffString());
 			} else {
 				final Context ctx = getHostActivity();
 				final LinearLayout l = new LinearLayout(ctx);
@@ -231,7 +242,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 				p.topMargin = UI._8dp;
 				txtCustomMinutes.setLayoutParams(p);
-				txtCustomMinutes.setText(Integer.toString(Player.getTurnOffTimerCustomMinutes()));
+				txtCustomMinutes.setText(Integer.toString((lastMenuView == optAutoTurnOff) ? Player.getTurnOffTimerCustomMinutes() : Player.getIdleTurnOffTimerCustomMinutes()));
 				l.addView(txtCustomMinutes);
 				UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 				.setTitle(R.string.msg_turn_off_title)
@@ -309,6 +320,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	private String getAutoTurnOffString() {
 		return getMinuteString(Player.getTurnOffTimerMinutesLeft());
+	}
+	
+	private String getAutoIdleTurnOffString() {
+		return getMinuteString(Player.getIdleTurnOffTimerMinutesLeft());
 	}
 	
 	private String getVolumeString() {
@@ -528,6 +543,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 			optAutoTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
 			optAutoTurnOff.setOnClickListener(this);
+			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
+			optAutoIdleTurnOff.setOnClickListener(this);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
 			optKeepScreenOn.setOnClickListener(this);
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
@@ -584,7 +601,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFadeInOther.setOnClickListener(this);
 			
 			panelSettings.addView(optAutoTurnOff);
-			addHeader(ctx, R.string.hdr_display, optAutoTurnOff);
+			panelSettings.addView(optAutoIdleTurnOff);
+			addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff);
 			panelSettings.addView(optKeepScreenOn);
 			if (!UI.isCurrentLocaleCyrillic())
 				panelSettings.addView(optUseAlternateTypeface);
@@ -637,6 +655,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		Player.turnOffTimerObserver = this;
 		if (optAutoTurnOff != null)
 			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+		if (optAutoIdleTurnOff != null)
+			optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
 	}
 	
 	@Override
@@ -653,6 +673,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optLoadCurrentTheme = null;
 		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
+		optAutoIdleTurnOff = null;
 		optKeepScreenOn = null;
 		optTheme = null;
 		optVolumeControlType = null;
@@ -799,7 +820,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
-		} else if (view == optAutoTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
+		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			CustomContextMenu.openContextMenu(view, this);
 			return;
 		}
@@ -819,10 +840,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else if (txtCustomMinutes != null) {
 				try {
 					int m = Integer.parseInt(txtCustomMinutes.getText().toString());
-					if (m > 0) {
-						configsChanged = true;
-						Player.setTurnOffTimer(m, true);
+					configsChanged = true;
+					if (lastMenuView == optAutoTurnOff) {
+						Player.setTurnOffTimer(m);
 						optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+					} else {
+						Player.setIdleTurnOffTimer(m);
+						optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
 					}
 				} catch (Throwable ex) {
 				}
@@ -835,6 +859,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public void onPlayerTurnOffTimerTick() {
 		if (optAutoTurnOff != null)
 			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+	}
+	
+	@Override
+	public void onPlayerIdleTurnOffTimerTick() {
+		if (optAutoIdleTurnOff != null)
+			optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
 	}
 	
 	private void validateColor(int idx1, int idx2) {

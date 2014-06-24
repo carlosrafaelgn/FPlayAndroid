@@ -118,6 +118,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	public static interface PlayerTurnOffTimerObserver {
 		public void onPlayerTurnOffTimerTick();
+		public void onPlayerIdleTurnOffTimerTick();
 	}
 	
 	public static interface PlayerDestroyedObserver {
@@ -236,6 +237,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
 	private static final int OPT_VISUALIZERORIENTATION = 0x002B;
 	private static final int OPT_SONGEXTRAINFOMODE = 0x002C;
+	private static final int OPT_TURNOFFTIMERSELECTEDMINUTES = 0x002D;
+	private static final int OPT_IDLETURNOFFTIMERCUSTOMMINUTES = 0x002E;
+	private static final int OPT_IDLETURNOFFTIMERSELECTEDMINUTES = 0x002F;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -244,7 +248,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode,
 		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, hasFocus, dimmedVolume, reviveAlreadyRetried;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static int volumeDB, lastTime = -1, lastHow, state, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
+	private static int volumeDB, lastTime = -1, lastHow, state, silenceMode, globalMaxVolume = 15, turnOffTimerMinutesLeft, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerMinutesLeft, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
 	private static Player thePlayer;
 	private static Song lastSong, currentSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
@@ -252,7 +256,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static AudioManager audioManager;
 	private static TelephonyManager telephonyManager;
 	private static ExternalReceiver externalReceiver;
-	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, turnOffTimer;
+	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, turnOffTimer, idleTurnOffTimer;
 	private static ComponentName mediaButtonEventReceiver;
 	private static RemoteControlClient remoteControlClient;
 	private static Object mediaRouterCallback;
@@ -308,6 +312,15 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
 		if (turnOffTimerCustomMinutes < 1)
 			turnOffTimerCustomMinutes = 1;
+		turnOffTimerSelectedMinutes = opts.getInt(OPT_TURNOFFTIMERSELECTEDMINUTES, 0);
+		if (turnOffTimerSelectedMinutes < 1)
+			turnOffTimerSelectedMinutes = 0;
+		idleTurnOffTimerCustomMinutes = opts.getInt(OPT_IDLETURNOFFTIMERCUSTOMMINUTES, 30);
+		if (idleTurnOffTimerCustomMinutes < 1)
+			idleTurnOffTimerCustomMinutes = 1;
+		idleTurnOffTimerSelectedMinutes = opts.getInt(OPT_IDLETURNOFFTIMERSELECTEDMINUTES, 0);
+		if (idleTurnOffTimerSelectedMinutes < 1)
+			idleTurnOffTimerSelectedMinutes = 0;
 		UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
 		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen);
 		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
@@ -369,6 +382,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_VOLUMECONTROLTYPE, volumeControlType);
 		opts.put(OPT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);
+		opts.put(OPT_TURNOFFTIMERSELECTEDMINUTES, turnOffTimerSelectedMinutes);
+		opts.put(OPT_IDLETURNOFFTIMERCUSTOMMINUTES, idleTurnOffTimerCustomMinutes);
+		opts.put(OPT_IDLETURNOFFTIMERSELECTEDMINUTES, idleTurnOffTimerSelectedMinutes);
 		opts.put(OPT_ISDIVIDERVISIBLE, UI.isDividerVisible);
 		opts.put(OPT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
 		opts.put(OPT_HANDLECALLKEY, handleCallKey);
@@ -587,8 +603,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				prepareDelayTimer = new Timer(thePlayer, "Player Prepare Delay Timer", true, true, false);
 			if (volumeTimer == null)
 				volumeTimer = new Timer(thePlayer, "Player Volume Timer", false, true, true);
-			if (turnOffTimer == null)
-				turnOffTimer = new Timer(thePlayer, "Turn Off Timer", true, true, false);
 			sendMessage(MSG_INITIALIZATION_0);
 		}
 	}
@@ -849,6 +863,33 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			final boolean playbackHasChanged = (lastPlaying != playing);
 			if (!songHasChanged && !playbackHasChanged && ex == null)
 				return;
+			if (idleTurnOffTimer != null) {
+				if (idleTurnOffTimer.isAlive()) {
+					if (playing) {
+						idleTurnOffTimerMinutesLeft = idleTurnOffTimerSelectedMinutes;
+						idleTurnOffTimer.stop();
+						if (turnOffTimerObserver != null)
+							turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+					}
+				} else {
+					if (idleTurnOffTimerSelectedMinutes > 0) {
+						if (!playing) {
+							idleTurnOffTimerMinutesLeft = idleTurnOffTimerSelectedMinutes;
+							idleTurnOffTimer.start(60000);
+							if (turnOffTimerObserver != null)
+								turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+						}
+					} else {
+						idleTurnOffTimerMinutesLeft = 0;
+						idleTurnOffTimerSelectedMinutes = 0;
+						idleTurnOffTimer.stop();
+						idleTurnOffTimer.release();
+						idleTurnOffTimer = null;
+						if (turnOffTimerObserver != null)
+							turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+					}
+				}
+			}
 			lastSong = currentSong;
 			lastPlaying = playing;
 			notificationManager.notify(1, getNotification());
@@ -881,13 +922,19 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
+	private static void performFinalInitializationTasks() {
+		state = STATE_INITIALIZED;
+		setTurnOffTimer(turnOffTimerSelectedMinutes);
+		setIdleTurnOffTimer(idleTurnOffTimerSelectedMinutes);
+	}
+	
 	public static void onSongListDeserialized(Song newCurrentSong, int forcePlayIdx, int positionToSelect, Throwable ex) {
 		if (positionToSelect >= 0)
 			setSelectionAfterAdding(positionToSelect);
 		onPlayerChanged(newCurrentSong, ex);
 		switch (state) {
 		case STATE_INITIALIZING_PENDING_LIST:
-			state = STATE_INITIALIZED;
+			performFinalInitializationTasks();
 			break;
 		case STATE_INITIALIZING:
 			state = STATE_INITIALIZING_PENDING_ACTIONS;
@@ -1434,14 +1481,21 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			destroyedObservers.remove(observer);
 	}
 	
-	public static void setTurnOffTimer(int minutes, boolean saveCustom) {
-		if (turnOffTimer != null) {
+	public static void setTurnOffTimer(int minutes) {
+		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) {
 			turnOffTimerMinutesLeft = 0;
-			turnOffTimer.stop();
+			turnOffTimerSelectedMinutes = 0;
+			if (turnOffTimer != null) {
+				turnOffTimer.stop();
+				turnOffTimer.release();
+				turnOffTimer = null;
+			}
 			if (minutes > 0) {
-				if (saveCustom)
+				turnOffTimer = new Timer(thePlayer, "Turn Off Timer", true, true, false);
+				if (minutes != 60 && minutes != 90 && minutes != 120)
 					turnOffTimerCustomMinutes = minutes;
 				turnOffTimerMinutesLeft = minutes;
+				turnOffTimerSelectedMinutes = minutes;
 				turnOffTimer.start(60000);
 			}
 		}
@@ -1453,6 +1507,43 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	public static int getTurnOffTimerCustomMinutes() {
 		return turnOffTimerCustomMinutes;
+	}
+	
+	public static int getTurnOffTimerSelectedMinutes() {
+		return turnOffTimerSelectedMinutes;
+	}
+	
+	public static void setIdleTurnOffTimer(int minutes) {
+		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) {
+			idleTurnOffTimerMinutesLeft = 0;
+			idleTurnOffTimerSelectedMinutes = 0;
+			if (idleTurnOffTimer != null) {
+				idleTurnOffTimer.stop();
+				idleTurnOffTimer.release();
+				idleTurnOffTimer = null;
+			}
+			if (minutes > 0) {
+				idleTurnOffTimer = new Timer(thePlayer, "Idle Turn Off Timer", true, true, false);
+				if (minutes != 60 && minutes != 90 && minutes != 120)
+					idleTurnOffTimerCustomMinutes = minutes;
+				idleTurnOffTimerMinutesLeft = minutes;
+				idleTurnOffTimerSelectedMinutes = minutes;
+				if (!playing)
+					idleTurnOffTimer.start(60000);
+			}
+		}
+	}
+	
+	public static int getIdleTurnOffTimerMinutesLeft() {
+		return idleTurnOffTimerMinutesLeft;
+	}
+	
+	public static int getIdleTurnOffTimerCustomMinutes() {
+		return idleTurnOffTimerCustomMinutes;
+	}
+	
+	public static int getIdleTurnOffTimerSelectedMinutes() {
+		return idleTurnOffTimerSelectedMinutes;
 	}
 	
 	public static int getState() {
@@ -1725,6 +1816,22 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					stopService();
 				else
 					turnOffTimer.start(60000);
+			}
+		} else if (timer == idleTurnOffTimer) {
+			if (playing) {
+				idleTurnOffTimerMinutesLeft = idleTurnOffTimerSelectedMinutes;
+				if (turnOffTimerObserver != null)
+					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+			} else {
+				if (idleTurnOffTimerMinutesLeft > 0) {
+					idleTurnOffTimerMinutesLeft--;
+					if (turnOffTimerObserver != null)
+						turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+					if (idleTurnOffTimerMinutesLeft <= 0)
+						stopService();
+					else
+						idleTurnOffTimer.start(60000);
+				}
 			}
 		}
 	}
@@ -2119,7 +2226,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			case MSG_INITIALIZATION_8:
 				switch (state) {
 				case STATE_INITIALIZING_PENDING_ACTIONS:
-					state = STATE_INITIALIZED;
+					performFinalInitializationTasks();
 					break;
 				case STATE_INITIALIZING:
 					state = STATE_INITIALIZING_PENDING_LIST;
@@ -2229,6 +2336,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					turnOffTimer.stop();
 					turnOffTimer.release();
 					turnOffTimer = null;
+				}
+				if (idleTurnOffTimer != null) {
+					idleTurnOffTimer.stop();
+					idleTurnOffTimer.release();
+					idleTurnOffTimer = null;
 				}
 				if (thePlayer != null) {
 					if (externalReceiver != null) {
