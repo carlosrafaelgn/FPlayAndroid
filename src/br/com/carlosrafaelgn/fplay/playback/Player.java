@@ -1844,10 +1844,15 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				}
 			}
 			if (playing || wasPlayingBeforeOngoingCall) {
-				if (!playing)
-					idleTurnOffTimer.start(30000); //we must check again later
-				else
+				if (!playing) {
+					//consider time spent in calls as active time, but keep checking,
+					//because when the call ends, the audio focus could go to someone
+					//else other than us, therefore, rendering us idle!
+					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
+					idleTurnOffTimer.start(30000);
+				} else {
 					idleTurnOffTimerOrigin = 0; //it's safe to reset the origin
+				}
 				if (turnOffTimerObserver != null)
 					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
 			} else {
