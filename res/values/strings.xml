@@ -45,7 +45,7 @@
     <string name="opt_language">Language:</string>
     <string name="opt_use_alternate_typeface">Use dyslexia-friendly typeface</string>
     <string name="opt_auto_turn_off">Automatically turn off the player after:</string>
-    <string name="opt_auto_idle_turn_off">When idle, automatically turn off the player after:</string>
+    <string name="opt_auto_idle_turn_off">When idle, automatically turn off the player after (beta):</string>
     <string name="opt_keep_screen_on">Keep screen always on</string>
     <string name="opt_volume_control_type">Volume control type:</string>
     <string name="opt_is_divider_visible">Show divider between items in lists</string>
@@ -215,7 +215,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Physical Back key always returns to player while adding songs</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Return to the player</string>
-    <string name="startup_message">- New sorting options for the list\n- New display options for the songs\n- Improved visualization! Give it a try! ;)</string>
+    <string name="startup_message">- New feature: idle shutdown\n- New sorting options for the list\n- New display options for the songs\n- Improved visualization! Give it a try! ;)</string>
     <string name="sort_by_title">Sort by title</string>
     <string name="sort_by_artist">Sort by artist</string>
     <string name="sort_by_album">Sort by album</string>

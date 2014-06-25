@@ -79,7 +79,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 36;
+	public static final int VERSION_CODE = 37;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -1031,17 +1031,30 @@ public final class UI {
 			loadDarkLightTheme();
 			break;
 		}
+		//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+		//	setAndroidThemeAccordingly14(context);
 	}
 	
+	/*@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private static void setAndroidThemeAccordingly14(Context context) {
+		//Theme.DeviceDefault.Light.NoActionBar.Fullscreen appeared
+		//only on API 14... :(
+		//http://android-developers.blogspot.com.br/2012/01/holo-everywhere.html
+		if (ColorUtils.relativeLuminance(color_list) >= 0.5)
+			context.setTheme(android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen);
+		else
+			context.setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
+	}*/
+	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 5) {
-			msgStartup = 5;
+		if (msgStartup >= 6) {
+			msgStartup = 6;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup < 5) {
-			msgStartup = 5;
+		if (msgStartup < 6) {
+			msgStartup = 6;
 			//content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_key_behavior).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 			content = activity.getText(R.string.startup_message).toString();
 		}

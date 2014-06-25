@@ -382,11 +382,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else
 			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		Player.setAppIdle(true);
 		super.onPause();
 	}
 	
 	@Override
 	protected void onResume() {
+		Player.setAppIdle(false);
 		Player.observer = this;
 		reset = true;
 		resumeTimer();

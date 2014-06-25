@@ -45,7 +45,7 @@
     <string name="opt_language">Idioma:</string>
     <string name="opt_use_alternate_typeface">Usar fonte amigável para dislexia</string>
     <string name="opt_auto_turn_off">Desligar o player automaticamente em:</string>
-    <string name="opt_auto_idle_turn_off">Quando inativo, desligar o player automaticamente em:</string>
+    <string name="opt_auto_idle_turn_off">Quando inativo, desligar o player automaticamente em (beta):</string>
     <string name="opt_keep_screen_on">Manter a tela sempre ligada</string>
     <string name="opt_volume_control_type">Tipo do controle de volume:</string>
     <string name="opt_is_divider_visible">Mostrar divisão entre os itens das listas</string>
@@ -215,7 +215,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
-    <string name="startup_message">- Novas opções de ordenação da lista\n- Novas opções de exibição das músicas\n- Visualização melhorada! Experimente! ;)</string>
+    <string name="startup_message">- Nova funcionalidade: desligamento quando ocioso\n- Novas opções de ordenação da lista\n- Novas opções de exibição das músicas\n- Visualização melhorada! Experimente! ;)</string>
     <string name="sort_by_title">Ordenar por título</string>
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>

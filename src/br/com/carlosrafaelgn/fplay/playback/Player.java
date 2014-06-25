@@ -246,7 +246,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
 	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode,
-		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, hasFocus, dimmedVolume, reviveAlreadyRetried;
+		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, hasFocus, dimmedVolume, reviveAlreadyRetried, appIdle;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin;
 	private static int volumeDB, lastTime = -1, lastHow, state, silenceMode, globalMaxVolume = 15, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
@@ -864,34 +864,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			final boolean playbackHasChanged = (lastPlaying != playing);
 			if (!songHasChanged && !playbackHasChanged && ex == null)
 				return;
-			if (idleTurnOffTimer != null) {
-				if (idleTurnOffTimer.isAlive()) {
-					if (playing) {
-						idleTurnOffTimerOrigin = 0;
-						idleTurnOffTimer.stop();
-						if (turnOffTimerObserver != null)
-							turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-					}
-				} else {
-					if (idleTurnOffTimerSelectedMinutes > 0) {
-						if (!playing) {
-							//refer to setTurnOffTimer and setIdleTurnOffTimer for more information
-							idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
-							idleTurnOffTimer.start(30000);
-							if (turnOffTimerObserver != null)
-								turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-						}
-					} else {
-						idleTurnOffTimerOrigin = 0;
-						idleTurnOffTimerSelectedMinutes = 0;
-						idleTurnOffTimer.stop();
-						idleTurnOffTimer.release();
-						idleTurnOffTimer = null;
-						if (turnOffTimerObserver != null)
-							turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-					}
-				}
-			}
+			if (idleTurnOffTimer != null && idleTurnOffTimerSelectedMinutes > 0)
+				processIdleTurnOffTimer();
 			lastSong = currentSong;
 			lastPlaying = playing;
 			notificationManager.notify(1, getNotification());
@@ -1522,6 +1496,44 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return turnOffTimerSelectedMinutes;
 	}
 	
+	private static void processIdleTurnOffTimer() {
+		final boolean timerShouldBeOn = (!playing && appIdle);
+		if (idleTurnOffTimer.isAlive()) {
+			if (!timerShouldBeOn) {
+				idleTurnOffTimerOrigin = 0;
+				idleTurnOffTimer.stop();
+				if (turnOffTimerObserver != null)
+					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+			}
+		} else {
+			if (idleTurnOffTimerSelectedMinutes > 0) {
+				if (timerShouldBeOn && (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK)) {
+					//refer to setIdleTurnOffTimer for more information
+					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
+					idleTurnOffTimer.start(30000);
+					if (turnOffTimerObserver != null)
+						turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+				}
+			} else {
+				idleTurnOffTimerOrigin = 0;
+				idleTurnOffTimerSelectedMinutes = 0;
+				idleTurnOffTimer.stop();
+				idleTurnOffTimer.release();
+				idleTurnOffTimer = null;
+				if (turnOffTimerObserver != null)
+					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+			}
+		}
+	}
+	
+	public static void setAppIdle(boolean appIdle) {
+		if (Player.appIdle != appIdle) {
+			Player.appIdle = appIdle;
+			if (idleTurnOffTimer != null && idleTurnOffTimerSelectedMinutes > 0)
+				processIdleTurnOffTimer();
+		}
+	}
+	
 	public static void setIdleTurnOffTimer(int minutes) {
 		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) {
 			idleTurnOffTimerOrigin = 0;
@@ -1539,10 +1551,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				//does not take sleep time into account (and the user makes no
 				//difference between the time spent during sleep and the one
 				//while actually working)
-				idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
 				idleTurnOffTimerSelectedMinutes = minutes;
-				if (!playing)
+				if (!playing && appIdle) {
+					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
 					idleTurnOffTimer.start(30000);
+				}
 			}
 		}
 	}
@@ -1825,7 +1838,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			}
 		} else if (timer == turnOffTimer) {
 			if (turnOffTimerOrigin > 0) {
-				final int secondsLeft = (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 1000);
+				final int secondsLeft = (turnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 1000);
 				if (turnOffTimerObserver != null)
 					turnOffTimerObserver.onPlayerTurnOffTimerTick();
 				if (secondsLeft < 15) //less than half of our period
@@ -1835,7 +1848,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			}
 		} else if (timer == idleTurnOffTimer) {
 			boolean wasPlayingBeforeOngoingCall = false;
-			if (!playing && telephonyManager != null) {
+			final boolean idle = (!playing && appIdle);
+			if (idle && telephonyManager != null) {
 				//check for ongoing call
 				try {
 					if (telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
@@ -1843,11 +1857,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				} catch (Throwable ex) {
 				}
 			}
-			if (playing || wasPlayingBeforeOngoingCall) {
-				if (!playing) {
+			if (!idle || wasPlayingBeforeOngoingCall) {
+				if (idle) {
 					//consider time spent in calls as active time, but keep checking,
 					//because when the call ends, the audio focus could go to someone
-					//else other than us, therefore, rendering us idle!
+					//else, rendering us actually idle!
 					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
 					idleTurnOffTimer.start(30000);
 				} else {
@@ -1857,7 +1871,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
 			} else {
 				if (idleTurnOffTimerOrigin > 0) {
-					final int secondsLeft = (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 1000);
+					final int secondsLeft = (idleTurnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 1000);
 					if (turnOffTimerObserver != null)
 						turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
 					if (secondsLeft < 15) //less than half of our period

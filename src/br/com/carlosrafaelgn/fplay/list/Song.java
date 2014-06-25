@@ -46,6 +46,7 @@ public final class Song extends BaseItem {
 	public static final int EXTRA_TRACK_ARTIST = 2;
 	public static final int EXTRA_TRACK_ALBUM = 3;
 	public static final int EXTRA_TRACK_ARTIST_ALBUM = 4;
+	public static final int EXTRA_ARTIST_ALBUM = 5;
 	public static int extraInfoMode;
 	public final String path;
 	public final boolean isHttp;
@@ -201,8 +202,11 @@ public final class Song extends BaseItem {
 		case EXTRA_TRACK_ALBUM:
 			extraInfo = ((track > 0) ? (track + " / " + album) : album);
 			break;
-		default:
+		case EXTRA_TRACK_ARTIST_ALBUM:
 			extraInfo = ((track > 0) ? (track + " / " + artist + " / " + album) : (artist + " / " + album));
+			break;
+		default:
+			extraInfo = artist + " / " + album;
 			break;
 		}
 	}

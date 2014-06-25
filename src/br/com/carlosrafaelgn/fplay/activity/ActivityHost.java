@@ -244,13 +244,15 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	protected void onPause() {
-		super.onPause();
 		if (top != null)
 			top.onPause();
+		Player.setAppIdle(true);
+		super.onPause();
 	}
 	
 	@Override
 	protected void onResume() {
+		Player.setAppIdle(false);
 		if (top != null)
 			top.onResume();
 		super.onResume();

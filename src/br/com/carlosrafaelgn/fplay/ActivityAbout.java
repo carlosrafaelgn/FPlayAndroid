@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay;
 
 import android.content.pm.PackageInfo;
+import android.os.Build;
 import android.text.util.Linkify;
 import android.util.TypedValue;
 import android.view.View;
@@ -86,6 +87,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));
+		sb.append("\nAPI: ");
+		sb.append(Build.VERSION.SDK_INT);
 		sb.append("\nDPI: ");
 		sb.append(UI.densityDpi);
 		sb.append("\ndp: ");

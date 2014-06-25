@@ -178,7 +178,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			lastMenuView = optExtraInfoMode;
 			UI.prepare(menu);
 			final int o = Song.extraInfoMode;
-			for (int i = Song.EXTRA_ARTIST; i <= Song.EXTRA_TRACK_ARTIST_ALBUM; i++) {
+			for (int i = Song.EXTRA_ARTIST; i <= Song.EXTRA_ARTIST_ALBUM; i++) {
 				menu.add(0, i, i, getExtraInfoModeString(i))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
@@ -221,11 +221,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public boolean onMenuItemClick(MenuItem item) {
 		if (lastMenuView == optAutoTurnOff || lastMenuView == optAutoIdleTurnOff) {
 			if (item.getItemId() >= 0) {
-				if (lastMenuView == optAutoTurnOff)
+				if (lastMenuView == optAutoTurnOff) {
 					Player.setTurnOffTimer(item.getItemId());
-				else
+					optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+				} else {
 					Player.setIdleTurnOffTimer(item.getItemId());
-				lastMenuView.setSecondaryText(getAutoTurnOffString());
+					optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
+				}
 			} else {
 				final Context ctx = getHostActivity();
 				final LinearLayout l = new LinearLayout(ctx);
@@ -347,8 +349,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			return getText(R.string.track) + "/" + getText(R.string.artist);
 		case Song.EXTRA_TRACK_ALBUM:
 			return getText(R.string.track) + "/" + getText(R.string.album);
-		default:
+		case Song.EXTRA_TRACK_ARTIST_ALBUM:
 			return getText(R.string.track) + "/" + getText(R.string.artist) + "/" + getText(R.string.album);
+		default:
+			return getText(R.string.artist) + "/" + getText(R.string.album);
 		}
 	}
 	
