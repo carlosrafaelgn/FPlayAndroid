@@ -35,8 +35,8 @@ package br.com.carlosrafaelgn.fplay.util;
 import android.graphics.Bitmap;
 
 public final class ReleasableBitmapWrapper {
-	private int ref;
-	public Bitmap bitmap;
+	private volatile int ref;
+	public volatile Bitmap bitmap;
 	
 	public ReleasableBitmapWrapper(Bitmap bitmap) {
 		this.ref = 1;

@@ -68,7 +68,8 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public static final int HOW_PREVIOUS = -3;
 	public static final int HOW_NEXT_MANUAL = -2;
 	public static final int HOW_NEXT_AUTO = -1;
-	private int adding, currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem, sortMode;
+	private volatile int adding;
+	private int currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem, sortMode;
 	public boolean selecting, moving;
 	private Song[] shuffledList;
 	public ActivityItemView observerActivity;

@@ -61,6 +61,10 @@ public final class MainHandler extends Handler {
 		theHandler.post(runnable);
 	}
 	
+	public static void postToMainThreadDelayed(Runnable runnable, long delayMillis) {
+		theHandler.postAtTime(runnable, SystemClock.uptimeMillis() + delayMillis);
+	}
+	
 	public static void sendMessage(MainHandler.Callback callback, int what) {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, callback), SystemClock.uptimeMillis());
 	}

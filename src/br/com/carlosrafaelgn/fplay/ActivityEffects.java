@@ -64,7 +64,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	private BgButton btnGoBack, btnMenu, btnChangeEffect;
 	private int min, max, barTextSizeIndex;
 	private int[] frequencies;
-	private boolean enablingEffect;
+	private boolean enablingEffect, screenNotSoLarge;
 	private BgSeekBar[] bars;
 	private BgSeekBar barBass, barVirtualizer;
 	private StringBuilder txtBuilder;
@@ -221,6 +221,8 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	@Override
 	protected void onCreate() {
 		txtBuilder = new StringBuilder(32);
+		final int _600dp = UI.dpToPxI(600);
+		screenNotSoLarge = ((UI.screenWidth < _600dp) || (UI.screenHeight < _600dp));
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -327,24 +329,32 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			if (btnChangeEffect != null)
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			if (UI.isLargeScreen) {
-				UI.prepareViewPaddingForLargeScreen(panelControls, UI._16dp);
+				UI.prepareViewPaddingForLargeScreen(panelControls, (screenNotSoLarge && !UI.isLandscape) ? UI._8dp : UI._16dp);
 				if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
 					((LinearLayout)panelControls).setOrientation(LinearLayout.VERTICAL);
 					((LinearLayout)panelControls).setWeightSum(0);
-					final int _32dp = (UI._16dp << 1);
+					final int margin = (screenNotSoLarge ? UI._8dp : (UI._16dp << 1));
 					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-					lp.leftMargin = _32dp;
-					lp.topMargin = _32dp;
-					lp.rightMargin = _32dp;
-					lp.bottomMargin = _32dp;
+					lp.leftMargin = margin;
+					lp.topMargin = margin;
+					lp.rightMargin = margin;
+					lp.bottomMargin = margin;
 					panelSecondary.setLayoutParams(lp);
 					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0);
 					lp.weight = 1;
-					lp.leftMargin = _32dp;
-					lp.topMargin = _32dp;
-					lp.rightMargin = _32dp;
-					lp.bottomMargin = _32dp;
+					lp.leftMargin = margin;
+					lp.topMargin = (screenNotSoLarge ? UI._16dp : margin);
+					lp.rightMargin = margin;
+					lp.bottomMargin = margin;
 					panelEqualizer.setLayoutParams(lp);
+					if (screenNotSoLarge) {
+						lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
+						lp.bottomMargin = UI._16dp;
+						barBass.setLayoutParams(lp);
+						lp = (LinearLayout.LayoutParams)barVirtualizer.getLayoutParams();
+						lp.bottomMargin = UI._16dp;
+						barVirtualizer.setLayoutParams(lp);
+					}
 				}
 			} else {
 				panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);

@@ -45,7 +45,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	}
 	
 	private final Object sync;
-	private BitmapLruCache cache;
+	private volatile BitmapLruCache cache;
 	private Thread thread;
 	private Handler handler;
 	private Looper looper;

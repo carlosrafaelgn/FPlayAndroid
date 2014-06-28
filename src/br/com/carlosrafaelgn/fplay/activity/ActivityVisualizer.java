@@ -197,12 +197,51 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		return false;
 	}
 	
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private static final class FullScreenObserver implements Runnable, View.OnSystemUiVisibilityChangeListener {
+		public final View decor;
+		
+		public FullScreenObserver(View decor) {
+			this.decor = decor;
+		}
+		
+		@Override
+		public void onSystemUiVisibilityChange(int visibility) {
+			if ((visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0)
+				MainHandler.postToMainThreadDelayed(this, 2000);
+		}
+		
+		@Override
+		public void run() {
+			try {
+				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+						View.SYSTEM_UI_FLAG_IMMERSIVE);
+			} catch (Throwable ex){
+			}
+		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private void prepareFullScreen() {
+		final View decor = getWindow().getDecorView();
+		try {
+			decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+					View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+					View.SYSTEM_UI_FLAG_IMMERSIVE);
+		} catch (Throwable ex) {
+		}
+		decor.setOnSystemUiVisibilityChangeListener(new FullScreenObserver(decor));
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			prepareFullScreen();
 		setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!

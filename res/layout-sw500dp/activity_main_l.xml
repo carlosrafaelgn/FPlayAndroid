@@ -97,6 +97,7 @@
                         android:layout_alignParentLeft="true"
                         android:layout_alignRight="@+id/lblTrackStatic"
                         android:layout_below="@+id/lblTrackStatic"
+                        android:gravity="center_horizontal"
                         android:singleLine="true"
                         android:text="@string/no_info" />
 

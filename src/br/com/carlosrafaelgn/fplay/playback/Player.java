@@ -240,6 +240,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_TURNOFFTIMERSELECTEDMINUTES = 0x002D;
 	private static final int OPT_IDLETURNOFFTIMERCUSTOMMINUTES = 0x002E;
 	private static final int OPT_IDLETURNOFFTIMERSELECTEDMINUTES = 0x002F;
+	private static final int OPT_FLAT = 0x0030;
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
@@ -308,6 +309,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
 		UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
 		UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
+		UI.setFlat(opts.getBoolean(OPT_FLAT, false));
 		setVolumeControlType(context, opts.getInt(OPT_VOLUMECONTROLTYPE, VOLUME_CONTROL_STREAM));
 		UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
 		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
@@ -380,6 +382,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_DISPLAYVOLUMEINDB, UI.displayVolumeInDB);
 		opts.put(OPT_DOUBLECLICKMODE, UI.doubleClickMode);
 		opts.put(OPT_MARQUEETITLE, UI.marqueeTitle);
+		opts.put(OPT_FLAT, UI.isFlat());
 		opts.put(OPT_VOLUMECONTROLTYPE, volumeControlType);
 		opts.put(OPT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);

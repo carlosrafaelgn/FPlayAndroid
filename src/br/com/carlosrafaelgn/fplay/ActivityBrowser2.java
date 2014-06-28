@@ -63,6 +63,7 @@ import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
@@ -77,13 +78,16 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking;
-	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
+	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, bgSecondary;
 	
+	@SuppressWarnings("deprecation")
 	private void refreshButtons() {
 		if (!isAtHome != (chkAll.getVisibility() == View.VISIBLE)) {
 			if (isAtHome) {
-				if (UI.extraSpacing)
+				if (UI.extraSpacing) {
+					panelSecondary.setBackgroundDrawable(null);
 					panelSecondary.setPadding(0, 0, 0, 0);
+				}
 				btnGoBackToPlayer.setVisibility(View.GONE);
 				sep.setVisibility(View.GONE);
 				chkAll.setVisibility(View.GONE);
@@ -103,8 +107,10 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 				list.setNextFocusRightId(R.id.btnGoBack);
 				UI.setNextFocusForwardId(list, R.id.btnGoBack);
 			} else {
-				if (UI.extraSpacing)
+				if (UI.extraSpacing) {
+					panelSecondary.setBackgroundDrawable(bgSecondary);
 					panelSecondary.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+				}
 				btnGoBackToPlayer.setVisibility(View.VISIBLE);
 				sep.setVisibility(View.VISIBLE);
 				chkAll.setVisibility(View.VISIBLE);
@@ -622,6 +628,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		ic_favorite = getDrawable(R.drawable.ic_favorite);
 		ic_artist = getDrawable(R.drawable.ic_artist);
 		ic_album = getDrawable(R.drawable.ic_album);
+		bgSecondary = new BorderDrawable(UI.color_highlight, UI.color_window, 0, UI.thickDividerSize, 0, 0);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -654,7 +661,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
-		panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_selected));
+		if (!isAtHome)
+			panelSecondary.setBackgroundDrawable(bgSecondary);
 		sep = (TextView)findViewById(R.id.sep);
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
@@ -667,11 +675,12 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		chkAll.setOnClickListener(this);
 		chkAll.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, true);
 		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
-		btnGoBackToPlayer.setTextColor(UI.colorState_text_selected_static);
+		btnGoBackToPlayer.setTextColor(UI.colorState_text_reactive);
 		btnGoBackToPlayer.setOnClickListener(this);
-		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_RIGHT, UI.color_text_selected, UI.defaultControlContentsSize), null, null, null);
+		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_RIGHT, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+		btnGoBackToPlayer.setDefaultHeight();
 		btnAdd = (BgButton)findViewById(R.id.btnAdd);
-		btnAdd.setTextColor(UI.colorState_text_selected_static);
+		btnAdd.setTextColor(UI.colorState_text_reactive);
 		btnAdd.setOnClickListener(this);
 		btnAdd.setIcon(UI.ICON_ADD, true, false);
 		sep2 = (TextView)findViewById(R.id.sep2);
@@ -681,9 +690,9 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		rp.leftMargin = UI._8dp;
 		rp.rightMargin = UI._8dp;
 		sep2.setLayoutParams(rp);
-		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_text_selected));
+		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		btnPlay = (BgButton)findViewById(R.id.btnPlay);
-		btnPlay.setTextColor(UI.colorState_text_selected_static);
+		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY, true, false);
 		if (UI.isLargeScreen) {
@@ -742,12 +751,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnAdd = null;
 		sep2 = null;
 		btnPlay = null;
-		ic_closed_folder = null;
-		ic_internal = null;
-		ic_external = null;
-		ic_favorite = null;
-		ic_artist = null;
-		ic_album = null;
 	}
 	
 	@Override
@@ -760,5 +763,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		ic_favorite = null;
 		ic_artist = null;
 		ic_album = null;
+		bgSecondary = null;
 	}
 }

@@ -288,8 +288,10 @@ public final class UI {
 			//http://developer.android.com/guide/practices/screens_support.html#DeclaringTabletLayouts
 			//(There is also the solution at http://stackoverflow.com/questions/11330363/how-to-detect-device-is-android-phone-or-android-tablet
 			//but the former link says it is deprecated...)
-			final int _600dp = (int)((600.0f * displayMetrics.density) + 0.5f);
-			isLargeScreen = ((screenWidth >= _600dp) && (screenHeight >= _600dp));
+			//*** I decided to treat screens >= 500dp as large screens because there are
+			//lots of 7" phones/tablets with resolutions starting at around 533dp ***
+			final int _500dp = (int)((500.0f * displayMetrics.density) + 0.5f);
+			isLargeScreen = ((screenWidth >= _500dp) && (screenHeight >= _500dp));
 			isLandscape = (screenWidth >= screenHeight);
 			isLowDpiScreen = (displayMetrics.densityDpi < 160);
 		}
@@ -338,7 +340,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
@@ -1046,6 +1048,15 @@ public final class UI {
 			context.setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
 	}*/
 	
+	public static void setFlat(boolean flat) {
+		UI.flat = flat;
+		Gradient.purgeAll();
+	}
+	
+	public static boolean isFlat() {
+		return flat;
+	}
+	
 	public static void showNextStartupMsg(final Activity activity) {
 		if (msgStartup >= 6) {
 			msgStartup = 6;
@@ -1172,12 +1183,16 @@ public final class UI {
 	
 	public static void drawBgBorderless(Canvas canvas, int state, Rect rect) {
 		if ((state & ~STATE_CURRENT) != 0) {
-			if ((state & STATE_PRESSED) != 0)
+			if ((state & STATE_PRESSED) != 0) {
 				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, rect);
-			else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0)
-				fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
-			else if ((state & STATE_MULTISELECTED) != 0)
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+				if (flat)
+					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, rect);
+				else
+					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
+			} else if ((state & STATE_MULTISELECTED) != 0) {
 				fillRect(canvas, color_selected_multi, rect);
+			}
 		}
 	}
 	
@@ -1199,9 +1214,15 @@ public final class UI {
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
 				if (squareItem) {
 					strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, rect, strokeSize);
-					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect, strokeSize, strokeSize);
+					if (flat)
+						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, rect, strokeSize, strokeSize);
+					else
+						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect, strokeSize, strokeSize);
 				} else {
-					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
+					if (flat)
+						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, rect);
+					else
+						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
 				}
 			} else if ((state & STATE_MULTISELECTED) != 0) {
 				fillRect(canvas, color_selected_multi, rect);

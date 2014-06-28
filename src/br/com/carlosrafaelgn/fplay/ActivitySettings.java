@@ -70,7 +70,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -553,6 +553,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optKeepScreenOn.setOnClickListener(this);
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
 			optTheme.setOnClickListener(this);
+			optFlat = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString(), null, true, UI.isFlat(), false);
+			optFlat.setOnClickListener(this);
 			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
 			optVolumeControlType.setOnClickListener(this);
 			optIsDividerVisible = new SettingView(ctx, UI.ICON_DIVIDER, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible, false);
@@ -608,14 +610,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optAutoIdleTurnOff);
 			addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff);
 			panelSettings.addView(optKeepScreenOn);
-			if (!UI.isCurrentLocaleCyrillic())
-				panelSettings.addView(optUseAlternateTypeface);
 			panelSettings.addView(optTheme);
+			panelSettings.addView(optFlat);
 			panelSettings.addView(optExtraInfoMode);
 			panelSettings.addView(optForceOrientation);
 			panelSettings.addView(optIsDividerVisible);
 			panelSettings.addView(optIsVerticalMarginLarge);
 			panelSettings.addView(optExtraSpacing);
+			if (!UI.isCurrentLocaleCyrillic())
+				panelSettings.addView(optUseAlternateTypeface);
 			panelSettings.addView(optForcedLocale);
 			addHeader(ctx, R.string.widget, optForcedLocale);
 			panelSettings.addView(optWidgetTransparentBg);
@@ -680,6 +683,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optAutoIdleTurnOff = null;
 		optKeepScreenOn = null;
 		optTheme = null;
+		optFlat = null;
 		optVolumeControlType = null;
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
@@ -792,6 +796,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.requestLayout();
 		} else if (view == optExtraSpacing) {
 			UI.extraSpacing = optExtraSpacing.isChecked();
+			onCleanupLayout();
+			onCreateLayout(false);
+			System.gc();
+		} else if (view == optFlat) {
+			UI.setFlat(optFlat.isChecked());
 			onCleanupLayout();
 			onCreateLayout(false);
 			System.gc();
