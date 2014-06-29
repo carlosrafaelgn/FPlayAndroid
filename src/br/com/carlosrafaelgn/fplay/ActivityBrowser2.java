@@ -63,7 +63,6 @@ import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
-import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
@@ -78,16 +77,24 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking;
-	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, bgSecondary;
+	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
-	@SuppressWarnings("deprecation")
+	private void setListPadding() {
+		if (list != null) {
+			if (UI.isLargeScreen)
+				UI.prepareViewPaddingForLargeScreen(list, isAtHome ? UI.thickDividerSize : 0, isAtHome ? 0 : UI.thickDividerSize);
+			else
+				list.setPadding(0, isAtHome ? UI.thickDividerSize : 0, 0, isAtHome ? 0 : UI.thickDividerSize);
+		}
+	}
+	
 	private void refreshButtons() {
 		if (!isAtHome != (chkAll.getVisibility() == View.VISIBLE)) {
 			if (isAtHome) {
-				if (UI.extraSpacing) {
-					panelSecondary.setBackgroundDrawable(null);
+				list.setTopBorder();
+				setListPadding();
+				if (UI.extraSpacing)
 					panelSecondary.setPadding(0, 0, 0, 0);
-				}
 				btnGoBackToPlayer.setVisibility(View.GONE);
 				sep.setVisibility(View.GONE);
 				chkAll.setVisibility(View.GONE);
@@ -107,10 +114,10 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 				list.setNextFocusRightId(R.id.btnGoBack);
 				UI.setNextFocusForwardId(list, R.id.btnGoBack);
 			} else {
-				if (UI.extraSpacing) {
-					panelSecondary.setBackgroundDrawable(bgSecondary);
+				list.setBottomBorder();
+				setListPadding();
+				if (UI.extraSpacing)
 					panelSecondary.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-				}
 				btnGoBackToPlayer.setVisibility(View.VISIBLE);
 				sep.setVisibility(View.VISIBLE);
 				chkAll.setVisibility(View.VISIBLE);
@@ -628,7 +635,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		ic_favorite = getDrawable(R.drawable.ic_favorite);
 		ic_artist = getDrawable(R.drawable.ic_artist);
 		ic_album = getDrawable(R.drawable.ic_album);
-		bgSecondary = new BorderDrawable(UI.color_highlight, UI.color_window, 0, UI.thickDividerSize, 0, 0);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -661,8 +667,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
-		if (!isAtHome)
-			panelSecondary.setBackgroundDrawable(bgSecondary);
 		sep = (TextView)findViewById(R.id.sep);
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
@@ -696,7 +700,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY, true, false);
 		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(list, 0);
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
 		} else if (UI.isLowDpiScreen) {
@@ -711,6 +714,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			if (!isAtHome)
 				panelSecondary.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		}
+		setListPadding();
+		UI.prepareEdgeEffectColor(getApplication());
 		navigateTo(Player.path, null);
 	}
 	
@@ -730,8 +735,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+		setListPadding();
 	}
 	
 	@Override
@@ -763,6 +767,5 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		ic_favorite = null;
 		ic_artist = null;
 		ic_album = null;
-		bgSecondary = null;
 	}
 }

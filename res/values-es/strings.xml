@@ -170,6 +170,7 @@
     <string name="there_is_a_new_setting">Hay una nueva opción disponible en el menu \"Configuración\":</string>
     <string name="check_it_out">Échale un vistazo :)</string>
     <string name="color_theme">Tema de color</string>
+    <string name="flat_details">Detalles en colores sólidos</string>
     <string name="widget">Widget</string>
     <string name="transparent_background">Fondo transparente</string>
     <string name="text_color">Color de texto</string>
@@ -215,7 +216,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla de retroceso físico siempre regresa al reproductor mientras se van añadiendo las canciones</string>
     <string name="player">Reproductor</string>
     <string name="go_back_to_player">Volver al reproductor</string>
-    <string name="startup_message">- Nueva característica: cierre por inactividad\n- Nuevas opciones de clasificación de la lista\n- Nuevas opciones de visualización de las canciones\n- Visualización mejorada! Pruébala! ;)</string>
+    <string name="startup_message">- Nuevas características: detalles en colores sólidos y cierre por inactividad\n- Nuevas opciones de clasificación de la lista\n- Nuevas opciones de visualización de las canciones</string>
     <string name="sort_by_title">Ordenar por titulo</string>
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>

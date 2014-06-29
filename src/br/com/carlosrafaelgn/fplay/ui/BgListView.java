@@ -91,7 +91,7 @@ public final class BgListView extends ListView {
 		super.setHorizontalFadingEdgeEnabled(false);
 		super.setVerticalFadingEdgeEnabled(false);
 		super.setFadingEdgeLength(0);
-		super.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
 		super.setFocusableInTouchMode(false);
 		super.setFocusable(true);
 		//List color turns black while Scrolling
@@ -116,27 +116,27 @@ public final class BgListView extends ListView {
 	
 	@SuppressWarnings("deprecation")
 	public void setTopLeftBorders() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.thickDividerSize, UI.thickDividerSize, 0, 0));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, UI.thickDividerSize, UI.thickDividerSize, 0, 0));
 	}
 	
 	@SuppressWarnings("deprecation")
 	public void setTopBottomBorders() {
-		super.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, UI.thickDividerSize));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, UI.thickDividerSize));
 	}
 	
 	@SuppressWarnings("deprecation")
 	public void setTopBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
 	}
 	
 	@SuppressWarnings("deprecation")
 	public void setRightBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(0, 0, UI.thickDividerSize, 0));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, 0, UI.thickDividerSize, 0));
 	}
 	
 	@SuppressWarnings("deprecation")
 	public void setBottomBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(0, 0, 0, UI.thickDividerSize));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, 0, 0, UI.thickDividerSize));
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -422,6 +422,23 @@ public final class BgListView extends ListView {
 			return true;
 		} else {
 			return super.onKeyDown(keyCode, event);
+		}
+	}
+	
+	@Override
+	protected void dispatchDraw(Canvas canvas) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			super.dispatchDraw(canvas);
+		} else {
+			//LAME!!!!! There is a bug in API 10 and the padding
+			//IS NOT properly accounted for and the children are not clipped!!!
+			canvas.save();
+			getDrawingRect(UI.rect);
+			UI.rect.top += getPaddingTop();
+			UI.rect.bottom -= getPaddingBottom();
+			canvas.clipRect(UI.rect);
+			super.dispatchDraw(canvas);
+			canvas.restore();
 		}
 	}
 	

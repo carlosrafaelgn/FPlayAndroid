@@ -37,6 +37,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.text.InputType;
+import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -45,8 +46,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.LinearLayout.LayoutParams;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -55,6 +56,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.ColorPickerView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.ObservableScrollView;
 import br.com.carlosrafaelgn.fplay.ui.SettingView;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -63,12 +65,15 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
-public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, Runnable {
+public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable {
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
 	private final boolean colorMode;
 	private boolean changed, checkingReturn, configsChanged;
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
+	private ObservableScrollView list;
+	private TextView lblTitle;
+	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
 	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
@@ -264,7 +269,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (item.getItemId() == UI.THEME_CUSTOM) {
 				startActivity(new ActivitySettings(true));
 			} else {
-				UI.setTheme(item.getItemId());
+				UI.setTheme(getHostActivity(), item.getItemId());
 				getHostActivity().setWindowColor(UI.color_window);
 				onCleanupLayout();
 				onCreateLayout(false);
@@ -366,11 +371,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 	
 	@SuppressWarnings("deprecation")
-	private void addHeader(Context ctx, int resId, SettingView previousControl) {
-		final TextView hdr = new TextView(ctx);
-		hdr.setText(resId);
-		hdr.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-		hdr.setMaxLines(3);
+	private void prepareHeader(TextView hdr) {
+		hdr.setMaxLines(2);
+		hdr.setEllipsize(TruncateAt.END);
 		hdr.setPadding(UI._8dp, UI._8sp, UI._8dp, UI._8sp);
 		if (UI.isLargeScreen)
 			UI.largeText(hdr);
@@ -378,9 +381,17 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.mediumText(hdr);
 		hdr.setTextColor(UI.colorState_text_highlight_static);
 		hdr.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
+	}
+	
+	private TextView addHeader(Context ctx, int resId, SettingView previousControl) {
+		final TextView hdr = new TextView(ctx);
+		hdr.setText(resId);
+		hdr.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		prepareHeader(hdr);
 		panelSettings.addView(hdr);
 		if (previousControl != null)
 			previousControl.setHidingSeparator(true);
+		return hdr;
 	}
 	
 	private boolean cancelGoBack() {
@@ -434,7 +445,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		for (int i = 0; i < colorViews.length; i++)
 			UI.serializeThemeColor(colors, i * 3, colorViews[i].getColor());
 		UI.customColors = colors;
-		UI.setTheme(UI.THEME_CUSTOM);
+		UI.setTheme(getHostActivity(), UI.THEME_CUSTOM);
 		getHostActivity().setWindowColor(UI.color_window);
 		changed = false;
 		finish();
@@ -512,6 +523,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		return cancelGoBack();
 	}
 	
+	private void setListPadding() {
+		//for lblTitle to look nice, we must have no paddings
+		UI.prepareViewPaddingForLargeScreen(list, colorMode ? UI.thickDividerSize : 0);
+	}
+	
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
@@ -529,18 +545,27 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		
 		final Context ctx = getHostActivity();
 		
-		final ScrollView list = (ScrollView)findViewById(R.id.list);
+		list = (ObservableScrollView)findViewById(R.id.list);
 		list.setHorizontalFadingEdgeEnabled(false);
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
-		list.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
+		//for lblTitle to look nice, we must have no paddings
+		list.setBackgroundDrawable((colorMode || UI.isLargeScreen) ?
+				new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0) :
+				new ColorDrawable(UI.color_list));
+		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		if (UI.isLargeScreen)
-			UI.prepareViewPaddingForLargeScreen(panelSettings, 0);
+			setListPadding();
 		
 		if (colorMode) {
 			loadColors(true, false);
 		} else {
+			//neat workaround to partially hide lblTitle ;)
+			panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+			lblTitle = (TextView)findViewById(R.id.lblTitle);
+			prepareHeader(lblTitle);
+			list.setOnScrollListener(this);
 			if (!UI.isCurrentLocaleCyrillic()) {
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface(), false);
 				optUseAlternateTypeface.setOnClickListener(this);
@@ -553,7 +578,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optKeepScreenOn.setOnClickListener(this);
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
 			optTheme.setOnClickListener(this);
-			optFlat = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString(), null, true, UI.isFlat(), false);
+			optFlat = new SettingView(ctx, UI.ICON_THEME, getText(R.string.flat_details).toString(), null, true, UI.isFlat(), false);
 			optFlat.setOnClickListener(this);
 			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
 			optVolumeControlType.setOnClickListener(this);
@@ -606,9 +631,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFadeInOther = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
 			optFadeInOther.setOnClickListener(this);
 			
+			headers = new TextView[5];
+			headers[0] = addHeader(ctx, R.string.msg_turn_off_title, optAutoIdleTurnOff);
+			headers[0].setTag(0);
 			panelSettings.addView(optAutoTurnOff);
 			panelSettings.addView(optAutoIdleTurnOff);
-			addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff);
+			headers[1] = addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff);
+			headers[1].setTag(1);
 			panelSettings.addView(optKeepScreenOn);
 			panelSettings.addView(optTheme);
 			panelSettings.addView(optFlat);
@@ -620,18 +649,21 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!UI.isCurrentLocaleCyrillic())
 				panelSettings.addView(optUseAlternateTypeface);
 			panelSettings.addView(optForcedLocale);
-			addHeader(ctx, R.string.widget, optForcedLocale);
+			headers[2] = addHeader(ctx, R.string.widget, optForcedLocale);
+			headers[2].setTag(2);
 			panelSettings.addView(optWidgetTransparentBg);
 			panelSettings.addView(optWidgetTextColor);
 			panelSettings.addView(optWidgetIconColor);
-			addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
+			headers[3] = addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
+			headers[3].setTag(3);
 			panelSettings.addView(optPlayWhenHeadsetPlugged);
 			panelSettings.addView(optHandleCallKey);
 			panelSettings.addView(optVolumeControlType);
 			panelSettings.addView(optFadeInFocus);
 			panelSettings.addView(optFadeInPause);
 			panelSettings.addView(optFadeInOther);
-			addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
+			headers[4] = addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
+			headers[4].setTag(4);
 			panelSettings.addView(optOldBrowserBehavior);
 			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optClearListWhenPlayingFolders);
@@ -641,13 +673,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optDoubleClickMode);
 			panelSettings.addView(optMarqueeTitle);
 			panelSettings.addView(optPrepareNext);
+			lblTitle.setVisibility(View.GONE);
+			currentHeader = -1;
 		}
 		
 		if (UI.isLargeScreen)
 			btnAbout.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		if (UI.extraSpacing)
-			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+			panelControls.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		btnAbout.setDefaultHeight();
+		UI.prepareEdgeEffectColor(getApplication());
 	}
 	
 	@Override
@@ -668,15 +703,23 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen && panelSettings != null)
-			UI.prepareViewPaddingForLargeScreen(panelSettings, 0);
+		if (UI.isLargeScreen && list != null)
+			setListPadding();
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
 		btnGoBack = null;
 		btnAbout = null;
+		list = null;
+		lblTitle = null;
+		panelControls = null;
 		panelSettings = null;
+		if (headers != null) {
+			for (int i = headers.length - 1; i >= 0; i--)
+				headers[i] = null;
+			headers = null;
+		}
 		optLoadCurrentTheme = null;
 		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
@@ -923,6 +966,51 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.widgetIconColor = color;
 			optWidgetIconColor.setColor(color);
 			WidgetMain.updateWidgets(getApplication());
+		}
+	}
+	
+	private int currentHeader;
+	private boolean lblTitleOk;
+	private TextView[] headers;
+	
+	@Override
+	public void onScroll(ObservableScrollView view, int l, int t, int oldl, int oldt) {
+		if (headers == null || panelSettings == null || lblTitle == null || oldt == t)
+			return;
+		if (t < 0)
+			t = 0;
+		int i = view.getPreviousChildIndexWithClass(TextView.class, t);
+		if (i <= 0) {
+			if (t == 0) {
+				currentHeader = -1;
+				lblTitle.setVisibility(View.GONE);
+				return;
+			} else {
+				i = 0;
+			}
+		}
+		i = (Integer)panelSettings.getChildAt(i).getTag();
+		if (currentHeader < 0) {
+			lblTitle.setVisibility(View.VISIBLE);
+			lblTitle.bringToFront();
+			//neat workaround to partially hide lblTitle ;)
+			panelControls.bringToFront();
+		}
+		if (currentHeader != i) {
+			currentHeader = i;
+			lblTitle.setText(headers[i].getText());
+		}
+		RelativeLayout.LayoutParams lp;
+		if (i < (headers.length - 1) && headers[i + 1].getTop() < (t + lblTitle.getHeight())) {
+			lp = (RelativeLayout.LayoutParams)lblTitle.getLayoutParams();
+			lp.topMargin = headers[i + 1].getTop() - (t + lblTitle.getHeight());
+			lblTitle.setLayoutParams(lp);
+			lblTitleOk = false;
+		} else if (!lblTitleOk) {
+			lp = (RelativeLayout.LayoutParams)lblTitle.getLayoutParams();
+			lp.topMargin = 0;
+			lblTitle.setLayoutParams(lp);
+			lblTitleOk = true;
 		}
 	}
 	

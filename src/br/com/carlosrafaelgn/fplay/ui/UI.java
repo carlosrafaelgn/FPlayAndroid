@@ -48,9 +48,11 @@ import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Paint.FontMetrics;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -223,6 +225,7 @@ public final class UI {
 	public static int color_focused_border;
 	public static int color_focused_pressed;
 	public static int color_focused_pressed_border;
+	public static int color_glow;
 	public static ColorStateList colorState_text_white_reactive;
 	public static ColorStateList colorState_text_menu_reactive;
 	public static ColorStateList colorState_text_reactive;
@@ -881,6 +884,18 @@ public final class UI {
 			useControlModeButtonsInsideList = false;
 			useVisualizerButtonsInsideList = false;
 		}
+		//choose the color with a nice contrast against the list background to be the glow color
+		double ratio = ColorUtils.contrastRatio(color_selected_grad_lt, color_list);
+		double ratio2 = ColorUtils.contrastRatio(color_selected_grad_dk, color_list);
+		if (ratio < ratio2) {
+			color_glow = color_selected_grad_dk;
+			ratio = ratio2;
+		} else {
+			color_glow = color_selected_grad_lt;
+		}
+		ratio2 = ColorUtils.contrastRatio(color_selected, color_list);
+		if (ratio < ratio2)
+			color_glow = color_selected;
 	}
 	
 	public static boolean loadCustomTheme() {
@@ -1009,7 +1024,7 @@ public final class UI {
 		return theme;
 	}
 	
-	public static void setTheme(int theme) {
+	public static void setTheme(Activity activity, int theme) {
 		UI.theme = theme;
 		Gradient.purgeAll();
 		switch (theme) {
@@ -1033,20 +1048,24 @@ public final class UI {
 			loadDarkLightTheme();
 			break;
 		}
-		//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-		//	setAndroidThemeAccordingly14(context);
+		if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)
+			setAndroidThemeAccordingly13(activity);
 	}
 	
-	/*@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	private static void setAndroidThemeAccordingly14(Context context) {
+	public static boolean isAndroidThemeLight() {
+		return ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) && (ColorUtils.relativeLuminance(color_list) >= 0.5));
+	}
+	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+	public static void setAndroidThemeAccordingly13(Activity activity) {
 		//Theme.DeviceDefault.Light.NoActionBar.Fullscreen appeared
 		//only on API 14... :(
 		//http://android-developers.blogspot.com.br/2012/01/holo-everywhere.html
-		if (ColorUtils.relativeLuminance(color_list) >= 0.5)
-			context.setTheme(android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen);
+		if (isAndroidThemeLight())
+			activity.setTheme(android.R.style.Theme_Holo_Light_NoActionBar_Fullscreen);
 		else
-			context.setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
-	}*/
+			activity.setTheme(android.R.style.Theme_Holo_NoActionBar_Fullscreen);
+	}
 	
 	public static void setFlat(boolean flat) {
 		UI.flat = flat;
@@ -1058,14 +1077,14 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 6) {
-			msgStartup = 6;
+		if (msgStartup >= 7) {
+			msgStartup = 7;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup < 6) {
-			msgStartup = 6;
+		if (msgStartup < 7) {
+			msgStartup = 7;
 			//content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_key_behavior).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 			content = activity.getText(R.string.startup_message).toString();
 		}
@@ -1287,9 +1306,14 @@ public final class UI {
 		view.setTypeface(defaultTypeface);
 	}
 	
-	public static void prepareViewPaddingForLargeScreen(View view, int extraBottomPadding) {
+	public static void prepareViewPaddingForLargeScreen(View view, int bottomPadding) {
 		final int p = ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
-		view.setPadding(p, thickDividerSize, p, extraBottomPadding);
+		view.setPadding(p, thickDividerSize, p, bottomPadding);
+	}
+	
+	public static void prepareViewPaddingForLargeScreen(View view, int topPadding, int bottomPadding) {
+		final int p = ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
+		view.setPadding(p, topPadding, p, bottomPadding);
 	}
 	
 	public static void toast(Context context, Throwable ex) {
@@ -1384,5 +1408,27 @@ public final class UI {
 			});
 		}
 		dialog.show();
+	}
+	
+	public static void prepareEdgeEffectColor(Context context) {
+		//
+		//:D amazing hack/workaround, as explained here:
+		//
+		//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
+		Drawable glow, edge;
+		try {
+			glow = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			if (glow != null)
+				//the color is treated as SRC, and the bitmap is treated as DST
+				glow.setColorFilter(color_glow, PorterDuff.Mode.SRC_IN);
+		} catch (Throwable ex) {
+		}
+		try {
+			edge = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			if (edge != null)
+				//hide the edge!!! ;)
+				edge.setColorFilter(0, PorterDuff.Mode.CLEAR);
+		} catch (Throwable ex) {
+		}
 	}
 }

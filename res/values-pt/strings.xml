@@ -170,6 +170,7 @@
     <string name="there_is_a_new_setting">Há uma nova opção disponível no menu \"Opções\":</string>
     <string name="check_it_out">Dê uma olhada :)</string>
     <string name="color_theme">Tema de cores</string>
+    <string name="flat_details">Detalhes em cores sólidas</string>
     <string name="widget">Widget</string>
     <string name="transparent_background">Fundo transparente</string>
     <string name="text_color">Cor do texto</string>
@@ -215,7 +216,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
-    <string name="startup_message">- Nova funcionalidade: desligamento quando ocioso\n- Novas opções de ordenação da lista\n- Novas opções de exibição das músicas\n- Visualização melhorada! Experimente! ;)</string>
+    <string name="startup_message">- Novas funcionalidades: detalhes em cores sólidas e desligamento quando ocioso\n- Novas opções de ordenação da lista\n- Novas opções de exibição das músicas</string>
     <string name="sort_by_title">Ordenar por título</string>
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>

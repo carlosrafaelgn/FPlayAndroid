@@ -552,6 +552,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		if (UI.extraSpacing)
 			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		//CustomContextMenu.registerForContextMenu(btnMenu, this);
+		UI.prepareEdgeEffectColor(getApplication());
 		navigateTo(Player.path, null);
 	}
 	

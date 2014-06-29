@@ -55,6 +55,7 @@ public final class ColorDrawable extends Drawable {
 		this.color = color;
 		this.alpha = ((color >>> 24) & 0xff);
 		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		invalidateSelf();
 	}
 	
 	@Override
@@ -88,9 +89,7 @@ public final class ColorDrawable extends Drawable {
 	
 	@Override
 	public void setAlpha(int alpha) {
-		color = (alpha << 24) | (color & 0x00ffffff);
-		this.alpha = alpha;
-		opacity = ((alpha == 0xff) ? PixelFormat.OPAQUE : ((alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		setColor((alpha << 24) | (color & 0x00ffffff));
 	}
 	
 	@Override

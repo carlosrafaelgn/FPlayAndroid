@@ -330,7 +330,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
-		UI.setTheme(opts.getInt(OPT_THEME, UI.THEME_DARK_LIGHT));
+		UI.setTheme(null, opts.getInt(OPT_THEME, UI.THEME_DARK_LIGHT));
 		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
 		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
@@ -1620,11 +1620,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			observer.onPlayerControlModeChanged(controlMode);
 	}
 	
-	public static void startService(Context context) {
+	public static boolean startService(Context context) {
 		if (thePlayer == null && state == STATE_NEW) {
 			initialize(context);
 			context.startService(new Intent(context, Player.class));
+			return true;
 		}
+		return false;
 	}
 	
 	public static void stopService() {

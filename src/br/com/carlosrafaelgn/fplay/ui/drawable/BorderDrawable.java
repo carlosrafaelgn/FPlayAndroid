@@ -40,47 +40,39 @@ import android.graphics.drawable.Drawable;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class BorderDrawable extends Drawable {
-	private int strokeColor, fillColor, leftSize, topSize, rightSize, bottomSize, opacity, alpha;
+	private int strokeColor, fillColor, opacity, alpha;
+	private final int leftSize, topSize, rightSize, bottomSize;
 	
 	public BorderDrawable(int strokeColor, int fillColor, boolean left, boolean top, boolean right, boolean bottom) {
-		init(strokeColor, fillColor, left ? UI.strokeSize : 0, top ? UI.strokeSize : 0, right ? UI.strokeSize : 0, bottom ? UI.strokeSize : 0);
+		changeColors(strokeColor, fillColor);
+		this.leftSize = (left ? UI.strokeSize : 0);
+		this.topSize = (top ? UI.strokeSize : 0);
+		this.rightSize = (right ? UI.strokeSize : 0);
+		this.bottomSize = (bottom ? UI.strokeSize : 0);
 	}
 	
 	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
-		init(strokeColor, fillColor, leftSize, topSize, rightSize, bottomSize);
-	}
-	
-	public BorderDrawable(int leftSize, int topSize, int rightSize, int bottomSize) {
-		init(UI.color_highlight, UI.color_list, leftSize, topSize, rightSize, bottomSize);
-	}
-	
-	private void init(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
-		this.strokeColor = strokeColor;
-		this.fillColor = fillColor;
+		changeColors(strokeColor, fillColor);
 		this.leftSize = leftSize;
 		this.topSize = topSize;
 		this.rightSize = rightSize;
 		this.bottomSize = bottomSize;
-		this.alpha = ((fillColor >>> 24) & 0xff);
-		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 	}
 	
 	public int getStrokeColor() {
 		return strokeColor;
 	}
 	
-	public void setStrokeColor(int strokeColor) {
-		this.strokeColor = strokeColor;
-	}
-	
 	public int getFillColor() {
 		return fillColor;
 	}
 	
-	public void setFillColor(int fillColor) {
+	public void changeColors(int strokeColor, int fillColor) {
+		this.strokeColor = strokeColor;
 		this.fillColor = fillColor;
 		this.alpha = ((fillColor >>> 24) & 0xff);
 		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		invalidateSelf();
 	}
 	
 	@Override
@@ -116,9 +108,7 @@ public final class BorderDrawable extends Drawable {
 	
 	@Override
 	public void setAlpha(int alpha) {
-		fillColor = (alpha << 24) | (fillColor & 0x00ffffff);
-		this.alpha = alpha;
-		opacity = ((alpha == 0xff) ? PixelFormat.OPAQUE : ((alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		changeColors((alpha << 24) | (strokeColor & 0x00ffffff), (alpha << 24) | (fillColor & 0x00ffffff));
 	}
 	
 	@Override

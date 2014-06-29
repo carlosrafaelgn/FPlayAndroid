@@ -70,7 +70,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	private EditText txt, txtH, txtS, txtV;
 	private TextView lblCurrent;
 	private HSV hsv, hsvTmp;
-	private int initialColor, currentColor;
+	private int initialColor, currentColor, sliderColor;
 	private boolean ignoreChanges;
 	private Bitmap bmpH, bmpS, bmpV;
 	private Rect bmpRect;
@@ -116,6 +116,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	private void init(Context context, int initialColor) {
 		setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		final int eachW = (UI._18sp * 7) >> 1;
+		final boolean smallScreen = (UI.isLowDpiScreen && !UI.isLargeScreen);
 		initialColor = 0xff000000 | (initialColor & 0x00ffffff);
 		hsv = new HSV();
 		hsv.fromRGB(initialColor);
@@ -123,6 +124,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		bmpRect = new Rect(0, 0, 1, 1);
 		this.initialColor = initialColor;
 		currentColor = initialColor;
+		sliderColor = (UI.isAndroidThemeLight() ? 0xff000000 : 0xffffffff);
 		final LinearLayout l = new LinearLayout(context);
 		l.setId(1);
 		l.setWeightSum(2);
@@ -133,49 +135,50 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		addView(l, p);
 		final TextView lbl = new TextView(context);
 		lbl.setBackgroundDrawable(new ColorDrawable(initialColor));
-		LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
+		LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, smallScreen ? (UI.defaultControlSize) >> 1 : UI.defaultControlSize);
 		lp.weight = 1;
 		lp.rightMargin = UI._4dp;
 		l.addView(lbl, lp);
 		bgCurrent = new ColorDrawable(initialColor);
 		lblCurrent = new TextView(context);
-		lblCurrent = new TextView(context);
 		lblCurrent.setBackgroundDrawable(bgCurrent);
-		lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
+		lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, smallScreen ? (UI.defaultControlSize) >> 1 : UI.defaultControlSize);
 		lp.weight = 1;
 		lp.leftMargin = UI._4dp;
 		l.addView(lblCurrent, lp);
 		
+		final int textSize = (smallScreen ? UI._14sp : UI._18sp);
+		final int margin = (smallScreen ? UI._4dp : UI._8dp);
 		TextView lblTit = new TextView(context);
 		lblTit.setId(2);
-		lblTit.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		lblTit.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		lblTit.setSingleLine();
 		lblTit.setGravity(Gravity.CENTER);
 		lblTit.setText("H");
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
 		lblTit = new TextView(context);
 		lblTit.setId(3);
-		lblTit.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		lblTit.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		lblTit.setSingleLine();
 		lblTit.setGravity(Gravity.CENTER);
 		lblTit.setText("S");
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
 		lblTit = new TextView(context);
 		lblTit.setId(4);
-		lblTit.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		lblTit.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		lblTit.setSingleLine();
 		lblTit.setGravity(Gravity.CENTER);
 		lblTit.setText("V");
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
@@ -187,7 +190,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		barH.setSliderMode(true);
 		barH.setVertical(true);
 		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
 		p.addRule(RelativeLayout.ALIGN_LEFT, 2);
 		p.addRule(RelativeLayout.BELOW, 2);
@@ -199,7 +202,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		barS.setSliderMode(true);
 		barS.setVertical(true);
 		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
 		p.addRule(RelativeLayout.ALIGN_LEFT, 3);
 		p.addRule(RelativeLayout.BELOW, 3);
@@ -211,7 +214,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		barV.setSliderMode(true);
 		barV.setVertical(true);
 		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
 		p.addRule(RelativeLayout.ALIGN_LEFT, 4);
 		p.addRule(RelativeLayout.BELOW, 4);
@@ -220,48 +223,48 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		
 		txtH = new EditText(context);
 		txtH.setId(6);
-		txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		txtH.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txtH.setSingleLine();
 		txtH.setGravity(Gravity.CENTER);
 		txtH.setText(Integer.toString((int)(hsv.h * 360.0)));
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtH, p);
 		txtS = new EditText(context);
-		txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		txtS.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txtS.setSingleLine();
 		txtS.setGravity(Gravity.CENTER);
 		txtS.setText(Integer.toString((int)(hsv.s * 100.0)));
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtS, p);
 		txtV = new EditText(context);
-		txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		txtV.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txtV.setSingleLine();
 		txtV.setGravity(Gravity.CENTER);
 		txtV.setText(Integer.toString((int)(hsv.v * 100.0)));
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtV, p);
 		
 		txt = new EditText(context);
 		txt.setId(7);
-		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		txt.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txt.setSingleLine();
 		txt.setGravity(Gravity.CENTER);
 		txt.setText(ColorUtils.toHexColor(initialColor));
 		p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI._8dp;
+		p.topMargin = margin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
@@ -483,8 +486,8 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 			for (int i = rect.bottom - 1; i >= UI._8dp; i--)
 				canvas.drawBitmap(bmp, 0, i, null);
 		}
-		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + UI.strokeSize - UI._8dp, 0, UI._16dp, 0xffffffff);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + UI.strokeSize - UI._8dp, rect.bottom, UI._16dp, 0xff000000);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + UI.strokeSize - UI._8dp, 0, UI._16dp, sliderColor);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + UI.strokeSize - UI._8dp, rect.bottom, UI._16dp, sliderColor);
 	}
 	
 	@Override

@@ -940,6 +940,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				panelSelection.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
 			}
 			btnCancelSel.setDefaultHeight();
+			UI.prepareEdgeEffectColor(getApplication());
 			final boolean m = Player.songs.moving;
 			if (m || Player.songs.selecting)
 				startSelecting();

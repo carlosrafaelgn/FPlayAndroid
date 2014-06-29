@@ -230,7 +230,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
 		panelControls = (LinearLayout)findViewById(R.id.panelControls);
-		panelControls.setBackgroundDrawable(new BorderDrawable(0, UI.thickDividerSize, 0, 0));
+		panelControls.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
 		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
 		panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 		if (panelSecondary instanceof ScrollView) {
@@ -375,6 +375,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		if (UI.extraSpacing)
 			findViewById(R.id.panelTop).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		prepareViewForMode();
+		UI.prepareEdgeEffectColor(getApplication());
 	}
 	
 	@Override

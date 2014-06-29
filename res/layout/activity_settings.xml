@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:baselineAligned="false"
-    android:orientation="vertical"
     tools:context=".ActivityHost" >
 
     <RelativeLayout
         android:id="@+id/panelControls"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true" >
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBack"
@@ -32,10 +31,17 @@
             android:text="@string/about" />
     </RelativeLayout>
 
-    <ScrollView
+    <TextView
+        android:id="@+id/lblTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/panelControls" />
+
+    <br.com.carlosrafaelgn.fplay.ui.ObservableScrollView
         android:id="@+id/list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="match_parent"
+        android:layout_below="@+id/panelControls" >
 
         <LinearLayout
             android:id="@+id/panelSettings"
@@ -43,6 +49,6 @@
             android:layout_height="wrap_content"
             android:baselineAligned="false"
             android:orientation="vertical" />
-    </ScrollView>
+    </br.com.carlosrafaelgn.fplay.ui.ObservableScrollView>
 
-</LinearLayout>
+</RelativeLayout>
