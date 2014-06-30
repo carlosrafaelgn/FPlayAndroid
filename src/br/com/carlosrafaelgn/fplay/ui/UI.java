@@ -595,7 +595,7 @@ public final class UI {
 			scaledDensity = sd;
 		else if (scaledDensity <= 0)
 			scaledDensity = 1.0f;
-
+		
 		_1dp = dpToPxI(1);
 		strokeSize = (_1dp + 1) >> 1;
 		thickDividerSize = ((_1dp >= 2) ? _1dp : 2);

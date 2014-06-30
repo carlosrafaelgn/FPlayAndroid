@@ -32,9 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.util;
 
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.GradientDrawable.Orientation;
-
 public final class ColorUtils {
 	public static final class HSV {
 		public double h, s, v;
@@ -176,10 +173,5 @@ public final class ColorUtils {
 	public static String toHexColor(int rgb) {
 		final String s = "00000" + Integer.toHexString(rgb);
 		return "#" + s.substring(s.length() - 6);
-	}
-	
-	public static GradientDrawable createLtDkGradient(int color1, int color2) {
-		color2 = blend(color1, color2, 0.5f);
-		return new GradientDrawable(Orientation.TOP_BOTTOM, (relativeLuminance(color1) > relativeLuminance(color2)) ? new int[] { color1, color2 } : new int[] { color2, color1 });
 	}
 }
