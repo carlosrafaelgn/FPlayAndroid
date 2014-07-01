@@ -45,7 +45,7 @@
     <string name="opt_language">Мова:</string>
     <string name="opt_use_alternate_typeface">Використовувати діслексичний шрифт (опція не доступна для даної мови)</string>
     <string name="opt_auto_turn_off">Автоматично вимкнути плеєр після:</string>
-    <string name="opt_auto_idle_turn_off">У режимі очікування, автоматично вимкнути плеєр після (beta):</string>
+    <string name="opt_auto_idle_turn_off">У режимі очікування, автоматично вимкнути плеєр після:</string>
     <string name="opt_keep_screen_on">Тримати екран постійно включеним</string>
     <string name="opt_volume_control_type">Тип регулятора гучності:</string>
     <string name="opt_is_divider_visible">Показувати границю між елементами в списках</string>
@@ -56,8 +56,8 @@
     <string name="opt_double_click_mode">Використовувати подвійне натиснення для відтворення пісень у плейлисті</string>
     <string name="opt_marquee_title">Прокручувати заголовок поточної пісні, якщо він не поміщається на екран</string>
     <string name="opt_prepare_next">Попередньо завантажувати наступну пісню, щоб скоротити розрив між піснями</string>
-    <string name="opt_clear_list_when_playing_folders">Очищення існуючого списку перед програванням папки, нового списку або альбому</string>
-    <string name="opt_go_back_when_playing_folders">Повернутися до списку при відтворенні папки, нового списку або альбому</string>
+    <string name="opt_clear_list_when_playing_folders">Очищення існуючого списку перед програванням папки, нового списку, альбому або виконавець</string>
+    <string name="opt_go_back_when_playing_folders">Повернутися до списку при відтворенні папки, нового списку, альбому або виконавець</string>
     <string name="opt_force_orientation">Примусова орієнтація екрану:</string>
     <string name="opt_fade_in_focus">Зменшення гучності при дзвінку або іншому перериванні ззовні:</string>
     <string name="opt_fade_in_pause">Зменшення гучності після зняття з паузи:</string>

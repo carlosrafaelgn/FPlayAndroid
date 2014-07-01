@@ -213,6 +213,8 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		MainHandler.postToMainThread(new Runnable() {
 			@Override
 			public void run() {
+				if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+					return;
 				if (play && isAddingFolder && Player.clearListWhenPlayingFolders)
 					clear();
 				final int p = getCount();

@@ -284,6 +284,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
 		final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
+		txtReverb.setTypeface(UI.defaultTypeface);
 		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);
 		LinearLayout.LayoutParams lp;
 		if (!UI.isLargeScreen && UI.isLandscape) {

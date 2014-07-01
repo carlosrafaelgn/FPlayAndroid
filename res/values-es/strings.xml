@@ -45,7 +45,7 @@
     <string name="opt_language">Idioma:</string>
     <string name="opt_use_alternate_typeface">Usar fuente amigable para dislexia</string>
     <string name="opt_auto_turn_off">Apagar automáticamente el reproductor después de:</string>
-    <string name="opt_auto_idle_turn_off">Cuando esté inactivo, apagar automáticamente el reproductor después de (beta):</string>
+    <string name="opt_auto_idle_turn_off">Cuando esté inactivo, apagar automáticamente el reproductor después de:</string>
     <string name="opt_keep_screen_on">Manter pantalla siempre encendida</string>
     <string name="opt_volume_control_type">Tipo de control de volumen:</string>
     <string name="opt_is_divider_visible">Mostrar división entre los ítems de la lista</string>
@@ -56,8 +56,8 @@
     <string name="opt_double_click_mode">Usar doble toque para tocar música de la lista</string>
     <string name="opt_marquee_title">Girar el título de la canción en reproducción cuando no se visualice completa en la pantalla</string>
     <string name="opt_prepare_next">Precargar la canción siguiente con el fin de tratar de reducir la brecha entre canción y canción</string>
-    <string name="opt_clear_list_when_playing_folders">Borrar lista existente antes de reproducir una carpeta, una nueva lista o un álbum</string>
-    <string name="opt_go_back_when_playing_folders">Volver a la lista cuando reproducir una carpeta, una nueva lista o un álbum</string>
+    <string name="opt_clear_list_when_playing_folders">Borrar lista existente antes de reproducir una carpeta, una nueva lista, un álbum o un artista</string>
+    <string name="opt_go_back_when_playing_folders">Volver a la lista cuando reproducir una carpeta, una nueva lista, un álbum o un artista</string>
     <string name="opt_force_orientation">Forzar orientación de la pantalla:</string>
     <string name="opt_fade_in_focus">Duración del fade de volumen después de una llamada, u otra interrupción externa:</string>
     <string name="opt_fade_in_pause">Duración del fade de volumen cuando se reproduce después de una pausa:</string>

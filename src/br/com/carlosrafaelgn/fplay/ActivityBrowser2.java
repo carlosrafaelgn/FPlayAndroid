@@ -181,48 +181,21 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		refreshButtons();
 	}
 	
-	/*private void addPlaySong(FileSt file, final boolean play) {
-		try {
-			final FileSt[] fs = new FileSt[] { file };
-			Player.songs.addingStarted();
-			SongAddingMonitor.start(getHostActivity());
-			(new Thread("Single File Adder Thread") {
-				@Override
-				public void run() {
-					try {
-						Player.songs.addFiles(fs, null, -1, 1, play, false);
-					} catch (Throwable ex) {
-						Player.songs.addingEnded();
-					}
-				}
-			}).start();
-		} catch (Throwable ex) {
-			Player.songs.addingEnded();
-			UI.toast(getApplication(), ex.getMessage());
-		}
-	}
-	
-	private void addPlayFolder(FileSt file, final boolean play, final boolean sub) {
-		try {
-			Player.songs.addingStarted();
-			SongAddingMonitor.start(getHostActivity());
-			FileFetcher.fetchFiles(file.path, Player.songs, false, sub, true, play);
-			if (play && Player.goBackWhenPlayingFolders)
-				finish();
-		} catch (Throwable ex) {
-			Player.songs.addingEnded();
-			UI.toast(getApplication(), ex.getMessage());
-		}
-	}*/
-	
 	private void addPlayCheckedItems(final boolean play) {
 		if (checkedCount <= 0)
 			return;
 		try {
+			boolean addingFolder = false;
+			int c = 0;
 			final FileSt[] fs = new FileSt[checkedCount];
 			for (int i = fileList.getCount() - 1, j = checkedCount - 1; i >= 0 && j >= 0; i--) {
 				final FileSt file = fileList.getItemT(i);
 				if (file.isChecked && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
+					if (!addingFolder) {
+						c++;
+						if (c > 1 || file.specialType != 0 || file.isDirectory)
+							addingFolder = true;
+					}
 					fs[j] = file;
 					j--;
 				}
@@ -232,16 +205,24 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			(new Thread("Checked File Adder Thread") {
 				@Override
 				public void run() {
+					boolean addingFolder = false;
 					try {
 						Throwable firstException = null;
 						final ArrayList<FileSt> filesToAdd = new ArrayList<FileSt>(256);
 						for (int i = 0; i < fs.length; i++) {
+							if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+								Player.songs.addingEnded();
+								return;
+							}
 							final FileSt file = fs[i];
 							if (file == null)
 								continue;
 							if (!file.isDirectory) {
 								filesToAdd.add(file);
+								if (!addingFolder && filesToAdd.size() > 1)
+									addingFolder = true;
 							} else {
+								addingFolder = true;
 								final FileFetcher ff = FileFetcher.fetchFilesInThisThread(file.path, null, false, true, true, false);
 								if (ff.getThrowedException() == null) {
 									if (ff.count <= 0)
@@ -261,13 +242,15 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 							else
 								Player.songs.addingEnded();
 						} else {
-							Player.songs.addFiles(null, filesToAdd.iterator(), -1, filesToAdd.size(), play, false);
+							Player.songs.addFiles(null, filesToAdd.iterator(), -1, filesToAdd.size(), play, addingFolder);
 						}
 					} catch (Throwable ex) {
 						Player.songs.addingEnded();
 					}
 				}
 			}).start();
+			if (play && addingFolder && Player.goBackWhenPlayingFolders)
+				finish();
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
 			UI.toast(getApplication(), ex.getMessage());

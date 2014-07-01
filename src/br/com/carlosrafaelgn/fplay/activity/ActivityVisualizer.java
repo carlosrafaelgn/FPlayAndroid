@@ -66,6 +66,55 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.VisualizerView;
 
 public final class ActivityVisualizer extends Activity implements Runnable, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener {
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private static final class FullScreenObserver implements Runnable, View.OnSystemUiVisibilityChangeListener {
+		private View decor;
+		
+		public FullScreenObserver(View decor) {
+			this.decor = decor;
+		}
+		
+		@Override
+		public void onSystemUiVisibilityChange(int visibility) {
+			if (decor == null)
+				return;
+			if ((visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0)
+				MainHandler.postToMainThreadDelayed(this, 2000);
+		}
+		
+		@Override
+		public void run() {
+			if (decor == null)
+				return;
+			try {
+				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+						View.SYSTEM_UI_FLAG_IMMERSIVE);
+			} catch (Throwable ex) {
+			}
+		}
+		
+		public void prepare() {
+			try {
+				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+						View.SYSTEM_UI_FLAG_IMMERSIVE);
+				decor.setOnSystemUiVisibilityChangeListener(this);
+			} catch (Throwable ex) {
+			}
+		}
+		
+		public void cleanup() {
+			if (decor != null) {
+				try {
+					decor.setOnSystemUiVisibilityChangeListener(null);
+				} catch (Throwable ex) {
+				}
+				decor = null;
+			}
+		}
+	}
+	
 	private static final int MNU_ORIENTATION = 100;
 	private android.media.audiofx.Visualizer fxVisualizer;
 	private Visualizer visualizer;
@@ -77,6 +126,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	private volatile boolean alive, paused, reset, visualizerReady;
 	private boolean fxVisualizerFailed, visualizerViewFullscreen, playing;
 	private int fxVisualizerAudioSessionId;
+	private Object fullScreenObserver;
 	private Timer timer;
 	
 	@Override
@@ -98,6 +148,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	private void prepareViews() {
 		if (info == null)
 			return;
+		
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			prepareFullScreen();
 		
 		RelativeLayout.LayoutParams p = (RelativeLayout.LayoutParams)panelTop.getLayoutParams();
 		p.width = (info.isLandscape ? RelativeLayout.LayoutParams.WRAP_CONTENT : RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -198,40 +251,18 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	}
 	
 	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private static final class FullScreenObserver implements Runnable, View.OnSystemUiVisibilityChangeListener {
-		public final View decor;
-		
-		public FullScreenObserver(View decor) {
-			this.decor = decor;
-		}
-		
-		@Override
-		public void onSystemUiVisibilityChange(int visibility) {
-			if ((visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0)
-				MainHandler.postToMainThreadDelayed(this, 2000);
-		}
-		
-		@Override
-		public void run() {
-			try {
-				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-						View.SYSTEM_UI_FLAG_IMMERSIVE);
-			} catch (Throwable ex){
-			}
-		}
+	private void prepareFullScreen() {
+		if (fullScreenObserver == null)
+			fullScreenObserver = new FullScreenObserver(getWindow().getDecorView());
+		((FullScreenObserver)fullScreenObserver).prepare();
 	}
 	
 	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private void prepareFullScreen() {
-		final View decor = getWindow().getDecorView();
-		try {
-			decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-					View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-					View.SYSTEM_UI_FLAG_IMMERSIVE);
-		} catch (Throwable ex) {
+	private void cleanupFullScreen() {
+		if (fullScreenObserver != null) {
+			((FullScreenObserver)fullScreenObserver).cleanup();
+			fullScreenObserver = null;
 		}
-		decor.setOnSystemUiVisibilityChangeListener(new FullScreenObserver(decor));
 	}
 	
 	@Override
@@ -240,8 +271,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			prepareFullScreen();
 		setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!
@@ -434,6 +463,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		onPlayerChanged(Player.getCurrentSong(), true, null);
 		//keep the screen always on while the visualizer is active
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			prepareFullScreen();
 		super.onResume();
 	}
 	
@@ -443,6 +474,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		if (visualizer != null)
 			visualizer.cancelLoading();
 		resumeTimer();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			cleanupFullScreen();
 		info = null;
 		panelControls = null;
 		panelTop = null;
