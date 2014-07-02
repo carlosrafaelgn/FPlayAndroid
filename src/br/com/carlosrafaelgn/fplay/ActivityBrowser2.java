@@ -39,7 +39,7 @@ import java.util.Locale;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.drawable.Drawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -65,6 +65,7 @@ import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class ActivityBrowser2 extends ActivityFileView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
 	private static final int MNU_REMOVEFAVORITE = 100;
@@ -77,7 +78,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
-	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
+	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
 	private void setListPadding() {
 		if (list != null) {
@@ -625,12 +626,30 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		isAtHome = (Player.path.length() == 0);
 		fileList = new FileList();
 		fileList.observerActivity = this;
-		ic_closed_folder = getDrawable(R.drawable.ic_closed_folder);
-		ic_internal = getDrawable(R.drawable.ic_internal);
-		ic_external = getDrawable(R.drawable.ic_external);
-		ic_favorite = getDrawable(R.drawable.ic_favorite);
-		ic_artist = getDrawable(R.drawable.ic_artist);
-		ic_album = getDrawable(R.drawable.ic_album);
+		try {
+			ic_closed_folder = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_closed_folder)).getBitmap());
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_internal = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_internal)).getBitmap());
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_external = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_external)).getBitmap());
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_favorite = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_favorite)).getBitmap());
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_artist = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_artist)).getBitmap());
+		} catch (Throwable ex) {
+		}
+		try {
+			ic_album = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_album)).getBitmap());
+		} catch (Throwable ex) {
+		}
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -761,11 +780,29 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	protected void onDestroy() {
 		fileList.cancel();
 		fileList = null;
-		ic_closed_folder = null;
-		ic_internal = null;
-		ic_external = null;
-		ic_favorite = null;
-		ic_artist = null;
-		ic_album = null;
+		if (ic_closed_folder != null) {
+			ic_closed_folder.release();
+			ic_closed_folder = null;
+		}
+		if (ic_internal != null) {
+			ic_internal.release();
+			ic_internal = null;
+		}
+		if (ic_external != null) {
+			ic_external.release();
+			ic_external = null;
+		}
+		if (ic_favorite != null) {
+			ic_favorite.release();
+			ic_favorite = null;
+		}
+		if (ic_artist != null) {
+			ic_artist.release();
+			ic_artist = null;
+		}
+		if (ic_album != null) {
+			ic_album.release();
+			ic_album = null;
+		}
 	}
 }

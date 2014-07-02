@@ -34,9 +34,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.Gravity;
@@ -46,12 +44,12 @@ import android.widget.LinearLayout;
 import br.com.carlosrafaelgn.fplay.ActivityFileView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
+import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener {
 	private ActivityFileView observerActivity;
 	private final int height, verticalMargin;
-	private Bitmap closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
-	private Bitmap bitmap;
+	private ReleasableBitmapWrapper bitmap, closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
 	private FileSt file;
 	private BgButton btnAdd, btnPlay;
 	private String ellipsizedName;
@@ -59,18 +57,30 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private final boolean hasButtons, buttonIsCheckbox;
 	private int state, width, position;
 	
-	public FileView(Context context, ActivityFileView observerActivity, Drawable closedFolderIcon, Drawable internalIcon, Drawable externalIcon, Drawable favoriteIcon, Drawable artistIcon, Drawable albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
+	public FileView(Context context, ActivityFileView observerActivity, ReleasableBitmapWrapper closedFolderIcon, ReleasableBitmapWrapper internalIcon, ReleasableBitmapWrapper externalIcon, ReleasableBitmapWrapper favoriteIcon, ReleasableBitmapWrapper artistIcon, ReleasableBitmapWrapper albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
 		super(context);
 		this.observerActivity = observerActivity;
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		setGravity(Gravity.RIGHT);
-		this.closedFolderIcon = ((closedFolderIcon == null) ? null : ((BitmapDrawable)closedFolderIcon).getBitmap());
-		this.internalIcon = ((internalIcon == null) ? null : ((BitmapDrawable)internalIcon).getBitmap());
-		this.externalIcon = ((externalIcon == null) ? null : ((BitmapDrawable)externalIcon).getBitmap());
-		this.favoriteIcon = ((favoriteIcon == null) ? null : ((BitmapDrawable)favoriteIcon).getBitmap());
-		this.artistIcon = ((artistIcon == null) ? null : ((BitmapDrawable)artistIcon).getBitmap());
-		this.albumIcon = ((albumIcon == null) ? null : ((BitmapDrawable)albumIcon).getBitmap());
+		this.closedFolderIcon = closedFolderIcon;
+		this.internalIcon = internalIcon;
+		this.externalIcon = externalIcon;
+		this.favoriteIcon = favoriteIcon;
+		this.artistIcon = artistIcon;
+		this.albumIcon = albumIcon;
+		if (closedFolderIcon != null)
+			closedFolderIcon.addRef();
+		if (internalIcon != null)
+			internalIcon.addRef();
+		if (externalIcon != null)
+			externalIcon.addRef();
+		if (favoriteIcon != null)
+			favoriteIcon.addRef();
+		if (artistIcon != null)
+			artistIcon.addRef();
+		if (albumIcon != null)
+			albumIcon.addRef();
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
 		if (hasButtons) {
@@ -265,8 +275,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			canvas.drawColor(UI.color_selected);
 			//canvas.drawColor(UI.color_window);
 		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false, true);
-		if (bitmap != null)
-			canvas.drawBitmap(bitmap, UI._8dp, (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1), null);
+		if (bitmap != null && bitmap.bitmap != null)
+			canvas.drawBitmap(bitmap.bitmap, UI._8dp, (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1), null);
 		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text_highlight : UI.color_text_listitem), UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		UI.drawText(canvas, ellipsizedName, ((state != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text : UI.color_text_listitem), UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
@@ -280,13 +290,30 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	protected void onDetachedFromWindow() {
 		observerActivity = null;
-		//do not recycle these bitmaps, as they are shared!
-		closedFolderIcon = null;
-		internalIcon = null;
-		externalIcon = null;
-		favoriteIcon = null;
-		artistIcon = null;
-		albumIcon = null;
+		if (closedFolderIcon != null) {
+			closedFolderIcon.release();
+			closedFolderIcon = null;
+		}
+		if (internalIcon != null) {
+			internalIcon.release();
+			internalIcon = null;
+		}
+		if (externalIcon != null) {
+			externalIcon.release();
+			externalIcon = null;
+		}
+		if (favoriteIcon != null) {
+			favoriteIcon.release();
+			favoriteIcon = null;
+		}
+		if (artistIcon != null) {
+			artistIcon.release();
+			artistIcon = null;
+		}
+		if (albumIcon != null) {
+			albumIcon.release();
+			albumIcon = null;
+		}
 		bitmap = null;
 		file = null;
 		btnAdd = null;
