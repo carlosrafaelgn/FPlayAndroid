@@ -56,6 +56,19 @@
                 android:visibility="gone" />
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/chkAlbumArt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@+id/btnHome"
+                android:contentDescription="@string/album_art"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnHome"
+                android:nextFocusLeft="@+id/btnGoBack"
+                android:nextFocusRight="@+id/btnHome"
+                android:nextFocusUp="@+id/list"
+                android:visibility="gone" />
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnHome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

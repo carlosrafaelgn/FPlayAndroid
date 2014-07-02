@@ -191,6 +191,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int MSG_TERMINATION_0 = 0x140;
 	private static final int MSG_TERMINATION_1 = 0x141;
 	private static final int MSG_TERMINATION_2 = 0x142;
+	
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
 	private static final int OPT_LASTTIME = 0x0002;
@@ -241,7 +242,47 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_IDLETURNOFFTIMERCUSTOMMINUTES = 0x002E;
 	private static final int OPT_IDLETURNOFFTIMERSELECTEDMINUTES = 0x002F;
 	private static final int OPT_FLAT = 0x0030;
+	private static final int OPT_ALBUMART = 0x0031;
+	
+	//values 0x01xx are shared among all effects
+	static final int OPT_EQUALIZER_ENABLED = 0x0100;
+	static final int OPT_EQUALIZER_PRESET = 0x0101;
+	static final int OPT_EQUALIZER_LEVELCOUNT = 0x0102;
+	static final int OPT_EQUALIZER_LEVEL0 = 0x20000;
+	static final int OPT_BASSBOOST_ENABLED = 0x0110;
+	static final int OPT_BASSBOOST_STRENGTH = 0x0111;
+	static final int OPT_VIRTUALIZER_ENABLED = 0x0112;
+	static final int OPT_VIRTUALIZER_STRENGTH = 0x0113;
+	
+	private static final int OPTBIT_CONTROLMODE = 0;
+	private static final int OPTBIT_BASSBOOSTMODE = 1;
+	private static final int OPTBIT_NEXTPREPARATION = 2;
+	private static final int OPTBIT_PLAYFOLDERCLEARSLIST = 3;
+	private static final int OPTBIT_KEEPSCREENON = 4;
+	private static final int OPTBIT_DISPLAYVOLUMEINDB = 5;
+	private static final int OPTBIT_DOUBLECLICKMODE = 6;
+	private static final int OPTBIT_MARQUEETITLE = 7;
+	private static final int OPTBIT_FLAT = 8;
+	private static final int OPTBIT_ALBUMART = 9;
+	private static final int OPTBIT_BLOCKBACKKEY = 10;
+	private static final int OPTBIT_ISDIVIDERVISIBLE = 11;
+	private static final int OPTBIT_ISVERTICALMARGINLARGE = 12;
+	private static final int OPTBIT_HANDLECALLKEY = 13;
+	private static final int OPTBIT_PLAYWHENHEADSETPLUGGED = 14;
+	private static final int OPTBIT_USEALTERNATETYPEFACE = 15;
+	private static final int OPTBIT_GOBACKWHENPLAYINGFOLDERS = 16;
+	private static final int OPTBIT_RANDOMMODE = 17;
+	private static final int OPTBIT_WIDGETTRANSPARENTBG = 18;
+	private static final int OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 19;
+	private static final int OPTBIT_WRAPAROUNDLIST = 20;
+	private static final int OPTBIT_EXTRASPACING = 21;
+	private static final int OPTBIT_OLDBROWSERBEHAVIOR = 22;
+	static final int OPTBIT_EQUALIZER_ENABLED = 23;
+	static final int OPTBIT_BASSBOOST_ENABLED = 24;
+	static final int OPTBIT_VIRTUALIZER_ENABLED = 25;
+	
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
+	
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
@@ -293,58 +334,87 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static void loadConfig(Context context) {
 		final SerializableMap opts = loadConfigFromFile(context);
+		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
 		setVolumeDB(opts.getInt(OPT_VOLUME));
-		controlMode = opts.getBoolean(OPT_CONTROLMODE);
 		path = opts.getString(OPT_PATH);
 		originalPath = opts.getString(OPT_ORIGINALPATH);
 		lastTime = opts.getInt(OPT_LASTTIME, -1);
-		bassBoostMode = opts.getBoolean(OPT_BASSBOOSTMODE);
 		fadeInIncrementOnFocus = opts.getInt(OPT_FADEININCREMENTONFOCUS, 125);
 		fadeInIncrementOnPause = opts.getInt(OPT_FADEININCREMENTONPAUSE, 125);
 		fadeInIncrementOnOther = opts.getInt(OPT_FADEININCREMENTONOTHER, 0);
-		nextPreparationEnabled = opts.getBoolean(OPT_NEXTPREPARATION, true);
-		clearListWhenPlayingFolders = opts.getBoolean(OPT_PLAYFOLDERCLEARSLIST);
-		UI.keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
 		UI.forcedOrientation = opts.getInt(OPT_FORCEDORIENTATION);
-		UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
-		UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
-		UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
-		UI.setFlat(opts.getBoolean(OPT_FLAT, false));
 		setVolumeControlType(context, opts.getInt(OPT_VOLUMECONTROLTYPE, VOLUME_CONTROL_STREAM));
-		UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
 		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
 		if (turnOffTimerCustomMinutes < 1)
 			turnOffTimerCustomMinutes = 1;
 		turnOffTimerSelectedMinutes = opts.getInt(OPT_TURNOFFTIMERSELECTEDMINUTES, 0);
-		if (turnOffTimerSelectedMinutes < 1)
+		if (turnOffTimerSelectedMinutes < 0)
 			turnOffTimerSelectedMinutes = 0;
 		idleTurnOffTimerCustomMinutes = opts.getInt(OPT_IDLETURNOFFTIMERCUSTOMMINUTES, 30);
 		if (idleTurnOffTimerCustomMinutes < 1)
 			idleTurnOffTimerCustomMinutes = 1;
 		idleTurnOffTimerSelectedMinutes = opts.getInt(OPT_IDLETURNOFFTIMERSELECTEDMINUTES, 0);
-		if (idleTurnOffTimerSelectedMinutes < 1)
+		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
-		UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
-		UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen);
-		handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
-		playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
-		UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
 		UI.setTheme(null, opts.getInt(OPT_THEME, UI.THEME_DARK_LIGHT));
-		goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
-		songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
-		UI.widgetTransparentBg = opts.getBoolean(OPT_WIDGETTRANSPARENTBG, false);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
-		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
-		UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, false);
-		UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST, false);
-		UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-		UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR, false);
 		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
+		if (opts.hasBits()) {
+			//load the bit flags the new way
+			controlMode = opts.getBit(OPTBIT_CONTROLMODE);
+			bassBoostMode = opts.getBit(OPTBIT_BASSBOOSTMODE);
+			nextPreparationEnabled = opts.getBit(OPTBIT_NEXTPREPARATION, true);
+			clearListWhenPlayingFolders = opts.getBit(OPTBIT_PLAYFOLDERCLEARSLIST);
+			UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON, true);
+			UI.displayVolumeInDB = opts.getBit(OPTBIT_DISPLAYVOLUMEINDB);
+			UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
+			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
+			UI.setFlat(opts.getBit(OPTBIT_FLAT, false));
+			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
+			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY, false);
+			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
+			UI.isVerticalMarginLarge = opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen);
+			handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
+			playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
+			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBit(OPTBIT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+			goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS, false);
+			songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE, false));
+			UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG, false);
+			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, false);
+			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST, false);
+			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
+			UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR, false);
+		} else {
+			//load bit flags the old way
+			controlMode = opts.getBoolean(OPT_CONTROLMODE);
+			bassBoostMode = opts.getBoolean(OPT_BASSBOOSTMODE);
+			nextPreparationEnabled = opts.getBoolean(OPT_NEXTPREPARATION, true);
+			clearListWhenPlayingFolders = opts.getBoolean(OPT_PLAYFOLDERCLEARSLIST);
+			UI.keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
+			UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
+			UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
+			UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
+			UI.setFlat(opts.getBoolean(OPT_FLAT, false));
+			UI.albumArt = opts.getBoolean(OPT_ALBUMART, true);
+			UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
+			UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
+			UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen);
+			handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
+			playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
+			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+			goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
+			songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
+			UI.widgetTransparentBg = opts.getBoolean(OPT_WIDGETTRANSPARENTBG, false);
+			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, false);
+			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST, false);
+			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
+			UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR, false);
+		}
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
@@ -366,51 +436,52 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	public static void saveConfig(Context context, boolean saveSongs) {
 		final SerializableMap opts = new SerializableMap(96);
+		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
 		opts.put(OPT_VOLUME, volumeDB);
-		opts.put(OPT_CONTROLMODE, controlMode);
 		opts.put(OPT_PATH, path);
 		opts.put(OPT_ORIGINALPATH, originalPath);
 		opts.put(OPT_LASTTIME, lastTime);
-		opts.put(OPT_BASSBOOSTMODE, bassBoostMode);
 		opts.put(OPT_FADEININCREMENTONFOCUS, fadeInIncrementOnFocus);
 		opts.put(OPT_FADEININCREMENTONPAUSE, fadeInIncrementOnPause);
 		opts.put(OPT_FADEININCREMENTONOTHER, fadeInIncrementOnOther);
-		opts.put(OPT_NEXTPREPARATION, nextPreparationEnabled);
-		opts.put(OPT_PLAYFOLDERCLEARSLIST, clearListWhenPlayingFolders);
-		opts.put(OPT_KEEPSCREENON, UI.keepScreenOn);
 		opts.put(OPT_FORCEDORIENTATION, UI.forcedOrientation);
-		opts.put(OPT_DISPLAYVOLUMEINDB, UI.displayVolumeInDB);
-		opts.put(OPT_DOUBLECLICKMODE, UI.doubleClickMode);
-		opts.put(OPT_MARQUEETITLE, UI.marqueeTitle);
-		opts.put(OPT_FLAT, UI.isFlat());
 		opts.put(OPT_VOLUMECONTROLTYPE, volumeControlType);
-		opts.put(OPT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);
 		opts.put(OPT_TURNOFFTIMERSELECTEDMINUTES, turnOffTimerSelectedMinutes);
 		opts.put(OPT_IDLETURNOFFTIMERCUSTOMMINUTES, idleTurnOffTimerCustomMinutes);
 		opts.put(OPT_IDLETURNOFFTIMERSELECTEDMINUTES, idleTurnOffTimerSelectedMinutes);
-		opts.put(OPT_ISDIVIDERVISIBLE, UI.isDividerVisible);
-		opts.put(OPT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
-		opts.put(OPT_HANDLECALLKEY, handleCallKey);
-		opts.put(OPT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
-		opts.put(OPT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
 		opts.put(OPT_CUSTOMCOLORS, UI.customColors);
 		opts.put(OPT_THEME, UI.getTheme());
-		opts.put(OPT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
-		opts.put(OPT_RANDOMMODE, songs.isInRandomMode());
 		opts.put(OPT_FORCEDLOCALE, UI.getForcedLocale());
 		opts.put(OPT_MSGS, UI.msgs);
 		opts.put(OPT_MSGSTARTUP, UI.msgStartup);
-		opts.put(OPT_WIDGETTRANSPARENTBG, UI.widgetTransparentBg);
 		opts.put(OPT_WIDGETTEXTCOLOR, UI.widgetTextColor);
 		opts.put(OPT_WIDGETICONCOLOR, UI.widgetIconColor);
-		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
-		opts.put(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing);
-		opts.put(OPT_WRAPAROUNDLIST, UI.wrapAroundList);
-		opts.put(OPT_EXTRASPACING, UI.extraSpacing);
-		opts.put(OPT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
 		opts.put(OPT_VISUALIZERORIENTATION, UI.visualizerOrientation);
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
+		opts.putBit(OPTBIT_CONTROLMODE, controlMode);
+		opts.putBit(OPTBIT_BASSBOOSTMODE, bassBoostMode);
+		opts.putBit(OPTBIT_NEXTPREPARATION, nextPreparationEnabled);
+		opts.putBit(OPTBIT_PLAYFOLDERCLEARSLIST, clearListWhenPlayingFolders);
+		opts.putBit(OPTBIT_KEEPSCREENON, UI.keepScreenOn);
+		opts.putBit(OPTBIT_DISPLAYVOLUMEINDB, UI.displayVolumeInDB);
+		opts.putBit(OPTBIT_DOUBLECLICKMODE, UI.doubleClickMode);
+		opts.putBit(OPTBIT_MARQUEETITLE, UI.marqueeTitle);
+		opts.putBit(OPTBIT_FLAT, UI.isFlat());
+		opts.putBit(OPTBIT_ALBUMART, UI.albumArt);
+		opts.putBit(OPTBIT_BLOCKBACKKEY, UI.blockBackKey);
+		opts.putBit(OPTBIT_ISDIVIDERVISIBLE, UI.isDividerVisible);
+		opts.putBit(OPTBIT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
+		opts.putBit(OPTBIT_HANDLECALLKEY, handleCallKey);
+		opts.putBit(OPTBIT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
+		opts.putBit(OPTBIT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
+		opts.putBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
+		opts.putBit(OPTBIT_RANDOMMODE, songs.isInRandomMode());
+		opts.putBit(OPTBIT_WIDGETTRANSPARENTBG, UI.widgetTransparentBg);
+		opts.putBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing);
+		opts.putBit(OPTBIT_WRAPAROUNDLIST, UI.wrapAroundList);
+		opts.putBit(OPTBIT_EXTRASPACING, UI.extraSpacing);
+		opts.putBit(OPTBIT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

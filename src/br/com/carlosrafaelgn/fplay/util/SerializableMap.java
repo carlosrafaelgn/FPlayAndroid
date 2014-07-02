@@ -47,8 +47,11 @@ public final class SerializableMap {
 	private static final int TYPE_DOUBLE = 3;
 	private static final int TYPE_STRING = 4;
 	private static final int TYPE_BUFFER = 5;
+	private static final int TYPE_BITS = 6;
 	
 	private final SparseArray<Object> dict;
+	private byte[] bitStorage;
+	private int bitCount;
 	
 	public SerializableMap() {
 		dict = new SparseArray<Object>();
@@ -63,8 +66,16 @@ public final class SerializableMap {
 		BufferedOutputStream bs = null;
 		try {
 			fs = context.openFileOutput(fileName, 0);
-			bs = new BufferedOutputStream(fs, 512);
+			bs = new BufferedOutputStream(fs, 1024);
 			final byte[] buf = new byte[16];
+			
+			//first, serialize the bits
+			buf[4] = TYPE_BITS;
+			Serializer.serializeInt(buf, 5, bitCount);
+			bs.write(buf, 0, 9);
+			if (bitCount > 0) bs.write(bitStorage, 0, (bitCount + 7) >>> 3);
+			
+			//then, serialize the rest
 			for (int i = dict.size() - 1; i >= 0; i--) {
 				final int k = dict.keyAt(i);
 				final Object v = dict.get(k);
@@ -169,6 +180,13 @@ public final class SerializableMap {
 						dict.put(Serializer.deserializeInt(buf, 0), tmpB);
 					}
 					break;
+				case TYPE_BITS:
+					dict.bitCount = Serializer.deserializeInt(buf, 5);
+					if (dict.bitCount > 0) {
+						dict.bitStorage = new byte[(dict.bitCount + 7) >>> 3];
+						if (bs.read(dict.bitStorage, 0, dict.bitStorage.length) != dict.bitStorage.length) return dict;
+					}
+					break;
 				default:
 					return dict;
 				}
@@ -190,6 +208,41 @@ public final class SerializableMap {
 		return null;
 	}
 	
+	public boolean hasBits() {
+		return (bitCount > 0);
+	}
+	
+	public void putBit(int bitIndex, boolean value) {
+		if (bitCount <= bitIndex)
+			bitCount = bitIndex + 1;
+		int i = ((bitCount + 7) >>> 3);
+		if (bitStorage == null) {
+			bitStorage = new byte[i + 8];
+		} else if (bitStorage.length < i) {
+			final byte[] tmp = new byte[i + 8];
+			System.arraycopy(bitStorage, 0, tmp, 0, bitStorage.length);
+			bitStorage = tmp;
+		}
+		i = (bitIndex >>> 3);
+		bitIndex = 1 << (bitIndex & 7);
+		if (value)
+			bitStorage[i] |= bitIndex;
+		else
+			bitStorage[i] &= ~bitIndex;
+	}
+	
+	public boolean getBit(int bitIndex) {
+		if (bitIndex >= bitCount)
+			return false;
+		return ((bitStorage[bitIndex >>> 3] & (1 << (bitIndex & 7))) != 0);
+	}
+	
+	public boolean getBit(int bitIndex, boolean defaultValue) {
+		if (bitIndex >= bitCount)
+			return defaultValue;
+		return ((bitStorage[bitIndex >>> 3] & (1 << (bitIndex & 7))) != 0);
+	}
+	
 	public boolean containsKey(int key) {
 		return (dict.indexOfKey(key) >= 0);
 	}
@@ -198,9 +251,9 @@ public final class SerializableMap {
 		dict.remove(key);
 	}
 	
-	public void put(int key, boolean value) {
+	/*public void put(int key, boolean value) {
 		dict.put(key, (value ? (int)1 : (int)0));
-	}
+	}*/
 	
 	public void put(int key, int value) {
 		dict.put(key, value);

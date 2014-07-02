@@ -82,7 +82,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 37;
+	public static final int VERSION_CODE = 38;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -169,6 +169,8 @@ public final class UI {
 	public static final String ICON_CLOCK = ".";
 	public static final String ICON_DIVIDER = ",";
 	public static final String ICON_MIC = "m";
+	public static final String ICON_ALBUMART = "B";
+	public static final String ICON_ALBUMART_OFF = "b";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
@@ -345,7 +347,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat, albumArt;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
@@ -1329,7 +1331,7 @@ public final class UI {
 	@SuppressWarnings("deprecation")
 	public static void prepareNotificationViewColors(TextView view) {
 		view.setTextColor(UI.colorState_text_highlight_static);
-		view.setBackgroundDrawable(new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, true, true, true, true));
+		view.setBackgroundDrawable(new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize));
 	}
 	
 	public static void toast(Context context, String text) {
@@ -1355,7 +1357,7 @@ public final class UI {
 			mnu.setItemClassConstructor(BgButton.class.getConstructor(Context.class));
 		} catch (NoSuchMethodException e) {
 		}
-		mnu.setBackground(new BorderDrawable(color_menu_border, color_menu, true, true, true, true));
+		mnu.setBackground(new BorderDrawable(color_menu_border, color_menu, strokeSize, strokeSize, strokeSize, strokeSize));
 		mnu.setPadding(0);
 		mnu.setItemTextSizeInPixels(_22sp);
 		mnu.setItemTextColor(colorState_text_menu_reactive);

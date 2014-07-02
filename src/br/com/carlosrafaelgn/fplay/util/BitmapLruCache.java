@@ -57,11 +57,8 @@ package br.com.carlosrafaelgn.fplay.util;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import android.annotation.TargetApi;
-import android.os.Build;
-
 public final class BitmapLruCache {
-	private int size;
+	private volatile int size;
 	private final int maxSize;
 	private final LinkedHashMap<String, ReleasableBitmapWrapper> map;
 	
@@ -77,11 +74,11 @@ public final class BitmapLruCache {
 	public ReleasableBitmapWrapper put(String key, ReleasableBitmapWrapper value) {
 		ReleasableBitmapWrapper previous;
 		
-		size += sizeOf(value);
+		size += value.size;
 		
 		previous = map.put(key, value);
 		if (previous != null) {
-			size -= sizeOf(previous);
+			size -= previous.size;
 			if (previous != value)
 				previous.release();
 		}
@@ -112,7 +109,7 @@ public final class BitmapLruCache {
 			final ReleasableBitmapWrapper value = toEvict.getValue();
 			map.remove(key);
 			if (value != null) {
-				size -= sizeOf(value);
+				size -= value.size;
 				value.release();
 			}
 		}
@@ -122,31 +119,10 @@ public final class BitmapLruCache {
 		ReleasableBitmapWrapper previous;
 		previous = map.remove(key);
 		if (previous != null) {
-			size -= sizeOf(previous);
+			size -= previous.size;
 			previous.release();
 		}
 		return previous;
-	}
-	
-	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private int sizeOf19(ReleasableBitmapWrapper value) {
-		return value.bitmap.getAllocationByteCount();
-	}
-	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
-	private int sizeOf12(ReleasableBitmapWrapper value) {
-		return value.bitmap.getByteCount();
-	}
-	
-	public int sizeOf(ReleasableBitmapWrapper value) {
-		if (value.bitmap == null)
-			return 0;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			return sizeOf19(value);
-		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
-			return sizeOf12(value);
-		else
-			return value.bitmap.getRowBytes() * value.bitmap.getHeight();
 	}
 	
 	public void evictAll() {

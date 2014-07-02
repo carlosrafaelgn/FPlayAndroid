@@ -331,7 +331,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			Player.originalPath = to;
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
-		fileList.setPath(to, from);
+		fileList.setPath(to, from, list.isInTouchMode());
 	}
 	
 	@Override

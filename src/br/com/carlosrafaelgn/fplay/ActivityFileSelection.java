@@ -386,7 +386,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 			UI.prepareViewPaddingForLargeScreen(list, 0);
 		if (UI.extraSpacing)
 			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-		fileList.setPrivateFileType(fileType);
+		fileList.setPrivateFileType(fileType, list.isInTouchMode());
 		UI.prepareEdgeEffectColor(getApplication());
 	}
 	

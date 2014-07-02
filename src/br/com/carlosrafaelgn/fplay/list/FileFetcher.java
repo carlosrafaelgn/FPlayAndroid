@@ -65,7 +65,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	public final String path;
 	public FileSt[] files;
 	public int count;
-	public final boolean playAfterFetching, oldBrowserBehavior;
+	public final boolean playAfterFetching, oldBrowserBehavior, isInTouchMode;
 	private Throwable notifyE;
 	private Listener listener;
 	private boolean recursive;
@@ -97,25 +97,25 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		return supportedTypes.contains(name.substring(i).toLowerCase(Locale.US));
 	}
 	
-	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive) {
-		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, false, false);
+	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode) {
+		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, false, false, isInTouchMode);
 		f.fetch();
 		return f;
 	}
 	
 	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching) {
-		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching);
+		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false);
 		f.fetch();
 		return f;
 	}
 	
 	public static FileFetcher fetchFilesInThisThread(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching) {
-		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching);
+		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false);
 		f.run();
 		return f;
 	}
 	
-	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching) {
+	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean isInTouchMode) {
 		this.files = new FileSt[LIST_DELTA];
 		this.path = path;
 		this.listener = listener;
@@ -124,6 +124,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		this.recursiveIfFirstEmpty = recursiveIfFirstEmpty;
 		this.playAfterFetching = playAfterFetching;
 		this.oldBrowserBehavior = UI.oldBrowserBehavior;
+		this.isInTouchMode = isInTouchMode;
 		this.count = 0;
 	}
 	

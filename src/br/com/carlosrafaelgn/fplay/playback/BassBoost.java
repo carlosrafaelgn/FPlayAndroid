@@ -35,21 +35,21 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class BassBoost {
-	//values 0x01xx are shared among all effects
-	private static final int OPT_ENABLED = 0x0110;
-	private static final int OPT_STRENGTH = 0x0111;
 	private static int sessionId = Integer.MIN_VALUE, strength;
 	private static boolean enabled, strengthSupported, supported;
 	private static android.media.audiofx.BassBoost theBooster;
 	
 	public static void loadConfig(SerializableMap opts) {
-		enabled = opts.getBoolean(OPT_ENABLED);
-		strength = opts.getInt(OPT_STRENGTH);
+		if (opts.hasBits())
+			enabled = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
+		else
+			enabled = opts.getBoolean(Player.OPT_BASSBOOST_ENABLED);
+		strength = opts.getInt(Player.OPT_BASSBOOST_STRENGTH);
 	}
 	
 	public static void saveConfig(SerializableMap opts) {
-		opts.put(OPT_ENABLED, enabled);
-		opts.put(OPT_STRENGTH, strength);
+		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED, enabled);
+		opts.put(Player.OPT_BASSBOOST_STRENGTH, strength);
 	}
 	
 	public static void initialize(int newSessionId) {

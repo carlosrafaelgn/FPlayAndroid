@@ -63,21 +63,21 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 		return path;
 	}
 	
-	public void setPath(String path, String comingFrom) {
+	public void setPath(String path, String comingFrom, boolean isInTouchMode) {
 		if (fetcher != null)
 			fetcher.cancel();
 		clear();
 		loadingProcessChanged(true);
 		this.comingFrom = comingFrom;
-		fetcher = FileFetcher.fetchFiles(path, this, true, false);
+		fetcher = FileFetcher.fetchFiles(path, this, true, false, isInTouchMode);
 	}
 	
-	public void setPrivateFileType(String fileType) {
+	public void setPrivateFileType(String fileType, boolean isInTouchMode) {
 		if (fetcher != null)
 			fetcher.cancel();
 		clear();
 		loadingProcessChanged(true);
-		fetcher = FileFetcher.fetchFiles(fileType, this, true, false);
+		fetcher = FileFetcher.fetchFiles(fileType, this, true, false, isInTouchMode);
 	}
 	
 	public void cancel() {
@@ -100,7 +100,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 			count = fetcher.count;
 			path = fetcher.path;
 			//if (listObserver != null || fetcher.oldBrowserBehavior) {
-				int p = (fetcher.oldBrowserBehavior ? 0 : -1);
+				int p = ((fetcher.oldBrowserBehavior || !fetcher.isInTouchMode) ? 0 : -1);
 				if (comingFrom != null && comingFrom.length() > 0) {
 					if (path == null || path.length() == 0) {
 						for (int i = count - 1; i >= 0; i--) {

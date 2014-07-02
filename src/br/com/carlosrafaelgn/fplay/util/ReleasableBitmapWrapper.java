@@ -32,15 +32,34 @@
 //
 package br.com.carlosrafaelgn.fplay.util;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
+import android.os.Build;
 
 public final class ReleasableBitmapWrapper {
 	private volatile int ref;
 	public volatile Bitmap bitmap;
+	public final int size;
 	
 	public ReleasableBitmapWrapper(Bitmap bitmap) {
 		this.ref = 1;
 		this.bitmap = bitmap;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			size = sizeOf19(bitmap);
+		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
+			size = sizeOf12(bitmap);
+		else
+			size = bitmap.getRowBytes() * bitmap.getHeight();
+	}
+	
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private int sizeOf19(Bitmap bitmap) {
+		return bitmap.getAllocationByteCount();
+	}
+	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
+	private int sizeOf12(Bitmap bitmap) {
+		return bitmap.getByteCount();
 	}
 	
 	public void addRef() {

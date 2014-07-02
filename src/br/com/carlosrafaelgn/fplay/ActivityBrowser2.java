@@ -74,9 +74,9 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private FileList fileList;
 	private RelativeLayout panelSecondary, panelLoading;
 	private EditText txtURL, txtTitle;
-	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
+	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
-	private boolean loading, isAtHome, verifyAlbumWhenChecking;
+	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
 	private Drawable ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
 	private void setListPadding() {
@@ -407,6 +407,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		isAtHome = (to.length() == 0);
 		final boolean fav = ((to.length() > 1) && (to.charAt(0) == File.separatorChar));
 		final boolean others = !isAtHome;
+		albumArtArea = false;
 		if (fav) {
 			btnURL.setVisibility(View.GONE);
 			btnGoBack.setNextFocusRightId(R.id.chkFavorite);
@@ -414,14 +415,23 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			btnHome.setNextFocusLeftId(R.id.chkFavorite);
 			chkFavorite.setChecked(Player.isFavoriteFolder(to));
 			chkFavorite.setVisibility(View.VISIBLE);
+			chkAlbumArt.setVisibility(View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
 			lblPath.setVisibility(View.VISIBLE);
 		} else if (others) {
+			albumArtArea = (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
 			btnURL.setVisibility(View.GONE);
-			btnGoBack.setNextFocusRightId(R.id.btnHome);
-			UI.setNextFocusForwardId(btnGoBack, R.id.btnHome);
-			btnHome.setNextFocusLeftId(R.id.btnGoBack);
+			if (albumArtArea) {
+				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);
+				UI.setNextFocusForwardId(btnGoBack, R.id.chkAlbumArt);
+				btnHome.setNextFocusLeftId(R.id.chkAlbumArt);
+			} else {
+				btnGoBack.setNextFocusRightId(R.id.btnHome);
+				UI.setNextFocusForwardId(btnGoBack, R.id.btnHome);
+				btnHome.setNextFocusLeftId(R.id.btnGoBack);
+			}
 			chkFavorite.setVisibility(View.GONE);
+			chkAlbumArt.setVisibility(albumArtArea ? View.VISIBLE : View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
 			lblPath.setVisibility(View.VISIBLE);
 		} else {
@@ -429,6 +439,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			btnGoBack.setNextFocusRightId(R.id.btnURL);
 			UI.setNextFocusForwardId(btnGoBack, R.id.btnURL);
 			chkFavorite.setVisibility(View.GONE);
+			chkAlbumArt.setVisibility(View.GONE);
 			btnHome.setVisibility(View.GONE);
 			lblPath.setVisibility(View.GONE);
 		}
@@ -437,7 +448,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		refreshButtons();
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
-		fileList.setPath(to, from);
+		fileList.setPath(to, from, list.isInTouchMode());
 	}
 	
 	@Override
@@ -537,6 +548,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 				Player.addFavoriteFolder(Player.path);
 			else
 				Player.removeFavoriteFolder(Player.path);
+		} else if (view == chkAlbumArt) {
+			UI.albumArt = chkAlbumArt.isChecked();
 		} if (view == btnHome) {
 			if (Player.path.length() > 0)
 				navigateTo("", Player.path);
@@ -646,6 +659,9 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
 		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, false, true, true);
+		chkAlbumArt = (BgButton)findViewById(R.id.chkAlbumArt);
+		chkAlbumArt.setOnClickListener(this);
+		chkAlbumArt.setIcon(UI.ICON_ALBUMART, UI.ICON_ALBUMART_OFF, UI.albumArt, false, true, true);
 		btnHome = (BgButton)findViewById(R.id.btnHome);
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
@@ -731,6 +747,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnGoBack = null;
 		btnURL = null;
 		chkFavorite = null;
+		chkAlbumArt = null;
 		btnHome = null;
 		sep = null;
 		chkAll = null;

@@ -43,14 +43,6 @@ public final class BorderDrawable extends Drawable {
 	private int strokeColor, fillColor, opacity, alpha;
 	private final int leftSize, topSize, rightSize, bottomSize;
 	
-	public BorderDrawable(int strokeColor, int fillColor, boolean left, boolean top, boolean right, boolean bottom) {
-		changeColors(strokeColor, fillColor);
-		this.leftSize = (left ? UI.strokeSize : 0);
-		this.topSize = (top ? UI.strokeSize : 0);
-		this.rightSize = (right ? UI.strokeSize : 0);
-		this.bottomSize = (bottom ? UI.strokeSize : 0);
-	}
-	
 	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
 		changeColors(strokeColor, fillColor);
 		this.leftSize = leftSize;

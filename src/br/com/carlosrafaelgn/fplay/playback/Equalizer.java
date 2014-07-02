@@ -37,11 +37,6 @@ import java.util.Arrays;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Equalizer {
-	//values 0x01xx are shared among all effects
-	private static final int OPT_ENABLED = 0x0100;
-	private static final int OPT_PRESET = 0x0101;
-	private static final int OPT_LEVELCOUNT = 0x0102;
-	private static final int OPT_LEVEL0 = 0x20000;
 	private static int sessionId = Integer.MIN_VALUE, minBandLevel, maxBandLevel, preset;
 	private static boolean enabled;
 	private static int[] bandLevels, bandFrequencies;
@@ -49,7 +44,7 @@ public final class Equalizer {
 	
 	public static void deserializePreset(SerializableMap opts) {
 		preset = -1;
-		int count = opts.getInt(OPT_LEVELCOUNT);
+		int count = opts.getInt(Player.OPT_EQUALIZER_LEVELCOUNT);
 		if (count > 0) {
 			if (bandLevels == null) {
 				if (count > 512)
@@ -57,27 +52,30 @@ public final class Equalizer {
 				bandLevels = new int[count];
 			}
 			for (int i = bandLevels.length - 1; i >= 0; i--)
-				bandLevels[i] = opts.getInt(OPT_LEVEL0 + i, bandLevels[i]);
+				bandLevels[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0 + i, bandLevels[i]);
 		}		
 	}
 	
 	public static void loadConfig(SerializableMap opts) {
-		enabled = opts.getBoolean(OPT_ENABLED);
+		if (opts.hasBits())
+			enabled = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
+		else
+			enabled = opts.getBoolean(Player.OPT_EQUALIZER_ENABLED);
 		deserializePreset(opts);
-		preset = opts.getInt(OPT_PRESET, -1);
+		preset = opts.getInt(Player.OPT_EQUALIZER_PRESET, -1);
 	}
 	
 	public static void serializePreset(SerializableMap opts) {
-		opts.put(OPT_LEVELCOUNT, (bandLevels != null) ? bandLevels.length : 0);
+		opts.put(Player.OPT_EQUALIZER_LEVELCOUNT, (bandLevels != null) ? bandLevels.length : 0);
 		if (bandLevels != null) {
 			for (int i = bandLevels.length - 1; i >= 0; i--)
-				opts.put(OPT_LEVEL0 + i, bandLevels[i]);
+				opts.put(Player.OPT_EQUALIZER_LEVEL0 + i, bandLevels[i]);
 		}		
 	}
 	
 	public static void saveConfig(SerializableMap opts) {
-		opts.put(OPT_ENABLED, enabled);
-		opts.put(OPT_PRESET, preset);
+		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled);
+		opts.put(Player.OPT_EQUALIZER_PRESET, preset);
 		serializePreset(opts);
 	}
 	

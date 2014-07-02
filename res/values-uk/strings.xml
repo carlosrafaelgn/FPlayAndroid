@@ -139,6 +139,7 @@
     <string name="title">Назва</string>
     <string name="artist">Виконавець</string>
     <string name="album">Альбом</string>
+    <string name="album_art">Обкладинки альбомів</string>
     <string name="track">Трек</string>
     <string name="duration">Тривалість</string>
     <string name="year">рік</string>

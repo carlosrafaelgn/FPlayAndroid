@@ -35,21 +35,21 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Virtualizer {
-	//values 0x01xx are shared among all effects
-	private static final int OPT_ENABLED = 0x0112;
-	private static final int OPT_STRENGTH = 0x0113;
 	private static int sessionId = Integer.MIN_VALUE, strength;
 	private static boolean enabled, strengthSupported, supported;
 	private static android.media.audiofx.Virtualizer theVirtualizer;
 	
 	public static void loadConfig(SerializableMap opts) {
-		enabled = opts.getBoolean(OPT_ENABLED);
-		strength = opts.getInt(OPT_STRENGTH);
+		if (opts.hasBits())
+			enabled = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
+		else
+			enabled = opts.getBoolean(Player.OPT_VIRTUALIZER_ENABLED);
+		strength = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH);
 	}
 	
 	public static void saveConfig(SerializableMap opts) {
-		opts.put(OPT_ENABLED, enabled);
-		opts.put(OPT_STRENGTH, strength);
+		opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED, enabled);
+		opts.put(Player.OPT_VIRTUALIZER_STRENGTH, strength);
 	}
 	
 	public static void initialize(int newSessionId) {
