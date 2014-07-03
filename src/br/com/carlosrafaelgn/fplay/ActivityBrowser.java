@@ -38,7 +38,8 @@ import java.util.Locale;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.drawable.BitmapDrawable;
+import android.content.res.Resources;
+import android.graphics.BitmapFactory;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -124,7 +125,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, false);
+		return new FileView(Player.getService(), this, null, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, false);
 	}
 	
 	@Override
@@ -482,28 +483,32 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			Player.originalPath = "";
 		fileList = new FileList();
 		fileList.observerActivity = this;
+		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
+		//is internally cached, therefore, causing an exception when we try to use it
+		//after being recycled...
+		final Resources res = getResources();
 		try {
-			ic_closed_folder = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_closed_folder)).getBitmap());
+			ic_closed_folder = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_closed_folder));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_internal = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_internal)).getBitmap());
+			ic_internal = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_internal));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_external = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_external)).getBitmap());
+			ic_external = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_external));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_favorite = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_favorite)).getBitmap());
+			ic_favorite = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_favorite));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_artist = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_artist)).getBitmap());
+			ic_artist = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_artist));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_album = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_album)).getBitmap());
+			ic_album = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_album));
 		} catch (Throwable ex) {
 		}
 	}

@@ -194,7 +194,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		super.onCreate(null);
 		setupActionBar();
 		UI.initialize(getApplication());
-		MainHandler.initialize(getApplication());
+		MainHandler.initialize();
 		if (Player.startService(getApplication()))
 			UI.setAndroidThemeAccordingly13(this);
 		top = new ActivityMain();

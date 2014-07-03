@@ -217,7 +217,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
-    <string name="startup_message">- Novas funcionalidades: detalhes em cores sólidas e desligamento quando ocioso\n- Novas opções de ordenação da lista\n- Novas opções de exibição das músicas</string>
+    <string name="startup_message">- Novas funcionalidades: arte do álbum, detalhes em cores sólidas e desligamento quando ocioso\n- Novas opções de ordenação da lista\n- Novas opções de exibição das músicas</string>
     <string name="sort_by_title">Ordenar por título</string>
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>

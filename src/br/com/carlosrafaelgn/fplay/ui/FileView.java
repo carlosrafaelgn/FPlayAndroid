@@ -37,29 +37,39 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.os.SystemClock;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.LinearLayout;
 import br.com.carlosrafaelgn.fplay.ActivityFileView;
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
-public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener {
+public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
 	private ActivityFileView observerActivity;
-	private final int height, verticalMargin;
-	private ReleasableBitmapWrapper bitmap, closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
+	private AlbumArtFetcher albumArtFetcher;
+	private Handler handler;
+	private final int height, verticalMargin, usableHeight;
+	private ReleasableBitmapWrapper bitmap, albumArt, closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
 	private FileSt file;
 	private BgButton btnAdd, btnPlay;
-	private String ellipsizedName;
-	private boolean buttonsVisible;
+	private String ellipsizedName, albumArtUri;
+	private boolean buttonsVisible, pendingAlbumArtRequest;
 	private final boolean hasButtons, buttonIsCheckbox;
-	private int state, width, position;
+	private int state, width, position, requestId, bitmapLeftPadding, leftPadding;
 	
-	public FileView(Context context, ActivityFileView observerActivity, ReleasableBitmapWrapper closedFolderIcon, ReleasableBitmapWrapper internalIcon, ReleasableBitmapWrapper externalIcon, ReleasableBitmapWrapper favoriteIcon, ReleasableBitmapWrapper artistIcon, ReleasableBitmapWrapper albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
+	public FileView(Context context, ActivityFileView observerActivity, AlbumArtFetcher albumArtFetcher, ReleasableBitmapWrapper closedFolderIcon, ReleasableBitmapWrapper internalIcon, ReleasableBitmapWrapper externalIcon, ReleasableBitmapWrapper favoriteIcon, ReleasableBitmapWrapper artistIcon, ReleasableBitmapWrapper albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
 		super(context);
 		this.observerActivity = observerActivity;
+		this.albumArtFetcher = albumArtFetcher;
+		if (albumArtFetcher != null)
+			handler = new Handler(Looper.getMainLooper(), this);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		setGravity(Gravity.RIGHT);
@@ -83,11 +93,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			albumIcon.addRef();
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
+		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
 		if (hasButtons) {
 			LayoutParams p;
 			if (!buttonIsCheckbox) {
 				btnAdd = new BgButton(context);
 				p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+				p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
 				btnAdd.setLayoutParams(p);
 				btnAdd.setIcon(UI.ICON_ADD, true, false);
 				btnAdd.setContentDescription(context.getText(R.string.add));
@@ -98,6 +110,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnPlay = new BgButton(context);
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI._8dp;
+			p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
 			btnPlay.setLayoutParams(p);
 			if (buttonIsCheckbox) {
 				btnPlay.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, false);
@@ -109,11 +122,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			}
 			btnPlay.setOnClickListener(this);
 			addView(btnPlay);
-			if (UI.isVerticalMarginLarge) {
-				if (btnAdd != null)
-					btnAdd.setHeight(height);
-				btnPlay.setHeight(height);
-			}
 		} else {
 			btnAdd = null;
 			btnPlay = null;
@@ -124,7 +132,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - ((bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp) - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - leftPadding - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp);
+	}
+	
+	public void refreshItem() {
+		//tiny workaround ;)
+		buttonsVisible = !buttonsVisible;
+		setItemState(file, position, state);
 	}
 	
 	public void setItemState(FileSt file, int position, int state) {
@@ -155,6 +169,15 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			if (btnPlay != null)
 				btnPlay.setVisibility(showButtons ? View.VISIBLE : View.GONE);
 		}
+		if (pendingAlbumArtRequest && albumArtFetcher != null) {
+			pendingAlbumArtRequest = false;
+			albumArtFetcher.cancelRequest(requestId, this);
+		}
+		requestId++;
+		if (albumArt != null) {
+			albumArt.release();
+			albumArt = null;
+		}
 		if (file.isDirectory) {
 			switch (specialType) {
 			case FileSt.TYPE_INTERNAL_STORAGE:
@@ -170,10 +193,19 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			case FileSt.TYPE_ARTIST_ROOT:
 				bitmap = artistIcon;
 				break;
-			case FileSt.TYPE_ALBUM:
 			case FileSt.TYPE_ALBUM_ROOT:
-			case FileSt.TYPE_ALBUM_ITEM:
 				bitmap = albumIcon;
+				break;
+			case FileSt.TYPE_ALBUM:
+			case FileSt.TYPE_ALBUM_ITEM:
+				ReleasableBitmapWrapper newAlbumArt = null;
+				if (UI.albumArt && albumArtFetcher != null && file.albumArt != null) {
+					albumArtUri = file.albumArt;
+					newAlbumArt = albumArtFetcher.getAlbumArt(albumArtUri, usableHeight, requestId, this);
+					pendingAlbumArtRequest = (newAlbumArt == null);
+				}
+				albumArt = newAlbumArt;
+				bitmap = ((newAlbumArt == null) ? albumIcon : newAlbumArt);
 				break;
 			default:
 				bitmap = closedFolderIcon;
@@ -183,6 +215,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			bitmap = null;
 		}
 		setContentDescription(file.name);
+		if (albumArt != null) {
+			bitmapLeftPadding = (usableHeight - albumArt.width) >> 1;
+			leftPadding = usableHeight + UI._8dp;
+		} else {
+			bitmapLeftPadding = UI._8dp;
+			leftPadding = ((bitmap != null) ? (UI._8dp + bitmap.width + UI._8dp) : UI._8dp);
+		}
 		processEllipsis();
 	}
 	
@@ -274,12 +313,12 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			//canvas.drawColor(UI.color_highlight);
 			canvas.drawColor(UI.color_selected);
 			//canvas.drawColor(UI.color_window);
-		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false, true);
+		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), false, true);
 		if (bitmap != null && bitmap.bitmap != null)
-			canvas.drawBitmap(bitmap.bitmap, UI._8dp, (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1), null);
-		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text_highlight : UI.color_text_listitem), UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
-		UI.drawText(canvas, ellipsizedName, ((state != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
-		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text : UI.color_text_listitem), UI._22sp, (bitmap != null) ? ((UI._8dp << 1) + UI.defaultControlContentsSize) : UI._8dp, (UI.rect.bottom >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
+			canvas.drawBitmap(bitmap.bitmap, bitmapLeftPadding, (usableHeight >> 1) - (bitmap.height >> 1), null);
+		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text_highlight : UI.color_text_listitem), UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
+		UI.drawText(canvas, ellipsizedName, ((state != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
+		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text : UI.color_text_listitem), UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		super.dispatchDraw(canvas);
 	}
 	
@@ -290,6 +329,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	protected void onDetachedFromWindow() {
 		observerActivity = null;
+		albumArtFetcher = null;
+		handler = null;
+		bitmap = null;
+		if (albumArt != null) {
+			albumArt.release();
+			albumArt = null;
+		}
 		if (closedFolderIcon != null) {
 			closedFolderIcon.release();
 			closedFolderIcon = null;
@@ -314,11 +360,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			albumIcon.release();
 			albumIcon = null;
 		}
-		bitmap = null;
 		file = null;
 		btnAdd = null;
 		btnPlay = null;
 		ellipsizedName = null;
+		albumArtUri = null;
 		super.onDetachedFromWindow();
 	}
 	
@@ -339,6 +385,52 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public boolean onLongClick(View view) {
 		if (observerActivity != null)
 			observerActivity.processItemLongClick(position);
+		return true;
+	}
+	
+	//Runs on a SECONDARY thread
+	@Override
+	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
+		//check if we have already been removed from the window
+		final Handler h = handler;
+		if (requestId != this.requestId || h == null)
+			return;
+		if (bitmap != null)
+			bitmap.addRef();
+		h.sendMessageAtTime(Message.obtain(h, requestId, bitmap), SystemClock.uptimeMillis());
+	}
+	
+	//Runs on a SECONDARY thread
+	@Override
+	public String albumArtUriForRequestId(int requestId) {
+		return ((requestId == this.requestId) ? albumArtUri : null);
+	}
+	
+	//Runs on the MAIN thread
+	@Override
+	public boolean handleMessage(Message msg) {
+		final ReleasableBitmapWrapper bitmap = (ReleasableBitmapWrapper)msg.obj;
+		msg.obj = null;
+		//check if we have already been removed from the window
+		if (msg.what != requestId || albumArtFetcher == null || bitmap == null) {
+			if (msg.what == requestId) {
+				pendingAlbumArtRequest = false;
+				albumArtUri = null;
+			}
+			if (bitmap != null)
+				bitmap.release();
+			return true;
+		}
+		pendingAlbumArtRequest = false;
+		albumArtUri = null;
+		if (albumArt != null)
+			albumArt.release();
+		albumArt = bitmap;
+		this.bitmap = bitmap;
+		bitmapLeftPadding = (usableHeight - bitmap.width) >> 1;
+		leftPadding = usableHeight + UI._8dp;
+		processEllipsis();
+		invalidate();
 		return true;
 	}
 }

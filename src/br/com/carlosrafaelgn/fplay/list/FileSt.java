@@ -83,7 +83,7 @@ public final class FileSt extends BaseItem {
 		this.isDirectory = (specialType != 0);
 		this.path = absolutePath;
 		this.name = name;
-		this.albumArt = albumArt;
+		this.albumArt = (((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
 		this.specialType = specialType;
 	}
 	
@@ -91,7 +91,7 @@ public final class FileSt extends BaseItem {
 		this.isDirectory = isDirectory;
 		this.path = absolutePath;
 		this.name = name;
-		this.albumArt = albumArt;
+		this.albumArt = (((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
 		this.specialType = specialType;
 	}
 	

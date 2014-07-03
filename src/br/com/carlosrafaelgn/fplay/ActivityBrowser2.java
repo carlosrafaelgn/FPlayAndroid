@@ -39,7 +39,8 @@ import java.util.Locale;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.drawable.BitmapDrawable;
+import android.content.res.Resources;
+import android.graphics.BitmapFactory;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -52,6 +53,7 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
@@ -76,6 +78,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private RelativeLayout panelSecondary, panelLoading;
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
+	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
 	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
@@ -276,7 +279,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, true);
+		return new FileView(Player.getService(), this, albumArtFetcher, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, true);
 	}
 	
 	@Override
@@ -551,6 +554,13 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 				Player.removeFavoriteFolder(Player.path);
 		} else if (view == chkAlbumArt) {
 			UI.albumArt = chkAlbumArt.isChecked();
+			for (int i = list.getChildCount() - 1; i >= 0; i--) {
+				final View v = list.getChildAt(i);
+				if (v instanceof FileView) {
+					((FileView)v).refreshItem();
+					v.invalidate();
+				}
+			}
 		} if (view == btnHome) {
 			if (Player.path.length() > 0)
 				navigateTo("", Player.path);
@@ -626,30 +636,35 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		isAtHome = (Player.path.length() == 0);
 		fileList = new FileList();
 		fileList.observerActivity = this;
+		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
+		//is internally cached, therefore, causing an exception when we try to use it
+		//after being recycled...
+		final Resources res = getResources();
 		try {
-			ic_closed_folder = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_closed_folder)).getBitmap());
+			ic_closed_folder = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_closed_folder));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_internal = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_internal)).getBitmap());
+			ic_internal = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_internal));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_external = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_external)).getBitmap());
+			ic_external = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_external));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_favorite = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_favorite)).getBitmap());
+			ic_favorite = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_favorite));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_artist = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_artist)).getBitmap());
+			ic_artist = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_artist));
 		} catch (Throwable ex) {
 		}
 		try {
-			ic_album = new ReleasableBitmapWrapper(((BitmapDrawable)getDrawable(R.drawable.ic_album)).getBitmap());
+			ic_album = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_album));
 		} catch (Throwable ex) {
 		}
+		albumArtFetcher = new AlbumArtFetcher();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -803,6 +818,10 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		if (ic_album != null) {
 			ic_album.release();
 			ic_album = null;
+		}
+		if (albumArtFetcher != null) {
+			albumArtFetcher.stopAndCleanup();
+			albumArtFetcher = null;
 		}
 	}
 }

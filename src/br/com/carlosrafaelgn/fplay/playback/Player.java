@@ -364,6 +364,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
 		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
+		//the concept of bit was added on version 38
 		if (opts.hasBits()) {
 			//load the bit flags the new way
 			controlMode = opts.getBit(OPTBIT_CONTROLMODE);
@@ -652,7 +653,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static void initialize(Context context) {
 		if (state == STATE_NEW) {
 			state = STATE_INITIALIZING;
-			_mainHandler = MainHandler.initialize(context);
+			_mainHandler = MainHandler.initialize();
 			if (notificationManager == null)
 				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			if (audioManager == null)

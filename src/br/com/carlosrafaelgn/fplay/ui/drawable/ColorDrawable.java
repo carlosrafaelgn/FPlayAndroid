@@ -76,10 +76,13 @@ public final class ColorDrawable extends Drawable {
 	
 	@Override
 	public void draw(Canvas canvas) {
-		if (!hasBounds)
+		if (!hasBounds) {
 			canvas.drawColor(color);
-		else
-			UI.fillRect(canvas, color, getBounds());
+		} else {
+			final Rect r = getBounds();
+			UI.fillPaint.setColor(color);
+			canvas.drawRect(r.left, r.top, r.right, r.bottom, UI.fillPaint);
+		}
 	}
 	
 	@Override

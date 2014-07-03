@@ -217,7 +217,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Physical Back key always returns to player while adding songs</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Return to the player</string>
-    <string name="startup_message">- New features: details in flat colors and idle shutdown\n- New sorting options for the list\n- New display options for the songs</string>
+    <string name="startup_message">- New features: album art, details in flat colors and idle shutdown\n- New sorting options for the list\n- New display options for the songs</string>
     <string name="sort_by_title">Sort by title</string>
     <string name="sort_by_artist">Sort by artist</string>
     <string name="sort_by_album">Sort by album</string>

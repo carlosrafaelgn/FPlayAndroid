@@ -160,7 +160,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, null, null, null, null, null, null, hasButtons, false);
+		return new FileView(Player.getService(), this, null, null, null, null, null, null, null, hasButtons, false);
 	}
 	
 	@Override

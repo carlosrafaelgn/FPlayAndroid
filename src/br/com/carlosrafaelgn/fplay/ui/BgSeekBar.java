@@ -502,18 +502,18 @@ public final class BgSeekBar extends View {
 			final int color = UI.getBorderColor(state);
 			UI.rect.top = UI._8dp;
 			UI.rect.bottom -= UI._8dp;
-			UI.strokeRect(canvas, color, UI.rect, UI.strokeSize);
+			UI.strokeRect(canvas, color, UI.strokeSize);
 			UI.rect.left = UI.strokeSize;
 			UI.rect.top += UI.strokeSize;
 			UI.rect.bottom -= UI.strokeSize;
 			UI.rect.right = UI.strokeSize + filledSize;
-			UI.drawBgBorderless(canvas, state, UI.rect);
+			UI.drawBgBorderless(canvas, state);
 			if (drawTextFirst)
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
 			UI.rect.left = UI.rect.right;
 			UI.rect.right = right - UI.strokeSize;
 			if (UI.rect.left < right)
-				UI.fillRect(canvas, insideList ? UI.color_list : UI.color_window, UI.rect);
+				UI.fillRect(canvas, insideList ? UI.color_list : UI.color_window);
 			if (!drawTextFirst)
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
 			if (sliderMode) {
@@ -524,12 +524,12 @@ public final class BgSeekBar extends View {
 				UI.rect.top = 0;
 				UI.rect.right = filledSize + thumbWidth;
 				UI.rect.bottom = bottom;
-				UI.fillRect(canvas, color, UI.rect);
+				UI.fillRect(canvas, color);
 				UI.rect.left += UI.strokeSize;
 				UI.rect.top += UI.strokeSize;
 				UI.rect.right -= UI.strokeSize;
 				UI.rect.bottom -= UI.strokeSize;
-				UI.drawBgBorderless(canvas, state, UI.rect);
+				UI.drawBgBorderless(canvas, state);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (thumbWidth >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
 			}
 		}

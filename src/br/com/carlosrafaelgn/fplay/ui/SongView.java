@@ -154,7 +154,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	protected void onDraw(Canvas canvas) {
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), UI.rect, false, true);
+		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), false, true);
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI._4dp, UI.rect.bottom - UI.defaultControlContentsSize - UI._4dp, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);

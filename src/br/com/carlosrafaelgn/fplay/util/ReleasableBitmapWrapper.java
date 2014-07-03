@@ -39,11 +39,13 @@ import android.os.Build;
 public final class ReleasableBitmapWrapper {
 	private volatile int ref;
 	public volatile Bitmap bitmap;
-	public final int size;
+	public final int width, height, size;
 	
 	public ReleasableBitmapWrapper(Bitmap bitmap) {
 		this.ref = 1;
 		this.bitmap = bitmap;
+		this.width = bitmap.getWidth();
+		this.height = bitmap.getHeight();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
 			size = sizeOf19(bitmap);
 		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)

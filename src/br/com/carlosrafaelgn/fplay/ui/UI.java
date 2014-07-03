@@ -1076,14 +1076,14 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 7) {
-			msgStartup = 7;
+		if (msgStartup >= 8) {
+			msgStartup = 8;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup < 7) {
-			msgStartup = 7;
+		if (msgStartup < 8) {
+			msgStartup = 8;
 			//content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_key_behavior).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 			content = activity.getText(R.string.startup_message).toString();
 		}
@@ -1158,29 +1158,29 @@ public final class UI {
 		canvas.drawText(emptyListString, (UI.rect.right >> 1) - emptyListStringHalfWidth, (UI.rect.bottom >> 1) - (_18spBox >> 1) + _18spYinBox, textPaint);
 	}
 	
-	public static void fillRect(Canvas canvas, int fillColor, Rect rect) {
+	public static void fillRect(Canvas canvas, int fillColor) {
 		fillPaint.setColor(fillColor);
 		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 	}
 	
-	public static void fillRect(Canvas canvas, int fillColor, Rect rect, int insetX, int insetY) {
+	public static void fillRect(Canvas canvas, int fillColor, int insetX, int insetY) {
 		fillPaint.setColor(fillColor);
 		canvas.drawRect(rect.left + insetX, rect.top + insetY, rect.right - insetX, rect.bottom - insetY, fillPaint);
 	}
 	
-	public static void fillRect(Canvas canvas, Shader shader, Rect rect) {
+	public static void fillRect(Canvas canvas, Shader shader) {
 		fillPaint.setShader(shader);
 		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 		fillPaint.setShader(null);
 	}
 	
-	public static void fillRect(Canvas canvas, Shader shader, Rect rect, int insetX, int insetY) {
+	public static void fillRect(Canvas canvas, Shader shader, int insetX, int insetY) {
 		fillPaint.setShader(shader);
 		canvas.drawRect(rect.left + insetX, rect.top + insetY, rect.right - insetX, rect.bottom - insetY, fillPaint);
 		fillPaint.setShader(null);
 	}
 	
-	public static void strokeRect(Canvas canvas, int strokeColor, Rect rect, int thickness) {
+	public static void strokeRect(Canvas canvas, int strokeColor, int thickness) {
 		fillPaint.setColor(strokeColor);
 		final int l = rect.left, t = rect.top, r = rect.right, b = rect.bottom;
 		canvas.drawRect(l, t, r, t + thickness, fillPaint);
@@ -1199,55 +1199,54 @@ public final class UI {
 		return 0;
 	}
 	
-	public static void drawBgBorderless(Canvas canvas, int state, Rect rect) {
+	public static void drawBgBorderless(Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
-				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, rect);
+				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
 				if (flat)
-					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, rect);
+					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
 				else
-					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
+					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
 			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillRect(canvas, color_selected_multi, rect);
+				fillRect(canvas, color_selected_multi);
 			}
 		}
 	}
 	
-	private static void drawDivider(Canvas canvas, Rect rect) {
-		fillPaint.setColor(color_divider);
-		final int top = rect.top;
-		rect.top = rect.bottom - strokeSize;
-		canvas.drawRect(rect, fillPaint);
-		rect.top = top;
-	}
-	
-	public static void drawBg(Canvas canvas, int state, Rect rect, boolean squareItem, boolean dividerAllowed) {
-		dividerAllowed &= isDividerVisible;
+	public static void drawBg(Canvas canvas, int state, boolean squareItem, boolean dividerAllowed) {
+		dividerAllowed &= ((!squareItem) & isDividerVisible);
+		if (dividerAllowed)
+			rect.bottom -= strokeSize;
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
-				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, rect, strokeSize);
-				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, rect, strokeSize, strokeSize);
-				return;
+				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
+				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, strokeSize, strokeSize);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
 				if (squareItem) {
-					strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, rect, strokeSize);
+					strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
 					if (flat)
-						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, rect, strokeSize, strokeSize);
+						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, strokeSize, strokeSize);
 					else
-						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect, strokeSize, strokeSize);
+						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), strokeSize, strokeSize);
 				} else {
 					if (flat)
-						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, rect);
+						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
 					else
-						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), rect);
+						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
 				}
 			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillRect(canvas, color_selected_multi, rect);
+				fillRect(canvas, color_selected_multi);
 			}
 		}
-		if (!squareItem && dividerAllowed)
-			drawDivider(canvas, rect);
+		if (dividerAllowed) {
+			fillPaint.setColor(color_divider);
+			final int top = rect.top;
+			rect.top = rect.bottom;
+			rect.bottom += strokeSize;
+			canvas.drawRect(rect, fillPaint);
+			rect.top = top;
+		}
 	}
 	
 	public static int handleStateChanges(int state, boolean pressed, boolean focused, View view) {

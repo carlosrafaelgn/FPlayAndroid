@@ -32,8 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
-import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
@@ -41,14 +41,14 @@ public final class MainHandler extends Handler {
 	private static MainHandler theHandler;
 	private static Thread mainThread;
 	
-	private MainHandler(Context context) {
-		super(context.getMainLooper());
+	private MainHandler() {
+		super(Looper.getMainLooper());
 	}
 	
-	public static MainHandler initialize(Context context) {
+	public static MainHandler initialize() {
 		if (theHandler == null) {
-			theHandler = new MainHandler(context);
-			mainThread = theHandler.getLooper().getThread();
+			theHandler = new MainHandler();
+			mainThread = Looper.getMainLooper().getThread();
 		}
 		return theHandler;
 	}

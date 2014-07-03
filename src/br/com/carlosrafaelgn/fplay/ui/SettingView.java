@@ -381,7 +381,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state, UI.rect, false, !hidingSeparator);
+		UI.drawBg(canvas, state, false, !hidingSeparator);
 		if (icon != null) {
 			UI.rect.top = (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1);
 			TextIconDrawable.drawIcon(canvas, icon, UI._8dp, UI.rect.top, UI.defaultControlContentsSize, (state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
@@ -389,7 +389,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			UI.rect.right = UI.rect.left + UI.strokeSize;
 			UI.rect.top += UI._2dp;
 			UI.rect.bottom = UI.rect.top + UI.defaultControlContentsSize - UI._4dp;
-			UI.fillRect(canvas, (state == 0) ? UI.color_divider : UI.color_text_selected, UI.rect);
+			UI.fillRect(canvas, (state == 0) ? UI.color_divider : UI.color_text_selected);
 		}
 		super.dispatchDraw(canvas);
 	}
