@@ -1083,7 +1083,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		if (how != SongList.HOW_CURRENT)
 			lastTime = -1;
 		try {
-			lastHow = how;
 			preparePlayer(currentPlayer, song);
 			currentSongPreparing = true;
 		} catch (Throwable ex) {
@@ -1103,6 +1102,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			return;
 		}
 		int prepareNext = 0;
+		lastHow = how;
 		if (nextSong == song && how != SongList.HOW_CURRENT) {
 			int doInternal = 1;
 			lastTime = -1;
@@ -1132,7 +1132,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			} else {
 				stopPlayer(currentPlayer);
 				if (nextPreparing) {
-					lastHow = how;
 					currentSongLoaded = false;
 					currentSongPreparing = true;
 					doInternal = 0;
@@ -2059,8 +2058,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				nextPreparing = false;
 				nextPrepared = false;
 			} else {
+				final boolean prep = currentSongPreparing;
 				fullCleanup(currentSong);
-				sendMessage(MSG_UPDATE_STATE, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
+				if (prep && lastHow == SongList.HOW_NEXT_AUTO)
+					//the error happened during currentSong's preparation
+					nextFailed(currentSong, lastHow, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
+				else
+					sendMessage(MSG_UPDATE_STATE, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
 			}
 		} else {
 			fullCleanup(currentSong);

@@ -45,6 +45,10 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.BitmapLruCache;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
+//Good information:
+//http://developer.android.com/training/displaying-bitmaps/manage-memory.html
+//http://developer.android.com/training/displaying-bitmaps/cache-bitmap.html
+//http://developer.android.com/reference/android/util/LruCache.html
 public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	public static interface AlbumArtFetcherListener {
 		//Runs on a SECONDARY thread
@@ -155,16 +159,20 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				b2 = Bitmap.createBitmap(dstR.right, dstR.bottom, Bitmap.Config.RGB_565);
 				c.setBitmap(b2);
 				c.drawBitmap(b, srcR, dstR, p);
-				c.setBitmap(null);
 				b.recycle();
 				w = new ReleasableBitmapWrapper(b2);
 			}
 		} catch (Throwable ex) {
-			c.setBitmap(null);
-			if (b != null)
-				b.recycle();
-			if (b2 != null)
-				b2.recycle();
+			try {
+				if (b != null)
+					b.recycle();
+			} catch (Throwable ex2) {
+			}
+			try {
+				if (b2 != null)
+					b2.recycle();
+			} catch (Throwable ex2) {
+			}
 			listener.albumArtFetched(null, msg.what);
 			return true;
 		}
