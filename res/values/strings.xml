@@ -152,6 +152,7 @@
     <string name="all_files">All files</string>
     <string name="internal_storage">Internal storage</string>
     <string name="external_storage">External storage</string>
+    <string name="usb_storage">USB storage</string>
     <string name="error_playback">Sorry, but something went wrong during the playback :(</string>
     <string name="error_msg">Sorry, but something went wrong during the playback:</string>
     <string name="error_state">Sorry, but the playback had to be stopped because the player has misbehaved :(</string>

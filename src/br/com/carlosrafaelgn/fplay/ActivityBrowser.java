@@ -75,6 +75,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	private RelativeLayout panelLoading;
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnURL, chkFavorite, btnHome, btnUp, btnMenu;
+	private boolean loading;
 	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
 	private void refreshMenu(int count) {
@@ -109,6 +110,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	public void loadingProcessChanged(boolean started) {
+		loading = started;
 		if (panelLoading != null)
 			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
 		int count = 0;
@@ -574,6 +576,8 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		fileList.observerActivity = this;
 		fileList.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
+		if (loading != fileList.isLoading())
+			loadingProcessChanged(fileList.isLoading());
 	}
 	
 	@Override

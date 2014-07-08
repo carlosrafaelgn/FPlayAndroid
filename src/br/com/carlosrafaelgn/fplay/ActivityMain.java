@@ -1030,8 +1030,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private void resume(boolean selectCurrent) {
-		Player.songs.setObserver(list);
 		Player.songs.observerActivity = this;
+		Player.songs.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
 		updateVolumeDisplay();
 		if (list != null) {

@@ -421,7 +421,6 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	protected void onDestroy() {
-		fileList.observerActivity = null;
 		fileList.cancel();
 		fileList = null;
 	}

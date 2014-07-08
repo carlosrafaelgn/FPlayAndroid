@@ -457,6 +457,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event) {
+		int p;
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_DPAD_LEFT:
 			if (btnURL.getVisibility() == View.VISIBLE)
@@ -473,11 +474,19 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 				btnGoBack.requestFocus();
 			return true;
 		case KeyEvent.KEYCODE_ENTER:
-		case KeyEvent.KEYCODE_SPACE:
 		case KeyEvent.KEYCODE_DPAD_CENTER:
-			final int p = fileList.getSelection();
+			p = fileList.getSelection();
 			if (p >= 0)
 				processItemClick(p);
+			return true;
+		case KeyEvent.KEYCODE_0:
+		case KeyEvent.KEYCODE_SPACE:
+			p = fileList.getSelection();
+			if (p >= 0) {
+				final FileSt file = fileList.getItemT(p);
+				file.isChecked = !file.isChecked;
+				processItemButtonClick(p, false);
+			}
 			return true;
 		}
 		return false;
@@ -764,6 +773,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		fileList.observerActivity = this;
 		fileList.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
+		if (loading != fileList.isLoading())
+			loadingProcessChanged(fileList.isLoading());
 	}
 	
 	@Override

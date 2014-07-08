@@ -46,6 +46,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 //http://developer.android.com/guide/appendix/media-formats.html
 //
 public final class FileList extends BaseList<FileSt> implements FileFetcher.Listener {
+	private boolean loading;
 	private String path, comingFrom;
 	private FileFetcher fetcher;
 	public ActivityFileView observerActivity;
@@ -54,7 +55,12 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 		super(FileSt.class);
 	}
 	
+	public boolean isLoading() {
+		return loading;
+	}
+	
 	private void loadingProcessChanged(boolean started) {
+		loading = started;
 		if (observerActivity != null)
 			observerActivity.loadingProcessChanged(started);
 	}
@@ -146,7 +152,13 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		final FileView view = ((convertView == null) ? observerActivity.createFileView() : (FileView)convertView);
+		if (convertView != null) {
+			((FileView)convertView).setItemState(items[position], position, getItemState(position));
+			return convertView;
+		}
+		if (observerActivity == null)
+			return null;
+		final FileView view = observerActivity.createFileView();
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}
