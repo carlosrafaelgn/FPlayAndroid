@@ -47,6 +47,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
@@ -73,11 +74,10 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	private final int id;
 	private final StringBuilder formatterSB;
 	private final Formatter formatter;
-	//private TextView lblTitle;
 	private EditText txtSaveAsName;
 	private BgListView list;
 	private FileList fileList;
-	private LinearLayout panelLoading;
+	private RelativeLayout panelLoading;
 	private BgButton btnGoBack, btnMenu;
 	private boolean loading;
 	private int lastLongClickedId;
@@ -114,13 +114,6 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 				btnGoBack.setNextFocusRightId(R.id.btnMenu);
 				UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
 			}
-			//if (lblTitle != null) {
-			//	final RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-			//	p.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
-			//	p.addRule(RelativeLayout.RIGHT_OF, R.id.btnGoBack);
-			//	p.addRule(RelativeLayout.LEFT_OF, R.id.btnMenu);
-			//	lblTitle.setLayoutParams(p);
-			//}
 			if (btnMenu != null)
 				btnMenu.setVisibility(View.VISIBLE);
 		} else {
@@ -128,13 +121,6 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 				btnGoBack.setNextFocusRightId(R.id.list);
 				UI.setNextFocusForwardId(btnGoBack, R.id.list);
 			}
-			//if (lblTitle != null) {
-			//	final RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-			//	p.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
-			//	p.addRule(RelativeLayout.RIGHT_OF, R.id.btnGoBack);
-			//	p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-			//	lblTitle.setLayoutParams(p);
-			//}
 			if (btnMenu != null)
 				btnMenu.setVisibility(View.GONE);
 		}
@@ -373,19 +359,16 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		//lblTitle = (TextView)findViewById(R.id.lblTitle);
-		//lblTitle.setText(format(save ? R.string.msg_select_item_save : R.string.msg_select_item_load, itemType));
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
 		list = (BgListView)findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
-		panelLoading = (LinearLayout)findViewById(R.id.panelLoading);
+		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		if (UI.isLargeScreen)
-			UI.prepareViewPaddingForLargeScreen(list, 0);
-		if (UI.extraSpacing)
-			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		fileList.setPrivateFileType(fileType, list.isInTouchMode());
 		UI.prepareEdgeEffectColor(getApplication());
 	}
@@ -407,13 +390,12 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
 		btnGoBack = null;
-		//lblTitle = null;
 		btnMenu = null;
 		list = null;
 		panelLoading = null;

@@ -43,7 +43,7 @@ import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
-import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 
 public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
 	private ScrollView list;
@@ -60,7 +60,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		list.setHorizontalFadingEdgeEnabled(false);
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
-		list.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
+		list.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		final TextView lblTitle = (TextView)findViewById(R.id.lblTitle);
 		lblTitle.setText("FPlay");
 		UI.largeTextAndColor(lblTitle);
@@ -112,11 +112,10 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 		lblDbg.setText(sb.toString());
 		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
-		if (UI.extraSpacing)
-			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		UI.prepareEdgeEffectColor(getApplication());
 	}
 	
@@ -133,7 +132,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
 	@Override

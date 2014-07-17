@@ -17,7 +17,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-            android:layout_centerVertical="true"
+            android:layout_alignParentTop="true"
             android:contentDescription="@string/go_back"
             android:nextFocusDown="@+id/lblMsg"
             android:nextFocusForward="@+id/lblMsg"
@@ -33,15 +33,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
-            android:layout_centerVertical="true"
+            android:layout_alignParentTop="true"
             android:contentDescription="@string/about"
             android:src="@drawable/ic_launcher" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
+            android:layout_alignBottom="@+id/imgIcon"
             android:layout_toLeftOf="@+id/imgIcon"
+            android:baselineAligned="true"
             android:gravity="right|bottom"
             android:orientation="horizontal" >
 
@@ -58,18 +59,16 @@
                 android:layout_height="wrap_content"
                 android:singleLine="true" />
         </LinearLayout>
-    </RelativeLayout>
 
-    <TextView
-        android:id="@+id/lblAppBy"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginTop="0dp"
-        android:gravity="right"
-        android:text="@string/app_by" />
+        <TextView
+            android:id="@+id/lblAppBy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/imgIcon"
+            android:gravity="right"
+            android:padding="4dp"
+            android:text="@string/app_by" />
+    </RelativeLayout>
 
     <ScrollView
         android:id="@+id/list"

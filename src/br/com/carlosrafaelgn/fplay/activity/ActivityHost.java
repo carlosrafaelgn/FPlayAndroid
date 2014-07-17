@@ -46,6 +46,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 
 //
 //Handling Runtime Changes
@@ -58,6 +59,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private ClientActivity top;
 	private boolean exitOnDestroy;
 	private int windowColor;
+	private final NullDrawable windowNullDrawable = new NullDrawable();
 	private ColorDrawable windowColorDrawable;
 	
 	public ClientActivity getTopActivity() {
@@ -163,7 +165,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 	
 	public void setWindowColor(int color) {
-		if (windowColorDrawable == null) {
+		if (color == 0) {
+			if (windowColor != color) {
+				windowColor = 0;
+				getWindow().setBackgroundDrawable(windowNullDrawable);
+			}
+		} else if (windowColorDrawable == null) {
 			windowColor = color;
 			windowColorDrawable = new ColorDrawable(color);
 			getWindow().setBackgroundDrawable(windowColorDrawable);
@@ -201,6 +208,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		top.finished = false;
 		top.activity = this;
 		top.previousActivity = null;
+		windowColor = 1;
 		setWindowColor(top.getDesiredWindowColor());
 		top.onCreate();
 		if (top != null && !top.finished) {

@@ -49,6 +49,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 
 public final class BgListView extends ListView {
@@ -91,9 +92,15 @@ public final class BgListView extends ListView {
 		super.setHorizontalFadingEdgeEnabled(false);
 		super.setVerticalFadingEdgeEnabled(false);
 		super.setFadingEdgeLength(0);
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
 		super.setFocusableInTouchMode(false);
 		super.setFocusable(true);
+		super.setHorizontalScrollBarEnabled(false);
+		super.setVerticalScrollBarEnabled(!UI.customScrollBar);
+		super.setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		//setPadding(0, 0, 0, 0);
+		//setFastScrollAlwaysVisible(true);
+		//setFastScrollEnabled(true);
+		//setScrollBarStyle(SCROLLBARS_INSIDE_INSET);
 		//List color turns black while Scrolling
 		//http://stackoverflow.com/questions/8531006/list-color-turns-black-while-scrolling
 		//Remove shadow from top and bottom of ListView in android?
@@ -116,27 +123,8 @@ public final class BgListView extends ListView {
 	
 	@SuppressWarnings("deprecation")
 	public void setTopLeftBorders() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, UI.thickDividerSize, UI.thickDividerSize, 0, 0));
-	}
-	
-	@SuppressWarnings("deprecation")
-	public void setTopBottomBorders() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, UI.thickDividerSize));
-	}
-	
-	@SuppressWarnings("deprecation")
-	public void setTopBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
-	}
-	
-	@SuppressWarnings("deprecation")
-	public void setRightBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, 0, UI.thickDividerSize, 0));
-	}
-	
-	@SuppressWarnings("deprecation")
-	public void setBottomBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, 0, 0, UI.thickDividerSize));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, UI.thickDividerSize, UI.thickDividerSize, 0, 0, true));
+		setPadding(UI.thickDividerSize, UI.thickDividerSize, 0, 0);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -351,6 +339,10 @@ public final class BgListView extends ListView {
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		switch (event.getAction()) {
+		case MotionEvent.ACTION_DOWN:
+			if (!UI.customScrollBar) break;
+			final int x = (int)event.getX();
+			break;
 		case MotionEvent.ACTION_UP:
 			if (emptyListClickListener != null) {
 				final ListAdapter a = getAdapter();
@@ -360,6 +352,11 @@ public final class BgListView extends ListView {
 			break;
 		}
 		return super.onTouchEvent(event);
+	}
+	
+	@Override
+	public void setPadding(int left, int top, int right, int bottom) {
+		super.setPadding(left, top, UI.customScrollBar ? (right + UI.defaultControlContentsSize) : right, bottom);
 	}
 	
 	private void defaultKeyDown(int keyCode) {
@@ -425,7 +422,7 @@ public final class BgListView extends ListView {
 		}
 	}
 	
-	@Override
+	/*@Override
 	protected void dispatchDraw(Canvas canvas) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			super.dispatchDraw(canvas);
@@ -440,11 +437,13 @@ public final class BgListView extends ListView {
 			super.dispatchDraw(canvas);
 			canvas.restore();
 		}
-	}
+	}*/
 	
 	@Override
-	protected void onDraw(Canvas canvas) {
-		super.onDraw(canvas);
+	public void onDraw(Canvas canvas) {
+		//there is no need to call super.onDraw() here, as ListView does
+		//not override this method... therefore, it does nothing!
+		//super.onDraw(canvas);
 		final ListAdapter a = getAdapter();
 		if (a == null || a.getCount() == 0) {
 			if (emptyLayout != null) {
@@ -459,6 +458,8 @@ public final class BgListView extends ListView {
 				getDrawingRect(UI.rect);
 				UI.drawEmptyListString(canvas);
 			}
+		} else if (UI.customScrollBar) {
+			
 		}
 	}
 	

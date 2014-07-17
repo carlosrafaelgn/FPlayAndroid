@@ -98,6 +98,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			LayoutParams p;
 			if (!buttonIsCheckbox) {
 				btnAdd = new BgButton(context);
+				btnAdd.setHideBorders(true);
 				p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 				p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
 				btnAdd.setLayoutParams(p);
@@ -108,6 +109,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				addView(btnAdd);
 			}
 			btnPlay = new BgButton(context);
+			btnPlay.setHideBorders(true);
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI._8dp;
 			p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
@@ -313,7 +315,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			//canvas.drawColor(UI.color_highlight);
 			canvas.drawColor(UI.color_selected);
 			//canvas.drawColor(UI.color_window);
-		UI.drawBg(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), false, true);
+		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
 		if (bitmap != null && bitmap.bitmap != null)
 			canvas.drawBitmap(bitmap.bitmap, bitmapLeftPadding, (usableHeight >> 1) - (bitmap.height >> 1), null);
 		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text_highlight : UI.color_text_listitem), UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);

@@ -45,7 +45,8 @@
         <RelativeLayout
             android:id="@+id/panelControls"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent" >
+            android:layout_height="match_parent"
+            android:paddingRight="8dp" >
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPrev"
@@ -123,7 +124,6 @@
             android:baselineAligned="false"
             android:orientation="vertical"
             android:paddingBottom="16dp"
-            android:paddingLeft="8dp"
             android:paddingRight="8dp" >
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton

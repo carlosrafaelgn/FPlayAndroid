@@ -46,8 +46,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.LinearLayout.LayoutParams;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -60,7 +60,6 @@ import br.com.carlosrafaelgn.fplay.ui.ObservableScrollView;
 import br.com.carlosrafaelgn.fplay.ui.SettingView;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
-import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
@@ -270,7 +269,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				startActivity(new ActivitySettings(true));
 			} else {
 				UI.setTheme(getHostActivity(), item.getItemId());
-				getHostActivity().setWindowColor(UI.color_window);
 				onCleanupLayout();
 				onCreateLayout(false);
 				System.gc();
@@ -446,7 +444,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.serializeThemeColor(colors, i * 3, colorViews[i].getColor());
 		UI.customColors = colors;
 		UI.setTheme(getHostActivity(), UI.THEME_CUSTOM);
-		getHostActivity().setWindowColor(UI.color_window);
 		changed = false;
 		finish();
 	}
@@ -525,7 +522,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	private void setListPadding() {
 		//for lblTitle to look nice, we must have no paddings
-		UI.prepareViewPaddingForLargeScreen(list, colorMode ? UI.thickDividerSize : 0);
+		UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		if (lblTitle != null) {
+			final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)lblTitle.getLayoutParams();
+			lp.leftMargin = UI.getViewPaddingForLargeScreen();
+			lp.rightMargin = lp.leftMargin;
+			lblTitle.setLayoutParams(lp);
+		}
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -550,21 +553,19 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
 		//for lblTitle to look nice, we must have no paddings
-		list.setBackgroundDrawable((colorMode || UI.isLargeScreen) ?
-				new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0) :
-				new ColorDrawable(UI.color_list));
+		list.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
+		if (!colorMode) {
+			lblTitle = (TextView)findViewById(R.id.lblTitle);
+			prepareHeader(lblTitle);
+		}
 		if (UI.isLargeScreen)
 			setListPadding();
 		
 		if (colorMode) {
 			loadColors(true, false);
 		} else {
-			//neat workaround to partially hide lblTitle ;)
-			panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-			lblTitle = (TextView)findViewById(R.id.lblTitle);
-			prepareHeader(lblTitle);
 			list.setOnScrollListener(this);
 			if (!UI.isCurrentLocaleCyrillic()) {
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface(), false);
@@ -677,10 +678,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			currentHeader = -1;
 		}
 		
+		UI.prepareControlContainer(panelControls, false, colorMode || UI.isLargeScreen);
 		if (UI.isLargeScreen)
 			btnAbout.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-		if (UI.extraSpacing)
-			panelControls.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		btnAbout.setDefaultHeight();
 		UI.prepareEdgeEffectColor(getApplication());
 	}

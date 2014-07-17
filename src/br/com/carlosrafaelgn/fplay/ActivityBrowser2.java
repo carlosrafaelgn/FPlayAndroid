@@ -83,67 +83,67 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
 	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
-	private void setListPadding() {
-		if (list != null) {
+	private void refreshOverallLayout() {
+		RelativeLayout.LayoutParams rp;
+		if (isAtHome) {
+			lblPath.setPadding(0, 0, 0, 0);
+			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
+			rp.height = 0;
+			lblPath.setLayoutParams(rp);
+			panelSecondary.setPadding(0, 0, 0, 0);
+			btnGoBackToPlayer.setVisibility(View.GONE);
+			sep.setVisibility(View.GONE);
+			chkAll.setVisibility(View.GONE);
+			rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
+			rp.leftMargin = UI._8dp;
+			rp.rightMargin = UI._8dp;
+			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+			chkFavorite.setNextFocusUpId(R.id.list);
+			btnHome.setLayoutParams(rp);
+			btnHome.setNextFocusUpId(R.id.list);
+			btnHome.setNextFocusRightId(R.id.list);
+			UI.setNextFocusForwardId(btnHome, R.id.list);
+			chkAll.setNextFocusUpId(R.id.list);
+			btnGoBack.setNextFocusUpId(R.id.list);
+			btnGoBack.setNextFocusLeftId(R.id.list);
+			list.setNextFocusDownId(R.id.btnGoBack);
+			list.setNextFocusRightId(R.id.btnGoBack);
+			UI.setNextFocusForwardId(list, R.id.btnGoBack);
+		} else {
+			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
+			rp.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+			lblPath.setLayoutParams(rp);
 			if (UI.isLargeScreen)
-				UI.prepareViewPaddingForLargeScreen(list, isAtHome ? UI.thickDividerSize : 0, isAtHome ? 0 : UI.thickDividerSize);
+				lblPath.setPadding(UI._4dp, UI._4dp - UI.thickDividerSize, UI._4dp, UI._4dp);
 			else
-				list.setPadding(0, isAtHome ? UI.thickDividerSize : 0, 0, isAtHome ? 0 : UI.thickDividerSize);
+				lblPath.setPadding(UI._2dp, UI._2dp - UI.thickDividerSize, UI._2dp, UI._2dp);
+			UI.prepareControlContainerPaddingOnly(panelSecondary, true, false);
+			btnGoBackToPlayer.setVisibility(View.VISIBLE);
+			sep.setVisibility(View.VISIBLE);
+			chkAll.setVisibility(View.VISIBLE);
+			rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
+			rp.leftMargin = UI._8dp;
+			rp.rightMargin = UI._8dp;
+			rp.addRule(RelativeLayout.LEFT_OF, R.id.sep);
+			chkFavorite.setNextFocusUpId(R.id.btnGoBackToPlayer);
+			btnHome.setLayoutParams(rp);
+			btnHome.setNextFocusUpId((checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBackToPlayer);
+			btnHome.setNextFocusRightId(R.id.chkAll);
+			UI.setNextFocusForwardId(btnHome, R.id.chkAll);
+			chkAll.setNextFocusUpId((checkedCount != 0) ? R.id.btnPlay : R.id.btnGoBackToPlayer);
+			btnGoBack.setNextFocusUpId(R.id.btnGoBackToPlayer);
+			btnGoBack.setNextFocusLeftId((checkedCount != 0) ? R.id.btnPlay : R.id.btnGoBackToPlayer);
+			list.setNextFocusDownId(R.id.btnGoBackToPlayer);
+			list.setNextFocusRightId(R.id.btnGoBackToPlayer);
+			UI.setNextFocusForwardId(list, R.id.btnGoBackToPlayer);
+			btnGoBackToPlayer.setNextFocusRightId((checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBack);
+			UI.setNextFocusForwardId(btnGoBackToPlayer, (checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBack);
 		}
 	}
 	
 	private void refreshButtons() {
-		if (!isAtHome != (chkAll.getVisibility() == View.VISIBLE)) {
-			if (isAtHome) {
-				list.setTopBorder();
-				setListPadding();
-				if (UI.extraSpacing)
-					panelSecondary.setPadding(0, 0, 0, 0);
-				btnGoBackToPlayer.setVisibility(View.GONE);
-				sep.setVisibility(View.GONE);
-				chkAll.setVisibility(View.GONE);
-				final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
-				rp.leftMargin = UI._8dp;
-				rp.rightMargin = UI._8dp;
-				rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-				chkFavorite.setNextFocusUpId(R.id.list);
-				btnHome.setLayoutParams(rp);
-				btnHome.setNextFocusUpId(R.id.list);
-				btnHome.setNextFocusRightId(R.id.list);
-				UI.setNextFocusForwardId(btnHome, R.id.list);
-				chkAll.setNextFocusUpId(R.id.list);
-				btnGoBack.setNextFocusUpId(R.id.list);
-				btnGoBack.setNextFocusLeftId(R.id.list);
-				list.setNextFocusDownId(R.id.btnGoBack);
-				list.setNextFocusRightId(R.id.btnGoBack);
-				UI.setNextFocusForwardId(list, R.id.btnGoBack);
-			} else {
-				list.setBottomBorder();
-				setListPadding();
-				if (UI.extraSpacing)
-					panelSecondary.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-				btnGoBackToPlayer.setVisibility(View.VISIBLE);
-				sep.setVisibility(View.VISIBLE);
-				chkAll.setVisibility(View.VISIBLE);
-				final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
-				rp.leftMargin = UI._8dp;
-				rp.rightMargin = UI._8dp;
-				rp.addRule(RelativeLayout.LEFT_OF, R.id.sep);
-				chkFavorite.setNextFocusUpId(R.id.btnGoBackToPlayer);
-				btnHome.setLayoutParams(rp);
-				btnHome.setNextFocusUpId((checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBackToPlayer);
-				btnHome.setNextFocusRightId(R.id.chkAll);
-				UI.setNextFocusForwardId(btnHome, R.id.chkAll);
-				chkAll.setNextFocusUpId((checkedCount != 0) ? R.id.btnPlay : R.id.btnGoBackToPlayer);
-				btnGoBack.setNextFocusUpId(R.id.btnGoBackToPlayer);
-				btnGoBack.setNextFocusLeftId((checkedCount != 0) ? R.id.btnPlay : R.id.btnGoBackToPlayer);
-				list.setNextFocusDownId(R.id.btnGoBackToPlayer);
-				list.setNextFocusRightId(R.id.btnGoBackToPlayer);
-				UI.setNextFocusForwardId(list, R.id.btnGoBackToPlayer);
-				btnGoBackToPlayer.setNextFocusRightId((checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBack);
-				UI.setNextFocusForwardId(btnGoBackToPlayer, (checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBack);
-			}
-		}
+		if (!isAtHome != (chkAll.getVisibility() == View.VISIBLE))
+			refreshOverallLayout();
 		if ((checkedCount != 0) != (btnAdd.getVisibility() == View.VISIBLE)) {
 			if (checkedCount != 0) {
 				btnAdd.setVisibility(View.VISIBLE);
@@ -421,7 +421,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			chkFavorite.setVisibility(View.VISIBLE);
 			chkAlbumArt.setVisibility(View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
-			lblPath.setVisibility(View.VISIBLE);
 		} else if (others) {
 			albumArtArea = (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
 			btnURL.setVisibility(View.GONE);
@@ -437,7 +436,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			chkFavorite.setVisibility(View.GONE);
 			chkAlbumArt.setVisibility(albumArtArea ? View.VISIBLE : View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
-			lblPath.setVisibility(View.VISIBLE);
 		} else {
 			btnURL.setVisibility(View.VISIBLE);
 			btnGoBack.setNextFocusRightId(R.id.btnURL);
@@ -445,7 +443,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			chkFavorite.setVisibility(View.GONE);
 			chkAlbumArt.setVisibility(View.GONE);
 			btnHome.setVisibility(View.GONE);
-			lblPath.setVisibility(View.GONE);
 		}
 		checkedCount = 0;
 		chkAll.setChecked(false);
@@ -684,7 +681,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		UI.largeText(lblLoading);
 		lblLoading.setTextColor(UI.colorState_text_listitem_static);
 		lblPath = (TextView)findViewById(R.id.lblPath);
-		lblPath.setText(Player.path);
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
@@ -741,23 +737,25 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY, true, false);
-		if (UI.isLargeScreen) {
+		if (UI.isLargeScreen)
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
-		} else if (UI.isLowDpiScreen) {
+		else if (UI.isLowDpiScreen)
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		}
 		if (UI.extraSpacing) {
 			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
 			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			lp.rightMargin = UI._8dp;
 			btnURL.setLayoutParams(lp);
-			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, 0, UI._8dp);
-			if (!isAtHome)
-				panelSecondary.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		}
-		setListPadding();
+		UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, true);
+		UI.prepareControlContainer(panelSecondary, true, false);
+		if (UI.isLargeScreen)
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareEdgeEffectColor(getApplication());
+		//this is the opposite as in refreshButtons(), to force refreshOverallLayout()
+		//to be called at least once
+		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE))
+			refreshOverallLayout();
 		navigateTo(Player.path, null);
 	}
 	
@@ -779,7 +777,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	protected void onOrientationChanged() {
-		setListPadding();
+		if (UI.isLargeScreen && list != null)
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
 	@Override

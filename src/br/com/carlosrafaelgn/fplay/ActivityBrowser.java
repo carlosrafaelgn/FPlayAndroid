@@ -311,7 +311,6 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			chkFavorite.setVisibility(View.VISIBLE);
 			btnHome.setVisibility(View.VISIBLE);
 			btnUp.setVisibility(View.VISIBLE);
-			lblPath.setVisibility(View.VISIBLE);
 		} else if (others) {
 			btnURL.setVisibility(View.GONE);
 			btnGoBack.setNextFocusRightId(R.id.btnHome);
@@ -320,7 +319,6 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			chkFavorite.setVisibility(View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
 			btnUp.setVisibility(View.VISIBLE);
-			lblPath.setVisibility(View.VISIBLE);
 		} else {
 			refreshMenu(0);
 			btnURL.setVisibility(View.VISIBLE);
@@ -329,7 +327,21 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			chkFavorite.setVisibility(View.GONE);
 			btnHome.setVisibility(View.GONE);
 			btnUp.setVisibility(View.GONE);
-			lblPath.setVisibility(View.GONE);
+		}
+		RelativeLayout.LayoutParams rp;
+		if (fav || others) {
+			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
+			rp.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+			lblPath.setLayoutParams(rp);
+			if (UI.isLargeScreen)
+				lblPath.setPadding(UI._4dp, UI._4dp - UI.thickDividerSize, UI._4dp, UI._4dp);
+			else
+				lblPath.setPadding(UI._2dp, UI._2dp - UI.thickDividerSize, UI._2dp, UI._2dp);
+		} else {
+			lblPath.setPadding(0, 0, 0, 0);
+			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
+			rp.height = 0;
+			lblPath.setLayoutParams(rp);
 		}
 		if (Player.path.length() == 0)
 			Player.originalPath = to;
@@ -523,7 +535,6 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		UI.largeText(lblLoading);
 		lblLoading.setTextColor(UI.colorState_text_listitem_static);
 		lblPath = (TextView)findViewById(R.id.lblPath);
-		lblPath.setText(Player.path);
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
@@ -551,15 +562,12 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
 		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			lblPath.setPadding(UI._4dp, UI._4dp, UI._4dp, UI._4dp);
 		} else if (UI.isLowDpiScreen) {
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
-		if (UI.extraSpacing)
-			findViewById(R.id.panelControls).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-		//CustomContextMenu.registerForContextMenu(btnMenu, this);
+		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		UI.prepareEdgeEffectColor(getApplication());
 		navigateTo(Player.path, null);
 	}
@@ -583,7 +591,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0);
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
 	@Override

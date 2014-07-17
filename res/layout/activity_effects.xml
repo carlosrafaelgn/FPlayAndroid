@@ -17,7 +17,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-            android:layout_centerVertical="true"
             android:contentDescription="@string/go_back"
             android:nextFocusLeft="@+id/btnChangeEffect"
             android:nextFocusUp="@+id/btnChangeEffect" >
@@ -30,8 +29,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
-            android:layout_centerVertical="true"
-            android:layout_marginLeft="8dp"
             android:contentDescription="@string/menu"
             android:nextFocusDown="@+id/chkEqualizer"
             android:nextFocusForward="@+id/chkEqualizer"

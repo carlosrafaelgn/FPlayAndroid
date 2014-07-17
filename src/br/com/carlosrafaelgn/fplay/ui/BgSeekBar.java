@@ -507,13 +507,11 @@ public final class BgSeekBar extends View {
 			UI.rect.top += UI.strokeSize;
 			UI.rect.bottom -= UI.strokeSize;
 			UI.rect.right = UI.strokeSize + filledSize;
-			UI.drawBgBorderless(canvas, state);
+			UI.drawBgBorderless(canvas, state, false);
 			if (drawTextFirst)
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
 			UI.rect.left = UI.rect.right;
 			UI.rect.right = right - UI.strokeSize;
-			if (UI.rect.left < right)
-				UI.fillRect(canvas, insideList ? UI.color_list : UI.color_window);
 			if (!drawTextFirst)
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
 			if (sliderMode) {
@@ -529,7 +527,7 @@ public final class BgSeekBar extends View {
 				UI.rect.top += UI.strokeSize;
 				UI.rect.right -= UI.strokeSize;
 				UI.rect.bottom -= UI.strokeSize;
-				UI.drawBgBorderless(canvas, state);
+				UI.drawBgBorderless(canvas, state, false);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (thumbWidth >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
 			}
 		}

@@ -34,25 +34,26 @@ package br.com.carlosrafaelgn.fplay.ui.drawable;
 
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
+import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 
 public final class NullDrawable extends Drawable {
 	public NullDrawable() {
 	}
-
+	
 	@Override
 	public void draw(Canvas canvas) {
 	}
-
+	
 	@Override
 	public int getOpacity() {
-		return 0;
+		return PixelFormat.OPAQUE;
 	}
-
+	
 	@Override
 	public void setAlpha(int alpha) {
 	}
-
+	
 	@Override
 	public void setColorFilter(ColorFilter cf) {
 	}
@@ -60,6 +61,11 @@ public final class NullDrawable extends Drawable {
 	@Override
 	public boolean isStateful() {
 		return false;
+	}
+	
+	@Override
+	public int getAlpha() {
+		return 255;
 	}
 	
 	@Override

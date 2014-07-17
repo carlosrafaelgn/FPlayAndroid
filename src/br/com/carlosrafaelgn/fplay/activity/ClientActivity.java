@@ -139,7 +139,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	}
 	
 	public int getDesiredWindowColor() {
-		return UI.color_window;
+		return 0;
 	}
 	
 	public View getNullContextMenuView() {

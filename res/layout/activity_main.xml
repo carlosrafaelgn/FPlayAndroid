@@ -7,7 +7,7 @@
     android:orientation="vertical"
     tools:context=".ActivityHost" >
 
-    <br.com.carlosrafaelgn.fplay.ui.BgTextView
+    <TextView
         android:id="@+id/lblTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

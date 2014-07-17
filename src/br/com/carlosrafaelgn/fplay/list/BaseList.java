@@ -36,7 +36,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 
 import android.database.DataSetObserver;
-import android.widget.ListAdapter;
+import android.widget.BaseAdapter;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
@@ -44,7 +44,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 //SINCE ALL CALLS MADE BY Player ARE MADE ON THE MAIN THREAD, THERE IS NO
 //NEED TO SYNCHRONIZE THE ACCESS TO THE ITEMS
 //
-public abstract class BaseList<E extends BaseItem> implements ListAdapter {
+public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	protected static final int LIST_DELTA = 32;
 	
 	protected static final int SELECTION_CHANGED = 0;

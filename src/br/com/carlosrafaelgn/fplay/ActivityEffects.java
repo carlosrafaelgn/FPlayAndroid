@@ -52,7 +52,7 @@ import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
-import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
@@ -230,7 +230,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
 		panelControls = (LinearLayout)findViewById(R.id.panelControls);
-		panelControls.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
+		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
 		panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 		if (panelSecondary instanceof ScrollView) {
@@ -330,7 +330,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			if (btnChangeEffect != null)
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			if (UI.isLargeScreen) {
-				UI.prepareViewPaddingForLargeScreen(panelControls, (screenNotSoLarge && !UI.isLandscape) ? UI._8dp : UI._16dp);
+				UI.prepareViewPaddingForLargeScreen(panelControls, 0, (screenNotSoLarge && !UI.isLandscape) ? UI._8dp : UI._16dp);
 				if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
 					((LinearLayout)panelControls).setOrientation(LinearLayout.VERTICAL);
 					((LinearLayout)panelControls).setWeightSum(0);
@@ -373,8 +373,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			barVirtualizer.setTextSizeIndex(1);
 			panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);
 		}
-		if (UI.extraSpacing)
-			findViewById(R.id.panelTop).setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
 		prepareViewForMode();
 		UI.prepareEdgeEffectColor(getApplication());
 	}

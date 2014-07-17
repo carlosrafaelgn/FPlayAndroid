@@ -82,7 +82,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 40;
+	public static final int VERSION_CODE = 41;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -347,7 +347,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat, albumArt;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat, albumArt, customScrollBar = false;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
@@ -363,7 +363,7 @@ public final class UI {
 	public static final Paint fillPaint;
 	public static final TextPaint textPaint;
 	private static PorterDuffColorFilter glowFilter;
-	private static final PorterDuffColorFilter edgeFilter;
+	//private static final PorterDuffColorFilter edgeFilter;
 	
 	static {
 		fillPaint = new Paint();
@@ -379,7 +379,7 @@ public final class UI {
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
 		//hide the edge!!! ;)
-		edgeFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.CLEAR);
+		//edgeFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.CLEAR);
 	}
 	
 	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
@@ -606,7 +606,9 @@ public final class UI {
 		
 		_1dp = dpToPxI(1);
 		strokeSize = (_1dp + 1) >> 1;
-		thickDividerSize = ((_1dp >= 2) ? _1dp : 2);
+		thickDividerSize = dpToPxI(1.5f);// ((_1dp >= 2) ? _1dp : 2);
+		if (thickDividerSize < 2) thickDividerSize = 2;
+		if (thickDividerSize <= _1dp) thickDividerSize = _1dp + 1;
 		_2dp = dpToPxI(2);
 		_4dp = dpToPxI(4);
 		_8dp = dpToPxI(8);
@@ -931,7 +933,7 @@ public final class UI {
 		color_list = 0xff080808;
 		color_menu = 0xffffffff;
 		color_menu_icon = 0xff555555;
-		color_divider = 0xff464646;
+		color_divider = 0xff3f3f3f; //0xff464646;
 		color_highlight = 0xfffad35a;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
@@ -984,7 +986,7 @@ public final class UI {
 		color_control_mode = 0xffe0e0e0;
 		color_visualizer = 0xffe0e0e0;
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffa0a0a0;
+		color_divider = 0xffb8b8b8; //0xffa0a0a0;
 		color_highlight = 0xff0000f1;
 		color_text_highlight = 0xffffffff;
 		color_text = 0xff000000;
@@ -996,7 +998,7 @@ public final class UI {
 	public static void loadDarkLightTheme() {
 		loadCommonColors(false);
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffa0a0a0;
+		color_divider = 0xffb8b8b8; //0xffa0a0a0;
 		color_text_listitem_secondary = 0xff0000f1;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
@@ -1199,7 +1201,10 @@ public final class UI {
 		return 0;
 	}
 	
-	public static void drawBgBorderless(Canvas canvas, int state) {
+	public static void drawBgBorderless(Canvas canvas, int state, boolean dividerAllowed) {
+		dividerAllowed &= isDividerVisible;
+		if (dividerAllowed)
+			rect.bottom -= strokeSize;
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
@@ -1212,40 +1217,34 @@ public final class UI {
 				fillRect(canvas, color_selected_multi);
 			}
 		}
+		if (dividerAllowed) {
+			fillPaint.setColor(color_divider);
+			final int top = rect.top;
+			//rect.left += _8dp;
+			//rect.right -= _8dp;
+			rect.top = rect.bottom;
+			rect.bottom += strokeSize;
+			canvas.drawRect(rect, fillPaint);
+			//rect.left -= _8dp;
+			//rect.right += _8dp;
+			rect.top = top;
+		}
 	}
 	
-	public static void drawBg(Canvas canvas, int state, boolean squareItem, boolean dividerAllowed) {
-		dividerAllowed &= ((!squareItem) & isDividerVisible);
-		if (dividerAllowed)
-			rect.bottom -= strokeSize;
+	public static void drawBg(Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
 				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, strokeSize, strokeSize);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				if (squareItem) {
-					strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
-					if (flat)
-						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, strokeSize, strokeSize);
-					else
-						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), strokeSize, strokeSize);
-				} else {
-					if (flat)
-						fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
-					else
-						fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
-				}
+				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
+				if (flat)
+					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, strokeSize, strokeSize);
+				else
+					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), strokeSize, strokeSize);
 			} else if ((state & STATE_MULTISELECTED) != 0) {
 				fillRect(canvas, color_selected_multi);
 			}
-		}
-		if (dividerAllowed) {
-			fillPaint.setColor(color_divider);
-			final int top = rect.top;
-			rect.top = rect.bottom;
-			rect.bottom += strokeSize;
-			canvas.drawRect(rect, fillPaint);
-			rect.top = top;
 		}
 	}
 	
@@ -1304,13 +1303,13 @@ public final class UI {
 		view.setTypeface(defaultTypeface);
 	}
 	
-	public static void prepareViewPaddingForLargeScreen(View view, int bottomPadding) {
-		final int p = ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
-		view.setPadding(p, thickDividerSize, p, bottomPadding);
+	public static int getViewPaddingForLargeScreen() {
+		return ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
 	}
 	
 	public static void prepareViewPaddingForLargeScreen(View view, int topPadding, int bottomPadding) {
-		final int p = ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
+		final int p = getViewPaddingForLargeScreen();
+		view.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
 		view.setPadding(p, topPadding, p, bottomPadding);
 	}
 	
@@ -1425,8 +1424,39 @@ public final class UI {
 			edge = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
 			if (edge != null)
 				//hide the edge!!! ;)
-				edge.setColorFilter(edgeFilter);
+				edge.setColorFilter(glowFilter);//edgeFilter);
 		} catch (Throwable ex) {
 		}
+	}
+	
+	@SuppressWarnings("deprecation")
+	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder) {
+		final int t = (topBorder ? thickDividerSize : 0);
+		final int b = (bottomBorder ? thickDividerSize : 0);
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, true));
+		if (extraSpacing)
+			view.setPadding(_8dp, _8dp + t, _8dp, _8dp + b);
+		else
+			view.setPadding(0, t, 0, b);
+	}
+	
+	public static void prepareControlContainerPaddingOnly(View view, boolean topBorder, boolean bottomBorder) {
+		final int t = (topBorder ? thickDividerSize : 0);
+		final int b = (bottomBorder ? thickDividerSize : 0);
+		if (extraSpacing)
+			view.setPadding(_8dp, _8dp + t, _8dp, _8dp + b);
+		else
+			view.setPadding(0, t, 0, b);
+	}
+	
+	@SuppressWarnings("deprecation")
+	public static void prepareControlContainerWithoutRightPadding(View view, boolean topBorder, boolean bottomBorder) {
+		final int t = (topBorder ? thickDividerSize : 0);
+		final int b = (bottomBorder ? thickDividerSize : 0);
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, true));
+		if (extraSpacing)
+			view.setPadding(_8dp, _8dp + t, 0, _8dp + b);
+		else
+			view.setPadding(0, t, 0, b);
 	}
 }

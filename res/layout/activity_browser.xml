@@ -1,119 +1,116 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     tools:context=".ActivityHost" >
 
-    <LinearLayout
+    <RelativeLayout
+        android:id="@+id/panelControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnGoBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:contentDescription="@string/go_back"
+            android:nextFocusDown="@+id/list"
+            android:nextFocusForward="@+id/chkFavorite"
+            android:nextFocusLeft="@+id/list"
+            android:nextFocusRight="@+id/chkFavorite"
+            android:nextFocusUp="@+id/list" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnURL"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:nextFocusDown="@+id/list"
+            android:nextFocusForward="@+id/list"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/list"
+            android:nextFocusUp="@+id/list"
+            android:text="@string/add_url"
+            android:visibility="gone" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/chkFavorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/btnHome"
+            android:contentDescription="@string/favorite"
+            android:nextFocusDown="@+id/list"
+            android:nextFocusForward="@+id/btnHome"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/btnHome"
+            android:nextFocusUp="@+id/list" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_toLeftOf="@+id/btnUp"
+            android:contentDescription="@string/home"
+            android:nextFocusDown="@+id/list"
+            android:nextFocusForward="@+id/btnUp"
+            android:nextFocusLeft="@+id/chkFavorite"
+            android:nextFocusRight="@+id/btnUp"
+            android:nextFocusUp="@+id/list" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnUp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_toLeftOf="@+id/btnMenu"
+            android:contentDescription="@string/up"
+            android:nextFocusDown="@+id/list"
+            android:nextFocusForward="@+id/btnMenu"
+            android:nextFocusLeft="@+id/btnHome"
+            android:nextFocusRight="@+id/btnMenu"
+            android:nextFocusUp="@+id/list" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnMenu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="8dp"
+            android:contentDescription="@string/menu"
+            android:nextFocusDown="@+id/list"
+            android:nextFocusForward="@+id/list"
+            android:nextFocusLeft="@+id/btnUp"
+            android:nextFocusRight="@+id/list"
+            android:nextFocusUp="@+id/list" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/lblPath"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/panelControls"
+        android:ellipsize="start"
+        android:maxLines="3" />
+
+    <br.com.carlosrafaelgn.fplay.ui.BgListView
+        android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:baselineAligned="false"
-        android:orientation="vertical" >
+        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/lblPath"
+        android:nextFocusForward="@+id/btnGoBack" >
 
-        <RelativeLayout
-            android:id="@+id/panelControls"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" >
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnGoBack"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:contentDescription="@string/go_back"
-                android:nextFocusDown="@+id/list"
-                android:nextFocusForward="@+id/chkFavorite"
-                android:nextFocusLeft="@+id/list"
-                android:nextFocusRight="@+id/chkFavorite"
-                android:nextFocusUp="@+id/list" />
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnURL"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:nextFocusDown="@+id/list"
-                android:nextFocusForward="@+id/list"
-                android:nextFocusLeft="@+id/btnGoBack"
-                android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/list"
-                android:text="@string/add_url"
-                android:visibility="gone" />
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/chkFavorite"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toLeftOf="@+id/btnHome"
-                android:contentDescription="@string/favorite"
-                android:nextFocusDown="@+id/list"
-                android:nextFocusForward="@+id/btnHome"
-                android:nextFocusLeft="@+id/btnGoBack"
-                android:nextFocusRight="@+id/btnHome"
-                android:nextFocusUp="@+id/list" />
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnHome"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:layout_toLeftOf="@+id/btnUp"
-                android:contentDescription="@string/home"
-                android:nextFocusDown="@+id/list"
-                android:nextFocusForward="@+id/btnUp"
-                android:nextFocusLeft="@+id/chkFavorite"
-                android:nextFocusRight="@+id/btnUp"
-                android:nextFocusUp="@+id/list" />
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnUp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:layout_toLeftOf="@+id/btnMenu"
-                android:contentDescription="@string/up"
-                android:nextFocusDown="@+id/list"
-                android:nextFocusForward="@+id/btnMenu"
-                android:nextFocusLeft="@+id/btnHome"
-                android:nextFocusRight="@+id/btnMenu"
-                android:nextFocusUp="@+id/list" />
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnMenu"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_marginLeft="8dp"
-                android:contentDescription="@string/menu"
-                android:nextFocusDown="@+id/list"
-                android:nextFocusForward="@+id/list"
-                android:nextFocusLeft="@+id/btnUp"
-                android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/list" />
-        </RelativeLayout>
-
-        <TextView
-            android:id="@+id/lblPath"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="start"
-            android:maxLines="3"
-            android:padding="2dp" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgListView
-            android:id="@+id/list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:nextFocusForward="@+id/btnGoBack" >
-
-            <requestFocus />
-        </br.com.carlosrafaelgn.fplay.ui.BgListView>
-    </LinearLayout>
+        <requestFocus />
+    </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
     <RelativeLayout
         android:id="@+id/panelLoading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:layout_centerInParent="true"
         android:visibility="gone" >
 
         <ProgressBar
@@ -137,4 +134,4 @@
             android:text="@string/loading" />
     </RelativeLayout>
 
-</merge>
+</RelativeLayout>

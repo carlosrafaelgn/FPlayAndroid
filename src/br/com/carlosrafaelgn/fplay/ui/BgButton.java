@@ -51,7 +51,7 @@ public final class BgButton extends Button {
 	}
 	
 	private int state;
-	private boolean checkable, checked, stretchable;
+	private boolean checkable, checked, stretchable, hideBorders;
 	private String iconChecked, iconUnchecked;
 	private TextIconDrawable checkBox;
 	private OnPressingChangeListener pressingChangeListener;
@@ -80,6 +80,10 @@ public final class BgButton extends Button {
 		super.setPadding(UI._8sp, UI._8sp, UI._8sp, UI._8sp);
 		super.setFocusableInTouchMode(false);
 		super.setFocusable(true);
+	}
+	
+	public void setHideBorders(boolean hideBorders) {
+		this.hideBorders = hideBorders;
 	}
 	
 	public void setDefaultHeight() {
@@ -256,7 +260,10 @@ public final class BgButton extends Button {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state, true, false);
+		if (hideBorders)
+			UI.drawBgBorderless(canvas, state, false);
+		else
+			UI.drawBg(canvas, state);
 		super.onDraw(canvas);
 	}
 	

@@ -59,6 +59,8 @@ import br.com.carlosrafaelgn.fplay.ui.BgTextView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
@@ -341,7 +343,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public int getDesiredWindowColor() {
-		return (Player.isControlMode() ? UI.color_control_mode : UI.color_window);
+		return (Player.isControlMode() ? UI.color_control_mode : 0);
 	}
 	
 	@Override
@@ -667,6 +669,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		tmrVolume = new Timer(this, "Volume Timer", false, true, true);
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		if (Player.getState() > Player.STATE_INITIALIZED || skipToDestruction) {
@@ -917,27 +920,33 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				vwVolumeId = R.id.barVolume;
 			}
 			
-			if (UI.isLandscape) {
-				if (UI.isLargeScreen)
-					list.setRightBorder();
-				else
-					list.setTopLeftBorders();
+			if (UI.isLargeScreen) {
+				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, (UI.isLandscape ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), 0, 0, true));
 			} else {
-				if (UI.isLargeScreen)
-					list.setBottomBorder();
-			}
-			if (UI.isLowDpiScreen && !UI.isLargeScreen && !UI.isLandscape) {
-				if (!UI.extraSpacing)
-					panelControls.setPadding(0, 0, 0, 0);
-				if (btnVolume != null) {
-					final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)btnVolume.getLayoutParams();
-					p.rightMargin = 0;
-					btnVolume.setLayoutParams(p);
+				lblTitle.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				lblMsgSelMove.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				if (UI.isLandscape) {
+					list.setTopLeftBorders();
+					panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					panelSelection.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				} else {
+					panelSecondary.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
+					panelSelection.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
+					panelSecondary.setPadding(0, 0, 0, UI._8dp + UI.thickDividerSize);
 				}
-			}
-			if (UI.extraSpacing && !UI.isLargeScreen) {
-				panelControls.setPadding(UI._8dp, 0, UI.isLandscape ? 0 : UI._8dp, UI._8dp);
-				panelSelection.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
+				if (UI.extraSpacing) {
+					panelControls.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
+					panelSelection.setPadding(UI._8dp, 0, UI._8dp, UI._8dp + (UI.isLandscape ? 0 : UI.thickDividerSize));
+				} else {
+					if (UI.isLowDpiScreen)
+						panelControls.setPadding(0, 0, 0, 0);
+					if (btnVolume != null) {
+						final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)btnVolume.getLayoutParams();
+						p.rightMargin = 0;
+						btnVolume.setLayoutParams(p);
+					}
+				}
 			}
 			btnCancelSel.setDefaultHeight();
 			UI.prepareEdgeEffectColor(getApplication());
