@@ -858,7 +858,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
-		if (currentSongPreparing)
+		if (currentSongPreparing || (state == STATE_PREPARING_PLAYBACK))
 			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
 		else if (currentSong == null)
 			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
@@ -879,7 +879,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				intent.setAction(Player.ACTION_EXIT);
 				views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
 			} else {
-				if (currentSongPreparing || currentSong == null)
+				if (currentSongPreparing || (state == STATE_PREPARING_PLAYBACK) || currentSong == null)
 					views.setTextViewText(R.id.lblArtist, "-");
 				else
 					views.setTextViewText(R.id.lblArtist, currentSong.extraInfo);
