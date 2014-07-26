@@ -36,7 +36,6 @@ import java.io.File;
 
 import android.view.View;
 import android.view.ViewGroup;
-import br.com.carlosrafaelgn.fplay.ActivityFileView;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -49,7 +48,6 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	private boolean loading;
 	private String path, comingFrom;
 	private FileFetcher fetcher;
-	public ActivityFileView observerActivity;
 	
 	public FileList() {
 		super(FileSt.class);
@@ -61,8 +59,8 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	private void loadingProcessChanged(boolean started) {
 		loading = started;
-		if (observerActivity != null)
-			observerActivity.loadingProcessChanged(started);
+		if (FileView.observerActivity != null)
+			FileView.observerActivity.loadingProcessChanged(started);
 	}
 	
 	public String getPath() {
@@ -152,13 +150,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		if (convertView != null) {
-			((FileView)convertView).setItemState(items[position], position, getItemState(position));
-			return convertView;
-		}
-		if (observerActivity == null)
-			return null;
-		final FileView view = observerActivity.createFileView();
+		final FileView view = ((convertView != null) ? (FileView)convertView : FileView.observerActivity.createFileView());
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}

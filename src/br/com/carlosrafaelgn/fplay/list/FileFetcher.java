@@ -356,9 +356,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		try {
 			final HashMap<String, RootItem> map = new HashMap<String, RootItem>(32);
 			String line;
-			Runtime runtime = Runtime.getRuntime();
-			Process proc = runtime.exec("mount");
-			is = proc.getInputStream();
+			is = Runtime.getRuntime().exec("mount").getInputStream();
 			isr = new InputStreamReader(is);
 			br = new BufferedReader(isr);
 			while ((line = br.readLine()) != null) {

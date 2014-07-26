@@ -279,7 +279,7 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, albumArtFetcher, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, true);
+		return new FileView(Player.getService(), albumArtFetcher, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, true);
 	}
 	
 	@Override
@@ -640,8 +640,8 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 		if (Player.originalPath == null)
 			Player.originalPath = "";
 		isAtHome = (Player.path.length() == 0);
+		FileView.observerActivity = this;
 		fileList = new FileList();
-		fileList.observerActivity = this;
 		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
 		//is internally cached, therefore, causing an exception when we try to use it
 		//after being recycled...
@@ -763,12 +763,11 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 	protected void onPause() {
 		SongAddingMonitor.stop();
 		fileList.setObserver(null);
-		fileList.observerActivity = null;
 	}
 	
 	@Override
 	protected void onResume() {
-		fileList.observerActivity = this;
+		FileView.observerActivity = this;
 		fileList.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
 		if (loading != fileList.isLoading())
@@ -833,5 +832,6 @@ public final class ActivityBrowser2 extends ActivityFileView implements View.OnC
 			albumArtFetcher.stopAndCleanup();
 			albumArtFetcher = null;
 		}
+		FileView.observerActivity = null;
 	}
 }

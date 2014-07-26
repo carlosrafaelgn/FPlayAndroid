@@ -146,7 +146,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, null, null, null, null, null, null, null, hasButtons, false);
+		return new FileView(Player.getService(), null, null, null, null, null, null, null, hasButtons, false);
 	}
 	
 	@Override
@@ -348,8 +348,8 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	protected void onCreate() {
+		FileView.observerActivity = this;
 		fileList = new FileList();
-		fileList.observerActivity = this;
 	}
 	
 	@Override
@@ -377,12 +377,11 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	protected void onPause() {
 		SongAddingMonitor.stop();
 		fileList.setObserver(null);
-		fileList.observerActivity = null;
 	}
 	
 	@Override
 	protected void onResume() {
-		fileList.observerActivity = this;
+		FileView.observerActivity = this;
 		fileList.setObserver(loading ? null : list);
 		SongAddingMonitor.start(getHostActivity());
 	}
@@ -405,5 +404,6 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	protected void onDestroy() {
 		fileList.cancel();
 		fileList = null;
+		FileView.observerActivity = null;
 	}
 }

@@ -127,7 +127,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	public FileView createFileView() {
-		return new FileView(Player.getService(), this, null, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, false);
+		return new FileView(Player.getService(), null, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, false);
 	}
 	
 	@Override
@@ -495,8 +495,8 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			Player.path = "";
 		if (Player.originalPath == null)
 			Player.originalPath = "";
+		FileView.observerActivity = this;
 		fileList = new FileList();
-		fileList.observerActivity = this;
 		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
 		//is internally cached, therefore, causing an exception when we try to use it
 		//after being recycled...
@@ -576,12 +576,11 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	protected void onPause() {
 		SongAddingMonitor.stop();
 		fileList.setObserver(null);
-		fileList.observerActivity = null;
 	}
 	
 	@Override
 	protected void onResume() {
-		fileList.observerActivity = this;
+		FileView.observerActivity = this;
 		fileList.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
 		if (loading != fileList.isLoading())
@@ -635,5 +634,6 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			ic_album.release();
 			ic_album = null;
 		}
+		FileView.observerActivity = null;
 	}
 }

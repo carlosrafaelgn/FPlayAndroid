@@ -339,10 +339,10 @@ public final class BgListView extends ListView {
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		switch (event.getAction()) {
-		case MotionEvent.ACTION_DOWN:
+		/*case MotionEvent.ACTION_DOWN:
 			if (!UI.customScrollBar) break;
 			final int x = (int)event.getX();
-			break;
+			break;*/
 		case MotionEvent.ACTION_UP:
 			if (emptyListClickListener != null) {
 				final ListAdapter a = getAdapter();

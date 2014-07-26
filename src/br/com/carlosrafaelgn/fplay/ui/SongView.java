@@ -44,15 +44,14 @@ import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
 public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
-	private ActivityItemView observerActivity;
+	public static ActivityItemView observerActivity;
 	private Song song;
 	private String ellipsizedTitle, ellipsizedExtraInfo;
 	private final int height, verticalMargin;
 	private int state, width, lengthWidth, position;
 	
-	public SongView(Context context, ActivityItemView observerActivity) {
+	public SongView(Context context) {
 		super(context);
-		this.observerActivity = observerActivity;
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
@@ -168,7 +167,6 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	
 	@Override
 	protected void onDetachedFromWindow() {
-		observerActivity = null;
 		song = null;
 		ellipsizedTitle = null;
 		ellipsizedExtraInfo = null;

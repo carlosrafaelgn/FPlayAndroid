@@ -106,7 +106,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //Allowing applications to play nice(r) with each other: Handling remote control buttons
 //http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
 //
-public final class Player extends Service implements Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
+public final class Player extends Service implements Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
 	public static interface PlayerObserver {
 		public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
@@ -158,15 +158,16 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static final int MIN_VOLUME_DB = -4000;
 	private static final int MSG_UPDATE_STATE = 0x0100;
 	private static final int MSG_PLAY_NEXT_AUTO = 0x0101;
-	private static final int MSG_INITIALIZATION_0 = 0x102;
-	private static final int MSG_INITIALIZATION_1 = 0x103;
-	private static final int MSG_INITIALIZATION_2 = 0x104;
-	private static final int MSG_INITIALIZATION_3 = 0x105;
-	private static final int MSG_INITIALIZATION_4 = 0x106;
-	private static final int MSG_INITIALIZATION_5 = 0x107;
-	private static final int MSG_INITIALIZATION_6 = 0x108;
-	private static final int MSG_INITIALIZATION_7 = 0x109;
-	private static final int MSG_INITIALIZATION_8 = 0x10a;
+	private static final int MSG_UPDATE_META = 0x0102;
+	private static final int MSG_INITIALIZATION_0 = 0x103;
+	private static final int MSG_INITIALIZATION_1 = 0x104;
+	private static final int MSG_INITIALIZATION_2 = 0x105;
+	private static final int MSG_INITIALIZATION_3 = 0x106;
+	private static final int MSG_INITIALIZATION_4 = 0x107;
+	private static final int MSG_INITIALIZATION_5 = 0x108;
+	private static final int MSG_INITIALIZATION_6 = 0x109;
+	private static final int MSG_INITIALIZATION_7 = 0x10a;
+	private static final int MSG_INITIALIZATION_8 = 0x10b;
 	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0 = 0x0110;
 	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1 = 0x0111;
 	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2 = 0x0112;
@@ -287,7 +288,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
-	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, currentSongPreparing, controlMode,
+	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, lastPreparing, currentSongPreparing, currentSongBuffering, controlMode,
 		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, hasFocus, dimmedVolume, reviveAlreadyRetried, appIdle;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin;
@@ -796,14 +797,16 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static void setLastTime() {
 		try {
-			if (currentPlayer != null && currentSongLoaded && playing)
+			if (currentSong != null && currentSong.isHttp)
+				lastTime = -1;
+			else if (currentPlayer != null && currentSongLoaded && playing)
 				lastTime = currentPlayer.getCurrentPosition();
 		} catch (Throwable ex) {
 		}
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	private static void broadcastStateChangeToRemoteControl(boolean songHasChanged) {
+	private static void broadcastStateChangeToRemoteControl(boolean preparing, boolean songHasChanged) {
 		try {
 			if (currentSong == null) {
 				remoteControlClient.setPlaybackState(RemoteControlClient.PLAYSTATE_STOPPED);
@@ -811,7 +814,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				remoteControlClient.setPlaybackState(playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED);
 				if (songHasChanged) {
 					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
-					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, currentSong.title);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : currentSong.title);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, currentSong.artist);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, currentSong.album);
 					ed.putLong(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER, currentSong.track);
@@ -824,7 +827,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
-	private static void broadcastStateChange(boolean playbackHasChanged, boolean songHasChanged) {
+	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean songHasChanged) {
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
 		//http://developer.android.com/reference/android/media/RemoteControlClient.html
@@ -844,7 +847,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			//final Intent i = new Intent("com.android.music.playstatechanged");
 			i.putExtra("id", currentSong.id);
 			i.putExtra("songid", currentSong.id);
-			i.putExtra("track", currentSong.title);
+			i.putExtra("track", preparing ? thePlayer.getText(R.string.loading) : currentSong.title);
 			i.putExtra("artist", currentSong.artist);
 			i.putExtra("album", currentSong.album);
 			i.putExtra("duration", (long)currentSong.lengthMS);
@@ -854,14 +857,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			thePlayer.sendStickyBroadcast(i);
 		}
 		if (remoteControlClient != null)
-			broadcastStateChangeToRemoteControl(songHasChanged);
+			broadcastStateChangeToRemoteControl(preparing, songHasChanged);
 	}
 	
 	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
-		if (currentSongPreparing || (state == STATE_PREPARING_PLAYBACK))
-			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
-		else if (currentSong == null)
+		if (currentSong == null)
 			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
+		else if (isCurrentSongPreparing())
+			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
 		else
 			views.setTextViewText(R.id.lblTitle, currentSong.title);
 		
@@ -879,7 +882,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				intent.setAction(Player.ACTION_EXIT);
 				views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
 			} else {
-				if (currentSongPreparing || (state == STATE_PREPARING_PLAYBACK) || currentSong == null)
+				if (currentSong == null)
 					views.setTextViewText(R.id.lblArtist, "-");
 				else
 					views.setTextViewText(R.id.lblArtist, currentSong.extraInfo);
@@ -912,7 +915,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return views;
 	}
 	
-	public static PendingIntent getPendingIntent(Context context) {
+	private static PendingIntent getPendingIntent(Context context) {
 		final Intent intent = new Intent(context, ActivityHost.class);
 		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 		return PendingIntent.getActivity(context, 0, intent, 0);
@@ -931,21 +934,23 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return notification;
 	}
 	
-	public static void onPlayerChanged(Song newCurrentSong, Throwable ex) {
+	private static void onPlayerChanged(Song newCurrentSong, boolean metaHasChanged, Throwable ex) {
 		if (thePlayer != null) {
 			if (newCurrentSong != null)
 				currentSong = newCurrentSong;
-			final boolean songHasChanged = (lastSong != currentSong);
+			final boolean songHasChanged = (metaHasChanged || (lastSong != currentSong));
 			final boolean playbackHasChanged = (lastPlaying != playing);
-			if (!songHasChanged && !playbackHasChanged && ex == null)
+			final boolean preparing = isCurrentSongPreparing();
+			if (!songHasChanged && !playbackHasChanged && (lastPreparing == preparing) && ex == null)
 				return;
 			if (idleTurnOffTimer != null && idleTurnOffTimerSelectedMinutes > 0)
 				processIdleTurnOffTimer();
 			lastSong = currentSong;
 			lastPlaying = playing;
+			lastPreparing = preparing;
 			notificationManager.notify(1, getNotification());
 			WidgetMain.updateWidgets(thePlayer);
-			broadcastStateChange(playbackHasChanged, songHasChanged);
+			broadcastStateChange(playbackHasChanged, preparing, songHasChanged);
 			if (ex != null) {
 				final String msg = ex.getMessage();
 				if (ex instanceof IllegalStateException) {
@@ -982,7 +987,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static void onSongListDeserialized(Song newCurrentSong, int forcePlayIdx, int positionToSelect, Throwable ex) {
 		if (positionToSelect >= 0)
 			setSelectionAfterAdding(positionToSelect);
-		onPlayerChanged(newCurrentSong, ex);
+		onPlayerChanged(newCurrentSong, false, ex);
 		switch (state) {
 		case STATE_INITIALIZING_PENDING_LIST:
 			performFinalInitializationTasks();
@@ -1000,6 +1005,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		mp.setOnPreparedListener(thePlayer);
 		mp.setOnSeekCompleteListener(thePlayer);
 		mp.setOnCompletionListener(thePlayer);
+		mp.setOnInfoListener(thePlayer);
 		mp.setWakeMode(thePlayer, PowerManager.PARTIAL_WAKE_LOCK);
 		return mp;
 	}
@@ -1044,6 +1050,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		mp.setOnPreparedListener(null);
 		mp.setOnSeekCompleteListener(null);
 		mp.setOnCompletionListener(null);
+		mp.setOnInfoListener(null);
 		stopPlayer(mp);
 		mp.release();
 	}
@@ -1103,6 +1110,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 		int prepareNext = 0;
 		lastHow = how;
+		currentSongBuffering = false;
 		if (nextSong == song && how != SongList.HOW_CURRENT) {
 			int doInternal = 1;
 			lastTime = -1;
@@ -1214,6 +1222,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		playing = false;
 		currentSongLoaded = false;
 		currentSongPreparing = false;
+		currentSongBuffering = false;
 		prepareNextOnSeek = false;
 		nextPreparing = false;
 		nextPrepared = false;
@@ -1666,7 +1675,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	public static boolean isCurrentSongPreparing() {
-		return (currentSongPreparing || (state == STATE_PREPARING_PLAYBACK));
+		return (currentSongPreparing || currentSongBuffering || (state == STATE_PREPARING_PLAYBACK));
 	}
 	
 	public static Song getCurrentSong() {
@@ -2153,6 +2162,27 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			playInternal(SongList.HOW_NEXT_AUTO);
 	}
 	
+	@Override
+	public boolean onInfo(MediaPlayer mp, int what, int extra) {
+		if (mp == currentPlayer) {
+			switch (what) {
+			case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+				if (!currentSongBuffering) {
+					currentSongBuffering = true;
+					sendMessage(MSG_UPDATE_META);
+				}
+				break;
+			case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+				if (currentSongBuffering) {
+					currentSongBuffering = false;
+					sendMessage(MSG_UPDATE_META);
+				}
+				break;
+			}
+		}
+		return false;
+	}
+	
 	//All this PlayerHandler stuff was created to avoid creating new instances of the
 	//former ObjHolder class, every time an object had to be sent in a message
 	private static void sendMessage(int what) {
@@ -2184,10 +2214,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		public void dispatchMessage(Message msg) {
 			switch (msg.what) {
 			case MSG_UPDATE_STATE:
-				onPlayerChanged(null, (Throwable)msg.obj);
+				onPlayerChanged(null, false, (Throwable)msg.obj);
 				break;
 			case MSG_PLAY_NEXT_AUTO:
 				playInternal(SongList.HOW_NEXT_AUTO);
+				break;
+			case MSG_UPDATE_META:
+				onPlayerChanged(null, true, null);
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0:
 				if (!hasFocus) {
@@ -2430,7 +2463,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				sendMessageAtTime(Message.obtain(this, MSG_TERMINATION_1), SystemClock.uptimeMillis());
 				break;
 			case MSG_TERMINATION_1:
-				onPlayerChanged(null, null); //to update the widget
+				onPlayerChanged(null, false, null); //to update the widget
 				unregisterMediaButtonEventReceiver();
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
 					unregisterMediaRouter(thePlayer);
@@ -2503,4 +2536,5 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			msg.obj = null;
 		}
 	}
+
 }

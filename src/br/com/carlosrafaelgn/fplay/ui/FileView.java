@@ -52,7 +52,7 @@ import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
-	private ActivityFileView observerActivity;
+	public static ActivityFileView observerActivity;
 	private AlbumArtFetcher albumArtFetcher;
 	private Handler handler;
 	private final int height, verticalMargin, usableHeight;
@@ -64,9 +64,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private final boolean hasButtons, buttonIsCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding;
 	
-	public FileView(Context context, ActivityFileView observerActivity, AlbumArtFetcher albumArtFetcher, ReleasableBitmapWrapper closedFolderIcon, ReleasableBitmapWrapper internalIcon, ReleasableBitmapWrapper externalIcon, ReleasableBitmapWrapper favoriteIcon, ReleasableBitmapWrapper artistIcon, ReleasableBitmapWrapper albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
+	public FileView(Context context, AlbumArtFetcher albumArtFetcher, ReleasableBitmapWrapper closedFolderIcon, ReleasableBitmapWrapper internalIcon, ReleasableBitmapWrapper externalIcon, ReleasableBitmapWrapper favoriteIcon, ReleasableBitmapWrapper artistIcon, ReleasableBitmapWrapper albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
 		super(context);
-		this.observerActivity = observerActivity;
 		this.albumArtFetcher = albumArtFetcher;
 		if (albumArtFetcher != null)
 			handler = new Handler(Looper.getMainLooper(), this);
@@ -330,7 +329,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	
 	@Override
 	protected void onDetachedFromWindow() {
-		observerActivity = null;
 		albumArtFetcher = null;
 		handler = null;
 		bitmap = null;
