@@ -112,11 +112,16 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	}
 	
 	public final void finish(int code) {
-		activity.finishActivity(this, code);
+		activity.finishActivity(this, null, code);
 	}
 	
 	public final void finish() {
-		activity.finishActivity(this, 0);
+		activity.finishActivity(this, null, 0);
+	}
+	
+	public final void finishAndStartNewActivity(int code, ClientActivity activity, int requestCode) {
+		activity.requestCode = requestCode;
+		this.activity.finishActivity(this, activity, code);
 	}
 	
 	public final void openContextMenu(View view) {

@@ -153,6 +153,8 @@
     <string name="internal_storage">Внутренняя память</string>
     <string name="external_storage">Внешняя память</string>
     <string name="usb_storage">USB память</string>
+    <string name="error_connection">Нет доступа в Интернет :(</string>
+    <string name="error_gen">Извините, но что-то пошло не так :(</string>
     <string name="error_playback">Извините, но что-то пошло не так во время воспроизведения :(</string>
     <string name="error_msg">Извините, но что-то пошло не так во время воспроизведения:</string>
     <string name="error_state">Извините, но воспроизведение было остановлено в связи с аварийным завершением работы плеера :(</string>

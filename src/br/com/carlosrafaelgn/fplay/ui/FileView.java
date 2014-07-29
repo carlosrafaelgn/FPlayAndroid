@@ -45,14 +45,12 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.LinearLayout;
-import br.com.carlosrafaelgn.fplay.ActivityFileView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
-	public static ActivityFileView observerActivity;
 	private AlbumArtFetcher albumArtFetcher;
 	private Handler handler;
 	private final int height, verticalMargin, usableHeight;
@@ -145,7 +143,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public void setItemState(FileSt file, int position, int state) {
 		if (file == null)
 			return;
-		final int w = getWidth();
 		final int specialType = file.specialType;
 		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ALBUM_ITEM) || (specialType == FileSt.TYPE_ARTIST)) && (buttonIsCheckbox || ((state & UI.STATE_SELECTED) != 0)));
 		final boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != specialType));
@@ -159,10 +156,9 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		}
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!
-		if (this.file == file && buttonsVisible == showButtons && width == w)
+		if (this.file == file && buttonsVisible == showButtons)
 			return;
 		this.file = file;
-		this.width = w;
 		if (buttonsVisible != showButtons) {
 			buttonsVisible = showButtons;
 			if (btnAdd != null)
@@ -373,18 +369,18 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (hasButtons && (view == btnAdd || view == btnPlay)) {
 			if (buttonIsCheckbox && file != null && view == btnPlay)
 				file.isChecked = btnPlay.isChecked();
-			if (observerActivity != null)
-				observerActivity.processItemButtonClick(position, view == btnAdd);
+			if (UI.browserActivity != null)
+				UI.browserActivity.processItemButtonClick(position, view == btnAdd);
 		} else {
-			if (observerActivity != null)
-				observerActivity.processItemClick(position);
+			if (UI.browserActivity != null)
+				UI.browserActivity.processItemClick(position);
 		}
 	}
 	
 	@Override
 	public boolean onLongClick(View view) {
-		if (observerActivity != null)
-			observerActivity.processItemLongClick(position);
+		if (UI.browserActivity != null)
+			UI.browserActivity.processItemLongClick(position);
 		return true;
 	}
 	

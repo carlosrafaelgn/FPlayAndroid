@@ -165,9 +165,13 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public void onFilesFetched(FileFetcher fetcher, final Throwable e) {
 		if (e != null) {
 			addingEnded();
+			if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+				return;
 			MainHandler.postToMainThread(new Runnable() {
 				@Override
 				public void run() {
+					if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+						return;
 					try {
 						UI.toast(Player.getService(), e);
 					} catch (Throwable ex) { }
@@ -180,6 +184,10 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	
 	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, final int position, int count, final boolean play, final boolean isAddingFolder) {
 		if (((files == null || files.length == 0) && (iterator == null)) || count <= 0) {
+			addingEnded();
+			return;
+		}
+		if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
 			addingEnded();
 			return;
 		}
@@ -207,6 +215,8 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			}
 		}
 		addingEnded();
+		if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+			return;
 		final int songCount = f;
 		MainHandler.postToMainThread(new Runnable() {
 			@Override
@@ -620,5 +630,4 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}
-
 }

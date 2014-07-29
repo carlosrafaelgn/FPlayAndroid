@@ -67,7 +67,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
-public final class ActivityBrowser extends ActivityFileView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
+public final class ActivityBrowser extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
 	private static final int MNU_ADDSONG = 100, MNU_PLAYSONG = 101, MNU_ADDFOLDER = 102, MNU_ADDFOLDERSUB = 103, MNU_PLAYFOLDER = 104, MNU_PLAYFOLDERSUB = 105, MNU_GOBACK = 106, MNU_REMOVEFAVORITE = 107;
 	private TextView lblPath;
 	private BgListView list;
@@ -126,7 +126,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	}
 	
 	@Override
-	public FileView createFileView() {
+	public View createView() {
 		return new FileView(Player.getService(), null, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, false);
 	}
 	
@@ -495,7 +495,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			Player.path = "";
 		if (Player.originalPath == null)
 			Player.originalPath = "";
-		FileView.observerActivity = this;
+		UI.browserActivity = this;
 		fileList = new FileList();
 		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
 		//is internally cached, therefore, causing an exception when we try to use it
@@ -580,7 +580,7 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 	
 	@Override
 	protected void onResume() {
-		FileView.observerActivity = this;
+		UI.browserActivity = this;
 		fileList.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
 		if (loading != fileList.isLoading())
@@ -634,6 +634,6 @@ public final class ActivityBrowser extends ActivityFileView implements View.OnCl
 			ic_album.release();
 			ic_album = null;
 		}
-		FileView.observerActivity = null;
+		UI.browserActivity = null;
 	}
 }

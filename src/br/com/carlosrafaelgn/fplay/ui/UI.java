@@ -70,6 +70,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
+import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
@@ -352,6 +354,11 @@ public final class UI {
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
+	//I know this is not the "proper" way of doing this... But this is the best way
+	//to save memory and prevent a few memory leaks (considering this class is only
+	//going to be used in this kind of project)
+	public static ActivityItemView songActivity;
+	public static ActivityBrowserView browserActivity;
 	
 	private static String emptyListString;
 	private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme, createdWidgetIconColor;

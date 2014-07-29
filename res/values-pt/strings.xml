@@ -153,6 +153,8 @@
     <string name="internal_storage">Armazenamento interno</string>
     <string name="external_storage">Armazenamento externo</string>
     <string name="usb_storage">Armazenamento USB</string>
+    <string name="error_connection">Sem conexão com a Internet :(</string>
+    <string name="error_gen">Desculpe, mas algo saiu errado :(</string>
     <string name="error_playback">Desculpe, mas algo saiu errado durante a reprodução :(</string>
     <string name="error_msg">Desculpe, mas algo saiu errado durante a reprodução:</string>
     <string name="error_state">Desculpe, mas a reprodução teve que ser interrompida pois o player se comportou mal :(</string>

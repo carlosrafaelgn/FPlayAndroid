@@ -70,12 +70,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		this.exitOnDestroy = exitOnDestroy;
 	}
 	
-	public void startActivity(ClientActivity activity) {
-		if (top != null) {
-			top.onPause();
-			if (top != null)
-				top.onCleanupLayout();
-		}
+	private void startActivityInternal(ClientActivity activity) {
 		activity.finished = false;
 		activity.activity = this;
 		activity.previousActivity = top;
@@ -89,7 +84,16 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 	}
 	
-	public void finishActivity(ClientActivity activity, int code) {
+	public void startActivity(ClientActivity activity) {
+		if (top != null) {
+			top.onPause();
+			if (top != null)
+				top.onCleanupLayout();
+		}
+		startActivityInternal(activity);
+	}
+	
+	public void finishActivity(ClientActivity activity, ClientActivity newActivity, int code) {
 		if (activity.finished || activity != top)
 			return;
 		activity.finished = true;
@@ -102,15 +106,19 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top = null;
 		activity.activity = null;
 		activity.previousActivity = null;
-		if (top == null) {
-			finish();
+		if (newActivity != null) {
+			startActivityInternal(newActivity);
 		} else {
-			setWindowColor(top.getDesiredWindowColor());
-			top.onCreateLayout(false);
-			if (top != null && !top.finished) {
-				top.onResume();
-				if (top != null && !top.finished)
-					top.activityFinished(activity, activity.requestCode, code);
+			if (top == null) {
+				finish();
+			} else {
+				setWindowColor(top.getDesiredWindowColor());
+				top.onCreateLayout(false);
+				if (top != null && !top.finished) {
+					top.onResume();
+					if (top != null && !top.finished)
+						top.activityFinished(activity, activity.requestCode, code);
+				}
 			}
 		}
 		System.gc();
@@ -122,7 +130,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (top.onBackPressed())
 				return;
 			if (top != null && top.previousActivity != null) {
-				finishActivity(top, 0);
+				finishActivity(top, null, 0);
 				return;
 			}
 		}

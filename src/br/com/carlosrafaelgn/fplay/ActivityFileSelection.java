@@ -60,7 +60,7 @@ import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivityFileSelection extends ActivityFileView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
+public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
 	public static interface OnFileSelectionListener {
 		public void onFileSelected(int id, String path, String name);
 		public void onAddClicked(int id, String path, String name);
@@ -145,7 +145,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	}
 	
 	@Override
-	public FileView createFileView() {
+	public View createView() {
 		return new FileView(Player.getService(), null, null, null, null, null, null, null, hasButtons, false);
 	}
 	
@@ -348,7 +348,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	protected void onCreate() {
-		FileView.observerActivity = this;
+		UI.browserActivity = this;
 		fileList = new FileList();
 	}
 	
@@ -381,7 +381,7 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	
 	@Override
 	protected void onResume() {
-		FileView.observerActivity = this;
+		UI.browserActivity = this;
 		fileList.setObserver(loading ? null : list);
 		SongAddingMonitor.start(getHostActivity());
 	}
@@ -404,6 +404,6 @@ public final class ActivityFileSelection extends ActivityFileView implements Vie
 	protected void onDestroy() {
 		fileList.cancel();
 		fileList = null;
-		FileView.observerActivity = null;
+		UI.browserActivity = null;
 	}
 }

@@ -53,6 +53,8 @@ import android.media.MediaRouter;
 import android.media.RemoteControlClient;
 import android.media.MediaRouter.RouteGroup;
 import android.media.MediaRouter.RouteInfo;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -691,6 +693,18 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			fullCleanup(null);
 			sendMessage(MSG_TERMINATION_0);
 		}
+	}
+	
+	public static boolean isInternetConnectionAvailable() {
+		if (thePlayer != null) {
+			try {
+				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
+				final NetworkInfo info = mngr.getActiveNetworkInfo();
+				return (info != null && info.isConnected());
+			} catch (Throwable ex) {
+			}
+		}
+		return false;
 	}
 	
 	@Override

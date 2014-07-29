@@ -58,7 +58,6 @@ import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.BgTextView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
-import br.com.carlosrafaelgn.fplay.ui.SongView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
@@ -1038,7 +1037,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private void resume(boolean selectCurrent) {
-		SongView.observerActivity = this;
+		UI.songActivity = this;
 		Player.songs.setObserver(list);
 		SongAddingMonitor.start(getHostActivity());
 		updateVolumeDisplay();
@@ -1081,7 +1080,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		SongAddingMonitor.stop();
 		if (Player.songs.selecting || Player.songs.moving)
 			cancelSelection(false);
-		SongView.observerActivity = null;
+		UI.songActivity = null;
 		Player.songs.setObserver(null);
 		Player.observer = null;
 		lastTime = -2;

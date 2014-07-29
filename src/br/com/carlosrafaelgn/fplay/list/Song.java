@@ -180,7 +180,10 @@ public final class Song extends BaseItem {
 			lengthMS = -1;
 		if (year <= 0)
 			year = -1;
-		length = formatTime(lengthMS);
+		if (isHttp)
+			length = "";
+		else
+			length = formatTime(lengthMS);
 	}
 	
 	@Override
@@ -189,25 +192,29 @@ public final class Song extends BaseItem {
 	}
 	
 	public void refreshExtraInfo() {
-		switch (extraInfoMode) {
-		case EXTRA_ARTIST:
-			extraInfo = artist;
-			break;
-		case EXTRA_ALBUM:
-			extraInfo = album;
-			break;
-		case EXTRA_TRACK_ARTIST:
-			extraInfo = ((track > 0) ? (track + " / " + artist) : artist);
-			break;
-		case EXTRA_TRACK_ALBUM:
-			extraInfo = ((track > 0) ? (track + " / " + album) : album);
-			break;
-		case EXTRA_TRACK_ARTIST_ALBUM:
-			extraInfo = ((track > 0) ? (track + " / " + artist + " / " + album) : (artist + " / " + album));
-			break;
-		default:
-			extraInfo = artist + " / " + album;
-			break;
+		if (isHttp) {
+			extraInfo = "";
+		} else {
+			switch (extraInfoMode) {
+			case EXTRA_ARTIST:
+				extraInfo = artist;
+				break;
+			case EXTRA_ALBUM:
+				extraInfo = album;
+				break;
+			case EXTRA_TRACK_ARTIST:
+				extraInfo = ((track > 0) ? (track + " / " + artist) : artist);
+				break;
+			case EXTRA_TRACK_ALBUM:
+				extraInfo = ((track > 0) ? (track + " / " + album) : album);
+				break;
+			case EXTRA_TRACK_ARTIST_ALBUM:
+				extraInfo = ((track > 0) ? (track + " / " + artist + " / " + album) : (artist + " / " + album));
+				break;
+			default:
+				extraInfo = artist + " / " + album;
+				break;
+			}
 		}
 	}
 	

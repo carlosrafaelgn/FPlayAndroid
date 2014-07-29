@@ -59,8 +59,8 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	private void loadingProcessChanged(boolean started) {
 		loading = started;
-		if (FileView.observerActivity != null)
-			FileView.observerActivity.loadingProcessChanged(started);
+		if (UI.browserActivity != null)
+			UI.browserActivity.loadingProcessChanged(started);
 	}
 	
 	public String getPath() {
@@ -150,7 +150,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		final FileView view = ((convertView != null) ? (FileView)convertView : FileView.observerActivity.createFileView());
+		final FileView view = (FileView)((convertView != null) ? convertView : UI.browserActivity.createView());
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}

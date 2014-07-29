@@ -153,6 +153,8 @@
     <string name="internal_storage">Анутрішня пам\'ять</string>
     <string name="external_storage">Зовнішня пам\'ять</string>
     <string name="usb_storage">USB пам\'ять</string>
+    <string name="error_connection">Немає доступу в Інтернет :(</string>
+    <string name="error_gen">Вибачте, але щось пішло не так :(</string>
     <string name="error_playback">Вибачте, але щось пішло не так під час відтворення :(</string>
     <string name="error_msg">Вибачте, але щось пішло не так під час відтворення:</string>
     <string name="error_state">Вибачте, але відтворення було зупинено у зв\'язку з аварійним завершенням роботи плеєра :(</string>

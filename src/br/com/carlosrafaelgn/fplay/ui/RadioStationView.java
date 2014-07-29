@@ -32,45 +32,63 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import br.com.carlosrafaelgn.fplay.list.Song;
-import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.text.StaticLayout;
+import android.text.Layout.Alignment;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
-public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
-	private Song song;
-	private String ellipsizedTitle, ellipsizedExtraInfo;
-	private final int height, verticalMargin;
-	private int state, width, lengthWidth, position;
+public final class RadioStationView extends View implements View.OnClickListener, View.OnLongClickListener {
+	private RadioStation station;
+	private String ellipsizedTitle, ellipsizedOnAir, ellipsizedTags;
+	private final int verticalMargin;
+	private int state, width, height, descriptionHeight, position;
+	private StaticLayout layout;
 	
-	public SongView(Context context) {
+	public RadioStationView(Context context) {
 		super(context);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = (UI._1dp << 1) + (verticalMargin << 1) + UI._22spBox + UI._14spBox;
 	}
 	
-	private void processEllipsis() {
-		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._8dp - lengthWidth);
-		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI._8dp << 1));
+	private void processEllipsis(boolean keepCurrentLayout) {
+		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - (UI._8dp << 1));
+		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - (UI._8dp << 1));
+		ellipsizedTags = UI.ellipsizeText(station.tags, UI._14sp, width - (UI._8dp << 1));
+		if (station.description == null || station.description.length() == 0) {
+			layout = null;
+			descriptionHeight = 0;
+		} else {
+			UI.textPaint.setTextSize(UI._14sp);
+			layout = new StaticLayout(station.description, UI.textPaint, (width < (UI._8dp << 1)) ? 0 : (width - (UI._8dp << 1)), Alignment.ALIGN_NORMAL, 1, 0, false);
+			descriptionHeight = layout.getHeight();
+			if (descriptionHeight < UI._14spBox)
+				descriptionHeight = UI._14spBox;
+			descriptionHeight += UI._1dp;
+		}
+		final int h = (UI._1dp << 1) + UI._1dp + (verticalMargin << 1) + UI._22spBox + UI._18spBox + UI._14spBox + descriptionHeight;
+		if (height != h) {
+			height = h;
+			if (!keepCurrentLayout)
+				requestLayout();
+		}
 	}
 	
-	public void setItemState(Song song, int position, int state) {
+	public void setItemState(RadioStation station, int position, int state) {
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.position = position;
 		//watch out, DO NOT use equals() in favor of speed!
-		if (this.song == song)
+		if (this.station == station)
 			return;
-		this.song = song;
-		lengthWidth = UI.measureText(song.length, UI._14sp);
-		setContentDescription(song.title);
-		processEllipsis();
+		this.station = station;
+		setContentDescription(station.title);
+		processEllipsis(true);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -141,7 +159,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (width != w) {
 			width = w;
-			processEllipsis();
+			processEllipsis(false);
 		}
 	}
 	
@@ -150,11 +168,17 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
-		if ((state & UI.STATE_CURRENT) != 0)
-			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI._4dp, UI.rect.bottom - UI.defaultControlContentsSize - UI._4dp, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
-		UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
-		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
+		UI.drawText(canvas, ellipsizedOnAir, txtColor, UI._18sp, UI._8dp, verticalMargin + UI._22spBox + UI._1dp + UI._18spYinBox);
+		if (layout != null) {
+			UI.textPaint.setColor(txtColor);
+			UI.textPaint.setTextSize(UI._14sp);
+			final float y = (float)(verticalMargin + UI._22spBox + UI._18spBox + (UI._1dp << 1));
+			canvas.translate(0, y);
+			layout.draw(canvas);
+			canvas.translate(0, -y);
+		}
+		UI.drawText(canvas, ellipsizedTags, txtColor, UI._14sp, UI._8dp, height - verticalMargin - UI._1dp - UI._14spBox + UI._14spYinBox);
 	}
 	
 	@Override
@@ -163,22 +187,24 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	
 	@Override
 	protected void onDetachedFromWindow() {
-		song = null;
+		station = null;
 		ellipsizedTitle = null;
-		ellipsizedExtraInfo = null;
+		ellipsizedOnAir = null;
+		ellipsizedTags = null;
+		layout = null;
 		super.onDetachedFromWindow();
 	}
 	
 	@Override
 	public void onClick(View view) {
-		if (UI.songActivity != null)
-			UI.songActivity.processItemClick(position);
+		if (UI.browserActivity != null)
+			UI.browserActivity.processItemClick(position);
 	}
 	
 	@Override
 	public boolean onLongClick(View view) {
-		if (UI.songActivity != null)
-			UI.songActivity.processItemLongClick(position);
+		if (UI.browserActivity != null)
+			UI.browserActivity.processItemLongClick(position);
 		return true;
 	}
 }
