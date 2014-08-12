@@ -110,6 +110,8 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 	
 	@Override
 	public void loadingProcessChanged(boolean started) {
+		if (UI.browserActivity != this)
+			return;
 		loading = started;
 		if (panelLoading != null)
 			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
@@ -608,6 +610,7 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 	
 	@Override
 	protected void onDestroy() {
+		UI.browserActivity = null;
 		fileList.cancel();
 		fileList = null;
 		if (ic_closed_folder != null) {
@@ -634,6 +637,5 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 			ic_album.release();
 			ic_album = null;
 		}
-		UI.browserActivity = null;
 	}
 }

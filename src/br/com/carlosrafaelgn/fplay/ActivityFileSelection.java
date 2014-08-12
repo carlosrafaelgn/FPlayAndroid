@@ -128,6 +128,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	public void loadingProcessChanged(boolean started) {
+		if (UI.browserActivity != this)
+			return;
 		loading = started;
 		if (panelLoading != null)
 			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
@@ -402,8 +404,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onDestroy() {
+		UI.browserActivity = null;
 		fileList.cancel();
 		fileList = null;
-		UI.browserActivity = null;
 	}
 }

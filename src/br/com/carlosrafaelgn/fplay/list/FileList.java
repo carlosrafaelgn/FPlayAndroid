@@ -131,6 +131,10 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 						}
 					}
 				}
+				//there is no need for this call, as FileList does not override
+				//notifyDataSetChanged to check whatHappened... also, setSelection
+				//already calls notifyDataSetChanged
+				//notifyDataSetChanged(p, CONTENT_ADDED);
 				setSelection(p, false);
 				//if (!fetcher.oldBrowserBehavior && listObserver != null && listObserver.isInTouchMode()) {
 				//	setSelection(-1, false);

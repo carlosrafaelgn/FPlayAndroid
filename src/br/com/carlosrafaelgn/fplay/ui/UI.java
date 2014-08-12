@@ -173,6 +173,8 @@ public final class UI {
 	public static final String ICON_MIC = "m";
 	public static final String ICON_ALBUMART = "B";
 	public static final String ICON_ALBUMART_OFF = "b";
+	public static final String ICON_BLUETOOTH = "W";
+	public static final String ICON_RADIO = "w";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
