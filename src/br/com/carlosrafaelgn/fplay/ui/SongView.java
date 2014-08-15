@@ -57,8 +57,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	}
 	
 	private void processEllipsis() {
-		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._8dp - lengthWidth);
-		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI._8dp << 1));
+		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._8dp - lengthWidth, false);
+		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI._8dp << 1), false);
 	}
 	
 	public void setItemState(Song song, int position, int state) {

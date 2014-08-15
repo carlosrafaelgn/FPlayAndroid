@@ -58,9 +58,9 @@ public final class RadioStationView extends View implements View.OnClickListener
 	}
 	
 	private void processEllipsis(boolean keepCurrentLayout) {
-		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - (UI._8dp << 1));
-		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - (UI._8dp << 1));
-		ellipsizedTags = UI.ellipsizeText(station.tags, UI._14sp, width - (UI._8dp << 1));
+		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - (UI._8dp << 1), false);
+		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - (UI._8dp << 1), false);
+		ellipsizedTags = UI.ellipsizeText(station.tags, UI._14sp, width - (UI._8dp << 1), false);
 		if (station.description == null || station.description.length() == 0) {
 			layout = null;
 			descriptionHeight = 0;

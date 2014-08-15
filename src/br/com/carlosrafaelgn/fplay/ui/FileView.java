@@ -131,7 +131,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - leftPadding - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - leftPadding - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp, true);
 	}
 	
 	public void refreshItem() {

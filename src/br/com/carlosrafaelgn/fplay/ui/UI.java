@@ -1141,13 +1141,13 @@ public final class UI {
 		return true;
 	}
 	
-	public static String ellipsizeText(String text, int size, int width) {
+	public static String ellipsizeText(String text, int size, int width, boolean truncateAtMiddle) {
 		if (text == null)
 			return "";
 		if (width <= 1)
 			return text;
 		textPaint.setTextSize(size);
-		return TextUtils.ellipsize(text, textPaint, width, TruncateAt.END).toString();
+		return TextUtils.ellipsize(text, textPaint, width, truncateAtMiddle ? TruncateAt.MIDDLE : TruncateAt.END).toString();
 	}
 	
 	public static int measureText(String text, int size) {
