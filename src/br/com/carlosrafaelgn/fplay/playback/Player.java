@@ -283,6 +283,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	static final int OPTBIT_EQUALIZER_ENABLED = 23;
 	static final int OPTBIT_BASSBOOST_ENABLED = 24;
 	static final int OPTBIT_VIRTUALIZER_ENABLED = 25;
+	static final int OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES = 26;
+	static final int OPTBIT_DO_NOT_ATTENUATE_VOLUME = 27;
 	
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	
@@ -293,7 +295,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, lastPreparing, currentSongPreparing, currentSongBuffering, controlMode,
 		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, hasFocus, dimmedVolume, reviveAlreadyRetried, appIdle;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
-	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin;
+	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
 	private static int volumeDB, lastTime = -1, lastHow, state, silenceMode, globalMaxVolume = 15, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
 	private static Player thePlayer;
 	private static Song lastSong, currentSong, nextSong, firstError;
@@ -302,7 +304,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static AudioManager audioManager;
 	private static TelephonyManager telephonyManager;
 	private static ExternalReceiver externalReceiver;
-	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, turnOffTimer, idleTurnOffTimer;
+	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, headsetHookTimer, turnOffTimer, idleTurnOffTimer;
 	private static ComponentName mediaButtonEventReceiver;
 	private static RemoteControlClient remoteControlClient;
 	private static Object mediaRouterCallback;
@@ -328,7 +330,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static HashSet<String> favoriteFolders;
 	public static String path, originalPath;
 	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
-	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged;
+	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged, headsetHookDoublePressPauses, doNotAttenuateVolume;
 	
 	public static SerializableMap loadConfigFromFile(Context context) {
 		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");
@@ -378,21 +380,23 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.displayVolumeInDB = opts.getBit(OPTBIT_DISPLAYVOLUMEINDB);
 			UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
-			UI.setFlat(opts.getBit(OPTBIT_FLAT, false));
+			UI.setFlat(opts.getBit(OPTBIT_FLAT));
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
-			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY, false);
+			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
 			UI.isVerticalMarginLarge = opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen);
 			handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
 			playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
-			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBit(OPTBIT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
-			goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS, false);
-			songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE, false));
-			UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG, false);
-			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, false);
-			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST, false);
+			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+			goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS);
+			songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE));
+			UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
+			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
+			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR, false);
+			UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR);
+			headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
+			doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
 		} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -403,21 +407,22 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
 			UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
-			UI.setFlat(opts.getBoolean(OPT_FLAT, false));
+			UI.setFlat(opts.getBoolean(OPT_FLAT));
 			UI.albumArt = opts.getBoolean(OPT_ALBUMART, true);
-			UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY, false);
+			UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
 			UI.isVerticalMarginLarge = opts.getBoolean(OPT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen);
 			handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 			playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
-			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE, false), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
-			goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS, false);
-			songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE, false));
-			UI.widgetTransparentBg = opts.getBoolean(OPT_WIDGETTRANSPARENTBG, false);
-			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, false);
-			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST, false);
+			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+			goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS);
+			songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE));
+			UI.widgetTransparentBg = opts.getBoolean(OPT_WIDGETTRANSPARENTBG);
+			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
+			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR, false);
+			UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR);
+			//ignoreHeadsetHookLongPress is a new setting
 		}
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -486,6 +491,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.putBit(OPTBIT_WRAPAROUNDLIST, UI.wrapAroundList);
 		opts.putBit(OPTBIT_EXTRASPACING, UI.extraSpacing);
 		opts.putBit(OPTBIT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
+		opts.putBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES, headsetHookDoublePressPauses);
+		opts.putBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME, doNotAttenuateVolume);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
@@ -682,6 +689,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				prepareDelayTimer = new Timer(thePlayer, "Player Prepare Delay Timer", true, true, false);
 			if (volumeTimer == null)
 				volumeTimer = new Timer(thePlayer, "Player Volume Timer", false, true, true);
+			if (headsetHookTimer == null)
+				headsetHookTimer = new Timer(thePlayer, "Headset Hook Timer", true, true, false);
 			sendMessage(MSG_INITIALIZATION_0);
 		}
 	}
@@ -1798,8 +1807,26 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case KeyEvent.KEYCODE_MEDIA_PLAY:
 		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
 		case KeyEvent.KEYCODE_MEDIA_PAUSE:
-		case KeyEvent.KEYCODE_HEADSETHOOK:
 			playPause();
+			break;
+		case KeyEvent.KEYCODE_HEADSETHOOK:
+			if (headsetHookTimer == null) {
+				playPause();
+			} else {
+				if (headsetHookLastTime != 0) {
+					headsetHookTimer.stop();
+					if ((SystemClock.uptimeMillis() - headsetHookLastTime) < 500) {
+						headsetHookLastTime = 0;
+						if (headsetHookDoublePressPauses)
+							playPause();
+						else
+							next();
+					}
+				} else {
+					headsetHookLastTime = SystemClock.uptimeMillis();
+					headsetHookTimer.start(500);
+				}
+			}
 			break;
 		case KeyEvent.KEYCODE_MEDIA_STOP:
 			if (playing)
@@ -1935,6 +1962,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				} catch (Throwable ex) {
 				}
 			}
+		} else if (timer == headsetHookTimer) {
+			if (thePlayer != null && headsetHookLastTime != 0) {
+				headsetHookLastTime = 0;
+				if (headsetHookDoublePressPauses)
+					next();
+				else
+					playPause();
+			}
 		} else if (timer == turnOffTimer) {
 			if (turnOffTimerOrigin > 0) {
 				final int secondsLeft = (turnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 1000);
@@ -1990,6 +2025,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			focusDelayTimer.stop();
 		if (volumeTimer != null)
 			volumeTimer.stop();
+		if (headsetHookTimer != null)
+			headsetHookTimer.stop();
 		actualVolume = volume;
 		dimmedVolume = false;
 		switch (focusChange) {
@@ -2047,13 +2084,15 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		//	break;
 		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
 			hasFocus = true;
-			//when dimmed, decreased the volume by 20dB
-			actualVolume = volume * 0.1f;
-			dimmedVolume = true;
-			if (currentPlayer != null && currentSongLoaded) {
-				try {
-					currentPlayer.setVolume(actualVolume, actualVolume);
-				} catch (Throwable ex) {
+			if (!doNotAttenuateVolume) {
+				//when dimmed, decreased the volume by 20dB
+				actualVolume = volume * 0.1f;
+				dimmedVolume = true;
+				if (currentPlayer != null && currentSongLoaded) {
+					try {
+						currentPlayer.setVolume(actualVolume, actualVolume);
+					} catch (Throwable ex) {
+					}
 				}
 			}
 			break;
@@ -2506,6 +2545,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					volumeTimer.stop();
 					volumeTimer.release();
 					volumeTimer = null;
+				}
+				if (headsetHookTimer != null) {
+					headsetHookTimer.stop();
+					headsetHookTimer.release();
+					headsetHookTimer = null;
 				}
 				if (turnOffTimer != null) {
 					turnOffTimer.stop();

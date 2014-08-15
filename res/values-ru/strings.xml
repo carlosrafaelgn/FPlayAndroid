@@ -51,6 +51,7 @@
     <string name="opt_is_divider_visible">Показывать границу между элементами в списках</string>
     <string name="opt_is_vertical_margin_large">Использовать большее расстояние между элементами в списках</string>
     <string name="opt_handle_call_key">Использовать клавишу "Позвонить/Набор" как "Воспроизведение/Пауза"</string>
+    <string name="opt_do_not_attenuate_volume">Не уменьшить громкость музыки, когда системные предупреждения происходят</string>
     <string name="opt_play_when_headset_plugged">Начинать воспроизведение при подключении гарнитуры</string>
     <string name="opt_block_back_key">Заблокировать кнопку "Назад", которая возвращает на главный экран</string>
     <string name="opt_double_click_mode">Использовать двойное нажатие для воспроизведения песен в плейлисте</string>

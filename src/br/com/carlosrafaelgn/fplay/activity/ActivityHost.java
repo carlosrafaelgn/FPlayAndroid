@@ -167,7 +167,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//presses when your activity doesn’t have the focus. For when it does, we override
 		//the Activity.onKeyDown() or onKeyUp() methods for the user interface to trap the
 		//headset button-related events...
-		if (Player.handleMediaButton(keyCode))
+		if ((event == null || event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
 			return true;
 		return super.onKeyDown(keyCode, event);
 	}

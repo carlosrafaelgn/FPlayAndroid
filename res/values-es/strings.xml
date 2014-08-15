@@ -50,8 +50,9 @@
     <string name="opt_volume_control_type">Tipo de control de volumen:</string>
     <string name="opt_is_divider_visible">Mostrar división entre los ítems de la lista</string>
     <string name="opt_is_vertical_margin_large">Usar espacio amplio entre los elementos de la lista</string>
-    <string name="opt_handle_call_key">Usar la tecla Llamar/Discar como Play/Pause (beta)</string>
-    <string name="opt_play_when_headset_plugged">Reproducir automáticamente cuando se conecte un auricular con cable (beta)</string>
+    <string name="opt_handle_call_key">Usar la tecla Llamar/Discar como Play/Pause</string>
+    <string name="opt_do_not_attenuate_volume">No atenuar el volumen de la música cuando ocurra notificaciones del sistema</string>
+    <string name="opt_play_when_headset_plugged">Reproducir automáticamente cuando se conecte un auricular con cable</string>
     <string name="opt_block_back_key">Impedir que la tecla de retroceso envié a la pantalla de inicio</string>
     <string name="opt_double_click_mode">Usar doble toque para tocar música de la lista</string>
     <string name="opt_marquee_title">Girar el título de la canción en reproducción cuando no se visualice completa en la pantalla</string>

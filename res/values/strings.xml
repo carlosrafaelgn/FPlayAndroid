@@ -50,8 +50,9 @@
     <string name="opt_volume_control_type">Volume control type:</string>
     <string name="opt_is_divider_visible">Show divider between items in lists</string>
     <string name="opt_is_vertical_margin_large">Use large spacing between items in lists</string>
-    <string name="opt_handle_call_key">Use Call/Dial key as Play/Pause (beta)</string>
-    <string name="opt_play_when_headset_plugged">Automatically play when a wired headset is plugged in (beta)</string>
+    <string name="opt_handle_call_key">Use Call/Dial key as Play/Pause</string>
+    <string name="opt_do_not_attenuate_volume">Do not attenuate music volume when system notifications happen</string>
+    <string name="opt_play_when_headset_plugged">Automatically play when a wired headset is plugged in</string>
     <string name="opt_block_back_key">Prevent the Back key from returning to the home screen</string>
     <string name="opt_double_click_mode">Use two clicks/touches to play songs in the playlist</string>
     <string name="opt_marquee_title">Spin current song\'s title when it does not fit on the screen</string>

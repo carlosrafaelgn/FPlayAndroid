@@ -74,7 +74,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -583,6 +583,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFlat.setOnClickListener(this);
 			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
 			optVolumeControlType.setOnClickListener(this);
+			optDoNotAttenuateVolume = new SettingView(ctx, UI.ICON_INFORMATION, getText(R.string.opt_do_not_attenuate_volume).toString(), null, true, Player.doNotAttenuateVolume, false);
+			optDoNotAttenuateVolume.setOnClickListener(this);
 			optIsDividerVisible = new SettingView(ctx, UI.ICON_DIVIDER, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible, false);
 			optIsDividerVisible.setOnClickListener(this);
 			optIsVerticalMarginLarge = new SettingView(ctx, UI.ICON_SPACELIST, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge, false);
@@ -660,6 +662,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optPlayWhenHeadsetPlugged);
 			panelSettings.addView(optHandleCallKey);
 			panelSettings.addView(optVolumeControlType);
+			panelSettings.addView(optDoNotAttenuateVolume);
 			panelSettings.addView(optFadeInFocus);
 			panelSettings.addView(optFadeInPause);
 			panelSettings.addView(optFadeInOther);
@@ -728,6 +731,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optTheme = null;
 		optFlat = null;
 		optVolumeControlType = null;
+		optDoNotAttenuateVolume = null;
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
 		optExtraSpacing = null;
@@ -866,6 +870,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.wrapAroundList = optWrapAroundList.isChecked();
 		} else if (view == optDoubleClickMode) {
 			UI.doubleClickMode = optDoubleClickMode.isChecked();
+		} else if (view == optDoNotAttenuateVolume) {
+			Player.doNotAttenuateVolume = optDoNotAttenuateVolume.isChecked();
 		} else if (view == optMarqueeTitle) {
 			UI.marqueeTitle = optMarqueeTitle.isChecked();
 		} else if (view == optPrepareNext) {

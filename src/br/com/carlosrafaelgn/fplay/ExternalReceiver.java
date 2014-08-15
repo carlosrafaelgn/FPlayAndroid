@@ -78,19 +78,18 @@ public final class ExternalReceiver extends BroadcastReceiver implements MainHan
 			return;
 		if (a.equals("android.media.AUDIO_BECOMING_NOISY")) {
 			handleEvent(BECOMING_NOISY, 0);
-		} else if (a.equals("android.intent.action.CALL_BUTTON")) {
-			if (Player.isFocused())
-				handleEvent(MEDIA_KEY, KeyEvent.KEYCODE_CALL);
+		} else if (a.equals("android.intent.action.HEADSET_PLUG")) {
+			handleEvent(AUDIO_SINK_CHANGED, (intent.getExtras().getInt("state", -1) > 0) ? 1 : 0);
 		} else if (a.equals("android.intent.action.MEDIA_BUTTON")) {
 			final Object o = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 			if (o == null || !(o instanceof KeyEvent))
 				return;
 			final KeyEvent e = (KeyEvent)o;
-			if (e.getAction() != KeyEvent.ACTION_DOWN) //ACTION_MULTIPLE...?
-				return;
-			handleEvent(MEDIA_KEY, e.getKeyCode());
-		} else if (a.equals("android.intent.action.HEADSET_PLUG")) {
-			handleEvent(AUDIO_SINK_CHANGED, (intent.getExtras().getInt("state", -1) > 0) ? 1 : 0);
+			if (e.getAction() == KeyEvent.ACTION_DOWN)
+				handleEvent(MEDIA_KEY, e.getKeyCode());
+		} else if (a.equals("android.intent.action.CALL_BUTTON")) {
+			if (Player.isFocused())
+				handleEvent(MEDIA_KEY, KeyEvent.KEYCODE_CALL);
 		} else if (a.equals("android.media.ACTION_SCO_AUDIO_STATE_UPDATED") ||
 				a.equals("android.media.SCO_AUDIO_STATE_CHANGED") ||
 				a.equals("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED") ||

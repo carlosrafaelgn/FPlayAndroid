@@ -1087,16 +1087,16 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 8) {
-			msgStartup = 8;
+		if (msgStartup >= 9) {
+			msgStartup = 9;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup < 8) {
-			msgStartup = 8;
-			//content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.custom_key_behavior).toString() + "\n- " + activity.getText(R.string.custom_color_theme).toString() + "\n- " + activity.getText(R.string.custom_widget).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-			content = activity.getText(R.string.startup_message).toString();
+		if (msgStartup < 9) {
+			msgStartup = 9;
+			content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.opt_do_not_attenuate_volume).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+			//content = activity.getText(R.string.startup_message).toString();
 		}
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
