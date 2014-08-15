@@ -422,7 +422,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 			UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR);
-			//ignoreHeadsetHookLongPress is a new setting
+			//headsetHookDoublePressPauses is a new setting
+			//doNotAttenuateVolume is a new setting
 		}
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
