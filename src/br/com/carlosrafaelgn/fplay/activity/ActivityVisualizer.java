@@ -32,8 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -43,14 +43,17 @@ import android.graphics.Point;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Message;
 import android.os.SystemClock;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnCreateContextMenuListener;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import br.com.carlosrafaelgn.fplay.R;
@@ -58,6 +61,7 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.InterceptableLayout;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
@@ -65,40 +69,62 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.VisualizerView;
 
-public final class ActivityVisualizer extends Activity implements Runnable, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener {
-	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private static final class FullScreenObserver implements Runnable, View.OnSystemUiVisibilityChangeListener {
+public final class ActivityVisualizer extends Activity implements Runnable, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener {
+	@SuppressLint("InlinedApi")
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private static final class SystemUIObserver implements View.OnSystemUiVisibilityChangeListener {
 		private View decor;
+		private MainHandler.Callback callback;
 		
-		public FullScreenObserver(View decor) {
+		public SystemUIObserver(View decor, MainHandler.Callback callback) {
 			this.decor = decor;
+			this.callback = callback;
 		}
 		
 		@Override
 		public void onSystemUiVisibilityChange(int visibility) {
 			if (decor == null)
 				return;
-			if ((visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0)
-				MainHandler.postToMainThreadDelayed(this, 2000);
+			if (callback != null)
+				MainHandler.sendMessage(callback, MSG_SYSTEM_UI_CHANGED, visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION, 0);
 		}
 		
-		@Override
-		public void run() {
+		public void hide() {
 			if (decor == null)
 				return;
 			try {
-				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+						View.SYSTEM_UI_FLAG_FULLSCREEN |
+						View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+						View.SYSTEM_UI_FLAG_LOW_PROFILE |
+						View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
 						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
 						View.SYSTEM_UI_FLAG_IMMERSIVE);
 			} catch (Throwable ex) {
 			}
 		}
 		
-		public void prepare() {
+		public void show() {
+			if (decor == null)
+				return;
 			try {
-				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-						View.SYSTEM_UI_FLAG_IMMERSIVE);
+				decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+						View.SYSTEM_UI_FLAG_FULLSCREEN |
+						View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+						//View.SYSTEM_UI_FLAG_LOW_PROFILE |
+						View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+						//View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+						View.SYSTEM_UI_FLAG_IMMERSIVE |
+						View.SYSTEM_UI_FLAG_VISIBLE);
+			} catch (Throwable ex) {
+			}
+		}
+		
+		public void prepare() {
+			show();
+			if (decor == null)
+				return;
+			try {
 				decor.setOnSystemUiVisibilityChangeListener(this);
 			} catch (Throwable ex) {
 			}
@@ -112,22 +138,59 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 				}
 				decor = null;
 			}
+			callback = null;
 		}
 	}
 	
+	private static final int MSG_HIDE = 0x0400;
+	private static final int MSG_SYSTEM_UI_CHANGED = 0x0401;
 	private static final int MNU_ORIENTATION = 100;
 	private android.media.audiofx.Visualizer fxVisualizer;
 	private Visualizer visualizer;
 	private UI.DisplayInfo info;
-	private RelativeLayout panelControls, panelTop, panelBottom;
+	private InterceptableLayout panelControls;
+	private RelativeLayout panelTop;
 	private LinearLayout panelSecondary;
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen, playing;
-	private int fxVisualizerAudioSessionId;
-	private Object fullScreenObserver;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen, playing, isWindowFocused, panelTopWasHidden;
+	private int fxVisualizerAudioSessionId, version;
+	private Object systemUIObserver;
 	private Timer timer;
+	
+	private void hideAllUIDelayed() {
+		version++;
+		MainHandler.removeMessages(this, MSG_HIDE);
+		MainHandler.sendMessageDelayed(this, MSG_HIDE, version, 0, 4000);
+	}
+	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private void prepareSystemUIObserver() {
+		if (systemUIObserver == null)
+			systemUIObserver = new SystemUIObserver(getWindow().getDecorView(), this);
+		((SystemUIObserver)systemUIObserver).prepare();
+	}
+	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private void hideSystemUI() {
+		if (systemUIObserver != null)
+			((SystemUIObserver)systemUIObserver).hide();
+	}
+	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private void showSystemUI() {
+		if (systemUIObserver != null)
+			((SystemUIObserver)systemUIObserver).show();
+	}
+	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private void cleanupSystemUIObserver() {
+		if (systemUIObserver != null) {
+			((SystemUIObserver)systemUIObserver).cleanup();
+			systemUIObserver = null;
+		}
+	}
 	
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
@@ -136,30 +199,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		return false;
 	}
 	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private void setupActionBar() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			final ActionBar b = getActionBar();
-			if (b != null)
-				b.setDisplayHomeAsUpEnabled(true);
-		}
-	}
-	
-	private void prepareViews() {
+	private void prepareViews(boolean updateInfo) {
 		if (info == null)
 			return;
 		
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			prepareFullScreen();
+		if (updateInfo)
+			info.getInfo(this);
 		
-		RelativeLayout.LayoutParams p = (RelativeLayout.LayoutParams)panelTop.getLayoutParams();
-		p.width = (info.isLandscape ? RelativeLayout.LayoutParams.WRAP_CONTENT : RelativeLayout.LayoutParams.MATCH_PARENT);
-		p.height = (info.isLandscape ? RelativeLayout.LayoutParams.MATCH_PARENT : RelativeLayout.LayoutParams.WRAP_CONTENT);
-		panelTop.setLayoutParams(p);
-		
-		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-		p.addRule(info.isLandscape ? RelativeLayout.RIGHT_OF : RelativeLayout.BELOW, R.id.panelTop);
-		panelBottom.setLayoutParams(p);
+		panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(info.isLandscape ? InterceptableLayout.LayoutParams.WRAP_CONTENT : InterceptableLayout.LayoutParams.MATCH_PARENT, info.isLandscape ? InterceptableLayout.LayoutParams.MATCH_PARENT : InterceptableLayout.LayoutParams.WRAP_CONTENT));
 		
 		LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)btnPrev.getLayoutParams();
 		lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
@@ -173,7 +220,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnPlay.setLayoutParams(lp);
 		btnPlay.setIcon((playing = Player.isPlaying()) ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		
-		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 		p.addRule(info.isLandscape ? RelativeLayout.CENTER_VERTICAL : RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		panelSecondary.setLayoutParams(p);
@@ -186,23 +233,15 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		btnMenu.setIcon(UI.ICON_MENU);
 		
 		if (visualizerView != null) {
+			final InterceptableLayout.LayoutParams ip;
 			if (visualizerViewFullscreen) {
-				p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+				ip = new InterceptableLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			} else {
-				final int margin = UI.defaultControlSize + (UI.extraSpacing ? (UI._8dp << 1) : 0);
-				int w, h;
-				if (info.isLandscape) {
-					w = info.usableScreenWidth - margin;
-					h = info.usableScreenHeight;
-				} else {
-					w = info.usableScreenWidth;
-					h = info.usableScreenHeight - margin;
-				}
-				final Point pt = visualizerView.getDesiredSize(w, h);
-				p = new RelativeLayout.LayoutParams(pt.x, pt.y);
-				p.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+				final Point pt = visualizerView.getDesiredSize(info.screenWidth, info.screenHeight);
+				ip = new InterceptableLayout.LayoutParams(pt.x, pt.y);
+				ip.gravity = Gravity.CENTER;
 			}
-			visualizerView.setLayoutParams(p);
+			visualizerView.setLayoutParams(ip);
 		}
 		
 		panelControls.requestLayout();
@@ -250,27 +289,25 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		return false;
 	}
 	
-	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private void prepareFullScreen() {
-		if (fullScreenObserver == null)
-			fullScreenObserver = new FullScreenObserver(getWindow().getDecorView());
-		((FullScreenObserver)fullScreenObserver).prepare();
-	}
-	
-	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private void cleanupFullScreen() {
-		if (fullScreenObserver != null) {
-			((FullScreenObserver)fullScreenObserver).cleanup();
-			fullScreenObserver = null;
-		}
-	}
-	
+	@SuppressLint("InlinedApi")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+		super.onCreate(null);
+		
+		isWindowFocused = true;
 		
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+		//keep the screen always on while the visualizer is active
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+				WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+				//WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR |
+				WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+				WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+				WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+				WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		//getWindow().requestFeature(Window.FEATURE_NO_TITLE |
+		//		Window.FEATURE_ACTION_MODE_OVERLAY);
+		
 		setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!
@@ -278,16 +315,17 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		
 		Player.addDestroyedObserver(this);
 		
-		setupActionBar();
+		info = new UI.DisplayInfo();
+		
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+			prepareSystemUIObserver();
 		
 		setContentView(R.layout.activity_visualizer);
 		
-		info = new UI.DisplayInfo();
-		info.getInfo(this);
-		
-		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
+		panelControls = (InterceptableLayout)findViewById(R.id.panelControls);
+		panelControls.setOnClickListener(this);
+		panelControls.setInterceptedTouchEventListener(this);
 		panelTop = (RelativeLayout)findViewById(R.id.panelTop);
-		panelBottom = (RelativeLayout)findViewById(R.id.panelBottom);
 		panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
@@ -329,11 +367,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		if (visualizer != null) {
 			visualizerView = visualizer.getView();
 			visualizerViewFullscreen = visualizerView.isFullscreen();
-			if (visualizerView != null)
-				panelBottom.addView(visualizerView);
+			if (visualizerView != null) {
+				visualizerView.setOnClickListener(this);
+				panelControls.addView(visualizerView);
+				panelTop.bringToFront();
+			}
 		}
 		
-		prepareViews();
+		prepareViews(true);
 		
 		if (UI.useVisualizerButtonsInsideList) {
 			btnGoBack.setTextColor(UI.colorState_text_listitem_reactive);
@@ -411,6 +452,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			}
 		}, "Visualizer Thread", false, false, true);
 		timer.start(16);
+		
+		hideAllUIDelayed();
+	}
+	
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.clear();
 	}
 	
 	@Override
@@ -424,7 +473,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		if (i != info.isLandscape || w != info.usableScreenWidth || h != info.usableScreenHeight) {
 			if (visualizer != null)
 				visualizer.configurationChanged(info.isLandscape);
-			prepareViews();
+			prepareViews(false);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				prepareSystemUIObserver();
+			hideAllUIDelayed();
 			System.gc();
 		}
 	}
@@ -445,11 +497,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 	protected void onPause() {
 		Player.observer = null;
 		paused = true;
-		//return to the default screen settings when paused  
-		if (UI.keepScreenOn)
-			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		else
-			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		Player.setAppIdle(true);
 		super.onPause();
 	}
@@ -461,10 +508,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		reset = true;
 		resumeTimer();
 		onPlayerChanged(Player.getCurrentSong(), true, null);
-		//keep the screen always on while the visualizer is active
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			prepareFullScreen();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+			prepareSystemUIObserver();
 		super.onResume();
 	}
 	
@@ -474,12 +519,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 		if (visualizer != null)
 			visualizer.cancelLoading();
 		resumeTimer();
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			cleanupFullScreen();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+			cleanupSystemUIObserver();
 		info = null;
 		panelControls = null;
 		panelTop = null;
-		panelBottom = null;
 		panelSecondary = null;
 		btnGoBack = null;
 		btnPrev = null;
@@ -588,6 +632,53 @@ public final class ActivityVisualizer extends Activity implements Runnable, Play
 			resumeTimer();
 		} else if (view == btnMenu) {
 			onPrepareOptionsMenu(null);
+		} else if (view == visualizerView || view == panelControls) {
+			if (visualizer != null && !panelTopWasHidden)
+				visualizer.onClick();
 		}
+	}
+	
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		if ((isWindowFocused = hasFocus))
+			hideAllUIDelayed();
+		super.onWindowFocusChanged(hasFocus);
+	}
+	
+	@Override
+	public boolean onTouch(View v, MotionEvent event) {
+		switch (event.getActionMasked()) {
+		case MotionEvent.ACTION_DOWN:
+		case MotionEvent.ACTION_POINTER_DOWN:
+			if (panelTop != null && (panelTopWasHidden = (panelTop.getVisibility() != View.VISIBLE)))
+				panelTop.setVisibility(View.VISIBLE);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				showSystemUI();
+			hideAllUIDelayed();
+			break;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean handleMessage(Message msg) {
+		switch (msg.what) {
+		case MSG_HIDE:
+			if (msg.arg1 != version || !isWindowFocused)
+				break;
+			if (panelTop != null && panelTop.getVisibility() != View.GONE)
+				panelTop.setVisibility(View.GONE);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				hideSystemUI();
+			break;
+		case MSG_SYSTEM_UI_CHANGED:
+			final int v = ((msg.arg1 == 0) ? View.VISIBLE : View.GONE);
+			if (panelTop != null && panelTop.getVisibility() != v)
+				panelTop.setVisibility(v);
+			if (v == View.VISIBLE)
+				hideAllUIDelayed();
+			break;
+		}
+		return true;
 	}
 }

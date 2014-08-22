@@ -87,30 +87,6 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	}
 	
 	@Override
-	public boolean performClick() {
-		switch (state) {
-		case 0:
-			lerp = true;
-			voice = false;
-			state = 1;
-			break;
-		case 1:
-			lerp = false;
-			voice = true;
-			state = 2;
-			break;
-		default:
-			lerp = false;
-			voice = false;
-			state = 0;
-			break;
-		}
-		refreshMultiplier(voice);
-		setLerpAndColorIndex(lerp, colorIndex);
-		return super.performClick();
-	}
-	
-	@Override
 	public boolean onMenuItemClick(MenuItem item) {
 		switch (item.getItemId()) {
 		case MNU_COLOR:
@@ -161,6 +137,30 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		menu.add(2, MNU_VOICEPRINT, 2, "VoicePrint")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(voice ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+	}
+	
+	//Runs on the MAIN thread
+	@Override
+	public void onClick() {
+		switch (state) {
+		case 0:
+			lerp = true;
+			voice = false;
+			state = 1;
+			break;
+		case 1:
+			lerp = false;
+			voice = true;
+			state = 2;
+			break;
+		default:
+			lerp = false;
+			voice = false;
+			state = 0;
+			break;
+		}
+		refreshMultiplier(voice);
+		setLerpAndColorIndex(lerp, colorIndex);
 	}
 	
 	//Runs on ANY thread

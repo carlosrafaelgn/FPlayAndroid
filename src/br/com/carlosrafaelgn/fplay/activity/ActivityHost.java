@@ -32,11 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
-import android.annotation.TargetApi;
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -147,15 +144,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		return false;
 	}
 	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private void setupActionBar() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			final ActionBar b = getActionBar();
-			if (b != null)
-				b.setDisplayHomeAsUpEnabled(true);
-		}
-	}
-	
 	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -207,7 +195,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//structure that belongs to ActivityMain
 		//that's why we pass null to super.onCreate!
 		super.onCreate(null);
-		setupActionBar();
 		UI.initialize(getApplication());
 		MainHandler.initialize();
 		if (Player.startService(getApplication()))

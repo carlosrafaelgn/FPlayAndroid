@@ -30,43 +30,43 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.visualizer;
+package br.com.carlosrafaelgn.fplay.ui;
 
 import android.content.Context;
-import android.view.ContextMenu;
+import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.FrameLayout;
 
-public interface Visualizer {
-	public static final String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
-	public static final int MAX_POINTS = 1024;
-	public static final int MNU_VISUALIZER = 200;
+public class InterceptableLayout extends FrameLayout {
+	private View.OnTouchListener interceptedTouchEventListener;
 	
-	//Runs on the MAIN thread
-	public VisualizerView getView();
+	public InterceptableLayout(Context context) {
+		super(context);
+	}
 	
-	//Runs on the MAIN thread
-	public void onCreateContextMenu(ContextMenu menu);
+	public InterceptableLayout(Context context, AttributeSet attrs) {
+		super(context, attrs);
+	}
 	
-	//Runs on the MAIN thread
-	public void onClick();
+	public InterceptableLayout(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
+	}
 	
-	//Runs on ANY thread
-	public int getDesiredPointCount();
+	public void setInterceptedTouchEventListener(View.OnTouchListener interceptedTouchEventListener) {
+		this.interceptedTouchEventListener = interceptedTouchEventListener;
+	}
 	
-	//Runs on a SECONDARY thread
-	public void load(Context context);
+	@Override
+	public boolean onInterceptTouchEvent(MotionEvent ev) {
+		if (interceptedTouchEventListener != null)
+			interceptedTouchEventListener.onTouch(this, ev);
+		return super.onInterceptTouchEvent(ev);
+	}
 	
-	//Runs on ANY thread
-	public boolean isLoading();
-	
-	//Runs on the MAIN thread
-	public void cancelLoading();
-	
-	//Runs on the MAIN thread
-	public void configurationChanged(boolean landscape);
-	
-	//Runs on a SECONDARY thread
-	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis);
-	
-	//Runs on a SECONDARY thread
-	public void release();
+	@Override
+	protected void onDetachedFromWindow() {
+		interceptedTouchEventListener = null;
+		super.onDetachedFromWindow();
+	}
 }

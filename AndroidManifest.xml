@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="43"
-    android:versionName="1.08" >
+    android:versionCode="44"
+    android:versionName="1.09" >
 
     <!-- versionCode must be kept in sync with UI.VERSION_CODE -->
 
@@ -37,12 +37,11 @@
     <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
     <!-- For android.media.audiofx.PresetReverb -->
     <!-- <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" /> -->
-    
 
 
     <!--
     Just to make Google Play show the App even to phones without Bluetooth,
-    despite the uses-permission below!
+    despite the uses-permission below!
     -->
     <uses-feature
         android:name="android.hardware.bluetooth"
@@ -64,7 +63,8 @@
             android:launchMode="singleTask"
             android:multiprocess="false"
             android:screenOrientation="unspecified"
-            android:stateNotNeeded="true" >
+            android:stateNotNeeded="true"
+            android:theme="@style/AppTheme" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -79,7 +79,8 @@
             android:multiprocess="false"
             android:parentActivityName="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
             android:screenOrientation="unspecified"
-            android:stateNotNeeded="true" >
+            android:stateNotNeeded="true"
+            android:theme="@style/AppTheme" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="br.com.carlosrafaelgn.fplay.activity.ActivityHost" />

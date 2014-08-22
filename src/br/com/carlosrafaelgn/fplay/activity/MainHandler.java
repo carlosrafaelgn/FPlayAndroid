@@ -85,6 +85,10 @@ public final class MainHandler extends Handler {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), when);
 	}
 	
+	public static void removeMessages(MainHandler.Callback callback, int what) {
+		theHandler.removeMessages(what, callback);
+	}
+	
 	@Override
 	public void dispatchMessage(Message msg) {
 		final Runnable r = msg.getCallback();
