@@ -830,13 +830,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	private static void broadcastStateChangeToRemoteControl(boolean preparing, boolean songHasChanged) {
+	private static void broadcastStateChangeToRemoteControl(boolean preparing, boolean titleOrSongHaveChanged) {
 		try {
 			if (currentSong == null) {
 				remoteControlClient.setPlaybackState(RemoteControlClient.PLAYSTATE_STOPPED);
 			} else {
 				remoteControlClient.setPlaybackState(playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED);
-				if (songHasChanged) {
+				if (titleOrSongHaveChanged) {
 					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : currentSong.title);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, currentSong.artist);
@@ -851,7 +851,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
-	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean songHasChanged) {
+	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean titleOrSongHaveChanged) {
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
 		//http://developer.android.com/reference/android/media/RemoteControlClient.html
@@ -881,7 +881,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			thePlayer.sendStickyBroadcast(i);
 		}
 		if (remoteControlClient != null)
-			broadcastStateChangeToRemoteControl(preparing, songHasChanged);
+			broadcastStateChangeToRemoteControl(preparing, titleOrSongHaveChanged);
 	}
 	
 	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
@@ -965,7 +965,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			final boolean songHasChanged = (metaHasChanged || (lastSong != currentSong));
 			final boolean playbackHasChanged = (lastPlaying != playing);
 			final boolean preparing = isCurrentSongPreparing();
-			if (!songHasChanged && !playbackHasChanged && (lastPreparing == preparing) && ex == null)
+			final boolean preparingHasChanged = (lastPreparing != preparing);
+			if (!songHasChanged && !playbackHasChanged && !preparingHasChanged && ex == null)
 				return;
 			if (idleTurnOffTimer != null && idleTurnOffTimerSelectedMinutes > 0)
 				processIdleTurnOffTimer();
@@ -974,7 +975,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			lastPreparing = preparing;
 			notificationManager.notify(1, getNotification());
 			WidgetMain.updateWidgets(thePlayer);
-			broadcastStateChange(playbackHasChanged, preparing, songHasChanged);
+			broadcastStateChange(playbackHasChanged, preparing, songHasChanged | preparingHasChanged);
 			if (ex != null) {
 				final String msg = ex.getMessage();
 				if (ex instanceof IllegalStateException) {
