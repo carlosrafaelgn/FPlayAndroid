@@ -50,7 +50,7 @@ import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
-public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
+public final class FileView extends LinearLayout implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
 	private AlbumArtFetcher albumArtFetcher;
 	private Handler handler;
 	private final int height, verticalMargin, usableHeight;
@@ -138,6 +138,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		//tiny workaround ;)
 		buttonsVisible = !buttonsVisible;
 		setItemState(file, position, state);
+		invalidate();
 	}
 	
 	public void setItemState(FileSt file, int position, int state) {
@@ -282,6 +283,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	
 	@Override
 	public int getMinimumHeight() {
+		return height;
+	}
+	
+	@Override
+	public int predictHeight() {
 		return height;
 	}
 	

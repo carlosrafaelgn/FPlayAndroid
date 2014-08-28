@@ -37,6 +37,7 @@ import java.util.Arrays;
 
 import android.database.DataSetObserver;
 import android.widget.BaseAdapter;
+import android.widget.SectionIndexer;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
@@ -45,6 +46,11 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 //NEED TO SYNCHRONIZE THE ACCESS TO THE ITEMS
 //
 public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
+	public static interface BaseSectionIndexer extends SectionIndexer {
+		public boolean hasSections();
+		public int sectionCount();
+	}
+	
 	protected static final int LIST_DELTA = 32;
 	
 	protected static final int SELECTION_CHANGED = 0;

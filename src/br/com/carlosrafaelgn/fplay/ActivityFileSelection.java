@@ -108,7 +108,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		return formatterSB.toString();
 	}
 	
-	private void refreshMenu(int count) {
+	private void updateMenu(int count) {
 		if (count != 0 || save) {
 			if (btnGoBack != null) {
 				btnGoBack.setNextFocusRightId(R.id.btnMenu);
@@ -143,7 +143,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (list != null)
 			list.centerItem(fileList.getSelection(), false);
 		if (!started)
-			refreshMenu(count);
+			updateMenu(count);
 	}
 	
 	@Override
@@ -175,7 +175,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					try {
 						getApplication().deleteFile(path);
 						fileList.removeSelection();
-						refreshMenu(fileList.getCount());
+						updateMenu(fileList.getCount());
 					} catch (Throwable ex) {
 					}
 				} else {
@@ -331,7 +331,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	public void onClick(DialogInterface dialog, int which) {
 		if (which == AlertDialog.BUTTON_POSITIVE) {
 			String n = txtSaveAsName.getText().toString().trim();
-			if (n.length() == 0 || !FileSt.isValidPrivateFileName(n))
+			if (!FileSt.isValidPrivateFileName(n))
 				return;
 			if (n.length() > 64)
 				n = n.substring(0, 64);

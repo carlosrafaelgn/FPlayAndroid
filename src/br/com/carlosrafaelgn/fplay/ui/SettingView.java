@@ -141,7 +141,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		super.setOnClickListener(this);
 		this.icon = icon;
 		setFocusable(true);
-		refreshVerticalMargin();
+		updateVerticalMargin();
 		setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		this.checkable = (secondaryText == null && checkable && !color);
 		this.color = (secondaryText == null && !checkable && color);
@@ -207,7 +207,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			setContentDescription(text);
 	}
 	
-	public void refreshVerticalMargin() {
+	public void updateVerticalMargin() {
 		setPadding(UI._8dp + ((icon == null) ? 0 : (UI.defaultControlContentsSize + UI._8dp + UI._8dp)), UI.isVerticalMarginLarge ? UI._16sp : UI._8sp, UI._8dp, UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 	}
 	

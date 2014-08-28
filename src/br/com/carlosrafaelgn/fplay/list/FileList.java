@@ -44,13 +44,21 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 //Supported Media Formats
 //http://developer.android.com/guide/appendix/media-formats.html
 //
-public final class FileList extends BaseList<FileSt> implements FileFetcher.Listener {
+public final class FileList extends BaseList<FileSt> implements FileFetcher.Listener, BaseList.BaseSectionIndexer {
+	private final String[] nullSections;
+	private final int[] nullSectionPositions;
 	private boolean loading;
 	private String path, comingFrom;
 	private FileFetcher fetcher;
+	private String[] sections;
+	private int[] sectionPositions;
 	
 	public FileList() {
 		super(FileSt.class);
+		nullSections = new String[] { "" };
+		nullSectionPositions = new int[] { 0 };
+		sections = nullSections;
+		sectionPositions = nullSectionPositions;
 	}
 	
 	public boolean isLoading() {
@@ -67,21 +75,25 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 		return path;
 	}
 	
-	public void setPath(String path, String comingFrom, boolean isInTouchMode) {
+	public void setPath(String path, String comingFrom, boolean isInTouchMode, boolean createSections) {
 		if (fetcher != null)
 			fetcher.cancel();
+		sections = nullSections;
+		sectionPositions = nullSectionPositions;
 		clear();
 		loadingProcessChanged(true);
 		this.comingFrom = comingFrom;
-		fetcher = FileFetcher.fetchFiles(path, this, true, false, isInTouchMode);
+		fetcher = FileFetcher.fetchFiles(path, this, true, false, isInTouchMode, createSections);
 	}
 	
 	public void setPrivateFileType(String fileType, boolean isInTouchMode) {
 		if (fetcher != null)
 			fetcher.cancel();
+		sections = nullSections;
+		sectionPositions = nullSectionPositions;
 		clear();
 		loadingProcessChanged(true);
-		fetcher = FileFetcher.fetchFiles(fileType, this, true, false, isInTouchMode);
+		fetcher = FileFetcher.fetchFiles(fileType, this, true, false, isInTouchMode, false);
 	}
 	
 	public void cancel() {
@@ -103,6 +115,13 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 			items = fetcher.files;
 			count = fetcher.count;
 			path = fetcher.path;
+			if (count < 1 || fetcher.sections == null || fetcher.sections.length < 1) {
+				sections = nullSections;
+				sectionPositions = nullSectionPositions;
+			} else {
+				sections = fetcher.sections;
+				sectionPositions = fetcher.sectionPositions;
+			}
 			//if (listObserver != null || fetcher.oldBrowserBehavior) {
 				int p = ((fetcher.oldBrowserBehavior || !fetcher.isInTouchMode) ? 0 : -1);
 				if (comingFrom != null && comingFrom.length() > 0) {
@@ -149,6 +168,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 			this.fetcher = null;
 			comingFrom = null;
 			loadingProcessChanged(false);
+			System.gc();
 		}
 	}
 	
@@ -157,5 +177,40 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 		final FileView view = (FileView)((convertView != null) ? convertView : UI.browserActivity.createView());
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
+	}
+	
+	@Override
+	public int getPositionForSection(int sectionIndex) {
+		return ((sectionIndex < sections.length) ? sectionPositions[sectionIndex] : sectionPositions[sectionPositions.length - 1]);
+	}
+	
+	@Override
+	public int getSectionForPosition(int position) {
+		int s = 0, e = sections.length - 1, m = 0;
+		while (s <= e) {
+			m = ((e + s) >> 1);
+			if (position == sectionPositions[m])
+				break;
+			else if (position < sectionPositions[m])
+				e = m - 1;
+			else
+				s = m + 1;
+		}
+		return m;
+	}
+	
+	@Override
+	public Object[] getSections() {
+		return sections;
+	}
+	
+	@Override
+	public boolean hasSections() {
+		return (sections != nullSections);
+	}
+	
+	@Override
+	public int sectionCount() {
+		return sections.length;
 	}
 }

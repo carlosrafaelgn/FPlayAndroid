@@ -45,14 +45,16 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.widget.AbsListView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import br.com.carlosrafaelgn.fplay.list.BaseItem;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 
-public final class BgListView extends ListView {
+public final class BgListView extends ListView implements ListView.OnScrollListener {
 	public static interface OnAttachedObserver {
 		public void onBgListViewAttached(BgListView list);
 	}
@@ -61,11 +63,22 @@ public final class BgListView extends ListView {
 		public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event);
 	}
 	
+	public static interface BgListItem {
+		public int predictHeight();
+	}
+	
+	public static final int SCROLLBAR_NONE = 0;
+	public static final int SCROLLBAR_LARGE = 1;
+	public static final int SCROLLBAR_INDEXED = 2;
+	
 	private OnAttachedObserver attachedObserver;
 	private OnBgListViewKeyDownObserver keyDownObserver;
 	private OnClickListener emptyListClickListener;
 	private StaticLayout emptyLayout;
-	private boolean notified, attached, measured, sized, ignoreTouchMode;
+	private BaseList<? extends BaseItem> adapter;
+	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking;
+	private int topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
+		top, right, bottom, width, height, heightOffset, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset;
 	int extraState;
 	
 	public BgListView(Context context) {
@@ -95,7 +108,7 @@ public final class BgListView extends ListView {
 		super.setFocusableInTouchMode(false);
 		super.setFocusable(true);
 		super.setHorizontalScrollBarEnabled(false);
-		super.setVerticalScrollBarEnabled(!UI.customScrollBar);
+		super.setVerticalScrollBarEnabled(true);
 		super.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		//setPadding(0, 0, 0, 0);
 		//setFastScrollAlwaysVisible(true);
@@ -169,17 +182,17 @@ public final class BgListView extends ListView {
 		ignoreTouchMode = true;
 		super.onFocusChanged(gainFocus, direction, gainFocus ? null : previouslyFocusedRect);
 		int s;
-		final BaseList<?> a = (BaseList<?>)getAdapter();
-		if (a != null) {
-			final int count = a.getCount();
-			s = a.getSelection();
+		if (adapter != null) {
+			s = adapter.getSelection();
 			if (gainFocus) {
-				if (s < 0 || s >= count) {
+				//do not change to itemCount!
+				final int ic = adapter.getCount();
+				if (s < 0 || s >= ic) {
 					s = getFirstVisiblePosition();
 					if (s < 0)
 						s = 0;
-					if (s < count) {
-						a.setSelection(s, true);
+					if (s < ic) {
+						adapter.setSelection(s, true);
 						if (s <= getFirstVisiblePosition() || s >= getLastVisiblePosition())
 							centerItem(s, false);
 					}
@@ -206,8 +219,8 @@ public final class BgListView extends ListView {
 	}
 	
 	public void scrollItemToTop(int position, boolean smoothly) {
-		final BaseList<?> a = (BaseList<?>)getAdapter();
-		if (a == null || position < 0 || position >= a.getCount())
+		//do not change to itemCount!
+		if (position < 0 || adapter == null || position >= adapter.getCount())
 			return;
 		if (smoothly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			smoothScroll(position, 0);
@@ -216,12 +229,14 @@ public final class BgListView extends ListView {
 	}
 	
 	public void centerItem(int position, boolean smoothly) {
-		final BaseList<?> a = (BaseList<?>)getAdapter();
-		if (a == null || position < 0 || position >= a.getCount())
+		//do not change to itemCount!
+		if (position < 0 || adapter == null || position >= adapter.getCount())
 			return;
 		final View v = getChildAt(0);
-		int y = (getHeight() >> 1);
-		final int y2 = ((v == null) ? 0 : (v.getHeight() >> 1));
+		int y = (height >> 1);
+		if (itemHeight <= 0 && v != null)
+			itemHeight = ((BgListItem)v).predictHeight();
+		final int y2 = ((itemHeight <= 0) ? 0 : (itemHeight >> 1));
 		y -= ((y2 == 0) ? UI._22spBox : y2);
 		if (y < 0)
 			y = 0;
@@ -253,7 +268,7 @@ public final class BgListView extends ListView {
 			emptyLayout = null;
 		} else {
 			UI.textPaint.setTextSize(UI._22sp);
-			final int w = getWidth();
+			final int w = width;
 			emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI._16dp << 1)) ? 0 : (w - (UI._16dp << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
 		}
 	}
@@ -284,6 +299,11 @@ public final class BgListView extends ListView {
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (w > 0 && h > 0) {
+			width = w;
+			height = h;
+			top = topPadding + UI._2dp;
+			right = w - (rightPadding + scrollBarWidth);
+			bottom = h - bottomPadding - UI._2dp;
 			sized = true;
 			if (!notified && attached && measured && attachedObserver != null) {
 				notified = true;
@@ -292,15 +312,14 @@ public final class BgListView extends ListView {
 			}
 			if (emptyLayout != null && emptyLayout.getWidth() != w)
 				setCustomEmptyText(emptyLayout.getText());
+			if (scrollBarType == SCROLLBAR_LARGE)
+				updateScrollBarThumb(true);
 		}
 	}
 	
 	public int getNewPosition(int position, int keyCode, boolean allowWrap) {
-		final ListAdapter a = getAdapter();
-		if (a == null)
-			return -1;
 		int p;
-		final int l = a.getCount() - 1;
+		final int l = itemCount - 1;
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_DPAD_UP:
 			if (position > l || position < 0 || (allowWrap && position == 0))
@@ -336,36 +355,164 @@ public final class BgListView extends ListView {
 		return -1;
 	}
 	
+	private void trackTouchEvent(int y) {
+		final int sbh = (bottom - top), vh = height + heightOffset;
+		y -= scrollBarThumbOffset + top;
+		int f;
+		if (y <= 0) {
+			y = 0;
+			f = 0;
+		} else if (y >= (sbh - scrollBarThumbHeight)) {
+			y = sbh - scrollBarThumbHeight;
+			f = itemCount - 1;
+		} else {
+			f = (y * (contentsHeight - vh)) / ((sbh - scrollBarThumbHeight) * itemHeight);
+			if (f >= itemCount)
+				f = itemCount - 1;
+		}
+		scrollBarThumbTop = y + top;
+		if (f == getFirstVisiblePosition()) {
+			invalidate(right, top, right + scrollBarWidth, bottom);
+			return;
+		}
+		setSelectionFromTop(f, 0);
+	}
+	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		switch (event.getAction()) {
-		/*case MotionEvent.ACTION_DOWN:
-			if (!UI.customScrollBar) break;
+		case MotionEvent.ACTION_DOWN:
+			if (scrollBarThumbHeight == 0) break;
 			final int x = (int)event.getX();
-			break;*/
+			if (x >= right && x < (right + scrollBarWidth)) {
+				tracking = true;
+				if (getParent() != null)
+					getParent().requestDisallowInterceptTouchEvent(true);
+				final int y = (int)event.getY();
+				if (y < scrollBarThumbTop || y >= (scrollBarThumbTop + scrollBarThumbHeight))
+					scrollBarThumbOffset = scrollBarThumbHeight >> 1;
+				else
+					scrollBarThumbOffset = y - scrollBarThumbTop;
+				trackTouchEvent(y);
+				return true;
+			}
+			break;
+		case MotionEvent.ACTION_MOVE:
+			if (!tracking)
+				break;
+			trackTouchEvent((int)event.getY());
+			return true;
 		case MotionEvent.ACTION_UP:
-			if (emptyListClickListener != null) {
-				final ListAdapter a = getAdapter();
-				if (a == null || a.getCount() == 0)
-					emptyListClickListener.onClick(this);
+			if (tracking) {
+				tracking = false;
+				trackTouchEvent((int)event.getY());
+				return true;
+			} else if (emptyListClickListener != null && itemCount == 0) {
+				emptyListClickListener.onClick(this);
+			}
+			break;
+		case MotionEvent.ACTION_CANCEL:
+			if (tracking) {
+				tracking = false;
+				invalidate();
 			}
 			break;
 		}
 		return super.onTouchEvent(event);
 	}
 	
+	private void updateScrollBarThumb(boolean updateEverything) {
+		final int sbh = (bottom - top);
+		if (itemCount == 0 || sbh <= 0) {
+			scrollBarThumbHeight = 0;
+		} else {
+			if (itemHeight <= 0) {
+				final View v = getChildAt(0);
+				if (v == null) {
+					scrollBarThumbHeight = 0;
+					return;
+				}
+				itemHeight = ((BgListItem)v).predictHeight();
+				contentsHeight = (itemCount * itemHeight);
+				final int roundedH = itemHeight * (height / itemHeight);
+				if (roundedH != height)
+					heightOffset = (roundedH + itemHeight) - height;
+			} else if (updateEverything) {
+				contentsHeight = (itemCount * itemHeight);
+				final int roundedH = itemHeight * (height / itemHeight);
+				if (roundedH != height)
+					heightOffset = (roundedH + itemHeight) - height;
+			}
+			final int vh = height + heightOffset;
+			if (contentsHeight <= vh) {
+				scrollBarThumbHeight = 0;
+			} else {
+				scrollBarThumbHeight = (sbh * vh) / contentsHeight;
+				if (scrollBarThumbHeight < UI._8dp)
+					scrollBarThumbHeight = UI._8dp;
+				scrollBarThumbTop = top + (((sbh - scrollBarThumbHeight) * getFirstVisiblePosition() * itemHeight) / (contentsHeight - vh));
+			}
+		}
+	}
+	
+	public void setScrollBarType(int scrollBarType) {
+		switch (scrollBarType) {
+		case SCROLLBAR_LARGE:
+			if (this.scrollBarType == SCROLLBAR_LARGE)
+				return;
+			ignorePadding = true;
+			super.setVerticalScrollBarEnabled(false);
+			super.setOnScrollListener(this);
+			ignorePadding = false;
+			this.scrollBarType = SCROLLBAR_LARGE;
+			scrollBarWidth = (UI.defaultControlSize >> 1);
+			updateScrollBarThumb(true);
+			break;
+		case SCROLLBAR_INDEXED:
+			if (this.scrollBarType == SCROLLBAR_INDEXED)
+				return;
+			ignorePadding = true;
+			super.setVerticalScrollBarEnabled(false);
+			super.setOnScrollListener(this);
+			ignorePadding = false;
+			this.scrollBarType = SCROLLBAR_INDEXED;
+			scrollBarWidth = (UI.defaultControlSize >> 1);
+			break;
+		default:
+			if (this.scrollBarType == SCROLLBAR_NONE)
+				return;
+			ignorePadding = true;
+			super.setOnScrollListener(null);
+			super.setVerticalScrollBarEnabled(true);
+			ignorePadding = false;
+			this.scrollBarType = SCROLLBAR_NONE;
+			scrollBarWidth = 0;
+			break;
+		}
+		updateRightPadding();
+	}
+	
+	private void updateRightPadding() {
+		right = width - (rightPadding + scrollBarWidth);
+		super.setPadding(getPaddingLeft(), topPadding, rightPadding + scrollBarWidth, bottomPadding);
+	}
+	
 	@Override
 	public void setPadding(int left, int top, int right, int bottom) {
-		super.setPadding(left, top, UI.customScrollBar ? (right + UI.defaultControlContentsSize) : right, bottom);
+		if (ignorePadding)
+			return;
+		this.top = top + UI._2dp;
+		this.right = width - (right + scrollBarWidth);
+		this.bottom = height - bottom - UI._2dp;
+		super.setPadding(left, (topPadding = top), (rightPadding = right) + scrollBarWidth, (bottomPadding = bottom));
 	}
 	
 	private void defaultKeyDown(int keyCode) {
-		final BaseList<?> a = (BaseList<?>)getAdapter();
-		if (a == null)
+		if (adapter == null)
 			return;
-		final int s = getNewPosition(a.getSelection(), keyCode, true);
-		if (s >= 0 && s < a.getCount()) {
-			a.setSelection(s, true);
+		final int s = getNewPosition(adapter.getSelection(), keyCode, true);
+		if (s >= 0 && s < itemCount) {
+			adapter.setSelection(s, true);
 			if (s <= getFirstVisiblePosition() || s >= getLastVisiblePosition())
 				centerItem(s, false);
 		}
@@ -373,7 +520,6 @@ public final class BgListView extends ListView {
 	
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		final BaseList<?> a;
 		if (isEnabled()) {
 			switch (keyCode) {
 			case KeyEvent.KEYCODE_DPAD_UP:
@@ -382,14 +528,13 @@ public final class BgListView extends ListView {
 				//somewhere else when the list is empty, or when the
 				//selection is not set to wrap around and it is at
 				//the top/bottom of the list
-				a = (BaseList<?>)getAdapter();
-				if (a == null || a.getCount() == 0) {
+				if (adapter == null || itemCount == 0) {
 					keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
 				} else if (!UI.wrapAroundList) {
 					if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-						if (a.getSelection() == 0)
+						if (adapter.getSelection() == 0)
 							keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
-					} else if (a.getSelection() == (a.getCount() - 1)) {
+					} else if (adapter.getSelection() == (itemCount - 1)) {
 						keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
 					}
 				}
@@ -397,11 +542,8 @@ public final class BgListView extends ListView {
 			case KeyEvent.KEYCODE_ENTER:
 			case KeyEvent.KEYCODE_SPACE:
 			case KeyEvent.KEYCODE_DPAD_CENTER:
-				if (emptyListClickListener != null) {
-					a = (BaseList<?>)getAdapter();
-					if (a == null || a.getCount() == 0)
-						emptyListClickListener.onClick(this);
-				}
+				if (emptyListClickListener != null && itemCount == 0)
+					emptyListClickListener.onClick(this);
 				break;
 			case KeyEvent.KEYCODE_DPAD_LEFT:
 			case KeyEvent.KEYCODE_DPAD_RIGHT:
@@ -439,16 +581,47 @@ public final class BgListView extends ListView {
 		}
 	}*/
 	
+	@SuppressWarnings("unchecked")
+	@Override
+	public void setAdapter(ListAdapter adapter) {
+		this.adapter = (BaseList<? extends BaseItem>)adapter;
+		itemCount = ((adapter == null) ? 0 : adapter.getCount());
+		if (scrollBarType == SCROLLBAR_LARGE)
+			updateScrollBarThumb(true);
+		super.setAdapter(adapter);
+	}
+	
+	@Override
+	protected void handleDataChanged() {
+		itemCount = ((adapter == null) ? 0 : adapter.getCount());
+		if (scrollBarType == SCROLLBAR_LARGE)
+			updateScrollBarThumb(true);
+		super.handleDataChanged();
+	}
+	
+	@Override
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+		if (tracking)
+			return;
+		if (scrollBarType == SCROLLBAR_LARGE) {
+			updateScrollBarThumb(false);
+			//invalidate();
+		}
+	}
+	
+	@Override
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+	}
+	
 	@Override
 	public void onDraw(Canvas canvas) {
 		//there is no need to call super.onDraw() here, as ListView does
 		//not override this method... therefore, it does nothing!
 		//super.onDraw(canvas);
-		final ListAdapter a = getAdapter();
-		if (a == null || a.getCount() == 0) {
+		if (itemCount == 0) {
 			if (emptyLayout != null) {
-				final float x = (float)((getWidth() >> 1) - (emptyLayout.getWidth() >> 1));
-				final float y = (float)((getHeight() >> 1) - (emptyLayout.getHeight() >> 1));
+				final float x = (float)((width >> 1) - (emptyLayout.getWidth() >> 1));
+				final float y = (float)((height >> 1) - (emptyLayout.getHeight() >> 1));
 				canvas.translate(x, y);
 				UI.textPaint.setColor(UI.color_text_disabled);
 				UI.textPaint.setTextSize(UI._22sp);
@@ -458,8 +631,24 @@ public final class BgListView extends ListView {
 				getDrawingRect(UI.rect);
 				UI.drawEmptyListString(canvas);
 			}
-		} else if (UI.customScrollBar) {
-			
+		} else if (scrollBarType == SCROLLBAR_LARGE) {
+			UI.rect.left = right + (scrollBarWidth >> 1) - (UI.strokeSize >> 1);
+			UI.rect.right = UI.rect.left + UI.strokeSize;
+			UI.rect.top = top + UI._4dp;
+			UI.rect.bottom = bottom - UI._4dp;
+			UI.fillRect(canvas, UI.color_divider);
+			if (scrollBarThumbHeight > 0) {
+				UI.rect.left = right + UI._2dp;
+				UI.rect.top = scrollBarThumbTop;
+				UI.rect.right = width - UI._2dp;
+				UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
+				if (tracking) {
+					UI.fillRect(canvas, UI.color_selected_pressed);
+					UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
+				} else {
+					UI.fillRect(canvas, UI.color_divider);
+				}
+			}
 		}
 	}
 	

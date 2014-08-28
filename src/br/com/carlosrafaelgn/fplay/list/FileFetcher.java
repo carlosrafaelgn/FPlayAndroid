@@ -90,8 +90,10 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	public String unknownArtist;
 	public final String path;
 	public FileSt[] files;
+	public String[] sections;
+	public int[] sectionPositions;
 	public int count;
-	public final boolean playAfterFetching, oldBrowserBehavior, isInTouchMode;
+	public final boolean playAfterFetching, oldBrowserBehavior, isInTouchMode, createSections;
 	private Throwable notifyE;
 	private Listener listener;
 	private boolean recursive;
@@ -123,25 +125,25 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		return supportedTypes.contains(name.substring(i).toLowerCase(Locale.US));
 	}
 	
-	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode) {
-		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, false, false, isInTouchMode);
+	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode, boolean createSections) {
+		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, false, false, isInTouchMode, createSections);
 		f.fetch();
 		return f;
 	}
 	
-	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching) {
-		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false);
+	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean createSections) {
+		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false, createSections);
 		f.fetch();
 		return f;
 	}
 	
-	public static FileFetcher fetchFilesInThisThread(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching) {
-		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false);
+	public static FileFetcher fetchFilesInThisThread(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean createSections) {
+		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false, createSections);
 		f.run();
 		return f;
 	}
 	
-	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean isInTouchMode) {
+	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean isInTouchMode, boolean createSections) {
 		this.files = new FileSt[LIST_DELTA];
 		this.path = path;
 		this.listener = listener;
@@ -151,6 +153,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		this.playAfterFetching = playAfterFetching;
 		this.oldBrowserBehavior = UI.oldBrowserBehavior;
 		this.isInTouchMode = isInTouchMode;
+		this.createSections = createSections;
 		this.count = 0;
 	}
 	
@@ -767,6 +770,87 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		ArraySorter.sort(this.files, 0, c, this);
 	}
 	
+	public void computeSections() {
+		if (!createSections || count < 1) {
+			sections = null;
+			sectionPositions = null;
+			return;
+		}
+		int sectionIdx = 0, i = 1, currentCount = 1;
+		int[] charCount = new int[100]; //no more than 100 groups allowed
+		int[] pos = new int[100];
+		char[] chars = new char[100];
+		char current, last = (char)Character.toUpperCase((int)files[0].name.charAt(0));
+		if (last < 'A')
+			last = '#';
+		chars[0] = last;
+		pos[0] = 0;
+		while (i < count && sectionIdx < 100) {
+			current = (char)Character.toUpperCase((int)files[i].name.charAt(0));
+			if (current < 'A')
+				current = '#';
+			if (current != last) {
+				charCount[sectionIdx] = currentCount;
+				sectionIdx++;
+				currentCount = 1;
+				last = current;
+				if (sectionIdx < 100) {
+					chars[sectionIdx] = last;
+					pos[sectionIdx] = i;
+				}
+			} else {
+				currentCount++;
+			}
+			i++;
+		}
+		if (currentCount != 0 && sectionIdx < 100) {
+			charCount[sectionIdx] = currentCount;
+			sectionIdx++;
+		}
+		//we must not create more than 27 sections
+		if (sectionIdx > 27) {
+			//sort by charCount (ignoring the first section, which is always included)
+			//a insertion-sort-like sort should do it :)
+			for (i = 2; i < sectionIdx; i++) {
+				final int c = charCount[i];
+				final int p = pos[i];
+				final char ch = chars[i];
+				int j = i - 1;
+				//ignore section 0
+				while (j > 0 && c > charCount[j]) {
+					charCount[j + 1] = charCount[j];
+					pos[j + 1] = pos[j];
+					chars[j + 1] = chars[j];
+					charCount[j] = c;
+					pos[j] = p;
+					chars[j] = ch;
+					j--;
+				}
+			}
+			sectionIdx = 27;
+			//now we take the first 27 sections, and sort them by pos
+			for (i = 2; i < 27; i++) {
+				final int p = pos[i];
+				final char ch = chars[i];
+				int j = i - 1;
+				//ignore section 0
+				while (j > 0 && p < pos[j]) {
+					pos[j + 1] = pos[j];
+					chars[j + 1] = chars[j];
+					pos[j] = p;
+					chars[j] = ch;
+					j--;
+				}
+			}
+		}
+		sections = new String[sectionIdx];
+		sectionPositions = new int[sectionIdx];
+		for (i = sectionIdx - 1; i >= 0; i--) {
+			sections[i] = Character.toString(chars[i]);
+			sectionPositions[i] = pos[i];
+		}
+	}
+	
 	@Override
 	public int compare(FileSt a, FileSt b) {
 		if (a.isDirectory == b.isDirectory)
@@ -794,8 +878,9 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			} else if (path.charAt(0) == FileSt.PRIVATE_FILETYPE_ID) {
 				fetchPrivateFiles(path);
 			} else if (path.charAt(0) == FileSt.ARTIST_ROOT_CHAR) {
-				if (path.startsWith(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT)) {
+				if (path.startsWith(FileSt.ARTIST_PREFIX)) {
 					fetchArtists();
+					computeSections();
 				} else {
 					final int p1 = path.indexOf(File.separatorChar);
 					final int p2 = path.lastIndexOf(File.separatorChar, path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR));
@@ -844,12 +929,15 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 					}
 				}
 			} else if (path.charAt(0) == FileSt.ALBUM_ROOT_CHAR) {
-				if (path.startsWith(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT))
+				if (path.startsWith(FileSt.ALBUM_PREFIX)) {
 					fetchAlbums(null);
-				else
+					computeSections();
+				} else {
 					fetchTracks(path);
+				}
 			} else {
 				fetchFiles(path, true);
+				computeSections();
 			}
 		} catch (Throwable ex) {
 			e = ex;

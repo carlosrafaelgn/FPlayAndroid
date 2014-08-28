@@ -481,11 +481,11 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		shuffledItemsAlreadyPlayed = 0;
 	}
 	
-	public void refreshExtraInfo() {
+	public void updateExtraInfo() {
 		//synchronized (sync) {
 			//don't mess up with modificationVersion as it is not affected by this operation
 			for (int i = count - 1; i >= 0; i--)
-				items[i].refreshExtraInfo();
+				items[i].updateExtraInfo();
 			//don't mess up with suffling as it is not affected by this operation
 		//}
 		notifyCheckedChanged();

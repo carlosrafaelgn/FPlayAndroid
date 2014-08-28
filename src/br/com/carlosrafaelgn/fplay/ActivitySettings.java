@@ -294,7 +294,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optExtraInfoMode) {
 			Song.extraInfoMode = item.getItemId();
 			optExtraInfoMode.setSecondaryText(getExtraInfoModeString(Song.extraInfoMode));
-			Player.songs.refreshExtraInfo();
+			Player.songs.updateExtraInfo();
 			WidgetMain.updateWidgets(getApplication());
 		} else if (lastMenuView == optForceOrientation) {
 			UI.forcedOrientation = item.getItemId();
@@ -838,7 +838,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
 				final View v = panelSettings.getChildAt(i);
 				if (v != null && (v instanceof SettingView))
-					((SettingView)v).refreshVerticalMargin();
+					((SettingView)v).updateVerticalMargin();
 			}
 			panelSettings.requestLayout();
 		} else if (view == optExtraSpacing) {

@@ -78,7 +78,7 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 	private boolean loading;
 	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
-	private void refreshMenu(int count) {
+	private void updateMenu(int count) {
 		boolean mnu = (count != 0 && btnURL.getVisibility() != View.VISIBLE);
 		if (mnu) {
 			btnMenu.setVisibility(View.VISIBLE);
@@ -124,7 +124,7 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 		if (list != null)
 			list.setCustomEmptyText(started ? "" : null);
 		if (!started)
-			refreshMenu(count);
+			updateMenu(count);
 	}
 	
 	@Override
@@ -322,7 +322,7 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 			btnHome.setVisibility(View.VISIBLE);
 			btnUp.setVisibility(View.VISIBLE);
 		} else {
-			refreshMenu(0);
+			updateMenu(0);
 			btnURL.setVisibility(View.VISIBLE);
 			btnGoBack.setNextFocusRightId(R.id.btnURL);
 			UI.setNextFocusForwardId(btnGoBack, R.id.btnURL);
@@ -349,7 +349,7 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 			Player.originalPath = to;
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
-		fileList.setPath(to, from, list.isInTouchMode());
+		fileList.setPath(to, from, list.isInTouchMode(), false);
 	}
 	
 	@Override

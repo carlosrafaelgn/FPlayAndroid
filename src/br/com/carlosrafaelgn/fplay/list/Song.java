@@ -173,7 +173,7 @@ public final class Song extends BaseItem {
 			if (album.length() == 0)
 				album = "-";
 		}
-		refreshExtraInfo();
+		updateExtraInfo();
 		if (track <= 0)
 			track = -1;
 		if (lengthMS <= 0)
@@ -191,7 +191,7 @@ public final class Song extends BaseItem {
 		return title;
 	}
 	
-	public void refreshExtraInfo() {
+	public void updateExtraInfo() {
 		if (isHttp) {
 			extraInfo = "";
 		} else {

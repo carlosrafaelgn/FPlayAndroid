@@ -80,10 +80,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
-	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
+	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea, sectionsEnabled;
 	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
-	private void refreshOverallLayout() {
+	private void updateOverallLayout() {
 		RelativeLayout.LayoutParams rp;
 		if (isAtHome) {
 			lblPath.setPadding(0, 0, 0, 0);
@@ -141,9 +141,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 	}
 	
-	private void refreshButtons() {
+	private void updateButtons() {
 		if (!isAtHome != (chkAll.getVisibility() == View.VISIBLE))
-			refreshOverallLayout();
+			updateOverallLayout();
 		if ((checkedCount != 0) != (btnAdd.getVisibility() == View.VISIBLE)) {
 			if (checkedCount != 0) {
 				btnAdd.setVisibility(View.VISIBLE);
@@ -182,7 +182,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		chkAll.setChecked(checkedCount == fileList.getCount());
 		fileList.notifyCheckedChanged();
-		refreshButtons();
+		updateButtons();
 	}
 	
 	private void addPlayCheckedItems(final boolean play) {
@@ -227,7 +227,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 									addingFolder = true;
 							} else {
 								addingFolder = true;
-								final FileFetcher ff = FileFetcher.fetchFilesInThisThread(file.path, null, false, true, true, false);
+								final FileFetcher ff = FileFetcher.fetchFilesInThisThread(file.path, null, false, true, true, false, false);
 								if (ff.getThrowedException() == null) {
 									if (ff.count <= 0)
 										continue;
@@ -276,7 +276,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		if (list != null)
 			list.setCustomEmptyText(started ? "" : null);
 		if (!started)
-			refreshButtons();
+			updateButtons();
 	}
 	
 	@Override
@@ -342,7 +342,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				if (checkedCount < 0)
 					checkedCount = 0;
 			}
-			refreshButtons();
+			updateButtons();
 		}
 	}
 	
@@ -448,10 +448,12 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		checkedCount = 0;
 		chkAll.setChecked(false);
-		refreshButtons();
+		updateButtons();
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
-		fileList.setPath(to, from, list.isInTouchMode());
+		sectionsEnabled = ((to.length() > 0) && ((to.charAt(0) == File.separatorChar) || to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
+		list.setScrollBarType(sectionsEnabled ? BgListView.SCROLLBAR_LARGE : BgListView.SCROLLBAR_NONE);
+		fileList.setPath(to, from, list.isInTouchMode(), sectionsEnabled);
 	}
 	
 	@Override
@@ -564,10 +566,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			UI.albumArt = chkAlbumArt.isChecked();
 			for (int i = list.getChildCount() - 1; i >= 0; i--) {
 				final View v = list.getChildAt(i);
-				if (v instanceof FileView) {
+				if (v instanceof FileView)
 					((FileView)v).refreshItem();
-					v.invalidate();
-				}
 			}
 		} if (view == btnHome) {
 			if (Player.path.length() > 0)
@@ -581,7 +581,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			for (; i >= 0; i--)
 				fileList.getItemT(i).isChecked = ck;
 			fileList.notifyCheckedChanged();
-			refreshButtons();
+			updateButtons();
 		} else if (view == btnGoBackToPlayer) {
 			finish();
 		} else if (view == btnAdd) {
@@ -628,7 +628,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			for (int i = fileList.getCount() - 1; i >= 0; i--)
 				fileList.getItemT(i).isChecked = false;
 			fileList.notifyCheckedChanged();
-			refreshButtons();
+			updateButtons();
 			return true;
 		}
 		onClick(btnGoBack);
@@ -754,10 +754,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareEdgeEffectColor(getApplication());
-		//this is the opposite as in refreshButtons(), to force refreshOverallLayout()
+		//this is the opposite as in updateButtons(), to force updateOverallLayout()
 		//to be called at least once
 		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE))
-			refreshOverallLayout();
+			updateOverallLayout();
 		navigateTo(Player.path, null);
 	}
 	

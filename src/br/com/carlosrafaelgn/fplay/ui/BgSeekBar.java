@@ -156,7 +156,7 @@ public final class BgSeekBar extends View {
 		updateTextWidth();
 	}
 	
-	private void refreshContentDescription() {
+	private void updateContentDescription() {
 		String d = "";
 		if (additionalContentDescription != null)
 			d = additionalContentDescription;
@@ -174,7 +174,7 @@ public final class BgSeekBar extends View {
 	
 	public void setAdditionalContentDescription(String additionalContentDescription) {
 		this.additionalContentDescription = additionalContentDescription;
-		refreshContentDescription();
+		updateContentDescription();
 	}
 	
 	public String getText() {
@@ -184,7 +184,7 @@ public final class BgSeekBar extends View {
 	public void setText(String text) {
 		this.text = text;
 		updateTextWidth();
-		refreshContentDescription();
+		updateContentDescription();
 	}
 	
 	public void setText(int resId) {
@@ -398,12 +398,12 @@ public final class BgSeekBar extends View {
 			tracking = true;
 			setPressed(true);
 			trackTouchEvent(vertical ? event.getY() : event.getX());
+			if (getParent() != null)
+				getParent().requestDisallowInterceptTouchEvent(true);
 			break;
 		case MotionEvent.ACTION_MOVE:
 			if (!tracking)
 				return true;
-			if (getParent() != null)
-				getParent().requestDisallowInterceptTouchEvent(true);
 			trackTouchEvent(vertical ? event.getY() : event.getX());
 			break;
 		case MotionEvent.ACTION_UP:

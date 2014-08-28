@@ -42,7 +42,7 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
-public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
+public final class SongView extends View implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener {
 	private Song song;
 	private String ellipsizedTitle, ellipsizedExtraInfo;
 	private final int height, verticalMargin;
@@ -128,6 +128,11 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	
 	@Override
 	public int getMinimumHeight() {
+		return height;
+	}
+	
+	@Override
+	public int predictHeight() {
 		return height;
 	}
 	

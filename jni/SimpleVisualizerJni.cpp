@@ -66,7 +66,7 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	colorIndex = jcolorIndex;
 }
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_refreshMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
+JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_updateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
 	float* const fft = floatBuffer;
 	float* const multiplier = fft + 256;
 	if (isVoice) {
@@ -93,7 +93,7 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	const unsigned int g = ((jbgColor >> 8) & 0xff) >> 2;
 	const unsigned int b = (jbgColor & 0xff) >> 3;
 	bgColor = (unsigned short)((r << 11) | (g << 5) | b);
-	Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_refreshMultiplier(env, clazz, 0);
+	Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_updateMultiplier(env, clazz, 0);
 }
 
 JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_checkNeonMode(JNIEnv* env, jclass clazz) {

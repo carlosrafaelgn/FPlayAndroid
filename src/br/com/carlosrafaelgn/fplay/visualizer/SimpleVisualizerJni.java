@@ -53,7 +53,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	}
 	
 	private static native void setLerpAndColorIndex(boolean lerp, int colorIndex);
-	private static native void refreshMultiplier(boolean isVoice);
+	private static native void updateMultiplier(boolean isVoice);
 	private static native void init(int bgColor);
 	private static native int checkNeonMode();
 	private static native void terminate();
@@ -109,7 +109,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 			break;
 		}
 		if (item.getItemId() != MNU_COLOR)
-			refreshMultiplier(voice);
+			updateMultiplier(voice);
 		setLerpAndColorIndex(lerp, colorIndex);
 		return true;
 	}
@@ -159,7 +159,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 			state = 0;
 			break;
 		}
-		refreshMultiplier(voice);
+		updateMultiplier(voice);
 		setLerpAndColorIndex(lerp, colorIndex);
 	}
 	

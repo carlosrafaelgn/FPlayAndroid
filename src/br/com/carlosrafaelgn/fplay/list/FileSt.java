@@ -42,6 +42,7 @@ public final class FileSt extends BaseItem {
 	public static final String FAKE_PATH_ROOT = "*";
 	public static final char FAKE_PATH_ROOT_CHAR = '*';
 	public static final String FAKE_PATH_SEPARATOR = "\u001A"; //Substitute!!! Old school techniques :D
+	public static final String ARTIST_PREFIX = ARTIST_ROOT + FAKE_PATH_ROOT;
 	public static final String ALBUM_PREFIX = ALBUM_ROOT + FAKE_PATH_ROOT;
 	public static final String ARTIST_ALBUM_PREFIX = ARTIST_ROOT + File.separator;
 	public static final char FAKE_PATH_SEPARATOR_CHAR = '\u001A';
@@ -73,7 +74,7 @@ public final class FileSt extends BaseItem {
 		//	t = ((e <= i) ? path.substring(i + 1) : path.substring(i + 1, e));
 		//}
 		//this.title = t;
-		this.name = name;
+		this.name = ((name.length() == 0) ? " " : name);
 		this.specialType = 0;
 		this.file = file; //keep this here for MetadataExtractor...
 		this.albumArt = null;
@@ -82,7 +83,7 @@ public final class FileSt extends BaseItem {
 	public FileSt(String absolutePath, String name, String albumArt, int specialType) {
 		this.isDirectory = (specialType != 0);
 		this.path = absolutePath;
-		this.name = name;
+		this.name = ((name.length() == 0) ? " " : name);
 		this.albumArt = (((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
 		this.specialType = specialType;
 	}
@@ -90,7 +91,7 @@ public final class FileSt extends BaseItem {
 	public FileSt(String absolutePath, String name, String albumArt, int specialType, boolean isDirectory) {
 		this.isDirectory = isDirectory;
 		this.path = absolutePath;
-		this.name = name;
+		this.name = ((name.length() == 0) ? " " : name);
 		this.albumArt = (((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
 		this.specialType = specialType;
 	}
