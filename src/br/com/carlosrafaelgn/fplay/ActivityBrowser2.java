@@ -452,7 +452,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
 		sectionsEnabled = ((to.length() > 0) && ((to.charAt(0) == File.separatorChar) || to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
-		list.setScrollBarType(sectionsEnabled ? BgListView.SCROLLBAR_LARGE : BgListView.SCROLLBAR_NONE);
+		//list.setScrollBarType(sectionsEnabled ? UI.browserScrollBarType : BgListView.SCROLLBAR_NONE);
 		fileList.setPath(to, from, list.isInTouchMode(), sectionsEnabled);
 	}
 	
@@ -687,6 +687,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		list = (BgListView)findViewById(R.id.list);
+		list.setScrollBarType(UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
 		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);

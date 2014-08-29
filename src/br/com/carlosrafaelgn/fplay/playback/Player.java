@@ -72,6 +72,7 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
+import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
@@ -283,8 +284,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	static final int OPTBIT_EQUALIZER_ENABLED = 23;
 	static final int OPTBIT_BASSBOOST_ENABLED = 24;
 	static final int OPTBIT_VIRTUALIZER_ENABLED = 25;
-	static final int OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES = 26;
-	static final int OPTBIT_DO_NOT_ATTENUATE_VOLUME = 27;
+	private static final int OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES = 26;
+	private static final int OPTBIT_DO_NOT_ATTENUATE_VOLUME = 27;
+	private static final int OPTBIT_SCROLLBAR_TO_THE_LEFT = 28;
+	private static final int OPTBIT_SCROLLBAR_SONGLIST0 = 29;
+	private static final int OPTBIT_SCROLLBAR_SONGLIST1 = 30;
+	private static final int OPTBIT_SCROLLBAR_BROWSER0 = 31;
+	private static final int OPTBIT_SCROLLBAR_BROWSER1 = 32;
 	
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	
@@ -370,7 +376,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		//the concept of bit was added on version 38
-		if (opts.hasBits()) {
+		if (opts.hasBits() || UI.lastVersionCode == 0) {
 			//load the bit flags the new way
 			controlMode = opts.getBit(OPTBIT_CONTROLMODE);
 			bassBoostMode = opts.getBit(OPTBIT_BASSBOOSTMODE);
@@ -380,7 +386,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.displayVolumeInDB = opts.getBit(OPTBIT_DISPLAYVOLUMEINDB);
 			UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
-			UI.setFlat(opts.getBit(OPTBIT_FLAT));
+			UI.setFlat(opts.getBit(OPTBIT_FLAT, true));
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
@@ -395,8 +401,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 			UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR);
+			//new settings (cannot be loaded the old way)
 			headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
 			doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
+			UI.scrollBarToTheLeft = opts.getBit(OPTBIT_SCROLLBAR_TO_THE_LEFT);
+			UI.songListScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST1, 0) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST0, 1);
+			if (UI.songListScrollBarType == BgListView.SCROLLBAR_INDEXED)
+				UI.songListScrollBarType = BgListView.SCROLLBAR_LARGE;
+			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
 		} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -407,7 +419,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
 			UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
-			UI.setFlat(opts.getBoolean(OPT_FLAT));
+			UI.setFlat(opts.getBoolean(OPT_FLAT, true));
 			UI.albumArt = opts.getBoolean(OPT_ALBUMART, true);
 			UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
@@ -422,8 +434,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 			UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR);
-			//headsetHookDoublePressPauses is a new setting
-			//doNotAttenuateVolume is a new setting
 		}
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -494,6 +504,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.putBit(OPTBIT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
 		opts.putBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES, headsetHookDoublePressPauses);
 		opts.putBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME, doNotAttenuateVolume);
+		opts.putBit(OPTBIT_SCROLLBAR_TO_THE_LEFT, UI.scrollBarToTheLeft);
+		opts.putBit(OPTBIT_SCROLLBAR_SONGLIST0, (UI.songListScrollBarType & 1) != 0);
+		opts.putBit(OPTBIT_SCROLLBAR_SONGLIST1, (UI.songListScrollBarType & 2) != 0);
+		opts.putBit(OPTBIT_SCROLLBAR_BROWSER0, (UI.browserScrollBarType & 1) != 0);
+		opts.putBit(OPTBIT_SCROLLBAR_BROWSER1, (UI.browserScrollBarType & 2) != 0);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

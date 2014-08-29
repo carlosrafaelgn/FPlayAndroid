@@ -823,6 +823,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
 			list = (BgListView)findViewById(R.id.list);
+			list.setScrollBarType(UI.songListScrollBarType);
 			list.setOnKeyDownObserver(this);
 			list.setEmptyListOnClickListener(this);
 			list.setCustomEmptyText(getText(R.string.touch_to_add_songs));

@@ -67,9 +67,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		public int predictHeight();
 	}
 	
-	public static final int SCROLLBAR_NONE = 0;
+	public static final int SCROLLBAR_SYSTEM = 0;
 	public static final int SCROLLBAR_LARGE = 1;
 	public static final int SCROLLBAR_INDEXED = 2;
+	public static final int SCROLLBAR_NONE = 3;
 	
 	private OnAttachedObserver attachedObserver;
 	private OnBgListViewKeyDownObserver keyDownObserver;
@@ -77,8 +78,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private StaticLayout emptyLayout;
 	private BaseList<? extends BaseItem> adapter;
 	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking;
-	private int topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
-		top, right, bottom, width, height, heightOffset, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset;
+	private int leftPadding, topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
+		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, heightOffset, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState;
 	int extraState;
 	
 	public BgListView(Context context) {
@@ -107,8 +108,12 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setFadingEdgeLength(0);
 		super.setFocusableInTouchMode(false);
 		super.setFocusable(true);
+		ignorePadding = true;
 		super.setHorizontalScrollBarEnabled(false);
 		super.setVerticalScrollBarEnabled(true);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			setVerticalScrollBarPosition();
+		ignorePadding = false;
 		super.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		//setPadding(0, 0, 0, 0);
 		//setFastScrollAlwaysVisible(true);
@@ -232,12 +237,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//do not change to itemCount!
 		if (position < 0 || adapter == null || position >= adapter.getCount())
 			return;
-		final View v = getChildAt(0);
-		int y = (height >> 1);
-		if (itemHeight <= 0 && v != null)
+		final View v;
+		if (itemHeight <= 0 && (v = getChildAt(0)) != null)
 			itemHeight = ((BgListItem)v).predictHeight();
-		final int y2 = ((itemHeight <= 0) ? 0 : (itemHeight >> 1));
-		y -= ((y2 == 0) ? UI._22spBox : y2);
+		int y = (viewHeight >> 1) - (((itemHeight <= 0) ? UI._22spBox : itemHeight) >> 1);
 		if (y < 0)
 			y = 0;
 		if (smoothly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
@@ -268,7 +271,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			emptyLayout = null;
 		} else {
 			UI.textPaint.setTextSize(UI._22sp);
-			final int w = width;
+			final int w = viewWidth;
 			emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI._16dp << 1)) ? 0 : (w - (UI._16dp << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
 		}
 	}
@@ -299,11 +302,12 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (w > 0 && h > 0) {
-			width = w;
-			height = h;
-			top = topPadding + UI._2dp;
-			right = w - (rightPadding + scrollBarWidth);
-			bottom = h - bottomPadding - UI._2dp;
+			viewWidth = w;
+			viewHeight = h;
+			scrollBarTop = topPadding + UI._4dp;
+			if (!UI.scrollBarToTheLeft)
+				scrollBarLeft = w - (rightPadding + scrollBarWidth);
+			scrollBarBottom = h - bottomPadding - UI._4dp;
 			sized = true;
 			if (!notified && attached && measured && attachedObserver != null) {
 				notified = true;
@@ -356,8 +360,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	private void trackTouchEvent(int y) {
-		final int sbh = (bottom - top), vh = height + heightOffset;
-		y -= scrollBarThumbOffset + top;
+		final int sbh = (scrollBarBottom - scrollBarTop), vh = viewHeight + heightOffset;
+		y -= scrollBarThumbOffset + scrollBarTop;
 		int f;
 		if (y <= 0) {
 			y = 0;
@@ -370,11 +374,11 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			if (f >= itemCount)
 				f = itemCount - 1;
 		}
-		scrollBarThumbTop = y + top;
-		if (f == getFirstVisiblePosition()) {
-			invalidate(right, top, right + scrollBarWidth, bottom);
-			return;
-		}
+		scrollBarThumbTop = y + scrollBarTop;
+		//if (f == getFirstVisiblePosition()) {
+			invalidate(scrollBarLeft, scrollBarTop, scrollBarLeft + scrollBarWidth, scrollBarBottom);
+		//	return;
+		//}
 		setSelectionFromTop(f, 0);
 	}
 	
@@ -384,16 +388,22 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		case MotionEvent.ACTION_DOWN:
 			if (scrollBarThumbHeight == 0) break;
 			final int x = (int)event.getX();
-			if (x >= right && x < (right + scrollBarWidth)) {
+			if (x >= scrollBarLeft && x < (scrollBarLeft + scrollBarWidth)) {
 				tracking = true;
-				if (getParent() != null)
-					getParent().requestDisallowInterceptTouchEvent(true);
 				final int y = (int)event.getY();
 				if (y < scrollBarThumbTop || y >= (scrollBarThumbTop + scrollBarThumbHeight))
 					scrollBarThumbOffset = scrollBarThumbHeight >> 1;
 				else
 					scrollBarThumbOffset = y - scrollBarThumbTop;
 				trackTouchEvent(y);
+				if (scrollState == SCROLL_STATE_FLING) {
+					//simulate a simple 10ms tap, to stop the fling 
+					super.onTouchEvent(event);
+					super.onTouchEvent(MotionEvent.obtain(event.getDownTime(), event.getDownTime() + 10, MotionEvent.ACTION_UP, event.getX(), event.getY(), event.getMetaState()));
+					scrollState = SCROLL_STATE_IDLE;
+				}
+				if (getParent() != null)
+					getParent().requestDisallowInterceptTouchEvent(true);
 				return true;
 			}
 			break;
@@ -422,7 +432,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	private void updateScrollBarThumb(boolean updateEverything) {
-		final int sbh = (bottom - top);
+		final int sbh = (scrollBarBottom - scrollBarTop);
 		if (itemCount == 0 || sbh <= 0) {
 			scrollBarThumbHeight = 0;
 		} else {
@@ -434,30 +444,36 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				}
 				itemHeight = ((BgListItem)v).predictHeight();
 				contentsHeight = (itemCount * itemHeight);
-				final int roundedH = itemHeight * (height / itemHeight);
-				if (roundedH != height)
-					heightOffset = (roundedH + itemHeight) - height;
+				final int roundedH = itemHeight * (viewHeight / itemHeight);
+				if (roundedH != viewHeight)
+					heightOffset = (roundedH + itemHeight) - viewHeight;
 			} else if (updateEverything) {
 				contentsHeight = (itemCount * itemHeight);
-				final int roundedH = itemHeight * (height / itemHeight);
-				if (roundedH != height)
-					heightOffset = (roundedH + itemHeight) - height;
+				final int roundedH = itemHeight * (viewHeight / itemHeight);
+				if (roundedH != viewHeight)
+					heightOffset = (roundedH + itemHeight) - viewHeight;
 			}
-			final int vh = height + heightOffset;
+			final int vh = viewHeight + heightOffset;
 			if (contentsHeight <= vh) {
 				scrollBarThumbHeight = 0;
 			} else {
 				scrollBarThumbHeight = (sbh * vh) / contentsHeight;
 				if (scrollBarThumbHeight < UI._8dp)
 					scrollBarThumbHeight = UI._8dp;
-				scrollBarThumbTop = top + (((sbh - scrollBarThumbHeight) * getFirstVisiblePosition() * itemHeight) / (contentsHeight - vh));
+				scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * getFirstVisiblePosition() * itemHeight) / (contentsHeight - vh));
 			}
 		}
+	}
+	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void setVerticalScrollBarPosition() {
+		super.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? SCROLLBAR_POSITION_LEFT : SCROLLBAR_POSITION_RIGHT);
 	}
 	
 	public void setScrollBarType(int scrollBarType) {
 		switch (scrollBarType) {
 		case SCROLLBAR_LARGE:
+		case SCROLLBAR_INDEXED:
 			if (this.scrollBarType == SCROLLBAR_LARGE)
 				return;
 			ignorePadding = true;
@@ -468,8 +484,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			scrollBarWidth = (UI.defaultControlSize >> 1);
 			updateScrollBarThumb(true);
 			break;
-		case SCROLLBAR_INDEXED:
-			if (this.scrollBarType == SCROLLBAR_INDEXED)
+			/*if (this.scrollBarType == SCROLLBAR_INDEXED)
 				return;
 			ignorePadding = true;
 			super.setVerticalScrollBarEnabled(false);
@@ -477,34 +492,52 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			ignorePadding = false;
 			this.scrollBarType = SCROLLBAR_INDEXED;
 			scrollBarWidth = (UI.defaultControlSize >> 1);
-			break;
-		default:
+			break;*/
+		case SCROLLBAR_NONE:
 			if (this.scrollBarType == SCROLLBAR_NONE)
 				return;
 			ignorePadding = true;
 			super.setOnScrollListener(null);
-			super.setVerticalScrollBarEnabled(true);
+			super.setVerticalScrollBarEnabled(false);
 			ignorePadding = false;
 			this.scrollBarType = SCROLLBAR_NONE;
 			scrollBarWidth = 0;
 			break;
+		default:
+			if (this.scrollBarType == SCROLLBAR_SYSTEM)
+				return;
+			ignorePadding = true;
+			super.setOnScrollListener(null);
+			super.setVerticalScrollBarEnabled(true);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				setVerticalScrollBarPosition();
+			ignorePadding = false;
+			this.scrollBarType = SCROLLBAR_SYSTEM;
+			scrollBarWidth = 0;
+			break;
 		}
-		updateRightPadding();
-	}
-	
-	private void updateRightPadding() {
-		right = width - (rightPadding + scrollBarWidth);
-		super.setPadding(getPaddingLeft(), topPadding, rightPadding + scrollBarWidth, bottomPadding);
+		if (UI.scrollBarToTheLeft) {
+			scrollBarLeft = leftPadding;
+			super.setPadding(leftPadding + scrollBarWidth, topPadding, rightPadding, bottomPadding);
+		} else {
+			scrollBarLeft = (viewWidth - (rightPadding + scrollBarWidth));
+			super.setPadding(leftPadding, topPadding, rightPadding + scrollBarWidth, bottomPadding);
+		}
 	}
 	
 	@Override
 	public void setPadding(int left, int top, int right, int bottom) {
 		if (ignorePadding)
 			return;
-		this.top = top + UI._2dp;
-		this.right = width - (right + scrollBarWidth);
-		this.bottom = height - bottom - UI._2dp;
-		super.setPadding(left, (topPadding = top), (rightPadding = right) + scrollBarWidth, (bottomPadding = bottom));
+		scrollBarTop = top + UI._2dp;
+		scrollBarBottom = viewHeight - bottom - UI._2dp;
+		if (UI.scrollBarToTheLeft) {
+			scrollBarLeft = left;
+			super.setPadding((leftPadding = left) + scrollBarWidth, (topPadding = top), (rightPadding = right), (bottomPadding = bottom));
+		} else {
+			scrollBarLeft = viewWidth - (right + scrollBarWidth);
+			super.setPadding((leftPadding = left), (topPadding = top), (rightPadding = right) + scrollBarWidth, (bottomPadding = bottom));
+		}
 	}
 	
 	private void defaultKeyDown(int keyCode) {
@@ -603,14 +636,13 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 		if (tracking)
 			return;
-		if (scrollBarType == SCROLLBAR_LARGE) {
+		if (scrollBarType == SCROLLBAR_LARGE)
 			updateScrollBarThumb(false);
-			//invalidate();
-		}
 	}
 	
 	@Override
 	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		this.scrollState = scrollState;
 	}
 	
 	@Override
@@ -620,8 +652,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//super.onDraw(canvas);
 		if (itemCount == 0) {
 			if (emptyLayout != null) {
-				final float x = (float)((width >> 1) - (emptyLayout.getWidth() >> 1));
-				final float y = (float)((height >> 1) - (emptyLayout.getHeight() >> 1));
+				final float x = (float)((viewWidth >> 1) - (emptyLayout.getWidth() >> 1));
+				final float y = (float)((viewHeight >> 1) - (emptyLayout.getHeight() >> 1));
 				canvas.translate(x, y);
 				UI.textPaint.setColor(UI.color_text_disabled);
 				UI.textPaint.setTextSize(UI._22sp);
@@ -632,15 +664,15 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				UI.drawEmptyListString(canvas);
 			}
 		} else if (scrollBarType == SCROLLBAR_LARGE) {
-			UI.rect.left = right + (scrollBarWidth >> 1) - (UI.strokeSize >> 1);
+			UI.rect.left = scrollBarLeft + (scrollBarWidth >> 1) - (UI.strokeSize >> 1);
 			UI.rect.right = UI.rect.left + UI.strokeSize;
-			UI.rect.top = top + UI._4dp;
-			UI.rect.bottom = bottom - UI._4dp;
+			UI.rect.top = scrollBarTop + UI._4dp;
+			UI.rect.bottom = scrollBarBottom - UI._4dp;
 			UI.fillRect(canvas, UI.color_divider);
 			if (scrollBarThumbHeight > 0) {
-				UI.rect.left = right + UI._2dp;
+				UI.rect.left = scrollBarLeft + UI._4dp;
 				UI.rect.top = scrollBarThumbTop;
-				UI.rect.right = width - UI._2dp;
+				UI.rect.right = scrollBarLeft + scrollBarWidth - UI._4dp;
 				UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
 				if (tracking) {
 					UI.fillRect(canvas, UI.color_selected_pressed);

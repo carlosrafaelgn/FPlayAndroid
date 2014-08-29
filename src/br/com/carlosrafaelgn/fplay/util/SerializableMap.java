@@ -243,6 +243,18 @@ public final class SerializableMap {
 		return ((bitStorage[bitIndex >>> 3] & (1 << (bitIndex & 7))) != 0);
 	}
 	
+	public int getBitI(int bitIndex) {
+		if (bitIndex >= bitCount)
+			return 0;
+		return ((bitStorage[bitIndex >>> 3] >> (bitIndex & 7)) & 1);
+	}
+	
+	public int getBitI(int bitIndex, int defaultValue) {
+		if (bitIndex >= bitCount)
+			return defaultValue;
+		return ((bitStorage[bitIndex >>> 3] >> (bitIndex & 7)) & 1);
+	}
+	
 	public boolean containsKey(int key) {
 		return (dict.indexOfKey(key) >= 0);
 	}

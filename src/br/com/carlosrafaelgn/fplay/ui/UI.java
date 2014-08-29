@@ -175,6 +175,8 @@ public final class UI {
 	public static final String ICON_ALBUMART_OFF = "b";
 	public static final String ICON_BLUETOOTH = "W";
 	public static final String ICON_RADIO = "w";
+	public static final String ICON_HAND = "a";
+	public static final String ICON_SCROLLBAR = "c";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
@@ -351,9 +353,9 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat, albumArt, customScrollBar = true;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat, albumArt, scrollBarToTheLeft;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode;
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
 	//I know this is not the "proper" way of doing this... But this is the best way
@@ -1087,15 +1089,15 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 9) {
-			msgStartup = 9;
+		if (msgStartup >= 10) {
+			msgStartup = 10;
 			return;
 		}
 		int title = R.string.new_setting;
 		String content = "";
-		if (msgStartup < 9) {
-			msgStartup = 9;
-			content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.opt_do_not_attenuate_volume).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		if (msgStartup < 10) {
+			msgStartup = 10;
+			content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.scrollbar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 			//content = activity.getText(R.string.startup_message).toString();
 		}
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))

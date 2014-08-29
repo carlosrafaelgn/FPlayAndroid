@@ -226,5 +226,12 @@
     <string name="sort_by_artist">Сортувати по виконавець</string>
     <string name="sort_by_album">Сортувати по альбом</string>
     <string name="secondary_line_of_text">Вторинний рядку тексту</string>
+    <string name="scrollbar">Смуга прокрутки</string>
+    <string name="scrollbar_to_the_left">Помістіть смуги прокрутки з лівого боку</string>
+    <string name="scrollbar_playlist">Смуга прокрутки для відображення у списку відтворення</string>
+    <string name="scrollbar_browser_type">Смуга прокрутки для відображення при додаванні пісні</string>
+    <string name="system_integrated">Інтегроване з системою</string>
+    <string name="large">Великий</string>
+    <string name="indexed_if_possible">Індексовані (якщо це можливо)</string>
     
 </resources>

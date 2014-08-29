@@ -54,6 +54,7 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.ColorPickerView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.ObservableScrollView;
@@ -74,7 +75,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -201,6 +202,24 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, 1, 1, R.string.portrait)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o > 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optScrollBarSongList || view == optScrollBarBrowser) {
+			lastMenuView = (SettingView)view;
+			UI.prepare(menu);
+			final int d = ((view == optScrollBarSongList) ? UI.songListScrollBarType : UI.browserScrollBarType);
+			if (view == optScrollBarBrowser)
+				menu.add(0, BgListView.SCROLLBAR_INDEXED, 0, R.string.indexed_if_possible)
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_INDEXED) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, BgListView.SCROLLBAR_LARGE, 1, R.string.large)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_LARGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, BgListView.SCROLLBAR_SYSTEM, 2, R.string.system_integrated)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((d != BgListView.SCROLLBAR_INDEXED && d != BgListView.SCROLLBAR_LARGE && d != BgListView.SCROLLBAR_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			UI.separator(menu, 0, 3);
+			menu.add(1, BgListView.SCROLLBAR_NONE, 0, R.string.none)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			lastMenuView = (SettingView)view;
 			UI.prepare(menu);
@@ -300,6 +319,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.forcedOrientation = item.getItemId();
 			getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 			optForceOrientation.setSecondaryText(getOrientationString());
+		} else if (lastMenuView == optScrollBarSongList) {
+			UI.songListScrollBarType = item.getItemId();
+			optScrollBarSongList.setSecondaryText(getScrollBarString(item.getItemId()));
+		} else if (lastMenuView == optScrollBarBrowser) {
+			UI.browserScrollBarType = item.getItemId();
+			optScrollBarBrowser.setSecondaryText(getScrollBarString(item.getItemId()));
 		} else if (lastMenuView == optFadeInFocus) {
 			Player.fadeInIncrementOnFocus = item.getItemId();
 			optFadeInFocus.setSecondaryText(getFadeInString(item.getItemId()));
@@ -366,6 +391,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	private String getFadeInString(int duration) {
 		return getText((duration >= 250) ? R.string.dshort : ((duration >= 125) ? R.string.dmedium : ((duration > 0) ? R.string.dlong : R.string.none))).toString();
+	}
+	
+	private String getScrollBarString(int scrollBarType) {
+		return getText(((scrollBarType == BgListView.SCROLLBAR_INDEXED) ? R.string.indexed_if_possible : ((scrollBarType == BgListView.SCROLLBAR_LARGE) ? R.string.large : ((scrollBarType == BgListView.SCROLLBAR_NONE) ? R.string.none : R.string.system_integrated)))).toString();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -593,6 +622,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optExtraSpacing.setOnClickListener(this);
 			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false, false);
 			optForcedLocale.setOnClickListener(this);
+			optScrollBarToTheLeft = new SettingView(ctx, UI.ICON_HAND, getText(R.string.scrollbar_to_the_left).toString(), null, true, UI.scrollBarToTheLeft, false); 
+			optScrollBarToTheLeft.setOnClickListener(this);
+			optScrollBarSongList = new SettingView(ctx, UI.ICON_SCROLLBAR, getText(R.string.scrollbar_playlist).toString(), getScrollBarString(UI.songListScrollBarType), false, false, false);
+			optScrollBarSongList.setOnClickListener(this);
+			optScrollBarBrowser = new SettingView(ctx, UI.ICON_SCROLLBAR, getText(R.string.scrollbar_browser_type).toString(), getScrollBarString(UI.browserScrollBarType), false, false, false);
+			optScrollBarBrowser.setOnClickListener(this);
 			optWidgetTransparentBg = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.transparent_background).toString(), null, true, UI.widgetTransparentBg, false);
 			optWidgetTransparentBg.setOnClickListener(this);
 			optWidgetTextColor = new SettingView(ctx, UI.ICON_PALETTE, getText(R.string.text_color).toString(), null, false, false, true);
@@ -634,7 +669,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFadeInOther = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
 			optFadeInOther.setOnClickListener(this);
 			
-			headers = new TextView[5];
+			headers = new TextView[6];
 			headers[0] = addHeader(ctx, R.string.msg_turn_off_title, optAutoIdleTurnOff);
 			headers[0].setTag(0);
 			panelSettings.addView(optAutoTurnOff);
@@ -652,13 +687,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!UI.isCurrentLocaleCyrillic())
 				panelSettings.addView(optUseAlternateTypeface);
 			panelSettings.addView(optForcedLocale);
-			headers[2] = addHeader(ctx, R.string.widget, optForcedLocale);
+			headers[2] = addHeader(ctx, R.string.scrollbar, optForcedLocale);
 			headers[2].setTag(2);
+			panelSettings.addView(optScrollBarToTheLeft);
+			panelSettings.addView(optScrollBarSongList);
+			panelSettings.addView(optScrollBarBrowser);
+			headers[3] = addHeader(ctx, R.string.widget, optScrollBarBrowser);
+			headers[3].setTag(3);
 			panelSettings.addView(optWidgetTransparentBg);
 			panelSettings.addView(optWidgetTextColor);
 			panelSettings.addView(optWidgetIconColor);
-			headers[3] = addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
-			headers[3].setTag(3);
+			headers[4] = addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
+			headers[4].setTag(4);
 			panelSettings.addView(optPlayWhenHeadsetPlugged);
 			panelSettings.addView(optHandleCallKey);
 			panelSettings.addView(optVolumeControlType);
@@ -666,8 +706,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optFadeInFocus);
 			panelSettings.addView(optFadeInPause);
 			panelSettings.addView(optFadeInOther);
-			headers[4] = addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
-			headers[4].setTag(4);
+			headers[5] = addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
+			headers[5].setTag(5);
 			panelSettings.addView(optOldBrowserBehavior);
 			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optClearListWhenPlayingFolders);
@@ -736,6 +776,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsVerticalMarginLarge = null;
 		optExtraSpacing = null;
 		optForcedLocale = null;
+		optScrollBarToTheLeft = null;
+		optScrollBarSongList = null;
+		optScrollBarBrowser = null;
 		optWidgetTransparentBg = null;
 		optWidgetTextColor = null;
 		optWidgetIconColor = null;
@@ -855,6 +898,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.handleCallKey = optHandleCallKey.isChecked();
 		} else if (view == optPlayWhenHeadsetPlugged) {
 			Player.playWhenHeadsetPlugged = optPlayWhenHeadsetPlugged.isChecked();
+		} else if (view == optScrollBarToTheLeft) {
+			UI.scrollBarToTheLeft = optScrollBarToTheLeft.isChecked();
 		} else if (view == optWidgetTransparentBg) {
 			UI.widgetTransparentBg = optWidgetTransparentBg.isChecked();
 			WidgetMain.updateWidgets(getApplication());
@@ -882,7 +927,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
-		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
+		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser) {
 			CustomContextMenu.openContextMenu(view, this);
 			return;
 		}

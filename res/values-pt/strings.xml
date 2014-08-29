@@ -226,5 +226,12 @@
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>
     <string name="secondary_line_of_text">Linha secundária de texto</string>
+    <string name="scrollbar">Barra de Rolagem</string>
+    <string name="scrollbar_to_the_left">Posicionar barras de rolagem à esquerda</string>
+    <string name="scrollbar_playlist">Tipo de barra de rolagem para mostrar na lista de reprodução</string>
+    <string name="scrollbar_browser_type">Tipo de barra de rolagem para mostrar ao adicionar músicas</string>
+    <string name="system_integrated">Integrada com o sistema</string>
+    <string name="large">Larga</string>
+    <string name="indexed_if_possible">Indexada (se possível)</string>
     
 </resources>

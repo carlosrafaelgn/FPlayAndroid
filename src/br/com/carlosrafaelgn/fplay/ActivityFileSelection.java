@@ -365,6 +365,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
 		list = (BgListView)findViewById(R.id.list);
+		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
 		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
