@@ -379,7 +379,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			invalidate(scrollBarLeft, scrollBarTop, scrollBarLeft + scrollBarWidth, scrollBarBottom);
 		//	return;
 		//}
-		setSelectionFromTop(f, 0);
+		if (f != getFirstVisiblePosition() && adapter != null && f >= 0 && f < adapter.getCount())
+			setSelectionFromTop(f, 0);
 	}
 	
 	@Override
@@ -471,6 +472,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	public void setScrollBarType(int scrollBarType) {
+		tracking = false;
 		switch (scrollBarType) {
 		case SCROLLBAR_LARGE:
 		case SCROLLBAR_INDEXED:
@@ -618,6 +620,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	@Override
 	public void setAdapter(ListAdapter adapter) {
 		this.adapter = (BaseList<? extends BaseItem>)adapter;
+		tracking = false;
 		itemCount = ((adapter == null) ? 0 : adapter.getCount());
 		if (scrollBarType == SCROLLBAR_LARGE)
 			updateScrollBarThumb(true);
@@ -627,6 +630,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	@Override
 	protected void handleDataChanged() {
 		itemCount = ((adapter == null) ? 0 : adapter.getCount());
+		if (itemCount == 0)
+			tracking = false;
 		if (scrollBarType == SCROLLBAR_LARGE)
 			updateScrollBarThumb(true);
 		super.handleDataChanged();

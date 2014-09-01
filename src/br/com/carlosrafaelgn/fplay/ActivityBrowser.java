@@ -184,7 +184,7 @@ public final class ActivityBrowser extends ActivityBrowserView implements View.O
 						(new Thread("Single File Adder Thread") {
 							@Override
 							public void run() {
-								Player.songs.addFiles(fs, null, -1, 1, id == MNU_PLAYSONG, false);
+								Player.songs.addFiles(fs, null, 1, id == MNU_PLAYSONG, false);
 							}
 						}).start();
 					} catch (Throwable ex) {

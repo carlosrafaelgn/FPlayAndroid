@@ -116,7 +116,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		notifyDataSetChanged(-1, CONTENT_ADDED);
 	}
 	
-	public final void add(E[] items, int position, int count) {
+	public final void add(int position, E[] items, int firstIndex, int count) {
 		if (count <= 0)
 			return;
 		
@@ -131,7 +131,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			modificationVersion++;
 			if (this.count != position)
 				System.arraycopy(this.items, position, this.items, position + count, this.count - position);
-			System.arraycopy(items, 0, this.items, position, count);
+			System.arraycopy(items, firstIndex, this.items, position, count);
 			this.count += count;
 			if (current >= position)
 				current += count;
@@ -145,7 +145,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		//}
 		
 		notifyDataSetChanged(-1, CONTENT_ADDED);
-	}	
+	}
 	
 	public final void clear() {
 		//synchronized (sync) {

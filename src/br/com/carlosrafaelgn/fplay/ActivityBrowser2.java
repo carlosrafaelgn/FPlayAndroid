@@ -246,7 +246,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 							else
 								Player.songs.addingEnded();
 						} else {
-							Player.songs.addFiles(null, filesToAdd.iterator(), -1, filesToAdd.size(), play, addingFolder);
+							Player.songs.addFiles(null, filesToAdd.iterator(), filesToAdd.size(), play, addingFolder);
 						}
 					} catch (Throwable ex) {
 						Player.songs.addingEnded();

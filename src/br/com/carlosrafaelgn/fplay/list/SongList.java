@@ -45,6 +45,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 import android.content.Context;
+import android.os.Message;
 import android.view.View;
 import android.view.ViewGroup;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -178,11 +179,11 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 				}
 			});
 		} else {
-			addFiles(fetcher.files, null, -1, fetcher.count, fetcher.playAfterFetching, true);
+			addFiles(fetcher.files, null, fetcher.count, fetcher.playAfterFetching, true);
 		}
 	}
 	
-	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, final int position, int count, final boolean play, final boolean isAddingFolder) {
+	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, int count, boolean play, boolean isAddingFolder) {
 		if (((files == null || files.length == 0) && (iterator == null)) || count <= 0) {
 			addingEnded();
 			return;
@@ -193,45 +194,70 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		}
 		if (files != null && count > files.length)
 			count = files.length;
-		final Song[] songs = new Song[count];
-		int f = 0;
-		if (songs != null) {
+		class Closure implements MainHandler.Callback {
+			public final Song[] songs;
+			private int idx, positionToSelect;
+			private boolean firstTime;
+			private final boolean clearList, playAfterwards;
+			Closure(int count, boolean clearList, boolean playAfterwards) {
+				songs = new Song[count];
+				idx = 0;
+				firstTime = true;
+				this.clearList = clearList;
+				this.playAfterwards = playAfterwards;
+			}
+			@Override
+			public boolean handleMessage(Message msg) {
+				if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+					return true;
+				if (firstTime) {
+					if (clearList)
+						clear();
+					positionToSelect = getCount();
+				}
+				int localCount = msg.what;
+				if (localCount > songs.length)
+					localCount = songs.length;
+				if (idx < localCount) {
+					add(-1, songs, idx, localCount - idx);
+					idx = localCount;
+				}
+				if (firstTime) {
+					firstTime = false;
+					Player.setSelectionAfterAdding(positionToSelect);
+					if (playAfterwards)
+						Player.play(positionToSelect);
+				}
+				return true;
+			}
+		}
+		if (count > 0) {
+			final Closure c = new Closure(count, play && isAddingFolder && Player.clearListWhenPlayingFolders, play);
 			final byte[][] tmpPtr = new byte[][] { new byte[256] };
+			int f = 0;
 			if (files != null) {
 				for (int i = 0; i < count; i++) {
 					if (!files[i].isDirectory) {
-						songs[f] = new Song(files[i], tmpPtr);
+						c.songs[f] = new Song(files[i], tmpPtr);
 						f++;
+						if ((f & 3) == 1)
+							MainHandler.sendMessage(c, f);
 					}
 				}
 			} else {
 				while (iterator.hasNext()) {
 					final FileSt file = iterator.next();
 					if (!file.isDirectory) {
-						songs[f] = new Song(file, tmpPtr);
+						c.songs[f] = new Song(file, tmpPtr);
 						f++;
+						if ((f & 3) == 1)
+							MainHandler.sendMessage(c, f);
 					}
 				}
 			}
+			MainHandler.sendMessage(c, f);
 		}
 		addingEnded();
-		if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
-			return;
-		final int songCount = f;
-		MainHandler.postToMainThread(new Runnable() {
-			@Override
-			public void run() {
-				if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
-					return;
-				if (play && isAddingFolder && Player.clearListWhenPlayingFolders)
-					clear();
-				final int p = getCount();
-				add(songs, position, songCount);
-				Player.setSelectionAfterAdding(p);
-				if (play)
-					Player.play(p);
-			}
-		});
 	}
 	
 	//--------------------------------------------------------------------------------------------
@@ -317,7 +343,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			if (songs.length == 0)
 				modificationVersion++; //increment here, since add() does not increment when count is 0
 			else
-				add(songs, -1, songs.length);
+				add(-1, songs, 0, songs.length);
 			if (positionToSelect >= this.count) {
 				positionToSelect = -1;
 			} else if (positionToSelect >= 0) {
