@@ -278,6 +278,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	
 	@Override
 	protected void onAttachedToWindow() {
+		ignorePadding = true;
 		super.onAttachedToWindow();
 		attached = true;
 		if (!notified && measured && sized && attachedObserver != null) {
@@ -285,6 +286,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			attachedObserver.onBgListViewAttached(this);
 			attachedObserver = null;
 		}
+		ignorePadding = false;
 	}
 	
 	@Override
@@ -518,6 +520,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			scrollBarWidth = 0;
 			break;
 		}
+		ignorePadding = true;
 		if (UI.scrollBarToTheLeft) {
 			scrollBarLeft = leftPadding;
 			super.setPadding(leftPadding + scrollBarWidth, topPadding, rightPadding, bottomPadding);
@@ -525,6 +528,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			scrollBarLeft = (viewWidth - (rightPadding + scrollBarWidth));
 			super.setPadding(leftPadding, topPadding, rightPadding + scrollBarWidth, bottomPadding);
 		}
+		ignorePadding = false;
 	}
 	
 	@Override

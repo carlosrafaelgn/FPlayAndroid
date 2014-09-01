@@ -60,7 +60,7 @@ public final class BgSeekBar extends View {
 	private String additionalContentDescription, text;
 	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textBgY, textSize, textSizeIdx, keyIncrement;
 	private boolean insideList, vertical, tracking, drawTextFirst, sliderMode;
-	private int state, thumbWidth;
+	private int state, thumbWidth, size;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
 	
@@ -133,6 +133,7 @@ public final class BgSeekBar extends View {
 	}
 	
 	public void setTextSizeIndex(int index) {
+		size = UI.defaultControlSize;
 		switch (index) {
 		case 2:
 			textSizeIdx = 2;
@@ -153,6 +154,15 @@ public final class BgSeekBar extends View {
 			textY = textBgY + UI._14spYinBox;
 			break;
 		}
+		updateTextWidth();
+	}
+	
+	public void setSize(int size, int textSize, int bgY, int y) {
+		this.size = size;
+		this.textSizeIdx = -1;
+		this.textSize = textSize;
+		this.textBgY = bgY;
+		this.textY = y;
 		updateTextWidth();
 	}
 	
@@ -338,27 +348,27 @@ public final class BgSeekBar extends View {
 	
 	@Override
 	protected int getSuggestedMinimumWidth() {
-		return UI.defaultControlSize;
+		return size;
 	}
 	
 	@Override
 	public int getMinimumWidth() {
-		return UI.defaultControlSize;
+		return size;
 	}
 	
 	@Override
 	protected int getSuggestedMinimumHeight() {
-		return UI.defaultControlSize;
+		return size;
 	}
 	
 	@Override
 	public int getMinimumHeight() {
-		return UI.defaultControlSize;
+		return size;
 	}
 	
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		 setMeasuredDimension(resolveSize(UI.defaultControlSize, widthMeasureSpec), resolveSize(UI.defaultControlSize, heightMeasureSpec));
+		 setMeasuredDimension(resolveSize(size, widthMeasureSpec), resolveSize(size, heightMeasureSpec));
 	}
 	
 	@Override

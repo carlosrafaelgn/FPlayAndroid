@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay;
 
 import android.content.Context;
+import android.graphics.Paint.FontMetrics;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -516,13 +517,34 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			}
 			chkEqualizer.setChecked(Equalizer.isEnabled());
 			
-			final int bandCount = Equalizer.getBandCount();
+			final int bandCount = Equalizer.getBandCount() ;
 			if (bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
 				initBarsAndFrequencies(bandCount);
 			int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));
-			final int screenW = getDecorViewWidth();
-			while (hMargin > 0 && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > screenW)
+			int availableScreenW = getDecorViewWidth();
+			if (UI.isLargeScreen)
+				availableScreenW -= ((UI.getViewPaddingForLargeScreen() << 1) + (UI._16dp << 1));
+			else
+				availableScreenW -= (UI._8dp << 1);
+			while (hMargin > UI._1dp && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
 				hMargin--;
+			int size = 0, textSize = 0, bgY = 0, y = 0;
+			if (hMargin <= UI._1dp) {
+				//oops... the bars didn't fit inside the screen... we must adjust everything!
+				hMargin = ((bandCount >= 10) ? UI._1dp : UI._4dp);
+				size = UI.defaultControlSize - 1;
+				while (size > UI._4dp && ((bandCount * size) + ((bandCount - 1) * hMargin)) > availableScreenW)
+					size--;
+				textSize = size - (UI._8dp << 1) - (UI.strokeSize << 1) - (UI._1dp << 1);
+				if (textSize < UI._4dp)
+					textSize = UI._4dp;
+				UI.textPaint.setTextSize(textSize);
+				final FontMetrics fm = UI.textPaint.getFontMetrics();
+				final int box = (int)(fm.descent - fm.ascent + 0.5f);
+				final int yInBox = box - (int)(fm.descent);
+				bgY = (size >> 1) - (box >> 1);
+				y = bgY + yInBox;
+			}
 			if (panelBars == null) {
 				panelBars = new LinearLayout(ctx);
 				lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -543,7 +565,10 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 					bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 10) : ((level - min) / 10));
 					bar.setOnBgSeekBarChangeListener(this);
 					bar.setInsideList(true);
-					bar.setTextSizeIndex(barTextSizeIndex);
+					if (size != 0)
+						bar.setSize(size, textSize, bgY, y);
+					else
+						bar.setTextSizeIndex(barTextSizeIndex);
 					bars[i] = bar;
 					bar.setId(i + 1);
 					bar.setNextFocusLeftId(i);

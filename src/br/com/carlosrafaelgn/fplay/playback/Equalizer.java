@@ -184,7 +184,7 @@ public final class Equalizer {
 	}
 	
 	public static int getBandFrequency(int band) {
-		return ((bandFrequencies == null) ? 0 : bandFrequencies[band]);
+		return ((bandFrequencies == null || band >= bandFrequencies.length) ? 0 : bandFrequencies[band]);
 	}
 	
 	public static int getMinBandLevel() {
