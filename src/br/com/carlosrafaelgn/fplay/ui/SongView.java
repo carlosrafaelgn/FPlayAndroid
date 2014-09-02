@@ -54,6 +54,7 @@ public final class SongView extends View implements BgListView.BgListItem, View.
 		setOnLongClickListener(this);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		height = (UI._1dp << 1) + (verticalMargin << 1) + UI._22spBox + UI._14spBox;
+		super.setDrawingCacheEnabled(false);
 	}
 	
 	private void processEllipsis() {

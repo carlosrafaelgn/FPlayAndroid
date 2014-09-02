@@ -47,14 +47,26 @@ public final class ObservableScrollView extends ScrollView {
 	
 	public ObservableScrollView(Context context) {
 		super(context);
+		
+		super.setDrawingCacheEnabled(false);
+		super.setChildrenDrawingCacheEnabled(false);
+		super.setAnimationCacheEnabled(false);
 	}
 	
 	public ObservableScrollView(Context context, AttributeSet attrs) {
 		super(context, attrs);
+		
+		super.setDrawingCacheEnabled(false);
+		super.setChildrenDrawingCacheEnabled(false);
+		super.setAnimationCacheEnabled(false);
 	}
 	
 	public ObservableScrollView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+		
+		super.setDrawingCacheEnabled(false);
+		super.setChildrenDrawingCacheEnabled(false);
+		super.setAnimationCacheEnabled(false);
 	}
 	
 	public void setOnScrollListener(OnScrollListener listener) {

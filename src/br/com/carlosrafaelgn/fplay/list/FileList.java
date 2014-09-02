@@ -213,4 +213,14 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	public int sectionCount() {
 		return sections.length;
 	}
+	
+	@Override
+	public String[] getSectionStrings() {
+		return sections;
+	}
+	
+	@Override
+	public int[] getSectionPositions() {
+		return sectionPositions;
+	}
 }

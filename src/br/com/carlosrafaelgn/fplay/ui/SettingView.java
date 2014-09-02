@@ -196,6 +196,10 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		if (extraView != null)
 			addView(extraView);
 		updateContentDescription();
+		
+		super.setDrawingCacheEnabled(false);
+		super.setChildrenDrawingCacheEnabled(false);
+		super.setAnimationCacheEnabled(false);
 	}
 	
 	private void updateContentDescription() {

@@ -85,6 +85,7 @@ public final class BgSeekBar extends View {
 		sliderMode = false;
 		thumbWidth = (UI._IconBox * 90) / 100;
 		setTextSizeIndex(2);
+		super.setDrawingCacheEnabled(false);
 		super.setClickable(true);
 		super.setFocusableInTouchMode(false);
 		super.setFocusable(true);

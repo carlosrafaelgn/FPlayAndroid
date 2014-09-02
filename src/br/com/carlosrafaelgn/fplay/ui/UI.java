@@ -47,7 +47,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Paint.FontMetrics;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
@@ -454,7 +453,7 @@ public final class UI {
 		//Font Metrics in Java OR How, the hell, Should I Position This Font?!
 		//http://blog.evendanan.net/2011/12/Font-Metrics-in-Java-OR-How-the-hell-Should-I-Position-This-Font
 		textPaint.setTextSize(_22sp);
-		final FontMetrics fm = textPaint.getFontMetrics();
+		final Paint.FontMetrics fm = textPaint.getFontMetrics();
 		_22spBox = (int)(fm.descent - fm.ascent + 0.5f);
 		_22spYinBox = _22spBox - (int)(fm.descent);
 		textPaint.setTextSize(_18sp);

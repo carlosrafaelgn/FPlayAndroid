@@ -61,6 +61,7 @@ public class BgTextView extends TextView {
 	
 	private void init() {
 		super.setBackgroundResource(0);
+		super.setDrawingCacheEnabled(false);
 		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
 		super.setFocusableInTouchMode(false);

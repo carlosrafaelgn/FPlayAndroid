@@ -466,9 +466,9 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			@Override
 			public int compare(FileSt a, FileSt b) {
 				if (a.name == unknownArtist)
-					return 1;
-				else if (b.name == unknownArtist)
 					return -1;
+				else if (b.name == unknownArtist)
+					return 1;
 				return a.name.compareToIgnoreCase(b.name);
 			}
 		});
@@ -781,13 +781,13 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		int[] pos = new int[100];
 		char[] chars = new char[100];
 		char current, last = (char)Character.toUpperCase((int)files[0].name.charAt(0));
-		if (last < 'A')
+		if (last < '@' || files[0].name == unknownArtist)
 			last = '#';
 		chars[0] = last;
 		pos[0] = 0;
 		while (i < count && sectionIdx < 100) {
 			current = (char)Character.toUpperCase((int)files[i].name.charAt(0));
-			if (current < 'A')
+			if (current < '@')
 				current = '#';
 			if (current != last) {
 				charCount[sectionIdx] = currentCount;
@@ -807,8 +807,8 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			charCount[sectionIdx] = currentCount;
 			sectionIdx++;
 		}
-		//we must not create more than 27 sections
-		if (sectionIdx > 27) {
+		//we must not create more than 28 sections
+		if (sectionIdx > 28) {
 			//sort by charCount (ignoring the first section, which is always included)
 			//a insertion-sort-like sort should do it :)
 			for (i = 2; i < sectionIdx; i++) {
@@ -827,9 +827,9 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 					j--;
 				}
 			}
-			sectionIdx = 27;
-			//now we take the first 27 sections, and sort them by pos
-			for (i = 2; i < 27; i++) {
+			sectionIdx = 28;
+			//now we take the first 28 sections, and sort them by pos
+			for (i = 2; i < 28; i++) {
 				final int p = pos[i];
 				final char ch = chars[i];
 				int j = i - 1;

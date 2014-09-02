@@ -80,7 +80,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
-	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea, sectionsEnabled;
+	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
 	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
 	private void updateOverallLayout() {
@@ -451,9 +451,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		updateButtons();
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
-		sectionsEnabled = ((to.length() > 0) && ((to.charAt(0) == File.separatorChar) || to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
-		//list.setScrollBarType(sectionsEnabled ? UI.browserScrollBarType : BgListView.SCROLLBAR_NONE);
-		fileList.setPath(to, from, list.isInTouchMode(), sectionsEnabled);
+		final boolean sectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
+		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !sectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
+		fileList.setPath(to, from, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && sectionsEnabled);
 	}
 	
 	@Override
@@ -687,7 +687,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		list = (BgListView)findViewById(R.id.list);
-		list.setScrollBarType(UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
 		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);

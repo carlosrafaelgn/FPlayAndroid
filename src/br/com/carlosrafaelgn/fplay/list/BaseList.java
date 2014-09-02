@@ -49,6 +49,8 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	public static interface BaseSectionIndexer extends SectionIndexer {
 		public boolean hasSections();
 		public int sectionCount();
+		public String[] getSectionStrings();
+		public int[] getSectionPositions();
 	}
 	
 	protected static final int LIST_DELTA = 32;

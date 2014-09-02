@@ -517,7 +517,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			}
 			chkEqualizer.setChecked(Equalizer.isEnabled());
 			
-			final int bandCount = Equalizer.getBandCount() ;
+			final int bandCount = Equalizer.getBandCount();
 			if (bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
 				initBarsAndFrequencies(bandCount);
 			int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));

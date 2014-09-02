@@ -55,6 +55,7 @@ public final class RadioStationView extends View implements View.OnClickListener
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		super.setDrawingCacheEnabled(false);
 	}
 	
 	private void processEllipsis(boolean keepCurrentLayout) {

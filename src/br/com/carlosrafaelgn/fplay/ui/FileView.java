@@ -128,6 +128,7 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		this.hasButtons = hasButtons;
 		this.buttonIsCheckbox = buttonIsCheckbox;
 		buttonsVisible = hasButtons;
+		super.setDrawingCacheEnabled(false);
 	}
 	
 	private void processEllipsis() {

@@ -73,6 +73,7 @@ public final class BgButton extends Button {
 	
 	private void init() {
 		super.setBackgroundResource(0);
+		super.setDrawingCacheEnabled(false);
 		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
