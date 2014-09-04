@@ -45,6 +45,7 @@ import android.text.StaticLayout;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.AbsListView;
@@ -462,6 +463,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				}
 				if (getParent() != null)
 					getParent().requestDisallowInterceptTouchEvent(true);
+				playSoundEffect(SoundEffectConstants.CLICK);
 				return true;
 			}
 			break;
@@ -482,6 +484,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					invalidate();
 				return true;
 			} else if (emptyListClickListener != null && itemCount == 0) {
+				playSoundEffect(SoundEffectConstants.CLICK);
 				emptyListClickListener.onClick(this);
 			}
 			break;
@@ -496,6 +499,33 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			break;
 		}
 		return super.onTouchEvent(event);
+	}
+	
+	private void updateScrollBarSectionForFirstPosition() {
+		final int first = getFirstVisiblePosition();
+		if (first <= 0 || sections == null) {
+			scrollBarThumbTop = 0;
+			return;
+		}
+		int s = 0, e = sections.length - 1, m = 0;
+		while (s <= e) {
+			m = ((e + s) >> 1);
+			if (first == sectionPositions[m]) {
+				scrollBarThumbTop = m;
+				return;
+			}
+			else if (first < sectionPositions[m])
+				e = m - 1;
+			else
+				s = m + 1;
+		}
+		if (first < sectionPositions[m])
+			m--;
+		if (m < 0)
+			m = 0;
+		else if (m >= sections.length)
+			m = sections.length - 1;
+		scrollBarThumbTop = m;
 	}
 	
 	private void updateScrollBarThumb(boolean updateEverything) {
@@ -565,6 +595,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			contentsHeight = 0;
 			scrollBarThumbOffset = 0;
 		}
+		updateScrollBarSectionForFirstPosition();
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -776,8 +807,14 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 		if (tracking)
 			return;
-		if (scrollBarType == SCROLLBAR_LARGE)
+		switch (scrollBarType) {
+		case SCROLLBAR_LARGE:
 			updateScrollBarThumb(false);
+			break;
+		case SCROLLBAR_INDEXED:
+			updateScrollBarSectionForFirstPosition();
+			break;
+		}
 	}
 	
 	@Override
@@ -857,11 +894,24 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 						UI.rect.bottom = scrollBarBottom;
 						UI.fillRect(canvas, UI.color_highlight);
 						final float l = (float)(scrollBarLeft + (scrollBarWidth >> 1));
-						for (int i = 0; i < sections.length; i++) {
+						int i;
+						for (i = 0; i < scrollBarThumbTop; i++) {
 							canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
 							UI.rect.top += scrollBarThumbHeight;
 						}
-						UI.textPaint.setTextAlign(Paint.Align.LEFT);
+						UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
+						UI.textPaint.setColor(UI.color_text_selected);
+						UI.fillRect(canvas, UI.color_selected_pressed);
+						UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
+						canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
+						UI.textPaint.setColor(UI.color_text_highlight);
+						UI.rect.top = UI.rect.bottom;
+						i++;
+						for (; i < sections.length; i++) {
+							canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
+							UI.rect.top += scrollBarThumbHeight;
+						}
+						UI.textPaint.setTextAlign(Paint.Align.LEFT);			
 					}
 					break;
 				}

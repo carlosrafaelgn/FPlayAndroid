@@ -69,7 +69,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.VisualizerView;
 
-public final class ActivityVisualizer extends Activity implements Runnable, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener {
+public final class ActivityVisualizer extends Activity implements Runnable, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
 	@SuppressLint("InlinedApi")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static final class SystemUIObserver implements View.OnSystemUiVisibilityChangeListener {
@@ -154,10 +154,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen, playing, isWindowFocused, panelTopWasHidden;
-	private int fxVisualizerAudioSessionId, version;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen, playing, isWindowFocused, panelTopWasVisibleOk;
+	private float panelTopAlpha;
+	private int fxVisualizerAudioSessionId, version, panelTopLastTime, panelTopHiding;
 	private Object systemUIObserver;
-	private Timer timer;
+	private Timer timer, uiAnimTimer;
 	
 	private void hideAllUIDelayed() {
 		version++;
@@ -205,6 +206,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		if (updateInfo)
 			info.getInfo(this);
+		
+		panelTopHiding = 0;
+		panelTopAlpha = 1.0f;
 		
 		panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(info.isLandscape ? InterceptableLayout.LayoutParams.WRAP_CONTENT : InterceptableLayout.LayoutParams.MATCH_PARENT, info.isLandscape ? InterceptableLayout.LayoutParams.MATCH_PARENT : InterceptableLayout.LayoutParams.WRAP_CONTENT));
 		
@@ -452,6 +456,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			}
 		}, "Visualizer Thread", false, false, true);
 		timer.start(16);
+		uiAnimTimer = new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false);
 		
 		hideAllUIDelayed();
 	}
@@ -521,6 +526,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		resumeTimer();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			cleanupSystemUIObserver();
+		if (uiAnimTimer != null)
+			uiAnimTimer.stop();
 		info = null;
 		panelControls = null;
 		panelTop = null;
@@ -530,6 +537,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		btnPlay = null;
 		btnNext = null;
 		btnMenu = null;
+		uiAnimTimer = null;
 	}
 	
 	@Override
@@ -633,7 +641,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		} else if (view == btnMenu) {
 			onPrepareOptionsMenu(null);
 		} else if (view == visualizerView || view == panelControls) {
-			if (visualizer != null && !panelTopWasHidden)
+			if (visualizer != null && panelTopWasVisibleOk)
 				visualizer.onClick();
 		}
 	}
@@ -650,8 +658,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		switch (event.getActionMasked()) {
 		case MotionEvent.ACTION_DOWN:
 		case MotionEvent.ACTION_POINTER_DOWN:
-			if (panelTop != null && (panelTopWasHidden = (panelTop.getVisibility() != View.VISIBLE)))
-				panelTop.setVisibility(View.VISIBLE);
+			if (panelTop != null && !(panelTopWasVisibleOk = (panelTopHiding == 0 && panelTop.getVisibility() == View.VISIBLE)))
+				showPanelTop(true);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 				showSystemUI();
 			hideAllUIDelayed();
@@ -659,26 +667,72 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		return false;
 	}
-
+	
 	@Override
 	public boolean handleMessage(Message msg) {
 		switch (msg.what) {
 		case MSG_HIDE:
 			if (msg.arg1 != version || !isWindowFocused)
 				break;
-			if (panelTop != null && panelTop.getVisibility() != View.GONE)
-				panelTop.setVisibility(View.GONE);
+			showPanelTop(false);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 				hideSystemUI();
 			break;
 		case MSG_SYSTEM_UI_CHANGED:
-			final int v = ((msg.arg1 == 0) ? View.VISIBLE : View.GONE);
-			if (panelTop != null && panelTop.getVisibility() != v)
-				panelTop.setVisibility(v);
-			if (v == View.VISIBLE)
+			final boolean show = (msg.arg1 == 0);
+			showPanelTop(show);
+			if (show)
 				hideAllUIDelayed();
 			break;
 		}
 		return true;
+	}
+	
+	private void showPanelTop(boolean show) {
+		if (panelTop == null || uiAnimTimer == null)
+			return;
+		if (show) {
+			if (panelTop.getVisibility() != View.VISIBLE)
+				panelTop.setVisibility(View.VISIBLE);
+			panelTopHiding = 1;
+			if (!uiAnimTimer.isAlive()) {
+				panelTopLastTime = (int)SystemClock.uptimeMillis();
+				uiAnimTimer.start(16);
+			}
+		} else {
+			if (panelTop.getVisibility() == View.GONE)
+				return;
+			panelTopHiding = -1;
+			if (!uiAnimTimer.isAlive()) {
+				panelTopLastTime = (int)SystemClock.uptimeMillis();
+				uiAnimTimer.start(16);
+			}
+		}
+	}
+	
+	@Override
+	public void handleTimer(Timer timer, Object param) {
+		if (panelTop == null || uiAnimTimer == null || info == null)
+			return;
+		final int now = (int)SystemClock.uptimeMillis();
+		final float delta = (float)(now - panelTopLastTime) * 0.001953125f;
+		panelTopLastTime = now;
+		if (panelTopHiding < 0) {
+			panelTopAlpha -= delta;
+			if (panelTopAlpha <= 0.0f) {
+				panelTopHiding = 0;
+				panelTopAlpha = 0.0f;
+				uiAnimTimer.stop();
+				panelTop.setVisibility(View.GONE);
+			}
+		} else {
+			panelTopAlpha += delta;
+			if (panelTopAlpha >= 1.0f) {
+				panelTopHiding = 0;
+				panelTopAlpha = 1.0f;
+				uiAnimTimer.stop();
+			}
+		}
+		panelTop.setAlpha(panelTopAlpha);
 	}
 }

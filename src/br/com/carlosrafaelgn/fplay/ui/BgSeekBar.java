@@ -41,6 +41,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
@@ -411,6 +412,7 @@ public final class BgSeekBar extends View {
 			trackTouchEvent(vertical ? event.getY() : event.getX());
 			if (getParent() != null)
 				getParent().requestDisallowInterceptTouchEvent(true);
+			playSoundEffect(SoundEffectConstants.CLICK);
 			break;
 		case MotionEvent.ACTION_MOVE:
 			if (!tracking)

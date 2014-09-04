@@ -180,38 +180,8 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	}
 	
 	@Override
-	public int getPositionForSection(int sectionIndex) {
-		return ((sectionIndex < sections.length) ? sectionPositions[sectionIndex] : sectionPositions[sectionPositions.length - 1]);
-	}
-	
-	@Override
-	public int getSectionForPosition(int position) {
-		int s = 0, e = sections.length - 1, m = 0;
-		while (s <= e) {
-			m = ((e + s) >> 1);
-			if (position == sectionPositions[m])
-				break;
-			else if (position < sectionPositions[m])
-				e = m - 1;
-			else
-				s = m + 1;
-		}
-		return m;
-	}
-	
-	@Override
-	public Object[] getSections() {
-		return sections;
-	}
-	
-	@Override
 	public boolean hasSections() {
 		return (sections != nullSections);
-	}
-	
-	@Override
-	public int sectionCount() {
-		return sections.length;
 	}
 	
 	@Override
