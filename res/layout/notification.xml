@@ -6,7 +6,7 @@
 
     <ImageView
         android:id="@+id/imgIcon"
-        android:layout_width="64dp"
+        android:layout_width="56dp"
         android:layout_height="64dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
@@ -33,7 +33,10 @@
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/previous"
             android:focusable="true"
-            android:padding="4dp"
+            android:paddingBottom="4dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
             android:scaleType="centerInside" />
 
         <ImageButton
@@ -48,7 +51,10 @@
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/play"
             android:focusable="true"
-            android:padding="4dp"
+            android:paddingBottom="4dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
             android:scaleType="centerInside" />
 
         <ImageButton
@@ -61,7 +67,10 @@
             android:background="@drawable/bg_notification_button"
             android:contentDescription="@string/next"
             android:focusable="true"
-            android:padding="4dp"
+            android:paddingBottom="4dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
             android:scaleType="centerInside" />
     </RelativeLayout>
 
@@ -89,7 +98,10 @@
         android:background="@drawable/bg_notification_button"
         android:contentDescription="@string/exit"
         android:focusable="true"
-        android:padding="4dp"
+        android:paddingBottom="4dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="4dp"
         android:scaleType="centerInside" />
 
 </RelativeLayout>

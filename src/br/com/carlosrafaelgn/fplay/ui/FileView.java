@@ -48,21 +48,22 @@ import android.widget.LinearLayout;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class FileView extends LinearLayout implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
 	private AlbumArtFetcher albumArtFetcher;
 	private Handler handler;
 	private final int height, verticalMargin, usableHeight;
-	private ReleasableBitmapWrapper bitmap, albumArt, closedFolderIcon, internalIcon, externalIcon, favoriteIcon, artistIcon, albumIcon;
+	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
 	private BgButton btnAdd, btnPlay;
-	private String ellipsizedName, albumArtUri;
+	private String icon, ellipsizedName, albumArtUri;
 	private boolean buttonsVisible, pendingAlbumArtRequest;
 	private final boolean hasButtons, buttonIsCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding;
 	
-	public FileView(Context context, AlbumArtFetcher albumArtFetcher, ReleasableBitmapWrapper closedFolderIcon, ReleasableBitmapWrapper internalIcon, ReleasableBitmapWrapper externalIcon, ReleasableBitmapWrapper favoriteIcon, ReleasableBitmapWrapper artistIcon, ReleasableBitmapWrapper albumIcon, boolean hasButtons, boolean buttonIsCheckbox) {
+	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasButtons, boolean buttonIsCheckbox) {
 		super(context);
 		this.albumArtFetcher = albumArtFetcher;
 		if (albumArtFetcher != null)
@@ -70,24 +71,6 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		setGravity(Gravity.RIGHT);
-		this.closedFolderIcon = closedFolderIcon;
-		this.internalIcon = internalIcon;
-		this.externalIcon = externalIcon;
-		this.favoriteIcon = favoriteIcon;
-		this.artistIcon = artistIcon;
-		this.albumIcon = albumIcon;
-		if (closedFolderIcon != null)
-			closedFolderIcon.addRef();
-		if (internalIcon != null)
-			internalIcon.addRef();
-		if (externalIcon != null)
-			externalIcon.addRef();
-		if (favoriteIcon != null)
-			favoriteIcon.addRef();
-		if (artistIcon != null)
-			artistIcon.addRef();
-		if (albumIcon != null)
-			albumIcon.addRef();
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
 		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
@@ -180,23 +163,29 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		if (file.isDirectory) {
 			switch (specialType) {
 			case FileSt.TYPE_INTERNAL_STORAGE:
-				bitmap = internalIcon;
+				icon = UI.ICON_SCREEN;
+				//bitmap = internalIcon;
 				break;
 			case FileSt.TYPE_EXTERNAL_STORAGE:
-				bitmap = externalIcon;
+				icon = UI.ICON_SD;
+				//bitmap = externalIcon;
 				break;
 			case FileSt.TYPE_FAVORITE:
-				bitmap = favoriteIcon;
+				icon = UI.ICON_FAVORITE_ON;
+				//bitmap = favoriteIcon;
 				break;
 			case FileSt.TYPE_ARTIST:
 			case FileSt.TYPE_ARTIST_ROOT:
-				bitmap = artistIcon;
+				icon = UI.ICON_MIC;
+				//bitmap = artistIcon;
 				break;
 			case FileSt.TYPE_ALBUM_ROOT:
-				bitmap = albumIcon;
+				icon = UI.ICON_ALBUMART;
+				//bitmap = albumIcon;
 				break;
 			case FileSt.TYPE_ALBUM:
 			case FileSt.TYPE_ALBUM_ITEM:
+				icon = UI.ICON_ALBUMART;
 				ReleasableBitmapWrapper newAlbumArt = null;
 				if (UI.albumArt && albumArtFetcher != null && file.albumArt != null) {
 					albumArtUri = file.albumArt;
@@ -204,14 +193,13 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 					pendingAlbumArtRequest = (newAlbumArt == null);
 				}
 				albumArt = newAlbumArt;
-				bitmap = ((newAlbumArt == null) ? albumIcon : newAlbumArt);
 				break;
 			default:
-				bitmap = closedFolderIcon;
+				icon = UI.ICON_FOLDER;
 				break;
 			}
 		} else {
-			bitmap = null;
+			icon = null;
 		}
 		setContentDescription(file.name);
 		if (albumArt != null) {
@@ -219,7 +207,7 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 			leftPadding = usableHeight + UI._8dp;
 		} else {
 			bitmapLeftPadding = UI._8dp;
-			leftPadding = ((bitmap != null) ? (UI._8dp + bitmap.width + UI._8dp) : UI._8dp);
+			leftPadding = ((icon != null) ? (UI._8dp + UI.defaultControlContentsSize + UI._8dp) : UI._8dp);
 		}
 		processEllipsis();
 	}
@@ -317,9 +305,12 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 			//canvas.drawColor(UI.color_highlight);
 			canvas.drawColor(UI.color_selected);
 			//canvas.drawColor(UI.color_window);
-		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
-		if (bitmap != null && bitmap.bitmap != null)
-			canvas.drawBitmap(bitmap.bitmap, bitmapLeftPadding, (usableHeight >> 1) - (bitmap.height >> 1), null);
+		final int st = state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2);
+		UI.drawBgBorderless(canvas, st, true);
+		if (albumArt != null && albumArt.bitmap != null)
+			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, (usableHeight >> 1) - (albumArt.height >> 1), null);
+		else if (icon != null)
+			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, (usableHeight >> 1) - (UI.defaultControlContentsSize >> 1), UI.defaultControlContentsSize, (st == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text_highlight : UI.color_text_listitem), UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		UI.drawText(canvas, ellipsizedName, ((state != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text : UI.color_text_listitem), UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
@@ -334,34 +325,9 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 	protected void onDetachedFromWindow() {
 		albumArtFetcher = null;
 		handler = null;
-		bitmap = null;
 		if (albumArt != null) {
 			albumArt.release();
 			albumArt = null;
-		}
-		if (closedFolderIcon != null) {
-			closedFolderIcon.release();
-			closedFolderIcon = null;
-		}
-		if (internalIcon != null) {
-			internalIcon.release();
-			internalIcon = null;
-		}
-		if (externalIcon != null) {
-			externalIcon.release();
-			externalIcon = null;
-		}
-		if (favoriteIcon != null) {
-			favoriteIcon.release();
-			favoriteIcon = null;
-		}
-		if (artistIcon != null) {
-			artistIcon.release();
-			artistIcon = null;
-		}
-		if (albumIcon != null) {
-			albumIcon.release();
-			albumIcon = null;
 		}
 		file = null;
 		btnAdd = null;
@@ -429,7 +395,6 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		if (albumArt != null)
 			albumArt.release();
 		albumArt = bitmap;
-		this.bitmap = bitmap;
 		bitmapLeftPadding = (usableHeight - bitmap.width) >> 1;
 		leftPadding = usableHeight + UI._8dp;
 		processEllipsis();

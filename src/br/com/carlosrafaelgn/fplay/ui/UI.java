@@ -176,6 +176,8 @@ public final class UI {
 	public static final String ICON_RADIO = "w";
 	public static final String ICON_HAND = "a";
 	public static final String ICON_SCROLLBAR = "c";
+	public static final String ICON_SD = "d";
+	public static final String ICON_FOLDER = "f";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;

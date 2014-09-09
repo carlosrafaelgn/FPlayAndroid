@@ -148,7 +148,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	public View createView() {
-		return new FileView(Player.getService(), null, null, null, null, null, null, null, hasButtons, false);
+		return new FileView(Player.getService(), null, hasButtons, false);
 	}
 	
 	@Override

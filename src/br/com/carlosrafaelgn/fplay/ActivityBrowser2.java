@@ -39,8 +39,6 @@ import java.util.Locale;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.res.Resources;
-import android.graphics.BitmapFactory;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -67,7 +65,6 @@ import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
-import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class ActivityBrowser2 extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
 	private static final int MNU_REMOVEFAVORITE = 100;
@@ -81,7 +78,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
-	private ReleasableBitmapWrapper ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album;
 	
 	private void updateOverallLayout() {
 		RelativeLayout.LayoutParams rp;
@@ -281,7 +277,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public View createView() {
-		return new FileView(Player.getService(), albumArtFetcher, ic_closed_folder, ic_internal, ic_external, ic_favorite, ic_artist, ic_album, true, true);
+		return new FileView(Player.getService(), albumArtFetcher, true, true);
 	}
 	
 	@Override
@@ -647,31 +643,11 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
 		//is internally cached, therefore, causing an exception when we try to use it
 		//after being recycled...
-		final Resources res = getResources();
-		try {
-			ic_closed_folder = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_closed_folder));
-		} catch (Throwable ex) {
-		}
-		try {
-			ic_internal = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_internal));
-		} catch (Throwable ex) {
-		}
-		try {
-			ic_external = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_external));
-		} catch (Throwable ex) {
-		}
-		try {
-			ic_favorite = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_favorite));
-		} catch (Throwable ex) {
-		}
-		try {
-			ic_artist = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_artist));
-		} catch (Throwable ex) {
-		}
-		try {
-			ic_album = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_album));
-		} catch (Throwable ex) {
-		}
+		//final Resources res = getResources();
+		//try {
+		//	ic_closed_folder = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_closed_folder));
+		//} catch (Throwable ex) {
+		//}
 		albumArtFetcher = new AlbumArtFetcher();
 	}
 	
@@ -807,30 +783,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		UI.browserActivity = null;
 		fileList.cancel();
 		fileList = null;
-		if (ic_closed_folder != null) {
-			ic_closed_folder.release();
-			ic_closed_folder = null;
-		}
-		if (ic_internal != null) {
-			ic_internal.release();
-			ic_internal = null;
-		}
-		if (ic_external != null) {
-			ic_external.release();
-			ic_external = null;
-		}
-		if (ic_favorite != null) {
-			ic_favorite.release();
-			ic_favorite = null;
-		}
-		if (ic_artist != null) {
-			ic_artist.release();
-			ic_artist = null;
-		}
-		if (ic_album != null) {
-			ic_album.release();
-			ic_album = null;
-		}
 		if (albumArtFetcher != null) {
 			albumArtFetcher.stopAndCleanup();
 			albumArtFetcher = null;
