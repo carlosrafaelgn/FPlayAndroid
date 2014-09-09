@@ -75,7 +75,6 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		final TextView lblMsg = (TextView)findViewById(R.id.lblMsg);
 		final StringBuilder sb = new StringBuilder(1024);
 		sb.append(getText(R.string.app_more_info));
-		sb.append("\n\nFolder/Disc icons:\nhttp://www.24psd.com/ubuntu+icon+pack\n\nPhone icon:\nhttp://www.psdgraphics.com/graphics/photoshop-recreation-of-google-nexus-one-smartphone-download-psd\n\nSD card icon:\nhttp://artofapogee.blogspot.com.br/2010/02/sd-card-icon.html");
 		sb.append(getText(R.string.app_more_info2));
 		sb.append(getText(R.string.app_license));
 		lblMsg.setAutoLinkMask(Linkify.EMAIL_ADDRESSES | Linkify.WEB_URLS);
@@ -87,6 +86,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));
+		sb.append("\nABI: ");
+		sb.append(Build.CPU_ABI);
 		sb.append("\nAPI: ");
 		sb.append(Build.VERSION.SDK_INT);
 		sb.append("\nDPI: ");

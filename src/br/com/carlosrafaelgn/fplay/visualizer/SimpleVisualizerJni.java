@@ -124,7 +124,7 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
 		UI.separator(menu, 1, 0);
-		menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.blue : R.string.green)
+		menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_THEME));
 		UI.separator(menu, 1, 2);

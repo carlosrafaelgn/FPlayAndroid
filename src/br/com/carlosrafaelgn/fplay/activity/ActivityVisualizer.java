@@ -210,29 +210,41 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		panelTopHiding = 0;
 		panelTopAlpha = 1.0f;
 		
-		panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(info.isLandscape ? InterceptableLayout.LayoutParams.WRAP_CONTENT : InterceptableLayout.LayoutParams.MATCH_PARENT, info.isLandscape ? InterceptableLayout.LayoutParams.MATCH_PARENT : InterceptableLayout.LayoutParams.WRAP_CONTENT));
+		//panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(info.isLandscape ? InterceptableLayout.LayoutParams.WRAP_CONTENT : InterceptableLayout.LayoutParams.MATCH_PARENT, info.isLandscape ? InterceptableLayout.LayoutParams.MATCH_PARENT : InterceptableLayout.LayoutParams.WRAP_CONTENT));
+		panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(InterceptableLayout.LayoutParams.MATCH_PARENT, InterceptableLayout.LayoutParams.WRAP_CONTENT));
+		final int margin = (info.isLandscape ? UI.defaultControlSize : 0);
+		if (UI.extraSpacing)
+			panelTop.setPadding(UI._8dp + margin, UI._8dp, UI._8dp + margin, UI._8dp);
+		else
+			panelTop.setPadding(margin, 0, margin, 0);
 		
 		LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)btnPrev.getLayoutParams();
-		lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
-		lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
+		//lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
+		//lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
+		lp.rightMargin = UI._16dp;
+		lp.bottomMargin = 0;
 		btnPrev.setLayoutParams(lp);
 		btnPrev.setIcon(UI.ICON_PREV);
 		
 		lp = (LinearLayout.LayoutParams)btnPlay.getLayoutParams();
-		lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
-		lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
+		//lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
+		//lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
+		lp.rightMargin = UI._16dp;
+		lp.bottomMargin = 0;
 		btnPlay.setLayoutParams(lp);
 		btnPlay.setIcon((playing = Player.isPlaying()) ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		p.addRule(info.isLandscape ? RelativeLayout.CENTER_VERTICAL : RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+		//p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		panelSecondary.setLayoutParams(p);
-		panelSecondary.setOrientation(info.isLandscape ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+		panelSecondary.setOrientation(LinearLayout.HORIZONTAL);
 		
 		p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_BOTTOM : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+		//p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 		btnMenu.setLayoutParams(p);
 		btnMenu.setIcon(UI.ICON_MENU);
 		
@@ -344,8 +356,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		
-		if (UI.extraSpacing)
-			panelTop.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+		//if (UI.extraSpacing)
+		//	panelTop.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 		
 		String name = null;
 		Class<?> clazz = null;
@@ -604,7 +616,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		if (info == null)
 			return;
 		UI.prepare(menu);
-		menu.add(0, MNU_ORIENTATION, 0, (UI.visualizerOrientation == 0) ? R.string.landscape : R.string.portrait)
+		menu.add(0, MNU_ORIENTATION, 0, (UI.visualizerOrientation == 0) ? R.string.portrait : R.string.landscape)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_ORIENTATION));
 		if (visualizer != null)

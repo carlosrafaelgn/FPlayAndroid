@@ -417,7 +417,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			}
 		}
 		
-		if (addedCount[0] >= 2 || cancelled)
+		/*if (addedCount[0] >= 2 || cancelled)
 			return;
 		
 		//try the hardcoded paths only after trying the "mount" command
@@ -432,7 +432,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 				addStorage(s, new File(paths[i]), true, externalCount, usbCount, addedCount, addedPaths);
 			} catch (Throwable ex2) {
 			}
-		}
+		}*/
 	}
 	
 	private void fetchArtists() {
@@ -452,7 +452,10 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 					unknownArtist = s.getText(R.string.unknownArtist).toString();
 				name = unknownArtist;
 			}
-			tmp.add(new FileSt(root + c.getLong(0) + fakeRoot + name, name, null, FileSt.TYPE_ARTIST));
+			final long id = c.getLong(0);
+			final FileSt f = new FileSt(root + id + fakeRoot + name, name, null, FileSt.TYPE_ARTIST);
+			f.artistIdForAlbumArt = id;
+			tmp.add(f);
 		}
 		c.close();
 		
@@ -481,9 +484,9 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		if (s == null)
 			return;
 		
-		String artist;
-		String fakeRoot;
-		String root;
+		final String artist;
+		final String fakeRoot;
+		final String root;
 		if (path == null) {
 			artist = null;
 			fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.albums).toString() + FileSt.FAKE_PATH_SEPARATOR;
@@ -496,7 +499,6 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			fakeRoot = fakePath + FileSt.FAKE_PATH_SEPARATOR;
 			root = realPath + File.separator;
 		}
-		
 		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
 		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART };
 		final Cursor c = s.getContentResolver().query((artist == null) ?
@@ -526,13 +528,19 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		
 		final int fakePathIdx = path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR);
 		final String realPath = path.substring(0, fakePathIdx);
-		final String album = realPath.substring(realPath.lastIndexOf(File.separatorChar) + 1);
+		final int albumIdIdx = realPath.lastIndexOf(File.separatorChar) + 1;
+		final String artist = ((realPath.charAt(0) == FileSt.ARTIST_ROOT_CHAR) ? realPath.substring(2, albumIdIdx - 1) : null);
+		final String album = realPath.substring(albumIdIdx);
 		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
 		final String[] proj = { MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.TRACK };
 		final Cursor c = s.getContentResolver().query(
 				MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, proj,
-				MediaStore.Audio.Media.ALBUM_ID + "=?",
-				new String[] { album },
+				(artist == null) ?
+				(MediaStore.Audio.Media.ALBUM_ID + "=?") :
+				(MediaStore.Audio.Media.ALBUM_ID + "=? AND " + MediaStore.Audio.Media.ARTIST_ID + "=?"),
+				(artist == null) ?
+				new String[] { album } :
+				new String[] { album, artist },
 				null);
 		while (!cancelled && c.moveToNext()) {
 			//temporarily use specialType as the song's track number ;)

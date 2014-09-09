@@ -32,6 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.app.Service;
+import android.content.ContentResolver;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -41,6 +44,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.provider.MediaStore;
+import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.BitmapLruCache;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
@@ -55,11 +60,12 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId);
 		
 		//Runs on a SECONDARY thread
-		public String albumArtUriForRequestId(int requestId);
+		public FileSt fileForRequestId(int requestId);
 	}
 	
 	private final Object sync;
 	private final BitmapFactory.Options opts;
+	private final ContentResolver contentResolver;
 	private volatile BitmapLruCache cache;
 	private byte[] tempStorage;
 	private Canvas canvas;
@@ -71,6 +77,8 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	public AlbumArtFetcher() {
 		sync = new Object();
 		opts = new BitmapFactory.Options();
+		final Service s = Player.getService();
+		contentResolver = ((s != null) ? s.getContentResolver() : null);
 		long max = Runtime.getRuntime().maxMemory();
 		max >>= 4; //1/16
 		//do not eat up more than 8 MiB
@@ -107,11 +115,37 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		String uri;
 		Bitmap b = null, b2 = null;
 		ReleasableBitmapWrapper w = null;
-		if (c == null || p == null || listener == null || (uri = listener.albumArtUriForRequestId(msg.what)) == null)
+		FileSt file;
+		if (c == null || p == null || listener == null || (file = listener.fileForRequestId(msg.what)) == null)
 			return true;
+		
+		uri = file.albumArt;
+		if (uri == null) {
+			if (contentResolver == null) {
+				file.artistIdForAlbumArt = 0;
+				return true;
+			}
+			//try to fetch the first album for this artist
+			final String[] proj = { MediaStore.Audio.Albums.ALBUM_ART };
+			final Cursor cursor = contentResolver.query(MediaStore.Audio.Artists.Albums.getContentUri("external", file.artistIdForAlbumArt), proj, null, null, null);
+			while (uri == null && !opts.mCancel && cursor.moveToNext())
+				uri = cursor.getString(0);
+			cursor.close();
+			file.artistIdForAlbumArt = 0;
+			if (uri == null)
+				return true;
+			file.albumArt = uri;
+			synchronized (sync) {
+				if (cache != null && (w = cache.get(uri)) != null) {
+					listener.albumArtFetched(w, msg.what);
+					return true;
+				}
+			}
+		}
 		
 		if (opts.mCancel)
 			return true;
+		
 		try {
 			opts.inJustDecodeBounds = true;
 			opts.inTempStorage = tempStorage;
@@ -188,21 +222,22 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	}
 	
 	//Runs on the MAIN thread
-	public ReleasableBitmapWrapper getAlbumArt(String uri, int desiredSize, int requestId, AlbumArtFetcherListener listener) {
-		ReleasableBitmapWrapper bitmap;
+	public ReleasableBitmapWrapper getAlbumArt(FileSt file, int desiredSize, int requestId, AlbumArtFetcherListener listener) {
 		synchronized (sync) {
 			if (cache == null)
 				return null;
-			bitmap = cache.get(uri);
-			if (bitmap != null) {
-				bitmap.addRef();
-				return bitmap;
+			if (file.albumArt != null) {
+				final ReleasableBitmapWrapper bitmap = cache.get(file.albumArt);
+				if (bitmap != null) {
+					bitmap.addRef();
+					return bitmap;
+				}
 			}
 		}
 		if (handler != null) {
 			//wait before actually trying to fetch the albumart, as this request could
 			//soon be cancelled, for example, in a ListView being scrolled fast
-			handler.sendMessageAtTime(Message.obtain(handler, requestId, desiredSize, 0, listener), 100 + SystemClock.uptimeMillis());
+			handler.sendMessageAtTime(Message.obtain(handler, requestId, desiredSize, 0, listener), SystemClock.uptimeMillis());
 		}
 		return null;
 	}

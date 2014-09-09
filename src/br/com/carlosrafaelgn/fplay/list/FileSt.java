@@ -59,8 +59,10 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_ALBUM_ROOT = 10;
 	public static final int TYPE_ALBUM_ITEM = 11;
 	public final boolean isDirectory;
-	public final String path, name, albumArt;
+	public final String path, name;
+	public String albumArt;
 	public int specialType;
+	public long artistIdForAlbumArt;
 	public File file;
 	public boolean isChecked;
 	

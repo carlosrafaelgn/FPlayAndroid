@@ -420,7 +420,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			chkAlbumArt.setVisibility(View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
 		} else if (others) {
-			albumArtArea = (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
+			albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));// (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
 			btnURL.setVisibility(View.GONE);
 			if (albumArtArea) {
 				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);

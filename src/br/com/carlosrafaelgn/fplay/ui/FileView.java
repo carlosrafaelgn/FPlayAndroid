@@ -58,7 +58,7 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
 	private BgButton btnAdd, btnPlay;
-	private String icon, ellipsizedName, albumArtUri;
+	private String icon, ellipsizedName;
 	private boolean buttonsVisible, pendingAlbumArtRequest;
 	private final boolean hasButtons, buttonIsCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding;
@@ -161,35 +161,40 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 			albumArt = null;
 		}
 		if (file.isDirectory) {
+			ReleasableBitmapWrapper newAlbumArt;
 			switch (specialType) {
 			case FileSt.TYPE_INTERNAL_STORAGE:
 				icon = UI.ICON_SCREEN;
-				//bitmap = internalIcon;
 				break;
 			case FileSt.TYPE_EXTERNAL_STORAGE:
 				icon = UI.ICON_SD;
-				//bitmap = externalIcon;
 				break;
 			case FileSt.TYPE_FAVORITE:
 				icon = UI.ICON_FAVORITE_ON;
-				//bitmap = favoriteIcon;
 				break;
-			case FileSt.TYPE_ARTIST:
 			case FileSt.TYPE_ARTIST_ROOT:
 				icon = UI.ICON_MIC;
-				//bitmap = artistIcon;
+				break;
+			case FileSt.TYPE_ARTIST:
+				icon = UI.ICON_MIC;
+				newAlbumArt = null;
+				if (UI.albumArt && albumArtFetcher != null) {
+					if (file.albumArt != null || file.artistIdForAlbumArt != 0) {
+						newAlbumArt = albumArtFetcher.getAlbumArt(file, usableHeight, requestId, this);
+						pendingAlbumArtRequest = (newAlbumArt == null);
+					}
+				}
+				albumArt = newAlbumArt;
 				break;
 			case FileSt.TYPE_ALBUM_ROOT:
 				icon = UI.ICON_ALBUMART;
-				//bitmap = albumIcon;
 				break;
 			case FileSt.TYPE_ALBUM:
 			case FileSt.TYPE_ALBUM_ITEM:
 				icon = UI.ICON_ALBUMART;
-				ReleasableBitmapWrapper newAlbumArt = null;
+				newAlbumArt = null;
 				if (UI.albumArt && albumArtFetcher != null && file.albumArt != null) {
-					albumArtUri = file.albumArt;
-					newAlbumArt = albumArtFetcher.getAlbumArt(albumArtUri, usableHeight, requestId, this);
+					newAlbumArt = albumArtFetcher.getAlbumArt(file, usableHeight, requestId, this);
 					pendingAlbumArtRequest = (newAlbumArt == null);
 				}
 				albumArt = newAlbumArt;
@@ -302,18 +307,14 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		getDrawingRect(UI.rect);
 		final boolean albumItem = ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM));
 		if (albumItem && (state == 0))
-			//canvas.drawColor(UI.color_highlight);
 			canvas.drawColor(UI.color_selected);
-			//canvas.drawColor(UI.color_window);
 		final int st = state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2);
 		UI.drawBgBorderless(canvas, st, true);
 		if (albumArt != null && albumArt.bitmap != null)
 			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, (usableHeight >> 1) - (albumArt.height >> 1), null);
 		else if (icon != null)
-			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, (usableHeight >> 1) - (UI.defaultControlContentsSize >> 1), UI.defaultControlContentsSize, (st == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
-		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text_highlight : UI.color_text_listitem), UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
-		UI.drawText(canvas, ellipsizedName, ((state != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
-		//UI.drawText(canvas, ellipsizedName, (state != 0) ? UI.color_text_selected : (albumItem ? UI.color_text : UI.color_text_listitem), UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
+			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, (usableHeight >> 1) - (UI.defaultControlContentsSize >> 1), UI.defaultControlContentsSize, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary);
+		UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
 		super.dispatchDraw(canvas);
 	}
 	
@@ -333,7 +334,6 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		btnAdd = null;
 		btnPlay = null;
 		ellipsizedName = null;
-		albumArtUri = null;
 		super.onDetachedFromWindow();
 	}
 	
@@ -371,8 +371,8 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 	
 	//Runs on a SECONDARY thread
 	@Override
-	public String albumArtUriForRequestId(int requestId) {
-		return ((requestId == this.requestId) ? albumArtUri : null);
+	public FileSt fileForRequestId(int requestId) {
+		return ((requestId == this.requestId) ? file : null);
 	}
 	
 	//Runs on the MAIN thread
@@ -382,16 +382,13 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		msg.obj = null;
 		//check if we have already been removed from the window
 		if (msg.what != requestId || albumArtFetcher == null || bitmap == null) {
-			if (msg.what == requestId) {
+			if (msg.what == requestId)
 				pendingAlbumArtRequest = false;
-				albumArtUri = null;
-			}
 			if (bitmap != null)
 				bitmap.release();
 			return true;
 		}
 		pendingAlbumArtRequest = false;
-		albumArtUri = null;
 		if (albumArt != null)
 			albumArt.release();
 		albumArt = bitmap;
