@@ -40,12 +40,14 @@ import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.ViewDebug.ExportedProperty;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public final class SimpleVisualizerJni extends VisualizerView implements SurfaceHolder.Callback, Visualizer, MenuItem.OnMenuItemClickListener {
+public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHolder.Callback, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener {
 	public static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_LORES = MNU_VISUALIZER + 2, MNU_HIRES = MNU_VISUALIZER + 3, MNU_VOICEPRINT = MNU_VISUALIZER + 4;	
 	
 	static {
@@ -60,6 +62,11 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 	private static native int prepareSurface(Surface surface);
 	private static native void process(byte[] bfft, Surface surface);
 	private static native void processVoice(byte[] bfft, Surface surface);
+	static native int glOnSurfaceCreated(int bgColor);
+	static native void glProcess(byte[] bfft);
+	static native void glDrawFrame();
+	static native void glChangeColorIndex(int colorIndex);
+	static native void glChangeSpeed(int speed);
 	
 	private byte[] bfft;
 	private final SlimLock lock;
@@ -84,6 +91,12 @@ public final class SimpleVisualizerJni extends VisualizerView implements Surface
 		lerp = false;
 		voice = false;
 		setLerpAndColorIndex(lerp, colorIndex);
+	}
+	
+	@Override
+	@ExportedProperty(category = "drawing")
+	public final boolean isOpaque() {
+		return true;
 	}
 	
 	@Override

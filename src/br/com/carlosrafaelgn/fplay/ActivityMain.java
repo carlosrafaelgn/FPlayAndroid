@@ -63,6 +63,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
@@ -530,7 +531,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			break;
 		case MNU_VISUALIZER:
 			if (Player.getState() == Player.STATE_INITIALIZED)
-				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
+				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
 			break;
 		case MNU_SETTINGS:
 			if (Player.getState() == Player.STATE_INITIALIZED)

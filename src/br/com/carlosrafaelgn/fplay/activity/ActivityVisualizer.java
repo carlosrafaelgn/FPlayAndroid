@@ -257,7 +257,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				ip = new InterceptableLayout.LayoutParams(pt.x, pt.y);
 				ip.gravity = Gravity.CENTER;
 			}
-			visualizerView.setLayoutParams(ip);
+			((View)visualizerView).setLayoutParams(ip);
 		}
 		
 		panelControls.requestLayout();
@@ -384,8 +384,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			visualizerView = visualizer.getView();
 			visualizerViewFullscreen = visualizerView.isFullscreen();
 			if (visualizerView != null) {
-				visualizerView.setOnClickListener(this);
-				panelControls.addView(visualizerView);
+				((View)visualizerView).setOnClickListener(this);
+				panelControls.addView((View)visualizerView);
 				panelTop.bringToFront();
 			}
 		}

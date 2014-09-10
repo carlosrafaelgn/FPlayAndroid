@@ -32,52 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
-import android.annotation.TargetApi;
-import android.content.Context;
 import android.graphics.Point;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
-import android.view.SurfaceView;
-import android.view.ViewDebug.ExportedProperty;
 
-public abstract class VisualizerView extends SurfaceView {
-	public VisualizerView(Context context) {
-		super(context);
-	}
-	
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	@Override
-	public final void setBackground(Drawable background) {
-		super.setBackground(null);
-	}
-	
-	@Override
-	@Deprecated
-	public final void setBackgroundDrawable(Drawable background) {
-		super.setBackgroundDrawable(null);
-	}
-	
-	@Override
-	public final void setBackgroundResource(int resid) {
-		super.setBackgroundResource(0);
-	}
-	
-	@Override
-	public final void setBackgroundColor(int color) {
-		super.setBackgroundResource(0);
-	}
-	
-	@Override
-	public final Drawable getBackground() {
-		return null;
-	}
-	
-	@Override
-	@ExportedProperty(category = "drawing")
-	public final boolean isOpaque() {
-		return true;
-	}
-	
+public interface VisualizerView {
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	public abstract void releaseView();
 	
