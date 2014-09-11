@@ -32,16 +32,15 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 
-import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
-import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.ConfigurationInfo;
+import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.opengl.GLSurfaceView;
 import android.os.Message;
@@ -54,8 +53,10 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLConfigChooser, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
+public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, /*CustomGLSurfaceView.EGLContextFactory,*/ Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
 	public static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4;	
+	
+	private static int GLVersion = -1;
 	
 	private byte[] bfft;
 	private volatile boolean supported, alerted, okToRender;
@@ -68,118 +69,228 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setClickable(true);
 		setFocusable(false);
 		colorIndex = 257;
-		speed = 1;
+		speed = 2;
 		
-		final ActivityManager activityManager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
-		final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
-		if (configurationInfo.reqGlEsVersion < 0x20000)
-			supported = false; //watch out for the emulator BUG! http://stackoverflow.com/questions/7190240/eclipse-and-opengl-es-2-0-info-reqglesversion-is-zero
-		else
-			supported = true;
+		if (GLVersion != -1) {
+			supported = (GLVersion >= 0x00020000);
+			if (!supported)
+				MainHandler.sendMessage(this, 0);
+		}
 		
+		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/opengl/GLSurfaceView.java
+		getHolder().setFormat(PixelFormat.RGB_565);
 		setEGLContextClientVersion(2);
-		setEGLConfigChooser(this);
+		setEGLConfigChooser(5, 6, 5, 0, 0, 0);
+		//setEGLContextFactory(this);
 		setRenderer(this);
 		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-		if (!supported)
-			MainHandler.sendMessage(this, 0);
 	}
 	
-	@Override
-	public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
-		int[] num_config = new int[1];
-		int[] value = new int[1], dv = new int[1], av = new int[1];
-		EGLConfig[] configs = new EGLConfig[32];
-		EGLConfig cfg = null;
-		int rgb = 0, actualRGB = 0, a = Integer.MAX_VALUE, d = Integer.MAX_VALUE;
-		boolean nat = false, actualNat = false;
+	/*@Override
+	public EGLContext createContext(final EGL10 egl, final EGLDisplay display, EGLConfig eglConfig) {
+		
+		//https://www.khronos.org/registry/egl/sdk/docs/man/html/eglChooseConfig.xhtml
+		//https://www.khronos.org/registry/egl/sdk/docs/man/html/eglCreateContext.xhtml
+		
+		//EGL_FALSE = 0
+		//EGL_TRUE = 1
+		//EGL_OPENGL_ES2_BIT = 4
+		//EGL_CONTEXT_CLIENT_VERSION = 0x3098
+		final EGLConfig[] configs = new EGLConfig[64], selectedConfigs = new EGLConfig[64];
+		final int[] num_config = { 0 }, value = new int[1];
+		final int[] none = { EGL10.EGL_NONE };
+		int selectedCount = 0;
 		if (egl.eglGetConfigs(display, configs, 32, num_config) && num_config[0] > 0) {
 			for (int i = 0; i < num_config[0]; i++) {
 				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_RENDERABLE_TYPE, value);
-				//EGL_OPENGL_ES2_BIT = 4
 				if ((value[0] & 4) == 0) continue;
 				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_SURFACE_TYPE, value);
 				if ((value[0] & EGL10.EGL_WINDOW_BIT) == 0) continue;
+				//egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_COLOR_BUFFER_TYPE, value);
+				//if (value[0] != EGL10.EGL_RGB_BUFFER) continue;
 				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_RED_SIZE, value);
 				if (value[0] < 4) continue;
 				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_GREEN_SIZE, value);
 				if (value[0] < 4) continue;
 				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_BLUE_SIZE, value);
 				if (value[0] < 4) continue;
-				if (value[0] < actualRGB) continue;
-				rgb = value[0];
-				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_NATIVE_RENDERABLE, value);
-				nat = (value[0] == 1);
-				if (!nat && actualNat) continue;
-				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_DEPTH_SIZE, dv);
-				egl.eglGetConfigAttrib(display, configs[i], EGL10.EGL_ALPHA_SIZE, av);
-				if (dv[0] <= d && av[0] <= a) {
-					actualRGB = rgb;
-					actualNat = nat;
-					d = dv[0];
-					a = av[0];
-					cfg = configs[i];
-				} else if (dv[0] < d) {
-					actualRGB = rgb;
-					actualNat = nat;
-					d = dv[0];
-					cfg = configs[i];
-				} else if (av[0] < a) {
-					actualRGB = rgb;
-					actualNat = nat;
-					a = av[0];
-					cfg = configs[i];
+				selectedConfigs[selectedCount++] = configs[i];
+			}
+		}
+		if (selectedCount == 0) {
+			supported = false;
+			MainHandler.sendMessage(this, 0);
+			return egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, none);
+		}
+		ArraySorter.sort(selectedConfigs, 0, selectedCount, new ArraySorter.Comparer<EGLConfig>() {
+			@Override
+			public int compare(EGLConfig a, EGLConfig b) {
+				int x;
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_COLOR_BUFFER_TYPE, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_COLOR_BUFFER_TYPE, value);
+				//prefer rgb buffers
+				if (x != value[0])
+					return (x == EGL10.EGL_RGB_BUFFER) ? -1 : 1;
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_NATIVE_RENDERABLE, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_NATIVE_RENDERABLE, value);
+				//prefer native configs
+				if (x != value[0])
+					return (x != 0) ? -1 : 1;
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_SAMPLE_BUFFERS, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_SAMPLE_BUFFERS, value);
+				//prefer smaller values
+				if (x != value[0])
+					return (x - value[0]);
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_SAMPLES, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_SAMPLES, value);
+				//prefer smaller values
+				if (x != value[0])
+					return (x - value[0]);
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_BUFFER_SIZE, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_BUFFER_SIZE, value);
+				//prefer smaller values
+				if (x != value[0])
+					return (x - value[0]);
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_DEPTH_SIZE, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_DEPTH_SIZE, value);
+				//prefer smaller values
+				if (x != value[0])
+					return (x - value[0]);
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_STENCIL_SIZE, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_STENCIL_SIZE, value);
+				//prefer smaller values
+				if (x != value[0])
+					return (x - value[0]);
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_ALPHA_MASK_SIZE, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_ALPHA_MASK_SIZE, value);
+				//prefer smaller values
+				if (x != value[0])
+					return (x - value[0]);
+				
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_ALPHA_SIZE, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_ALPHA_SIZE, value);
+				//prefer smaller values
+				if (x != value[0])
+					return (x - value[0]);
+				egl.eglGetConfigAttrib(display, a, EGL10.EGL_CONFIG_ID, value);
+				x = value[0];
+				egl.eglGetConfigAttrib(display, b, EGL10.EGL_CONFIG_ID, value);
+				//prefer smaller values
+				return (x - value[0]);
+			}
+		});
+		for (int i = 0; i < selectedCount; i++) {
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_BUFFER_SIZE, value);
+			System.out.print(i + " bs" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_SAMPLE_BUFFERS, value);
+			System.out.print(" sp" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_SAMPLES, value);
+			System.out.print(" s" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_DEPTH_SIZE, value);
+			System.out.print(" d" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_STENCIL_SIZE, value);
+			System.out.print(" st" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_ALPHA_SIZE, value);
+			System.out.print(" a" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_ALPHA_MASK_SIZE, value);
+			System.out.print(" am" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_GREEN_SIZE, value);
+			System.out.println(" rgb" + value[0]);
+			try {
+				EGLContext ctx = egl.eglCreateContext(display, selectedConfigs[i], EGL10.EGL_NO_CONTEXT, new int[] { 0x3098, 2, EGL10.EGL_NONE } );
+				if (ctx == null)
+					ctx = egl.eglCreateContext(display, selectedConfigs[i], EGL10.EGL_NO_CONTEXT, none);
+				if (ctx != null)
+					return ctx;
+			} catch (Throwable ex) {
+			}
+		}
+		supported = false;
+		MainHandler.sendMessage(this, 0);
+		return egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, none);
+	}
+	
+	@Override
+	public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) {
+		egl.eglDestroyContext(display, context);
+	}*/
+	
+	//Runs on a SECONDARY thread
+	@Override
+	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+		if (GLVersion == -1) {
+			supported = true;
+			Process ifc = null;
+			BufferedReader bis = null;
+			try {
+				ifc = Runtime.getRuntime().exec("getprop ro.opengles.version");
+				bis = new BufferedReader(new InputStreamReader(ifc.getInputStream()));
+				String line = bis.readLine();
+				GLVersion = Integer.parseInt(line);
+				supported = (GLVersion >= 0x00020000);
+				if (!supported)
+					MainHandler.sendMessage(this, 0);
+			} catch (Throwable ex) {
+			} finally {
+				try {
+					if (ifc != null)
+						ifc.destroy();
+				} catch (Throwable ex) {
+				}
+				try {
+					if (bis != null)
+						bis.close();
+				} catch (Throwable ex) {
 				}
 			}
 		}
-		if (cfg == null || !supported) {
-			supported = false;
-			MainHandler.sendMessage(this, 0);
-		}
-		return cfg;
-	}
-	
-	// Runs on a secondary thread
-	@Override
-	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		if (!supported)
 			return;
 		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer)) != 0) {
 			supported = false;
-			okToRender = false;
 			MainHandler.sendMessage(this, 0);
 		}
 	}
 	
-	// Runs on a secondary thread
+	//Runs on a SECONDARY thread
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		if (!supported)
 			return;
+		SimpleVisualizerJni.glOnSurfaceChanged(width, height);
 		okToRender = true;
 	}
 	
-	// Runs on the main thread
+	//Runs on the MAIN thread
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		//is it really necessary to call any cleanup code??????
-		okToRender = false;
+		supported = false;
 		super.surfaceDestroyed(holder);
 	}
 	
-	// Runs on a secondary thread
+	//Runs on a SECONDARY thread
 	@Override
 	public void onDrawFrame(GL10 gl) {
-		if (okToRender)
+		if (supported && okToRender)
 			SimpleVisualizerJni.glDrawFrame();
 	}
 	
 	@Override
 	public boolean handleMessage(Message msg) {
 		if (!alerted) {
-			okToRender = false;
 			alerted = true;
-			UI.toast(getContext(), (error != 0) ? ("OpenGL " + error + " :(") : "Not supported :(");
+			final Context ctx = getContext();
+			UI.toast(ctx, ctx.getText(R.string.sorry) + ((error != 0) ? (ctx.getText(R.string.opengl_error).toString() + error) : ctx.getText(R.string.opengl_not_supported).toString()) + " :(");
 		}
 		return true;
 	}
@@ -222,18 +333,19 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
+		final Context ctx = getContext();
 		UI.separator(menu, 1, 0);
 		menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_THEME));
 		UI.separator(menu, 1, 2);
-		menu.add(2, MNU_SPEED0, 0, "LoSpeed")
+		menu.add(2, MNU_SPEED0, 0, ctx.getText(R.string.speed) + ": 0")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED1, 1, "MedSpeed")
+		menu.add(2, MNU_SPEED1, 1, ctx.getText(R.string.speed) + ": 1")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED2, 2, "HiSpeed")
+		menu.add(2, MNU_SPEED2, 2, ctx.getText(R.string.speed) + ": 2")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 	}
@@ -275,14 +387,14 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
-		if (okToRender) {
+		if (supported && okToRender) {
 			//WE MUST NEVER call any method from visualizer
 			//while the player is not actually playing
 			if (!playing)
 				Arrays.fill(bfft, 0, 1024, (byte)0);
 			else
 				visualizer.getFft(bfft);
-			SimpleVisualizerJni.glProcess(bfft);
+			SimpleVisualizerJni.glProcess(bfft, deltaMillis);
 			requestRender();
 		}
 	}
@@ -308,5 +420,4 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void releaseView() {
 	}
-
 }

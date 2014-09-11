@@ -233,5 +233,9 @@
     <string name="system_integrated">Integrada con el sistema</string>
     <string name="large">Grande</string>
     <string name="indexed_if_possible">Indexada (si es posible)</string>
+    <string name="sorry">Lo sentimos!</string>
+    <string name="opengl_error"> Error OpenGL </string>
+    <string name="opengl_not_supported"> No hay soporte para OpenGL ES 2.0</string>
+    <string name="speed">Velocidad</string>
     
 </resources>

@@ -60,10 +60,11 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private static native int checkNeonMode();
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
-	private static native void process(byte[] bfft, Surface surface);
+	private static native void process(byte[] bfft, int deltaMillis, Surface surface);
 	private static native void processVoice(byte[] bfft, Surface surface);
 	static native int glOnSurfaceCreated(int bgColor);
-	static native void glProcess(byte[] bfft);
+	static native void glOnSurfaceChanged(int width, int height);
+	static native void glProcess(byte[] bfft, int deltaMillis);
 	static native void glDrawFrame();
 	static native void glChangeColorIndex(int colorIndex);
 	static native void glChangeSpeed(int speed);
@@ -220,7 +221,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 				else
 					visualizer.getFft(bfft);
 				if (!voice)
-					process(bfft, surface);
+					process(bfft, deltaMillis, surface);
 				else
 					processVoice(bfft, surface);
 			}

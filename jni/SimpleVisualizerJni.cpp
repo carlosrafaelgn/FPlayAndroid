@@ -44,7 +44,12 @@
 #include <string.h>
 #include <math.h>
 
-extern "C" {
+
+//http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
+//http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
+
+
+#define DEFSPEED (0.09375f / 16.0f)
 
 //for the alignment:
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
@@ -61,12 +66,12 @@ static unsigned short* voice, *alignedVoice;
 static unsigned int neonMode;
 #endif
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_setLerpAndColorIndex(JNIEnv* env, jclass clazz, jboolean jlerp, int jcolorIndex) {
+void JNICALL setLerpAndColorIndex(JNIEnv* env, jclass clazz, jboolean jlerp, int jcolorIndex) {
 	lerp = (jlerp ? 1 : 0);
 	colorIndex = jcolorIndex;
 }
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_updateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
+void JNICALL updateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
 	float* const fft = floatBuffer;
 	float* const multiplier = fft + 256;
 	if (isVoice) {
@@ -85,7 +90,7 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 
 #include "OpenGLVisualizerJni.h"
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_init(JNIEnv* env, jclass clazz, int jbgColor) {
+void JNICALL init(JNIEnv* env, jclass clazz, int jbgColor) {
 	voice = 0;
 	recreateVoice = 0;
 #ifdef __ARM_NEON__
@@ -95,10 +100,10 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	const unsigned int g = ((jbgColor >> 8) & 0xff) >> 2;
 	const unsigned int b = (jbgColor & 0xff) >> 3;
 	bgColor = (unsigned short)((r << 11) | (g << 5) | b);
-	Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_updateMultiplier(env, clazz, 0);
+	updateMultiplier(env, clazz, 0);
 }
 
-JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_checkNeonMode(JNIEnv* env, jclass clazz) {
+int JNICALL checkNeonMode(JNIEnv* env, jclass clazz) {
 #ifdef __ARM_NEON__
 	//based on
 	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.c?r=2195
@@ -142,7 +147,7 @@ JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualiz
 #endif
 }
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_terminate(JNIEnv* env, jclass clazz) {
+void JNICALL terminate(JNIEnv* env, jclass clazz) {
 	if (voice) {
 		free(voice);
 		voice = 0;
@@ -152,7 +157,7 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 #endif
 }
 
-JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_prepareSurface(JNIEnv* env, jclass clazz, jobject surface) {
+int JNICALL prepareSurface(JNIEnv* env, jclass clazz, jobject surface) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return -1;
@@ -181,9 +186,9 @@ JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualiz
 }
 
 #ifdef __ARM_NEON__
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_processSimple(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
+void JNICALL processSimple(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
 #else
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
+void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
 #endif
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
@@ -206,11 +211,17 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	signed char* const bfft = (signed char*)env->GetByteArrayElements(jbfft, 0);
+	signed char* const bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
+	if (!bfft) {
+		ANativeWindow_unlockAndPost(wnd);
+		ANativeWindow_release(wnd);
+		return;
+	}
+	const float coefNew = DEFSPEED * (float)deltaMillis;
+	const float coefOld = 1.0f - coefNew;
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 	bfft[1] = bfft[0];
 	float previous = 0;
-	
 	for (int i = 0; i < barBins; i++) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
@@ -218,8 +229,7 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 		float m = (multiplier[i] * sqrtf((float)((re * re) + (im * im))));
 		const float old = fft[i];
 		if (m < old)
-			m = (0.25f * m) + (0.75f * old);
-			//m = (0.28125f * m) + (0.71875f * old);
+			m = (coefNew * m) + (coefOld * old);
 		fft[i] = m;
 		
 		if (barW == 1 || !lerp) {
@@ -372,8 +382,8 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 			}
 		}
 	}
+	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 	ANativeWindow_unlockAndPost(wnd);
-	env->ReleaseByteArrayElements(jbfft, (jbyte*)bfft, JNI_ABORT);
 	ANativeWindow_release(wnd);
 }
 
@@ -383,7 +393,7 @@ static const int __32768[] __attribute__((aligned(16))) = { 32768, 32768, 32768,
 static int __tmp[4] __attribute__((aligned(16)));
 static int __v[4] __attribute__((aligned(16)));
 static int __v2[4] __attribute__((aligned(16)));
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_processNeon(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
+void JNICALL processNeon(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return;
@@ -405,7 +415,15 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	signed char* const bfft = (signed char*)env->GetByteArrayElements(jbfft, 0);
+	signed char* const bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
+	if (!bfft) {
+		ANativeWindow_unlockAndPost(wnd);
+		ANativeWindow_release(wnd);
+		return;
+	}
+	
+	const float coefNew = DEFSPEED * (float)deltaMillis;
+	const float coefOld = 1.0f - coefNew;
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 	bfft[1] = bfft[0];
 	
@@ -417,8 +435,7 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 		float m = (multiplier[i] * sqrtf((float)((re * re) + (im * im))));
 		const float old = fft[i];
 		if (m < old)
-			m = (0.25f * m) + (0.75f * old);
-			//m = (0.28125f * m) + (0.71875f * old);
+			m = (coefNew * m) + (coefOld * old);
 		fft[i] = m;
 	}
 	
@@ -612,20 +629,20 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 			_prev = vld1q_f32(fft + (i + 3));
 		}
 	}
+	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 	ANativeWindow_unlockAndPost(wnd);
-	env->ReleaseByteArrayElements(jbfft, (jbyte*)bfft, JNI_ABORT);
 	ANativeWindow_release(wnd);
 }
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
+void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
 	if (neonMode)
-		Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_processNeon(env, clazz, jbfft, surface);
+		processNeon(env, clazz, jbfft, deltaMillis, surface);
 	else
-		Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_processSimple(env, clazz, jbfft, surface);
+		processSimple(env, clazz, jbfft, deltaMillis, surface);
 }
 #endif
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
+void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return;
@@ -666,7 +683,13 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	signed char* const bfft = (signed char*)env->GetByteArrayElements(jbfft, 0);
+	signed char* const bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
+	if (!bfft) {
+		ANativeWindow_unlockAndPost(wnd);
+		ANativeWindow_release(wnd);
+		return;
+	}
+	
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 	bfft[1] = bfft[0];
 	float previous = 0;
@@ -699,10 +722,47 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 			}
 		}
 	}
+	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 	memcpy(inf.bits, alignedVoice, inf.stride * inf.height);
 	ANativeWindow_unlockAndPost(wnd);
-	env->ReleaseByteArrayElements(jbfft, (jbyte*)bfft, JNI_ABORT);
 	ANativeWindow_release(wnd);
+}
+
+extern "C" {
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+	voice = 0;
+	recreateVoice = 0;
+#ifdef __ARM_NEON__
+	neonMode = 0;
+#endif
+	JNINativeMethod methodTable[] = {
+		{"setLerpAndColorIndex", "(ZI)V", (void*)setLerpAndColorIndex},
+		{"updateMultiplier", "(Z)V", (void*)updateMultiplier},
+		{"init", "(I)V", (void*)init},
+		{"checkNeonMode", "()I", (void*)checkNeonMode},
+		{"terminate", "()V", (void*)terminate},
+		{"prepareSurface", "(Landroid/view/Surface;)I", (void*)prepareSurface},
+		{"process", "([BILandroid/view/Surface;)V", (void*)process},
+		{"processVoice", "([BLandroid/view/Surface;)V", (void*)processVoice},
+		{"glOnSurfaceCreated", "(I)I", (void*)glOnSurfaceCreated},
+		{"glOnSurfaceChanged", "(II)V", (void*)glOnSurfaceChanged},
+		{"glProcess", "([BI)V", (void*)glProcess},
+		{"glDrawFrame", "()V", (void*)glDrawFrame},
+		{"glChangeColorIndex", "(I)V", (void*)glChangeColorIndex},
+		{"glChangeSpeed", "(I)V", (void*)glChangeSpeed}
+	};
+	JNIEnv* env;
+	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)
+		return -1;
+	jclass clazz = env->FindClass("br/com/carlosrafaelgn/fplay/visualizer/SimpleVisualizerJni");
+	if (!clazz)
+		return -1;
+	env->RegisterNatives(clazz, methodTable, sizeof(methodTable) / sizeof(methodTable[0]));
+	return JNI_VERSION_1_6;
+}
+
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 }
 
 }

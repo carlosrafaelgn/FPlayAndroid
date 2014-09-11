@@ -233,5 +233,9 @@
     <string name="system_integrated">Інтегроване з системою</string>
     <string name="large">Великий</string>
     <string name="indexed_if_possible">Індексовані (якщо це можливо)</string>
+    <string name="sorry">Вибачте!</string>
+    <string name="opengl_error"> OpenGL помилку </string>
+    <string name="opengl_not_supported"> OpenGL ES 2.0 не дозволені</string>
+    <string name="speed">Швидкість</string>
     
 </resources>

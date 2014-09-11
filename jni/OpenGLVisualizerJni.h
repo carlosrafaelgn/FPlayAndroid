@@ -40,30 +40,27 @@
 #include <GLES2/gl2ext.h>
 
 static unsigned int glProgram, glVShader, glFShader, glTex[2], glBuf[2], glColorIndex;
-static float glNew, glOld;
+static float glNew;
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_glChangeColorIndex(JNIEnv* env, jclass clazz, int jcolorIndex) {
+void JNICALL glChangeColorIndex(JNIEnv* env, jclass clazz, int jcolorIndex) {
 	glColorIndex = jcolorIndex;
 }
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_glChangeSpeed(JNIEnv* env, jclass clazz, int speed) {
+void JNICALL glChangeSpeed(JNIEnv* env, jclass clazz, int speed) {
 	switch (speed) {
 	case 1:
-		glNew = 0.09375f;
-		glOld = 0.90625f;
+		glNew = 0.09375f / 16.0f; //0.09375 @ 60fps (~16ms)
 		break;
 	case 2:
-		glNew = 0.140625f;
-		glOld = 0.859375f;
+		glNew = 0.140625f / 16.0f;
 		break;
 	default:
-		glNew = 0.0625f;
-		glOld = 0.9375f;
+		glNew = 0.0625f / 16.0f;
 		break;
 	}
 }
 
-JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor) {
+int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor) {
 	const float bgR = (float)((bgColor >> 16) & 0xff) / 255.0f;
 	const float bgG = (float)((bgColor >> 8) & 0xff) / 255.0f;
 	const float bgB = (float)(bgColor & 0xff) / 255.0f;
@@ -150,10 +147,10 @@ JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualiz
 	glDisable(GL_DITHER);
 	glDisable(GL_SCISSOR_TEST);
 	glDisable(GL_STENCIL_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
+	//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
-	glGetError(); //clear any possible error flag
+	glGetError(); //clear any eventual error flags
 	
 	glTex[0] = 0;
 	glTex[1] = 0;
@@ -196,39 +193,47 @@ JNIEXPORT int JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualiz
 	
 	glColorIndex = 257;
 	colorIndex = 0;
-	Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_glChangeSpeed(env, clazz, 1);
-	Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_updateMultiplier(env, clazz, 0);
+	glChangeSpeed(env, clazz, 2);
+	updateMultiplier(env, clazz, 0);
 	
 	return 0;
 }
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_glProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft) {
+void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height) {
+	glViewport(0, 0, width, height);
+}
+
+void JNICALL glProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis) {
 	float* const fft = floatBuffer;
 	const float* const multiplier = fft + 256;
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	signed char* const bfft = (signed char*)env->GetByteArrayElements(jbfft, 0);
+	signed char* const bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
+	if (!bfft)
+		return;
+	const float coefNew = glNew * (float)deltaMillis;
+	const float coefOld = 1.0f - coefNew;
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-	bfft[0] = 0;
-	bfft[1] = 0;
-	for (int i = 1; i < 256; i++) {
+	bfft[1] = bfft[0];
+	for (int i = 0; i < 256; i++) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
 		float m = (multiplier[i] * sqrtf((float)((re * re) + (im * im))));
 		const float old = fft[i];
 		if (m < old)
-			m = (glNew * m) + (glOld * old);
+			m = (coefNew * m) + (coefOld * old);
 			//m = (0.28125f * m) + (0.71875f * old);
 		fft[i] = m;
-		//m goes from 0 to 32768 (inclusive)
-		((unsigned char*)(floatBuffer + 512))[i] = ((m >= 32766.5f) ? 255 : ((m <= 0.0f) ? 0 : (unsigned char)((int)m >> 7)));
+		//v goes from 0 to 32768 (inclusive)
+		const int v = (int)m;
+		((unsigned char*)(floatBuffer + 512))[i] = ((v >= (255 << 7)) ? 255 : ((m <= 0) ? 0 : (unsigned char)(v >> 7)));
 	}
-	env->ReleaseByteArrayElements(jbfft, (jbyte*)bfft, JNI_ABORT);
+	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 }
 
-JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_glDrawFrame(JNIEnv* env, jclass clazz) {
+void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	if (colorIndex != glColorIndex) {
 		colorIndex = glColorIndex;
 		glActiveTexture(GL_TEXTURE1);
@@ -243,7 +248,7 @@ JNIEXPORT void JNICALL Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisuali
 			((unsigned int*)floatBuffer)[i] = 0xff000000 | r | g | b;
 		}
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
-		Java_br_com_carlosrafaelgn_fplay_visualizer_SimpleVisualizerJni_updateMultiplier(env, clazz, 0);
+		updateMultiplier(env, clazz, 0);
 		glActiveTexture(GL_TEXTURE0);
 	}
 	//glUseProgram(glProgram);
