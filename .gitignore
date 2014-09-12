@@ -2,6 +2,5 @@
 bin/
 obj/
 gen/
-libs/
 proguard/
 ic_launcher-web.png
