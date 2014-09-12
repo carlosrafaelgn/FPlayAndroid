@@ -83,7 +83,7 @@
     <string name="up">Вверх</string>
     <string name="home">Домой</string>
     <string name="add_url_title">Добавить ссылку</string>
-    <string name="add_url">Добавить ссылку&#8230;</string>
+    <string name="add_url">URL&#8230;</string>
     <string name="url">Ссылка</string>
     <string name="description">Описание</string>
     <string name="favorite">Избранное</string>
@@ -237,5 +237,6 @@
     <string name="opengl_error"> OpenGL ошибке </string>
     <string name="opengl_not_supported"> OpenGL ES 2.0 не поддерживается</string>
     <string name="speed">Скорость</string>
+    <string name="add_radio">Радио&#8230;</string>
     
 </resources>

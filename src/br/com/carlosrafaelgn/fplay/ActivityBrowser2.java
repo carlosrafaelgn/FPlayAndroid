@@ -74,7 +74,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private FileList fileList;
 	private RelativeLayout panelSecondary, panelLoading;
 	private EditText txtURL, txtTitle;
-	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
+	private BgButton btnGoBack, btnRadio, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
@@ -411,6 +411,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		final boolean others = !isAtHome;
 		albumArtArea = false;
 		if (fav) {
+			btnRadio.setVisibility(View.GONE);
 			btnURL.setVisibility(View.GONE);
 			btnGoBack.setNextFocusRightId(R.id.chkFavorite);
 			UI.setNextFocusForwardId(btnGoBack, R.id.chkFavorite);
@@ -421,6 +422,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			btnHome.setVisibility(View.VISIBLE);
 		} else if (others) {
 			albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));// (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
+			btnRadio.setVisibility(View.GONE);
 			btnURL.setVisibility(View.GONE);
 			if (albumArtArea) {
 				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);
@@ -435,9 +437,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			chkAlbumArt.setVisibility(albumArtArea ? View.VISIBLE : View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
 		} else {
+			btnRadio.setVisibility(View.VISIBLE);
 			btnURL.setVisibility(View.VISIBLE);
-			btnGoBack.setNextFocusRightId(R.id.btnURL);
-			UI.setNextFocusForwardId(btnGoBack, R.id.btnURL);
+			btnGoBack.setNextFocusRightId(R.id.btnRadio);
+			UI.setNextFocusForwardId(btnGoBack, R.id.btnRadio);
 			chkFavorite.setVisibility(View.GONE);
 			chkAlbumArt.setVisibility(View.GONE);
 			btnHome.setVisibility(View.GONE);
@@ -516,6 +519,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			} else {
 				finish();
 			}
+		} else if (view == btnRadio) {
+			UI.toast(getHostActivity(), R.string.coming_soon);
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = new LinearLayout(ctx);
@@ -669,6 +674,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
+		btnRadio = (BgButton)findViewById(R.id.btnRadio);
+		btnRadio.setOnClickListener(this);
+		btnRadio.setDefaultHeight();
+		btnRadio.setCompoundDrawables(new TextIconDrawable(UI.ICON_RADIO, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		btnURL = (BgButton)findViewById(R.id.btnURL);
 		btnURL.setOnClickListener(this);
 		btnURL.setDefaultHeight();
@@ -715,10 +724,12 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY, true, false);
-		if (UI.isLargeScreen)
+		if (UI.isLargeScreen) {
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-		else if (UI.isLowDpiScreen)
+		} else if (UI.isLowDpiScreen) {
+			btnRadio.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		}
 		if (UI.extraSpacing) {
 			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
 			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
@@ -766,6 +777,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		panelLoading = null;
 		panelSecondary = null;
 		btnGoBack = null;
+		btnRadio = null;
 		btnURL = null;
 		chkFavorite = null;
 		chkAlbumArt = null;

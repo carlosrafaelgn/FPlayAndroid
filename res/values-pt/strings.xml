@@ -83,7 +83,7 @@
     <string name="up">Acima</string>
     <string name="home">Início</string>
     <string name="add_url_title">Adicionar URL</string>
-    <string name="add_url">Adicionar URL&#8230;</string>
+    <string name="add_url">URL&#8230;</string>
     <string name="url">URL</string>
     <string name="description">Descrição</string>
     <string name="favorite">Favorito</string>
@@ -237,5 +237,6 @@
     <string name="opengl_error"> Erro OpenGL </string>
     <string name="opengl_not_supported"> Sem suporte a OpenGL ES 2.0</string>
     <string name="speed">Velocidade</string>
+    <string name="add_radio">Rádio&#8230;</string>
     
 </resources>

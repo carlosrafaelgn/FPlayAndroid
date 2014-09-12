@@ -23,13 +23,28 @@
             android:nextFocusUp="@+id/list" />
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnRadio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="8dp"
+            android:layout_toLeftOf="@+id/btnURL"
+            android:nextFocusDown="@+id/list"
+            android:nextFocusForward="@+id/btnURL"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/btnURL"
+            android:nextFocusUp="@+id/list"
+            android:text="@string/add_radio"
+            android:visibility="gone" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnURL"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
+            android:contentDescription="@string/add_url_title"
             android:nextFocusDown="@+id/list"
             android:nextFocusForward="@+id/list"
-            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusLeft="@+id/btnRadio"
             android:nextFocusRight="@+id/list"
             android:nextFocusUp="@+id/list"
             android:text="@string/add_url"

@@ -82,8 +82,8 @@
     <string name="dlong">Довге</string>
     <string name="up">Вгору</string>
     <string name="home">Додому</string>
-    <string name="add_url_title">Додати посилання</string>
-    <string name="add_url">Додати посилання&#8230;</string>
+    <string name="add_url_title">Додати Посилання</string>
+    <string name="add_url">URL&#8230;</string>
     <string name="url">Посилання</string>
     <string name="description">Опис</string>
     <string name="favorite">Обране</string>
@@ -237,5 +237,6 @@
     <string name="opengl_error"> OpenGL помилку </string>
     <string name="opengl_not_supported"> OpenGL ES 2.0 не дозволені</string>
     <string name="speed">Швидкість</string>
+    <string name="add_radio">Радіо&#8230;</string>
     
 </resources>
