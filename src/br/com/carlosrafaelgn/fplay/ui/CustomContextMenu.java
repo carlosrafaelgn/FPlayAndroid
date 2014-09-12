@@ -742,11 +742,11 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			return;
 		}
 		if (!closed) {
+			final Item clkIt = clickedItem;
+			final android.view.MenuItem.OnMenuItemClickListener list = ((clkIt != null) ? clkIt.menuItemClickListener : null);
 			closed = true;
 			if (menu != null)
 				menu.cancel();
-			if (clickedItem != null && clickedItem.menuItemClickListener != null)
-				clickedItem.menuItemClickListener.onMenuItemClick(clickedItem);
 			if (closeListener != null)
 				closeListener.onContextMenuClosed(this);
 			if (parentItem != null) {
@@ -758,6 +758,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 				parentMenu.close();
 				parentMenu = null;
 			}
+			//only call the click handler after closing
+			//the parent and all its sub menus!
+			if (list != null)
+				list.onMenuItemClick(clkIt);
 		}
 		//help the gc
 		context = null;

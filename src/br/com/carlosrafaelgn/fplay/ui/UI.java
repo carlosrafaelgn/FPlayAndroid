@@ -83,7 +83,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 46;
+	public static final int VERSION_CODE = 47;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -354,7 +354,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, oldBrowserBehavior, extraSpacing, flat, albumArt, scrollBarToTheLeft;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;

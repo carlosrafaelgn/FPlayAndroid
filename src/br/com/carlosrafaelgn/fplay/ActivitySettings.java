@@ -75,7 +75,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optOldBrowserBehavior, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -652,8 +652,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optMarqueeTitle.setOnClickListener(this);
 			optPrepareNext = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled, false);
 			optPrepareNext.setOnClickListener(this);
-			optOldBrowserBehavior = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_old_browser_behavior).toString(), null, true, UI.oldBrowserBehavior, false);
-			optOldBrowserBehavior.setOnClickListener(this);
+			//optOldBrowserBehavior = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_old_browser_behavior).toString(), null, true, UI.oldBrowserBehavior, false);
+			//optOldBrowserBehavior.setOnClickListener(this);
 			optClearListWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders, false);
 			optClearListWhenPlayingFolders.setOnClickListener(this);
 			optGoBackWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
@@ -708,7 +708,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optFadeInOther);
 			headers[5] = addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
 			headers[5].setTag(5);
-			panelSettings.addView(optOldBrowserBehavior);
+			//panelSettings.addView(optOldBrowserBehavior);
 			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optClearListWhenPlayingFolders);
 			panelSettings.addView(optGoBackWhenPlayingFolders);
@@ -790,7 +790,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optDoubleClickMode = null;
 		optMarqueeTitle = null;
 		optPrepareNext = null;
-		optOldBrowserBehavior = null;
+		//optOldBrowserBehavior = null;
 		optClearListWhenPlayingFolders = null;
 		optGoBackWhenPlayingFolders = null;
 		optExtraInfoMode = null;
@@ -921,8 +921,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.marqueeTitle = optMarqueeTitle.isChecked();
 		} else if (view == optPrepareNext) {
 			Player.nextPreparationEnabled = optPrepareNext.isChecked();
-		} else if (view == optOldBrowserBehavior) {
-			UI.oldBrowserBehavior = optOldBrowserBehavior.isChecked();
+		//} else if (view == optOldBrowserBehavior) {
+		//	UI.oldBrowserBehavior = optOldBrowserBehavior.isChecked();
 		} else if (view == optClearListWhenPlayingFolders) {
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {

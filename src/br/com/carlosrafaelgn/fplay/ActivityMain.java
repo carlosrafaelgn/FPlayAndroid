@@ -90,7 +90,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_OPENGL = 113;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -322,7 +322,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void addSongs() {
 		if (Player.getState() == Player.STATE_INITIALIZED) {
 			Player.alreadySelected = false;
-			startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
+			//startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
+			startActivity(new ActivityBrowser2());
 		}
 	}
 	
@@ -433,7 +434,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_ADD));
 		UI.separator(menu, 0, 1);
-		Menu s = menu.addSubMenu(1, 0, 0, R.string.list)
+		Menu s2, s = menu.addSubMenu(1, 0, 0, R.string.list)
 				.setIcon(new TextIconDrawable(UI.ICON_LIST));
 		UI.prepare(s);
 		s.add(0, MNU_CLEARLIST, 0, R.string.clear_list)
@@ -473,7 +474,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s.add(2, MNU_EFFECTS, 2, R.string.audio_effects)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_EQUALIZER));
-		s.add(2, MNU_VISUALIZER, 3, R.string.visualizer)
+		s2 = s.addSubMenu(2, 0, 3, getText(R.string.visualizer) + "\u2026")
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+		UI.prepare(s2);
+		s2.add(2, MNU_VISUALIZER, 0, "Classic")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+		s2.add(2, MNU_VISUALIZER_OPENGL, 1, "Fullscreen OpenGL 2.0")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
@@ -530,6 +537,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				startActivity(new ActivityEffects());
 			break;
 		case MNU_VISUALIZER:
+			if (Player.getState() == Player.STATE_INITIALIZED)
+				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
+			break;
+		case MNU_VISUALIZER_OPENGL:
 			if (Player.getState() == Player.STATE_INITIALIZED)
 				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
 			break;

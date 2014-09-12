@@ -239,7 +239,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 0x0027;
 	private static final int OPT_WRAPAROUNDLIST = 0x0028;
 	private static final int OPT_EXTRASPACING = 0x0029;
-	private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
+	//private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
 	private static final int OPT_VISUALIZERORIENTATION = 0x002B;
 	private static final int OPT_SONGEXTRAINFOMODE = 0x002C;
 	private static final int OPT_TURNOFFTIMERSELECTEDMINUTES = 0x002D;
@@ -280,7 +280,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 19;
 	private static final int OPTBIT_WRAPAROUNDLIST = 20;
 	private static final int OPTBIT_EXTRASPACING = 21;
-	private static final int OPTBIT_OLDBROWSERBEHAVIOR = 22;
+	//private static final int OPTBIT_OLDBROWSERBEHAVIOR = 22;
 	static final int OPTBIT_EQUALIZER_ENABLED = 23;
 	static final int OPTBIT_BASSBOOST_ENABLED = 24;
 	static final int OPTBIT_VIRTUALIZER_ENABLED = 25;
@@ -400,7 +400,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
 			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR);
+			//UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR);
 			//new settings (cannot be loaded the old way)
 			headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
 			doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
@@ -433,7 +433,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
 			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR);
+			//UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR);
 		}
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -501,7 +501,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.putBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing);
 		opts.putBit(OPTBIT_WRAPAROUNDLIST, UI.wrapAroundList);
 		opts.putBit(OPTBIT_EXTRASPACING, UI.extraSpacing);
-		opts.putBit(OPTBIT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
+		//opts.putBit(OPTBIT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
 		opts.putBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES, headsetHookDoublePressPauses);
 		opts.putBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME, doNotAttenuateVolume);
 		opts.putBit(OPTBIT_SCROLLBAR_TO_THE_LEFT, UI.scrollBarToTheLeft);

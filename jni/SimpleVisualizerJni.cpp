@@ -49,7 +49,7 @@
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
 
 
-#define DEFSPEED (0.09375f / 16.0f)
+#define DEFSPEED (0.140625f / 16.0f)
 
 //for the alignment:
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html

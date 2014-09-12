@@ -722,6 +722,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 	}
 	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void setPanelTopAlpha() {
+		panelTop.setAlpha(panelTopAlpha);
+	}
+	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
 		if (panelTop == null || uiAnimTimer == null || info == null)
@@ -745,6 +750,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				uiAnimTimer.stop();
 			}
 		}
-		panelTop.setAlpha(panelTopAlpha);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			setPanelTopAlpha();
 	}
 }

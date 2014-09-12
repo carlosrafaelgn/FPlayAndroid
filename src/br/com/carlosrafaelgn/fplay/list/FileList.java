@@ -123,7 +123,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 				sectionPositions = fetcher.sectionPositions;
 			}
 			//if (listObserver != null || fetcher.oldBrowserBehavior) {
-				int p = ((fetcher.oldBrowserBehavior || !fetcher.isInTouchMode) ? 0 : -1);
+				int p = ((/*fetcher.oldBrowserBehavior || */!fetcher.isInTouchMode) ? 0 : -1);
 				if (comingFrom != null && comingFrom.length() > 0) {
 					if (path == null || path.length() == 0) {
 						for (int i = count - 1; i >= 0; i--) {

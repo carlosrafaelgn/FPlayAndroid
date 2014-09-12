@@ -49,7 +49,6 @@ import android.provider.MediaStore;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 //
@@ -93,7 +92,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	public String[] sections;
 	public int[] sectionPositions;
 	public int count;
-	public final boolean playAfterFetching, oldBrowserBehavior, isInTouchMode, createSections;
+	public final boolean playAfterFetching, /*oldBrowserBehavior,*/ isInTouchMode, createSections;
 	private Throwable notifyE;
 	private Listener listener;
 	private boolean recursive;
@@ -151,7 +150,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		this.recursive = recursive;
 		this.recursiveIfFirstEmpty = recursiveIfFirstEmpty;
 		this.playAfterFetching = playAfterFetching;
-		this.oldBrowserBehavior = UI.oldBrowserBehavior;
+		//this.oldBrowserBehavior = UI.oldBrowserBehavior;
 		this.isInTouchMode = isInTouchMode;
 		this.createSections = createSections;
 		this.count = 0;
@@ -896,7 +895,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 						fetchTracks(path);
 					} else {
 						fetchAlbums(path);
-						final boolean keepAlbumsAsItems = (!recursive && !oldBrowserBehavior);
+						final boolean keepAlbumsAsItems = (!recursive);// && !oldBrowserBehavior);
 						if (recursive || keepAlbumsAsItems) {
 							//we actually need to fetch all tracks from all this artist's albums...
 							final FileSt[] albums = files;
