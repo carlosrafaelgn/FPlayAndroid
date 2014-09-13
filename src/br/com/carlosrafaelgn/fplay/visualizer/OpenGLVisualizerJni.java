@@ -36,7 +36,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
+import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
@@ -52,8 +56,9 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
-public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, /*CustomGLSurfaceView.EGLContextFactory,*/ Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
+public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
 	public static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4;	
 	
 	private static int GLVersion = -1;
@@ -62,6 +67,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private volatile boolean supported, alerted, okToRender;
 	private volatile int error;
 	private int colorIndex, speed;
+	private EGLConfig config;
 	
 	public OpenGLVisualizerJni(Context context, boolean landscape) {
 		super(context);
@@ -78,20 +84,34 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 		
 		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/opengl/GLSurfaceView.java
-		getHolder().setFormat(PixelFormat.RGB_565);
-		setEGLContextClientVersion(2);
-		setEGLConfigChooser(5, 6, 5, 0, 0, 0);
-		//setEGLContextFactory(this);
+		//getHolder().setFormat(PixelFormat.RGB_565);
+		//setEGLContextClientVersion(2);
+		//setEGLConfigChooser(5, 6, 5, 0, 0, 0);
+		setEGLContextFactory(this);
+		setEGLWindowSurfaceFactory(this);
 		setRenderer(this);
 		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 	}
 	
-	/*@Override
-	public EGLContext createContext(final EGL10 egl, final EGLDisplay display, EGLConfig eglConfig) {
+	@Override
+	public EGLSurface createWindowSurface(EGL10 egl, EGLDisplay display, EGLConfig config, Object native_window) {
+		return egl.eglCreateWindowSurface(display, (this.config != null) ? this.config : config, native_window, null);
+	}
+	
+	@Override
+	public void destroySurface(EGL10 egl, EGLDisplay display, EGLSurface surface) {
+		if (egl != null && display != null && surface != null)
+			egl.eglDestroySurface(display, surface);
+	}
+	
+	@Override
+	public EGLContext createContext(final EGL10 egl, final EGLDisplay display, EGLConfig config) {
 		
 		//https://www.khronos.org/registry/egl/sdk/docs/man/html/eglChooseConfig.xhtml
 		//https://www.khronos.org/registry/egl/sdk/docs/man/html/eglCreateContext.xhtml
 		
+		egl.eglMakeCurrent(display, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+		this.config = null;
 		//EGL_FALSE = 0
 		//EGL_TRUE = 1
 		//EGL_OPENGL_ES2_BIT = 4
@@ -99,6 +119,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		final EGLConfig[] configs = new EGLConfig[64], selectedConfigs = new EGLConfig[64];
 		final int[] num_config = { 0 }, value = new int[1];
 		final int[] none = { EGL10.EGL_NONE };
+		final int[] v2 = { 0x3098, 2, EGL10.EGL_NONE };
 		int selectedCount = 0;
 		if (egl.eglGetConfigs(display, configs, 32, num_config) && num_config[0] > 0) {
 			for (int i = 0; i < num_config[0]; i++) {
@@ -120,7 +141,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		if (selectedCount == 0) {
 			supported = false;
 			MainHandler.sendMessage(this, 0);
-			return egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, none);
+			return egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, none);
 		}
 		ArraySorter.sort(selectedConfigs, 0, selectedCount, new ArraySorter.Comparer<EGLConfig>() {
 			@Override
@@ -174,7 +195,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				//prefer smaller values
 				if (x != value[0])
 					return (x - value[0]);
-				
 				egl.eglGetConfigAttrib(display, a, EGL10.EGL_ALPHA_SIZE, value);
 				x = value[0];
 				egl.eglGetConfigAttrib(display, b, EGL10.EGL_ALPHA_SIZE, value);
@@ -188,7 +208,12 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				return (x - value[0]);
 			}
 		});
+		//according to this:
+		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/opengl/GLSurfaceView.java#941
+		//the native_window parameter in cretaeWindowSurface is this SurfaceHolder 
+		final SurfaceHolder holder = getHolder();
 		for (int i = 0; i < selectedCount; i++) {
+			final int r, g, b;
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_BUFFER_SIZE, value);
 			System.out.print(i + " bs" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_SAMPLE_BUFFERS, value);
@@ -203,26 +228,56 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			System.out.print(" a" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_ALPHA_MASK_SIZE, value);
 			System.out.print(" am" + value[0]);
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_RED_SIZE, value);
+			r = value[0];
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_GREEN_SIZE, value);
-			System.out.println(" rgb" + value[0]);
+			g = value[0];
+			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_BLUE_SIZE, value);
+			b = value[0];
+			System.out.println(" rgb" + r + " " + g + " " + b);
+			if (r != 8 || g != 8 || b != 8) {
+				if (r != 5 || g != 6 || b != 5)
+					continue;
+			}
+			EGLSurface surface = null;
 			try {
-				EGLContext ctx = egl.eglCreateContext(display, selectedConfigs[i], EGL10.EGL_NO_CONTEXT, new int[] { 0x3098, 2, EGL10.EGL_NONE } );
-				if (ctx == null)
-					ctx = egl.eglCreateContext(display, selectedConfigs[i], EGL10.EGL_NO_CONTEXT, none);
-				if (ctx != null)
-					return ctx;
+				this.config = selectedConfigs[i];
+				EGLContext ctx = egl.eglCreateContext(display, this.config, EGL10.EGL_NO_CONTEXT, v2);
+				if (ctx == null || ctx == EGL10.EGL_NO_CONTEXT)
+					ctx = egl.eglCreateContext(display, this.config, EGL10.EGL_NO_CONTEXT, none);
+				if (ctx != null && ctx != EGL10.EGL_NO_CONTEXT) {
+					//try to create a surface and make it current successfully
+					//before confirming this is the right config/context
+					holder.setFormat((r == 5) ? PixelFormat.RGB_565 : PixelFormat.RGBA_8888);
+					surface = egl.eglCreateWindowSurface(display, this.config, holder, null);
+					if (surface != null && surface != EGL10.EGL_NO_SURFACE) {
+						//try to make current
+						if (egl.eglMakeCurrent(display, surface, surface, ctx)) {
+							//yes! this combination works!!!
+							return ctx;
+						}
+						this.config = null;
+					}
+				}
 			} catch (Throwable ex) {
+			} finally {
+				egl.eglMakeCurrent(display, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+				if (surface != null && surface != EGL10.EGL_NO_SURFACE)
+					egl.eglDestroySurface(display, surface);
+				surface = null;
 			}
 		}
+		this.config = null;
 		supported = false;
 		MainHandler.sendMessage(this, 0);
-		return egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, none);
+		return egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, none);
 	}
 	
 	@Override
 	public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) {
-		egl.eglDestroyContext(display, context);
-	}*/
+		if (egl != null && display != null && context != null)
+			egl.eglDestroyContext(display, context);
+	}
 	
 	//Runs on a SECONDARY thread
 	@Override
