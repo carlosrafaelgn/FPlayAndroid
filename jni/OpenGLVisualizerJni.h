@@ -76,7 +76,11 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor) {
 	glShaderSource(glVShader, 1, &vertexShader, &l);
 	if (glGetError()) return -4;
 	//memory reuse FTW! :)
-	sprintf((char*)floatBuffer, "precision mediump float; uniform sampler2D texAmplitude; uniform sampler2D texColor; varying vec2 vTexCoord; void main() { vec4 c = texture2D(texAmplitude, vec2(vTexCoord.x, 0.0)); if (vTexCoord.y <= c.a && vTexCoord.y >= -c.a) {" \
+	sprintf((char*)floatBuffer, "precision mediump float; uniform sampler2D texAmplitude; uniform sampler2D texColor; varying vec2 vTexCoord; void main() {" \
+	"vec4 c = texture2D(texAmplitude, vec2(" \
+	"vTexCoord.x" \
+	/*"(vTexCoord.x < 0.25) ? (vTexCoord.x * 0.5) : (((vTexCoord.x - 0.25) * 1.167) + 0.125)"*/ \
+	", 0.0)); if (vTexCoord.y <= c.a && vTexCoord.y >= -c.a) {" \
 	"gl_FragColor = texture2D(texColor, c.ar);" \
 	"} else {" \
 	"gl_FragColor = vec4(%.8f, %.8f, %.8f, 1.0);" \
@@ -220,7 +224,13 @@ void JNICALL glProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMil
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		float m = (multiplier[i] * sqrtf((float)((re * re) + (im * im))));
+		
+		float m = multiplier[i] * sqrtf((float)((re * re) + (im * im)));
+		//2048/32768 = 0.0625
+		//float m = (((multiplier[i] * sqrtf((float)((re * re) + (im * im)))) - 2048.0f) * 1.0625f) + 2048.0f;
+		//if (m < 0)
+		//	m = 0;
+		
 		const float old = fft[i];
 		if (m < old)
 			m = (coefNew * m) + (coefOld * old);

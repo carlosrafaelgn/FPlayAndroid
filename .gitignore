@@ -1,6 +1,10 @@
+.gradle/
+.idea/
 .settings/
 bin/
+build/
 obj/
 gen/
 proguard/
 ic_launcher-web.png
+local.properties
