@@ -103,19 +103,22 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top = null;
 		activity.activity = null;
 		activity.previousActivity = null;
+		final ClientActivity oldTop = top;
+		if (oldTop != null && !oldTop.finished)
+			oldTop.activityFinished(activity, activity.requestCode, code);
 		if (newActivity != null) {
 			startActivityInternal(newActivity);
 		} else {
 			if (top == null) {
 				finish();
-			} else {
+			} else if (top == oldTop) {
+				//we must check because the top activity could have
+				//changed as a consequence of oldTop.activityFinished()
+				//being called
 				setWindowColor(top.getDesiredWindowColor());
 				top.onCreateLayout(false);
-				if (top != null && !top.finished) {
+				if (top != null && !top.finished)
 					top.onResume();
-					if (top != null && !top.finished)
-						top.activityFinished(activity, activity.requestCode, code);
-				}
 			}
 		}
 		System.gc();

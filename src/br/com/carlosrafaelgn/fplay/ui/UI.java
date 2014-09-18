@@ -139,7 +139,7 @@ public final class UI {
 	public static final String ICON_VOLUME4 = "4";
 	public static final String ICON_DECREASE_VOLUME = "-";
 	public static final String ICON_INCREASE_VOLUME = "+";
-	public static final String ICON_FIND = "F";
+	public static final String ICON_SEARCH = "F";
 	public static final String ICON_INFORMATION = "I";
 	public static final String ICON_QUESTION = "?";
 	public static final String ICON_EXCLAMATION = "!";

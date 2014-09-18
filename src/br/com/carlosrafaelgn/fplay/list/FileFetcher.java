@@ -61,26 +61,26 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	}
 	
 	private static final class RootItem {
-		public final String fromLC, pathLC, path;
-		public final boolean isValid;
+		public final String fs_specLC, pathLC, path;
+		public final boolean isFileSystemTypeValid;
 		
-		public RootItem(String from, String path, boolean isValid) {
-			this.fromLC = from.toLowerCase(Locale.US);
+		public RootItem(String fs_spec, String path, boolean isFileSystemTypeValid) {
+			this.fs_specLC = fs_spec.toLowerCase(Locale.US);
 			this.pathLC = path.toLowerCase(Locale.US);
 			this.path = path;
-			this.isValid = isValid;
+			this.isFileSystemTypeValid = isFileSystemTypeValid;
 		}
 		
 		@Override
 		public int hashCode() {
-			return fromLC.hashCode();
+			return fs_specLC.hashCode();
 		}
 		
 		@Override
 		public boolean equals(Object o) {
 			if (o instanceof String)
-				return fromLC.equals(o);
-			return fromLC.equals(((RootItem)o).fromLC);
+				return fs_specLC.equals(o);
+			return fs_specLC.equals(((RootItem)o).fs_specLC);
 		}
 	}
 	
@@ -178,32 +178,66 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		files = Arrays.copyOf(files, capacity);
 	}
 	
-	private void addStorage(Service s, File path, boolean isExternal, int[] externalCount, int[] usbCount, int[] addedCount, String[] addedPaths) throws Throwable {
+	private void addStorage(Service s, File path, boolean isExternal, int[] internalCount, int[] externalCount, int[] usbCount, int[] addedCount, String[] addedPaths) throws Throwable {
 		if (!path.exists() || !path.isDirectory())
 			return;
+		
 		int c = addedCount[0];
 		if (c >= addedPaths.length)
 			return;
-		final String absPath = path.getCanonicalFile().getAbsolutePath();
-		final String absPathLC = absPath.toLowerCase(Locale.US);
+		
+		//readlink command could be used instead? which is better???
+		//http://www.computerhope.com/unix/readlink.htm
+		String canonicalPath = path.getCanonicalFile().getAbsolutePath();
+		String canonicalPathLC = canonicalPath.toLowerCase(Locale.US);
+		try {
+			//limit the amount of iterations while resolving symlinks
+			for (int i = 4; i > 0; i--) {
+				final File file = new File(canonicalPath);
+				final String p = file.getCanonicalFile().getAbsolutePath();
+				final String pLC = p.toLowerCase(Locale.US);
+				if (pLC.equals(canonicalPathLC))
+					break;
+				path = file;
+				canonicalPath = p;
+				canonicalPathLC = pLC;
+			}
+		} catch (Throwable ex) {
+		}
+		
 		for (int i = c - 1; i >= 0; i--) {
-			if (absPathLC.equals(addedPaths[i]))
+			if (canonicalPathLC.equals(addedPaths[i]))
 				return;
 		}
-		addedPaths[c] = absPathLC;
+		
+		/*
+		//check if the directory is empty before actually adding it
+		try {
+			final String[] files = path.list();
+			if (files == null || files.length == 0)
+				return;
+		} catch (Throwable ex) {
+			return;
+		}*/
+		
+		addedPaths[c] = canonicalPathLC;
 		addedCount[0] = c + 1;
 		if (isExternal) {
-			if (absPathLC.contains("usb")) {
+			if (canonicalPathLC.contains("usb")) {
 				c = usbCount[0] + 1;
-				files[count] = new FileSt(absPath, s.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_INTERNAL_STORAGE);
+				files[count] = new FileSt(canonicalPath, s.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_INTERNAL_STORAGE);
 				usbCount[0] = c;
 			} else {
+				//try to avoid duplication of internal sdcard on a few phones... 
+				if (internalCount[0] > 0 && canonicalPathLC.contains("/legacy"))
+					return;
 				c = externalCount[0] + 1;
-				files[count] = new FileSt(absPath, s.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE);
+				files[count] = new FileSt(canonicalPath, s.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE);
 				externalCount[0] = c;
 			}
 		} else {
-			files[count] = new FileSt(absPath, s.getText(R.string.internal_storage).toString(), null, FileSt.TYPE_INTERNAL_STORAGE);
+			files[count] = new FileSt(canonicalPath, s.getText(R.string.internal_storage).toString(), null, FileSt.TYPE_INTERNAL_STORAGE);
+			internalCount[0]++;
 		}
 		count++;
 	}
@@ -243,19 +277,16 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		}
 		f = null;
 		
-		files[count] = new FileSt(File.separator, s.getText(R.string.all_files).toString(), null, FileSt.TYPE_ALL_FILES);
-		count++;
-		
 		if (cancelled)
 			return;
 		
 		int i;
-		int[] externalCount = new int[1], usbCount = new int[1], addedCount = new int[1];
+		int[] internalCount = new int[1], externalCount = new int[1], usbCount = new int[1], addedCount = new int[1];
 		String[] addedPaths = new String[16];
 		String path;
 		
 		try {
-			addStorage(s, Environment.getExternalStorageDirectory(), Environment.isExternalStorageRemovable(), externalCount, usbCount, addedCount, addedPaths);
+			addStorage(s, Environment.getExternalStorageDirectory(), Environment.isExternalStorageRemovable(), internalCount, externalCount, usbCount, addedCount, addedPaths);
 		} catch (Throwable ex) {
 		}
 		
@@ -263,21 +294,21 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		//http://sapienmobile.com/?p=204
 		//http://stackoverflow.com/questions/11281010/how-can-i-get-external-sd-card-path-for-android-4-0
 		
-		try {
+		/*try {
 			path = System.getenv("SECONDARY_STORAGE");
 			if (path != null && path.length() > 0) {
 				//this file helps clarifying this ':' a little bit...
 				//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.4.2_r1/android/os/Environment.java
 				int start = path.indexOf(':');
 				if (start < 0) {
-					addStorage(s, new File(path), true, externalCount, usbCount, addedCount, addedPaths);
+					addStorage(s, new File(path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 				} else {
 					//avoid using split ;)
 					int end;
 					do {
 						end = path.indexOf(':', start + 1);
 						if (end <= start) end = path.length();
-						addStorage(s, new File(path.substring(start, end)), true, externalCount, usbCount, addedCount, addedPaths);
+						addStorage(s, new File(path.substring(start, end)), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 						start = end + 1;
 					} while (end < path.length());
 				}
@@ -286,71 +317,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		}
 		
 		if (cancelled)
-			return;
-		
-		//let's try a few hardcoded paths before going deeper...
-		/*final String[] paths = {
-				"/mnt/sdcard/ext_sd",
-				"/mnt/sdcard/external_sd",
-				"/mnt/external",
-				"/mnt/extSdCard"
-		};
-		for (i = paths.length - 1; i >= 0 && !cancelled; i--) {
-			try {
-				addStorage(s, new File(paths[i]), true, externalCount, usbCount, addedCount, addedPaths);
-			} catch (Throwable ex) {
-			}
-		}
-		
-		if (addedCount[0] >= 2)
 			return;*/
-		
-		//now, try to go deeper!
-		/*final String[] cfgFiles = {
-				"/fstab.goldfish",
-				"/fstab.aries",
-				"/system/etc/vold",
-				"/system/etc/fstab.conf",
-				"/system/etc/fstab",
-				"/system/etc/vold.conf",
-				"/system/etc/vold.fstab"
-		};
-		for (i = cfgFiles.length - 1; i >= 0 && !cancelled; i--) {
-			Scanner scanner = null;
-			try {
-				f = new File(cfgFiles[i]);
-				if (!f.exists())
-					continue;
-				scanner = new Scanner(f);
-				while (!cancelled && scanner.hasNext()) {
-					final String line = scanner.nextLine();
-					if (line.startsWith("dev_mount")) {
-						final int start = line.indexOf(' ', 10); //skip "dev_mount "
-						int end = line.indexOf(' ', start + 1);
-						if (end <= start)
-							end = line.length();
-						String element = line.substring(start + 1, end);
-						if (element.contains(":"))
-							element = element.substring(0, element.indexOf(":"));
-						if (element.toLowerCase(Locale.US).contains("usb"))
-							continue;
-						try {
-							addStorage(s, new File(element), true, externalCount, usbCount, addedCount, addedPaths);
-						} catch (Throwable ex) {
-						}
-					}
-				}
-			} catch (Throwable ex) {
-			} finally {
-				f = null;
-				if (scanner != null) {
-					try {
-						scanner.close();
-					} catch (Throwable e) {
-					}
-				}
-			}
-		}*/
 		
 		InputStream is = null;
 		InputStreamReader isr = null;
@@ -364,24 +331,36 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			while ((line = br.readLine()) != null) {
 				if (cancelled)
 					break;
+				
+				//skip secure storages (accessing them usually result in
+				//a permission denied error)
 				if (line.length() == 0 ||
 					line.contains("secure") ||
 					line.contains("asec")) continue;
+				
+				//http://unix.stackexchange.com/questions/91960/can-anyone-explain-the-output-of-mount
+				
+				//every line returned by mount must be seen as
+				//fs_spec fs_file fs_vfstype [fs_mntopts - optional]
+				
 				final int first = line.indexOf(' ');
 				if (first <= 0) continue;
 				final int second = line.indexOf(' ', first + 1);
 				if (second <= first) continue;
-				final String from = line.substring(0, first);
+				
+				final String fs_spec = line.substring(0, first);
 				path = line.substring(first + 1, second);
+				
 				//fuse is used for internal storage
-				final RootItem item = new RootItem(from, path, line.contains("fat") || line.contains("fuse"));
-				map.put(item.fromLC, item);
+				final RootItem item = new RootItem(fs_spec, path, line.contains("fat") || line.contains("fuse"));
+				map.put(item.fs_specLC, item);
 			}
 			for (RootItem item : map.values()) {
 				if (cancelled)
 					break;
-				if (item.isValid) {
+				if (item.isFileSystemTypeValid) {
 					RootItem tmp = item, it = item;
+					//try to get the actual path pointed by this item, using a
 					//poor man's cycle prevention ;)
 					i = 0;
 					while (i < 4 && (tmp = map.get(it.pathLC)) != null) {
@@ -389,7 +368,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 						i++;
 					}
 					try {
-						addStorage(s, new File(it.path), true, externalCount, usbCount, addedCount, addedPaths);
+						addStorage(s, new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 					} catch (Throwable ex) {
 					}
 				}
@@ -416,22 +395,10 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 			}
 		}
 		
-		/*if (addedCount[0] >= 2 || cancelled)
-			return;
-		
-		//try the hardcoded paths only after trying the "mount" command
-		final String[] paths = {
-				"/mnt/sdcard/ext_sd",
-				"/mnt/sdcard/external_sd",
-				"/mnt/external",
-				"/mnt/extSdCard"
-		};
-		for (i = paths.length - 1; i >= 0 && !cancelled; i--) {
-			try {
-				addStorage(s, new File(paths[i]), true, externalCount, usbCount, addedCount, addedPaths);
-			} catch (Throwable ex2) {
-			}
-		}*/
+		if (count < files.length) {
+			files[count] = new FileSt(File.separator, s.getText(R.string.all_files).toString(), null, FileSt.TYPE_ALL_FILES);
+			count++;
+		}
 	}
 	
 	private void fetchArtists() {

@@ -247,6 +247,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_IDLETURNOFFTIMERSELECTEDMINUTES = 0x002F;
 	private static final int OPT_FLAT = 0x0030;
 	private static final int OPT_ALBUMART = 0x0031;
+	private static final int OPT_RADIOSEARCHTERM = 0x0032;
+	private static final int OPT_RADIOLASTGENRE = 0x0033;
 	
 	//values 0x01xx are shared among all effects
 	static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -291,6 +293,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPTBIT_SCROLLBAR_SONGLIST1 = 30;
 	private static final int OPTBIT_SCROLLBAR_BROWSER0 = 31;
 	private static final int OPTBIT_SCROLLBAR_BROWSER1 = 32;
+	private static final int OPTBIT_LASTRADIOSEARCHWASBYGENRE = 33;
 	
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	
@@ -334,9 +337,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	//so they will survive their respective activity's destruction
 	//(and even the class garbage collection)
 	private static HashSet<String> favoriteFolders;
-	public static String path, originalPath;
-	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
-	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged, headsetHookDoublePressPauses, doNotAttenuateVolume;
+	public static String path, originalPath, radioSearchTerm;
+	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
+	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged, headsetHookDoublePressPauses, doNotAttenuateVolume, lastRadioSearchWasByGenre;
 	
 	public static SerializableMap loadConfigFromFile(Context context) {
 		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");
@@ -375,6 +378,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
 		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
+		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
+		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		//the concept of bit was added on version 38
 		if (opts.hasBits() || UI.lastVersionCode == 0) {
 			//load the bit flags the new way
@@ -409,6 +414,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			if (UI.songListScrollBarType == BgListView.SCROLLBAR_INDEXED)
 				UI.songListScrollBarType = BgListView.SCROLLBAR_LARGE;
 			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
+			lastRadioSearchWasByGenre = opts.getBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, true);
 		} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -479,6 +485,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_WIDGETICONCOLOR, UI.widgetIconColor);
 		opts.put(OPT_VISUALIZERORIENTATION, UI.visualizerOrientation);
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
+		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
+		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);
 		opts.putBit(OPTBIT_BASSBOOSTMODE, bassBoostMode);
 		opts.putBit(OPTBIT_NEXTPREPARATION, nextPreparationEnabled);
@@ -509,6 +517,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.putBit(OPTBIT_SCROLLBAR_SONGLIST1, (UI.songListScrollBarType & 2) != 0);
 		opts.putBit(OPTBIT_SCROLLBAR_BROWSER0, (UI.browserScrollBarType & 1) != 0);
 		opts.putBit(OPTBIT_SCROLLBAR_BROWSER1, (UI.browserScrollBarType & 2) != 0);
+		opts.putBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, lastRadioSearchWasByGenre);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

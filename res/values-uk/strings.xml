@@ -238,5 +238,8 @@
     <string name="opengl_not_supported"> OpenGL ES 2.0 не дозволені</string>
     <string name="speed">Швидкість</string>
     <string name="add_radio">Радіо&#8230;</string>
+    <string name="search">Шукати</string>
+    <string name="genre">Жанр</string>
+    <string name="search_term">Критерії пошуку</string>
     
 </resources>

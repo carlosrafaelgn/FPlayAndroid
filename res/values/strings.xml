@@ -238,5 +238,8 @@
     <string name="opengl_not_supported"> No support for OpenGL ES 2.0</string>
     <string name="speed">Speed</string>
     <string name="add_radio">Radio&#8230;</string>
+    <string name="search">Search</string>
+    <string name="genre">Genre</string>
+    <string name="search_term">Search term</string>
     
 </resources>

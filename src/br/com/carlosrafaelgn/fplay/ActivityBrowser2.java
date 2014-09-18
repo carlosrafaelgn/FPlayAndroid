@@ -48,9 +48,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileList;
@@ -66,7 +66,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivityBrowser2 extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
+public final class ActivityBrowser2 extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver {
 	private static final int MNU_REMOVEFAVORITE = 100;
 	private FileSt lastClickedFavorite;
 	private TextView lblPath, sep, sep2;
@@ -102,8 +102,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			chkAll.setNextFocusUpId(R.id.list);
 			btnGoBack.setNextFocusUpId(R.id.list);
 			btnGoBack.setNextFocusLeftId(R.id.list);
-			list.setNextFocusDownId(R.id.btnGoBack);
-			list.setNextFocusRightId(R.id.btnGoBack);
 			UI.setNextFocusForwardId(list, R.id.btnGoBack);
 		} else {
 			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
@@ -129,8 +127,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			chkAll.setNextFocusUpId((checkedCount != 0) ? R.id.btnPlay : R.id.btnGoBackToPlayer);
 			btnGoBack.setNextFocusUpId(R.id.btnGoBackToPlayer);
 			btnGoBack.setNextFocusLeftId((checkedCount != 0) ? R.id.btnPlay : R.id.btnGoBackToPlayer);
-			list.setNextFocusDownId(R.id.btnGoBackToPlayer);
-			list.setNextFocusRightId(R.id.btnGoBackToPlayer);
 			UI.setNextFocusForwardId(list, R.id.btnGoBackToPlayer);
 			btnGoBackToPlayer.setNextFocusRightId((checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBack);
 			UI.setNextFocusForwardId(btnGoBackToPlayer, (checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBack);
@@ -385,11 +381,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	}
 	
 	@Override
-	public View getNullContextMenuView() {
-		return null;
-	}
-	
-	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		UI.prepare(menu);
 		menu.add(0, MNU_REMOVEFAVORITE, 0, R.string.remove_favorite)
@@ -520,12 +511,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				finish();
 			}
 		} else if (view == btnRadio) {
-			UI.toast(getHostActivity(), R.string.coming_soon);
+			startActivity(new ActivityBrowserRadio(), 1);
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = new LinearLayout(ctx);
 			l.setOrientation(LinearLayout.VERTICAL);
 			l.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+			l.setBaselineAligned(false);
 			TextView lbl = new TextView(ctx);
 			lbl.setText(R.string.url);
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
@@ -533,7 +525,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			txtURL = new EditText(ctx);
 			txtURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			txtURL.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
-			LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI._8dp;
 			p.bottomMargin = UI._16dp;
 			txtURL.setLayoutParams(p);
@@ -546,7 +538,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			txtTitle.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTitle.setSingleLine();
-			p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI._8dp;
 			txtTitle.setLayoutParams(p);
 			l.addView(txtTitle);
@@ -617,6 +609,16 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		txtURL = null;
 		txtTitle = null;
+	}
+	
+	@Override
+	public void onCancel(DialogInterface dialog) {
+		onClick(dialog, AlertDialog.BUTTON_NEGATIVE);
+	}
+	
+	public void activityFinished(ClientActivity activity, int requestCode, int code) {
+		if (requestCode == 1 && code == -1)
+			finish();
 	}
 	
 	@Override
@@ -730,13 +732,18 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			btnRadio.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
-		if (UI.extraSpacing) {
-			final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
-			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-			lp.rightMargin = UI._8dp;
-			btnURL.setLayoutParams(lp);
+		if (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED ||
+			UI.browserScrollBarType == BgListView.SCROLLBAR_LARGE) {
+			UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
+		} else {
+			if (UI.extraSpacing) {
+				final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
+				lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+				lp.rightMargin = UI._8dp;
+				btnURL.setLayoutParams(lp);
+			}
+			UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, true);
 		}
-		UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, true);
 		UI.prepareControlContainer(panelSecondary, true, false);
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);

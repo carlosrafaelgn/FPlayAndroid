@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -43,12 +44,12 @@ import android.text.Layout.Alignment;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
-public final class RadioStationView extends View implements View.OnClickListener, View.OnLongClickListener {
+public final class RadioStationView extends View implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener {
 	private RadioStation station;
-	private String ellipsizedTitle, ellipsizedOnAir, ellipsizedTags;
+	private String ellipsizedTitle, ellipsizedOnAir;
 	private final int verticalMargin;
-	private int state, width, height, descriptionHeight, position;
-	private StaticLayout layout;
+	private int state, width, height, descriptionHeight, tagsHeight, position;
+	private StaticLayout layout, layoutTags;
 	
 	public RadioStationView(Context context) {
 		super(context);
@@ -58,10 +59,21 @@ public final class RadioStationView extends View implements View.OnClickListener
 		super.setDrawingCacheEnabled(false);
 	}
 	
-	private void processEllipsis(boolean keepCurrentLayout) {
-		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - (UI._8dp << 1), false);
-		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - (UI._8dp << 1), false);
-		ellipsizedTags = UI.ellipsizeText(station.tags, UI._14sp, width - (UI._8dp << 1), false);
+	private void processEllipsis() {
+		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - (UI._8dp << 1), true);
+		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - (UI._8dp << 1) - UI._18sp - UI._4dp, true);
+		//ellipsizedTags = UI.ellipsizeText(station.tags, UI._14sp, width - (UI._8dp << 1), false);
+		if (station.tags == null || station.tags.length() == 0) {
+			layoutTags = null;
+			tagsHeight = 0;
+		} else {
+			UI.textPaint.setTextSize(UI._14sp);
+			layoutTags = new StaticLayout(station.tags, UI.textPaint, (width < (UI._8dp << 1)) ? 0 : (width - (UI._8dp << 1)), Alignment.ALIGN_NORMAL, 1, 0, false);
+			tagsHeight = layoutTags.getHeight();
+			if (tagsHeight < UI._14spBox)
+				tagsHeight = UI._14spBox;
+			tagsHeight += UI._4sp;
+		}
 		if (station.description == null || station.description.length() == 0) {
 			layout = null;
 			descriptionHeight = 0;
@@ -71,13 +83,12 @@ public final class RadioStationView extends View implements View.OnClickListener
 			descriptionHeight = layout.getHeight();
 			if (descriptionHeight < UI._14spBox)
 				descriptionHeight = UI._14spBox;
-			descriptionHeight += UI._1dp;
+			descriptionHeight += UI._4sp;
 		}
-		final int h = (UI._1dp << 1) + UI._1dp + (verticalMargin << 1) + UI._22spBox + UI._18spBox + UI._14spBox + descriptionHeight;
+		final int h = (verticalMargin << 1) + UI._22spBox + UI._1dp + UI._18spBox + UI._1dp + descriptionHeight + tagsHeight + UI._1dp;
 		if (height != h) {
 			height = h;
-			if (!keepCurrentLayout)
-				requestLayout();
+			requestLayout();
 		}
 	}
 	
@@ -89,7 +100,7 @@ public final class RadioStationView extends View implements View.OnClickListener
 			return;
 		this.station = station;
 		setContentDescription(station.title);
-		processEllipsis(true);
+		processEllipsis();
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -151,6 +162,11 @@ public final class RadioStationView extends View implements View.OnClickListener
 	}
 	
 	@Override
+	public int predictHeight() {
+		return height;
+	}
+	
+	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
 	}
@@ -160,26 +176,36 @@ public final class RadioStationView extends View implements View.OnClickListener
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (width != w) {
 			width = w;
-			processEllipsis(false);
+			processEllipsis();
 		}
 	}
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
+		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
-		UI.drawText(canvas, ellipsizedOnAir, txtColor, UI._18sp, UI._8dp, verticalMargin + UI._22spBox + UI._1dp + UI._18spYinBox);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, verticalMargin + UI._22spBox + UI._1dp + (UI._18spBox >> 1) - (UI._18sp >> 1), UI._18sp, txtColor2);
+		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI._8dp + UI._18sp + UI._4dp, verticalMargin + UI._22spBox + UI._1dp + UI._18spYinBox);
 		if (layout != null) {
 			UI.textPaint.setColor(txtColor);
 			UI.textPaint.setTextSize(UI._14sp);
-			final float y = (float)(verticalMargin + UI._22spBox + UI._18spBox + (UI._1dp << 1));
-			canvas.translate(0, y);
+			final float y = (float)(verticalMargin + UI._22spBox + UI._1dp + UI._18spBox + UI._1dp + UI._4sp);
+			canvas.translate(UI._8dp, y);
 			layout.draw(canvas);
-			canvas.translate(0, -y);
+			canvas.translate(-UI._8dp, -y);
 		}
-		UI.drawText(canvas, ellipsizedTags, txtColor, UI._14sp, UI._8dp, height - verticalMargin - UI._1dp - UI._14spBox + UI._14spYinBox);
+		if (layoutTags != null) {
+			UI.textPaint.setColor(txtColor2);
+			UI.textPaint.setTextSize(UI._14sp);
+			final float y = (float)(verticalMargin + UI._22spBox + UI._1dp + UI._18spBox + UI._1dp + descriptionHeight + UI._4sp);
+			canvas.translate(UI._8dp, y);
+			layoutTags.draw(canvas);
+			canvas.translate(-UI._8dp, -y);
+		}
+		//UI.drawText(canvas, ellipsizedTags, txtColor, UI._14sp, UI._8dp, height - verticalMargin - UI._1dp - UI._14spBox + UI._14spYinBox);
 	}
 	
 	@Override
@@ -191,8 +217,9 @@ public final class RadioStationView extends View implements View.OnClickListener
 		station = null;
 		ellipsizedTitle = null;
 		ellipsizedOnAir = null;
-		ellipsizedTags = null;
+		//ellipsizedTags = null;
 		layout = null;
+		layoutTags = null;
 		super.onDetachedFromWindow();
 	}
 	

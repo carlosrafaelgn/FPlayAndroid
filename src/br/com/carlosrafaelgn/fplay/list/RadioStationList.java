@@ -60,9 +60,10 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 	private static final int MSG_FINISHED = 0x0300;
 	private static final int MSG_MORE_RESULTS = 0x0301;
 	
+	public static final int POPULAR_GENRE_COUNT = 32;
 	//I took these genres from http://dir.xiph.org/yp.xml
 	//... after grouping, counting, sorting and selecting properly ;)
-	public static final String[] POPULAR_GENRES = new String[] {
+	public static final String[] GENRES = new String[] {
 		"8bit",
 		"Alternative",
 		"Anime",
@@ -94,9 +95,8 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		"Top100",
 		"Trance",
 		"Various",
-		"Video Game"
-	};
-	public static final String[] OTHER_GENRES = new String[] {
+		"Video Game", //last popular genre
+		
 		"40s",
 		"50s",
 		"60s",
@@ -331,7 +331,9 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 				if (ev == XmlPullParser.START_TAG && parser.getName().equals("a")) {
 					if (parser.nextToken() == XmlPullParser.TEXT) {
 						if (sb.length() > 0)
-							sb.append(' ');
+							sb.append(", ");
+						else
+							sb.append("Tags: ");
 						sb.append(parser.getText());
 					} else {
 						hasNextToken = true;
