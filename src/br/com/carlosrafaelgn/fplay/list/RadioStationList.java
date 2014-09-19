@@ -213,11 +213,16 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 	private volatile boolean okToFetchAgain;
 	private int currentStationIndex;
 	private volatile int version;
+	private final String tags, noOnAir, noDescription, noTags;
 	
-	public RadioStationList() {
+	public RadioStationList(String tags, String noOnAir, String noDescription, String noTags) {
 		super(RadioStation.class);
 		this.items = new RadioStation[MAX_COUNT];
 		this.okToFetchAgain = true;
+		this.tags = tags;
+		this.noOnAir = noOnAir;
+		this.noDescription = noDescription;
+		this.noTags = noTags;
 	}
 	
 	public boolean isLoading() {
@@ -302,7 +307,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 						for (int a = parser.getAttributeCount() - 1; a >= 0; a--) {
 							if (parser.getAttributeName(a).equals("href") &&
 								(v = parser.getAttributeValue(a)).endsWith("m3u")) {
-								fields[5] = ((v.charAt(0) == '/') ? ("http://dir.xiph.org" + v) : (v));
+								fields[5] = ((v.charAt(0) == '/') ? ("http://dir.xiph.org" + v) : (v)).trim();
 								hasFields = true;
 								break;
 							}
@@ -314,7 +319,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		return hasFields;
 	}
 	
-	private static boolean parseIcecastColumn1(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
+	private boolean parseIcecastColumn1(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
 		int ev = 0, pCount = 0;
 		boolean hasFields = false, hasNextToken = false, parsingTags = false;
 		String str;
@@ -330,10 +335,12 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 			} else if (parsingTags) {
 				if (ev == XmlPullParser.START_TAG && parser.getName().equals("a")) {
 					if (parser.nextToken() == XmlPullParser.TEXT) {
-						if (sb.length() > 0)
-							sb.append(", ");
-						else
-							sb.append("Tags: ");
+						if (sb.length() > 0) {
+							sb.append(' ');
+						} else {
+							sb.append(tags);
+							sb.append(": ");
+						}
 						sb.append(parser.getText());
 					} else {
 						hasNextToken = true;
@@ -341,7 +348,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 					}
 				} else if (ev == XmlPullParser.END_TAG && parser.getName().equals("ul")) {
 					hasFields = true;
-					fields[4] = sb.toString();
+					fields[4] = sb.toString().trim();
 				}
 			} else {
 				switch (pCount) {
@@ -351,15 +358,15 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 							parser.nextToken();
 							if ((str = readStringIfPossible(parser, sb)) != null) {
 								hasFields = true;
-								fields[0] = str;
+								fields[0] = str.trim();
 							}
 							hasNextToken = true;
 							ev = parser.getEventType();
 						} else if (fields[0].length() != 0 && parser.getName().equals("span")) {
 							if (parser.nextToken() == XmlPullParser.TEXT) {
-								fields[1] = parser.getText();
+								fields[1] = parser.getText().trim();
 								if (fields[1].length() > 0)
-									fields[1] = fields[1].substring(1);
+									fields[1] = fields[1].substring(1).trim();
 							} else {
 								hasNextToken = true;
 								ev = parser.getEventType();
@@ -370,7 +377,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 				case 2:
 					if (fields[2].length() == 0 && (str = readStringIfPossible(parser, sb)) != null) {
 						hasFields = true;
-						fields[2] = str;
+						fields[2] = str.trim();
 						hasNextToken = true;
 						ev = parser.getEventType();
 					} else {
@@ -383,7 +390,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 							parser.nextToken();
 							if ((str = readStringIfPossible(parser, sb)) != null) {
 								hasFields = true;
-								fields[3] = str;
+								fields[3] = str.trim();
 							}
 							hasNextToken = true;
 							ev = parser.getEventType();
@@ -396,7 +403,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		return hasFields;
 	}
 	
-	private static boolean parseIcecastRow(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
+	private boolean parseIcecastRow(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
 		fields[0] = ""; //title
 		fields[1] = ""; //listeners
 		fields[2] = ""; //description
@@ -462,6 +469,12 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 					if (myVersion != version)
 						break;
 					if (parseIcecastRow(parser, fields, sb) && myVersion == version) {
+						if (fields[2].length() < 1)
+							fields[2] = noDescription;
+						if (fields[3].length() < 1)
+							fields[3] = noOnAir;
+						if (fields[4].length() < 1)
+							fields[4] = noTags;
 						items[currentStationIndex++] = new RadioStation(fields);
 						hasResults = true;
 					}
@@ -561,7 +574,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		case MSG_FINISHED:
 			loadingProcessChanged(false);
 			if (msg.arg2 != 0)
-				UI.toast(Player.getService(), R.string.error_gen);
+				UI.toast(Player.getService(), !Player.isConnectedToTheInternet() ? R.string.error_connection : R.string.error_gen);
 			break;
 		case MSG_MORE_RESULTS:
 			//protection against out of order messages... does this really happen? ;)

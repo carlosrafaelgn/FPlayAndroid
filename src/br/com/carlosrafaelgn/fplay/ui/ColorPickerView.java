@@ -114,7 +114,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	
 	@SuppressWarnings("deprecation")
 	private void init(Context context, int initialColor) {
-		setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+		setPadding(UI._DLGdppad, UI._DLGdppad, UI._DLGdppad, UI._DLGdppad);
 		final int eachW = (UI._18sp * 7) >> 1;
 		final boolean smallScreen = (UI.isLowDpiScreen && !UI.isLargeScreen);
 		initialColor = 0xff000000 | (initialColor & 0x00ffffff);

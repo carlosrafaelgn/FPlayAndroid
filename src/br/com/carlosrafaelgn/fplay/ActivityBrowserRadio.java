@@ -32,11 +32,22 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.HttpGet;
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.database.DataSetObserver;
+import android.net.http.AndroidHttpClient;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -49,6 +60,8 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TextView;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -111,33 +124,88 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			return;
 		try {
 			final RadioStation radioStation = radioStationList.getItemT(radioStationList.getSelection());
+			if (radioStation.m3uUri == null || radioStation.m3uUri.length() < 0) {
+				UI.toast(getApplication(), R.string.error_file_not_found);
+				return;
+			}
 			Player.songs.addingStarted();
 			SongAddingMonitor.start(getHostActivity());
 			(new Thread("Checked Radio Station Adder Thread") {
 				@Override
 				public void run() {
+					AndroidHttpClient client = null;
+					HttpResponse response = null;
+					InputStream is = null;
+					InputStreamReader isr = null;
+					BufferedReader br = null;
 					try {
-						/*Throwable firstException = null;
-						final ArrayList<FileSt> filesToAdd = new ArrayList<FileSt>(256);
-						for (int i = 0; i < rs.length; i++) {
+						if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+							Player.songs.addingEnded();
+							return;
+						}
+						client = AndroidHttpClient.newInstance("Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36 Debian");
+						response = client.execute(new HttpGet(radioStation.m3uUri));
+						final StatusLine statusLine = response.getStatusLine();
+						final int s = statusLine.getStatusCode();
+						if (s == HttpStatus.SC_OK) {
+							is = response.getEntity().getContent();
+							isr = new InputStreamReader(is, "UTF-8");
+							br = new BufferedReader(isr, 1024);
+							ArrayList<String> lines = new ArrayList<String>(8);
+							String line;
+							while ((line = br.readLine()) != null) {
+								line = line.trim();
+								if (line.length() > 0 && line.charAt(0) != '#' &&
+									(line.regionMatches(true, 0, "http://", 0, 7) ||
+									line.regionMatches(true, 0, "https://", 0, 8)))
+									lines.add(line);
+							}
 							if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
 								Player.songs.addingEnded();
 								return;
 							}
-							final RadioStation radioStation = rs[i];
-							if (radioStation == null)
-								continue;
-						}
-						if (filesToAdd.size() <= 0) {
-							if (firstException != null)
-								Player.songs.onFilesFetched(null, firstException);
-							else*/
+							if (lines.size() == 0) {
 								Player.songs.addingEnded();
-						/*} else {
-							Player.songs.addFiles(null, filesToAdd.iterator(), filesToAdd.size(), play, false);
-						}*/
+								MainHandler.toast(R.string.error_gen);
+							} else {
+								//instead of just using the first available address, let's use
+								//one from the middle ;)
+								Player.songs.addFiles(new FileSt[] { new FileSt(lines.get(lines.size() >> 1), radioStation.title, null, 0) }, null, 1, play, false, true);
+							}
+						} else {
+							Player.songs.addingEnded();
+							MainHandler.toast((s >= 400 && s < 500) ? R.string.error_file_not_found : R.string.error_gen);
+						}
 					} catch (Throwable ex) {
 						Player.songs.addingEnded();
+						MainHandler.toast(ex);
+					} finally {
+						try {
+							if (client != null)
+								client.close();
+						} catch (Throwable ex) {
+						}
+						try {
+							if (is != null)
+								is.close();
+						} catch (Throwable ex) {
+						}
+						try {
+							if (isr != null)
+								isr.close();
+						} catch (Throwable ex) {
+						}
+						try {
+							if (br != null)
+								br.close();
+						} catch (Throwable ex) {
+						}
+						br = null;
+						isr = null;
+						is = null;
+						client = null;
+						response = null;
+						System.gc();
 					}
 				}
 			}).start();
@@ -242,39 +310,36 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			//isAtFavorites = true;
 		} else if (view == btnSearch) {
 			final Context ctx = getHostActivity();
-			final LinearLayout l = new LinearLayout(ctx);
-			l.setOrientation(LinearLayout.VERTICAL);
-			l.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-			l.setBaselineAligned(false);
+			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 			
 			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			chkGenre = new RadioButton(ctx);
 			chkGenre.setText(R.string.genre);
 			chkGenre.setChecked(Player.lastRadioSearchWasByGenre);
 			chkGenre.setOnClickListener(this);
-			chkGenre.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkGenre.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			chkGenre.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._8dp;
+			p.topMargin = UI._DLGsppad;
 			btnGenre = new Spinner(ctx);
 			btnGenre.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._16dp;
+			p.topMargin = UI._DLGsppad << 1;
 			chkTerm = new RadioButton(ctx);
 			chkTerm.setText(R.string.search_term);
 			chkTerm.setChecked(!Player.lastRadioSearchWasByGenre);
 			chkTerm.setOnClickListener(this);
-			chkTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			chkTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			chkTerm.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._8dp;
+			p.topMargin = UI._DLGsppad;
 			txtTerm = new EditText(ctx);
 			txtTerm.setText(Player.radioSearchTerm == null ? "" : Player.radioSearchTerm);
 			txtTerm.setOnClickListener(this);
-			txtTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txtTerm.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTerm.setSingleLine();
 			txtTerm.setLayoutParams(p);
@@ -315,7 +380,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (which == AlertDialog.BUTTON_POSITIVE) {
 			Player.lastRadioSearchWasByGenre = chkGenre.isChecked();
 			Player.radioLastGenre = btnGenre.getSelectedItemPosition();
-			Player.radioSearchTerm = txtTerm.getText().toString();
+			Player.radioSearchTerm = txtTerm.getText().toString().trim();
+			doSearch();
 		}
 		chkGenre = null;
 		btnGenre = null;
@@ -344,7 +410,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected void onCreate() {
 		UI.browserActivity = this;
-		radioStationList = new RadioStationList();
+		radioStationList = new RadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString());
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -471,7 +537,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			txt = new TextView(getApplication());
 			txt.setPadding(UI._8dp, UI._4dp, UI._8dp, UI._4dp);
 			txt.setTypeface(UI.defaultTypeface);
-			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txt.setTextColor(defaultTextColors);
 		}
 		txt.setText(getGenreString(position));
@@ -512,9 +578,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		TextView txt = (TextView)convertView;
 		if (txt == null) {
 			txt = new TextView(getApplication());
-			txt.setPadding(UI._8dp, UI._8sp, UI._8dp, UI._8sp);
+			txt.setPadding(UI._DLGdppad, UI._DLGsppad, UI._DLGdppad, UI._DLGsppad);
 			txt.setTypeface(UI.defaultTypeface);
-			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txt.setTextColor(defaultTextColors);
 		}
 		txt.setText(getGenreString(position));

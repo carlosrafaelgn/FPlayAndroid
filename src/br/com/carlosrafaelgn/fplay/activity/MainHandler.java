@@ -32,12 +32,16 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
+import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
 public final class MainHandler extends Handler {
+	public static final int MSG_HANDLER_TOAST = 0x0500;
+	
 	private static MainHandler theHandler;
 	private static Thread mainThread;
 	
@@ -55,6 +59,18 @@ public final class MainHandler extends Handler {
 	
 	public static boolean isOnMainThread() {
 		return (mainThread == Thread.currentThread());
+	}
+	
+	public static void toast(Throwable ex) {
+		theHandler.sendMessageAtTime(Message.obtain(theHandler, MSG_HANDLER_TOAST, 0, 0, ex), SystemClock.uptimeMillis());
+	}
+	
+	public static void toast(int resId) {
+		theHandler.sendMessageAtTime(Message.obtain(theHandler, MSG_HANDLER_TOAST, resId, 0, null), SystemClock.uptimeMillis());
+	}
+	
+	public static void toast(String message) {
+		theHandler.sendMessageAtTime(Message.obtain(theHandler, MSG_HANDLER_TOAST, 0, 0, message), SystemClock.uptimeMillis());
 	}
 	
 	public static void postToMainThread(Runnable runnable) {
@@ -91,6 +107,23 @@ public final class MainHandler extends Handler {
 	
 	@Override
 	public void dispatchMessage(Message msg) {
+		switch (msg.what) {
+		case MSG_HANDLER_TOAST:
+			try {
+				if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+					return;
+				if (msg.obj != null) {
+					if (msg.obj instanceof Throwable)
+						UI.toast(Player.getService(), (Throwable)msg.obj);
+					else
+						UI.toast(Player.getService(), msg.obj.toString());
+				} else {
+					UI.toast(Player.getService(), msg.arg1);
+				}
+			} catch (Throwable ex) {
+			}
+			return;
+		}
 		final Runnable r = msg.getCallback();
 		if (r != null) {
 			r.run();

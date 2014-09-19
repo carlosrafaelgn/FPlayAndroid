@@ -241,5 +241,8 @@
     <string name="search">Шукати</string>
     <string name="genre">Жанр</string>
     <string name="search_term">Критерії пошуку</string>
+    <string name="tags">Теги</string>
+    <string name="no_description">Немає опису :(</string>
+    <string name="no_tags">Немає тегів :(</string>
     
 </resources>

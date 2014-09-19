@@ -32,64 +32,79 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import br.com.carlosrafaelgn.fplay.list.RadioStation;
-import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.text.StaticLayout;
 import android.text.Layout.Alignment;
+import android.text.StaticLayout;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import br.com.carlosrafaelgn.fplay.list.RadioStation;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class RadioStationView extends View implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener {
 	private RadioStation station;
 	private String ellipsizedTitle, ellipsizedOnAir;
-	private final int verticalMargin;
-	private int state, width, height, descriptionHeight, tagsHeight, position;
-	private StaticLayout layout, layoutTags;
+	private String[] descriptionLines, tagsLines;
+	private final int height, verticalMargin;
+	private int state, width, position, descriptionY, tagsY;
 	
 	public RadioStationView(Context context) {
 		super(context);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		descriptionLines = new String[4];
+		tagsLines = new String[3];
+		height = (verticalMargin << 1) + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + (UI._14spBox << 1) + UI._4dp;
 		super.setDrawingCacheEnabled(false);
 	}
 	
 	private void processEllipsis() {
+		if (width <= (UI._8dp << 1)) {
+			ellipsizedTitle = "";
+			ellipsizedOnAir = "";
+			descriptionLines[0] = null;
+			tagsLines[0] = null;
+			return;
+		}
 		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - (UI._8dp << 1), true);
 		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - (UI._8dp << 1) - UI._18sp - UI._4dp, true);
-		//ellipsizedTags = UI.ellipsizeText(station.tags, UI._14sp, width - (UI._8dp << 1), false);
-		if (station.tags == null || station.tags.length() == 0) {
-			layoutTags = null;
-			tagsHeight = 0;
-		} else {
-			UI.textPaint.setTextSize(UI._14sp);
-			layoutTags = new StaticLayout(station.tags, UI.textPaint, (width < (UI._8dp << 1)) ? 0 : (width - (UI._8dp << 1)), Alignment.ALIGN_NORMAL, 1, 0, false);
-			tagsHeight = layoutTags.getHeight();
-			if (tagsHeight < UI._14spBox)
-				tagsHeight = UI._14spBox;
-			tagsHeight += UI._4sp;
+		UI.textPaint.setTextSize(UI._14sp);
+		
+		//push the tags to the bottom!
+		StaticLayout layout = new StaticLayout(station.tags, UI.textPaint, width - (UI._8dp << 1) - UI.defaultControlContentsSize - UI._4dp, Alignment.ALIGN_NORMAL, 1, 0, false);
+		int i, visibleLines = Math.min(2, layout.getLineCount());
+		for (i = 0; i < visibleLines; i++)
+			tagsLines[i] = station.tags.substring(layout.getLineStart(i), layout.getLineEnd(i));
+		tagsLines[i] = null;
+		if (layout.getLineCount() > 2) {
+			//ellipsize last line...
+			if (tagsLines[1].length() > 2)
+				tagsLines[1] = tagsLines[1].substring(0, tagsLines[1].length() - 2) + "\u2026";
+			else
+				tagsLines[1] += "\u2026";
 		}
-		if (station.description == null || station.description.length() == 0) {
-			layout = null;
-			descriptionHeight = 0;
-		} else {
-			UI.textPaint.setTextSize(UI._14sp);
-			layout = new StaticLayout(station.description, UI.textPaint, (width < (UI._8dp << 1)) ? 0 : (width - (UI._8dp << 1)), Alignment.ALIGN_NORMAL, 1, 0, false);
-			descriptionHeight = layout.getHeight();
-			if (descriptionHeight < UI._14spBox)
-				descriptionHeight = UI._14spBox;
-			descriptionHeight += UI._4sp;
+		tagsY = height - verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
+		
+		//center the description vertically, considering all available space
+		final int top = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox, bottom = verticalMargin + (visibleLines * UI._14spBox);
+		
+		layout = new StaticLayout(station.description, UI.textPaint, width - (UI._8dp << 1), Alignment.ALIGN_NORMAL, 1, 0, false);
+		visibleLines = Math.min(3, layout.getLineCount());
+		for (i = 0; i < visibleLines; i++)
+			descriptionLines[i] = station.description.substring(layout.getLineStart(i), layout.getLineEnd(i));
+		descriptionLines[i] = null;
+		if (layout.getLineCount() > 3) {
+			//ellipsize last line...
+			if (descriptionLines[2].length() > 2)
+				descriptionLines[2] = descriptionLines[2].substring(0, descriptionLines[2].length() - 2) + "\u2026";
+			else
+				descriptionLines[2] += "\u2026";
 		}
-		final int h = (verticalMargin << 1) + UI._22spBox + UI._1dp + UI._18spBox + UI._1dp + descriptionHeight + tagsHeight + UI._1dp;
-		if (height != h) {
-			height = h;
-			requestLayout();
-		}
+		descriptionY = top + ((height - top - bottom) >> 1) - ((visibleLines * UI._14spBox) >> 1) + UI._14spYinBox;
 	}
 	
 	public void setItemState(RadioStation station, int position, int state) {
@@ -187,25 +202,21 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, verticalMargin + UI._22spBox + UI._1dp + (UI._18spBox >> 1) - (UI._18sp >> 1), UI._18sp, txtColor2);
-		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI._8dp + UI._18sp + UI._4dp, verticalMargin + UI._22spBox + UI._1dp + UI._18spYinBox);
-		if (layout != null) {
-			UI.textPaint.setColor(txtColor);
-			UI.textPaint.setTextSize(UI._14sp);
-			final float y = (float)(verticalMargin + UI._22spBox + UI._1dp + UI._18spBox + UI._1dp + UI._4sp);
-			canvas.translate(UI._8dp, y);
-			layout.draw(canvas);
-			canvas.translate(-UI._8dp, -y);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, verticalMargin + UI._22spBox + UI._2dp + (UI._18spBox >> 1) - (UI._18sp >> 1), UI._18sp, txtColor2);
+		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI._8dp + UI._18sp + UI._4dp, verticalMargin + UI._22spBox + UI._2dp + UI._18spYinBox);
+		int i = 0, y = descriptionY;
+		while (descriptionLines[i] != null) {
+			UI.drawText(canvas, descriptionLines[i], txtColor, UI._14sp, UI._8dp, y);
+			y += UI._14spBox;
+			i++;
 		}
-		if (layoutTags != null) {
-			UI.textPaint.setColor(txtColor2);
-			UI.textPaint.setTextSize(UI._14sp);
-			final float y = (float)(verticalMargin + UI._22spBox + UI._1dp + UI._18spBox + UI._1dp + descriptionHeight + UI._4sp);
-			canvas.translate(UI._8dp, y);
-			layoutTags.draw(canvas);
-			canvas.translate(-UI._8dp, -y);
+		i = 0;
+		y = tagsY;
+		while (tagsLines[i] != null) {
+			UI.drawText(canvas, tagsLines[i], txtColor2, UI._14sp, UI._8dp, y);
+			y += UI._14spBox;
+			i++;
 		}
-		//UI.drawText(canvas, ellipsizedTags, txtColor, UI._14sp, UI._8dp, height - verticalMargin - UI._1dp - UI._14spBox + UI._14spYinBox);
 	}
 	
 	@Override
@@ -217,9 +228,8 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 		station = null;
 		ellipsizedTitle = null;
 		ellipsizedOnAir = null;
-		//ellipsizedTags = null;
-		layout = null;
-		layoutTags = null;
+		descriptionLines = null;
+		tagsLines = null;
 		super.onDetachedFromWindow();
 	}
 	

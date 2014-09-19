@@ -67,6 +67,7 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
@@ -178,6 +179,7 @@ public final class UI {
 	public static final String ICON_SCROLLBAR = "c";
 	public static final String ICON_SD = "d";
 	public static final String ICON_FOLDER = "f";
+	public static final String ICON_USB = "u";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
@@ -355,7 +357,7 @@ public final class UI {
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft;
-	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox,
+	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
@@ -632,6 +634,15 @@ public final class UI {
 		_22sp = spToPxI(22);
 		_18sp = spToPxI(18);
 		_14sp = spToPxI(14);
+		if (isLargeScreen || !isLowDpiScreen) {
+			_DLGsp = _18sp;
+			_DLGsppad = _8sp;
+			_DLGdppad = _8dp;
+		} else {
+			_DLGsp = _16sp;
+			_DLGsppad = _4sp;
+			_DLGdppad = _4dp;
+		}
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
 		if (!setForcedLocale(context, forcedLocale))
@@ -1103,7 +1114,7 @@ public final class UI {
 		}
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
-		.setMessage(content)
+		.setView(createDialogView(activity, content))
 		.setPositiveButton(R.string.got_it, new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
@@ -1137,7 +1148,7 @@ public final class UI {
 		}
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
-		.setMessage(activity.getText(content))
+		.setView(createDialogView(activity, activity.getText(content)))
 		.setPositiveButton(R.string.got_it, null)
 		.create());
 		msgs |= msg;
@@ -1382,6 +1393,21 @@ public final class UI {
 	public static void setNextFocusForwardId(View view, int nextFocusForwardId) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			view.setNextFocusForwardId(nextFocusForwardId);
+	}
+	
+	public static View createDialogView(Context context, CharSequence messageOnly) {
+		if (messageOnly == null) {
+			final LinearLayout l = new LinearLayout(context);
+			l.setOrientation(LinearLayout.VERTICAL);
+			l.setPadding(_DLGdppad, _DLGdppad, _DLGdppad, _DLGdppad);
+			l.setBaselineAligned(false);
+			return l;
+		}
+		final TextView txt = new TextView(context);
+		txt.setText(messageOnly);
+		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, _DLGsp);
+		txt.setPadding(_DLGdppad << 1, _DLGdppad << 1, _DLGdppad << 1, _DLGdppad << 1);
+		return txt;
 	}
 	
 	public static void prepareDialogAndShow(final AlertDialog dialog) {

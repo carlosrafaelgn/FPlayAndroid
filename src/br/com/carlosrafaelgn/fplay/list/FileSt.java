@@ -58,6 +58,7 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_ALBUM = 9;
 	public static final int TYPE_ALBUM_ROOT = 10;
 	public static final int TYPE_ALBUM_ITEM = 11;
+	public static final int TYPE_EXTERNAL_STORAGE_USB = 12;
 	public final boolean isDirectory;
 	public final String path, name;
 	public String albumArt;

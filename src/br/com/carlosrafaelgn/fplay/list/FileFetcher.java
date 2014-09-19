@@ -225,7 +225,7 @@ public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 		if (isExternal) {
 			if (canonicalPathLC.contains("usb")) {
 				c = usbCount[0] + 1;
-				files[count] = new FileSt(canonicalPath, s.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_INTERNAL_STORAGE);
+				files[count] = new FileSt(canonicalPath, s.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE_USB);
 				usbCount[0] = c;
 			} else {
 				//try to avoid duplication of internal sdcard on a few phones... 

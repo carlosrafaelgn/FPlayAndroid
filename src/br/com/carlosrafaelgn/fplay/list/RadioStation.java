@@ -36,12 +36,12 @@ public final class RadioStation extends BaseItem {
 	public final String title, listeners, description, onAir, tags, m3uUri;
 	
 	public RadioStation(String[] fields) {
-		this.title = fields[0].trim();
-		this.listeners = fields[1].trim();
-		this.description = fields[2].trim();
-		this.onAir = fields[3].trim();
-		this.tags = fields[4].trim();
-		this.m3uUri = fields[5].trim();
+		this.title = fields[0];
+		this.listeners = fields[1];
+		this.description = fields[2];
+		this.onAir = fields[3];
+		this.tags = fields[4];
+		this.m3uUri = fields[5];
 	}
 	
 	@Override

@@ -51,7 +51,6 @@ import android.view.ViewGroup;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.SongView;
-import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
@@ -168,22 +167,13 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			addingEnded();
 			if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
 				return;
-			MainHandler.postToMainThread(new Runnable() {
-				@Override
-				public void run() {
-					if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
-						return;
-					try {
-						UI.toast(Player.getService(), e);
-					} catch (Throwable ex) { }
-				}
-			});
+			MainHandler.toast(e);
 		} else {
-			addFiles(fetcher.files, null, fetcher.count, fetcher.playAfterFetching, true);
+			addFiles(fetcher.files, null, fetcher.count, fetcher.playAfterFetching, true, false);
 		}
 	}
 	
-	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, int count, boolean play, boolean isAddingFolder) {
+	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, int count, boolean play, boolean isAddingFolder, boolean addAsURL) {
 		if (((files == null || files.length == 0) && (iterator == null)) || count <= 0) {
 			addingEnded();
 			return;
@@ -233,25 +223,48 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		}
 		if (count > 0) {
 			final Closure c = new Closure(count, play && isAddingFolder && Player.clearListWhenPlayingFolders, play);
-			final byte[][] tmpPtr = new byte[][] { new byte[256] };
 			int f = 0;
-			if (files != null) {
-				for (int i = 0; i < count; i++) {
-					if (!files[i].isDirectory) {
-						c.songs[f] = new Song(files[i], tmpPtr);
-						f++;
-						if ((f & 3) == 1)
-							MainHandler.sendMessage(c, f);
+			if (addAsURL) {
+				if (files != null) {
+					for (int i = 0; i < count; i++) {
+						if (!files[i].isDirectory) {
+							c.songs[f] = new Song(files[i].path, files[i].name);
+							f++;
+							if ((f & 3) == 1)
+								MainHandler.sendMessage(c, f);
+						}
+					}
+				} else {
+					while (iterator.hasNext()) {
+						final FileSt file = iterator.next();
+						if (!file.isDirectory) {
+							c.songs[f] = new Song(file.path, file.name);
+							f++;
+							if ((f & 3) == 1)
+								MainHandler.sendMessage(c, f);
+						}
 					}
 				}
 			} else {
-				while (iterator.hasNext()) {
-					final FileSt file = iterator.next();
-					if (!file.isDirectory) {
-						c.songs[f] = new Song(file, tmpPtr);
-						f++;
-						if ((f & 3) == 1)
-							MainHandler.sendMessage(c, f);
+				final byte[][] tmpPtr = new byte[][] { new byte[256] };
+				if (files != null) {
+					for (int i = 0; i < count; i++) {
+						if (!files[i].isDirectory) {
+							c.songs[f] = new Song(files[i], tmpPtr);
+							f++;
+							if ((f & 3) == 1)
+								MainHandler.sendMessage(c, f);
+						}
+					}
+				} else {
+					while (iterator.hasNext()) {
+						final FileSt file = iterator.next();
+						if (!file.isDirectory) {
+							c.songs[f] = new Song(file, tmpPtr);
+							f++;
+							if ((f & 3) == 1)
+								MainHandler.sendMessage(c, f);
+						}
 					}
 				}
 			}

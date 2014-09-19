@@ -238,7 +238,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 							else
 								Player.songs.addingEnded();
 						} else {
-							Player.songs.addFiles(null, filesToAdd.iterator(), filesToAdd.size(), play, addingFolder);
+							Player.songs.addFiles(null, filesToAdd.iterator(), filesToAdd.size(), play, addingFolder, false);
 						}
 					} catch (Throwable ex) {
 						Player.songs.addingEnded();
@@ -514,34 +514,36 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			startActivity(new ActivityBrowserRadio(), 1);
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
-			final LinearLayout l = new LinearLayout(ctx);
-			l.setOrientation(LinearLayout.VERTICAL);
-			l.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-			l.setBaselineAligned(false);
+			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
+			
 			TextView lbl = new TextView(ctx);
 			lbl.setText(R.string.url);
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			l.addView(lbl);
+			
 			txtURL = new EditText(ctx);
-			txtURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txtURL.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
 			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._8dp;
-			p.bottomMargin = UI._16dp;
+			p.topMargin = UI._DLGsppad;
+			p.bottomMargin = UI._DLGsppad << 1;
 			txtURL.setLayoutParams(p);
 			l.addView(txtURL);
+			
 			lbl = new TextView(ctx);
 			lbl.setText(R.string.description);
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			l.addView(lbl);
+			
 			txtTitle = new EditText(ctx);
-			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txtTitle.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTitle.setSingleLine();
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._8dp;
+			p.topMargin = UI._DLGsppad;
 			txtTitle.setLayoutParams(p);
 			l.addView(txtTitle);
+			
 			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
 			.setTitle(getText(R.string.add_url_title))
 			.setView(l)

@@ -168,7 +168,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private void confirm(final String path, final String name, final boolean delete) {
 		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 		.setTitle(getText(R.string.oops))
-		.setMessage(format(delete ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, name))
+		.setView(UI.createDialogView(getHostActivity(), format(delete ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, name)))
 		.setPositiveButton(delete ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				if (delete) {
@@ -224,23 +224,24 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			break;
 		case MNU_SAVEAS:
 			final Context ctx = getHostActivity();
-			final LinearLayout l = new LinearLayout(ctx);
-			l.setOrientation(LinearLayout.VERTICAL);
-			l.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
+			
 			TextView lbl = new TextView(ctx);
 			lbl.setText(format(R.string.msg_enter_name, itemType));
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			l.addView(lbl);
+			
 			txtSaveAsName = new EditText(ctx);
-			txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txtSaveAsName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 			txtSaveAsName.setSingleLine();
 			final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._8dp;
+			p.topMargin = UI._DLGsppad;
 			txtSaveAsName.setLayoutParams(p);
 			if (s >= 0)
 				txtSaveAsName.setText(fileList.getItemT(s).name);
 			l.addView(txtSaveAsName);
+			
 			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
 			.setTitle(format(R.string.msg_create_new_title, itemType))
 			.setView(l)

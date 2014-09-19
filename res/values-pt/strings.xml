@@ -241,5 +241,8 @@
     <string name="search">Procurar</string>
     <string name="genre">Gênero</string>
     <string name="search_term">Termo de pesquisa</string>
+    <string name="tags">Tags</string>
+    <string name="no_description">Sem descrição :(</string>
+    <string name="no_tags">Sem tags :(</string>
     
 </resources>

@@ -253,22 +253,23 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				}
 			} else {
 				final Context ctx = getHostActivity();
-				final LinearLayout l = new LinearLayout(ctx);
-				l.setOrientation(LinearLayout.VERTICAL);
-				l.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
+				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
+				
 				TextView lbl = new TextView(ctx);
 				lbl.setText(R.string.msg_turn_off);
-				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 				l.addView(lbl);
+				
 				txtCustomMinutes = new EditText(ctx);
-				txtCustomMinutes.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+				txtCustomMinutes.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 				txtCustomMinutes.setInputType(InputType.TYPE_CLASS_NUMBER);
 				txtCustomMinutes.setSingleLine();
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-				p.topMargin = UI._8dp;
+				p.topMargin = UI._DLGsppad;
 				txtCustomMinutes.setLayoutParams(p);
 				txtCustomMinutes.setText(Integer.toString((lastMenuView == optAutoTurnOff) ? Player.getTurnOffTimerCustomMinutes() : Player.getIdleTurnOffTimerCustomMinutes()));
 				l.addView(txtCustomMinutes);
+				
 				UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 				.setTitle(R.string.msg_turn_off_title)
 				.setView(l)
@@ -426,7 +427,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			checkingReturn = true;
 			UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 			.setTitle(R.string.oops)
-			.setMessage(R.string.discard_theme)
+			.setView(UI.createDialogView(getHostActivity(), getText(R.string.discard_theme)))
 			.setPositiveButton(R.string.ok, this)
 			.setNegativeButton(R.string.cancel, null)
 			.create());
@@ -836,7 +837,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				case -1:
 					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 					.setTitle(R.string.oops)
-					.setMessage(R.string.hard_theme)
+					.setView(UI.createDialogView(getHostActivity(), getText(R.string.hard_theme)))
 					.setPositiveButton(R.string.ok, this)
 					.setNegativeButton(R.string.cancel, null)
 					.create());
@@ -844,7 +845,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				case -2:
 					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 					.setTitle(R.string.oops)
-					.setMessage(R.string.unreadable_theme)
+					.setView(UI.createDialogView(getHostActivity(), getText(R.string.unreadable_theme)))
 					.setPositiveButton(R.string.got_it, null)
 					.create());
 					return;

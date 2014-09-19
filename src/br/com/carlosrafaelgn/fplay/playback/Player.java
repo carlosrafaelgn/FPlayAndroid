@@ -729,12 +729,25 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		}
 	}
 	
-	public static boolean isInternetConnectionAvailable() {
+	public static boolean isConnectedToTheInternet() {
 		if (thePlayer != null) {
 			try {
 				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
 				final NetworkInfo info = mngr.getActiveNetworkInfo();
 				return (info != null && info.isConnected());
+			} catch (Throwable ex) {
+			}
+		}
+		return false;
+	}
+	
+	public static boolean isInternetConnectedViaWiFi() {
+		if (thePlayer != null) {
+			try {
+				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
+				final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+				final NetworkInfo info = mngr.getActiveNetworkInfo();
+				return (infoMob != null && info != null && !infoMob.isConnected() && info.isConnected());
 			} catch (Throwable ex) {
 			}
 		}

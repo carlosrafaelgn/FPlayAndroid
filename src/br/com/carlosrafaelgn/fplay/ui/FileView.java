@@ -166,8 +166,14 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 			case FileSt.TYPE_INTERNAL_STORAGE:
 				icon = UI.ICON_SCREEN;
 				break;
+			case FileSt.TYPE_ALL_FILES:
+				icon = UI.ICON_LIST;
+				break;
 			case FileSt.TYPE_EXTERNAL_STORAGE:
 				icon = UI.ICON_SD;
+				break;
+			case FileSt.TYPE_EXTERNAL_STORAGE_USB:
+				icon = UI.ICON_USB;
 				break;
 			case FileSt.TYPE_FAVORITE:
 				icon = UI.ICON_FAVORITE_ON;
