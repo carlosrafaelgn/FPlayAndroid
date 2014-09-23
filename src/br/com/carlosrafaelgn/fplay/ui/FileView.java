@@ -70,6 +70,7 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 			handler = new Handler(Looper.getMainLooper(), this);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
+		setBaselineAligned(false);
 		setGravity(Gravity.RIGHT);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);

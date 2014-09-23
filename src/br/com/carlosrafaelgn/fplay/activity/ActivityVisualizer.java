@@ -60,6 +60,7 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.InterceptableLayout;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -159,6 +160,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private int fxVisualizerAudioSessionId, version, panelTopLastTime, panelTopHiding;
 	private Object systemUIObserver;
 	private Timer timer, uiAnimTimer;
+	private BgColorStateList buttonColor;
 	
 	private void hideAllUIDelayed() {
 		version++;
@@ -310,6 +312,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(null);
 		
+		buttonColor = new BgColorStateList(UI.color_text, UI.color_text_selected);
+		
 		isWindowFocused = true;
 		
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
@@ -392,13 +396,15 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		prepareViews(true);
 		
-		if (UI.useVisualizerButtonsInsideList) {
-			btnGoBack.setTextColor(UI.colorState_text_listitem_reactive);
-			btnPrev.setTextColor(UI.colorState_text_listitem_reactive);
-			btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
-			btnNext.setTextColor(UI.colorState_text_listitem_reactive);
-			btnMenu.setTextColor(UI.colorState_text_listitem_reactive);
-		}
+		if (UI.useVisualizerButtonsInsideList)
+			buttonColor.setNormalColor(UI.color_text_listitem);
+		
+		btnGoBack.setTextColor(buttonColor);
+		btnPrev.setTextColor(buttonColor);
+		btnPlay.setTextColor(buttonColor);
+		btnNext.setTextColor(buttonColor);
+		btnMenu.setTextColor(buttonColor);
+		
 		if (!btnGoBack.isInTouchMode())
 			btnGoBack.requestFocus();
 		
@@ -722,11 +728,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 	}
 	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private void setPanelTopAlpha() {
-		panelTop.setAlpha(panelTopAlpha);
-	}
-	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
 		if (panelTop == null || uiAnimTimer == null || info == null)
@@ -750,7 +751,19 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				uiAnimTimer.stop();
 			}
 		}
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			setPanelTopAlpha();
+		
+		if (panelTopAlpha != 0.0f) {
+			buttonColor.setNormalColorAlpha((int)(255.0f * panelTopAlpha));
+			if (btnGoBack != null)
+				btnGoBack.setTextColor(buttonColor);
+			if (btnPrev != null)
+				btnPrev.setTextColor(buttonColor);
+			if (btnPlay != null)
+				btnPlay.setTextColor(buttonColor);
+			if (btnNext != null)
+				btnNext.setTextColor(buttonColor);
+			if (btnMenu != null)
+				btnMenu.setTextColor(buttonColor);
+		}
 	}
 }

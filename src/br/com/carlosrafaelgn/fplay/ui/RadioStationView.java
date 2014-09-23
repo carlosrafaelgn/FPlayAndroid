@@ -39,13 +39,17 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.widget.LinearLayout;
+import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class RadioStationView extends View implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener {
+public final class RadioStationView extends LinearLayout implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener {
 	private RadioStation station;
+	private BgButton btnFavorite;
 	private String ellipsizedTitle, ellipsizedOnAir;
 	private String[] descriptionLines, tagsLines;
 	private final int height, verticalMargin;
@@ -55,10 +59,22 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 		super(context);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
+		setBaselineAligned(false);
+		setGravity(Gravity.RIGHT | Gravity.BOTTOM);
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
 		descriptionLines = new String[4];
 		tagsLines = new String[3];
-		height = (verticalMargin << 1) + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + (UI._14spBox << 1) + UI._4dp;
+		height = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), verticalMargin + (UI._14spBox << 1)) + UI._4dp;
+		btnFavorite = new BgButton(context);
+		LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+		p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
+		btnFavorite.setLayoutParams(p);
+		btnFavorite.setHideBorders(true);
+		btnFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, true, false, true, true);
+		btnFavorite.setContentDescription(context.getText(R.string.favorite));
+		btnFavorite.setOnClickListener(this);
+		btnFavorite.setTextColor(UI.colorState_text_listitem_reactive);
+		addView(btnFavorite);
 		super.setDrawingCacheEnabled(false);
 	}
 	
@@ -75,7 +91,7 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 		UI.textPaint.setTextSize(UI._14sp);
 		
 		//push the tags to the bottom!
-		StaticLayout layout = new StaticLayout(station.tags, UI.textPaint, width - (UI._8dp << 1) - UI.defaultControlContentsSize - UI._4dp, Alignment.ALIGN_NORMAL, 1, 0, false);
+		StaticLayout layout = new StaticLayout(station.tags, UI.textPaint, width - (UI._8dp << 1) - UI.defaultControlSize, Alignment.ALIGN_NORMAL, 1, 0, false);
 		int i, visibleLines = Math.min(2, layout.getLineCount());
 		for (i = 0; i < visibleLines; i++)
 			tagsLines[i] = station.tags.substring(layout.getLineStart(i), layout.getLineEnd(i));
@@ -90,7 +106,7 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 		tagsY = height - verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
 		
 		//center the description vertically, considering all available space
-		final int top = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox, bottom = verticalMargin + (visibleLines * UI._14spBox);
+		final int top = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox, bottom = Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), verticalMargin + (visibleLines * UI._14spBox));
 		
 		layout = new StaticLayout(station.description, UI.textPaint, width - (UI._8dp << 1), Alignment.ALIGN_NORMAL, 1, 0, false);
 		visibleLines = Math.min(3, layout.getLineCount());
@@ -108,12 +124,16 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 	}
 	
 	public void setItemState(RadioStation station, int position, int state) {
-		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.position = position;
+		if (btnFavorite != null && (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
+			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
+		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.station == station)
 			return;
 		this.station = station;
+		if (btnFavorite != null)
+			btnFavorite.setChecked(station.isFavorite);
 		setContentDescription(station.title);
 		processEllipsis();
 	}
@@ -163,7 +183,10 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
+		final boolean old = (state == 0);
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		if ((state == 0) != old && btnFavorite != null)
+			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 	}
 	
 	@Override
@@ -183,6 +206,7 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 	
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
 	}
 	
@@ -195,8 +219,10 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 		}
 	}
 	
+	//Android Custom Layout - onDraw() never gets called
+	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
-	protected void onDraw(Canvas canvas) {
+	protected void dispatchDraw(Canvas canvas) {
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		getDrawingRect(UI.rect);
@@ -217,6 +243,7 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 			y += UI._14spBox;
 			i++;
 		}
+		super.dispatchDraw(canvas);
 	}
 	
 	@Override
@@ -226,6 +253,7 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 	@Override
 	protected void onDetachedFromWindow() {
 		station = null;
+		btnFavorite = null;
 		ellipsizedTitle = null;
 		ellipsizedOnAir = null;
 		descriptionLines = null;
@@ -235,8 +263,15 @@ public final class RadioStationView extends View implements BgListView.BgListIte
 	
 	@Override
 	public void onClick(View view) {
-		if (UI.browserActivity != null)
-			UI.browserActivity.processItemClick(position);
+		if (view == btnFavorite) {
+			if (station != null)
+				station.isFavorite = btnFavorite.isChecked();
+			if (UI.browserActivity != null)
+				UI.browserActivity.processItemButtonClick(position, true);
+		} else {
+			if (UI.browserActivity != null)
+				UI.browserActivity.processItemClick(position);
+		}
 	}
 	
 	@Override

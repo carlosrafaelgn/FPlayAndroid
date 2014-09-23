@@ -1018,7 +1018,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				if (ex instanceof IllegalStateException) {
 					UI.toast(thePlayer, R.string.error_state);
 				} else if (ex instanceof IOException) {
-					UI.toast(thePlayer, R.string.error_io);
+					UI.toast(thePlayer, (currentSong != null && currentSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_io);
 				} else if (ex instanceof FileNotFoundException) {
 					UI.toast(thePlayer, R.string.error_file_not_found);
 				} else if (ex instanceof TimeoutException) {

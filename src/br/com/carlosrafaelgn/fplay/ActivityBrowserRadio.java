@@ -233,7 +233,11 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	public void processItemButtonClick(int position, boolean add) {
-		//add/remove favorite!!!
+		final RadioStation station = radioStationList.getItemT(position);
+		if (station.isFavorite)
+			radioStationList.addFavoriteStation(station);
+		else
+			radioStationList.removeFavoriteStation(station);
 	}
 	
 	@Override
@@ -267,9 +271,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (Player.radioSearchTerm != null && Player.radioSearchTerm.length() < 1)
 			Player.radioSearchTerm = null;
 		if (Player.lastRadioSearchWasByGenre || Player.radioSearchTerm == null)
-			radioStationList.fetchIcecast(getGenreString(Player.radioLastGenre), null);
+			radioStationList.fetchIcecast(getApplication(), getGenreString(Player.radioLastGenre), null);
 		else
-			radioStationList.fetchIcecast(null, Player.radioSearchTerm);
+			radioStationList.fetchIcecast(getApplication(), null, Player.radioSearchTerm);
+		updateButtons();
 	}
 	
 	@Override
@@ -301,13 +306,16 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	public void onClick(View view) {
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
+				isAtFavorites = false;
+				doSearch();
 			} else {
 				finish();
 			}
 		} else if (view == btnFavorite) {
-			//radioStationList.cancel();
-			////fetch favorites
-			//isAtFavorites = true;
+			isAtFavorites = true;
+			radioStationList.cancel();
+			radioStationList.fetchFavorites(getApplication());
+			updateButtons();
 		} else if (view == btnSearch) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
@@ -466,6 +474,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected void onPause() {
 		SongAddingMonitor.stop();
+		radioStationList.saveFavorites(getApplication());
 		radioStationList.setObserver(null);
 	}
 	

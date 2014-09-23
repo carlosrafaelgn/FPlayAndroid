@@ -32,8 +32,15 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.util.HashSet;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -42,6 +49,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import android.content.Context;
 import android.net.http.AndroidHttpClient;
 import android.os.Message;
 import android.view.View;
@@ -51,8 +59,10 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.RadioStationView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.util.ArraySorter;
+import br.com.carlosrafaelgn.fplay.util.Serializer;
 
-public final class RadioStationList extends BaseList<RadioStation> implements MainHandler.Callback {
+public final class RadioStationList extends BaseList<RadioStation> implements Runnable, ArraySorter.Comparer<RadioStation>, MainHandler.Callback {
 	//after analyzing the results obtained from http://dir.xiph.org/xxx
 	//I noticed that there are never more than 5 pages of results,
 	//with 20 results each ;)
@@ -209,16 +219,21 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		"Zouk"
 	};
 	
-	private boolean loading;
-	private volatile boolean okToFetchAgain;
-	private int currentStationIndex;
-	private volatile int version;
+	private boolean loading, favoritesLoaded, favoritesChanged;
+	private final Object favoritesSync;
+	private final HashSet<RadioStation> favorites;
 	private final String tags, noOnAir, noDescription, noTags;
+	private volatile boolean readyToFetch, isSavingFavorites;
+	private volatile int version;
+	private volatile String genreToFetch, searchTermToFetch;
+	private volatile Context context;
 	
 	public RadioStationList(String tags, String noOnAir, String noDescription, String noTags) {
 		super(RadioStation.class);
 		this.items = new RadioStation[MAX_COUNT];
-		this.okToFetchAgain = true;
+		this.readyToFetch = true;
+		this.favoritesSync = new Object();
+		this.favorites = new HashSet<RadioStation>(32);
 		this.tags = tags;
 		this.noOnAir = noOnAir;
 		this.noDescription = noDescription;
@@ -302,12 +317,13 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 						} else {
 							v = parser.getText().trim();
 							hasFields = (v.equals("MP3") || v.equals("Ogg Vorbis"));
+							fields[2] = v;
 						}
 					} else {
 						for (int a = parser.getAttributeCount() - 1; a >= 0; a--) {
 							if (parser.getAttributeName(a).equals("href") &&
 								(v = parser.getAttributeValue(a)).endsWith("m3u")) {
-								fields[5] = ((v.charAt(0) == '/') ? ("http://dir.xiph.org" + v) : (v)).trim();
+								fields[7] = ((v.charAt(0) == '/') ? ("http://dir.xiph.org" + v) : (v)).trim();
 								hasFields = true;
 								break;
 							}
@@ -348,13 +364,21 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 					}
 				} else if (ev == XmlPullParser.END_TAG && parser.getName().equals("ul")) {
 					hasFields = true;
-					fields[4] = sb.toString().trim();
+					fields[6] = sb.toString().trim();
 				}
 			} else {
 				switch (pCount) {
 				case 1:
 					if (ev == XmlPullParser.START_TAG) {
 						if (parser.getName().equals("a")) {
+							for (int a = parser.getAttributeCount() - 1; a >= 0; a--) {
+								if (parser.getAttributeName(a).equals("href")) {
+									fields[1] = parser.getAttributeValue(a).trim();
+									//set hasFields to true, only if the title has been found!
+									//hasFields = true;
+									break;
+								}
+							}
 							parser.nextToken();
 							if ((str = readStringIfPossible(parser, sb)) != null) {
 								hasFields = true;
@@ -364,9 +388,9 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 							ev = parser.getEventType();
 						} else if (fields[0].length() != 0 && parser.getName().equals("span")) {
 							if (parser.nextToken() == XmlPullParser.TEXT) {
-								fields[1] = parser.getText().trim();
-								if (fields[1].length() > 0)
-									fields[1] = fields[1].substring(1).trim();
+								fields[3] = parser.getText().trim();
+								if (fields[3].length() > 0)
+									fields[3] = fields[3].substring(1).trim();
 							} else {
 								hasNextToken = true;
 								ev = parser.getEventType();
@@ -375,9 +399,9 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 					}
 					break;
 				case 2:
-					if (fields[2].length() == 0 && (str = readStringIfPossible(parser, sb)) != null) {
+					if (fields[4].length() == 0 && (str = readStringIfPossible(parser, sb)) != null) {
 						hasFields = true;
-						fields[2] = str.trim();
+						fields[4] = str.trim();
 						hasNextToken = true;
 						ev = parser.getEventType();
 					} else {
@@ -386,11 +410,11 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 					break;
 				case 3:
 					if (ev == XmlPullParser.END_TAG && parser.getName().equals("strong")) {
-						if (fields[3].length() == 0) {
+						if (fields[5].length() == 0) {
 							parser.nextToken();
 							if ((str = readStringIfPossible(parser, sb)) != null) {
 								hasFields = true;
-								fields[3] = str.trim();
+								fields[5] = str.trim();
 							}
 							hasNextToken = true;
 							ev = parser.getEventType();
@@ -405,11 +429,13 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 	
 	private boolean parseIcecastRow(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
 		fields[0] = ""; //title
-		fields[1] = ""; //listeners
-		fields[2] = ""; //description
-		fields[3] = ""; //onAir
-		fields[4] = ""; //tags
-		fields[5] = ""; //m3uUri
+		fields[1] = ""; //uri
+		fields[2] = ""; //type
+		fields[3] = ""; //listeners
+		fields[4] = ""; //description
+		fields[5] = ""; //onAir
+		fields[6] = ""; //tags
+		fields[7] = ""; //m3uUri
 		int ev, colCount = 0;
 		while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && colCount < 2) {
 			if (ev == XmlPullParser.END_TAG && parser.getName().equals("tr"))
@@ -428,7 +454,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		return true;
 	}
 	
-	private boolean parseIcecastResults(InputStream is, String[] fields, int myVersion, StringBuilder sb) throws Throwable {
+	private boolean parseIcecastResults(InputStream is, String[] fields, int myVersion, StringBuilder sb, int[] currentStationIndex) throws Throwable {
 		int b = 0;
 		while (b >= 0) {
 			if ((b = is.read()) == (int)'<' &&
@@ -462,20 +488,20 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 			//special feature! (check out kXML2 source and you will find it!)
 			parser.setFeature("http://xmlpull.org/v1/doc/features.html#relaxed", true);
 			int ev;
-			while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && currentStationIndex < MAX_COUNT) {
+			while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && currentStationIndex[0] < MAX_COUNT) {
 				if (ev == XmlPullParser.END_TAG && parser.getName().equals("table"))
 					break;
 				if (ev == XmlPullParser.START_TAG && parser.getName().equals("tr")) {
 					if (myVersion != version)
 						break;
 					if (parseIcecastRow(parser, fields, sb) && myVersion == version) {
-						if (fields[2].length() < 1)
-							fields[2] = noDescription;
-						if (fields[3].length() < 1)
-							fields[3] = noOnAir;
-						if (fields[4].length() < 1)
-							fields[4] = noTags;
-						items[currentStationIndex++] = new RadioStation(fields);
+						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6].length() == 0 ? noTags : fields[6], fields[7], false);
+						synchronized (favoritesSync) {
+							station.isFavorite = favorites.contains(station);
+						}
+						if (myVersion != version)
+							break;
+						items[currentStationIndex[0]++] = station;
 						hasResults = true;
 					}
 				}
@@ -486,83 +512,278 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		return hasResults;
 	}
 	
-	public void fetchIcecast(final String genre, final String searchTerm) {
-		if (!okToFetchAgain)
+	private void loadFavoritesInternal(Context context) throws IOException {
+		FileInputStream fs = null;
+		BufferedInputStream bs = null;
+		try {
+			fs = context.openFileInput("_RadioFav");
+			bs = new BufferedInputStream(fs, 4096);
+			final int version = Serializer.deserializeInt(bs);
+			final int count = Math.min(Serializer.deserializeInt(bs), MAX_COUNT);
+			if (version == 0x0100 && count > 0) {
+				favorites.clear();
+				for (int i = 0; i < count; i++)
+					favorites.add(RadioStation.deserialize(bs, true));
+			}
+		} catch (IOException ex) {
+			if (ex instanceof FileNotFoundException && fs == null) {
+				favorites.clear();
+			} else {
+				throw ex;
+			}
+		} finally {
+			try {
+				if (bs != null)
+					bs.close();
+			} catch (Throwable ex) {
+			}
+			try {
+				if (fs != null)
+					fs.close();
+			} catch (Throwable ex) {
+			}
+		}
+	}
+	
+	private void saveFavoritesInternal(Context context) throws IOException {
+		FileOutputStream fs = null;
+		BufferedOutputStream bs = null;
+		try {
+			final int count = Math.min(MAX_COUNT, favorites.size());
+			int i = 0;
+			fs = context.openFileOutput("_RadioFav", 0);
+			bs = new BufferedOutputStream(fs, 4096);
+			Serializer.serializeInt(bs, 0x0100);
+			Serializer.serializeInt(bs, count);
+			for (RadioStation s : favorites) {
+				if (i >= count)
+					break;
+				s.serialize(bs);
+				i++;
+			}
+			bs.flush();
+		} finally {
+			try {
+				if (bs != null)
+					bs.close();
+			} catch (Throwable ex) {
+			}
+			try {
+				if (fs != null)
+					fs.close();
+			} catch (Throwable ex) {
+			}
+		}
+	}
+	
+	@Override
+	public int compare(RadioStation a, RadioStation b) {
+		int r = a.title.compareToIgnoreCase(b.title);
+		if (r != 0)
+			return r;
+		r = a.onAir.compareToIgnoreCase(b.onAir);
+		if (r != 0)
+			return r;
+		return a.m3uUri.compareTo(b.m3uUri);
+	}
+	
+	@Override
+	public void run() {
+		final int myVersion = version;
+		final Context context = this.context;
+		final String genre = genreToFetch, searchTerm = searchTermToFetch;
+		final boolean isSavingFavorites = this.isSavingFavorites;
+		this.context = null;
+		readyToFetch = true;
+		
+		int err = 0;
+		
+		if (!favoritesLoaded && !isSavingFavorites && context != null) {
+			synchronized (favoritesSync) {
+				if (!favoritesLoaded) {
+					try {
+						loadFavoritesInternal(context);
+						favoritesLoaded = true;
+						favoritesChanged = false;
+					} catch (Throwable ex) {
+					}
+				}
+			}
+		}
+		
+		if (genre == null && searchTerm == null) {
+			//favorites
+			synchronized (favoritesSync) {
+				if (isSavingFavorites) {
+					try {
+						if (favoritesLoaded && favoritesChanged && context != null) {
+							saveFavoritesInternal(context);
+							favoritesChanged = false;
+						}
+					} catch (Throwable ex) {
+						MainHandler.toast(R.string.error_gen);
+					}
+				} else {
+					try {
+						if (favoritesLoaded && context != null) {
+							if (myVersion != version)
+								return;
+							final RadioStation[] stations = new RadioStation[favorites.size()];
+							favorites.toArray(stations);
+							ArraySorter.sort(stations, 0, stations.length, this);
+							if (myVersion == version) {
+								final int count = Math.min(stations.length, MAX_COUNT);
+								System.arraycopy(stations, 0, items, 0, count);
+								MainHandler.sendMessage(RadioStationList.this, MSG_MORE_RESULTS, myVersion, count);
+							}
+						}
+					} catch (Throwable ex) {
+						err = -2;
+					} finally {
+						if (myVersion == version)
+							MainHandler.sendMessage(RadioStationList.this, MSG_FINISHED, myVersion, err);
+					}
+				}
+			}
 			return;
+		}
+		
+		try {
+			int pageNumber = 0;
+			boolean hasResults;
+			String[] fields = new String[8];
+			final StringBuilder sb = new StringBuilder(256);
+			final int[] currentStationIndex = { 0 };
+			
+			//genre MUST be one of the predefined genres (due to the encoding)
+			final String uri = ((genre != null) ?
+					("http://dir.xiph.org/by_genre/" + genre.replace(" ", "%20") + "?page=") :
+					("http://dir.xiph.org/search?search=" + URLEncoder.encode(searchTerm, "UTF-8") + "&page="));
+			do {
+				if (myVersion != version)
+					break;
+				AndroidHttpClient client = null;
+				HttpResponse response = null;
+				InputStream is = null;
+				try {
+					client = AndroidHttpClient.newInstance("Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36 Debian");
+					response = client.execute(new HttpGet(uri + pageNumber));
+					final StatusLine statusLine = response.getStatusLine();
+					if (myVersion != version)
+						break;
+					if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+						is = response.getEntity().getContent();
+						hasResults = parseIcecastResults(is, fields, myVersion, sb, currentStationIndex);
+						if (hasResults && myVersion == version)
+							MainHandler.sendMessage(RadioStationList.this, MSG_MORE_RESULTS, myVersion, currentStationIndex[0]);
+					} else {
+						hasResults = false;
+						err = statusLine.getStatusCode();
+					}
+				} catch (Throwable ex) {
+					hasResults = false;
+					err = -1;
+				} finally {
+					try {
+						if (client != null)
+							client.close();
+					} catch (Throwable ex) {
+					}
+					try {
+						if (is != null)
+							is.close();
+					} catch (Throwable ex) {
+					}
+					is = null;
+					client = null;
+					response = null;
+					System.gc();
+				}
+				pageNumber++;
+			} while (hasResults && pageNumber < 5);
+		} catch (Throwable ex) {
+			err = -1;
+		} finally {
+			if (myVersion == version)
+				MainHandler.sendMessage(RadioStationList.this, MSG_FINISHED, myVersion, err);
+		}
+	}
+	
+	public void addFavoriteStation(RadioStation station) {
+		synchronized (favoritesSync) {
+			if (favoritesLoaded) {
+				station.isFavorite = true;
+				favoritesChanged |= favorites.add(station);
+			}
+		}
+	}
+	
+	public void removeFavoriteStation(RadioStation station) {
+		synchronized (favoritesSync) {
+			if (favoritesLoaded) {
+				station.isFavorite = false;
+				favoritesChanged |= favorites.remove(station);
+			}
+		}
+	}
+	
+	public void fetchIcecast(Context context, String genre, String searchTerm) {
+		while (!readyToFetch)
+			Thread.yield();
 		cancel();
 		clear();
 		loadingProcessChanged(true);
-		final Thread t = new Thread("Icecast Station Fetcher Thread") {
-			@Override
-			public void run() {
-				final int myVersion = version;
-				int pageNumber = 0, err = -1;
-				boolean hasResults;
-				String[] fields = new String[6];
-				final StringBuilder sb = new StringBuilder(256);
-				currentStationIndex = 0;
-				okToFetchAgain = true;
-				try {
-					//genre MUST be one of the predefined genres (due to the encoding)
-					final String uri = ((genre != null) ?
-							("http://dir.xiph.org/by_genre/" + genre.replace(" ", "%20") + "?page=") :
-							("http://dir.xiph.org/search?search=" + URLEncoder.encode(searchTerm, "UTF-8") + "&page="));
-					do {
-						if (myVersion != version)
-							break;
-						AndroidHttpClient client = null;
-						HttpResponse response = null;
-						InputStream is = null;
-						try {
-							client = AndroidHttpClient.newInstance("Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36 Debian");
-							response = client.execute(new HttpGet(uri + pageNumber));
-							final StatusLine statusLine = response.getStatusLine();
-							if (myVersion != version)
-								break;
-							if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-								is = response.getEntity().getContent();
-								hasResults = parseIcecastResults(is, fields, myVersion, sb);
-								err = 0;
-								if (hasResults && myVersion == version)
-									MainHandler.sendMessage(RadioStationList.this, MSG_MORE_RESULTS, myVersion, currentStationIndex);
-							} else {
-								hasResults = false;
-								err = statusLine.getStatusCode();
-							}
-						} catch (Throwable ex) {
-							hasResults = false;
-							err = -1;
-						} finally {
-							try {
-								if (client != null)
-									client.close();
-							} catch (Throwable ex) {
-							}
-							try {
-								if (is != null)
-									is.close();
-							} catch (Throwable ex) {
-							}
-							is = null;
-							client = null;
-							response = null;
-							System.gc();
-						}
-						pageNumber++;
-					} while (hasResults && pageNumber < 5);
-				} catch (Throwable ex) {
-				} finally {
-					if (myVersion == version)
-						MainHandler.sendMessage(RadioStationList.this, MSG_FINISHED, myVersion, err);
-				}
-			}
-		};
-		okToFetchAgain = false;
+		final Thread t = new Thread(this, "Icecast Station Fetcher Thread");
+		isSavingFavorites = false;
+		genreToFetch = genre;
+		searchTermToFetch = searchTerm;
+		this.context = context;
+		readyToFetch = false;
 		try {
 			t.start();
 		} catch (Throwable ex) {
-			okToFetchAgain = true;
+			readyToFetch = true;
 			loadingProcessChanged(false);
+		}
+	}
+	
+	public void fetchFavorites(Context context) {
+		while (!readyToFetch)
+			Thread.yield();
+		cancel();
+		clear();
+		loadingProcessChanged(true);
+		final Thread t = new Thread(this, "Icecast Favorite Stations Fetcher Thread");
+		isSavingFavorites = false;
+		genreToFetch = null;
+		searchTermToFetch = null;
+		this.context = context;
+		readyToFetch = false;
+		try {
+			t.start();
+		} catch (Throwable ex) {
+			readyToFetch = true;
+			loadingProcessChanged(false);
+		}
+	}
+	
+	public void saveFavorites(Context context) {
+		while (!readyToFetch)
+			Thread.yield();
+		synchronized (favoritesSync) {
+			if (!favoritesLoaded || !favoritesChanged)
+				return;
+		}
+		final Thread t = new Thread(this, "Icecast Favorite Stations Storer Thread");
+		isSavingFavorites = true;
+		genreToFetch = null;
+		searchTermToFetch = null;
+		this.context = context;
+		readyToFetch = false;
+		try {
+			t.start();
+		} catch (Throwable ex) {
+			readyToFetch = true;
 		}
 	}
 	
@@ -574,7 +795,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ma
 		case MSG_FINISHED:
 			loadingProcessChanged(false);
 			if (msg.arg2 != 0)
-				UI.toast(Player.getService(), !Player.isConnectedToTheInternet() ? R.string.error_connection : R.string.error_gen);
+				UI.toast(Player.getService(), ((msg.arg2 != -2) && !Player.isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_gen);
 			break;
 		case MSG_MORE_RESULTS:
 			//protection against out of order messages... does this really happen? ;)

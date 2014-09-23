@@ -30,45 +30,63 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.util;
+package br.com.carlosrafaelgn.fplay.ui;
 
-public final class ArraySorter {
-	public static interface Comparer<E> {
-		public int compare(E a, E b);
+import android.content.res.ColorStateList;
+
+public final class BgColorStateList extends ColorStateList {
+	private static final int[][] states = new int[][] { new int[] {} };
+	private static final int[] colors = new int[] { 0 };
+	private int normalColor, alteredColor;
+	
+	public BgColorStateList(int color) {
+		super(states, colors);
+		this.normalColor = color;
+		this.alteredColor = color;
 	}
 	
-	public static <E> void sort(E[] elements, int i, int n, Comparer<E> comparer) {
-		if (n > 1) {
-			E eA, eB;
-			final int endB = i + n;
-			if (n < 8) {
-				//use insertion sort only for small arrays
-				for (int x = i; x < endB; x++) {
-					int y = x;
-					while (y > i && comparer.compare(eA = elements[y - 1], eB = elements[y]) > 0) {
-						elements[y - 1] = eB;
-						elements[y--] = eA;
-					}
-				}
-				return;
-			}
-			final int m = n >> 1;
-			sort(elements, i, m, comparer);
-			sort(elements, i + m, n - m, comparer);
-			int iB = i + m;
-			eA = elements[i];
-			eB = elements[iB];
-			for (;;) {
-				if (comparer.compare(eA, eB) > 0) {
-					System.arraycopy(elements, i, elements, i + 1, iB - i);
-					elements[i] = eB;
-					if ((++iB) >= endB || (++i) >= iB) break; //MUST INCREMENT iB BEFORE COMPARING i AND iB
-					eB = elements[iB];
-				} else {
-					if ((++i) >= iB) break;
-					eA = elements[i];
-				}
+	public BgColorStateList(int normalColor, int alteredColor) {
+		super(states, colors);
+		this.normalColor = normalColor;
+		this.alteredColor = alteredColor;
+	}
+	
+	public void setNormalColor(int normalColor) {
+		this.normalColor = normalColor;
+	}
+	
+	public void setNormalColorAlpha(int alpha) {
+		normalColor = (alpha << 24) | (normalColor & 0x00ffffff);
+	}
+	
+	public void setAlteredColor(int alteredColor) {
+		this.alteredColor = alteredColor;
+	}
+	
+	@Override
+	public int getColorForState(int[] stateSet, int defaultColor) {
+		if (stateSet != null) {
+			for (int i = stateSet.length - 1; i >= 0; i--) {
+				if (stateSet[i] == android.R.attr.state_pressed ||
+					stateSet[i] == android.R.attr.state_focused)
+					return alteredColor;
 			}
 		}
+		return normalColor;
+	}
+	
+	@Override
+	public int getDefaultColor() {
+		return normalColor;
+	}
+	
+	@Override
+	public boolean isStateful() {
+		return (normalColor != alteredColor);
+	}
+	
+	@Override
+	public ColorStateList withAlpha(int alpha) {
+		return this;
 	}
 }

@@ -58,7 +58,7 @@ public final class SongView extends View implements BgListView.BgListItem, View.
 	}
 	
 	private void processEllipsis() {
-		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._8dp - lengthWidth, false);
+		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._4dp - lengthWidth, false);
 		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI._8dp << 1), false);
 	}
 	
@@ -69,7 +69,7 @@ public final class SongView extends View implements BgListView.BgListItem, View.
 		if (this.song == song)
 			return;
 		this.song = song;
-		lengthWidth = UI.measureText(song.length, UI._14sp);
+		lengthWidth = (song.isHttp ? UI._14spBox : UI.measureText(song.length, UI._14sp));
 		setContentDescription(song.title);
 		processEllipsis();
 	}
@@ -159,7 +159,10 @@ public final class SongView extends View implements BgListView.BgListItem, View.
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI._4dp, UI.rect.bottom - UI.defaultControlContentsSize - UI._4dp, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
-		UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
+		if (song.isHttp)
+			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, UI.rect.right - UI._14spBox - UI._8dp, verticalMargin, UI._14spBox, txtColor);
+		else
+			UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
 		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
 	}
 	
