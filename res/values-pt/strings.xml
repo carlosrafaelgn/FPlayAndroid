@@ -244,5 +244,7 @@
     <string name="tags">Tags</string>
     <string name="no_description">Sem descrição :(</string>
     <string name="no_tags">Sem tags :(</string>
+    <string name="no_favorites">Ainda sem favoritas!\n\nMarque estações de rádio como favoritas para encontrá-las aqui :)</string>
+    <string name="no_stations">Nenhuma estação de rádio encontrada :(\n\nClique aqui para ver suas favoritas :)</string>
     
 </resources>

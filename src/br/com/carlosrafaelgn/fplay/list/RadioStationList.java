@@ -118,7 +118,6 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 		"Alternate",
 		"Ambiance",
 		"Ambient",
-		"Anime",
 		"Argentina",
 		"Baladas",
 		"Bass",

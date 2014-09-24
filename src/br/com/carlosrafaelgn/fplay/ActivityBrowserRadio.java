@@ -222,6 +222,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		loading = started;
 		if (panelLoading != null)
 			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
+		if (list != null)
+			list.setCustomEmptyText(getText(started ? R.string.loading : (isAtFavorites ? R.string.no_favorites : R.string.no_stations)));
 		if (!started)
 			updateButtons();
 	}
@@ -380,6 +382,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		} else if (view == chkTerm || view == txtTerm) {
 			chkGenre.setChecked(false);
 			chkTerm.setChecked(true);
+		} else if (view == list) {
+			if (!isAtFavorites && !loading && (radioStationList == null || radioStationList.getCount() == 0))
+				onClick(btnFavorite);
 		}
 	}
 	
@@ -429,6 +434,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		list = (BgListView)findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
+		list.setCustomEmptyText(getText(R.string.loading));
+		list.setEmptyListOnClickListener(this);
 		radioStationList.setObserver(list);
 		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
@@ -514,31 +521,26 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		radioStationList = null;
 	}
 	
-
 	@Override
 	public int getCount() {
 		return RadioStationList.GENRES.length;
 	}
 
-	
 	@Override
 	public Object getItem(int position) {
 		return getGenreString(position);
 	}
 
-	
 	@Override
 	public long getItemId(int position) {
 		return position;
 	}
 
-	
 	@Override
 	public int getItemViewType(int position) {
 		return 0;
 	}
 
-	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		TextView txt = (TextView)convertView;
@@ -553,35 +555,29 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		return txt;
 	}
 
-	
 	@Override
 	public int getViewTypeCount() {
 		return 1;
 	}
 
-	
 	@Override
 	public boolean hasStableIds() {
 		return true;
 	}
 
-	
 	@Override
 	public boolean isEmpty() {
 		return false;
 	}
 
-	
 	@Override
 	public void registerDataSetObserver(DataSetObserver observer) {
 	}
 
-	
 	@Override
 	public void unregisterDataSetObserver(DataSetObserver observer) {
 	}
 
-	
 	@Override
 	public View getDropDownView(int position, View convertView, ViewGroup parent) {
 		TextView txt = (TextView)convertView;
