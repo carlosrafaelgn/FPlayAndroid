@@ -49,7 +49,9 @@ import android.content.res.ColorStateList;
 import android.database.DataSetObserver;
 import android.net.http.AndroidHttpClient;
 import android.text.InputType;
+import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -66,12 +68,14 @@ import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.RadioStationView;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
 public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, SpinnerAdapter {
 	private TextView sep2;
@@ -354,10 +358,25 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			txtTerm.setSingleLine();
 			txtTerm.setLayoutParams(p);
 			
+			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+			p.topMargin = UI._DLGsppad;
+			p.bottomMargin = UI._DLGsppad;
+			final TextView lbl = new TextView(ctx);
+			lbl.setAutoLinkMask(0);
+			lbl.setLinksClickable(true);
+			//http://developer.android.com/design/style/color.html
+			lbl.setLinkTextColor(new BgColorStateList(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5));
+			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
+			lbl.setGravity(Gravity.CENTER_HORIZONTAL);
+			lbl.setText(SafeURLSpan.parseSafeHtml(getText(R.string.by_dir_xiph_org)));
+			lbl.setMovementMethod(LinkMovementMethod.getInstance());
+			lbl.setLayoutParams(p);
+			
 			l.addView(chkGenre);
 			l.addView(btnGenre);
 			l.addView(chkTerm);
 			l.addView(txtTerm);
+			l.addView(lbl);
 			
 			btnGenre.setAdapter(this);
 			btnGenre.setSelection(getValidGenre(Player.radioLastGenre));

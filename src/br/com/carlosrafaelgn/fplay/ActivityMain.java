@@ -1251,7 +1251,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				playingBeforeSeek = Player.isPlaying();
 				if (playingBeforeSeek)
 					Player.playPause();
-				if (!UI.isLargeScreen)
+				if (UI.expandSeekBar && !UI.isLargeScreen)
 					vwVolume.setVisibility(View.GONE);
 				return true;
 			}
@@ -1276,7 +1276,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					Player.seekTo(ms, playingBeforeSeek);
 				}
 			}
-			if (!UI.isLargeScreen)
+			if (UI.expandSeekBar && !UI.isLargeScreen)
 				vwVolume.setVisibility(View.VISIBLE);
 		}
 	}

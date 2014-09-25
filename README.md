@@ -1,11 +1,12 @@
 FPlayAndroid
 ============
 
-FPlay for Android is a simple and straightforward music player, with equalizer and bass boost.
+FPlay for Android is a simple and lightweight music player, with clean interface, equalizer, bass boost and customizable colors.
 
 The main goal of this project is to provide the users with a fully functional music player based on lists and folders. The player itself does not consume too much memory, and respects WCAG 2.0 accessibility guidelines for colors and contrast, being friendly for color blind people as well as for people with mild visual impairments.
 
-Moreover, this source code can be used as an example on how to do a few common tasks in Android:
+Moreover, this source code can be used as an example on how to do a few tasks in Android:
+- Browse through Icecast Directory
 - Extract ID3v1 and ID3v2 information from MP3 and AAC files without android.media.MediaMetadataRetriever
 - Reduce the latency between consecutive tracks using setNextMediaPlayer()
 - Apply audio effects to music (equalizer and bass boost)
@@ -36,14 +37,6 @@ Very special thanks to the people who helped translating FPlay:
 - David Gonzalez (redandy16@gmail.com)
 
 Thanks a lot!! :D
-
-Free third-party resources used in the application:
-
-Folder/Disc icons: http://www.24psd.com/ubuntu+icon+pack
-
-Phone icon: http://www.psdgraphics.com/graphics/photoshop-recreation-of-google-nexus-one-smartphone-download-psd
-
-SD card icon: http://artofapogee.blogspot.com.br/2010/02/sd-card-icon.html
 
 The typeface used as the dyslexia-friendly typeface is OpenDyslexic Regular, by Abelardo Gonzalez, available at http://dyslexicfonts.com and licensed under a Creative Commons Attribution 3.0 Unported License.
 

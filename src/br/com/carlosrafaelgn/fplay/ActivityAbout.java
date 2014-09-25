@@ -34,7 +34,7 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.content.pm.PackageInfo;
 import android.os.Build;
-import android.text.util.Linkify;
+import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.ScrollView;
@@ -44,6 +44,7 @@ import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
+import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
 public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
 	private ScrollView list;
@@ -73,16 +74,17 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		}
 		UI.smallTextAndColor((TextView)findViewById(R.id.lblAppBy));
 		final TextView lblMsg = (TextView)findViewById(R.id.lblMsg);
-		final StringBuilder sb = new StringBuilder(1024);
+		final StringBuilder sb = new StringBuilder(2048);
 		sb.append(getText(R.string.app_more_info));
 		sb.append(getText(R.string.app_more_info2));
 		sb.append(getText(R.string.app_license));
-		lblMsg.setAutoLinkMask(Linkify.EMAIL_ADDRESSES | Linkify.WEB_URLS);
+		lblMsg.setAutoLinkMask(0);
 		lblMsg.setLinksClickable(true);
-		lblMsg.setText(sb.toString());
-		lblMsg.setLinkTextColor(UI.color_text_listitem_secondary);
+		lblMsg.setLinkTextColor(UI.colorState_text_listitem_secondary_static);
 		UI.smallText(lblMsg);
 		lblMsg.setTextColor(UI.colorState_text_listitem_static);
+		lblMsg.setText(SafeURLSpan.parseSafeHtml(sb));
+		lblMsg.setMovementMethod(LinkMovementMethod.getInstance());
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));

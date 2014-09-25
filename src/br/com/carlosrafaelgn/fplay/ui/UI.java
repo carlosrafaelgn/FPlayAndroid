@@ -179,6 +179,7 @@ public final class UI {
 	public static final String ICON_SD = "d";
 	public static final String ICON_FOLDER = "f";
 	public static final String ICON_USB = "u";
+	public static final String ICON_SEEKBAR = "5";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
@@ -355,7 +356,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft;
+		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft, expandSeekBar;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
@@ -1081,8 +1082,13 @@ public final class UI {
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
 	public static void setAndroidThemeAccordingly13(Activity activity) {
+		//Even though android.R.style.Theme_Light_NoTitleBar_Fullscreen
+		//is available on API 10, 11 and 12, it DOES NOT make dialogs's
+		//background light :(
+		//
 		//Theme.DeviceDefault.Light.NoActionBar.Fullscreen appeared
 		//only on API 14... :(
+		//
 		//http://android-developers.blogspot.com.br/2012/01/holo-everywhere.html
 		if (isAndroidThemeLight())
 			activity.setTheme(android.R.style.Theme_Holo_Light_NoActionBar_Fullscreen);
@@ -1100,17 +1106,14 @@ public final class UI {
 	}
 	
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 10) {
-			msgStartup = 10;
+		if (msgStartup >= 11) {
+			msgStartup = 11;
 			return;
 		}
-		int title = R.string.new_setting;
-		String content = "";
-		if (msgStartup < 10) {
-			msgStartup = 10;
-			content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.scrollbar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-			//content = activity.getText(R.string.startup_message).toString();
-		}
+		final int title = R.string.new_setting;
+		msgStartup = 11;
+		final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		//final String content = activity.getText(R.string.startup_message).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
 		.setView(createDialogView(activity, content))

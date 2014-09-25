@@ -75,7 +75,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -611,6 +611,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optTheme.setOnClickListener(this);
 			optFlat = new SettingView(ctx, UI.ICON_THEME, getText(R.string.flat_details).toString(), null, true, UI.isFlat(), false);
 			optFlat.setOnClickListener(this);
+			optExpandSeekBar = new SettingView(ctx, UI.ICON_SEEKBAR, getText(R.string.expand_seek_bar).toString(), null, true, UI.expandSeekBar, false);
+			optExpandSeekBar.setOnClickListener(this);
 			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
 			optVolumeControlType.setOnClickListener(this);
 			optDoNotAttenuateVolume = new SettingView(ctx, UI.ICON_INFORMATION, getText(R.string.opt_do_not_attenuate_volume).toString(), null, true, Player.doNotAttenuateVolume, false);
@@ -702,6 +704,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			headers[4].setTag(4);
 			panelSettings.addView(optPlayWhenHeadsetPlugged);
 			panelSettings.addView(optHandleCallKey);
+			panelSettings.addView(optExpandSeekBar);
 			panelSettings.addView(optVolumeControlType);
 			panelSettings.addView(optDoNotAttenuateVolume);
 			panelSettings.addView(optFadeInFocus);
@@ -771,6 +774,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optKeepScreenOn = null;
 		optTheme = null;
 		optFlat = null;
+		optExpandSeekBar = null;
 		optVolumeControlType = null;
 		optDoNotAttenuateVolume = null;
 		optIsDividerVisible = null;
@@ -928,6 +932,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
+		} else if (view == optExpandSeekBar) {
+			UI.expandSeekBar = optExpandSeekBar.isChecked();
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser) {
 			CustomContextMenu.openContextMenu(view, this);
 			return;
