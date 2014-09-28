@@ -82,7 +82,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private BaseList<? extends BaseItem> adapter;
 	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking;
 	private int leftPadding, topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
-		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, heightOffset, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState;
+		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState;
 	private String[] sections;
 	private int[] sectionPositions;
 	int extraState;
@@ -251,7 +251,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		final View v;
 		if (itemHeight <= 0 && (v = getChildAt(0)) != null)
 			itemHeight = ((BgListItem)v).predictHeight();
-		int y = ((viewHeight - bottomPadding - topPadding) >> 1) - (((itemHeight <= 0) ? UI._22spBox : itemHeight) >> 1);
+		int y = ((viewHeight - bottomPadding - topPadding) >> 1) - (itemHeight >> 1);
 		if (y < 0)
 			y = 0;
 		if (smoothly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
@@ -332,7 +332,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			case SCROLLBAR_LARGE:
 				scrollBarTop = topPadding + UI._4dp;
 				scrollBarBottom = h - bottomPadding - UI._4dp;
-				updateScrollBarThumb(true);
+				updateScrollBarThumb();
 				break;
 			case SCROLLBAR_INDEXED:
 				scrollBarTop = topPadding;
@@ -398,24 +398,32 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	private void trackTouchEvent(int y) {
-		final int sbh = (scrollBarBottom - scrollBarTop), vh = (viewHeight - bottomPadding - topPadding) + heightOffset;
+		final int count = adapter.getCount();
+		if (adapter == null || count <= 0)
+			return;
+		final int sbh = (scrollBarBottom - scrollBarTop), vh = (viewHeight - bottomPadding - topPadding);
 		y -= scrollBarThumbOffset + scrollBarTop;
+		//int t, f;
 		int f;
 		if (y <= 0) {
-			y = 0;
+			scrollBarThumbTop = scrollBarTop;
+			//t = 0;
 			f = 0;
 		} else if (y >= (sbh - scrollBarThumbHeight)) {
-			y = sbh - scrollBarThumbHeight;
-			f = itemCount - 1;
+			scrollBarThumbTop = sbh - scrollBarThumbHeight + scrollBarTop;
+			//t = 0;
+			f = count - 1;
 		} else {
-			f = (y * (contentsHeight - vh)) / ((sbh - scrollBarThumbHeight) * itemHeight);
-			if (f >= itemCount)
-				f = itemCount - 1;
+			scrollBarThumbTop = y + scrollBarTop;
+			int t = (y * (contentsHeight - vh) / (sbh - scrollBarThumbHeight));
+			f = t / itemHeight;
+			if (f >= count)
+				f = count - 1;
+			//t = (f * itemHeight) - t;
 		}
-		scrollBarThumbTop = y + scrollBarTop;
 		invalidateScrollBar();
-		if (f != getFirstVisiblePosition() && adapter != null && f >= 0 && f < adapter.getCount())
-			setSelectionFromTop(f, 0);
+		//setSelectionFromTop(f, t);
+		setSelectionFromTop(f, 0);
 	}
 	
 	private void trackIndexedTouchEvent(int y) {
@@ -528,38 +536,28 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		scrollBarThumbTop = m;
 	}
 	
-	private void updateScrollBarThumb(boolean updateEverything) {
+	private void updateScrollBarThumb() {
 		final int sbh = (scrollBarBottom - scrollBarTop);
 		if (itemCount == 0 || sbh <= 0) {
 			scrollBarThumbHeight = 0;
 		} else {
-			final int vh = (viewHeight - bottomPadding - topPadding);
-			if (itemHeight <= 0) {
-				final View v = getChildAt(0);
-				if (v == null) {
-					scrollBarThumbHeight = 0;
-					return;
-				}
-				itemHeight = ((BgListItem)v).predictHeight();
-				contentsHeight = (itemCount * itemHeight);
-				final int roundedH = itemHeight * (vh / itemHeight);
-				if (roundedH != vh)
-					heightOffset = (roundedH + itemHeight) - vh;
-			} else if (updateEverything) {
-				contentsHeight = (itemCount * itemHeight);
-				final int roundedH = itemHeight * (vh / itemHeight);
-				if (roundedH != vh)
-					heightOffset = (roundedH + itemHeight) - vh;
-			}
-			final int vho = vh + heightOffset;
-			if (contentsHeight <= vho) {
+			final View v = getChildAt(0);
+			if (v == null) {
 				scrollBarThumbHeight = 0;
-			} else {
-				scrollBarThumbHeight = (sbh * vho) / contentsHeight;
-				if (scrollBarThumbHeight < UI._8dp)
-					scrollBarThumbHeight = UI._8dp;
-				scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * getFirstVisiblePosition() * itemHeight) / (contentsHeight - vho));
+				return;
 			}
+			final int vh = (viewHeight - bottomPadding - topPadding);
+			if (itemHeight <= 0)
+				itemHeight = ((BgListItem)v).predictHeight();
+			contentsHeight = (itemCount * itemHeight);
+			if (contentsHeight <= vh) {
+				scrollBarThumbHeight = 0;
+				return;
+			}
+			scrollBarThumbHeight = (sbh * vh) / contentsHeight;
+			if (scrollBarThumbHeight < UI._8dp)
+				scrollBarThumbHeight = UI._8dp;
+			scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * ((getFirstVisiblePosition() * itemHeight) - v.getTop())) / (contentsHeight - vh));
 		}
 	}
 	
@@ -619,7 +617,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			scrollBarTop = topPadding + UI._4dp;
 			scrollBarBottom = viewHeight - bottomPadding - UI._4dp;
 			scrollBarWidth = (UI.defaultControlSize >> 1);
-			updateScrollBarThumb(true);
+			updateScrollBarThumb();
 			break;
 		case SCROLLBAR_INDEXED:
 			if (this.scrollBarType == SCROLLBAR_INDEXED)
@@ -777,7 +775,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		itemCount = ((adapter == null) ? 0 : adapter.getCount());
 		switch (scrollBarType) {
 		case SCROLLBAR_LARGE:
-			updateScrollBarThumb(true);
+			updateScrollBarThumb();
 			break;
 		case SCROLLBAR_INDEXED:
 			updateScrollBarIndices(true);
@@ -794,7 +792,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			cancelTracking();
 		switch (scrollBarType) {
 		case SCROLLBAR_LARGE:
-			updateScrollBarThumb(true);
+			updateScrollBarThumb();
 			break;
 		case SCROLLBAR_INDEXED:
 			updateScrollBarIndices(true);
@@ -809,7 +807,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			return;
 		switch (scrollBarType) {
 		case SCROLLBAR_LARGE:
-			updateScrollBarThumb(false);
+			updateScrollBarThumb();
 			break;
 		case SCROLLBAR_INDEXED:
 			updateScrollBarSectionForFirstPosition();
