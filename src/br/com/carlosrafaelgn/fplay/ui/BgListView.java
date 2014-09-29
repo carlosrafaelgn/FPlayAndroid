@@ -415,7 +415,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			f = count - 1;
 		} else {
 			scrollBarThumbTop = y + scrollBarTop;
-			int t = (y * (contentsHeight - vh) / (sbh - scrollBarThumbHeight));
+			int t = (scrollBarThumbTop * (contentsHeight - vh)) / (sbh - scrollBarThumbHeight);
 			f = t / itemHeight;
 			if (f >= count)
 				f = count - 1;
