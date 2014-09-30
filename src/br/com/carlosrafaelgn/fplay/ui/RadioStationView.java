@@ -47,13 +47,20 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class RadioStationView extends LinearLayout implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener {
+public final class RadioStationView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener {
 	private RadioStation station;
 	private BgButton btnFavorite;
 	private String ellipsizedTitle, ellipsizedOnAir;
 	private String[] descriptionLines, tagsLines;
-	private final int height, verticalMargin;
 	private int state, width, position, descriptionY, tagsY;
+	
+	private static int height, verticalMargin;
+	
+	public static int getViewHeight() {
+		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		height = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), verticalMargin + (UI._14spBox << 1)) + UI._4dp;
+		return height;
+	}
 	
 	public RadioStationView(Context context) {
 		super(context);
@@ -61,10 +68,9 @@ public final class RadioStationView extends LinearLayout implements BgListView.B
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
 		setGravity(Gravity.RIGHT | Gravity.BOTTOM);
-		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		getViewHeight();
 		descriptionLines = new String[4];
 		tagsLines = new String[3];
-		height = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), verticalMargin + (UI._14spBox << 1)) + UI._4dp;
 		btnFavorite = new BgButton(context);
 		LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 		p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
@@ -196,11 +202,6 @@ public final class RadioStationView extends LinearLayout implements BgListView.B
 	
 	@Override
 	public int getMinimumHeight() {
-		return height;
-	}
-	
-	@Override
-	public int predictHeight() {
 		return height;
 	}
 	

@@ -42,18 +42,24 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
-public final class SongView extends View implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener {
+public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
 	private Song song;
 	private String ellipsizedTitle, ellipsizedExtraInfo;
-	private final int height, verticalMargin;
 	private int state, width, lengthWidth, position;
+	
+	private static int height, verticalMargin;
+	
+	public static int getViewHeight() {
+		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		height = (UI._1dp << 1) + (verticalMargin << 1) + UI._22spBox + UI._14spBox;
+		return height;
+	}
 	
 	public SongView(Context context) {
 		super(context);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
-		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = (UI._1dp << 1) + (verticalMargin << 1) + UI._22spBox + UI._14spBox;
+		getViewHeight();
 		super.setDrawingCacheEnabled(false);
 	}
 	
@@ -129,11 +135,6 @@ public final class SongView extends View implements BgListView.BgListItem, View.
 	
 	@Override
 	public int getMinimumHeight() {
-		return height;
-	}
-	
-	@Override
-	public int predictHeight() {
 		return height;
 	}
 	

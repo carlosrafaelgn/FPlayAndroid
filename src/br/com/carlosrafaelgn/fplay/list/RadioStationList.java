@@ -817,4 +817,9 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}
+	
+	@Override
+	public int getViewHeight() {
+		return RadioStationView.getViewHeight();
+	}
 }

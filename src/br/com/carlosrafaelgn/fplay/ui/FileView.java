@@ -51,10 +51,9 @@ import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
-public final class FileView extends LinearLayout implements BgListView.BgListItem, View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
+public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
 	private AlbumArtFetcher albumArtFetcher;
 	private Handler handler;
-	private final int height, verticalMargin, usableHeight;
 	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
 	private BgButton btnAdd, btnPlay;
@@ -62,6 +61,15 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 	private boolean buttonsVisible, pendingAlbumArtRequest;
 	private final boolean hasButtons, buttonIsCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding;
+	
+	private static int height, verticalMargin, usableHeight;
+	
+	public static int getViewHeight() {
+		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
+		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
+		return height;
+	}
 	
 	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasButtons, boolean buttonIsCheckbox) {
 		super(context);
@@ -72,9 +80,7 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
 		setGravity(Gravity.RIGHT);
-		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
-		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
+		getViewHeight();
 		if (hasButtons) {
 			LayoutParams p;
 			if (!buttonIsCheckbox) {
@@ -284,11 +290,6 @@ public final class FileView extends LinearLayout implements BgListView.BgListIte
 	
 	@Override
 	public int getMinimumHeight() {
-		return height;
-	}
-	
-	@Override
-	public int predictHeight() {
 		return height;
 	}
 	

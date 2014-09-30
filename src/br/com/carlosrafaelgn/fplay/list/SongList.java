@@ -669,4 +669,9 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}
+	
+	@Override
+	public int getViewHeight() {
+		return SongView.getViewHeight();
+	}
 }

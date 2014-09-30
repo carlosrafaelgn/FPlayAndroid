@@ -429,4 +429,6 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		return ((position == current) ? UI.STATE_CURRENT : 0) | ((position == originalSel) ? UI.STATE_SELECTED :
 			((position >= firstSel && position <= lastSel) ? UI.STATE_MULTISELECTED : 0));
 	}
+	
+	public abstract int getViewHeight();
 }

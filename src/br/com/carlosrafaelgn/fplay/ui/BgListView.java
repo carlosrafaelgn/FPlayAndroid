@@ -66,10 +66,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event);
 	}
 	
-	public static interface BgListItem {
-		public int predictHeight();
-	}
-	
 	public static final int SCROLLBAR_SYSTEM = 0;
 	public static final int SCROLLBAR_LARGE = 1;
 	public static final int SCROLLBAR_INDEXED = 2;
@@ -248,9 +244,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//do not change to itemCount!
 		if (position < 0 || adapter == null || position >= adapter.getCount())
 			return;
-		final View v;
-		if (itemHeight <= 0 && (v = getChildAt(0)) != null)
-			itemHeight = ((BgListItem)v).predictHeight();
 		int y = ((viewHeight - bottomPadding - topPadding) >> 1) - (itemHeight >> 1);
 		if (y < 0)
 			y = 0;
@@ -547,8 +540,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				return;
 			}
 			final int vh = (viewHeight - bottomPadding - topPadding);
-			if (itemHeight <= 0)
-				itemHeight = ((BgListItem)v).predictHeight();
 			contentsHeight = (itemCount * itemHeight);
 			if (contentsHeight <= vh) {
 				scrollBarThumbHeight = 0;
@@ -771,6 +762,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	@Override
 	public void setAdapter(ListAdapter adapter) {
 		this.adapter = (BaseList<? extends BaseItem>)adapter;
+		itemHeight = ((adapter == null) ? UI.defaultControlSize : this.adapter.getViewHeight());
 		cancelTracking();
 		itemCount = ((adapter == null) ? 0 : adapter.getCount());
 		switch (scrollBarType) {

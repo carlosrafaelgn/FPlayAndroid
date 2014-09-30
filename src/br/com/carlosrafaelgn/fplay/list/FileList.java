@@ -180,6 +180,11 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	}
 	
 	@Override
+	public int getViewHeight() {
+		return FileView.getViewHeight();
+	}
+	
+	@Override
 	public boolean hasSections() {
 		return (sections != nullSections);
 	}
