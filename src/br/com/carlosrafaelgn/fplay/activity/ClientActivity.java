@@ -46,7 +46,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	ActivityHost activity;
 	ClientActivity previousActivity;
 	int requestCode;
-	boolean finished;
+	boolean finished, paused;
 	
 	public final int getDecorViewWidth() {
 		final int w = activity.getWindow().getDecorView().getWidth();

@@ -60,11 +60,36 @@ void JNICALL glChangeSpeed(JNIEnv* env, jclass clazz, int speed) {
 	}
 }
 
+int formatRGB(int x, char* str) {
+	str[1] = '.';
+	if (x >= 255) {
+		str[0] = '1';
+		str[2] = '0';
+		return 3;
+	}
+	str[0] = '0';
+	if (x <= 0) {
+		str[2] = '0';
+		return 3;
+	}
+	str += 2 + 5;
+	x = (x * 1000000) / 255;
+	//x ranges from 003921 to 996078
+	int digits = 0;
+	while (digits < 6) {
+		*str = '0' + (x % 10);
+		x /= 10;
+		str--;
+		digits++;
+	}
+	return 8;
+}
+
 int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor) {
-	const float bgR = (float)((bgColor >> 16) & 0xff) / 255.0f;
-	const float bgG = (float)((bgColor >> 8) & 0xff) / 255.0f;
-	const float bgB = (float)(bgColor & 0xff) / 255.0f;
-	int l;
+	const int bgR = ((bgColor >> 16) & 0xff);
+	const int bgG = ((bgColor >> 8) & 0xff);
+	const int bgB = (bgColor & 0xff);
+	int l, l2;
 	glProgram = glCreateProgram();
 	if (glGetError() || !glProgram) return -1;
 	glVShader = glCreateShader(GL_VERTEX_SHADER);
@@ -75,18 +100,50 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor) {
 	l = strlen(vertexShader);
 	glShaderSource(glVShader, 1, &vertexShader, &l);
 	if (glGetError()) return -4;
-	//memory reuse FTW! :)
-	sprintf((char*)floatBuffer, "precision mediump float; uniform sampler2D texAmplitude; uniform sampler2D texColor; varying vec2 vTexCoord; void main() {" \
+	
+	const char* fragmentShader1 = "precision mediump float; uniform sampler2D texAmplitude; uniform sampler2D texColor; varying vec2 vTexCoord; void main() {" \
 	"vec4 c = texture2D(texAmplitude, vec2(" \
 	"vTexCoord.x" \
 	/*"(vTexCoord.x < 0.25) ? (vTexCoord.x * 0.5) : (((vTexCoord.x - 0.25) * 1.167) + 0.125)"*/ \
 	", 0.0)); if (vTexCoord.y <= c.a && vTexCoord.y >= -c.a) {" \
 	"gl_FragColor = texture2D(texColor, c.ar);" \
 	"} else {" \
-	"gl_FragColor = vec4(%.8f, %.8f, %.8f, 1.0);" \
-	"} }", bgR, bgG, bgB);
-	l = strlen((char*)floatBuffer);
-	const char* fragmentShader = (char*)floatBuffer;
+	"gl_FragColor = vec4(";
+	
+	//sprintf causes SERIOUS issues on some devices when using %.8f, %.8f, %.8f
+	
+	const char* fragmentShader2 = ",1.0);" \
+	"} }";
+	
+	//memory reuse FTW! :)
+	char* tmp = (char*)floatBuffer;
+	l = strlen(fragmentShader1);
+	memcpy(tmp, fragmentShader1, l);
+	tmp += l;
+	
+	l2 = formatRGB(bgR, tmp);
+	l += l2;
+	tmp += l2;
+	*tmp = ',';
+	l++;
+	tmp++;
+	
+	l2 = formatRGB(bgG, tmp);
+	l += l2;
+	tmp += l2;
+	*tmp = ',';
+	l++;
+	tmp++;
+	
+	l2 = formatRGB(bgB, tmp);
+	l += l2;
+	tmp += l2;
+	
+	l2 = strlen(fragmentShader2);
+	l += l2;
+	memcpy(tmp, fragmentShader2, l2 + 1); //copy the null char
+	
+	const char* fragmentShader = (const char*)floatBuffer;
 	glShaderSource(glFShader, 1, &fragmentShader, &l);
 	if (glGetError()) return -5;
 	glCompileShader(glVShader);

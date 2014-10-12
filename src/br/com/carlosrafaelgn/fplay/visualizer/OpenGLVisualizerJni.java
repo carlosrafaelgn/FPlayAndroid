@@ -95,7 +95,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	
 	@Override
 	public EGLSurface createWindowSurface(EGL10 egl, EGLDisplay display, EGLConfig config, Object native_window) {
-		return egl.eglCreateWindowSurface(display, (this.config != null) ? this.config : config, native_window, null);
+		try {
+			EGLSurface s = egl.eglCreateWindowSurface(display, (this.config != null) ? this.config : config, native_window, null);
+			return s;
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
 	}
 	
 	@Override

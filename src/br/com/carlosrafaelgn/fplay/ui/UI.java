@@ -1027,6 +1027,16 @@ public final class UI {
 		finishLoadingTheme(false);
 	}
 	
+	public static void loadCreamTheme() {
+		loadCommonColors(false);
+		color_window = 0xff275a96;
+		color_list = 0xfff9f6ea;
+		color_divider = 0xffaabbcc;
+		color_text_listitem_secondary = 0xff0052a8;
+		color_text_listitem = 0xff000000;
+		finishLoadingTheme(false);
+	}
+	
 	public static String getThemeString(Context context, int theme) {
 		switch (theme) {
 		case THEME_CUSTOM:
