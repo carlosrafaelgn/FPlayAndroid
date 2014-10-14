@@ -83,7 +83,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 48;
+	public static final int VERSION_CODE = 49;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -359,6 +359,7 @@ public final class UI {
 		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft, expandSeekBar;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
+	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
 	//I know this is not the "proper" way of doing this... But this is the best way
@@ -1420,6 +1421,17 @@ public final class UI {
 		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, _DLGsp);
 		txt.setPadding(_DLGdppad << 1, _DLGdppad << 1, _DLGdppad << 1, _DLGdppad << 1);
 		return txt;
+	}
+	
+	public static void storeViewCenterLocationForFade(View view) {
+		if (view == null) {
+			lastViewCenterLocation[0] = screenWidth >> 1;
+			lastViewCenterLocation[1] = screenHeight >> 1;
+		} else {
+			view.getLocationOnScreen(lastViewCenterLocation);
+			lastViewCenterLocation[0] += (view.getWidth() >> 1);
+			lastViewCenterLocation[1] += (view.getHeight() >> 1);
+		}
 	}
 	
 	public static void prepareDialogAndShow(final AlertDialog dialog) {

@@ -146,8 +146,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	
 	@Override
 	public void onClick(View view) {
-		if (view == btnGoBack) {
-			finish();
-		}
+		if (view == btnGoBack)
+			finish(0, view);
 	}
 }

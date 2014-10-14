@@ -315,7 +315,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				isAtFavorites = false;
 				doSearch();
 			} else {
-				finish();
+				finish(0, view);
 			}
 		} else if (view == btnFavorite) {
 			isAtFavorites = true;
@@ -390,7 +390,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			.setOnCancelListener(this)
 			.create());
 		} else if (view == btnGoBackToPlayer) {
-			finish(-1);
+			finish(-1, view);
 		} else if (view == btnAdd) {
 			addPlaySelectedItem(false);
 		} else if (view == btnPlay) {
@@ -430,7 +430,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected boolean onBackPressed() {
 		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing) {
-			finish(-1);
+			finish(-1, null);
 			return true;
 		}
 		if (!isAtFavorites)

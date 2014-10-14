@@ -38,11 +38,16 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.ScaleAnimation;
+import android.widget.FrameLayout;
 import br.com.carlosrafaelgn.fplay.ActivityMain;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.UI;
-import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 
 //
@@ -52,12 +57,12 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver {
+public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener {
 	private ClientActivity top;
-	private boolean exitOnDestroy;
-	private int windowColor;
-	private final NullDrawable windowNullDrawable = new NullDrawable();
-	private ColorDrawable windowColorDrawable;
+	private boolean exitOnDestroy, isFading, useFadeOutNextTime, ignoreFadeNextTime;
+	private FrameLayout parent;
+	private View oldView, newView;
+	private AnimationSet anim;
 	
 	public ClientActivity getTopActivity() {
 		return top;
@@ -67,23 +72,130 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		this.exitOnDestroy = exitOnDestroy;
 	}
 	
+	@Override
+	public void onAnimationEnd(Animation animation) {
+		if (isFading) {
+			isFading = false;
+			if (parent != null) {
+				if (oldView != null) {
+					parent.removeView(oldView);
+					oldView = null;
+				}
+				if (newView != null) {
+					newView.setEnabled(true);
+					newView = null;
+				}
+				parent = null;
+			}
+		}
+		if (anim != null) {
+			anim.setAnimationListener(null);
+			anim = null;
+		}
+	}
+	
+	@Override
+	public void onAnimationRepeat(Animation animation) {
+	}
+	
+	@Override
+	public void onAnimationStart(Animation animation) {
+	}
+	
+	@Override
+	public View findViewById(int id) {
+		return ((newView != null) ? newView.findViewById(id) : super.findViewById(id));
+	}
+	
+	void setContentViewWithTransition(View view, boolean fadeAllowed, boolean forceFadeOut) {
+		if (fadeAllowed && !ignoreFadeNextTime) {
+			try {
+				parent = (FrameLayout)findViewById(android.R.id.content);
+			} catch (Throwable ex) {
+				parent = null;
+			}
+		} else {
+			parent = null;
+		}
+		if (parent != null) {
+			anim = null;
+			try {
+				oldView = parent.getChildAt(0);
+				if (oldView != null) {
+					newView = view;
+					anim = new AnimationSet(true);
+					int x = UI.lastViewCenterLocation[0], y = UI.lastViewCenterLocation[1];
+					try {
+						parent.getLocationOnScreen(UI.lastViewCenterLocation);
+						x -= UI.lastViewCenterLocation[0];
+						y -= UI.lastViewCenterLocation[1];
+					} catch (Throwable ex) {
+					}
+					//leave prepared for next time
+					UI.storeViewCenterLocationForFade(null);
+					if (useFadeOutNextTime || forceFadeOut) {
+						anim.addAnimation(new ScaleAnimation(1, 0.25f, 1, 0.25f, x, y));
+						anim.addAnimation(new AlphaAnimation(1, 0));
+					} else {
+						anim.addAnimation(new ScaleAnimation(0.25f, 1, 0.25f, 1, x, y));
+						anim.addAnimation(new AlphaAnimation(0, 1));
+					}
+					anim.setDuration(330);
+					anim.setInterpolator(new AccelerateDecelerateInterpolator());
+					anim.setRepeatCount(0);
+					anim.setFillAfter(false);
+				} else {
+					parent = null;
+				}
+			} catch (Throwable ex) {
+				anim = null;
+				parent = null;
+			}
+			if (anim != null) {
+				anim.setAnimationListener(this);
+				oldView.setEnabled(false);
+				view.setEnabled(false);
+				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+				if (useFadeOutNextTime || forceFadeOut) {
+					oldView.bringToFront();
+					oldView.startAnimation(anim);
+				} else {
+					view.bringToFront();
+					view.startAnimation(anim);
+				}
+				isFading = true;
+			}
+		}
+		if (parent == null) {
+			oldView = null;
+			newView = null;
+			setContentView(view);
+		}
+		useFadeOutNextTime = false;
+	}
+	
 	private void startActivityInternal(ClientActivity activity) {
 		activity.finished = false;
 		activity.activity = this;
 		activity.previousActivity = top;
 		top = activity;
-		setWindowColor(top.getDesiredWindowColor());
+		activity.paused = true;
 		activity.onCreate();
 		if (!activity.finished) {
 			activity.onCreateLayout(true);
-			if (!activity.finished)
+			if (!activity.finished && activity.paused) {
+				activity.paused = false;
 				activity.onResume();
+			}
 		}
 	}
 	
 	public void startActivity(ClientActivity activity) {
 		if (top != null) {
-			top.onPause();
+			if (!top.paused) {
+				top.paused = true;
+				top.onPause();
+			}
 			if (top != null)
 				top.onCleanupLayout();
 		}
@@ -93,8 +205,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	public void finishActivity(ClientActivity activity, ClientActivity newActivity, int code) {
 		if (activity.finished || activity != top)
 			return;
+		useFadeOutNextTime = true;
 		activity.finished = true;
-		activity.onPause();
+		if (!activity.paused) {
+			activity.paused = true;
+			activity.onPause();
+		}
 		activity.onCleanupLayout();
 		activity.onDestroy();
 		if (top != null)
@@ -115,10 +231,11 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				//we must check because the top activity could have
 				//changed as a consequence of oldTop.activityFinished()
 				//being called
-				setWindowColor(top.getDesiredWindowColor());
 				top.onCreateLayout(false);
-				if (top != null && !top.finished)
+				if (top != null && !top.finished && top.paused) {
+					top.paused = false;
 					top.onResume();
+				}
 			}
 		}
 		System.gc();
@@ -126,6 +243,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	public void onBackPressed() {
+		if (isFading)
+			return;
 		if (top != null) {
 			if (top.onBackPressed())
 				return;
@@ -139,6 +258,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
+		if (isFading)
+			return false;
 		if (top != null) {
 			final View v = top.getNullContextMenuView();
 			if (v != null)
@@ -163,23 +284,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		return super.onKeyDown(keyCode, event);
 	}
 	
-	public void setWindowColor(int color) {
-		if (color == 0) {
-			if (windowColor != color) {
-				windowColor = 0;
-				getWindow().setBackgroundDrawable(windowNullDrawable);
-			}
-		} else if (windowColorDrawable == null) {
-			windowColor = color;
-			windowColorDrawable = new ColorDrawable(color);
-			getWindow().setBackgroundDrawable(windowColorDrawable);
-		} else if (windowColor != color) {
-			windowColor = color;
-			windowColorDrawable.setColor(color);
-			getWindow().setBackgroundDrawable(windowColorDrawable);
-		}
-	}
-	
 	@Override
 	protected final void onCreate(Bundle savedInstanceState) {
 		//StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
@@ -202,12 +306,13 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		MainHandler.initialize();
 		if (Player.startService(getApplication()))
 			UI.setAndroidThemeAccordingly13(this);
+		UI.storeViewCenterLocationForFade(null);
 		top = new ActivityMain();
 		top.finished = false;
 		top.activity = this;
 		top.previousActivity = null;
-		windowColor = 1;
-		setWindowColor(top.getDesiredWindowColor());
+		getWindow().setBackgroundDrawable(new NullDrawable());
+		top.paused = true;
 		top.onCreate();
 		if (top != null && !top.finished) {
 			top.onCreateLayout(true);
@@ -243,7 +348,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		UI.initialize(this);
 		if (i != UI.isLandscape) {
 			if (top != null) {
+				ignoreFadeNextTime = true;
 				top.onOrientationChanged();
+				ignoreFadeNextTime = false;
 				System.gc();
 			}
 		}
@@ -251,8 +358,11 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	protected void onPause() {
-		if (top != null)
+		onAnimationEnd(null);
+		if (top != null && !top.paused) {
+			top.paused = true;
 			top.onPause();
+		}
 		Player.setAppIdle(true);
 		super.onPause();
 	}
@@ -260,19 +370,33 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	@Override
 	protected void onResume() {
 		Player.setAppIdle(false);
-		if (top != null)
+		if (top != null && top.paused) {
+			top.paused = false;
 			top.onResume();
+		}
 		super.onResume();
 	}
 	
 	private void finalCleanup() {
 		ClientActivity c = top, p;
 		top = null;
+		parent = null;
+		oldView = null;
+		newView = null;
+		if (anim != null) {
+			anim.setAnimationListener(null);
+			anim = null;
+		}
 		while (c != null) {
-			//the activity is already paused, so, just clean it up and destroy
-			c.finished = true;
-			c.onCleanupLayout();
-			c.onDestroy();
+			if (!c.finished) {
+				c.finished = true;
+				if (!c.paused) {
+					c.paused = true;
+					c.onPause();
+				}
+				c.onCleanupLayout();
+				c.onDestroy();
+			}
 			p = c.previousActivity;
 			c.activity = null;
 			c.previousActivity = null;
@@ -284,7 +408,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	protected void onDestroy() {
 		Player.removeDestroyedObserver(this);
 		finalCleanup();
-		windowColorDrawable = null;
 		super.onDestroy();
 		if (exitOnDestroy)
 			System.exit(0);

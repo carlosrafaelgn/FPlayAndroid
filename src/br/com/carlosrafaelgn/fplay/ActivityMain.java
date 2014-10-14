@@ -100,7 +100,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction;
+	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut;
 	private StringBuilder timeBuilder, volumeBuilder;
 	
 	private void saveListViewPosition() {
@@ -319,11 +319,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 	}
 	
-	private void addSongs() {
+	private void addSongs(View sourceView) {
 		if (Player.getState() == Player.STATE_INITIALIZED) {
 			Player.alreadySelected = false;
 			//startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
-			startActivity(new ActivityBrowser2());
+			startActivity(new ActivityBrowser2(), 0, sourceView);
 		}
 	}
 	
@@ -341,11 +341,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				Player.increaseStreamVolume());
 		setVolumeIcon();
 		return ret;
-	}
-	
-	@Override
-	public int getDesiredWindowColor() {
-		return (Player.isControlMode() ? UI.color_control_mode : 0);
 	}
 	
 	@Override
@@ -387,9 +382,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			cancelSelection(false);
 		if (controlMode)
 			Player.lastCurrent = Player.songs.getCurrentPosition();
-		getHostActivity().setWindowColor(getDesiredWindowColor());
 		onCleanupLayout();
+		forceFadeOut = !controlMode;
 		onCreateLayout(false);
+		forceFadeOut = false;
 		resume(true);
 		System.gc();
 	}
@@ -497,7 +493,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
 			if (Player.getState() == Player.STATE_INITIALIZED)
-				addSongs();
+				addSongs(null);
 			break;
 		case MNU_CLEARLIST:
 			if (Player.getState() == Player.STATE_INITIALIZED)
@@ -506,12 +502,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		case MNU_LOADLIST:
 			if (Player.getState() == Player.STATE_INITIALIZED) {
 				Player.alreadySelected = false;
-				startActivity(new ActivityFileSelection(MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this));
+				startActivity(new ActivityFileSelection(MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this), 0, null);
 			}
 			break;
 		case MNU_SAVELIST:
 			if (Player.getState() == Player.STATE_INITIALIZED)
-				startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this));
+				startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this), 0, null);
 			break;
 		case MNU_SORT_BY_TITLE:
 			if (Player.getState() == Player.STATE_INITIALIZED)
@@ -534,7 +530,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			break;
 		case MNU_EFFECTS:
 			if (Player.getState() == Player.STATE_INITIALIZED)
-				startActivity(new ActivityEffects());
+				startActivity(new ActivityEffects(), 0, null);
 			break;
 		case MNU_VISUALIZER:
 			if (Player.getState() == Player.STATE_INITIALIZED)
@@ -546,10 +542,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			break;
 		case MNU_SETTINGS:
 			if (Player.getState() == Player.STATE_INITIALIZED)
-				startActivity(new ActivitySettings(false));
+				startActivity(new ActivitySettings(false), 0, null);
 			break;
 		case MNU_EXIT:
-			finish();
+			finish(0, null);
 			Player.stopService();
 			break;
 		}
@@ -559,7 +555,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public void onClick(View view) {
 		if (view == btnAdd) {
-			addSongs();
+			addSongs(view);
 		} else if (view == btnPrev) {
 			if (Player.previous() && !Player.isControlMode())
 				bringCurrentIntoView();
@@ -595,7 +591,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				Player.playPause();
 		} else if (view == list) {
 			if (Player.songs.getCount() == 0)
-				addSongs();
+				addSongs(view);
 		}
 	}
 	
@@ -684,10 +680,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	protected void onCreateLayout(boolean firstCreation) {
 		if (Player.getState() > Player.STATE_INITIALIZED || skipToDestruction) {
 			skipToDestruction = true;
-			finish();
+			finish(0, null);
 			return;
 		}
-		setContentView(Player.isControlMode() ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? R.layout.activity_main_l : R.layout.activity_main));
+		setContentView(Player.isControlMode() ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? R.layout.activity_main_l : R.layout.activity_main), true, forceFadeOut);
+		findViewById(R.id.panelControls).setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		btnPrev = (BgButton)findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);

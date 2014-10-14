@@ -246,7 +246,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				}
 			}).start();
 			if (play && addingFolder && Player.goBackWhenPlayingFolders)
-				finish();
+				finish(0, null);
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
 			UI.toast(getApplication(), ex.getMessage());
@@ -508,10 +508,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			} else if (Player.path.length() == 1) {
 				navigateTo("", Player.path);
 			} else {
-				finish();
+				finish(0, view);
 			}
 		} else if (view == btnRadio) {
-			startActivity(new ActivityBrowserRadio(), 1);
+			startActivity(new ActivityBrowserRadio(), 1, view);
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
@@ -578,7 +578,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			fileList.notifyCheckedChanged();
 			updateButtons();
 		} else if (view == btnGoBackToPlayer) {
-			finish();
+			finish(0, view);
 		} else if (view == btnAdd) {
 			addPlayCheckedItems(false);
 		} else if (view == btnPlay) {
@@ -620,7 +620,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	public void activityFinished(ClientActivity activity, int requestCode, int code) {
 		if (requestCode == 1 && code == -1)
-			finish();
+			finish(0, null);
 	}
 	
 	@Override

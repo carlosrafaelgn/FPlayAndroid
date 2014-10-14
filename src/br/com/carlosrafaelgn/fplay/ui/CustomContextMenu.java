@@ -539,6 +539,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			}
 		}
 		if (it != null && it.enabled) {
+			UI.storeViewCenterLocationForFade(it.actionView);
 			if (it.subMenu != null) {
 				it.subMenu.run();
 				return;

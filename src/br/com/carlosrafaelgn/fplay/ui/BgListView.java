@@ -253,6 +253,13 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			setSelectionFromTop(position, y);
 	}
 	
+	public View getViewForPosition(int position) {
+		position -= getFirstVisiblePosition();
+		if (position < 0 || position >= getChildCount())
+			return null;
+		return getChildAt(position);
+	}
+	
 	public void setOnKeyDownObserver(OnBgListViewKeyDownObserver keyDownObserver) {
 		this.keyDownObserver = keyDownObserver;
 	}

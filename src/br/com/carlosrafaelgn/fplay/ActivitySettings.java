@@ -286,7 +286,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optTheme) {
 			if (item.getItemId() == UI.THEME_CUSTOM) {
-				startActivity(new ActivitySettings(true));
+				startActivity(new ActivitySettings(true), 0, null);
 			} else {
 				UI.setTheme(getHostActivity(), item.getItemId());
 				onCleanupLayout();
@@ -468,14 +468,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		return 0;
 	}
 	
-	private void applyTheme() {
+	private void applyTheme(View sourceView) {
 		final byte[] colors = UI.serializeThemeToArray();
 		for (int i = 0; i < colorViews.length; i++)
 			UI.serializeThemeColor(colors, i * 3, colorViews[i].getColor());
 		UI.customColors = colors;
 		UI.setTheme(getHostActivity(), UI.THEME_CUSTOM);
 		changed = false;
-		finish();
+		finish(0, sourceView);
 	}
 	
 	private void loadColors(boolean createControls, boolean forceCurrent) {
@@ -830,7 +830,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 		if (view == btnGoBack) {
 			if (!cancelGoBack())
-				finish();
+				finish(0, view);
 		} else if (view == optLoadCurrentTheme) {
 			if (colorMode)
 				loadColors(false, true);
@@ -854,9 +854,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					.create());
 					return;
 				}
-				applyTheme();
+				applyTheme(view);
 			} else {
-				startActivity(new ActivityAbout());
+				startActivity(new ActivityAbout(), 0, view);
 			}
 		} else if (!UI.isCurrentLocaleCyrillic() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
@@ -947,9 +947,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (colorMode) {
 				if (checkingReturn) {
 					changed = false;
-					finish();
+					finish(0, null);
 				} else {
-					applyTheme();
+					applyTheme(null);
 				}
 			} else if (txtCustomMinutes != null) {
 				try {

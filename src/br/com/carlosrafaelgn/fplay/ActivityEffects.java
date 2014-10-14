@@ -128,10 +128,10 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 			updateBars();
 			break;
 		case MNU_LOADPRESET:
-			startActivity(new ActivityFileSelection(MNU_LOADPRESET, false, false, getText(R.string.item_preset).toString(), "#pset", this));
+			startActivity(new ActivityFileSelection(MNU_LOADPRESET, false, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null);
 			break;
 		case MNU_SAVEPRESET:
-			startActivity(new ActivityFileSelection(MNU_SAVEPRESET, true, false, getText(R.string.item_preset).toString(), "#pset", this));
+			startActivity(new ActivityFileSelection(MNU_SAVEPRESET, true, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null);
 			break;
 		}
 		return true;
@@ -140,7 +140,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
-			finish();
+			finish(0, view);
 		} else if (view == btnMenu) {
 			CustomContextMenu.openContextMenu(btnMenu, this);
 		} else if (view == btnChangeEffect) {

@@ -161,7 +161,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		} else {
 			listener.onPlayClicked(id, file.path, file.name);
 			if (Player.goBackWhenPlayingFolders)
-				finish();
+				finish(0, (list == null) ? null : list.getViewForPosition(position));
 		}
 	}
 	
@@ -179,7 +179,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					} catch (Throwable ex) {
 					}
 				} else {
-					finish();
+					finish(0, null);
 					listener.onFileSelected(ActivityFileSelection.this.id, path, name);
 				}
 			}
@@ -196,7 +196,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				confirm(file.path, file.name, false);
 				return;
 			}
-			finish();
+			finish(0, (list == null) ? null : list.getViewForPosition(position));
 			listener.onFileSelected(id, file.path, file.name);
 		} else {
 			fileList.setSelection(position, true);
@@ -321,7 +321,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
-			finish();
+			finish(0, view);
 		} if (view == btnMenu) {
 			lastLongClickedId = -1;
 			CustomContextMenu.openContextMenu(btnMenu, this);
@@ -343,7 +343,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					return;
 				}
 			}
-			finish();
+			finish(0, null);
 			listener.onFileSelected(ActivityFileSelection.this.id, n + fileType, n);
 		}
 		txtSaveAsName = null;

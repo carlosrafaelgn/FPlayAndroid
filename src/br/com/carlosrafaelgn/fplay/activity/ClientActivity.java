@@ -32,10 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.res.Resources;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnCreateContextMenuListener;
@@ -78,12 +80,36 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		return activity;
 	}
 	
+	public final void setContentView(int layoutResID, boolean fadeAllowed, boolean forceFadeOut) {
+		if (fadeAllowed) {
+			View v;
+			try {
+				LayoutInflater l = (LayoutInflater)activity.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+				v = l.inflate(layoutResID, null);
+			} catch (Throwable ex) {
+				activity.setContentView(layoutResID);
+				return;
+			}
+			activity.setContentViewWithTransition(v, true, forceFadeOut);
+		} else {
+			activity.setContentView(layoutResID);
+		}
+	}
+	
 	public final void setContentView(int layoutResID) {
-		activity.setContentView(layoutResID);
+		View v;
+		try {
+			LayoutInflater l = (LayoutInflater)activity.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+			v = l.inflate(layoutResID, null);
+		} catch (Throwable ex) {
+			activity.setContentView(layoutResID);
+			return;
+		}
+		activity.setContentViewWithTransition(v, true, false);
 	}
 	
 	public final void setContentView(View view) {
-		activity.setContentView(view);
+		activity.setContentViewWithTransition(view, true, false);
 	}
 	
 	public final View findViewById(int id) {
@@ -102,24 +128,22 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		return previousActivity;
 	}
 	
-	public final void startActivity(ClientActivity activity) {
-		this.activity.startActivity(activity);
-	}
-	
-	public final void startActivity(ClientActivity activity, int requestCode) {
+	public final void startActivity(ClientActivity activity, int requestCode, View sourceView) {
+		if (sourceView != null)
+			UI.storeViewCenterLocationForFade(sourceView);
 		activity.requestCode = requestCode;
 		this.activity.startActivity(activity);
 	}
 	
-	public final void finish(int code) {
+	public final void finish(int code, View sourceView) {
+		if (sourceView != null)
+			UI.storeViewCenterLocationForFade(sourceView);
 		activity.finishActivity(this, null, code);
 	}
 	
-	public final void finish() {
-		activity.finishActivity(this, null, 0);
-	}
-	
-	public final void finishAndStartNewActivity(int code, ClientActivity activity, int requestCode) {
+	public final void finishAndStartNewActivity(int code, ClientActivity activity, int requestCode, View sourceView) {
+		if (sourceView != null)
+			UI.storeViewCenterLocationForFade(sourceView);
 		activity.requestCode = requestCode;
 		this.activity.finishActivity(this, activity, code);
 	}
@@ -141,10 +165,6 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	}
 	
 	public void activityFinished(ClientActivity activity, int requestCode, int code) {
-	}
-	
-	public int getDesiredWindowColor() {
-		return 0;
 	}
 	
 	public View getNullContextMenuView() {
