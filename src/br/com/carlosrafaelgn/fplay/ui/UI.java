@@ -107,6 +107,7 @@ public final class UI {
 	//present the new dark/light theme to all those using the light theme ;)
 	public static final int THEME_LIGHT = 4;
 	public static final int THEME_DARK_LIGHT = 3;
+	public static final int THEME_CREAMY = 5;
 	
 	public static final int MSG_ADD = 0x0001;
 	public static final int MSG_PLAY = 0x0002;
@@ -1028,7 +1029,7 @@ public final class UI {
 		finishLoadingTheme(false);
 	}
 	
-	public static void loadCreamTheme() {
+	public static void loadCreamyTheme() {
 		loadCommonColors(false);
 		color_window = 0xff275a96;
 		color_list = 0xfff9f6ea;
@@ -1036,6 +1037,8 @@ public final class UI {
 		color_text_listitem_secondary = 0xff0052a8;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
+		color_text_title = color_text;
+		colorState_text_title_static = colorState_text_static;
 	}
 	
 	public static String getThemeString(Context context, int theme) {
@@ -1050,8 +1053,10 @@ public final class UI {
 			return context.getText(R.string.orange).toString();
 		case THEME_LIGHT:
 			return context.getText(R.string.light).toString();
-		default:
+		case THEME_DARK_LIGHT:
 			return context.getText(R.string.dark_light).toString();
+		default:
+			return context.getText(R.string.creamy).toString();
 		}
 	}
 	
@@ -1078,9 +1083,12 @@ public final class UI {
 		case THEME_LIGHT:
 			loadLightTheme();
 			break;
-		default:
-			UI.theme = THEME_DARK_LIGHT;
+		case THEME_DARK_LIGHT:
 			loadDarkLightTheme();
+			break;
+		default:
+			UI.theme = THEME_CREAMY;
+			loadCreamyTheme();
 			break;
 		}
 		if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)

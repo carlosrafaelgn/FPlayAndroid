@@ -248,5 +248,6 @@
     <string name="no_stations">Неможливо знайти радіостанції :(\n\nНатисніть тут, щоб переглянути свої улюблені радіостанції :)</string>
     <string name="expand_seek_bar">Розгорнути шукати бар перед пошуком</string>
     <string name="by_dir_xiph_org">Від Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
+    <string name="creamy">Вершковий</string>
     
 </resources>

@@ -156,7 +156,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				ss++;
 				s >>= 1;
 			} while (s > msg.arg1);
-			opts.inInputShareable = false;
+			//opts.inInputShareable = false;
 			opts.inPreferQualityOverSpeed = false;
 			opts.inJustDecodeBounds = false;
 			opts.inScaled = false;

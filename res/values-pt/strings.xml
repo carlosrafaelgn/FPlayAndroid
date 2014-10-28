@@ -248,5 +248,6 @@
     <string name="no_stations">Nenhuma estação de rádio encontrada :(\n\nToque aqui para ver suas estações favoritas :)</string>
     <string name="expand_seek_bar">Expandir a barra de busca antes de buscar</string>
     <string name="by_dir_xiph_org">Por Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
+    <string name="creamy">Creme</string>
     
 </resources>

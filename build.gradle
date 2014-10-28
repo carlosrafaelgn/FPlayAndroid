@@ -13,13 +13,13 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 20
+    compileSdkVersion 21
     buildToolsVersion "20.0.0"
 
 	defaultConfig {
 		applicationId "br.com.carlosrafaelgn.fplay"
 		minSdkVersion 10
-		targetSdkVersion 20
+		targetSdkVersion 21
 	}
 
 	buildTypes {

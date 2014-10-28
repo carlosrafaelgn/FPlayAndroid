@@ -159,6 +159,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.THEME_DARK_LIGHT, 4, UI.getThemeString(ctx, UI.THEME_DARK_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_DARK_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.THEME_CREAMY, 5, UI.getThemeString(ctx, UI.THEME_CREAMY))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.THEME_CREAMY) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
