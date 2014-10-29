@@ -249,5 +249,8 @@
     <string name="expand_seek_bar">Розгорнути шукати бар перед пошуком</string>
     <string name="by_dir_xiph_org">Від Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
     <string name="creamy">Вершковий</string>
-    
+    <string name="transition">Перехід</string>
+    <string name="fade">В\'янути</string>
+    <string name="zoom">Зумміровать</string>
+
 </resources>

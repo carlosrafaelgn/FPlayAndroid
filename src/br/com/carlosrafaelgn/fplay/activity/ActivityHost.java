@@ -43,6 +43,7 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import br.com.carlosrafaelgn.fplay.ActivityMain;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -108,7 +109,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 	
 	void setContentViewWithTransition(View view, boolean fadeAllowed, boolean forceFadeOut) {
-		if (fadeAllowed && !ignoreFadeNextTime) {
+		final int transition = UI.getTransition();
+		if (fadeAllowed && !ignoreFadeNextTime && transition != UI.TRANSITION_NONE) {
 			try {
 				parent = (FrameLayout)findViewById(android.R.id.content);
 			} catch (Throwable ex) {
@@ -124,7 +126,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				if (oldView != null) {
 					newView = view;
 					anim = new AnimationSet(true);
-					int x = UI.lastViewCenterLocation[0], y = UI.lastViewCenterLocation[1];
+					int x, y;
+					if (transition == UI.TRANSITION_FADE) {
+						x = oldView.getWidth() >> 1;
+						y = 0;
+					} else {
+						x = UI.lastViewCenterLocation[0];
+						y = UI.lastViewCenterLocation[1];
+					}
 					try {
 						parent.getLocationOnScreen(UI.lastViewCenterLocation);
 						x -= UI.lastViewCenterLocation[0];
@@ -134,10 +143,20 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					//leave prepared for next time
 					UI.storeViewCenterLocationForFade(null);
 					if (useFadeOutNextTime || forceFadeOut) {
-						anim.addAnimation(new ScaleAnimation(1, 0.25f, 1, 0.25f, x, y));
+						if (transition == UI.TRANSITION_FADE) {
+							anim.addAnimation(new ScaleAnimation(1, 0.75f, 1, 1, x, y));
+							anim.addAnimation(new TranslateAnimation(0, 0, 0, oldView.getHeight() >> 3));
+						} else {
+							anim.addAnimation(new ScaleAnimation(1, 0.3f, 1, 0.3f, x, y));
+						}
 						anim.addAnimation(new AlphaAnimation(1, 0));
 					} else {
-						anim.addAnimation(new ScaleAnimation(0.25f, 1, 0.25f, 1, x, y));
+						if (transition == UI.TRANSITION_FADE) {
+							anim.addAnimation(new ScaleAnimation(0.75f, 1, 1, 1, x, y));
+							anim.addAnimation(new TranslateAnimation(0, 0, -(oldView.getHeight() >> 3), 0));
+						} else {
+							anim.addAnimation(new ScaleAnimation(0.3f, 1, 0.3f, 1, x, y));
+						}
 						anim.addAnimation(new AlphaAnimation(0, 1));
 					}
 					anim.setDuration(330);

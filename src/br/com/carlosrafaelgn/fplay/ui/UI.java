@@ -108,6 +108,10 @@ public final class UI {
 	public static final int THEME_LIGHT = 4;
 	public static final int THEME_DARK_LIGHT = 3;
 	public static final int THEME_CREAMY = 5;
+
+	public static final int TRANSITION_NONE = 0;
+	public static final int TRANSITION_FADE = 1;
+	public static final int TRANSITION_ZOOM = 2;
 	
 	public static final int MSG_ADD = 0x0001;
 	public static final int MSG_PLAY = 0x0002;
@@ -370,7 +374,7 @@ public final class UI {
 	public static ActivityBrowserView browserActivity;
 	
 	private static String emptyListString;
-	private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme, createdWidgetIconColor;
+	private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme, transition, createdWidgetIconColor;
 	private static boolean alternateTypefaceActive, useAlternateTypeface, fullyInitialized;
 	private static Toast internalToast;
 	
@@ -1067,6 +1071,7 @@ public final class UI {
 	public static void setTheme(Activity activity, int theme) {
 		UI.theme = theme;
 		Gradient.purgeAll();
+		internalToast = null;
 		switch (theme) {
 		case THEME_CUSTOM:
 			loadCustomTheme();
@@ -1123,7 +1128,34 @@ public final class UI {
 	public static boolean isFlat() {
 		return flat;
 	}
-	
+
+	public static void setTransition(int transition) {
+		switch (transition) {
+			case TRANSITION_FADE:
+			case TRANSITION_ZOOM:
+				UI.transition = transition;
+				break;
+			default:
+				UI.transition = TRANSITION_NONE;
+				break;
+		}
+	}
+
+	public static int getTransition() {
+		return transition;
+	}
+
+	public static String getTransitionString(Context context, int transition) {
+		switch (transition) {
+			case TRANSITION_FADE:
+				return context.getText(R.string.fade).toString();
+			case TRANSITION_ZOOM:
+				return context.getText(R.string.zoom).toString();
+			default:
+				return context.getText(R.string.none).toString();
+		}
+	}
+
 	public static void showNextStartupMsg(final Activity activity) {
 		if (msgStartup >= 11) {
 			msgStartup = 11;

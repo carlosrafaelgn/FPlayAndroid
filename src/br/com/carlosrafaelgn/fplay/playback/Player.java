@@ -249,6 +249,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPT_ALBUMART = 0x0031;
 	private static final int OPT_RADIOSEARCHTERM = 0x0032;
 	private static final int OPT_RADIOLASTGENRE = 0x0033;
+	private static final int OPT_TRANSITION = 0x0034;
 	
 	//values 0x01xx are shared among all effects
 	static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -381,6 +382,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
+		UI.setTransition(opts.getInt(OPT_TRANSITION, UI.TRANSITION_FADE));
 		//the concept of bit was added on version 38
 		if (opts.hasBits() || UI.lastVersionCode == 0) {
 			//load the bit flags the new way
@@ -489,6 +491,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
+		opts.put(OPT_TRANSITION, UI.getTransition());
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);
 		opts.putBit(OPTBIT_BASSBOOSTMODE, bassBoostMode);
 		opts.putBit(OPTBIT_NEXTPREPARATION, nextPreparationEnabled);

@@ -249,5 +249,8 @@
     <string name="expand_seek_bar">Expandir la barra de búsqueda antes de buscar</string>
     <string name="by_dir_xiph_org">Por Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
     <string name="creamy">Cremoso</string>
-    
+    <string name="transition">Transición</string>
+    <string name="fade">Fade</string>
+    <string name="zoom">Zoom</string>
+
 </resources>
