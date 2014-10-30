@@ -90,7 +90,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_TOGGLERANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_OPENGL = 113;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_OPENGL = 113, MNU_REPEAT = 114, MNU_REPEATONE = 115;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -463,9 +463,32 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			s = menu;
 		}
-		s.add(2, MNU_TOGGLERANDOMMODE, 0, R.string.random_mode)
+
+
+		//s.add(2, MNU_TOGGLERANDOMMODE, 0, R.string.random_mode)
+		//	.setOnMenuItemClickListener(this)
+		//	.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
+		if (Player.songs.isRepeatingOne()) {
+			s2 = s.addSubMenu(2, 0, 0, getText(R.string.repeat_one) + "\u2026")
+				.setIcon(new TextIconDrawable(UI.ICON_REPEATONE));
+		} else if (Player.songs.isInRandomMode()) {
+			s2 = s.addSubMenu(2, 0, 0, getText(R.string.random_mode) + "\u2026")
+				.setIcon(new TextIconDrawable(UI.ICON_SHUFFLE));
+		} else {
+			s2 = s.addSubMenu(2, 0, 0, getText(R.string.repeat_all) + "\u2026")
+				.setIcon(new TextIconDrawable(UI.ICON_REPEAT));
+		}
+		UI.prepare(s2);
+		s2.add(2, MNU_REPEAT, 0, getText(R.string.repeat_all))
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
+			.setIcon(new TextIconDrawable((Player.songs.isRepeatingOne() || Player.songs.isInRandomMode()) ? UI.ICON_RADIOUNCHK : UI.ICON_RADIOCHK));
+		s2.add(2, MNU_REPEATONE, 0, getText(R.string.repeat_one))
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(Player.songs.isRepeatingOne() ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		s2.add(2, MNU_RANDOMMODE, 0, getText(R.string.random_mode))
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+
 		UI.separator(s, 2, 1);
 		s.add(2, MNU_EFFECTS, 2, R.string.audio_effects)
 			.setOnMenuItemClickListener(this)
@@ -490,63 +513,61 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
+		final int id = item.getItemId();
+		if (id == MNU_EXIT) {
+			finish(0, null);
+			Player.stopService();
+			return true;
+		}
+		if (Player.getState() != Player.STATE_INITIALIZED)
+			return true;
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				addSongs(null);
+			addSongs(null);
 			break;
 		case MNU_CLEARLIST:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				Player.songs.clear();
+			Player.songs.clear();
 			break;
 		case MNU_LOADLIST:
-			if (Player.getState() == Player.STATE_INITIALIZED) {
-				Player.alreadySelected = false;
-				startActivity(new ActivityFileSelection(MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this), 0, null);
-			}
+			Player.alreadySelected = false;
+			startActivity(new ActivityFileSelection(MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this), 0, null);
 			break;
 		case MNU_SAVELIST:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this), 0, null);
+			startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this), 0, null);
 			break;
 		case MNU_SORT_BY_TITLE:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				Player.songs.sort(SongList.SORT_BY_TITLE);
+			Player.songs.sort(SongList.SORT_BY_TITLE);
 			break;
 		case MNU_SORT_BY_ARTIST:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				Player.songs.sort(SongList.SORT_BY_ARTIST);
+			Player.songs.sort(SongList.SORT_BY_ARTIST);
 			break;
 		case MNU_SORT_BY_ALBUM:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				Player.songs.sort(SongList.SORT_BY_ALBUM);
+			Player.songs.sort(SongList.SORT_BY_ALBUM);
 			break;
 		case MNU_TOGGLECONTROLMODE:
 			Player.setControlMode(!Player.isControlMode());
 			break;
-		case MNU_TOGGLERANDOMMODE:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				Player.songs.setRandomMode(!Player.songs.isInRandomMode());
+		case MNU_REPEAT:
+			Player.songs.setRepeatingOne(false);
+			Player.songs.setRandomMode(false);
+			break;
+		case MNU_REPEATONE:
+			Player.songs.setRepeatingOne(true);
+			break;
+		case MNU_RANDOMMODE:
+			Player.songs.setRandomMode(!Player.songs.isInRandomMode());
 			break;
 		case MNU_EFFECTS:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				startActivity(new ActivityEffects(), 0, null);
+			startActivity(new ActivityEffects(), 0, null);
 			break;
 		case MNU_VISUALIZER:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
 			break;
 		case MNU_VISUALIZER_OPENGL:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
 			break;
 		case MNU_SETTINGS:
-			if (Player.getState() == Player.STATE_INITIALIZED)
-				startActivity(new ActivitySettings(false), 0, null);
-			break;
-		case MNU_EXIT:
-			finish(0, null);
-			Player.stopService();
+			startActivity(new ActivitySettings(false), 0, null);
 			break;
 		}
 		return true;

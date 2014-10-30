@@ -296,6 +296,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPTBIT_SCROLLBAR_BROWSER1 = 32;
 	private static final int OPTBIT_LASTRADIOSEARCHWASBYGENRE = 33;
 	private static final int OPTBIT_EXPANDSEEKBAR = 34;
+	private static final int OPTBIT_REPEATONE = 35;
 	
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	
@@ -419,6 +420,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
 			lastRadioSearchWasByGenre = opts.getBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, true);
 			UI.expandSeekBar = opts.getBit(OPTBIT_EXPANDSEEKBAR, true);
+			songs.setRepeatingOne(opts.getBit(OPTBIT_REPEATONE));
 		} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -524,6 +526,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.putBit(OPTBIT_SCROLLBAR_BROWSER1, (UI.browserScrollBarType & 2) != 0);
 		opts.putBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, lastRadioSearchWasByGenre);
 		opts.putBit(OPTBIT_EXPANDSEEKBAR, UI.expandSeekBar);
+		opts.putBit(OPTBIT_REPEATONE, songs.isRepeatingOne());
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

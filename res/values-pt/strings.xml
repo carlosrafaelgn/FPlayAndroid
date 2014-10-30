@@ -252,5 +252,7 @@
     <string name="transition">Transição</string>
     <string name="fade">Fade</string>
     <string name="zoom">Zoom</string>
+    <string name="repeat_all">Repetir todas</string>
+    <string name="repeat_one">Repetir uma</string>
 
 </resources>

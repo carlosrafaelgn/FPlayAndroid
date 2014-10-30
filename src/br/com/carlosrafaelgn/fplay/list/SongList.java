@@ -69,6 +69,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public static final int HOW_NEXT_AUTO = -1;
 	private volatile int adding;
 	private int currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem, sortMode;
+	private boolean repeatOne;
 	public boolean selecting, moving;
 	private Song[] shuffledList;
 	private static final SongList theSongList = new SongList();
@@ -457,7 +458,10 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			if (how < 0 || how >= count)
 				how = count - 1;
 		} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
-			how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
+			if (repeatOne && how == HOW_NEXT_AUTO)
+				how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
+			else
+				how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
 			if (how < 0 || how >= count)
 				how = 0;
 		}
@@ -467,7 +471,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			return null;
 		current = how;
 		final Song s = items[how];
-		s.possibleNextSong = items[((how == (count - 1)) ? 0 : (how + 1))];
+		s.possibleNextSong = (repeatOne ? null : items[((how == (count - 1)) ? 0 : (how + 1))]);
 		if (!selecting && !moving) {
 			firstSel = current;
 			lastSel = current;
@@ -486,10 +490,20 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		}
 	}
 	
+	public boolean isRepeatingOne() {
+		return repeatOne;
+	}
+
+	public void setRepeatingOne(boolean repeatOne) {
+		this.repeatOne = repeatOne;
+		if (repeatOne)
+			setRandomMode(false);
+	}
+
 	public boolean isInRandomMode() {
 		return (shuffledList != null);
 	}
-	
+
 	public void setRandomMode(boolean randomMode) {
 		if ((shuffledList != null) == randomMode && !randomMode)
 			return;
@@ -501,6 +515,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 				shuffledList = null;
 			}
 		} else {
+			repeatOne = false;
 			setShuffledCapacity(count);
 			for (i = count - 1; i >= 0; i--) {
 				final Song s = items[i];

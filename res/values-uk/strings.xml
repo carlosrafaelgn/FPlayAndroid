@@ -252,5 +252,7 @@
     <string name="transition">Перехід</string>
     <string name="fade">В\'янути</string>
     <string name="zoom">Зумміровать</string>
+    <string name="repeat_all">Repeat all</string>
+    <string name="repeat_one">Repeat one</string>
 
 </resources>
