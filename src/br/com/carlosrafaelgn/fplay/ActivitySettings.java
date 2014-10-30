@@ -685,7 +685,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optExtraInfoMode.setOnClickListener(this);
 			optForceOrientation = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
 			optForceOrientation.setOnClickListener(this);
-			optTransition = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.transition).toString(), UI.getTransitionString(ctx, UI.getTransition()), false, false, false);
+			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(ctx, UI.getTransition()), false, false, false);
 			optTransition.setOnClickListener(this);
 			optFadeInFocus = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false, false);
 			optFadeInFocus.setOnClickListener(this);
