@@ -185,7 +185,6 @@ public final class UI {
 	public static final String ICON_FOLDER = "f";
 	public static final String ICON_USB = "u";
 	public static final String ICON_SEEKBAR = "5";
-	public static final String ICON_TRANSITION = "%";
 	
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
