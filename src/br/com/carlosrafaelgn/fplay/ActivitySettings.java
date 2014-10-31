@@ -340,6 +340,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optForceOrientation.setSecondaryText(getOrientationString());
 		} else if (lastMenuView == optTransition) {
 			UI.setTransition(item.getItemId());
+			optTransition.setSecondaryText(UI.getTransitionString(getApplication(), item.getItemId()));
 		} else if (lastMenuView == optScrollBarSongList) {
 			UI.songListScrollBarType = item.getItemId();
 			optScrollBarSongList.setSecondaryText(getScrollBarString(item.getItemId()));
