@@ -67,7 +67,14 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._4dp - lengthWidth, false);
 		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI._8dp << 1), false);
 	}
-	
+
+	@Override
+	public CharSequence getContentDescription() {
+		if (song != null)
+			return song.title;
+		return super.getContentDescription();
+	}
+
 	public void setItemState(Song song, int position, int state) {
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.position = position;
@@ -76,7 +83,6 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			return;
 		this.song = song;
 		lengthWidth = (song.isHttp ? UI._14spBox : UI.measureText(song.length, UI._14sp));
-		setContentDescription(song.title);
 		processEllipsis();
 	}
 	

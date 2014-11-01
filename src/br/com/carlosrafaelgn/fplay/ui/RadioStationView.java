@@ -128,7 +128,14 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		}
 		descriptionY = top + ((height - top - bottom) >> 1) - ((visibleLines * UI._14spBox) >> 1) + UI._14spYinBox;
 	}
-	
+
+	@Override
+	public CharSequence getContentDescription() {
+		if (station != null)
+			return station.title;
+		return super.getContentDescription();
+	}
+
 	public void setItemState(RadioStation station, int position, int state) {
 		this.position = position;
 		if (btnFavorite != null && (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
@@ -140,7 +147,6 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		this.station = station;
 		if (btnFavorite != null)
 			btnFavorite.setChecked(station.isFavorite);
-		setContentDescription(station.title);
 		processEllipsis();
 	}
 	

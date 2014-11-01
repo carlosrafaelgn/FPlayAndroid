@@ -689,6 +689,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
 		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, false, true, true);
+		chkFavorite.setContentDescription(getText(R.string.remove_from_favorites), getText(R.string.add_to_favorites));
 		chkAlbumArt = (BgButton)findViewById(R.id.chkAlbumArt);
 		chkAlbumArt.setOnClickListener(this);
 		chkAlbumArt.setIcon(UI.ICON_ALBUMART, UI.ICON_ALBUMART_OFF, UI.albumArt, false, true, true);
@@ -707,6 +708,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		chkAll = (BgButton)findViewById(R.id.chkAll);
 		chkAll.setOnClickListener(this);
 		chkAll.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, true);
+		chkAll.setContentDescription(getText(R.string.unselect_everything), getText(R.string.select_everything));
 		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
 		btnGoBackToPlayer.setTextColor(UI.colorState_text_reactive);
 		btnGoBackToPlayer.setOnClickListener(this);

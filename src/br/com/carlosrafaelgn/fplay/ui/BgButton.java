@@ -53,6 +53,7 @@ public final class BgButton extends Button {
 	private int state;
 	private boolean checkable, checked, stretchable, hideBorders;
 	private String iconChecked, iconUnchecked;
+	private CharSequence descriptionChecked, descriptionUnchecked;
 	private TextIconDrawable checkBox;
 	private OnPressingChangeListener pressingChangeListener;
 	
@@ -144,7 +145,25 @@ public final class BgButton extends Button {
 			super.setCompoundDrawables(checkBox, null, null, null);
 		}
 	}
-	
+
+	@Override
+	public CharSequence getContentDescription() {
+		if (checkable) {
+			if (checked) {
+				if (descriptionChecked != null)
+					return descriptionChecked;
+			} else if (descriptionUnchecked != null) {
+				return descriptionUnchecked;
+			}
+		}
+		return super.getContentDescription();
+	}
+
+	public void setContentDescription(CharSequence descriptionChecked, CharSequence descriptionUnchecked) {
+		this.descriptionChecked = descriptionChecked;
+		this.descriptionUnchecked = descriptionUnchecked;
+	}
+
 	public OnPressingChangeListener getOnPressingChangeListener() {
 		return pressingChangeListener;
 	}
@@ -272,6 +291,8 @@ public final class BgButton extends Button {
 	protected void onDetachedFromWindow() {
 		iconChecked = null;
 		iconUnchecked = null;
+		descriptionChecked = null;
+		descriptionUnchecked = null;
 		checkBox = null;
 		pressingChangeListener = null;
 		super.setCompoundDrawables(null, null, null, null);

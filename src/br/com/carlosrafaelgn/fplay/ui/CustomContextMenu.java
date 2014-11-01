@@ -56,6 +56,7 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -319,6 +320,16 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			setCanceledOnTouchOutside(true);
 			setOnCancelListener(menu);
 			setOnDismissListener(menu);
+			setTitle(context.getText(R.string.menu));
+		}
+
+		@Override
+		public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
+			if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+				event.getText().add(getContext().getText(R.string.menu));
+				return true;
+			}
+			return super.dispatchPopulateAccessibilityEvent(event);
 		}
 	}
 	

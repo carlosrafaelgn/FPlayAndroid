@@ -254,5 +254,13 @@
     <string name="zoom">Zoom</string>
     <string name="repeat_all">Repetir todas</string>
     <string name="repeat_one">Repetir uma</string>
+    <string name="select_everything">Marcar tudo</string>
+    <string name="unselect_everything">Desmarcar tudo</string>
+    <string name="select">Marcar</string>
+    <string name="unselect">Desmarcar</string>
+    <string name="add_to_favorites">Adicionar aos favoritos</string>
+    <string name="remove_from_favorites">Remover dos favoritos</string>
+    <string name="selected">Marcado</string>
+    <string name="unselected">Desmarcado</string>
 
 </resources>

@@ -252,7 +252,15 @@
     <string name="transition">Transición</string>
     <string name="fade">Fade</string>
     <string name="zoom">Zoom</string>
-    <string name="repeat_all">Repeat all</string>
-    <string name="repeat_one">Repeat one</string>
+    <string name="repeat_all">Repetir todas</string>
+    <string name="repeat_one">Repetir una</string>
+    <string name="select_everything">Seleccionar todo</string>
+    <string name="unselect_everything">Deseleccionar todo</string>
+    <string name="select">Seleccionar</string>
+    <string name="unselect">Deseleccionar</string>
+    <string name="add_to_favorites">Añadir a favoritos</string>
+    <string name="remove_from_favorites">Eliminar de los favoritos</string>
+    <string name="selected">Seleccionado</string>
+    <string name="unselected">No seleccionado</string>
 
 </resources>

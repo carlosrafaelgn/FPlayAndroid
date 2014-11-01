@@ -168,8 +168,9 @@ public final class BgSeekBar extends View {
 		this.textY = y;
 		updateTextWidth();
 	}
-	
-	private void updateContentDescription() {
+
+	@Override
+	public CharSequence getContentDescription() {
 		String d = "";
 		if (additionalContentDescription != null)
 			d = additionalContentDescription;
@@ -178,16 +179,11 @@ public final class BgSeekBar extends View {
 				d += ": ";
 			d += text;
 		}
-		setContentDescription(d);
+		return d;
 	}
-	
-	public String getAdditionalContentDescription() {
-		return additionalContentDescription;
-	}
-	
+
 	public void setAdditionalContentDescription(String additionalContentDescription) {
 		this.additionalContentDescription = additionalContentDescription;
-		updateContentDescription();
 	}
 	
 	public String getText() {
@@ -197,7 +193,6 @@ public final class BgSeekBar extends View {
 	public void setText(String text) {
 		this.text = text;
 		updateTextWidth();
-		updateContentDescription();
 	}
 	
 	public void setText(int resId) {

@@ -195,20 +195,21 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			addView(secondaryTextView);
 		if (extraView != null)
 			addView(extraView);
-		updateContentDescription();
-		
+
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);
 		super.setAnimationCacheEnabled(false);
 	}
-	
-	private void updateContentDescription() {
+
+	@Override
+	public CharSequence getContentDescription() {
 		if (secondaryTextView != null)
-			setContentDescription(text + " " + secondaryText);
+			return text + " " + secondaryText;
 		else if (checkable)
-			setContentDescription(text + ": " + getContext().getText(extraView.isChecked() ? R.string.yes : R.string.no));
+			return text + ": " + getContext().getText(extraView.isChecked() ? R.string.yes : R.string.no);
 		else if (color)
-			setContentDescription(text);
+			return text;
+		return super.getContentDescription();
 	}
 	
 	public void updateVerticalMargin() {
@@ -243,7 +244,6 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 				secondaryTextView.setPadding(0, UI._4sp, 0, 0);
 				secondaryTextView.setText(secondaryText);
 			}
-			updateContentDescription();
 		}
 	}
 	
@@ -256,10 +256,8 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	}
 	
 	public void setChecked(boolean checked) {
-		if (checkable) {
+		if (checkable)
 			extraView.setChecked(checked);
-			updateContentDescription();
-		}
 	}
 	
 	public boolean isHidingSeparator() {

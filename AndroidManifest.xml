@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="49"
-    android:versionName="1.14" >
+    android:versionCode="50"
+    android:versionName="1.15" >
 
     <!-- versionCode must be kept in sync with UI.VERSION_CODE -->
 
@@ -41,7 +41,9 @@
 
     <!--
     Just to make Google Play show the App even to phones without Bluetooth,
-    despite the uses-permission below!
+    despite the uses-permission below!
+
+
     -->
     <uses-feature
         android:name="android.hardware.bluetooth"

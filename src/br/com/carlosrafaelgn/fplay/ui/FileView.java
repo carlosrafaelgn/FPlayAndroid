@@ -103,6 +103,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnPlay.setLayoutParams(p);
 			if (buttonIsCheckbox) {
 				btnPlay.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, false);
+				btnPlay.setContentDescription(context.getText(R.string.unselect), context.getText(R.string.select));
 				btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
 			} else {
 				btnPlay.setIcon(UI.ICON_PLAY, true, false);
@@ -131,7 +132,17 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		setItemState(file, position, state);
 		invalidate();
 	}
-	
+
+	@Override
+	public CharSequence getContentDescription() {
+		if (file != null) {
+			if (buttonIsCheckbox && btnPlay != null && btnPlay.getVisibility() == View.VISIBLE)
+				return file.name + ": " + getContext().getText(file.isChecked ? R.string.selected : R.string.unselected);
+			return file.name;
+		}
+		return super.getContentDescription();
+	}
+
 	public void setItemState(FileSt file, int position, int state) {
 		if (file == null)
 			return;
@@ -219,7 +230,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		} else {
 			icon = null;
 		}
-		setContentDescription(file.name);
 		if (albumArt != null) {
 			bitmapLeftPadding = (usableHeight - albumArt.width) >> 1;
 			leftPadding = usableHeight + UI._8dp;
@@ -229,7 +239,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		}
 		processEllipsis();
 	}
-	
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
 	public void setBackground(Drawable background) {

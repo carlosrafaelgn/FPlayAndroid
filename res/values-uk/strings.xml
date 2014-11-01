@@ -252,7 +252,15 @@
     <string name="transition">Перехід</string>
     <string name="fade">В\'янути</string>
     <string name="zoom">Зумміровать</string>
-    <string name="repeat_all">Repeat all</string>
-    <string name="repeat_one">Repeat one</string>
+    <string name="repeat_all">Повтор всіх</string>
+    <string name="repeat_one">Повторіть одну</string>
+    <string name="select_everything">Виберіть всі</string>
+    <string name="unselect_everything">Очистити всі</string>
+    <string name="select">Виберіть</string>
+    <string name="unselect">Очистити</string>
+    <string name="add_to_favorites">Додати в обране</string>
+    <string name="remove_from_favorites">Видалити з обраного</string>
+    <string name="selected">Обраний</string>
+    <string name="unselected">Не вибрано</string>
 
 </resources>

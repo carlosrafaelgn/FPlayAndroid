@@ -102,7 +102,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
-            android:contentDescription="@string/menu"
             android:nextFocusDown="@+id/list"
             android:nextFocusForward="@+id/list"
             android:nextFocusLeft="@+id/btnHome"
