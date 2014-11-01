@@ -278,12 +278,14 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		barBass.setKeyIncrement(BassBoost.getMaxStrength() / 50);
 		barBass.setOnBgSeekBarChangeListener(this);
 		barBass.setInsideList(true);
+		barBass.setAdditionalContentDescription(getText(R.string.bass_boost).toString());
 		barVirtualizer = (BgSeekBar)findViewById(R.id.barVirtualizer);
 		barVirtualizer.setMax(BassBoost.getMaxStrength());
 		barVirtualizer.setValue(BassBoost.getStrength());
 		barVirtualizer.setKeyIncrement(BassBoost.getMaxStrength() / 50);
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
+		barBass.setAdditionalContentDescription(getText(R.string.virtualization).toString());
 		final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
 		txtReverb.setTypeface(UI.defaultTypeface);
 		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);

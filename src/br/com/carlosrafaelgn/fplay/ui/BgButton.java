@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -155,6 +156,10 @@ public final class BgButton extends Button {
 			} else if (descriptionUnchecked != null) {
 				return descriptionUnchecked;
 			}
+			CharSequence c = super.getContentDescription();
+			if (c == null)
+				c = getText();
+			return c + ": " + getContext().getText(checked ? R.string.selected : R.string.unselected);
 		}
 		return super.getContentDescription();
 	}
