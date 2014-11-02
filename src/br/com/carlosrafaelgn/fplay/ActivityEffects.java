@@ -57,7 +57,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
-public class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener {
+public final class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener {
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
 	private LinearLayout panelControls, panelEqualizer, panelBars;
 	private ViewGroup panelSecondary;
@@ -285,7 +285,7 @@ public class ActivityEffects extends ClientActivity implements Runnable, View.On
 		barVirtualizer.setKeyIncrement(BassBoost.getMaxStrength() / 50);
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
-		barBass.setAdditionalContentDescription(getText(R.string.virtualization).toString());
+		barVirtualizer.setAdditionalContentDescription(getText(R.string.virtualization).toString());
 		final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
 		txtReverb.setTypeface(UI.defaultTypeface);
 		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);

@@ -42,7 +42,7 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public class SongAddingMonitor implements Timer.TimerHandler {
+public final class SongAddingMonitor implements Timer.TimerHandler {
 	private static TextView notification;
 	private static int lastMsg;
 	private static final Timer timer = new Timer(new SongAddingMonitor(), "Song Adding Monitor Timer", false, true, false);

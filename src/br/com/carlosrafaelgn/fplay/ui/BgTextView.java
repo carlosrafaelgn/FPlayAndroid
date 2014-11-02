@@ -41,7 +41,7 @@ import android.util.AttributeSet;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.TextView;
 
-public class BgTextView extends TextView {
+public final class BgTextView extends TextView {
 	private int state;
 	
 	public BgTextView(Context context) {

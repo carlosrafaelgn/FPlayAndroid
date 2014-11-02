@@ -335,14 +335,14 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		//is it really necessary to call any cleanup code??????
-		supported = false;
+		okToRender = false;
 		super.surfaceDestroyed(holder);
 	}
 	
 	//Runs on a SECONDARY thread
 	@Override
 	public void onDrawFrame(GL10 gl) {
-		if (supported && okToRender)
+		if (okToRender)
 			SimpleVisualizerJni.glDrawFrame();
 	}
 	
@@ -448,7 +448,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
-		if (supported && okToRender) {
+		if (okToRender) {
 			//WE MUST NEVER call any method from visualizer
 			//while the player is not actually playing
 			if (!playing)

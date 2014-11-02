@@ -55,7 +55,7 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 //Supported Media Formats
 //http://developer.android.com/guide/appendix/media-formats.html
 //
-public class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
+public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
 	public static interface Listener {
 		public void onFilesFetched(FileFetcher fetcher, Throwable e);
 	}
