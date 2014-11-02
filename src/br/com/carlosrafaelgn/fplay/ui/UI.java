@@ -104,10 +104,10 @@ public final class UI {
 	public static final int THEME_BLUE_ORANGE = 0;
 	public static final int THEME_BLUE = 1;
 	public static final int THEME_ORANGE = 2;
-	//present the new dark/light theme to all those using the light theme ;)
 	public static final int THEME_LIGHT = 4;
-	public static final int THEME_DARK_LIGHT = 3;
-	public static final int THEME_CREAMY = 5;
+	public static final int THEME_DARK_LIGHT = 5;
+	//present the new creamy theme to all those using the dark/light theme ;)
+	public static final int THEME_CREAMY = 3;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -1159,13 +1159,14 @@ public final class UI {
 	}
 
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 11) {
-			msgStartup = 11;
+		if (msgStartup >= 12) {
+			msgStartup = 12;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 11;
-		final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		msgStartup = 12;
+		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
