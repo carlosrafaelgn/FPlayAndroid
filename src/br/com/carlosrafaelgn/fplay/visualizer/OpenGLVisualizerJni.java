@@ -43,7 +43,9 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.opengl.GLSurfaceView;
@@ -59,7 +61,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
-	public static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4;	
+	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4;
 	
 	private static int GLVersion = -1;
 	
@@ -69,14 +71,16 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private int colorIndex, speed;
 	private EGLConfig config;
 	
-	public OpenGLVisualizerJni(Context context, boolean landscape) {
+	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape) {
 		super(context);
 		bfft = new byte[2048];
 		setClickable(true);
 		setFocusable(false);
 		colorIndex = 257;
 		speed = 2;
-		
+		SimpleVisualizerJni.glChangeColorIndex(colorIndex);
+		SimpleVisualizerJni.glChangeSpeed(speed);
+
 		if (GLVersion != -1) {
 			supported = (GLVersion >= 0x00020000);
 			if (!supported)
@@ -288,6 +292,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+		SimpleVisualizerJni.glChangeColorIndex(colorIndex);
+		SimpleVisualizerJni.glChangeSpeed(speed);
 		if (GLVersion == -1) {
 			supported = true;
 			Process ifc = null;
@@ -364,22 +370,17 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
-		switch (item.getItemId()) {
+		final int id = item.getItemId();
+		switch (id) {
 		case MNU_COLOR:
 			colorIndex = ((colorIndex == 0) ? 257 : 0);
 			SimpleVisualizerJni.glChangeColorIndex(colorIndex);
 			break;
 		case MNU_SPEED0:
-			speed = 0;
-			SimpleVisualizerJni.glChangeSpeed(0);
-			break;
 		case MNU_SPEED1:
-			speed = 1;
-			SimpleVisualizerJni.glChangeSpeed(1);
-			break;
 		case MNU_SPEED2:
-			speed = 2;
-			SimpleVisualizerJni.glChangeSpeed(2);
+			speed = id - MNU_SPEED0;
+			SimpleVisualizerJni.glChangeSpeed(speed);
 			break;
 		}
 		return true;
@@ -390,7 +391,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public VisualizerView getView() {
 		return this;
 	}
-	
+
+	//Runs on the MAIN thread
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	}
+
 	//Runs on the MAIN thread
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
@@ -455,7 +460,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				Arrays.fill(bfft, 0, 1024, (byte)0);
 			else
 				visualizer.getFft(bfft);
-			SimpleVisualizerJni.glProcess(bfft, deltaMillis);
+			SimpleVisualizerJni.glOrBTProcess(bfft, deltaMillis, 0);
 			requestRender();
 		}
 	}

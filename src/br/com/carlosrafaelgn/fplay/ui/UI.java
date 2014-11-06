@@ -1477,7 +1477,7 @@ public final class UI {
 		}
 	}
 	
-	public static void prepareDialogAndShow(final AlertDialog dialog) {
+	public static AlertDialog prepareDialogAndShow(final AlertDialog dialog) {
 		if (alternateTypefaceActive) {
 			//https://code.google.com/p/android/issues/detail?id=6360
 			dialog.setOnShowListener(new DialogInterface.OnShowListener() {
@@ -1510,6 +1510,7 @@ public final class UI {
 			});
 		}
 		dialog.show();
+		return dialog;
 	}
 	
 	public static void prepareEdgeEffectColor(Context context) {

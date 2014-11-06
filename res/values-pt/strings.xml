@@ -262,5 +262,22 @@
     <string name="remove_from_favorites">Remover dos favoritos</string>
     <string name="selected">Marcado</string>
     <string name="unselected">Desmarcado</string>
+    <string name="refresh_list">Atualizar lista</string>
+
+    <string name="bt_packages_sent">Pacotes enviados:</string>
+    <string name="bt_sample_count">Amostras para enviar&#8230;</string>
+    <string name="bt_start">Iniciar transmissão Bluetooth</string>
+    <string name="bt_stop">Parar transmissão Bluetooth</string>
+    <string name="bt_pairing">Por favor, tente conectar-se de novo depois de parear o dispositivo.</string>
+    <string name="bt_connection_error">Ocorreu um erro ao se conectar ao dispositivo Bluetooth :(</string>
+    <string name="bt_needs_to_be_enabled">Você precisa habilitar o Bluetooth para poder prosseguir :(</string>
+    <string name="bt_not_supported">Bluetooth não suportado :(</string>
+    <string name="bt_discovery_error">Ocorreu um erro na procura pelos dispositivos Bluetooth :(</string>
+    <string name="bt_devices">Dispositivos Bluetooth</string>
+    <string name="bt_connecting">Conectando-se ao seu dispositivo Bluetooth. Por favor, aguarde&#8230;</string>
+    <string name="bt_scanning">Procurando dispositivos Bluetooth&#8230;</string>
+    <string name="bt_not_paired">Nenhum dispositivo Bluetooth pareado!</string>
+    <string name="bt_not_found">Nenhum dispositivo Bluetooth encontrado!</string>
+    <string name="bt_null_device_name">[Dispositivo BT]</string>
 
 </resources>

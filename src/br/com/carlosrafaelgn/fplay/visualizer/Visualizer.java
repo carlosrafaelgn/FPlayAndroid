@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.ContextMenu;
 
 public interface Visualizer {
@@ -44,8 +45,11 @@ public interface Visualizer {
 	public VisualizerView getView();
 	
 	//Runs on the MAIN thread
+	public void onActivityResult(int requestCode, int resultCode, Intent data);
+
+	//Runs on the MAIN thread
 	public void onCreateContextMenu(ContextMenu menu);
-	
+
 	//Runs on the MAIN thread
 	public void onClick();
 	

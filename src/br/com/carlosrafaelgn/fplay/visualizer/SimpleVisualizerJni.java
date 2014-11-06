@@ -34,7 +34,9 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 
 import java.util.Arrays;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Point;
 import android.view.ContextMenu;
 import android.view.MenuItem;
@@ -48,14 +50,14 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
 public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHolder.Callback, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener {
-	public static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_LORES = MNU_VISUALIZER + 2, MNU_HIRES = MNU_VISUALIZER + 3, MNU_VOICEPRINT = MNU_VISUALIZER + 4;	
+	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_LORES = MNU_VISUALIZER + 2, MNU_HIRES = MNU_VISUALIZER + 3, MNU_VOICEPRINT = MNU_VISUALIZER + 4;
 	
 	static {
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 	
 	private static native void setLerpAndColorIndex(boolean lerp, int colorIndex);
-	private static native void updateMultiplier(boolean isVoice);
+	static native void updateMultiplier(boolean isVoice);
 	private static native void init(int bgColor);
 	private static native int checkNeonMode();
 	private static native void terminate();
@@ -64,7 +66,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private static native void processVoice(byte[] bfft, Surface surface);
 	static native int glOnSurfaceCreated(int bgColor);
 	static native void glOnSurfaceChanged(int width, int height);
-	static native void glProcess(byte[] bfft, int deltaMillis);
+	static native int glOrBTProcess(byte[] bfft, int deltaMillis, int bt);
 	static native void glDrawFrame();
 	static native void glChangeColorIndex(int colorIndex);
 	static native void glChangeSpeed(int speed);
@@ -77,7 +79,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private boolean lerp, voice;
 	private Surface surface;
 	
-	public SimpleVisualizerJni(Context context, boolean landscape) {
+	public SimpleVisualizerJni(Context context, Activity activity, boolean landscape) {
 		super(context);
 		bfft = new byte[2048];
 		init(UI.color_visualizer565);
@@ -133,7 +135,11 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	public VisualizerView getView() {
 		return this;
 	}
-	
+
+	//Runs on the MAIN thread
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	}
+
 	//Runs on the MAIN thread
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {

@@ -39,6 +39,15 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
+//used during Bluetooth processing
+#define SIZE_4 ((int)'0')
+#define SIZE_8 ((int)'1')
+#define SIZE_16 ((int)'2')
+#define SIZE_32 ((int)'3')
+#define SIZE_64 ((int)'4')
+#define SIZE_128 ((int)'5')
+#define SIZE_256 ((int)'6')
+
 static unsigned int glProgram, glVShader, glFShader, glTex[2], glBuf[2], glColorIndex;
 static float glNew;
 
@@ -252,9 +261,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor) {
 	glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 	glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
 	
-	glColorIndex = 257;
-	colorIndex = 0;
-	glChangeSpeed(env, clazz, 2);
+	colorIndex = 1; //to make (colorIndex != glColorIndex) become true inside glDrawFrame
 	updateMultiplier(env, clazz, 0);
 	
 	return 0;
@@ -264,7 +271,7 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 	glViewport(0, 0, width, height);
 }
 
-void JNICALL glProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis) {
+int JNICALL glOrBTProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, int bt) {
 	float* const fft = floatBuffer;
 	const float* const multiplier = fft + 256;
 	//fft format:
@@ -272,12 +279,14 @@ void JNICALL glProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMil
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	signed char* const bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
 	if (!bfft)
-		return;
+		return 0;
+	unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
 	const float coefNew = glNew * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 	bfft[1] = bfft[0];
-	for (int i = 0; i < 256; i++) {
+	int i;
+	for (i = 0; i < 256; i++) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
@@ -295,9 +304,197 @@ void JNICALL glProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMil
 		fft[i] = m;
 		//v goes from 0 to 32768 (inclusive)
 		const int v = (int)m;
-		((unsigned char*)(floatBuffer + 512))[i] = ((v >= (255 << 7)) ? 255 : ((m <= 0) ? 0 : (unsigned char)(v >> 7)));
+		processedData[i] = ((v >= (255 << 7)) ? 255 : ((m <= 0) ? 0 : (unsigned char)(v >> 7)));
 	}
-	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
+	if (!bt) {
+		env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
+		return 0;
+	}
+#define PACK_BIN(BIN) if ((BIN) == 0x01 || (BIN) == 0x1B) { *packet = 0x1B; packet[1] = ((unsigned char)(BIN) ^ 1); packet += 2; len += 2; } else { *packet = (unsigned char)(BIN); packet++; len++; }
+	unsigned char* packet = (unsigned char*)bfft;
+	int len = 0, last;
+	unsigned int avg;
+	unsigned char b;
+	packet[0] = 1; //SOH - Start of Heading
+	packet[1] = (unsigned char)bt; //payload type
+	//packet[2] and packet[3] are the payload length
+	packet += 4;
+	//processedData stores the first 256 bins, out of the 512 captured by visualizer.getFft
+	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11000Hz for a SR of 44100Hz)
+	//
+	//the mapping algorithms used in SIZE_4, SIZE_8, SIZE_16, SIZE_32, SIZE_64 and in SIZE_128
+	//were "empirically created", without too much of theory envolved ;)
+	switch (bt) {
+	case SIZE_4:
+		avg = ((unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3] + (unsigned int)processedData[4]) >> 2;
+		PACK_BIN(avg);
+		avg = 0;
+		for (i = 5; i < 37; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 5;
+		PACK_BIN(avg);
+		avg = 0;
+		for (; i < 101; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 6;
+		PACK_BIN(avg);
+		avg = 0;
+		for (; i < 229; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 7;
+		PACK_BIN(avg);
+		break;
+	case SIZE_8:
+		avg = ((unsigned int)processedData[1] + (unsigned int)processedData[2]) >> 1;
+		PACK_BIN(avg);
+		avg = ((unsigned int)processedData[3] + (unsigned int)processedData[4]) >> 1;
+		PACK_BIN(avg);
+		avg = 0;
+		for (i = 5; i < 21; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 4;
+		PACK_BIN(avg);
+		avg = 0;
+		for (; i < 37; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 4;
+		PACK_BIN(avg);
+		avg = 0;
+		for (; i < 69; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 5;
+		PACK_BIN(avg);
+		avg = 0;
+		for (; i < 101; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 5;
+		PACK_BIN(avg);
+		avg = 0;
+		for (; i < 165; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 6;
+		PACK_BIN(avg);
+		avg = 0;
+		for (; i < 229; i++)
+			avg += (unsigned int)processedData[i];
+		avg >>= 6;
+		PACK_BIN(avg);
+		break;
+	case SIZE_16:
+		avg = ((unsigned int)processedData[1] + (unsigned int)processedData[2]) >> 1;
+		PACK_BIN(avg);
+		avg = ((unsigned int)processedData[3] + (unsigned int)processedData[4]) >> 1;
+		PACK_BIN(avg);
+		for (i = 5; i < 21; i += 4) {
+			avg = ((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2;
+			PACK_BIN(avg);
+		}
+		for (last = 29; last <= 37; last += 8) {
+			avg = 0;
+			for (; i < last; i++)
+				avg += (unsigned int)processedData[i];
+			avg >>= 3;
+			PACK_BIN(avg);
+		}
+		for (last = 53; last <= 101; last += 16) {
+			avg = 0;
+			for (; i < last; i++)
+				avg += (unsigned int)processedData[i];
+			avg >>= 4;
+			PACK_BIN(avg);
+		}
+		for (last = 133; last <= 229; last += 32) {
+			avg = 0;
+			for (; i < last; i++)
+				avg += (unsigned int)processedData[i];
+			avg >>= 5;
+			PACK_BIN(avg);
+		}
+		break;
+	case SIZE_32:
+		b = processedData[1];
+		PACK_BIN(b);
+		b = processedData[2];
+		PACK_BIN(b);
+		b = processedData[3];
+		PACK_BIN(b);
+		b = processedData[4];
+		PACK_BIN(b);
+		for (i = 5; i < 21; i += 2) {
+			avg = ((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1;
+			PACK_BIN(avg);
+		}
+		for (; i < 37; i += 4) {
+			avg = ((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2;
+			PACK_BIN(avg);
+		}
+		for (last = 45; last <= 101; last += 8) {
+			avg = 0;
+			for (; i < last; i++)
+				avg += (unsigned int)processedData[i];
+			avg >>= 3;
+			PACK_BIN(avg);
+		}
+		for (last = 117; last <= 229; last += 16) {
+			avg = 0;
+			for (; i < last; i++)
+				avg += (unsigned int)processedData[i];
+			avg >>= 4;
+			PACK_BIN(avg);
+		}
+		break;
+	case SIZE_64:
+		for (i = 1; i < 21; i++) {
+			b = processedData[i];
+			PACK_BIN(b);
+		}
+		for (; i < 37; i += 2) {
+			avg = ((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1;
+			PACK_BIN(avg);
+		}
+		for (; i < 133; i += 4) {
+			avg = ((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2;
+			PACK_BIN(avg);
+		}
+		for (last = 141; last <= 229; last += 8) {
+			avg = 0;
+			for (; i < last; i++)
+				avg += (unsigned int)processedData[i];
+			avg >>= 3;
+			PACK_BIN(avg);
+		}
+		break;
+	case SIZE_128:
+		for (i = 1; i < 37; i++) {
+			b = processedData[i];
+			PACK_BIN(b);
+		}
+		for (; i < 185; i += 2) {
+			avg = ((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1;
+			PACK_BIN(avg);
+		}
+		for (; i < 253; i += 4) {
+			avg = ((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2;
+			PACK_BIN(avg);
+		}
+		break;
+	case SIZE_256:
+		for (i = 0; i < 256; i++) {
+			b = processedData[i];
+			PACK_BIN(b);
+		}
+		break;
+	default:
+		env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
+		return 0;
+	}
+#undef PACK_BIN
+	//fill in the payload length
+	((unsigned char*)bfft)[2] = (len & 0x7F) << 1; //lower 7 bits, left shifted by 1
+	((unsigned char*)bfft)[3] = (len >> 6) & 0xFE; //upper 7 bits, left shifted by 1
+	*packet = 4; //EOT - End of Transmission
+	env->ReleasePrimitiveArrayCritical(jbfft, bfft, 0);
+	return len + 5;
 }
 
 void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {

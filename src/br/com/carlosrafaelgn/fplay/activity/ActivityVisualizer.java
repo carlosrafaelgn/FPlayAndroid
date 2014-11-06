@@ -378,7 +378,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		if (clazz != null) {
 			try {
-				visualizer = (Visualizer)clazz.getConstructor(Context.class, boolean.class).newInstance(getApplication(), info.isLandscape);
+				visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class).newInstance(getApplication(), this, info.isLandscape);
 			} catch (Throwable ex) {
 				clazz = null;
 			}
@@ -444,7 +444,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 						final int now = (int)SystemClock.uptimeMillis();
 						final int deltaMillis = (int)(now - lastTime);
 						lastTime = now;
-						visualizer.processFrame(fxVisualizer, playing, ((deltaMillis >= 32) || (deltaMillis <= 0)) ? 32 : deltaMillis);
+						visualizer.processFrame(fxVisualizer, playing, ((deltaMillis >= 100) || (deltaMillis <= 0)) ? 100 : deltaMillis);
 					}
 				}
 				if (!alive) {
@@ -563,7 +563,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		finalCleanup();
 		super.onDestroy();
 	}
-	
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (visualizer != null)
+			visualizer.onActivityResult(requestCode, resultCode, data);
+	}
+
 	@Override
 	public void run() {
 		if (fxVisualizerFailed) {

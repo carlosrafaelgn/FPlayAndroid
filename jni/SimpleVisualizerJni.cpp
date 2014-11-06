@@ -747,7 +747,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"processVoice", "([BLandroid/view/Surface;)V", (void*)processVoice},
 		{"glOnSurfaceCreated", "(I)I", (void*)glOnSurfaceCreated},
 		{"glOnSurfaceChanged", "(II)V", (void*)glOnSurfaceChanged},
-		{"glProcess", "([BI)V", (void*)glProcess},
+		{"glOrBTProcess", "([BII)I", (void*)glOrBTProcess},
 		{"glDrawFrame", "()V", (void*)glDrawFrame},
 		{"glChangeColorIndex", "(I)V", (void*)glChangeColorIndex},
 		{"glChangeSpeed", "(I)V", (void*)glChangeSpeed}

@@ -55,7 +55,6 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
-import br.com.carlosrafaelgn.fplay.ui.BgTextView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -63,6 +62,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
@@ -90,7 +90,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_OPENGL = 113, MNU_REPEAT = 114, MNU_REPEATONE = 115;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_OPENGL = 113, MNU_REPEAT = 114, MNU_REPEATONE = 115, MNU_VISUALIZER_BLUETOOTH = 116;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -502,6 +502,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_OPENGL, 1, "Fullscreen OpenGL 2.0")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 3, "Bluetooth")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
@@ -565,6 +568,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			break;
 		case MNU_VISUALIZER_OPENGL:
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
+			break;
+		case MNU_VISUALIZER_BLUETOOTH:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, BluetoothVisualizerJni.class.getName()));
 			break;
 		case MNU_SETTINGS:
 			startActivity(new ActivitySettings(false), 0, null);
@@ -705,7 +711,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			return;
 		}
 		setContentView(Player.isControlMode() ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? R.layout.activity_main_l : R.layout.activity_main), true, forceFadeOut);
-		findViewById(R.id.panelControls).setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		btnPrev = (BgButton)findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);
@@ -714,6 +719,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		if (Player.isControlMode()) {
+			findViewById(R.id.panelControls).setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
 			UI.largeText(lblTitle);
 			btnPrev.setIconNoChanges(UI.ICON_PREV);
 			btnNext.setIconNoChanges(UI.ICON_NEXT);
@@ -754,7 +760,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			int panelH = (UI.isLandscape ? ((min * 25) / 100) : ((max * 14) / 100));
 			if (!UI.isLandscape && panelH > (min >> 2))
 				panelH = (min >> 2);
-			((ViewGroup)findViewById(R.id.panelTop)).setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, panelH));
+			findViewById(R.id.panelTop).setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, panelH));
 			
 			RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(panelH, panelH);
 			rp.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
@@ -775,9 +781,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.useControlModeButtonsInsideList ? UI.color_text_listitem : UI.color_text, panelH >> 1);
 			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
 			
-			int lds = 0;
 			if (UI.isLowDpiScreen && !UI.isLargeScreen) {
-				lds = (UI.isLandscape ? UI.dpToPxI(12) : UI._8dp);
+				final int lds = (UI.isLandscape ? UI.dpToPxI(12) : UI._8dp);
 				btnDecreaseVolume.setPadding(lds, lds, lds, lds);
 				btnIncreaseVolume.setPadding(lds, lds, lds, lds);
 				btnVolume.setPadding(lds, lds, lds, lds);
@@ -809,7 +814,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnVolume.setTextColor(UI.colorState_text_listitem_reactive);
 				btnIncreaseVolume.setTextColor(UI.colorState_text_listitem_reactive);
 				btnMenu.setTextColor(UI.colorState_text_listitem_reactive);
-				((BgTextView)lblTitle).setTextColor(UI.colorState_text_listitem_reactive);
+				lblTitle.setTextColor(UI.colorState_text_listitem_reactive);
 				btnPrev.setTextColor(UI.colorState_text_listitem_reactive);
 				btnNext.setTextColor(UI.colorState_text_listitem_reactive);
 			}

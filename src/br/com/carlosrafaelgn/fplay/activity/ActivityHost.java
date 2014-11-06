@@ -259,7 +259,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 		System.gc();
 	}
-	
+
 	@Override
 	public void onBackPressed() {
 		if (isFading)
