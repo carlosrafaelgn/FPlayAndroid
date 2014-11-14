@@ -284,9 +284,15 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public void processItemButtonClick(int position, boolean add) {
+		//somehow, Google Play indicates a NullPointerException, either here or
+		//in processItemClick, in a LG Optimus L3 (2.3.3) :/
+		if (list == null || fileList == null)
+			return;
 		if (!add && !list.isInTouchMode())
 			fileList.setSelection(position, true);
 		final FileSt file = fileList.getItemT(position);
+		if (file == null) //same as above
+			return;
 		if (file.specialType == FileSt.TYPE_ALBUM_ITEM) {
 			selectAlbumSongs(position);
 		} else {
@@ -346,8 +352,14 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public void processItemClick(int position) {
+		//somehow, Google Play indicates a NullPointerException, either here or
+		//in processItemButtonClick, in a LG Optimus L3 (2.3.3) :/
+		if (list == null || fileList == null)
+			return;
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
 			final FileSt file = fileList.getItemT(position);
+			if (file == null) //same as above
+				return;
 			if (file.isDirectory && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
 				navigateTo(file.path, null);
 			} else {
