@@ -33,11 +33,14 @@
 package br.com.carlosrafaelgn.fplay.activity;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -65,7 +68,26 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private FrameLayout parent;
 	private View oldView, newView;
 	private AnimationSet anim;
-	
+
+	private void updateTitle(CharSequence title, boolean announce) {
+		setTitle(title);
+		//announce should be false when starting/finishing an activity from a menu
+		//because in those cases AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED will
+		//already happen due to a change in the active window, making the user hear
+		//the title twice!
+		if (announce) {
+			final AccessibilityManager manager = (AccessibilityManager)getSystemService(Context.ACCESSIBILITY_SERVICE);
+			if (manager != null && manager.isEnabled()) {
+				final AccessibilityEvent e = AccessibilityEvent.obtain();
+				e.setEventType(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+				e.setClassName(getClass().getName());
+				e.setPackageName(getApplication().getPackageName());
+				e.getText().add(title);
+				manager.sendAccessibilityEvent(e);
+			}
+		}
+	}
+
 	public ClientActivity getTopActivity() {
 		return top;
 	}
@@ -194,11 +216,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		useFadeOutNextTime = false;
 	}
 	
-	private void startActivityInternal(ClientActivity activity) {
+	private void startActivityInternal(ClientActivity activity, boolean announce) {
 		activity.finished = false;
 		activity.activity = this;
 		activity.previousActivity = top;
 		top = activity;
+		updateTitle(activity.getTitle(), announce);
 		activity.paused = true;
 		activity.onCreate();
 		if (!activity.finished) {
@@ -210,7 +233,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 	}
 	
-	public void startActivity(ClientActivity activity) {
+	public void startActivity(ClientActivity activity, boolean announce) {
 		if (top != null) {
 			if (!top.paused) {
 				top.paused = true;
@@ -219,10 +242,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (top != null)
 				top.onCleanupLayout();
 		}
-		startActivityInternal(activity);
+		startActivityInternal(activity, announce);
 	}
 	
-	public void finishActivity(ClientActivity activity, ClientActivity newActivity, int code) {
+	public void finishActivity(ClientActivity activity, ClientActivity newActivity, int code, boolean announce) {
 		if (activity.finished || activity != top)
 			return;
 		useFadeOutNextTime = true;
@@ -237,13 +260,19 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top = top.previousActivity;
 		else
 			top = null;
+		if (top != null)
+			updateTitle(top.getTitle(), announce);
+		else
+			//prevent the title from being said by TalkBack when the
+			//application finishes in response to a menu item
+			setTitle("\u00A0");
 		activity.activity = null;
 		activity.previousActivity = null;
 		final ClientActivity oldTop = top;
 		if (oldTop != null && !oldTop.finished)
 			oldTop.activityFinished(activity, activity.requestCode, code);
 		if (newActivity != null) {
-			startActivityInternal(newActivity);
+			startActivityInternal(newActivity, announce);
 		} else {
 			if (top == null) {
 				finish();
@@ -269,7 +298,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (top.onBackPressed())
 				return;
 			if (top != null && top.previousActivity != null) {
-				finishActivity(top, null, 0);
+				finishActivity(top, null, 0, true);
 				return;
 			}
 		}
@@ -331,6 +360,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		top.finished = false;
 		top.activity = this;
 		top.previousActivity = null;
+		setTitle(top.getTitle());
 		getWindow().setBackgroundDrawable(new NullDrawable());
 		top.paused = true;
 		top.onCreate();

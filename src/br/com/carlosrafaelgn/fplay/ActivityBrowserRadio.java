@@ -89,7 +89,12 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
 	private boolean loading, isAtFavorites;
-	
+
+	@Override
+	public CharSequence getTitle() {
+		return getText(R.string.add_radio);
+	}
+
 	private void updateButtons() {
 		if (!isAtFavorites != (btnFavorite.getVisibility() == View.VISIBLE)) {
 			if (isAtFavorites) {
@@ -316,7 +321,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				isAtFavorites = false;
 				doSearch();
 			} else {
-				finish(0, view);
+				finish(0, view, true);
 			}
 		} else if (view == btnFavorite) {
 			isAtFavorites = true;
@@ -393,7 +398,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			.setOnCancelListener(this)
 			.create());
 		} else if (view == btnGoBackToPlayer) {
-			finish(-1, view);
+			finish(-1, view, false);
 		} else if (view == btnAdd) {
 			addPlaySelectedItem(false);
 		} else if (view == btnPlay) {
@@ -433,7 +438,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected boolean onBackPressed() {
 		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing) {
-			finish(-1, null);
+			finish(-1, null, false);
 			return true;
 		}
 		if (!isAtFavorites)

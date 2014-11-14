@@ -50,7 +50,12 @@ import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
 	private ScrollView list;
 	private BgButton btnGoBack;
-	
+
+	@Override
+	public CharSequence getTitle() {
+		return getText(R.string.about);
+	}
+
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
@@ -148,6 +153,6 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack)
-			finish(0, view);
+			finish(0, view, true);
 	}
 }

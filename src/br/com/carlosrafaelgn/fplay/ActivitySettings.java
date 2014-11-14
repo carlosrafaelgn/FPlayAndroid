@@ -83,7 +83,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public ActivitySettings(boolean colorMode) {
 		this.colorMode = colorMode;
 	}
-	
+
+	@Override
+	public CharSequence getTitle() {
+		return getText(colorMode ? R.string.custom_color_theme : R.string.settings);
+	}
+
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		if (view == optAutoTurnOff || view == optAutoIdleTurnOff) {
@@ -306,7 +311,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optTheme) {
 			if (item.getItemId() == UI.THEME_CUSTOM) {
-				startActivity(new ActivitySettings(true), 0, null);
+				startActivity(new ActivitySettings(true), 0, null, false);
 			} else {
 				UI.setTheme(getHostActivity(), item.getItemId());
 				onCleanupLayout();
@@ -498,7 +503,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		UI.customColors = colors;
 		UI.setTheme(getHostActivity(), UI.THEME_CUSTOM);
 		changed = false;
-		finish(0, sourceView);
+		finish(0, sourceView, true);
 	}
 	
 	private void loadColors(boolean createControls, boolean forceCurrent) {
@@ -857,7 +862,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 		if (view == btnGoBack) {
 			if (!cancelGoBack())
-				finish(0, view);
+				finish(0, view, true);
 		} else if (view == optLoadCurrentTheme) {
 			if (colorMode)
 				loadColors(false, true);
@@ -883,7 +888,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				}
 				applyTheme(view);
 			} else {
-				startActivity(new ActivityAbout(), 0, view);
+				startActivity(new ActivityAbout(), 0, view, true);
 			}
 		} else if (!UI.isCurrentLocaleCyrillic() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
@@ -974,7 +979,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (colorMode) {
 				if (checkingReturn) {
 					changed = false;
-					finish(0, null);
+					finish(0, null, false);
 				} else {
 					applyTheme(null);
 				}

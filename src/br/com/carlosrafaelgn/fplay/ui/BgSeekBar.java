@@ -554,7 +554,7 @@ public final class BgSeekBar extends View {
 		if (vertical)
 			canvas.restore();
 	}
-	
+
 	@Override
 	protected void onDetachedFromWindow() {
 		additionalContentDescription = null;

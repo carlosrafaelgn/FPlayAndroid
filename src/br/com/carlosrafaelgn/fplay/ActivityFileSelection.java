@@ -71,6 +71,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private static final int MNU_LOAD = 100, MNU_SAVE = 101, MNU_SAVEAS = 102, MNU_DELETE = 103;
 	private final boolean save, hasButtons;
 	private final String fileType, itemType;
+	private final CharSequence title;
 	private final OnFileSelectionListener listener;
 	private final int id;
 	private final StringBuilder formatterSB;
@@ -83,9 +84,10 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private boolean loading;
 	private int lastLongClickedId;
 	
-	public ActivityFileSelection(int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
+	public ActivityFileSelection(CharSequence title, int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
 		if (fileType.charAt(0) != FileSt.PRIVATE_FILETYPE_ID)
 			throw new IllegalArgumentException("fileType must start with " + FileSt.PRIVATE_FILETYPE_ID);
+		this.title = title;
 		this.id = id;
 		this.save = save;
 		this.hasButtons = hasButtons;
@@ -96,7 +98,12 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		this.formatterSB = new StringBuilder();
 		this.formatter = new Formatter(formatterSB);
 	}
-	
+
+	@Override
+	public CharSequence getTitle() {
+		return title;
+	}
+
 	private String format(int resId, String p1) {
 		formatterSB.delete(0, formatterSB.length());
 		formatter.format(getText(resId).toString(), p1);
@@ -162,7 +169,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		} else {
 			listener.onPlayClicked(id, file.path, file.name);
 			if (Player.goBackWhenPlayingFolders)
-				finish(0, (list == null) ? null : list.getViewForPosition(position));
+				finish(0, (list == null) ? null : list.getViewForPosition(position), true);
 		}
 	}
 	
@@ -180,7 +187,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					} catch (Throwable ex) {
 					}
 				} else {
-					finish(0, null);
+					finish(0, null, false);
 					listener.onFileSelected(ActivityFileSelection.this.id, path, name);
 				}
 			}
@@ -197,7 +204,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				confirm(file.path, file.name, false);
 				return;
 			}
-			finish(0, (list == null) ? null : list.getViewForPosition(position));
+			finish(0, (list == null) ? null : list.getViewForPosition(position), true);
 			listener.onFileSelected(id, file.path, file.name);
 		} else {
 			fileList.setSelection(position, true);
@@ -323,7 +330,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
-			finish(0, view);
+			finish(0, view, true);
 		} if (view == btnMenu) {
 			lastLongClickedId = -1;
 			CustomContextMenu.openContextMenu(btnMenu, this);
@@ -345,7 +352,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					return;
 				}
 			}
-			finish(0, null);
+			finish(0, null, false);
 			listener.onFileSelected(ActivityFileSelection.this.id, n + fileType, n);
 		}
 		txtSaveAsName = null;

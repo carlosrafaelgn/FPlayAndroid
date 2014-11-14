@@ -103,7 +103,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
 	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut;
 	private StringBuilder timeBuilder, volumeBuilder;
-	
+
+	@Override
+	public CharSequence getTitle() {
+		return getText(R.string.fplay);
+	}
+
 	private void saveListViewPosition() {
 		if (list != null && list.getAdapter() != null) {
 			final int i = list.getFirstVisiblePosition();
@@ -324,7 +329,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (Player.getState() == Player.STATE_INITIALIZED) {
 			Player.alreadySelected = false;
 			//startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
-			startActivity(new ActivityBrowser2(), 0, sourceView);
+			startActivity(new ActivityBrowser2(), 0, sourceView, sourceView != null);
 		}
 	}
 	
@@ -519,7 +524,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public boolean onMenuItemClick(MenuItem item) {
 		final int id = item.getItemId();
 		if (id == MNU_EXIT) {
-			finish(0, null);
+			finish(0, null, false);
 			Player.stopService();
 			return true;
 		}
@@ -534,10 +539,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			break;
 		case MNU_LOADLIST:
 			Player.alreadySelected = false;
-			startActivity(new ActivityFileSelection(MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this), 0, null);
+			startActivity(new ActivityFileSelection(getText(R.string.load_list), MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this), 0, null, false);
 			break;
 		case MNU_SAVELIST:
-			startActivity(new ActivityFileSelection(MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this), 0, null);
+			startActivity(new ActivityFileSelection(getText(R.string.save_list), MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this), 0, null, false);
 			break;
 		case MNU_SORT_BY_TITLE:
 			Player.songs.sort(SongList.SORT_BY_TITLE);
@@ -562,7 +567,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.songs.setRandomMode(!Player.songs.isInRandomMode());
 			break;
 		case MNU_EFFECTS:
-			startActivity(new ActivityEffects(), 0, null);
+			startActivity(new ActivityEffects(), 0, null, false);
 			break;
 		case MNU_VISUALIZER:
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
@@ -574,7 +579,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, BluetoothVisualizerJni.class.getName()));
 			break;
 		case MNU_SETTINGS:
-			startActivity(new ActivitySettings(false), 0, null);
+			startActivity(new ActivitySettings(false), 0, null, false);
 			break;
 		}
 		return true;
@@ -708,7 +713,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	protected void onCreateLayout(boolean firstCreation) {
 		if (Player.getState() > Player.STATE_INITIALIZED || skipToDestruction) {
 			skipToDestruction = true;
-			finish(0, null);
+			finish(0, null, false);
 			return;
 		}
 		setContentView(Player.isControlMode() ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? R.layout.activity_main_l : R.layout.activity_main), true, forceFadeOut);

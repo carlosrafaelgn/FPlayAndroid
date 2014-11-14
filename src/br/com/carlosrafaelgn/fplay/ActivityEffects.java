@@ -70,7 +70,12 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	private BgSeekBar[] bars;
 	private BgSeekBar barBass, barVirtualizer;
 	private StringBuilder txtBuilder;
-	
+
+	@Override
+	public CharSequence getTitle() {
+		return getText(R.string.audio_effects);
+	}
+
 	private String format(int frequency, int level) {
 		if (txtBuilder == null)
 			return "";
@@ -129,10 +134,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			updateBars();
 			break;
 		case MNU_LOADPRESET:
-			startActivity(new ActivityFileSelection(MNU_LOADPRESET, false, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null);
+			startActivity(new ActivityFileSelection(getText(R.string.load_preset), MNU_LOADPRESET, false, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null, false);
 			break;
 		case MNU_SAVEPRESET:
-			startActivity(new ActivityFileSelection(MNU_SAVEPRESET, true, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null);
+			startActivity(new ActivityFileSelection(getText(R.string.save_preset), MNU_SAVEPRESET, true, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null, false);
 			break;
 		}
 		return true;
@@ -141,7 +146,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
-			finish(0, view);
+			finish(0, view, true);
 		} else if (view == btnMenu) {
 			CustomContextMenu.openContextMenu(btnMenu, this);
 		} else if (view == btnChangeEffect) {

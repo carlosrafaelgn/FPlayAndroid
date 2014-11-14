@@ -79,7 +79,12 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
-	
+
+	@Override
+	public CharSequence getTitle() {
+		return getText(R.string.add_songs);
+	}
+
 	private void updateOverallLayout() {
 		RelativeLayout.LayoutParams rp;
 		if (isAtHome) {
@@ -247,7 +252,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				}
 			}).start();
 			if (play && addingFolder && Player.goBackWhenPlayingFolders)
-				finish(0, null);
+				finish(0, null, true);
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
 			UI.toast(getApplication(), ex.getMessage());
@@ -509,10 +514,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			} else if (Player.path.length() == 1) {
 				navigateTo("", Player.path);
 			} else {
-				finish(0, view);
+				finish(0, view, true);
 			}
 		} else if (view == btnRadio) {
-			startActivity(new ActivityBrowserRadio(), 1, view);
+			startActivity(new ActivityBrowserRadio(), 1, view, true);
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
@@ -581,7 +586,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			fileList.notifyCheckedChanged();
 			updateButtons();
 		} else if (view == btnGoBackToPlayer) {
-			finish(0, view);
+			finish(0, view, true);
 		} else if (view == btnAdd) {
 			addPlayCheckedItems(false);
 		} else if (view == btnPlay) {
@@ -623,7 +628,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	public void activityFinished(ClientActivity activity, int requestCode, int code) {
 		if (requestCode == 1 && code == -1)
-			finish(0, null);
+			finish(0, null, true);
 	}
 	
 	@Override

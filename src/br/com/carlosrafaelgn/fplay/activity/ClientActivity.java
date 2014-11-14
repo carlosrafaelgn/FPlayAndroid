@@ -129,24 +129,24 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		return previousActivity;
 	}
 	
-	public final void startActivity(ClientActivity activity, int requestCode, View sourceView) {
+	public final void startActivity(ClientActivity activity, int requestCode, View sourceView, boolean announce) {
 		if (sourceView != null)
 			UI.storeViewCenterLocationForFade(sourceView);
 		activity.requestCode = requestCode;
-		this.activity.startActivity(activity);
+		this.activity.startActivity(activity, announce);
 	}
 	
-	public final void finish(int code, View sourceView) {
+	public final void finish(int code, View sourceView, boolean announce) {
 		if (sourceView != null)
 			UI.storeViewCenterLocationForFade(sourceView);
-		activity.finishActivity(this, null, code);
+		activity.finishActivity(this, null, code, announce);
 	}
 	
-	public final void finishAndStartNewActivity(int code, ClientActivity activity, int requestCode, View sourceView) {
+	public final void finishAndStartNewActivity(int code, ClientActivity activity, int requestCode, View sourceView, boolean announce) {
 		if (sourceView != null)
 			UI.storeViewCenterLocationForFade(sourceView);
 		activity.requestCode = requestCode;
-		this.activity.finishActivity(this, activity, code);
+		this.activity.finishActivity(this, activity, code, announce);
 	}
 	
 	public final void openContextMenu(View view) {
@@ -164,7 +164,9 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	public final Resources getResources() {
 		return activity.getResources();
 	}
-	
+
+	public abstract CharSequence getTitle();
+
 	public void activityFinished(ClientActivity activity, int requestCode, int code) {
 	}
 	
