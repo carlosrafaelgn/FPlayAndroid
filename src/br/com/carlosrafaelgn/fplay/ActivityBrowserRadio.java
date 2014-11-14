@@ -32,16 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.HttpGet;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -62,6 +52,17 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TextView;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.HttpGet;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
@@ -337,6 +338,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI._DLGsppad;
 			btnGenre = new Spinner(ctx);
+			btnGenre.setContentDescription(ctx.getText(R.string.genre));
 			btnGenre.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -351,6 +353,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI._DLGsppad;
 			txtTerm = new EditText(ctx);
+			txtTerm.setContentDescription(ctx.getText(R.string.search_term));
 			txtTerm.setText(Player.radioSearchTerm == null ? "" : Player.radioSearchTerm);
 			txtTerm.setOnClickListener(this);
 			txtTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);

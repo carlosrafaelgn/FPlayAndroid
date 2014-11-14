@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import java.nio.IntBuffer;
-
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -55,6 +53,9 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import java.nio.IntBuffer;
+
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;

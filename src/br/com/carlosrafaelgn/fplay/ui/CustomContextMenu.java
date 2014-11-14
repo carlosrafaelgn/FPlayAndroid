@@ -32,9 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-
 import android.app.Activity;
 import android.app.Application;
 import android.app.Dialog;
@@ -63,6 +60,10 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.ScrollView;
 import android.widget.TextView;
+
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;

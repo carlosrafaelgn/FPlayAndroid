@@ -32,6 +32,11 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.app.Service;
+import android.database.Cursor;
+import android.os.Environment;
+import android.provider.MediaStore;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -42,10 +47,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 
-import android.app.Service;
-import android.database.Cursor;
-import android.os.Environment;
-import android.provider.MediaStore;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;

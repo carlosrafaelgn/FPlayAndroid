@@ -39,6 +39,7 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.ScrollView;
 import android.widget.TextView;
+
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;

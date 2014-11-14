@@ -44,6 +44,8 @@ import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.accessibility.AccessibilityEvent;
+
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class BgSeekBar extends View {
@@ -259,7 +261,14 @@ public final class BgSeekBar extends View {
 	public void setValue(int value) {
 		setValue(value, false, false);
 	}
-	
+
+	@Override
+	public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
+		if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED)
+			event.setEventType(32768); //AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED = 32768
+		return super.dispatchPopulateAccessibilityEvent(event);
+	}
+
 	private void setValue(int value, boolean fromUser, boolean usingKeys) {
 		if (value < 0)
 			value = 0;
@@ -270,6 +279,8 @@ public final class BgSeekBar extends View {
 			if (listener != null)
 				listener.onValueChanged(this, value, fromUser, usingKeys);
 			updateBar();
+			if (fromUser && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+				sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED);
 		}
 	}
 	
@@ -389,7 +400,7 @@ public final class BgSeekBar extends View {
 			position -= (float)(thumbWidth >> 1);
 		setValue((int)(((float)max * position) / total), true, false);
 	}
-	
+
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (!isEnabled())

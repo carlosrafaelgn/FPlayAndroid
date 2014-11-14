@@ -45,6 +45,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.BitmapLruCache;

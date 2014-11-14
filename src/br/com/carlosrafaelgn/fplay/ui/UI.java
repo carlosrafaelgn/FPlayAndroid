@@ -32,9 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -69,6 +66,10 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
 import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.R;

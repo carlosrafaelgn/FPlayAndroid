@@ -32,10 +32,11 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
-import java.io.File;
-
 import android.view.View;
 import android.view.ViewGroup;
+
+import java.io.File;
+
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;

@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import java.util.Formatter;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -49,6 +47,9 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import java.util.Formatter;
+
 import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -232,6 +233,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			l.addView(lbl);
 			
 			txtSaveAsName = new EditText(ctx);
+			txtSaveAsName.setContentDescription(lbl.getText());
 			txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txtSaveAsName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 			txtSaveAsName.setSingleLine();

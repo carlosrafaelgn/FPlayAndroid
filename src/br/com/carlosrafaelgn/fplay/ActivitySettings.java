@@ -49,6 +49,7 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -279,6 +280,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				l.addView(lbl);
 				
 				txtCustomMinutes = new EditText(ctx);
+				txtCustomMinutes.setContentDescription(ctx.getText(R.string.msg_turn_off));
 				txtCustomMinutes.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 				txtCustomMinutes.setInputType(InputType.TYPE_CLASS_NUMBER);
 				txtCustomMinutes.setSingleLine();

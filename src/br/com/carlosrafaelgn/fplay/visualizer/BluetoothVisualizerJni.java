@@ -42,19 +42,15 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.Arrays;
 
-import javax.xml.validation.TypeInfoProvider;
-
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
-import br.com.carlosrafaelgn.fplay.ui.BgTextView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
@@ -183,7 +179,8 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	public void onCreateContextMenu(ContextMenu menu) {
 		final Context ctx = getContext();
 		UI.separator(menu, 1, 0);
-		final Menu s = menu.addSubMenu(1, 0, 0, R.string.bt_sample_count);
+		final Menu s = menu.addSubMenu(1, 0, 0, R.string.bt_sample_count)
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
 		UI.prepare(s);
 		s.add(1, MNU_SIZE_4, 0, "4")
 			.setOnMenuItemClickListener(this)

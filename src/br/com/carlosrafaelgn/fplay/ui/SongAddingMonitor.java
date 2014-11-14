@@ -38,6 +38,7 @@ import android.view.View;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Timer;

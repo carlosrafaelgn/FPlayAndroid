@@ -37,6 +37,7 @@ import android.graphics.ColorFilter;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class BorderDrawable extends Drawable {

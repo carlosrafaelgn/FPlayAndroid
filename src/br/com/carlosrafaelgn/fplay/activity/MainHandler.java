@@ -32,12 +32,13 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
-import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.UI;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+
+import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class MainHandler extends Handler {
 	public static final int MSG_HANDLER_TOAST = 0x0500;

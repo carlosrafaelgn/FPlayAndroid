@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import br.com.carlosrafaelgn.fplay.R;
-import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -44,15 +42,21 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.ViewGroup.LayoutParams;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.Button;
+
+import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class BgButton extends Button {
 	public static interface OnPressingChangeListener {
 		public void onPressingChanged(BgButton button, boolean pressed);
 	}
-	
+
+	private static String selected, unselected;
+
 	private int state;
-	private boolean checkable, checked, stretchable, hideBorders;
+	private boolean checkable, checked, stretchable, hideBorders, forceDescription;
 	private String iconChecked, iconUnchecked;
 	private CharSequence descriptionChecked, descriptionUnchecked;
 	private TextIconDrawable checkBox;
@@ -83,6 +87,10 @@ public final class BgButton extends Button {
 		super.setPadding(UI._8sp, UI._8sp, UI._8sp, UI._8sp);
 		super.setFocusableInTouchMode(false);
 		super.setFocusable(true);
+		if (selected == null)
+			selected = getContext().getText(R.string.selected).toString();
+		if (unselected == null)
+			unselected = getContext().getText(R.string.unselected).toString();
 	}
 	
 	public void setHideBorders(boolean hideBorders) {
@@ -159,7 +167,7 @@ public final class BgButton extends Button {
 			CharSequence c = super.getContentDescription();
 			if (c == null)
 				c = getText();
-			return c + ": " + getContext().getText(checked ? R.string.selected : R.string.unselected);
+			return c + ": " + (checked ? selected : unselected);
 		}
 		return super.getContentDescription();
 	}
@@ -225,11 +233,23 @@ public final class BgButton extends Button {
 			}
 		}
 	}
-	
+
+	@Override
+	public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
+		if (forceDescription) {
+			forceDescription = false;
+			event.setEventType(32768); //AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED = 32768
+		}
+		return super.dispatchPopulateAccessibilityEvent(event);
+	}
+
 	@Override
 	public boolean performClick() {
-		if (checkable)
+		if (checkable) {
 			toggle();
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+				forceDescription = true;
+		}
 		return super.performClick();
 	}
 	

@@ -43,6 +43,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.LinearLayout;
+
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;

@@ -32,13 +32,13 @@
 //
 package br.com.carlosrafaelgn.fplay.util;
 
+import android.content.Context;
+import android.util.SparseArray;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-
-import android.content.Context;
-import android.util.SparseArray;
 
 public final class SerializableMap {
 	private static final int TYPE_INT = 0;

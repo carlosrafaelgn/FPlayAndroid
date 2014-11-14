@@ -32,11 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.media.MediaMetadataRetriever;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import android.media.MediaMetadataRetriever;
 import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 

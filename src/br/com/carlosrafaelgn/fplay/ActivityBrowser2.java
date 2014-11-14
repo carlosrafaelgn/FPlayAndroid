@@ -32,10 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Locale;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -50,6 +46,11 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Locale;
+
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileFetcher;
@@ -522,6 +523,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			l.addView(lbl);
 			
 			txtURL = new EditText(ctx);
+			txtURL.setContentDescription(ctx.getText(R.string.url));
 			txtURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txtURL.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
 			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -536,6 +538,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			l.addView(lbl);
 			
 			txtTitle = new EditText(ctx);
+			txtTitle.setContentDescription(ctx.getText(R.string.description));
 			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txtTitle.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTitle.setSingleLine();

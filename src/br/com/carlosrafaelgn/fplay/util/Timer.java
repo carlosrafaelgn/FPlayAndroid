@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.util;
 
 import android.os.Message;
 import android.os.SystemClock;
+
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 
 public final class Timer implements MainHandler.Callback {

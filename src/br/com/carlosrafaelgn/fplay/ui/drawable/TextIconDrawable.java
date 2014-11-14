@@ -39,6 +39,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
+
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class TextIconDrawable extends Drawable {

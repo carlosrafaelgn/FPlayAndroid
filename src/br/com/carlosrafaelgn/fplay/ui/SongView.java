@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import br.com.carlosrafaelgn.fplay.list.Song;
-import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -41,6 +39,9 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+
+import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
 	private Song song;

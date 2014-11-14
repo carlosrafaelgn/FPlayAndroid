@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
-import java.util.Arrays;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -44,6 +42,9 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewDebug.ExportedProperty;
+
+import java.util.Arrays;
+
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;

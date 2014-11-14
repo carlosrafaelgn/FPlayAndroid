@@ -32,11 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-
 import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -50,9 +45,9 @@ import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.MediaRouter;
-import android.media.RemoteControlClient;
 import android.media.MediaRouter.RouteGroup;
 import android.media.MediaRouter.RouteInfo;
+import android.media.RemoteControlClient;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -64,6 +59,12 @@ import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+
 import br.com.carlosrafaelgn.fplay.ExternalReceiver;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.WidgetMain;

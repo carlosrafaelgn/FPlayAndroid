@@ -45,6 +45,7 @@ import android.view.ViewDebug.ExportedProperty;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 

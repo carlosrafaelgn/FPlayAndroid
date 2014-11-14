@@ -32,6 +32,19 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.content.Context;
+import android.net.http.AndroidHttpClient;
+import android.os.Message;
+import android.view.View;
+import android.view.ViewGroup;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.HttpGet;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
@@ -42,18 +55,6 @@ import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.HashSet;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.HttpGet;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import android.content.Context;
-import android.net.http.AndroidHttpClient;
-import android.os.Message;
-import android.view.View;
-import android.view.ViewGroup;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;

@@ -32,11 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.database.DataSetObserver;
+import android.widget.BaseAdapter;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-import android.database.DataSetObserver;
-import android.widget.BaseAdapter;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 

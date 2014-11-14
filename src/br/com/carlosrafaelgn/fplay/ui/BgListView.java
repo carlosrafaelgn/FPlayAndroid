@@ -51,6 +51,7 @@ import android.view.ViewDebug.ExportedProperty;
 import android.widget.AbsListView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+
 import br.com.carlosrafaelgn.fplay.list.BaseItem;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;

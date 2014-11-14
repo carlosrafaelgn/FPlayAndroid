@@ -32,6 +32,11 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.content.Context;
+import android.os.Message;
+import android.view.View;
+import android.view.ViewGroup;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -44,10 +49,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 
-import android.content.Context;
-import android.os.Message;
-import android.view.View;
-import android.view.ViewGroup;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.SongView;
