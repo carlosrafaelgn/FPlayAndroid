@@ -284,27 +284,22 @@ int JNICALL glOrBTProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int delta
 	const float coefNew = glNew * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-	bfft[1] = bfft[0];
+	bfft[1] = 0;
 	int i;
 	for (i = 0; i < 256; i++) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		
-		float m = multiplier[i] * sqrtf((float)((re * re) + (im * im)));
-		//2048/32768 = 0.0625
-		//float m = (((multiplier[i] * sqrtf((float)((re * re) + (im * im)))) - 2048.0f) * 1.0625f) + 2048.0f;
-		//if (m < 0)
-		//	m = 0;
-		
+		int amplSq = (re * re) + (im * im);
+		if (amplSq < 3) amplSq = 0;
+		float m = multiplier[i] * (float)(amplSq);
 		const float old = fft[i];
 		if (m < old)
 			m = (coefNew * m) + (coefOld * old);
-			//m = (0.28125f * m) + (0.71875f * old);
 		fft[i] = m;
-		//v goes from 0 to 32768 (inclusive)
-		const int v = (int)m;
-		processedData[i] = ((v >= (255 << 7)) ? 255 : ((m <= 0) ? 0 : (unsigned char)(v >> 7)));
+		//v goes from 0 to 32768+ (inclusive)
+		const unsigned int v = ((unsigned int)m) >> 7;
+		processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
 	}
 	if (!bt) {
 		env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);

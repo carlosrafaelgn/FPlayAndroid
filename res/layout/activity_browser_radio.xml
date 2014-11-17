@@ -20,7 +20,7 @@
             android:nextFocusForward="@+id/btnFavorite"
             android:nextFocusLeft="@+id/list"
             android:nextFocusRight="@+id/btnFavorite"
-            android:nextFocusUp="@+id/list" />
+            android:nextFocusUp="@+id/btnGoBackToPlayer" />
 
         <RelativeLayout
             android:id="@+id/panelLoading"

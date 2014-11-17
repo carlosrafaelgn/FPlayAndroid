@@ -77,13 +77,17 @@ void JNICALL updateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
 	if (isVoice) {
 		for (int i = 0; i < 256; i++) {
 			fft[i] = 0;
-			multiplier[i] = 2.0f * expf((float)i / 128.0f);
+			double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
+			if (d < 1.5) d = 1.5;
+			multiplier[i] = (float)(d / 111.0);
+			//multiplier[i] = 2.0f * expf((float)i / 128.0f);
 		}
 	} else {
 		for (int i = 0; i < 256; i++) {
 			fft[i] = 0;
-			multiplier[i] = 256.0f * expf((float)i / 128.0f);
-			//multiplier[i] = 1;//(((float)i + 100.0f) / 101.0f) * expf((float)i / 300.0f);
+			double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
+			multiplier[i] = ((d < 1.5) ? 1.5f : (float)d);
+			//multiplier[i] = 256.0f * expf((float)i / 128.0f);
 		}
 	}
 }
@@ -226,18 +230,18 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMilli
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		float m = (multiplier[i] * sqrtf((float)((re * re) + (im * im))));
+		int amplSq = (re * re) + (im * im);
+		if (amplSq < 3) amplSq = 0;
+		float m = multiplier[i] * (float)(amplSq);
 		const float old = fft[i];
 		if (m < old)
 			m = (coefNew * m) + (coefOld * old);
 		fft[i] = m;
 		
 		if (barW == 1 || !lerp) {
-			//v goes from 0 to 32768 (inclusive)
+			//v goes from 0 to 32768+ (inclusive)
 			int v = (int)m;
-			if (v < 0)
-				v = 0;
-			else if (v > 32768)
+			if (v > 32768)
 				v = 32768;
 			
 			const unsigned short color = COLORS[colorIndex + (v >> 7)];
@@ -425,14 +429,16 @@ void JNICALL processNeon(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaM
 	const float coefNew = DEFSPEED * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-	bfft[1] = bfft[0];
+	bfft[1] = 0;
 	
 	//step 1: compute all magnitudes
 	for (int i = barBins - 1; i >= 0; i--) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		float m = (multiplier[i] * sqrtf((float)((re * re) + (im * im))));
+		int amplSq = (re * re) + (im * im);
+		if (amplSq < 3) amplSq = 0;
+		float m = multiplier[i] * (float)(amplSq);
 		const float old = fft[i];
 		if (m < old)
 			m = (coefNew * m) + (coefOld * old);
@@ -698,26 +704,20 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		const float m = (multiplier[i] * sqrtf((float)((re * re) + (im * im))));
+		int amplSq = (re * re) + (im * im);
+		if (amplSq < 3) amplSq = 0;
+		const float m = multiplier[i] * (float)(amplSq);
 		if (barW == 1) {
-			//v goes from 0 to 32768 (inclusive)
+			//v goes from 0 to 256+ (inclusive)
 			const int v = (int)m;
-			*currentBar = COLORS[colorIndex + ((v <= 0) ? 0 : ((v >= 256) ? 256 : v))];
+			*currentBar = COLORS[colorIndex + ((v >= 256) ? 256 : v)];
 			currentBar++;
 		} else {
 			const float delta = (m - previous) * invBarW;
 			for (int i = 0; i < barW; i++) {
 				previous += delta;
-				const int v = (int)m;
-				/*if (v < 0) {
-					v = 0;
-					//previous = 0.0f;
-				} else if (v > 256) {
-					v = 256;
-					//previous = 256.0f;
-				}*/
-				//*currentBar = COLORS[v];
-				*currentBar = COLORS[colorIndex + ((v <= 0) ? 0 : ((v >= 256) ? 256 : v))];
+				const int v = (int)previous;
+				*currentBar = COLORS[colorIndex + ((v >= 256) ? 256 : v)];
 				currentBar++;
 			}
 		}

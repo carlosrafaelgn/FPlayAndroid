@@ -57,6 +57,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
@@ -77,7 +78,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		bfft = new byte[2048];
 		setClickable(true);
 		setFocusable(false);
-		colorIndex = 257;
+		colorIndex = 0;
 		speed = 2;
 		SimpleVisualizerJni.glChangeColorIndex(colorIndex);
 		SimpleVisualizerJni.glChangeSpeed(speed);
@@ -420,8 +421,14 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	@Override
 	public void onClick() {
+		drawNow = true;
 	}
-	
+
+	//Runs on the MAIN thread
+	@Override
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	}
+
 	//Runs on ANY thread
 	@Override
 	public int getDesiredPointCount() {
@@ -450,11 +457,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void configurationChanged(boolean landscape) {
 		
 	}
-	
+	volatile boolean drawNow;
 	//Runs on a SECONDARY thread
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
-		if (okToRender) {
+		if (okToRender) {// && drawNow) {
 			//WE MUST NEVER call any method from visualizer
 			//while the player is not actually playing
 			if (!playing)

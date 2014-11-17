@@ -265,7 +265,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		panelControls.requestLayout();
 	}
-	
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	private void setScalingMode() {
+		fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
+		fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
+	}
+
 	private boolean initFxVisualizer() {
 		try {
 			final int g = Player.getAudioSessionId();
@@ -297,13 +303,21 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			try {
 				fxVisualizer.setCaptureSize((visualizer == null) ? Visualizer.MAX_POINTS : visualizer.getDesiredPointCount());
 				fxVisualizer.setEnabled(true);
-				return true;
 			} catch (Throwable ex) {
 				fxVisualizerFailed = true;
 				fxVisualizer.release();
 				fxVisualizer = null;
 				fxVisualizerAudioSessionId = -1;
 			}
+		}
+		if (fxVisualizer != null) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+				try {
+					setScalingMode();
+				} catch (Throwable ex) {
+				}
+			}
+			return true;
 		}
 		return false;
 	}
@@ -595,6 +609,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			btnPlay.setText(playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
 			btnPlay.setContentDescription(getText(playing ? R.string.pause : R.string.play));
 		}
+		if (visualizer != null)
+			visualizer.onPlayerChanged(currentSong, songHasChanged, ex);
 	}
 	
 	@Override

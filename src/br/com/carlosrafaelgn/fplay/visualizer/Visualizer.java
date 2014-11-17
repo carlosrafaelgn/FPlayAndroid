@@ -36,6 +36,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.view.ContextMenu;
 
+import br.com.carlosrafaelgn.fplay.list.Song;
+
 public interface Visualizer {
 	public static final String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
 	public static final int MAX_POINTS = 1024;
@@ -52,6 +54,9 @@ public interface Visualizer {
 
 	//Runs on the MAIN thread
 	public void onClick();
+
+	//Runs on the MAIN thread
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
 	
 	//Runs on ANY thread
 	public int getDesiredPointCount();

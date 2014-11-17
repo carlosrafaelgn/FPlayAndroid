@@ -262,10 +262,12 @@
     <string name="remove_from_favorites">Eliminar de los favoritos</string>
     <string name="selected">Seleccionado</string>
     <string name="unselected">No seleccionado</string>
-    <string name="refresh_list">Refresh list</string>
+    <string name="refresh_list">Actualizar lista</string>
 
     <string name="bt_packages_sent">Packages sent:</string>
     <string name="bt_sample_count">Samples to send&#8230;</string>
+    <string name="bt_connect">Connect to Bluetooth device&#8230;</string>
+    <string name="bt_disconnect">Disconnect Bluetooth device</string>
     <string name="bt_start">Start Bluetooth Transmission</string>
     <string name="bt_stop">Stop Bluetooth Transmission</string>
     <string name="bt_pairing">Please, try to connect again after pairing the device.</string>

@@ -46,6 +46,7 @@ import android.view.ViewDebug.ExportedProperty;
 import java.util.Arrays;
 
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
@@ -91,7 +92,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		surfaceHolder = getHolder();
 		surfaceHolder.addCallback(this);
 		state = 0;
-		colorIndex = 257;
+		colorIndex = 0;
 		lerp = false;
 		voice = false;
 		setLerpAndColorIndex(lerp, colorIndex);
@@ -183,7 +184,12 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		updateMultiplier(voice);
 		setLerpAndColorIndex(lerp, colorIndex);
 	}
-	
+
+	//Runs on the MAIN thread
+	@Override
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	}
+
 	//Runs on ANY thread
 	@Override
 	public int getDesiredPointCount() {
