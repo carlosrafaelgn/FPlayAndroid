@@ -77,16 +77,19 @@ void JNICALL updateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
 	if (isVoice) {
 		for (int i = 0; i < 256; i++) {
 			fft[i] = 0;
-			double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
-			if (d < 1.5) d = 1.5;
-			multiplier[i] = (float)(d / 111.0);
+			//const double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
+			//multiplier[i] = ((d <= 1.5) ? 1.5f : (float)(d / 111.0));
+			const double d = 5.0 * (400.0 - exp(1.0 / (((double)i / 3700.0) + 0.165)));
+			multiplier[i] = ((d <= 256.0) ? 256.0f : (float)d) / 114.0f;
 			//multiplier[i] = 2.0f * expf((float)i / 128.0f);
 		}
 	} else {
 		for (int i = 0; i < 256; i++) {
 			fft[i] = 0;
-			double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
-			multiplier[i] = ((d < 1.5) ? 1.5f : (float)d);
+			//const double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
+			//multiplier[i] = ((d <= 1.5) ? 1.5f : (float)d);
+			const double d = 5.0 * (400.0 - exp(1.0 / (((double)i / 3700.0) + 0.165)));
+			multiplier[i] = ((d <= 256.0) ? 256.0f : (float)d);
 			//multiplier[i] = 256.0f * expf((float)i / 128.0f);
 		}
 	}
@@ -230,9 +233,8 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMilli
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		int amplSq = (re * re) + (im * im);
-		if (amplSq < 3) amplSq = 0;
-		float m = multiplier[i] * (float)(amplSq);
+		const int amplSq = (re * re) + (im * im);
+		float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 		const float old = fft[i];
 		if (m < old)
 			m = (coefNew * m) + (coefOld * old);
@@ -436,9 +438,8 @@ void JNICALL processNeon(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaM
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		int amplSq = (re * re) + (im * im);
-		if (amplSq < 3) amplSq = 0;
-		float m = multiplier[i] * (float)(amplSq);
+		const int amplSq = (re * re) + (im * im);
+		float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 		const float old = fft[i];
 		if (m < old)
 			m = (coefNew * m) + (coefOld * old);
@@ -704,9 +705,8 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		int amplSq = (re * re) + (im * im);
-		if (amplSq < 3) amplSq = 0;
-		const float m = multiplier[i] * (float)(amplSq);
+		const int amplSq = (re * re) + (im * im);
+		const float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 		if (barW == 1) {
 			//v goes from 0 to 256+ (inclusive)
 			const int v = (int)m;

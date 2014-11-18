@@ -290,9 +290,8 @@ int JNICALL glOrBTProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int delta
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
 		const int im = (int)bfft[(i << 1) + 1];
-		int amplSq = (re * re) + (im * im);
-		if (amplSq < 3) amplSq = 0;
-		float m = multiplier[i] * (float)(amplSq);
+		const int amplSq = (re * re) + (im * im);
+		float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 		const float old = fft[i];
 		if (m < old)
 			m = (coefNew * m) + (coefOld * old);
