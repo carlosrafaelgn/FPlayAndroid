@@ -190,7 +190,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return ((state & ~UI.STATE_CURRENT) != 0);
+		return false;//((state & ~UI.STATE_CURRENT) != 0);
 	}
 	
 	@Override

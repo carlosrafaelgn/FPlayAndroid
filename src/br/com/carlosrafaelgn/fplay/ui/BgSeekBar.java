@@ -322,7 +322,7 @@ public final class BgSeekBar extends View {
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return false;//(filledSize >= (vertical ? height : width));
+		return false;
 	}
 	
 	@Override

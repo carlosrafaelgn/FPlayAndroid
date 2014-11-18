@@ -119,7 +119,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 		@Override
 		@ExportedProperty(category = "drawing")
 		public boolean isOpaque() {
-			return true;
+			return false;//true;
 		}
 		
 		@Override
@@ -356,7 +356,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return (state != 0);
+		return false;//(state != 0);
 	}
 	
 	@Override

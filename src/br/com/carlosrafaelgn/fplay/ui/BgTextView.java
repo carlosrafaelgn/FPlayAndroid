@@ -97,7 +97,7 @@ public final class BgTextView extends TextView {
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return (state != 0);
+		return false;//(state != 0);
 	}
 	
 	@Override

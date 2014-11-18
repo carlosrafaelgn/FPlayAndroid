@@ -280,7 +280,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return (state != 0);
+		return false;//(state != 0);
 	}
 	
 	@Override

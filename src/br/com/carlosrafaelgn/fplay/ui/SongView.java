@@ -126,7 +126,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return ((state & ~UI.STATE_CURRENT) != 0);
+		return false;//((state & ~UI.STATE_CURRENT) != 0);
 	}
 	
 	@Override
