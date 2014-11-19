@@ -265,7 +265,8 @@
     <string name="refresh_list">Refresh list</string>
 
     <string name="bt_packages_sent">Packages sent:</string>
-    <string name="bt_sample_count">Samples to send&#8230;</string>
+    <string name="bt_fps">Messages per second&#8230;</string>
+    <string name="bt_sample_count">Samples per message&#8230;</string>
     <string name="bt_connect">Connect to Bluetooth device&#8230;</string>
     <string name="bt_disconnect">Disconnect Bluetooth device</string>
     <string name="bt_start">Start Bluetooth transmission</string>

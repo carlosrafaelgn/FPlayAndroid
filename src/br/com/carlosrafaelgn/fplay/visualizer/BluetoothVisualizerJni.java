@@ -65,7 +65,10 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	private static final int MSG_UPDATE_PACKAGES = 0x0600;
 	private static final int MSG_PLAYER_COMMAND = 0x0601;
 
+	private static final int[] FRAMES_TO_SKIP = { 0, 1, 2, 3, 4, 5, 9, 11, 14, 19, 29, 59 };
+
 	private static final int MNU_SPEED0 = MNU_VISUALIZER + 1, MNU_SPEED1 = MNU_VISUALIZER + 2, MNU_SPEED2 = MNU_VISUALIZER + 3, MNU_SIZE_4 = MNU_VISUALIZER + 4, MNU_SIZE_8 = MNU_VISUALIZER + 5, MNU_SIZE_16 = MNU_VISUALIZER + 6, MNU_SIZE_32 = MNU_VISUALIZER + 7, MNU_SIZE_64 = MNU_VISUALIZER + 8, MNU_SIZE_128 = MNU_VISUALIZER + 9, MNU_SIZE_256 = MNU_VISUALIZER + 10;
+	private static final int MNU_FRAMES_TO_SKIP = MNU_VISUALIZER + 100;
 
 	private static final int SOH = 0x01;
 	private static final int ESC = 0x1B;
@@ -106,10 +109,10 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		bfft = new byte[1024];
 		lock = new SlimLock();
 		state = new AtomicLong();
-		size = SIZE_8;
+		size = SIZE_16;
 		speed = 2;
-		framesToSkip = 2;
-		framesToSkipOriginal = 2;
+		framesToSkip = 3;
+		framesToSkipOriginal = 3;
 		SimpleVisualizerJni.glChangeSpeed(speed);
 		SimpleVisualizerJni.updateMultiplier(false);
 
@@ -174,6 +177,11 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			size = SIZE_4 + (id - MNU_SIZE_4);
 			break;
 		}
+		if (id >= MNU_FRAMES_TO_SKIP && id < (MNU_FRAMES_TO_SKIP + FRAMES_TO_SKIP.length)) {
+			final int f = FRAMES_TO_SKIP[id - MNU_FRAMES_TO_SKIP];
+			framesToSkipOriginal = f;
+			framesToSkip = f;
+		}
 		return true;
 	}
 
@@ -215,7 +223,16 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	public void onCreateContextMenu(ContextMenu menu) {
 		final Context ctx = getContext();
 		UI.separator(menu, 1, 0);
-		final Menu s = menu.addSubMenu(1, 0, 0, R.string.bt_sample_count)
+		Menu s = menu.addSubMenu(1, 0, 1, R.string.bt_fps)
+			.setIcon(new TextIconDrawable(UI.ICON_CLOCK));
+		UI.prepare(s);
+		for (int i = 0; i < FRAMES_TO_SKIP.length; i++) {
+			final int f = FRAMES_TO_SKIP[i];
+			s.add(1, MNU_FRAMES_TO_SKIP + i, i, Integer.toString(60 / (f + 1)))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((framesToSkip == f) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		}
+		s = menu.addSubMenu(1, 0, 2, R.string.bt_sample_count)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
 		UI.prepare(s);
 		s.add(1, MNU_SIZE_4, 0, "4")
@@ -239,7 +256,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		s.add(1, MNU_SIZE_256, 6, "256")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((size == SIZE_256) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		UI.separator(menu, 1, 2);
+		UI.separator(menu, 1, 3);
 		menu.add(2, MNU_SPEED0, 0, ctx.getText(R.string.speed) + ": 0")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
