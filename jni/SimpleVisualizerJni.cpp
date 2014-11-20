@@ -63,7 +63,7 @@ static int barW, barH, barBins, barWidthInPixels, recreateVoice, colorIndex, ler
 static unsigned short bgColor;
 static unsigned short* voice, *alignedVoice;
 #ifdef __ARM_NEON__
-static unsigned int neonMode;
+static unsigned int neonMode, neonDone;
 #endif
 
 void JNICALL setLerpAndColorIndex(JNIEnv* env, jclass clazz, jboolean jlerp, int jcolorIndex) {
@@ -112,6 +112,8 @@ void JNICALL init(JNIEnv* env, jclass clazz, int jbgColor) {
 
 int JNICALL checkNeonMode(JNIEnv* env, jclass clazz) {
 #ifdef __ARM_NEON__
+	if (neonDone == 1)
+		return neonMode;
 	//based on
 	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.c?r=2195
 	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.h?r=2195
@@ -148,6 +150,7 @@ int JNICALL checkNeonMode(JNIEnv* env, jclass clazz) {
 			// __android_log_print(ANDROID_LOG_INFO, "JNI", "Neon mode: %d", neonMode);
 		}
 	}
+	neonDone = 1;
 	return neonMode;
 #else
 	return 0;
@@ -735,6 +738,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	recreateVoice = 0;
 #ifdef __ARM_NEON__
 	neonMode = 0;
+	neonDone = 0;
 #endif
 	JNINativeMethod methodTable[] = {
 		{"setLerpAndColorIndex", "(ZI)V", (void*)setLerpAndColorIndex},

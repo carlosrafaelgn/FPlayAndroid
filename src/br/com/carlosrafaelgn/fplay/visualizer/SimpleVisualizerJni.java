@@ -36,7 +36,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
-import android.os.SystemClock;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.Surface;
