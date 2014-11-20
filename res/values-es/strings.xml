@@ -264,23 +264,23 @@
     <string name="unselected">No seleccionado</string>
     <string name="refresh_list">Actualizar lista</string>
 
-    <string name="bt_packages_sent">Packages sent:</string>
-    <string name="bt_fps">Messages per second&#8230;</string>
-    <string name="bt_sample_count">Samples per message&#8230;</string>
-    <string name="bt_connect">Connect to Bluetooth device&#8230;</string>
-    <string name="bt_disconnect">Disconnect Bluetooth device</string>
-    <string name="bt_start">Start Bluetooth Transmission</string>
-    <string name="bt_stop">Stop Bluetooth Transmission</string>
-    <string name="bt_pairing">Please, try to connect again after pairing the device.</string>
-    <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device :(</string>
-    <string name="bt_needs_to_be_enabled">You need to enable Bluetooth first :(</string>
-    <string name="bt_not_supported">Bluetooth not supported :(</string>
-    <string name="bt_discovery_error">An error occurred while searching the Bluetooth devices :(</string>
-    <string name="bt_devices">Bluetooth Devices</string>
-    <string name="bt_connecting">Connecting to your Bluetooth device. Please wait&#8230;</string>
-    <string name="bt_scanning">Scanning for Bluetooth devices&#8230;</string>
-    <string name="bt_not_paired">No Bluetooth devices were paired!</string>
-    <string name="bt_not_found">No Bluetooth devices were found!</string>
-    <string name="bt_null_device_name">[BT Device]</string>
+    <string name="bt_packages_sent">Mensajes enviados:</string>
+    <string name="bt_fps">Mensajes por segundo&#8230;</string>
+    <string name="bt_sample_count">Muestras por mensaje&#8230;</string>
+    <string name="bt_connect">Conectar a un dispositivo Bluetooth&#8230;</string>
+    <string name="bt_disconnect">Desconectar dispositivo Bluetooth</string>
+    <string name="bt_start">Iniciar la transmisión Bluetooth</string>
+    <string name="bt_stop">Detener la transmisión de Bluetooth</string>
+    <string name="bt_pairing">Por favor, intente conectarse de nuevo después de emparejar el dispositivo.</string>
+    <string name="bt_connection_error">Se ha producido un error al conectar con el dispositivo Bluetooth :(</string>
+    <string name="bt_needs_to_be_enabled">Necesitas habilitar Bluetooth para proceder :(</string>
+    <string name="bt_not_supported">Bluetooth no es compatible :(</string>
+    <string name="bt_discovery_error">Se ha producido un error al buscar los dispositivos Bluetooth :(</string>
+    <string name="bt_devices">Dispositivos Bluetooth</string>
+    <string name="bt_connecting">Conectando con el dispositivo Bluetooth. Por favor, espera&#8230;</string>
+    <string name="bt_scanning">Buscando dispositivos Bluetooth.&#8230;</string>
+    <string name="bt_not_paired">No hay dispositivos Bluetooth emparejados :(</string>
+    <string name="bt_not_found">No se han encontrado dispositivos Bluetooth :(</string>
+    <string name="bt_null_device_name">[Dispositivo BT]</string>
 
 </resources>

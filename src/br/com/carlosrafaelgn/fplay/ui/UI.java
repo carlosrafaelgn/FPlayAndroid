@@ -259,7 +259,10 @@ public final class UI {
 	public static BgColorStateList colorState_highlight_static;
 	public static BgColorStateList colorState_text_highlight_static;
 	public static BgColorStateList colorState_text_highlight_reactive;
-	
+	public static BgColorStateList colorState_text_control_mode_reactive;
+	public static BgColorStateList colorState_text_visualizer_static;
+	public static BgColorStateList colorState_text_visualizer_reactive;
+
 	public static Typeface iconsTypeface, defaultTypeface;
 	
 	public static final class DisplayInfo {
@@ -364,7 +367,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, useControlModeButtonsInsideList, useVisualizerButtonsInsideList, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft, expandSeekBar;
+		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft, expandSeekBar;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, _IconBox, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];
@@ -923,8 +926,9 @@ public final class UI {
 			color_text_title = color_highlight;
 			colorState_text_title_static = colorState_highlight_static;
 			color_menu_border = color_selected_border;
-			useControlModeButtonsInsideList = false;
-			useVisualizerButtonsInsideList = false;
+			colorState_text_control_mode_reactive = colorState_text_reactive;
+			colorState_text_visualizer_static = colorState_text_static;
+			colorState_text_visualizer_reactive = colorState_text_reactive;
 		}
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
@@ -937,10 +941,42 @@ public final class UI {
 			loadLightTheme();
 			return false;
 		}
-		//check which color to use for the buttons in the main screen (when in control mode) and in the visualizer screen
-		useControlModeButtonsInsideList = (ColorUtils.contrastRatio(color_control_mode, color_text_listitem) > ColorUtils.contrastRatio(color_control_mode, color_text));
-		useVisualizerButtonsInsideList = (ColorUtils.contrastRatio(color_visualizer, color_text_listitem) > ColorUtils.contrastRatio(color_visualizer, color_text));
 		finishLoadingTheme(true);
+
+		//check which color to use for the buttons in the main screen (when in control mode) and in the visualizer screen
+		double maxRatio, ratio;
+
+		//control mode
+		maxRatio = ColorUtils.contrastRatio(color_control_mode, color_text);
+		colorState_text_control_mode_reactive = colorState_text_reactive;
+		ratio = ColorUtils.contrastRatio(color_control_mode, color_text_listitem);
+		if (maxRatio < ratio) {
+			maxRatio = ratio;
+			colorState_text_control_mode_reactive = colorState_text_listitem_reactive;
+		}
+		//make the buttons visible, no matter what
+		if (maxRatio < 4.0) {
+			final int color = ((ColorUtils.contrastRatio(color_control_mode, 0xffffffff) > ColorUtils.contrastRatio(color_control_mode, 0xff000000)) ? 0xffffffff : 0xff000000);
+			colorState_text_control_mode_reactive = new BgColorStateList(color, color_text_selected);
+		}
+
+		//visualizer
+		maxRatio = ColorUtils.contrastRatio(color_visualizer, color_text);
+		colorState_text_visualizer_static = colorState_text_static;
+		colorState_text_visualizer_reactive = colorState_text_reactive;
+		ratio = ColorUtils.contrastRatio(color_visualizer, color_text_listitem);
+		if (maxRatio < ratio) {
+			maxRatio = ratio;
+			colorState_text_visualizer_static = colorState_text_listitem_static;
+			colorState_text_visualizer_reactive = colorState_text_listitem_reactive;
+		}
+		//make the buttons visible, no matter what
+		if (maxRatio < 4.0) {
+			final int color = ((ColorUtils.contrastRatio(color_visualizer, 0xffffffff) > ColorUtils.contrastRatio(color_visualizer, 0xff000000)) ? 0xffffffff : 0xff000000);
+			colorState_text_visualizer_static = new BgColorStateList(color, color);
+			colorState_text_visualizer_reactive = new BgColorStateList(color, color_text_selected);
+		}
+
 		//check which color to use for the title in the main screen
 		final double crHighlight = ColorUtils.contrastRatio(color_window, color_highlight);
 		final double crList = ColorUtils.contrastRatio(color_window, color_text_listitem_secondary);

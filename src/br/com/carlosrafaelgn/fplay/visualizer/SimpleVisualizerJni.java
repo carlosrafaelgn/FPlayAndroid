@@ -36,6 +36,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
+import android.os.SystemClock;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.Surface;
@@ -57,11 +58,14 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	static {
 		System.loadLibrary("SimpleVisualizerJni");
 	}
-	
+
+	private static native void ttSS();
+	private static native void ttNE();
+	private static native void tt();
 	private static native void setLerpAndColorIndex(boolean lerp, int colorIndex);
 	static native void updateMultiplier(boolean isVoice);
 	private static native void init(int bgColor);
-	private static native int checkNeonMode();
+	static native int checkNeonMode();
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
 	private static native void process(byte[] bfft, int deltaMillis, Surface surface);
@@ -190,7 +194,13 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
 	}
 
-	//Runs on ANY thread
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean requiresScreen() {
+		return true;
+	}
+
+	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
 	public int getDesiredPointCount() {
 		return 1024;
@@ -250,7 +260,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		terminate();
 	}
 	
-	//Runs on the MAIN thread (return value MUST always be the same)
+	//Runs on the MAIN thread (returned value MUST always be the same)
 	@Override
 	public boolean isFullscreen() {
 		return false;

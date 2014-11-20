@@ -116,16 +116,13 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		SimpleVisualizerJni.glChangeSpeed(speed);
 		SimpleVisualizerJni.updateMultiplier(false);
 
-		final BgColorStateList lblColor = (UI.useVisualizerButtonsInsideList ? UI.colorState_text_listitem_static : UI.colorState_text_static);
-		final BgColorStateList btnColor = (UI.useVisualizerButtonsInsideList ? UI.colorState_text_listitem_reactive : UI.colorState_text_reactive);
-
 		LayoutParams lp;
 		lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 		lp.addRule(CENTER_VERTICAL, TRUE);
 		lblMsg = new TextView(context);
 		lblMsg.setId(1);
 		UI.mediumText(lblMsg);
-		lblMsg.setTextColor(lblColor);
+		lblMsg.setTextColor(UI.colorState_text_visualizer_static);
 		lblMsg.setGravity(Gravity.CENTER_HORIZONTAL);
 		lblMsg.setLayoutParams(lp);
 
@@ -136,7 +133,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		btnConnect = new BgButton(context);
 		btnConnect.setId(2);
 		btnConnect.setText(R.string.bt_connect);
-		btnConnect.setTextColor(btnColor);
+		btnConnect.setTextColor(UI.colorState_text_visualizer_reactive);
 		btnConnect.setLayoutParams(lp);
 		btnConnect.setOnClickListener(this);
 
@@ -147,7 +144,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		btnStart = new BgButton(context);
 		btnStart.setId(3);
 		btnStart.setText(R.string.bt_start);
-		btnStart.setTextColor(btnColor);
+		btnStart.setTextColor(UI.colorState_text_visualizer_reactive);
 		btnStart.setLayoutParams(lp);
 		btnStart.setOnClickListener(this);
 		btnStart.setVisibility(View.INVISIBLE);
@@ -230,7 +227,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			final int f = FRAMES_TO_SKIP[i];
 			s.add(1, MNU_FRAMES_TO_SKIP + i, i, Integer.toString(60 / (f + 1)))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((framesToSkip == f) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((framesToSkipOriginal == f) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		}
 		s = menu.addSubMenu(1, 0, 2, R.string.bt_sample_count)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
@@ -280,7 +277,13 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			generateAndSendState();
 	}
 
-	//Runs on ANY thread
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean requiresScreen() {
+		return false;
+	}
+
+	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
 	public int getDesiredPointCount() {
 		return 1024;
@@ -289,6 +292,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {
+		SimpleVisualizerJni.checkNeonMode();
 	}
 
 	//Runs on ANY thread
@@ -367,7 +371,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		transmitting = false;
 	}
 
-	//Runs on the MAIN thread (return value MUST always be the same)
+	//Runs on the MAIN thread (returned value MUST always be the same)
 	@Override
 	public boolean isFullscreen() {
 		return true;

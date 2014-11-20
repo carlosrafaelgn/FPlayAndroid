@@ -56,6 +56,7 @@ import android.view.View.OnCreateContextMenuListener;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -154,16 +155,19 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private RelativeLayout panelTop;
 	private LinearLayout panelSecondary;
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
+	private TextView lblTitle;
 	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen, playing, isWindowFocused, panelTopWasVisibleOk;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresScreen, playing, isWindowFocused, panelTopWasVisibleOk;
 	private float panelTopAlpha;
 	private int fxVisualizerAudioSessionId, version, panelTopLastTime, panelTopHiding;
 	private Object systemUIObserver;
 	private Timer timer, uiAnimTimer;
-	private BgColorStateList buttonColor;
+	private BgColorStateList buttonColor, lblColor;
 	
 	private void hideAllUIDelayed() {
+		if (!visualizerRequiresScreen)
+			return;
 		version++;
 		MainHandler.removeMessages(this, MSG_HIDE);
 		MainHandler.sendMessageDelayed(this, MSG_HIDE, version, 0, 4000);
@@ -171,6 +175,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void prepareSystemUIObserver() {
+		if (!visualizerRequiresScreen)
+			return;
 		if (systemUIObserver == null)
 			systemUIObserver = new SystemUIObserver(getWindow().getDecorView(), this);
 		((SystemUIObserver)systemUIObserver).prepare();
@@ -178,19 +184,19 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void hideSystemUI() {
-		if (systemUIObserver != null)
+		if (visualizerRequiresScreen && systemUIObserver != null)
 			((SystemUIObserver)systemUIObserver).hide();
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void showSystemUI() {
-		if (systemUIObserver != null)
+		if (visualizerRequiresScreen && systemUIObserver != null)
 			((SystemUIObserver)systemUIObserver).show();
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void cleanupSystemUIObserver() {
-		if (systemUIObserver != null) {
+		if (visualizerRequiresScreen && systemUIObserver != null) {
 			((SystemUIObserver)systemUIObserver).cleanup();
 			systemUIObserver = null;
 		}
@@ -212,7 +218,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		panelTopHiding = 0;
 		panelTopAlpha = 1.0f;
-		
+
+		lblTitle.setPadding(0, UI._4dp, 0, 0);
+
 		//panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(info.isLandscape ? InterceptableLayout.LayoutParams.WRAP_CONTENT : InterceptableLayout.LayoutParams.MATCH_PARENT, info.isLandscape ? InterceptableLayout.LayoutParams.MATCH_PARENT : InterceptableLayout.LayoutParams.WRAP_CONTENT));
 		panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(InterceptableLayout.LayoutParams.MATCH_PARENT, InterceptableLayout.LayoutParams.WRAP_CONTENT));
 		final int margin = (info.isLandscape ? UI.defaultControlSize : 0);
@@ -327,31 +335,63 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(null);
 		
-		buttonColor = new BgColorStateList(UI.color_text, UI.color_text_selected);
-		
+		buttonColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.color_text_selected);
+		lblColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.colorState_text_visualizer_reactive.getDefaultColor());
+
 		isWindowFocused = true;
-		
+
+		info = new UI.DisplayInfo();
+
+		setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		//whenever the activity is being displayed, the volume keys must control
+		//the music volume and nothing else!
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+		Player.addDestroyedObserver(this);
+
+		String name = null;
+		Class<?> clazz = null;
+		final Intent si = getIntent();
+		if (si != null && (name = si.getStringExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME)) != null) {
+			if (!name.startsWith("br.com.carlosrafaelgn.fplay"))
+				name = null;
+		}
+		if (name != null) {
+			try {
+				clazz = Class.forName(name);
+			} catch (Throwable ex) {
+			}
+		}
+		if (clazz != null) {
+			try {
+				info.getInfo(this);
+				visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class).newInstance(getApplication(), this, info.isLandscape);
+			} catch (Throwable ex) {
+				clazz = null;
+			}
+		}
+		visualizerRequiresScreen = (visualizer != null && visualizer.requiresScreen());
+
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		//keep the screen always on while the visualizer is active
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+		if (visualizerRequiresScreen) {
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
 				WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
 				//WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR |
 				WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
 				WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
 				WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
-		//getWindow().requestFeature(Window.FEATURE_NO_TITLE |
-		//		Window.FEATURE_ACTION_MODE_OVERLAY);
-		
-		setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		//whenever the activity is being displayed, the volume keys must control
-		//the music volume and nothing else!
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		
-		Player.addDestroyedObserver(this);
-		
-		info = new UI.DisplayInfo();
-		
+			//getWindow().requestFeature(Window.FEATURE_NO_TITLE |
+			//	Window.FEATURE_ACTION_MODE_OVERLAY);
+		} else {
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+			if (UI.keepScreenOn)
+				getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+			else
+				getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		}
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
 		
@@ -374,31 +414,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		btnNext.setIcon(UI.ICON_NEXT);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
-		
+		lblTitle = (TextView)findViewById(R.id.lblTitle);
+		UI.mediumText(lblTitle);
+		final Song currentSong = Player.getCurrentSong();
+		lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
+
 		//if (UI.extraSpacing)
 		//	panelTop.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
-		
-		String name = null;
-		Class<?> clazz = null;
-		final Intent si = getIntent();
-		if (si != null && (name = si.getStringExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME)) != null) {
-			if (!name.startsWith("br.com.carlosrafaelgn.fplay"))
-				name = null;
-		}
-		if (name != null) {
-			try {
-				clazz = Class.forName(name);
-			} catch (Throwable ex) {
-			}
-		}
-		if (clazz != null) {
-			try {
-				visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class).newInstance(getApplication(), this, info.isLandscape);
-			} catch (Throwable ex) {
-				clazz = null;
-			}
-		}
-		
+
 		if (visualizer != null) {
 			visualizerView = visualizer.getView();
 			visualizerViewFullscreen = visualizerView.isFullscreen();
@@ -410,15 +433,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		
 		prepareViews(true);
-		
-		if (UI.useVisualizerButtonsInsideList)
-			buttonColor.setNormalColor(UI.color_text_listitem);
-		
+
 		btnGoBack.setTextColor(buttonColor);
 		btnPrev.setTextColor(buttonColor);
 		btnPlay.setTextColor(buttonColor);
 		btnNext.setTextColor(buttonColor);
 		btnMenu.setTextColor(buttonColor);
+		lblTitle.setTextColor(lblColor);
 		
 		if (!btnGoBack.isInTouchMode())
 			btnGoBack.requestFocus();
@@ -489,7 +510,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			}
 		}, "Visualizer Thread", false, false, true);
 		timer.start(16);
-		uiAnimTimer = new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false);
+		uiAnimTimer = (visualizerRequiresScreen ? new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false) : null);
 		
 		hideAllUIDelayed();
 	}
@@ -609,6 +630,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			btnPlay.setText(playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
 			btnPlay.setContentDescription(getText(playing ? R.string.pause : R.string.play));
 		}
+		if (songHasChanged && lblTitle != null)
+			lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 		if (visualizer != null)
 			visualizer.onPlayerChanged(currentSong, songHasChanged, ex);
 	}
@@ -778,6 +801,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		if (panelTopAlpha != 0.0f) {
 			buttonColor.setNormalColorAlpha((int)(255.0f * panelTopAlpha));
+			lblColor.setNormalColorAlpha((int)(255.0f * panelTopAlpha));
 			if (btnGoBack != null)
 				btnGoBack.setTextColor(buttonColor);
 			if (btnPrev != null)
@@ -788,6 +812,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				btnNext.setTextColor(buttonColor);
 			if (btnMenu != null)
 				btnMenu.setTextColor(buttonColor);
+			if (lblTitle != null)
+				lblTitle.setTextColor(lblColor);
 		}
 	}
 }

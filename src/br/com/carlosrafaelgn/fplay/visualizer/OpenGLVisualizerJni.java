@@ -429,7 +429,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
 	}
 
-	//Runs on ANY thread
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean requiresScreen() {
+		return true;
+	}
+
+	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
 	public int getDesiredPointCount() {
 		return 1024;
@@ -479,7 +485,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		bfft = null;
 	}
 	
-	//Runs on the MAIN thread (return value MUST always be the same)
+	//Runs on the MAIN thread (returned value MUST always be the same)
 	@Override
 	public boolean isFullscreen() {
 		return true;

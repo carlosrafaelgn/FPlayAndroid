@@ -36,11 +36,11 @@ import android.graphics.Point;
 
 public interface VisualizerView {
 	//Runs on the MAIN thread (AFTER Visualizer.release())
-	public abstract void releaseView();
+	public void releaseView();
 	
-	//Runs on the MAIN thread (return value MUST always be the same)
-	public abstract boolean isFullscreen();
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	public boolean isFullscreen();
 	
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public abstract Point getDesiredSize(int availableWidth, int availableHeight);
+	public Point getDesiredSize(int availableWidth, int availableHeight);
 }

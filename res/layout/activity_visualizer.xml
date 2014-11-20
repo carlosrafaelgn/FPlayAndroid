@@ -78,6 +78,17 @@
             android:nextFocusLeft="@+id/btnNext"
             android:nextFocusRight="@+id/btnGoBack"
             android:nextFocusUp="@+id/btnNext" />
+
+        <TextView
+            android:id="@+id/lblTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/panelSecondary"
+            android:gravity="center_horizontal"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:text="@string/nothing_playing" />
     </RelativeLayout>
 
 </br.com.carlosrafaelgn.fplay.ui.InterceptableLayout>

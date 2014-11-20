@@ -117,7 +117,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			TextView txt = (TextView)convertView;
 			if (txt == null) {
 				txt = new TextView(Player.getService());
-				txt.setPadding(UI._DLGdppad, UI._DLGsppad, UI._DLGdppad, UI._DLGsppad);
+				txt.setPadding(UI._DLGdppad, UI._8sp, UI._DLGdppad, UI._8sp);
 				txt.setTypeface(UI.defaultTypeface);
 				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			}
@@ -329,7 +329,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		barWait.setIndeterminate(true);
 		barWait.setLayoutParams(p);
 
-		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI._DLGsppad;
 		listView = new ListView(activity);
 		listView.setLayoutParams(p);

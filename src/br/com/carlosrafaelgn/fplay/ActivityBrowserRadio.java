@@ -610,7 +610,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		TextView txt = (TextView)convertView;
 		if (txt == null) {
 			txt = new TextView(getApplication());
-			txt.setPadding(UI._DLGdppad, UI._DLGsppad, UI._DLGdppad, UI._DLGsppad);
+			txt.setPadding(UI._DLGdppad, UI._8sp, UI._DLGdppad, UI._8sp);
 			txt.setTypeface(UI.defaultTypeface);
 			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
 			txt.setTextColor(defaultTextColors);

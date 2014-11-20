@@ -57,8 +57,11 @@ public interface Visualizer {
 
 	//Runs on the MAIN thread
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
-	
-	//Runs on ANY thread
+
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	public boolean requiresScreen();
+
+	//Runs on ANY thread (returned value MUST always be the same)
 	public int getDesiredPointCount();
 	
 	//Runs on a SECONDARY thread

@@ -264,23 +264,23 @@
     <string name="unselected">Неотобранный</string>
     <string name="refresh_list">Обновить список</string>
 
-    <string name="bt_packages_sent">Packages sent:</string>
+    <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>
     <string name="bt_sample_count">Samples per message&#8230;</string>
-    <string name="bt_connect">Connect to Bluetooth device&#8230;</string>
+    <string name="bt_connect">Connect to a Bluetooth device&#8230;</string>
     <string name="bt_disconnect">Disconnect Bluetooth device</string>
-    <string name="bt_start">Start Bluetooth Transmission</string>
-    <string name="bt_stop">Stop Bluetooth Transmission</string>
+    <string name="bt_start">Start Bluetooth transmission</string>
+    <string name="bt_stop">Stop Bluetooth transmission</string>
     <string name="bt_pairing">Please, try to connect again after pairing the device.</string>
     <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device :(</string>
-    <string name="bt_needs_to_be_enabled">You need to enable Bluetooth first :(</string>
+    <string name="bt_needs_to_be_enabled">You need to enable Bluetooth to proceed :(</string>
     <string name="bt_not_supported">Bluetooth not supported :(</string>
-    <string name="bt_discovery_error">An error occurred while searching the Bluetooth devices :(</string>
+    <string name="bt_discovery_error">An error occurred while searching for the Bluetooth devices :(</string>
     <string name="bt_devices">Bluetooth Devices</string>
     <string name="bt_connecting">Connecting to your Bluetooth device. Please wait&#8230;</string>
-    <string name="bt_scanning">Scanning for Bluetooth devices&#8230;</string>
-    <string name="bt_not_paired">No Bluetooth devices were paired!</string>
-    <string name="bt_not_found">No Bluetooth devices were found!</string>
+    <string name="bt_scanning">Searching for Bluetooth devices&#8230;</string>
+    <string name="bt_not_paired">No Bluetooth devices were paired :(</string>
+    <string name="bt_not_found">No Bluetooth devices were found :(</string>
     <string name="bt_null_device_name">[BT Device]</string>
 
 </resources>

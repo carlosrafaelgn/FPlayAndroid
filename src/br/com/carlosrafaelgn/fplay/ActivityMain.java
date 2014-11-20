@@ -784,7 +784,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			btnMenu.setLayoutParams(rp);
 			
-			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.useControlModeButtonsInsideList ? UI.color_text_listitem : UI.color_text, panelH >> 1);
+			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.colorState_text_control_mode_reactive.getDefaultColor(), panelH >> 1);
 			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
 			
 			if (UI.isLowDpiScreen && !UI.isLargeScreen) {
@@ -815,15 +815,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnPrev.setPadding(ph, pv, ph, pv);
 				btnNext.setPadding(ph, pv, ph, pv);
 			}
-			if (UI.useControlModeButtonsInsideList) {
-				btnDecreaseVolume.setTextColor(UI.colorState_text_listitem_reactive);
-				btnVolume.setTextColor(UI.colorState_text_listitem_reactive);
-				btnIncreaseVolume.setTextColor(UI.colorState_text_listitem_reactive);
-				btnMenu.setTextColor(UI.colorState_text_listitem_reactive);
-				lblTitle.setTextColor(UI.colorState_text_listitem_reactive);
-				btnPrev.setTextColor(UI.colorState_text_listitem_reactive);
-				btnNext.setTextColor(UI.colorState_text_listitem_reactive);
-			}
+			btnDecreaseVolume.setTextColor(UI.colorState_text_control_mode_reactive);
+			btnVolume.setTextColor(UI.colorState_text_control_mode_reactive);
+			btnIncreaseVolume.setTextColor(UI.colorState_text_control_mode_reactive);
+			btnMenu.setTextColor(UI.colorState_text_control_mode_reactive);
+			lblTitle.setTextColor(UI.colorState_text_control_mode_reactive);
+			btnPrev.setTextColor(UI.colorState_text_control_mode_reactive);
+			btnNext.setTextColor(UI.colorState_text_control_mode_reactive);
 		} else {
 			UI.largeText(lblTitle);
 			btnPrev.setIcon(UI.ICON_PREV);

@@ -264,7 +264,7 @@
     <string name="unselected">Desmarcado</string>
     <string name="refresh_list">Atualizar lista</string>
 
-    <string name="bt_packages_sent">Pacotes enviados:</string>
+    <string name="bt_packages_sent">Mensagens enviadas:</string>
     <string name="bt_fps">Mensagens por segundo&#8230;</string>
     <string name="bt_sample_count">Amostras por mensagem&#8230;</string>
     <string name="bt_connect">Conectar a um dispositivo Bluetooth&#8230;</string>
@@ -278,9 +278,9 @@
     <string name="bt_discovery_error">Ocorreu um erro na procura pelos dispositivos Bluetooth :(</string>
     <string name="bt_devices">Dispositivos Bluetooth</string>
     <string name="bt_connecting">Conectando-se ao seu dispositivo Bluetooth. Por favor, aguarde&#8230;</string>
-    <string name="bt_scanning">Procurando dispositivos Bluetooth&#8230;</string>
-    <string name="bt_not_paired">Nenhum dispositivo Bluetooth pareado!</string>
-    <string name="bt_not_found">Nenhum dispositivo Bluetooth encontrado!</string>
+    <string name="bt_scanning">Procurando por dispositivos Bluetooth&#8230;</string>
+    <string name="bt_not_paired">Nenhum dispositivo Bluetooth pareado :(</string>
+    <string name="bt_not_found">Nenhum dispositivo Bluetooth encontrado :(</string>
     <string name="bt_null_device_name">[Dispositivo BT]</string>
 
 </resources>
