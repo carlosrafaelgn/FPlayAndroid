@@ -58,9 +58,6 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 
-	private static native void ttSS();
-	private static native void ttNE();
-	private static native void tt();
 	private static native void setLerpAndColorIndex(boolean lerp, int colorIndex);
 	static native void updateMultiplier(boolean isVoice);
 	private static native void init(int bgColor);
@@ -204,7 +201,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	public int getDesiredPointCount() {
 		return 1024;
 	}
-	
+
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {

@@ -421,7 +421,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	@Override
 	public void onClick() {
-		drawNow = true;
 	}
 
 	//Runs on the MAIN thread
@@ -444,6 +443,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {
+		SimpleVisualizerJni.checkNeonMode();
 	}
 	
 	//Runs on ANY thread
@@ -463,11 +463,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void configurationChanged(boolean landscape) {
 		
 	}
-	volatile boolean drawNow;
+
 	//Runs on a SECONDARY thread
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
-		if (okToRender) {// && drawNow) {
+		if (okToRender) {
 			//WE MUST NEVER call any method from visualizer
 			//while the player is not actually playing
 			if (!playing)

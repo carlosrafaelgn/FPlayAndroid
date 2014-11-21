@@ -272,8 +272,8 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 }
 
 int JNICALL glOrBTProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, int bt) {
-	float* const fft = floatBuffer;
-	const float* const multiplier = fft + 256;
+	float* fft = floatBuffer;
+	const float* multiplier = fft + 256;
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
@@ -286,6 +286,9 @@ int JNICALL glOrBTProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int delta
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 	bfft[1] = 0;
 	int i;
+#ifdef __ARM_NEON__
+if (!neonMode) {
+#endif
 	for (i = 0; i < 256; i++) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
 		const int re = (int)bfft[i << 1];
@@ -300,6 +303,48 @@ int JNICALL glOrBTProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int delta
 		const unsigned int v = ((unsigned int)m) >> 7;
 		processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
 	}
+#ifdef __ARM_NEON__
+} else {
+	int* const intBuffer = (int*)(floatBuffer + 512);
+	float* const mBuffer = (float*)(floatBuffer + 512);
+	for (i = 0; i < 256; i++) {
+		const int re = (int)bfft[i << 1];
+		const int im = (int)bfft[(i << 1) + 1];
+		const int amplSq = (re * re) + (im * im);
+		intBuffer[i] = ((amplSq < 8) ? 0 : amplSq);
+	}
+	for (i = 0; i < 256; i += 4) {
+		//mBuffer[i] = multiplier[i] * sqrtf((float)intBuffer[i]);
+		float32x4_t d0, d1, d2, d3;
+		d0 = vcvtq_f32_s32(vld1q_s32(intBuffer + i));
+		d1 = d0;
+		d0 = vrsqrteq_f32(d0);
+		d2 = vmulq_f32(d0, d1);
+		d3 = vrsqrtsq_f32(d2, d0);
+		d0 = vmulq_f32(d0, d3);
+		d2 = vmulq_f32(d0, d1);
+		d3 = vrsqrtsq_f32(d2, d0);
+		d0 = vmulq_f32(d0, d3);
+		d1 = vrecpeq_f32(d0);
+		d2 = vrecpsq_f32(d1, d0);
+		d1 = vmulq_f32(d1, d2);
+		d2 = vrecpsq_f32(d1, d0);
+		d0 = vmulq_f32(d1, d2);
+		d0 = vmulq_f32(d0, vld1q_f32(multiplier + i));
+		vst1q_f32(mBuffer + i, d0);
+	}
+	for (i = 0; i < 256; i++) {
+		float m = mBuffer[i];
+		const float old = fft[i];
+		if (m < old)
+			m = (coefNew * m) + (coefOld * old);
+		fft[i] = m;
+		//v goes from 0 to 32768+ (inclusive)
+		const unsigned int v = ((unsigned int)m) >> 7;
+		processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
+	}
+}
+#endif
 	if (!bt) {
 		env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 		return 0;
