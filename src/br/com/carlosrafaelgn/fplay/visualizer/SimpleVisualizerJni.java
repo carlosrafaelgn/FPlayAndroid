@@ -58,21 +58,23 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 
-	private static native void setLerpAndColorIndex(boolean lerp, int colorIndex);
-	static native void updateMultiplier(boolean isVoice);
+	static native void commonSetSpeed(int speed);
+	static native void commonSetColorIndex(int colorIndex);
+	static native int commonCheckNeonMode();
+	static native void commonUpdateMultiplier(boolean isVoice);
+	static native int commonProcess(byte[] bfft, int deltaMillis, int bt);
+
+	private static native void setLerp(boolean lerp);
 	private static native void init(int bgColor);
-	static native int checkNeonMode();
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
 	private static native void process(byte[] bfft, int deltaMillis, Surface surface);
 	private static native void processVoice(byte[] bfft, Surface surface);
+
 	static native int glOnSurfaceCreated(int bgColor);
 	static native void glOnSurfaceChanged(int width, int height);
-	static native int glOrBTProcess(byte[] bfft, int deltaMillis, int bt);
 	static native void glDrawFrame();
-	static native void glChangeColorIndex(int colorIndex);
-	static native void glChangeSpeed(int speed);
-	
+
 	private byte[] bfft;
 	private final SlimLock lock;
 	private Point point;
@@ -95,7 +97,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		colorIndex = 0;
 		lerp = false;
 		voice = false;
-		setLerpAndColorIndex(lerp, colorIndex);
+		setLerp(lerp);
+		commonSetColorIndex(colorIndex);
 	}
 	
 	@Override
@@ -127,8 +130,9 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			break;
 		}
 		if (item.getItemId() != MNU_COLOR)
-			updateMultiplier(voice);
-		setLerpAndColorIndex(lerp, colorIndex);
+			commonUpdateMultiplier(voice);
+		setLerp(lerp);
+		commonSetColorIndex(colorIndex);
 		return true;
 	}
 	
@@ -181,8 +185,9 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			state = 0;
 			break;
 		}
-		updateMultiplier(voice);
-		setLerpAndColorIndex(lerp, colorIndex);
+		commonUpdateMultiplier(voice);
+		setLerp(lerp);
+		commonSetColorIndex(colorIndex);
 	}
 
 	//Runs on the MAIN thread
@@ -205,7 +210,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {
-		checkNeonMode();
+		commonCheckNeonMode();
 	}
 	
 	//Runs on ANY thread

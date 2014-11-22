@@ -80,8 +80,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setFocusable(false);
 		colorIndex = 0;
 		speed = 2;
-		SimpleVisualizerJni.glChangeColorIndex(colorIndex);
-		SimpleVisualizerJni.glChangeSpeed(speed);
+		SimpleVisualizerJni.commonSetColorIndex(colorIndex);
+		SimpleVisualizerJni.commonSetSpeed(speed);
 
 		if (GLVersion != -1) {
 			supported = (GLVersion >= 0x00020000);
@@ -294,8 +294,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		SimpleVisualizerJni.glChangeColorIndex(colorIndex);
-		SimpleVisualizerJni.glChangeSpeed(speed);
+		SimpleVisualizerJni.commonSetColorIndex(colorIndex);
+		SimpleVisualizerJni.commonSetSpeed(speed);
 		if (GLVersion == -1) {
 			supported = true;
 			Process ifc = null;
@@ -376,13 +376,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		switch (id) {
 		case MNU_COLOR:
 			colorIndex = ((colorIndex == 0) ? 257 : 0);
-			SimpleVisualizerJni.glChangeColorIndex(colorIndex);
+			SimpleVisualizerJni.commonSetColorIndex(colorIndex);
 			break;
 		case MNU_SPEED0:
 		case MNU_SPEED1:
 		case MNU_SPEED2:
 			speed = id - MNU_SPEED0;
-			SimpleVisualizerJni.glChangeSpeed(speed);
+			SimpleVisualizerJni.commonSetSpeed(speed);
 			break;
 		}
 		return true;
@@ -443,7 +443,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {
-		SimpleVisualizerJni.checkNeonMode();
+		SimpleVisualizerJni.commonCheckNeonMode();
 	}
 	
 	//Runs on ANY thread
@@ -474,7 +474,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				Arrays.fill(bfft, 0, 1024, (byte)0);
 			else
 				visualizer.getFft(bfft);
-			SimpleVisualizerJni.glOrBTProcess(bfft, deltaMillis, 0);
+			SimpleVisualizerJni.commonProcess(bfft, deltaMillis, 0);
 			requestRender();
 		}
 	}

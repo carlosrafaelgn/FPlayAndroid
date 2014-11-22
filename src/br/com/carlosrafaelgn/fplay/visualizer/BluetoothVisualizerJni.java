@@ -112,8 +112,8 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		speed = 2;
 		framesToSkip = 3;
 		framesToSkipOriginal = 3;
-		SimpleVisualizerJni.glChangeSpeed(speed);
-		SimpleVisualizerJni.updateMultiplier(false);
+		SimpleVisualizerJni.commonSetSpeed(speed);
+		SimpleVisualizerJni.commonUpdateMultiplier(false);
 
 		LayoutParams lp;
 		lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
@@ -161,7 +161,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		case MNU_SPEED1:
 		case MNU_SPEED2:
 			speed = id - MNU_SPEED0;
-			SimpleVisualizerJni.glChangeSpeed(speed);
+			SimpleVisualizerJni.commonSetSpeed(speed);
 			break;
 		case MNU_SIZE_4:
 		case MNU_SIZE_8:
@@ -291,7 +291,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {
-		SimpleVisualizerJni.checkNeonMode();
+		SimpleVisualizerJni.commonCheckNeonMode();
 	}
 
 	//Runs on ANY thread
@@ -325,7 +325,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 						Arrays.fill(bfft, 0, 1024, (byte)0);
 					else
 						visualizer.getFft(bfft);
-					bt.getOutputStream().write(bfft, 0, SimpleVisualizerJni.glOrBTProcess(bfft, deltaMillis, size));
+					bt.getOutputStream().write(bfft, 0, SimpleVisualizerJni.commonProcess(bfft, deltaMillis, size));
 					packagesSent++;
 				} else {
 					framesToSkip--;
