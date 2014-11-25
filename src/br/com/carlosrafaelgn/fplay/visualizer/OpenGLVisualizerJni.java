@@ -311,13 +311,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			} catch (Throwable ex) {
 			} finally {
 				try {
-					if (ifc != null)
-						ifc.destroy();
+					if (bis != null)
+						bis.close();
 				} catch (Throwable ex) {
 				}
 				try {
-					if (bis != null)
-						bis.close();
+					if (ifc != null)
+						ifc.destroy();
 				} catch (Throwable ex) {
 				}
 			}

@@ -233,8 +233,6 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor) {
 	glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 	glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
 	
-	for (int i = 0; i < 256; i++)
-		floatBuffer[i] = 0;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 4; //to make (commonColorIndexApplied != commonColorIndex) become true inside glDrawFrame
 	commonUpdateMultiplier(env, clazz, 0);
@@ -250,6 +248,8 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	if (commonColorIndexApplied != commonColorIndex) {
 		commonColorIndexApplied = commonColorIndex;
 		glActiveTexture(GL_TEXTURE1);
+		/*
+		//**** There is no need, at all, to convert COLORS from RGB 565 to RGBA 32bpp !!!
 		for (int i = 0, idx = commonColorIndex; i < 256; i++, idx++) {
 			const unsigned int c = (unsigned int)COLORS[idx];
 			unsigned int r = (c >> 11) & 0x1f;
@@ -262,6 +262,8 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 		}
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
 		commonUpdateMultiplier(env, clazz, 0);
+		*/
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)(COLORS + commonColorIndex));
 		glActiveTexture(GL_TEXTURE0);
 	}
 	//glUseProgram(glProgram);
