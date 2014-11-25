@@ -274,7 +274,9 @@ if (!neonMode) {
 			"vdupq.32 q5, r6\n" //q5 = coefOld
 
 			"vld1.32 {d12, d13}, [%[fft]]\n" //q6 = fft (old)
-			"vld1.32 {d14, d15}, [%[fft],16]\n" //q7 = fft (old)
+			"adds %[fft], #16\n"
+			"vld1.32 {d14, d15}, [%[fft]]\n" //q7 = fft (old)
+			"subs %[fft], #16\n"
 
 			"vcgeq.f32 q2, q0, q6\n" //q2 = (m >= old) (q0 >= q6)
 			"vcgeq.f32 q3, q1, q7\n" //q3 = (m >= old) (q1 >= q7)
