@@ -31,11 +31,9 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 #include <jni.h>
-#include <stdio.h>
 #ifdef __ARM_NEON__
 #include <errno.h>
 #include <fcntl.h>
-#include <machine/cpu-features.h>
 #include <arm_neon.h>
 #endif
 #include <android/native_window_jni.h>
