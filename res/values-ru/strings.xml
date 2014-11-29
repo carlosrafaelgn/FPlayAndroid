@@ -263,6 +263,7 @@
     <string name="selected">Выбранный</string>
     <string name="unselected">Неотобранный</string>
     <string name="refresh_list">Обновить список</string>
+    <string name="fullscreen">Полноэкранный</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>

@@ -76,7 +76,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -695,6 +695,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optForceOrientation.setOnClickListener(this);
 			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(ctx, UI.getTransition()), false, false, false);
 			optTransition.setOnClickListener(this);
+			optNotFullscreen = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.fullscreen).toString(), null, true, !UI.notFullscreen, false);
+			optNotFullscreen.setOnClickListener(this);
 			optFadeInFocus = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false, false);
 			optFadeInFocus.setOnClickListener(this);
 			optFadeInPause = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_pause).toString(), getFadeInString(Player.fadeInIncrementOnPause), false, false, false);
@@ -715,6 +717,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optExtraInfoMode);
 			panelSettings.addView(optForceOrientation);
 			panelSettings.addView(optTransition);
+			panelSettings.addView(optNotFullscreen);
 			panelSettings.addView(optIsDividerVisible);
 			panelSettings.addView(optIsVerticalMarginLarge);
 			panelSettings.addView(optExtraSpacing);
@@ -832,6 +835,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optExtraInfoMode = null;
 		optForceOrientation = null;
 		optTransition = null;
+		optNotFullscreen = null;
 		optFadeInFocus = null;
 		optFadeInPause = null;
 		optFadeInOther = null;
@@ -906,6 +910,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 			else
 				clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		} else if (view == optNotFullscreen) {
+			UI.notFullscreen = !optNotFullscreen.isChecked();
+			if (UI.notFullscreen)
+				clearWindowFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+			else
+				addWindowFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		} else if (view == optIsDividerVisible) {
 			UI.isDividerVisible = optIsDividerVisible.isChecked();
 			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {

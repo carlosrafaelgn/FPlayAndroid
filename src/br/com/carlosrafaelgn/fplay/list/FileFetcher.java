@@ -103,6 +103,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	static {
 		supportedTypes = new HashSet<String>(15);
 		supportedTypes.add(".3gp");
+		supportedTypes.add(".3ga");
 		supportedTypes.add(".mp4");
 		supportedTypes.add(".m4a");
 		supportedTypes.add(".aac");

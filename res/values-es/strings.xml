@@ -263,6 +263,7 @@
     <string name="selected">Seleccionado</string>
     <string name="unselected">No seleccionado</string>
     <string name="refresh_list">Actualizar lista</string>
+    <string name="fullscreen">Pantalla completa</string>
 
     <string name="bt_packages_sent">Mensajes enviados:</string>
     <string name="bt_fps">Mensajes por segundo&#8230;</string>
