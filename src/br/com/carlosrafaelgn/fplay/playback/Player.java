@@ -327,7 +327,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static MediaSession mediaSession;
 	private static MediaMetadata.Builder mediaSessionMetadataBuilder;
 	private static PlaybackState.Builder mediaSessionPlaybackStateBuilder;
-	private static MediaSession.Callback mediaSessionCallback;
 	private static Object mediaRouterCallback;
 	private static Runnable effectsObserver;
 	//private static BluetoothAdapter bluetoothAdapter;
@@ -663,7 +662,29 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			mr.removeCallback((MediaRouter.Callback)mediaRouterCallback);
 		mediaRouterCallback = null;
 	}
-	
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+	private static void registerRemoteControlClientCallbacks() {
+		remoteControlClient.setOnGetPlaybackPositionListener(new RemoteControlClient.OnGetPlaybackPositionListener() {
+			@Override
+			public long onGetPlaybackPosition() {
+				return getCurrentPosition();
+			}
+		});
+		remoteControlClient.setPlaybackPositionUpdateListener(new RemoteControlClient.OnPlaybackPositionUpdateListener() {
+			@Override
+			public void onPlaybackPositionUpdate(long pos) {
+				Player.seekTo((int)pos, (currentPlayer != null) && currentSongLoaded && playing);
+			}
+		});
+	}
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+	private static void unregisterRemoteControlClientCallbacks() {
+		remoteControlClient.setOnGetPlaybackPositionListener(null);
+		remoteControlClient.setPlaybackPositionUpdateListener(null);
+	}
+
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static void registerRemoteControlClient() {
 		try {
@@ -673,6 +694,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				final PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(thePlayer, 0, mediaButtonIntent, 0);
 				remoteControlClient = new RemoteControlClient(mediaPendingIntent);
 				remoteControlClient.setTransportControlFlags(RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS | RemoteControlClient.FLAG_KEY_MEDIA_NEXT | RemoteControlClient.FLAG_KEY_MEDIA_PLAY | RemoteControlClient.FLAG_KEY_MEDIA_PAUSE | RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE | RemoteControlClient.FLAG_KEY_MEDIA_STOP);
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
+					registerRemoteControlClientCallbacks();
 			}
 			audioManager.registerRemoteControlClient(remoteControlClient);
 		} catch (Throwable ex) {
@@ -682,7 +705,12 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static void unregisterRemoteControlClient() {
 		try {
-			audioManager.unregisterRemoteControlClient(remoteControlClient);
+			if (remoteControlClient != null) {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
+					unregisterRemoteControlClientCallbacks();
+				audioManager.unregisterRemoteControlClient(remoteControlClient);
+				remoteControlClient = null;
+			}
 		} catch (Throwable ex) {
 		}
 	}
@@ -694,7 +722,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				mediaSessionMetadataBuilder = new MediaMetadata.Builder();
 				mediaSessionPlaybackStateBuilder = new PlaybackState.Builder();
 				mediaSessionPlaybackStateBuilder.setActions(PlaybackState.ACTION_SKIP_TO_PREVIOUS | PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_PLAY_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_STOP | PlaybackState.ACTION_SEEK_TO);
-				mediaSessionCallback = new MediaSession.Callback() {
+				mediaSession = new MediaSession(thePlayer, "FPlay");
+				mediaSession.setCallback(new MediaSession.Callback() {
 					@Override
 					public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
 						if (mediaButtonIntent != null) {
@@ -735,10 +764,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 
 					@Override
 					public void onSeekTo(long pos) {
+						Player.seekTo((int)pos, (currentPlayer != null) && currentSongLoaded && playing);
 					}
-				};
-				mediaSession = new MediaSession(thePlayer, "FPlay");
-				mediaSession.setCallback(mediaSessionCallback);
+				});
 				mediaSession.setSessionActivity(getPendingIntent(thePlayer));
 				mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
@@ -758,7 +786,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				mediaSession = null;
 			}
 			mediaSessionPlaybackStateBuilder = null;
-			mediaSessionCallback = null;
 		} catch (Throwable ex) {
 		}
 	}
@@ -1037,7 +1064,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			i.putExtra("artist", currentSong.artist);
 			i.putExtra("album", currentSong.album);
 			i.putExtra("duration", (long)currentSong.lengthMS);
-			i.putExtra("position", (long)10000);
+			//i.putExtra("position", (long)0);
 			i.putExtra("playing", playing);
 			//thePlayer.sendBroadcast(i);
 			thePlayer.sendStickyBroadcast(i);
