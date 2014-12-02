@@ -407,7 +407,8 @@ public final class UI {
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
 		//hide the edge!!! ;)
-		//edgeFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.CLEAR);
+		//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+		//  edgeFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.CLEAR);
 	}
 	
 	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
@@ -724,7 +725,7 @@ public final class UI {
 			initialize(context);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
-		textPaint.setColor(0xffffffff);
+		textPaint.setColor((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? 0xff999999 : 0xffffffff);
 		textPaint.setTextSize(defaultControlContentsSize);
 		icPrevNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
 		c.setBitmap(icPrevNotif);
@@ -942,7 +943,8 @@ public final class UI {
 		}
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
-		glowFilter = new PorterDuffColorFilter((ColorUtils.contrastRatio(color_glow_dk, color_list) >= ColorUtils.contrastRatio(color_glow_lt, color_list)) ? color_glow_dk : color_glow_lt, PorterDuff.Mode.SRC_IN);
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+			glowFilter = new PorterDuffColorFilter((ColorUtils.contrastRatio(color_glow_dk, color_list) >= ColorUtils.contrastRatio(color_glow_lt, color_list)) ? color_glow_dk : color_glow_lt, PorterDuff.Mode.SRC_IN);
 	}
 	
 	public static boolean loadCustomTheme() {
@@ -1576,6 +1578,8 @@ public final class UI {
 	}
 	
 	public static void prepareEdgeEffectColor(Context context) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			return;
 		//
 		//:D amazing hack/workaround, as explained here:
 		//
