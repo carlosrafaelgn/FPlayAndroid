@@ -328,6 +328,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static MediaMetadata.Builder mediaSessionMetadataBuilder;
 	private static PlaybackState.Builder mediaSessionPlaybackStateBuilder;
 	private static Object mediaRouterCallback;
+	private static Intent stickyBroadcast;
 	private static Runnable effectsObserver;
 	//private static BluetoothAdapter bluetoothAdapter;
 	//private static BluetoothA2dp bluetoothA2dpProxy;
@@ -770,8 +771,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				mediaSession.setSessionActivity(getPendingIntent(thePlayer));
 				mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
-				mediaSession.setActive(true);
 			}
+			mediaSession.setActive(true);
 		} catch (Throwable ex) {
 		}
 	}
@@ -813,6 +814,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					unregisterRemoteControlClient();
 				audioManager.unregisterMediaButtonEventReceiver(mediaButtonEventReceiver);
 			}
+			mediaButtonEventReceiver = null;
 		}
 	}
 	
@@ -828,6 +830,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				telephonyManager = (TelephonyManager)context.getSystemService(TELEPHONY_SERVICE);
 			if (destroyedObservers == null)
 				destroyedObservers = new ArrayList<Player.PlayerDestroyedObserver>(4);
+			if (stickyBroadcast == null)
+				stickyBroadcast = new Intent();
 			loadConfig(context);
 		}
 		if (thePlayer != null) {
@@ -1053,21 +1057,30 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		//https://android.googlesource.com/platform/packages/apps/Bluetooth/+/android-4.3_r0.9.1/src/com/android/bluetooth/a2dp/Avrcp.java
 		//
 		if (currentSong == null) {
-			thePlayer.sendStickyBroadcast(new Intent("com.android.music.playbackcomplete"));
+			stickyBroadcast.setAction("com.android.music.playbackcomplete");
+			stickyBroadcast.removeExtra("id");
+			stickyBroadcast.removeExtra("songid");
+			stickyBroadcast.removeExtra("track");
+			stickyBroadcast.removeExtra("artist");
+			stickyBroadcast.removeExtra("album");
+			stickyBroadcast.removeExtra("duration");
+			stickyBroadcast.removeExtra("position");
+			stickyBroadcast.removeExtra("playing");
+			thePlayer.sendStickyBroadcast(new Intent());
 		} else {
 			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
-			final Intent i = new Intent(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
-			//final Intent i = new Intent("com.android.music.playstatechanged");
-			i.putExtra("id", currentSong.id);
-			i.putExtra("songid", currentSong.id);
-			i.putExtra("track", preparing ? thePlayer.getText(R.string.loading) : currentSong.title);
-			i.putExtra("artist", currentSong.artist);
-			i.putExtra("album", currentSong.album);
-			i.putExtra("duration", (long)currentSong.lengthMS);
-			//i.putExtra("position", (long)0);
-			i.putExtra("playing", playing);
-			//thePlayer.sendBroadcast(i);
-			thePlayer.sendStickyBroadcast(i);
+			stickyBroadcast.setAction(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
+			//stickyBroadcast.setAction("com.android.music.playstatechanged");
+			stickyBroadcast.putExtra("id", currentSong.id);
+			stickyBroadcast.putExtra("songid", currentSong.id);
+			stickyBroadcast.putExtra("track", preparing ? thePlayer.getText(R.string.loading) : currentSong.title);
+			stickyBroadcast.putExtra("artist", currentSong.artist);
+			stickyBroadcast.putExtra("album", currentSong.album);
+			stickyBroadcast.putExtra("duration", (long)currentSong.lengthMS);
+			stickyBroadcast.putExtra("position", (long)0);
+			stickyBroadcast.putExtra("playing", playing);
+			//thePlayer.sendBroadcast(stickyBroadcast);
+			thePlayer.sendStickyBroadcast(stickyBroadcast);
 		}
 		if (remoteControlClient != null)
 			broadcastStateChangeToRemoteControl(preparing, titleOrSongHaveChanged);
@@ -2755,10 +2768,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					idleTurnOffTimer = null;
 				}
 				if (thePlayer != null) {
-					if (externalReceiver != null) {
+					if (externalReceiver != null)
 						thePlayer.getApplicationContext().unregisterReceiver(externalReceiver);
-						externalReceiver = null;
-					}
 					saveConfig(thePlayer, true);
 				}
 				observer = null;
@@ -2767,9 +2778,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				audioManager = null;
 				telephonyManager = null;
 				externalReceiver = null;
-				mediaButtonEventReceiver = null;
-				remoteControlClient = null;
 				effectsObserver = null;
+				stickyBroadcast = null;
 				if (favoriteFolders != null) {
 					favoriteFolders.clear();
 					favoriteFolders = null;
