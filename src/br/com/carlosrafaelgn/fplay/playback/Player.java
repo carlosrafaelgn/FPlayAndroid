@@ -1066,7 +1066,6 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			stickyBroadcast.removeExtra("duration");
 			stickyBroadcast.removeExtra("position");
 			stickyBroadcast.removeExtra("playing");
-			thePlayer.sendStickyBroadcast(new Intent());
 		} else {
 			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
 			stickyBroadcast.setAction(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
@@ -1079,9 +1078,9 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			stickyBroadcast.putExtra("duration", (long)currentSong.lengthMS);
 			stickyBroadcast.putExtra("position", (long)0);
 			stickyBroadcast.putExtra("playing", playing);
-			//thePlayer.sendBroadcast(stickyBroadcast);
-			thePlayer.sendStickyBroadcast(stickyBroadcast);
 		}
+		//thePlayer.sendBroadcast(stickyBroadcast);
+		thePlayer.sendStickyBroadcast(stickyBroadcast);
 		if (remoteControlClient != null)
 			broadcastStateChangeToRemoteControl(preparing, titleOrSongHaveChanged);
 		if (mediaSession != null)
