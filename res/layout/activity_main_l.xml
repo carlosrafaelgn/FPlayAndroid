@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:baselineAligned="false"
     android:orientation="vertical"
+    android:splitMotionEvents="false"
     tools:context=".ActivityHost" >
 
     <TextView
@@ -37,6 +38,7 @@
         android:visibility="gone" />
 
     <LinearLayout
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:baselineAligned="false"
@@ -44,6 +46,7 @@
 
         <RelativeLayout
             android:id="@+id/panelControls"
+            android:splitMotionEvents="false"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:paddingRight="8dp" >
@@ -119,6 +122,7 @@
 
         <LinearLayout
             android:id="@+id/panelSecondary"
+            android:splitMotionEvents="false"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:baselineAligned="false"
@@ -165,6 +169,7 @@
 
         <RelativeLayout
             android:id="@+id/panelSelection"
+            android:splitMotionEvents="false"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:visibility="gone" >

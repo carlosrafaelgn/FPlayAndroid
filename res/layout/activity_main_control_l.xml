@@ -6,10 +6,12 @@
     android:layout_height="match_parent"
     android:baselineAligned="false"
     android:orientation="vertical"
+    android:splitMotionEvents="false"
     tools:context=".ActivityHost" >
 
     <RelativeLayout
         android:id="@+id/panelTop"
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="10dp" >
 
@@ -61,6 +63,7 @@
     </RelativeLayout>
 
     <LinearLayout
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="16dp"

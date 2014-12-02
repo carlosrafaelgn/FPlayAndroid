@@ -5,10 +5,12 @@
     android:layout_height="match_parent"
     android:baselineAligned="false"
     android:orientation="vertical"
+    android:splitMotionEvents="false"
     tools:context=".ActivityHost" >
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="2"
@@ -19,6 +21,7 @@
 
     <LinearLayout
         android:id="@+id/panelInfo"
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:baselineAligned="false"
@@ -26,6 +29,7 @@
         android:padding="16dp" >
 
         <LinearLayout
+            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:baselineAligned="false"
@@ -33,6 +37,7 @@
             android:weightSum="5" >
 
             <LinearLayout
+                android:splitMotionEvents="false"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"
@@ -78,6 +83,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:splitMotionEvents="false"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
@@ -85,6 +91,7 @@
                 android:orientation="vertical" >
 
                 <RelativeLayout
+                    android:splitMotionEvents="false"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="32dp" >
@@ -152,6 +159,7 @@
 
         <LinearLayout
             android:id="@+id/panelSecondary"
+            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="32dp"
@@ -197,6 +205,7 @@
 
         <RelativeLayout
             android:id="@+id/panelControls"
+            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" >
 
@@ -279,6 +288,7 @@
 
         <LinearLayout
             android:id="@+id/panelSelection"
+            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:baselineAligned="false"

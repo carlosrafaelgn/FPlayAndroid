@@ -43,6 +43,7 @@ import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.TypedValue;
 import android.view.ActionProvider;
 import android.view.ContextMenu;
@@ -413,6 +414,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			ArraySorter.sort(items, 0, items.length, this);
 			
 			final LinearLayout list = new LinearLayout(context);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				UI.removeSplitTouch(list);
 			list.setLayoutParams(new ViewGroup.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 			list.setOrientation(LinearLayout.VERTICAL);
 			list.setBackgroundColor(0);

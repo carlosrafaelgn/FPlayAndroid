@@ -61,6 +61,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
+import android.view.ViewParent;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -1500,6 +1501,8 @@ public final class UI {
 	public static View createDialogView(Context context, CharSequence messageOnly) {
 		if (messageOnly == null) {
 			final LinearLayout l = new LinearLayout(context);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				UI.removeSplitTouch(l);
 			l.setOrientation(LinearLayout.VERTICAL);
 			l.setPadding(_DLGdppad, _DLGdppad, _DLGdppad, _DLGdppad);
 			l.setBaselineAligned(false);
@@ -1524,7 +1527,7 @@ public final class UI {
 	}
 	
 	public static AlertDialog prepareDialogAndShow(final AlertDialog dialog) {
-		if (alternateTypefaceActive) {
+		if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			//https://code.google.com/p/android/issues/detail?id=6360
 			dialog.setOnShowListener(new DialogInterface.OnShowListener() {
 				private void scanChildren(ViewGroup parent) {
@@ -1539,18 +1542,31 @@ public final class UI {
 				
 				@Override
 				public void onShow(DialogInterface dlg) {
-					View v = dialog.findViewById(android.R.id.content);
-					if (v != null && (v instanceof ViewGroup)) {
-						scanChildren((ViewGroup)v);
-					} else {
-						//at least try to change the buttons...
-						Button btn;
+					Button btn;
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+						ViewParent parent = null;
 						if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
-							btn.setTypeface(defaultTypeface);
-						if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
-							btn.setTypeface(defaultTypeface);
-						if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
-							btn.setTypeface(defaultTypeface);
+							parent = btn.getParent();
+						else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
+							parent = btn.getParent();
+						else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
+							parent = btn.getParent();
+						if (parent != null && (parent instanceof ViewGroup))
+							removeSplitTouch((ViewGroup)parent);
+					}
+					if (alternateTypefaceActive) {
+						final View v = dialog.findViewById(android.R.id.content);
+						if (v != null && (v instanceof ViewGroup)) {
+							scanChildren((ViewGroup)v);
+						} else {
+							//at least try to change the buttons...
+							if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
+								btn.setTypeface(defaultTypeface);
+							if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
+								btn.setTypeface(defaultTypeface);
+							if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
+								btn.setTypeface(defaultTypeface);
+						}
 					}
 				}
 			});
@@ -1610,5 +1626,10 @@ public final class UI {
 			view.setPadding(_8dp, _8dp + t, 0, _8dp + b);
 		else
 			view.setPadding(0, t, 0, b);
+	}
+
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	public static void removeSplitTouch(ViewGroup viewGroup) {
+		viewGroup.setMotionEventSplittingEnabled(false);
 	}
 }

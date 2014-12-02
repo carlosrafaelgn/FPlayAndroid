@@ -3,10 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:splitMotionEvents="false"
     tools:context=".ActivityHost" >
 
     <RelativeLayout
         android:id="@+id/panelControls"
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
@@ -120,6 +122,7 @@
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/panelSecondary"
@@ -159,6 +162,7 @@
 
     <RelativeLayout
         android:id="@+id/panelSecondary"
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true" >

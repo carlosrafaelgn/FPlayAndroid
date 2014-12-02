@@ -6,10 +6,12 @@
     android:baselineAligned="false"
     android:orientation="horizontal"
     android:weightSum="2"
+    android:splitMotionEvents="false"
     tools:context=".ActivityHost" >
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
+        android:splitMotionEvents="false"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
@@ -20,18 +22,21 @@
 
     <RelativeLayout
         android:id="@+id/panelInfo"
+        android:splitMotionEvents="false"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:padding="16dp" >
 
         <RelativeLayout
+            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_above="@+id/panelBottom"
             android:layout_alignParentTop="true" >
 
             <LinearLayout
+                android:splitMotionEvents="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
@@ -75,6 +80,7 @@
                     android:text="@string/no_info" />
 
                 <RelativeLayout
+                    android:splitMotionEvents="false"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="32dp" >
@@ -141,6 +147,7 @@
 
         <LinearLayout
             android:id="@+id/panelBottom"
+            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
@@ -149,6 +156,7 @@
 
             <LinearLayout
                 android:id="@+id/panelSecondary"
+                android:splitMotionEvents="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
@@ -194,6 +202,7 @@
 
             <RelativeLayout
                 android:id="@+id/panelControls"
+                android:splitMotionEvents="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" >
 
@@ -276,6 +285,7 @@
 
             <LinearLayout
                 android:id="@+id/panelSelection"
+                android:splitMotionEvents="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:baselineAligned="false"
