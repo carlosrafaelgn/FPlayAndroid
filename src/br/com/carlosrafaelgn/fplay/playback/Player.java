@@ -1064,7 +1064,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			stickyBroadcast.removeExtra("artist");
 			stickyBroadcast.removeExtra("album");
 			stickyBroadcast.removeExtra("duration");
-			stickyBroadcast.removeExtra("position");
+			//stickyBroadcast.removeExtra("position");
 			stickyBroadcast.removeExtra("playing");
 		} else {
 			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
@@ -1076,7 +1076,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			stickyBroadcast.putExtra("artist", currentSong.artist);
 			stickyBroadcast.putExtra("album", currentSong.album);
 			stickyBroadcast.putExtra("duration", (long)currentSong.lengthMS);
-			stickyBroadcast.putExtra("position", (long)0);
+			//stickyBroadcast.putExtra("position", (long)0);
 			stickyBroadcast.putExtra("playing", playing);
 		}
 		//thePlayer.sendBroadcast(stickyBroadcast);
