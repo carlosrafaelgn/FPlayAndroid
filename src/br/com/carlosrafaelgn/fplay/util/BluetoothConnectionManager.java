@@ -415,7 +415,9 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			final String name = device.getName();
 			deviceList.add(new DeviceItem(((name == null || name.length() == 0) ? activity.getText(R.string.bt_null_device_name).toString() : name) + " - " + address, address, paired, false), -1);
 			deviceList.setSelection(-1, true);
-			deviceList.sort();
+			//stop sorting as the devices are discovered, to prevent the
+			//order of the list from changing
+			//deviceList.sort();
 		} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
 			if (!connecting) {
 				stopDialogDiscovery();
