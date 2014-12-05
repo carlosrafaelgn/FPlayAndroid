@@ -31,10 +31,9 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 #include <jni.h>
-#ifdef __ARM_NEON__
+#ifdef _MAY_HAVE_NEON_
 #include <errno.h>
 #include <fcntl.h>
-#include <arm_neon.h>
 #endif
 #include <android/native_window_jni.h>
 #include <android/native_window.h>
@@ -50,8 +49,6 @@
 #include "Common.h"
 #include "OpenGLVisualizerJni.h"
 
-
-#define DEFSPEED (0.140625f / 16.0f)
 
 static float invBarW;
 static int barW, barH, barBins, barWidthInPixels, recreateVoice, lerp;
@@ -109,11 +106,7 @@ int JNICALL prepareSurface(JNIEnv* env, jclass clazz, jobject surface) {
 	return ret;
 }
 
-#ifdef __ARM_NEON__
-void JNICALL processSimple(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
-#else
 void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
-#endif
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return;
@@ -130,8 +123,6 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMilli
 	}
 	inf.stride <<= 1; //convert from pixels to unsigned short
 	
-	float* const fft = floatBuffer;
-	const float* const multiplier = fft + 256;
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
@@ -141,10 +132,18 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMilli
 		ANativeWindow_release(wnd);
 		return;
 	}
+	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
+	bfft[1] = 0;
+
+/*#ifdef _MAY_HAVE_NEON_
+if (!neonMode) {
+#endif*/
+	float* const fft = floatBuffer;
+	const float* const multiplier = floatBuffer + 256;
+
 	const float coefNew = DEFSPEED * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
-	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-	bfft[1] = bfft[0];
+
 	float previous = 0;
 	for (int i = 0; i < barBins; i++) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
@@ -305,266 +304,15 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMilli
 			}
 		}
 	}
+/*#ifdef _MAY_HAVE_NEON_
+} else {
+	processNeon(bfft, deltaMillis);
+}
+#endif*/
 	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 	ANativeWindow_unlockAndPost(wnd);
 	ANativeWindow_release(wnd);
 }
-
-#ifdef __ARM_NEON__
-static const int __0[] __attribute__((aligned(16))) = { 0, 0, 0, 0 };
-static const int __32768[] __attribute__((aligned(16))) = { 32768, 32768, 32768, 32768 };
-static int __tmp[4] __attribute__((aligned(16)));
-static int __v[4] __attribute__((aligned(16)));
-static int __v2[4] __attribute__((aligned(16)));
-void JNICALL processNeon(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
-	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
-	if (!wnd)
-		return;
-	ANativeWindow_Buffer inf;
-	if (ANativeWindow_lock(wnd, &inf, 0) < 0) {
-		ANativeWindow_release(wnd);
-		return;
-	}
-	if (inf.width != barWidthInPixels ||
-		inf.height != barH) {
-		ANativeWindow_unlockAndPost(wnd);
-		ANativeWindow_release(wnd);
-		return;
-	}
-	inf.stride <<= 1; //convert from pixels to unsigned short
-	
-	float* const fft = floatBuffer;
-	const float* const multiplier = fft + 256;
-	//fft format:
-	//index  0   1    2  3  4  5  ..... n-2        n-1
-	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	signed char* const bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
-	if (!bfft) {
-		ANativeWindow_unlockAndPost(wnd);
-		ANativeWindow_release(wnd);
-		return;
-	}
-	
-	const float coefNew = DEFSPEED * (float)deltaMillis;
-	const float coefOld = 1.0f - coefNew;
-	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-	bfft[1] = 0;
-	
-	//step 1: compute all magnitudes
-	for (int i = barBins - 1; i >= 0; i--) {
-		//bfft[i] stores values from 0 to -128/127 (inclusive)
-		const int re = (int)bfft[i << 1];
-		const int im = (int)bfft[(i << 1) + 1];
-		const int amplSq = (re * re) + (im * im);
-		float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
-		const float old = fft[i];
-		if (m < old)
-			m = (coefNew * m) + (coefOld * old);
-		fft[i] = m;
-	}
-	
-	int32x4_t _0 = vld1q_s32(__0), _32768 = vld1q_s32(__32768), _barH = { barH, barH, barH, barH }, _barH2 = vshrq_n_s32(_barH, 1), _colorIndex = { commonColorIndex, commonColorIndex, commonColorIndex, commonColorIndex };
-	if (barW == 1 || !lerp) {
-		for (int i = 0; i < barBins; i += 4) {
-			//_v goes from 0 to 32768 (inclusive)
-			int32x4_t _v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(vld1q_f32(fft + i))));
-			vst1q_s32(__tmp, vaddq_s32(vshrq_n_s32(_v, 7), _colorIndex));
-			_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
-			int32x4_t _v2 = _v;
-			_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
-			vst1q_s32(__v, _v);
-			vst1q_s32(__v2, vaddq_s32(_v2, _v));
-			for (int j = 0; j < 4; j++) {
-				const unsigned short color = COLORS[__tmp[j]];
-				const int v = __v[j];
-				const int v2 = __v2[j];
-				unsigned short* currentBar = (unsigned short*)inf.bits;
-				inf.bits = (void*)((unsigned short*)inf.bits + barW);
-				int y = 0;
-				switch (barW) {
-				case 1:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				case 2:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar[1] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				case 3:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar[1] = color;
-						currentBar[2] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				case 4:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar[3] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar[1] = color;
-						currentBar[2] = color;
-						currentBar[3] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar[3] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				default:
-					for (; y < v; y++) {
-						for (int b = barW - 1; b >= 0; b--)
-							currentBar[b] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						for (int b = barW - 1; b >= 0; b--)
-							currentBar[b] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						for (int b = barW - 1; b >= 0; b--)
-							currentBar[b] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				}
-			}
-		}
-	} else {
-		float32x4_t _invBarW = { invBarW, invBarW, invBarW, invBarW }, _prev = { 0.0f, fft[0], fft[1], fft[2] };
-		int originalBarIndex = 0;
-		for (int i = 0; i < barBins; i += 4) {
-			//process the four actual bars
-			int barIndex = originalBarIndex;
-			//_v goes from 0 to 32768 (inclusive)
-			int32x4_t _v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev)));
-			vst1q_s32(__tmp, vaddq_s32(vshrq_n_s32(_v, 7), _colorIndex));
-			_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
-			int32x4_t _v2 = _v;
-			_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
-			vst1q_s32(__v, _v);
-			vst1q_s32(__v2, vaddq_s32(_v2, _v));
-			for (int j = 0; j < 4; j++) {
-				//v goes from 0 to 32768 (inclusive)
-				const unsigned short color = COLORS[__tmp[j]];
-				const int v = __v[j];
-				const int v2 = __v2[j];
-				unsigned short* currentBar = (unsigned short*)inf.bits + barIndex;
-				int y = 0;
-				for (; y < v; y++) {
-					*currentBar = bgColor;
-					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-				}
-				for (; y < v2; y++) {
-					*currentBar = color;
-					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-				}
-				for (; y < barH; y++) {
-					*currentBar = bgColor;
-					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-				}
-				barIndex += barW;
-			}
-			
-			//now, process all the interpolated bars (the ones between the actual bars)
-			float32x4_t _delta = vmulq_f32(vsubq_f32(vld1q_f32(fft + i), _prev), _invBarW);
-			for (int b = 1; b < barW; b++) {
-				//move to the next bar
-				barIndex = originalBarIndex + b;
-				_prev = vaddq_f32(_prev, _delta);
-				//_v goes from 0 to 32768 (inclusive)
-				_v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev)));
-				vst1q_s32(__tmp, vaddq_s32(vshrq_n_s32(_v, 7), _colorIndex));
-				_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
-				int32x4_t _v2 = _v;
-				_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
-				vst1q_s32(__v, _v);
-				vst1q_s32(__v2, vaddq_s32(_v2, _v));
-				for (int j = 0; j < 4; j++) {
-					const unsigned short color = COLORS[__tmp[j]];
-					const int v = __v[j];
-					const int v2 = __v2[j];
-					unsigned short* currentBar = (unsigned short*)inf.bits + barIndex;
-					int y = 0;
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					barIndex += barW;
-				}
-			}
-			originalBarIndex += (barW << 2);
-			//it is ok to load data beyond index 255, as after the first fft's 256
-			//elements there are the 256 multipliers ;)
-			_prev = vld1q_f32(fft + (i + 3));
-		}
-	}
-	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
-	ANativeWindow_unlockAndPost(wnd);
-	ANativeWindow_release(wnd);
-}
-
-void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
-	if (neonMode)
-		processNeon(env, clazz, jbfft, deltaMillis, surface);
-	else
-		processSimple(env, clazz, jbfft, deltaMillis, surface);
-}
-#endif
 
 void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
@@ -650,7 +398,7 @@ extern "C" {
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	voice = 0;
 	recreateVoice = 0;
-#ifdef __ARM_NEON__
+#ifdef _MAY_HAVE_NEON_
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
 	neonMode = 0;
