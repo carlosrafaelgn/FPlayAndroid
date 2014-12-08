@@ -1147,8 +1147,12 @@ public final class UI {
 			loadCreamyTheme();
 			break;
 		}
-		if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)
-			setAndroidThemeAccordingly13(activity);
+		if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+				setAndroidThemeAccordingly21(activity);
+			else
+				setAndroidThemeAccordingly13(activity);
+		}
 	}
 	
 	public static boolean isAndroidThemeLight() {
@@ -1170,7 +1174,15 @@ public final class UI {
 		else
 			activity.setTheme(android.R.style.Theme_Holo_NoActionBar_Fullscreen);
 	}
-	
+
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	public static void setAndroidThemeAccordingly21(Activity activity) {
+		if (isAndroidThemeLight())
+			activity.setTheme(android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
+		else
+			activity.setTheme(android.R.style.Theme_Material_NoActionBar_Fullscreen);
+	}
+
 	public static void setFlat(boolean flat) {
 		UI.flat = flat;
 		Gradient.purgeAll();
