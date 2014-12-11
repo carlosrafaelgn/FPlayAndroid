@@ -46,8 +46,10 @@
 #define ERR_LOCK -3
 #define ERR_NOMEM -4
 #define ERR_GL -5
+
 #define TYPE_FULLSCREEN 0
 #define TYPE_MAG 1
+#define TYPE_MAG_REV 2
 
 static unsigned int glProgram, glVShader, glFShader, glTex[2], glBuf[2], glType;
 
@@ -89,7 +91,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	if (glGetError() || !glFShader) return -3;
 
 	const char* vertexShader;
-	if (type == TYPE_MAG)
+	if (type == TYPE_MAG || type == TYPE_MAG_REV)
 		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }";
 	else
 		vertexShader = "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
@@ -106,6 +108,16 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	const char* fragmentShader;
 
 	if (type == TYPE_MAG)
+		fragmentShader = "precision mediump float; uniform sampler2D texAmplitude; uniform sampler2D texColor; varying vec2 vTexCoord; void main() {" \
+		"float c = texture2D(texAmplitude, vTexCoord).a;" \
+		"float absy = abs(vTexCoord.y);" \
+		"if (absy <= c) {" \
+		"gl_FragColor = texture2D(texColor, vec2(vTexCoord.x, (vTexCoord.y - 1.0) * (-0.5) ));" \
+		"} else {" \
+		"float ss = smoothstep(c, 1.0, absy);" \
+		"absy = sign(vTexCoord.y) * ((ss * (1.0 - c)) + c);" \
+		"gl_FragColor = texture2D(texColor, vec2(vTexCoord.x, (absy - 1.0) * (-0.5) )) + vec4(0.125 + ((1.0 - (ss * ss)) * 0.25)); } }";
+	else if (type == TYPE_MAG_REV)
 		fragmentShader = "precision mediump float; uniform sampler2D texAmplitude; uniform sampler2D texColor; varying vec2 vTexCoord; void main() {" \
 		"float c = texture2D(texAmplitude, vTexCoord).a;" \
 		"float absy = abs(vTexCoord.y);" \
@@ -132,7 +144,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	if (glGetError()) return -9;
 	glBindAttribLocation(glProgram, 0, "inPosition");
 	if (glGetError()) return -10;
-	if (type == TYPE_MAG) {
+	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
 		glBindAttribLocation(glProgram, 1, "inTexCoord");
 		if (glGetError()) return -11;
 	}
@@ -142,7 +154,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glBuf[0] = 0;
 	glBuf[1] = 0;
 
-	if (type == TYPE_MAG) {
+	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
 		glGenBuffers(2, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
 
@@ -246,7 +258,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	if (type == TYPE_MAG)
+	if (type == TYPE_MAG || type == TYPE_MAG_REV)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
 	if (glGetError()) return -19;
 
@@ -259,7 +271,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glActiveTexture(GL_TEXTURE0);
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-	if (type == TYPE_MAG) {
+	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
 		glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
 
 		glEnableVertexAttribArray(1);
@@ -270,7 +282,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	}
 	if (glGetError()) return -21;
 
-	commonColorIndex = ((type == TYPE_MAG) ? 4 : 0);
+	commonColorIndex = (((type == TYPE_MAG) || (type == TYPE_MAG_REV)) ? 4 : 0);
 	commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside glDrawFrame
 	commonUpdateMultiplier(env, clazz, 0);
 	
@@ -351,7 +363,7 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	//glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 	//glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
 
-	if (glType == TYPE_MAG) {
+	if (glType == TYPE_MAG || glType == TYPE_MAG_REV) {
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	} else {
 		glClear(GL_COLOR_BUFFER_BIT);

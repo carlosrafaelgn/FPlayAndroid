@@ -68,19 +68,24 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
 	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5;
-	
+
+	private static final int MSG_OPENGL_ERROR = 0x0700;
+	private static final int MSG_CHOOSE_IMAGE = 0x0701;
+
 	private static int GLVersion = -1;
 
 	public static final String EXTRA_VISUALIZER_TYPE = "br.com.carlosrafaelgn.fplay.OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE";
 
 	public static final int TYPE_FULLSCREEN = 0;
 	public static final int TYPE_MAG = 1;
+	public static final int TYPE_MAG_REV = 2;
 
 	private final int type;
 	private byte[] bfft;
-	private volatile boolean supported, alerted, okToRender, skipFrameProcessing;
+	private volatile boolean supported, alerted, okToRender, skipFrameProcessing, imageChoosenAtLeastOnce;
 	private volatile int error;
 	private volatile Uri selectedUri;
+	private boolean browsing;
 	private int colorIndex, speed;
 	private EGLConfig config;
 	private Activity activity;
@@ -92,13 +97,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setClickable(true);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_MAG) ? 1 : 2);
+		speed = 2;
 		this.activity = activity;
 
 		if (GLVersion != -1) {
 			supported = (GLVersion >= 0x00020000);
 			if (!supported)
-				MainHandler.sendMessage(this, 0);
+				MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 		}
 		
 		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/opengl/GLSurfaceView.java
@@ -164,7 +169,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 		if (selectedCount == 0) {
 			supported = false;
-			MainHandler.sendMessage(this, 0);
+			MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 			return egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, none);
 		}
 		ArraySorter.sort(selectedConfigs, 0, selectedCount, new ArraySorter.Comparer<EGLConfig>() {
@@ -293,7 +298,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 		this.config = null;
 		supported = false;
-		MainHandler.sendMessage(this, 0);
+		MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 		return egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, none);
 	}
 	
@@ -306,7 +311,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		if (type != TYPE_MAG)
+		if (type != TYPE_MAG && type != TYPE_MAG_REV)
 			SimpleVisualizerJni.commonSetColorIndex(colorIndex);
 		SimpleVisualizerJni.commonSetSpeed(speed);
 		if (GLVersion == -1) {
@@ -320,7 +325,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				GLVersion = Integer.parseInt(line);
 				supported = (GLVersion >= 0x00020000);
 				if (!supported)
-					MainHandler.sendMessage(this, 0);
+					MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 			} catch (Throwable ex) {
 			} finally {
 				try {
@@ -339,7 +344,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			return;
 		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer, type)) != 0) {
 			supported = false;
-			MainHandler.sendMessage(this, 0);
+			MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 		}
 	}
 	
@@ -350,6 +355,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			return;
 		SimpleVisualizerJni.glOnSurfaceChanged(width, height);
 		okToRender = true;
+		if ((type == TYPE_MAG || type == TYPE_MAG_REV) && !imageChoosenAtLeastOnce) {
+			imageChoosenAtLeastOnce = true;
+			MainHandler.sendMessage(this, MSG_CHOOSE_IMAGE);
+		}
 	}
 	
 	//Runs on the MAIN thread
@@ -446,10 +455,17 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	
 	@Override
 	public boolean handleMessage(Message msg) {
-		if (!alerted) {
-			alerted = true;
-			final Context ctx = getContext();
-			UI.toast(ctx, ctx.getText(R.string.sorry) + " " + ((error != 0) ? (ctx.getText(R.string.opengl_error).toString() + ": " + error) : ctx.getText(R.string.opengl_not_supported).toString()) + " :(");
+		switch (msg.what) {
+		case MSG_OPENGL_ERROR:
+			if (!alerted) {
+				alerted = true;
+				final Context ctx = getContext();
+				UI.toast(ctx, ctx.getText(R.string.sorry) + " " + ((error != 0) ? (ctx.getText(R.string.opengl_error).toString() + ": " + error) : ctx.getText(R.string.opengl_not_supported).toString()) + " :(");
+			}
+			break;
+		case MSG_CHOOSE_IMAGE:
+			chooseImage();
+			break;
 		}
 		return true;
 	}
@@ -459,7 +475,20 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public final boolean isOpaque() {
 		return true;
 	}
-	
+
+	private void chooseImage() {
+		//Based on: http://stackoverflow.com/a/20177611/3569421
+		//Based on: http://stackoverflow.com/a/4105966/3569421
+		if (activity != null && selectedUri == null && !browsing && okToRender) {
+			browsing = true;
+			imageChoosenAtLeastOnce = true;
+			final Intent intent = new Intent();
+			intent.setType("image/*");
+			intent.setAction(Intent.ACTION_GET_CONTENT);
+			activity.startActivityForResult(intent, 1234);
+		}
+	}
+
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
 		final int id = item.getItemId();
@@ -475,14 +504,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			SimpleVisualizerJni.commonSetSpeed(speed);
 			break;
 		case MNU_CHOOSE_IMAGE:
-			//Based on: http://stackoverflow.com/a/20177611/3569421
-			//Based on: http://stackoverflow.com/a/4105966/3569421
-			if (activity != null && selectedUri == null) {
-				final Intent intent = new Intent();
-				intent.setType("image/*");
-				intent.setAction(Intent.ACTION_GET_CONTENT);
-				activity.startActivityForResult(intent, 1);
-			}
+			chooseImage();
 			break;
 		}
 		return true;
@@ -496,8 +518,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on the MAIN thread
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (resultCode == Activity.RESULT_OK && requestCode == 1)
-			selectedUri = data.getData();
+		if (requestCode == 1234) {
+			browsing = false;
+			if (resultCode == Activity.RESULT_OK)
+				selectedUri = data.getData();
+		}
 	}
 
 	//Runs on the MAIN thread
@@ -506,7 +531,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		final Context ctx = getContext();
 		UI.separator(menu, 1, 0);
 
-		if (type == TYPE_MAG) {
+		if (type == TYPE_MAG || type == TYPE_MAG_REV) {
 			menu.add(1, MNU_CHOOSE_IMAGE, 1, R.string.choose_image)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
