@@ -234,8 +234,8 @@
     <string name="large">Большой</string>
     <string name="indexed_if_possible">Индексированные (если это возможно)</string>
     <string name="sorry">Извините!</string>
-    <string name="opengl_error"> OpenGL ошибке </string>
-    <string name="opengl_not_supported"> OpenGL ES 2.0 не поддерживается</string>
+    <string name="opengl_error">OpenGL ошибке</string>
+    <string name="opengl_not_supported">OpenGL ES 2.0 не поддерживается</string>
     <string name="speed">Скорость</string>
     <string name="add_radio">Радио&#8230;</string>
     <string name="search">Искать</string>
@@ -264,6 +264,7 @@
     <string name="unselected">Неотобранный</string>
     <string name="refresh_list">Обновить список</string>
     <string name="fullscreen">Полноэкранный</string>
+    <string name="choose_image">Выберите изображение&#8230;</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>

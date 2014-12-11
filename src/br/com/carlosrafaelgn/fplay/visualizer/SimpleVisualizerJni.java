@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.view.ContextMenu;
 import android.view.MenuItem;
@@ -71,8 +72,9 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private static native void process(byte[] bfft, int deltaMillis, Surface surface);
 	private static native void processVoice(byte[] bfft, Surface surface);
 
-	static native int glOnSurfaceCreated(int bgColor);
+	static native int glOnSurfaceCreated(int bgColor, int type);
 	static native void glOnSurfaceChanged(int width, int height);
+	static native int glLoadBitmapFromJava(Bitmap bitmap);
 	static native void glDrawFrame();
 
 	private byte[] bfft;
@@ -83,7 +85,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private boolean lerp, voice;
 	private Surface surface;
 	
-	public SimpleVisualizerJni(Context context, Activity activity, boolean landscape) {
+	public SimpleVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
 		bfft = new byte[2048];
 		init(UI.color_visualizer565);

@@ -35,8 +35,11 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Message;
 import android.view.ContextMenu;
@@ -45,6 +48,7 @@ import android.view.SurfaceHolder;
 import android.view.ViewDebug.ExportedProperty;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
@@ -63,25 +67,33 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
-	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4;
+	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5;
 	
 	private static int GLVersion = -1;
-	
+
+	public static final String EXTRA_VISUALIZER_TYPE = "br.com.carlosrafaelgn.fplay.OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE";
+
+	public static final int TYPE_FULLSCREEN = 0;
+	public static final int TYPE_MAG = 1;
+
+	private final int type;
 	private byte[] bfft;
-	private volatile boolean supported, alerted, okToRender;
+	private volatile boolean supported, alerted, okToRender, skipFrameProcessing;
 	private volatile int error;
+	private volatile Uri selectedUri;
 	private int colorIndex, speed;
 	private EGLConfig config;
+	private Activity activity;
 	
-	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape) {
+	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
+		type = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_FULLSCREEN);
 		bfft = new byte[2048];
 		setClickable(true);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = 2;
-		SimpleVisualizerJni.commonSetColorIndex(colorIndex);
-		SimpleVisualizerJni.commonSetSpeed(speed);
+		speed = ((type == TYPE_MAG) ? 1 : 2);
+		this.activity = activity;
 
 		if (GLVersion != -1) {
 			supported = (GLVersion >= 0x00020000);
@@ -96,7 +108,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setEGLContextFactory(this);
 		setEGLWindowSurfaceFactory(this);
 		setRenderer(this);
-		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+		setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 	}
 	
 	@Override
@@ -294,7 +306,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		SimpleVisualizerJni.commonSetColorIndex(colorIndex);
+		if (type != TYPE_MAG)
+			SimpleVisualizerJni.commonSetColorIndex(colorIndex);
 		SimpleVisualizerJni.commonSetSpeed(speed);
 		if (GLVersion == -1) {
 			supported = true;
@@ -324,7 +337,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 		if (!supported)
 			return;
-		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer)) != 0) {
+		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer, type)) != 0) {
 			supported = false;
 			MainHandler.sendMessage(this, 0);
 		}
@@ -346,12 +359,89 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		okToRender = false;
 		super.surfaceDestroyed(holder);
 	}
-	
+
+	private static void loadBitmap(Activity activity, Uri uri) {
+		if (activity == null || uri == null)
+			return;
+
+		/*String path = null;
+		int orientation = 1;
+
+		//Try to fetch the image's rotation from EXIF (this process needs the exact path)
+		//Based on: http://stackoverflow.com/q/2169649/3569421
+		try {
+			final String[] projection = {MediaStore.Images.Media.DATA};
+			final Cursor cursor = activity.managedQuery(uri, projection, null, null, null);
+			if (cursor != null) {
+				final int column_index = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+				if (column_index >= 0) {
+					cursor.moveToFirst();
+					path = cursor.getString(column_index);
+				}
+			}
+		} catch (Throwable ex) {
+		}
+		try {
+			//OI FILE Manager
+			if (path == null)
+				path = uri.getPath();
+			orientation = (new ExifInterface(path)).getAttributeInt(ExifInterface.TAG_ORIENTATION, 1);
+		} catch (Throwable ex) {
+		}*/
+
+		InputStream input = null;
+		Bitmap bitmap = null;
+		try {
+			input = activity.getContentResolver().openInputStream(uri);
+			BitmapFactory.Options opts = new BitmapFactory.Options();
+			opts.inJustDecodeBounds = true;
+			bitmap = BitmapFactory.decodeStream(input, null, opts);
+			input.close();
+			input = null;
+
+			opts.inSampleSize = 1;
+			int largest = ((opts.outWidth >= opts.outHeight) ? opts.outWidth : opts.outHeight);
+			while (largest > 1024) {
+				opts.inSampleSize <<= 1;
+				largest >>= 1;
+			}
+
+			input = activity.getContentResolver().openInputStream(uri);
+			opts.inJustDecodeBounds = false;
+			opts.inPreferredConfig = Bitmap.Config.RGB_565;
+			opts.inDither = true;
+			bitmap = BitmapFactory.decodeStream(input, null, opts);
+
+			if (bitmap != null)
+				SimpleVisualizerJni.glLoadBitmapFromJava(bitmap);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		} finally {
+			if (input != null) {
+				try {
+					input.close();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			}
+			if (bitmap != null) {
+				bitmap.recycle();
+			}
+		}
+	}
+
 	//Runs on a SECONDARY thread
 	@Override
 	public void onDrawFrame(GL10 gl) {
-		if (okToRender)
+		if (okToRender) {
+			if (selectedUri != null) {
+				skipFrameProcessing = true;
+				loadBitmap(activity, selectedUri);
+				selectedUri = null;
+				skipFrameProcessing = false;
+			}
 			SimpleVisualizerJni.glDrawFrame();
+		}
 	}
 	
 	@Override
@@ -359,7 +449,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		if (!alerted) {
 			alerted = true;
 			final Context ctx = getContext();
-			UI.toast(ctx, ctx.getText(R.string.sorry) + ((error != 0) ? (ctx.getText(R.string.opengl_error).toString() + error) : ctx.getText(R.string.opengl_not_supported).toString()) + " :(");
+			UI.toast(ctx, ctx.getText(R.string.sorry) + " " + ((error != 0) ? (ctx.getText(R.string.opengl_error).toString() + ": " + error) : ctx.getText(R.string.opengl_not_supported).toString()) + " :(");
 		}
 		return true;
 	}
@@ -384,6 +474,16 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			speed = id - MNU_SPEED0;
 			SimpleVisualizerJni.commonSetSpeed(speed);
 			break;
+		case MNU_CHOOSE_IMAGE:
+			//Based on: http://stackoverflow.com/a/20177611/3569421
+			//Based on: http://stackoverflow.com/a/4105966/3569421
+			if (activity != null && selectedUri == null) {
+				final Intent intent = new Intent();
+				intent.setType("image/*");
+				intent.setAction(Intent.ACTION_GET_CONTENT);
+				activity.startActivityForResult(intent, 1);
+			}
+			break;
 		}
 		return true;
 	}
@@ -396,6 +496,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on the MAIN thread
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (resultCode == Activity.RESULT_OK && requestCode == 1)
+			selectedUri = data.getData();
 	}
 
 	//Runs on the MAIN thread
@@ -403,9 +505,16 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void onCreateContextMenu(ContextMenu menu) {
 		final Context ctx = getContext();
 		UI.separator(menu, 1, 0);
-		menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_THEME));
+
+		if (type == TYPE_MAG) {
+			menu.add(1, MNU_CHOOSE_IMAGE, 1, R.string.choose_image)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
+		} else {
+			menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
+		}
 		UI.separator(menu, 1, 2);
 		menu.add(2, MNU_SPEED0, 0, ctx.getText(R.string.speed) + ": 0")
 			.setOnMenuItemClickListener(this)
@@ -467,7 +576,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
-		if (okToRender) {
+		if (okToRender && !skipFrameProcessing) {
 			//WE MUST NEVER call any method from visualizer
 			//while the player is not actually playing
 			if (!playing)
@@ -475,7 +584,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			else
 				visualizer.getFft(bfft);
 			SimpleVisualizerJni.commonProcess(bfft, deltaMillis, 0);
-			requestRender();
+			//requestRender();
 		}
 	}
 	
@@ -499,5 +608,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	@Override
 	public void releaseView() {
+		activity = null;
 	}
 }

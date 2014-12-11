@@ -2,7 +2,7 @@ LOCAL_PATH      := $(call my-dir)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := SimpleVisualizerJni
-LOCAL_LDLIBS    := -landroid -llog -lGLESv2
+LOCAL_LDLIBS    := -landroid -ljnigraphics -llog -lGLESv2
 LOCAL_SRC_FILES := SimpleVisualizerJni.cpp
 
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)

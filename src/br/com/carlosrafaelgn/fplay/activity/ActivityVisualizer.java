@@ -365,7 +365,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		if (clazz != null) {
 			try {
 				info.getInfo(this);
-				visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class).newInstance(getApplication(), this, info.isLandscape);
+				visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class, Intent.class).newInstance(getApplication(), this, info.isLandscape, si);
 			} catch (Throwable ex) {
 				clazz = null;
 			}

@@ -234,8 +234,8 @@
     <string name="large">Великий</string>
     <string name="indexed_if_possible">Індексовані (якщо це можливо)</string>
     <string name="sorry">Вибачте!</string>
-    <string name="opengl_error"> OpenGL помилку </string>
-    <string name="opengl_not_supported"> OpenGL ES 2.0 не дозволені</string>
+    <string name="opengl_error">OpenGL помилку</string>
+    <string name="opengl_not_supported">OpenGL ES 2.0 не дозволені</string>
     <string name="speed">Швидкість</string>
     <string name="add_radio">Радіо&#8230;</string>
     <string name="search">Шукати</string>
@@ -264,6 +264,7 @@
     <string name="unselected">Не вибрано</string>
     <string name="refresh_list">Оновити список</string>
     <string name="fullscreen">Повноекранний</string>
+    <string name="choose_image">Виберіть зображення&#8230;</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>

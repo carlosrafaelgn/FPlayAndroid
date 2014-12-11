@@ -234,8 +234,8 @@
     <string name="large">Larga</string>
     <string name="indexed_if_possible">Indexada (se possível)</string>
     <string name="sorry">Desculpe!</string>
-    <string name="opengl_error"> Erro OpenGL </string>
-    <string name="opengl_not_supported"> Sem suporte a OpenGL ES 2.0</string>
+    <string name="opengl_error">Erro OpenGL</string>
+    <string name="opengl_not_supported">Sem suporte a OpenGL ES 2.0</string>
     <string name="speed">Velocidade</string>
     <string name="add_radio">Rádio&#8230;</string>
     <string name="search">Procurar</string>
@@ -264,6 +264,7 @@
     <string name="unselected">Desmarcado</string>
     <string name="refresh_list">Atualizar lista</string>
     <string name="fullscreen">Tela cheia</string>
+    <string name="choose_image">Escolher imagem&#8230;</string>
 
     <string name="bt_packages_sent">Mensagens enviadas:</string>
     <string name="bt_fps">Mensagens por segundo&#8230;</string>
