@@ -392,7 +392,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
-		UI.setTransition(opts.getInt(OPT_TRANSITION, UI.TRANSITION_FADE));
+		int fade = opts.getInt(OPT_TRANSITION, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) ? UI.TRANSITION_FADE : UI.TRANSITION_NONE);
+		if (UI.lastVersionCode < 55 && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2)
+			fade = UI.TRANSITION_NONE;
+		UI.setTransition(fade);
 		//the concept of bit was added on version 38
 		if (opts.hasBits() || UI.lastVersionCode == 0) {
 			//load the bit flags the new way
