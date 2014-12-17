@@ -207,84 +207,84 @@ if (!neonMode) {
 	//were "empirically created", without too much of theory envolved ;)
 	switch (bt) {
 	case SIZE_4:
-		avg = (unsigned char)(((unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3] + (unsigned int)processedData[4]) >> 2);
+		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 2);
 		PACK_BIN(avg);
 		avg = 0;
-		for (i = 5; i < 37; i++)
+		for (i = 4; i < 36; i++) //for (i = 5; i < 37; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 5;
 		PACK_BIN(avg);
 		avg = 0;
-		for (; i < 101; i++)
+		for (; i < 100; i++) //for (; i < 101; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 6;
 		PACK_BIN(avg);
 		avg = 0;
-		for (; i < 229; i++)
+		for (; i < 228; i++) //for (; i < 229; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 7;
 		PACK_BIN(avg);
 		break;
 	case SIZE_8:
-		avg = (unsigned char)(((unsigned int)processedData[1] + (unsigned int)processedData[2]) >> 1);
+		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
-		avg = (unsigned char)(((unsigned int)processedData[3] + (unsigned int)processedData[4]) >> 1);
+		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
 		PACK_BIN(avg);
 		avg = 0;
-		for (i = 5; i < 21; i++)
+		for (i = 4; i < 20; i++) //for (i = 5; i < 21; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 4;
 		PACK_BIN(avg);
 		avg = 0;
-		for (; i < 37; i++)
+		for (; i < 36; i++) //for (; i < 37; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 4;
 		PACK_BIN(avg);
 		avg = 0;
-		for (; i < 69; i++)
+		for (; i < 68; i++) //for (; i < 69; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 5;
 		PACK_BIN(avg);
 		avg = 0;
-		for (; i < 101; i++)
+		for (; i < 100; i++) //for (; i < 101; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 5;
 		PACK_BIN(avg);
 		avg = 0;
-		for (; i < 165; i++)
+		for (; i < 164; i++) //for (; i < 165; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 6;
 		PACK_BIN(avg);
 		avg = 0;
-		for (; i < 229; i++)
+		for (; i < 228; i++) //for (; i < 229; i++)
 			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 		//avg >>= 6;
 		PACK_BIN(avg);
 		break;
 	case SIZE_16:
-		avg = (unsigned char)(((unsigned int)processedData[1] + (unsigned int)processedData[2]) >> 1);
+		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
-		avg = (unsigned char)(((unsigned int)processedData[3] + (unsigned int)processedData[4]) >> 1);
+		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
 		PACK_BIN(avg);
-		for (i = 5; i < 21; i += 4) {
+		for (i = 4; i < 20; i += 4) { //for (i = 5; i < 21; i += 4) {
 			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
 			PACK_BIN(avg);
 		}
-		for (last = 29; last <= 37; last += 8) {
+		for (last = 28; last <= 36; last += 8) { //for (last = 29; last <= 37; last += 8) {
 			avg = 0;
 			for (; i < last; i++)
 				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 			//avg >>= 3;
 			PACK_BIN(avg);
 		}
-		for (last = 53; last <= 101; last += 16) {
+		for (last = 52; last <= 100; last += 16) { //for (last = 53; last <= 101; last += 16) {
 			avg = 0;
 			for (; i < last; i++)
 				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 			//avg >>= 4;
 			PACK_BIN(avg);
 		}
-		for (last = 133; last <= 229; last += 32) {
+		for (last = 132; last <= 228; last += 32) { //for (last = 133; last <= 229; last += 32) {
 			avg = 0;
 			for (; i < last; i++)
 				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
@@ -293,30 +293,30 @@ if (!neonMode) {
 		}
 		break;
 	case SIZE_32:
+		b = processedData[0];
+		PACK_BIN(b);
 		b = processedData[1];
 		PACK_BIN(b);
 		b = processedData[2];
 		PACK_BIN(b);
 		b = processedData[3];
 		PACK_BIN(b);
-		b = processedData[4];
-		PACK_BIN(b);
-		for (i = 5; i < 21; i += 2) {
+		for (i = 4; i < 20; i += 2) { //for (i = 5; i < 21; i += 2) {
 			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1);
 			PACK_BIN(avg);
 		}
-		for (; i < 37; i += 4) {
+		for (; i < 36; i += 4) { //for (; i < 37; i += 4) {
 			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
 			PACK_BIN(avg);
 		}
-		for (last = 45; last <= 101; last += 8) {
+		for (last = 44; last <= 100; last += 8) { //for (last = 45; last <= 101; last += 8) {
 			avg = 0;
 			for (; i < last; i++)
 				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
 			//avg >>= 3;
 			PACK_BIN(avg);
 		}
-		for (last = 117; last <= 229; last += 16) {
+		for (last = 116; last <= 228; last += 16) { //for (last = 117; last <= 229; last += 16) {
 			avg = 0;
 			for (; i < last; i++)
 				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
@@ -325,19 +325,19 @@ if (!neonMode) {
 		}
 		break;
 	case SIZE_64:
-		for (i = 1; i < 21; i++) {
+		for (i = 0; i < 20; i++) { //for (i = 1; i < 21; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
 		}
-		for (; i < 37; i += 2) {
+		for (; i < 36; i += 2) { //for (; i < 37; i += 2) {
 			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1);
 			PACK_BIN(avg);
 		}
-		for (; i < 133; i += 4) {
+		for (; i < 132; i += 4) { //for (; i < 133; i += 4) {
 			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
 			PACK_BIN(avg);
 		}
-		for (last = 141; last <= 229; last += 8) {
+		for (last = 140; last <= 228; last += 8) { //for (last = 141; last <= 229; last += 8) {
 			avg = 0;
 			for (; i < last; i++)
 				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
@@ -346,15 +346,15 @@ if (!neonMode) {
 		}
 		break;
 	case SIZE_128:
-		for (i = 1; i < 37; i++) {
+		for (i = 0; i < 36; i++) { //for (i = 1; i < 37; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
 		}
-		for (; i < 185; i += 2) {
+		for (; i < 184; i += 2) { //for (; i < 185; i += 2) {
 			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1);
 			PACK_BIN(avg);
 		}
-		for (; i < 253; i += 4) {
+		for (; i < 252; i += 4) { //for (; i < 253; i += 4) {
 			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
 			PACK_BIN(avg);
 		}
