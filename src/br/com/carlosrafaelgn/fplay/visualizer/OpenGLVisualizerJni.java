@@ -97,7 +97,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setClickable(true);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = 2;
+		speed = ((type == TYPE_MAG || type == TYPE_MAG_REV) ? 0 : 2);
 		this.activity = activity;
 
 		if (GLVersion != -1) {
@@ -408,9 +408,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			input.close();
 			input = null;
 
+			final int maxDim = Math.max(320, Math.min(1024, Math.max(UI.screenWidth, UI.screenHeight)));
+
 			opts.inSampleSize = 1;
 			int largest = ((opts.outWidth >= opts.outHeight) ? opts.outWidth : opts.outHeight);
-			while (largest > 1024) {
+			while (largest > maxDim) {
 				opts.inSampleSize <<= 1;
 				largest >>= 1;
 			}
@@ -433,9 +435,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 					ex.printStackTrace();
 				}
 			}
-			if (bitmap != null) {
+			if (bitmap != null)
 				bitmap.recycle();
-			}
 		}
 	}
 
