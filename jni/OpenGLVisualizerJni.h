@@ -96,7 +96,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glType = type;
 
 	int l;
-	unsigned int glTex[3], glBuf[4];
+	unsigned int glTex[2], glBuf[4];
 	const char* vertexShader;
 	const char* fragmentShader;
 
@@ -148,17 +148,15 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
 		if ((l = createProgram(
-			"attribute vec4 inPosition2; attribute vec2 inTexCoord2; varying vec2 vTexCoord; void main() { gl_Position = inPosition2; vTexCoord = inTexCoord2; }",
+			"attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }",
 			"precision mediump float; varying vec2 vTexCoord; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vTexCoord); }",
 			&glProgram2)))
 			return l;
 
-		glBindAttribLocation(glProgram2, 2, "inPosition2");
+		glBindAttribLocation(glProgram2, 2, "inPosition");
 		if (glGetError()) return -10;
-		if (type == TYPE_MAG || type == TYPE_MAG_REV) {
-			glBindAttribLocation(glProgram2, 3, "inTexCoord2");
-			if (glGetError()) return -11;
-		}
+		glBindAttribLocation(glProgram2, 3, "inTexCoord");
+		if (glGetError()) return -11;
 		glLinkProgram(glProgram2);
 		if (glGetError()) return -12;
 	}
@@ -291,15 +289,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	
 	glTex[0] = 0;
 	glTex[1] = 0;
-	glTex[2] = 0;
 
-	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
-		glGenTextures(3, glTex);
-		if (glGetError() || !glTex[0] || !glTex[1] || !glTex[2]) return -15;
-	} else {
-		glGenTextures(2, glTex);
-		if (glGetError() || !glTex[0] || !glTex[1]) return -15;
-	}
+	glGenTextures(2, glTex);
+	if (glGetError() || !glTex[0] || !glTex[1]) return -15;
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, glTex[0]);
@@ -415,7 +407,10 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 
 	if (glType == TYPE_MAG || glType == TYPE_MAG_REV) {
 		glUseProgram(glProgram2);
+
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		glFinish();
 
 		glUseProgram(glProgram);
 
