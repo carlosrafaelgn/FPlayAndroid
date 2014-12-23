@@ -217,8 +217,8 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		"float absy = amplitude[i];" \
 		"absy += (amplitude[i + 1] - absy) * smoothstep(0.0, 1.0, fract(x));" \
 
-		"angle += 0.25 * absy;" \
-		"dist = dist * dist * (0.5 + (1.5 * amplitude[2]));" \
+		"angle -= 0.25 * absy;" \
+		"dist = (dist * dist * (0.5 + (1.5 * amplitude[2]))) - (length(vec2(mod(gl_FragCoord.x, 20.0)-10.0, mod(gl_FragCoord.y, 20.0)-10.0)) * 0.0625);" \
 		"gl_FragColor = vec4(abs(cos(angle*5.0+time*0.5)) + dist," \
 		"abs(cos(angle*7.0+time*1.0)) + dist," \
 		"abs(cos(angle*11.0+time*1.5)) + dist," \
@@ -372,11 +372,17 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		memset(floatBuffer, 0, 512);
-		if (type == TYPE_LIQUID)
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
-		else
+		if (type == TYPE_LIQUID) {
+			//create a default blue background
+			((unsigned short*)floatBuffer)[0] = 0x31fb;
+			((unsigned short*)floatBuffer)[1] = 0x5b3a;
+			((unsigned short*)floatBuffer)[2] = 0x041f;
+			((unsigned short*)floatBuffer)[3] = 0x34df;
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
+		} else {
+			memset(floatBuffer, 0, 256);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
+		}
 		if (glGetError()) return -17;
 
 		if (type != TYPE_LIQUID) {

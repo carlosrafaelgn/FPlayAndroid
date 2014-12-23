@@ -359,10 +359,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			return;
 		SimpleVisualizerJni.glOnSurfaceChanged(width, height);
 		okToRender = true;
-		if (type == TYPE_LIQUID && !imageChoosenAtLeastOnce) {
+		/*if (type == TYPE_LIQUID && !imageChoosenAtLeastOnce) {
 			imageChoosenAtLeastOnce = true;
 			MainHandler.sendMessage(this, MSG_CHOOSE_IMAGE);
-		}
+		}*/
 	}
 	
 	//Runs on the MAIN thread
