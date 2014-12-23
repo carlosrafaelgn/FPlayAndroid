@@ -47,11 +47,59 @@
 #define ERR_NOMEM -4
 #define ERR_GL -5
 
-#define TYPE_FULLSCREEN 0
-#define TYPE_MAG 1
-#define TYPE_MAG_REV 2
+#define TYPE_SPECTRUM 0
+#define TYPE_LIQUID 1
+#define TYPE_SPIN 2
+
+#define left -1.0f
+#define top 1.0f
+#define right 1.0f
+#define bottom -1.0f
+#define z 0.0f
+static const float glVerticesRect[] = {
+	left, bottom, z, 1.0f,
+	right, bottom, z, 1.0f,
+	left, top, z, 1.0f,
+	right, top, z, 1.0f
+};
+#undef left
+#undef top
+#undef right
+#undef bottom
+#undef z
+#define leftTex 0.0f
+#define topTex 0.0f
+#define rightTex 1.0f
+#define bottomTex 1.0f
+static const float glTexCoordsRect[] = {
+	leftTex, bottomTex,
+	rightTex, bottomTex,
+	leftTex, topTex,
+	rightTex, topTex
+};
+#undef leftTex
+#undef topTex
+#undef rightTex
+#undef bottomTex
+#define leftTex 1.0f
+#define topTex 1.0f
+#define rightTex 0.0f
+#define bottomTex 0.0f
+static const float glTexCoordsRectInv[] = {
+	leftTex, bottomTex,
+	rightTex, bottomTex,
+	leftTex, topTex,
+	rightTex, topTex
+};
+#undef leftTex
+#undef topTex
+#undef rightTex
+#undef bottomTex
+
+static const char* const rectangleVShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }";
 
 static unsigned int glProgram, glProgram2, glType;
+static int glTime, glAmplitude;
 
 int createProgram(const char* vertexShaderSource, const char* fragmentShaderSource, unsigned int* program) {
 	int l;
@@ -94,61 +142,109 @@ int createProgram(const char* vertexShaderSource, const char* fragmentShaderSour
 
 int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type) {
 	glType = type;
+	commonTime = 0;
 
 	int l;
 	unsigned int glTex[2], glBuf[4];
 	const char* vertexShader;
 	const char* fragmentShader;
 
-	if (type == TYPE_MAG || type == TYPE_MAG_REV)
-		vertexShader = "attribute float inPosition; attribute float inTexCoord; varying vec2 vTexCoord; varying float vAmpl; uniform sampler2D texAmplitude; void main() {" \
+	switch (type) {
+	case TYPE_LIQUID:
+		vertexShader = "attribute float inPosition; attribute float inTexCoord; varying vec2 vTexCoord; varying float vAmpl; uniform float amplitude[33]; void main() {" \
 		"vec2 coord = vec2((inPosition + 1.0) * 0.5, 0.0);" \
 		"float absy;" \
 		"if (inTexCoord < 0.0) {" \
 			"vAmpl = 0.0;" \
 			"gl_Position = vec4(inPosition, 1.0, 0.0, 1.0);" \
 		"} else {" \
-			"if (inTexCoord < 1.0) {" \
-				"absy = texture2D(texAmplitude, vec2(inTexCoord * 2.0, 0.0)).a;" \
-			"} else {" \
-				"coord.y = floor(inTexCoord) - 1.0;" \
-				"absy = texture2D(texAmplitude, vec2(coord.y / 992.0, 0.0)).a;" \
-				"absy += (texture2D(texAmplitude, vec2((coord.y + 32.0) / 992.0, 0.0)).a - absy) * smoothstep(0.0, 1.0, fract(inTexCoord));" \
-			"}" \
+			"int i = int(inTexCoord);" \
+			"absy = amplitude[i];" \
+			"absy += (amplitude[i + 1] - absy) * smoothstep(0.0, 1.0, fract(inTexCoord));" \
 			"vAmpl = 1.0;" \
 			"gl_Position = vec4(inPosition, (absy * 2.0) - 1.0, 0.0, 1.0);" \
 			"coord.y = 1.0 - absy;" \
 		"}" \
 		"vTexCoord = coord; }";
-	else
+		break;
+	case TYPE_SPIN:
+		vertexShader = rectangleVShader;
+		break;
+	default:
 		vertexShader = "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
 		"float absx = abs(inPosition);" \
 		"vec4 c = texture2D(texAmplitude, vec2(0.5 * (absx - 1.0), 0.0));" \
 		"gl_Position = vec4(absx - 2.0, sign(inPosition) * c.a, 0.0, 1.0);" \
 		"vColor = texture2D(texColor, c.ar); }";
+		break;
+	}
 
-	if (type == TYPE_MAG || type == TYPE_MAG_REV)
-		fragmentShader = "precision mediump float; varying vec2 vTexCoord; varying float vAmpl; uniform sampler2D texColor; void main() {" \
-		"vec4 c = texture2D(texColor, vTexCoord);"
-		"gl_FragColor = c + (vAmpl * 0.5); }";
-	else
+	switch (type) {
+	case TYPE_LIQUID:
+		fragmentShader = "precision highp float; varying vec2 vTexCoord; varying float vAmpl; uniform sampler2D texColor; uniform float time; void main() {" \
+
+		/* This water equation (length, sin, cos) was based on: http://glslsandbox.com/e#21421.0 */ \
+		"vec2 p = (vec2(vTexCoord.x, mix(vTexCoord.y, vAmpl, 0.25)) * 6.0) - vec2(125.0);" \
+
+		"float t = time * -0.5;" \
+		"vec2 i = p + vec2(cos(t - p.x) + sin(t + p.y), sin(t - p.y) + cos(t + p.x));" \
+		"float c = 1.0 + (1.0 / length(vec2(p.x / (sin(i.x + t) * 100.0), p.y / (cos(i.y + t) * 100.0))));" \
+
+		/* Let's perform only one iteration, in favor of speed ;) */
+		/*"t = time * -0.05;" \
+		"i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));" \
+		"c += 1.0 / length(vec2(p.x / (sin(i.x + t) * 100.0), p.y / (cos(i.y + t) * 100.0)));" \
+
+		"c = 1.5 - sqrt(c * 0.5);"*/ \
+		"c = 1.5 - sqrt(c);" \
+
+		"c = 1.25 * c * c * c;" \
+		"t = (vAmpl * vAmpl * vAmpl);" \
+
+		"gl_FragColor = (0.5 * t) + (0.7 * vec4(c, c + 0.1, c + 0.2, 0.0)) + texture2D(texColor, vec2(vTexCoord.x, vTexCoord.y * (1.0 - (min(1.0, (1.2 * c) + t) * 0.55))));" \
+
+		"}";
+		break;
+	case TYPE_SPIN:
+		// Modified version of http://glslsandbox.com/e#21756.1
+		fragmentShader = "precision mediump float; varying vec2 vTexCoord; uniform float amplitude[33]; uniform float time; " \
+		"void main() {" \
+		"float angle = atan(vTexCoord.y, vTexCoord.x);" \
+		"float dist = max(0.0, 1.0 - (length(vTexCoord) / 1.25));" \
+
+		"float x = dist * 31.9375;" \
+		"int i = int(x);" \
+		"float absy = amplitude[i];" \
+		"absy += (amplitude[i + 1] - absy) * smoothstep(0.0, 1.0, fract(x));" \
+
+		"angle += 0.25 * absy;" \
+		"dist = dist * dist * (0.5 + (1.5 * amplitude[2]));" \
+		"gl_FragColor = vec4(abs(cos(angle*5.0+time*0.5)) + dist," \
+		"abs(cos(angle*7.0+time*1.0)) + dist," \
+		"abs(cos(angle*11.0+time*1.5)) + dist," \
+		"1.0);" \
+		"}";
+		break;
+	default:
 		fragmentShader = "precision mediump float; varying vec4 vColor; void main() { gl_FragColor = vColor; }";
+		break;
+	}
 
 	if ((l = createProgram(vertexShader, fragmentShader, &glProgram)))
 		return l;
 
 	glBindAttribLocation(glProgram, 0, "inPosition");
 	if (glGetError()) return -10;
-	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
+	if (type != TYPE_SPECTRUM) {
 		glBindAttribLocation(glProgram, 1, "inTexCoord");
 		if (glGetError()) return -11;
 	}
 	glLinkProgram(glProgram);
 	if (glGetError()) return -12;
 
-	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
+	if (type == TYPE_LIQUID) {
 		if ((l = createProgram(
-			"attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }",
+			rectangleVShader,
 			"precision mediump float; varying vec2 vTexCoord; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vTexCoord); }",
 			&glProgram2)))
 			return l;
@@ -166,7 +262,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glBuf[2] = 0;
 	glBuf[3] = 0;
 
-	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
+	if (type == TYPE_LIQUID) {
 		glGenBuffers(4, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1] || !glBuf[2] || !glBuf[3]) return -13;
 
@@ -190,61 +286,26 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 		//vertices at odd indices receive a -1, to indicate they are static, and must be placed
 		//at the top of the screen
-		for (int i = 1; i < 1024; i += 2) {
+		for (int i = 1; i < 1024; i += 2)
 			vertices[i] = -1.0f;
-		}
-		//vertices at indices 0, 32, 64, 96 .... receive the coordinate where to read the
-		//magnitude from the magnitude texture (from 0 to 0.5)
-		for (int i = 0; i < 1024; i += 32) {
-			vertices[i] = (float)(i >> 5) / 62.0f;
-		}
-		//vertices at indices 2..30, 34..62, 66..94 .... receive a coordinate to make the GPU's
-		//life easier when computing smoothStep
-		for (int start = 0; start < 1024; start += 32) {
-			for (int i = 2; i < 32; i += 2) {
-				vertices[start + i] = (float)start + 1.0f + ((float)i / 32.0f); // 0 < i/32 < 1 !!!
-			}
-		}
+		//vertices at even indices receive a value in range [0 .. 32[
+		for (int i = 0; i < 1024; i += 2)
+			vertices[i] = (float)(i << 5) / 1024.0f;
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 		glBufferData(GL_ARRAY_BUFFER, (512 * 2) * sizeof(float), vertices, GL_STATIC_DRAW);
 
 		delete vertices;
+	} else if (type == TYPE_SPIN) {
+        glGenBuffers(2, glBuf);
+        if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
+    }
 
+	if (type != TYPE_SPECTRUM) {
 		//create a rectangle that occupies the entire screen
-		#define left -1.0f
-		#define top 1.0f
-		#define right 1.0f
-		#define bottom -1.0f
-		#define z 0.0f
-		const float verticesC[] = {
-			left, bottom, z, 1.0f,
-			right, bottom, z, 1.0f,
-			left, top, z, 1.0f,
-			right, top, z, 1.0f
-		};
-		#undef left
-		#undef top
-		#undef right
-		#undef bottom
-		#undef z
-		#define leftTex 0.0f
-		#define topTex 0.0f
-		#define rightTex 1.0f
-		#define bottomTex 1.0f
-		const float texCoords[] = {
-			leftTex, bottomTex,
-			rightTex, bottomTex,
-			leftTex, topTex,
-			rightTex, topTex
-		};
-		#undef leftTex
-		#undef topTex
-		#undef rightTex
-		#undef bottomTex
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[2]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), verticesC, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[3]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), texCoords, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[(type == TYPE_LIQUID) ? 2 : 0]);
+		glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[(type == TYPE_LIQUID) ? 3 : 1]);
+		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), (type == TYPE_LIQUID) ? glTexCoordsRect : glTexCoordsRectInv, GL_STATIC_DRAW);
 
 		if (glGetError()) return -14;
 	} else {
@@ -290,54 +351,88 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glTex[0] = 0;
 	glTex[1] = 0;
 
-	glGenTextures(2, glTex);
-	if (glGetError() || !glTex[0] || !glTex[1]) return -15;
+	switch (type) {
+	case TYPE_LIQUID:
+		glGenTextures(1, glTex);
+		if (glGetError() || !glTex[0]) return -15;
+		break;
+	case TYPE_SPIN:
+		break;
+	default:
+		glGenTextures(2, glTex);
+		if (glGetError() || !glTex[0] || !glTex[1]) return -15;
+		break;
+	}
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, glTex[0]);
-	if (glGetError()) return -16;
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	memset(floatBuffer, 0, 512);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, (type == TYPE_MAG || type == TYPE_MAG_REV) ? 32 : 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
-	if (glGetError()) return -17;
+	if (type != TYPE_SPIN) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, glTex[0]);
+		if (glGetError()) return -16;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		memset(floatBuffer, 0, 512);
+		if (type == TYPE_LIQUID)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
+		else
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
+		if (glGetError()) return -17;
 
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, glTex[1]);
-	if (glGetError()) return -18;
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	if (type == TYPE_MAG || type == TYPE_MAG_REV)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
-	if (glGetError()) return -19;
+		if (type != TYPE_LIQUID) {
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, glTex[1]);
+			if (glGetError()) return -18;
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			if (glGetError()) return -19;
+		}
+
+		//leave everything prepared for fast drawing :)
+		glActiveTexture(GL_TEXTURE0);
+	}
 
 	glUseProgram(glProgram);
 	if (glGetError()) return -20;
 
-	glUniform1i(glGetUniformLocation(glProgram, "texAmplitude"), 0);
-	glUniform1i(glGetUniformLocation(glProgram, "texColor"), 1);
+	switch (type) {
+	case TYPE_LIQUID:
+		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 0);
+	case TYPE_SPIN:
+		glTime = glGetUniformLocation(glProgram, "time");
+		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
+		break;
+	default:
+		glUniform1i(glGetUniformLocation(glProgram, "texAmplitude"), 0);
+		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 1);
+		break;
+	}
 	if (glGetError()) return -21;
 
-	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
+	if (type == TYPE_LIQUID) {
 		glUseProgram(glProgram2);
 		if (glGetError()) return -22;
 
-		glUniform1i(glGetUniformLocation(glProgram2, "texColor"), 1);
+		glUniform1i(glGetUniformLocation(glProgram2, "texColor"), 0);
 		if (glGetError()) return -23;
 	}
 
-	//leave everything prepared for fast drawing :)
-	glActiveTexture(GL_TEXTURE0);
+	if (type != TYPE_SPIN) {
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+		glVertexAttribPointer(0, 1, GL_FLOAT, false, 0, 0);
+	} else {
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+		glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
 
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-	glVertexAttribPointer(0, 1, GL_FLOAT, false, 0, 0);
-
-	if (type == TYPE_MAG || type == TYPE_MAG_REV) {
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
+		glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+	}
+	if (type == TYPE_LIQUID) {
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 		glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
@@ -352,7 +447,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	}
 	if (glGetError()) return -24;
 
-	commonColorIndex = (((type == TYPE_MAG) || (type == TYPE_MAG_REV)) ? 4 : 0);
+	commonColorIndex = ((type != TYPE_SPECTRUM) ? 4 : 0);
 	commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside glDrawFrame
 	commonUpdateMultiplier(env, clazz, 0);
 
@@ -382,11 +477,9 @@ int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
 		return ERR_NOMEM;
 	}
 
-	glActiveTexture(GL_TEXTURE1);
 	glGetError(); //clear any eventual error flags
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, inf.width, inf.height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, dst);
 	int error = glGetError();
-	glActiveTexture(GL_TEXTURE0);
 
 	AndroidBitmap_unlockPixels(env, bitmap);
 
@@ -405,51 +498,50 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 		glActiveTexture(GL_TEXTURE0);
 	}
 
-	if (glType == TYPE_MAG || glType == TYPE_MAG_REV) {
+	int i, idx, last;
+	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
+
+	switch (glType) {
+	case TYPE_LIQUID:
 		glUseProgram(glProgram2);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-		glFinish();
+		glFlush(); //faster than glFinish :)
 
 		glUseProgram(glProgram);
 
-		unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
+	case TYPE_SPIN:
+		glUniform1f(glTime, (float)commonTime * 0.001f);
 
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
-		int i, idx = 4, last;
-		unsigned char avg;
-		unsigned char data[32];
-
-		((unsigned int*)data)[0] = ((unsigned int*)processedData)[0];
-
-		for (i = 4; i < 20; i += 2) {
-			data[idx++] = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1);
-		}
-		for (; i < 36; i += 4) {
-			data[idx++] = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
-		}
+		idx = glAmplitude;
+		for (i = 0; i < 6; i++)
+			glUniform1f(idx++, (float)processedData[i] / 255.0f);
+		for (; i < 20; i += 2)
+			glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f);
+		for (; i < 36; i += 4)
+			glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f);
 		for (last = 44; last <= 100; last += 8) {
 			avg = 0;
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 3;
-			data[idx++] = avg;
+				avg = MAX(avg, processedData[i]);
+			glUniform1f(idx++, (float)avg / 255.0f);
 		}
 		for (last = 116; last <= 228; last += 16) {
 			avg = 0;
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 4;
-			data[idx++] = avg;
+				avg = MAX(avg, processedData[i]);
+			glUniform1f(idx++, (float)avg / 255.0f);
 		}
 #undef MAX
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 32, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, data);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2);
-	} else {
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, (glType == TYPE_SPIN) ? 4 : (512 * 2));
+		break;
+	default:
 		glClear(GL_COLOR_BUFFER_BIT);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)(floatBuffer + 512));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, processedData);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2);
+		break;
 	}
 }

@@ -33,7 +33,9 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -65,9 +67,10 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
+import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
-	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5;
+public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback, DialogInterface.OnClickListener {
+	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5, MNU_ABOUT = MNU_VISUALIZER + 6;
 
 	private static final int MSG_OPENGL_ERROR = 0x0700;
 	private static final int MSG_CHOOSE_IMAGE = 0x0701;
@@ -76,9 +79,9 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	public static final String EXTRA_VISUALIZER_TYPE = "br.com.carlosrafaelgn.fplay.OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE";
 
-	public static final int TYPE_FULLSCREEN = 0;
-	public static final int TYPE_MAG = 1;
-	public static final int TYPE_MAG_REV = 2;
+	public static final int TYPE_SPECTRUM = 0;
+	public static final int TYPE_LIQUID = 1;
+	public static final int TYPE_SPIN = 2;
 
 	private final int type;
 	private byte[] bfft;
@@ -92,12 +95,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	
 	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
-		type = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_FULLSCREEN);
+		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
+		type = ((t < TYPE_LIQUID || t > TYPE_SPIN) ? TYPE_SPECTRUM : t);
 		bfft = new byte[2048];
 		setClickable(true);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_MAG || type == TYPE_MAG_REV) ? 0 : 2);
+		speed = ((type == TYPE_LIQUID) ? 0 : 2);
 		this.activity = activity;
 
 		if (GLVersion != -1) {
@@ -311,7 +315,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		if (type != TYPE_MAG && type != TYPE_MAG_REV)
+		if (type == TYPE_SPECTRUM)
 			SimpleVisualizerJni.commonSetColorIndex(colorIndex);
 		SimpleVisualizerJni.commonSetSpeed(speed);
 		if (GLVersion == -1) {
@@ -355,7 +359,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			return;
 		SimpleVisualizerJni.glOnSurfaceChanged(width, height);
 		okToRender = true;
-		if ((type == TYPE_MAG || type == TYPE_MAG_REV) && !imageChoosenAtLeastOnce) {
+		if (type == TYPE_LIQUID && !imageChoosenAtLeastOnce) {
 			imageChoosenAtLeastOnce = true;
 			MainHandler.sendMessage(this, MSG_CHOOSE_IMAGE);
 		}
@@ -507,6 +511,16 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		case MNU_CHOOSE_IMAGE:
 			chooseImage();
 			break;
+		case MNU_ABOUT:
+			if (activity == null)
+				break;
+			UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
+				.setTitle(activity.getText(R.string.about))
+				.setView(UI.createDialogView(activity, SafeURLSpan.parseSafeHtml("I/O fragment shader by movAX13h, August 2013<br/><a href=\"https://www.shadertoy.com/view/XsfGDS\">shadertoy.com/view/XsfGDS</a>")))
+				.setCancelable(true)
+				.setPositiveButton(R.string.ok, this)
+				.create());
+			break;
 		}
 		return true;
 	}
@@ -530,16 +544,22 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
 		final Context ctx = getContext();
-		UI.separator(menu, 1, 0);
+		if (type != TYPE_SPIN)
+			UI.separator(menu, 1, 0);
 
-		if (type == TYPE_MAG || type == TYPE_MAG_REV) {
+		switch (type) {
+		case TYPE_LIQUID:
 			menu.add(1, MNU_CHOOSE_IMAGE, 1, R.string.choose_image)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
-		} else {
+			break;
+		case TYPE_SPIN:
+			break;
+		default:
 			menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
+			break;
 		}
 		UI.separator(menu, 1, 2);
 		menu.add(2, MNU_SPEED0, 0, ctx.getText(R.string.speed) + ": 0")
@@ -635,5 +655,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void releaseView() {
 		activity = null;
+	}
+
+	@Override
+	public void onClick(DialogInterface dialogInterface, int which) {
+
 	}
 }

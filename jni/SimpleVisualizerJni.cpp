@@ -398,9 +398,11 @@ extern "C" {
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	voice = 0;
 	recreateVoice = 0;
-#ifdef _MAY_HAVE_NEON_
+	commonTime = 0;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
+	commonCoefNew = 0.0f;
+#ifdef _MAY_HAVE_NEON_
 	neonMode = 0;
 	neonDone = 0;
 #endif

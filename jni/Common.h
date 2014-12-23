@@ -46,7 +46,7 @@ int intBuffer[8] __attribute__((aligned(16)));
 #endif
 
 float commonCoefNew;
-unsigned int commonColorIndex, commonColorIndexApplied;
+unsigned int commonColorIndex, commonColorIndexApplied, commonTime;
 
 void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int speed) {
 	switch (speed) {
@@ -141,6 +141,8 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 }
 
 int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, int bt) {
+	commonTime += deltaMillis;
+
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
