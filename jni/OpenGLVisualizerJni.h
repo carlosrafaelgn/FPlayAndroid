@@ -81,25 +81,11 @@ static const float glTexCoordsRect[] = {
 #undef topTex
 #undef rightTex
 #undef bottomTex
-#define leftTex 1.0f
-#define topTex 1.0f
-#define rightTex 0.0f
-#define bottomTex 0.0f
-static const float glTexCoordsRectInv[] = {
-	leftTex, bottomTex,
-	rightTex, bottomTex,
-	leftTex, topTex,
-	rightTex, topTex
-};
-#undef leftTex
-#undef topTex
-#undef rightTex
-#undef bottomTex
 
 static const char* const rectangleVShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }";
 
-static unsigned int glProgram, glProgram2, glType;
-static int glTime, glAmplitude;
+static unsigned int glProgram, glProgram2, glType, glBuf[4];
+static int glTime, glAmplitude, glVerticesPerRow, glRows;
 
 int createProgram(const char* vertexShaderSource, const char* fragmentShaderSource, unsigned int* program) {
 	int l;
@@ -142,11 +128,21 @@ int createProgram(const char* vertexShaderSource, const char* fragmentShaderSour
 
 int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type) {
 	glType = type;
+	glProgram = 0;
+	glProgram2 = 0;
+	glBuf[0] = 0;
+	glBuf[1] = 0;
+	glBuf[2] = 0;
+	glBuf[3] = 0;
+	glTime = 0;
+	glAmplitude = 0;
+	glVerticesPerRow = 0;
+	glRows = 0;
 	commonTime = 0;
-	commonTimeLimit = 6283; //2 * pi * 1000
+	commonTimeLimit = ((type == TYPE_SPIN) ? 6283 : 12566); //2 * pi * 1000 : 2 * 2 * pi * 1000
 
 	int l;
-	unsigned int glTex[2], glBuf[4];
+	unsigned int glTex[2];
 	const char* vertexShader;
 	const char* fragmentShader;
 
@@ -169,7 +165,23 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		"vTexCoord = coord; }";
 		break;
 	case TYPE_SPIN:
-		vertexShader = rectangleVShader;
+		//inPosition stores the distance of the vertex to the origin in the z component
+		//inTexCoord stores the angle of the vertex in the z component
+		vertexShader = "attribute vec3 inPosition; attribute vec3 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; varying float dist; uniform float amplitude[33]; uniform float time; void main() {" \
+		"gl_Position = vec4(inPosition.x, inPosition.y, 0.0, 1.0);" \
+		"float d = inPosition.z;" \
+
+		"vTexCoord = inTexCoord.xy;" \
+		"float angle = inTexCoord.z - (0.25 * amplitude[int(d * 31.9375)]);" \
+
+		"dist = d * d * (0.5 + (1.5 * amplitude[2]));" \
+
+		"vColor = vec3(abs(cos(angle*5.0+time))," \
+		"abs(cos(angle*7.0+time*2.0))," \
+		"abs(cos(angle*11.0+time*4.0))" \
+		");" \
+
+		"}";
 		break;
 	default:
 		vertexShader = "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
@@ -207,23 +219,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		"}";
 		break;
 	case TYPE_SPIN:
-		// Modified version of http://glslsandbox.com/e#21756.1
-		fragmentShader = "precision mediump float; varying vec2 vTexCoord; uniform float amplitude[33]; uniform float time; " \
-		"void main() {" \
-		"float angle = atan(vTexCoord.y, vTexCoord.x);" \
-		"float dist = max(0.0, 1.0 - (length(vTexCoord) / 1.25));" \
-
-		"float x = dist * 31.9375;" \
-		"int i = int(x);" \
-		"float absy = amplitude[i];" \
-		"absy += (amplitude[i + 1] - absy) * smoothstep(0.0, 1.0, fract(x));" \
-
-		"angle -= 0.25 * absy;" \
-		"dist = (dist * dist * (0.5 + (1.5 * amplitude[2]))) - (length(vec2(mod(gl_FragCoord.x, 20.0)-10.0, mod(gl_FragCoord.y, 20.0)-10.0)) * 0.0625);" \
-		"gl_FragColor = vec4(abs(cos(angle*5.0+time)) + dist," \
-		"abs(cos(angle*7.0+time*2.0)) + dist," \
-		"abs(cos(angle*11.0+time*4.0)) + dist," \
-		"1.0);" \
+		fragmentShader = "precision mediump float; varying vec2 vTexCoord; varying vec3 vColor; varying float dist; uniform sampler2D texColor; void main() {" \
+		"float c = dist - texture2D(texColor, vTexCoord).a;" \
+		"gl_FragColor = vec4(vColor.r + c, vColor.g + c, vColor.b + c, 1.0);" \
 		"}";
 		break;
 	default:
@@ -258,11 +256,6 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		if (glGetError()) return -12;
 	}
 
-	glBuf[0] = 0;
-	glBuf[1] = 0;
-	glBuf[2] = 0;
-	glBuf[3] = 0;
-
 	if (type == TYPE_LIQUID) {
 		glGenBuffers(4, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1] || !glBuf[2] || !glBuf[3]) return -13;
@@ -296,20 +289,18 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		glBufferData(GL_ARRAY_BUFFER, (512 * 2) * sizeof(float), vertices, GL_STATIC_DRAW);
 
 		delete vertices;
+
+		//create a rectangle that occupies the entire screen
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[2]);
+		glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[3]);
+		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsRect, GL_STATIC_DRAW);
+
+		if (glGetError()) return -14;
 	} else if (type == TYPE_SPIN) {
         glGenBuffers(2, glBuf);
         if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
-    }
-
-	if (type != TYPE_SPECTRUM) {
-		//create a rectangle that occupies the entire screen
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[(type == TYPE_LIQUID) ? 2 : 0]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[(type == TYPE_LIQUID) ? 3 : 1]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), (type == TYPE_LIQUID) ? glTexCoordsRect : glTexCoordsRectInv, GL_STATIC_DRAW);
-
-		if (glGetError()) return -14;
-	} else {
+    } else {
 		glGenBuffers(1, glBuf);
 		if (glGetError() || !glBuf[0]) return -13;
 
@@ -354,10 +345,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 	switch (type) {
 	case TYPE_LIQUID:
+	case TYPE_SPIN:
 		glGenTextures(1, glTex);
 		if (glGetError() || !glTex[0]) return -15;
-		break;
-	case TYPE_SPIN:
 		break;
 	default:
 		glGenTextures(2, glTex);
@@ -399,6 +389,27 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 		//leave everything prepared for fast drawing :)
 		glActiveTexture(GL_TEXTURE0);
+	} else {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, glTex[0]);
+		if (glGetError()) return -16;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		//generate the 20x20 texture
+		for (int y = 0; y < 20; y++) {
+			float yf = (float)(y - 10);
+			yf *= yf;
+			for (int x = 0; x < 20; x++) {
+				//length(vec2(x-10.0, y-10.0)) * 0.0625
+				float xf = (float)(x - 10);
+				int v = (int)(255.0f * 0.0625f * sqrtf((xf * xf) + yf));
+				((unsigned char*)floatBuffer)[(y * 20) + x] = (unsigned char)((v >= 255) ? 255 : v);
+			}
+		}
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 20, 20, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
+		if (glGetError()) return -17;
 	}
 
 	glUseProgram(glProgram);
@@ -406,8 +417,8 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 	switch (type) {
 	case TYPE_LIQUID:
-		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 0);
 	case TYPE_SPIN:
+		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 0);
 		glTime = glGetUniformLocation(glProgram, "time");
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		break;
@@ -433,11 +444,11 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	} else {
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-		glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
-		glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
 	}
 	if (type == TYPE_LIQUID) {
 		glEnableVertexAttribArray(1);
@@ -465,6 +476,74 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height) {
 	glViewport(0, 0, width, height);
+	if (glType == TYPE_SPIN && glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
+		glVerticesPerRow = ((width + 19) / 20) + 1;
+		glRows = ((height + 19) / 20);
+		struct _coord {
+			float x, y, z;
+		};
+		_coord* vertices = new _coord[(glVerticesPerRow << 1) * glRows];
+
+		//compute the position of each vertex on the screen, respecting their order:
+		// 1  3  5  7
+		//             ...
+		// 0  2  4  6
+		//inPosition stores the distance of the vertex to the origin in the z component
+		_coord* v = vertices;
+		float y0 = 1.0f;
+		for (int j = 0; j < glRows; j++) {
+			//compute x and y every time to improve precision
+			float y1 = 1.0f - ((float)(20 * 2 * (j + 1)) / (float)height);
+			for (int i = 0; i < glVerticesPerRow; i++) {
+				float x = -1.0f + ((float)(20 * 2 * i) / (float)width);
+				v[(i << 1)    ].x = x;
+				v[(i << 1)    ].y = y1;
+				v[(i << 1) + 1].x = x;
+				v[(i << 1) + 1].y = y0;
+
+				x = (-x + 1.0f) * 0.5f;
+				x = x * x;
+
+				float y = (y0 + 1.0f) * 0.5f;
+				float z = 1.0f - (sqrtf(x + (y * y)) / 1.25f);
+				v[(i << 1) + 1].z = ((z > 0.0f) ? z : 0.0f);
+
+				y = (y1 + 1.0f) * 0.5f;
+				z = 1.0f - (sqrtf(x + (y * y)) / 1.25f);
+				v[(i << 1)    ].z = ((z > 0.0f) ? z : 0.0f);
+			}
+			y0 = y1;
+			v += (glVerticesPerRow << 1);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+		glBufferData(GL_ARRAY_BUFFER, (glVerticesPerRow << 1) * glRows * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
+
+		//inTexCoord stores the angle of the vertex in the z component
+		v = vertices;
+		for (int j = 0; j < glRows; j++) {
+			for (int i = 0; i < glVerticesPerRow; i++) {
+				int idx = (i << 1) + 1;
+				v[idx].z = atan2f((v[idx].y + 1.0f) * 0.5f, (-v[idx].x + 1.0f) * 0.5f);
+				v[idx].x = (float)i;
+				v[idx].y = (float)j;
+				//even vertices are located below odd ones
+				idx--;
+				v[idx].z = atan2f((v[idx].y + 1.0f) * 0.5f, (-v[idx].x + 1.0f) * 0.5f);
+				v[idx].x = (float)i;
+				v[idx].y = (float)(j + 1);
+			}
+			v += (glVerticesPerRow << 1);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
+		glBufferData(GL_ARRAY_BUFFER, (glVerticesPerRow << 1) * glRows * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
+
+		delete vertices;
+
+		glVerticesPerRow <<= 1;
+	} else {
+		glVerticesPerRow = 0;
+		glRows = 0;
+	}
 }
 
 int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
@@ -543,7 +622,15 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 		}
 #undef MAX
 
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, (glType == TYPE_SPIN) ? 4 : (512 * 2));
+		if (glType == TYPE_LIQUID) {
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2);
+		} else if (glRows) {
+			int first = 0;
+			for (int i = 0; i < glRows; i++) {
+				glDrawArrays(GL_TRIANGLE_STRIP, first, glVerticesPerRow);
+				first += glVerticesPerRow;
+			}
+		}
 		break;
 	default:
 		glClear(GL_COLOR_BUFFER_BIT);
