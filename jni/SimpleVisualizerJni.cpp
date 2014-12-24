@@ -399,6 +399,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	voice = 0;
 	recreateVoice = 0;
 	commonTime = 0;
+	commonTimeLimit = 0xffffffff;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
 	commonCoefNew = 0.0f;

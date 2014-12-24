@@ -46,7 +46,7 @@ int intBuffer[8] __attribute__((aligned(16)));
 #endif
 
 float commonCoefNew;
-unsigned int commonColorIndex, commonColorIndexApplied, commonTime;
+unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit;
 
 void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int speed) {
 	switch (speed) {
@@ -141,7 +141,11 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 }
 
 int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, int bt) {
-	commonTime += deltaMillis;
+	int i;
+	i = commonTime + deltaMillis;
+	while (((unsigned int)i) >= commonTimeLimit)
+		i -= commonTimeLimit;
+	commonTime = i;
 
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
@@ -154,7 +158,6 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int delta
 
 	unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
 
-	int i;
 #ifdef _MAY_HAVE_NEON_
 if (!neonMode) {
 #endif

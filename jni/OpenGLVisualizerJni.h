@@ -143,6 +143,7 @@ int createProgram(const char* vertexShaderSource, const char* fragmentShaderSour
 int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type) {
 	glType = type;
 	commonTime = 0;
+	commonTimeLimit = 6283; //2 * pi * 1000
 
 	int l;
 	unsigned int glTex[2], glBuf[4];
@@ -219,9 +220,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 		"angle -= 0.25 * absy;" \
 		"dist = (dist * dist * (0.5 + (1.5 * amplitude[2]))) - (length(vec2(mod(gl_FragCoord.x, 20.0)-10.0, mod(gl_FragCoord.y, 20.0)-10.0)) * 0.0625);" \
-		"gl_FragColor = vec4(abs(cos(angle*5.0+time*0.5)) + dist," \
-		"abs(cos(angle*7.0+time*1.0)) + dist," \
-		"abs(cos(angle*11.0+time*1.5)) + dist," \
+		"gl_FragColor = vec4(abs(cos(angle*5.0+time)) + dist," \
+		"abs(cos(angle*7.0+time*2.0)) + dist," \
+		"abs(cos(angle*11.0+time*4.0)) + dist," \
 		"1.0);" \
 		"}";
 		break;
