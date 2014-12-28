@@ -508,9 +508,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_SPIN, 3, "Spinning Rainbow")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 4, "Bluetooth")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+		//s2.add(2, MNU_VISUALIZER_BLUETOOTH, 4, "Bluetooth")
+		//	.setOnMenuItemClickListener(this)
+		//	.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));

@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -39,11 +40,14 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.os.Message;
+import android.provider.Settings;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
@@ -85,11 +89,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	private final int type;
 	private byte[] bfft;
-	private volatile boolean supported, alerted, okToRender, skipFrameProcessing, imageChoosenAtLeastOnce;
+	private volatile boolean supported, alerted, okToRender, imageChoosenAtLeastOnce;
 	private volatile int error;
 	private volatile Uri selectedUri;
 	private boolean browsing;
-	private int colorIndex, speed;
+	private int colorIndex, speed, viewWidth, viewHeight;
 	private EGLConfig config;
 	private Activity activity;
 	
@@ -103,6 +107,15 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		colorIndex = 0;
 		speed = ((type == TYPE_LIQUID) ? 0 : 2);
 		this.activity = activity;
+
+		//initialize these with default values to be used in
+		if (landscape) {
+			viewWidth = 1024;
+			viewHeight = 512;
+		} else {
+			viewWidth = 512;
+			viewHeight = 1024;
+		}
 
 		if (GLVersion != -1) {
 			supported = (GLVersion >= 0x00020000);
@@ -118,8 +131,15 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setEGLWindowSurfaceFactory(this);
 		setRenderer(this);
 		setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			setPreserveEGLContext();
 	}
-	
+
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void setPreserveEGLContext() {
+		setPreserveEGLContextOnPause(false);
+	}
+
 	@Override
 	public EGLSurface createWindowSurface(EGL10 egl, EGLDisplay display, EGLConfig config, Object native_window) {
 		try {
@@ -312,7 +332,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			egl.eglDestroyContext(display, context);
 	}
 	
-	//Runs on a SECONDARY thread
+	//Runs on a SECONDARY thread (A)
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		if (type == TYPE_SPECTRUM)
@@ -352,11 +372,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 	}
 	
-	//Runs on a SECONDARY thread
+	//Runs on a SECONDARY thread (A)
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		if (!supported)
 			return;
+		viewWidth = width;
+		viewHeight = height;
 		SimpleVisualizerJni.glOnSurfaceChanged(width, height);
 		okToRender = true;
 		/*if (type == TYPE_LIQUID && !imageChoosenAtLeastOnce) {
@@ -373,8 +395,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		super.surfaceDestroyed(holder);
 	}
 
-	private static void loadBitmap(Activity activity, Uri uri) {
-		if (activity == null || uri == null)
+	private void loadBitmap() {
+		if (activity == null || selectedUri == null)
 			return;
 
 		/*String path = null;
@@ -384,7 +406,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		//Based on: http://stackoverflow.com/q/2169649/3569421
 		try {
 			final String[] projection = {MediaStore.Images.Media.DATA};
-			final Cursor cursor = activity.managedQuery(uri, projection, null, null, null);
+			final Cursor cursor = activity.managedQuery(selectedUri, projection, null, null, null);
 			if (cursor != null) {
 				final int column_index = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
 				if (column_index >= 0) {
@@ -397,7 +419,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		try {
 			//OI FILE Manager
 			if (path == null)
-				path = uri.getPath();
+				path = selectedUri.getPath();
 			orientation = (new ExifInterface(path)).getAttributeInt(ExifInterface.TAG_ORIENTATION, 1);
 		} catch (Throwable ex) {
 		}*/
@@ -405,14 +427,14 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		InputStream input = null;
 		Bitmap bitmap = null;
 		try {
-			input = activity.getContentResolver().openInputStream(uri);
+			input = activity.getContentResolver().openInputStream(selectedUri);
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inJustDecodeBounds = true;
 			bitmap = BitmapFactory.decodeStream(input, null, opts);
 			input.close();
 			input = null;
 
-			final int maxDim = Math.max(320, Math.min(1024, Math.max(UI.screenWidth, UI.screenHeight)));
+			final int maxDim = Math.max(320, Math.min(1024, Math.max(viewWidth, viewHeight)));
 
 			opts.inSampleSize = 1;
 			int largest = ((opts.outWidth >= opts.outHeight) ? opts.outWidth : opts.outHeight);
@@ -421,43 +443,52 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				largest >>= 1;
 			}
 
-			input = activity.getContentResolver().openInputStream(uri);
+			input = activity.getContentResolver().openInputStream(selectedUri);
 			opts.inJustDecodeBounds = false;
 			opts.inPreferredConfig = Bitmap.Config.RGB_565;
 			opts.inDither = true;
 			bitmap = BitmapFactory.decodeStream(input, null, opts);
 
-			if (bitmap != null)
+			if (bitmap != null) {
+				if (opts.outWidth != opts.outHeight && ((opts.outWidth > opts.outHeight) != (viewWidth > viewHeight))) {
+					//rotate the image 90 degress
+					final Matrix matrix = new Matrix();
+					matrix.postRotate(-90);
+					final Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+					if (bitmap != newBitmap && newBitmap != null) {
+						bitmap.recycle();
+						bitmap = newBitmap;
+					}
+					System.gc();
+				}
 				SimpleVisualizerJni.glLoadBitmapFromJava(bitmap);
+			}
 		} catch (Throwable ex) {
-			ex.printStackTrace();
 		} finally {
 			if (input != null) {
 				try {
 					input.close();
 				} catch (Throwable ex) {
-					ex.printStackTrace();
 				}
 			}
 			if (bitmap != null)
 				bitmap.recycle();
+			System.gc();
 		}
 	}
 
-	//Runs on a SECONDARY thread
+	//Runs on a SECONDARY thread (A)
 	@Override
 	public void onDrawFrame(GL10 gl) {
 		if (okToRender) {
 			if (selectedUri != null) {
-				skipFrameProcessing = true;
-				loadBitmap(activity, selectedUri);
+				loadBitmap();
 				selectedUri = null;
-				skipFrameProcessing = false;
 			}
 			SimpleVisualizerJni.glDrawFrame();
 		}
 	}
-	
+
 	@Override
 	public boolean handleMessage(Message msg) {
 		switch (msg.what) {
@@ -595,7 +626,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		return 1024;
 	}
 	
-	//Runs on a SECONDARY thread
+	//Runs on a SECONDARY thread (B)
 	@Override
 	public void load(Context context) {
 		SimpleVisualizerJni.commonCheckNeonMode();
@@ -619,10 +650,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		
 	}
 
-	//Runs on a SECONDARY thread
+	//Runs on a SECONDARY thread (B)
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
-		if (okToRender && !skipFrameProcessing) {
+		if (okToRender) {
 			//WE MUST NEVER call any method from visualizer
 			//while the player is not actually playing
 			if (!playing)
@@ -634,7 +665,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 	}
 	
-	//Runs on a SECONDARY thread
+	//Runs on a SECONDARY thread (B)
 	@Override
 	public void release() {
 		bfft = null;

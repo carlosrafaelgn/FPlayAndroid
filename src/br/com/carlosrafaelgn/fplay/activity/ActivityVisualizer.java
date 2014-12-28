@@ -532,8 +532,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		final int w = info.usableScreenWidth, h = info.usableScreenHeight;
 		info.getInfo(this);
 		if (i != info.isLandscape || w != info.usableScreenWidth || h != info.usableScreenHeight) {
-			if (visualizer != null)
-				visualizer.configurationChanged(info.isLandscape);
+			final Visualizer v = visualizer;
+			if (v != null)
+				v.configurationChanged(info.isLandscape);
 			prepareViews(false);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 				prepareSystemUIObserver();
@@ -577,8 +578,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private void finalCleanup() {
 		Player.removeDestroyedObserver(this);
 		alive = false;
-		if (visualizer != null)
-			visualizer.cancelLoading();
+		final Visualizer v = visualizer;
+		if (v != null)
+			v.cancelLoading();
 		resumeTimer();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			cleanupSystemUIObserver();
@@ -605,8 +607,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		if (visualizer != null)
-			visualizer.onActivityResult(requestCode, resultCode, data);
+		final Visualizer v = visualizer;
+		if (v != null)
+			v.onActivityResult(requestCode, resultCode, data);
 	}
 
 	@Override
@@ -634,8 +637,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		if (songHasChanged && lblTitle != null)
 			lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
-		if (visualizer != null)
-			visualizer.onPlayerChanged(currentSong, songHasChanged, ex);
+		final Visualizer v = visualizer;
+		if (v != null)
+			v.onPlayerChanged(currentSong, songHasChanged, ex);
 	}
 	
 	@Override
@@ -674,8 +678,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		menu.add(0, MNU_ORIENTATION, 0, (UI.visualizerOrientation == 0) ? R.string.portrait : R.string.landscape)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_ORIENTATION));
-		if (visualizer != null)
-			visualizer.onCreateContextMenu(menu);
+		final Visualizer v = visualizer;
+		if (v != null)
+			v.onCreateContextMenu(menu);
 	}
 	
 	@Override
@@ -708,8 +713,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		} else if (view == btnMenu) {
 			onPrepareOptionsMenu(null);
 		} else if (view == visualizerView || view == panelControls) {
-			if (visualizer != null && panelTopWasVisibleOk)
-				visualizer.onClick();
+			final Visualizer v = visualizer;
+			if (v != null && panelTopWasVisibleOk)
+				v.onClick();
 		}
 	}
 	

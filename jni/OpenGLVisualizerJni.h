@@ -31,10 +31,11 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-//https://www.khronos.org/opengles/sdk/docs/man3/docbook4/xhtml/glDeleteBuffers.xml
-//https://www.khronos.org/opengles/sdk/docs/man3/docbook4/xhtml/glVertexAttribPointer.xml
-//https://www.khronos.org/opengles/sdk/docs/man3/docbook4/xhtml/glTexImage2D.xml
-//https://www.khronos.org/opengles/sdk/docs/man3/docbook4/xhtml/glGenBuffers.xml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glDeleteBuffers.xml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glVertexAttribPointer.xml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glTexImage2D.xml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glGenBuffers.xml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glPixelStorei.xhtml
 
 #include <android/bitmap.h>
 #include <GLES2/gl2.h>
@@ -139,7 +140,17 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glVerticesPerRow = 0;
 	glRows = 0;
 	commonTime = 0;
-	commonTimeLimit = ((type == TYPE_SPIN) ? 6283 : 12566); //2 * pi * 1000 : 2 * 2 * pi * 1000
+	switch (type) {
+	case TYPE_LIQUID:
+		commonTimeLimit = 12566; //2 * 2 * pi * 1000
+		break;
+	case TYPE_SPIN:
+		commonTimeLimit = 6283; //2 * pi * 1000
+		break;
+	default:
+		commonTimeLimit = 0xffffffff;
+		break;
+	}
 
 	int l;
 	unsigned int glTex[2];
@@ -199,16 +210,11 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		/* This water equation (length, sin, cos) was based on: http://glslsandbox.com/e#21421.0 */ \
 		"vec2 p = (vec2(vTexCoord.x, mix(vTexCoord.y, vAmpl, 0.25)) * 6.0) - vec2(125.0);" \
 
+		/* Let's perform only one iteration, in favor of speed ;) */ \
 		"float t = time * -0.5;" \
 		"vec2 i = p + vec2(cos(t - p.x) + sin(t + p.y), sin(t - p.y) + cos(t + p.x));" \
 		"float c = 1.0 + (1.0 / length(vec2(p.x / (sin(i.x + t) * 100.0), p.y / (cos(i.y + t) * 100.0))));" \
 
-		/* Let's perform only one iteration, in favor of speed ;) */
-		/*"t = time * -0.05;" \
-		"i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));" \
-		"c += 1.0 / length(vec2(p.x / (sin(i.x + t) * 100.0), p.y / (cos(i.y + t) * 100.0)));" \
-
-		"c = 1.5 - sqrt(c * 0.5);"*/ \
 		"c = 1.5 - sqrt(c);" \
 
 		"c = 1.25 * c * c * c;" \
@@ -330,6 +336,11 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		glClearColor((float)((bgColor >> 16) & 0xff) / 255.0f, (float)((bgColor >> 8) & 0xff) / 255.0f, (float)(bgColor & 0xff) / 255.0f, 1.0f);
 	}
 
+	//According to the docs, glTexImage2D initially expects images to be aligned on 4-byte
+	//boundaries, but for ANDROID_BITMAP_FORMAT_RGB_565, AndroidBitmap_lockPixels aligns images
+	//on 2-byte boundaries, making a few images look terrible!
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
+
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DITHER);
@@ -369,7 +380,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 			((unsigned short*)floatBuffer)[1] = 0x5b3a;
 			((unsigned short*)floatBuffer)[2] = 0x041f;
 			((unsigned short*)floatBuffer)[3] = 0x34df;
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
 		} else {
 			memset(floatBuffer, 0, 256);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
@@ -564,7 +575,7 @@ int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
 	}
 
 	glGetError(); //clear any eventual error flags
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, inf.width, inf.height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, dst);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, inf.width, inf.height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, dst);
 	int error = glGetError();
 
 	AndroidBitmap_unlockPixels(env, bitmap);
@@ -580,7 +591,7 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	if (commonColorIndexApplied != commonColorIndex) {
 		commonColorIndexApplied = commonColorIndex;
 		glActiveTexture(GL_TEXTURE1);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)(COLORS + commonColorIndex));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)(COLORS + commonColorIndex));
 		glActiveTexture(GL_TEXTURE0);
 	}
 
