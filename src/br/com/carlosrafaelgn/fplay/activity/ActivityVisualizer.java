@@ -164,6 +164,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private Object systemUIObserver;
 	private Timer timer, uiAnimTimer;
 	private BgColorStateList buttonColor, lblColor;
+	private ColorDrawable panelTopBackground;
 	
 	private void hideAllUIDelayed() {
 		if (!visualizerRequiresScreen)
@@ -219,7 +220,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		panelTopHiding = 0;
 		panelTopAlpha = 1.0f;
 
-		lblTitle.setPadding(0, UI._4dp, 0, 0);
+		lblTitle.setPadding(0, UI._4dp, 0, UI._4dp);
 
 		//panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(info.isLandscape ? InterceptableLayout.LayoutParams.WRAP_CONTENT : InterceptableLayout.LayoutParams.MATCH_PARENT, info.isLandscape ? InterceptableLayout.LayoutParams.MATCH_PARENT : InterceptableLayout.LayoutParams.WRAP_CONTENT));
 		panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(InterceptableLayout.LayoutParams.MATCH_PARENT, InterceptableLayout.LayoutParams.WRAP_CONTENT));
@@ -331,6 +332,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	}
 	
 	@SuppressLint("InlinedApi")
+	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(null);
@@ -436,6 +438,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		prepareViews(true);
 
+		if (visualizerRequiresScreen) {
+			panelTopBackground = new ColorDrawable(UI.color_visualizer565);
+			panelTop.setBackgroundDrawable(panelTopBackground);
+		}
 		btnGoBack.setTextColor(buttonColor);
 		btnPrev.setTextColor(buttonColor);
 		btnPlay.setTextColor(buttonColor);
@@ -808,8 +814,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		
 		if (panelTopAlpha != 0.0f) {
-			buttonColor.setNormalColorAlpha((int)(255.0f * panelTopAlpha));
-			lblColor.setNormalColorAlpha((int)(255.0f * panelTopAlpha));
+			final int c = (int)(255.0f * panelTopAlpha);
+			if (panelTopBackground != null)
+				panelTopBackground.setAlpha(c >> 1);
+			buttonColor.setNormalColorAlpha(c);
+			lblColor.setNormalColorAlpha(c);
 			if (btnGoBack != null)
 				btnGoBack.setTextColor(buttonColor);
 			if (btnPrev != null)

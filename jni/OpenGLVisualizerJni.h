@@ -380,7 +380,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 			((unsigned short*)floatBuffer)[1] = 0x5b3a;
 			((unsigned short*)floatBuffer)[2] = 0x041f;
 			((unsigned short*)floatBuffer)[3] = 0x34df;
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
 		} else {
 			memset(floatBuffer, 0, 256);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
@@ -575,7 +575,7 @@ int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
 	}
 
 	glGetError(); //clear any eventual error flags
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, inf.width, inf.height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, dst);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, inf.width, inf.height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, dst);
 	int error = glGetError();
 
 	AndroidBitmap_unlockPixels(env, bitmap);
@@ -591,7 +591,7 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	if (commonColorIndexApplied != commonColorIndex) {
 		commonColorIndexApplied = commonColorIndex;
 		glActiveTexture(GL_TEXTURE1);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)(COLORS + commonColorIndex));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)(COLORS + commonColorIndex));
 		glActiveTexture(GL_TEXTURE0);
 	}
 
