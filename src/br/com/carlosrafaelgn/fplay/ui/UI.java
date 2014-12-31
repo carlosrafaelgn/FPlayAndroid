@@ -1231,8 +1231,9 @@ public final class UI {
 		final int title = R.string.new_setting;
 		msgStartup = 13;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
+		final String content = activity.getText(R.string.visualizer).toString() + "! :D\n\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
 		.setView(createDialogView(activity, content))
