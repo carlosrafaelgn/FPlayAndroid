@@ -528,12 +528,21 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			final int bandCount = Equalizer.getBandCount();
 			if (bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
 				initBarsAndFrequencies(bandCount);
-			int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));
 			int availableScreenW = getDecorViewWidth();
-			if (UI.isLargeScreen)
+			int hMargin = getDecorViewHeight();
+			//some times, when rotating the device, the decorview takes a little longer to be updated
+			if (UI.isLandscape != (availableScreenW >= hMargin))
+				availableScreenW = hMargin;
+			hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));
+			if (UI.usableScreenWidth > 0 && availableScreenW > UI.usableScreenWidth)
+				availableScreenW = UI.usableScreenWidth;
+			if (UI.isLargeScreen) {
 				availableScreenW -= ((UI.getViewPaddingForLargeScreen() << 1) + (UI._16dp << 1));
-			else
+				if (UI.isLandscape)
+					availableScreenW >>= 1;
+			} else {
 				availableScreenW -= (UI._8dp << 1);
+			}
 			while (hMargin > UI._1dp && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
 				hMargin--;
 			int size = 0, textSize = 0, bgY = 0, y = 0;
