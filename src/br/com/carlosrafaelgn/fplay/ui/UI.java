@@ -571,7 +571,11 @@ public final class UI {
 			decimalSeparator = '.';
 		}
 	}
-	
+
+	public static void reapplyForcedLocale(Context context) {
+		setForcedLocale(context, forcedLocale);
+	}
+
 	public static boolean setForcedLocale(Context context, int localeCode) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;

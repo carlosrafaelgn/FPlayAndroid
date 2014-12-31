@@ -420,6 +420,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	@Override
 	protected void onResume() {
 		Player.setAppIdle(false);
+		if (UI.getForcedLocale() != UI.LOCALE_NONE)
+			UI.reapplyForcedLocale(getApplication());
 		if (top != null && top.paused) {
 			top.paused = false;
 			top.onResume();
