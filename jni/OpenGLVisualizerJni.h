@@ -149,6 +149,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		break;
 	default:
 		commonTimeLimit = 0xffffffff;
+		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &glTime);
+		if (glTime < 2)
+			glTime = 0;
 		break;
 	}
 
@@ -195,11 +198,20 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		"}";
 		break;
 	default:
-		vertexShader = "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
+		vertexShader = (glTime ? "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
 		"float absx = abs(inPosition);" \
 		"vec4 c = texture2D(texAmplitude, vec2(0.5 * (absx - 1.0), 0.0));" \
 		"gl_Position = vec4(absx - 2.0, sign(inPosition) * c.a, 0.0, 1.0);" \
-		"vColor = texture2D(texColor, c.ar); }";
+		"vColor = texture2D(texColor, c.ar); }"
+		:
+		//Tegra GPUs CANNOT use textures in vertex shaders AND does not support more than 256 registers! :(
+		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
+		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
+		"attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
+		"float absx = abs(inPosition);" \
+		"float c = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
+		"gl_Position = vec4(absx - 2.0, sign(inPosition) * c, 0.0, 1.0);" \
+		"vAmpl = c; }");
 		break;
 	}
 
@@ -231,7 +243,12 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		"}";
 		break;
 	default:
-		fragmentShader = "precision mediump float; varying vec4 vColor; void main() { gl_FragColor = vColor; }";
+		fragmentShader = (glTime ? "precision mediump float; varying vec4 vColor; void main() { gl_FragColor = vColor; }"
+		:
+		//Tegra GPUs CANNOT use textures in vertex shaders! :(
+        //http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
+        //http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
+		"precision mediump float; varying float vAmpl; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vec2(vAmpl, 0.0)); }");
 		break;
 	}
 
@@ -323,14 +340,25 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		//in the vertex shader
 		//
 		//we cannot send x = 0, as sign(0) = 0, and this would render that point useless
-		for (int i = 0; i < 256; i++) {
-			//even is negative, odd is positive
-			const float p = 1.0f + (2.0f * (float)i / 255.0f);
-			floatBuffer[(i << 1)    ] = -p;
-			floatBuffer[(i << 1) + 1] = p;
+		if (glTime) {
+			for (int i = 0; i < 256; i++) {
+				//even is negative, odd is positive
+				const float p = 1.0f + (2.0f * (float)i / 255.0f);
+				floatBuffer[(i << 1)    ] = -p;
+				floatBuffer[(i << 1) + 1] = p;
+			}
+			glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+			glBufferData(GL_ARRAY_BUFFER, (256 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
+		} else {
+			for (int i = 0; i < 128; i++) {
+				//even is negative, odd is positive
+				const float p = 1.0f + (2.0f * (float)i / 127.0f);
+				floatBuffer[(i << 1)    ] = -p;
+				floatBuffer[(i << 1) + 1] = p;
+			}
+			glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+			glBufferData(GL_ARRAY_BUFFER, (128 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
 		}
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-		glBufferData(GL_ARRAY_BUFFER, (256 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
 		if (glGetError()) return -14;
 
 		glClearColor((float)((bgColor >> 16) & 0xff) / 255.0f, (float)((bgColor >> 8) & 0xff) / 255.0f, (float)(bgColor & 0xff) / 255.0f, 1.0f);
@@ -434,7 +462,10 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		break;
 	default:
-		glUniform1i(glGetUniformLocation(glProgram, "texAmplitude"), 0);
+		if (glAmplitude)
+			glUniform1i(glGetUniformLocation(glProgram, "texAmplitude"), 0);
+		else
+			glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 1);
 		break;
 	}
@@ -637,7 +668,7 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2);
 		} else if (glRows) {
 			int first = 0;
-			for (int i = 0; i < glRows; i++) {
+			for (i = 0; i < glRows; i++) {
 				glDrawArrays(GL_TRIANGLE_STRIP, first, glVerticesPerRow);
 				first += glVerticesPerRow;
 			}
@@ -645,8 +676,19 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 		break;
 	default:
 		glClear(GL_COLOR_BUFFER_BIT);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, processedData);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2);
+		if (glTime) {
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, processedData);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2);
+		} else {
+			idx = glAmplitude;
+			for (i = 0; i < 36; i++)
+				glUniform1f(idx++, (float)processedData[i] / 255.0f);
+			for (; i < 184; i += 2)
+				glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f);
+			for (; i < 252; i += 4)
+				glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 128 * 2);
+		}
 		break;
 	}
 }
