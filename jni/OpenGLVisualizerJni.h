@@ -436,19 +436,22 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		//generate the 20x20 texture
-		for (int y = 0; y < 20; y++) {
-			float yf = (float)(y - 10);
+#define TEXTURE_SIZE 16
+		//generate the texture
+		for (int y = 0; y < TEXTURE_SIZE; y++) {
+			float yf = (float)(y - (TEXTURE_SIZE >> 1));
 			yf *= yf;
-			for (int x = 0; x < 20; x++) {
-				//length(vec2(x-10.0, y-10.0)) * 0.0625
-				float xf = (float)(x - 10);
-				int v = (int)(255.0f * 0.0625f * sqrtf((xf * xf) + yf));
-				((unsigned char*)floatBuffer)[(y * 20) + x] = (unsigned char)((v >= 255) ? 255 : v);
+			for (int x = 0; x < TEXTURE_SIZE; x++) {
+				//0.0625 = 1/16 (used for 20x20)
+				//0.078125 = 1/12.8 (used for 16x16)
+				float xf = (float)(x - (TEXTURE_SIZE >> 1));
+				int v = (int)(255.0f * 0.078125f * sqrtf((xf * xf) + yf));
+				((unsigned char*)floatBuffer)[(y * TEXTURE_SIZE) + x] = (unsigned char)((v >= 255) ? 255 : v);
 			}
 		}
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 20, 20, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
 		if (glGetError()) return -17;
+#undef TEXTURE_SIZE
 	}
 
 	glUseProgram(glProgram);
