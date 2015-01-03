@@ -436,16 +436,24 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-#define TEXTURE_SIZE 16
+
+		//according to these:
+		//http://stackoverflow.com/questions/5705753/android-opengl-es-loading-a-non-power-of-2-texture
+		//http://stackoverflow.com/questions/3740077/can-opengl-es-render-textures-of-non-base-2-dimensions
+		//https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml
+		//non-power-of-2 textures cannot be used with GL_TEXTURE_WRAP_x other than GL_CLAMP_TO_EDGE
+		//(even though it works on many devices, the spec says it shouldn't...)
+#define TEXTURE_SIZE 32
 		//generate the texture
 		for (int y = 0; y < TEXTURE_SIZE; y++) {
 			float yf = (float)(y - (TEXTURE_SIZE >> 1));
 			yf *= yf;
 			for (int x = 0; x < TEXTURE_SIZE; x++) {
+				//0.0390625 = 1/25.6 (used for 32x32)
 				//0.0625 = 1/16 (used for 20x20)
 				//0.078125 = 1/12.8 (used for 16x16)
 				float xf = (float)(x - (TEXTURE_SIZE >> 1));
-				int v = (int)(255.0f * 0.078125f * sqrtf((xf * xf) + yf));
+				int v = (int)(255.0f * 0.0390625f * sqrtf((xf * xf) + yf));
 				((unsigned char*)floatBuffer)[(y * TEXTURE_SIZE) + x] = (unsigned char)((v >= 255) ? 255 : v);
 			}
 		}
@@ -522,8 +530,13 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height) {
 	glViewport(0, 0, width, height);
 	if (glType == TYPE_SPIN && glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
-		glVerticesPerRow = ((width + 19) / 20) + 1;
-		glRows = ((height + 19) / 20);
+		int size = 20;
+		while (size < 33 && ((width % size) || (height % size)))
+			size++;
+		if (size > 32)
+			size = 20;
+		glVerticesPerRow = ((width + (size - 1)) / size) + 1;
+		glRows = ((height + (size - 1)) / size);
 		struct _coord {
 			float x, y, z;
 		};
@@ -538,9 +551,9 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 		float y0 = 1.0f;
 		for (int j = 0; j < glRows; j++) {
 			//compute x and y every time to improve precision
-			float y1 = 1.0f - ((float)(20 * 2 * (j + 1)) / (float)height);
+			float y1 = 1.0f - ((float)((size << 1) * (j + 1)) / (float)height);
 			for (int i = 0; i < glVerticesPerRow; i++) {
-				float x = -1.0f + ((float)(20 * 2 * i) / (float)width);
+				float x = -1.0f + ((float)((size << 1) * i) / (float)width);
 				v[(i << 1)    ].x = x;
 				v[(i << 1)    ].y = y1;
 				v[(i << 1) + 1].x = x;
