@@ -533,8 +533,18 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 		int size = 20;
 		while (size < 33 && ((width % size) || (height % size)))
 			size++;
-		if (size > 32)
+		if (size > 32) {
 			size = 20;
+			while (size < 33 && (height % size))
+				size++;
+			if (size > 32) {
+				size = 20;
+				while (size < 33 && (width % size))
+					size++;
+				if (size > 32)
+					size = 20;
+			}
+		}
 		glVerticesPerRow = ((width + (size - 1)) / size) + 1;
 		glRows = ((height + (size - 1)) / size);
 		struct _coord {
