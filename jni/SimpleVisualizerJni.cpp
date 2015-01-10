@@ -40,7 +40,7 @@
 #include <android/log.h>
 #include <string.h>
 #include <math.h>
-
+#include <stdlib.h>
 
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
@@ -408,6 +408,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	glAmplitude = 0;
 	glVerticesPerRow = 0;
 	glRows = 0;
+	glSoundParticle = 0;
 	commonTime = 0;
 	commonTimeLimit = 0xffffffff;
 	commonColorIndex = 0;
@@ -434,7 +435,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"glOnSurfaceCreated", "(II)I", (void*)glOnSurfaceCreated},
 		{"glOnSurfaceChanged", "(II)V", (void*)glOnSurfaceChanged},
 		{"glLoadBitmapFromJava", "(Landroid/graphics/Bitmap;)I", (void*)glLoadBitmapFromJava},
-		{"glDrawFrame", "()V", (void*)glDrawFrame}
+		{"glDrawFrame", "()V", (void*)glDrawFrame},
+		{"glOnSurfaceDestroyed", "()V", (void*)glOnSurfaceDestroyed}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)
@@ -447,6 +449,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 }
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
+	if (glSoundParticle) {
+		delete glSoundParticle;
+		glSoundParticle = 0;
+	}
 }
 
 }

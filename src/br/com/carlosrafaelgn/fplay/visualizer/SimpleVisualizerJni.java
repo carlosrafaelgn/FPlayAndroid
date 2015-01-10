@@ -76,6 +76,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	static native void glOnSurfaceChanged(int width, int height);
 	static native int glLoadBitmapFromJava(Bitmap bitmap);
 	static native void glDrawFrame();
+	static native void glOnSurfaceDestroyed();
 
 	private byte[] bfft;
 	private final SlimLock lock;

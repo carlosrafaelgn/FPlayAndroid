@@ -43,9 +43,7 @@
 
     <!--
     Just to make Google Play show the App even to phones without Bluetooth,
-    despite the uses-permission below!
-
-
+    despite the uses-permission above!
     -->
     <uses-feature
         android:name="android.hardware.bluetooth"

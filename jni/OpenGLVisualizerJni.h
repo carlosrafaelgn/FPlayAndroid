@@ -51,6 +51,7 @@
 #define TYPE_SPECTRUM 0
 #define TYPE_LIQUID 1
 #define TYPE_SPIN 2
+#define TYPE_PARTICLE 3
 
 #define left -1.0f
 #define top 1.0f
@@ -87,6 +88,22 @@ static const char* const rectangleVShader = "attribute vec4 inPosition; attribut
 
 static unsigned int glProgram, glProgram2, glType, glBuf[4];
 static int glTime, glAmplitude, glVerticesPerRow, glRows;
+
+//variables reuse :)
+#define glPos glProgram2
+#define glSize glVerticesPerRow
+#define glColor glRows
+
+float glSmoothStep(float edge0, float edge1, float x) {
+	float t = (x - edge0) / (edge1 - edge0);
+	return ((t <= 0.0f) ? 0.0f :
+		((t >= 1.0f) ? 1.0f :
+			(t * t * (3.0f - (2.0f * t)))
+		)
+	);
+}
+
+#include "GLSoundParticle.h"
 
 int createProgram(const char* vertexShaderSource, const char* fragmentShaderSource, unsigned int* program) {
 	int l;
@@ -147,6 +164,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	case TYPE_SPIN:
 		commonTimeLimit = 6283; //2 * pi * 1000
 		break;
+	case TYPE_PARTICLE:
+		commonTimeLimit = 0xffffffff;
+		break;
 	default:
 		commonTimeLimit = 0xffffffff;
 		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &glTime);
@@ -197,6 +217,17 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 		"}";
 		break;
+	case TYPE_PARTICLE:
+		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform vec2 pos; uniform vec2 aspect; uniform vec2 size; uniform vec3 color; void main() {" \
+		"float a = mix(size.x, size.y, amplitude);" \
+		"float bass = 1.0 - clamp(pos.y, -1.0, 1.0);" \
+		"bass = bass * bass * bass * 0.125;" \
+		"a = (0.75 * a) + (0.25 * bass);" \
+		"gl_Position = vec4(pos.x + (inPosition.x * aspect.x * a), pos.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
+		"vTexCoord = inTexCoord;" \
+		"vColor = color + bass + (0.25 * amplitude);" \
+		"}";
+		break;
 	default:
 		vertexShader = (glTime ? "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
 		"float absx = abs(inPosition);" \
@@ -242,12 +273,18 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		"gl_FragColor = vec4(vColor.r + c, vColor.g + c, vColor.b + c, 1.0);" \
 		"}";
 		break;
+	case TYPE_PARTICLE:
+		fragmentShader = "precision mediump float; varying vec2 vTexCoord; varying vec3 vColor; uniform sampler2D texColor; void main() {" \
+		"float a = texture2D(texColor, vTexCoord).a;"
+		"gl_FragColor = vec4(vColor.r * a, vColor.g * a, vColor.b * a, 1.0);" \
+		"}";
+		break;
 	default:
 		fragmentShader = (glTime ? "precision mediump float; varying vec4 vColor; void main() { gl_FragColor = vColor; }"
 		:
 		//Tegra GPUs CANNOT use textures in vertex shaders! :(
-        //http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
-        //http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
+		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
+		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
 		"precision mediump float; varying float vAmpl; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vec2(vAmpl, 0.0)); }");
 		break;
 	}
@@ -321,9 +358,20 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 		if (glGetError()) return -14;
 	} else if (type == TYPE_SPIN) {
-        glGenBuffers(2, glBuf);
-        if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
-    } else {
+		glGenBuffers(2, glBuf);
+		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
+	} else if (type == TYPE_PARTICLE) {
+		glGenBuffers(2, glBuf);
+		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
+
+		//create a rectangle for the particles
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+		glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
+		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsRect, GL_STATIC_DRAW);
+
+		glClearColor((float)((bgColor >> 16) & 0xff) / 255.0f, (float)((bgColor >> 8) & 0xff) / 255.0f, (float)(bgColor & 0xff) / 255.0f, 1.0f);
+	} else {
 		glGenBuffers(1, glBuf);
 		if (glGetError() || !glBuf[0]) return -13;
 
@@ -374,8 +422,13 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	glDisable(GL_DITHER);
 	glDisable(GL_SCISSOR_TEST);
 	glDisable(GL_STENCIL_TEST);
-	glDisable(GL_BLEND);
-	//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	if (type == TYPE_PARTICLE) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
+	} else {
+		glDisable(GL_BLEND);
+	}
 	glEnable(GL_TEXTURE_2D);
 	glGetError(); //clear any eventual error flags
 	
@@ -385,6 +438,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	switch (type) {
 	case TYPE_LIQUID:
 	case TYPE_SPIN:
+	case TYPE_PARTICLE:
 		glGenTextures(1, glTex);
 		if (glGetError() || !glTex[0]) return -15;
 		break;
@@ -409,6 +463,8 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 			((unsigned short*)floatBuffer)[2] = 0x041f;
 			((unsigned short*)floatBuffer)[3] = 0x34df;
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
+		} else if (type == TYPE_PARTICLE) {
+			GLSoundParticle::FillTexture();
 		} else {
 			memset(floatBuffer, 0, 256);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
@@ -454,7 +510,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 				//0.078125 = 1/12.8 (used for 16x16)
 				float xf = (float)(x - (TEXTURE_SIZE >> 1));
 				int v = (int)(255.0f * 0.0390625f * sqrtf((xf * xf) + yf));
-				((unsigned char*)floatBuffer)[(y * TEXTURE_SIZE) + x] = (unsigned char)((v >= 255) ? 255 : v);
+				((unsigned char*)floatBuffer)[(y * TEXTURE_SIZE) + x] = ((v >= 255) ? 255 : (unsigned char)v);
 			}
 		}
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
@@ -471,6 +527,13 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 0);
 		glTime = glGetUniformLocation(glProgram, "time");
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
+		break;
+	case TYPE_PARTICLE:
+		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
+		glPos = glGetUniformLocation(glProgram, "pos");
+		glSize = glGetUniformLocation(glProgram, "size");
+		glColor = glGetUniformLocation(glProgram, "color");
+		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 0);
 		break;
 	default:
 		if (glAmplitude)
@@ -490,7 +553,15 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		if (glGetError()) return -23;
 	}
 
-	if (type != TYPE_SPIN) {
+	if (type == TYPE_PARTICLE) {
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+		glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
+
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
+		glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+	} else if (type != TYPE_SPIN) {
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
 		glVertexAttribPointer(0, 1, GL_FLOAT, false, 0, 0);
@@ -524,90 +595,105 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 
 	glReleaseShaderCompiler();
 
+	switch (type) {
+	case TYPE_PARTICLE:
+		if (glSoundParticle)
+			delete glSoundParticle;
+		glSoundParticle = new GLSoundParticle();
+		break;
+	}
+
 	return 0;
 }
 
 void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height) {
 	glViewport(0, 0, width, height);
-	if (glType == TYPE_SPIN && glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
-		int size = 20;
-		while (size < 33 && ((width % size) || (height % size)))
-			size++;
-		if (size > 32) {
-			size = 20;
-			while (size < 33 && (height % size))
+	if (glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
+		if (glType == TYPE_SPIN) {
+			int size = 20;
+			while (size < 33 && ((width % size) || (height % size)))
 				size++;
 			if (size > 32) {
 				size = 20;
-				while (size < 33 && (width % size))
+				while (size < 33 && (height % size))
 					size++;
-				if (size > 32)
+				if (size > 32) {
 					size = 20;
+					while (size < 33 && (width % size))
+						size++;
+					if (size > 32)
+						size = 20;
+				}
 			}
-		}
-		glVerticesPerRow = ((width + (size - 1)) / size) + 1;
-		glRows = ((height + (size - 1)) / size);
-		struct _coord {
-			float x, y, z;
-		};
-		_coord* vertices = new _coord[(glVerticesPerRow << 1) * glRows];
+			glVerticesPerRow = ((width + (size - 1)) / size) + 1;
+			glRows = ((height + (size - 1)) / size);
+			struct _coord {
+				float x, y, z;
+			};
+			_coord* vertices = new _coord[(glVerticesPerRow << 1) * glRows];
 
-		//compute the position of each vertex on the screen, respecting their order:
-		// 1  3  5  7
-		//             ...
-		// 0  2  4  6
-		//inPosition stores the distance of the vertex to the origin in the z component
-		_coord* v = vertices;
-		float y0 = 1.0f;
-		for (int j = 0; j < glRows; j++) {
-			//compute x and y every time to improve precision
-			float y1 = 1.0f - ((float)((size << 1) * (j + 1)) / (float)height);
-			for (int i = 0; i < glVerticesPerRow; i++) {
-				float x = -1.0f + ((float)((size << 1) * i) / (float)width);
-				v[(i << 1)    ].x = x;
-				v[(i << 1)    ].y = y1;
-				v[(i << 1) + 1].x = x;
-				v[(i << 1) + 1].y = y0;
+			//compute the position of each vertex on the screen, respecting their order:
+			// 1  3  5  7
+			//             ...
+			// 0  2  4  6
+			//inPosition stores the distance of the vertex to the origin in the z component
+			_coord* v = vertices;
+			float y0 = 1.0f;
+			for (int j = 0; j < glRows; j++) {
+				//compute x and y every time to improve precision
+				float y1 = 1.0f - ((float)((size << 1) * (j + 1)) / (float)height);
+				for (int i = 0; i < glVerticesPerRow; i++) {
+					float x = -1.0f + ((float)((size << 1) * i) / (float)width);
+					v[(i << 1)    ].x = x;
+					v[(i << 1)    ].y = y1;
+					v[(i << 1) + 1].x = x;
+					v[(i << 1) + 1].y = y0;
 
-				x = (-x + 1.0f) * 0.5f;
-				x = x * x;
+					x = (-x + 1.0f) * 0.5f;
+					x = x * x;
 
-				float y = (y0 + 1.0f) * 0.5f;
-				float z = 1.0f - (sqrtf(x + (y * y)) / 1.25f);
-				v[(i << 1) + 1].z = ((z > 0.0f) ? z : 0.0f);
+					float y = (y0 + 1.0f) * 0.5f;
+					float z = 1.0f - (sqrtf(x + (y * y)) / 1.25f);
+					v[(i << 1) + 1].z = ((z > 0.0f) ? z : 0.0f);
 
-				y = (y1 + 1.0f) * 0.5f;
-				z = 1.0f - (sqrtf(x + (y * y)) / 1.25f);
-				v[(i << 1)    ].z = ((z > 0.0f) ? z : 0.0f);
+					y = (y1 + 1.0f) * 0.5f;
+					z = 1.0f - (sqrtf(x + (y * y)) / 1.25f);
+					v[(i << 1)    ].z = ((z > 0.0f) ? z : 0.0f);
+				}
+				y0 = y1;
+				v += (glVerticesPerRow << 1);
 			}
-			y0 = y1;
-			v += (glVerticesPerRow << 1);
-		}
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-		glBufferData(GL_ARRAY_BUFFER, (glVerticesPerRow << 1) * glRows * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+			glBufferData(GL_ARRAY_BUFFER, (glVerticesPerRow << 1) * glRows * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
 
-		//inTexCoord stores the angle of the vertex in the z component
-		v = vertices;
-		for (int j = 0; j < glRows; j++) {
-			for (int i = 0; i < glVerticesPerRow; i++) {
-				int idx = (i << 1) + 1;
-				v[idx].z = atan2f((v[idx].y + 1.0f) * 0.5f, (-v[idx].x + 1.0f) * 0.5f);
-				v[idx].x = (float)i;
-				v[idx].y = (float)j;
-				//even vertices are located below odd ones
-				idx--;
-				v[idx].z = atan2f((v[idx].y + 1.0f) * 0.5f, (-v[idx].x + 1.0f) * 0.5f);
-				v[idx].x = (float)i;
-				v[idx].y = (float)(j + 1);
+			//inTexCoord stores the angle of the vertex in the z component
+			v = vertices;
+			for (int j = 0; j < glRows; j++) {
+				for (int i = 0; i < glVerticesPerRow; i++) {
+					int idx = (i << 1) + 1;
+					v[idx].z = atan2f((v[idx].y + 1.0f) * 0.5f, (-v[idx].x + 1.0f) * 0.5f);
+					v[idx].x = (float)i;
+					v[idx].y = (float)j;
+					//even vertices are located below odd ones
+					idx--;
+					v[idx].z = atan2f((v[idx].y + 1.0f) * 0.5f, (-v[idx].x + 1.0f) * 0.5f);
+					v[idx].x = (float)i;
+					v[idx].y = (float)(j + 1);
+				}
+				v += (glVerticesPerRow << 1);
 			}
-			v += (glVerticesPerRow << 1);
+			glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
+			glBufferData(GL_ARRAY_BUFFER, (glVerticesPerRow << 1) * glRows * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
+
+			delete vertices;
+
+			glVerticesPerRow <<= 1;
+		} else if (glType == TYPE_PARTICLE) {
+			if (width > height)
+				glUniform2f(glGetUniformLocation(glProgram, "aspect"), (float)height / (float)width, 1.0f);
+			else
+				glUniform2f(glGetUniformLocation(glProgram, "aspect"), 1.0f, (float)width / (float)height);
 		}
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
-		glBufferData(GL_ARRAY_BUFFER, (glVerticesPerRow << 1) * glRows * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
-
-		delete vertices;
-
-		glVerticesPerRow <<= 1;
 	} else {
 		glVerticesPerRow = 0;
 		glRows = 0;
@@ -644,6 +730,40 @@ int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
 	return (error ? ERR_GL : 0);
 }
 
+void glSumData() {
+	int i, idx, last;
+	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
+
+#define MAX(A,B) (((A) > (B)) ? (A) : (B))
+	idx = glAmplitude;
+	for (i = 0; i < 6; i++)
+		glUniform1f(idx++, (float)processedData[i] / 255.0f);
+	for (; i < 20; i += 2)
+		glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f);
+	for (; i < 36; i += 4)
+		glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f);
+	for (last = 44; last <= 100; last += 8) {
+		avg = 0;
+		for (; i < last; i++)
+			avg = MAX(avg, processedData[i]);
+		glUniform1f(idx++, (float)avg / 255.0f);
+	}
+	for (last = 116; last <= 228; last += 16) {
+		avg = 0;
+		for (; i < last; i++)
+			avg = MAX(avg, processedData[i]);
+		glUniform1f(idx++, (float)avg / 255.0f);
+	}
+#undef MAX
+}
+
+void JNICALL glOnSurfaceDestroyed(JNIEnv* env, jclass clazz) {
+	if (glSoundParticle) {
+		delete glSoundParticle;
+		glSoundParticle = 0;
+	}
+}
+
 void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	if (commonColorIndexApplied != commonColorIndex) {
 		commonColorIndexApplied = commonColorIndex;
@@ -652,10 +772,11 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 		glActiveTexture(GL_TEXTURE0);
 	}
 
-	int i, idx, last;
-	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
-
 	switch (glType) {
+	case TYPE_PARTICLE:
+		if (glSoundParticle)
+			glSoundParticle->Draw();
+		break;
 	case TYPE_LIQUID:
 		glUseProgram(glProgram2);
 
@@ -665,35 +786,19 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 
 		glUseProgram(glProgram);
 
-	case TYPE_SPIN:
 		glUniform1f(glTime, (float)commonTime * 0.001f);
 
-#define MAX(A,B) (((A) > (B)) ? (A) : (B))
-		idx = glAmplitude;
-		for (i = 0; i < 6; i++)
-			glUniform1f(idx++, (float)processedData[i] / 255.0f);
-		for (; i < 20; i += 2)
-			glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f);
-		for (; i < 36; i += 4)
-			glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f);
-		for (last = 44; last <= 100; last += 8) {
-			avg = 0;
-			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]);
-			glUniform1f(idx++, (float)avg / 255.0f);
-		}
-		for (last = 116; last <= 228; last += 16) {
-			avg = 0;
-			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]);
-			glUniform1f(idx++, (float)avg / 255.0f);
-		}
-#undef MAX
+		glSumData();
 
-		if (glType == TYPE_LIQUID) {
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2);
-		} else if (glRows) {
-			int first = 0;
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2);
+		break;
+	case TYPE_SPIN:
+		if (glRows) {
+			glUniform1f(glTime, (float)commonTime * 0.001f);
+
+			glSumData();
+
+			int i, first = 0;
 			for (i = 0; i < glRows; i++) {
 				glDrawArrays(GL_TRIANGLE_STRIP, first, glVerticesPerRow);
 				first += glVerticesPerRow;
@@ -703,10 +808,11 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	default:
 		glClear(GL_COLOR_BUFFER_BIT);
 		if (glTime) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, processedData);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)(floatBuffer + 512));
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2);
 		} else {
-			idx = glAmplitude;
+			int i, idx = glAmplitude, last;
+			unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 			for (i = 0; i < 36; i++)
 				glUniform1f(idx++, (float)processedData[i] / 255.0f);
 			for (; i < 184; i += 2)

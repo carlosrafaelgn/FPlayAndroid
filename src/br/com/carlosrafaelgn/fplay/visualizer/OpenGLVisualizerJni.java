@@ -86,6 +86,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public static final int TYPE_SPECTRUM = 0;
 	public static final int TYPE_LIQUID = 1;
 	public static final int TYPE_SPIN = 2;
+	public static final int TYPE_PARTICLE = 3;
 
 	private final int type;
 	private byte[] bfft;
@@ -100,7 +101,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
-		type = ((t < TYPE_LIQUID || t > TYPE_SPIN) ? TYPE_SPECTRUM : t);
+		type = ((t < TYPE_LIQUID || t > TYPE_PARTICLE) ? TYPE_SPECTRUM : t);
 		bfft = new byte[2048];
 		setClickable(true);
 		setFocusable(false);
@@ -390,9 +391,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		//is it really necessary to call any cleanup code??????
+		//is it really necessary to call any cleanup code for OpenGL in Android??????
 		okToRender = false;
 		super.surfaceDestroyed(holder);
+		SimpleVisualizerJni.glOnSurfaceDestroyed();
 	}
 
 	private void loadBitmap() {
@@ -575,7 +577,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
 		final Context ctx = getContext();
-		if (type != TYPE_SPIN)
+		if (type != TYPE_SPIN && type != TYPE_PARTICLE)
 			UI.separator(menu, 1, 0);
 
 		switch (type) {
@@ -585,6 +587,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
 			break;
 		case TYPE_SPIN:
+		case TYPE_PARTICLE:
 			break;
 		default:
 			menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)

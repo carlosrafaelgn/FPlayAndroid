@@ -34,7 +34,9 @@ package br.com.carlosrafaelgn.fplay.activity;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -332,7 +334,16 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			return true;
 		return super.onKeyDown(keyCode, event);
 	}
-	
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		final Uri data;
+		if (Player.getState() == Player.STATE_INITIALIZED && intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && (data = intent.getData()) != null) {
+			System.out.println(data.getPath());
+		}
+	}
+
 	@Override
 	protected final void onCreate(Bundle savedInstanceState) {
 		//StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
@@ -416,7 +427,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.setAppIdle(true);
 		super.onPause();
 	}
-	
+
 	@Override
 	protected void onResume() {
 		Player.setAppIdle(false);
