@@ -91,8 +91,9 @@ static int glTime, glAmplitude, glVerticesPerRow, glRows;
 
 //variables reuse :)
 #define glPos glProgram2
-#define glSize glVerticesPerRow
-#define glColor glRows
+#define glColor glTime
+#define glBaseX glVerticesPerRow
+#define glTheta glRows
 
 float glSmoothStep(float edge0, float edge1, float x) {
 	float t = (x - edge0) / (edge1 - edge0);
@@ -218,14 +219,14 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		"}";
 		break;
 	case TYPE_PARTICLE:
-		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform vec2 pos; uniform vec2 aspect; uniform vec2 size; uniform vec3 color; void main() {" \
-		"float a = mix(size.x, size.y, amplitude);" \
-		"float bass = 1.0 - clamp(pos.y, -1.0, 1.0);" \
-		"bass = bass * bass * bass * 0.125;" \
-		"a = (0.75 * a) + (0.25 * bass);" \
-		"gl_Position = vec4(pos.x + (inPosition.x * aspect.x * a), pos.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
+		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; void main() {" \
+		"float a = mix(0.0625, 0.3125, amplitude);" \
+		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
+		"bottom = bottom * bottom * bottom * 0.125;" \
+		"a = (0.75 * a) + (0.25 * bottom);" \
+		"gl_Position = vec4(baseX + pos.x + (5.0 * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)) + (inPosition.x * aspect.x * a), pos.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
 		"vTexCoord = inTexCoord;" \
-		"vColor = color + bass + (0.25 * amplitude);" \
+		"vColor = color + bottom + (0.25 * amplitude);" \
 		"}";
 		break;
 	default:
@@ -531,8 +532,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	case TYPE_PARTICLE:
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		glPos = glGetUniformLocation(glProgram, "pos");
-		glSize = glGetUniformLocation(glProgram, "size");
 		glColor = glGetUniformLocation(glProgram, "color");
+		glBaseX = glGetUniformLocation(glProgram, "baseX");
+		glTheta = glGetUniformLocation(glProgram, "theta");
 		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 0);
 		break;
 	default:
@@ -689,6 +691,8 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 
 			glVerticesPerRow <<= 1;
 		} else if (glType == TYPE_PARTICLE) {
+			if (glSoundParticle)
+				glSoundParticle->SetAspect(width, height);
 			if (width > height)
 				glUniform2f(glGetUniformLocation(glProgram, "aspect"), (float)height / (float)width, 1.0f);
 			else

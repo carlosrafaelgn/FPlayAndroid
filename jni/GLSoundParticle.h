@@ -38,25 +38,25 @@
 class GLSoundParticle {
 private:
 	unsigned int lastTime;
+	float timeCoef;
 
 	float COLORS[16 * 3];
 
-	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT];
+	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT];
 	unsigned char bgColor[BG_COUNT];
 
 	void FillBgParticle(int index, int column, float y) {
-		//horizontal space has a length of 2 on the screen (from -1 to 1)
-		//the four background columns spread from -0.9 to 0.9, producing a length of 1.8
-		//and they are linearly spaced
-		bgPos[(index << 1)] = -0.9f + (0.06206897f * (float)column) + (0.0078125f * (float)(((int)rand() & 7) - 4));
+		bgPos[(index << 1)] = 0.0078125f * (float)(((int)rand() & 7) - 4);
 		bgPos[(index << 1) + 1] = y;
-		bgSpeedY[index] = 0.25f + (0.0078125f * (float)(rand() & 15));
+		bgTheta[index] = 0.03125f * (float)(rand() & 63);
+		bgSpeedY[index] = 0.125f + (0.00390625f * (float)(rand() & 15));
 		bgColor[index] = rand() & 15;
 	}
 
 public:
 	GLSoundParticle() {
 		lastTime = commonTime;
+		timeCoef = 0.001f;
 
 #define FULL 0.75f
 #define HALF 0.325f
@@ -142,13 +142,16 @@ public:
 #undef TEXTURE_SIZE
 	}
 
+	void SetAspect(int width, int height) {
+		//change the time coefficient to slow down the particles when in portrait mode
+		timeCoef = ((width >= height) ? 0.001f : (0.001f * (float)width / (float)height));
+	}
+
 	void Draw() {
-		float delta = (float)(commonTime - lastTime) * 0.001f;
+		float delta = (float)(commonTime - lastTime) * timeCoef;
 		lastTime = commonTime;
 
 		glClear(GL_COLOR_BUFFER_BIT);
-
-		glUniform2f(glSize, 0.0625f, 0.0625f * 4.0f); //size.x = minimum size / size.y = maximum size
 
 		float a;
 		int p = 0, c, ic, i = 2, last = 44, last2 = 116;
@@ -158,29 +161,31 @@ public:
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
 			//increase the amplitudes in order to improve the effect
 			if (i < 6) {
-				a = 1.1f * (float)processedData[i] / 255.0f;
+				a = (float)processedData[i] / 255.0f;
 				i++;
 			} else if (i < 20) {
-				a = 2.5f * (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f;
+				a = 1.5f * (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f;
 				i += 2;
 			} else if (i < 36) {
-				a = 3.0f * (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f;
+				a = 1.5f * (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f;
 				i += 4;
 			} else if (i < 100) {
 				avg = 0;
 				for (; i < last; i++)
 					avg = MAX(avg, processedData[i]);
-				a = 4.0f * (float)avg / 255.0f;
+				a = 2.0f * (float)avg / 255.0f;
 				last += 8;
 			} else {
 				avg = 0;
 				for (; i < last2; i++)
 					avg = MAX(avg, processedData[i]);
-				a = 5.5f * (float)avg / 255.0f;
+				a = 2.5f * (float)avg / 255.0f;
 				last2 += 16;
 			}
 #undef MAX
 			glUniform1f(glAmplitude, (a >= 1.0f) ? 1.0f : a);
+			//the 31 columns spread from -0.9 to 0.9, and they are evenly spaced
+			glUniform1f(glBaseX, -0.9f + (0.06206897f * (float)c));
 
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, p++) {
 				if (bgPos[(p << 1) + 1] > 1.2f)
@@ -189,6 +194,7 @@ public:
 					bgPos[(p << 1) + 1] += bgSpeedY[p] * delta;
 				glUniform3fv(glColor, 1, COLORS + (bgColor[p] * 3));
 				glUniform2fv(glPos, 1, bgPos + (p << 1));
+				glUniform1f(glTheta, bgTheta[p]);
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 			}
 		}
