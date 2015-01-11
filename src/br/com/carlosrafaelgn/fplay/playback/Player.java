@@ -1334,6 +1334,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static void playInternal0(int how, Song song) {
+		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
+			return;
 		if (!hasFocus) {
 			if (state == STATE_PREPARING_PLAYBACK)
 				state = STATE_INITIALIZED;
@@ -1388,6 +1390,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static void playInternal1(boolean doInternal, boolean prepareNext, int how, Song song) {
+		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
+			return;
 		if (!hasFocus) {
 			if (state == STATE_PREPARING_PLAYBACK)
 				state = STATE_INITIALIZED;
@@ -1403,6 +1407,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static void playInternal2(boolean prepareNext, Song song) {
+		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
+			return;
 		if (state == STATE_PREPARING_PLAYBACK)
 			state = STATE_INITIALIZED;
 		if (!hasFocus)
@@ -1419,6 +1425,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static Song playInternal(int how) {
+		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
+			return null;
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
 			playing = false;
@@ -1478,6 +1486,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	@SuppressWarnings("deprecation")
 	private static void checkAudioSink(boolean wiredHeadsetJustPlugged, boolean triggerNoisy) {
+		if (audioManager == null)
+			return;
 		final int oldAudioSink = audioSink;
 		//let the guessing begin!!! really, it is NOT possible to rely solely on
 		//these AudioManager.isXXX() methods, neither on MediaRouter...
@@ -1524,7 +1534,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				if (!playing && playWhenHeadsetPlugged) {
 					if (!hasFocus) {
 						try {
-							if (telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
+							if (telephonyManager != null && telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
 								break;
 						} catch (Throwable ex) {
 						}
