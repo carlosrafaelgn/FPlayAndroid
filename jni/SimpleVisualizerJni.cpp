@@ -436,7 +436,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"glOnSurfaceChanged", "(II)V", (void*)glOnSurfaceChanged},
 		{"glLoadBitmapFromJava", "(Landroid/graphics/Bitmap;)I", (void*)glLoadBitmapFromJava},
 		{"glDrawFrame", "()V", (void*)glDrawFrame},
-		{"glOnSurfaceDestroyed", "()V", (void*)glOnSurfaceDestroyed}
+		{"glReleaseView", "()V", (void*)glReleaseView}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)

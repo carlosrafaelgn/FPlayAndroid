@@ -47,7 +47,6 @@ import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Message;
-import android.provider.Settings;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
@@ -394,7 +393,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		//is it really necessary to call any cleanup code for OpenGL in Android??????
 		okToRender = false;
 		super.surfaceDestroyed(holder);
-		SimpleVisualizerJni.glOnSurfaceDestroyed();
+		//some times surfaceDestroyed is called, but after resuming,
+		//onSurfaceCreated is not called, only onSurfaceChanged is! :/
 	}
 
 	private void loadBitmap() {
@@ -689,6 +689,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void releaseView() {
 		activity = null;
+		SimpleVisualizerJni.glReleaseView();
 	}
 
 	@Override

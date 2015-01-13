@@ -220,7 +220,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		break;
 	case TYPE_PARTICLE:
 		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; void main() {" \
-		"float a = mix(0.0625, 0.3125, amplitude);" \
+		"float a = mix(0.0625, 0.34375, amplitude);" \
 		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
 		"bottom = bottom * bottom * bottom * 0.125;" \
 		"a = (0.75 * a) + (0.25 * bottom);" \
@@ -761,7 +761,7 @@ void glSumData() {
 #undef MAX
 }
 
-void JNICALL glOnSurfaceDestroyed(JNIEnv* env, jclass clazz) {
+void JNICALL glReleaseView(JNIEnv* env, jclass clazz) {
 	if (glSoundParticle) {
 		delete glSoundParticle;
 		glSoundParticle = 0;
