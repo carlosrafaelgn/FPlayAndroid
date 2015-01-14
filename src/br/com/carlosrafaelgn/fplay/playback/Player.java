@@ -859,7 +859,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static void terminate() {
-		if ((state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) && !songs.isAdding()) {
+		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) { // && !songs.isAdding()) {
 			state = STATE_TERMINATING;
 			setLastTime();
 			fullCleanup(null);

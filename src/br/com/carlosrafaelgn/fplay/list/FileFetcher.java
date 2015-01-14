@@ -413,7 +413,12 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
 		final String[] proj = { MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST };
 		final Cursor c = s.getContentResolver().query(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, proj, null, null, null);
-		while (!cancelled && c.moveToNext()) {
+		while (c.moveToNext()) {
+			if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+				count = 0;
+				c.close();
+				return;
+			}
 			String name = c.getString(1);
 			if (name.equals("<unknown>")) {
 				if (unknownArtist == null)
@@ -426,10 +431,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			tmp.add(f);
 		}
 		c.close();
-		
-		if (cancelled)
-			return;
-		
+
 		count = tmp.size();
 		files = new FileSt[count];
 		tmp.toArray(files);
@@ -472,15 +474,17 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		final Cursor c = s.getContentResolver().query((artist == null) ?
 				MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI :
 				MediaStore.Audio.Artists.Albums.getContentUri("external", Long.parseLong(artist)), proj, null, null, null);
-		while (!cancelled && c.moveToNext()) {
+		while (c.moveToNext()) {
+			if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+				count = 0;
+				c.close();
+				return;
+			}
 			final String name = c.getString(1);
 			tmp.add(new FileSt(root + c.getLong(0) + fakeRoot + name, name, c.getString(2), FileSt.TYPE_ALBUM));
 		}
 		c.close();
-		
-		if (cancelled)
-			return;
-		
+
 		count = tmp.size();
 		files = new FileSt[count];
 		tmp.toArray(files);
@@ -510,15 +514,17 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				new String[] { album } :
 				new String[] { album, artist },
 				null);
-		while (!cancelled && c.moveToNext()) {
+		while (c.moveToNext()) {
+			if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+				count = 0;
+				c.close();
+				return;
+			}
 			//temporarily use specialType as the song's track number ;)
 			tmp.add(new FileSt(c.getString(0), c.getString(1), null, c.getInt(2), false));
 		}
 		c.close();
-		
-		if (cancelled)
-			return;
-		
+
 		count = tmp.size();
 		files = new FileSt[count];
 		tmp.toArray(files);
@@ -679,8 +685,10 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}*/
 	
 	private void fetchFiles(String path, boolean first) {
-		if (cancelled)
+		if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+			count = 0;
 			return;
+		}
 		int i;
 		File root = new File((path.charAt(path.length() - 1) == File.separatorChar) ? path : (path + File.separator));
 		File[] files = root.listFiles();
@@ -691,10 +699,12 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			return;
 		}
 		final int l = count;
-		if (cancelled)
-			return;
 		ensureCapacity(count + files.length);
-		for (i = 0; i < files.length && !cancelled; i++) {
+		for (i = 0; i < files.length; i++) {
+			if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+				count = 0;
+				return;
+			}
 			final String t = files[i].getName();
 			if (!files[i].isDirectory() && !isFileSupported(t)) {
 				files[i] = null;
@@ -707,23 +717,27 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			files[i] = null;
 		}
 		files = null;
-		if (cancelled)
-			return;
 		final int e = count;
 		ArraySorter.sort(this.files, l, e - l, this);
 		if (first && !filesAdded && recursiveIfFirstEmpty)
 			recursive = true;
 		if (!recursive)
 			return;
-		for (i = l; i < e && !cancelled; i++) {
+		for (i = l; i < e; i++) {
+			if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+				count = 0;
+				return;
+			}
 			if (this.files[i].isDirectory)
 				fetchFiles(this.files[i].path, false);
 		}
 	}
 	
 	private void fetchPrivateFiles(String fileType) {
-		if (cancelled)
+		if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+			count = 0;
 			return;
+		}
 		final String[] files = Player.getService().fileList();
 		if (files == null || files.length == 0) {
 			if (this.files == null)
@@ -733,7 +747,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		ensureCapacity(files.length);
 		int i, c = 0;
 		final int l = fileType.length();
-		for (i = files.length - 1; i >= 0 && !cancelled; i--) {
+		for (i = files.length - 1; i >= 0; i--) {
+			if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+				count = 0;
+				return;
+			}
 			final String f = files[i];
 			if (files[i].endsWith(fileType)) {
 				this.files[c] = new FileSt(f, f.substring(0, f.length() - l), null, 0);
@@ -741,8 +759,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			}
 		}
 		count = c;
-		if (cancelled)
-			return;
 		ArraySorter.sort(this.files, 0, c, this);
 	}
 	
@@ -841,7 +857,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	@Override
 	public void run() {
 		if (MainHandler.isOnMainThread()) {
-			if (listener != null && !cancelled)
+			if (listener != null && !cancelled && Player.getState() != Player.STATE_TERMINATED && Player.getState() != Player.STATE_TERMINATING)
 				listener.onFilesFetched(this, notifyE);
 			listener = null;
 			notifyE = null;
@@ -870,6 +886,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 							final FileSt[] albums = files;
 							final ArrayList<FileSt> tracks = new ArrayList<FileSt>(albums.length * 11);
 							for (int i = 0; i < albums.length; i++) {
+								if (cancelled || Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+									count = 0;
+									tracks.clear();
+									break;
+								}
 								try {
 									fetchTracks(albums[i].path);
 									if (files != null && count > 0) {
@@ -918,7 +939,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		} catch (Throwable ex) {
 			e = ex;
 		}
-		if (!cancelled) {
+		if (!cancelled && Player.getState() != Player.STATE_TERMINATED && Player.getState() != Player.STATE_TERMINATING) {
 			if (listener != null) {
 				if (notifyFromMain) {
 					notifyE = e;
