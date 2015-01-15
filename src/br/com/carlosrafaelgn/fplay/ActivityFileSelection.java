@@ -57,7 +57,6 @@ import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
-import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
@@ -388,7 +387,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onPause() {
-		SongAddingMonitor.stop();
 		fileList.setObserver(null);
 	}
 	
@@ -396,7 +394,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	protected void onResume() {
 		UI.browserActivity = this;
 		fileList.setObserver(loading ? null : list);
-		SongAddingMonitor.start(getHostActivity());
 	}
 	
 	@Override

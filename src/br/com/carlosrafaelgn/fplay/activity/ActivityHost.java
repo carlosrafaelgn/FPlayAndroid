@@ -41,6 +41,7 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -54,6 +55,7 @@ import android.widget.FrameLayout;
 import br.com.carlosrafaelgn.fplay.ActivityMain;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 
@@ -118,6 +120,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			anim.setAnimationListener(null);
 			anim = null;
 		}
+		if (animation != null)
+			SongAddingMonitor.start(this);
 	}
 	
 	@Override
@@ -127,12 +131,34 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	@Override
 	public void onAnimationStart(Animation animation) {
 	}
-	
+
+	public View findViewByIdDirect(int id) {
+		return super.findViewById(id);
+	}
+
 	@Override
 	public View findViewById(int id) {
 		return ((newView != null) ? newView.findViewById(id) : super.findViewById(id));
 	}
-	
+
+	@Override
+	public void setContentView(View view) {
+		super.setContentView(view);
+		SongAddingMonitor.start(this);
+	}
+
+	@Override
+	public void setContentView(View view, ViewGroup.LayoutParams params) {
+		super.setContentView(view, params);
+		SongAddingMonitor.start(this);
+	}
+
+	@Override
+	public void setContentView(int layoutResID) {
+		super.setContentView(layoutResID);
+		SongAddingMonitor.start(this);
+	}
+
 	void setContentViewWithTransition(View view, boolean fadeAllowed, boolean forceFadeOut) {
 		final int transition = UI.getTransition();
 		if (fadeAllowed && !ignoreFadeNextTime && transition != UI.TRANSITION_NONE) {
@@ -196,6 +222,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				parent = null;
 			}
 			if (anim != null) {
+				SongAddingMonitor.stop();
 				anim.setAnimationListener(this);
 				oldView.setEnabled(false);
 				view.setEnabled(false);
@@ -419,6 +446,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	protected void onPause() {
+		SongAddingMonitor.stop();
 		onAnimationEnd(null);
 		if (top != null && !top.paused) {
 			top.paused = true;
@@ -437,6 +465,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.paused = false;
 			top.onResume();
 		}
+		SongAddingMonitor.start(this);
 		super.onResume();
 	}
 	

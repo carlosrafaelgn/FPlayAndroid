@@ -108,11 +108,18 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		}
 		activity.setContentViewWithTransition(v, true, false);
 	}
-	
+
+	public final void setContentView(View view, boolean fadeAllowed, boolean forceFadeOut) {
+		if (fadeAllowed)
+			activity.setContentViewWithTransition(view, true, forceFadeOut);
+		else
+			activity.setContentView(view);
+	}
+
 	public final void setContentView(View view) {
 		activity.setContentViewWithTransition(view, true, false);
 	}
-	
+
 	public final View findViewById(int id) {
 		return activity.findViewById(id);
 	}

@@ -52,7 +52,6 @@ import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
-import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
@@ -392,17 +391,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		onCleanupLayout();
 		onCreateLayout(false);
 	}
-	
-	@Override
-	protected void onPause() {
-		SongAddingMonitor.stop();
-	}
-	
-	@Override
-	protected void onResume() {
-		SongAddingMonitor.start(getHostActivity());
-	}
-	
+
 	@Override
 	protected void onCleanupLayout() {
 		panelControls = null;

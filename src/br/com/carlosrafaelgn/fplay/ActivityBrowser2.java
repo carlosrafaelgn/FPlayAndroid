@@ -781,7 +781,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	protected void onPause() {
-		SongAddingMonitor.stop();
 		fileList.setObserver(null);
 	}
 	
@@ -789,7 +788,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	protected void onResume() {
 		UI.browserActivity = this;
 		fileList.setObserver(list);
-		SongAddingMonitor.start(getHostActivity());
 		if (loading != fileList.isLoading())
 			loadingProcessChanged(fileList.isLoading());
 	}

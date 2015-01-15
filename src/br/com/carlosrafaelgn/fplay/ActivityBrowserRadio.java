@@ -507,7 +507,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	protected void onPause() {
-		SongAddingMonitor.stop();
 		radioStationList.saveFavorites(getApplication());
 		radioStationList.setObserver(null);
 	}
@@ -516,7 +515,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	protected void onResume() {
 		UI.browserActivity = this;
 		radioStationList.setObserver(list);
-		SongAddingMonitor.start(getHostActivity());
 		if (loading != radioStationList.isLoading())
 			loadingProcessChanged(radioStationList.isLoading());
 	}

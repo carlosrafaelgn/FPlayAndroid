@@ -1093,7 +1093,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void resume(boolean selectCurrent) {
 		UI.songActivity = this;
 		Player.songs.setObserver(list);
-		SongAddingMonitor.start(getHostActivity());
 		updateVolumeDisplay();
 		if (list != null) {
 			selectCurrentWhenAttached = selectCurrent;
@@ -1131,7 +1130,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (tmrVolume != null)
 			tmrVolume.stop();
 		volumeButtonPressed = 0;
-		SongAddingMonitor.stop();
 		if (Player.songs.selecting || Player.songs.moving)
 			cancelSelection(false);
 		UI.songActivity = null;
@@ -1176,7 +1174,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			tmrUpdateVolumeDisplay.stop();
 		if (tmrVolume != null)
 			tmrVolume.stop();
-		SongAddingMonitor.stop();
 	}
 	
 	@Override

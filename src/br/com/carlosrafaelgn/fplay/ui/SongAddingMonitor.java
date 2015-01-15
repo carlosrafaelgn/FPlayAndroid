@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import android.app.Activity;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewParent;
@@ -40,6 +39,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
@@ -51,12 +51,12 @@ public final class SongAddingMonitor implements Timer.TimerHandler {
 	private SongAddingMonitor() {
 	}
 	
-	public static void start(Activity activity) {
+	public static void start(ActivityHost activity) {
 		if (Player.songs.isAdding() || Player.getState() != Player.STATE_INITIALIZED) {
 			stop();
 			//...the parent of an activity's content view is always a FrameLayout.
 			//http://android-developers.blogspot.com.br/2009/03/android-layout-tricks-3-optimize-by.html
-			View parent = activity.findViewById(android.R.id.content);
+			View parent = activity.findViewByIdDirect(android.R.id.content);
 			if (parent != null && parent instanceof FrameLayout) {
 				notification = new TextView(activity);
 				FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);

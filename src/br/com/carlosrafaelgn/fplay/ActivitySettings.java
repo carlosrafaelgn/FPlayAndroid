@@ -60,7 +60,6 @@ import br.com.carlosrafaelgn.fplay.ui.ColorPickerView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.ObservableScrollView;
 import br.com.carlosrafaelgn.fplay.ui.SettingView;
-import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
@@ -771,13 +770,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	protected void onPause() {
-		SongAddingMonitor.stop();
 		Player.turnOffTimerObserver = null;
 	}
 	
 	@Override
 	protected void onResume() {
-		SongAddingMonitor.start(getHostActivity());
 		Player.turnOffTimerObserver = this;
 		if (optAutoTurnOff != null)
 			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());

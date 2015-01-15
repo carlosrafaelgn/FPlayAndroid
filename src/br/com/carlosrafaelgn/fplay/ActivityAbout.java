@@ -42,7 +42,6 @@ import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
-import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
@@ -127,17 +126,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		UI.prepareEdgeEffectColor(getApplication());
 	}
-	
-	@Override
-	protected void onPause() {
-		SongAddingMonitor.stop();
-	}
-	
-	@Override
-	protected void onResume() {
-		SongAddingMonitor.start(getHostActivity());
-	}
-	
+
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && list != null)
