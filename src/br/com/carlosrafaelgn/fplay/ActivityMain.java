@@ -227,10 +227,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					lblMsgSelMove.setLayoutParams(p);
 				}
 			} else if (!UI.isLandscape) {
-				final int h = panelControls.getHeight() + panelSecondary.getHeight();
-				final int ph = UI.defaultControlSize + UI._8dp;
+				final int h = (UI.defaultControlSize << 1) + panelControls.getPaddingBottom() + panelSecondary.getPaddingBottom();
 				final ViewGroup.LayoutParams p = panelSelection.getLayoutParams();
-				if (h > ph && p != null && p.height != h) {
+				if (p != null && p.height != h) {
 					p.height = h;
 					panelSelection.setLayoutParams(p);
 				}
@@ -991,8 +990,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					panelControls.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
 					panelSelection.setPadding(UI._8dp, 0, UI._8dp, UI._8dp + (UI.isLandscape ? 0 : UI.thickDividerSize));
 				} else {
-					if (UI.isLowDpiScreen)
-						panelControls.setPadding(0, 0, 0, 0);
+					if (!UI.isLandscape)
+						panelControls.setPadding(0, 0, 0, UI.isLowDpiScreen ? 0 : UI._8dp);
 					if (btnVolume != null) {
 						final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)btnVolume.getLayoutParams();
 						p.rightMargin = 0;
