@@ -440,6 +440,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 
 		if (visualizerRequiresScreen) {
 			panelTopBackground = new ColorDrawable(UI.color_visualizer565);
+			panelTopBackground.setAlpha(255 >> 1);
 			panelTop.setBackgroundDrawable(panelTopBackground);
 		}
 		btnGoBack.setTextColor(buttonColor);
