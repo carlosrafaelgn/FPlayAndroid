@@ -326,7 +326,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private void addSongs(View sourceView) {
-		if (Player.getState() == Player.STATE_INITIALIZED) {
+		if (Player.getState() == Player.STATE_INITIALIZED || Player.getState() == Player.STATE_PREPARING_PLAYBACK) {
 			Player.alreadySelected = false;
 			//startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
 			startActivity(new ActivityBrowser2(), 0, sourceView, sourceView != null);
@@ -426,7 +426,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
  	public View getNullContextMenuView() {
-		return ((!Player.songs.selecting && !Player.songs.moving && (Player.getState() == Player.STATE_INITIALIZED)) ? btnMenu : null);
+		return ((!Player.songs.selecting && !Player.songs.moving && (Player.getState() == Player.STATE_INITIALIZED || Player.getState() == Player.STATE_PREPARING_PLAYBACK)) ? btnMenu : null);
 	}
 	
 	@Override
@@ -531,7 +531,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.stopService();
 			return true;
 		}
-		if (Player.getState() != Player.STATE_INITIALIZED)
+		if (Player.getState() != Player.STATE_INITIALIZED && Player.getState() != Player.STATE_PREPARING_PLAYBACK)
 			return true;
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
@@ -693,7 +693,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	protected void onCreate() {
-		if (Player.getState() > Player.STATE_INITIALIZED) {
+		if (Player.getState() >= Player.STATE_TERMINATING) {
 			skipToDestruction = true;
 			return;
 		} else {
@@ -725,7 +725,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
-		if (Player.getState() > Player.STATE_INITIALIZED || skipToDestruction) {
+		if (Player.getState() >= Player.STATE_TERMINATING || skipToDestruction) {
 			skipToDestruction = true;
 			finish(0, null, false);
 			return;

@@ -275,10 +275,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
-                android:ellipsize="marquee"
                 android:gravity="center_vertical"
-                android:marqueeRepeatLimit="marquee_forever"
-                android:scrollHorizontally="true"
                 android:singleLine="true"
                 android:text="@string/msg_sel"
                 android:visibility="gone" />
