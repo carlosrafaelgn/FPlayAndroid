@@ -25,7 +25,7 @@ android {
 	buildTypes {
 		release {
 			runProguard true
-			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt'
 		}
 	}
 

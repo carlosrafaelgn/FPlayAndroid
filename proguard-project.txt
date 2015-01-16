@@ -23,6 +23,8 @@
 # http://developer.android.com/tools/help/proguard.html
 # http://proguard.sourceforge.net/index.html#manual/examples.html
 #
+-allowaccessmodification
+-repackageclasses ''
 -keep public interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer {
     public *;
