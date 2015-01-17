@@ -167,7 +167,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			secondaryTextView.setTextColor(UI.colorState_text_listitem_secondary_static);
 			secondaryTextView.setGravity(Gravity.RIGHT);
 		} else if (this.checkable || this.color) {
-			p = new LayoutParams(UI._IconBox, UI._IconBox);
+			p = new LayoutParams(UI.defaultCheckIconSize, UI.defaultCheckIconSize);
 			p.addRule(ALIGN_PARENT_RIGHT, TRUE);
 			p.addRule(CENTER_VERTICAL, TRUE);
 			p.leftMargin = UI._8dp;
@@ -303,7 +303,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 			errorView.setId(4);
 			errorView.setLayoutParams(p);
 			errorView.setTypeface(UI.iconsTypeface);
-			errorView.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._IconBox);
+			errorView.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.defaultCheckIconSize);
 			errorView.setTextColor(UI.colorState_highlight_static);
 			errorView.setText(UI.ICON_REMOVE);
 			addView(errorView);

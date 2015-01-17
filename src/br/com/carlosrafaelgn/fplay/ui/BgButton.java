@@ -129,30 +129,23 @@ public final class BgButton extends Button {
 		setIcon(icon, true, true);
 	}
 	
-	public void setIcon(String iconChecked, String iconUnchecked, boolean checked, boolean small, boolean changeWidth, boolean changeHeight) {
+	public void formatAsCheckBox(String iconChecked, String iconUnchecked, boolean checked, boolean changeWidth, boolean changeHeight) {
 		setIcon(checked ? iconChecked : iconUnchecked, changeWidth, changeHeight);
-		if (small)
-			super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._IconBox);
 		this.iconChecked = iconChecked;
 		this.iconUnchecked = iconUnchecked;
 		this.checkable = true;
 		this.checked = checked;
 	}
-	
-	public boolean isBehavingAsCheckBox() {
-		return (checkBox != null);
+
+	public void formatAsPlainCheckBox(boolean checked, boolean changeWidth, boolean changeHeight) {
+		formatAsCheckBox(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, checked, changeWidth, changeHeight);
+		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.defaultCheckIconSize);
 	}
-	
-	public void setBehavingAsCheckBox(boolean behavingAsCheckBox) {
-		if (!behavingAsCheckBox) {
-			super.setCompoundDrawables(null, null, null, null);
-			checkBox = null;
-			checkable = false;
-		} else {
-			checkable = true;
-			checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, getTextColors().getDefaultColor());
-			super.setCompoundDrawables(checkBox, null, null, null);
-		}
+
+	public void formatAsLabelledCheckBox() {
+		checkable = true;
+		checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, getTextColors().getDefaultColor());
+		super.setCompoundDrawables(checkBox, null, null, null);
 	}
 
 	@Override

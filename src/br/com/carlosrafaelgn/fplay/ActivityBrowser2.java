@@ -708,11 +708,11 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
-		chkFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, false, true, true);
+		chkFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, true, true);
 		chkFavorite.setContentDescription(getText(R.string.remove_from_favorites), getText(R.string.add_to_favorites));
 		chkAlbumArt = (BgButton)findViewById(R.id.chkAlbumArt);
 		chkAlbumArt.setOnClickListener(this);
-		chkAlbumArt.setIcon(UI.ICON_ALBUMART, UI.ICON_ALBUMART_OFF, UI.albumArt, false, true, true);
+		chkAlbumArt.formatAsCheckBox(UI.ICON_ALBUMART, UI.ICON_ALBUMART_OFF, UI.albumArt, true, true);
 		btnHome = (BgButton)findViewById(R.id.btnHome);
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
@@ -727,7 +727,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		sep.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		chkAll = (BgButton)findViewById(R.id.chkAll);
 		chkAll.setOnClickListener(this);
-		chkAll.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, true);
+		chkAll.formatAsPlainCheckBox(false, true, true);
 		chkAll.setContentDescription(getText(R.string.unselect_everything), getText(R.string.select_everything));
 		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
 		btnGoBackToPlayer.setTextColor(UI.colorState_text_reactive);
@@ -737,7 +737,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnAdd = (BgButton)findViewById(R.id.btnAdd);
 		btnAdd.setTextColor(UI.colorState_text_reactive);
 		btnAdd.setOnClickListener(this);
-		btnAdd.setIcon(UI.ICON_ADD, true, false);
+		btnAdd.setIcon(UI.ICON_ADD);
 		sep2 = (TextView)findViewById(R.id.sep2);
 		rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
@@ -749,7 +749,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnPlay = (BgButton)findViewById(R.id.btnPlay);
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
-		btnPlay.setIcon(UI.ICON_PLAY, true, false);
+		btnPlay.setIcon(UI.ICON_PLAY);
 		if (UI.isLargeScreen) {
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		} else if (UI.isLowDpiScreen) {

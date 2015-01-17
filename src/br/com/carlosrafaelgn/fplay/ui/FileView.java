@@ -67,7 +67,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	
 	public static int getViewHeight() {
 		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._22spBox);
+		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemspBox);
 		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
 		return height;
 	}
@@ -103,7 +103,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
 			btnPlay.setLayoutParams(p);
 			if (buttonIsCheckbox) {
-				btnPlay.setIcon(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, false, true, true, false);
+				btnPlay.formatAsPlainCheckBox(false, true, false);
 				btnPlay.setContentDescription(context.getText(R.string.unselect), context.getText(R.string.select));
 				btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
 			} else {
@@ -124,7 +124,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(file.name, UI._22sp, width - leftPadding - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp, true);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._LargeItemsp, width - leftPadding - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp, true);
 	}
 	
 	public void refreshItem() {
@@ -333,7 +333,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, (usableHeight >> 1) - (albumArt.height >> 1), null);
 		else if (icon != null)
 			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, (usableHeight >> 1) - (UI.defaultControlContentsSize >> 1), UI.defaultControlContentsSize, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary);
-		UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._22sp, leftPadding, (usableHeight >> 1) - (UI._22spBox >> 1) + UI._22spYinBox);
+		UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, (usableHeight >> 1) - (UI._LargeItemspBox >> 1) + UI._LargeItemspYinBox);
 		super.dispatchDraw(canvas);
 	}
 	

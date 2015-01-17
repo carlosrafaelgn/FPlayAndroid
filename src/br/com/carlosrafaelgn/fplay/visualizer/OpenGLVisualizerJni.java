@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -70,10 +69,9 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
-import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
 public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback, DialogInterface.OnClickListener {
-	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5, MNU_ABOUT = MNU_VISUALIZER + 6;
+	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5;
 
 	private static final int MSG_OPENGL_ERROR = 0x0700;
 	private static final int MSG_CHOOSE_IMAGE = 0x0701;
@@ -497,7 +495,9 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		case MSG_OPENGL_ERROR:
 			if (!alerted) {
 				alerted = true;
-				final Context ctx = getContext();
+				if (activity == null)
+					break;
+				final Context ctx = activity.getApplication();
 				UI.toast(ctx, ctx.getText(R.string.sorry) + " " + ((error != 0) ? (ctx.getText(R.string.opengl_error).toString() + ": " + error) : ctx.getText(R.string.opengl_not_supported).toString()) + " :(");
 			}
 			break;
@@ -544,16 +544,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		case MNU_CHOOSE_IMAGE:
 			chooseImage();
 			break;
-		case MNU_ABOUT:
-			if (activity == null)
-				break;
-			UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
-				.setTitle(activity.getText(R.string.about))
-				.setView(UI.createDialogView(activity, SafeURLSpan.parseSafeHtml("I/O fragment shader by movAX13h, August 2013<br/><a href=\"https://www.shadertoy.com/view/XsfGDS\">shadertoy.com/view/XsfGDS</a>")))
-				.setCancelable(true)
-				.setPositiveButton(R.string.ok, this)
-				.create());
-			break;
 		}
 		return true;
 	}
@@ -576,7 +566,9 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
-		final Context ctx = getContext();
+		if (activity == null)
+			return;
+		final Context ctx = activity.getApplication();
 		if (type != TYPE_SPIN && type != TYPE_PARTICLE)
 			UI.separator(menu, 1, 0);
 

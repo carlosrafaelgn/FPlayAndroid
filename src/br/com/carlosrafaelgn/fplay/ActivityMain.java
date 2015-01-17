@@ -929,7 +929,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				barVolume = null;
 				btnVolume.setVisibility(View.VISIBLE);
 				btnVolume.setOnClickListener(this);
-				btnVolume.setIcon(UI.ICON_VOLUME4, true, true);
+				btnVolume.setIcon(UI.ICON_VOLUME4);
 				vwVolume = btnVolume;
 				vwVolumeId = R.id.btnVolume;
 				if (UI.isLargeScreen) {

@@ -77,7 +77,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
 		btnFavorite.setLayoutParams(p);
 		btnFavorite.setHideBorders(true);
-		btnFavorite.setIcon(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, true, false, true, true);
+		btnFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, true, true, true);
 		btnFavorite.setContentDescription(context.getText(R.string.favorite));
 		btnFavorite.setOnClickListener(this);
 		btnFavorite.setTextColor(UI.colorState_text_listitem_reactive);

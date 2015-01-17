@@ -68,22 +68,22 @@ public final class TextIconDrawable extends Drawable {
 	
 	public TextIconDrawable(String icon) {
 		this.icon = icon;
-		this.size = UI._IconBox;
-		this.y = UI._IconBox >> 1;
+		this.size = UI.defaultCheckIconSize;
+		this.y = UI.defaultCheckIconSize >> 1;
 		this.outsideMenu = false;
 		this.color = UI.color_menu_icon;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, UI._IconBox + UI._8dp + UI._8dp + 1, UI._IconBox);
+		super.setBounds(0, 0, UI.defaultCheckIconSize + UI._8sp + UI._8sp + 1, UI.defaultCheckIconSize);
 	}
 	
 	public TextIconDrawable(String icon, int color) {
 		this.icon = icon;
-		this.size = UI._IconBox;
-		this.y = UI._IconBox >> 1;
+		this.size = UI.defaultCheckIconSize;
+		this.y = UI.defaultCheckIconSize >> 1;
 		this.outsideMenu = true;
 		this.color = color;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, UI._IconBox + UI._8dp, UI._IconBox);
+		super.setBounds(0, 0, UI.defaultCheckIconSize + UI._8sp, UI.defaultCheckIconSize);
 	}
 	
 	public TextIconDrawable(String icon, int color, int size) {
@@ -93,7 +93,7 @@ public final class TextIconDrawable extends Drawable {
 		this.outsideMenu = true;
 		this.color = color;
 		this.stateSet = super.getState();
-		super.setBounds(0, 0, size + UI._8dp, size);
+		super.setBounds(0, 0, size + UI._8sp, size);
 	}
 	
 	public String getIcon() {
@@ -112,7 +112,7 @@ public final class TextIconDrawable extends Drawable {
 		paint.setTextSize(size);
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top) >> 1) + y, paint);
 		if (!outsideMenu) {
-			UI.rect.left = rect.right - UI._8dp - 1;
+			UI.rect.left = rect.right - UI._8sp - 1;
 			UI.rect.right = UI.rect.left + UI.strokeSize;
 			UI.rect.top = rect.top + UI._2dp;
 			UI.rect.bottom = rect.bottom - UI._2dp;

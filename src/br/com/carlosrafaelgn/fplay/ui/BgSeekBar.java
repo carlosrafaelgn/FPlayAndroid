@@ -87,7 +87,7 @@ public final class BgSeekBar extends View {
 		text = "";
 		max = 100;
 		sliderMode = false;
-		thumbWidth = (UI._IconBox * 90) / 100;
+		thumbWidth = (UI.defaultControlContentsSize * 3) >> 2;
 		setTextSizeIndex(2);
 		super.setDrawingCacheEnabled(false);
 		super.setClickable(true);
@@ -97,7 +97,7 @@ public final class BgSeekBar extends View {
 	
 	public void setSliderMode(boolean sliderMode) {
 		this.sliderMode = sliderMode;
-		this.thumbWidth = (sliderMode ? (UI.strokeSize << 1) : ((UI._IconBox * 90) / 100));
+		this.thumbWidth = (sliderMode ? (UI.strokeSize << 1) : ((UI.defaultControlContentsSize * 3) >> 2));
 		setTextSizeIndex(textSizeIdx);
 		updateBar();
 		invalidate();
@@ -548,7 +548,7 @@ public final class BgSeekBar extends View {
 				UI.rect.right -= UI.strokeSize;
 				UI.rect.bottom -= UI.strokeSize;
 				UI.drawBgBorderless(canvas, state, false);
-				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize + (thumbWidth >> 1) - (UI._22sp >> 1), (bottom >> 1) - (UI._22sp >> 1), UI._22sp, color);
+				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize, (bottom >> 1) - (thumbWidth >> 1), thumbWidth, color);
 			}
 		}
 		if (vertical)

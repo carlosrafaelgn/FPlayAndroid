@@ -370,7 +370,9 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 						i++;
 					}
 					try {
-						addStorage(s, new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
+						//a few old phones erroneously return these 3 as mounted devices
+						if (!it.path.equals("/system") && !it.path.equals("/data") && !it.path.equals("/cache"))
+							addStorage(s, new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 					} catch (Throwable ex) {
 					}
 				}

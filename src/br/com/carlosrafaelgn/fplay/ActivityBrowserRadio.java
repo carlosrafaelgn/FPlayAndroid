@@ -483,7 +483,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		btnAdd = (BgButton)findViewById(R.id.btnAdd);
 		btnAdd.setTextColor(UI.colorState_text_reactive);
 		btnAdd.setOnClickListener(this);
-		btnAdd.setIcon(UI.ICON_ADD, true, false);
+		btnAdd.setIcon(UI.ICON_ADD);
 		sep2 = (TextView)findViewById(R.id.sep2);
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
@@ -495,7 +495,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		btnPlay = (BgButton)findViewById(R.id.btnPlay);
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
-		btnPlay.setIcon(UI.ICON_PLAY, true, false);
+		btnPlay.setIcon(UI.ICON_PLAY);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		UI.prepareControlContainer(panelSecondary, true, false);
 		if (UI.isLargeScreen)

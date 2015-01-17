@@ -336,7 +336,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(null);
-		
+
+		if (UI.getForcedLocale() != UI.LOCALE_NONE)
+			UI.reapplyForcedLocale(getApplication());
+
 		buttonColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.color_text_selected);
 		lblColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.colorState_text_visualizer_reactive.getDefaultColor());
 
@@ -572,6 +575,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@Override
 	protected void onResume() {
+		if (UI.getForcedLocale() != UI.LOCALE_NONE)
+			UI.reapplyForcedLocale(getApplication());
 		Player.setAppIdle(false);
 		Player.observer = this;
 		reset = true;
