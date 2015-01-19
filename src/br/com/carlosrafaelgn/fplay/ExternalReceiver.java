@@ -60,7 +60,7 @@ public final class ExternalReceiver extends BroadcastReceiver implements MainHan
 			Player.becomingNoisy();
 			break;
 		case AUDIO_SINK_CHANGED:
-			if (Player.isFocused())
+			if (Player.hasFocus)
 				Player.registerMediaButtonEventReceiver();
 			Player.audioSinkChanged(extra != 0);
 			break;
@@ -72,7 +72,7 @@ public final class ExternalReceiver extends BroadcastReceiver implements MainHan
 	
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		if (intent == null || Player.getState() != Player.STATE_INITIALIZED)
+		if (intent == null || (Player.state != Player.STATE_INITIALIZED && Player.state != Player.STATE_PREPARING_PLAYBACK))
 			return;
 		final String a = intent.getAction();
 		if (a == null)
@@ -89,7 +89,7 @@ public final class ExternalReceiver extends BroadcastReceiver implements MainHan
 			if (e.getAction() == KeyEvent.ACTION_DOWN)
 				handleEvent(MEDIA_KEY, e.getKeyCode());
 		} else if (a.equals("android.intent.action.CALL_BUTTON")) {
-			if (Player.isFocused())
+			if (Player.hasFocus)
 				handleEvent(MEDIA_KEY, KeyEvent.KEYCODE_CALL);
 		} else if (a.equals("android.media.ACTION_SCO_AUDIO_STATE_UPDATED") ||
 				a.equals("android.media.SCO_AUDIO_STATE_CHANGED") ||

@@ -93,8 +93,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (view == optAutoTurnOff || view == optAutoIdleTurnOff) {
 			lastMenuView = (SettingView)view;
 			UI.prepare(menu);
-			final int s = ((view == optAutoTurnOff) ? Player.getTurnOffTimerSelectedMinutes() : Player.getIdleTurnOffTimerSelectedMinutes());
-			final int c = ((view == optAutoTurnOff) ? Player.getTurnOffTimerCustomMinutes() : Player.getIdleTurnOffTimerCustomMinutes());
+			final int s = ((view == optAutoTurnOff) ? Player.turnOffTimerSelectedMinutes : Player.idleTurnOffTimerSelectedMinutes);
+			final int c = ((view == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes);
 			menu.add(0, 0, 0, R.string.never)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(s <= 0 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
@@ -118,7 +118,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setIcon(new TextIconDrawable(s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optForcedLocale) {
 			final Context ctx = getApplication();
-			final int o = UI.getForcedLocale();
+			final int o = UI.forcedLocale;
 			lastMenuView = optForcedLocale;
 			UI.prepare(menu);
 			menu.add(0, UI.LOCALE_NONE, 0, R.string.standard_language)
@@ -145,7 +145,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_DE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optTheme) {
 			final Context ctx = getApplication();
-			final int o = UI.getTheme();
+			final int o = UI.theme;
 			lastMenuView = optTheme;
 			UI.prepare(menu);
 			menu.add(0, UI.THEME_CUSTOM, 0, UI.getThemeString(ctx, UI.THEME_CUSTOM))
@@ -217,7 +217,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			lastMenuView = optTransition;
 			UI.prepare(menu);
 			final Context ctx = getApplication();
-			final int o = UI.getTransition();
+			final int o = UI.transition;
 			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(ctx, UI.TRANSITION_NONE))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
@@ -294,7 +294,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 				p.topMargin = UI._DLGsppad;
 				txtCustomMinutes.setLayoutParams(p);
-				txtCustomMinutes.setText(Integer.toString((lastMenuView == optAutoTurnOff) ? Player.getTurnOffTimerCustomMinutes() : Player.getIdleTurnOffTimerCustomMinutes()));
+				txtCustomMinutes.setText(Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes));
 				l.addView(txtCustomMinutes);
 				
 				UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
@@ -305,7 +305,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.create());
 			}
 		} else if (lastMenuView == optForcedLocale) {
-			if (item.getItemId() != UI.getForcedLocale()) {
+			if (item.getItemId() != UI.forcedLocale) {
 				UI.setForcedLocale(getApplication(), item.getItemId());
 				onCleanupLayout();
 				onCreateLayout(false);
@@ -628,7 +628,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else {
 			list.setOnScrollListener(this);
 			if (!UI.isCurrentLocaleCyrillic()) {
-				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface(), false);
+				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
 				optUseAlternateTypeface.setOnClickListener(this);
 			}
 			optAutoTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
@@ -637,9 +637,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoIdleTurnOff.setOnClickListener(this);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
 			optKeepScreenOn.setOnClickListener(this);
-			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.getTheme()), false, false, false);
+			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.theme), false, false, false);
 			optTheme.setOnClickListener(this);
-			optFlat = new SettingView(ctx, UI.ICON_THEME, getText(R.string.flat_details).toString(), null, true, UI.isFlat(), false);
+			optFlat = new SettingView(ctx, UI.ICON_THEME, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optFlat.setOnClickListener(this);
 			optExpandSeekBar = new SettingView(ctx, UI.ICON_SEEKBAR, getText(R.string.expand_seek_bar).toString(), null, true, UI.expandSeekBar, false);
 			optExpandSeekBar.setOnClickListener(this);
@@ -653,7 +653,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optIsVerticalMarginLarge.setOnClickListener(this);
 			optExtraSpacing = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.opt_extra_spacing).toString(), null, true, UI.extraSpacing, false);
 			optExtraSpacing.setOnClickListener(this);
-			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.getForcedLocale()), false, false, false);
+			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.forcedLocale), false, false, false);
 			optForcedLocale.setOnClickListener(this);
 			optScrollBarToTheLeft = new SettingView(ctx, UI.ICON_HAND, getText(R.string.scrollbar_to_the_left).toString(), null, true, UI.scrollBarToTheLeft, false); 
 			optScrollBarToTheLeft.setOnClickListener(this);
@@ -695,7 +695,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optExtraInfoMode.setOnClickListener(this);
 			optForceOrientation = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
 			optForceOrientation.setOnClickListener(this);
-			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(ctx, UI.getTransition()), false, false, false);
+			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(ctx, UI.transition), false, false, false);
 			optTransition.setOnClickListener(this);
 			optNotFullscreen = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.fullscreen).toString(), null, true, !UI.notFullscreen, false);
 			optNotFullscreen.setOnClickListener(this);
@@ -897,8 +897,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (!UI.isCurrentLocaleCyrillic() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
 			UI.setUsingAlternateTypeface(getHostActivity(), desired);
-			if (UI.isUsingAlternateTypeface() != desired) {
-				optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface());
+			if (UI.isUsingAlternateTypeface != desired) {
+				optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface);
 			} else {
 				onCleanupLayout();
 				onCreateLayout(false);
@@ -1116,7 +1116,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void run() {
-		if (Player.getState() != Player.STATE_TERMINATING && Player.getState() != Player.STATE_TERMINATED && Player.getService() != null)
+		if (Player.state < Player.STATE_TERMINATING && Player.getService() != null)
 			Player.saveConfig(Player.getService(), false);
 	}
 }

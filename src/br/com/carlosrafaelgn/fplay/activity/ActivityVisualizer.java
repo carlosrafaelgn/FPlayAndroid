@@ -244,7 +244,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		lp.rightMargin = UI._16dp;
 		lp.bottomMargin = 0;
 		btnPlay.setLayoutParams(lp);
-		btnPlay.setIcon((playing = Player.isPlaying()) ? UI.ICON_PAUSE : UI.ICON_PLAY);
+		btnPlay.setIcon((playing = Player.playing) ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		//p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -337,7 +337,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(null);
 
-		if (UI.getForcedLocale() != UI.LOCALE_NONE)
+		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(getApplication());
 
 		buttonColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.color_text_selected);
@@ -423,7 +423,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		btnMenu.setOnClickListener(this);
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		UI.mediumText(lblTitle);
-		final Song currentSong = Player.getCurrentSong();
+		final Song currentSong = Player.currentSong;
 		lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 
 		//if (UI.extraSpacing)
@@ -575,13 +575,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@Override
 	protected void onResume() {
-		if (UI.getForcedLocale() != UI.LOCALE_NONE)
+		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(getApplication());
 		Player.setAppIdle(false);
 		Player.observer = this;
 		reset = true;
 		resumeTimer();
-		onPlayerChanged(Player.getCurrentSong(), true, null);
+		onPlayerChanged(Player.currentSong, true, null);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
 		super.onResume();
@@ -642,7 +642,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		if (!songHasChanged)
 			reset = true;
 		resumeTimer();
-		playing = Player.isPlaying();
+		playing = Player.playing;
 		if (btnPlay != null) {
 			btnPlay.setText(playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
 			btnPlay.setContentDescription(getText(playing ? R.string.pause : R.string.play));

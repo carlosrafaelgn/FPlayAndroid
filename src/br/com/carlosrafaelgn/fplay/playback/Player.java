@@ -309,13 +309,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
 	private static String startCommand;
-	private static boolean lastPlaying, playing, wasPlayingBeforeFocusLoss, currentSongLoaded, playAfterSeek, unpaused, lastPreparing, currentSongPreparing, currentSongBuffering, controlMode,
-		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, hasFocus, dimmedVolume, reviveAlreadyRetried, appIdle;
+	private static boolean lastPlaying, wasPlayingBeforeFocusLoss, playAfterSeek, unpaused, lastPreparing, currentSongPreparing, currentSongBuffering,
+		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, dimmedVolume, reviveAlreadyRetried, appIdle;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
-	private static int volumeDB, lastTime = -1, lastHow, state, silenceMode, globalMaxVolume = 15, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
+	private static int lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
 	private static Player thePlayer;
-	private static Song lastSong, currentSong, nextSong, firstError;
+	private static Song lastSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
 	private static NotificationManager notificationManager;
 	private static AudioManager audioManager;
@@ -352,7 +352,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static String path, originalPath, radioSearchTerm;
 	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
 	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged, headsetHookDoublePressPauses, doNotAttenuateVolume, lastRadioSearchWasByGenre;
-	
+
+	//These guys used to be private, but I decided to make them public, even though some of them still have
+	//their setters, after I found out ProGuard does not inline static setters (or at least I have
+	//not been able to figure out a way to do so....)
+	public static int idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, state, volumeDB;
+	public static boolean playing, hasFocus, controlMode, currentSongLoaded;
+	public static Song currentSong;
+
 	public static SerializableMap loadConfigFromFile(Context context) {
 		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");
 		return ((opts == null) ? new SerializableMap() : opts);
@@ -496,8 +503,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_IDLETURNOFFTIMERCUSTOMMINUTES, idleTurnOffTimerCustomMinutes);
 		opts.put(OPT_IDLETURNOFFTIMERSELECTEDMINUTES, idleTurnOffTimerSelectedMinutes);
 		opts.put(OPT_CUSTOMCOLORS, UI.customColors);
-		opts.put(OPT_THEME, UI.getTheme());
-		opts.put(OPT_FORCEDLOCALE, UI.getForcedLocale());
+		opts.put(OPT_THEME, UI.theme);
+		opts.put(OPT_FORCEDLOCALE, UI.forcedLocale);
 		opts.put(OPT_MSGS, UI.msgs);
 		opts.put(OPT_MSGSTARTUP, UI.msgStartup);
 		opts.put(OPT_WIDGETTEXTCOLOR, UI.widgetTextColor);
@@ -506,7 +513,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
-		opts.put(OPT_TRANSITION, UI.getTransition());
+		opts.put(OPT_TRANSITION, UI.transition);
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);
 		opts.putBit(OPTBIT_BASSBOOSTMODE, bassBoostMode);
 		opts.putBit(OPTBIT_NEXTPREPARATION, nextPreparationEnabled);
@@ -515,14 +522,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.putBit(OPTBIT_DISPLAYVOLUMEINDB, UI.displayVolumeInDB);
 		opts.putBit(OPTBIT_DOUBLECLICKMODE, UI.doubleClickMode);
 		opts.putBit(OPTBIT_MARQUEETITLE, UI.marqueeTitle);
-		opts.putBit(OPTBIT_FLAT, UI.isFlat());
+		opts.putBit(OPTBIT_FLAT, UI.isFlat);
 		opts.putBit(OPTBIT_ALBUMART, UI.albumArt);
 		opts.putBit(OPTBIT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.putBit(OPTBIT_ISDIVIDERVISIBLE, UI.isDividerVisible);
 		opts.putBit(OPTBIT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
 		opts.putBit(OPTBIT_HANDLECALLKEY, handleCallKey);
 		opts.putBit(OPTBIT_PLAYWHENHEADSETPLUGGED, playWhenHeadsetPlugged);
-		opts.putBit(OPTBIT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface());
+		opts.putBit(OPTBIT_USEALTERNATETYPEFACE, UI.isUsingAlternateTypeface);
 		opts.putBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS, goBackWhenPlayingFolders);
 		opts.putBit(OPTBIT_RANDOMMODE, songs.isInRandomMode());
 		opts.putBit(OPTBIT_WIDGETTRANSPARENTBG, UI.widgetTransparentBg);
@@ -1660,11 +1667,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			processPreparation();
 		}
 	}
-	
-	public static int getVolumeDB() {
-		return volumeDB;
-	}
-	
+
 	public static boolean setVolumeDB(int volumeDB) {
 		final boolean ret;
 		if (volumeDB <= MIN_VOLUME_DB) {
@@ -1811,15 +1814,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		final int m = turnOffTimerSelectedMinutes - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 60000L);
 		return ((m <= 0) ? 1 : m);
 	}
-	
-	public static int getTurnOffTimerCustomMinutes() {
-		return turnOffTimerCustomMinutes;
-	}
-	
-	public static int getTurnOffTimerSelectedMinutes() {
-		return turnOffTimerSelectedMinutes;
-	}
-	
+
 	private static void processIdleTurnOffTimer() {
 		final boolean timerShouldBeOn = (!playing && appIdle);
 		if (idleTurnOffTimer.isAlive()) {
@@ -1890,39 +1885,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		final int m = idleTurnOffTimerSelectedMinutes - (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 60000L);
 		return ((m <= 0) ? 1 : m);
 	}
-	
-	public static int getIdleTurnOffTimerCustomMinutes() {
-		return idleTurnOffTimerCustomMinutes;
-	}
-	
-	public static int getIdleTurnOffTimerSelectedMinutes() {
-		return idleTurnOffTimerSelectedMinutes;
-	}
-	
-	public static int getState() {
-		return state;
-	}
-	
-	public static boolean isPlaying() {
-		return playing;
-	}
-	
-	public static boolean isFocused() {
-		return hasFocus;
-	}
-	
-	public static boolean isCurrentSongLoaded() {
-		return currentSongLoaded;
-	}
-	
+
 	public static boolean isCurrentSongPreparing() {
 		return (currentSongPreparing || currentSongBuffering || (state == STATE_PREPARING_PLAYBACK));
 	}
-	
-	public static Song getCurrentSong() {
-		return currentSong;
-	}
-	
+
 	public static int getCurrentPosition() {
 		return (((currentPlayer != null) && currentSongLoaded) ? currentPlayer.getCurrentPosition() : ((currentSong == null) ? -1 : lastTime));
 	}
@@ -1930,11 +1897,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static int getAudioSessionId() {
 		return ((currentPlayer == null) ? -1 : currentPlayer.getAudioSessionId());
 	}
-	
-	public static boolean isControlMode() {
-		return controlMode;
-	}
-	
+
 	public static void setControlMode(boolean controlMode) {
 		Player.controlMode = controlMode;
 		if (observer != null)

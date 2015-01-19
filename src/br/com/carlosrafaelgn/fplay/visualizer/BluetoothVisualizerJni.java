@@ -509,7 +509,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 
 	@Override
 	public void onBluetoothConnected(BluetoothConnectionManager manager) {
-		if (activity != null && Player.getState() == Player.STATE_INITIALIZED) {
+		if (activity != null && Player.state == Player.STATE_INITIALIZED) {
 			if (lblMsg != null) {
 				lblMsg.setText(activity.getText(R.string.bt_packages_sent) + " 0");
 				MainHandler.sendMessageDelayed(this, MSG_UPDATE_PACKAGES, 1000);
@@ -580,7 +580,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			}
 			break;
 		case MSG_PLAYER_COMMAND:
-			if (connected && Player.getState() == Player.STATE_INITIALIZED) {
+			if (connected && Player.state == Player.STATE_INITIALIZED) {
 				switch (message.arg1) {
 				case PLAYER_COMMAND_SEND_STATE:
 					generateAndSendState();
@@ -594,7 +594,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 					Player.handleMediaButton(message.arg1);
 					break;
 				case PLAYER_COMMAND_PLAY:
-					if (!Player.isPlaying())
+					if (!Player.playing)
 						Player.handleMediaButton(message.arg1);
 					break;
 				}
@@ -605,9 +605,9 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	}
 
 	private void generateAndSendState() {
-		final Song s = Player.getCurrentSong();
+		final Song s = Player.currentSong;
 		state.set(4 |
-			(Player.isPlaying() ? 1 : 0) |
+			(Player.playing ? 1 : 0) |
 			(Player.isCurrentSongPreparing() ? 2 : 0) |
 			(((s == null) ? -1 : s.lengthMS) & ~7) |
 			((long)Player.getCurrentPosition()) << 32);

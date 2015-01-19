@@ -52,7 +52,7 @@ public final class SongAddingMonitor implements Timer.TimerHandler {
 	}
 	
 	public static void start(ActivityHost activity) {
-		if (Player.songs.isAdding() || Player.getState() != Player.STATE_INITIALIZED) {
+		if (Player.songs.isAdding() || Player.state != Player.STATE_INITIALIZED) {
 			stop();
 			//...the parent of an activity's content view is always a FrameLayout.
 			//http://android-developers.blogspot.com.br/2009/03/android-layout-tricks-3-optimize-by.html
@@ -68,7 +68,7 @@ public final class SongAddingMonitor implements Timer.TimerHandler {
 				notification.setLayoutParams(p);
 				UI.smallText(notification);
 				UI.prepareNotificationViewColors(notification);
-				lastMsg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.loading : R.string.adding_songs);
+				lastMsg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : R.string.adding_songs);
 				notification.setText(lastMsg);
 				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
 				((FrameLayout)parent).addView(notification);
@@ -92,8 +92,8 @@ public final class SongAddingMonitor implements Timer.TimerHandler {
 	@Override
 	public void handleTimer(Timer timer, Object param) {
 		int msg = 0;
-		if (Player.songs.isAdding() || Player.getState() != Player.STATE_INITIALIZED)
-			msg = ((Player.getState() != Player.STATE_INITIALIZED) ? R.string.loading : R.string.adding_songs);
+		if (Player.songs.isAdding() || Player.state != Player.STATE_INITIALIZED)
+			msg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : R.string.adding_songs);
 		if (msg == 0) {
 			stop();
 		} else if (lastMsg != msg) {

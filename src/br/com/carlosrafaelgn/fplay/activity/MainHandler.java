@@ -111,7 +111,7 @@ public final class MainHandler extends Handler {
 		switch (msg.what) {
 		case MSG_HANDLER_TOAST:
 			try {
-				if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+				if (Player.state >= Player.STATE_TERMINATING)
 					return;
 				if (msg.obj != null) {
 					if (msg.obj instanceof Throwable)

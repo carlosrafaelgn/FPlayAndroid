@@ -160,8 +160,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	void setContentViewWithTransition(View view, boolean fadeAllowed, boolean forceFadeOut) {
-		final int transition = UI.getTransition();
-		if (fadeAllowed && !ignoreFadeNextTime && transition != UI.TRANSITION_NONE) {
+		if (fadeAllowed && !ignoreFadeNextTime && UI.transition != UI.TRANSITION_NONE) {
 			try {
 				parent = (FrameLayout)findViewById(android.R.id.content);
 			} catch (Throwable ex) {
@@ -178,7 +177,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					newView = view;
 					anim = new AnimationSet(true);
 					int x, y;
-					if (transition == UI.TRANSITION_FADE) {
+					if (UI.transition == UI.TRANSITION_FADE) {
 						x = oldView.getWidth() >> 1;
 						y = 0;
 					} else {
@@ -194,7 +193,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					//leave prepared for next time
 					UI.storeViewCenterLocationForFade(null);
 					if (useFadeOutNextTime || forceFadeOut) {
-						if (transition == UI.TRANSITION_FADE) {
+						if (UI.transition == UI.TRANSITION_FADE) {
 							anim.addAnimation(new ScaleAnimation(1, 0.75f, 1, 1, x, y));
 							anim.addAnimation(new TranslateAnimation(0, 0, 0, oldView.getHeight() >> 3));
 						} else {
@@ -202,7 +201,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						}
 						anim.addAnimation(new AlphaAnimation(1, 0));
 					} else {
-						if (transition == UI.TRANSITION_FADE) {
+						if (UI.transition == UI.TRANSITION_FADE) {
 							anim.addAnimation(new ScaleAnimation(0.75f, 1, 1, 1, x, y));
 							anim.addAnimation(new TranslateAnimation(0, 0, -(oldView.getHeight() >> 3), 0));
 						} else {
@@ -366,7 +365,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
 		final Uri data;
-		if (Player.getState() == Player.STATE_INITIALIZED && intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && (data = intent.getData()) != null) {
+		if (Player.state == Player.STATE_INITIALIZED && intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && (data = intent.getData()) != null) {
 			System.out.println(data.getPath());
 		}
 	}
@@ -459,7 +458,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	@Override
 	protected void onResume() {
 		Player.setAppIdle(false);
-		if (UI.getForcedLocale() != UI.LOCALE_NONE)
+		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(getApplication());
 		if (top != null && top.paused) {
 			top.paused = false;

@@ -369,7 +369,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, flat, albumArt, scrollBarToTheLeft, expandSeekBar, notFullscreen;
+		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt, scrollBarToTheLeft, expandSeekBar, notFullscreen;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];
@@ -382,9 +382,15 @@ public final class UI {
 	public static ActivityBrowserView browserActivity;
 	
 	private static String emptyListString;
-	private static int emptyListStringHalfWidth, forcedLocale, currentLocale, theme, transition, createdWidgetIconColor;
-	private static boolean alternateTypefaceActive, useAlternateTypeface, fullyInitialized;
+	private static int emptyListStringHalfWidth, currentLocale, createdWidgetIconColor;
+	private static boolean alternateTypefaceActive, fullyInitialized;
 	private static Toast internalToast;
+
+	//These guys used to be private, but I decided to make them public, even though they still have
+	//their setters, after I found out ProGuard does not inline static setters (or at least I have
+	//not been able to figure out a way to do so....)
+	public static boolean isUsingAlternateTypeface, isFlat;
+	public static int forcedLocale, theme, transition;
 	
 	public static float density, scaledDensity, xdpi_1_72;
 	
@@ -446,20 +452,16 @@ public final class UI {
 			sb.append(dec);
 		}
 	}
-	
-	public static boolean isUsingAlternateTypeface() {
-		return useAlternateTypeface;
-	}
-	
+
 	public static void setUsingAlternateTypeface(Context context, boolean useAlternateTypeface) {
-		UI.useAlternateTypeface = useAlternateTypeface;
+		UI.isUsingAlternateTypeface = useAlternateTypeface;
 		if (useAlternateTypeface && !isCurrentLocaleCyrillic()) {
 			if (defaultTypeface == null || !alternateTypefaceActive) {
 				alternateTypefaceActive = true;
 				try {
 					defaultTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/OpenDyslexicRegular.otf");
 				} catch (Throwable ex) {
-					UI.useAlternateTypeface = false;
+					UI.isUsingAlternateTypeface = false;
 					alternateTypefaceActive = false;
 					defaultTypeface = Typeface.DEFAULT;
 				}
@@ -566,11 +568,7 @@ public final class UI {
 	public static boolean isCurrentLocaleCyrillic() {
 		return ((currentLocale == LOCALE_RU) || (currentLocale == LOCALE_UK));
 	}
-	
-	public static int getForcedLocale() {
-		return forcedLocale;
-	}
-	
+
 	private static void updateDecimalSeparator(Context context) {
 		try {
 			final DecimalFormatSymbols d = new DecimalFormatSymbols(getLocaleFromCode(currentLocale));
@@ -605,14 +603,14 @@ public final class UI {
 		}
 		updateDecimalSeparator(context);
 		if (fullyInitialized) {
-			setUsingAlternateTypeface(context, useAlternateTypeface);
+			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
 			return true;
 		}
 		return false;
 	}
 	
 	public static void setUsingAlternateTypefaceAndForcedLocale(Context context, boolean useAlternateTypeface, int localeCode) {
-		UI.useAlternateTypeface = useAlternateTypeface;
+		UI.isUsingAlternateTypeface = useAlternateTypeface;
 		if (!setForcedLocale(context, localeCode))
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
@@ -682,7 +680,7 @@ public final class UI {
 		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
 		defaultCheckIconSize = dpToPxI(24); //both descent and ascent of iconsTypeface are 0!
 		if (!setForcedLocale(context, forcedLocale))
-			setUsingAlternateTypeface(context, useAlternateTypeface);
+			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
 	}
 	
 	public static void prepareWidgetPlaybackIcons(Context context) {
@@ -1127,11 +1125,7 @@ public final class UI {
 			return context.getText(R.string.creamy).toString();
 		}
 	}
-	
-	public static int getTheme() {
-		return theme;
-	}
-	
+
 	public static void setTheme(Activity activity, int theme) {
 		UI.theme = theme;
 		Gradient.purgeAll();
@@ -1197,12 +1191,8 @@ public final class UI {
 	}
 
 	public static void setFlat(boolean flat) {
-		UI.flat = flat;
+		isFlat = flat;
 		Gradient.purgeAll();
-	}
-	
-	public static boolean isFlat() {
-		return flat;
 	}
 
 	public static void setTransition(int transition) {
@@ -1215,10 +1205,6 @@ public final class UI {
 				UI.transition = TRANSITION_NONE;
 				break;
 		}
-	}
-
-	public static int getTransition() {
-		return transition;
 	}
 
 	public static String getTransitionString(Context context, int transition) {
@@ -1363,7 +1349,7 @@ public final class UI {
 			if ((state & STATE_PRESSED) != 0) {
 				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				if (flat)
+				if (isFlat)
 					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
 				else
 					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
@@ -1392,7 +1378,7 @@ public final class UI {
 				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, strokeSize, strokeSize);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
 				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
-				if (flat)
+				if (isFlat)
 					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, strokeSize, strokeSize);
 				else
 					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), strokeSize, strokeSize);

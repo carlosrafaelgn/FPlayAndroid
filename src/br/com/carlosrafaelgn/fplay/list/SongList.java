@@ -167,7 +167,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public void onFilesFetched(FileFetcher fetcher, final Throwable e) {
 		if (e != null) {
 			addingEnded();
-			if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+			if (Player.state >= Player.STATE_TERMINATING)
 				return;
 			MainHandler.toast(e);
 		} else {
@@ -180,7 +180,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			addingEnded();
 			return;
 		}
-		if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+		if (Player.state >= Player.STATE_TERMINATING) {
 			addingEnded();
 			return;
 		}
@@ -200,7 +200,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			}
 			@Override
 			public boolean handleMessage(Message msg) {
-				if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+				if (Player.state >= Player.STATE_TERMINATING)
 					return true;
 				if (firstTime) {
 					if (clearList)
@@ -233,7 +233,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(files[i].path, files[i].name);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING)
 									break;
 								MainHandler.sendMessage(c, f);
 							}
@@ -246,7 +246,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(file.path, file.name);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING)
 									break;
 								MainHandler.sendMessage(c, f);
 							}
@@ -261,7 +261,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(files[i], tmpPtr);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING)
 									break;
 								MainHandler.sendMessage(c, f);
 							}
@@ -274,7 +274,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(file, tmpPtr);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING)
 									break;
 								MainHandler.sendMessage(c, f);
 							}
@@ -282,7 +282,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 					}
 				}
 			}
-			if (Player.getState() != Player.STATE_TERMINATED && Player.getState() != Player.STATE_TERMINATING)
+			if (Player.state < Player.STATE_TERMINATING)
 				MainHandler.sendMessage(c, f);
 		}
 		addingEnded();

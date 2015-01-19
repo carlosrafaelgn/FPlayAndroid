@@ -149,7 +149,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 					InputStreamReader isr = null;
 					BufferedReader br = null;
 					try {
-						if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+						if (Player.state >= Player.STATE_TERMINATING) {
 							Player.songs.addingEnded();
 							return;
 						}
@@ -170,7 +170,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 									line.regionMatches(true, 0, "https://", 0, 8)))
 									lines.add(line);
 							}
-							if (Player.getState() == Player.STATE_TERMINATED || Player.getState() == Player.STATE_TERMINATING) {
+							if (Player.state >= Player.STATE_TERMINATING) {
 								Player.songs.addingEnded();
 								return;
 							}
