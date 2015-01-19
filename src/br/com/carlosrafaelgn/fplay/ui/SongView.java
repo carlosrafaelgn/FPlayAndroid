@@ -48,14 +48,12 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private String ellipsizedTitle, ellipsizedExtraInfo;
 	private int state, width, lengthWidth, position;
 	
-	private static int height, verticalMargin;
-	
+	private static int height;
+
 	public static int getViewHeight() {
-		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = (UI._1dp << 1) + (verticalMargin << 1) + UI._22spBox + UI._14spBox;
-		return height;
+		return (height = (UI._1dp << 1) + (UI.verticalMargin << 1) + UI._22spBox + UI._14spBox);
 	}
-	
+
 	public SongView(Context context) {
 		super(context);
 		setOnClickListener(this);
@@ -166,12 +164,12 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI._4dp, UI.rect.bottom - UI.defaultControlContentsSize - UI._4dp, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, UI.verticalMargin + UI._22spYinBox);
 		if (song.isHttp)
-			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, UI.rect.right - UI._14spBox - UI._8dp, verticalMargin, UI._14spBox, txtColor);
+			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, UI.rect.right - UI._14spBox - UI._8dp, UI.verticalMargin, UI._14spBox, txtColor);
 		else
-			UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, verticalMargin + UI._14spYinBox);
-		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI._8dp, verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
+			UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, UI.verticalMargin + UI._14spYinBox);
+		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI._8dp, UI.verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
 	}
 	
 	@Override

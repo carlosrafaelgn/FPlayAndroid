@@ -63,15 +63,14 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private final boolean hasButtons, buttonIsCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding;
 	
-	private static int height, verticalMargin, usableHeight;
-	
+	private static int height, usableHeight;
+
 	public static int getViewHeight() {
-		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = (verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemspBox);
+		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemspBox);
 		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
 		return height;
 	}
-	
+
 	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasButtons, boolean buttonIsCheckbox) {
 		super(context);
 		this.albumArtFetcher = albumArtFetcher;

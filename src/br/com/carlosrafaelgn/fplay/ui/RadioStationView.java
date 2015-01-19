@@ -55,14 +55,12 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	private String[] descriptionLines, tagsLines;
 	private int state, width, position, descriptionY, tagsY;
 	
-	private static int height, verticalMargin;
-	
+	private static int height;
+
 	public static int getViewHeight() {
-		verticalMargin = (UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
-		height = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), verticalMargin + (UI._14spBox << 1)) + UI._4dp;
-		return height;
+		return (height = UI.verticalMargin + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), UI.verticalMargin + (UI._14spBox << 1)) + UI._4dp);
 	}
-	
+
 	public RadioStationView(Context context) {
 		super(context);
 		setOnClickListener(this);
@@ -110,10 +108,10 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			else
 				tagsLines[1] += "\u2026";
 		}
-		tagsY = height - verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
+		tagsY = height - UI.verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
 		
 		//center the description vertically, considering all available space
-		final int top = verticalMargin + UI._22spBox + UI._2dp + UI._18spBox, bottom = Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), verticalMargin + (visibleLines * UI._14spBox));
+		final int top = UI.verticalMargin + UI._22spBox + UI._2dp + UI._18spBox, bottom = Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), UI.verticalMargin + (visibleLines * UI._14spBox));
 		
 		layout = new StaticLayout(station.description, UI.textPaint, width - (UI._8dp << 1), Alignment.ALIGN_NORMAL, 1, 0, false);
 		visibleLines = Math.min(3, layout.getLineCount());
@@ -235,9 +233,9 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, verticalMargin + UI._22spYinBox);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, verticalMargin + UI._22spBox + UI._2dp + (UI._18spBox >> 1) - (UI._18sp >> 1), UI._18sp, txtColor2);
-		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI._8dp + UI._18sp + UI._4dp, verticalMargin + UI._22spBox + UI._2dp + UI._18spYinBox);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, UI.verticalMargin + UI._22spYinBox);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, UI.verticalMargin + UI._22spBox + UI._2dp + (UI._18spBox >> 1) - (UI._18sp >> 1), UI._18sp, txtColor2);
+		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI._8dp + UI._18sp + UI._4dp, UI.verticalMargin + UI._22spBox + UI._2dp + UI._18spYinBox);
 		int i = 0, y = descriptionY;
 		while (descriptionLines[i] != null) {
 			UI.drawText(canvas, descriptionLines[i], txtColor, UI._14sp, UI._8dp, y);

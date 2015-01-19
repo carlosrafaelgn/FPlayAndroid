@@ -214,7 +214,7 @@ public final class SettingView extends RelativeLayout implements View.OnClickLis
 	}
 	
 	public void updateVerticalMargin() {
-		setPadding(UI._8dp + ((icon == null) ? 0 : (UI.defaultControlContentsSize + UI._8dp + UI._8dp)), UI.isVerticalMarginLarge ? UI._16sp : UI._8sp, UI._8dp, UI.isVerticalMarginLarge ? UI._16sp : UI._8sp);
+		setPadding(UI._8dp + ((icon == null) ? 0 : (UI.defaultControlContentsSize + UI._8dp + UI._8dp)), UI.verticalMargin, UI._8dp, UI.verticalMargin);
 	}
 	
 	@Override

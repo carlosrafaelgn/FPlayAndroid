@@ -924,7 +924,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					((SettingView)v).invalidate();
 			}
 		} else if (view == optIsVerticalMarginLarge) {
-			UI.isVerticalMarginLarge = optIsVerticalMarginLarge.isChecked();
+			UI.setVerticalMarginLarge(optIsVerticalMarginLarge.isChecked());
 			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
 				final View v = panelSettings.getChildAt(i);
 				if (v != null && (v instanceof SettingView))
