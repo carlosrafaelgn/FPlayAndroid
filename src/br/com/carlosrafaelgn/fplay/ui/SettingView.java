@@ -246,7 +246,7 @@ public final class SettingView extends View implements View.OnClickListener {
 		if (width != w) {
 			width = w;
 			updateLayout();
-			if (height != h && !isInLayout())
+			if (height != h)
 				requestLayout();
 		}
 	}
