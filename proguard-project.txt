@@ -24,6 +24,7 @@
 # http://proguard.sourceforge.net/index.html#manual/examples.html
 #
 -allowaccessmodification
+-useuniqueclassmembernames
 -repackageclasses ''
 -keep public interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer {

@@ -225,11 +225,11 @@
     <string name="sort_by_title">Nach Titel sortieren</string>
     <string name="sort_by_artist">Nach Interpret sortieren</string>
     <string name="sort_by_album">Nach Album sortieren </string>
-    <string name="secondary_line_of_text">Zweite Zeile vom Text</string>
+    <string name="secondary_line_of_text">Zweite Zeile vom Text:</string>
     <string name="scrollbar">Scrollbar/Bildlaufleiste</string>
     <string name="scrollbar_to_the_left">Laufleiste auf der linken Seite</string>
-    <string name="scrollbar_playlist">Typ der Laufleiste, die in der Wiedergabeliste gezeigt wird</string>
-    <string name="scrollbar_browser_type">Typ der Laufleiste beim Hinzufügen neuer Titel</string>
+    <string name="scrollbar_playlist">Typ der Laufleiste, die in der Wiedergabeliste gezeigt wird:</string>
+    <string name="scrollbar_browser_type">Typ der Laufleiste beim Hinzufügen neuer Titel:</string>
     <string name="system_integrated">Nutzung Systemscrollen</string>
     <string name="large">Groß</string>
     <string name="indexed_if_possible">Indiziert (wenn möglich)</string>
@@ -249,7 +249,7 @@
     <string name="expand_seek_bar">Lautstärkebalken erweitern bei Nutzung</string>
     <string name="by_dir_xiph_org">Von Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
     <string name="creamy">Kremig</string>
-    <string name="transition">Übergang</string>
+    <string name="transition">Übergang:</string>
     <string name="fade">Ein/Ausblenden</string>
     <string name="zoom">Hinein/Herauszoomen</string>
     <string name="repeat_all">Alles Wiederholen</string>

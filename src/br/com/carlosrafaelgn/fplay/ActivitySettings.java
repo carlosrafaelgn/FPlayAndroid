@@ -306,7 +306,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optForcedLocale) {
 			if (item.getItemId() != UI.forcedLocale) {
-				UI.setForcedLocale(getApplication(), item.getItemId());
+				UI.setForcedLocale(getApplication(), getHostActivity(), item.getItemId());
 				onCleanupLayout();
 				onCreateLayout(false);
 				System.gc();
@@ -924,13 +924,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					((SettingView)v).invalidate();
 			}
 		} else if (view == optIsVerticalMarginLarge) {
+			final int oldVerticalMargin = UI.verticalMargin;
 			UI.setVerticalMarginLarge(optIsVerticalMarginLarge.isChecked());
 			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
 				final View v = panelSettings.getChildAt(i);
 				if (v != null && (v instanceof SettingView))
-					((SettingView)v).updateVerticalMargin();
+					((SettingView)v).updateVerticalMargin(oldVerticalMargin);
 			}
-			panelSettings.requestLayout();
 		} else if (view == optExtraSpacing) {
 			UI.extraSpacing = optExtraSpacing.isChecked();
 			onCleanupLayout();

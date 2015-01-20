@@ -85,7 +85,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 59;
+	public static final int VERSION_CODE = 61;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -578,14 +578,13 @@ public final class UI {
 		}
 	}
 
-	public static void reapplyForcedLocale(Context context) {
-		setForcedLocale(context, forcedLocale);
+	public static void reapplyForcedLocale(Context context, Activity activityContext) {
+		setForcedLocale(context, activityContext, forcedLocale);
 	}
 
-	public static boolean setForcedLocale(Context context, int localeCode) {
+	public static boolean setForcedLocale(Context context, Activity activityContext, int localeCode) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
-		final Resources res = context.getResources();
 		if (forcedLocale == 0 && localeCode == 0) {
 			currentLocale = getCurrentLocale(context);
 			updateDecimalSeparator(context);
@@ -593,11 +592,18 @@ public final class UI {
 		}
 		try {
 			final Locale l = getLocaleFromCode(localeCode);
-			final Configuration cfg = new Configuration(res.getConfiguration());
+			Resources res = context.getResources();
+			Configuration cfg = new Configuration(res.getConfiguration());
 			cfg.locale = l;
 			res.updateConfiguration(cfg, res.getDisplayMetrics());
 			forcedLocale = localeCode;
 			currentLocale = ((localeCode == 0) ? getCurrentLocale(context) : localeCode);
+			if (activityContext != null) {
+				res = activityContext.getResources();
+				cfg = new Configuration(res.getConfiguration());
+				cfg.locale = l;
+				res.updateConfiguration(cfg, res.getDisplayMetrics());
+			}
 		} catch (Throwable ex) {
 			currentLocale = getCurrentLocale(context);
 		}
@@ -611,7 +617,7 @@ public final class UI {
 	
 	public static void setUsingAlternateTypefaceAndForcedLocale(Context context, boolean useAlternateTypeface, int localeCode) {
 		UI.isUsingAlternateTypeface = useAlternateTypeface;
-		if (!setForcedLocale(context, localeCode))
+		if (!setForcedLocale(context, null, localeCode))
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
 	
@@ -620,13 +626,13 @@ public final class UI {
 			return;
 		final SerializableMap opts = Player.loadConfigFromFile(context);
 		//I know, this is ugly... I'll fix it one day...
-		setForcedLocale(context, opts.getInt(0x001E, LOCALE_NONE));
+		setForcedLocale(context, null, opts.getInt(0x001E, LOCALE_NONE));
 		widgetTransparentBg = opts.getBoolean(0x0022, false);
 		widgetTextColor = opts.getInt(0x0023, 0xff000000);
 		widgetIconColor = opts.getInt(0x0024, 0xff000000);
 	}
 	
-	public static void initialize(Context context) {
+	public static void initialize(Context context, Activity activityContext) {
 		fullyInitialized = true;
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
@@ -679,7 +685,7 @@ public final class UI {
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
 		defaultCheckIconSize = dpToPxI(24); //both descent and ascent of iconsTypeface are 0!
-		if (!setForcedLocale(context, forcedLocale))
+		if (!setForcedLocale(context, activityContext, forcedLocale))
 			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
 		setVerticalMarginLarge(isVerticalMarginLarge);
 	}
@@ -706,7 +712,7 @@ public final class UI {
 		if (icPrev != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(context);
+			initialize(context, null);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		textPaint.setColor(widgetIconColor);
@@ -734,7 +740,7 @@ public final class UI {
 		if (icPrevNotif != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(context);
+			initialize(context, null);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		textPaint.setColor((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? 0xff999999 : 0xffffffff);
@@ -1299,7 +1305,13 @@ public final class UI {
 		textPaint.setTextSize(size);
 		canvas.drawText(text, x, y, textPaint);
 	}
-	
+
+	public static void drawText(Canvas canvas, String text, int start, int end, int color, int size, int x, int y) {
+		textPaint.setColor(color);
+		textPaint.setTextSize(size);
+		canvas.drawText(text, start, end, x, y, textPaint);
+	}
+
 	public static void drawEmptyListString(Canvas canvas) {
 		textPaint.setColor(color_text_disabled);
 		textPaint.setTextSize(_22sp);

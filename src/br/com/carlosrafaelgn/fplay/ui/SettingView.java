@@ -37,6 +37,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.text.Layout;
+import android.text.StaticLayout;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.LinearLayout;
@@ -45,11 +47,9 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class SettingView extends View implements View.OnClickListener {
-	/*if (color != 0)
-		canvas.drawColor(color);
-	TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, 0, 0, getWidth(), textColor);*/
 	private View.OnClickListener onClickListener;
 	private String icon, text, secondaryText;
+	private int[] textLines;
 	private boolean checkable, checked, hidingSeparator;
 	private int state, color, secondaryTextWidth, width, height, textY;
 	
@@ -93,10 +93,32 @@ public final class SettingView extends View implements View.OnClickListener {
 		if (checkable || color != 0)
 			usableWidth -= (UI.defaultCheckIconSize + UI._8dp);
 
-		if (usableWidth <= 0) {
+		if (usableWidth <= 0 || text == null) {
+			if (textLines == null || textLines.length < 1)
+				textLines = new int[1];
+			textLines[0] = -1;
 			textHeight = UI._LargeItemspBox;
 		} else {
-			textHeight = UI._LargeItemspBox;
+			UI.textPaint.setTextSize(UI._LargeItemsp);
+			final StaticLayout layout = new StaticLayout(text, UI.textPaint, usableWidth, Layout.Alignment.ALIGN_NORMAL, 1, 0, false);
+			final int lineCount = layout.getLineCount();
+			if (lineCount <= 1) {
+				if (textLines == null || textLines.length < 3)
+					textLines = new int[3];
+				textLines[0] = 0;
+				textLines[1] = text.length();
+				textLines[2] = -1;
+				textHeight = UI._LargeItemspBox;
+			} else {
+				if (textLines == null || textLines.length < ((lineCount << 1) + 1))
+					textLines = new int[(lineCount << 1) + 1];
+				textLines[lineCount << 1] = -1;
+				for (int i = lineCount - 1; i >= 0; i--) {
+					textLines[(i << 1)] = layout.getLineStart(i);
+					textLines[(i << 1) + 1] = layout.getLineEnd(i);
+				}
+				textHeight = UI._LargeItemspBox * lineCount;
+			}
 		}
 		height += Math.max(textHeight, UI.defaultControlContentsSize);
 		if (secondaryTextWidth > 0) {
@@ -110,8 +132,10 @@ public final class SettingView extends View implements View.OnClickListener {
 		}
 	}
 
-	public void updateVerticalMargin() {
-		//setPadding(UI._8dp + ((icon == null) ? 0 : (UI.defaultControlContentsSize + UI._8dp + UI._8dp)), UI.verticalMargin, UI._8dp, UI.verticalMargin);
+	public void updateVerticalMargin(int oldVerticalMargin) {
+		height = height - (oldVerticalMargin << 1) + (UI.verticalMargin << 1);
+		textY = textY - oldVerticalMargin + UI.verticalMargin;
+		requestLayout();
 	}
 	
 	@Override
@@ -237,32 +261,50 @@ public final class SettingView extends View implements View.OnClickListener {
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
-	}
-
-	@Override
-	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-		super.onSizeChanged(w, h, oldw, oldh);
+		final int w = resolveSize(0, widthMeasureSpec);
 		if (width != w) {
 			width = w;
 			updateLayout();
-			if (height != h)
-				requestLayout();
 		}
+		setMeasuredDimension(w, height);
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state, !hidingSeparator);
+		final int txtColor = ((state == 0) ? UI.color_text_listitem : UI.color_text_selected);
+		final int txtColorSecondary = ((state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
+		int x = UI._8dp;
 		if (icon != null) {
+			x += (UI.defaultControlContentsSize + UI._8dp + UI.strokeSize + UI._8dp);
 			UI.rect.top = (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1);
-			TextIconDrawable.drawIcon(canvas, icon, UI._8dp, UI.rect.top, UI.defaultControlContentsSize, (state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
+			TextIconDrawable.drawIcon(canvas, icon, UI._8dp, UI.rect.top, UI.defaultControlContentsSize, txtColorSecondary);
 			UI.rect.left = UI._8dp + UI._8dp + UI.defaultControlContentsSize;
 			UI.rect.right = UI.rect.left + UI.strokeSize;
 			UI.rect.top += UI._2dp;
 			UI.rect.bottom = UI.rect.top + UI.defaultControlContentsSize - UI._4dp;
 			UI.fillRect(canvas, (state == 0) ? UI.color_divider : UI.color_text_selected);
+		}
+		if (textLines != null) {
+			int y = textY, i = 0, start;
+			while ((start = textLines[i]) >= 0) {
+				UI.drawText(canvas, text, start, textLines[i + 1], txtColor,  UI._LargeItemsp, x, y);
+				y += UI._LargeItemspBox;
+				i += 2;
+			}
+		}
+		if (secondaryTextWidth > 0) {
+			UI.drawText(canvas, secondaryText, txtColorSecondary, UI._18sp, width - secondaryTextWidth - UI._8dp, height - UI.verticalMargin - UI._18spBox + UI._18spYinBox);
+		} else if (color != 0 || checkable) {
+			UI.rect.left = width - UI._8dp - UI.defaultCheckIconSize;
+			UI.rect.top = (height >> 1) - (UI.defaultCheckIconSize >> 1);
+			if (color != 0) {
+				UI.rect.right = UI.rect.left + UI.defaultCheckIconSize;
+				UI.rect.bottom = UI.rect.top + UI.defaultCheckIconSize;
+				UI.fillRect(canvas, color);
+			}
+			TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, UI.rect.left, UI.rect.top, UI.defaultCheckIconSize, txtColor);
 		}
 	}
 	
@@ -276,6 +318,7 @@ public final class SettingView extends View implements View.OnClickListener {
 		icon = null;
 		text = null;
 		secondaryText = null;
+		textLines = null;
 		super.onDetachedFromWindow();
 	}
 	

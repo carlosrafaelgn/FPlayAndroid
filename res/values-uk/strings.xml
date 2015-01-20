@@ -225,11 +225,11 @@
     <string name="sort_by_title">Сортувати по назва</string>
     <string name="sort_by_artist">Сортувати по виконавець</string>
     <string name="sort_by_album">Сортувати по альбом</string>
-    <string name="secondary_line_of_text">Вторинний рядку тексту</string>
+    <string name="secondary_line_of_text">Вторинний рядку тексту:</string>
     <string name="scrollbar">Смуга прокрутки</string>
     <string name="scrollbar_to_the_left">Помістіть смуги прокрутки з лівого боку</string>
-    <string name="scrollbar_playlist">Смуга прокрутки для відображення у списку відтворення</string>
-    <string name="scrollbar_browser_type">Смуга прокрутки для відображення при додаванні пісні</string>
+    <string name="scrollbar_playlist">Смуга прокрутки для відображення у списку відтворення:</string>
+    <string name="scrollbar_browser_type">Смуга прокрутки для відображення при додаванні пісні:</string>
     <string name="system_integrated">Інтегроване з системою</string>
     <string name="large">Великий</string>
     <string name="indexed_if_possible">Індексовані (якщо це можливо)</string>
@@ -249,7 +249,7 @@
     <string name="expand_seek_bar">Розгорнути шукати бар перед пошуком</string>
     <string name="by_dir_xiph_org">Від Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
     <string name="creamy">Вершковий</string>
-    <string name="transition">Перехід</string>
+    <string name="transition">Перехід:</string>
     <string name="fade">В\'янути</string>
     <string name="zoom">Зумміровать</string>
     <string name="repeat_all">Повтор всіх</string>

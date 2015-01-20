@@ -388,7 +388,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//structure that belongs to ActivityMain
 		//that's why we pass null to super.onCreate!
 		super.onCreate(null);
-		UI.initialize(getApplication());
+		UI.initialize(getApplication(), this);
 		MainHandler.initialize();
 		if (Player.startService(getApplication()))
 			UI.setAndroidThemeAccordingly13(this);
@@ -432,7 +432,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		final boolean i = UI.isLandscape;
-		UI.initialize(this);
+		UI.initialize(getApplication(), this);
 		if (i != UI.isLandscape) {
 			if (top != null) {
 				ignoreFadeNextTime = true;
@@ -459,7 +459,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	protected void onResume() {
 		Player.setAppIdle(false);
 		if (UI.forcedLocale != UI.LOCALE_NONE)
-			UI.reapplyForcedLocale(getApplication());
+			UI.reapplyForcedLocale(getApplication(), this);
 		if (top != null && top.paused) {
 			top.paused = false;
 			top.onResume();

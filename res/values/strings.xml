@@ -225,11 +225,11 @@
     <string name="sort_by_title">Sort by title</string>
     <string name="sort_by_artist">Sort by artist</string>
     <string name="sort_by_album">Sort by album</string>
-    <string name="secondary_line_of_text">Secondary line of text</string>
+    <string name="secondary_line_of_text">Secondary line of text:</string>
     <string name="scrollbar">Scroll Bar</string>
     <string name="scrollbar_to_the_left">Place scroll bars to the left side</string>
-    <string name="scrollbar_playlist">Type of scroll bar to show in the playlist</string>
-    <string name="scrollbar_browser_type">Type of scroll bar to show when adding songs</string>
+    <string name="scrollbar_playlist">Type of scroll bar to show in the playlist:</string>
+    <string name="scrollbar_browser_type">Type of scroll bar to show when adding songs:</string>
     <string name="system_integrated">Integrated with the system</string>
     <string name="large">Large</string>
     <string name="indexed_if_possible">Indexed (if possible)</string>
@@ -249,7 +249,7 @@
     <string name="expand_seek_bar">Expand the seek bar before seeking</string>
     <string name="by_dir_xiph_org">By Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
     <string name="creamy">Creamy</string>
-    <string name="transition">Transition</string>
+    <string name="transition">Transition:</string>
     <string name="fade">Fade</string>
     <string name="zoom">Zoom</string>
     <string name="repeat_all">Repeat all</string>

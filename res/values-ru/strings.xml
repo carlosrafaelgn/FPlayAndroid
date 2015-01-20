@@ -225,11 +225,11 @@
     <string name="sort_by_title">Сортировать по название</string>
     <string name="sort_by_artist">Сортировать по исполнитель</string>
     <string name="sort_by_album">Сортировать по альбом</string>
-    <string name="secondary_line_of_text">Вторичный строка текста</string>
+    <string name="secondary_line_of_text">Вторичный строка текста:</string>
     <string name="scrollbar">Полоса прокрутки</string>
     <string name="scrollbar_to_the_left">Поместите полосы прокрутки с левой стороны</string>
-    <string name="scrollbar_playlist">Полоса прокрутки для отображения в списке воспроизведения</string>
-    <string name="scrollbar_browser_type">Полоса прокрутки для отображения при добавлении песни</string>
+    <string name="scrollbar_playlist">Полоса прокрутки для отображения в списке воспроизведения:</string>
+    <string name="scrollbar_browser_type">Полоса прокрутки для отображения при добавлении песни:</string>
     <string name="system_integrated">Интегрированное с системой</string>
     <string name="large">Большой</string>
     <string name="indexed_if_possible">Индексированные (если это возможно)</string>
@@ -249,7 +249,7 @@
     <string name="expand_seek_bar">Развернуть искать бар перед поиском</string>
     <string name="by_dir_xiph_org">От Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
     <string name="creamy">Сливочный</string>
-    <string name="transition">Переход</string>
+    <string name="transition">Переход:</string>
     <string name="fade">Вянуть</string>
     <string name="zoom">Зуммировать</string>
     <string name="repeat_all">Повтор всех</string>
