@@ -101,7 +101,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private volatile boolean cancelled;
 	
 	static {
-		supportedTypes = new HashSet<String>(15);
+		supportedTypes = new HashSet<String>(16);
 		supportedTypes.add(".3gp");
 		supportedTypes.add(".3ga");
 		supportedTypes.add(".mp4");
