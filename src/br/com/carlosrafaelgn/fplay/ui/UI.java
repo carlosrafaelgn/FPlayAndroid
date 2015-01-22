@@ -590,25 +590,28 @@ public final class UI {
 			updateDecimalSeparator(context);
 			return false;
 		}
+		final boolean wasCyrillic = isCurrentLocaleCyrillic();
 		try {
 			final Locale l = getLocaleFromCode(localeCode);
-			Resources res = context.getResources();
+			final Resources res = context.getResources();
 			Configuration cfg = new Configuration(res.getConfiguration());
 			cfg.locale = l;
 			res.updateConfiguration(cfg, res.getDisplayMetrics());
 			forcedLocale = localeCode;
 			currentLocale = ((localeCode == 0) ? getCurrentLocale(context) : localeCode);
 			if (activityContext != null) {
-				res = activityContext.getResources();
-				cfg = new Configuration(res.getConfiguration());
-				cfg.locale = l;
-				res.updateConfiguration(cfg, res.getDisplayMetrics());
+				final Resources res2 = activityContext.getResources();
+				if (res != res2) {
+					cfg = new Configuration(res2.getConfiguration());
+					cfg.locale = l;
+					res2.updateConfiguration(cfg, res2.getDisplayMetrics());
+				}
 			}
 		} catch (Throwable ex) {
 			currentLocale = getCurrentLocale(context);
 		}
 		updateDecimalSeparator(context);
-		if (fullyInitialized) {
+		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
 			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
 			return true;
 		}
@@ -627,7 +630,8 @@ public final class UI {
 		final SerializableMap opts = Player.loadConfigFromFile(context);
 		//I know, this is ugly... I'll fix it one day...
 		setForcedLocale(context, null, opts.getInt(0x001E, LOCALE_NONE));
-		widgetTransparentBg = opts.getBoolean(0x0022, false);
+		//widgetTransparentBg = opts.getBoolean(0x0022, false);
+		widgetTransparentBg = opts.getBit(18);
 		widgetTextColor = opts.getInt(0x0023, 0xff000000);
 		widgetIconColor = opts.getInt(0x0024, 0xff000000);
 	}

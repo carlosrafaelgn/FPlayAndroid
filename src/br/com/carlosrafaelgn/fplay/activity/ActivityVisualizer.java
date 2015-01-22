@@ -575,8 +575,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@Override
 	protected void onResume() {
-		if (UI.forcedLocale != UI.LOCALE_NONE)
-			UI.reapplyForcedLocale(getApplication(), this);
 		Player.setAppIdle(false);
 		Player.observer = this;
 		reset = true;
@@ -686,6 +684,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		if (info == null)
 			return;
+		if (UI.forcedLocale != UI.LOCALE_NONE)
+			UI.reapplyForcedLocale(getApplication(), this);
 		UI.prepare(menu);
 		menu.add(0, MNU_ORIENTATION, 0, (UI.visualizerOrientation == 0) ? R.string.portrait : R.string.landscape)
 			.setOnMenuItemClickListener(this)
@@ -772,7 +772,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		return true;
 	}
-	
+
 	private void showPanelTop(boolean show) {
 		if (panelTop == null || uiAnimTimer == null)
 			return;

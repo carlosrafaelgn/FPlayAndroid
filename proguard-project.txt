@@ -23,8 +23,16 @@
 # http://developer.android.com/tools/help/proguard.html
 # http://proguard.sourceforge.net/index.html#manual/examples.html
 #
+
+# **********************************************************************************************************
+# I made a the following changes to the file proguard-android-optimize.txt:
+#
+# removed -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+# added -optimizations !code/simplification/cast,!field/*,!class/merging/*
+# removed -dontusemixedcaseclassnames
+# **********************************************************************************************************
+
 -allowaccessmodification
--useuniqueclassmembernames
 -repackageclasses ''
 -keep public interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer {
