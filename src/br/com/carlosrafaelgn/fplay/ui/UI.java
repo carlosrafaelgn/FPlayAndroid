@@ -594,17 +594,17 @@ public final class UI {
 		try {
 			final Locale l = getLocaleFromCode(localeCode);
 			final Resources res = context.getResources();
-			Configuration cfg = new Configuration(res.getConfiguration());
+			Configuration cfg = new Configuration();
 			cfg.locale = l;
-			res.updateConfiguration(cfg, res.getDisplayMetrics());
+			res.getConfiguration().updateFrom(cfg);
+			res.updateConfiguration(res.getConfiguration(), res.getDisplayMetrics());
 			forcedLocale = localeCode;
 			currentLocale = ((localeCode == 0) ? getCurrentLocale(context) : localeCode);
 			if (activityContext != null) {
 				final Resources res2 = activityContext.getResources();
 				if (res != res2) {
-					cfg = new Configuration(res2.getConfiguration());
-					cfg.locale = l;
-					res2.updateConfiguration(cfg, res2.getDisplayMetrics());
+					res2.getConfiguration().updateFrom(cfg);
+					res2.updateConfiguration(res2.getConfiguration(), res2.getDisplayMetrics());
 				}
 			}
 		} catch (Throwable ex) {
