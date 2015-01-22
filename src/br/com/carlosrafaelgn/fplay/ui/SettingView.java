@@ -144,8 +144,9 @@ public final class SettingView extends View implements View.OnClickListener {
 	}
 
 	public void setSecondaryText(String secondaryText) {
-		if (this.secondaryText != null) {
+		if (this.secondaryText != null && secondaryText != null) {
 			this.secondaryText = secondaryText;
+			secondaryTextWidth = UI.measureText(secondaryText, UI._18sp);
 			invalidate();
 		}
 	}
