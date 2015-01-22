@@ -830,6 +830,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	
 	private static void initialize(Context context) {
 		if (state == STATE_NEW) {
+			alreadySelected = true; //fix the initial selection when the app is started from the widget
 			state = STATE_INITIALIZING;
 			_mainHandler = MainHandler.initialize();
 			if (notificationManager == null)
