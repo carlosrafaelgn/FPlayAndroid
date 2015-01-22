@@ -433,6 +433,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		final boolean i = UI.isLandscape;
+		ActivityMain.localeHasBeenChanged = false;
 		UI.initialize(getApplication(), this);
 		if (i != UI.isLandscape) {
 			if (top != null) {

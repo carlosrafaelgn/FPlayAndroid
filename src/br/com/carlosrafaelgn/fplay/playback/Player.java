@@ -418,7 +418,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
-			UI.setVerticalMarginLarge(opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen));
+			UI.setVerticalMarginLarge(opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
 			handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
 			playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
 			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
@@ -455,7 +455,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.albumArt = opts.getBoolean(OPT_ALBUMART, true);
 			UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
-			UI.setVerticalMarginLarge(opts.getBoolean(OPT_ISVERTICALMARGINLARGE, UI.isLargeScreen || !UI.isLowDpiScreen));
+			UI.setVerticalMarginLarge(opts.getBoolean(OPT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
 			handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
 			playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
 			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));

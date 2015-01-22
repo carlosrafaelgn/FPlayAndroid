@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.media.AudioManager;
+import android.os.Build;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -103,6 +104,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
 	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut;
 	private StringBuilder timeBuilder, volumeBuilder;
+	public static boolean localeHasBeenChanged;
 
 	@Override
 	public CharSequence getTitle() {
@@ -430,6 +432,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
+		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
+			localeHasBeenChanged = true;
+			UI.reapplyForcedLocale(getHostActivity().getApplication(), getHostActivity());
+		}
 		UI.prepare(menu);
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
 			.setOnMenuItemClickListener(this)
@@ -698,6 +704,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			skipToDestruction = false;
 		}
+		localeHasBeenChanged = false;
 		addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1137,6 +1144,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		lastTime = -2;
 		if (!Player.controlMode)
 			Player.lastCurrent = Player.songs.getCurrentPosition();
+		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
+			localeHasBeenChanged = true;
+			UI.reapplyForcedLocale(getHostActivity().getApplication(), getHostActivity());
+		}
 	}
 	
 	@Override

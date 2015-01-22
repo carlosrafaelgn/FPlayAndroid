@@ -579,10 +579,10 @@ public final class UI {
 	}
 
 	public static void reapplyForcedLocale(Context context, Activity activityContext) {
-		setForcedLocale(context, activityContext, forcedLocale);
+		setForcedLocale(context, activityContext, forcedLocale, false);
 	}
 
-	public static boolean setForcedLocale(Context context, Activity activityContext, int localeCode) {
+	public static boolean setForcedLocale(Context context, Activity activityContext, int localeCode, boolean reloadEmptyListString) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
 		if (forcedLocale == 0 && localeCode == 0) {
@@ -614,13 +614,16 @@ public final class UI {
 		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
 			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
 			return true;
+		} else if (reloadEmptyListString) {
+			emptyListString = context.getText(R.string.empty_list).toString();
+			emptyListStringHalfWidth = measureText(emptyListString, _22sp) >> 1;
 		}
 		return false;
 	}
 	
 	public static void setUsingAlternateTypefaceAndForcedLocale(Context context, boolean useAlternateTypeface, int localeCode) {
 		UI.isUsingAlternateTypeface = useAlternateTypeface;
-		if (!setForcedLocale(context, null, localeCode))
+		if (!setForcedLocale(context, null, localeCode, false))
 			setUsingAlternateTypeface(context, useAlternateTypeface);
 	}
 	
@@ -629,7 +632,7 @@ public final class UI {
 			return;
 		final SerializableMap opts = Player.loadConfigFromFile(context);
 		//I know, this is ugly... I'll fix it one day...
-		setForcedLocale(context, null, opts.getInt(0x001E, LOCALE_NONE));
+		setForcedLocale(context, null, opts.getInt(0x001E, LOCALE_NONE), false);
 		//widgetTransparentBg = opts.getBoolean(0x0022, false);
 		widgetTransparentBg = opts.getBit(18);
 		widgetTextColor = opts.getInt(0x0023, 0xff000000);
@@ -689,7 +692,7 @@ public final class UI {
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
 		defaultCheckIconSize = dpToPxI(24); //both descent and ascent of iconsTypeface are 0!
-		if (!setForcedLocale(context, activityContext, forcedLocale))
+		if (!setForcedLocale(context, activityContext, forcedLocale, false))
 			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
 		setVerticalMarginLarge(isVerticalMarginLarge);
 	}
