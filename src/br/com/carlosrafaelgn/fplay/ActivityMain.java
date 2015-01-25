@@ -687,7 +687,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public boolean onBackPressed() {
 		if (Player.controlMode) {
-			Player.setControlMode(false);
+			//Player.setControlMode(false);
 			return true;
 		} else if (Player.songs.selecting || Player.songs.moving) {
 			cancelSelection(false);
@@ -977,24 +977,37 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				vwVolume = barVolume;
 				vwVolumeId = R.id.barVolume;
 			}
-			
+
 			if (UI.isLargeScreen) {
 				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, (UI.isLandscape ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), 0, 0, true));
 			} else {
-				lblTitle.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-				lblMsgSelMove.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-				panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				if (UI.isLandscape && UI.extraSpacing) {
+					findViewById(R.id.panelInfo).setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				} else {
+					lblTitle.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					lblMsgSelMove.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				}
 				if (UI.isLandscape) {
 					list.setTopLeftBorders();
-					panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					panelSelection.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					if (!UI.extraSpacing) {
+						panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+						panelSelection.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					}
 				} else {
 					panelSecondary.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
 					panelSelection.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
 					panelSecondary.setPadding(0, 0, 0, UI._8dp + UI.thickDividerSize);
 				}
 				if (UI.extraSpacing) {
-					panelControls.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
+					if (UI.isLandscape) {
+						panelControls.setPadding(UI._8dp, 0, UI._8dp, 0);
+						final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)panelControls.getLayoutParams();
+						p.bottomMargin = UI._8dp;
+						panelControls.setLayoutParams(p);
+					} else {
+						panelControls.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
+					}
 					panelSelection.setPadding(UI._8dp, 0, UI._8dp, UI._8dp + (UI.isLandscape ? 0 : UI.thickDividerSize));
 				} else {
 					if (!UI.isLandscape)

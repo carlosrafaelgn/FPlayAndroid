@@ -6,6 +6,7 @@
     android:baselineAligned="false"
     android:orientation="vertical"
     android:splitMotionEvents="false"
+    android:id="@+id/panelInfo"
     tools:context=".ActivityHost" >
 
     <TextView
@@ -52,25 +53,38 @@
             android:paddingRight="8dp" >
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnPrev"
+                android:id="@+id/btnAdd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
+                android:contentDescription="@string/add_songs"
+                android:nextFocusDown="@+id/btnPrev"
+                android:nextFocusForward="@+id/btnPrev"
+                android:nextFocusLeft="@+id/list"
+                android:nextFocusRight="@+id/barVolume"
+                android:nextFocusUp="@+id/list" />
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnPrev"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_above="@+id/btnPlay"
                 android:layout_marginBottom="8dp"
                 android:contentDescription="@string/previous"
                 android:nextFocusDown="@+id/btnPlay"
                 android:nextFocusForward="@+id/btnPlay"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/list" />
+                android:nextFocusUp="@+id/btnAdd" />
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPlay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
-                android:layout_below="@+id/btnPrev"
+                android:layout_centerVertical="true"
                 android:layout_marginBottom="8dp"
                 android:contentDescription="@string/play"
                 android:nextFocusDown="@+id/btnNext"
@@ -85,26 +99,12 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_below="@+id/btnPlay"
-                android:layout_marginBottom="8dp"
                 android:contentDescription="@string/next"
-                android:nextFocusDown="@+id/btnAdd"
-                android:nextFocusForward="@+id/btnAdd"
-                android:nextFocusLeft="@+id/list"
-                android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/btnPlay" />
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnAdd"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_below="@+id/btnNext"
-                android:contentDescription="@string/add_songs"
                 android:nextFocusDown="@+id/btnMenu"
                 android:nextFocusForward="@+id/btnMenu"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/btnNext" />
+                android:nextFocusUp="@+id/btnPlay" />
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMenu"
@@ -117,7 +117,7 @@
                 android:nextFocusForward="@+id/barVolume"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/btnAdd" />
+                android:nextFocusUp="@+id/btnNext" />
         </RelativeLayout>
 
         <LinearLayout

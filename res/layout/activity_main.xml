@@ -6,6 +6,7 @@
     android:baselineAligned="false"
     android:orientation="vertical"
     android:splitMotionEvents="false"
+    android:id="@+id/panelInfo"
     tools:context=".ActivityHost" >
 
     <TextView
@@ -78,8 +79,7 @@
             android:id="@+id/btnPlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="16dp"
-            android:layout_toLeftOf="@+id/btnNext"
+            android:layout_centerHorizontal="true"
             android:contentDescription="@string/play"
             android:nextFocusDown="@+id/barVolume"
             android:nextFocusForward="@+id/btnNext"
@@ -91,8 +91,8 @@
             android:id="@+id/btnNext"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="16dp"
-            android:layout_toLeftOf="@+id/btnMenu"
+            android:layout_marginLeft="16dp"
+            android:layout_toRightOf="@+id/btnPlay"
             android:contentDescription="@string/next"
             android:nextFocusDown="@+id/barVolume"
             android:nextFocusForward="@+id/btnMenu"

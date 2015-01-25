@@ -732,7 +732,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
 		btnGoBackToPlayer.setTextColor(UI.colorState_text_reactive);
 		btnGoBackToPlayer.setOnClickListener(this);
-		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_RIGHT, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_LIST, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		btnGoBackToPlayer.setDefaultHeight();
 		btnAdd = (BgButton)findViewById(R.id.btnAdd);
 		btnAdd.setTextColor(UI.colorState_text_reactive);
