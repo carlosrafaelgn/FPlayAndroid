@@ -213,7 +213,7 @@
     <string name="equalizer_not_supported">Seu dispositivo não suporta o equalizador :(</string>
     <string name="bass_boost_not_supported">Seu dispositivo não suporta reforço de graves :(</string>
     <string name="bass_boost_strength_not_supported">Seu dispositivo não suporta ajuste fino de reforço de graves :(</string>
-    <string name="touch_to_add_songs">Lista vazia!\n\nToque aqui, ou no botão +, para adicionar músicas :)</string>
+    <string name="touch_to_add_songs">Lista vazia!\n\nToque aqui, ou no botão &#9835;, para adicionar músicas :)</string>
     <string name="custom_key_behavior">Comportamento personalizável de teclas</string>
     <string name="opt_wrap_around_list">Mover a seleção do teclado para a extremidade oposta de uma lista ao atingir sua parte superior/inferior</string>
     <string name="opt_extra_spacing">Usar espaçamento largo nos cabeçalhos</string>

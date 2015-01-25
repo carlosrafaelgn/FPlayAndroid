@@ -439,7 +439,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		UI.prepare(menu);
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_ADD));
+			.setIcon(new TextIconDrawable(UI.ICON_FPLAY));
 		UI.separator(menu, 0, 1);
 		Menu s2, s = menu.addSubMenu(1, 0, 0, R.string.list)
 				.setIcon(new TextIconDrawable(UI.ICON_LIST));
@@ -686,10 +686,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public boolean onBackPressed() {
-		if (Player.controlMode) {
-			//Player.setControlMode(false);
+		/*if (Player.controlMode) {
+			Player.setControlMode(false);
 			return true;
-		} else if (Player.songs.selecting || Player.songs.moving) {
+		} else*/ if (Player.songs.selecting || Player.songs.moving) {
 			cancelSelection(false);
 			return true;
 		}
@@ -850,7 +850,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			
 			btnAdd = (BgButton)findViewById(R.id.btnAdd);
 			btnAdd.setOnClickListener(this);
-			btnAdd.setIcon(UI.ICON_ADD);
+			btnAdd.setIcon(UI.ICON_FPLAY);
 			
 			if (!UI.marqueeTitle) {
 				lblTitle.setEllipsize(TruncateAt.END);

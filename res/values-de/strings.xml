@@ -213,7 +213,7 @@
     <string name="equalizer_not_supported">Dieses Gerät unterstützt den Equalizer nicht :(</string>
     <string name="bass_boost_not_supported">Dieses Gerät unterstützt den Bass Boost nicht :(</string>
     <string name="bass_boost_strength_not_supported">Dieses Gerät unterstützt die feinere Bass Boost Einstellung nicht :(</string>
-    <string name="touch_to_add_songs">Liste leer!\n\nHier berühren oder + Schaltfläche, um Titel hinzuzufügen :)</string>
+    <string name="touch_to_add_songs">Liste leer!\n\nHier berühren oder &#9835; Schaltfläche, um Titel hinzuzufügen :)</string>
     <string name="custom_key_behavior">Veränderbares Verhalten</string>
     <string name="opt_wrap_around_list">Verschieben der Selektion an das andere Ende der Liste wenn Anfang oder Ende erreicht wird</string>
     <string name="opt_extra_spacing">Großer Abstand in den Überschriften</string>

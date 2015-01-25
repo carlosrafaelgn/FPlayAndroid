@@ -185,7 +185,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				icon = UI.ICON_SCREEN;
 				break;
 			case FileSt.TYPE_ALL_FILES:
-				icon = UI.ICON_LIST;
+				icon = UI.ICON_ROOT;
 				break;
 			case FileSt.TYPE_EXTERNAL_STORAGE:
 				icon = UI.ICON_SD;

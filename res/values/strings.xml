@@ -213,7 +213,7 @@
     <string name="equalizer_not_supported">Your device does not support the equalizer :(</string>
     <string name="bass_boost_not_supported">Your device does not support bass boost :(</string>
     <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment :(</string>
-    <string name="touch_to_add_songs">Empty list!\n\nTouch here, or the + button, to add songs :)</string>
+    <string name="touch_to_add_songs">Empty list!\n\nTouch here, or the &#9835; button, to add songs :)</string>
     <string name="custom_key_behavior">Customizable key behavior</string>
     <string name="opt_wrap_around_list">Move keyboard selection to the opposite end of a list when reaching its top/bottom</string>
     <string name="opt_extra_spacing">Use large spacing in headers</string>

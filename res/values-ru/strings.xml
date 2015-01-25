@@ -213,7 +213,7 @@
     <string name="equalizer_not_supported">Ваше устройство не поддерживает эквалайзер :(</string>
     <string name="bass_boost_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
     <string name="bass_boost_strength_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
-    <string name="touch_to_add_songs">Список пустой!\n\nНажмите здесь или элемент \"+\", чтобы добавить композиции :)</string>
+    <string name="touch_to_add_songs">Список пустой!\n\nНажмите здесь или элемент &#9835;, чтобы добавить композиции :)</string>
     <string name="custom_key_behavior">Настраиваемые поведения клавиш</string>
     <string name="opt_wrap_around_list">Переместить курсор в противоположный конец списка при достижении его верха/низа</string>
     <string name="opt_extra_spacing">Использовать широкий отступ в заголовках</string>
