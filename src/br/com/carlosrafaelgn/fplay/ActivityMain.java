@@ -36,11 +36,14 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.media.AudioManager;
 import android.os.Build;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils.TruncateAt;
+import android.text.style.DynamicDrawableSpan;
+import android.text.style.ImageSpan;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -886,7 +889,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			list.setScrollBarType(UI.songListScrollBarType);
 			list.setOnKeyDownObserver(this);
 			list.setEmptyListOnClickListener(this);
-			list.setCustomEmptyText(getText(R.string.touch_to_add_songs));
+			//Apparently, not all devices can properly draw the character &#9835; :(
+			final String originalText = getText(R.string.touch_to_add_songs).toString();
+			final int iconIdx = originalText.indexOf('\u266B');
+			if (iconIdx > 0) {
+				final SpannableStringBuilder txt = new SpannableStringBuilder(originalText);
+				txt.setSpan(new ImageSpan(new TextIconDrawable(UI.ICON_FPLAY, UI.color_text_disabled, UI._22sp, 0), DynamicDrawableSpan.ALIGN_BASELINE), iconIdx, iconIdx + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				list.setCustomEmptyText(txt);
+			} else {
+				list.setCustomEmptyText(originalText);
+			}
 			panelControls = (ViewGroup)findViewById(R.id.panelControls);
 			panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
