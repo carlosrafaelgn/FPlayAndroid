@@ -265,6 +265,8 @@
     <string name="refresh_list">Refresh list</string>
     <string name="fullscreen">Fullscreen</string>
     <string name="choose_image">Choose image&#8230;</string>
+    <string name="accessibility">Accessibility</string>
+    <string name="place_the_playlist_to_the_right">Place the playlist to the right</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>

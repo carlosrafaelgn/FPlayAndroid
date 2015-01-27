@@ -9,6 +9,8 @@
     android:splitMotionEvents="false"
     tools:context=".ActivityHost" >
 
+    <include layout="@layout/activity_main_l_controls" />
+
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
         android:splitMotionEvents="false"
@@ -19,7 +21,5 @@
 
         <requestFocus />
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
-
-    <include layout="@layout/activity_main_l_controls" />
 
 </LinearLayout>

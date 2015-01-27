@@ -265,6 +265,8 @@
     <string name="refresh_list">Atualizar lista</string>
     <string name="fullscreen">Tela cheia</string>
     <string name="choose_image">Escolher imagem&#8230;</string>
+    <string name="accessibility">Acessibilidade</string>
+    <string name="place_the_playlist_to_the_right">Posicionar a lista de reprodução à direita</string>
 
     <string name="bt_packages_sent">Mensagens enviadas:</string>
     <string name="bt_fps">Mensagens por segundo&#8230;</string>

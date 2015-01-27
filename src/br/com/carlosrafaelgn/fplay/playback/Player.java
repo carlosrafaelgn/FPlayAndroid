@@ -302,7 +302,8 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int OPTBIT_EXPANDSEEKBAR = 34;
 	private static final int OPTBIT_REPEATONE = 35;
 	private static final int OPTBIT_NOTFULLSCREEN = 36;
-	
+	private static final int OPTBIT_CONTROLS_TO_THE_LEFT = 37;
+
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	
 	private static final int SILENCE_NORMAL = 0;
@@ -441,6 +442,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.expandSeekBar = opts.getBit(OPTBIT_EXPANDSEEKBAR, true);
 			songs.setRepeatingOne(opts.getBit(OPTBIT_REPEATONE));
 			UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
+			UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
 		} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -548,6 +550,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		opts.putBit(OPTBIT_EXPANDSEEKBAR, UI.expandSeekBar);
 		opts.putBit(OPTBIT_REPEATONE, songs.isRepeatingOne());
 		opts.putBit(OPTBIT_NOTFULLSCREEN, UI.notFullscreen);
+		opts.putBit(OPTBIT_CONTROLS_TO_THE_LEFT, UI.controlsToTheLeft);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

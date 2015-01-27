@@ -75,7 +75,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView;
 	
@@ -656,7 +656,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optExtraSpacing.setOnClickListener(this);
 			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.forcedLocale), false, false, false);
 			optForcedLocale.setOnClickListener(this);
-			optScrollBarToTheLeft = new SettingView(ctx, UI.ICON_HAND, getText(R.string.scrollbar_to_the_left).toString(), null, true, UI.scrollBarToTheLeft, false); 
+			if (UI.isLargeScreen) {
+				optPlacePlaylistToTheRight = new SettingView(ctx, UI.ICON_HAND, getText(R.string.place_the_playlist_to_the_right).toString(), null, true, UI.controlsToTheLeft, false);
+				optPlacePlaylistToTheRight.setOnClickListener(this);
+			}
+			optScrollBarToTheLeft = new SettingView(ctx, UI.ICON_HAND, getText(R.string.scrollbar_to_the_left).toString(), null, true, UI.scrollBarToTheLeft, false);
 			optScrollBarToTheLeft.setOnClickListener(this);
 			optScrollBarSongList = new SettingView(ctx, UI.ICON_SCROLLBAR, getText(R.string.scrollbar_playlist).toString(), getScrollBarString(UI.songListScrollBarType), false, false, false);
 			optScrollBarSongList.setOnClickListener(this);
@@ -707,13 +711,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFadeInOther = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
 			optFadeInOther.setOnClickListener(this);
 			
-			headers = new TextView[6];
-			headers[0] = addHeader(ctx, R.string.msg_turn_off_title, optAutoIdleTurnOff);
-			headers[0].setTag(0);
+			int hIdx = 0;
+			headers = new TextView[UI.isLargeScreen ? 7 : 6];
+			headers[hIdx] = addHeader(ctx, R.string.msg_turn_off_title, optAutoIdleTurnOff);
+			headers[hIdx].setTag(hIdx++);
 			panelSettings.addView(optAutoTurnOff);
 			panelSettings.addView(optAutoIdleTurnOff);
-			headers[1] = addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff);
-			headers[1].setTag(1);
+			headers[hIdx] = addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff);
+			headers[hIdx].setTag(hIdx++);
 			panelSettings.addView(optKeepScreenOn);
 			panelSettings.addView(optTheme);
 			panelSettings.addView(optFlat);
@@ -727,18 +732,27 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!UI.isCurrentLocaleCyrillic())
 				panelSettings.addView(optUseAlternateTypeface);
 			panelSettings.addView(optForcedLocale);
-			headers[2] = addHeader(ctx, R.string.scrollbar, optForcedLocale);
-			headers[2].setTag(2);
-			panelSettings.addView(optScrollBarToTheLeft);
+			SettingView lastSettingView = optForcedLocale;
+			if (UI.isLargeScreen) {
+				headers[hIdx] = addHeader(ctx, R.string.accessibility, lastSettingView);
+				headers[hIdx].setTag(hIdx++);
+				panelSettings.addView(optPlacePlaylistToTheRight);
+				panelSettings.addView(optScrollBarToTheLeft);
+				lastSettingView = optScrollBarToTheLeft;
+			}
+			headers[hIdx] = addHeader(ctx, R.string.scrollbar, lastSettingView);
+			headers[hIdx].setTag(hIdx++);
+			if (!UI.isLargeScreen)
+				panelSettings.addView(optScrollBarToTheLeft);
 			panelSettings.addView(optScrollBarSongList);
 			panelSettings.addView(optScrollBarBrowser);
-			headers[3] = addHeader(ctx, R.string.widget, optScrollBarBrowser);
-			headers[3].setTag(3);
+			headers[hIdx] = addHeader(ctx, R.string.widget, optScrollBarBrowser);
+			headers[hIdx].setTag(hIdx++);
 			panelSettings.addView(optWidgetTransparentBg);
 			panelSettings.addView(optWidgetTextColor);
 			panelSettings.addView(optWidgetIconColor);
-			headers[4] = addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
-			headers[4].setTag(4);
+			headers[hIdx] = addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
+			headers[hIdx].setTag(hIdx++);
 			panelSettings.addView(optPlayWhenHeadsetPlugged);
 			panelSettings.addView(optHandleCallKey);
 			panelSettings.addView(optExpandSeekBar);
@@ -747,8 +761,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optFadeInFocus);
 			panelSettings.addView(optFadeInPause);
 			panelSettings.addView(optFadeInOther);
-			headers[5] = addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
-			headers[5].setTag(5);
+			headers[hIdx] = addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
+			headers[hIdx].setTag(hIdx++);
 			//panelSettings.addView(optOldBrowserBehavior);
 			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optClearListWhenPlayingFolders);
@@ -816,6 +830,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsVerticalMarginLarge = null;
 		optExtraSpacing = null;
 		optForcedLocale = null;
+		optPlacePlaylistToTheRight = null;
 		optScrollBarToTheLeft = null;
 		optScrollBarSongList = null;
 		optScrollBarBrowser = null;
@@ -946,6 +961,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.handleCallKey = optHandleCallKey.isChecked();
 		} else if (view == optPlayWhenHeadsetPlugged) {
 			Player.playWhenHeadsetPlugged = optPlayWhenHeadsetPlugged.isChecked();
+		} else if (view == optPlacePlaylistToTheRight) {
+			UI.controlsToTheLeft = optPlacePlaylistToTheRight.isChecked();
 		} else if (view == optScrollBarToTheLeft) {
 			UI.scrollBarToTheLeft = optScrollBarToTheLeft.isChecked();
 		} else if (view == optWidgetTransparentBg) {

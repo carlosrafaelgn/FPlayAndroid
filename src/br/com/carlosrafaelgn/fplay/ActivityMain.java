@@ -40,6 +40,7 @@ import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -736,7 +737,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			finish(0, null, false);
 			return;
 		}
-		setContentView(Player.controlMode ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? R.layout.activity_main_l : R.layout.activity_main), true, forceFadeOut);
+		setContentView(Player.controlMode ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? ((UI.isLargeScreen && UI.controlsToTheLeft) ? R.layout.activity_main_l_left : R.layout.activity_main_l) : R.layout.activity_main), true, forceFadeOut);
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		btnPrev = (BgButton)findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);
@@ -979,7 +980,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 
 			if (UI.isLargeScreen) {
-				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, (UI.isLandscape ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), 0, 0, true));
+				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0, true));
 			} else {
 				if (UI.isLandscape && UI.extraSpacing) {
 					findViewById(R.id.panelInfo).setBackgroundDrawable(new ColorDrawable(UI.color_window));

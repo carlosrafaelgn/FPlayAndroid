@@ -85,7 +85,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 63;
+	public static final int VERSION_CODE = 64;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -370,7 +370,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt, scrollBarToTheLeft, expandSeekBar, notFullscreen;
+		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType, verticalMargin;
 	public static int[] lastViewCenterLocation = new int[2];

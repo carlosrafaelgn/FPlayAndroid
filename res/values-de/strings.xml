@@ -265,6 +265,8 @@
     <string name="refresh_list">Liste auffrischen</string>
 	<string name="fullscreen">Vollbild</string>
     <string name="choose_image">Wählen Sie ein Bild&#8230;</string>
+    <string name="accessibility">Zugänglichkeit</string>
+    <string name="place_the_playlist_to_the_right">Legen Sie die Wiedergabeliste auf der rechten Seite</string>
 
     <string name="bt_packages_sent">Nachricht gesendet:</string>
     <string name="bt_fps">Nachrichten pro Sekunde&#8230;</string>

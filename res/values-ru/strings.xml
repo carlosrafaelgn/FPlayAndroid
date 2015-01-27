@@ -265,6 +265,8 @@
     <string name="refresh_list">Обновить список</string>
     <string name="fullscreen">Полноэкранный</string>
     <string name="choose_image">Выберите изображение&#8230;</string>
+    <string name="accessibility">Доступность</string>
+    <string name="place_the_playlist_to_the_right">Поместите воспроизведения на правой стороне экрана</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>
