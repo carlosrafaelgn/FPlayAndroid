@@ -549,30 +549,41 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (createControls) {
 			optLoadCurrentTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.load_colors_from_current_theme).toString(), null, false, false, false);
 			optLoadCurrentTheme.setOnClickListener(this);
+			int hIdx = 0;
+			headers = new TextView[6];
+			headers[hIdx] = addHeader(ctx, R.string.color_theme, optLoadCurrentTheme);
+			headers[hIdx].setTag(hIdx++);
 			panelSettings.addView(optLoadCurrentTheme);
 			for (int i = 0; i < colorOrder.length; i++) {
 				final int idx = colorOrder[i];
 				switch (i) {
 				case 0:
-					addHeader(ctx, R.string.general, optLoadCurrentTheme);
+					headers[hIdx] = addHeader(ctx, R.string.general, optLoadCurrentTheme);
+					headers[hIdx].setTag(hIdx++);
 					break;
 				case 8:
-					addHeader(ctx, R.string.list2, colorViews[colorOrder[i - 1]]);
+					headers[hIdx] = addHeader(ctx, R.string.list2, colorViews[colorOrder[i - 1]]);
+					headers[hIdx].setTag(hIdx++);
 					break;
 				case 11:
-					addHeader(ctx, R.string.menu, colorViews[colorOrder[i - 1]]);
+					headers[hIdx] = addHeader(ctx, R.string.menu, colorViews[colorOrder[i - 1]]);
+					headers[hIdx].setTag(hIdx++);
 					break;
 				case 15:
-					addHeader(ctx, R.string.selection, colorViews[colorOrder[i - 1]]);
+					headers[hIdx] = addHeader(ctx, R.string.selection, colorViews[colorOrder[i - 1]]);
+					headers[hIdx].setTag(hIdx++);
 					break;
 				case 20:
-					addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]]);
+					headers[hIdx] = addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]]);
+					headers[hIdx].setTag(hIdx++);
 					break;
 				}
 				//don't show this to the user as it is not atually being used...
 				if (idx != UI.IDX_COLOR_TEXT_DISABLED)
 					panelSettings.addView(colorViews[idx]);
 			}
+			lblTitle.setVisibility(View.GONE);
+			currentHeader = -1;
 		}
 	}
 	
@@ -617,17 +628,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
-		if (!colorMode) {
-			lblTitle = (TextView)findViewById(R.id.lblTitle);
-			prepareHeader(lblTitle);
-		}
+		lblTitle = (TextView)findViewById(R.id.lblTitle);
+		prepareHeader(lblTitle);
+
 		if (UI.isLargeScreen)
 			setListPadding();
-		
+
+		list.setOnScrollListener(this);
 		if (colorMode) {
 			loadColors(true, false);
 		} else {
-			list.setOnScrollListener(this);
 			if (!UI.isCurrentLocaleCyrillic()) {
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
 				optUseAlternateTypeface.setOnClickListener(this);
