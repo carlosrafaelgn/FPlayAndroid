@@ -68,7 +68,7 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable {
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
 	private final boolean colorMode;
-	private boolean changed, checkingReturn, configsChanged;
+	private boolean changed, checkingReturn, configsChanged, lblTitleOk;
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
 	private ObservableScrollView list;
@@ -77,8 +77,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private LinearLayout panelSettings;
 	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
 	private SettingView[] colorViews;
-	private int lastColorView;
-	
+	private int lastColorView, currentHeader;
+	private TextView[] headers;
+
 	public ActivitySettings(boolean colorMode) {
 		this.colorMode = colorMode;
 	}
@@ -442,15 +443,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		hdr.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 	}
 	
-	private TextView addHeader(Context ctx, int resId, SettingView previousControl) {
+	private void addHeader(Context ctx, int resId, SettingView previousControl, int index) {
 		final TextView hdr = new TextView(ctx);
 		hdr.setText(resId);
 		hdr.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 		prepareHeader(hdr);
+		headers[index] = hdr;
+		hdr.setTag(index);
 		panelSettings.addView(hdr);
 		if (previousControl != null)
 			previousControl.setHidingSeparator(true);
-		return hdr;
 	}
 	
 	private boolean cancelGoBack() {
@@ -551,31 +553,25 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optLoadCurrentTheme.setOnClickListener(this);
 			int hIdx = 0;
 			headers = new TextView[6];
-			headers[hIdx] = addHeader(ctx, R.string.color_theme, optLoadCurrentTheme);
-			headers[hIdx].setTag(hIdx++);
+			addHeader(ctx, R.string.color_theme, optLoadCurrentTheme, hIdx++);
 			panelSettings.addView(optLoadCurrentTheme);
 			for (int i = 0; i < colorOrder.length; i++) {
 				final int idx = colorOrder[i];
 				switch (i) {
 				case 0:
-					headers[hIdx] = addHeader(ctx, R.string.general, optLoadCurrentTheme);
-					headers[hIdx].setTag(hIdx++);
+					addHeader(ctx, R.string.general, optLoadCurrentTheme, hIdx++);
 					break;
 				case 8:
-					headers[hIdx] = addHeader(ctx, R.string.list2, colorViews[colorOrder[i - 1]]);
-					headers[hIdx].setTag(hIdx++);
+					addHeader(ctx, R.string.list2, colorViews[colorOrder[i - 1]], hIdx++);
 					break;
 				case 11:
-					headers[hIdx] = addHeader(ctx, R.string.menu, colorViews[colorOrder[i - 1]]);
-					headers[hIdx].setTag(hIdx++);
+					addHeader(ctx, R.string.menu, colorViews[colorOrder[i - 1]], hIdx++);
 					break;
 				case 15:
-					headers[hIdx] = addHeader(ctx, R.string.selection, colorViews[colorOrder[i - 1]]);
-					headers[hIdx].setTag(hIdx++);
+					addHeader(ctx, R.string.selection, colorViews[colorOrder[i - 1]], hIdx++);
 					break;
 				case 20:
-					headers[hIdx] = addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]]);
-					headers[hIdx].setTag(hIdx++);
+					addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]], hIdx++);
 					break;
 				}
 				//don't show this to the user as it is not atually being used...
@@ -591,7 +587,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public boolean onBackPressed() {
 		return cancelGoBack();
 	}
-	
+
 	private void setListPadding() {
 		//for lblTitle to look nice, we must have no paddings
 		UI.prepareViewPaddingForLargeScreen(list, 0, 0);
@@ -720,15 +716,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFadeInPause.setOnClickListener(this);
 			optFadeInOther = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
 			optFadeInOther.setOnClickListener(this);
-			
+
 			int hIdx = 0;
 			headers = new TextView[UI.isLargeScreen ? 7 : 6];
-			headers[hIdx] = addHeader(ctx, R.string.msg_turn_off_title, optAutoIdleTurnOff);
-			headers[hIdx].setTag(hIdx++);
+			addHeader(ctx, R.string.msg_turn_off_title, optAutoIdleTurnOff, hIdx++);
 			panelSettings.addView(optAutoTurnOff);
 			panelSettings.addView(optAutoIdleTurnOff);
-			headers[hIdx] = addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff);
-			headers[hIdx].setTag(hIdx++);
+			addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff, hIdx++);
 			panelSettings.addView(optKeepScreenOn);
 			panelSettings.addView(optTheme);
 			panelSettings.addView(optFlat);
@@ -744,25 +738,21 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optForcedLocale);
 			SettingView lastSettingView = optForcedLocale;
 			if (UI.isLargeScreen) {
-				headers[hIdx] = addHeader(ctx, R.string.accessibility, lastSettingView);
-				headers[hIdx].setTag(hIdx++);
+				addHeader(ctx, R.string.accessibility, lastSettingView, hIdx++);
 				panelSettings.addView(optPlacePlaylistToTheRight);
 				panelSettings.addView(optScrollBarToTheLeft);
 				lastSettingView = optScrollBarToTheLeft;
 			}
-			headers[hIdx] = addHeader(ctx, R.string.scrollbar, lastSettingView);
-			headers[hIdx].setTag(hIdx++);
+			addHeader(ctx, R.string.scrollbar, lastSettingView, hIdx++);
 			if (!UI.isLargeScreen)
 				panelSettings.addView(optScrollBarToTheLeft);
 			panelSettings.addView(optScrollBarSongList);
 			panelSettings.addView(optScrollBarBrowser);
-			headers[hIdx] = addHeader(ctx, R.string.widget, optScrollBarBrowser);
-			headers[hIdx].setTag(hIdx++);
+			addHeader(ctx, R.string.widget, optScrollBarBrowser, hIdx++);
 			panelSettings.addView(optWidgetTransparentBg);
 			panelSettings.addView(optWidgetTextColor);
 			panelSettings.addView(optWidgetIconColor);
-			headers[hIdx] = addHeader(ctx, R.string.hdr_playback, optWidgetIconColor);
-			headers[hIdx].setTag(hIdx++);
+			addHeader(ctx, R.string.hdr_playback, optWidgetIconColor, hIdx++);
 			panelSettings.addView(optPlayWhenHeadsetPlugged);
 			panelSettings.addView(optHandleCallKey);
 			panelSettings.addView(optExpandSeekBar);
@@ -771,8 +761,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optFadeInFocus);
 			panelSettings.addView(optFadeInPause);
 			panelSettings.addView(optFadeInOther);
-			headers[hIdx] = addHeader(ctx, R.string.hdr_behavior, optFadeInOther);
-			headers[hIdx].setTag(hIdx++);
+			addHeader(ctx, R.string.hdr_behavior, optFadeInOther, hIdx++);
 			//panelSettings.addView(optOldBrowserBehavior);
 			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optClearListWhenPlayingFolders);
@@ -786,7 +775,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			currentHeader = -1;
 		}
 		
-		UI.prepareControlContainer(panelControls, false, colorMode || UI.isLargeScreen);
+		UI.prepareControlContainer(panelControls, false, UI.isLargeScreen);
 		if (UI.isLargeScreen)
 			btnAbout.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		btnAbout.setDefaultHeight();
@@ -1096,10 +1085,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			WidgetMain.updateWidgets(getApplication());
 		}
 	}
-	
-	private int currentHeader;
-	private boolean lblTitleOk;
-	private TextView[] headers;
 	
 	@Override
 	public void onScroll(ObservableScrollView view, int l, int t, int oldl, int oldt) {
