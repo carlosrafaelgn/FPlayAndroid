@@ -123,6 +123,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			setVerticalScrollBarPosition();
 		ignorePadding = false;
 		super.setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		super.setOverscrollHeader(null); //Motorola bug!!! :P
+		super.setOverscrollFooter(null); //Motorola bug!!! :P
 		//setPadding(0, 0, 0, 0);
 		//setFastScrollAlwaysVisible(true);
 		//setFastScrollEnabled(true);
@@ -823,48 +825,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		super.dispatchDraw(canvas);
-		if (tracking && scrollBarType == SCROLLBAR_INDEXED && sections != null) {
-			UI.textPaint.setColor(UI.color_text_highlight);
-			UI.textPaint.setTextSize(contentsHeight);
-			UI.textPaint.setTextAlign(Paint.Align.CENTER);
-			final float l;
-			if (UI.scrollBarToTheLeft) {
-				UI.rect.left = scrollBarLeft;
-				l = (float)(UI.rect.left + UI.defaultControlContentsSize + (scrollBarWidth >> 1));
-			} else {
-				UI.rect.left = scrollBarLeft - UI.defaultControlContentsSize;
-				l = (float)(UI.rect.left + (scrollBarWidth >> 1));
-			}
-			UI.rect.right = UI.rect.left + UI.defaultControlContentsSize + scrollBarWidth;
-			UI.rect.top = scrollBarTop;
-			UI.rect.bottom = scrollBarBottom;
-			UI.fillRect(canvas, UI.color_highlight);
-			int i;
-			for (i = 0; i < scrollBarThumbTop; i++) {
-				canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-				UI.rect.top += scrollBarThumbHeight;
-			}
-			UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
-			UI.textPaint.setColor(UI.color_text_selected);
-			UI.fillRect(canvas, UI.color_selected_pressed);
-			UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
-			canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-			UI.textPaint.setColor(UI.color_text_highlight);
-			UI.rect.top = UI.rect.bottom;
-			i++;
-			for (; i < sections.length; i++) {
-				canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-				UI.rect.top += scrollBarThumbHeight;
-			}
-			UI.textPaint.setTextAlign(Paint.Align.LEFT);			
-		}
-	}
-	
-	@Override
-	public void onDraw(Canvas canvas) {
-		//there is no need to call super.onDraw() here, as ListView does
-		//not override this method... therefore, it does nothing!
-		//super.onDraw(canvas);
 		if (itemCount == 0) {
 			if (emptyLayout != null) {
 				final float x = (float)((viewWidth >> 1) - (emptyLayout.getWidth() >> 1));
@@ -882,37 +842,47 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			switch (scrollBarType) {
 			case SCROLLBAR_INDEXED:
 				if (sections != null) {
-					if (!tracking) {
-						UI.textPaint.setColor(UI.color_text_highlight);
-						UI.textPaint.setTextSize(contentsHeight);
-						UI.textPaint.setTextAlign(Paint.Align.CENTER);
+					UI.textPaint.setColor(UI.color_text_highlight);
+					UI.textPaint.setTextSize(contentsHeight);
+					UI.textPaint.setTextAlign(Paint.Align.CENTER);
+					final float l;
+					if (tracking) {
+						if (UI.scrollBarToTheLeft) {
+							UI.rect.left = scrollBarLeft;
+							l = (float)(UI.rect.left + UI.defaultControlContentsSize + (scrollBarWidth >> 1));
+						} else {
+							UI.rect.left = scrollBarLeft - UI.defaultControlContentsSize;
+							l = (float)(UI.rect.left + (scrollBarWidth >> 1));
+						}
+						UI.rect.right = UI.rect.left + UI.defaultControlContentsSize + scrollBarWidth;
+					} else {
 						UI.rect.left = scrollBarLeft;
 						UI.rect.right = scrollBarLeft + scrollBarWidth;
-						UI.rect.top = scrollBarTop;
-						UI.rect.bottom = scrollBarBottom;
-						UI.fillRect(canvas, UI.color_highlight);
-						final float l = (float)(scrollBarLeft + (scrollBarWidth >> 1));
-						int i;
-						for (i = 0; i < scrollBarThumbTop; i++) {
-							canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-							UI.rect.top += scrollBarThumbHeight;
-						}
-						UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
-						UI.textPaint.setColor(UI.color_text_selected);
-						UI.fillRect(canvas, UI.color_selected_pressed);
-						UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
-						canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-						UI.textPaint.setColor(UI.color_text_highlight);
-						UI.rect.top = UI.rect.bottom;
-						i++;
-						for (; i < sections.length; i++) {
-							canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-							UI.rect.top += scrollBarThumbHeight;
-						}
-						UI.textPaint.setTextAlign(Paint.Align.LEFT);			
+						l = (float)(scrollBarLeft + (scrollBarWidth >> 1));
 					}
-					break;
+					UI.rect.top = scrollBarTop;
+					UI.rect.bottom = scrollBarBottom;
+					UI.fillRect(canvas, UI.color_highlight);
+					int i;
+					for (i = 0; i < scrollBarThumbTop; i++) {
+						canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
+						UI.rect.top += scrollBarThumbHeight;
+					}
+					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
+					UI.textPaint.setColor(UI.color_text_selected);
+					UI.fillRect(canvas, UI.color_selected_pressed);
+					UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
+					canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
+					UI.textPaint.setColor(UI.color_text_highlight);
+					UI.rect.top = UI.rect.bottom;
+					i++;
+					for (; i < sections.length; i++) {
+						canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
+						UI.rect.top += scrollBarThumbHeight;
+					}
+					UI.textPaint.setTextAlign(Paint.Align.LEFT);
 				}
+				break;
 			case SCROLLBAR_LARGE:
 				UI.rect.left = scrollBarLeft + (scrollBarWidth >> 1) - (UI.strokeSize >> 1);
 				UI.rect.right = UI.rect.left + UI.strokeSize;
@@ -934,6 +904,13 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				break;
 			}
 		}
+	}
+	
+	@Override
+	public void onDraw(Canvas canvas) {
+		//there is no need to call super.onDraw() here, as ListView does
+		//not override this method... therefore, it does nothing!
+		//super.onDraw(canvas);
 	}
 	
 	@Override

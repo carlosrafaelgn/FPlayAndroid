@@ -1067,7 +1067,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			else if (Player.songs.moving)
 				btnCancelSel.requestFocus();
 			else if (UI.isLargeScreen)
-				vwVolume.requestFocus();
+				(UI.isLandscape ? btnAdd : vwVolume).requestFocus();
 			else if (UI.isLandscape)
 				btnPrev.requestFocus();
 			else
