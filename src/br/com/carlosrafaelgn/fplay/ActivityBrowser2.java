@@ -251,8 +251,18 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 					}
 				}
 			}).start();
-			if (play && addingFolder && Player.goBackWhenPlayingFolders)
+			if (play && addingFolder && Player.goBackWhenPlayingFolders) {
 				finish(0, null, true);
+			} else {
+				//Unselect everything after adding/playing
+				chkAll.setChecked(false);
+				c = fileList.getCount() - 1;
+				checkedCount = 0;
+				for (; c >= 0; c--)
+					fileList.getItemT(c).isChecked = false;
+				fileList.notifyCheckedChanged();
+				updateButtons();
+			}
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
 			UI.toast(getApplication(), ex.getMessage());
