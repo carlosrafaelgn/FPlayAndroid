@@ -63,6 +63,8 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewParent;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -381,6 +383,7 @@ public final class UI {
 	//going to be used in this kind of project)
 	public static ActivityItemView songActivity;
 	public static ActivityBrowserView browserActivity;
+	public static AccessibilityManager accessibilityManager;
 	
 	public static String emptyListString;
 	private static int emptyListStringHalfWidth, currentLocale, createdWidgetIconColor;
@@ -641,6 +644,7 @@ public final class UI {
 	}
 	
 	public static void initialize(Context context, Activity activityContext) {
+		accessibilityManager = (AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
 		fullyInitialized = true;
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
@@ -1673,5 +1677,16 @@ public final class UI {
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	public static void removeSplitTouch(ViewGroup viewGroup) {
 		viewGroup.setMotionEventSplittingEnabled(false);
+	}
+
+	public static void announceAccessibilityText(CharSequence text) {
+		if (accessibilityManager != null && accessibilityManager.isEnabled()) {
+			final AccessibilityEvent e = AccessibilityEvent.obtain();
+			e.setEventType(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+			e.setClassName("br.com.carlosrafaelgn.fplay.activity.ActivityHost");
+			e.setPackageName("br.com.carlosrafaelgn.fplay");
+			e.getText().add(text);
+			accessibilityManager.sendAccessibilityEvent(e);
+		}
 	}
 }

@@ -133,13 +133,31 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		invalidate();
 	}
 
+	public static String makeContextDescription(boolean addDetailedDescription, Context ctx, FileSt file) {
+		if (!addDetailedDescription)
+			return (file.isDirectory ? (ctx.getText(R.string.folder) + ": " + file.name) : file.name);
+		String initial = "";
+		if (file.isDirectory) {
+			switch (file.specialType) {
+			case FileSt.TYPE_ARTIST:
+				initial = ctx.getText(R.string.artist) + ": ";
+				break;
+			case FileSt.TYPE_ALBUM:
+			case FileSt.TYPE_ALBUM_ITEM:
+				initial = ctx.getText(R.string.album) + ": ";
+				break;
+			default:
+				initial = ctx.getText(R.string.folder) + ": ";
+				break;
+			}
+		}
+		return initial + file.name + ": " + ctx.getText(file.isChecked ? R.string.selected : R.string.unselected);
+	}
+
 	@Override
 	public CharSequence getContentDescription() {
-		if (file != null) {
-			if (buttonIsCheckbox && btnPlay != null && btnPlay.getVisibility() == View.VISIBLE)
-				return file.name + ": " + getContext().getText(file.isChecked ? R.string.selected : R.string.unselected);
-			return file.name;
-		}
+		if (file != null)
+			return makeContextDescription(buttonIsCheckbox && btnPlay != null && btnPlay.getVisibility() == View.VISIBLE, getContext(), file);
 		return super.getContentDescription();
 	}
 

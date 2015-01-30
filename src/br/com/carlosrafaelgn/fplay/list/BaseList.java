@@ -419,7 +419,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		if (observer != null)
 			observer.onChanged();
 		if (listObserver != null && gotoPosition >= 0)
-			listObserver.centerItem(gotoPosition, false);
+			listObserver.centerItem(gotoPosition);
 	}
 	
 	public void notifyCheckedChanged() {

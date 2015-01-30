@@ -382,7 +382,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 					this.originalSel = positionToSelect;
 				}
 				if (listObserver != null)
-					listObserver.centerItem(positionToSelect, false);
+					listObserver.centerItem(positionToSelect);
 			}
 		}
 		Player.onSongListDeserialized((positionToSelect >= 0) ? items[positionToSelect] : null, ((play && positionToSelect >= 0) ? positionToSelect : -1), positionToSelect, ex);

@@ -279,7 +279,7 @@ public final class BgSeekBar extends View {
 			if (listener != null)
 				listener.onValueChanged(this, value, fromUser, usingKeys);
 			updateBar();
-			if (fromUser && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			if (fromUser && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 				sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED);
 		}
 	}

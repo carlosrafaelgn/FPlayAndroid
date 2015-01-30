@@ -124,6 +124,7 @@
     <string name="go_back">Volver</string>
     <string name="add_song">Añadir canción</string>
     <string name="play_song">Tocar canción</string>
+    <string name="folder">Carpeta</string>
     <string name="add_folder">Añadir carpeta</string>
     <string name="add_folder_sub">Añadir carpeta y subcarpeta</string>
     <string name="play_folder">Tocar carpeta</string>

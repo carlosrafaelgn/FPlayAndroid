@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay.activity;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -42,8 +41,6 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -79,17 +76,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//because in those cases AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED will
 		//already happen due to a change in the active window, making the user hear
 		//the title twice!
-		if (announce) {
-			final AccessibilityManager manager = (AccessibilityManager)getSystemService(Context.ACCESSIBILITY_SERVICE);
-			if (manager != null && manager.isEnabled()) {
-				final AccessibilityEvent e = AccessibilityEvent.obtain();
-				e.setEventType(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-				e.setClassName(getClass().getName());
-				e.setPackageName(getApplication().getPackageName());
-				e.getText().add(title);
-				manager.sendAccessibilityEvent(e);
-			}
-		}
+		if (announce)
+			UI.announceAccessibilityText(title);
 	}
 
 	public ClientActivity getTopActivity() {

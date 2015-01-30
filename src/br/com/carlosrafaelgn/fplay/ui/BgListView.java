@@ -227,7 +227,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					if (s < ic) {
 						adapter.setSelection(s, true);
 						if (s <= getFirstVisiblePosition() || s >= getLastVisiblePosition())
-							centerItem(s, false);
+							centerItem(s);
 					}
 				}
 			}
@@ -250,30 +250,30 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private void smoothScroll(int position, int y) {
 		smoothScrollToPositionFromTop(position, y);
 	}
-	
-	public void scrollItemToTop(int position, boolean smoothly) {
-		//do not change to itemCount!
-		if (position < 0 || adapter == null || position >= adapter.getCount())
-			return;
-		if (smoothly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			smoothScroll(position, 0);
-		else
-			setSelectionFromTop(position, 0);
-	}
-	
-	public void centerItem(int position, boolean smoothly) {
+
+	public void centerItemSmoothly(int position) {
 		//do not change to itemCount!
 		if (position < 0 || adapter == null || position >= adapter.getCount())
 			return;
 		int y = ((viewHeight - bottomPadding - topPadding) >> 1) - (itemHeight >> 1);
 		if (y < 0)
 			y = 0;
-		if (smoothly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			smoothScroll(position, y);
 		else
 			setSelectionFromTop(position, y);
 	}
-	
+
+	public void centerItem(int position) {
+		//do not change to itemCount!
+		if (position < 0 || adapter == null || position >= adapter.getCount())
+			return;
+		int y = ((viewHeight - bottomPadding - topPadding) >> 1) - (itemHeight >> 1);
+		if (y < 0)
+			y = 0;
+		setSelectionFromTop(position, y);
+	}
+
 	public View getViewForPosition(int position) {
 		position -= getFirstVisiblePosition();
 		if (position < 0 || position >= getChildCount())
@@ -719,7 +719,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		if (s >= 0 && s < itemCount) {
 			adapter.setSelection(s, true);
 			if (s <= getFirstVisiblePosition() || s >= getLastVisiblePosition())
-				centerItem(s, false);
+				centerItem(s);
 		}
 	}
 	

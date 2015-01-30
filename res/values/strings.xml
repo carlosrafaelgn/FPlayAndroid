@@ -124,6 +124,7 @@
     <string name="go_back">Return</string>
     <string name="add_song">Add song</string>
     <string name="play_song">Play song</string>
+    <string name="folder">Folder</string>
     <string name="add_folder">Add folder</string>
     <string name="add_folder_sub">Add folder and subfolders</string>
     <string name="play_folder">Play folder</string>

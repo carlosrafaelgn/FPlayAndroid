@@ -124,6 +124,7 @@
     <string name="go_back">Zurück</string>
     <string name="add_song">Titel hinzufügen</string>
     <string name="play_song">Titel abspielen</string>
+    <string name="folder">Ordner</string>
     <string name="add_folder">Ordner hinzufügen</string>
     <string name="add_folder_sub">Ordner und Unterordner hinzufügen</string>
     <string name="play_folder">Ordner abspielen</string>

@@ -268,7 +268,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			UI.toast(getApplication(), ex.getMessage());
 		}
 	}
-	
+
 	@Override
 	public void loadingProcessChanged(boolean started) {
 		if (UI.browserActivity != this)
@@ -277,10 +277,19 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		if (fileList != null) {
 			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
 			if (list != null && !list.isInTouchMode())
-				list.centerItem(fileList.getSelection(), false);
+				list.centerItem(fileList.getSelection());
 		}
-		if (list != null)
+		if (list != null) {
 			list.setCustomEmptyText(started ? getText(R.string.loading) : null);
+			if (!started && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && fileList != null) {
+				if (fileList.getCount() == 0) {
+					UI.announceAccessibilityText(getText(R.string.empty_list));
+				} else {
+					final int i = fileList.getFirstSelectedPosition();
+					UI.announceAccessibilityText(FileView.makeContextDescription(!isAtHome, getHostActivity(), fileList.getItemT(i < 0 ? 0 : i)));
+				}
+			}
+		}
 		if (!started)
 			updateButtons();
 	}

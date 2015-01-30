@@ -130,7 +130,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void restoreListViewPosition(boolean selectCurrent) {
 		if (list != null) {
 			if (Player.positionToSelect >= 0) {
-				list.centerItem(Player.positionToSelect, false);
+				list.centerItem(Player.positionToSelect);
 				Player.positionToSelect = -1;
 				return;
 			}
@@ -141,12 +141,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				if (selectCurrent && Player.lastCurrent != c && c >= 0) {
 					if (Player.songs.getSelection() != c)
 						Player.songs.setSelection(c, true);
-					list.centerItem(c, false);
+					list.centerItem(c);
 				} else {
 					if (Player.listFirst >= 0)
 						list.setSelectionFromTop(Player.listFirst, Player.listTop);
 					else
-						list.centerItem(Player.songs.getSelection(), false);
+						list.centerItem(Player.songs.getSelection());
 				}
 			}
 			Player.lastCurrent = -1;
@@ -327,7 +327,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (!Player.songs.moving && !Player.songs.selecting) {
 			final int p = Player.songs.getCurrentPosition();
 			if (p <= list.getFirstVisiblePosition() || p >= list.getLastVisiblePosition())
-				list.centerItem(p, true);
+				list.centerItemSmoothly(p);
 		}
 	}
 	
@@ -1099,7 +1099,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					Player.songs.setSelection(firstSel, n, n, true, true);
 				}
 				if (center)
-					list.centerItem(n, false);
+					list.centerItem(n);
 				return true;
 			}
 		} else {

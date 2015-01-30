@@ -124,6 +124,7 @@
     <string name="go_back">Voltar</string>
     <string name="add_song">Adicionar música</string>
     <string name="play_song">Tocar música</string>
+    <string name="folder">Pasta</string>
     <string name="add_folder">Adicionar pasta</string>
     <string name="add_folder_sub">Adicionar pasta e subpastas</string>
     <string name="play_folder">Tocar pasta</string>

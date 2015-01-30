@@ -124,6 +124,7 @@
     <string name="go_back">Вернуться</string>
     <string name="add_song">Добавить композицию</string>
     <string name="play_song">Воспроизвести композицию</string>
+    <string name="folder">Директорию</string>
     <string name="add_folder">Добавить директорию</string>
     <string name="add_folder_sub">Добавить директорию со вложенными каталогами</string>
     <string name="play_folder">Воспроизвести директорию</string>
