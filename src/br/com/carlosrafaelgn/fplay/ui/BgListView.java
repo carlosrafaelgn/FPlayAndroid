@@ -48,6 +48,7 @@ import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.AbsListView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -148,7 +149,24 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	protected boolean isInFilterMode() {
 		return true;
 	}
-	
+
+	@Override
+	public CharSequence getContentDescription() {
+		return null;
+	}
+
+	@Override
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
+		super.onInitializeAccessibilityNodeInfo(info);
+		info.setClassName("br.com.carlosrafaelgn.fplay.activity.ActivityHost");
+		if (itemCount == 0) {
+			info.setText(emptyLayout == null ? UI.emptyListString : emptyLayout.getText());
+		} else {
+			info.setText("");
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	public void setTopLeftBorders() {
 		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, UI.thickDividerSize, UI.thickDividerSize, 0, 0, true));

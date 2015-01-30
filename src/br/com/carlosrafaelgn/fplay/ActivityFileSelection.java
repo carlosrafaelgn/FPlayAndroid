@@ -45,7 +45,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.Formatter;
@@ -78,7 +77,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private EditText txtSaveAsName;
 	private BgListView list;
 	private FileList fileList;
-	private RelativeLayout panelLoading;
 	private BgButton btnGoBack, btnMenu;
 	private boolean loading;
 	private int lastLongClickedId;
@@ -138,17 +136,17 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (UI.browserActivity != this)
 			return;
 		loading = started;
-		if (panelLoading != null)
-			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
 		int count = 0;
 		if (fileList != null) {
 			fileList.setObserver(started ? null : list);
 			count = fileList.getCount();
 			if (!started && count > 0 && hasButtons)
 				fileList.setSelection(0, true);
+			if (list != null && !list.isInTouchMode())
+				list.centerItem(fileList.getSelection(), false);
 		}
 		if (list != null)
-			list.centerItem(fileList.getSelection(), false);
+			list.setCustomEmptyText(started ? getText(R.string.loading) : null);
 		if (!started)
 			updateMenu(count);
 	}
@@ -366,7 +364,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_file_selection);
-		UI.largeTextAndColor((TextView)findViewById(R.id.lblLoading));
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
@@ -377,7 +374,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
-		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
@@ -407,7 +403,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		btnGoBack = null;
 		btnMenu = null;
 		list = null;
-		panelLoading = null;
 	}
 	
 	@Override

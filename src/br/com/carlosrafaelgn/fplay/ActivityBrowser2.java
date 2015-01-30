@@ -73,7 +73,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private TextView lblPath, sep, sep2;
 	private BgListView list;
 	private FileList fileList;
-	private RelativeLayout panelSecondary, panelLoading;
+	private RelativeLayout panelSecondary;
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnRadio, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private AlbumArtFetcher albumArtFetcher;
@@ -274,15 +274,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		if (UI.browserActivity != this)
 			return;
 		loading = started;
-		if (panelLoading != null)
-			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
 		if (fileList != null) {
 			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
 			if (list != null && !list.isInTouchMode())
 				list.centerItem(fileList.getSelection(), false);
 		}
 		if (list != null)
-			list.setCustomEmptyText(started ? "" : null);
+			list.setCustomEmptyText(started ? getText(R.string.loading) : null);
 		if (!started)
 			updateButtons();
 	}
@@ -694,9 +692,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_browser2);
-		final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
-		UI.largeText(lblLoading);
-		lblLoading.setTextColor(UI.colorState_text_listitem_static);
 		lblPath = (TextView)findViewById(R.id.lblPath);
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.mediumText(lblPath);
@@ -704,7 +699,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		list = (BgListView)findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
-		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
@@ -813,7 +807,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		lastClickedFavorite = null;
 		lblPath = null;
 		list = null;
-		panelLoading = null;
 		panelSecondary = null;
 		btnGoBack = null;
 		btnRadio = null;

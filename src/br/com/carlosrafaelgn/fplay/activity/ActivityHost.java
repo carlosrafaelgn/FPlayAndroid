@@ -388,6 +388,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//structure that belongs to ActivityMain
 		//that's why we pass null to super.onCreate!
 		super.onCreate(null);
+		if (Player.state >= Player.STATE_TERMINATING) {
+			finish();
+			return;
+		}
 		UI.initialize(getApplication(), this);
 		MainHandler.initialize();
 		if (Player.startService(getApplication()))
@@ -459,6 +463,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@Override
 	protected void onResume() {
+		if (Player.state >= Player.STATE_TERMINATING) {
+			finish();
+			return;
+		}
 		Player.setAppIdle(false);
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(getApplication(), this);
@@ -503,7 +511,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		finalCleanup();
 		super.onDestroy();
 		if (exitOnDestroy)
-			System.exit(0);
+			Player.stopService();
 	}
 	
 	@Override

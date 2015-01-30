@@ -112,7 +112,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 
 	@Override
 	public CharSequence getTitle() {
-		return getText(R.string.fplay);
+		final Song currentSong = Player.currentSong;
+		return "FPlay: " + ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 	}
 
 	private void saveListViewPosition() {
@@ -520,9 +521,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_PARTICLE, 4, "Sound Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		//s2.add(2, MNU_VISUALIZER_BLUETOOTH, 4, "Bluetooth")
-		//	.setOnMenuItemClickListener(this)
-		//	.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 4, "Bluetooth")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
@@ -536,8 +537,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public boolean onMenuItemClick(MenuItem item) {
 		final int id = item.getItemId();
 		if (id == MNU_EXIT) {
+			getHostActivity().setExitOnDestroy(true);
 			finish(0, null, false);
-			Player.stopService();
 			return true;
 		}
 		if (Player.state != Player.STATE_INITIALIZED && Player.state != Player.STATE_PREPARING_PLAYBACK)

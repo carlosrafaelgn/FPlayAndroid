@@ -382,7 +382,7 @@ public final class UI {
 	public static ActivityItemView songActivity;
 	public static ActivityBrowserView browserActivity;
 	
-	private static String emptyListString;
+	public static String emptyListString;
 	private static int emptyListStringHalfWidth, currentLocale, createdWidgetIconColor;
 	private static boolean alternateTypefaceActive, fullyInitialized;
 	private static Toast internalToast;
