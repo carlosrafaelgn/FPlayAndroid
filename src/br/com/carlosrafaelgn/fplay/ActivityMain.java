@@ -366,8 +366,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			lblTitleIcon.setIcon(icon);
 		if (songHasChanged) {
 			if (lblTitle != null) {
-				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
+				final CharSequence title = ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
+				lblTitle.setText(title);
 				lblTitle.setSelected(true);
+				if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
+					UI.announceAccessibilityText(title);
 			}
 			if (lblArtist != null)
 				lblArtist.setText((currentSong == null) ? "-" : currentSong.artist);
