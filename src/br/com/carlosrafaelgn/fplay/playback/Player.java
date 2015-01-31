@@ -1436,7 +1436,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	private static Song playInternal(int how) {
-		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
+		if (thePlayer == null || state < STATE_INITIALIZED || state >= STATE_TERMINATING)
 			return null;
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
@@ -1584,10 +1584,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	public static boolean previous() {
-		if (thePlayer == null || state != STATE_INITIALIZED)
-			return false;
-		playInternal(SongList.HOW_PREVIOUS);
-		return true;
+		return (playInternal(SongList.HOW_PREVIOUS) != null);
 	}
 	
 	public static boolean playPause() {
@@ -1625,17 +1622,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	}
 	
 	public static boolean play(int index) {
-		if (thePlayer == null || state != STATE_INITIALIZED)
-			return false;
-		playInternal(index);
-		return true;
+		return (playInternal(index) != null);
 	}
 	
 	public static boolean next() {
-		if (thePlayer == null || state != STATE_INITIALIZED)
-			return false;
-		playInternal(SongList.HOW_NEXT_MANUAL);
-		return true;
+		return (playInternal(SongList.HOW_NEXT_MANUAL) != null);
 	}
 	
 	public static boolean seekTo(int timeMS, boolean play) {

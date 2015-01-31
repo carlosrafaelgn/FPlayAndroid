@@ -137,7 +137,7 @@
     <string name="next">Next</string>
     <string name="play">Play</string>
     <string name="add">Add</string>
-    <string name="unknownArtist">[Unknown Artist]</string>
+    <string name="unknownArtist">(Unknown Artist)</string>
     <string name="title">Title</string>
     <string name="artist">Artist</string>
     <string name="album">Album</string>
@@ -286,6 +286,6 @@
     <string name="bt_scanning">Searching for Bluetooth devices&#8230;</string>
     <string name="bt_not_paired">No Bluetooth devices were paired :(</string>
     <string name="bt_not_found">No Bluetooth devices were found :(</string>
-    <string name="bt_null_device_name">[BT Device]</string>
+    <string name="bt_null_device_name">(BT Device)</string>
 
 </resources>

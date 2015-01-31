@@ -521,8 +521,11 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
-			if (Player.path.length() > 1) {
-				if (Player.path.equals(Player.originalPath)) {
+			if (Player.path.length() != 0) {
+				//does not work well... the focused item is always the first (but the selected item may vary)
+				//if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && list != null)
+				//	list.requestFocusFromTouch();
+				if (Player.path.length() == 1 || Player.path.equals(Player.originalPath)) {
 					navigateTo("", Player.path);
 					return;
 				}
@@ -540,8 +543,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 					final String originalPath = Player.path;
 					navigateTo((i <= 0) ? File.separator : Player.path.substring(0, i), ((i >= 0) && (i < originalPath.length())) ? originalPath.substring(i + 1) : null);
 				}
-			} else if (Player.path.length() == 1) {
-				navigateTo("", Player.path);
 			} else {
 				finish(0, view, true);
 			}

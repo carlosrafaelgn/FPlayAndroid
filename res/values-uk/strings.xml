@@ -137,7 +137,7 @@
     <string name="next">Наступна</string>
     <string name="play">Відтворення</string>
     <string name="add">Додати</string>
-    <string name="unknownArtist">[Невідомий виконавець]</string>
+    <string name="unknownArtist">(Невідомий виконавець)</string>
     <string name="title">Назва</string>
     <string name="artist">Виконавець</string>
     <string name="album">Альбом</string>
@@ -286,6 +286,6 @@
     <string name="bt_scanning">Searching for Bluetooth devices&#8230;</string>
     <string name="bt_not_paired">No Bluetooth devices were paired :(</string>
     <string name="bt_not_found">No Bluetooth devices were found :(</string>
-    <string name="bt_null_device_name">[BT Device]</string>
+    <string name="bt_null_device_name">(BT Device)</string>
 
 </resources>

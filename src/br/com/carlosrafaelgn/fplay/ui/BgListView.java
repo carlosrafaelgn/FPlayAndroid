@@ -48,6 +48,7 @@ import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.AbsListView;
 import android.widget.ListAdapter;
@@ -417,22 +418,28 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				invalidateScrollBar();
 		}
 	}
-	
+
+	private void setSelectionAtTheTop(int position) {
+		if (getFirstVisiblePosition() == position) {
+			final View firstChild = getChildAt(0);
+			if (firstChild != null && firstChild.getTop() == 0)
+				return;
+		}
+		setSelectionFromTop(position, 0);
+	}
+
 	private void trackTouchEvent(int y) {
 		final int count = adapter.getCount();
 		if (adapter == null || count <= 0)
 			return;
 		final int sbh = (scrollBarBottom - scrollBarTop), vh = (viewHeight - bottomPadding - topPadding);
 		y -= scrollBarThumbOffset + scrollBarTop;
-		//int t, f;
 		int f;
 		if (y <= 0) {
 			scrollBarThumbTop = scrollBarTop;
-			//t = 0;
 			f = 0;
 		} else if (y >= (sbh - scrollBarThumbHeight)) {
 			scrollBarThumbTop = sbh - scrollBarThumbHeight + scrollBarTop;
-			//t = 0;
 			f = count - 1;
 		} else {
 			scrollBarThumbTop = y + scrollBarTop;
@@ -440,11 +447,9 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			f = t / itemHeight;
 			if (f >= count)
 				f = count - 1;
-			//t = (f * itemHeight) - t;
 		}
 		invalidateScrollBar();
-		//setSelectionFromTop(f, t);
-		setSelectionFromTop(f, 0);
+		setSelectionAtTheTop(f);
 	}
 	
 	private void trackIndexedTouchEvent(int y) {
@@ -461,7 +466,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		y = sectionPositions[y];
 		invalidateScrollBar();
 		if (adapter != null && y >= 0 && y < adapter.getCount())
-			setSelectionFromTop(y, 0);
+			setSelectionAtTheTop(y);
 	}
 	
 	@Override

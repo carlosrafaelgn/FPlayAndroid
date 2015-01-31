@@ -135,23 +135,23 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	public static String makeContextDescription(boolean addDetailedDescription, Context ctx, FileSt file) {
 		if (!addDetailedDescription)
-			return (file.isDirectory ? (ctx.getText(R.string.folder) + ": " + file.name) : file.name);
+			return (file.isDirectory ? (ctx.getText(R.string.folder) + " " + file.name) : file.name);
 		String initial = "";
 		if (file.isDirectory) {
 			switch (file.specialType) {
 			case FileSt.TYPE_ARTIST:
-				initial = ctx.getText(R.string.artist) + ": ";
+				initial = ctx.getText(R.string.artist).toString();
 				break;
 			case FileSt.TYPE_ALBUM:
 			case FileSt.TYPE_ALBUM_ITEM:
-				initial = ctx.getText(R.string.album) + ": ";
+				initial = ctx.getText(R.string.album).toString();
 				break;
 			default:
-				initial = ctx.getText(R.string.folder) + ": ";
+				initial = ctx.getText(R.string.folder).toString();
 				break;
 			}
 		}
-		return initial + file.name + ": " + ctx.getText(file.isChecked ? R.string.selected : R.string.unselected);
+		return initial + " " + file.name + ": " + ctx.getText(file.isChecked ? R.string.selected : R.string.unselected);
 	}
 
 	@Override

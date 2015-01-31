@@ -538,10 +538,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		final int id = item.getItemId();
 		if (id == MNU_EXIT) {
 			getHostActivity().setExitOnDestroy(true);
+			if (Player.playing)
+				Player.playPause();
 			finish(0, null, false);
 			return true;
 		}
-		if (Player.state != Player.STATE_INITIALIZED && Player.state != Player.STATE_PREPARING_PLAYBACK)
+		if (Player.state < Player.STATE_INITIALIZED || Player.state >= Player.STATE_TERMINATING)
 			return true;
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
