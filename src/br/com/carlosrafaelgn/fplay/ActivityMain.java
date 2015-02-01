@@ -106,7 +106,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut;
+	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
 
@@ -369,7 +369,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				final CharSequence title = ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 				lblTitle.setText(title);
 				lblTitle.setSelected(true);
-				if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
+				if (ignoreAnnouncement)
+					ignoreAnnouncement = false;
+				else if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
 					UI.announceAccessibilityText(title);
 			}
 			if (lblArtist != null)
@@ -524,9 +526,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_PARTICLE, 4, "Sound Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 4, "Bluetooth")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+		//s2.add(2, MNU_VISUALIZER_BLUETOOTH, 4, "Bluetooth")
+		//	.setOnMenuItemClickListener(this)
+		//	.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
@@ -1136,6 +1138,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
 		}
+		ignoreAnnouncement = true;
 		onPlayerChanged(Player.currentSong, true, null);
 	}
 	

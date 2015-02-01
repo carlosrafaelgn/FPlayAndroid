@@ -102,7 +102,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	private volatile boolean connected, transmitting;
 	private Activity activity;
 
-	public BluetoothVisualizerJni(Context context, Activity activity, boolean landscape) {
+	public BluetoothVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
 		this.activity = activity;
 		bfft = new byte[1024];
