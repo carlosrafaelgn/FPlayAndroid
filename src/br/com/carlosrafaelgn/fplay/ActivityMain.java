@@ -106,7 +106,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut, ignoreAnnouncement;
+	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
 
@@ -369,10 +369,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				final CharSequence title = ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 				lblTitle.setText(title);
 				lblTitle.setSelected(true);
-				if (ignoreAnnouncement)
-					ignoreAnnouncement = false;
-				else if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
-					UI.announceAccessibilityText(title);
+				//if (ignoreAnnouncement)
+				//	ignoreAnnouncement = false;
+				//else if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
+				//	UI.announceAccessibilityText(title);
 			}
 			if (lblArtist != null)
 				lblArtist.setText((currentSong == null) ? "-" : currentSong.artist);
@@ -1138,7 +1138,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
 		}
-		ignoreAnnouncement = true;
+		//ignoreAnnouncement = true;
 		onPlayerChanged(Player.currentSong, true, null);
 	}
 	
