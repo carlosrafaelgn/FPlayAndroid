@@ -45,7 +45,7 @@ private:
 	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT];
 	unsigned char bgColor[BG_COUNT];
 
-	void FillBgParticle(int index, int column, float y) {
+	void FillBgParticle(int index, float y) {
 		bgPos[(index << 1)] = 0.0078125f * (float)(((int)rand() & 7) - 4);
 		bgPos[(index << 1) + 1] = y;
 		bgTheta[index] = 0.03125f * (float)(rand() & 63);
@@ -93,7 +93,7 @@ public:
 		int i = 0, c, ic;
 		for (c = 0; c < BG_COLUMNS; c++) {
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, i++)
-				FillBgParticle(i, c, -1.2f + (0.01953125f * (float)(rand() & 127)));
+				FillBgParticle(i, -1.2f + (0.01953125f * (float)(rand() & 127)));
 		}
 	}
 
@@ -189,7 +189,7 @@ public:
 
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, p++) {
 				if (bgPos[(p << 1) + 1] > 1.2f)
-					FillBgParticle(p, c, -1.2f);
+					FillBgParticle(p, -1.2f);
 				else
 					bgPos[(p << 1) + 1] += bgSpeedY[p] * delta;
 				glUniform3fv(glColor, 1, COLORS + (bgColor[p] * 3));

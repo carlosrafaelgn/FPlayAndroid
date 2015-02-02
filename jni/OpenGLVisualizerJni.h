@@ -472,7 +472,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		}
 		if (glGetError()) return -17;
 
-		if (type != TYPE_LIQUID) {
+		if (type != TYPE_LIQUID && type != TYPE_PARTICLE) {
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, glTex[1]);
 			if (glGetError()) return -18;
