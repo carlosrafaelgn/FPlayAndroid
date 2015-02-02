@@ -159,7 +159,7 @@ public:
 
 		for (c = 0; c < BG_COLUMNS; c++) {
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
-			//increase the amplitudes in order to improve the effect
+			//increase the amplitudes as the frequency increases, in order to improve the effect
 			if (i < 6) {
 				a = (float)processedData[i] / 255.0f;
 				i++;
