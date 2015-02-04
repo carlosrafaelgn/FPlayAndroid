@@ -383,7 +383,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		UI.initialize(getApplication(), this);
 		MainHandler.initialize();
 		if (Player.startService(getApplication()))
-			UI.setAndroidThemeAccordingly13(this);
+			UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
 		Player.alreadySelected = false; //fix the initial selection when the app is started from the widget
 		top = new ActivityMain();

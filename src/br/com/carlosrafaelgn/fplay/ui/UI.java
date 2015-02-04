@@ -39,6 +39,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -87,7 +88,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 66;
+	public static final int VERSION_CODE = 67;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -755,7 +756,15 @@ public final class UI {
 			initialize(context, null);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
-		textPaint.setColor((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? 0xff999999 : 0xffffffff);
+		//instead of guessing the color, try to fetch the actual one first
+		int color = 0;
+		try {
+			color = getAndroidThemeColor(context, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? android.R.style.TextAppearance_Material_Notification_Title : android.R.style.TextAppearance_StatusBar_EventContent_Title, android.R.attr.textColor);
+		} catch (Throwable ex) {
+		}
+		if ((color & 0xff000000) == 0)
+			color = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? 0xff999999 : 0xffffffff);
+		textPaint.setColor(color);
 		textPaint.setTextSize(defaultControlContentsSize);
 		icPrevNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
 		c.setBitmap(icPrevNotif);
@@ -1173,20 +1182,23 @@ public final class UI {
 			loadCreamyTheme();
 			break;
 		}
-		if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-				setAndroidThemeAccordingly21(activity);
-			else
-				setAndroidThemeAccordingly13(activity);
-		}
+		if (activity != null)
+			setAndroidThemeAccordingly(activity);
 	}
-	
+
 	public static boolean isAndroidThemeLight() {
 		return ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) && (ColorUtils.relativeLuminance(color_list) >= 0.5));
 	}
-	
+
+	public static void setAndroidThemeAccordingly(Activity activity) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			setAndroidThemeAccordingly21(activity);
+		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)
+			setAndroidThemeAccordingly13(activity);
+	}
+
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-	public static void setAndroidThemeAccordingly13(Activity activity) {
+	private static void setAndroidThemeAccordingly13(Activity activity) {
 		//Even though android.R.style.Theme_Light_NoTitleBar_Fullscreen
 		//is available on API 10, 11 and 12, it DOES NOT make dialogs's
 		//background light :(
@@ -1202,11 +1214,18 @@ public final class UI {
 	}
 
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	public static void setAndroidThemeAccordingly21(Activity activity) {
+	private static void setAndroidThemeAccordingly21(Activity activity) {
 		if (isAndroidThemeLight())
 			activity.setTheme(android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
 		else
 			activity.setTheme(android.R.style.Theme_Material_NoActionBar_Fullscreen);
+	}
+
+	public static int getAndroidThemeColor(Context context, int style, int attribute) {
+		final TypedArray array = context.getTheme().obtainStyledAttributes(style, new int[]{attribute});
+		final int color = array.getColor(array.getIndex(0), 0);
+		array.recycle();
+		return color;
 	}
 
 	public static void setFlat(boolean flat) {

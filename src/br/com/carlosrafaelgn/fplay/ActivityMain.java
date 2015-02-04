@@ -444,7 +444,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
 			localeHasBeenChanged = true;
-			UI.reapplyForcedLocale(getHostActivity().getApplication(), getHostActivity());
+			UI.reapplyForcedLocale(getApplication(), getHostActivity());
 		}
 		UI.prepare(menu);
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
@@ -1181,7 +1181,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.lastCurrent = Player.songs.getCurrentPosition();
 		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
 			localeHasBeenChanged = true;
-			UI.reapplyForcedLocale(getHostActivity().getApplication(), getHostActivity());
+			UI.reapplyForcedLocale(getApplication(), getHostActivity());
 		}
 	}
 	
