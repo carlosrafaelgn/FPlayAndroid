@@ -462,6 +462,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 						btn.setText(it.title);
 						btn.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 						it.actionView = btn;
+						it.actionView.setFocusableInTouchMode(!UI.hasTouch);
 						it.actionView.setFocusable(true);
 						it.actionView.setClickable(true);
 						it.actionView.setOnClickListener(this);

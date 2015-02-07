@@ -40,6 +40,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.ViewGroup.LayoutParams;
 import android.view.accessibility.AccessibilityEvent;
@@ -85,7 +86,7 @@ public final class BgButton extends Button {
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		super.setGravity(Gravity.CENTER);
 		super.setPadding(UI._8sp, UI._8sp, UI._8sp, UI._8sp);
-		super.setFocusableInTouchMode(false);
+		super.setFocusableInTouchMode(!UI.hasTouch);
 		super.setFocusable(true);
 		//Seriously?! Feature?!?!? :P
 		//http://stackoverflow.com/questions/26958909/why-is-my-button-text-coerced-to-all-caps-on-lollipop
@@ -281,7 +282,55 @@ public final class BgButton extends Button {
 	public boolean isOpaque() {
 		return false;//(state != 0);
 	}
-	
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_ENTER:
+		case KeyEvent.KEYCODE_NUMPAD_ENTER:
+		case KeyEvent.KEYCODE_SPACE:
+		case KeyEvent.KEYCODE_BUTTON_START:
+		case KeyEvent.KEYCODE_BUTTON_A:
+		case KeyEvent.KEYCODE_BUTTON_B:
+			keyCode = KeyEvent.KEYCODE_DPAD_CENTER;
+			event = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_DPAD_CENTER, event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), 232, event.getFlags(), event.getSource());
+			break;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_ENTER:
+		case KeyEvent.KEYCODE_NUMPAD_ENTER:
+		case KeyEvent.KEYCODE_SPACE:
+		case KeyEvent.KEYCODE_BUTTON_START:
+		case KeyEvent.KEYCODE_BUTTON_A:
+		case KeyEvent.KEYCODE_BUTTON_B:
+			keyCode = KeyEvent.KEYCODE_DPAD_CENTER;
+			event = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_DPAD_CENTER, event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), 232, event.getFlags(), event.getSource());
+			break;
+		}
+		return super.onKeyLongPress(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_ENTER:
+		case KeyEvent.KEYCODE_NUMPAD_ENTER:
+		case KeyEvent.KEYCODE_SPACE:
+		case KeyEvent.KEYCODE_BUTTON_START:
+		case KeyEvent.KEYCODE_BUTTON_A:
+		case KeyEvent.KEYCODE_BUTTON_B:
+			keyCode = KeyEvent.KEYCODE_DPAD_CENTER;
+			event = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_DPAD_CENTER, event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), 232, event.getFlags(), event.getSource());
+			break;
+		}
+		return super.onKeyUp(keyCode, event);
+	}
+
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();

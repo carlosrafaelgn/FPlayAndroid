@@ -65,6 +65,7 @@ public final class BgTextView extends TextView {
 		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
 		super.setFocusableInTouchMode(false);
+		super.setFocusable(false);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)

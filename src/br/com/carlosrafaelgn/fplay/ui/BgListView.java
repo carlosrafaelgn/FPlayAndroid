@@ -65,9 +65,9 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	public static interface OnBgListViewKeyDownObserver {
-		public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event);
+		public boolean onBgListViewKeyDown(BgListView list, int keyCode);
 	}
-	
+
 	public static final int SCROLLBAR_SYSTEM = 0;
 	public static final int SCROLLBAR_LARGE = 1;
 	public static final int SCROLLBAR_INDEXED = 2;
@@ -83,6 +83,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState;
 	private String[] sections;
 	private int[] sectionPositions;
+	public boolean skipUpDownTranslation;
 	int extraState;
 	
 	public BgListView(Context context) {
@@ -109,7 +110,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setHorizontalFadingEdgeEnabled(false);
 		super.setVerticalFadingEdgeEnabled(false);
 		super.setFadingEdgeLength(0);
-		super.setFocusableInTouchMode(false);
+		super.setFocusableInTouchMode(!UI.hasTouch);
 		super.setFocusable(true);
 		
 		super.setScrollingCacheEnabled(false);
@@ -368,15 +369,17 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		int p;
 		final int l = itemCount - 1;
 		switch (keyCode) {
-		case KeyEvent.KEYCODE_DPAD_UP:
+		case UI.KEY_UP:
+		case UI.KEY_LEFT:
 			if (position > l || position < 0 || (allowWrap && position == 0))
 				return l;
 			return position - 1;
-		case KeyEvent.KEYCODE_DPAD_DOWN:
+		case UI.KEY_DOWN:
+		case UI.KEY_RIGHT:
 			if ((allowWrap && position == l) || position > l || position < 0)
 				return 0;
 			return position + 1;
-		case KeyEvent.KEYCODE_PAGE_UP:
+		case UI.KEY_PAGE_UP:
 			if (position > l || position < 0 || (allowWrap && position == 0))
 				return l;
 			p = getLastVisiblePosition() - getFirstVisiblePosition();
@@ -385,7 +388,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			else
 				p = position - 1;
 			return ((p <= 0) ? 0 : p);
-		case KeyEvent.KEYCODE_PAGE_DOWN:
+		case UI.KEY_PAGE_DOWN:
 			if ((allowWrap && position == l) || position > l || position < 0)
 				return 0;
 			p = getLastVisiblePosition() - getFirstVisiblePosition();
@@ -394,9 +397,9 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			else
 				p = position + 1;
 			return ((p >= l) ? l : p);
-		case KeyEvent.KEYCODE_MOVE_HOME:
+		case UI.KEY_HOME:
 			return 0;
-		case KeyEvent.KEYCODE_MOVE_END:
+		case UI.KEY_END:
 			return l;
 		}
 		return -1;
@@ -731,41 +734,60 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (isEnabled()) {
 			switch (keyCode) {
-			case KeyEvent.KEYCODE_DPAD_UP:
-			case KeyEvent.KEYCODE_DPAD_DOWN:
+			case UI.KEY_UP:
+			case UI.KEY_DOWN:
+				if (skipUpDownTranslation)
+					break;
 				//change the key to make sure the focus goes
 				//somewhere else when the list is empty, or when the
 				//selection is not set to wrap around and it is at
 				//the top/bottom of the list
 				if (adapter == null || itemCount == 0) {
-					keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+					keyCode = ((keyCode == UI.KEY_UP) ? UI.KEY_LEFT : UI.KEY_RIGHT);
 				} else if (!UI.wrapAroundList) {
-					if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+					if (keyCode == UI.KEY_UP) {
 						if (adapter.getSelection() == 0)
-							keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+							keyCode = (UI.KEY_LEFT);
 					} else if (adapter.getSelection() == (itemCount - 1)) {
-						keyCode = ((keyCode == KeyEvent.KEYCODE_DPAD_UP) ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+						keyCode = (UI.KEY_RIGHT);
 					}
 				}
 				break;
-			case KeyEvent.KEYCODE_ENTER:
-			case KeyEvent.KEYCODE_SPACE:
+			case UI.KEY_LEFT:
+			case UI.KEY_RIGHT:
+			case UI.KEY_DEL:
+			case UI.KEY_EXTRA:
+			case UI.KEY_HOME:
+			case UI.KEY_END:
+			case UI.KEY_PAGE_UP:
+			case UI.KEY_PAGE_DOWN:
+				break;
 			case KeyEvent.KEYCODE_DPAD_CENTER:
+			case KeyEvent.KEYCODE_ENTER:
+			case KeyEvent.KEYCODE_NUMPAD_ENTER:
+			case KeyEvent.KEYCODE_BUTTON_START:
+			case KeyEvent.KEYCODE_BUTTON_A:
+			case KeyEvent.KEYCODE_BUTTON_B:
+				keyCode = UI.KEY_ENTER;
 				if (emptyListClickListener != null && itemCount == 0)
 					emptyListClickListener.onClick(this);
 				break;
-			case KeyEvent.KEYCODE_DPAD_LEFT:
-			case KeyEvent.KEYCODE_DPAD_RIGHT:
-			case KeyEvent.KEYCODE_FORWARD_DEL:
-			case KeyEvent.KEYCODE_PAGE_UP:
-			case KeyEvent.KEYCODE_PAGE_DOWN:
-			case KeyEvent.KEYCODE_MOVE_HOME:
-			case KeyEvent.KEYCODE_MOVE_END:
+			case KeyEvent.KEYCODE_DEL:
+				keyCode = UI.KEY_DEL;
+				break;
+			case KeyEvent.KEYCODE_BUTTON_SELECT:
+			case KeyEvent.KEYCODE_BUTTON_X:
+			case KeyEvent.KEYCODE_BUTTON_Y:
+				keyCode = UI.KEY_EXTRA;
 				break;
 			default:
-				return super.onKeyDown(keyCode, event);
+				if ((keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9) || (keyCode >= KeyEvent.KEYCODE_NUMPAD_0 && keyCode <= KeyEvent.KEYCODE_NUMPAD_9))
+					keyCode = UI.KEY_EXTRA;
+				else
+					return super.onKeyDown(keyCode, event);
+				break;
 			}
-			if (keyDownObserver == null || !keyDownObserver.onBgListViewKeyDown(this, keyCode, event))
+			if (keyDownObserver == null || !keyDownObserver.onBgListViewKeyDown(this, keyCode))
 				defaultKeyDown(keyCode);
 			return true;
 		} else {

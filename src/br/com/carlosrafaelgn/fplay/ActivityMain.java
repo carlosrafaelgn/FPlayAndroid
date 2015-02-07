@@ -44,7 +44,6 @@ import android.text.style.ImageSpan;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -265,6 +264,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 			Player.songs.selecting = true;
 			Player.songs.moving = false;
+			list.skipUpDownTranslation = true;
 		}
 	}
 	
@@ -286,6 +286,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 			Player.songs.selecting = false;
 			Player.songs.moving = true;
+			list.skipUpDownTranslation = true;
 		}
 	}
 	
@@ -293,6 +294,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (Player.songs.getFirstSelectedPosition() >= 0) {
 			Player.songs.removeSelection();
 			cancelSelection(true);
+		} else {
+			list.skipUpDownTranslation = false;
 		}
 	}
 	
@@ -311,6 +314,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 		Player.songs.selecting = false;
 		Player.songs.moving = false;
+		list.skipUpDownTranslation = false;
 		firstSel = -1;
 		lastSel = -1;
 		lblMsgSelMove.setVisibility(View.GONE);
@@ -1057,9 +1061,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	@Override
-	public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event) {
+	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
 		switch (keyCode) {
-		case KeyEvent.KEYCODE_DPAD_LEFT:
+		case UI.KEY_LEFT:
 			if (Player.songs.selecting)
 				(UI.isLargeScreen ? btnCancelSel : (UI.isLandscape ? btnMoveSel : btnRemoveSel)).requestFocus();
 			else if (Player.songs.moving)
@@ -1069,7 +1073,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			else
 				vwVolume.requestFocus();
 			return true;
-		case KeyEvent.KEYCODE_DPAD_RIGHT:
+		case UI.KEY_RIGHT:
 			if (Player.songs.selecting)
 				((UI.isLargeScreen || UI.isLandscape) ? btnMoveSel : btnCancelSel).requestFocus();
 			else if (Player.songs.moving)
@@ -1085,16 +1089,23 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		final int s = Player.songs.getSelection();
 		if (Player.songs.moving || Player.songs.selecting) {
 			switch (keyCode) {
-			case KeyEvent.KEYCODE_FORWARD_DEL:
+			case UI.KEY_DEL:
 				if (s >= 0)
 					removeSelection();
 				return true;
-			case KeyEvent.KEYCODE_DPAD_UP:
-			case KeyEvent.KEYCODE_DPAD_DOWN:
-			case KeyEvent.KEYCODE_PAGE_UP:
-			case KeyEvent.KEYCODE_PAGE_DOWN:
-			case KeyEvent.KEYCODE_MOVE_HOME:
-			case KeyEvent.KEYCODE_MOVE_END:
+			case UI.KEY_EXTRA:
+			case UI.KEY_ENTER:
+				if (Player.songs.selecting)
+					startMovingSelection();
+				else
+					cancelSelection(false);
+				return true;
+			case UI.KEY_UP:
+			case UI.KEY_DOWN:
+			case UI.KEY_PAGE_UP:
+			case UI.KEY_PAGE_DOWN:
+			case UI.KEY_HOME:
+			case UI.KEY_END:
 				int n = list.getNewPosition(s, keyCode, false);
 				if (n < 0)
 					return true;
@@ -1111,13 +1122,15 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 		} else {
 			switch (keyCode) {
-			case KeyEvent.KEYCODE_FORWARD_DEL:
+			case UI.KEY_DEL:
 				if (s >= 0)
 					Player.songs.removeSelection();
 				return true;
-			case KeyEvent.KEYCODE_ENTER:
-			case KeyEvent.KEYCODE_SPACE:
-			case KeyEvent.KEYCODE_DPAD_CENTER:
+			case UI.KEY_EXTRA:
+				if (s >= 0)
+					processItemLongClick(s);
+				return true;
+			case UI.KEY_ENTER:
 				if (s >= 0) {
 					if (Player.songs.getItemT(s) == Player.currentSong && !Player.playing)
 						Player.playPause();

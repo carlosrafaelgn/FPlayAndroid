@@ -377,7 +377,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		fadeInIncrementOnPause = opts.getInt(OPT_FADEININCREMENTONPAUSE, 125);
 		fadeInIncrementOnOther = opts.getInt(OPT_FADEININCREMENTONOTHER, 0);
 		UI.forcedOrientation = opts.getInt(OPT_FORCEDORIENTATION);
-		setVolumeControlType(context, opts.getInt(OPT_VOLUMECONTROLTYPE, VOLUME_CONTROL_STREAM));
+		setVolumeControlType(context, opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM));
 		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
 		if (turnOffTimerCustomMinutes < 1)
 			turnOffTimerCustomMinutes = 1;
@@ -428,16 +428,16 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
 			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
 			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
-			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
+			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, UI.isTV || (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 			//UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR);
 			//new settings (cannot be loaded the old way)
 			headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
 			doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
 			UI.scrollBarToTheLeft = opts.getBit(OPTBIT_SCROLLBAR_TO_THE_LEFT);
-			UI.songListScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST1, 0) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST0, 1);
+			UI.songListScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST1, 0) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST0, UI.isTV ? 0 : 1);
 			if (UI.songListScrollBarType == BgListView.SCROLLBAR_INDEXED)
 				UI.songListScrollBarType = BgListView.SCROLLBAR_LARGE;
-			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
+			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, UI.isTV ? 0 : 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
 			lastRadioSearchWasByGenre = opts.getBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, true);
 			UI.expandSeekBar = opts.getBit(OPTBIT_EXPANDSEEKBAR, true);
 			songs.setRepeatingOne(opts.getBit(OPTBIT_REPEATONE));
@@ -468,6 +468,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 			//UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR);
+			//Load default values for new settings
+			UI.songListScrollBarType = (UI.isTV ? BgListView.SCROLLBAR_SYSTEM : BgListView.SCROLLBAR_LARGE);
+			UI.browserScrollBarType = (UI.isTV ? BgListView.SCROLLBAR_SYSTEM : BgListView.SCROLLBAR_INDEXED);
+			lastRadioSearchWasByGenre = true;
+			UI.expandSeekBar = true;
 		}
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -1983,6 +1988,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		case KeyEvent.KEYCODE_MEDIA_PLAY:
 		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
 		case KeyEvent.KEYCODE_MEDIA_PAUSE:
+		case KeyEvent.KEYCODE_BREAK:
 			playPause();
 			break;
 		case KeyEvent.KEYCODE_HEADSETHOOK:

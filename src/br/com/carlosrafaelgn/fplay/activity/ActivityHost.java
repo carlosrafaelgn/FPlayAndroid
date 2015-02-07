@@ -380,8 +380,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			finish();
 			return;
 		}
-		UI.initialize(getApplication(), this);
 		MainHandler.initialize();
+		UI.initialize(getApplication(), this);
 		if (Player.startService(getApplication()))
 			UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);

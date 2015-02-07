@@ -39,7 +39,6 @@ import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -305,17 +304,15 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	}
 	
 	@Override
-	public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event) {
+	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
 		switch (keyCode) {
-		case KeyEvent.KEYCODE_DPAD_LEFT:
+		case UI.KEY_LEFT:
 			((btnMenu.getVisibility() == View.VISIBLE) ? btnMenu : btnGoBack).requestFocus();
 			return true;
-		case KeyEvent.KEYCODE_DPAD_RIGHT:
+		case UI.KEY_RIGHT:
 			btnGoBack.requestFocus();
 			return true;
-		case KeyEvent.KEYCODE_ENTER:
-		case KeyEvent.KEYCODE_SPACE:
-		case KeyEvent.KEYCODE_DPAD_CENTER:
+		case UI.KEY_ENTER:
 			final int p = fileList.getSelection();
 			if (p >= 0)
 				processItemClick(p);

@@ -39,7 +39,6 @@ import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -482,10 +481,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	}
 	
 	@Override
-	public boolean onBgListViewKeyDown(BgListView bgListView, int keyCode, KeyEvent event) {
+	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
 		int p;
 		switch (keyCode) {
-		case KeyEvent.KEYCODE_DPAD_LEFT:
+		case UI.KEY_LEFT:
 			if (btnURL.getVisibility() == View.VISIBLE)
 				btnURL.requestFocus();
 			else if (chkAll.getVisibility() == View.VISIBLE)
@@ -493,22 +492,20 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			else
 				btnGoBack.requestFocus();
 			return true;
-		case KeyEvent.KEYCODE_DPAD_RIGHT:
+		case UI.KEY_RIGHT:
 			if (btnGoBackToPlayer.getVisibility() == View.VISIBLE)
 				btnGoBackToPlayer.requestFocus();
 			else
 				btnGoBack.requestFocus();
 			return true;
-		case KeyEvent.KEYCODE_ENTER:
-		case KeyEvent.KEYCODE_DPAD_CENTER:
+		case UI.KEY_ENTER:
 			p = fileList.getSelection();
 			if (p >= 0)
 				processItemClick(p);
 			return true;
-		case KeyEvent.KEYCODE_0:
-		case KeyEvent.KEYCODE_SPACE:
+		case UI.KEY_EXTRA:
 			p = fileList.getSelection();
-			if (p >= 0) {
+			if (p >= 0 && !isAtHome) {
 				final FileSt file = fileList.getItemT(p);
 				file.isChecked = !file.isChecked;
 				processItemButtonClick(p, false);

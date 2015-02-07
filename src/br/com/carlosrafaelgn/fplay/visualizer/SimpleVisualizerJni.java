@@ -93,6 +93,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		lock = new SlimLock();
 		point = new Point();
 		setClickable(true);
+		setFocusableInTouchMode(false);
 		setFocusable(false);
 		surfaceHolder = getHolder();
 		surfaceHolder.addCallback(this);

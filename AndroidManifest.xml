@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="67"
-    android:versionName="1.32" >
+    android:versionCode="68"
+    android:versionName="1.33" >
 
     <!-- versionCode must be kept in sync with UI.VERSION_CODE -->
 
@@ -50,6 +50,22 @@
     <uses-feature
         android:name="android.hardware.bluetooth"
         android:required="false" />
+    <!--
+    Support for devices without touch, devices without microphone and TVs
+    as described in http://developer.android.com/guide/topics/manifest/uses-feature-element.html
+    -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.faketouch"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -71,8 +87,12 @@
             android:theme="@style/AppTheme" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- TV support! -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
         <activity

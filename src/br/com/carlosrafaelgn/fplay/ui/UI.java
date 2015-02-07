@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Configuration;
@@ -58,6 +59,7 @@ import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
@@ -88,7 +90,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 67;
+	public static final int VERSION_CODE = 68;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -195,6 +197,18 @@ public final class UI {
 	public static final String ICON_REPEATONE = "y";
 	public static final String ICON_ROOT = "(";
 
+	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
+	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
+	public static final int KEY_LEFT = KeyEvent.KEYCODE_DPAD_LEFT;
+	public static final int KEY_RIGHT = KeyEvent.KEYCODE_DPAD_RIGHT;
+	public static final int KEY_ENTER = KeyEvent.KEYCODE_DPAD_CENTER;
+	public static final int KEY_DEL = KeyEvent.KEYCODE_FORWARD_DEL;
+	public static final int KEY_EXTRA = KeyEvent.KEYCODE_SPACE;
+	public static final int KEY_HOME = KeyEvent.KEYCODE_MOVE_HOME;
+	public static final int KEY_END = KeyEvent.KEYCODE_MOVE_END;
+	public static final int KEY_PAGE_UP = KeyEvent.KEYCODE_PAGE_UP;
+	public static final int KEY_PAGE_DOWN = KeyEvent.KEYCODE_PAGE_DOWN;
+
 	public static final int IDX_COLOR_WINDOW = 0;
 	public static final int IDX_COLOR_CONTROL_MODE = 1;
 	public static final int IDX_COLOR_VISUALIZER = 2;
@@ -273,7 +287,7 @@ public final class UI {
 	
 	public static final class DisplayInfo {
 		public int usableScreenWidth, usableScreenHeight, screenWidth, screenHeight;
-		public boolean isLargeScreen, isLandscape, isLowDpiScreen;
+		public boolean isLandscape, isLargeScreen, isLowDpiScreen;
 		public DisplayMetrics displayMetrics;
 		
 		private void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
@@ -324,8 +338,8 @@ public final class UI {
 			//*** I decided to treat screens >= 500dp as large screens because there are
 			//lots of 7" phones/tablets with resolutions starting at around 533dp ***
 			final int _500dp = (int)((500.0f * displayMetrics.density) + 0.5f);
-			isLargeScreen = ((screenWidth >= _500dp) && (screenHeight >= _500dp));
 			isLandscape = (screenWidth >= screenHeight);
+			isLargeScreen = ((screenWidth >= _500dp) && (screenHeight >= _500dp));
 			isLowDpiScreen = (displayMetrics.densityDpi < 160);
 		}
 	}
@@ -372,7 +386,7 @@ public final class UI {
 	
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
-	public static boolean isLandscape, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
+	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, displayVolumeInDB, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType, verticalMargin;
@@ -649,6 +663,17 @@ public final class UI {
 		fullyInitialized = true;
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
+		if (Player.state == Player.STATE_NEW) {
+			try {
+				isTV = ((((UiModeManager)context.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
+			} catch (Throwable ex) {
+			}
+			try {
+				hasTouch = context.getPackageManager().hasSystemFeature("android.hardware.touchscreen");
+			} catch (Throwable ex) {
+				hasTouch = true;
+			}
+		}
 		final DisplayInfo info = new DisplayInfo();
 		info.getInfo(context);
 		density = info.displayMetrics.density;
@@ -659,9 +684,10 @@ public final class UI {
 		screenHeight = info.screenHeight;
 		usableScreenWidth = info.usableScreenWidth;
 		usableScreenHeight = info.usableScreenHeight;
-		isLargeScreen = info.isLargeScreen;
+		isLargeScreen = (isTV || info.isLargeScreen);
 		isLandscape = info.isLandscape;
 		isLowDpiScreen = info.isLowDpiScreen;
+
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()
 		final float sd = context.getResources().getDisplayMetrics().scaledDensity;

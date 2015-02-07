@@ -91,7 +91,7 @@ public final class BgSeekBar extends View {
 		setTextSizeIndex(2);
 		super.setDrawingCacheEnabled(false);
 		super.setClickable(true);
-		super.setFocusableInTouchMode(false);
+		super.setFocusableInTouchMode(!UI.hasTouch);
 		super.setFocusable(true);
 	}
 	

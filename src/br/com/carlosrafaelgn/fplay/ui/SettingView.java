@@ -39,6 +39,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Layout;
 import android.text.StaticLayout;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.LinearLayout;
@@ -46,8 +47,7 @@ import android.widget.LinearLayout;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class SettingView extends View implements View.OnClickListener {
-	private View.OnClickListener onClickListener;
+public final class SettingView extends View {
 	private String icon, text, secondaryText;
 	private int[] textLines;
 	private boolean checkable, checked, hidingSeparator;
@@ -55,7 +55,8 @@ public final class SettingView extends View implements View.OnClickListener {
 	
 	public SettingView(Context context, String icon, String text, String secondaryText, boolean checkable, boolean checked, boolean color) {
 		super(context);
-		super.setOnClickListener(this);
+		setClickable(true);
+		setFocusableInTouchMode(!UI.hasTouch);
 		setFocusable(true);
 		setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 		this.icon = icon;
@@ -137,11 +138,6 @@ public final class SettingView extends View implements View.OnClickListener {
 		textY = textY - oldVerticalMargin + UI.verticalMargin;
 		requestLayout();
 	}
-	
-	@Override
-	public void setOnClickListener(OnClickListener listener) {
-		this.onClickListener = listener;
-	}
 
 	public void setSecondaryText(String secondaryText) {
 		if (this.secondaryText != null && secondaryText != null) {
@@ -201,7 +197,14 @@ public final class SettingView extends View implements View.OnClickListener {
 			errorView = null;
 		}*/
 	}
-	
+
+	@Override
+	public boolean performClick() {
+		if (checkable)
+			checked = !checked;
+		return super.performClick();
+	}
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
 	public void setBackground(Drawable background) {
@@ -243,7 +246,55 @@ public final class SettingView extends View implements View.OnClickListener {
 	public boolean isOpaque() {
 		return false;//(state != 0);
 	}
-	
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_ENTER:
+		case KeyEvent.KEYCODE_NUMPAD_ENTER:
+		case KeyEvent.KEYCODE_SPACE:
+		case KeyEvent.KEYCODE_BUTTON_START:
+		case KeyEvent.KEYCODE_BUTTON_A:
+		case KeyEvent.KEYCODE_BUTTON_B:
+			keyCode = KeyEvent.KEYCODE_DPAD_CENTER;
+			event = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_DPAD_CENTER, event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), 232, event.getFlags(), event.getSource());
+			break;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_ENTER:
+		case KeyEvent.KEYCODE_NUMPAD_ENTER:
+		case KeyEvent.KEYCODE_SPACE:
+		case KeyEvent.KEYCODE_BUTTON_START:
+		case KeyEvent.KEYCODE_BUTTON_A:
+		case KeyEvent.KEYCODE_BUTTON_B:
+			keyCode = KeyEvent.KEYCODE_DPAD_CENTER;
+			event = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_DPAD_CENTER, event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), 232, event.getFlags(), event.getSource());
+			break;
+		}
+		return super.onKeyLongPress(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_ENTER:
+		case KeyEvent.KEYCODE_NUMPAD_ENTER:
+		case KeyEvent.KEYCODE_SPACE:
+		case KeyEvent.KEYCODE_BUTTON_START:
+		case KeyEvent.KEYCODE_BUTTON_A:
+		case KeyEvent.KEYCODE_BUTTON_B:
+			keyCode = KeyEvent.KEYCODE_DPAD_CENTER;
+			event = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_DPAD_CENTER, event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), 232, event.getFlags(), event.getSource());
+			break;
+		}
+		return super.onKeyUp(keyCode, event);
+	}
+
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
@@ -315,19 +366,10 @@ public final class SettingView extends View implements View.OnClickListener {
 	
 	@Override
 	protected void onDetachedFromWindow() {
-		onClickListener = null;
 		icon = null;
 		text = null;
 		secondaryText = null;
 		textLines = null;
 		super.onDetachedFromWindow();
-	}
-	
-	@Override
-	public void onClick(View view) {
-		if (checkable)
-			checked = !checked;
-		if (onClickListener != null)
-			onClickListener.onClick(this);
 	}
 }

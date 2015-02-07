@@ -101,6 +101,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		type = ((t < TYPE_LIQUID || t > TYPE_PARTICLE) ? TYPE_SPECTRUM : t);
 		bfft = new byte[2048];
 		setClickable(true);
+		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
 		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE) ? 0 : 2);
