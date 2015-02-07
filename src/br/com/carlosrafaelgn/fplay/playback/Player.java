@@ -1978,6 +1978,26 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		return null;
 	}
 	
+	public static boolean isMediaButton(int keyCode) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_MEDIA_PLAY:
+		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+		case KeyEvent.KEYCODE_MEDIA_PAUSE:
+		case KeyEvent.KEYCODE_BREAK:
+		case KeyEvent.KEYCODE_HEADSETHOOK:
+		case KeyEvent.KEYCODE_MEDIA_STOP:
+		case KeyEvent.KEYCODE_CALL:
+		case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+		case KeyEvent.KEYCODE_MEDIA_NEXT:
+		case KeyEvent.KEYCODE_MEDIA_REWIND:
+		case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+		case KeyEvent.KEYCODE_VOLUME_DOWN:
+		case KeyEvent.KEYCODE_VOLUME_UP:
+			return true;
+		}
+		return false;
+	}
+
 	public static boolean handleMediaButton(int keyCode) {
 		switch (keyCode) {
 		//There are a few weird bluetooth headsets that despite having only one physical

@@ -48,6 +48,7 @@ import android.os.SystemClock;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -330,7 +331,49 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		return false;
 	}
-	
+
+	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		//
+		//Allowing applications to play nice(r) with each other: Handling remote control buttons
+		//http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
+		//
+		//...In a media playback application, this is used to react to headset button
+		//presses when your activity doesn’t have the focus. For when it does, we override
+		//the Activity.onKeyDown() or onKeyUp() methods for the user interface to trap the
+		//headset button-related events...
+		if ((event == null || event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
+			return true;
+		if (Player.isMediaButton(keyCode)) {
+			switch (keyCode) {
+			case KeyEvent.KEYCODE_VOLUME_DOWN:
+			case KeyEvent.KEYCODE_VOLUME_UP:
+				Player.handleMediaButton(keyCode);
+				break;
+			}
+			return true;
+		}
+		if (panelTop != null && !(panelTopWasVisibleOk = (panelTopHiding == 0 && panelTop.getVisibility() == View.VISIBLE)))
+			showPanelTop(true);
+		hideAllUIDelayed();
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+		if (Player.isMediaButton(keyCode))
+			return true;
+		return super.onKeyLongPress(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		if (Player.isMediaButton(keyCode))
+			return true;
+		return super.onKeyUp(keyCode, event);
+	}
+
 	@SuppressLint("InlinedApi")
 	@SuppressWarnings("deprecation")
 	@Override

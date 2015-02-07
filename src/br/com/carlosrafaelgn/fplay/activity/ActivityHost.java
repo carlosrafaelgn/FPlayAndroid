@@ -346,7 +346,30 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//headset button-related events...
 		if ((event == null || event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
 			return true;
+		if (Player.isMediaButton(keyCode)) {
+			switch (keyCode) {
+			case KeyEvent.KEYCODE_VOLUME_DOWN:
+			case KeyEvent.KEYCODE_VOLUME_UP:
+				Player.handleMediaButton(keyCode);
+				break;
+			}
+			return true;
+		}
 		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+		if (Player.isMediaButton(keyCode))
+			return true;
+		return super.onKeyLongPress(keyCode, event);
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		if (Player.isMediaButton(keyCode))
+			return true;
+		return super.onKeyUp(keyCode, event);
 	}
 
 	@Override
