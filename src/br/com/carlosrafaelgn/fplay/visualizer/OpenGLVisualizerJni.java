@@ -365,7 +365,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 		if (!supported)
 			return;
-		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer, type)) != 0) {
+		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer, type, UI.screenWidth, UI.screenHeight, (UI._1dp < 2) ? 1 : 0)) != 0) {
 			supported = false;
 			MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 		}
@@ -378,7 +378,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			return;
 		viewWidth = width;
 		viewHeight = height;
-		SimpleVisualizerJni.glOnSurfaceChanged(width, height);
+		SimpleVisualizerJni.glOnSurfaceChanged(width, height, (UI._1dp < 2) ? 1 : 0);
 		okToRender = true;
 		/*if (type == TYPE_LIQUID && !imageChoosenAtLeastOnce) {
 			imageChoosenAtLeastOnce = true;

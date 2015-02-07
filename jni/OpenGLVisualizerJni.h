@@ -145,7 +145,27 @@ int createProgram(const char* vertexShaderSource, const char* fragmentShaderSour
 	return 0;
 }
 
-int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type) {
+int computeSpinSize(int width, int height, int dp1OrLess) {
+	dp1OrLess = (dp1OrLess ? 10 : 20);
+	int size = dp1OrLess;
+	while (size < 33 && ((width % size) || (height % size)))
+		size++;
+	if (size > 32) {
+		size = dp1OrLess;
+		while (size < 33 && (height % size))
+			size++;
+		if (size > 32) {
+			size = dp1OrLess;
+			while (size < 33 && (width % size))
+				size++;
+			if (size > 32)
+				size = dp1OrLess;
+		}
+	}
+	return size;
+}
+
+int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess) {
 	glType = type;
 	glProgram = 0;
 	glProgram2 = 0;
@@ -500,7 +520,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 		//https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml
 		//non-power-of-2 textures cannot be used with GL_TEXTURE_WRAP_x other than GL_CLAMP_TO_EDGE
 		//(even though it works on many devices, the spec says it shouldn't...)
-#define TEXTURE_SIZE 32
+		int TEXTURE_SIZE = computeSpinSize(estimatedWidth, estimatedHeight, dp1OrLess);
+		TEXTURE_SIZE = ((TEXTURE_SIZE <= 16) ? 16 : 32);
+		const float TEXTURE_COEF = ((TEXTURE_SIZE == 16) ? (255.0f * 0.078125f) : (255.0f * 0.0390625f));
 		//generate the texture
 		for (int y = 0; y < TEXTURE_SIZE; y++) {
 			float yf = (float)(y - (TEXTURE_SIZE >> 1));
@@ -510,13 +532,12 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 				//0.0625 = 1/16 (used for 20x20)
 				//0.078125 = 1/12.8 (used for 16x16)
 				float xf = (float)(x - (TEXTURE_SIZE >> 1));
-				int v = (int)(255.0f * 0.0390625f * sqrtf((xf * xf) + yf));
+				int v = (int)(TEXTURE_COEF * sqrtf((xf * xf) + yf));
 				((unsigned char*)floatBuffer)[(y * TEXTURE_SIZE) + x] = ((v >= 255) ? 255 : (unsigned char)v);
 			}
 		}
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
 		if (glGetError()) return -17;
-#undef TEXTURE_SIZE
 	}
 
 	glUseProgram(glProgram);
@@ -608,25 +629,11 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type)
 	return 0;
 }
 
-void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height) {
+void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height, int dp1OrLess) {
 	glViewport(0, 0, width, height);
 	if (glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
 		if (glType == TYPE_SPIN) {
-			int size = 20;
-			while (size < 33 && ((width % size) || (height % size)))
-				size++;
-			if (size > 32) {
-				size = 20;
-				while (size < 33 && (height % size))
-					size++;
-				if (size > 32) {
-					size = 20;
-					while (size < 33 && (width % size))
-						size++;
-					if (size > 32)
-						size = 20;
-				}
-			}
+			int size = computeSpinSize(width, height, dp1OrLess);
 			glVerticesPerRow = ((width + (size - 1)) / size) + 1;
 			glRows = ((height + (size - 1)) / size);
 			struct _coord {

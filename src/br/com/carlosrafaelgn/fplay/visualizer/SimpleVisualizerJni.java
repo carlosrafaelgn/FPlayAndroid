@@ -72,8 +72,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private static native void process(byte[] bfft, int deltaMillis, Surface surface);
 	private static native void processVoice(byte[] bfft, Surface surface);
 
-	static native int glOnSurfaceCreated(int bgColor, int type);
-	static native void glOnSurfaceChanged(int width, int height);
+	static native int glOnSurfaceCreated(int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess);
+	static native void glOnSurfaceChanged(int width, int height, int dp1OrLess);
 	static native int glLoadBitmapFromJava(Bitmap bitmap);
 	static native void glDrawFrame();
 	static native void glReleaseView();
