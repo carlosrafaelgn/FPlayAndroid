@@ -32,8 +32,10 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.annotation.TargetApi;
 import android.app.Service;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 
@@ -231,8 +233,12 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				usbCount[0] = c;
 			} else {
 				//try to avoid duplication of internal sdcard on a few phones... 
-				if (internalCount[0] > 0 && canonicalPathLC.contains("/legacy"))
+				if (internalCount[0] > 0 && canonicalPathLC.contains("/legacy")) {
+					//ignore this path in addedPaths
+					addedCount[0]--;
+					addedPaths[addedCount[0]] = null;
 					return;
+				}
 				c = externalCount[0] + 1;
 				files[count] = new FileSt(canonicalPath, s.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE);
 				externalCount[0] = c;
@@ -354,14 +360,19 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				path = line.substring(first + 1, second);
 				
 				//fuse is used for internal storage
-				final RootItem item = new RootItem(fs_spec, path, line.contains("fat") || line.contains("fuse"));
+				final RootItem item = new RootItem(fs_spec, path,
+					line.contains("fat") ||
+					line.contains("fuse") ||
+					//line.contains("ntfs") || //would this be safe?????
+					//there are a few "interesting" mount points starting with /mnt/ ;)
+					(path.startsWith("/mnt/") && !fs_spec.equals("tmpfs")));
 				map.put(item.fs_specLC, item);
 			}
 			for (RootItem item : map.values()) {
 				if (cancelled)
 					break;
 				if (item.isFileSystemTypeValid) {
-					RootItem tmp = item, it = item;
+					RootItem tmp, it = item;
 					//try to get the actual path pointed by this item, using a
 					//poor man's cycle prevention ;)
 					i = 0;
@@ -371,7 +382,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 					}
 					try {
 						//a few old phones erroneously return these 3 as mounted devices
-						if (!it.path.equals("/system") && !it.path.equals("/data") && !it.path.equals("/cache"))
+						if (!it.pathLC.equals("/system") && !it.pathLC.equals("/data") && !it.pathLC.equals("/cache"))
 							addStorage(s, new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 					} catch (Throwable ex) {
 					}
@@ -399,9 +410,31 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			}
 		}
 		
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			fetchRoot19(s, internalCount, externalCount, usbCount, addedCount, addedPaths);
+
 		if (count < files.length) {
 			files[count] = new FileSt(File.separator, s.getText(R.string.all_files).toString(), null, FileSt.TYPE_ALL_FILES);
 			count++;
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private void fetchRoot19(Service s, int[] internalCount, int[] externalCount, int[] usbCount, int[] addedCount, String[] addedPaths) {
+		//Massive workaround! This is a desperate attempt to fetch all possible directories
+		//in newer CM and others...
+		try {
+			final File[] fs = s.getExternalFilesDirs(null);
+			if (fs != null) {
+				for (int i = 0; i < fs.length; i++) {
+					final String p = fs[i].getAbsolutePath();
+					final int a = p.indexOf("Android");
+					if (a <= 0)
+						continue;
+					addStorage(s, new File(p.substring(0, a - 1)), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
+				}
+			}
+		} catch (Throwable ex) {
 		}
 	}
 	
