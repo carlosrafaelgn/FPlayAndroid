@@ -56,6 +56,7 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
@@ -113,7 +114,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //Allowing applications to play nice(r) with each other: Handling remote control buttons
 //http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
 //
-public final class Player extends Service implements Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
+public final class Player extends Service implements Runnable, Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
 	public static interface PlayerObserver {
 		public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
@@ -199,7 +200,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	private static final int MSG_TERMINATION_0 = 0x140;
 	private static final int MSG_TERMINATION_1 = 0x141;
 	private static final int MSG_TERMINATION_2 = 0x142;
-	
+	private static final int MSG_ASYNC_PREPARATION = 0x150;
+	private static final int MSG_ASYNC_PREPARATION_FAILED = 0x151;
+	private static final int MSG_ASYNC_PREPARATION_NEXT = 0x152;
+	private static final int MSG_ASYNC_PREPARATION_NEXT_FAILED = 0x153;
+
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
 	private static final int OPT_LASTTIME = 0x0002;
@@ -353,6 +358,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public static String path, originalPath, radioSearchTerm;
 	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
 	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged, headsetHookDoublePressPauses, doNotAttenuateVolume, lastRadioSearchWasByGenre;
+
+	//Even though it happens very rarely, a few devices will freeze and produce an ANR
+	//when calling setDataSource from the main thread :(
+	private static Thread preparationThread;
+	private static final Object preparationSync = new Object();
+	private static PreparationHandler preparationHandler;
+	private static MediaPlayer preparationPlayer, preparationPlayerNext;
+	private static Song preparationSong, preparationSongNext;
 
 	//These guys used to be private, but I decided to make them public, even though some of them still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
@@ -835,7 +848,14 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			mediaButtonEventReceiver = null;
 		}
 	}
-	
+
+	@Override
+	public void run() {
+		Looper.prepare();
+		preparationHandler = new PreparationHandler(Looper.myLooper());
+		Looper.loop();
+	}
+
 	private static void initialize(Context context) {
 		if (state == STATE_NEW) {
 			alreadySelected = true; //fix the initial selection when the app is started from the widget
@@ -854,6 +874,10 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			loadConfig(context);
 		}
 		if (thePlayer != null) {
+			if (preparationThread == null) {
+				preparationThread = new Thread(thePlayer, "Player Preparation Thread");
+				preparationThread.start();
+			}
 			if (_playerHandler == null)
 				_playerHandler = new PlayerHandler(context);
 			registerMediaButtonEventReceiver();
@@ -863,23 +887,27 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			//	registerA2dpObserver(thePlayer);
 			checkAudioSink(false, false);
 			if (focusDelayTimer == null)
-				focusDelayTimer = new Timer(thePlayer, "Player Focus Delay Timer", true, true, false);
+				focusDelayTimer = new Timer((Timer.TimerHandler)thePlayer, "Player Focus Delay Timer", true, true, false);
 			if (prepareDelayTimer == null)
-				prepareDelayTimer = new Timer(thePlayer, "Player Prepare Delay Timer", true, true, false);
+				prepareDelayTimer = new Timer((Timer.TimerHandler)thePlayer, "Player Prepare Delay Timer", true, true, false);
 			if (volumeTimer == null)
-				volumeTimer = new Timer(thePlayer, "Player Volume Timer", false, true, true);
+				volumeTimer = new Timer((Timer.TimerHandler)thePlayer, "Player Volume Timer", false, true, true);
 			if (headsetHookTimer == null)
-				headsetHookTimer = new Timer(thePlayer, "Headset Hook Timer", true, true, false);
+				headsetHookTimer = new Timer((Timer.TimerHandler)thePlayer, "Headset Hook Timer", true, true, false);
 			sendMessage(MSG_INITIALIZATION_0);
 		}
 	}
-	
+
 	private static void terminate() {
 		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) { // && !songs.isAdding()) {
-			state = STATE_TERMINATING;
-			setLastTime();
-			fullCleanup(null);
-			sendMessage(MSG_TERMINATION_0);
+			synchronized (preparationSync) {
+				state = STATE_TERMINATING;
+				if (preparationHandler != null)
+					preparationHandler.sendEmptyMessageAtTime(MSG_TERMINATION_0, SystemClock.uptimeMillis());
+				setLastTime();
+				fullCleanup(null);
+				sendMessage(MSG_TERMINATION_0);
+			}
 		}
 	}
 	
@@ -1256,19 +1284,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		mp.setWakeMode(thePlayer, PowerManager.PARTIAL_WAKE_LOCK);
 		return mp;
 	}
-	
-	private static void preparePlayer(MediaPlayer mp, Song song) throws Throwable {
-		mp.reset();
-		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		if (song.path == null || song.path.length() == 0)
-			throw new IOException();
-		mp.setDataSource(song.path);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-			clearNextPlayer(mp);
-		//PresetReverb.applyToPlayer(mp);
-		mp.prepareAsync();
-	}
-	
+
 	private static void startPlayer(MediaPlayer mp) {
 		if (silenceMode != SILENCE_NONE && volumeTimer != null) {
 			final int incr = (unpaused ? fadeInIncrementOnPause : ((silenceMode == SILENCE_FOCUS) ? fadeInIncrementOnFocus : fadeInIncrementOnOther));
@@ -1336,16 +1352,13 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 		stopInternal(null);
 		if (how != SongList.HOW_CURRENT)
 			lastTime = -1;
-		try {
-			preparePlayer(currentPlayer, song);
-			currentSongPreparing = true;
-		} catch (Throwable ex) {
-			song.possibleNextSong = null;
-			fullCleanup(song);
-			nextFailed(song, how, ex);
-			return false;
-		}
+		currentSongPreparing = true;
 		currentSong = song;
+		synchronized (preparationSync) {
+			preparationPlayer = currentPlayer;
+			preparationSong = currentSong;
+			preparationHandler.sendMessageAtTime(Message.obtain(preparationHandler, MSG_ASYNC_PREPARATION, how, 0), SystemClock.uptimeMillis());
+		}
 		return true;
 	}
 	
@@ -1794,7 +1807,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				turnOffTimer = null;
 			}
 			if (minutes > 0) {
-				turnOffTimer = new Timer(thePlayer, "Turn Off Timer", true, true, false);
+				turnOffTimer = new Timer((Timer.TimerHandler)thePlayer, "Turn Off Timer", true, true, false);
 				if (minutes != 60 && minutes != 90 && minutes != 120)
 					turnOffTimerCustomMinutes = minutes;
 				//we must use SystemClock.elapsedRealtime because uptimeMillis
@@ -1863,7 +1876,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				idleTurnOffTimer = null;
 			}
 			if (minutes > 0) {
-				idleTurnOffTimer = new Timer(thePlayer, "Idle Turn Off Timer", true, true, false);
+				idleTurnOffTimer = new Timer((Timer.TimerHandler)thePlayer, "Idle Turn Off Timer", true, true, false);
 				if (minutes != 60 && minutes != 90 && minutes != 120)
 					idleTurnOffTimerCustomMinutes = minutes;
 				//we must use SystemClock.elapsedRealtime because uptimeMillis
@@ -2137,12 +2150,11 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 				nextPreparing = false;
 				nextPrepared = false;
 				if (nextPlayer != null && nextSong != null && !nextSong.isHttp) {
-					try {
-						preparePlayer(nextPlayer, nextSong);
-						nextPreparing = true;
-					} catch (Throwable ex) {
-						nextSong = null;
-						nextPlayer.reset();
+					nextPreparing = true;
+					synchronized (preparationSync) {
+						preparationPlayerNext = nextPlayer;
+						preparationSongNext = nextSong;
+						preparationHandler.sendEmptyMessageAtTime(MSG_ASYNC_PREPARATION_NEXT, SystemClock.uptimeMillis());
 					}
 				}
 			}
@@ -2342,12 +2354,12 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 	public void onPrepared(MediaPlayer mp) {
 		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
 			return;
-		if (mp == nextPlayer) {
+		if (mp == nextPlayer && preparationSongNext == nextSong && nextSong != null) {
 			nextPreparing = false;
 			nextPrepared = true;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 				setNextPlayer();
-		} else if (mp == currentPlayer) {
+		} else if (mp == currentPlayer && preparationSong == currentSong && currentSong != null) {
 			try {
 				if (!hasFocus) {
 					fullCleanup(currentSong);
@@ -2789,9 +2801,85 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 					System.exit(0);
 				}
 				break;
+			case MSG_ASYNC_PREPARATION_FAILED:
+				if (preparationSong == currentSong && currentSong != null) {
+					currentSong.possibleNextSong = null;
+					fullCleanup(currentSong);
+					nextFailed(currentSong, msg.arg1, (Throwable)msg.obj);
+					preparationSong = null;
+				}
+				break;
+			case MSG_ASYNC_PREPARATION_NEXT_FAILED:
+				if (preparationSongNext == nextSong && nextSong != null) {
+					nextSong = null;
+					nextPlayer.reset();
+					preparationSongNext = null;
+				}
+				break;
 			}
 			msg.obj = null;
 		}
 	}
 
+	private static final class PreparationHandler extends Handler {
+		public PreparationHandler(Looper looper) {
+			super(looper);
+		}
+
+		@Override
+		public void dispatchMessage(Message msg) {
+			if (state >= STATE_TERMINATING) {
+				final Looper looper = Looper.myLooper();
+				if (looper != null)
+					looper.quit();
+				return;
+			}
+			final MediaPlayer mp;
+			final Song song;
+			final int playerMsg, arg;
+			synchronized (preparationSync) {
+				if (state >= STATE_TERMINATING) {
+					final Looper looper = Looper.myLooper();
+					if (looper != null)
+						looper.quit();
+					return;
+				}
+				switch (msg.what) {
+				case MSG_ASYNC_PREPARATION:
+					if (preparationPlayer != currentPlayer || preparationPlayer == null || preparationSong != currentSong || preparationSong == null)
+						return;
+					mp = preparationPlayer;
+					song = preparationSong;
+					playerMsg = MSG_ASYNC_PREPARATION_FAILED;
+					arg = msg.arg1;
+					preparationPlayer = null;
+					break;
+				case MSG_ASYNC_PREPARATION_NEXT:
+					if (preparationPlayerNext != nextPlayer || preparationPlayerNext == null || preparationSongNext != nextSong || preparationSongNext == null)
+						return;
+					mp = preparationPlayerNext;
+					song = preparationSongNext;
+					playerMsg = MSG_ASYNC_PREPARATION_NEXT_FAILED;
+					arg = 0;
+					preparationPlayerNext = null;
+					break;
+				default:
+					return;
+				}
+				try {
+					mp.reset();
+					mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+					if (song.path == null || song.path.length() == 0)
+						throw new IOException();
+					mp.setDataSource(song.path);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+						clearNextPlayer(mp);
+					//PresetReverb.applyToPlayer(mp);
+					mp.prepareAsync();
+				} catch (Throwable ex) {
+					Player.sendMessage(playerMsg, arg, 0, ex);
+				}
+			}
+		}
+	}
 }
