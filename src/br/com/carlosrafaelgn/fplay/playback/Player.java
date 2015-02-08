@@ -1468,7 +1468,7 @@ public final class Player extends Service implements Timer.TimerHandler, MediaPl
 			state = STATE_PREPARING_PLAYBACK;
 			playInternal0(how, s);
 		}
-		return ((how == SongList.HOW_CURRENT) ? s : null);
+		return s;
 	}
 	
 	private static void stopInternal(Song newCurrentSong) {
