@@ -150,9 +150,8 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	public static final int STATE_INITIALIZING_PENDING_LIST = 2;
 	public static final int STATE_INITIALIZING_PENDING_ACTIONS = 3;
 	public static final int STATE_INITIALIZED = 4;
-	public static final int STATE_PREPARING_PLAYBACK = 5;
-	public static final int STATE_TERMINATING = 6;
-	public static final int STATE_TERMINATED = 7;
+	public static final int STATE_TERMINATING = 5;
+	public static final int STATE_TERMINATED = 6;
 	public static final int AUDIO_SINK_DEVICE = 1;
 	public static final int AUDIO_SINK_WIRE = 2;
 	public static final int AUDIO_SINK_BT = 4;
@@ -362,10 +361,11 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	//Even though it happens very rarely, a few devices will freeze and produce an ANR
 	//when calling setDataSource from the main thread :(
 	private static Thread preparationThread;
-	private static final Object preparationSync = new Object();
+	private static final Object preparationSync = new Object(), preparationSyncNext = new Object();
 	private static PreparationHandler preparationHandler;
 	private static MediaPlayer preparationPlayer, preparationPlayerNext;
 	private static Song preparationSong, preparationSongNext;
+	private static int preparationVersion, preparationVersionNext;
 
 	//These guys used to be private, but I decided to make them public, even though some of them still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
@@ -899,15 +899,13 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 
 	private static void terminate() {
-		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) { // && !songs.isAdding()) {
-			synchronized (preparationSync) {
-				state = STATE_TERMINATING;
-				if (preparationHandler != null)
-					preparationHandler.sendEmptyMessageAtTime(MSG_TERMINATION_0, SystemClock.uptimeMillis());
-				setLastTime();
-				fullCleanup(null);
-				sendMessage(MSG_TERMINATION_0);
-			}
+		if (state == STATE_INITIALIZED) {
+			state = STATE_TERMINATING;
+			if (preparationHandler != null)
+				preparationHandler.sendEmptyMessageAtTime(MSG_TERMINATION_0, SystemClock.uptimeMillis());
+			setLastTime();
+			fullCleanup(null);
+			sendMessage(MSG_TERMINATION_0);
 		}
 	}
 	
@@ -1347,27 +1345,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			sendMessage(MSG_PLAY_NEXT_AUTO);
 		}
 	}
-	
-	private static boolean doPlayInternal(int how, Song song) {
-		stopInternal(null);
-		if (how != SongList.HOW_CURRENT)
-			lastTime = -1;
-		currentSongPreparing = true;
-		currentSong = song;
-		synchronized (preparationSync) {
-			preparationPlayer = currentPlayer;
-			preparationSong = currentSong;
-			preparationHandler.sendMessageAtTime(Message.obtain(preparationHandler, MSG_ASYNC_PREPARATION, how, 0), SystemClock.uptimeMillis());
-		}
-		return true;
-	}
-	
+
 	private static void playInternal0(int how, Song song) {
-		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
-			return;
-		if (!hasFocus) {
-			if (state == STATE_PREPARING_PLAYBACK)
-				state = STATE_INITIALIZED;
+		if (state != STATE_INITIALIZED || !hasFocus) {
+			currentSongPreparing = false;
 			return;
 		}
 		int prepareNext = 0;
@@ -1419,16 +1400,22 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	private static void playInternal1(boolean doInternal, boolean prepareNext, int how, Song song) {
-		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
-			return;
-		if (!hasFocus) {
-			if (state == STATE_PREPARING_PLAYBACK)
-				state = STATE_INITIALIZED;
+		if (state != STATE_INITIALIZED || !hasFocus) {
+			currentSongPreparing = false;
 			return;
 		}
 		if (doInternal) {
-			if (!doPlayInternal(how, song))
-				return;
+			stopInternal(null);
+			if (how != SongList.HOW_CURRENT)
+				lastTime = -1;
+			currentSong = song;
+			synchronized (preparationSync) {
+				currentPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+				preparationPlayer = currentPlayer;
+				preparationSong = currentSong;
+				preparationVersion++;
+			}
+			preparationHandler.sendMessageAtTime(Message.obtain(preparationHandler, MSG_ASYNC_PREPARATION, how, preparationVersion), SystemClock.uptimeMillis());
 			sendMessageAtFrontOfQueue(MSG_PREPARE_PLAYBACK_2, prepareNext ? 1 : 0, 0, song);
 		} else {
 			playInternal2(prepareNext, song);
@@ -1436,12 +1423,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	private static void playInternal2(boolean prepareNext, Song song) {
-		if (state < STATE_INITIALIZED || state >= STATE_TERMINATING)
+		if (state != STATE_INITIALIZED || !hasFocus) {
+			currentSongPreparing = false;
 			return;
-		if (state == STATE_PREPARING_PLAYBACK)
-			state = STATE_INITIALIZED;
-		if (!hasFocus)
-			return;
+		}
 		nextSong = song.possibleNextSong;
 		song.possibleNextSong = null;
 		if (nextSong == currentSong)
@@ -1454,7 +1439,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	private static Song playInternal(int how) {
-		if (thePlayer == null || state < STATE_INITIALIZED || state >= STATE_TERMINATING)
+		if (thePlayer == null || state != STATE_INITIALIZED || currentSongPreparing)
 			return null;
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
@@ -1475,10 +1460,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		}
 		if (currentPlayer == null || nextPlayer == null) {
 			initializePlayers();
-			state = STATE_PREPARING_PLAYBACK;
+			currentSongPreparing = true;
 			sendMessage(MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0, how, 0, s);
 		} else {
-			state = STATE_PREPARING_PLAYBACK;
+			currentSongPreparing = true;
 			playInternal0(how, s);
 		}
 		return s;
@@ -1497,6 +1482,16 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		nextAlreadySetForPlaying = false;
 		if (prepareDelayTimer != null)
 			prepareDelayTimer.stop();
+		synchronized (preparationSync) {
+			preparationPlayer = null;
+			preparationSong = null;
+			preparationVersion++;
+		}
+		synchronized (preparationSyncNext) {
+			preparationPlayerNext = null;
+			preparationSongNext = null;
+			preparationVersionNext++;
+		}
 		if (currentPlayer != null)
 			stopPlayer(currentPlayer);
 		if (nextPlayer != null)
@@ -1504,8 +1499,6 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	private static void fullCleanup(Song newCurrentSong) {
-		if (state == STATE_PREPARING_PLAYBACK)
-			state = STATE_INITIALIZED;
 		wasPlayingBeforeFocusLoss = false;
 		unpaused = false;
 		silenceMode = SILENCE_NORMAL;
@@ -1606,7 +1599,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static boolean playPause() {
-		if (thePlayer == null || state != STATE_INITIALIZED)
+		if (thePlayer == null || state != STATE_INITIALIZED || currentSongPreparing)
 			return false;
 		if (currentSong == null || !currentSongLoaded || !hasFocus) {
 			unpaused = true;
@@ -1648,7 +1641,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static boolean seekTo(int timeMS, boolean play) {
-		if (thePlayer == null || state != STATE_INITIALIZED)
+		if (thePlayer == null || state != STATE_INITIALIZED || currentSongPreparing)
 			return false;
 		if (!currentSongLoaded) {
 			lastTime = timeMS;
@@ -1670,6 +1663,11 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	
 	public static void nextMayHaveChanged(Song possibleNextSong) {
 		if (nextSong != possibleNextSong && nextPreparationEnabled) {
+			synchronized (preparationSyncNext) {
+				preparationPlayerNext = null;
+				preparationSongNext = null;
+				preparationVersionNext++;
+			}
 			if (currentPlayer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 				clearNextPlayer(currentPlayer);
 			if (nextPlayer != null)
@@ -1798,7 +1796,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static void setTurnOffTimer(int minutes) {
-		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) {
+		if (state == STATE_INITIALIZED) {
 			turnOffTimerOrigin = 0;
 			turnOffTimerSelectedMinutes = 0;
 			if (turnOffTimer != null) {
@@ -1839,7 +1837,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			}
 		} else {
 			if (idleTurnOffTimerSelectedMinutes > 0) {
-				if (timerShouldBeOn && (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK)) {
+				if (timerShouldBeOn && state == STATE_INITIALIZED) {
 					//refer to setIdleTurnOffTimer for more information
 					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
 					idleTurnOffTimer.start(30000);
@@ -1867,7 +1865,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static void setIdleTurnOffTimer(int minutes) {
-		if (state == STATE_INITIALIZED || state == STATE_PREPARING_PLAYBACK) {
+		if (state == STATE_INITIALIZED) {
 			idleTurnOffTimerOrigin = 0;
 			idleTurnOffTimerSelectedMinutes = 0;
 			if (idleTurnOffTimer != null) {
@@ -1900,7 +1898,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 
 	public static boolean isCurrentSongPreparing() {
-		return (currentSongPreparing || currentSongBuffering || (state == STATE_PREPARING_PLAYBACK));
+		return (currentSongPreparing || currentSongBuffering);
 	}
 
 	public static int getCurrentPosition() {
@@ -2140,7 +2138,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
-		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+		if (state != STATE_INITIALIZED)
 			return;
 		if (timer == focusDelayTimer) {
 			if (thePlayer != null && hasFocus)
@@ -2151,11 +2149,19 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				nextPrepared = false;
 				if (nextPlayer != null && nextSong != null && !nextSong.isHttp) {
 					nextPreparing = true;
-					synchronized (preparationSync) {
+					synchronized (preparationSyncNext) {
+						nextPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+						try {
+							nextPlayer.reset();
+							if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+								clearNextPlayer(nextPlayer);
+						} catch (Throwable ex) {
+						}
 						preparationPlayerNext = nextPlayer;
 						preparationSongNext = nextSong;
-						preparationHandler.sendEmptyMessageAtTime(MSG_ASYNC_PREPARATION_NEXT, SystemClock.uptimeMillis());
+						preparationVersionNext++;
 					}
+					preparationHandler.sendMessageAtTime(Message.obtain(preparationHandler, MSG_ASYNC_PREPARATION_NEXT, 0, preparationVersionNext), SystemClock.uptimeMillis());
 				}
 			}
 		} else if (timer == volumeTimer) {
@@ -2233,7 +2239,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	
 	@Override
 	public void onAudioFocusChange(int focusChange) {
-		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+		if (state != STATE_INITIALIZED)
 			return;
 		if (focusDelayTimer != null)
 			focusDelayTimer.stop();
@@ -2262,8 +2268,6 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			break;
 		case AudioManager.AUDIOFOCUS_LOSS:
 		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-			if (state == STATE_PREPARING_PLAYBACK)
-				state = STATE_INITIALIZED;
 			//we just cannot replace wasPlayingBeforeFocusLoss's value with
 			//playing, because if a second focus loss occurred BEFORE focusDelayTimer
 			//had a chance to trigger, then playing would be false, when in fact,
@@ -2315,7 +2319,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
-		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+		if (state != STATE_INITIALIZED)
 			return true;
 		if (mp == nextPlayer || mp == currentPlayer) {
 			if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
@@ -2352,14 +2356,16 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	
 	@Override
 	public void onPrepared(MediaPlayer mp) {
-		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+		if (state != STATE_INITIALIZED)
 			return;
 		if (mp == nextPlayer && preparationSongNext == nextSong && nextSong != null) {
+			preparationSongNext = null;
 			nextPreparing = false;
 			nextPrepared = true;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 				setNextPlayer();
 		} else if (mp == currentPlayer && preparationSong == currentSong && currentSong != null) {
+			preparationSong = null;
 			try {
 				if (!hasFocus) {
 					fullCleanup(currentSong);
@@ -2398,7 +2404,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	
 	@Override
 	public void onSeekComplete(MediaPlayer mp) {
-		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+		if (state != STATE_INITIALIZED)
 			return;
 		if (mp == currentPlayer) {
 			try {
@@ -2423,7 +2429,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	
 	@Override
 	public void onCompletion(MediaPlayer mp) {
-		if (state != STATE_INITIALIZED && state != STATE_PREPARING_PLAYBACK)
+		if (state != STATE_INITIALIZED)
 			return;
 		if (playing)
 			playInternal(SongList.HOW_NEXT_AUTO);
@@ -2491,8 +2497,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				Equalizer.release();
@@ -2500,8 +2505,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				BassBoost.release();
@@ -2509,8 +2513,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				Virtualizer.release();
@@ -2519,8 +2522,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				if (Equalizer.isEnabled() && currentPlayer != null)
@@ -2529,8 +2531,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				if (Equalizer.isEnabled() && currentPlayer != null)
@@ -2539,8 +2540,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				if (BassBoost.isEnabled() && currentPlayer != null)
@@ -2549,8 +2549,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_6:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				if (BassBoost.isEnabled() && currentPlayer != null)
@@ -2559,8 +2558,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_7:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				if (Virtualizer.isEnabled() && currentPlayer != null)
@@ -2569,8 +2567,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_8:
 				if (!hasFocus) {
-					if (state == STATE_PREPARING_PLAYBACK)
-						state = STATE_INITIALIZED;
+					currentSongPreparing = false;
 					break;
 				}
 				if (Virtualizer.isEnabled() && currentPlayer != null)
@@ -2801,19 +2798,51 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 					System.exit(0);
 				}
 				break;
+			case MSG_ASYNC_PREPARATION:
+				if (preparationVersion == msg.arg2) {
+					try {
+						if (currentPlayer != null) {
+							//PresetReverb.applyToPlayer(currentPlayer);
+							currentPlayer.prepareAsync();
+						}
+						break;
+					} catch (Throwable ex) {
+						msg.obj = ex;
+					}
+				} else {
+					break;
+				}
+				//let it fall through when an exception happenss
 			case MSG_ASYNC_PREPARATION_FAILED:
-				if (preparationSong == currentSong && currentSong != null) {
-					currentSong.possibleNextSong = null;
+				if (preparationVersion == msg.arg2) {
+					preparationSong = null;
+					if (currentSong != null)
+						currentSong.possibleNextSong = null;
 					fullCleanup(currentSong);
 					nextFailed(currentSong, msg.arg1, (Throwable)msg.obj);
-					preparationSong = null;
 				}
 				break;
+			case MSG_ASYNC_PREPARATION_NEXT:
+				if (preparationVersionNext == msg.arg2) {
+					try {
+						if (nextPlayer != null) {
+							//PresetReverb.applyToPlayer(nextPlayer);
+							nextPlayer.prepareAsync();
+						}
+						break;
+					} catch (Throwable ex) {
+					}
+				} else {
+					break;
+				}
+				//let it fall through when an exception happenss
 			case MSG_ASYNC_PREPARATION_NEXT_FAILED:
-				if (preparationSongNext == nextSong && nextSong != null) {
-					nextSong = null;
-					nextPlayer.reset();
+				if (preparationVersionNext == msg.arg2) {
 					preparationSongNext = null;
+					nextSong = null;
+					nextPreparing = false;
+					if (nextPlayer != null)
+						nextPlayer.reset();
 				}
 				break;
 			}
@@ -2835,50 +2864,55 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				return;
 			}
 			final MediaPlayer mp;
-			final Song song;
-			final int playerMsg, arg;
-			synchronized (preparationSync) {
-				if (state >= STATE_TERMINATING) {
-					final Looper looper = Looper.myLooper();
-					if (looper != null)
-						looper.quit();
-					return;
-				}
-				switch (msg.what) {
-				case MSG_ASYNC_PREPARATION:
-					if (preparationPlayer != currentPlayer || preparationPlayer == null || preparationSong != currentSong || preparationSong == null)
+			switch (msg.what) {
+			case MSG_ASYNC_PREPARATION:
+				synchronized (preparationSync) {
+					if (state >= STATE_TERMINATING) {
+						final Looper looper = Looper.myLooper();
+						if (looper != null)
+							looper.quit();
+						return;
+					}
+					if (preparationPlayer == null || preparationSong == null || preparationVersion != msg.arg2)
 						return;
 					mp = preparationPlayer;
-					song = preparationSong;
-					playerMsg = MSG_ASYNC_PREPARATION_FAILED;
-					arg = msg.arg1;
 					preparationPlayer = null;
-					break;
-				case MSG_ASYNC_PREPARATION_NEXT:
-					if (preparationPlayerNext != nextPlayer || preparationPlayerNext == null || preparationSongNext != nextSong || preparationSongNext == null)
+					try {
+						if (preparationSong.path == null || preparationSong.path.length() == 0) {
+							Player.sendMessage(MSG_ASYNC_PREPARATION_FAILED, msg.arg1, msg.arg2, new IOException());
+						} else {
+							mp.setDataSource(preparationSong.path);
+							Player.sendMessage(MSG_ASYNC_PREPARATION, 0, msg.arg2);
+						}
+					} catch (Throwable ex) {
+						Player.sendMessage(MSG_ASYNC_PREPARATION_FAILED, msg.arg1, msg.arg2, ex);
+					}
+				}
+				break;
+			case MSG_ASYNC_PREPARATION_NEXT:
+				synchronized (preparationSyncNext) {
+					if (state >= STATE_TERMINATING) {
+						final Looper looper = Looper.myLooper();
+						if (looper != null)
+							looper.quit();
+						return;
+					}
+					if (preparationPlayerNext == null || preparationSongNext == null || preparationVersionNext != msg.arg2)
 						return;
 					mp = preparationPlayerNext;
-					song = preparationSongNext;
-					playerMsg = MSG_ASYNC_PREPARATION_NEXT_FAILED;
-					arg = 0;
 					preparationPlayerNext = null;
-					break;
-				default:
-					return;
+					try {
+						if (preparationSongNext.path == null || preparationSongNext.path.length() == 0) {
+							Player.sendMessage(MSG_ASYNC_PREPARATION_NEXT_FAILED, 0, msg.arg2, new IOException());
+						} else {
+							mp.setDataSource(preparationSongNext.path);
+							Player.sendMessage(MSG_ASYNC_PREPARATION_NEXT, 0, msg.arg2);
+						}
+					} catch (Throwable ex) {
+						Player.sendMessage(MSG_ASYNC_PREPARATION_NEXT_FAILED, 0, msg.arg2, ex);
+					}
 				}
-				try {
-					mp.reset();
-					mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
-					if (song.path == null || song.path.length() == 0)
-						throw new IOException();
-					mp.setDataSource(song.path);
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-						clearNextPlayer(mp);
-					//PresetReverb.applyToPlayer(mp);
-					mp.prepareAsync();
-				} catch (Throwable ex) {
-					Player.sendMessage(playerMsg, arg, 0, ex);
-				}
+				break;
 			}
 		}
 	}

@@ -336,7 +336,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private void addSongs(View sourceView) {
-		if (Player.state == Player.STATE_INITIALIZED || Player.state == Player.STATE_PREPARING_PLAYBACK) {
+		if (Player.state == Player.STATE_INITIALIZED) {
 			Player.alreadySelected = false;
 			//startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
 			startActivity(new ActivityBrowser2(), 0, sourceView, sourceView != null);
@@ -441,7 +441,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
  	public View getNullContextMenuView() {
-		return ((!Player.songs.selecting && !Player.songs.moving && (Player.state == Player.STATE_INITIALIZED || Player.state == Player.STATE_PREPARING_PLAYBACK)) ? btnMenu : null);
+		return ((!Player.songs.selecting && !Player.songs.moving && Player.state == Player.STATE_INITIALIZED) ? btnMenu : null);
 	}
 	
 	@Override
@@ -552,7 +552,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			finish(0, null, false);
 			return true;
 		}
-		if (Player.state < Player.STATE_INITIALIZED || Player.state >= Player.STATE_TERMINATING)
+		if (Player.state != Player.STATE_INITIALIZED)
 			return true;
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:

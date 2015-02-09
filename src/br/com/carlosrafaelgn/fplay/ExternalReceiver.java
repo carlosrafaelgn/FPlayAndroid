@@ -72,7 +72,7 @@ public final class ExternalReceiver extends BroadcastReceiver implements MainHan
 	
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		if (intent == null || (Player.state != Player.STATE_INITIALIZED && Player.state != Player.STATE_PREPARING_PLAYBACK))
+		if (intent == null || Player.state != Player.STATE_INITIALIZED)
 			return;
 		final String a = intent.getAction();
 		if (a == null)
