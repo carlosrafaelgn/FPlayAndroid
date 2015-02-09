@@ -267,26 +267,18 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		for (int i = 0; i < selectedCount; i++) {
 			final int r, g, b;
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_BUFFER_SIZE, value);
-			//System.out.print(i + " bs" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_SAMPLE_BUFFERS, value);
-			//System.out.print(" sp" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_SAMPLES, value);
-			//System.out.print(" s" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_DEPTH_SIZE, value);
-			//System.out.print(" d" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_STENCIL_SIZE, value);
-			//System.out.print(" st" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_ALPHA_SIZE, value);
-			//System.out.print(" a" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_ALPHA_MASK_SIZE, value);
-			//System.out.print(" am" + value[0]);
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_RED_SIZE, value);
 			r = value[0];
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_GREEN_SIZE, value);
 			g = value[0];
 			egl.eglGetConfigAttrib(display, selectedConfigs[i], EGL10.EGL_BLUE_SIZE, value);
 			b = value[0];
-			//System.out.println(" rgb" + r + " " + g + " " + b);
 			if (r != 8 || g != 8 || b != 8) {
 				if (r != 5 || g != 6 || b != 5)
 					continue;

@@ -366,6 +366,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static MediaPlayer preparationPlayer, preparationPlayerNext;
 	private static Song preparationSong, preparationSongNext;
 	private static int preparationVersion, preparationVersionNext;
+	//This flag is used to differentiate two distinct moments when currentSongPreparing == true:
+	//- When preparationMustBeWaitedFor is true, setDataSource has not finished yet
+	//- When preparationMustBeWaitedFor is false, setDataSource has already finished, but onPrepared() has not been caled
+	private static boolean preparationMustBeWaitedFor;
 
 	//These guys used to be private, but I decided to make them public, even though some of them still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
@@ -1406,6 +1410,9 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		}
 		if (doInternal) {
 			stopInternal(null);
+			//we need to reset the flags to true here, because stopInternal() sets them to false
+			currentSongPreparing = true;
+			preparationMustBeWaitedFor = true;
 			if (how != SongList.HOW_CURRENT)
 				lastTime = -1;
 			currentSong = song;
@@ -1439,7 +1446,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	private static Song playInternal(int how) {
-		if (thePlayer == null || state != STATE_INITIALIZED || currentSongPreparing)
+		if (thePlayer == null || state != STATE_INITIALIZED || (currentSongPreparing && preparationMustBeWaitedFor))
 			return null;
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
@@ -1461,9 +1468,11 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		if (currentPlayer == null || nextPlayer == null) {
 			initializePlayers();
 			currentSongPreparing = true;
+			preparationMustBeWaitedFor = true;
 			sendMessage(MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0, how, 0, s);
 		} else {
 			currentSongPreparing = true;
+			preparationMustBeWaitedFor = true;
 			playInternal0(how, s);
 		}
 		return s;
@@ -1475,6 +1484,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		playing = false;
 		currentSongLoaded = false;
 		currentSongPreparing = false;
+		preparationMustBeWaitedFor = false;
 		currentSongBuffering = false;
 		prepareNextOnSeek = false;
 		nextPreparing = false;
@@ -1599,7 +1609,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static boolean playPause() {
-		if (thePlayer == null || state != STATE_INITIALIZED || currentSongPreparing)
+		if (thePlayer == null || state != STATE_INITIALIZED || (currentSongPreparing && preparationMustBeWaitedFor))
 			return false;
 		if (currentSong == null || !currentSongLoaded || !hasFocus) {
 			unpaused = true;
@@ -1641,7 +1651,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static boolean seekTo(int timeMS, boolean play) {
-		if (thePlayer == null || state != STATE_INITIALIZED || currentSongPreparing)
+		if (thePlayer == null || state != STATE_INITIALIZED || (currentSongPreparing && preparationMustBeWaitedFor))
 			return false;
 		if (!currentSongLoaded) {
 			lastTime = timeMS;
@@ -2800,6 +2810,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				break;
 			case MSG_ASYNC_PREPARATION:
 				if (preparationVersion == msg.arg2) {
+					preparationMustBeWaitedFor = false;
 					try {
 						if (currentPlayer != null) {
 							//PresetReverb.applyToPlayer(currentPlayer);
@@ -2812,9 +2823,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				} else {
 					break;
 				}
-				//let it fall through when an exception happenss
+				//let it fall through when an exception happens
 			case MSG_ASYNC_PREPARATION_FAILED:
 				if (preparationVersion == msg.arg2) {
+					preparationMustBeWaitedFor = false;
 					preparationSong = null;
 					if (currentSong != null)
 						currentSong.possibleNextSong = null;
@@ -2835,7 +2847,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				} else {
 					break;
 				}
-				//let it fall through when an exception happenss
+				//let it fall through when an exception happens
 			case MSG_ASYNC_PREPARATION_NEXT_FAILED:
 				if (preparationVersionNext == msg.arg2) {
 					preparationSongNext = null;
