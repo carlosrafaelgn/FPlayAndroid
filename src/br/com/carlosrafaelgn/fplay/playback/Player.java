@@ -408,7 +408,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
-		UI.setTheme(null, opts.getInt(OPT_THEME, UI.THEME_CREAMY));
+		UI.setTheme(null, opts.getInt(OPT_THEME, UI.THEME_FPLAY));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);

@@ -68,7 +68,7 @@
                 android:text="@string/equalizer" />
         </LinearLayout>
 
-        <ScrollView
+        <!-- <ScrollView
             android:id="@+id/panelSecondary"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -76,14 +76,17 @@
             android:baselineAligned="false"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:visibility="gone" >
+            android:visibility="gone" > -->
 
             <LinearLayout
+                android:id="@+id/panelSecondary"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
                 android:baselineAligned="false"
-                android:gravity="center_horizontal"
-                android:orientation="vertical" >
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone" >
 
                 <br.com.carlosrafaelgn.fplay.ui.BgButton
                     android:id="@+id/chkBass"
@@ -125,13 +128,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:nextFocusDown="@+id/chkReverb"
-                    android:nextFocusForward="@+id/chkReverb"
+                    android:nextFocusDown="@+id/btnChangeEffect"
+                    android:nextFocusForward="@+id/btnChangeEffect"
                     android:nextFocusLeft="@+id/chkVirtualizer"
-                    android:nextFocusRight="@+id/chkReverb"
+                    android:nextFocusRight="@+id/btnChangeEffect"
                     android:nextFocusUp="@+id/chkVirtualizer" />
 
-                <br.com.carlosrafaelgn.fplay.ui.BgButton
+                <!-- <br.com.carlosrafaelgn.fplay.ui.BgButton
                     android:id="@+id/chkReverb"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -148,9 +151,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_horizontal"
-                    android:text="@string/coming_soon" />
+                    android:text="@string/coming_soon" /> -->
             </LinearLayout>
-        </ScrollView>
+        <!-- </ScrollView> -->
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnChangeEffect"

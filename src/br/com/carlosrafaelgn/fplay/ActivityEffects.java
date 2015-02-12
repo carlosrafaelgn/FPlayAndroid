@@ -61,7 +61,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
 	private LinearLayout panelControls, panelEqualizer, panelBars;
 	private ViewGroup panelSecondary;
-	private BgButton chkEqualizer, chkBass, chkVirtualizer, chkReverb;
+	private BgButton chkEqualizer, chkBass, chkVirtualizer;//, chkReverb;
 	private BgButton btnGoBack, btnMenu, btnChangeEffect;
 	private int min, max, barTextSizeIndex;
 	private int[] frequencies;
@@ -184,16 +184,16 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			enablingEffect = true;
 			Virtualizer.setEnabled(chkVirtualizer.isChecked(), false);
 			Player.resetEffects(this);
-		} else if (view == chkReverb) {
+		}// else if (view == chkReverb) {
 			/*if (chkReverb.isChecked()) {
 				PresetReverb.setPreset(1, true);
 				chkReverb.setChecked(PresetReverb.getPreset() != 0);
 			} else {
 				PresetReverb.setPreset(0, true);
 			}*/
-			chkReverb.setChecked(false);
+			/*chkReverb.setChecked(false);
 			UI.toast(getApplication(), R.string.coming_soon);
-		}
+		}*/
 	}
 	
 	@Override
@@ -259,10 +259,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		chkVirtualizer.setOnClickListener(this);
 		chkVirtualizer.setTextColor(UI.colorState_text_listitem_reactive);
 		chkVirtualizer.formatAsLabelledCheckBox();
-		chkReverb = (BgButton)findViewById(R.id.chkReverb);
+		/*chkReverb = (BgButton)findViewById(R.id.chkReverb);
 		chkReverb.setOnClickListener(this);
 		chkReverb.setTextColor(UI.colorState_text_listitem_reactive);
-		chkReverb.formatAsLabelledCheckBox();
+		chkReverb.formatAsLabelledCheckBox();*/
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
@@ -291,16 +291,16 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
 		barVirtualizer.setAdditionalContentDescription(getText(R.string.virtualization).toString());
-		final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
+		/*final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
 		txtReverb.setTypeface(UI.defaultTypeface);
-		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);
+		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);*/
 		LinearLayout.LayoutParams lp;
 		if (!UI.isLargeScreen && UI.isLandscape) {
 			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			/*chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);*/
 			if (btnChangeEffect != null) {
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 				lp = (LinearLayout.LayoutParams)btnChangeEffect.getLayoutParams();
@@ -319,9 +319,9 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			lp = (LinearLayout.LayoutParams)chkVirtualizer.getLayoutParams();
 			lp.bottomMargin = 0;
 			chkVirtualizer.setLayoutParams(lp);
-			lp = (LinearLayout.LayoutParams)chkReverb.getLayoutParams();
+			/*lp = (LinearLayout.LayoutParams)chkReverb.getLayoutParams();
 			lp.bottomMargin = 0;
-			chkReverb.setLayoutParams(lp);
+			chkReverb.setLayoutParams(lp);*/
 			lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
 			lp.bottomMargin = UI._8dp;
 			barBass.setLayoutParams(lp);
@@ -333,8 +333,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			/*chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
+			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);*/
 			if (btnChangeEffect != null)
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			if (UI.isLargeScreen) {
@@ -372,8 +372,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			/*chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);*/
 			if (btnChangeEffect != null)
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 			barTextSizeIndex = 1;
@@ -401,7 +401,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		chkEqualizer = null;
 		chkBass = null;
 		chkVirtualizer = null;
-		chkReverb = null;
+		//chkReverb = null;
 		btnGoBack = null;
 		btnMenu = null;
 		btnChangeEffect = null;
@@ -504,8 +504,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			btnGoBack.setNextFocusRightId(R.id.chkBass);
 			btnGoBack.setNextFocusDownId(R.id.chkBass);
 			UI.setNextFocusForwardId(btnGoBack, R.id.chkBass);
-			btnChangeEffect.setNextFocusUpId(R.id.chkReverb);
-			btnChangeEffect.setNextFocusLeftId(R.id.chkReverb);
+			btnChangeEffect.setNextFocusUpId(R.id.barVirtualizer);//R.id.chkReverb);
+			btnChangeEffect.setNextFocusLeftId(R.id.barVirtualizer);//R.id.chkReverb);
 		} else {
 			if (btnChangeEffect != null) {
 				panelSecondary.setVisibility(View.GONE);

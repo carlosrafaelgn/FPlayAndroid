@@ -22,7 +22,7 @@
             android:contentDescription="@string/go_back"
             android:nextFocusDown="@+id/chkEqualizer"
             android:nextFocusForward="@+id/btnMenu"
-            android:nextFocusLeft="@+id/chkReverb"
+            android:nextFocusLeft="@+id/barVirtualizer"
             android:nextFocusRight="@+id/btnMenu"
             android:nextFocusUp="@+id/chkEqualizer" >
 
@@ -39,7 +39,7 @@
             android:nextFocusForward="@+id/chkEqualizer"
             android:nextFocusLeft="@+id/btnGoBack"
             android:nextFocusRight="@+id/chkEqualizer"
-            android:nextFocusUp="@+id/chkReverb" />
+            android:nextFocusUp="@+id/barVirtualizer" />
     </RelativeLayout>
 
     <LinearLayout
@@ -75,14 +75,14 @@
         <LinearLayout
             android:id="@+id/panelSecondary"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_marginBottom="32dp"
             android:layout_marginLeft="16dp"
             android:layout_marginRight="32dp"
             android:layout_marginTop="32dp"
             android:layout_weight="2"
             android:baselineAligned="false"
-            android:gravity="center_horizontal"
+            android:gravity="center"
             android:orientation="vertical" >
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -124,13 +124,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
-                android:nextFocusDown="@+id/chkReverb"
-                android:nextFocusForward="@+id/chkReverb"
+                android:nextFocusDown="@+id/btnMenu"
+                android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/chkVirtualizer"
-                android:nextFocusRight="@+id/chkReverb"
+                android:nextFocusRight="@+id/btnGoBack"
                 android:nextFocusUp="@+id/chkVirtualizer" />
 
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
+            <!-- <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/chkReverb"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -147,7 +147,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center_horizontal"
-                android:text="@string/coming_soon" />
+                android:text="@string/coming_soon" /> -->
         </LinearLayout>
     </LinearLayout>
 

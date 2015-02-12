@@ -114,8 +114,9 @@ public final class UI {
 	public static final int THEME_ORANGE = 2;
 	public static final int THEME_LIGHT = 4;
 	public static final int THEME_DARK_LIGHT = 5;
-	//present the new creamy theme to all those using the dark/light theme ;)
-	public static final int THEME_CREAMY = 3;
+	public static final int THEME_CREAMY = 6;
+	//present the new FPlay theme to all those using the creamy theme ;)
+	public static final int THEME_FPLAY = 3;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -1078,31 +1079,31 @@ public final class UI {
 		color_list = 0xff080808;
 		color_menu = 0xffffffff;
 		color_menu_icon = 0xff555555;
-		color_divider = 0xff3f3f3f; //0xff464646;
+		color_divider = 0xff3f3f3f;
 		color_highlight = 0xfffad35a;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
-		color_text_disabled = 0xff8c8c8c; //959595;
+		color_text_disabled = 0xff8c8c8c;
 		color_text_listitem = 0xffffffff;
 		color_text_listitem_secondary = 0xfffad35a;
 		color_text_selected = 0xff000000;
 		color_text_menu = 0xff000000;
 		if (invertSelectedAndFocus) {
 			color_focused_grad_lt = 0xffd1e8ff;
-			color_focused_grad_dk = 0xff5da2e3;
+			color_focused_grad_dk = 0xff5798ff;//0xff5da2e3;
 			color_focused_border = 0xff518ec2;
 			color_focused_pressed = 0xffcfe1ff;
 			color_selected_grad_lt = 0xfff7eb6a;
-			color_selected_grad_dk = 0xfffeb645;
+			color_selected_grad_dk = 0xfffdbb4a;//0xfffeb645;
 			color_selected_border = 0xffad9040;
 			color_selected_pressed = 0xffffeed4;
 		} else {
 			color_selected_grad_lt = 0xffd1e8ff;
-			color_selected_grad_dk = 0xff5da2e3;
+			color_selected_grad_dk = 0xff5798ff;//0xff5da2e3;
 			color_selected_border = 0xff518ec2;
 			color_selected_pressed = 0xffcfe1ff;
 			color_focused_grad_lt = 0xfff7eb6a;
-			color_focused_grad_dk = 0xfffeb645;
+			color_focused_grad_dk = 0xfffdbb4a;//0xfffeb645;
 			color_focused_border = 0xffad9040;
 			color_focused_pressed = 0xffffeed4;
 		}
@@ -1131,7 +1132,7 @@ public final class UI {
 		color_control_mode = 0xffe0e0e0;
 		color_visualizer = 0xffe0e0e0;
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffb8b8b8; //0xffa0a0a0;
+		color_divider = 0xffb8b8b8;
 		color_highlight = 0xff0000f1;
 		color_text_highlight = 0xffffffff;
 		color_text = 0xff000000;
@@ -1143,7 +1144,7 @@ public final class UI {
 	public static void loadDarkLightTheme() {
 		loadCommonColors(false);
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffb8b8b8; //0xffa0a0a0;
+		color_divider = 0xffb8b8b8;
 		color_text_listitem_secondary = 0xff0000f1;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
@@ -1160,7 +1161,37 @@ public final class UI {
 		color_text_title = color_text;
 		colorState_text_title_static = colorState_text_static;
 	}
-	
+
+	public static void loadFPlayTheme() {
+		color_window = 0xff444abf;
+		color_control_mode = 0xff000000;
+		color_visualizer = 0xff000000;
+		color_list = 0xfffcfcfc;
+		color_menu = 0xfffcfcfc;
+		color_menu_icon = 0xff555555;
+		color_divider = 0xffbbbbbb;
+		color_highlight = 0xffffcc66;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff8c8c8c;
+		color_text_listitem = 0xff000000;
+		color_text_listitem_secondary = 0xff353be0;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xff000000;
+		color_selected_grad_lt = 0xffffdd99;
+		color_selected_grad_dk = 0xffffbb33;
+		color_selected_border = 0xffce9731;
+		color_selected_pressed = 0xffffe5b5;
+		color_focused_grad_lt = 0xffd6d8ff;
+		color_focused_grad_dk = 0xffaaafff;
+		color_focused_border = 0xff696dbf;
+		color_focused_pressed = 0xffe5e6ff;
+		finishLoadingTheme(false);
+		color_menu_border = 0xffbbbbbb;
+		color_text_title = color_text;
+		colorState_text_title_static = colorState_text_static;
+	}
+
 	public static String getThemeString(Context context, int theme) {
 		switch (theme) {
 		case THEME_CUSTOM:
@@ -1175,8 +1206,10 @@ public final class UI {
 			return context.getText(R.string.light).toString();
 		case THEME_DARK_LIGHT:
 			return context.getText(R.string.dark_light).toString();
-		default:
+		case THEME_CREAMY:
 			return context.getText(R.string.creamy).toString();
+		default:
+			return "FPlay";
 		}
 	}
 
@@ -1203,9 +1236,12 @@ public final class UI {
 		case THEME_DARK_LIGHT:
 			loadDarkLightTheme();
 			break;
-		default:
-			UI.theme = THEME_CREAMY;
+		case THEME_CREAMY:
 			loadCreamyTheme();
+			break;
+		default:
+			UI.theme = THEME_FPLAY;
+			loadFPlayTheme();
 			break;
 		}
 		if (activity != null)
@@ -1283,16 +1319,16 @@ public final class UI {
 	}
 
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 14) {
-			msgStartup = 14;
+		if (msgStartup >= 15) {
+			msgStartup = 15;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 14;
+		msgStartup = 15;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
-		final String content = activity.getText(R.string.visualizer).toString() + "! :D\n\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
 		.setView(createDialogView(activity, content))

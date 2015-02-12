@@ -913,9 +913,9 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 						UI.rect.top += scrollBarThumbHeight;
 					}
 					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
-					UI.textPaint.setColor(UI.color_text_selected);
-					UI.fillRect(canvas, UI.color_selected_pressed);
-					UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
+					UI.textPaint.setColor(UI.color_text_listitem);//UI.color_text_selected);
+					UI.fillRect(canvas, UI.color_list);//UI.color_selected_pressed);
+					//UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
 					canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
 					UI.textPaint.setColor(UI.color_text_highlight);
 					UI.rect.top = UI.rect.bottom;
