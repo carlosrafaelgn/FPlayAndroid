@@ -295,16 +295,15 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public View createView() {
-		return new FileView(Player.getService(), albumArtFetcher, true, true);
+		return new FileView(Player.getService(), albumArtFetcher, true);
 	}
-	
-	@Override
-	public void processItemButtonClick(int position, boolean add) {
+
+	private void processItemCheckboxClickInternal(int position, boolean forceNotifyCheckedChanged) {
 		//somehow, Google Play indicates a NullPointerException, either here or
 		//in processItemClick, in a LG Optimus L3 (2.3.3) :/
 		if (list == null || fileList == null)
 			return;
-		if (!add && !list.isInTouchMode())
+		if (!list.isInTouchMode())
 			fileList.setSelection(position, true);
 		final FileSt file = fileList.getItemT(position);
 		if (file == null) //same as above
@@ -332,6 +331,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 								album.isChecked = true;
 								checkedCount++;
 								fileList.notifyCheckedChanged();
+								forceNotifyCheckedChanged = false;
 							}
 							break;
 						}
@@ -352,6 +352,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 								album.isChecked = false;
 								checkedCount--;
 								fileList.notifyCheckedChanged();
+								forceNotifyCheckedChanged = false;
 							}
 							break;
 						}
@@ -364,6 +365,21 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			}
 			updateButtons();
 		}
+		if (forceNotifyCheckedChanged) {
+			if (list != null) {
+				final FileView view = (FileView)list.getViewForPosition(position);
+				if (view != null) {
+					view.refreshItem();
+					return;
+				}
+			}
+			fileList.notifyCheckedChanged();
+		}
+	}
+
+	@Override
+	public void processItemCheckboxClick(int position) {
+		processItemCheckboxClickInternal(position, false);
 	}
 	
 	@Override
@@ -380,9 +396,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				navigateTo(file.path, null);
 			} else {
 				file.isChecked = !file.isChecked;
-				if (file.specialType != FileSt.TYPE_ALBUM_ITEM)
-					fileList.notifyCheckedChanged();
-				processItemButtonClick(position, true);
+				processItemCheckboxClickInternal(position, true);
 			}
 		} else {
 			fileList.setSelection(position, true);
@@ -391,11 +405,16 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public void processItemLongClick(int position) {
+		if (!isAtHome || loading || list == null || fileList == null || position < 0 || position >= fileList.getCount())
+			return;
 		lastClickedFavorite = fileList.getItemT(position);
-		if (lastClickedFavorite.specialType == FileSt.TYPE_FAVORITE)
-			CustomContextMenu.openContextMenu(chkAll, this);
-		else
+		if (lastClickedFavorite.specialType == FileSt.TYPE_FAVORITE) {
+			if (UI.doubleClickMode && fileList.getSelection() != position)
+				fileList.setSelection(position, true);
+			CustomContextMenu.openContextMenu(list, this);
+		} else {
 			lastClickedFavorite = null;
+		}
 	}
 	
 	private void processMenuItemClick(int id) {
@@ -413,7 +432,21 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			break;
 		}
 	}
-	
+
+	@Override
+	public View getNullContextMenuView() {
+		if (isAtHome && !loading && list != null && fileList != null) {
+			final int p = fileList.getSelection();
+			if (p < 0 || p >= fileList.getCount())
+				return null;
+			lastClickedFavorite = fileList.getItemT(p);
+			if (lastClickedFavorite.specialType == FileSt.TYPE_FAVORITE)
+				return list;
+			lastClickedFavorite = null;
+		}
+		return null;
+	}
+
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		UI.prepare(menu);
@@ -499,16 +532,20 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				btnGoBack.requestFocus();
 			return true;
 		case UI.KEY_ENTER:
-			p = fileList.getSelection();
-			if (p >= 0)
-				processItemClick(p);
+			if (fileList != null) {
+				p = fileList.getSelection();
+				if (p >= 0)
+					processItemClick(p);
+			}
 			return true;
 		case UI.KEY_EXTRA:
-			p = fileList.getSelection();
-			if (p >= 0 && !isAtHome) {
-				final FileSt file = fileList.getItemT(p);
-				file.isChecked = !file.isChecked;
-				processItemButtonClick(p, false);
+			if (fileList != null && !isAtHome) {
+				p = fileList.getSelection();
+				if (p >= 0) {
+					final FileSt file = fileList.getItemT(p);
+					file.isChecked = !file.isChecked;
+					processItemCheckboxClickInternal(p, true);
+				}
 			}
 			return true;
 		}
@@ -761,12 +798,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY);
-		if (UI.isLargeScreen) {
+		if (UI.isLargeScreen)
 			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-		} else if (UI.isLowDpiScreen) {
-			btnRadio.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			btnURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		}
 		if (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED ||
 			UI.browserScrollBarType == BgListView.SCROLLBAR_LARGE) {
 			UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);

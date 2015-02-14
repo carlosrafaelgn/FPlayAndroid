@@ -128,6 +128,11 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		descriptionY = top + ((height - top - bottom) >> 1) - ((visibleLines * UI._14spBox) >> 1) + UI._14spYinBox;
 	}
 
+	public void refreshItemFavoriteButton() {
+		if (station != null && btnFavorite != null)
+			btnFavorite.setChecked(station.isFavorite);
+	}
+
 	@Override
 	public CharSequence getContentDescription() {
 		if (station != null)
@@ -273,7 +278,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			if (station != null)
 				station.isFavorite = btnFavorite.isChecked();
 			if (UI.browserActivity != null)
-				UI.browserActivity.processItemButtonClick(position, true);
+				UI.browserActivity.processItemCheckboxClick(position);
 		} else {
 			if (UI.browserActivity != null)
 				UI.browserActivity.processItemClick(position);

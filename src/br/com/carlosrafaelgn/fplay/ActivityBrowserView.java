@@ -36,6 +36,6 @@ import android.view.View;
 
 public abstract class ActivityBrowserView extends ActivityItemView {
 	public abstract void loadingProcessChanged(boolean started);
-	public abstract void processItemButtonClick(int position, boolean add);
+	public abstract void processItemCheckboxClick(int position);
 	public View createView() { return null; }
 }

@@ -243,7 +243,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	}
 	
 	@Override
-	public void processItemButtonClick(int position, boolean add) {
+	public void processItemCheckboxClick(int position) {
 		final RadioStation station = radioStationList.getItemT(position);
 		if (station.isFavorite)
 			radioStationList.addFavoriteStation(station);
@@ -302,9 +302,29 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			btnGoBackToPlayer.requestFocus();
 			return true;
 		case UI.KEY_ENTER:
-			p = radioStationList.getSelection();
-			if (p >= 0)
-				processItemClick(p);
+			if (radioStationList != null) {
+				p = radioStationList.getSelection();
+				if (p >= 0)
+					processItemClick(p);
+			}
+			return true;
+		case UI.KEY_EXTRA:
+			if (radioStationList != null) {
+				p = radioStationList.getSelection();
+				if (p >= 0) {
+					final RadioStation station = radioStationList.getItemT(p);
+					station.isFavorite = !station.isFavorite;
+					processItemCheckboxClick(p);
+					if (list != null) {
+						final RadioStationView view = (RadioStationView)list.getViewForPosition(p);
+						if (view != null) {
+							view.refreshItemFavoriteButton();
+							break;
+						}
+					}
+					radioStationList.notifyCheckedChanged();
+				}
+			}
 			return true;
 		}
 		return false;

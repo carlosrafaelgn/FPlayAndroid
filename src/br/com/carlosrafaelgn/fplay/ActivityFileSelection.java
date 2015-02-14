@@ -44,6 +44,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.Formatter;
@@ -56,6 +57,7 @@ import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
@@ -68,15 +70,17 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private static final int MNU_LOAD = 100, MNU_SAVE = 101, MNU_SAVEAS = 102, MNU_DELETE = 103;
 	private final boolean save, hasButtons;
 	private final String fileType, itemType;
-	private final CharSequence title;
-	private final OnFileSelectionListener listener;
 	private final int id;
-	private final StringBuilder formatterSB;
-	private final Formatter formatter;
+	private CharSequence title;
+	private OnFileSelectionListener listener;
+	private StringBuilder formatterSB;
+	private Formatter formatter;
 	private EditText txtSaveAsName;
 	private BgListView list;
 	private FileList fileList;
-	private BgButton btnGoBack, btnMenu;
+	private FileSt checkedFile;
+	private BgButton btnGoBack, btnMenu, btnAdd, btnPlay;
+	private RelativeLayout panelSecondary;
 	private boolean loading;
 	private int lastLongClickedId;
 	
@@ -86,7 +90,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		this.title = title;
 		this.id = id;
 		this.save = save;
-		this.hasButtons = hasButtons;
+		this.hasButtons = (hasButtons && !save);
 		this.itemType = itemType;
 		this.fileType = fileType;
 		this.listener = listener;
@@ -100,6 +104,64 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		return title;
 	}
 
+	private void updateOverallLayout() {
+		if (!save) {
+			RelativeLayout.LayoutParams rp;
+			final int count = ((fileList != null) ? fileList.getCount() : 0);
+			if (count != 0) {
+				if (btnGoBack != null) {
+					btnGoBack.setNextFocusRightId(R.id.btnMenu);
+					UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
+				}
+				if (btnMenu != null)
+					btnMenu.setVisibility(View.VISIBLE);
+			} else {
+				checkedFile = null;
+				if (btnGoBack != null) {
+					btnGoBack.setNextFocusRightId(R.id.list);
+					UI.setNextFocusForwardId(btnGoBack, R.id.list);
+				}
+				if (btnMenu != null)
+					btnMenu.setVisibility(View.GONE);
+			}
+			if (checkedFile == null) {
+				if (panelSecondary != null && panelSecondary.getVisibility() != View.GONE) {
+					if (list != null) {
+						rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+						rp.addRule(RelativeLayout.BELOW, R.id.panelControls);
+						rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+						list.setLayoutParams(rp);
+						UI.setNextFocusForwardId(list, R.id.btnGoBack);
+					}
+					panelSecondary.setVisibility(View.GONE);
+					if (btnMenu != null)
+						btnMenu.setNextFocusUpId(R.id.list);
+					if (btnGoBack != null) {
+						btnGoBack.setNextFocusUpId(R.id.list);
+						btnGoBack.setNextFocusLeftId(R.id.list);
+					}
+				}
+			} else {
+				if (panelSecondary != null && panelSecondary.getVisibility() != View.VISIBLE) {
+					if (list != null) {
+						rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+						rp.addRule(RelativeLayout.BELOW, R.id.panelControls);
+						rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
+						list.setLayoutParams(rp);
+						UI.setNextFocusForwardId(list, R.id.btnAdd);
+					}
+					panelSecondary.setVisibility(View.VISIBLE);
+					if (btnMenu != null)
+						btnMenu.setNextFocusUpId(R.id.btnPlay);
+					if (btnGoBack != null) {
+						btnGoBack.setNextFocusUpId(R.id.btnPlay);
+						btnGoBack.setNextFocusLeftId(R.id.btnPlay);
+					}
+				}
+			}
+		}
+	}
+
 	private String format(int resId, String p1) {
 		formatterSB.delete(0, formatterSB.length());
 		formatter.format(getText(resId).toString(), p1);
@@ -111,25 +173,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		formatter.format(getText(resId).toString(), p1, p2);
 		return formatterSB.toString();
 	}
-	
-	private void updateMenu(int count) {
-		if (count != 0 || save) {
-			if (btnGoBack != null) {
-				btnGoBack.setNextFocusRightId(R.id.btnMenu);
-				UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
-			}
-			if (btnMenu != null)
-				btnMenu.setVisibility(View.VISIBLE);
-		} else {
-			if (btnGoBack != null) {
-				btnGoBack.setNextFocusRightId(R.id.list);
-				UI.setNextFocusForwardId(btnGoBack, R.id.list);
-			}
-			if (btnMenu != null)
-				btnMenu.setVisibility(View.GONE);
-		}
-	}
-	
+
 	@Override
 	public void loadingProcessChanged(boolean started) {
 		if (UI.browserActivity != this)
@@ -147,26 +191,28 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (list != null)
 			list.setCustomEmptyText(started ? getText(R.string.loading) : null);
 		if (!started)
-			updateMenu(count);
+			updateOverallLayout();
 	}
 	
 	@Override
 	public View createView() {
-		return new FileView(Player.getService(), null, hasButtons, false);
+		return new FileView(Player.getService(), null, hasButtons);
 	}
 	
 	@Override
-	public void processItemButtonClick(int position, boolean add) {
+	public void processItemCheckboxClick(int position) {
 		if (!hasButtons)
 			return;
+		//see the comments at processItemButtonClick(), in ActivityBrowser2
+		if (list == null || fileList == null)
+			return;
+		if (!list.isInTouchMode())
+			fileList.setSelection(position, true);
 		final FileSt file = fileList.getItemT(position);
-		if (add) {
-			listener.onAddClicked(id, file.path, file.name);
-		} else {
-			listener.onPlayClicked(id, file.path, file.name);
-			if (Player.goBackWhenPlayingFolders)
-				finish(0, (list == null) ? null : list.getViewForPosition(position), true);
-		}
+		if (file == null) //same as above
+			return;
+		checkedFile = (file.isChecked ? file : null);
+		updateOverallLayout();
 	}
 	
 	private void confirm(final String path, final String name, final boolean delete) {
@@ -179,12 +225,14 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					try {
 						getApplication().deleteFile(path);
 						fileList.removeSelection();
-						updateMenu(fileList.getCount());
+						updateOverallLayout();
 					} catch (Throwable ex) {
 					}
 				} else {
+					final OnFileSelectionListener listener = ActivityFileSelection.this.listener;
 					finish(0, null, false);
-					listener.onFileSelected(ActivityFileSelection.this.id, path, name);
+					if (listener != null)
+						listener.onFileSelected(ActivityFileSelection.this.id, path, name);
 				}
 			}
 		})
@@ -194,14 +242,19 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	public void processItemClick(int position) {
-		if (fileList.getSelection() == position || (!UI.doubleClickMode && !hasButtons)) {
+		//see the comments at processItemClick(), in ActivityBrowser2
+		if (list == null || fileList == null)
+			return;
+		if (!UI.doubleClickMode || fileList.getSelection() == position) {
 			final FileSt file = fileList.getItemT(position);
 			if (save) {
 				confirm(file.path, file.name, false);
 				return;
 			}
+			final OnFileSelectionListener listener = this.listener;
 			finish(0, (list == null) ? null : list.getViewForPosition(position), true);
-			listener.onFileSelected(id, file.path, file.name);
+			if (listener != null)
+				listener.onFileSelected(id, file.path, file.name);
 		} else {
 			fileList.setSelection(position, true);
 		}
@@ -209,7 +262,9 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	public void processItemLongClick(int position) {
-		if (fileList.getSelection() != position && (UI.doubleClickMode || hasButtons))
+		if (list == null || fileList == null)
+			return;
+		if (UI.doubleClickMode && fileList.getSelection() != position)
 			fileList.setSelection(position, true);
 		lastLongClickedId = position;
 		CustomContextMenu.openContextMenu(btnMenu, this);
@@ -265,20 +320,25 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	public View getNullContextMenuView() {
-		return btnMenu;
+		if (list != null && fileList != null && !loading) {
+			if ((lastLongClickedId = fileList.getSelection()) < 0)
+				return (save ? null : btnMenu);
+			return btnMenu;
+		}
+		return null;
 	}
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		final int i = ((lastLongClickedId < 0) ? fileList.getSelection() : lastLongClickedId);
 		UI.prepare(menu);
-		if (save)
-			menu.add(0, MNU_SAVEAS, 0, format(R.string.msg_create_new, itemType))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_SAVE));
+		//if (save)
+		//	menu.add(0, MNU_SAVEAS, 0, format(R.string.msg_create_new, itemType))
+		//		.setOnMenuItemClickListener(this)
+		//		.setIcon(new TextIconDrawable(UI.ICON_SAVE));
 		if (i >= 0) {
 			if (save)
-				menu.add(0, MNU_SAVE, 1, format(R.string.msg_overwrite, itemType, fileList.getItemT(i).name))
+				menu.add(0, MNU_SAVE, 0, format(R.string.msg_overwrite, itemType, fileList.getItemT(i).name))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable(UI.ICON_SAVE));
 			else
@@ -305,17 +365,39 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
+		int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
 			((btnMenu.getVisibility() == View.VISIBLE) ? btnMenu : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_RIGHT:
-			btnGoBack.requestFocus();
+			((btnAdd != null && panelSecondary != null && panelSecondary.getVisibility() == View.VISIBLE) ? btnAdd : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_ENTER:
-			final int p = fileList.getSelection();
-			if (p >= 0)
-				processItemClick(p);
+			if (fileList != null) {
+				p = fileList.getSelection();
+				if (p >= 0)
+					processItemClick(p);
+			}
+			return true;
+		case UI.KEY_EXTRA:
+			if (fileList != null && hasButtons) {
+				p = fileList.getSelection();
+				if (p >= 0) {
+					final FileSt file = fileList.getItemT(p);
+					if (checkedFile == file) {
+						file.isChecked = false;
+						checkedFile = null;
+					} else {
+						if (checkedFile != null)
+							checkedFile.isChecked = false;
+						file.isChecked = true;
+						checkedFile = file;
+					}
+					processItemCheckboxClick(p);
+					fileList.notifyCheckedChanged();
+				}
+			}
 			return true;
 		}
 		return false;
@@ -326,8 +408,38 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (view == btnGoBack) {
 			finish(0, view, true);
 		} if (view == btnMenu) {
-			lastLongClickedId = -1;
-			CustomContextMenu.openContextMenu(btnMenu, this);
+			if (loading)
+				return;
+			if (save) {
+				processMenuItemClick(MNU_SAVEAS);
+			} else {
+				lastLongClickedId = -1;
+				CustomContextMenu.openContextMenu(btnMenu, this);
+			}
+		} else if (view == btnAdd) {
+			if (hasButtons && checkedFile != null) {
+				if (listener != null)
+					listener.onAddClicked(id, checkedFile.path, checkedFile.name);
+				checkedFile.isChecked = false;
+				checkedFile = null;
+				if (fileList != null)
+					fileList.notifyCheckedChanged();
+				updateOverallLayout();
+			}
+		} else if (view == btnPlay) {
+			if (hasButtons && checkedFile != null) {
+				if (listener != null)
+					listener.onPlayClicked(id, checkedFile.path, checkedFile.name);
+				if (Player.goBackWhenPlayingFolders) {
+					finish(0, (list == null || fileList == null) ? null : list.getViewForPosition(fileList.indexOf(checkedFile)), true);
+				} else {
+					checkedFile.isChecked = false;
+					checkedFile = null;
+					if (fileList != null)
+						fileList.notifyCheckedChanged();
+					updateOverallLayout();
+				}
+			}
 		}
 	}
 	
@@ -346,8 +458,10 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					return;
 				}
 			}
+			final OnFileSelectionListener listener = this.listener;
 			finish(0, null, false);
-			listener.onFileSelected(ActivityFileSelection.this.id, n + fileType, n);
+			if (listener != null)
+				listener.onFileSelected(ActivityFileSelection.this.id, n + fileType, n);
 		}
 		txtSaveAsName = null;
 	}
@@ -366,16 +480,43 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		btnGoBack.setIcon(UI.ICON_GOBACK);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
-		btnMenu.setIcon(UI.ICON_MENU);
 		list = (BgListView)findViewById(R.id.list);
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
 		fileList.setObserver(list);
+		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
+		if (save) {
+			btnMenu.setText(format(R.string.msg_create_new, itemType));
+			btnMenu.setDefaultHeight();
+			btnMenu.setCompoundDrawables(new TextIconDrawable(UI.ICON_SAVE, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+		} else {
+			btnMenu.setIcon(UI.ICON_MENU);
+			btnAdd = (BgButton)findViewById(R.id.btnAdd);
+			btnAdd.setTextColor(UI.colorState_text_reactive);
+			btnAdd.setOnClickListener(this);
+			btnAdd.setIcon(UI.ICON_ADD);
+			RelativeLayout.LayoutParams rp;
+			final TextView sep2 = (TextView)findViewById(R.id.sep2);
+			rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
+			rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
+			rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
+			rp.leftMargin = UI._8dp;
+			rp.rightMargin = UI._8dp;
+			sep2.setLayoutParams(rp);
+			sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
+			btnPlay = (BgButton)findViewById(R.id.btnPlay);
+			btnPlay.setTextColor(UI.colorState_text_reactive);
+			btnPlay.setOnClickListener(this);
+			btnPlay.setIcon(UI.ICON_PLAY);
+
+			UI.prepareControlContainer(panelSecondary, true, false);
+		}
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		fileList.setPrivateFileType(fileType, list.isInTouchMode());
 		UI.prepareEdgeEffectColor(getApplication());
+		updateOverallLayout();
 	}
 	
 	@Override
@@ -397,9 +538,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onCleanupLayout() {
+		checkedFile = null;
 		btnGoBack = null;
 		btnMenu = null;
+		btnAdd = null;
+		btnPlay = null;
 		list = null;
+		panelSecondary = null;
 	}
 	
 	@Override
@@ -407,5 +552,9 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		UI.browserActivity = null;
 		fileList.cancel();
 		fileList = null;
+		title = null;
+		listener = null;
+		formatterSB = null;
+		formatter = null;
 	}
 }

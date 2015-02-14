@@ -57,10 +57,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private Handler handler;
 	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
-	private BgButton btnAdd, btnPlay;
+	private BgButton btnCheckbox;
 	private String icon, ellipsizedName;
-	private boolean buttonsVisible, pendingAlbumArtRequest;
-	private final boolean hasButtons, buttonIsCheckbox;
+	private boolean pendingAlbumArtRequest, checkBoxVisible;
+	private final boolean hasCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding;
 	
 	private static int height, usableHeight;
@@ -71,7 +71,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		return height;
 	}
 
-	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasButtons, boolean buttonIsCheckbox) {
+	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasCheckbox) {
 		super(context);
 		this.albumArtFetcher = albumArtFetcher;
 		if (albumArtFetcher != null)
@@ -81,54 +81,34 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		setBaselineAligned(false);
 		setGravity(Gravity.RIGHT);
 		getViewHeight();
-		if (hasButtons) {
+		if (hasCheckbox) {
 			LayoutParams p;
-			if (!buttonIsCheckbox) {
-				btnAdd = new BgButton(context);
-				btnAdd.setHideBorders(true);
-				p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
-				p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
-				btnAdd.setLayoutParams(p);
-				btnAdd.setIcon(UI.ICON_ADD, true, false);
-				btnAdd.setContentDescription(context.getText(R.string.add));
-				btnAdd.setOnClickListener(this);
-				btnAdd.setTextColor(UI.colorState_text_selected_static);
-				addView(btnAdd);
-			}
-			btnPlay = new BgButton(context);
-			btnPlay.setHideBorders(true);
+			btnCheckbox = new BgButton(context);
+			btnCheckbox.setHideBorders(true);
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI._8dp;
 			p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
-			btnPlay.setLayoutParams(p);
-			if (buttonIsCheckbox) {
-				btnPlay.formatAsPlainCheckBox(false, true, false);
-				btnPlay.setContentDescription(context.getText(R.string.unselect), context.getText(R.string.select));
-				btnPlay.setTextColor(UI.colorState_text_listitem_reactive);
-			} else {
-				btnPlay.setIcon(UI.ICON_PLAY, true, false);
-				btnPlay.setContentDescription(context.getText(R.string.play));
-				btnPlay.setTextColor(UI.colorState_text_selected_static);
-			}
-			btnPlay.setOnClickListener(this);
-			addView(btnPlay);
+			btnCheckbox.setLayoutParams(p);
+			btnCheckbox.formatAsPlainCheckBox(false, true, false);
+			btnCheckbox.setContentDescription(context.getText(R.string.unselect), context.getText(R.string.select));
+			btnCheckbox.setTextColor(UI.colorState_text_listitem_reactive);
+			btnCheckbox.setOnClickListener(this);
+			addView(btnCheckbox);
 		} else {
-			btnAdd = null;
-			btnPlay = null;
+			btnCheckbox = null;
 		}
-		this.hasButtons = hasButtons;
-		this.buttonIsCheckbox = buttonIsCheckbox;
-		buttonsVisible = hasButtons;
+		this.hasCheckbox = hasCheckbox;
+		this.checkBoxVisible = hasCheckbox;
 		super.setDrawingCacheEnabled(false);
 	}
 	
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(file.name, UI._LargeItemsp, width - leftPadding - (buttonsVisible ? (buttonIsCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : ((UI.defaultControlContentsSize << 1) + (UI._8dp << 2))) : 0) - UI._8dp, true);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._LargeItemsp, width - leftPadding - (hasCheckbox ? (UI.defaultControlContentsSize + (UI._8dp << 1)) : 0) - UI._8dp, true);
 	}
 	
 	public void refreshItem() {
-		//tiny workaround ;)
-		buttonsVisible = !buttonsVisible;
+		//tiny workaround to force complete execution of setItemState()
+		checkBoxVisible = !checkBoxVisible;
 		setItemState(file, position, state);
 		invalidate();
 	}
@@ -157,7 +137,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	public CharSequence getContentDescription() {
 		if (file != null)
-			return makeContextDescription(buttonIsCheckbox && btnPlay != null && btnPlay.getVisibility() == View.VISIBLE, getContext(), file);
+			return makeContextDescription(hasCheckbox, getContext(), file);
 		return super.getContentDescription();
 	}
 
@@ -165,27 +145,25 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (file == null)
 			return;
 		final int specialType = file.specialType;
-		final boolean showButtons = (hasButtons && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ALBUM_ITEM) || (specialType == FileSt.TYPE_ARTIST)) && (buttonIsCheckbox || ((state & UI.STATE_SELECTED) != 0)));
+		final boolean showCheckbox = (hasCheckbox && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ALBUM_ITEM) || (specialType == FileSt.TYPE_ARTIST)));
 		final boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != specialType));
 		this.position = position;
-		if (buttonIsCheckbox && btnPlay != null) {
+		if (btnCheckbox != null) {
 			if (specialTypeChanged || this.file != file || (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
 				//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : ((specialType == FileSt.TYPE_ALBUM_ITEM) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
-				btnPlay.setTextColor(((state != 0) || (specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
+				btnCheckbox.setTextColor(((state != 0) || (specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 				//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : ((specialType == FileSt.TYPE_ALBUM_ITEM) ? UI.colorState_text_reactive : UI.colorState_text_listitem_reactive));
-			btnPlay.setChecked(file.isChecked);
+			btnCheckbox.setChecked(file.isChecked);
 		}
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!
-		if (this.file == file && buttonsVisible == showButtons)
+		if (this.file == file && checkBoxVisible == showCheckbox)
 			return;
 		this.file = file;
-		if (buttonsVisible != showButtons) {
-			buttonsVisible = showButtons;
-			if (btnAdd != null)
-				btnAdd.setVisibility(showButtons ? View.VISIBLE : View.GONE);
-			if (btnPlay != null)
-				btnPlay.setVisibility(showButtons ? View.VISIBLE : View.GONE);
+		if (checkBoxVisible != showCheckbox) {
+			checkBoxVisible = showCheckbox;
+			if (btnCheckbox != null)
+				btnCheckbox.setVisibility(showCheckbox ? View.VISIBLE : View.GONE);
 		}
 		if (pendingAlbumArtRequest && albumArtFetcher != null) {
 			pendingAlbumArtRequest = false;
@@ -305,10 +283,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
-		if (buttonIsCheckbox && (state == 0) != old && btnPlay != null)
-			//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
-			btnPlay.setTextColor(((state != 0) || ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM))) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
-			//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_reactive : UI.colorState_text_listitem_reactive));
+		if ((state == 0) != old && btnCheckbox != null)
+			//btnCheckbox.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
+			btnCheckbox.setTextColor(((state != 0) || ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM))) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
+			//btnCheckbox.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_reactive : UI.colorState_text_listitem_reactive));
 	}
 	
 	@Override
@@ -367,19 +345,17 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			albumArt = null;
 		}
 		file = null;
-		btnAdd = null;
-		btnPlay = null;
+		btnCheckbox = null;
 		ellipsizedName = null;
 		super.onDetachedFromWindow();
 	}
 	
 	@Override
 	public void onClick(View view) {
-		if (hasButtons && (view == btnAdd || view == btnPlay)) {
-			if (buttonIsCheckbox && file != null && view == btnPlay)
-				file.isChecked = btnPlay.isChecked();
+		if (checkBoxVisible && view == btnCheckbox) {
+			file.isChecked = btnCheckbox.isChecked();
 			if (UI.browserActivity != null)
-				UI.browserActivity.processItemButtonClick(position, view == btnAdd);
+				UI.browserActivity.processItemCheckboxClick(position);
 		} else {
 			if (UI.browserActivity != null)
 				UI.browserActivity.processItemClick(position);

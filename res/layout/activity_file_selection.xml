@@ -20,9 +20,9 @@
             android:layout_alignParentLeft="true"
             android:contentDescription="@string/go_back"
             android:nextFocusDown="@+id/list"
-            android:nextFocusForward="@+id/list"
+            android:nextFocusForward="@+id/btnMenu"
             android:nextFocusLeft="@+id/list"
-            android:nextFocusRight="@+id/list"
+            android:nextFocusRight="@+id/btnMenu"
             android:nextFocusUp="@+id/list" />
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -35,8 +35,7 @@
             android:nextFocusForward="@+id/list"
             android:nextFocusLeft="@+id/btnGoBack"
             android:nextFocusRight="@+id/list"
-            android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:nextFocusUp="@+id/list" />
     </RelativeLayout>
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
@@ -50,5 +49,44 @@
 
         <requestFocus />
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
+
+    <RelativeLayout
+        android:id="@+id/panelSecondary"
+        android:splitMotionEvents="false"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone" >
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toLeftOf="@+id/sep2"
+            android:contentDescription="@string/add"
+            android:nextFocusDown="@+id/btnMenu"
+            android:nextFocusForward="@+id/btnPlay"
+            android:nextFocusLeft="@+id/list"
+            android:nextFocusRight="@+id/btnPlay"
+            android:nextFocusUp="@+id/list" />
+
+        <TextView
+            android:id="@+id/sep2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:singleLine="true" />
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnPlay"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:contentDescription="@string/play"
+            android:nextFocusDown="@+id/btnMenu"
+            android:nextFocusForward="@+id/btnGoBack"
+            android:nextFocusLeft="@+id/btnAdd"
+            android:nextFocusRight="@+id/btnGoBack"
+            android:nextFocusUp="@+id/list" />
+    </RelativeLayout>
 
 </RelativeLayout>
