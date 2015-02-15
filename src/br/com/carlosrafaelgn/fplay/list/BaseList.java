@@ -51,7 +51,11 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		public String[] getSectionStrings();
 		public int[] getSectionPositions();
 	}
-	
+
+	public static interface OnBaseListSelectionChangedListener<E extends BaseItem> {
+		public void onSelectionChanged(BaseList<E> list);
+	}
+
 	protected static final int LIST_DELTA = 32;
 	
 	protected static final int SELECTION_CHANGED = 0;
@@ -62,6 +66,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	
 	protected BgListView listObserver;
 	protected DataSetObserver observer;
+	private OnBaseListSelectionChangedListener<E> listener;
 	protected final Object sync;
 	protected E[] items;
 	protected int count, current, firstSel, lastSel, originalSel, indexOfPreviouslyDeletedCurrentItem, modificationVersion;
@@ -163,6 +168,8 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			indexOfPreviouslyDeletedCurrentItem = -1;
 		//}
 		notifyDataSetChanged(-1, LIST_CLEARED);
+		if (listener != null)
+			listener.onSelectionChanged(this);
 	}
 	
 	public final boolean removeSelection() {
@@ -221,7 +228,10 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		setCapacity(this.count);
 		
 		notifyDataSetChanged(originalSel, CONTENT_REMOVED);
-		
+
+		if (listener != null)
+			listener.onSelectionChanged(this);
+
 		return true;
 	}
 	
@@ -328,6 +338,8 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		}
 		if (notifyChanged)
 			notifyDataSetChanged(byUserInteraction ? -1 : gotoPosition, SELECTION_CHANGED);
+		if (listener != null)
+			listener.onSelectionChanged(this);
 	}
 	
 	public final int indexOf(E item) {
@@ -394,7 +406,11 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	public final boolean isEmpty() {
 		return (count == 0);
 	}
-	
+
+	public final void setOnBaseListSelectionChangedListener(OnBaseListSelectionChangedListener<E> listener) {
+		this.listener = listener;
+	}
+
 	public final void setObserver(BgListView list) {
 		//if (listObserver != null)
 		//	listObserver.setAdapter(null);

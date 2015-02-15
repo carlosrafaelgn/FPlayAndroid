@@ -25,12 +25,12 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_widget_button"
                 android:clickable="true"
+                android:focusable="true"
                 android:ellipsize="end"
                 android:gravity="center"
                 android:maxLines="2"
                 android:padding="2dp"
-                android:textAppearance="@style/MediumText"
-                android:textColor="@color/color_widget_text" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/lblArtist"
@@ -43,8 +43,7 @@
                 android:gravity="center"
                 android:padding="2dp"
                 android:singleLine="true"
-                android:textAppearance="@style/SmallText"
-                android:textColor="@color/color_widget_text" />
+                android:textSize="14sp" />
         </RelativeLayout>
 
         <ImageButton

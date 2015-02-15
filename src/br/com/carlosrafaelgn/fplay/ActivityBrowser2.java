@@ -308,6 +308,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		final FileSt file = fileList.getItemT(position);
 		if (file == null) //same as above
 			return;
+		final int originalPosition = position;
 		if (file.specialType == FileSt.TYPE_ALBUM_ITEM) {
 			selectAlbumSongs(position);
 		} else {
@@ -367,7 +368,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		if (forceNotifyCheckedChanged) {
 			if (list != null) {
-				final FileView view = (FileView)list.getViewForPosition(position);
+				final FileView view = (FileView)list.getViewForPosition(originalPosition);
 				if (view != null) {
 					view.refreshItem();
 					return;

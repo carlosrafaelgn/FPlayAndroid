@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="color_widget_text">#ff000000</color>
-    <color name="color_widget_pressed">#ffcccccc</color>
-    <color name="color_widget_pressed_border">#ff999999</color>
-    <color name="color_notification_pressed">#ff555555</color>
     <color name="color_transparent">#00000000</color>
-    <color name="color_text">#ffffffff</color>
 
 </resources>

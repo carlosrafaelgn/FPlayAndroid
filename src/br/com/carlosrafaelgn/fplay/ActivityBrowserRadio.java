@@ -63,6 +63,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
@@ -77,7 +78,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, SpinnerAdapter {
+public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter {
 	private TextView sep2;
 	private BgListView list;
 	private RadioStationList radioStationList;
@@ -329,7 +330,12 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		}
 		return false;
 	}
-	
+
+	@Override
+	public void onSelectionChanged(BaseList<RadioStation> list) {
+		updateButtons();
+	}
+
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
@@ -467,6 +473,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	protected void onCreate() {
 		UI.browserActivity = this;
 		radioStationList = new RadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString());
+		radioStationList.setOnBaseListSelectionChangedListener(this);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -558,8 +565,11 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected void onDestroy() {
 		UI.browserActivity = null;
-		radioStationList.cancel();
-		radioStationList = null;
+		if (radioStationList != null) {
+			radioStationList.cancel();
+			radioStationList.setOnBaseListSelectionChangedListener(null);
+			radioStationList = null;
+		}
 	}
 	
 	@Override
