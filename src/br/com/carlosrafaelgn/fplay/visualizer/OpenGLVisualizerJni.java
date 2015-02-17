@@ -35,13 +35,16 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
@@ -70,7 +73,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
-public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
+public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, MenuItem.OnMenuItemClickListener, MainHandler.Callback, SensorEventListener {
 	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5;
 
 	private static final int MSG_OPENGL_ERROR = 0x0700;
@@ -95,17 +98,19 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private int colorIndex, speed, viewWidth, viewHeight;
 	private EGLConfig config;
 	private Activity activity;
-	
+	private SensorManager sensorManager;
+	private Sensor accel, magnetic;
+
 	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
-		type = ((t < TYPE_LIQUID || t > TYPE_PARTICLE) ? TYPE_SPECTRUM : t);
+		type = ((t < TYPE_LIQUID || t > TYPE_IMMERSIVE_PARTICLE) ? TYPE_SPECTRUM : t);
 		bfft = new byte[2048];
 		setClickable(true);
 		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE) ? 0 : 2);
+		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) ? 0 : 2);
 		this.activity = activity;
 
 		//initialize these with default values to be used in
@@ -121,6 +126,26 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			supported = (GLVersion >= 0x00020000);
 			if (!supported)
 				MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
+		}
+
+		if (type == TYPE_IMMERSIVE_PARTICLE) {
+			try {
+				sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+				accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+				magnetic = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+				if (accel == null || magnetic == null) {
+					sensorManager = null;
+					accel = null;
+					magnetic = null;
+				}
+			} catch (Throwable ex) {
+				sensorManager = null;
+				accel = null;
+				magnetic = null;
+			}
+			if (sensorManager == null) {
+				UI.toast(activity, "No sensors :(");
+			}
 		}
 		
 		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/opengl/GLSurfaceView.java
@@ -553,10 +578,18 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on the MAIN thread
 	public void onActivityPause() {
+		if (sensorManager != null)
+			sensorManager.unregisterListener(this);
 	}
 
 	//Runs on the MAIN thread
 	public void onActivityResume() {
+		if (sensorManager != null) {
+			//SENSOR_DELAY_UI provides a nice refresh rate, but SENSOR_DELAY_GAME
+			//provides an AWESOME refresh rate!
+			sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME);
+			sensorManager.registerListener(this, magnetic, SensorManager.SENSOR_DELAY_GAME);
+		}
 	}
 
 	//Runs on the MAIN thread
@@ -565,19 +598,19 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		if (activity == null)
 			return;
 		final Context ctx = activity.getApplication();
-		if (type != TYPE_SPIN && type != TYPE_PARTICLE)
-			UI.separator(menu, 1, 0);
-
 		switch (type) {
 		case TYPE_LIQUID:
+			UI.separator(menu, 1, 0);
 			menu.add(1, MNU_CHOOSE_IMAGE, 1, R.string.choose_image)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
 			break;
 		case TYPE_SPIN:
 		case TYPE_PARTICLE:
+		case TYPE_IMMERSIVE_PARTICLE:
 			break;
 		default:
+			UI.separator(menu, 1, 0);
 			menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
@@ -643,18 +676,16 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on ANY thread
 	@Override
 	public void cancelLoading() {
-		
 	}
 	
 	//Runs on the MAIN thread
 	@Override
 	public void configurationChanged(boolean landscape) {
-		
 	}
 
 	//Runs on a SECONDARY thread (B)
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
+	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing) {
 		if (okToRender) {
 			//WE MUST NEVER call any method from visualizer
 			//while the player is not actually playing
@@ -662,7 +693,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				Arrays.fill(bfft, 0, 1024, (byte)0);
 			else
 				visualizer.getFft(bfft);
-			SimpleVisualizerJni.commonProcess(bfft, deltaMillis, 0);
+			SimpleVisualizerJni.commonProcess(bfft, 0);
 			//requestRender();
 		}
 	}
@@ -676,7 +707,24 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	@Override
 	public void releaseView() {
+		if (sensorManager != null) {
+			sensorManager.unregisterListener(this);
+			sensorManager = null;
+			accel = null;
+			magnetic = null;
+		}
 		activity = null;
 		SimpleVisualizerJni.glReleaseView();
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onSensorChanged(SensorEvent sensorEvent) {
+		SimpleVisualizerJni.glOnSensorData((sensorEvent.sensor == accel) ? 1 : 2, sensorEvent.values);
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int i) {
 	}
 }

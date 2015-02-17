@@ -63,19 +63,20 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	static native void commonSetColorIndex(int colorIndex);
 	static native int commonCheckNeonMode();
 	static native void commonUpdateMultiplier(boolean isVoice);
-	static native int commonProcess(byte[] bfft, int deltaMillis, int bt);
+	static native int commonProcess(byte[] bfft, int bt);
 
 	private static native void setLerp(boolean lerp);
 	private static native void init(int bgColor);
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
-	private static native void process(byte[] bfft, int deltaMillis, Surface surface);
+	private static native void process(byte[] bfft, Surface surface);
 	private static native void processVoice(byte[] bfft, Surface surface);
 
 	static native int glOnSurfaceCreated(int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess);
 	static native void glOnSurfaceChanged(int width, int height, int dp1OrLess);
 	static native int glLoadBitmapFromJava(Bitmap bitmap);
 	static native void glDrawFrame();
+	static native void glOnSensorData(int sensorType, float[] values);
 	static native void glReleaseView();
 
 	private byte[] bfft;
@@ -260,7 +261,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	
 	//Runs on a SECONDARY thread
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
+	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing) {
 		if (!lock.lockLowPriority())
 			return;
 		try {
@@ -272,7 +273,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 				else
 					visualizer.getFft(bfft);
 				if (!voice)
-					process(bfft, deltaMillis, surface);
+					process(bfft, surface);
 				else
 					processVoice(bfft, surface);
 			}

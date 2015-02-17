@@ -52,6 +52,7 @@
 #define TYPE_LIQUID 1
 #define TYPE_SPIN 2
 #define TYPE_PARTICLE 3
+#define TYPE_IMMERSIVE_PARTICLE 4
 
 #define left -1.0f
 #define top 1.0f
@@ -186,6 +187,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		commonTimeLimit = 6283; //2 * pi * 1000
 		break;
 	case TYPE_PARTICLE:
+	case TYPE_IMMERSIVE_PARTICLE:
 		commonTimeLimit = 0xffffffff;
 		break;
 	default:
@@ -239,6 +241,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"}";
 		break;
 	case TYPE_PARTICLE:
+	case TYPE_IMMERSIVE_PARTICLE:
 		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; void main() {" \
 		"float a = mix(0.0625, 0.34375, amplitude);" \
 		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
@@ -295,6 +298,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"}";
 		break;
 	case TYPE_PARTICLE:
+	case TYPE_IMMERSIVE_PARTICLE:
 		fragmentShader = "precision mediump float; varying vec2 vTexCoord; varying vec3 vColor; uniform sampler2D texColor; void main() {" \
 		"float a = texture2D(texColor, vTexCoord).a;"
 		"gl_FragColor = vec4(vColor.r * a, vColor.g * a, vColor.b * a, 1.0);" \
@@ -335,9 +339,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		if (glGetError()) return -11;
 		glLinkProgram(glProgram2);
 		if (glGetError()) return -12;
-	}
 
-	if (type == TYPE_LIQUID) {
 		glGenBuffers(4, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1] || !glBuf[2] || !glBuf[3]) return -13;
 
@@ -381,7 +383,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	} else if (type == TYPE_SPIN) {
 		glGenBuffers(2, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
-	} else if (type == TYPE_PARTICLE) {
+	} else if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
 		glGenBuffers(2, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
 
@@ -443,7 +445,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	glDisable(GL_DITHER);
 	glDisable(GL_SCISSOR_TEST);
 	glDisable(GL_STENCIL_TEST);
-	if (type == TYPE_PARTICLE) {
+	if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 		glBlendEquation(GL_FUNC_ADD);
@@ -460,6 +462,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	case TYPE_LIQUID:
 	case TYPE_SPIN:
 	case TYPE_PARTICLE:
+	case TYPE_IMMERSIVE_PARTICLE:
 		glGenTextures(1, glTex);
 		if (glGetError() || !glTex[0]) return -15;
 		break;
@@ -484,7 +487,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 			((unsigned short*)floatBuffer)[2] = 0x041f;
 			((unsigned short*)floatBuffer)[3] = 0x34df;
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
-		} else if (type == TYPE_PARTICLE) {
+		} else if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
 			GLSoundParticle::FillTexture();
 		} else {
 			memset(floatBuffer, 0, 256);
@@ -492,7 +495,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		}
 		if (glGetError()) return -17;
 
-		if (type != TYPE_LIQUID && type != TYPE_PARTICLE) {
+		if (type != TYPE_LIQUID && type != TYPE_PARTICLE && type != TYPE_IMMERSIVE_PARTICLE) {
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, glTex[1]);
 			if (glGetError()) return -18;
@@ -551,6 +554,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		break;
 	case TYPE_PARTICLE:
+	case TYPE_IMMERSIVE_PARTICLE:
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		glPos = glGetUniformLocation(glProgram, "pos");
 		glColor = glGetUniformLocation(glProgram, "color");
@@ -576,7 +580,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		if (glGetError()) return -23;
 	}
 
-	if (type == TYPE_PARTICLE) {
+	if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
 		glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
@@ -620,6 +624,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 
 	switch (type) {
 	case TYPE_PARTICLE:
+	case TYPE_IMMERSIVE_PARTICLE:
 		if (glSoundParticle)
 			delete glSoundParticle;
 		glSoundParticle = new GLSoundParticle();
@@ -697,7 +702,7 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 			delete vertices;
 
 			glVerticesPerRow <<= 1;
-		} else if (glType == TYPE_PARTICLE) {
+		} else if (glType == TYPE_PARTICLE || glType == TYPE_IMMERSIVE_PARTICLE) {
 			if (glSoundParticle)
 				glSoundParticle->SetAspect(width, height);
 			if (width > height)
@@ -768,13 +773,6 @@ void glSumData() {
 #undef MAX
 }
 
-void JNICALL glReleaseView(JNIEnv* env, jclass clazz) {
-	if (glSoundParticle) {
-		delete glSoundParticle;
-		glSoundParticle = 0;
-	}
-}
-
 void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	if (commonColorIndexApplied != commonColorIndex) {
 		commonColorIndexApplied = commonColorIndex;
@@ -785,6 +783,10 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 
 	switch (glType) {
 	case TYPE_PARTICLE:
+		if (glSoundParticle)
+			glSoundParticle->Draw();
+		break;
+	case TYPE_IMMERSIVE_PARTICLE:
 		if (glSoundParticle)
 			glSoundParticle->Draw();
 		break;
@@ -833,5 +835,20 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 128 * 2);
 		}
 		break;
+	}
+}
+
+void JNICALL glOnSensorData(JNIEnv* env, jclass clazz, int sensorType, jfloatArray jvalues) {
+	if (!glSoundParticle || !jvalues)
+		return;
+	float* values = (float*)env->GetPrimitiveArrayCritical(jvalues, 0);
+	glSoundParticle->OnSensorData(sensorType, values);
+	env->ReleasePrimitiveArrayCritical(jvalues, values, JNI_ABORT);
+}
+
+void JNICALL glReleaseView(JNIEnv* env, jclass clazz) {
+	if (glSoundParticle) {
+		delete glSoundParticle;
+		glSoundParticle = 0;
 	}
 }

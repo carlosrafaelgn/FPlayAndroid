@@ -45,6 +45,9 @@ private:
 	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT];
 	unsigned char bgColor[BG_COUNT];
 
+	unsigned int sensorData, lastSensorTime, landscape;
+	float matrix[9], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3];
+
 	void FillBgParticle(int index, float y) {
 		bgPos[(index << 1)] = 0.0078125f * (float)(((int)rand() & 7) - 4);
 		bgPos[(index << 1) + 1] = y;
@@ -57,6 +60,18 @@ public:
 	GLSoundParticle() {
 		lastTime = commonTime;
 		timeCoef = 0.001f;
+
+		sensorData = 0;
+		lastSensorTime = 0;
+		landscape = 0;
+		memset(matrix, 0, sizeof(float) * 9);
+		memset(accelData, 0, sizeof(float) * 3);
+		memset(magneticData, 0, sizeof(float) * 3);
+		memset(oldAccelData, 0, sizeof(float) * 3);
+		memset(oldMagneticData, 0, sizeof(float) * 3);
+		matrix[0] = 1.0f;
+		matrix[4] = 1.0f;
+		matrix[8] = 1.0f;
 
 #define FULL 0.75f
 #define HALF 0.325f
@@ -145,6 +160,7 @@ public:
 	void SetAspect(int width, int height) {
 		//change the time coefficient to slow down the particles when in portrait mode
 		timeCoef = ((width >= height) ? 0.001f : (0.001f * (float)width / (float)height));
+		landscape = (width >= height);
 	}
 
 	void Draw() {
@@ -205,6 +221,95 @@ int index;
 int bassIndex;
 vec2 size;
 vec3 color;*/
+	}
+
+	void OnSensorData(int sensorType, float* values) {
+		if (sensorType == 1) {
+			accelData[0] = values[0];
+			accelData[1] = values[1];
+			accelData[2] = values[2];
+			sensorData |= 1;
+		} else {
+			magneticData[0] = values[0];
+			magneticData[1] = values[1];
+			magneticData[2] = values[2];
+			sensorData |= 2;
+		}
+		if (sensorData != 3)
+			return;
+		sensorData = 0;
+		if (lastSensorTime == 0) {
+			oldAccelData[0] = accelData[0];
+			oldAccelData[1] = accelData[1];
+			oldAccelData[2] = accelData[2];
+			oldMagneticData[0] = magneticData[0];
+			oldMagneticData[1] = magneticData[1];
+			oldMagneticData[2] = magneticData[2];
+			commonUptimeDeltaMillis(&lastSensorTime);
+			return;
+		}
+		const float coefNew = (0.09375f / 16.0f) * (float)commonUptimeDeltaMillis(&lastSensorTime); //0.09375 @ 60fps (~16ms)
+		const float coefOld = 1.0f - coefNew;
+		accelData[0] = (oldAccelData[0] * coefOld) + (accelData[0] * coefNew);
+		accelData[1] = (oldAccelData[1] * coefOld) + (accelData[1] * coefNew);
+		accelData[2] = (oldAccelData[2] * coefOld) + (accelData[2] * coefNew);
+		oldAccelData[0] = accelData[0];
+		oldAccelData[1] = accelData[1];
+		oldAccelData[2] = accelData[2];
+		magneticData[0] = (oldMagneticData[0] * coefOld) + (magneticData[0] * coefNew);
+		magneticData[1] = (oldMagneticData[1] * coefOld) + (magneticData[1] * coefNew);
+		magneticData[2] = (oldMagneticData[2] * coefOld) + (magneticData[2] * coefNew);
+		oldMagneticData[0] = magneticData[0];
+		oldMagneticData[1] = magneticData[1];
+		oldMagneticData[2] = magneticData[2];
+		//SensorManager.getRotationMatrix(matrix, null, accelData, magneticData);
+		//Original code -> AOSP: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.0.2_r1/android/hardware/SensorManager.java
+		//(just porting from Java to C++ to improve performance)
+		float Ax, Ay, Az, Ex, Ey, Ez;
+		if (landscape) {
+			Ax = -accelData[1];
+			Ay = accelData[0];
+			Az = accelData[2];
+			Ex = -magneticData[1];
+			Ey = magneticData[0];
+			Ez = magneticData[2];
+		} else {
+			Ax = accelData[0];
+			Ay = accelData[1];
+			Az = accelData[2];
+			Ex = magneticData[0];
+			Ey = magneticData[1];
+			Ez = magneticData[2];
+		}
+		float Hx = (Ey * Az) - (Ez * Ay);
+		float Hy = (Ez * Ax) - (Ex * Az);
+		float Hz = (Ex * Ay) - (Ey * Ax);
+		const float normH = (float)sqrtf((Hx * Hx) + (Hy * Hy) + (Hz * Hz));
+		if (normH < 0.1f) {
+			//device is close to free fall (or in space?), or close to
+			//magnetic north pole. Typical values are > 100...
+			//leave the matrix as-is!
+			return;
+		}
+		const float invH = 1.0f / normH;
+		Hx *= invH;
+		Hy *= invH;
+		Hz *= invH;
+		const float invA = 1.0f / (float)sqrtf((Ax * Ax) + (Ay * Ay) + (Az * Az));
+		Ax *= invA;
+		Ay *= invA;
+		Az *= invA;
+		const float Mx = (Ay * Hz) - (Az * Hy);
+		const float My = (Az * Hx) - (Ax * Hz);
+		const float Mz = (Ax * Hy) - (Ay * Hx);
+		matrix[0] = Hx; matrix[1] = Hy; matrix[2] = Hz;
+		matrix[3] = Mx; matrix[4] = My; matrix[5] = Mz;
+		matrix[6] = Ax; matrix[7] = Ay; matrix[8] = Az;
+		//SensorManager.getRotationMatrix() returns the matrix in row-major order and
+		//OpenGL needs the matrices in column-major order... nevertheless we must not
+		//transpose this matrix, as it will be used as the camera matrix, and the camera
+		//matrix is the inverse of the world matrix (luckly, the inverse of a pure
+		//rotation matrix is also its transpose!)
 	}
 };
 

@@ -32,6 +32,7 @@
 //
 
 #include "CommonNeon.h"
+#include <time.h>
 
 //for the alignment:
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
@@ -46,7 +47,18 @@ int intBuffer[8] __attribute__((aligned(16)));
 #endif
 
 float commonCoefNew;
-unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit;
+unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
+
+unsigned int commonUptimeDeltaMillis(unsigned int* lastTime) {
+	struct timespec t;
+	t.tv_sec = 0;
+	t.tv_nsec = 0;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	*((unsigned int*)&t) = (unsigned int)((((long)t.tv_sec) * 1000L) + (t.tv_nsec / 1000000L));
+	const unsigned int delta = *((unsigned int*)&t) - *lastTime;
+	*lastTime = *((unsigned int*)&t);
+	return ((delta >= 100) ? 100 : delta);
+}
 
 void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int speed) {
 	switch (speed) {
@@ -140,7 +152,8 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 	}
 }
 
-int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, int bt) {
+int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jbfft, int bt) {
+	const unsigned int deltaMillis = commonUptimeDeltaMillis(&commonLastTime);
 	int i;
 	i = commonTime + deltaMillis;
 	while (((unsigned int)i) >= commonTimeLimit)

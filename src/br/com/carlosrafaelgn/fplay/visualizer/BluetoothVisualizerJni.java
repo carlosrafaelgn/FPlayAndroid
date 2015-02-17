@@ -327,7 +327,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 
 	//Runs on a SECONDARY thread
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing, int deltaMillis) {
+	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing) {
 		if (!lock.lockLowPriority())
 			return;
 		try {
@@ -340,7 +340,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 						Arrays.fill(bfft, 0, 1024, (byte)0);
 					else
 						visualizer.getFft(bfft);
-					bt.getOutputStream().write(bfft, 0, SimpleVisualizerJni.commonProcess(bfft, deltaMillis, size));
+					bt.getOutputStream().write(bfft, 0, SimpleVisualizerJni.commonProcess(bfft, size));
 					packagesSent++;
 				} else {
 					framesToSkip--;

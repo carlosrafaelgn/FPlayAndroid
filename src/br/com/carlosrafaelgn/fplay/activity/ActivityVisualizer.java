@@ -71,7 +71,6 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
-import br.com.carlosrafaelgn.fplay.visualizer.VisualizerView;
 
 public final class ActivityVisualizer extends Activity implements Runnable, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
 	@SuppressLint("InlinedApi")
@@ -502,7 +501,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		fxVisualizerFailed = false;
 		fxVisualizerAudioSessionId = -1;
 		timer = new Timer(new Runnable() {
-			private int lastTime = 0;
 			@Override
 			public void run() {
 				if (alive) {
@@ -527,12 +525,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 							visualizerReady = true;
 						}
 					}
-					if (fxVisualizer != null && visualizer != null) {
-						final int now = (int)SystemClock.uptimeMillis();
-						final int deltaMillis = (int)(now - lastTime);
-						lastTime = now;
-						visualizer.processFrame(fxVisualizer, playing, ((deltaMillis >= 100) || (deltaMillis <= 0)) ? 100 : deltaMillis);
-					}
+					if (fxVisualizer != null && visualizer != null)
+						visualizer.processFrame(fxVisualizer, playing);
 				}
 				if (!alive) {
 					if (timer != null) {

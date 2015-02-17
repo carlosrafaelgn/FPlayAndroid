@@ -106,7 +106,7 @@ int JNICALL prepareSurface(JNIEnv* env, jclass clazz, jobject surface) {
 	return ret;
 }
 
-void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, int deltaMillis, jobject surface) {
+void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return;
@@ -141,7 +141,7 @@ if (!neonMode) {
 	float* const fft = floatBuffer;
 	const float* const multiplier = floatBuffer + 256;
 
-	const float coefNew = DEFSPEED * (float)deltaMillis;
+	const float coefNew = DEFSPEED * (float)commonUptimeDeltaMillis(&commonLastTime);
 	const float coefOld = 1.0f - coefNew;
 
 	float previous = 0;
@@ -423,19 +423,20 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"commonSetColorIndex", "(I)V", (void*)commonSetColorIndex},
 		{"commonCheckNeonMode", "()I", (void*)commonCheckNeonMode},
 		{"commonUpdateMultiplier", "(Z)V", (void*)commonUpdateMultiplier},
-		{"commonProcess", "([BII)I", (void*)commonProcess},
+		{"commonProcess", "([BI)I", (void*)commonProcess},
 
 		{"setLerp", "(Z)V", (void*)setLerp},
 		{"init", "(I)V", (void*)init},
 		{"terminate", "()V", (void*)terminate},
 		{"prepareSurface", "(Landroid/view/Surface;)I", (void*)prepareSurface},
-		{"process", "([BILandroid/view/Surface;)V", (void*)process},
+		{"process", "([BLandroid/view/Surface;)V", (void*)process},
 		{"processVoice", "([BLandroid/view/Surface;)V", (void*)processVoice},
 
 		{"glOnSurfaceCreated", "(IIIII)I", (void*)glOnSurfaceCreated},
 		{"glOnSurfaceChanged", "(III)V", (void*)glOnSurfaceChanged},
 		{"glLoadBitmapFromJava", "(Landroid/graphics/Bitmap;)I", (void*)glLoadBitmapFromJava},
 		{"glDrawFrame", "()V", (void*)glDrawFrame},
+		{"glOnSensorData", "(I[F)V", (void*)glOnSensorData},
 		{"glReleaseView", "()V", (void*)glReleaseView}
 	};
 	JNIEnv* env;
