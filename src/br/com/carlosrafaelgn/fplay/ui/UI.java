@@ -197,6 +197,7 @@ public final class UI {
 	public static final String ICON_TRANSITION = "%";
 	public static final String ICON_REPEATONE = "y";
 	public static final String ICON_ROOT = "(";
+	public static final String ICON_3DPAN = ")";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;

@@ -70,7 +70,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
-public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, MainHandler.Callback, DialogInterface.OnClickListener {
+public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
 	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5;
 
 	private static final int MSG_OPENGL_ERROR = 0x0700;
@@ -84,6 +84,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public static final int TYPE_LIQUID = 1;
 	public static final int TYPE_SPIN = 2;
 	public static final int TYPE_PARTICLE = 3;
+	public static final int TYPE_IMMERSIVE_PARTICLE = 4;
 
 	private final int type;
 	private byte[] bfft;
@@ -540,12 +541,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 		return true;
 	}
-	
-	//Runs on the MAIN thread
-	@Override
-	public VisualizerView getView() {
-		return this;
-	}
 
 	//Runs on the MAIN thread
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -554,6 +549,14 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			if (resultCode == Activity.RESULT_OK)
 				selectedUri = data.getData();
 		}
+	}
+
+	//Runs on the MAIN thread
+	public void onActivityPause() {
+	}
+
+	//Runs on the MAIN thread
+	public void onActivityResume() {
 	}
 
 	//Runs on the MAIN thread
@@ -600,6 +603,17 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	}
+
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean isFullscreen() {
+		return true;
+	}
+
+	//Runs on the MAIN thread (called only if isFullscreen() returns false)
+	public Point getDesiredSize(int availableWidth, int availableHeight) {
+		return new Point(availableWidth, availableHeight);
 	}
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
@@ -658,27 +672,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void release() {
 		bfft = null;
 	}
-	
-	//Runs on the MAIN thread (returned value MUST always be the same)
-	@Override
-	public boolean isFullscreen() {
-		return true;
-	}
-	
-	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight) {
-		return new Point(availableWidth, availableHeight);
-	}
-	
+
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	@Override
 	public void releaseView() {
 		activity = null;
 		SimpleVisualizerJni.glReleaseView();
-	}
-
-	@Override
-	public void onClick(DialogInterface dialogInterface, int which) {
-
 	}
 }

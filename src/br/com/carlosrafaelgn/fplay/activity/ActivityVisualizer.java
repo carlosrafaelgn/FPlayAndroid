@@ -157,9 +157,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private LinearLayout panelSecondary;
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private TextView lblTitle;
-	private VisualizerView visualizerView;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresScreen, playing, isWindowFocused, panelTopWasVisibleOk;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresScreen, playing, isWindowFocused, panelTopWasVisibleOk, visualizerPaused;
 	private float panelTopAlpha;
 	private int fxVisualizerAudioSessionId, version, panelTopLastTime, panelTopHiding;
 	private Object systemUIObserver;
@@ -261,16 +260,16 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		btnMenu.setLayoutParams(p);
 		btnMenu.setIcon(UI.ICON_MENU);
 		
-		if (visualizerView != null) {
+		if (visualizer != null) {
 			final InterceptableLayout.LayoutParams ip;
 			if (visualizerViewFullscreen) {
 				ip = new InterceptableLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			} else {
-				final Point pt = visualizerView.getDesiredSize(info.screenWidth, info.screenHeight);
+				final Point pt = visualizer.getDesiredSize(info.screenWidth, info.screenHeight);
 				ip = new InterceptableLayout.LayoutParams(pt.x, pt.y);
 				ip.gravity = Gravity.CENTER;
 			}
-			((View)visualizerView).setLayoutParams(ip);
+			((View)visualizer).setLayoutParams(ip);
 		}
 		
 		panelControls.requestLayout();
@@ -473,13 +472,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		//	panelTop.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
 
 		if (visualizer != null) {
-			visualizerView = visualizer.getView();
-			visualizerViewFullscreen = visualizerView.isFullscreen();
-			if (visualizerView != null) {
-				((View)visualizerView).setOnClickListener(this);
-				panelControls.addView((View)visualizerView);
-				panelTop.bringToFront();
-			}
+			visualizerViewFullscreen = visualizer.isFullscreen();
+			((View)visualizer).setOnClickListener(this);
+			panelControls.addView((View)visualizer);
+			panelTop.bringToFront();
 		}
 		
 		prepareViews(true);
@@ -544,10 +540,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 						timer.release();
 						timer = null;
 					}
-					if (visualizer != null) {
+					if (visualizer != null)
 						visualizer.release();
-						visualizer = null;
-					}
 					if (fxVisualizer != null) {
 						try {
 							fxVisualizer.setEnabled(false);
@@ -564,6 +558,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				}
 			}
 		}, "Visualizer Thread", false, false, true);
+		if (visualizer != null) {
+			visualizerPaused = false;
+			visualizer.onActivityResume();
+		}
 		timer.start(16);
 		uiAnimTimer = (visualizerRequiresScreen ? new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false) : null);
 		
@@ -610,6 +608,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@Override
 	protected void onPause() {
+		if (visualizer != null && !visualizerPaused) {
+			visualizerPaused = true;
+			visualizer.onActivityPause();
+		}
 		Player.observer = null;
 		paused = true;
 		Player.setAppIdle(true);
@@ -625,6 +627,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		onPlayerChanged(Player.currentSong, true, null);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
+		if (visualizer != null && visualizerPaused) {
+			visualizerPaused = false;
+			visualizer.onActivityResume();
+		}
 		super.onResume();
 	}
 	
@@ -672,9 +678,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			UI.toast(getApplication(), R.string.visualizer_not_supported);
 		}
 		//perform the final cleanup
-		if (!alive && visualizerView != null) {
-			visualizerView.releaseView();
-			visualizerView = null;
+		if (!alive && visualizer != null) {
+			if (!visualizerPaused) {
+				visualizerPaused = true;
+				visualizer.onActivityPause();
+			}
+			visualizer.releaseView();
+			visualizer = null;
 		}
 	}
 	
@@ -767,10 +777,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			resumeTimer();
 		} else if (view == btnMenu) {
 			onPrepareOptionsMenu(null);
-		} else if (view == visualizerView || view == panelControls) {
-			final Visualizer v = visualizer;
-			if (v != null && panelTopWasVisibleOk)
-				v.onClick();
+		} else if (view == visualizer || view == panelControls) {
+			if (visualizer != null && panelTopWasVisibleOk)
+				visualizer.onClick();
 		}
 	}
 	

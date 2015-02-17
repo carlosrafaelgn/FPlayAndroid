@@ -60,7 +60,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, View.OnClickListener, Runnable {
+public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer, MenuItem.OnMenuItemClickListener, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, View.OnClickListener, Runnable {
 	private static final int MSG_UPDATE_PACKAGES = 0x0600;
 	private static final int MSG_PLAYER_COMMAND = 0x0601;
 
@@ -182,12 +182,6 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	}
 
 	//Runs on the MAIN thread
-	@Override
-	public VisualizerView getView() {
-		return this;
-	}
-
-	//Runs on the MAIN thread
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
 		case BluetoothConnectionManager.REQUEST_ENABLE:
@@ -212,6 +206,16 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			}
 			break;
 		}
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onActivityPause() {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onActivityResume() {
 	}
 
 	//Runs on the MAIN thread
@@ -274,6 +278,17 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
 		if (connected && bt != null)
 			generateAndSendState();
+	}
+
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean isFullscreen() {
+		return true;
+	}
+
+	//Runs on the MAIN thread (called only if isFullscreen() returns false)
+	public Point getDesiredSize(int availableWidth, int availableHeight) {
+		return new Point(availableWidth, availableHeight);
 	}
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
@@ -368,17 +383,6 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		version++;
 		connected = false;
 		transmitting = false;
-	}
-
-	//Runs on the MAIN thread (returned value MUST always be the same)
-	@Override
-	public boolean isFullscreen() {
-		return true;
-	}
-
-	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight) {
-		return new Point(availableWidth, availableHeight);
 	}
 
 	//Runs on the MAIN thread (AFTER Visualizer.release())

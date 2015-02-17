@@ -52,7 +52,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHolder.Callback, Visualizer, VisualizerView, MenuItem.OnMenuItemClickListener {
+public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHolder.Callback, Visualizer, MenuItem.OnMenuItemClickListener {
 	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_LORES = MNU_VISUALIZER + 2, MNU_HIRES = MNU_VISUALIZER + 3, MNU_VOICEPRINT = MNU_VISUALIZER + 4;
 	
 	static {
@@ -139,15 +139,19 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		commonSetColorIndex(colorIndex);
 		return true;
 	}
-	
-	//Runs on the MAIN thread
-	@Override
-	public VisualizerView getView() {
-		return this;
-	}
 
 	//Runs on the MAIN thread
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onActivityPause() {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onActivityResume() {
 	}
 
 	//Runs on the MAIN thread
@@ -197,6 +201,25 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	//Runs on the MAIN thread
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	}
+
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean isFullscreen() {
+		return false;
+	}
+
+	//Runs on the MAIN thread (called only if isFullscreen() returns false)
+	public Point getDesiredSize(int availableWidth, int availableHeight) {
+		point.x = ((availableWidth > availableHeight) ? ((availableWidth * 7) >> 3) : availableWidth) >> 8;
+		point.y = ((availableWidth < availableHeight) ? availableWidth : availableHeight) >> 1;
+		if (point.x < 1)
+			point.x = 1;
+		point.x <<= 8;
+		if (point.x > availableWidth)
+			point.x = availableWidth;
+		point.y &= (~1); //make y always an even number
+		return point;
 	}
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
@@ -264,26 +287,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		bfft = null;
 		terminate();
 	}
-	
-	//Runs on the MAIN thread (returned value MUST always be the same)
-	@Override
-	public boolean isFullscreen() {
-		return false;
-	}
-	
-	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight) {
-		point.x = ((availableWidth > availableHeight) ? ((availableWidth * 7) >> 3) : availableWidth) >> 8;
-		point.y = ((availableWidth < availableHeight) ? availableWidth : availableHeight) >> 1;
-		if (point.x < 1)
-			point.x = 1;
-		point.x <<= 8;
-		if (point.x > availableWidth)
-			point.x = availableWidth;
-		point.y &= (~1); //make y always an even number
-		return point;
-	}
-	
+
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	@Override
 	public void releaseView() {

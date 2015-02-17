@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Point;
 import android.view.ContextMenu;
 
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -42,12 +43,15 @@ public interface Visualizer {
 	public static final String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
 	public static final int MAX_POINTS = 1024;
 	public static final int MNU_VISUALIZER = 200;
-	
-	//Runs on the MAIN thread
-	public VisualizerView getView();
-	
+
 	//Runs on the MAIN thread
 	public void onActivityResult(int requestCode, int resultCode, Intent data);
+
+	//Runs on the MAIN thread
+	public void onActivityPause();
+
+	//Runs on the MAIN thread
+	public void onActivityResume();
 
 	//Runs on the MAIN thread
 	public void onCreateContextMenu(ContextMenu menu);
@@ -57,6 +61,12 @@ public interface Visualizer {
 
 	//Runs on the MAIN thread
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
+
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	public boolean isFullscreen();
+
+	//Runs on the MAIN thread (called only if isFullscreen() returns false)
+	public Point getDesiredSize(int availableWidth, int availableHeight);
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
 	public boolean requiresScreen();
@@ -81,4 +91,7 @@ public interface Visualizer {
 	
 	//Runs on a SECONDARY thread
 	public void release();
+
+	//Runs on the MAIN thread (AFTER release())
+	public void releaseView();
 }
