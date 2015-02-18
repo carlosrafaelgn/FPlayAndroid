@@ -31,6 +31,7 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
+#include "SimpleMutex.h"
 #include "CommonNeon.h"
 #include <time.h>
 

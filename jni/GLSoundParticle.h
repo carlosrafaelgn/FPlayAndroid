@@ -48,6 +48,8 @@ private:
 	unsigned int sensorData, lastSensorTime, landscape;
 	float matrix[9], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3];
 
+	SimpleMutex mutex;
+
 	void FillBgParticle(int index, float y) {
 		bgPos[(index << 1)] = 0.0078125f * (float)(((int)rand() & 7) - 4);
 		bgPos[(index << 1) + 1] = y;
@@ -173,6 +175,9 @@ public:
 		int p = 0, c, ic, i = 2, last = 44, last2 = 116;
 		unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 
+		mutex.enter0();
+		mutex.leave0();
+
 		for (c = 0; c < BG_COLUMNS; c++) {
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
 			//increase the amplitudes as the frequency increases, in order to improve the effect
@@ -214,13 +219,6 @@ public:
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 			}
 		}
-
-/*float amplitude[33];
-vec2 pos;
-int index;
-int bassIndex;
-vec2 size;
-vec3 color;*/
 	}
 
 	void OnSensorData(int sensorType, float* values) {
@@ -299,12 +297,11 @@ vec3 color;*/
 		Ax *= invA;
 		Ay *= invA;
 		Az *= invA;
-		const float Mx = (Ay * Hz) - (Az * Hy);
-		const float My = (Az * Hx) - (Ax * Hz);
-		const float Mz = (Ax * Hy) - (Ay * Hx);
+		mutex.enter1();
 		matrix[0] = Hx; matrix[1] = Hy; matrix[2] = Hz;
-		matrix[3] = Mx; matrix[4] = My; matrix[5] = Mz;
+		matrix[3] = (Ay * Hz) - (Az * Hy); matrix[4] = (Az * Hx) - (Ax * Hz); matrix[5] = (Ax * Hy) - (Ay * Hx);
 		matrix[6] = Ax; matrix[7] = Ay; matrix[8] = Az;
+		mutex.leave1();
 		//SensorManager.getRotationMatrix() returns the matrix in row-major order and
 		//OpenGL needs the matrices in column-major order... nevertheless we must not
 		//transpose this matrix, as it will be used as the camera matrix, and the camera
