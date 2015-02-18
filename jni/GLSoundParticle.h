@@ -46,7 +46,7 @@ private:
 	unsigned char bgColor[BG_COUNT];
 
 	unsigned int sensorData, lastSensorTime, landscape;
-	float matrix[9], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3];
+	float matrix[16], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3], screenLargestSize, yScale, yScaleRatio;
 
 	SimpleMutex mutex;
 
@@ -66,14 +66,20 @@ public:
 		sensorData = 0;
 		lastSensorTime = 0;
 		landscape = 0;
-		memset(matrix, 0, sizeof(float) * 9);
+		//yScale = tan((PI * 0.5f) - (fovyInDegrees * PI / 360.0f)); //cot(x) = tan(PI/2 - x)
+		//considering fovyInDegrees = 50 deg:
+		yScale = 2.1445069205095586163562607910459f;
+		yScaleRatio = yScale;
+		memset(matrix, 0, sizeof(float) * 16);
 		memset(accelData, 0, sizeof(float) * 3);
 		memset(magneticData, 0, sizeof(float) * 3);
 		memset(oldAccelData, 0, sizeof(float) * 3);
 		memset(oldMagneticData, 0, sizeof(float) * 3);
-		matrix[0] = 1.0f;
-		matrix[4] = 1.0f;
-		matrix[8] = 1.0f;
+#define zNear 1.0f
+#define zFar 50.0f
+#define fovCoefA (zFar / (zNear - zFar))
+#define fovCoefB ((zNear * zFar) / (zNear - zFar))
+		matrix[14] = fovCoefB; //for the fov matrix
 
 #define FULL 0.75f
 #define HALF 0.325f
@@ -160,9 +166,13 @@ public:
 	}
 
 	void SetAspect(int width, int height) {
-		//change the time coefficient to slow down the particles when in portrait mode
-		timeCoef = ((width >= height) ? 0.001f : (0.001f * (float)width / (float)height));
-		landscape = (width >= height);
+		if (glType == TYPE_IMMERSIVE_PARTICLE) {
+			landscape = (width >= height);
+			yScaleRatio = yScale * (float)height / (float)width;
+		} else {
+			//change the time coefficient to slow down the particles when in portrait mode
+			timeCoef = ((width >= height) ? 0.001f : (0.001f * (float)width / (float)height));
+		}
 	}
 
 	void Draw() {
@@ -175,8 +185,11 @@ public:
 		int p = 0, c, ic, i = 2, last = 44, last2 = 116;
 		unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 
-		mutex.enter0();
-		mutex.leave0();
+		if (glType == TYPE_IMMERSIVE_PARTICLE) {
+			mutex.enter0();
+			glUniformMatrix4fv(glMatrix, 1, 0, matrix);
+			mutex.leave0();
+		}
 
 		for (c = 0; c < BG_COLUMNS; c++) {
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
@@ -246,7 +259,7 @@ public:
 			commonUptimeDeltaMillis(&lastSensorTime);
 			return;
 		}
-		const float coefNew = (0.09375f / 16.0f) * (float)commonUptimeDeltaMillis(&lastSensorTime); //0.09375 @ 60fps (~16ms)
+		const float coefNew = (0.03125f / 16.0f) * (float)commonUptimeDeltaMillis(&lastSensorTime); //0.03125 @ 60fps (~16ms)
 		const float coefOld = 1.0f - coefNew;
 		accelData[0] = (oldAccelData[0] * coefOld) + (accelData[0] * coefNew);
 		accelData[1] = (oldAccelData[1] * coefOld) + (accelData[1] * coefNew);
@@ -297,16 +310,64 @@ public:
 		Ax *= invA;
 		Ay *= invA;
 		Az *= invA;
-		mutex.enter1();
-		matrix[0] = Hx; matrix[1] = Hy; matrix[2] = Hz;
-		matrix[3] = (Ay * Hz) - (Az * Hy); matrix[4] = (Az * Hx) - (Ax * Hz); matrix[5] = (Ax * Hy) - (Ay * Hx);
-		matrix[6] = Ax; matrix[7] = Ay; matrix[8] = Az;
-		mutex.leave1();
+		Ex = (Ay * Hz) - (Az * Hy);
+		Ey = (Az * Hx) - (Ax * Hz);
+		Ez = (Ax * Hy) - (Ay * Hx);
+
 		//SensorManager.getRotationMatrix() returns the matrix in row-major order and
 		//OpenGL needs the matrices in column-major order... nevertheless we must not
-		//transpose this matrix, as it will be used as the camera matrix, and the camera
-		//matrix is the inverse of the world matrix (luckly, the inverse of a pure
+		//transpose this matrix, as it will be used as the camera/view matrix, and the
+		//view matrix is the inverse of the world matrix (luckly, the inverse of a pure
 		//rotation matrix is also its transpose!)
+
+		//now, we apply a projection matrix with a fov of 50 deg
+		//based on D3DXMatrixPerspectiveFovRH
+		//http://msdn.microsoft.com/en-us/library/windows/desktop/bb205351(v=vs.85).aspx
+		//...as a matter of fact, this is a port from my original JavaScript implementation:
+		//http://carlosrafaelgn.com.br/WebGL/Matrix4.js
+
+		//matrix = fov * view
+
+		//optimizations:
+		//- assume m3, m7, m11, m12, m13, m14 are 0 and m15 is 1 before applying the fov matrix
+		//- use macros intead of storing everything in the actual matrix, just to read everything
+		//back again to apply the fov
+#define m0 Hx
+#define m1 Hy
+#define m2 Hz
+#define m4 Ex
+#define m5 Ey
+#define m6 Ez
+#define m8 Ax
+#define m9 Ay
+#define m10 Az
+		mutex.enter1();
+		matrix[0] = m0 * yScaleRatio;
+		matrix[4] = m4 * yScaleRatio;
+		matrix[8] = m8 * yScaleRatio;
+		matrix[1] = m1 * yScale;
+		matrix[5] = m5 * yScale;
+		matrix[9] = m9 * yScale;
+		matrix[2] = m2 * fovCoefA;
+		matrix[6] = m6 * fovCoefA;
+		matrix[10] = m10 * fovCoefA;
+		matrix[3] = -m2;
+		matrix[7] = -m6;
+		matrix[11] = -m10;
+		mutex.leave1();
+#undef m0
+#undef m1
+#undef m2
+#undef m4
+#undef m5
+#undef m6
+#undef m8
+#undef m9
+#undef m10
+#undef zNear //defined inside the constructor
+#undef zFar
+#undef fovCoefA
+#undef fovCoefB
 	}
 };
 

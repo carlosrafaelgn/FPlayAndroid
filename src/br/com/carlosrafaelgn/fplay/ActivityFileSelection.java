@@ -183,7 +183,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (fileList != null) {
 			fileList.setObserver(started ? null : list);
 			count = fileList.getCount();
-			if (!started && count > 0 && hasButtons)
+			if (!started && count > 0 && list != null && list.isInTouchMode()) //hasButtons)
 				fileList.setSelection(0, true);
 			if (list != null && !list.isInTouchMode())
 				list.centerItem(fileList.getSelection());

@@ -31,11 +31,12 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-//https://www.khronos.org/opengles/sdk/docs/man31/html/glDeleteBuffers.xml
-//https://www.khronos.org/opengles/sdk/docs/man31/html/glVertexAttribPointer.xml
-//https://www.khronos.org/opengles/sdk/docs/man31/html/glTexImage2D.xml
-//https://www.khronos.org/opengles/sdk/docs/man31/html/glGenBuffers.xml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glDeleteBuffers.xhtml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glVertexAttribPointer.xhtml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glTexImage2D.xhtml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glGenBuffers.xhtml
 //https://www.khronos.org/opengles/sdk/docs/man31/html/glPixelStorei.xhtml
+//https://www.khronos.org/opengles/sdk/docs/man31/html/glUniform.xhtml
 
 #include <android/bitmap.h>
 #include <GLES2/gl2.h>
@@ -88,7 +89,7 @@ static const float glTexCoordsRect[] = {
 static const char* const rectangleVShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }";
 
 static unsigned int glProgram, glProgram2, glType, glBuf[4];
-static int glTime, glAmplitude, glVerticesPerRow, glRows;
+static int glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix;
 
 //variables reuse :)
 #define glPos glProgram2
@@ -252,14 +253,26 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"}";
 		break;
 	case TYPE_IMMERSIVE_PARTICLE:
-		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; void main() {" \
-		"float a = mix(0.0625, 0.34375, amplitude);" \
+		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; uniform mat4 mvpMat; void main() {" \
+		/*baseX goes from -0.9 / 0.9, which we will map to pi / 0*/ \
+		"float a = -1.7 * (baseX + pos.x + (5.0 * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)));" \
+		/*spread the particles in a semicylinder with a radius of 3 and height of 12*/ \
+		"vec4 p = mvpMat * vec4(3.0 * cos(a), 3.0 * sin(a), 6.0 * pos.y, 1.0);" \
+		/*proceed with the original computation*/ \
+		"a = mix(0.1, 0.45, amplitude);" \
 		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
-		"bottom = bottom * bottom * bottom * 0.125;" \
+		"bottom = bottom * bottom * bottom * 0.2;" \
 		"a = (0.75 * a) + (0.25 * bottom);" \
-		"gl_Position = vec4(baseX + pos.x + (5.0 * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)) + (inPosition.x * aspect.x * a), pos.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
+		"vec3 smoothedColor = color + bottom + (0.25 * amplitude);" \
+		/*make the particles smoothly appear at the bottom and diminish at the top*/ \
+		"if (pos.y > 1.0)" \
+			"a *= 1.0 - smoothstep(1.0, 1.2, pos.y);" \
+		"else if (pos.y < -0.8)" \
+			"smoothedColor *= smoothstep(-1.2, -0.8, pos.y);" \
+		/*gl_Position is different from p, because we want the particles to be always facing the camera*/ \
+		"gl_Position = vec4(p.x + (inPosition.x * aspect.x * a * 5.0), p.y + (inPosition.y * aspect.y * a * 5.0), p.z, p.w);" \
 		"vTexCoord = inTexCoord;" \
-		"vColor = color + bottom + (0.25 * amplitude);" \
+		"vColor = smoothedColor;" \
 		"}";
 		break;
 	default:
@@ -530,7 +543,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		//according to these:
 		//http://stackoverflow.com/questions/5705753/android-opengl-es-loading-a-non-power-of-2-texture
 		//http://stackoverflow.com/questions/3740077/can-opengl-es-render-textures-of-non-base-2-dimensions
-		//https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml
+		//https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xhtml
 		//non-power-of-2 textures cannot be used with GL_TEXTURE_WRAP_x other than GL_CLAMP_TO_EDGE
 		//(even though it works on many devices, the spec says it shouldn't...)
 		int TEXTURE_SIZE = computeSpinSize(estimatedWidth, estimatedHeight, dp1OrLess);
@@ -563,8 +576,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		glTime = glGetUniformLocation(glProgram, "time");
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		break;
-	case TYPE_PARTICLE:
 	case TYPE_IMMERSIVE_PARTICLE:
+		glMatrix = glGetUniformLocation(glProgram, "mvpMat");
+	case TYPE_PARTICLE:
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 		glPos = glGetUniformLocation(glProgram, "pos");
 		glColor = glGetUniformLocation(glProgram, "color");
