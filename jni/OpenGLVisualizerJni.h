@@ -259,9 +259,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		/*spread the particles in a semicylinder with a radius of 3 and height of 12*/ \
 		"vec4 p = mvpMat * vec4(3.0 * cos(a), 3.0 * sin(a), 6.0 * pos.y, 1.0);" \
 		/*proceed with the original computation*/ \
-		"a = mix(0.1, 0.45, amplitude);" \
+		"a = mix(0.0625, 0.46875, amplitude);" \
 		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
-		"bottom = bottom * bottom * bottom * 0.2;" \
+		"bottom = bottom * bottom * bottom * 0.125;" \
 		"a = (0.75 * a) + (0.25 * bottom);" \
 		"vec3 smoothedColor = color + bottom + (0.25 * amplitude);" \
 		/*make the particles smoothly appear at the bottom and diminish at the top*/ \

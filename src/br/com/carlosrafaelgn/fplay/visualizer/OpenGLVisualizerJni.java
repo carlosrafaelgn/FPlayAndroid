@@ -110,7 +110,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE /*|| type == TYPE_IMMERSIVE_PARTICLE*/) ? 0 : 2);
+		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE) ? 0 : 2);
 		this.activity = activity;
 
 		//initialize these with default values to be used in
@@ -131,19 +131,30 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		if (type == TYPE_IMMERSIVE_PARTICLE) {
 			try {
 				sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-				accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-				magnetic = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-				if (accel == null || magnetic == null) {
-					sensorManager = null;
-					accel = null;
-					magnetic = null;
-				}
 			} catch (Throwable ex) {
+				sensorManager = null;
+			}
+			try {
+				accel = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+			} catch (Throwable ex) {
+				accel = null;
+			}
+			if (accel == null) {
+				try {
+					accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+				} catch (Throwable ex) {
+					accel = null;
+				}
+			}
+			try {
+				magnetic = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+			} catch (Throwable ex) {
+				magnetic = null;
+			}
+			if (accel == null || magnetic == null) {
 				sensorManager = null;
 				accel = null;
 				magnetic = null;
-			}
-			if (sensorManager == null) {
 				UI.toast(activity, "No sensors :(");
 			}
 		}

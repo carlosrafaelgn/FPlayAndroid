@@ -1247,7 +1247,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				} else {
 					final StringBuilder sb = new StringBuilder(thePlayer.getText(R.string.error_msg));
 					sb.append(msg);
-					UI.toast(thePlayer, sb.toString());
+					UI.toast(thePlayer, sb);
 				}
 			}
 			if (observer != null)

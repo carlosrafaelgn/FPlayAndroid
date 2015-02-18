@@ -1575,7 +1575,7 @@ public final class UI {
 	}
 	
 	public static void toast(Context context, int resId) {
-		toast(context, context.getText(resId).toString());
+		toast(context, context.getText(resId));
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -1584,7 +1584,7 @@ public final class UI {
 		view.setBackgroundDrawable(new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize));
 	}
 	
-	public static void toast(Context context, String text) {
+	public static void toast(Context context, CharSequence text) {
 		if (internalToast == null) {
 			final Toast t = new Toast(context);
 			final TextView v = new TextView(context);
