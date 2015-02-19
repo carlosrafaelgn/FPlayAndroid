@@ -37,9 +37,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.text.InputType;
 import android.util.TypedValue;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -54,7 +51,6 @@ import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
-import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
@@ -67,7 +63,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		public void onPlayClicked(int id, String path, String name);
 	}
 	
-	private static final int MNU_LOAD = 100, MNU_SAVE = 101, MNU_SAVEAS = 102, MNU_DELETE = 103;
 	private final boolean save, hasButtons;
 	private final String fileType, itemType;
 	private final int id;
@@ -82,8 +77,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private BgButton btnGoBack, btnMenu, btnAdd, btnPlay;
 	private RelativeLayout panelSecondary;
 	private boolean loading;
-	private int lastLongClickedId;
-	
+	private TextIconDrawable btnMenuIcon;
+
 	public ActivityFileSelection(CharSequence title, int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
 		if (fileType.charAt(0) != FileSt.PRIVATE_FILETYPE_ID)
 			throw new IllegalArgumentException("fileType must start with " + FileSt.PRIVATE_FILETYPE_ID);
@@ -94,7 +89,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		this.itemType = itemType;
 		this.fileType = fileType;
 		this.listener = listener;
-		this.lastLongClickedId = -1;
 		this.formatterSB = new StringBuilder();
 		this.formatter = new Formatter(formatterSB);
 	}
@@ -108,7 +102,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (!save) {
 			RelativeLayout.LayoutParams rp;
 			final int count = ((fileList != null) ? fileList.getCount() : 0);
-			if (count != 0) {
+			if (count != 0 && checkedFile != null) {
 				if (btnGoBack != null) {
 					btnGoBack.setNextFocusRightId(R.id.btnMenu);
 					UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
@@ -116,7 +110,10 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				if (btnMenu != null)
 					btnMenu.setVisibility(View.VISIBLE);
 			} else {
-				checkedFile = null;
+				if (checkedFile != null) {
+					checkedFile.isChecked = false;
+					checkedFile = null;
+				}
 				if (btnGoBack != null) {
 					btnGoBack.setNextFocusRightId(R.id.list);
 					UI.setNextFocusForwardId(btnGoBack, R.id.list);
@@ -124,25 +121,25 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				if (btnMenu != null)
 					btnMenu.setVisibility(View.GONE);
 			}
-			if (checkedFile == null) {
-				if (panelSecondary != null && panelSecondary.getVisibility() != View.GONE) {
-					if (list != null) {
-						rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-						rp.addRule(RelativeLayout.BELOW, R.id.panelControls);
-						rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-						list.setLayoutParams(rp);
-						UI.setNextFocusForwardId(list, R.id.btnGoBack);
+			if (hasButtons) {
+				if (checkedFile == null) {
+					if (panelSecondary != null && panelSecondary.getVisibility() != View.GONE) {
+						if (list != null) {
+							rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+							rp.addRule(RelativeLayout.BELOW, R.id.panelControls);
+							rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+							list.setLayoutParams(rp);
+							UI.setNextFocusForwardId(list, R.id.btnGoBack);
+						}
+						panelSecondary.setVisibility(View.GONE);
+						if (btnMenu != null)
+							btnMenu.setNextFocusUpId(R.id.list);
+						if (btnGoBack != null) {
+							btnGoBack.setNextFocusUpId(R.id.list);
+							btnGoBack.setNextFocusLeftId(R.id.list);
+						}
 					}
-					panelSecondary.setVisibility(View.GONE);
-					if (btnMenu != null)
-						btnMenu.setNextFocusUpId(R.id.list);
-					if (btnGoBack != null) {
-						btnGoBack.setNextFocusUpId(R.id.list);
-						btnGoBack.setNextFocusLeftId(R.id.list);
-					}
-				}
-			} else {
-				if (panelSecondary != null && panelSecondary.getVisibility() != View.VISIBLE) {
+				} else if (panelSecondary != null && panelSecondary.getVisibility() != View.VISIBLE) {
 					if (list != null) {
 						rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 						rp.addRule(RelativeLayout.BELOW, R.id.panelControls);
@@ -158,6 +155,19 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 						btnGoBack.setNextFocusLeftId(R.id.btnPlay);
 					}
 				}
+			}
+		} else {
+			if (btnMenuIcon != null && btnMenu != null && btnMenuIcon.getIcon() != ((checkedFile != null) ? UI.ICON_DELETE : UI.ICON_SAVE)) {
+				final String txt;
+				if (checkedFile == null) {
+					txt = format(R.string.msg_create_new, itemType);
+					btnMenuIcon.setIcon(UI.ICON_SAVE);
+				} else {
+					txt = format(R.string.msg_delete_button, itemType);
+					btnMenuIcon.setIcon(UI.ICON_DELETE);
+				}
+				btnMenu.setText(txt);
+				btnMenu.setContentDescription(txt);
 			}
 		}
 	}
@@ -179,53 +189,67 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (UI.browserActivity != this)
 			return;
 		loading = started;
-		int count = 0;
-		if (fileList != null) {
-			fileList.setObserver(started ? null : list);
-			count = fileList.getCount();
-			if (!started && count > 0 && list != null && list.isInTouchMode()) //hasButtons)
-				fileList.setSelection(0, true);
-			if (list != null && !list.isInTouchMode())
-				list.centerItem(fileList.getSelection());
-		}
-		if (list != null)
+		if (list != null) {
 			list.setCustomEmptyText(started ? getText(R.string.loading) : null);
+			if (fileList != null) {
+				fileList.setObserver(started ? null : list);
+				final int count = fileList.getCount();
+				if (!started) {
+					if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
+						UI.announceAccessibilityText(count == 0 ? getText(R.string.empty_list) : FileView.makeContextDescription(true, getHostActivity(), fileList.getItemT(0)));
+					if (count > 0 && !list.isInTouchMode()) {
+						fileList.setSelection(0, true);
+						list.centerItem(0);
+					}
+				}
+			}
+		}
 		if (!started)
 			updateOverallLayout();
 	}
 	
 	@Override
 	public View createView() {
-		return new FileView(Player.getService(), null, hasButtons);
+		return new FileView(Player.getService(), null, true);
 	}
 	
 	@Override
 	public void processItemCheckboxClick(int position) {
-		if (!hasButtons)
-			return;
 		//see the comments at processItemButtonClick(), in ActivityBrowser2
 		if (list == null || fileList == null)
 			return;
-		if (!list.isInTouchMode())
+		if (!list.isInTouchMode() && fileList.getSelection() != position)
 			fileList.setSelection(position, true);
 		final FileSt file = fileList.getItemT(position);
 		if (file == null) //same as above
 			return;
+		if (checkedFile != file && checkedFile != null)
+			checkedFile.isChecked = false;
 		checkedFile = (file.isChecked ? file : null);
 		updateOverallLayout();
+		fileList.notifyCheckedChanged();
 	}
 	
-	private void confirm(final String path, final String name, final boolean delete) {
+	private void confirm(final String path, final String name, final int deleteIndex) {
 		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 		.setTitle(getText(R.string.oops))
-		.setView(UI.createDialogView(getHostActivity(), format(delete ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, name)))
-		.setPositiveButton(delete ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
+		.setView(UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, name)))
+		.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
-				if (delete) {
+				if (deleteIndex >= 0) {
 					try {
 						getApplication().deleteFile(path);
-						fileList.removeSelection();
-						updateOverallLayout();
+						final int p;
+						if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
+							checkedFile.isChecked = false;
+							checkedFile = null;
+							if (fileList.getSelection() != p)
+								fileList.setSelection(p, true);
+							fileList.removeSelection();
+							if (list != null && list.isInTouchMode() && fileList.getSelection() >= 0)
+								fileList.setSelection(-1, true);
+							updateOverallLayout();
+						}
 					} catch (Throwable ex) {
 					}
 				} else {
@@ -248,7 +272,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
 			final FileSt file = fileList.getItemT(position);
 			if (save) {
-				confirm(file.path, file.name, false);
+				confirm(file.path, file.name, -1);
 				return;
 			}
 			final OnFileSelectionListener listener = this.listener;
@@ -259,113 +283,14 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			fileList.setSelection(position, true);
 		}
 	}
-	
+
 	@Override
 	public void processItemLongClick(int position) {
-		if (list == null || fileList == null)
-			return;
-		if (UI.doubleClickMode && fileList.getSelection() != position)
-			fileList.setSelection(position, true);
-		lastLongClickedId = position;
-		CustomContextMenu.openContextMenu(btnMenu, this);
 	}
-	
-	private void processMenuItemClick(int id) {
-		final int s = ((lastLongClickedId < 0) ? fileList.getSelection() : lastLongClickedId);
-		switch (id) {
-		case MNU_LOAD:
-			if (s >= 0)
-				processItemClick(s);
-			break;
-		case MNU_SAVE:
-			if (s >= 0)
-				processItemClick(s);
-			break;
-		case MNU_SAVEAS:
-			final Context ctx = getHostActivity();
-			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
-			
-			TextView lbl = new TextView(ctx);
-			lbl.setText(format(R.string.msg_enter_name, itemType));
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
-			l.addView(lbl);
-			
-			txtSaveAsName = new EditText(ctx);
-			txtSaveAsName.setContentDescription(lbl.getText());
-			txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
-			txtSaveAsName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtSaveAsName.setSingleLine();
-			final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._DLGsppad;
-			txtSaveAsName.setLayoutParams(p);
-			if (s >= 0)
-				txtSaveAsName.setText(fileList.getItemT(s).name);
-			l.addView(txtSaveAsName);
-			
-			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
-			.setTitle(format(R.string.msg_create_new_title, itemType))
-			.setView(l)
-			.setPositiveButton(R.string.create, this)
-			.setNegativeButton(R.string.cancel, this)
-			.create());
-			break;
-		case MNU_DELETE:
-			if (s >= 0) {
-				final FileSt f = fileList.getItemT(s);
-				confirm(f.path, f.name, true);
-			}
-			break;
-		}
-	}
-	
-	@Override
-	public View getNullContextMenuView() {
-		if (list != null && fileList != null && !loading) {
-			if ((lastLongClickedId = fileList.getSelection()) < 0)
-				return (save ? null : btnMenu);
-			return btnMenu;
-		}
-		return null;
-	}
-	
-	@Override
-	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		final int i = ((lastLongClickedId < 0) ? fileList.getSelection() : lastLongClickedId);
-		UI.prepare(menu);
-		//if (save)
-		//	menu.add(0, MNU_SAVEAS, 0, format(R.string.msg_create_new, itemType))
-		//		.setOnMenuItemClickListener(this)
-		//		.setIcon(new TextIconDrawable(UI.ICON_SAVE));
-		if (i >= 0) {
-			if (save)
-				menu.add(0, MNU_SAVE, 0, format(R.string.msg_overwrite, itemType, fileList.getItemT(i).name))
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable(UI.ICON_SAVE));
-			else
-				menu.add(0, MNU_LOAD, 0, R.string.load)
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable(UI.ICON_LOAD));
-			UI.separator(menu, 1, 0);
-			menu.add(1, MNU_DELETE, 1, format(R.string.msg_delete, itemType, fileList.getItemT(i).name))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_DELETE));
-		} else if (!save && !UI.doubleClickMode && fileList.getCount() > 0) {
-			//just to show something when the user clicks the menu button
-			menu.add(1, MNU_DELETE, 1, format(R.string.msg_delete, itemType, fileList.getItemT(0).name))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_DELETE));
-		}
-	}	
-	
-	@Override
-	public boolean onMenuItemClick(MenuItem item) {
-		processMenuItemClick(item.getItemId());
-		return true;
-	}
-	
+
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
-		int p;
+		final int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
 			((btnMenu.getVisibility() == View.VISIBLE) ? btnMenu : btnGoBack).requestFocus();
@@ -374,29 +299,14 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			((btnAdd != null && panelSecondary != null && panelSecondary.getVisibility() == View.VISIBLE) ? btnAdd : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_ENTER:
-			if (fileList != null) {
-				p = fileList.getSelection();
-				if (p >= 0)
-					processItemClick(p);
-			}
+			if (fileList != null && (p = fileList.getSelection()) >= 0)
+				processItemClick(p);
 			return true;
 		case UI.KEY_EXTRA:
-			if (fileList != null && hasButtons) {
-				p = fileList.getSelection();
-				if (p >= 0) {
-					final FileSt file = fileList.getItemT(p);
-					if (checkedFile == file) {
-						file.isChecked = false;
-						checkedFile = null;
-					} else {
-						if (checkedFile != null)
-							checkedFile.isChecked = false;
-						file.isChecked = true;
-						checkedFile = file;
-					}
-					processItemCheckboxClick(p);
-					fileList.notifyCheckedChanged();
-				}
+			if (fileList != null && (p = fileList.getSelection()) >= 0) {
+				final FileSt file = fileList.getItemT(p);
+				file.isChecked = !file.isChecked;
+				processItemCheckboxClick(p);
 			}
 			return true;
 		}
@@ -410,11 +320,39 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		} if (view == btnMenu) {
 			if (loading)
 				return;
-			if (save) {
-				processMenuItemClick(MNU_SAVEAS);
+			if (save && checkedFile == null) {
+				final Context ctx = getHostActivity();
+				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
+
+				TextView lbl = new TextView(ctx);
+				lbl.setText(format(R.string.msg_enter_name, itemType));
+				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+				l.addView(lbl);
+
+				txtSaveAsName = new EditText(ctx);
+				txtSaveAsName.setContentDescription(lbl.getText());
+				txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+				txtSaveAsName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+				txtSaveAsName.setSingleLine();
+				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+				p.topMargin = UI._DLGsppad;
+				txtSaveAsName.setLayoutParams(p);
+				if (fileList != null && fileList.getSelection() >= 0)
+					txtSaveAsName.setText(fileList.getItemT(fileList.getSelection()).name);
+				l.addView(txtSaveAsName);
+
+				UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
+					.setTitle(format(R.string.msg_create_new_title, itemType))
+					.setView(l)
+					.setPositiveButton(R.string.create, this)
+					.setNegativeButton(R.string.cancel, this)
+					.create());
 			} else {
-				lastLongClickedId = -1;
-				CustomContextMenu.openContextMenu(btnMenu, this);
+				if (fileList != null && checkedFile != null) {
+					final int s = fileList.indexOf(checkedFile);
+					if (s >= 0)
+						confirm(checkedFile.path, checkedFile.name, s);
+				}
 			}
 		} else if (view == btnAdd) {
 			if (hasButtons && checkedFile != null) {
@@ -453,7 +391,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				n = n.substring(0, 64);
 			for (int i = fileList.getCount() - 1; i >= 0; i--) {
 				if (fileList.getItemT(i).name.equals(n)) {
-					confirm(n + fileType, n, false);
+					confirm(n + fileType, n, -1);
 					txtSaveAsName = null;
 					return;
 				}
@@ -486,11 +424,17 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		fileList.setObserver(list);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
 		if (save) {
-			btnMenu.setText(format(R.string.msg_create_new, itemType));
+			final String txt = format(R.string.msg_create_new, itemType);
+			btnMenu.setText(txt);
+			btnMenu.setContentDescription(txt);
 			btnMenu.setDefaultHeight();
-			btnMenu.setCompoundDrawables(new TextIconDrawable(UI.ICON_SAVE, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_SAVE, UI.color_text, UI.defaultControlContentsSize)), null, null, null);
 		} else {
-			btnMenu.setIcon(UI.ICON_MENU);
+			final String txt = format(R.string.msg_delete_button, itemType);
+			btnMenu.setText(txt);
+			btnMenu.setContentDescription(txt);
+			btnMenu.setDefaultHeight();
+			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_DELETE, UI.color_text, UI.defaultControlContentsSize)), null, null, null);
 			btnAdd = (BgButton)findViewById(R.id.btnAdd);
 			btnAdd.setTextColor(UI.colorState_text_reactive);
 			btnAdd.setOnClickListener(this);
@@ -545,6 +489,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		btnPlay = null;
 		list = null;
 		panelSecondary = null;
+		btnMenuIcon = null;
 	}
 	
 	@Override

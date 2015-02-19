@@ -45,12 +45,12 @@ private:
 	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT];
 	unsigned char bgColor[BG_COUNT];
 
-	unsigned int sensorData, lastSensorTime, landscape;
-	float matrix[16], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3], screenLargestSize, yScale, yScaleRatio;
+	unsigned int sensorData, lastSensorTime, landscape, nextDiffusion;
+	float matrix[16], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3], screenLargestSize, xScale, yScale;
 
 	SimpleMutex mutex;
 
-	void FillBgParticle(int index, float y) {
+	void fillBgParticle(int index, float y) {
 		bgPos[(index << 1)] = 0.0078125f * (float)(((int)rand() & 7) - 4);
 		bgPos[(index << 1) + 1] = y;
 		bgTheta[index] = 0.03125f * (float)(rand() & 63);
@@ -61,15 +61,14 @@ private:
 public:
 	GLSoundParticle() {
 		lastTime = commonTime;
-		timeCoef = 0.001f;
+		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f);
 
 		sensorData = 0;
 		lastSensorTime = 0;
 		landscape = 0;
-		//yScale = tan((PI * 0.5f) - (fovyInDegrees * PI / 360.0f)); //cot(x) = tan(PI/2 - x)
-		//considering fovyInDegrees = 50 deg:
-		yScale = 2.1445069205095586163562607910459f;
-		yScaleRatio = yScale;
+		nextDiffusion = 1;
+		yScale = 0.0f;
+		xScale = 0.0f;
 		memset(matrix, 0, sizeof(float) * 16);
 		memset(accelData, 0, sizeof(float) * 3);
 		memset(magneticData, 0, sizeof(float) * 3);
@@ -79,7 +78,7 @@ public:
 #define zFar 50.0f
 #define fovCoefA (zFar / (zNear - zFar))
 #define fovCoefB ((zNear * zFar) / (zNear - zFar))
-		matrix[14] = fovCoefB; //for the fov matrix
+		matrix[14] = fovCoefB; //-1 //for the fov matrix
 
 #define FULL 0.75f
 #define HALF 0.325f
@@ -116,11 +115,11 @@ public:
 		int i = 0, c, ic;
 		for (c = 0; c < BG_COLUMNS; c++) {
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, i++)
-				FillBgParticle(i, -1.2f + (0.01953125f * (float)(rand() & 127)));
+				fillBgParticle(i, -1.2f + (0.01953125f * (float)(rand() & 127)));
 		}
 	}
 
-	static void FillTexture() {
+	static void fillTexture() {
 #define TEXTURE_SIZE 64
 		unsigned char *tex = new unsigned char[TEXTURE_SIZE * TEXTURE_SIZE];
 
@@ -165,17 +164,46 @@ public:
 #undef TEXTURE_SIZE
 	}
 
-	void SetAspect(int width, int height) {
+	void setAspect(int width, int height) {
 		if (glType == TYPE_IMMERSIVE_PARTICLE) {
-			landscape = (width >= height);
-			yScaleRatio = yScale * (float)height / (float)width;
+			if (width >= height) {
+				landscape = 1;
+				//yScale = cot(fovY / 2) = cot(fovYInDegrees * PI / 360) //cot(x) = tan(PI/2 - x)
+				//considering fovYInDegrees = 50 deg:
+				yScale = 2.1445069205095586163562607910459f;
+			} else {
+				landscape = 0;
+				//in this case, we must make up for the extended height, and increase
+				//the fov proportionally (0.43633231299858239423092269212215 = 50 * PI / 360)
+				yScale = tanf(1.5707963267948966192313216916398f - (0.43633231299858239423092269212215f * (float)height / (float)width));
+			}
+			//xScale = yScale / aspect ratio
+			xScale = yScale * (float)height / (float)width;
 		} else {
 			//change the time coefficient to slow down the particles when in portrait mode
 			timeCoef = ((width >= height) ? 0.001f : (0.001f * (float)width / (float)height));
 		}
 	}
 
-	void Draw() {
+	void setImmersiveCfg(int diffusion, int riseSpeed) {
+		nextDiffusion = diffusion + 1;
+		switch (riseSpeed) {
+		case 0:
+			timeCoef = 0.0f;
+			break;
+		case 1:
+			timeCoef = 0.0003f;
+			break;
+		case 2:
+			timeCoef = 0.001f;
+			break;
+		case 3:
+			timeCoef = 0.0017f;
+			break;
+		}
+	}
+
+	void draw() {
 		float delta = (float)(commonTime - lastTime) * timeCoef;
 		lastTime = commonTime;
 
@@ -186,6 +214,23 @@ public:
 		unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 
 		if (glType == TYPE_IMMERSIVE_PARTICLE) {
+			if (nextDiffusion) {
+				//not perfect... but good enough ;)
+				c = nextDiffusion;
+				nextDiffusion = 0;
+				switch (c) {
+				case 2:
+					*((float*)&c) = 10.0f;
+					break;
+				case 3:
+					*((float*)&c) = 15.0f;
+					break;
+				default:
+					*((float*)&c) = 5.0f;
+					break;
+				}
+				glUniform1f(glGetUniformLocation(glProgram, "diffusion"), *((float*)&c));
+			}
 			mutex.enter0();
 			glUniformMatrix4fv(glMatrix, 1, 0, matrix);
 			mutex.leave0();
@@ -223,7 +268,7 @@ public:
 
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, p++) {
 				if (bgPos[(p << 1) + 1] > 1.2f)
-					FillBgParticle(p, -1.2f);
+					fillBgParticle(p, -1.2f);
 				else
 					bgPos[(p << 1) + 1] += bgSpeedY[p] * delta;
 				glUniform3fv(glColor, 1, COLORS + (bgColor[p] * 3));
@@ -234,7 +279,7 @@ public:
 		}
 	}
 
-	void OnSensorData(int sensorType, float* values) {
+	void onSensorData(int sensorType, float* values) {
 		if (sensorType == 1) {
 			accelData[0] = values[0];
 			accelData[1] = values[1];
@@ -342,18 +387,18 @@ public:
 #define m9 Ay
 #define m10 Az
 		mutex.enter1();
-		matrix[0] = m0 * yScaleRatio;
-		matrix[4] = m4 * yScaleRatio;
-		matrix[8] = m8 * yScaleRatio;
+		matrix[0] = m0 * xScale;
+		matrix[4] = m4 * xScale;
+		matrix[8] = m8 * xScale;
 		matrix[1] = m1 * yScale;
 		matrix[5] = m5 * yScale;
 		matrix[9] = m9 * yScale;
 		matrix[2] = m2 * fovCoefA;
 		matrix[6] = m6 * fovCoefA;
 		matrix[10] = m10 * fovCoefA;
-		matrix[3] = -m2;
-		matrix[7] = -m6;
-		matrix[11] = -m10;
+		matrix[3] = -m2; //m2 * fovCoefB;
+		matrix[7] = -m6; //m6 * fovCoefB;
+		matrix[11] = -m10; //m10 * fovCoefB;
 		mutex.leave1();
 #undef m0
 #undef m1

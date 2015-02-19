@@ -36,6 +36,7 @@
     <string name="msg_confirm_delete">Вы действительно хотите удалить %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Перезаписать %1$s \"%2$s\"</string>
     <string name="msg_delete">Удалить %1$s \"%2$s\"</string>
+    <string name="msg_delete_button">Удалить %1$s&#8230;</string>
     <string name="msg_create_new_title">Создать новый %s</string>
     <string name="msg_create_new">Создать новый %s&#8230;</string>
     <string name="msg_add">Эта кнопка добавляет в список воспроизведения все композиции в папке и её подпапках.</string>
@@ -268,6 +269,10 @@
     <string name="choose_image">Выберите изображение&#8230;</string>
     <string name="accessibility">Доступность</string>
     <string name="place_the_playlist_to_the_right">Поместите воспроизведения на правой стороне экрана</string>
+    <string name="sustain">Поддерживать</string>
+    <string name="diffusion">Диффузия</string>
+    <string name="msg_immersive">&#8634; Наведите устройство вокруг (будьте осторожны!)</string>
+    <string name="msg_no_sensors">Извините, но устройство не имеет необходимых датчиков :(</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>

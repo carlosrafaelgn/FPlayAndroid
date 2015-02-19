@@ -168,6 +168,7 @@ int computeSpinSize(int width, int height, int dp1OrLess) {
 }
 
 int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess) {
+	commonSRand();
 	glType = type;
 	glProgram = 0;
 	glProgram2 = 0;
@@ -253,26 +254,35 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"}";
 		break;
 	case TYPE_IMMERSIVE_PARTICLE:
-		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; uniform mat4 mvpMat; void main() {" \
-		/*baseX goes from -0.9 / 0.9, which we will map to pi / 0*/ \
-		"float a = -1.7 * (baseX + pos.x + (5.0 * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)));" \
-		/*spread the particles in a semicylinder with a radius of 3 and height of 12*/ \
-		"vec4 p = mvpMat * vec4(3.0 * cos(a), 3.0 * sin(a), 6.0 * pos.y, 1.0);" \
-		/*proceed with the original computation*/ \
-		"a = mix(0.0625, 0.46875, amplitude);" \
-		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
+		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; uniform mat4 mvpMat; void main() {" \
+		/*start with the original computation*/ \
+		"float a = mix(0.0625, 0.484375, amplitude)," \
+			"bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
 		"bottom = bottom * bottom * bottom * 0.125;" \
 		"a = (0.75 * a) + (0.25 * bottom);" \
+
 		"vec3 smoothedColor = color + bottom + (0.25 * amplitude);" \
 		/*make the particles smoothly appear at the bottom and diminish at the top*/ \
-		"if (pos.y > 1.0)" \
+		/*(from here on, bottom will store the radius)*/ \
+		"bottom = 3.0;" \
+		"if (pos.y > 1.0) {" \
 			"a *= 1.0 - smoothstep(1.0, 1.2, pos.y);" \
-		"else if (pos.y < -0.8)" \
-			"smoothedColor *= smoothstep(-1.2, -0.8, pos.y);" \
-		/*gl_Position is different from p, because we want the particles to be always facing the camera*/ \
-		"gl_Position = vec4(p.x + (inPosition.x * aspect.x * a * 5.0), p.y + (inPosition.y * aspect.y * a * 5.0), p.z, p.w);" \
+		"} else if (pos.y < -0.8) {" \
+			"bottom = smoothstep(-1.2, -0.8, pos.y);" \
+			"smoothedColor *= bottom;" \
+			"bottom *= 3.0;" \
+		"}" \
 		"vTexCoord = inTexCoord;" \
 		"vColor = smoothedColor;" \
+
+		/*baseX goes from -0.9 / 0.9, which we will map to pi / 0*/ \
+		"smoothedColor.x = -1.7 * (baseX + pos.x + (diffusion * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)));" \
+		/*spread the particles in a semicylinder with a radius of 3 and height of 12*/ \
+		"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x), bottom * sin(smoothedColor.x), 6.0 * pos.y, 1.0);" \
+		/*"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x) + (inPosition.x * a * 5.0), bottom * sin(smoothedColor.x) + (inPosition.y * a * 5.0), 6.0 * pos.y, 1.0);"*/ \
+
+		/*gl_Position is different from p, because we want the particles to be always facing the camera*/ \
+		"gl_Position = vec4(p.x + (inPosition.x * aspect.x * a * 5.0), p.y + (inPosition.y * aspect.y * a * 5.0), p.z, p.w);" \
 		"}";
 		break;
 	default:
@@ -511,7 +521,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 			((unsigned short*)floatBuffer)[3] = 0x34df;
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
 		} else if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
-			GLSoundParticle::FillTexture();
+			GLSoundParticle::fillTexture();
 		} else {
 			memset(floatBuffer, 0, 256);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
@@ -728,7 +738,7 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 			glVerticesPerRow <<= 1;
 		} else if (glType == TYPE_PARTICLE || glType == TYPE_IMMERSIVE_PARTICLE) {
 			if (glSoundParticle)
-				glSoundParticle->SetAspect(width, height);
+				glSoundParticle->setAspect(width, height);
 			if (width > height)
 				glUniform2f(glGetUniformLocation(glProgram, "aspect"), (float)height / (float)width, 1.0f);
 			else
@@ -807,12 +817,9 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 
 	switch (glType) {
 	case TYPE_PARTICLE:
-		if (glSoundParticle)
-			glSoundParticle->Draw();
-		break;
 	case TYPE_IMMERSIVE_PARTICLE:
 		if (glSoundParticle)
-			glSoundParticle->Draw();
+			glSoundParticle->draw();
 		break;
 	case TYPE_LIQUID:
 		glUseProgram(glProgram2);
@@ -866,8 +873,14 @@ void JNICALL glOnSensorData(JNIEnv* env, jclass clazz, int sensorType, jfloatArr
 	if (!glSoundParticle || !jvalues)
 		return;
 	float* values = (float*)env->GetPrimitiveArrayCritical(jvalues, 0);
-	glSoundParticle->OnSensorData(sensorType, values);
+	glSoundParticle->onSensorData(sensorType, values);
 	env->ReleasePrimitiveArrayCritical(jvalues, values, JNI_ABORT);
+}
+
+void JNICALL glSetImmersiveCfg(JNIEnv* env, jclass clazz, int diffusion, int riseSpeed) {
+	if (!glSoundParticle || glType != TYPE_IMMERSIVE_PARTICLE)
+		return;
+	glSoundParticle->setImmersiveCfg(diffusion, riseSpeed);
 }
 
 void JNICALL glReleaseView(JNIEnv* env, jclass clazz) {

@@ -36,6 +36,7 @@
     <string name="msg_confirm_delete">Quer mesmo excluir a %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Sobrescrever %1$s \"%2$s\"</string>
     <string name="msg_delete">Excluir %1$s \"%2$s\"</string>
+    <string name="msg_delete_button">Excluir %1$s&#8230;</string>
     <string name="msg_create_new_title">Criar nova %s</string>
     <string name="msg_create_new">Criar nova %s&#8230;</string>
     <string name="msg_add">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas.</string>
@@ -268,6 +269,10 @@
     <string name="choose_image">Escolher imagem&#8230;</string>
     <string name="accessibility">Acessibilidade</string>
     <string name="place_the_playlist_to_the_right">Posicionar a lista de reprodução à direita</string>
+    <string name="sustain">Sustentação</string>
+    <string name="diffusion">Difusão</string>
+    <string name="msg_immersive">&#8634; Mova seu aparelho ao redor (seja cuidadoso!)</string>
+    <string name="msg_no_sensors">Desculpe, mas seu aparelho não possui os sensores necessários :(</string>
 
     <string name="bt_packages_sent">Mensagens enviadas:</string>
     <string name="bt_fps">Mensagens por segundo&#8230;</string>

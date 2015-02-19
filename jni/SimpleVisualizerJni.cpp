@@ -437,6 +437,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"glLoadBitmapFromJava", "(Landroid/graphics/Bitmap;)I", (void*)glLoadBitmapFromJava},
 		{"glDrawFrame", "()V", (void*)glDrawFrame},
 		{"glOnSensorData", "(I[F)V", (void*)glOnSensorData},
+		{"glSetImmersiveCfg", "(II)V", (void*)glSetImmersiveCfg},
 		{"glReleaseView", "()V", (void*)glReleaseView}
 	};
 	JNIEnv* env;

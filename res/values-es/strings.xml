@@ -36,6 +36,7 @@
     <string name="msg_confirm_delete">Confirma que desea borrar %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Sobrescribir %1$s \"%2$s\"</string>
     <string name="msg_delete">Eliminar %1$s \"%2$s\"</string>
+    <string name="msg_delete_button">Eliminar %1$s&#8230;</string>
     <string name="msg_create_new_title">Crear nueva %s</string>
     <string name="msg_create_new">Crear nueva %s&#8230;</string>
     <string name="msg_add">Este boton añade a la lista de reproducción, todas las canciones en la carpeta incluyendo las subcarpetas.</string>
@@ -268,6 +269,10 @@
     <string name="choose_image">Seleccionar imagen&#8230;</string>
     <string name="accessibility">Accesibilidad</string>
     <string name="place_the_playlist_to_the_right">Colocar la lista de reproducción en el lado derecho</string>
+    <string name="sustain">Sostener</string>
+    <string name="diffusion">Difusión</string>
+    <string name="msg_immersive">&#8634; Mueve tu dispositivo alrededor (ten cuidado!)</string>
+    <string name="msg_no_sensors">Lo sentimos, pero el dispositivo no tiene los sensores necesarios :(</string>
 
     <string name="bt_packages_sent">Mensajes enviados:</string>
     <string name="bt_fps">Mensajes por segundo&#8230;</string>

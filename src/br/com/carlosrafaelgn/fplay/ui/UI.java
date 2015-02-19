@@ -1600,7 +1600,24 @@ public final class UI {
 		((TextView)internalToast.getView()).setText(text);
 		internalToast.show();
 	}
-	
+
+	@SuppressWarnings("deprecation")
+	public static void customToast(Context context, CharSequence text, boolean longDuration, int textSize, int textColor, Drawable background) {
+		final Toast t = new Toast(context);
+		final TextView v = new TextView(context);
+		v.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+		v.setTypeface(defaultTypeface);
+		v.setTextColor(textColor);
+		v.setBackgroundDrawable(background);
+		v.setGravity(Gravity.CENTER);
+		v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		v.setPadding(_8dp, _8dp, _8dp, _8dp);
+		v.setText(text);
+		t.setView(v);
+		t.setDuration(longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
+		t.show();
+	}
+
 	public static void prepare(Menu menu) {
 		final CustomContextMenu mnu = (CustomContextMenu)menu;
 		try {

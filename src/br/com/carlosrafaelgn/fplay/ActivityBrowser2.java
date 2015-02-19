@@ -516,37 +516,23 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
-		int p;
+		final int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
-			if (btnURL.getVisibility() == View.VISIBLE)
-				btnURL.requestFocus();
-			else if (chkAll.getVisibility() == View.VISIBLE)
-				chkAll.requestFocus();
-			else
-				btnGoBack.requestFocus();
+			((btnURL.getVisibility() == View.VISIBLE) ? btnURL : ((chkAll.getVisibility() == View.VISIBLE) ? chkAll : btnGoBack)).requestFocus();
 			return true;
 		case UI.KEY_RIGHT:
-			if (btnGoBackToPlayer.getVisibility() == View.VISIBLE)
-				btnGoBackToPlayer.requestFocus();
-			else
-				btnGoBack.requestFocus();
+			((btnGoBackToPlayer.getVisibility() == View.VISIBLE) ? btnGoBackToPlayer : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_ENTER:
-			if (fileList != null) {
-				p = fileList.getSelection();
-				if (p >= 0)
-					processItemClick(p);
-			}
+			if (fileList != null && (p = fileList.getSelection()) >= 0)
+				processItemClick(p);
 			return true;
 		case UI.KEY_EXTRA:
-			if (fileList != null && !isAtHome) {
-				p = fileList.getSelection();
-				if (p >= 0) {
-					final FileSt file = fileList.getItemT(p);
-					file.isChecked = !file.isChecked;
-					processItemCheckboxClickInternal(p, true);
-				}
+			if (!isAtHome && fileList != null && (p = fileList.getSelection()) >= 0) {
+				final FileSt file = fileList.getItemT(p);
+				file.isChecked = !file.isChecked;
+				processItemCheckboxClickInternal(p, true);
 			}
 			return true;
 		}

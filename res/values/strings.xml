@@ -36,6 +36,7 @@
     <string name="msg_confirm_delete">Do you really want to delete the %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Overwrite %1$s \"%2$s\"</string>
     <string name="msg_delete">Delete %1$s \"%2$s\"</string>
+    <string name="msg_delete_button">Delete %1$s&#8230;</string>
     <string name="msg_create_new_title">Create new %s</string>
     <string name="msg_create_new">Create new %s&#8230;</string>
     <string name="msg_add">This button adds to the playlist all songs in the folder and in its subfolders.</string>
@@ -268,6 +269,10 @@
     <string name="choose_image">Choose image&#8230;</string>
     <string name="accessibility">Accessibility</string>
     <string name="place_the_playlist_to_the_right">Place the playlist to the right</string>
+    <string name="sustain">Sustain</string>
+    <string name="diffusion">Diffusion</string>
+    <string name="msg_immersive">&#8634; Move your device around (be careful!)</string>
+    <string name="msg_no_sensors">Sorry, but your device does not have the necessary sensors :(</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>

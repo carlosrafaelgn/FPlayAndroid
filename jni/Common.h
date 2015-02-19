@@ -61,6 +61,14 @@ unsigned int commonUptimeDeltaMillis(unsigned int* lastTime) {
 	return ((delta >= 100) ? 100 : delta);
 }
 
+void commonSRand() {
+	struct timespec t;
+	t.tv_sec = 0;
+	t.tv_nsec = 0;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	srand((unsigned int)t.tv_nsec);
+}
+
 void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int speed) {
 	switch (speed) {
 	case 1:
