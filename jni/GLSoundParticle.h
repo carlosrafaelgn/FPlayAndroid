@@ -138,13 +138,9 @@ public:
 				d = d * d;
 				d = d + (0.5f * d);
 				if (d < 0.55f)
-				{
 					d = 0.0f;
-				}
 				else if (d < 1.0f)
-				{
 					d = glSmoothStep(0.55f, 1.0f, d);
-				}
 
 				d2 = 1.0f - d2;
 				d2 = glSmoothStep(0.0f, 1.0f, d2);
@@ -186,20 +182,23 @@ public:
 	}
 
 	void setImmersiveCfg(int diffusion, int riseSpeed) {
-		nextDiffusion = diffusion + 1;
-		switch (riseSpeed) {
-		case 0:
-			timeCoef = 0.0f;
-			break;
-		case 1:
-			timeCoef = 0.0003f;
-			break;
-		case 2:
-			timeCoef = 0.001f;
-			break;
-		case 3:
-			timeCoef = 0.0017f;
-			break;
+		if (diffusion >= 0)
+			nextDiffusion = diffusion + 1;
+		if (riseSpeed >= 0) {
+			switch (riseSpeed) {
+			case 0:
+				timeCoef = 0.0f;
+				break;
+			case 2:
+				timeCoef = 0.001f;
+				break;
+			case 3:
+				timeCoef = 0.0017f;
+				break;
+			default:
+				timeCoef = 0.0003f;
+				break;
+			}
 		}
 	}
 
@@ -219,10 +218,13 @@ public:
 				c = nextDiffusion;
 				nextDiffusion = 0;
 				switch (c) {
-				case 2:
-					*((float*)&c) = 10.0f;
+				case 1:
+					*((float*)&c) = 0.0f;
 					break;
 				case 3:
+					*((float*)&c) = 10.0f;
+					break;
+				case 4:
 					*((float*)&c) = 15.0f;
 					break;
 				default:

@@ -80,7 +80,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, MenuItem.OnMenuItemClickListener, MainHandler.Callback, SensorEventListener {
-	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5, MNU_DIFFUSION0 = MNU_VISUALIZER + 6, MNU_DIFFUSION1 = MNU_VISUALIZER + 7, MNU_DIFFUSION2 = MNU_VISUALIZER + 8, MNU_RISESPEED0 = MNU_VISUALIZER + 9, MNU_RISESPEED1 = MNU_VISUALIZER + 10, MNU_RISESPEED2 = MNU_VISUALIZER + 11, MNU_RISESPEED3 = MNU_VISUALIZER + 12;
+	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5, MNU_DIFFUSION0 = MNU_VISUALIZER + 6, MNU_DIFFUSION1 = MNU_VISUALIZER + 7, MNU_DIFFUSION2 = MNU_VISUALIZER + 8, MNU_DIFFUSION3 = MNU_VISUALIZER + 9, MNU_RISESPEED0 = MNU_VISUALIZER + 10, MNU_RISESPEED1 = MNU_VISUALIZER + 11, MNU_RISESPEED2 = MNU_VISUALIZER + 12, MNU_RISESPEED3 = MNU_VISUALIZER + 13;
 
 	private static final int MSG_OPENGL_ERROR = 0x0700;
 	private static final int MSG_CHOOSE_IMAGE = 0x0701;
@@ -117,7 +117,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setFocusable(false);
 		colorIndex = 0;
 		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE) ? 0 : 2);
-		diffusion = 0;
+		diffusion = 1;
 		riseSpeed = 1;
 		this.activity = activity;
 
@@ -591,6 +591,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		case MNU_DIFFUSION0:
 		case MNU_DIFFUSION1:
 		case MNU_DIFFUSION2:
+		case MNU_DIFFUSION3:
 			diffusion = id - MNU_DIFFUSION0;
 			SimpleVisualizerJni.glSetImmersiveCfg(diffusion, -1);
 			break;
@@ -657,22 +658,25 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			UI.prepare(s);
 			s.add(0, MNU_DIFFUSION0, 0, ctx.getText(R.string.diffusion) + ": 0")
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((diffusion != 1 && diffusion != 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((diffusion == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			s.add(0, MNU_DIFFUSION1, 1, ctx.getText(R.string.diffusion) + ": 1")
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((diffusion == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((diffusion != 0 && diffusion != 2 && diffusion != 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			s.add(0, MNU_DIFFUSION2, 2, ctx.getText(R.string.diffusion) + ": 2")
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((diffusion == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			s.add(0, MNU_DIFFUSION3, 3, ctx.getText(R.string.diffusion) + ": 3")
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((diffusion == 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			s = menu.addSubMenu(1, 0, 2, ctx.getText(R.string.speed) + "\u2026")
 				.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
 			UI.prepare(s);
 			s.add(0, MNU_RISESPEED0, 0, ctx.getText(R.string.speed) + ": 0")
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((riseSpeed != 1 && riseSpeed != 2 && riseSpeed != 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((riseSpeed == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			s.add(0, MNU_RISESPEED1, 1, ctx.getText(R.string.speed) + ": 1")
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((riseSpeed == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((riseSpeed != 0 && riseSpeed != 2 && riseSpeed != 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			s.add(0, MNU_RISESPEED2, 2, ctx.getText(R.string.speed) + ": 2")
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((riseSpeed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
@@ -688,13 +692,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			break;
 		}
 		UI.separator(menu, 2, 0);
-		menu.add(2, MNU_SPEED0, 1, ctx.getText(R.string.sustain) + ": 2")
+		menu.add(2, MNU_SPEED0, 1, ctx.getText(R.string.sustain) + ": 3")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED1, 2, ctx.getText(R.string.sustain) + ": 1")
+		menu.add(2, MNU_SPEED1, 2, ctx.getText(R.string.sustain) + ": 2")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED2, 3, ctx.getText(R.string.sustain) + ": 0")
+		menu.add(2, MNU_SPEED2, 3, ctx.getText(R.string.sustain) + ": 1")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 	}
