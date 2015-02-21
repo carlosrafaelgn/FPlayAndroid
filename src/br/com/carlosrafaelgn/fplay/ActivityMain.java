@@ -530,7 +530,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_PARTICLE, 4, "Sound Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 5, "Immersive Particles")
+		s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 5, "Into the Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
 		//s2.add(2, MNU_VISUALIZER_BLUETOOTH, 6, "Bluetooth")
