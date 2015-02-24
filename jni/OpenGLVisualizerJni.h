@@ -130,6 +130,10 @@ int createProgram(const char* vertexShaderSource, const char* fragmentShaderSour
 	glCompileShader(vertexShader);
 	l = 0;
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &l);
+	//int s = 0;
+	//glGetShaderInfoLog(vertexShader, 1024, &s, (char*)floatBuffer);
+	//((char*)floatBuffer)[s] = 0;
+	//__android_log_print(ANDROID_LOG_INFO, "JNI", "Compilation result: %s", (char*)floatBuffer);
 	if (glGetError() || !l) return -6;
 
 	glCompileShader(fragmentShader);
@@ -243,46 +247,55 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"}";
 		break;
 	case TYPE_PARTICLE:
-		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; void main() {" \
-		"float a = mix(0.0625, 0.34375, amplitude);" \
-		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
+		vertexShader = "attribute vec2 inPosition; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos[16]; uniform vec2 aspect; uniform vec3 color[16]; uniform float theta[16]; void main() {" \
+		"int idx = int(inIndex);" \
+		"vec2 posi = pos[idx];" \
+		"float a = mix(0.0625, 0.34375, amplitude)," \
+			"bottom = 1.0 - clamp(posi.y, -1.0, 1.0);" \
 		"bottom = bottom * bottom * bottom * 0.125;" \
 		"a = (0.75 * a) + (0.25 * bottom);" \
-		"gl_Position = vec4(baseX + pos.x + (5.0 * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)) + (inPosition.x * aspect.x * a), pos.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
-		"vTexCoord = inTexCoord;" \
-		"vColor = color + bottom + (0.25 * amplitude);" \
+		"gl_Position = vec4(baseX + posi.x + (5.0 * (posi.y + 1.0) * posi.x * sin((2.0 * posi.y) + theta[idx])) + (inPosition.x * aspect.x * a), posi.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
+		"vTexCoord = vec2(0.5 + (0.5 * inPosition.x), 0.5 + (0.5 * inPosition.y));" \
+		"vColor = color[idx] + bottom + (0.25 * amplitude);" \
 		"}";
 		break;
 	case TYPE_IMMERSIVE_PARTICLE:
-		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; uniform mat4 mvpMat; void main() {" \
+		vertexShader = "attribute vec2 inPosition; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos[16]; uniform vec2 aspect; uniform vec3 color[16]; uniform float theta[16]; uniform float diffusion; uniform mat4 mvpMat; void main() {" \
+		"int idx = int(inIndex);" \
+		"vec4 posi = vec4(pos[idx], 0.0, 1.0);" \
 		/*start with the original computation*/ \
 		"float a = mix(0.0625, 0.484375, amplitude)," \
-			"bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
+			"bottom = 1.0 - clamp(posi.y, -1.0, 1.0);" \
 		"bottom = bottom * bottom * bottom * 0.125;" \
 		"a = (0.75 * a) + (0.25 * bottom);" \
 
-		"vec3 smoothedColor = color + bottom + (0.25 * amplitude);" \
+		"vec3 smoothedColor = color[idx] + bottom + (0.25 * amplitude);" \
 		/*make the particles smoothly appear at the bottom and diminish at the top*/ \
 		/*(from here on, bottom will store the radius)*/ \
 		"bottom = 3.0;" \
-		"if (pos.y > 1.0) {" \
-			"a *= 1.0 - smoothstep(1.0, 1.2, pos.y);" \
-		"} else if (pos.y < -0.8) {" \
-			"bottom = smoothstep(-1.2, -0.8, pos.y);" \
+		"if (posi.y > 1.0) {" \
+			"a *= 1.0 - smoothstep(1.0, 1.2, posi.y);" \
+		"} else if (posi.y < -0.8) {" \
+			"bottom = smoothstep(-1.2, -0.8, posi.y);" \
 			"smoothedColor *= bottom;" \
 			"bottom *= 3.0;" \
 		"}" \
-		"vTexCoord = inTexCoord;" \
+		"vTexCoord = vec2(0.5 + (0.5 * inPosition.x), 0.5 + (0.5 * inPosition.y));" \
 		"vColor = smoothedColor;" \
 
 		/*baseX goes from -0.9 / 0.9, which we will map to pi / 0*/ \
-		"smoothedColor.x = -1.7 * (baseX + pos.x + (diffusion * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)));" \
+		"smoothedColor.x = -1.7 * (baseX + posi.x + (diffusion * (posi.y + 1.0) * posi.x * sin((2.0 * posi.y) + theta[idx])));" \
 		/*spread the particles in a semicylinder with a radius of 3 and height of 12*/ \
-		"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x), bottom * sin(smoothedColor.x), 6.0 * pos.y, 1.0);" \
-		/*"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x) + (inPosition.x * a * 5.0), bottom * sin(smoothedColor.x) + (inPosition.y * a * 5.0), 6.0 * pos.y, 1.0);"*/ \
+		"posi.z = 6.0 * posi.y;" \
+		"posi.x = bottom * cos(smoothedColor.x);" \
+		"posi.y = bottom * sin(smoothedColor.x);" \
+		"posi = mvpMat * posi;" \
 
-		/*gl_Position is different from p, because we want the particles to be always facing the camera*/ \
-		"gl_Position = vec4(p.x + (inPosition.x * aspect.x * a * 5.0), p.y + (inPosition.y * aspect.y * a * 5.0), p.z, p.w);" \
+		/*gl_Position is different from posi, because we want the particles to be always facing the camera*/ \
+		"a *= 5.0;" \
+		"posi.x += inPosition.x * aspect.x * a;" \
+		"posi.y += inPosition.y * aspect.y * a;" \
+		"gl_Position = posi;" \
 		"}";
 		break;
 	default:
@@ -295,6 +308,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		//Tegra GPUs CANNOT use textures in vertex shaders AND does not support more than 256 registers! :(
 		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
 		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
+		//https://www.khronos.org/registry/gles/specs/2.0/GLSL_ES_Specification_1.0.17.pdf page 111-113
 		"attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
 		"float absx = abs(inPosition);" \
 		"float c = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
@@ -352,7 +366,10 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 
 	glBindAttribLocation(glProgram, 0, "inPosition");
 	if (glGetError()) return -10;
-	if (type != TYPE_SPECTRUM) {
+	if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
+		glBindAttribLocation(glProgram, 1, "inIndex");
+		if (glGetError()) return -11;
+	} else if (type != TYPE_SPECTRUM) {
 		glBindAttribLocation(glProgram, 1, "inTexCoord");
 		if (glGetError()) return -11;
 	}
@@ -417,14 +434,14 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		glGenBuffers(2, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
 	} else if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
-		glGenBuffers(2, glBuf);
-		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
+		glGenBuffers(3, glBuf);
+		if (glGetError() || !glBuf[0] || !glBuf[1] || !glBuf[2]) return -13;
 
-		//create a rectangle for the particles
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsRect, GL_STATIC_DRAW);
+		if (glSoundParticle)
+			delete glSoundParticle;
+		glSoundParticle = new GLSoundParticle();
+
+		if (glGetError()) return -14;
 
 		glClearColor((float)((bgColor >> 16) & 0xff) / 255.0f, (float)((bgColor >> 8) & 0xff) / 255.0f, (float)(bgColor & 0xff) / 255.0f, 1.0f);
 	} else {
@@ -617,11 +634,11 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE) {
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-		glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0);
 
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
-		glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+		glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	} else if (type != TYPE_SPIN) {
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
@@ -655,15 +672,6 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	commonUpdateMultiplier(env, clazz, 0);
 
 	glReleaseShaderCompiler();
-
-	switch (type) {
-	case TYPE_PARTICLE:
-	case TYPE_IMMERSIVE_PARTICLE:
-		if (glSoundParticle)
-			delete glSoundParticle;
-		glSoundParticle = new GLSoundParticle();
-		break;
-	}
 
 	return 0;
 }

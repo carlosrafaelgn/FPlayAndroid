@@ -40,10 +40,7 @@ private:
 	unsigned int lastTime;
 	float timeCoef;
 
-	float COLORS[16 * 3];
-
-	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT];
-	unsigned char bgColor[BG_COUNT];
+	float COLORS[16 * 3], BASEX[BG_COLUMNS], bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT], bgColor[BG_COUNT * 3];
 
 	unsigned int sensorData, lastSensorTime, landscape, nextDiffusion;
 	float matrix[16], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3], screenLargestSize, xScale, yScale;
@@ -55,7 +52,12 @@ private:
 		bgPos[(index << 1) + 1] = y;
 		bgTheta[index] = 0.03125f * (float)(rand() & 63);
 		bgSpeedY[index] = 0.125f + (0.00390625f * (float)(rand() & 15));
-		bgColor[index] = rand() & 15;
+		index += (index << 1); //index *= 3;
+		int colorIdx = rand() & 15;
+		colorIdx += (colorIdx << 1); //colorIdx *= 3;
+		bgColor[index    ] = COLORS[colorIdx    ];
+		bgColor[index + 1] = COLORS[colorIdx + 1];
+		bgColor[index + 2] = COLORS[colorIdx + 2];
 	}
 
 public:
@@ -112,11 +114,58 @@ public:
 #undef COLORS_G
 #undef COLORS_B
 
+		//we will render BG_PARTICLES_BY_COLUMN particles at a time (which is one column)
 		int i = 0, c, ic;
+		float *pos = bgPos, *idx = bgSpeedY;
+		unsigned char *indices = (unsigned char*)bgTheta, first = 0;
+		for (i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
+			//left bottom
+			pos[0] = -1.0f;
+			pos[1] = -1.0f;
+			//right bottom
+			pos[2] =  1.0f;
+			pos[3] = -1.0f;
+			//left top
+			pos[4] = -1.0f;
+			pos[5] =  1.0f;
+			//right top
+			pos[6] =  1.0f;
+			pos[7] =  1.0f;
+			pos += 8;
+
+			idx[0] = (float)i;
+			idx[1] = (float)i;
+			idx[2] = (float)i;
+			idx[3] = (float)i;
+			idx += 4;
+
+			//triangle 0
+			indices[0] = first;
+			indices[1] = first + 1;
+			indices[2] = first + 2;
+			//triangle 1
+			indices[3] = first + 2;
+			indices[4] = first + 1;
+			indices[5] = first + 3;
+			indices += 6;
+			first += 4;
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+		glBufferData(GL_ARRAY_BUFFER, (BG_PARTICLES_BY_COLUMN * 4 * 2) * sizeof(float), bgPos, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
+		glBufferData(GL_ARRAY_BUFFER, (BG_PARTICLES_BY_COLUMN * 4) * sizeof(int), bgSpeedY, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glBuf[2]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, BG_PARTICLES_BY_COLUMN * 6, bgTheta, GL_STATIC_DRAW);
+
+		i = 0;
 		for (c = 0; c < BG_COLUMNS; c++) {
+			//the 31 columns spread from -0.9 to 0.9, and they are evenly spaced
+			BASEX[c] = -0.9f + (0.06206897f * (float)c);
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, i++)
 				fillBgParticle(i, -1.2f + (0.01953125f * (float)(rand() & 127)));
 		}
+
 	}
 
 	static void fillTexture() {
@@ -265,19 +314,23 @@ public:
 			}
 #undef MAX
 			glUniform1f(glAmplitude, (a >= 1.0f) ? 1.0f : a);
-			//the 31 columns spread from -0.9 to 0.9, and they are evenly spaced
-			glUniform1f(glBaseX, -0.9f + (0.06206897f * (float)c));
+			glUniform1f(glBaseX, BASEX[c]);
 
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, p++) {
 				if (bgPos[(p << 1) + 1] > 1.2f)
 					fillBgParticle(p, -1.2f);
 				else
 					bgPos[(p << 1) + 1] += bgSpeedY[p] * delta;
-				glUniform3fv(glColor, 1, COLORS + (bgColor[p] * 3));
-				glUniform2fv(glPos, 1, bgPos + (p << 1));
-				glUniform1f(glTheta, bgTheta[p]);
-				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 			}
+
+			p -= BG_PARTICLES_BY_COLUMN;
+			glUniform3fv(glColor, BG_PARTICLES_BY_COLUMN, bgColor + (p * 3));
+			glUniform2fv(glPos, BG_PARTICLES_BY_COLUMN, bgPos + (p << 1));
+			glUniform1fv(glTheta, BG_PARTICLES_BY_COLUMN, bgTheta + p);
+			p += BG_PARTICLES_BY_COLUMN;
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glBuf[2]);
+			glDrawElements(GL_TRIANGLES, (BG_PARTICLES_BY_COLUMN * 6), GL_UNSIGNED_BYTE, 0);
 		}
 	}
 
