@@ -749,7 +749,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
 	@Override
-	public boolean requiresScreen() {
+	public boolean requiresHiddenControls() {
 		return true;
 	}
 

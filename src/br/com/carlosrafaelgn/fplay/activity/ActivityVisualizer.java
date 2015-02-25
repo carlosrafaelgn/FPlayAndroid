@@ -157,7 +157,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private TextView lblTitle;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresScreen, playing, isWindowFocused, panelTopWasVisibleOk, visualizerPaused;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresHiddenControls, playing, isWindowFocused, panelTopWasVisibleOk, visualizerPaused;
 	private float panelTopAlpha;
 	private int fxVisualizerAudioSessionId, version, panelTopLastTime, panelTopHiding;
 	private Object systemUIObserver;
@@ -166,7 +166,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private ColorDrawable panelTopBackground;
 	
 	private void hideAllUIDelayed() {
-		if (!visualizerRequiresScreen)
+		if (!visualizerRequiresHiddenControls)
 			return;
 		version++;
 		MainHandler.removeMessages(this, MSG_HIDE);
@@ -175,7 +175,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void prepareSystemUIObserver() {
-		if (!visualizerRequiresScreen)
+		if (!visualizerRequiresHiddenControls)
 			return;
 		if (systemUIObserver == null)
 			systemUIObserver = new SystemUIObserver(getWindow().getDecorView(), this);
@@ -184,19 +184,19 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void hideSystemUI() {
-		if (visualizerRequiresScreen && systemUIObserver != null)
+		if (visualizerRequiresHiddenControls && systemUIObserver != null)
 			((SystemUIObserver)systemUIObserver).hide();
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void showSystemUI() {
-		if (visualizerRequiresScreen && systemUIObserver != null)
+		if (visualizerRequiresHiddenControls && systemUIObserver != null)
 			((SystemUIObserver)systemUIObserver).show();
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void cleanupSystemUIObserver() {
-		if (visualizerRequiresScreen && systemUIObserver != null) {
+		if (visualizerRequiresHiddenControls && systemUIObserver != null) {
 			((SystemUIObserver)systemUIObserver).cleanup();
 			systemUIObserver = null;
 		}
@@ -264,9 +264,15 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			if (visualizerViewFullscreen) {
 				ip = new InterceptableLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			} else {
-				final Point pt = visualizer.getDesiredSize(info.screenWidth, info.screenHeight);
-				ip = new InterceptableLayout.LayoutParams(pt.x, pt.y);
-				ip.gravity = Gravity.CENTER;
+				if (visualizerRequiresHiddenControls) {
+					final Point pt = visualizer.getDesiredSize(info.screenWidth, info.screenHeight);
+					ip = new InterceptableLayout.LayoutParams(pt.x, pt.y);
+					ip.addRule(InterceptableLayout.CENTER_IN_PARENT, InterceptableLayout.TRUE);
+				} else {
+					ip = new InterceptableLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+					ip.addRule(InterceptableLayout.BELOW, R.id.panelTop);
+					ip.addRule(InterceptableLayout.ALIGN_PARENT_BOTTOM, InterceptableLayout.TRUE);
+				}
 			}
 			((View)visualizer).setLayoutParams(ip);
 		}
@@ -416,11 +422,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				clazz = null;
 			}
 		}
-		visualizerRequiresScreen = (visualizer != null && visualizer.requiresScreen());
+		visualizerRequiresHiddenControls = (visualizer != null && visualizer.requiresHiddenControls());
 
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		//keep the screen always on while the visualizer is active
-		if (visualizerRequiresScreen) {
+		if (visualizerRequiresHiddenControls) {
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
 				WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
 				//WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR |
@@ -479,7 +485,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		prepareViews(true);
 
-		if (visualizerRequiresScreen) {
+		if (visualizerRequiresHiddenControls) {
 			panelTopBackground = new ColorDrawable(UI.color_visualizer565);
 			panelTopBackground.setAlpha(255 >> 1);
 			panelTop.setBackgroundDrawable(panelTopBackground);
@@ -557,7 +563,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			visualizer.onActivityResume();
 		}
 		timer.start(16);
-		uiAnimTimer = (visualizerRequiresScreen ? new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false) : null);
+		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false) : null);
 		
 		hideAllUIDelayed();
 	}

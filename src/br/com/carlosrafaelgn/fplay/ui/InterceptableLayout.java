@@ -36,9 +36,9 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.FrameLayout;
+import android.widget.RelativeLayout;
 
-public final class InterceptableLayout extends FrameLayout {
+public final class InterceptableLayout extends RelativeLayout {
 	private View.OnTouchListener interceptedTouchEventListener;
 	
 	public InterceptableLayout(Context context) {

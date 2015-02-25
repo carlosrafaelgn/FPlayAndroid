@@ -226,7 +226,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
 	@Override
-	public boolean requiresScreen() {
+	public boolean requiresHiddenControls() {
 		return true;
 	}
 

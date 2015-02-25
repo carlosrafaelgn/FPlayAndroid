@@ -69,7 +69,7 @@ public interface Visualizer {
 	public Point getDesiredSize(int availableWidth, int availableHeight);
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
-	public boolean requiresScreen();
+	public boolean requiresHiddenControls();
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	public int getDesiredPointCount();

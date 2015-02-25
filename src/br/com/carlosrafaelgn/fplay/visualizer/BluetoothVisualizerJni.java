@@ -283,7 +283,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	//Runs on the MAIN thread (returned value MUST always be the same)
 	@Override
 	public boolean isFullscreen() {
-		return true;
+		return false;
 	}
 
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
@@ -293,7 +293,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
 	@Override
-	public boolean requiresScreen() {
+	public boolean requiresHiddenControls() {
 		return false;
 	}
 
