@@ -42,7 +42,7 @@ private:
 
 	float COLORS[16 * 3], BASEX[BG_COLUMNS], bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT], bgColor[BG_COUNT * 3];
 
-	unsigned int sensorData, lastSensorTime, landscape, nextDiffusion;
+	unsigned int sensorData, lastSensorTime, nextDiffusion, rotation;
 	float matrix[16], accelData[3], magneticData[3], oldAccelData[3], oldMagneticData[3], screenLargestSize, xScale, yScale;
 
 	SimpleMutex mutex;
@@ -67,8 +67,8 @@ public:
 
 		sensorData = 0;
 		lastSensorTime = 0;
-		landscape = 0;
 		nextDiffusion = 1;
+		rotation = 0;
 		yScale = 0.0f;
 		xScale = 0.0f;
 		memset(matrix, 0, sizeof(float) * 16);
@@ -209,15 +209,16 @@ public:
 #undef TEXTURE_SIZE
 	}
 
-	void setAspect(int width, int height) {
+	void setAspect(int width, int height, int rotation) {
+		this->rotation = rotation;
 		if (glType == TYPE_IMMERSIVE_PARTICLE) {
 			if (width >= height) {
-				landscape = 1;
+				//landscape
 				//yScale = cot(fovY / 2) = cot(fovYInDegrees * PI / 360) //cot(x) = tan(PI/2 - x)
 				//considering fovYInDegrees = 50 deg:
 				yScale = 2.1445069205095586163562607910459f;
 			} else {
-				landscape = 0;
+				//portrait
 				//in this case, we must make up for the extended height, and increase
 				//the fov proportionally (0.43633231299858239423092269212215 = 50 * PI / 360)
 				yScale = tanf(1.5707963267948966192313216916398f - (0.43633231299858239423092269212215f * (float)height / (float)width));
@@ -377,21 +378,35 @@ public:
 		//Original code -> AOSP: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.0.2_r1/android/hardware/SensorManager.java
 		//(just porting from Java to C++ to improve performance)
 		float Ax, Ay, Az, Ex, Ey, Ez;
-		if (landscape) {
+		//http://developer.download.nvidia.com/tegra/docs/tegra_android_accelerometer_v5f.pdf
+		switch (rotation) {
+		case 1: //ROTATION_90
 			Ax = -accelData[1];
 			Ay = accelData[0];
-			Az = accelData[2];
 			Ex = -magneticData[1];
 			Ey = magneticData[0];
-			Ez = magneticData[2];
-		} else {
+			break;
+		case 2: //ROTATION_180
+			Ax = -accelData[0];
+			Ay = -accelData[1];
+			Ex = -magneticData[0];
+			Ey = -magneticData[1];
+			break;
+		case 3: //ROTATION_270
+			Ax = accelData[1];
+			Ay = -accelData[0];
+			Ex = magneticData[1];
+			Ey = -magneticData[0];
+			break;
+		default:
 			Ax = accelData[0];
 			Ay = accelData[1];
-			Az = accelData[2];
 			Ex = magneticData[0];
 			Ey = magneticData[1];
-			Ez = magneticData[2];
+			break;
 		}
+		Az = accelData[2];
+		Ez = magneticData[2];
 		float Hx = (Ey * Az) - (Ez * Ay);
 		float Hy = (Ez * Ax) - (Ex * Az);
 		float Hz = (Ex * Ay) - (Ey * Ax);

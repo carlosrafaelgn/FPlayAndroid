@@ -56,8 +56,10 @@ import android.text.style.ImageSpan;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.WindowManager;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -105,6 +107,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private EGLConfig config;
 	private Activity activity;
 	private SensorManager sensorManager;
+	private WindowManager windowManager;
 	private Sensor accel, magnetic;
 
 	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
@@ -134,6 +137,12 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			supported = (GLVersion >= 0x00020000);
 			if (!supported)
 				MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
+		}
+
+		try {
+			windowManager = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+		} catch (Throwable ex) {
+			windowManager = null;
 		}
 
 		if (type == TYPE_IMMERSIVE_PARTICLE) {
@@ -422,9 +431,23 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		if (!supported)
 			return;
+		//http://developer.download.nvidia.com/tegra/docs/tegra_android_accelerometer_v5f.pdf
+		int rotation;
+		if (windowManager != null) {
+			try {
+				rotation = windowManager.getDefaultDisplay().getRotation();
+			} catch (Throwable ex) {
+				//silly assumption for phones....
+				rotation = ((width >= height) ? Surface.ROTATION_90 : Surface.ROTATION_0);
+			}
+		} else {
+			//silly assumption for phones....
+			rotation = ((width >= height) ? Surface.ROTATION_90 : Surface.ROTATION_0);
+		}
+
 		viewWidth = width;
 		viewHeight = height;
-		SimpleVisualizerJni.glOnSurfaceChanged(width, height, (UI._1dp < 2) ? 1 : 0);
+		SimpleVisualizerJni.glOnSurfaceChanged(width, height, rotation, (UI._1dp < 2) ? 1 : 0);
 		okToRender = true;
 		/*if (type == TYPE_LIQUID && !imageChoosenAtLeastOnce) {
 			imageChoosenAtLeastOnce = true;
@@ -782,6 +805,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread (AFTER Visualizer.release())
 	@Override
 	public void releaseView() {
+		windowManager = null;
 		if (sensorManager != null) {
 			sensorManager.unregisterListener(this);
 			sensorManager = null;

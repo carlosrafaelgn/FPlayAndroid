@@ -676,7 +676,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	return 0;
 }
 
-void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height, int dp1OrLess) {
+void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height, int rotation, int dp1OrLess) {
 	glViewport(0, 0, width, height);
 	if (glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
 		if (glType == TYPE_SPIN) {
@@ -746,7 +746,7 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 			glVerticesPerRow <<= 1;
 		} else if (glType == TYPE_PARTICLE || glType == TYPE_IMMERSIVE_PARTICLE) {
 			if (glSoundParticle)
-				glSoundParticle->setAspect(width, height);
+				glSoundParticle->setAspect(width, height, rotation);
 			if (width > height)
 				glUniform2f(glGetUniformLocation(glProgram, "aspect"), (float)height / (float)width, 1.0f);
 			else
