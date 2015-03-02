@@ -67,7 +67,7 @@ public final class FileSt extends BaseItem {
 	public File file;
 	public boolean isChecked;
 	
-	public FileSt(File file, String name) {
+	public FileSt(File file) {
 		this.isDirectory = file.isDirectory();
 		this.path = file.getAbsolutePath();
 		//int i = path.lastIndexOf('/'), e;
@@ -77,7 +77,7 @@ public final class FileSt extends BaseItem {
 		//	t = ((e <= i) ? path.substring(i + 1) : path.substring(i + 1, e));
 		//}
 		//this.title = t;
-		this.name = ((name.length() == 0) ? " " : name);
+		this.name = file.getName();
 		this.specialType = 0;
 		this.file = file; //keep this here for MetadataExtractor...
 		this.albumArt = null;

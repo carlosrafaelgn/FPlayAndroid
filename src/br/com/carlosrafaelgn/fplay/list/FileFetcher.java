@@ -41,6 +41,7 @@ import android.provider.MediaStore;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 //Supported Media Formats
 //http://developer.android.com/guide/appendix/media-formats.html
 //
-public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt> {
+public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>, FileFilter {
 	public static interface Listener {
 		public void onFilesFetched(FileFetcher fetcher, Throwable e);
 	}
@@ -121,13 +122,16 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		supportedTypes.add(".wav");
 		supportedTypes.add(".mkv");
 	}
-	
-	public static boolean isFileSupported(String name) {
+
+	@Override
+	public boolean accept(File file) {
+		if (file.isDirectory()) return true;
+		final String name = file.getName();
 		final int i = name.lastIndexOf('.');
 		if (i < 0) return false;
 		return supportedTypes.contains(name.substring(i).toLowerCase(Locale.US));
 	}
-	
+
 	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode, boolean createSections) {
 		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, false, false, isInTouchMode, createSections);
 		f.fetch();
@@ -726,7 +730,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		}
 		int i;
 		File root = new File((path.charAt(path.length() - 1) == File.separatorChar) ? path : (path + File.separator));
-		File[] files = root.listFiles();
+		File[] files = root.listFiles(this);
 		boolean filesAdded = false;
 		if (files == null || files.length == 0) {
 			if (this.files == null)
@@ -740,12 +744,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				count = 0;
 				return;
 			}
-			final String t = files[i].getName();
-			if (!files[i].isDirectory() && !isFileSupported(t)) {
-				files[i] = null;
-				continue;
-			}
-			this.files[count] = new FileSt(files[i], t);
+			this.files[count] = new FileSt(files[i]);
 			if (!this.files[count].isDirectory)
 				filesAdded = true;
 			count++;
