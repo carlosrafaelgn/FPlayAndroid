@@ -47,7 +47,6 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -157,7 +156,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private TextView lblTitle;
 	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresHiddenControls, playing, isWindowFocused, panelTopWasVisibleOk, visualizerPaused;
+	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresHiddenControls, playing, isWindowFocused, panelTopWasVisibleOk, visualizerPaused, visualizerRequiresThread;
 	private float panelTopAlpha;
 	private int fxVisualizerAudioSessionId, version, panelTopLastTime, panelTopHiding;
 	private Object systemUIObserver;
@@ -422,7 +421,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				clazz = null;
 			}
 		}
-		visualizerRequiresHiddenControls = (visualizer != null && visualizer.requiresHiddenControls());
+		if (visualizer != null) {
+			visualizerRequiresHiddenControls = visualizer.requiresHiddenControls();
+			visualizerRequiresThread = (visualizer.getDesiredPointCount() > 0);
+		} else {
+			visualizerRequiresHiddenControls = false;
+			visualizerRequiresThread = false;
+		}
 
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		//keep the screen always on while the visualizer is active
@@ -506,7 +511,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		visualizerReady = false;
 		fxVisualizerFailed = false;
 		fxVisualizerAudioSessionId = -1;
-		timer = new Timer(new Runnable() {
+		timer = (!visualizerRequiresThread ? null : new Timer(new Runnable() {
 			@Override
 			public void run() {
 				if (alive) {
@@ -557,12 +562,16 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 					System.gc();
 				}
 			}
-		}, "Visualizer Thread", false, false, true);
+		}, "Visualizer Thread", false, false, true));
+
 		if (visualizer != null) {
 			visualizerPaused = false;
 			visualizer.onActivityResume();
+			if (!visualizerRequiresThread)
+				visualizer.load(getApplication());
 		}
-		timer.start(16);
+		if (visualizerRequiresThread)
+			timer.start(16);
 		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false) : null);
 		
 		hideAllUIDelayed();
@@ -641,6 +650,10 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		if (v != null)
 			v.cancelLoading();
 		resumeTimer();
+		if (!visualizerRequiresThread && v != null) {
+			v.release();
+			run();
+		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			cleanupSystemUIObserver();
 		if (uiAnimTimer != null)
