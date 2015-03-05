@@ -223,15 +223,28 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				icon = UI.ICON_FOLDER;
 				break;
 			}
+			if (albumArt != null) {
+				bitmapLeftPadding = (usableHeight - albumArt.width) >> 1;
+				leftPadding = usableHeight + UI._8dp;
+			} else {
+				switch (specialType) {
+				case FileSt.TYPE_ARTIST:
+				case FileSt.TYPE_ALBUM:
+				case FileSt.TYPE_ALBUM_ITEM:
+					if (UI.albumArt) {
+						bitmapLeftPadding = (usableHeight - UI.defaultControlContentsSize) >> 1;
+						leftPadding = usableHeight + UI._8dp;
+						break;
+					}
+				default:
+					bitmapLeftPadding = UI._8dp;
+					leftPadding = UI._8dp + UI.defaultControlContentsSize + UI._8dp;
+					break;
+				}
+			}
 		} else {
 			icon = null;
-		}
-		if (albumArt != null) {
-			bitmapLeftPadding = (usableHeight - albumArt.width) >> 1;
-			leftPadding = usableHeight + UI._8dp;
-		} else {
-			bitmapLeftPadding = UI._8dp;
-			leftPadding = ((icon != null) ? (UI._8dp + UI.defaultControlContentsSize + UI._8dp) : UI._8dp);
+			leftPadding = UI._8dp;
 		}
 		processEllipsis();
 	}
@@ -405,8 +418,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			albumArt.release();
 		albumArt = bitmap;
 		bitmapLeftPadding = (usableHeight - bitmap.width) >> 1;
-		leftPadding = usableHeight + UI._8dp;
-		processEllipsis();
 		invalidate();
 		return true;
 	}

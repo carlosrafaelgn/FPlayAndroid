@@ -295,7 +295,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		if (handler != null) {
 			//wait before actually trying to fetch the albumart, as this request could
 			//soon be cancelled, for example, in a ListView being scrolled fast
-			handler.sendMessageAtTime(Message.obtain(handler, requestId, desiredSize, 0, listener), 200 + SystemClock.uptimeMillis());
+			handler.sendMessageAtTime(Message.obtain(handler, requestId, desiredSize, 0, listener), SystemClock.uptimeMillis());
 		}
 	}
 
