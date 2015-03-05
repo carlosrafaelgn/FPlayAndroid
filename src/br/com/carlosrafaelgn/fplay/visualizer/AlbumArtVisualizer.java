@@ -70,7 +70,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	public AlbumArtVisualizer(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
 		sync = new Object();
-		absMax = Math.max(UI.dpToPxI(100.0f), Math.min(Math.min(UI.dpToPxI(350.0f), (UI.usableScreenWidth * 80) / 100), (UI.usableScreenHeight * 80 / 100)));
+		absMax = Math.max(UI.dpToPxI(100.0f), Math.min(Math.min(UI.dpToPxI(300.0f), (UI.usableScreenWidth * 80) / 100), (UI.usableScreenHeight * 80 / 100)));
 		point = new Point();
 		srcRect = new Rect();
 		dstRect = new Rect();
