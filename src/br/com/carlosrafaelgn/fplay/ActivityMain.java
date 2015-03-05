@@ -67,7 +67,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerJni;
+import br.com.carlosrafaelgn.fplay.visualizer.AlbumArtVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
@@ -533,9 +533,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 5, "Into the Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
-		//s2.add(2, MNU_VISUALIZER_BLUETOOTH, 6, "Bluetooth")
-		//	.setOnMenuItemClickListener(this)
-		//	.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 6, "Bluetooth")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
@@ -615,7 +615,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
 			break;
 		case MNU_VISUALIZER_BLUETOOTH:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, BluetoothVisualizerJni.class.getName()));
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, AlbumArtVisualizer.class.getName()));
 			break;
 		case MNU_SETTINGS:
 			startActivity(new ActivitySettings(false), 0, null, false);

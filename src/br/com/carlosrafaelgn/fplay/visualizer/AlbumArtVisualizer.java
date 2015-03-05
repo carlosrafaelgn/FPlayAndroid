@@ -35,46 +35,46 @@ package br.com.carlosrafaelgn.fplay.visualizer;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.view.ContextMenu;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
+import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
-public final class AlbumArtVisualizer extends View implements Visualizer, MainHandler.Callback, Runnable {
-	private static final int MSG_LOAD_IMAGE = 0x0600;
-	private static final int MSG_IMAGE_LOADED = 0x0601;
+public final class AlbumArtVisualizer extends View implements Visualizer, MainHandler.Callback, AlbumArtFetcher.AlbumArtFetcherListener {
+	private static final int MSG_IMAGE_LOADED = 0x0600;
 
 	private final Object sync;
-	private int width, height, minSize, absMax, color1, color2;
-	private Handler handler;
-	private Looper looper;
+	private final int absMax;
+	private int width, height, minSize, color1, color2;
 	private Point point;
 	private Rect srcRect, dstRect;
+	private AlbumArtFetcher albumArtFetcher;
 	private ReleasableBitmapWrapper bmp;
+	private Song currentSong;
 	private volatile int version;
+	private volatile String nextPath;
 	private volatile ReleasableBitmapWrapper nextBmp;
-	private volatile Song currentSong;
 
 	public AlbumArtVisualizer(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
 		sync = new Object();
-		absMax = UI.dpToPxI(400.0f);
+		absMax = Math.max(UI.dpToPxI(100.0f), Math.min(Math.min(UI.dpToPxI(350.0f), (UI.usableScreenWidth * 80) / 100), (UI.usableScreenHeight * 80 / 100)));
 		point = new Point();
 		srcRect = new Rect();
 		dstRect = new Rect();
+		albumArtFetcher = new AlbumArtFetcher();
 		color1 = UI.colorState_text_visualizer_static.getDefaultColor();
 		color2 = ColorUtils.blend(color1, UI.color_visualizer565, 0.5f);
 	}
@@ -103,7 +103,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
 	}
-	
+
 	//Runs on the MAIN thread
 	@Override
 	public void onClick() {
@@ -130,10 +130,11 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		if (currentSong == null) {
 			releaseBitmapsAndSetCurrentSong(null);
 			updateRects();
-		} else if (this.currentSong != currentSong && handler != null) {
+		} else if (this.currentSong != currentSong && albumArtFetcher != null) {
 			releaseBitmapsAndSetCurrentSong(currentSong);
 			updateRects(); //force the album icon to be displayed
-			handler.sendMessageDelayed(Message.obtain(handler, MSG_LOAD_IMAGE, version, 0), 200);
+			nextPath = currentSong.path;
+			albumArtFetcher.getAlbumArtForFile(0, version, this);
 		}
 		invalidate();
 	}
@@ -166,7 +167,6 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	//Runs on a SECONDARY thread
 	@Override
 	public void load(Context context) {
-		(new Thread(this, "Album Art Fetcher Thread")).start();
 	}
 	
 	//Runs on ANY thread
@@ -183,7 +183,6 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	//Runs on the MAIN thread
 	@Override
 	public void configurationChanged(boolean landscape) {
-		absMax = UI.dpToPxI(400.0f);
 	}
 	
 	//Runs on a SECONDARY thread
@@ -200,14 +199,14 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	@Override
 	public void releaseView() {
 		releaseBitmapsAndSetCurrentSong(null);
-		handler = null;
-		if (looper != null) {
-			looper.quit();
-			looper = null;
+		if (albumArtFetcher != null) {
+			albumArtFetcher.stopAndCleanup();
+			albumArtFetcher = null;
 		}
 		point = null;
 		srcRect = null;
 		dstRect = null;
+		nextPath = null;
 	}
 
 	private void updateRects() {
@@ -275,41 +274,26 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		}
 	}
 
-	//Runs on a SECONDARY thread
-	private void loadImage(int version) {
-		if (this.version != version)
-			return;
-
-		MainHandler.sendMessage(this, MSG_IMAGE_LOADED, version, 0);
-	}
-
 	@Override
 	public boolean handleMessage(Message msg) {
-		if (handler == null)
-			return false;
 		switch (msg.what) {
-		case MSG_LOAD_IMAGE:
-			//Runs on a SECONDARY thread
-			loadImage(msg.arg1);
-			break;
 		case MSG_IMAGE_LOADED:
 			//Runs on the MAIN thread
 			if (msg.arg1 != version)
 				break;
+			if (bmp != null) {
+				bmp.release();
+				bmp = null;
+			}
 			synchronized (sync) {
 				version++;
-				if (bmp != null) {
-					bmp.release();
-					bmp = null;
-				}
-				if (nextBmp == null || nextBmp.width <= 0 || nextBmp.height <= 0) {
-					if (nextBmp != null) {
+				if (nextBmp == null || nextBmp.width <= 0 || nextBmp.height <= 0 || nextBmp.bitmap == null) {
+					if (nextBmp != null)
 						nextBmp.release();
-						nextBmp = null;
-					}
 				} else {
 					bmp = nextBmp;
 				}
+				nextBmp = null;
 			}
 			updateRects();
 			invalidate();
@@ -319,10 +303,24 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	}
 
 	@Override
-	public void run() {
-		Looper.prepare();
-		looper = Looper.myLooper();
-		handler = new Handler(looper, this);
-		Looper.loop();
+	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
+		if (bitmap == null)
+			return;
+		synchronized (sync) {
+			if (version == requestId) {
+				bitmap.addRef();
+				if (nextBmp != null)
+					nextBmp.release();
+				nextBmp = bitmap;
+				MainHandler.sendMessage(this, MSG_IMAGE_LOADED, requestId, 0);
+			}
+		}
+	}
+
+	@Override
+	public FileSt fileForRequestId(int requestId) {
+		synchronized (sync) {
+			return ((version == requestId) && (nextPath != null) ? new FileSt(nextPath, "", null, 0) : null);
+		}
 	}
 }

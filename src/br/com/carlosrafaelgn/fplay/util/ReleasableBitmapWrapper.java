@@ -74,8 +74,10 @@ public final class ReleasableBitmapWrapper {
 	
 	public void release() {
 		synchronized (this) {
-			ref--;
-			if (ref <= 0) {
+			if (ref > 1) {
+				ref--;
+			} else {
+				ref = 0;
 				if (bitmap != null) {
 					bitmap.recycle();
 					bitmap = null;

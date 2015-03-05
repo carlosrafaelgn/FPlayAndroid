@@ -67,6 +67,8 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	private final Object sync;
 	private final BitmapFactory.Options opts;
 	private final ContentResolver contentResolver;
+	private final String audioDataSelection, albumIdSelection;
+	private final String[] albumArtProjection, audioAlbumIdProjection, tempSelection;
 	private volatile BitmapLruCache cache;
 	private byte[] tempStorage;
 	private Canvas canvas;
@@ -74,12 +76,17 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	private Rect srcR, dstR;
 	private Handler handler;
 	private Looper looper;
-	
+
 	public AlbumArtFetcher() {
 		sync = new Object();
 		opts = new BitmapFactory.Options();
 		final Service s = Player.getService();
 		contentResolver = ((s != null) ? s.getContentResolver() : null);
+		audioDataSelection = MediaStore.Audio.AudioColumns.DATA + "=?";
+		albumIdSelection = MediaStore.Audio.Albums._ID + "=?";
+		albumArtProjection = new String[] { MediaStore.Audio.Albums.ALBUM_ART };
+		audioAlbumIdProjection = new String[] { MediaStore.Audio.AudioColumns.ALBUM_ID };
+		tempSelection = new String[1];
 		long max = Runtime.getRuntime().maxMemory();
 		max >>= 4; //1/16
 		//do not eat up more than 8 MiB
@@ -113,22 +120,58 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		final Canvas c = canvas;
 		final Paint p = paint;
 		msg.obj = null;
-		String uri;
+		String uri = null;
 		Bitmap b = null, b2 = null;
 		ReleasableBitmapWrapper w = null;
 		FileSt file;
 		if (c == null || p == null || listener == null || (file = listener.fileForRequestId(msg.what)) == null)
 			return true;
-		
-		uri = file.albumArt;
+
+		if (file.specialType == 0) {
+			//we are fetching the album art for a file
+			tempSelection[0] = file.path;
+			Cursor cursor = contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, audioAlbumIdProjection, audioDataSelection, tempSelection, null);
+			long albumId = Long.MIN_VALUE;
+			if (cursor != null) {
+				if (cursor.moveToNext())
+					albumId = cursor.getLong(0);
+				cursor.close();
+			}
+			if (albumId != Long.MIN_VALUE) {
+				if (opts.mCancel)
+					return true;
+
+				tempSelection[0] = Long.toString(albumId);
+				cursor = contentResolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumArtProjection, albumIdSelection, tempSelection, null);
+				if (cursor != null) {
+					if (cursor.moveToNext())
+						uri = cursor.getString(0);
+					cursor.close();
+
+					if (opts.mCancel)
+						return true;
+
+					if (uri != null) {
+						synchronized (sync) {
+							if (cache != null && (w = cache.get(uri)) != null) {
+								listener.albumArtFetched(w, msg.what);
+								return true;
+							}
+						}
+					}
+				}
+			}
+		} else {
+			uri = file.albumArt;
+		}
+
 		if (uri == null) {
 			if (contentResolver == null) {
 				file.artistIdForAlbumArt = 0;
 				return true;
 			}
 			//try to fetch the first album for this artist
-			final String[] proj = { MediaStore.Audio.Albums.ALBUM_ART };
-			final Cursor cursor = contentResolver.query(MediaStore.Audio.Artists.Albums.getContentUri("external", file.artistIdForAlbumArt), proj, null, null, null);
+			final Cursor cursor = contentResolver.query(MediaStore.Audio.Artists.Albums.getContentUri("external", file.artistIdForAlbumArt), albumArtProjection, null, null, null);
 			while (uri == null && !opts.mCancel && cursor.moveToNext())
 				uri = cursor.getString(0);
 			cursor.close();
@@ -152,11 +195,15 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 			opts.inTempStorage = tempStorage;
 			BitmapFactory.decodeFile(uri, opts);
 			int ss = 0;
-			int s = ((opts.outWidth >= opts.outHeight) ? opts.outWidth : opts.outHeight);
-			do {
-				ss++;
-				s >>= 1;
-			} while (s > msg.arg1);
+			if (msg.arg1 > 0) {
+				int s = ((opts.outWidth >= opts.outHeight) ? opts.outWidth : opts.outHeight);
+				do {
+					ss++;
+					s >>= 1;
+				} while (s > msg.arg1);
+			} else {
+				ss = 1;
+			}
 			//opts.inInputShareable = false;
 			opts.inPreferQualityOverSpeed = false;
 			opts.inJustDecodeBounds = false;
@@ -171,7 +218,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 			//I decided to do all this work here, because Bitmap.createScaledBitmap()
 			//creates a lot of temporary objects every time it is called, including
 			//a Canvas and a Paint
-			if (opts.outWidth == msg.arg1 && opts.outHeight == msg.arg1) {
+			if (msg.arg1 <= 0 || (opts.outWidth == msg.arg1 && opts.outHeight == msg.arg1)) {
 				w = new ReleasableBitmapWrapper(b);
 			} else {
 				srcR.right = opts.outWidth;
@@ -242,7 +289,16 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		}
 		return null;
 	}
-	
+
+	//Runs on the MAIN thread
+	public void getAlbumArtForFile(int desiredSize, int requestId, AlbumArtFetcherListener listener) {
+		if (handler != null) {
+			//wait before actually trying to fetch the albumart, as this request could
+			//soon be cancelled, for example, in a ListView being scrolled fast
+			handler.sendMessageAtTime(Message.obtain(handler, requestId, desiredSize, 0, listener), 200 + SystemClock.uptimeMillis());
+		}
+	}
+
 	//Runs on the MAIN thread
 	public void cancelRequest(int requestId, AlbumArtFetcherListener listener) {
 		if (handler != null)
