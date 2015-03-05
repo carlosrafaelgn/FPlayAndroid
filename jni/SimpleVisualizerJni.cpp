@@ -165,7 +165,7 @@ if (!neonMode) {
 			const unsigned short color = COLORS[commonColorIndex + (v >> 7)];
 			v = ((v * barH) >> 15);
 			int v2 = v;
-			v = (barH >> 1) - (v >> 1);
+			v = (barH - v) >> 1;
 			v2 += v;
 			unsigned short* currentBar = (unsigned short*)inf.bits;
 			inf.bits = (void*)((unsigned short*)inf.bits + barW);
@@ -283,7 +283,7 @@ if (!neonMode) {
 				const unsigned short color = COLORS[commonColorIndex + (v >> 7)];
 				v = ((v * barH) >> 15);
 				int v2 = v;
-				v = (barH >> 1) - (v >> 1);
+				v = (barH - v) >> 1;
 				v2 += v;
 				unsigned short* currentBar = (unsigned short*)inf.bits;
 				inf.bits = (void*)((unsigned short*)inf.bits + 1);

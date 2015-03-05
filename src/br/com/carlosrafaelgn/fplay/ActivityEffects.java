@@ -547,7 +547,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				final FontMetrics fm = UI.textPaint.getFontMetrics();
 				final int box = (int)(fm.descent - fm.ascent + 0.5f);
 				final int yInBox = box - (int)(fm.descent);
-				bgY = (size >> 1) - (box >> 1);
+				bgY = (size - box) >> 1;
 				y = bgY + yInBox;
 			}
 			if (panelBars == null) {

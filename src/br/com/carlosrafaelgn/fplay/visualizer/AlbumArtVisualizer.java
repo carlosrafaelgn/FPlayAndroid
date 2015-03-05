@@ -215,8 +215,8 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 		if (bmp == null) {
 			//we will draw the icon instead of the bitmap
-			dstRect.left = (width >> 1) - (minSize >> 1);
-			dstRect.top = (height >> 1) - (minSize >> 1);
+			dstRect.left = (width - minSize) >> 1;
+			dstRect.top = (height - minSize) >> 1;
 			dstRect.right = dstRect.left + minSize;
 			dstRect.bottom = dstRect.top + minSize;
 			return;
@@ -231,20 +231,20 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		//if we are missing the size by a handful of pixels, let's just
 		//stretch the image a little bit... ;)
 		if (Math.abs(bmp.width - bmp.height) <= UI._4dp) {
-			dstRect.left = (width >> 1) - (minSize >> 1);
-			dstRect.top = (height >> 1) - (minSize >> 1);
+			dstRect.left = (width - minSize) >> 1;
+			dstRect.top = (height - minSize) >> 1;
 			dstRect.right = dstRect.left + minSize;
 			dstRect.bottom = dstRect.top + minSize;
 		} else if (bmp.width > bmp.height) {
 			other = (bmp.height * minSize) / bmp.width;
-			dstRect.left = (width >> 1) - (minSize >> 1);
-			dstRect.top = (height >> 1) - (other >> 1);
+			dstRect.left = (width - minSize) >> 1;
+			dstRect.top = (height - other) >> 1;
 			dstRect.right = dstRect.left + minSize;
 			dstRect.bottom = dstRect.top + other;
 		} else {
 			other = (bmp.width * minSize) / bmp.height;
-			dstRect.left = (width >> 1) - (other >> 1);
-			dstRect.top = (height >> 1) - (minSize >> 1);
+			dstRect.left = (width - other) >> 1;
+			dstRect.top = (height - minSize) >> 1;
 			dstRect.right = dstRect.left + other;
 			dstRect.bottom = dstRect.top + minSize;
 		}

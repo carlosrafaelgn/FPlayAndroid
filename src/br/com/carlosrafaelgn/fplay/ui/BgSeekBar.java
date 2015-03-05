@@ -143,19 +143,19 @@ public final class BgSeekBar extends View {
 		case 2:
 			textSizeIdx = 2;
 			textSize = UI._22sp;
-			textBgY = (UI.defaultControlSize >> 1) - (UI._22spBox >> 1);
+			textBgY = (UI.defaultControlSize - UI._22spBox) >> 1;
 			textY = textBgY + UI._22spYinBox;
 			break;
 		case 1:
 			textSizeIdx = 1;
 			textSize = UI._18sp;
-			textBgY = (UI.defaultControlSize >> 1) - (UI._18spBox >> 1);
+			textBgY = (UI.defaultControlSize - UI._18spBox) >> 1;
 			textY = textBgY + UI._18spYinBox;
 			break;
 		default:
 			textSizeIdx = 0;
 			textSize = UI._14sp;
-			textBgY = (UI.defaultControlSize >> 1) - (UI._14spBox >> 1);
+			textBgY = (UI.defaultControlSize - UI._14spBox) >> 1;
 			textY = textBgY + UI._14spYinBox;
 			break;
 		}
@@ -204,7 +204,7 @@ public final class BgSeekBar extends View {
 	
 	private void updateTextX() {
 		final int s = (vertical ? height : width);
-		if (filledSize < textWidth && filledSize < ((s >> 1) - (thumbWidth >> 1))) {
+		if (filledSize < textWidth && filledSize < ((s - thumbWidth) >> 1)) {
 			drawTextFirst = false;
 			textColor = (insideList ? UI.color_text_listitem : UI.color_text);
 			textX = s - textWidth;
@@ -548,7 +548,7 @@ public final class BgSeekBar extends View {
 				UI.rect.right -= UI.strokeSize;
 				UI.rect.bottom -= UI.strokeSize;
 				UI.drawBgBorderless(canvas, state, false);
-				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize, (bottom >> 1) - (thumbWidth >> 1), thumbWidth, color);
+				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize, (bottom - thumbWidth) >> 1, thumbWidth, color);
 			}
 		}
 		if (vertical)

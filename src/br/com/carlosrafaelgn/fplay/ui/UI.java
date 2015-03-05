@@ -1410,7 +1410,7 @@ public final class UI {
 	public static void drawEmptyListString(Canvas canvas) {
 		textPaint.setColor(color_text_disabled);
 		textPaint.setTextSize(_22sp);
-		canvas.drawText(emptyListString, (UI.rect.right >> 1) - emptyListStringHalfWidth, (UI.rect.bottom >> 1) - (_18spBox >> 1) + _18spYinBox, textPaint);
+		canvas.drawText(emptyListString, (UI.rect.right >> 1) - emptyListStringHalfWidth, ((UI.rect.bottom - _18spBox) >> 1) + _18spYinBox, textPaint);
 	}
 	
 	public static void fillRect(Canvas canvas, int fillColor) {

@@ -256,7 +256,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//do not change to itemCount!
 		if (position < 0 || adapter == null || position >= adapter.getCount())
 			return;
-		int y = ((viewHeight - bottomPadding - topPadding) >> 1) - (itemHeight >> 1);
+		int y = ((viewHeight - bottomPadding - topPadding) - itemHeight) >> 1;
 		if (y < 0)
 			y = 0;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
@@ -269,7 +269,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//do not change to itemCount!
 		if (position < 0 || adapter == null || position >= adapter.getCount())
 			return;
-		int y = ((viewHeight - bottomPadding - topPadding) >> 1) - (itemHeight >> 1);
+		int y = ((viewHeight - bottomPadding - topPadding) - itemHeight) >> 1;
 		if (y < 0)
 			y = 0;
 		setSelectionFromTop(position, y);
@@ -613,7 +613,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			UI.textPaint.setTextSize(contentsHeight);
 			final Paint.FontMetrics fm = UI.textPaint.getFontMetrics();
 			final int box = (int)(fm.descent - fm.ascent + 0.5f);
-			scrollBarThumbOffset = (scrollBarThumbHeight >> 1) - (box >> 1) + (box - (int)fm.descent);
+			scrollBarThumbOffset = ((scrollBarThumbHeight - box) >> 1) + (box - (int)fm.descent);
 		} else {
 			scrollBarThumbHeight = 0;
 			contentsHeight = 0;
@@ -871,8 +871,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.dispatchDraw(canvas);
 		if (itemCount == 0) {
 			if (emptyLayout != null) {
-				final float x = (float)((viewWidth >> 1) - (emptyLayout.getWidth() >> 1));
-				final float y = (float)((viewHeight >> 1) - (emptyLayout.getHeight() >> 1));
+				final float x = (float)((viewWidth - emptyLayout.getWidth()) >> 1);
+				final float y = (float)((viewHeight - emptyLayout.getHeight()) >> 1);
 				canvas.translate(x, y);
 				UI.textPaint.setColor(UI.color_text_disabled);
 				UI.textPaint.setTextSize(UI._22sp);
@@ -928,7 +928,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				}
 				break;
 			case SCROLLBAR_LARGE:
-				UI.rect.left = scrollBarLeft + (scrollBarWidth >> 1) - (UI.strokeSize >> 1);
+				UI.rect.left = scrollBarLeft + ((scrollBarWidth - UI.strokeSize) >> 1);
 				UI.rect.right = UI.rect.left + UI.strokeSize;
 				UI.rect.top = scrollBarTop + UI._4dp;
 				UI.rect.bottom = scrollBarBottom - UI._4dp;

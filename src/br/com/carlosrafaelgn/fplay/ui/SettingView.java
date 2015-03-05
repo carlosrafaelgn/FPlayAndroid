@@ -127,7 +127,7 @@ public final class SettingView extends View {
 			textY = UI.verticalMargin + UI._LargeItemspYinBox;
 		} else {
 			if (textHeight <= UI.defaultControlContentsSize)
-				textY = (height >> 1) - (textHeight >> 1) + UI._LargeItemspYinBox;
+				textY = ((height - textHeight) >> 1) + UI._LargeItemspYinBox;
 			else
 				textY = UI.verticalMargin + UI._LargeItemspYinBox;
 		}
@@ -330,7 +330,7 @@ public final class SettingView extends View {
 		int x = UI._8dp;
 		if (icon != null) {
 			x += (UI.defaultControlContentsSize + UI._8dp + UI.strokeSize + UI._8dp);
-			UI.rect.top = (UI.rect.bottom >> 1) - (UI.defaultControlContentsSize >> 1);
+			UI.rect.top = (UI.rect.bottom - UI.defaultControlContentsSize) >> 1;
 			TextIconDrawable.drawIcon(canvas, icon, UI._8dp, UI.rect.top, UI.defaultControlContentsSize, txtColorSecondary);
 			UI.rect.left = UI._8dp + UI._8dp + UI.defaultControlContentsSize;
 			UI.rect.right = UI.rect.left + UI.strokeSize;
@@ -350,7 +350,7 @@ public final class SettingView extends View {
 			UI.drawText(canvas, secondaryText, txtColorSecondary, UI._18sp, width - secondaryTextWidth - UI._8dp, height - UI.verticalMargin - UI._18spBox + UI._18spYinBox);
 		} else if (color != 0 || checkable) {
 			UI.rect.left = width - UI._8dp - UI.defaultCheckIconSize;
-			UI.rect.top = (height >> 1) - (UI.defaultCheckIconSize >> 1);
+			UI.rect.top = (height - UI.defaultCheckIconSize) >> 1;
 			if (color != 0) {
 				UI.rect.right = UI.rect.left + UI.defaultCheckIconSize;
 				UI.rect.bottom = UI.rect.top + UI.defaultCheckIconSize;

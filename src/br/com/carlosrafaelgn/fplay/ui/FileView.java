@@ -325,10 +325,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		final int st = state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2);
 		UI.drawBgBorderless(canvas, st, true);
 		if (albumArt != null && albumArt.bitmap != null)
-			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, (usableHeight >> 1) - (albumArt.height >> 1), null);
+			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, (usableHeight - albumArt.height) >> 1, null);
 		else if (icon != null)
-			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, (usableHeight >> 1) - (UI.defaultControlContentsSize >> 1), UI.defaultControlContentsSize, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary);
-		UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, (usableHeight >> 1) - (UI._LargeItemspBox >> 1) + UI._LargeItemspYinBox);
+			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, (usableHeight - UI.defaultControlContentsSize) >> 1, UI.defaultControlContentsSize, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary);
+		UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, ((usableHeight - UI._LargeItemspBox) >> 1) + UI._LargeItemspYinBox);
 		super.dispatchDraw(canvas);
 	}
 	
