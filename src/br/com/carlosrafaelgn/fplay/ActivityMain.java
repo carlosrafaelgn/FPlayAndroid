@@ -68,6 +68,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.AlbumArtVisualizer;
+import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
@@ -95,7 +96,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEATONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEATONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -515,27 +516,32 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2 = s.addSubMenu(2, 0, 3, getText(R.string.visualizer) + "\u2026")
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
 		UI.prepare(s2);
-		s2.add(2, MNU_VISUALIZER, 0, "Classic")
+		s2.add(2, MNU_VISUALIZER_SPECTRUM, 0, "Spectrum")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_SPECTRUM, 1, "Spectrum")
+		s2.add(2, MNU_VISUALIZER_SPIN, 1, "Spinning Rainbow")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_LIQUID, 2, "Liquid Spectrum")
+		s2.add(2, MNU_VISUALIZER_PARTICLE, 2, "Sound Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_SPIN, 3, "Spinning Rainbow")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_PARTICLE, 4, "Sound Particles")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 5, "Into the Particles")
+		s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 3, "Into the Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
-		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 6, "Bluetooth")
+		UI.separator(s2, 2, 4);
+		s2.add(2, MNU_VISUALIZER_ALBUMART, 5, R.string.album_art)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+			.setIcon(new TextIconDrawable(UI.ICON_ALBUMART));
+		UI.separator(s2, 2, 6);
+		s2.add(2, MNU_VISUALIZER_LIQUID, 7, "Liquid Spectrum")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+		s2.add(2, MNU_VISUALIZER, 8, "Classic")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+		//s2.add(2, MNU_VISUALIZER_BLUETOOTH, 9, "Bluetooth")
+		//	.setOnMenuItemClickListener(this)
+		//	.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
@@ -615,6 +621,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
 			break;
 		case MNU_VISUALIZER_BLUETOOTH:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, BluetoothVisualizerJni.class.getName()));
+			break;
+		case MNU_VISUALIZER_ALBUMART:
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, AlbumArtVisualizer.class.getName()));
 			break;
 		case MNU_SETTINGS:
