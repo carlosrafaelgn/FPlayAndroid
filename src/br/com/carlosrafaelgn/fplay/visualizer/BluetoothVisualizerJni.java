@@ -46,6 +46,7 @@ import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
@@ -63,6 +64,7 @@ import br.com.carlosrafaelgn.fplay.util.SlimLock;
 public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer, MenuItem.OnMenuItemClickListener, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, View.OnClickListener, Runnable {
 	private static final int MSG_UPDATE_PACKAGES = 0x0600;
 	private static final int MSG_PLAYER_COMMAND = 0x0601;
+	private static final int MSG_BLUETOOTH_RXTX_ERROR = 0x0602;
 
 	private static final int[] FRAMES_TO_SKIP = { 0, 1, 2, 3, 4, 5, 9, 11, 14, 19, 29, 59 };
 
@@ -388,6 +390,10 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 				bt.getOutputStream().write(bfft, 0, len + 5);
 				packagesSent++;
 			}
+		} catch (IOException ex) {
+			//Bluetooth error
+			if (connected)
+				MainHandler.sendMessage(this, MSG_BLUETOOTH_RXTX_ERROR);
 		} catch (Throwable ex) {
 		} finally {
 			lock.releaseLowPriority();
@@ -510,8 +516,11 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 						MainHandler.sendMessage(this, MSG_PLAYER_COMMAND, currentMessage, payload);
 				}
 			}
+		} catch (IOException ex) {
+			//Bluetooth error
+			if (connected)
+				MainHandler.sendMessage(this, MSG_BLUETOOTH_RXTX_ERROR);
 		} catch (Throwable ex) {
-			ex.printStackTrace();
 		}
 	}
 
@@ -624,6 +633,9 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			case BluetoothConnectionManager.ERROR_CONNECTION:
 				lblMsg.setText(R.string.bt_connection_error);
 				break;
+			case BluetoothConnectionManager.ERROR_COMMUNICATION:
+				lblMsg.setText(R.string.bt_communication_error);
+				break;
 			default:
 				lblMsg.setText(R.string.bt_not_supported);
 				break;
@@ -696,6 +708,10 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 					break;
 				}
 			}
+			break;
+		case MSG_BLUETOOTH_RXTX_ERROR:
+			if (connected)
+				onBluetoothError(bt, BluetoothConnectionManager.ERROR_COMMUNICATION);
 			break;
 		}
 		return true;

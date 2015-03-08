@@ -79,6 +79,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	public static final int ERROR_NOTHING_PAIRED = -4;
 	public static final int ERROR_STILL_PAIRING = -5;
 	public static final int ERROR_CONNECTION = -6;
+	public static final int ERROR_COMMUNICATION = -7;
 
 	private static ColorStateList defaultTextColors, highlightTextColors;
 
@@ -91,11 +92,12 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	}
 
 	private static final class DeviceItem extends BaseItem {
-		public final String description, address;
+		public final String name, description, address;
 		public final boolean paired, recentlyUsed;
 
-		public DeviceItem(String description, String address, boolean paired, boolean recentlyUsed) {
-			this.description = description;
+		public DeviceItem(String name, String address, boolean paired, boolean recentlyUsed) {
+			this.name = name;
+			this.description = name + " - " + address;
 			this.address = address;
 			this.paired = paired;
 			this.recentlyUsed = recentlyUsed;
@@ -133,8 +135,8 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 
 		@Override
 		public int compare(DeviceItem a, DeviceItem b) {
-			if (a.recentlyUsed != b.recentlyUsed)
-				return (a.recentlyUsed ? -1 : 1);
+			//if (a.recentlyUsed != b.recentlyUsed)
+			//	return (a.recentlyUsed ? -1 : 1);
 			return a.description.compareToIgnoreCase(b.description);
 		}
 
@@ -339,17 +341,17 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		l.addView(listView);
 
 		deviceList = new DeviceList();
-		listView.setAdapter(deviceList);
-		listView.setOnItemClickListener(this);
 		defaultTextColors = lblTitle.getTextColors();
 		highlightTextColors = ColorStateList.valueOf(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5);
 
 		final Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
 		if (pairedDevices.size() > 0) {
 			for (BluetoothDevice device : pairedDevices)
-				deviceList.add(new DeviceItem(device.getName() + " - " + device.getAddress(), device.getAddress(), true, false), -1);
+				deviceList.add(new DeviceItem(device.getName(), device.getAddress(), true, false), -1);
 			deviceList.sort();
 		}
+		listView.setAdapter(deviceList);
+		listView.setOnItemClickListener(this);
 		try {
 			if (btAdapter.isDiscovering())
 				btAdapter.cancelDiscovery();
@@ -403,17 +405,21 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		if (BluetoothDevice.ACTION_FOUND.equals(action)) {
 			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 			final String address = device.getAddress();
+			final String name = device.getName();
 			boolean paired = false;
 			for (int i = deviceList.getCount() - 1; i >= 0; i--) {
-				if (deviceList.getItemT(i).address.equals(address)) {
-					paired = deviceList.getItemT(i).paired;
+				final DeviceItem di = deviceList.getItemT(i);
+				if (di.address.equalsIgnoreCase(address)) {
+					//an item with this same address/name is already on the list
+					if (di.name.equalsIgnoreCase(name))
+						return;
+					paired = di.paired;
 					deviceList.setSelection(i, true);
 					deviceList.removeSelection();
 					break;
 				}
 			}
-			final String name = device.getName();
-			deviceList.add(new DeviceItem(((name == null || name.length() == 0) ? activity.getText(R.string.bt_null_device_name).toString() : name) + " - " + address, address, paired, false), -1);
+			deviceList.add(new DeviceItem(((name == null || name.length() == 0) ? activity.getText(R.string.bt_null_device_name).toString() : name), address, paired, false), -1);
 			deviceList.setSelection(-1, true);
 			//stop sorting as the devices are discovered, to prevent the
 			//order of the list from changing

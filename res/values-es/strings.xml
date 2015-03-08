@@ -283,6 +283,7 @@
     <string name="bt_stop">Detener la transmisión de Bluetooth</string>
     <string name="bt_pairing">Por favor, intente conectarse de nuevo después de emparejar el dispositivo.</string>
     <string name="bt_connection_error">Se ha producido un error al conectar con el dispositivo Bluetooth :(</string>
+    <string name="bt_communication_error">Se ha producido un error durante la comunicación con el dispositivo Bluetooth :(</string>
     <string name="bt_needs_to_be_enabled">Necesitas habilitar Bluetooth para proceder :(</string>
     <string name="bt_not_supported">Bluetooth no es compatible :(</string>
     <string name="bt_discovery_error">Se ha producido un error al buscar los dispositivos Bluetooth :(</string>

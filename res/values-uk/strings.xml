@@ -283,6 +283,7 @@
     <string name="bt_stop">Stop Bluetooth transmission</string>
     <string name="bt_pairing">Please, try to connect again after pairing the device.</string>
     <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device :(</string>
+    <string name="bt_communication_error">An error occurred while communicating with the Bluetooth device :(</string>
     <string name="bt_needs_to_be_enabled">You need to enable Bluetooth to proceed :(</string>
     <string name="bt_not_supported">Bluetooth not supported :(</string>
     <string name="bt_discovery_error">An error occurred while searching for the Bluetooth devices :(</string>
