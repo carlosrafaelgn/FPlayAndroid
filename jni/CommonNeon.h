@@ -32,13 +32,13 @@
 //
 
 //used during Bluetooth processing
-#define SIZE_4 ((int)'0')
-#define SIZE_8 ((int)'1')
-#define SIZE_16 ((int)'2')
-#define SIZE_32 ((int)'3')
-#define SIZE_64 ((int)'4')
-#define SIZE_128 ((int)'5')
-#define SIZE_256 ((int)'6')
+#define MessageSpectrum4 ((int)0x20)
+#define MessageSpectrum8 ((int)0x21)
+#define MessageSpectrum16 ((int)0x22)
+#define MessageSpectrum32 ((int)0x23)
+#define MessageSpectrum64 ((int)0x24)
+#define MessageSpectrum128 ((int)0x25)
+#define MessageSpectrum256 ((int)0x26)
 
 #define DEFSPEED (0.140625f / 16.0f)
 

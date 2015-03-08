@@ -230,10 +230,10 @@ if (!neonMode) {
 	//processedData stores the first 256 bins, out of the 512 captured by visualizer.getFft
 	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11000Hz for a SR of 44100Hz)
 	//
-	//the mapping algorithms used in SIZE_4, SIZE_8, SIZE_16, SIZE_32, SIZE_64 and in SIZE_128
+	//the mapping algorithms used in MessageSpectrum4, MessageSpectrum8, MessageSpectrum16, MessageSpectrum32, MessageSpectrum64 and in MessageSpectrum128
 	//were "empirically created", without too much of theory envolved ;)
 	switch (bt) {
-	case SIZE_4:
+	case MessageSpectrum4:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 2);
 		PACK_BIN(avg);
 		avg = 0;
@@ -252,7 +252,7 @@ if (!neonMode) {
 		//avg >>= 7;
 		PACK_BIN(avg);
 		break;
-	case SIZE_8:
+	case MessageSpectrum8:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
 		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
@@ -288,7 +288,7 @@ if (!neonMode) {
 		//avg >>= 6;
 		PACK_BIN(avg);
 		break;
-	case SIZE_16:
+	case MessageSpectrum16:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
 		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
@@ -319,7 +319,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case SIZE_32:
+	case MessageSpectrum32:
 		b = processedData[0];
 		PACK_BIN(b);
 		b = processedData[1];
@@ -351,7 +351,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case SIZE_64:
+	case MessageSpectrum64:
 		for (i = 0; i < 20; i++) { //for (i = 1; i < 21; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
@@ -372,7 +372,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case SIZE_128:
+	case MessageSpectrum128:
 		for (i = 0; i < 36; i++) { //for (i = 1; i < 37; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
@@ -386,7 +386,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case SIZE_256:
+	case MessageSpectrum256:
 		for (i = 0; i < 256; i++) {
 			b = processedData[i];
 			PACK_BIN(b);

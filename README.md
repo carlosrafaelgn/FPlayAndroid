@@ -28,12 +28,24 @@ Moreover, this source code can be used as an example on how to do a few tasks in
 
 The player is still in a "beta stage", so there may be unknown bugs yet ;)
 
+You can find FPlay on Google Play at https://play.google.com/store/apps/details?id=br.com.carlosrafaelgn.fplay
+
 * FPlay for Android is somewhat based on my old J2ME player FPlay, also available on GitHub: https://github.com/carlosrafaelgn/FPlay
+
+----
+
+FPlayArduino
+============
+
+FPlay can be integrated to Arduino, or other electronic board, via Bluetooth SPP - Serial Port Profile :)
+
+The Arduino library is available on GitHub: https://github.com/carlosrafaelgn/FPlayArduino
 
 ----
 
 Very special thanks to the people who helped translating FPlay:
 - Sviat Hurskyi (sviat.hurskyi@gmail.com)
+- Stefan Fitzenreiter (sfitzenreiter@gmail.com)
 - David Gonzalez (redandy16@gmail.com)
 
 Thanks a lot!! :D
