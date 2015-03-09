@@ -362,10 +362,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	//when calling setDataSource from the main thread :(
 	private static Thread preparationThread;
 	private static final Object preparationSync = new Object(), preparationSyncNext = new Object();
-	private static PreparationHandler preparationHandler;
-	private static MediaPlayer preparationPlayer, preparationPlayerNext;
-	private static Song preparationSong, preparationSongNext;
-	private static int preparationVersion, preparationVersionNext;
+	private static volatile PreparationHandler preparationHandler;
+	private static volatile MediaPlayer preparationPlayer, preparationPlayerNext;
+	private static volatile Song preparationSong, preparationSongNext;
+	private static volatile int preparationVersion, preparationVersionNext;
 	//This flag is used to differentiate two distinct moments when currentSongPreparing == true:
 	//- When preparationMustBeWaitedFor is true, setDataSource has not finished yet
 	//- When preparationMustBeWaitedFor is false, setDataSource has already finished, but onPrepared() has not been caled
