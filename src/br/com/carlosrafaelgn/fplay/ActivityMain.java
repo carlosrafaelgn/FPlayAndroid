@@ -532,16 +532,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_ALBUMART, 5, R.string.album_art)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_ALBUMART));
-		UI.separator(s2, 2, 6);
-		s2.add(2, MNU_VISUALIZER_LIQUID, 7, "Liquid Spectrum")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER, 8, "Classic")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 9, "Bluetooth")
+		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 6, "Bluetooth")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+		UI.separator(s2, 2, 7);
+		s2.add(2, MNU_VISUALIZER_LIQUID, 8, "Liquid Spectrum")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+		s2.add(2, MNU_VISUALIZER, 9, "Classic")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));

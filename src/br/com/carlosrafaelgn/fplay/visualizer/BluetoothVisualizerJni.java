@@ -615,6 +615,10 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		version++;
 		connected = false;
 		transmitting = false;
+		if (bt != null) {
+			bt.destroy();
+			bt = null;
+		}
 		if (lblMsg != null) {
 			switch (error) {
 			case BluetoothConnectionManager.NOT_ENABLED:
