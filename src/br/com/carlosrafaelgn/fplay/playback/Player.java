@@ -370,6 +370,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	//- When preparationMustBeWaitedFor is true, setDataSource has not finished yet
 	//- When preparationMustBeWaitedFor is false, setDataSource has already finished, but onPrepared() has not been caled
 	private static boolean preparationMustBeWaitedFor;
+	private static int preparationStartTime;
 
 	//These guys used to be private, but I decided to make them public, even though some of them still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
@@ -1411,6 +1412,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		if (doInternal) {
 			stopInternal(null);
 			//we need to reset the flags to true here, because stopInternal() sets them to false
+			preparationStartTime = (int)SystemClock.uptimeMillis();
 			currentSongPreparing = true;
 			preparationMustBeWaitedFor = true;
 			if (how != SongList.HOW_CURRENT)
@@ -1444,10 +1446,24 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		//wasPlaying = true;
 		sendMessage(MSG_UPDATE_STATE, null);
 	}
-	
+
+	private static boolean resetDueToDelay() {
+		//reset everything as it appears to be taking too long for the loading process to finish
+		if ((((int)SystemClock.uptimeMillis()) - preparationStartTime) <= 5000)
+			return false;
+		preparationVersion++;
+		preparationVersionNext++;
+		fullCleanup(null);
+		return true;
+	}
+
 	private static Song playInternal(int how) {
-		if (thePlayer == null || state != STATE_INITIALIZED || (currentSongPreparing && preparationMustBeWaitedFor))
+		if (thePlayer == null || state != STATE_INITIALIZED) {
 			return null;
+		} else if (currentSongPreparing && preparationMustBeWaitedFor) {
+			if (!resetDueToDelay())
+				return null;
+		}
 		if (!hasFocus && !requestFocus()) {
 			unpaused = false;
 			playing = false;
@@ -1465,6 +1481,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			sendMessage(MSG_UPDATE_STATE, null);
 			return null;
 		}
+		preparationStartTime = (int)SystemClock.uptimeMillis();
 		if (currentPlayer == null || nextPlayer == null) {
 			initializePlayers();
 			currentSongPreparing = true;
@@ -1609,8 +1626,12 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static boolean playPause() {
-		if (thePlayer == null || state != STATE_INITIALIZED || (currentSongPreparing && preparationMustBeWaitedFor))
+		if (thePlayer == null || state != STATE_INITIALIZED) {
 			return false;
+		} else if (currentSongPreparing && preparationMustBeWaitedFor) {
+			if (!resetDueToDelay())
+				return false;
+		}
 		if (currentSong == null || !currentSongLoaded || !hasFocus) {
 			unpaused = true;
 			//the user deleted the current song before it had a chance to load
@@ -1651,6 +1672,8 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 	
 	public static boolean seekTo(int timeMS, boolean play) {
+		//seekTo does not reset the players even if it taking too long
+		//for the preparation process to finish
 		if (thePlayer == null || state != STATE_INITIALIZED || (currentSongPreparing && preparationMustBeWaitedFor))
 			return false;
 		if (!currentSongLoaded) {
