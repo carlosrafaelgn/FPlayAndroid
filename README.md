@@ -58,4 +58,4 @@ Some of the scalable icons were created by me and some came from the IcoMoon Fre
 
 ----
 
-This projected is licensed under the terms of the FreeBSD License. See LICENSE.txt for more details.
+This project is licensed under the terms of the FreeBSD License. See LICENSE.txt for more details.
