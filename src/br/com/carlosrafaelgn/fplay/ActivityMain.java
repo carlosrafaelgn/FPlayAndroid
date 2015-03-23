@@ -154,11 +154,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private String volumeToString() {
-		if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) {
+		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
 			return Integer.toString(Player.getStreamVolume());
 		} else {
 			int volumeDB = Player.volumeDB;
-			if (UI.displayVolumeInDB) {
+			if (Player.volumeControlType == Player.VOLUME_CONTROL_DB) {
 				if (volumeDB <= Player.MIN_VOLUME_DB)
 					return "-\u221E dB";
 				if (volumeDB >= 0)
@@ -175,12 +175,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				volumeBuilder.append(" dB");
 				return volumeBuilder.toString();
 			}
-			if (volumeDB <= Player.MIN_VOLUME_DB)
-				return "0%";
-			if (volumeDB >= 0)
-				return "100%";
 			volumeBuilder.delete(0, volumeBuilder.length());
-			volumeBuilder.append(((Player.MIN_VOLUME_DB - volumeDB) * 100) / Player.MIN_VOLUME_DB);
+			volumeBuilder.append(Player.getGenericVolumePercent());
 			volumeBuilder.append('%');
 			return volumeBuilder.toString();
 		}
@@ -190,12 +186,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (btnVolume != null) {
 			final int max;
 			final int v;
-			switch (Player.getVolumeControlType()) {
+			switch (Player.volumeControlType) {
 			case Player.VOLUME_CONTROL_STREAM:
 				max = Player.getStreamMaxVolume();
 				v = Player.getStreamVolume();
 				break;
 			case Player.VOLUME_CONTROL_DB:
+			case Player.VOLUME_CONTROL_PERCENT:
 				max = -Player.MIN_VOLUME_DB;
 				v = max + Player.volumeDB;
 				break;
@@ -218,7 +215,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	private void updateVolumeDisplay() {
 		if (barVolume != null) {
-			barVolume.setValue((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamVolume() : ((Player.volumeDB - Player.MIN_VOLUME_DB) / 5));
+			barVolume.setValue((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamVolume() : ((Player.volumeDB - Player.MIN_VOLUME_DB) / 5));
 			barVolume.setText(volumeToString());
 		} else {
 			setVolumeIcon();
@@ -345,17 +342,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private boolean decreaseVolume() {
-		final boolean ret = ((Player.getVolumeControlType() == Player.VOLUME_CONTROL_DB) ?
-				Player.setVolumeDB(Player.volumeDB - 200) :
-				Player.decreaseStreamVolume());
+		final boolean ret = Player.decreaseVolume();
 		setVolumeIcon();
 		return ret;
 	}
 	
 	private boolean increaseVolume() {
-		final boolean ret = ((Player.getVolumeControlType() == Player.VOLUME_CONTROL_DB) ?
-				Player.setVolumeDB(Player.volumeDB + 200) :
-				Player.increaseStreamVolume());
+		final boolean ret = Player.increaseVolume();
 		setVolumeIcon();
 		return ret;
 	}
@@ -420,7 +413,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public void onPlayerAudioSinkChanged(int audioSink) {
 		//when changing the output, the global volume usually changes
-		if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) {
+		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
 			updateVolumeDisplay();
 			if (barVolume != null)
 				barVolume.setMax(Player.getStreamMaxVolume());
@@ -655,15 +648,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			cancelSelection(false);
 		} else if (view == btnDecreaseVolume) {
 			//this click will only actually perform an action when triggered by keys
-			if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE)
-				Player.showStreamVolumeUI();
-			else if (volumeButtonPressed == 0)
+			if (volumeButtonPressed == 0)
 				decreaseVolume();
 		} else if (view == btnIncreaseVolume) {
 			//this click will only actually perform an action when triggered by keys
-			if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE)
-				Player.showStreamVolumeUI();
-			else if (volumeButtonPressed == 0)
+			if (volumeButtonPressed == 0)
 				increaseVolume();
 		} else if (view == btnVolume) {
 			Player.showStreamVolumeUI();
@@ -971,7 +960,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				lblLength = null;
 			}
 			
-			if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE) {
+			if (Player.volumeControlType == Player.VOLUME_CONTROL_NONE) {
 				panelSecondary.removeView(barVolume);
 				barVolume = null;
 				btnVolume.setVisibility(View.VISIBLE);
@@ -1011,9 +1000,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnVolume = null;
 				barVolume.setAdditionalContentDescription(getText(R.string.volume).toString());
 				barVolume.setOnBgSeekBarChangeListener(this);
-				barVolume.setMax((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamMaxVolume() : (-Player.MIN_VOLUME_DB / 5));
+				barVolume.setMax((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? Player.globalMaxVolume : (-Player.MIN_VOLUME_DB / 5));
 				barVolume.setVertical(UI.isLandscape && !UI.isLargeScreen);
-				barVolume.setKeyIncrement((Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) ? 1 : 20);
+				barVolume.setKeyIncrement((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? 1 : 20);
 				vwVolume = barVolume;
 				vwVolumeId = R.id.barVolume;
 			}
@@ -1337,7 +1326,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
 		if (fromUser) {
 			if (seekBar == barVolume) {
-				if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM)
+				if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM)
 					Player.setStreamVolume(value);
 				else
 					Player.setVolumeDB((value * 5) + Player.MIN_VOLUME_DB);
@@ -1373,7 +1362,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
-		if (seekBar == barVolume && Player.getVolumeControlType() == Player.VOLUME_CONTROL_STREAM) {
+		if (seekBar == barVolume && Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
 			updateVolumeDisplay();
 		} else if (seekBar == barSeek) {
 			if (Player.currentSong != null) {
@@ -1423,7 +1412,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onPressingChanged(BgButton button, boolean pressed) {
 		if (button == btnDecreaseVolume) {
 			if (pressed) {
-				if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE) {
+				if (Player.volumeControlType == Player.VOLUME_CONTROL_NONE) {
 					Player.showStreamVolumeUI();
 					tmrVolume.stop();
 				} else {
@@ -1440,7 +1429,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 		} else if (button == btnIncreaseVolume) {
 			if (pressed) {
-				if (Player.getVolumeControlType() == Player.VOLUME_CONTROL_NONE) {
+				if (Player.volumeControlType == Player.VOLUME_CONTROL_NONE) {
 					Player.showStreamVolumeUI();
 					tmrVolume.stop();
 				} else {

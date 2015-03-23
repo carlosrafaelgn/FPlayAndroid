@@ -276,11 +276,11 @@
 
     <string name="bt_packages_sent">Nachricht gesendet:</string>
     <string name="bt_fps">Nachrichten pro Sekunde&#8230;</string>
-    <string name="bt_sample_count">Sample pro Nachricht&#8230;</string>
+    <string name="bt_sample_count">Frequenzbänder pro Nachricht&#8230;</string>
     <string name="bt_connect">Verbunden mit einem Bluetooth Gerät&#8230;</string>
     <string name="bt_disconnect">Getrenntes Bluetooth Gerät</string>
-    <string name="bt_start">Start Bluetooth Übertragung</string>
-    <string name="bt_stop">Stop Bluetooth Übertragung</string>
+    <string name="bt_start">Starten Sie das Senden der Frequenzbänder</string>
+    <string name="bt_stop">Stoppen Sie das Senden der Frequenzbänder</string>
     <string name="bt_pairing">Bitte nach dem Pairen der Geräte nochmals versuchen, die Verbindung herzustellen.</string>
     <string name="bt_connection_error">Fehler während der Verbindung zum Bluetooth Gerät :(</string>
     <string name="bt_communication_error">Fehler bei der Kommunikation mit Bluetooth-Gerät :(</string>

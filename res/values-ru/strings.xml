@@ -276,11 +276,11 @@
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>
-    <string name="bt_sample_count">Samples per message&#8230;</string>
+    <string name="bt_sample_count">Bins per message&#8230;</string>
     <string name="bt_connect">Connect to a Bluetooth device&#8230;</string>
     <string name="bt_disconnect">Disconnect Bluetooth device</string>
-    <string name="bt_start">Start Bluetooth transmission</string>
-    <string name="bt_stop">Stop Bluetooth transmission</string>
+    <string name="bt_start">Start sending frequency bins</string>
+    <string name="bt_stop">Stop sending frequency bins</string>
     <string name="bt_pairing">Please, try to connect again after pairing the device.</string>
     <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device :(</string>
     <string name="bt_communication_error">An error occurred while communicating with the Bluetooth device :(</string>

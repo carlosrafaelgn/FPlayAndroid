@@ -177,23 +177,20 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
-			int o = Player.getVolumeControlType();
-			if (o == Player.VOLUME_CONTROL_DB)
-				o = (UI.displayVolumeInDB ? -1 : -2);
 			menu.add(0, Player.VOLUME_CONTROL_STREAM, 0, R.string.volume_control_type_integrated)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == Player.VOLUME_CONTROL_STREAM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, -1, 0, R.string.volume_control_type_decibels)
+			menu.add(1, Player.VOLUME_CONTROL_DB, 0, R.string.volume_control_type_decibels)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == -1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, -2, 1, R.string.volume_control_type_percentage)
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_DB) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, Player.VOLUME_CONTROL_PERCENT, 1, R.string.volume_control_type_percentage)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == -2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_PERCENT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 1, 2);
 			menu.add(2, Player.VOLUME_CONTROL_NONE, 0, R.string.noneM)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == Player.VOLUME_CONTROL_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optExtraInfoMode) {
 			lastMenuView = optExtraInfoMode;
 			UI.prepare(menu);
@@ -326,22 +323,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				System.gc();
 			}
 		} else if (lastMenuView == optVolumeControlType) {
-			switch (item.getItemId()) {
-			case Player.VOLUME_CONTROL_STREAM:
-				Player.setVolumeControlType(getApplication(), Player.VOLUME_CONTROL_STREAM);
-				break;
-			case -1:
-				Player.setVolumeControlType(getApplication(), Player.VOLUME_CONTROL_DB);
-				UI.displayVolumeInDB = true;
-				break;
-			case -2:
-				Player.setVolumeControlType(getApplication(), Player.VOLUME_CONTROL_DB);
-				UI.displayVolumeInDB = false;
-				break;
-			case Player.VOLUME_CONTROL_NONE:
-				Player.setVolumeControlType(getApplication(), Player.VOLUME_CONTROL_NONE);
-				break;
-			}
+			Player.setVolumeControlType(getApplication(), item.getItemId());
 			optVolumeControlType.setSecondaryText(getVolumeString());
 		} else if (lastMenuView == optExtraInfoMode) {
 			Song.extraInfoMode = item.getItemId();
@@ -393,13 +375,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 	
 	private String getVolumeString() {
-		switch (Player.getVolumeControlType()) {
-		case Player.VOLUME_CONTROL_STREAM:
-			return getText(R.string.volume_control_type_integrated).toString();
+		switch (Player.volumeControlType) {
 		case Player.VOLUME_CONTROL_DB:
-			return getText(UI.displayVolumeInDB ? R.string.volume_control_type_decibels : R.string.volume_control_type_percentage).toString();
-		default:
+			return getText(R.string.volume_control_type_decibels).toString();
+		case Player.VOLUME_CONTROL_PERCENT:
+			return getText(R.string.volume_control_type_percentage).toString();
+		case Player.VOLUME_CONTROL_NONE:
 			return getText(R.string.noneM).toString();
+		default:
+			return getText(R.string.volume_control_type_integrated).toString();
 		}
 	}
 	

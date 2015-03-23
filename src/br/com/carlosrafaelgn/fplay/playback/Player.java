@@ -158,6 +158,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	public static final int VOLUME_CONTROL_DB = 0;
 	public static final int VOLUME_CONTROL_STREAM = 1;
 	public static final int VOLUME_CONTROL_NONE = 2;
+	public static final int VOLUME_CONTROL_PERCENT = 3;
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
@@ -274,7 +275,9 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static final int OPTBIT_NEXTPREPARATION = 2;
 	private static final int OPTBIT_PLAYFOLDERCLEARSLIST = 3;
 	private static final int OPTBIT_KEEPSCREENON = 4;
+	//volume control changed on version 71
 	private static final int OPTBIT_DISPLAYVOLUMEINDB = 5;
+	private static final int OPTBIT_VOLUMECONTROLTYPE0 = 5;
 	private static final int OPTBIT_DOUBLECLICKMODE = 6;
 	private static final int OPTBIT_MARQUEETITLE = 7;
 	private static final int OPTBIT_FLAT = 8;
@@ -291,7 +294,9 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static final int OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 19;
 	private static final int OPTBIT_WRAPAROUNDLIST = 20;
 	private static final int OPTBIT_EXTRASPACING = 21;
+	//this bit has been recycled on version 71
 	//private static final int OPTBIT_OLDBROWSERBEHAVIOR = 22;
+	private static final int OPTBIT_VOLUMECONTROLTYPE1 = 22;
 	static final int OPTBIT_EQUALIZER_ENABLED = 23;
 	static final int OPTBIT_BASSBOOST_ENABLED = 24;
 	static final int OPTBIT_VIRTUALIZER_ENABLED = 25;
@@ -318,7 +323,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, dimmedVolume, reviveAlreadyRetried, appIdle;
 	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
-	private static int lastTime = -1, lastHow, silenceMode, globalMaxVolume = 15, audioSink, audioSinkBeforeFocusLoss, volumeControlType;
+	private static int lastTime = -1, lastHow, silenceMode, audioSink, audioSinkBeforeFocusLoss;
 	private static Player thePlayer;
 	private static Song lastSong, nextSong, firstError;
 	private static MediaPlayer currentPlayer, nextPlayer;
@@ -375,7 +380,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	//These guys used to be private, but I decided to make them public, even though some of them still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
 	//not been able to figure out a way to do so....)
-	public static int idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, state, volumeDB;
+	public static int idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, state, volumeDB, volumeControlType, globalMaxVolume = 15;
 	public static boolean playing, hasFocus, controlMode, currentSongLoaded;
 	public static Song currentSong;
 
@@ -395,7 +400,6 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		fadeInIncrementOnPause = opts.getInt(OPT_FADEININCREMENTONPAUSE, 125);
 		fadeInIncrementOnOther = opts.getInt(OPT_FADEININCREMENTONOTHER, 0);
 		UI.forcedOrientation = opts.getInt(OPT_FORCEDORIENTATION);
-		setVolumeControlType(context, opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM));
 		turnOffTimerCustomMinutes = opts.getInt(OPT_TURNOFFTIMERCUSTOMMINUTES, 30);
 		if (turnOffTimerCustomMinutes < 1)
 			turnOffTimerCustomMinutes = 1;
@@ -422,6 +426,20 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		if (UI.lastVersionCode < 55 && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1)
 			fade = UI.TRANSITION_NONE;
 		UI.setTransition(fade);
+		//the volume control types changed on version 71
+		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
+			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
+			if (volumeControlType == VOLUME_CONTROL_DB)
+				setVolumeControlType(context, (opts.hasBits() ? opts.getBit(OPTBIT_DISPLAYVOLUMEINDB) : opts.getBoolean(OPT_DISPLAYVOLUMEINDB)) ? VOLUME_CONTROL_DB : VOLUME_CONTROL_PERCENT);
+			else
+				setVolumeControlType(context, volumeControlType);
+		} else {
+			//load the volume control type the new way
+			final int defVolumeControlType = (UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
+			setVolumeControlType(context,
+				opts.getBitI(OPTBIT_VOLUMECONTROLTYPE0, defVolumeControlType & 1) |
+				(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE1, defVolumeControlType >> 1) << 1));
+		}
 		//the concept of bit was added on version 38
 		if (opts.hasBits() || UI.lastVersionCode == 0) {
 			//load the bit flags the new way
@@ -430,7 +448,6 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			nextPreparationEnabled = opts.getBit(OPTBIT_NEXTPREPARATION, true);
 			clearListWhenPlayingFolders = opts.getBit(OPTBIT_PLAYFOLDERCLEARSLIST);
 			UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON, true);
-			UI.displayVolumeInDB = opts.getBit(OPTBIT_DISPLAYVOLUMEINDB);
 			UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
 			UI.setFlat(opts.getBit(OPTBIT_FLAT, true));
@@ -468,7 +485,6 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			nextPreparationEnabled = opts.getBoolean(OPT_NEXTPREPARATION, true);
 			clearListWhenPlayingFolders = opts.getBoolean(OPT_PLAYFOLDERCLEARSLIST);
 			UI.keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
-			UI.displayVolumeInDB = opts.getBoolean(OPT_DISPLAYVOLUMEINDB);
 			UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
 			UI.setFlat(opts.getBoolean(OPT_FLAT, true));
@@ -522,7 +538,6 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		opts.put(OPT_FADEININCREMENTONPAUSE, fadeInIncrementOnPause);
 		opts.put(OPT_FADEININCREMENTONOTHER, fadeInIncrementOnOther);
 		opts.put(OPT_FORCEDORIENTATION, UI.forcedOrientation);
-		opts.put(OPT_VOLUMECONTROLTYPE, volumeControlType);
 		opts.put(OPT_TURNOFFTIMERCUSTOMMINUTES, turnOffTimerCustomMinutes);
 		opts.put(OPT_TURNOFFTIMERSELECTEDMINUTES, turnOffTimerSelectedMinutes);
 		opts.put(OPT_IDLETURNOFFTIMERCUSTOMMINUTES, idleTurnOffTimerCustomMinutes);
@@ -544,7 +559,8 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		opts.putBit(OPTBIT_NEXTPREPARATION, nextPreparationEnabled);
 		opts.putBit(OPTBIT_PLAYFOLDERCLEARSLIST, clearListWhenPlayingFolders);
 		opts.putBit(OPTBIT_KEEPSCREENON, UI.keepScreenOn);
-		opts.putBit(OPTBIT_DISPLAYVOLUMEINDB, UI.displayVolumeInDB);
+		opts.putBit(OPTBIT_VOLUMECONTROLTYPE0, (volumeControlType & 1) != 0);
+		opts.putBit(OPTBIT_VOLUMECONTROLTYPE1, (volumeControlType & 2) != 0);
 		opts.putBit(OPTBIT_DOUBLECLICKMODE, UI.doubleClickMode);
 		opts.putBit(OPTBIT_MARQUEETITLE, UI.marqueeTitle);
 		opts.putBit(OPTBIT_FLAT, UI.isFlat);
@@ -681,6 +697,8 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 						//this actually works... nonetheless, I was not able to detected
 						//which is the audio sink used by this route.... :(
 						globalMaxVolume = info.getVolumeMax();
+						if (globalMaxVolume < 1)
+							globalMaxVolume = 1;
 						audioSinkChanged(false);
 					}
 				}
@@ -1745,7 +1763,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	public static int getStreamMaxVolume() {
 		return globalMaxVolume;
 	}
-	
+
 	public static void showStreamVolumeUI() {
 		try {
 			if (audioManager != null)
@@ -1753,28 +1771,52 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		} catch (Throwable ex) {
 		}
 	}
-	
-	public static boolean decreaseStreamVolume() {
+
+	public static boolean decreaseVolume() {
 		try {
 			if (audioManager != null) {
-				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume <= 1) ? 0 : (volume - 1)), 0);
-				return (volume > 1);
+				switch (volumeControlType) {
+				case VOLUME_CONTROL_STREAM:
+					final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume <= 1) ? 0 : (volume - 1)), 0);
+					return (volume > 1);
+				case VOLUME_CONTROL_DB:
+				case VOLUME_CONTROL_PERCENT:
+					//http://stackoverflow.com/a/4413073/3569421
+					//(a/b)*b+(a%b) is equal to a
+					//-350 % 200 = -150
+					final int leftover = (Player.volumeDB % 200);
+					return Player.setVolumeDB(Player.volumeDB + ((leftover == 0) ? -200 : (-200 - leftover)));
+				}
 			}
 		} catch (Throwable ex) {
+			return false;
 		}
+		showStreamVolumeUI();
 		return false;
 	}
 	
-	public static boolean increaseStreamVolume() {
+	public static boolean increaseVolume() {
 		try {
 			if (audioManager != null) {
-				final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume >= globalMaxVolume) ? globalMaxVolume : (volume + 1)), 0);
-				return (volume < (globalMaxVolume- 1));
+				switch (volumeControlType) {
+				case VOLUME_CONTROL_STREAM:
+					final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume >= globalMaxVolume) ? globalMaxVolume : (volume + 1)), 0);
+					return (volume < (globalMaxVolume- 1));
+				case VOLUME_CONTROL_DB:
+				case VOLUME_CONTROL_PERCENT:
+					//http://stackoverflow.com/a/4413073/3569421
+					//(a/b)*b+(a%b) is equal to a
+					//-350 % 200 = -150
+					final int leftover = (Player.volumeDB % 200);
+					return Player.setVolumeDB(Player.volumeDB + ((leftover == 0) ? 200 : -leftover));
+				}
 			}
 		} catch (Throwable ex) {
+			return false;
 		}
+		showStreamVolumeUI();
 		return false;
 	}
 	
@@ -1790,19 +1832,52 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	public static void setStreamVolume(int volume) {
 		try {
 			if (audioManager != null) {
-				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume < 0) ? 0 : ((volume > globalMaxVolume) ? globalMaxVolume : volume)), 0);
+				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume <= 0) ? 0 : ((volume >= globalMaxVolume) ? globalMaxVolume : volume)), 0);
 			}
 		} catch (Throwable ex) {
 		}
 	}
-	
-	public static int getVolumeControlType() {
-		return volumeControlType;
+
+	public static void setGenericVolumePercent(int percent) {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_STREAM:
+			setStreamVolume((percent * globalMaxVolume) / 100);
+			break;
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+			if (percent >= 100)
+				setVolumeDB(0);
+			if (percent <= 0)
+				setVolumeDB(MIN_VOLUME_DB);
+			setVolumeDB(((100 - percent) * MIN_VOLUME_DB) / 100);
+			break;
+		}
 	}
-	
+
+	public static int getGenericVolumePercent() {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_STREAM:
+			final int vol = getStreamVolume();
+			if (vol <= 0)
+				return 0;
+			if (vol >= globalMaxVolume)
+				return 100;
+			return (vol * 100) / globalMaxVolume;
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+			if (volumeDB <= Player.MIN_VOLUME_DB)
+				return 0;
+			if (volumeDB >= 0)
+				return 100;
+			return ((Player.MIN_VOLUME_DB - volumeDB) * 100) / Player.MIN_VOLUME_DB;
+		}
+		return 0;
+	}
+
 	public static void setVolumeControlType(Context context, int volumeControlType) {
 		switch (volumeControlType) {
 		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
 		case VOLUME_CONTROL_NONE:
 			Player.volumeControlType = volumeControlType;
 			break;
@@ -1810,9 +1885,12 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			try {
 				if (audioManager != null)
 					globalMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+				if (globalMaxVolume < 1)
+					globalMaxVolume = 1;
 				setVolumeDB(0);
 				Player.volumeControlType = VOLUME_CONTROL_STREAM;
 			} catch (Throwable ex) {
+				Player.volumeControlType = VOLUME_CONTROL_NONE;
 			}
 			break;
 		}
@@ -2097,20 +2175,20 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			break;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 			if (volumeControlType == VOLUME_CONTROL_STREAM) {
-				decreaseStreamVolume();
+				decreaseVolume();
 				if (observer != null)
 					observer.onPlayerGlobalVolumeChanged();
 				break;
 			}
-			return false;
+			break;
 		case KeyEvent.KEYCODE_VOLUME_UP:
 			if (volumeControlType == VOLUME_CONTROL_STREAM) {
-				increaseStreamVolume();
+				increaseVolume();
 				if (observer != null)
 					observer.onPlayerGlobalVolumeChanged();
 				break;
 			}
-			return false;
+			break;
 		default:
 			return false;
 		}
@@ -2198,7 +2276,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				}
 			}
 		} else if (timer == volumeTimer) {
-			volumeDBMultiplier += ((param == null) ? 125 : ((Integer)param).intValue());
+			volumeDBMultiplier += ((param == null) ? 125 : (Integer)param);
 			if (volumeDBMultiplier >= 0) {
 				timer.stop();
 				volumeDBMultiplier = 0;

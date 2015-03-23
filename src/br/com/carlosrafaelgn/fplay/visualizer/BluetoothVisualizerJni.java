@@ -49,6 +49,7 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -78,22 +79,22 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	private static final int Escape = 0x1b;
 	private static final int EndOfTransmission = 0x04;
 
-	private static final int MessageSpectrum4 = 0x20;
-	private static final int MessageSpectrum8 = 0x21;
-	private static final int MessageSpectrum16 = 0x22;
-	private static final int MessageSpectrum32 = 0x23;
-	private static final int MessageSpectrum64 = 0x24;
-	private static final int MessageSpectrum128 = 0x25;
-	private static final int MessageSpectrum256 = 0x26;
-	private static final int MessageStartSpectrum = 0x30;
-	private static final int PayloadSpectrum4 = MessageSpectrum4;
-	private static final int PayloadSpectrum8 = MessageSpectrum8;
-	private static final int PayloadSpectrum16 = MessageSpectrum16;
-	private static final int PayloadSpectrum32 = MessageSpectrum32;
-	private static final int PayloadSpectrum64 = MessageSpectrum64;
-	private static final int PayloadSpectrum128 = MessageSpectrum128;
-	private static final int PayloadSpectrum256 = MessageSpectrum256;
-	private static final int MessageStopSpectrum = 0x31;
+	private static final int MessageBins4 = 0x20;
+	private static final int MessageBins8 = 0x21;
+	private static final int MessageBins16 = 0x22;
+	private static final int MessageBins32 = 0x23;
+	private static final int MessageBins64 = 0x24;
+	private static final int MessageBins128 = 0x25;
+	private static final int MessageBins256 = 0x26;
+	private static final int MessageStartBinTransmission = 0x30;
+	private static final int PayloadBins4 = MessageBins4;
+	private static final int PayloadBins8 = MessageBins8;
+	private static final int PayloadBins16 = MessageBins16;
+	private static final int PayloadBins32 = MessageBins32;
+	private static final int PayloadBins64 = MessageBins64;
+	private static final int PayloadBins128 = MessageBins128;
+	private static final int PayloadBins256 = MessageBins256;
+	private static final int MessageStopBinTransmission = 0x31;
 	private static final int MessagePlayerCommand = 0x32;
 	private static final int PayloadPlayerCommandUpdateState = 0x00;
 	private static final int PayloadPlayerCommandPrevious = 0x58; //KeyEvent.KEYCODE_MEDIA_PREVIOUS
@@ -103,6 +104,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	private static final int PayloadPlayerCommandPause = 0x56; //KeyEvent.KEYCODE_MEDIA_STOP
 	private static final int PayloadPlayerCommandIncreaseVolume = 0x18; //KeyEvent.KEYCODE_VOLUME_UP
 	private static final int PayloadPlayerCommandDecreaseVolume = 0x19; //KeyEvent.KEYCODE_VOLUME_DOWN
+	private static final int PayloadPlayerCommandSetVolume = 0xd1; //KeyEvent.KEYCODE_MUSIC
 	private static final int MessagePlayerState = 0x33;
 	private static final int PayloadPlayerStateFlagPlaying = 0x01;
 	private static final int PayloadPlayerStateFlagLoading = 0x02;
@@ -113,8 +115,8 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	private BgButton btnStart, btnConnect;
 	private TextView lblMsg;
 	private int speed;
-	private final AtomicLong state;
-	private volatile int size, packagesSent, version, framesToSkip, framesToSkipOriginal;
+	private final AtomicInteger state;
+	private volatile int size, packagesSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength;
 	private volatile boolean connected, transmitting;
 	private Activity activity;
 	private long lastPlayerCommandTime;
@@ -124,8 +126,8 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		this.activity = activity;
 		bfft = new byte[1024];
 		lock = new SlimLock();
-		state = new AtomicLong();
-		size = PayloadSpectrum16;
+		state = new AtomicInteger();
+		size = PayloadBins16;
 		speed = 2;
 		framesToSkip = 3;
 		framesToSkipOriginal = 3;
@@ -188,7 +190,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		case MNU_SIZE_64:
 		case MNU_SIZE_128:
 		case MNU_SIZE_256:
-			size = PayloadSpectrum4 + (id - MNU_SIZE_4);
+			size = PayloadBins4 + (id - MNU_SIZE_4);
 			break;
 		}
 		if (id >= MNU_FRAMES_TO_SKIP && id < (MNU_FRAMES_TO_SKIP + FRAMES_TO_SKIP.length)) {
@@ -255,25 +257,25 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		UI.prepare(s);
 		s.add(1, MNU_SIZE_4, 0, "4")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((size == PayloadSpectrum4) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((size == PayloadBins4) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		s.add(1, MNU_SIZE_8, 1, "8")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((size == PayloadSpectrum8) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((size == PayloadBins8) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		s.add(1, MNU_SIZE_16, 2, "16")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((size == PayloadSpectrum16) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((size == PayloadBins16) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		s.add(1, MNU_SIZE_32, 3, "32")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((size == PayloadSpectrum32) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((size == PayloadBins32) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		s.add(1, MNU_SIZE_64, 4, "64")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((size == PayloadSpectrum64) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((size == PayloadBins64) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		s.add(1, MNU_SIZE_128, 5, "128")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((size == PayloadSpectrum128) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((size == PayloadBins128) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		s.add(1, MNU_SIZE_256, 6, "256")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((size == PayloadSpectrum256) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((size == PayloadBins256) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		UI.separator(menu, 1, 3);
 		menu.add(2, MNU_SPEED0, 0, ctx.getText(R.string.sustain) + ": 3")
 			.setOnMenuItemClickListener(this)
@@ -364,27 +366,25 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 					framesToSkip--;
 				}
 			}
-			final long state64 = state.getAndSet(0);
-			if (state64 != 0) {
+			int stateI = state.getAndSet(0);
+			if (stateI != 0) {
 				//Build and send a Player state message
 				bfft[0] = StartOfHeading;
 				bfft[1] = (byte)MessagePlayerState;
 				bfft[3] = 0;
-				int state32 = (int)state64;
 				int len = 0;
-				len = writeByte(bfft, len, state32 & 3);
-				state32 = ((state32 < 0) ? -1 : (state32 & ~7));
-				len = writeByte(bfft, len, state32);
-				len = writeByte(bfft, len, state32 >> 8);
-				len = writeByte(bfft, len, state32 >> 16);
-				len = writeByte(bfft, len, state32 >> 24);
-				state32 = (int)(state64 >> 32);
-				if (state32 < 0)
-					state32 = -1;
-				len = writeByte(bfft, len, state32);
-				len = writeByte(bfft, len, state32 >> 8);
-				len = writeByte(bfft, len, state32 >> 16);
-				len = writeByte(bfft, len, state32 >> 24);
+				len = writeByte(bfft, len, stateI & 3);
+				len = writeByte(bfft, len, stateVolume);
+				stateI = stateSongPosition;
+				len = writeByte(bfft, len, stateI);
+				len = writeByte(bfft, len, stateI >> 8);
+				len = writeByte(bfft, len, stateI >> 16);
+				len = writeByte(bfft, len, stateI >> 24);
+				stateI = stateSongLength;
+				len = writeByte(bfft, len, stateI);
+				len = writeByte(bfft, len, stateI >> 8);
+				len = writeByte(bfft, len, stateI >> 16);
+				len = writeByte(bfft, len, stateI >> 24);
 				bfft[2] = (byte)(len << 1);
 				bfft[4 + len] = EndOfTransmission;
 				bt.getOutputStream().write(bfft, 0, len + 5);
@@ -438,8 +438,8 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 				case 0:
 					//This byte should be the message type
 					switch (data) {
-					case MessageStartSpectrum:
-					case MessageStopSpectrum:
+					case MessageStartBinTransmission:
+					case MessageStopBinTransmission:
 					case MessagePlayerCommand:
 						//Take the state machine to its next state
 						currentMessage = data;
@@ -471,7 +471,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 					} else {
 						payloadLength |= (data << 6);
 
-						if (currentMessage == MessageStopSpectrum) {
+						if (currentMessage == MessageStopBinTransmission) {
 							if (payloadLength != 0) {
 								//Take the state machine to its error state
 								state |= FlagState;
@@ -481,12 +481,15 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 							state += 2;
 						} else {
 							if (payloadLength != 1) {
-								//Take the state machine to its error state
-								state |= FlagState;
-								continue;
+								if (currentMessage != MessagePlayerCommand || payloadLength != 2) {
+									//Take the state machine to its error state
+									state |= FlagState;
+									continue;
+								}
 							}
 							//Take the state machine to its next state
 							state++;
+							payload = 0;
 						}
 					}
 					continue;
@@ -502,7 +505,17 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 						continue;
 					}
 
-					payload = data;
+					if (currentMessage == MessagePlayerCommand) {
+						payload = (payload << 8) | data;
+						payloadLength--;
+
+						//Keep the machine in state 3
+						if (payloadLength > 0)
+							continue;
+					} else {
+						payload = data;
+					}
+
 					//For now, the only payload received is 1 byte long
 					state++;
 					continue;
@@ -667,15 +680,15 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		case MSG_PLAYER_COMMAND:
 			if (connected && Player.state == Player.STATE_INITIALIZED) {
 				switch (message.arg1) {
-				case MessageStartSpectrum:
+				case MessageStartBinTransmission:
 					switch (message.arg2) {
-					case PayloadSpectrum4:
-					case PayloadSpectrum8:
-					case PayloadSpectrum16:
-					case PayloadSpectrum32:
-					case PayloadSpectrum64:
-					case PayloadSpectrum128:
-					case PayloadSpectrum256:
+					case PayloadBins4:
+					case PayloadBins8:
+					case PayloadBins16:
+					case PayloadBins32:
+					case PayloadBins64:
+					case PayloadBins128:
+					case PayloadBins256:
 						size = message.arg2;
 						//simulate the actual button click
 						if (!transmitting)
@@ -683,30 +696,41 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 						break;
 					}
 					break;
-				case MessageStopSpectrum:
+				case MessageStopBinTransmission:
 					//simulate the actual button click
 					if (transmitting)
 						onClick(btnStart);
 					break;
 				case MessagePlayerCommand:
-					switch (message.arg2) {
-					case PayloadPlayerCommandUpdateState:
+					//The minimum interval must not take
+					//PayloadPlayerCommandUpdateState into account
+					if (message.arg2 == PayloadPlayerCommandUpdateState) {
 						generateAndSendState();
 						break;
+					}
+					final long now = SystemClock.uptimeMillis();
+					//Minimum interval accepted between commands
+					if ((now - lastPlayerCommandTime) < 50)
+						break;
+					lastPlayerCommandTime = now;
+					switch (message.arg2) {
 					case PayloadPlayerCommandPrevious:
 					case PayloadPlayerCommandPlayPause:
 					case PayloadPlayerCommandNext:
 					case PayloadPlayerCommandPause:
-					case PayloadPlayerCommandIncreaseVolume:
-					case PayloadPlayerCommandDecreaseVolume:
 					case PayloadPlayerCommandPlay:
-						final long now = SystemClock.uptimeMillis();
-						//Minimum interval accepted between commands
-						if ((now - lastPlayerCommandTime) < 50)
-							break;
-						lastPlayerCommandTime = now;
 						if (message.arg2 != PayloadPlayerCommandPlay || !Player.playing)
 							Player.handleMediaButton(message.arg2);
+						break;
+					case PayloadPlayerCommandIncreaseVolume:
+						Player.increaseVolume();
+						break;
+					case PayloadPlayerCommandDecreaseVolume:
+						Player.decreaseVolume();
+						break;
+					default:
+						if ((message.arg2 >> 8) == PayloadPlayerCommandSetVolume)
+							Player.setGenericVolumePercent((message.arg2 & 0xff) >> 1);
 						break;
 					}
 					break;
@@ -723,12 +747,12 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 
 	private void generateAndSendState() {
 		final Song s = Player.currentSong;
+		stateVolume = Player.getGenericVolumePercent();
+		stateSongPosition = Player.getCurrentPosition();
+		stateSongLength = ((s == null) ? -1 : s.lengthMS);
 		state.set(4 |
 			(Player.playing ? PayloadPlayerStateFlagPlaying : 0) |
-			(Player.isCurrentSongPreparing() ? PayloadPlayerStateFlagLoading : 0) |
-			//~7 to free 3 bits for 3 flags
-			(Player.getCurrentPosition() & ~7) |
-			((long)((s == null) ? -1 : s.lengthMS)) << 32);
+			(Player.isCurrentSongPreparing() ? PayloadPlayerStateFlagLoading : 0));
 	}
 
 	private static int writeByte(byte[] message, int payloadIndex, int x) {
