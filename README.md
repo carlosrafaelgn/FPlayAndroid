@@ -37,7 +37,7 @@ You can find FPlay on Google Play at https://play.google.com/store/apps/details?
 FPlayArduino
 ============
 
-FPlay can be integrated to Arduino, or other electronic board, via Bluetooth SPP - Serial Port Profile :)
+FPlay can be integrated to Arduino, or other electronic board, via Bluetooth SPP - Serial Port Profile :D
 
 The Arduino library is available on GitHub: https://github.com/carlosrafaelgn/FPlayArduino
 

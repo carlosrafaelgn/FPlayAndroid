@@ -230,10 +230,10 @@ if (!neonMode) {
 	//processedData stores the first 256 bins, out of the 512 captured by visualizer.getFft
 	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11000Hz for a SR of 44100Hz)
 	//
-	//the mapping algorithms used in MessageSpectrum4, MessageSpectrum8, MessageSpectrum16, MessageSpectrum32, MessageSpectrum64 and in MessageSpectrum128
+	//the mapping algorithms used in MessageBins4, MessageBins8, MessageBins16, MessageBins32, MessageBins64 and in MessageBins128
 	//were "empirically created", without too much of theory envolved ;)
 	switch (bt) {
-	case MessageSpectrum4:
+	case MessageBins4:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 2);
 		PACK_BIN(avg);
 		avg = 0;
@@ -252,7 +252,7 @@ if (!neonMode) {
 		//avg >>= 7;
 		PACK_BIN(avg);
 		break;
-	case MessageSpectrum8:
+	case MessageBins8:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
 		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
@@ -288,7 +288,7 @@ if (!neonMode) {
 		//avg >>= 6;
 		PACK_BIN(avg);
 		break;
-	case MessageSpectrum16:
+	case MessageBins16:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
 		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
@@ -319,7 +319,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageSpectrum32:
+	case MessageBins32:
 		b = processedData[0];
 		PACK_BIN(b);
 		b = processedData[1];
@@ -351,7 +351,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageSpectrum64:
+	case MessageBins64:
 		for (i = 0; i < 20; i++) { //for (i = 1; i < 21; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
@@ -372,7 +372,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageSpectrum128:
+	case MessageBins128:
 		for (i = 0; i < 36; i++) { //for (i = 1; i < 37; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
@@ -386,7 +386,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageSpectrum256:
+	case MessageBins256:
 		for (i = 0; i < 256; i++) {
 			b = processedData[i];
 			PACK_BIN(b);

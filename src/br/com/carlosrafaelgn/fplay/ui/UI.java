@@ -1320,17 +1320,18 @@ public final class UI {
 	}
 
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 17) {
-			msgStartup = 17;
+		if (msgStartup >= 18) {
+			msgStartup = 18;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 17;
+		msgStartup = 18;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
+		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.check_it_out).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
 		.setView(createDialogView(activity, content))

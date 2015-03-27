@@ -36,6 +36,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.Message;
 import android.os.SystemClock;
 import android.view.ContextMenu;
@@ -112,10 +113,11 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	private byte[] bfft;
 	private final SlimLock lock;
 	private BluetoothConnectionManager bt;
-	private BgButton btnStart, btnConnect;
+	private BgButton btnTutorial, btnStart, btnConnect;
 	private TextView lblMsg;
 	private int speed;
 	private final AtomicInteger state;
+	private final String bt_packages_sent, bt_start, bt_stop, bt_connect, bt_connecting, bt_disconnect;
 	private volatile int size, packagesSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength;
 	private volatile boolean connected, transmitting;
 	private Activity activity;
@@ -135,6 +137,13 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		SimpleVisualizerJni.commonSetSpeed(speed);
 		SimpleVisualizerJni.commonUpdateMultiplier(false);
 
+		bt_packages_sent = activity.getText(R.string.bt_packages_sent).toString();
+		bt_start = activity.getText(R.string.bt_start).toString();
+		bt_stop = activity.getText(R.string.bt_stop).toString();
+		bt_connect = activity.getText(R.string.bt_connect).toString();
+		bt_connecting = activity.getText(R.string.bt_connecting).toString();
+		bt_disconnect = activity.getText(R.string.bt_disconnect).toString();
+
 		LayoutParams lp;
 		lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 		lp.addRule(CENTER_VERTICAL, TRUE);
@@ -151,8 +160,9 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		lp.addRule(BELOW, 1);
 		btnConnect = new BgButton(context);
 		btnConnect.setId(2);
-		btnConnect.setText(R.string.bt_connect);
+		btnConnect.setText(bt_connect);
 		btnConnect.setTextColor(UI.colorState_text_visualizer_reactive);
+		btnConnect.setCompoundDrawables(new TextIconDrawable(UI.ICON_BLUETOOTH, UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.defaultControlContentsSize), null, null, null);
 		btnConnect.setLayoutParams(lp);
 		btnConnect.setOnClickListener(this);
 
@@ -162,12 +172,27 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		lp.addRule(BELOW, 2);
 		btnStart = new BgButton(context);
 		btnStart.setId(3);
-		btnStart.setText(R.string.bt_start);
+		btnStart.setText(bt_start);
 		btnStart.setTextColor(UI.colorState_text_visualizer_reactive);
+		btnStart.setCompoundDrawables(new TextIconDrawable(UI.ICON_VISUALIZER, UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.defaultControlContentsSize), null, null, null);
 		btnStart.setLayoutParams(lp);
 		btnStart.setOnClickListener(this);
 		btnStart.setVisibility(View.INVISIBLE);
 
+		lp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+		lp.topMargin = UI._8dp;
+		lp.rightMargin = UI._8dp;
+		lp.addRule(ALIGN_PARENT_TOP, TRUE);
+		lp.addRule(ALIGN_PARENT_RIGHT, TRUE);
+		btnTutorial = new BgButton(context);
+		btnTutorial.setId(4);
+		btnTutorial.setText(R.string.tutorial);
+		btnTutorial.setTextColor(UI.colorState_text_visualizer_reactive);
+		btnTutorial.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.defaultControlContentsSize), null, null, null);
+		btnTutorial.setLayoutParams(lp);
+		btnTutorial.setOnClickListener(this);
+
+		addView(btnTutorial);
 		addView(lblMsg);
 		addView(btnConnect);
 		addView(btnStart);
@@ -416,8 +441,10 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			bt.destroy();
 			bt = null;
 		}
+		btnTutorial = null;
 		lblMsg = null;
 		btnStart = null;
+		btnConnect = null;
 		activity = null;
 	}
 
@@ -539,7 +566,13 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 
 	@Override
 	public void onClick(View view) {
-		if (view == btnConnect) {
+		if (view == btnTutorial) {
+			try {
+				if (activity != null)
+					activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayArduino")));
+			} catch (Throwable ex) {
+			}
+		} else if (view == btnConnect) {
 			lock.lockHighPriority();
 			try {
 				version++;
@@ -548,7 +581,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 					lblMsg.setText("");
 				if (btnStart != null)
 					btnStart.setVisibility(View.INVISIBLE);
-				btnConnect.setText(R.string.bt_connect);
+				btnConnect.setText(bt_connect);
 				if (bt != null) {
 					bt.destroy();
 					bt = null;
@@ -569,7 +602,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			if (connected) {
 				framesToSkip = framesToSkipOriginal;
 				transmitting = !transmitting;
-				btnStart.setText(transmitting ? R.string.bt_stop : R.string.bt_start);
+				btnStart.setText(transmitting ? bt_stop : bt_start);
 			}
 		}
 	}
@@ -577,7 +610,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	@Override
 	public void onBluetoothPairingStarted(BluetoothConnectionManager manager, String description, String address) {
 		if (lblMsg != null)
-			lblMsg.setText(R.string.bt_connecting);
+			lblMsg.setText(bt_connecting);
 	}
 
 	@Override
@@ -591,7 +624,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		if (lblMsg != null)
 			lblMsg.setText("");
 		if (btnConnect != null) {
-			btnConnect.setText(R.string.bt_connect);
+			btnConnect.setText(bt_connect);
 			btnConnect.setVisibility(View.VISIBLE);
 		}
 		if (btnStart != null)
@@ -602,7 +635,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 	public void onBluetoothConnected(BluetoothConnectionManager manager) {
 		if (activity != null && Player.state == Player.STATE_INITIALIZED) {
 			if (lblMsg != null) {
-				lblMsg.setText(activity.getText(R.string.bt_packages_sent) + " 0");
+				lblMsg.setText(bt_packages_sent + " 0");
 				MainHandler.sendMessageDelayed(this, MSG_UPDATE_PACKAGES, 1000);
 			}
 			packagesSent = 0;
@@ -613,11 +646,11 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 			generateAndSendState();
 			(new Thread(this, "Bluetooth RX Thread")).start();
 			if (btnConnect != null) {
-				btnConnect.setText(R.string.bt_disconnect);
+				btnConnect.setText(bt_disconnect);
 				btnConnect.setVisibility(View.VISIBLE);
 			}
 			if (btnStart != null) {
-				btnStart.setText(R.string.bt_start);
+				btnStart.setText(bt_start);
 				btnStart.setVisibility(View.VISIBLE);
 			}
 		}
@@ -673,7 +706,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 		switch (message.what) {
 		case MSG_UPDATE_PACKAGES:
 			if (connected && lblMsg != null && activity != null) {
-				lblMsg.setText(activity.getText(R.string.bt_packages_sent).toString() + " " + packagesSent);
+				lblMsg.setText(bt_packages_sent + " " + packagesSent);
 				MainHandler.sendMessageDelayed(this, MSG_UPDATE_PACKAGES, 1000);
 			}
 			break;

@@ -525,7 +525,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_ALBUMART, 5, R.string.album_art)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_ALBUMART));
-		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 6, "Bluetooth")
+		s2.add(2, MNU_VISUALIZER_BLUETOOTH, 6, "Bluetooth + Arduino")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
 		UI.separator(s2, 2, 7);

@@ -273,6 +273,7 @@
     <string name="diffusion">Дифузія</string>
     <string name="msg_immersive">&#8634; Наведіть пристрій навколо (будьте обережні!)</string>
     <string name="msg_no_sensors">Вибачте, але пристрій не має необхідних датчиків :(</string>
+    <string name="tutorial">Підручник&#8230;</string>
 
     <string name="bt_packages_sent">Messages sent:</string>
     <string name="bt_fps">Messages per second&#8230;</string>

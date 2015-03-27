@@ -273,6 +273,7 @@
     <string name="diffusion">Difusión</string>
     <string name="msg_immersive">&#8634; Mueve tu dispositivo alrededor (ten cuidado!)</string>
     <string name="msg_no_sensors">Lo sentimos, pero el dispositivo no tiene los sensores necesarios :(</string>
+    <string name="tutorial">Tutorial&#8230;</string>
 
     <string name="bt_packages_sent">Mensajes enviados:</string>
     <string name="bt_fps">Mensajes por segundo&#8230;</string>
