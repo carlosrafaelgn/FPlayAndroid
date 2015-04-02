@@ -354,7 +354,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	@Override
-	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 		final String icon = (Player.playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		if (btnPlay != null) {
 			btnPlay.setText(icon);
@@ -364,8 +364,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			lblTitleIcon.setIcon(icon);
 		if (songHasChanged) {
 			if (lblTitle != null) {
-				final CharSequence title = ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
-				lblTitle.setText(title);
+				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : ((barSeek == null && Player.isCurrentSongPreparing()) ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
 				lblTitle.setSelected(true);
 				//if (ignoreAnnouncement)
 				//	ignoreAnnouncement = false;
@@ -380,6 +379,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				lblAlbum.setText((currentSong == null) ? "-" : currentSong.album);
 			if (lblLength != null)
 				lblLength.setText((currentSong == null) ? "-" : currentSong.length);
+		} else if (preparingHasChanged) {
+			if (barSeek != null) {
+				if (Player.isCurrentSongPreparing() && !barSeek.isTracking()) {
+					barSeek.setText(R.string.loading);
+					barSeek.setValue(0);
+				}
+			} else if (lblTitle != null) {
+				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isCurrentSongPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
+				lblTitle.setSelected(true);
+			}
 		}
 		if (Player.playing && !Player.controlMode) {
 			if (!tmrSong.isAlive())
@@ -614,13 +623,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
 			break;
 		case MNU_VISUALIZER_BLUETOOTH:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, BluetoothVisualizerJni.class.getName()));
+			//getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, BluetoothVisualizerJni.class.getName()));
+			startActivity(new ActivitySettings(false, true), 0, null, false);
 			break;
 		case MNU_VISUALIZER_ALBUMART:
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, AlbumArtVisualizer.class.getName()));
 			break;
 		case MNU_SETTINGS:
-			startActivity(new ActivitySettings(false), 0, null, false);
+			startActivity(new ActivitySettings(false, false), 0, null, false);
 			break;
 		}
 		return true;
@@ -1156,7 +1166,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			list.notifyMeWhenFirstAttached(this);
 		}
 		//ignoreAnnouncement = true;
-		onPlayerChanged(Player.currentSong, true, null);
+		onPlayerChanged(Player.currentSong, true, true, null);
 	}
 	
 	@Override

@@ -67,7 +67,7 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable {
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
-	private final boolean colorMode;
+	private final boolean colorMode, bluetoothMode;
 	private boolean changed, checkingReturn, configsChanged, lblTitleOk;
 	private BgButton btnGoBack, btnAbout;
 	private EditText txtCustomMinutes;
@@ -80,8 +80,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private int lastColorView, currentHeader;
 	private TextView[] headers;
 
-	public ActivitySettings(boolean colorMode) {
+	public ActivitySettings(boolean colorMode, boolean bluetoothMode) {
 		this.colorMode = colorMode;
+		this.bluetoothMode = bluetoothMode;
 	}
 
 	@Override
@@ -315,7 +316,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optTheme) {
 			if (item.getItemId() == UI.THEME_CUSTOM) {
-				startActivity(new ActivitySettings(true), 0, null, false);
+				startActivity(new ActivitySettings(true, false), 0, null, false);
 			} else {
 				UI.setTheme(getHostActivity(), item.getItemId());
 				onCleanupLayout();

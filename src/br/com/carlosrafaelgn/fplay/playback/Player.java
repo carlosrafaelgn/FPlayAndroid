@@ -82,6 +82,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
 //
 //MediaPlayer CALLBACKS ARE CALLED ON THE THREAD WHERE THE PLAYER IS CREATED (WHICH
@@ -116,7 +117,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //
 public final class Player extends Service implements Runnable, Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
 	public static interface PlayerObserver {
-		public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
+		public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
 		public void onPlayerGlobalVolumeChanged();
 		public void onPlayerAudioSinkChanged(int audioSink);
@@ -340,6 +341,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static Object mediaRouterCallback;
 	private static Intent stickyBroadcast;
 	private static Runnable effectsObserver;
+	public static BluetoothVisualizerControllerJni bluetoothVisualizerController;
 	//private static BluetoothAdapter bluetoothAdapter;
 	//private static BluetoothA2dp bluetoothA2dpProxy;
 	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
@@ -609,6 +611,21 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			songs.serialize(context, null);
 	}
 	
+	public static boolean startBluetoothVisualizer(int size, int speed, int framesToSkip) {
+		if (state != STATE_INITIALIZED)
+			return false;
+		stopBluetoothVisualizer();
+		bluetoothVisualizerController = new BluetoothVisualizerControllerJni(size, speed, framesToSkip);
+		return true;
+	}
+
+	public static void stopBluetoothVisualizer() {
+		if (bluetoothVisualizerController != null) {
+			bluetoothVisualizerController.destroy();
+			bluetoothVisualizerController = null;
+		}
+	}
+
 	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private static void registerA2dpObserver(Context context) {
 		bluetoothAdapter = null;
@@ -1251,8 +1268,6 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				final String msg = ex.getMessage();
 				if (ex instanceof IllegalStateException) {
 					UI.toast(thePlayer, R.string.error_state);
-				} else if (ex instanceof IOException) {
-					UI.toast(thePlayer, (currentSong != null && currentSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_io);
 				} else if (ex instanceof FileNotFoundException) {
 					UI.toast(thePlayer, R.string.error_file_not_found);
 				} else if (ex instanceof TimeoutException) {
@@ -1263,14 +1278,23 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 					UI.toast(thePlayer, R.string.error_security);
 				} else if (msg == null || msg.length() == 0) {
 					UI.toast(thePlayer, R.string.error_playback);
+				} else if (ex instanceof IOException) {
+					UI.toast(thePlayer, (currentSong != null && currentSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_io);
 				} else {
 					final StringBuilder sb = new StringBuilder(thePlayer.getText(R.string.error_msg));
 					sb.append(msg);
 					UI.toast(thePlayer, sb);
 				}
 			}
+			if (bluetoothVisualizerController != null) {
+				if (!songHasChanged && playing)
+					bluetoothVisualizerController.resetAndResume();
+				else
+					bluetoothVisualizerController.resume();
+				bluetoothVisualizerController.playingChanged();
+			}
 			if (observer != null)
-				observer.onPlayerChanged(currentSong, songHasChanged, ex);
+				observer.onPlayerChanged(currentSong, songHasChanged, preparingHasChanged, ex);
 		}
 	}
 	
@@ -2838,6 +2862,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				sendMessageAtTime(Message.obtain(this, MSG_TERMINATION_1), SystemClock.uptimeMillis());
 				break;
 			case MSG_TERMINATION_1:
+				stopBluetoothVisualizer();
 				onPlayerChanged(null, false, null); //to update the widget
 				unregisterMediaButtonEventReceiver();
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)

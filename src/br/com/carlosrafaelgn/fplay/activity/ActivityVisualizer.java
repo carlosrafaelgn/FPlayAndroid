@@ -69,9 +69,10 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.visualizer.FxVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
-public final class ActivityVisualizer extends Activity implements Runnable, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
+public final class ActivityVisualizer extends Activity implements FxVisualizer.FxVisualizerHandler, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
 	@SuppressLint("InlinedApi")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static final class SystemUIObserver implements View.OnSystemUiVisibilityChangeListener {
@@ -147,20 +148,19 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	private static final int MSG_HIDE = 0x0400;
 	private static final int MSG_SYSTEM_UI_CHANGED = 0x0401;
 	private static final int MNU_ORIENTATION = 100;
-	private android.media.audiofx.Visualizer fxVisualizer;
 	private Visualizer visualizer;
+	private FxVisualizer fxVisualizer;
 	private UI.DisplayInfo info;
 	private InterceptableLayout panelControls;
 	private RelativeLayout panelTop;
 	private LinearLayout panelSecondary;
 	private BgButton btnGoBack, btnPrev, btnPlay, btnNext, btnMenu;
 	private TextView lblTitle;
-	private volatile boolean alive, paused, reset, visualizerReady;
-	private boolean fxVisualizerFailed, visualizerViewFullscreen, visualizerRequiresHiddenControls, playing, isWindowFocused, panelTopWasVisibleOk, visualizerPaused, visualizerRequiresThread;
+	private boolean visualizerViewFullscreen, visualizerRequiresHiddenControls, isWindowFocused, panelTopWasVisibleOk, visualizerPaused;
 	private float panelTopAlpha;
-	private int fxVisualizerAudioSessionId, version, panelTopLastTime, panelTopHiding;
+	private int version, panelTopLastTime, panelTopHiding;
 	private Object systemUIObserver;
-	private Timer timer, uiAnimTimer;
+	private Timer uiAnimTimer;
 	private BgColorStateList buttonColor, lblColor;
 	private ColorDrawable panelTopBackground;
 	
@@ -242,7 +242,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		lp.rightMargin = UI._16dp;
 		lp.bottomMargin = 0;
 		btnPlay.setLayoutParams(lp);
-		btnPlay.setIcon((playing = Player.playing) ? UI.ICON_PAUSE : UI.ICON_PLAY);
+		btnPlay.setIcon(Player.playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		//p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -277,62 +277,6 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		}
 		
 		panelControls.requestLayout();
-	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void setScalingMode() {
-		fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
-		fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
-	}
-
-	private boolean initFxVisualizer() {
-		try {
-			final int g = Player.getAudioSessionId();
-			if (g < 0)
-				return true;
-			if (fxVisualizer != null) {
-				if (fxVisualizerAudioSessionId == g) {
-					try {
-						fxVisualizer.setEnabled(true);
-						return true;
-					} catch (Throwable ex) {
-					}
-				}
-				try {
-					fxVisualizer.release();
-				} catch (Throwable ex) {
-					fxVisualizer = null;
-				}
-			}
-			fxVisualizer = new android.media.audiofx.Visualizer(g);
-			fxVisualizerAudioSessionId = g;
-		} catch (Throwable ex) {
-			fxVisualizerFailed = true;
-			fxVisualizer = null;
-			fxVisualizerAudioSessionId = -1;
-			return false;
-		}
-		if (fxVisualizer != null) {
-			try {
-				fxVisualizer.setCaptureSize((visualizer == null) ? Visualizer.MAX_POINTS : visualizer.getDesiredPointCount());
-				fxVisualizer.setEnabled(true);
-			} catch (Throwable ex) {
-				fxVisualizerFailed = true;
-				fxVisualizer.release();
-				fxVisualizer = null;
-				fxVisualizerAudioSessionId = -1;
-			}
-		}
-		if (fxVisualizer != null) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-				try {
-					setScalingMode();
-				} catch (Throwable ex) {
-				}
-			}
-			return true;
-		}
-		return false;
 	}
 
 	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!
@@ -421,6 +365,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 				clazz = null;
 			}
 		}
+
+		final boolean visualizerRequiresThread;
 		if (visualizer != null) {
 			visualizerRequiresHiddenControls = visualizer.requiresHiddenControls();
 			visualizerRequiresThread = (visualizer.getDesiredPointCount() > 0);
@@ -504,74 +450,17 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		
 		if (!btnGoBack.isInTouchMode())
 			btnGoBack.requestFocus();
-		
-		alive = true;
-		reset = true;
-		paused = false;
-		visualizerReady = false;
-		fxVisualizerFailed = false;
-		fxVisualizerAudioSessionId = -1;
-		timer = (!visualizerRequiresThread ? null : new Timer(new Runnable() {
-			@Override
-			public void run() {
-				if (alive) {
-					if (paused) {
-						try {
-							if (fxVisualizer != null)
-								fxVisualizer.setEnabled(false);
-						} catch (Throwable ex) {
-						}
-						if (timer != null)
-							timer.pause();
-						return;
-					}
-					if (reset || fxVisualizer == null) {
-						reset = false;
-						if (!initFxVisualizer()) {
-							MainHandler.postToMainThread(ActivityVisualizer.this);
-							return;
-						}
-						if (!visualizerReady && alive && visualizer != null) {
-							visualizer.load(getApplication());
-							visualizerReady = true;
-						}
-					}
-					if (fxVisualizer != null && visualizer != null)
-						visualizer.processFrame(fxVisualizer, playing);
-				}
-				if (!alive) {
-					if (timer != null) {
-						timer.stop();
-						timer.release();
-						timer = null;
-					}
-					if (visualizer != null)
-						visualizer.release();
-					if (fxVisualizer != null) {
-						try {
-							fxVisualizer.setEnabled(false);
-						} catch (Throwable ex) {
-						}
-						try {
-							fxVisualizer.release();
-						} catch (Throwable ex) {
-						}
-						fxVisualizer = null;
-					}
-					MainHandler.postToMainThread(ActivityVisualizer.this);
-					System.gc();
-				}
-			}
-		}, "Visualizer Thread", false, false, true));
 
+		fxVisualizer = null;
 		if (visualizer != null) {
 			visualizerPaused = false;
 			visualizer.onActivityResume();
 			if (!visualizerRequiresThread)
 				visualizer.load(getApplication());
+			else
+				fxVisualizer = new FxVisualizer(getApplication(), visualizer, this);
 		}
-		if (visualizerRequiresThread)
-			timer.start(16);
+
 		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false) : null);
 		
 		hideAllUIDelayed();
@@ -602,19 +491,7 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			System.gc();
 		}
 	}
-	
-	private void resumeTimer() {
-		//I decided to keep the visualizer paused only when the Activity is paused...
-		//in all other cases, let the visualizer run free! :)
-		//this behavior is specially useful for more complex visualizations
-		paused = false;
-		if (timer != null)
-			timer.resume();
-		//paused = !Player.isPlaying();
-		//if (!paused && timer != null)
-		//	timer.resume();
-	}
-	
+
 	@Override
 	protected void onPause() {
 		if (visualizer != null && !visualizerPaused) {
@@ -622,7 +499,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			visualizer.onActivityPause();
 		}
 		Player.observer = null;
-		paused = true;
+		if (fxVisualizer != null)
+			fxVisualizer.pause();
 		Player.setAppIdle(true);
 		super.onPause();
 	}
@@ -631,9 +509,9 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	protected void onResume() {
 		Player.setAppIdle(false);
 		Player.observer = this;
-		reset = true;
-		resumeTimer();
-		onPlayerChanged(Player.currentSong, true, null);
+		if (fxVisualizer != null)
+			fxVisualizer.resetAndResume();
+		onPlayerChanged(Player.currentSong, true, true, null);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
 		if (visualizer != null && visualizerPaused) {
@@ -645,14 +523,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	private void finalCleanup() {
 		Player.removeDestroyedObserver(this);
-		alive = false;
-		final Visualizer v = visualizer;
-		if (v != null)
-			v.cancelLoading();
-		resumeTimer();
-		if (!visualizerRequiresThread && v != null) {
-			v.release();
-			run();
+		if (fxVisualizer != null) {
+			fxVisualizer.destroy();
+			fxVisualizer = null;
+		} else if (visualizer != null) {
+			visualizer.cancelLoading();
+			visualizer.release();
+			onFinalCleanup();
 		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			cleanupSystemUIObserver();
@@ -667,7 +544,11 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 		btnPlay = null;
 		btnNext = null;
 		btnMenu = null;
+		lblTitle = null;
 		uiAnimTimer = null;
+		buttonColor = null;
+		lblColor = null;
+		panelTopBackground = null;
 	}
 	
 	@Override
@@ -685,13 +566,13 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	}
 
 	@Override
-	public void run() {
-		if (fxVisualizerFailed) {
-			fxVisualizerFailed = false;
-			UI.toast(getApplication(), R.string.visualizer_not_supported);
-		}
-		//perform the final cleanup
-		if (!alive && visualizer != null) {
+	public void onFailure() {
+		UI.toast(getApplication(), R.string.visualizer_not_supported);
+	}
+
+	@Override
+	public void onFinalCleanup() {
+		if (visualizer != null) {
 			if (!visualizerPaused) {
 				visualizerPaused = true;
 				visualizer.onActivityPause();
@@ -700,19 +581,22 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			visualizer = null;
 		}
 	}
-	
+
 	@Override
-	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
-		if (!songHasChanged)
-			reset = true;
-		resumeTimer();
-		playing = Player.playing;
-		if (btnPlay != null) {
-			btnPlay.setText(playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
-			btnPlay.setContentDescription(getText(playing ? R.string.pause : R.string.play));
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
+		if (fxVisualizer != null) {
+			if (!songHasChanged && Player.playing)
+				fxVisualizer.resetAndResume();
+			else
+				fxVisualizer.resume();
+			fxVisualizer.playingChanged();
 		}
-		if (songHasChanged && lblTitle != null)
-			lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
+		if (btnPlay != null) {
+			btnPlay.setText(Player.playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
+			btnPlay.setContentDescription(getText(Player.playing ? R.string.pause : R.string.play));
+		}
+		if ((songHasChanged || preparingHasChanged) && lblTitle != null)
+			lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isCurrentSongPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
 		final Visualizer v = visualizer;
 		if (v != null)
 			v.onPlayerChanged(currentSong, songHasChanged, ex);
@@ -728,8 +612,8 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 	
 	@Override
 	public void onPlayerAudioSinkChanged(int audioSink) {
-		reset = true;
-		resumeTimer();
+		if (fxVisualizer != null)
+			fxVisualizer.resetAndResume();
 	}
 	
 	@Override
@@ -780,14 +664,14 @@ public final class ActivityVisualizer extends Activity implements Runnable, Main
 			finish();
 		} else if (view == btnPrev) {
 			Player.previous();
-			reset = true;
-			resumeTimer();
+			if (fxVisualizer != null)
+				fxVisualizer.resetAndResume();
 		} else if (view == btnPlay) {
 			Player.playPause();
 		} else if (view == btnNext) {
 			Player.next();
-			reset = true;
-			resumeTimer();
+			if (fxVisualizer != null)
+				fxVisualizer.resetAndResume();
 		} else if (view == btnMenu) {
 			onPrepareOptionsMenu(null);
 		} else if (view == visualizer || view == panelControls) {
