@@ -269,17 +269,18 @@
     <string name="choose_image">Seleccionar imagen&#8230;</string>
     <string name="accessibility">Accesibilidad</string>
     <string name="place_the_playlist_to_the_right">Colocar la lista de reproducción en el lado derecho</string>
-    <string name="sustain">Sostener</string>
+    <string name="sustain">Sostener:</string>
     <string name="diffusion">Difusión</string>
     <string name="msg_immersive">&#8634; Mueve tu dispositivo alrededor (ten cuidado!)</string>
     <string name="msg_no_sensors">Lo sentimos, pero el dispositivo no tiene los sensores necesarios :(</string>
     <string name="tutorial">Tutorial&#8230;</string>
 
+    <string name="bt_inactive">Bluetooth inactivo</string>
     <string name="bt_active">Bluetooth activo&#8230;</string>
     <string name="bt_error">Problemas con Bluetooth!</string>
     <string name="bt_packages_sent">Mensajes enviados:</string>
-    <string name="bt_fps">Mensajes por segundo&#8230;</string>
-    <string name="bt_sample_count">Muestras por mensaje&#8230;</string>
+    <string name="bt_fps">Mensajes por segundo:</string>
+    <string name="bt_sample_count">Muestras por mensaje:</string>
     <string name="bt_connect">Conectar a un dispositivo Bluetooth&#8230;</string>
     <string name="bt_disconnect">Desconectar dispositivo Bluetooth</string>
     <string name="bt_start">Iniciar el envío de muestras de frecuencia</string>

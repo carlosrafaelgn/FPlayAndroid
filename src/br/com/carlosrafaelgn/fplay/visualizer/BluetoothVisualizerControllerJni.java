@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
@@ -98,30 +99,60 @@ public class BluetoothVisualizerControllerJni {
 	private Activity activity;
 	private long lastPlayerCommandTime;
 
-	public BluetoothVisualizerControllerJni(ActivityHost activity, int size, int speed, int framesToSkip) {
+	public BluetoothVisualizerControllerJni(ActivityHost activity) {
 		bfft = new byte[1024];
 		lock = new SlimLock();
 		state = new AtomicInteger();
-		setSize(size);
-		setSpeed(speed);
-		setFramesToSkip(framesToSkip);
+		setSize(UI.bluetoothVisualizerConfig & 7);
+		setSpeed((UI.bluetoothVisualizerConfig >> 3) & 3);
+		setFramesToSkip((UI.bluetoothVisualizerConfig >> 5) & 15);
 		lastPlayerCommandTime = SystemClock.uptimeMillis();
 		SimpleVisualizerJni.commonUpdateMultiplier(false);
 		BackgroundActivityMonitor.start(activity);
 	}
 
+	public static String getSizeString() {
+		int size = (UI.bluetoothVisualizerConfig & 3);
+		if (size < 0)
+			size = 0;
+		else if (size > 6)
+			size = 6;
+		return Integer.toString(1 << (2 + size));
+	}
+
+	public static String getSpeedString() {
+		final int speed = ((UI.bluetoothVisualizerConfig >> 2) & 3);
+		return Integer.toString((speed <= 0) ? 3 : ((speed >= 2) ? 1 : 2));
+	}
+
+	public static String getFramesToSkipString() {
+		final int framesToSkip = ((UI.bluetoothVisualizerConfig >> 5) & 15);
+		return Integer.toString(60 / (((framesToSkip <= 0) ? FRAMES_TO_SKIP[0] : ((framesToSkip >= (FRAMES_TO_SKIP.length - 1)) ? FRAMES_TO_SKIP[FRAMES_TO_SKIP.length - 1] : FRAMES_TO_SKIP[framesToSkip])) + 1));
+	}
+
 	public void setSize(int size) {
-		this.size = ((size <= 0) ? PayloadBins4 : ((size >= 6) ? PayloadBins256 : (PayloadBins4 + size)));
+		if (size < 0)
+			size = 0;
+		else if (size > 6)
+			size = 6;
+		this.size = PayloadBins4 + size;
+		UI.bluetoothVisualizerConfig = (UI.bluetoothVisualizerConfig & (~7)) | size;
 	}
 
 	public void setSpeed(int speed) {
-		this.speed = ((speed <= 0) ? 0 : ((size >= 2) ? 2 : 1));
+		this.speed = ((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1));
 		SimpleVisualizerJni.commonSetSpeed(speed);
+		UI.bluetoothVisualizerConfig = (UI.bluetoothVisualizerConfig & (~(3 << 3))) | (this.speed << 3);
 	}
 
 	public void setFramesToSkip(int framesToSkip) {
-		framesToSkipOriginal = ((framesToSkip <= 0) ? FRAMES_TO_SKIP[0] : ((framesToSkip >= FRAMES_TO_SKIP.length) ? FRAMES_TO_SKIP[FRAMES_TO_SKIP.length - 1] : FRAMES_TO_SKIP[framesToSkip]));
+		if (framesToSkip < 0)
+			framesToSkip = 0;
+		else if (framesToSkip >= FRAMES_TO_SKIP.length)
+			framesToSkip = FRAMES_TO_SKIP.length - 1;
+		framesToSkipOriginal = FRAMES_TO_SKIP[framesToSkip];
 		this.framesToSkip = framesToSkipOriginal;
+		UI.bluetoothVisualizerConfig = (UI.bluetoothVisualizerConfig & (~(15 << 5))) | (framesToSkip << 5);
 	}
 
 	public void playingChanged() {

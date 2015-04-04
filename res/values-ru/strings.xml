@@ -269,17 +269,18 @@
     <string name="choose_image">Выберите изображение&#8230;</string>
     <string name="accessibility">Доступность</string>
     <string name="place_the_playlist_to_the_right">Поместите воспроизведения на правой стороне экрана</string>
-    <string name="sustain">Поддерживать</string>
+    <string name="sustain">Поддерживать:</string>
     <string name="diffusion">Диффузия</string>
     <string name="msg_immersive">&#8634; Наведите устройство вокруг (будьте осторожны!)</string>
     <string name="msg_no_sensors">Извините, но устройство не имеет необходимых датчиков :(</string>
     <string name="tutorial">Учебник&#8230;</string>
 
+    <string name="bt_inactive">Bluetooth inactive</string>
     <string name="bt_active">Bluetooth active&#8230;</string>
     <string name="bt_error">Bluetooth error!</string>
     <string name="bt_packages_sent">Messages sent:</string>
-    <string name="bt_fps">Messages per second&#8230;</string>
-    <string name="bt_sample_count">Bins per message&#8230;</string>
+    <string name="bt_fps">Messages per second:</string>
+    <string name="bt_sample_count">Bins per message:</string>
     <string name="bt_connect">Connect to a Bluetooth device&#8230;</string>
     <string name="bt_disconnect">Disconnect Bluetooth device</string>
     <string name="bt_start">Start sending frequency bins</string>

@@ -35,7 +35,9 @@ package br.com.carlosrafaelgn.fplay;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.net.Uri;
 import android.text.InputType;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
@@ -64,6 +66,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
+import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable {
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
@@ -75,7 +78,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, /*optOldBrowserBehavior,*/ optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtSpeed, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader;
 	private TextView[] headers;
@@ -87,7 +90,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	@Override
 	public CharSequence getTitle() {
-		return getText(colorMode ? R.string.custom_color_theme : R.string.settings);
+		return (bluetoothMode ? "Bluetooth + Arduino" : getText(colorMode ? R.string.custom_color_theme : R.string.settings));
 	}
 
 	@Override
@@ -596,10 +599,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		btnGoBack.setIcon(UI.ICON_GOBACK);
 		btnAbout = (BgButton)findViewById(R.id.btnAbout);
 		btnAbout.setOnClickListener(this);
-		if (!colorMode)
-			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, UI.color_text, UI.defaultControlContentsSize), null, null, null);
-		else
+		if (colorMode) {
 			btnAbout.setText(R.string.apply_theme);
+		} else if (bluetoothMode) {
+			btnAbout.setText(R.string.tutorial);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.defaultControlContentsSize), null, null, null);
+		} else {
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+		}
 		lastColorView = -1;
 		
 		final Context ctx = getHostActivity();
@@ -621,6 +628,24 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setOnScrollListener(this);
 		if (colorMode) {
 			loadColors(true, false);
+		} else if (bluetoothMode) {
+			optBtMessage = new SettingView(ctx, UI.ICON_INFORMATION, "", null, false, false, false);
+			optBtConnect = new SettingView(ctx, UI.ICON_BLUETOOTH, "", null, false, false, false);
+			optBtStart = new SettingView(ctx, UI.ICON_VISUALIZER, "", null, false, false, false);
+			optBtFramesToSkip = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.bt_fps).toString(), BluetoothVisualizerControllerJni.getFramesToSkipString(), false, false, false);
+			optBtSize = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.bt_sample_count).toString(), BluetoothVisualizerControllerJni.getSizeString(), false, false, false);
+			optBtSpeed = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.sustain).toString(), BluetoothVisualizerControllerJni.getSpeedString(), false, false, false);
+
+			headers = new TextView[3];
+			addHeader(ctx, R.string.general, optBtMessage, 0);
+			panelSettings.addView(optBtMessage);
+			addHeader(ctx, R.string.general, optBtMessage, 1);
+			panelSettings.addView(optBtConnect);
+			panelSettings.addView(optBtStart);
+			addHeader(ctx, R.string.settings, optBtStart, 2);
+			panelSettings.addView(optBtFramesToSkip);
+			panelSettings.addView(optBtSize);
+			panelSettings.addView(optBtSpeed);
 		} else {
 			if (!UI.isCurrentLocaleCyrillic()) {
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
@@ -684,8 +709,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optMarqueeTitle.setOnClickListener(this);
 			optPrepareNext = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_prepare_next).toString(), null, true, Player.nextPreparationEnabled, false);
 			optPrepareNext.setOnClickListener(this);
-			//optOldBrowserBehavior = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_old_browser_behavior).toString(), null, true, UI.oldBrowserBehavior, false);
-			//optOldBrowserBehavior.setOnClickListener(this);
 			optClearListWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders, false);
 			optClearListWhenPlayingFolders.setOnClickListener(this);
 			optGoBackWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
@@ -750,7 +773,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optFadeInPause);
 			panelSettings.addView(optFadeInOther);
 			addHeader(ctx, R.string.hdr_behavior, optFadeInOther, hIdx++);
-			//panelSettings.addView(optOldBrowserBehavior);
 			panelSettings.addView(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			panelSettings.addView(optClearListWhenPlayingFolders);
 			panelSettings.addView(optGoBackWhenPlayingFolders);
@@ -772,16 +794,19 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	protected void onPause() {
-		Player.turnOffTimerObserver = null;
+		if (!colorMode && !bluetoothMode)
+			Player.turnOffTimerObserver = null;
 	}
 	
 	@Override
 	protected void onResume() {
-		Player.turnOffTimerObserver = this;
-		if (optAutoTurnOff != null)
-			optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
-		if (optAutoIdleTurnOff != null)
-			optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
+		if (!colorMode && !bluetoothMode) {
+			Player.turnOffTimerObserver = this;
+			if (optAutoTurnOff != null)
+				optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
+			if (optAutoIdleTurnOff != null)
+				optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
+		}
 	}
 	
 	@Override
@@ -832,7 +857,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optDoubleClickMode = null;
 		optMarqueeTitle = null;
 		optPrepareNext = null;
-		//optOldBrowserBehavior = null;
 		optClearListWhenPlayingFolders = null;
 		optGoBackWhenPlayingFolders = null;
 		optExtraInfoMode = null;
@@ -842,6 +866,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInFocus = null;
 		optFadeInPause = null;
 		optFadeInOther = null;
+		optBtMessage = null;
+		optBtConnect = null;
+		optBtStart = null;
+		optBtFramesToSkip = null;
+		optBtSize = null;
+		optBtSpeed = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -858,6 +888,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void onClick(View view) {
+		if (view == btnGoBack) {
+			if (!cancelGoBack())
+				finish(0, view, true);
+			return;
+		}
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--) {
 				if (view == colorViews[i]) {
@@ -866,11 +901,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					return;
 				}
 			}
+		} else if (bluetoothMode) {
+			if (view == btnAbout) {
+				try {
+					getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayArduino")));
+				} catch (Throwable ex) {
+				}
+			} else if (view == optBtConnect) {
+
+			} else if (view == optBtStart) {
+
+			} else if (view == optBtSize || view == optBtSpeed || view == optBtFramesToSkip) {
+				CustomContextMenu.openContextMenu(view, this);
+			}
+			return;
 		}
-		if (view == btnGoBack) {
-			if (!cancelGoBack())
-				finish(0, view, true);
-		} else if (view == optLoadCurrentTheme) {
+		if (view == optLoadCurrentTheme) {
 			if (colorMode)
 				loadColors(false, true);
 		} else if (view == btnAbout) {
@@ -973,8 +1019,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.marqueeTitle = optMarqueeTitle.isChecked();
 		} else if (view == optPrepareNext) {
 			Player.nextPreparationEnabled = optPrepareNext.isChecked();
-		//} else if (view == optOldBrowserBehavior) {
-		//	UI.oldBrowserBehavior = optOldBrowserBehavior.isChecked();
 		} else if (view == optClearListWhenPlayingFolders) {
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {

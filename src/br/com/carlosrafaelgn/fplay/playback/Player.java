@@ -260,6 +260,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static final int OPT_RADIOSEARCHTERM = 0x0032;
 	private static final int OPT_RADIOLASTGENRE = 0x0033;
 	private static final int OPT_TRANSITION = 0x0034;
+	private static final int OPT_BLUETOOTHVISUALIZERCONFIG = 0x0035;
 	
 	//values 0x01xx are shared among all effects
 	static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -421,6 +422,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
 		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
+		UI.bluetoothVisualizerConfig = opts.getInt(OPT_BLUETOOTHVISUALIZERCONFIG, 2 | (2 << 3) | (3 << 5));
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
@@ -552,6 +554,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		opts.put(OPT_WIDGETTEXTCOLOR, UI.widgetTextColor);
 		opts.put(OPT_WIDGETICONCOLOR, UI.widgetIconColor);
 		opts.put(OPT_VISUALIZERORIENTATION, UI.visualizerOrientation);
+		opts.put(OPT_BLUETOOTHVISUALIZERCONFIG, UI.bluetoothVisualizerConfig);
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
@@ -611,11 +614,11 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			songs.serialize(context, null);
 	}
 	
-	public static boolean startBluetoothVisualizer(ActivityHost activity, int size, int speed, int framesToSkip) {
+	public static boolean startBluetoothVisualizer(ActivityHost activity) {
 		if (state != STATE_INITIALIZED)
 			return false;
 		stopBluetoothVisualizer();
-		bluetoothVisualizerController = new BluetoothVisualizerControllerJni(activity, size, speed, framesToSkip);
+		bluetoothVisualizerController = new BluetoothVisualizerControllerJni(activity);
 		return true;
 	}
 

@@ -715,13 +715,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			break;
 		}
 		UI.separator(menu, 2, 0);
-		menu.add(2, MNU_SPEED0, 1, ctx.getText(R.string.sustain) + ": 3")
+		menu.add(2, MNU_SPEED0, 1, ctx.getText(R.string.sustain) + " 3")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED1, 2, ctx.getText(R.string.sustain) + ": 2")
+		menu.add(2, MNU_SPEED1, 2, ctx.getText(R.string.sustain) + " 2")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED2, 3, ctx.getText(R.string.sustain) + ": 1")
+		menu.add(2, MNU_SPEED2, 3, ctx.getText(R.string.sustain) + " 1")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 	}
