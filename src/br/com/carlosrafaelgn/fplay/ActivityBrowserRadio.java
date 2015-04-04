@@ -68,11 +68,11 @@ import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.RadioStationView;
-import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
@@ -139,7 +139,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				return;
 			}
 			Player.songs.addingStarted();
-			SongAddingMonitor.start(getHostActivity());
+			BackgroundActivityMonitor.start(getHostActivity());
 			(new Thread("Checked Radio Station Adder Thread") {
 				@Override
 				public void run() {

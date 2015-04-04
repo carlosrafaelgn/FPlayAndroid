@@ -37,7 +37,8 @@ import android.os.SystemClock;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
+import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
@@ -97,7 +98,7 @@ public class BluetoothVisualizerControllerJni {
 	private Activity activity;
 	private long lastPlayerCommandTime;
 
-	public BluetoothVisualizerControllerJni(int size, int speed, int framesToSkip) {
+	public BluetoothVisualizerControllerJni(ActivityHost activity, int size, int speed, int framesToSkip) {
 		bfft = new byte[1024];
 		lock = new SlimLock();
 		state = new AtomicInteger();
@@ -106,6 +107,7 @@ public class BluetoothVisualizerControllerJni {
 		setFramesToSkip(framesToSkip);
 		lastPlayerCommandTime = SystemClock.uptimeMillis();
 		SimpleVisualizerJni.commonUpdateMultiplier(false);
+		BackgroundActivityMonitor.start(activity);
 	}
 
 	public void setSize(int size) {
@@ -141,6 +143,7 @@ public class BluetoothVisualizerControllerJni {
 	}
 
 	public void destroy() {
+		BackgroundActivityMonitor.bluetoothEnded();
 		if (fxVisualizer != null) {
 			fxVisualizer.destroy();
 			fxVisualizer = null;

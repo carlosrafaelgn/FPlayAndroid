@@ -611,11 +611,11 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			songs.serialize(context, null);
 	}
 	
-	public static boolean startBluetoothVisualizer(int size, int speed, int framesToSkip) {
+	public static boolean startBluetoothVisualizer(ActivityHost activity, int size, int speed, int framesToSkip) {
 		if (state != STATE_INITIALIZED)
 			return false;
 		stopBluetoothVisualizer();
-		bluetoothVisualizerController = new BluetoothVisualizerControllerJni(size, speed, framesToSkip);
+		bluetoothVisualizerController = new BluetoothVisualizerControllerJni(activity, size, speed, framesToSkip);
 		return true;
 	}
 

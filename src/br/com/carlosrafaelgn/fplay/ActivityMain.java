@@ -57,18 +57,17 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
-import br.com.carlosrafaelgn.fplay.ui.SongAddingMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.AlbumArtVisualizer;
-import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
@@ -1396,7 +1395,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
 			Player.songs.startDeserializing(getApplication(), path, true, false, false);
-			SongAddingMonitor.start(getHostActivity());
+			BackgroundActivityMonitor.start(getHostActivity());
 		} else {
 			Player.songs.serialize(getApplication(), path);
 		}
@@ -1406,7 +1405,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onAddClicked(int id, String path, String name) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializing(getApplication(), path, false, true, false);
-			SongAddingMonitor.start(getHostActivity());
+			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
 	
@@ -1414,7 +1413,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onPlayClicked(int id, String path, String name) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializing(getApplication(), path, false, !Player.clearListWhenPlayingFolders, true);
-			SongAddingMonitor.start(getHostActivity());
+			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
 	

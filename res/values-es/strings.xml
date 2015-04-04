@@ -275,6 +275,8 @@
     <string name="msg_no_sensors">Lo sentimos, pero el dispositivo no tiene los sensores necesarios :(</string>
     <string name="tutorial">Tutorial&#8230;</string>
 
+    <string name="bt_active">Bluetooth activo&#8230;</string>
+    <string name="bt_error">Problemas con Bluetooth!</string>
     <string name="bt_packages_sent">Mensajes enviados:</string>
     <string name="bt_fps">Mensajes por segundo&#8230;</string>
     <string name="bt_sample_count">Muestras por mensaje&#8230;</string>
