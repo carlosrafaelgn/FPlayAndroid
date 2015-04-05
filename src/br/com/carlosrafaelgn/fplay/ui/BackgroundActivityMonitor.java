@@ -49,7 +49,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 	private static final Timer timer = new Timer(new BackgroundActivityMonitor(), "Background Activity Monitor Timer", false, true, false);
 
 	public static void start(ActivityHost activity) {
-		if (Player.songs.isAdding() || Player.state != Player.STATE_INITIALIZED || Player.bluetoothVisualizerController != null) {
+		if (Player.state != Player.STATE_INITIALIZED || Player.songs.isAdding() || Player.bluetoothVisualizerController != null || Player.bluetoothVisualizerLastErrorMessage != 0) {
 			stop();
 			//...the parent of an activity's content view is always a FrameLayout.
 			//http://android-developers.blogspot.com.br/2009/03/android-layout-tricks-3-optimize-by.html
@@ -65,7 +65,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 				notification.setLayoutParams(p);
 				UI.smallText(notification);
 				UI.prepareNotificationViewColors(notification);
-				lastMsg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerController.lastMessage != 0) ? R.string.bt_error : R.string.bt_active)));
+				lastMsg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : R.string.bt_active)));
 				notification.setText(lastMsg);
 				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
 				((FrameLayout)parent).addView(notification);
@@ -75,16 +75,17 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 		}
 	}
 
-	public static void bluetoothError() {
-		if (lastMsg != R.string.bt_error && notification != null) {
-			lastMsg = R.string.bt_error;
-			notification.setText(lastMsg);
-		}
-	}
-
 	public static void bluetoothEnded() {
-		if (!Player.songs.isAdding() && Player.state == Player.STATE_INITIALIZED)
-			stop();
+		if (Player.state == Player.STATE_INITIALIZED && !Player.songs.isAdding()) {
+			if (Player.bluetoothVisualizerLastErrorMessage != 0) {
+				if (lastMsg != R.string.bt_error && notification != null) {
+					lastMsg = R.string.bt_error;
+					notification.setText(lastMsg);
+				}
+			} else {
+				stop();
+			}
+		}
 	}
 	
 	public static void stop() {
@@ -101,7 +102,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
-		final int msg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerController != null) ? ((Player.bluetoothVisualizerController.lastMessage != 0) ? R.string.bt_error : R.string.bt_active) : 0)));
+		final int msg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : ((Player.bluetoothVisualizerController != null) ? R.string.bt_active : 0))));
 		if (msg == 0) {
 			stop();
 		} else {
@@ -109,7 +110,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 				lastMsg = msg;
 				notification.setText(msg);
 			}
-			if (!Player.songs.isAdding() && Player.state == Player.STATE_INITIALIZED)
+			if (Player.state == Player.STATE_INITIALIZED && !Player.songs.isAdding())
 				BackgroundActivityMonitor.timer.stop();
 		}
 	}

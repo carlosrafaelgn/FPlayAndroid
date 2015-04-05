@@ -33,20 +33,34 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Point;
+import android.os.Message;
 import android.os.SystemClock;
+import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.View;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public class BluetoothVisualizerControllerJni {
-	private static final int MSG_UPDATE_PACKAGES = 0x0600;
-	private static final int MSG_PLAYER_COMMAND = 0x0601;
-	private static final int MSG_BLUETOOTH_RXTX_ERROR = 0x0602;
+public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, Runnable, FxVisualizer.FxVisualizerHandler {
+	private static final int MSG_PLAYER_COMMAND = 0x0600;
+	private static final int MSG_BLUETOOTH_RXTX_ERROR = 0x0601;
 
 	private static final int[] FRAMES_TO_SKIP = { 0, 1, 2, 3, 4, 5, 9, 11, 14, 19, 29, 59 };
 
@@ -87,80 +101,95 @@ public class BluetoothVisualizerControllerJni {
 	private static final int PayloadPlayerStateFlagPlaying = 0x01;
 	private static final int PayloadPlayerStateFlagLoading = 0x02;
 
-	public int lastMessage;
 	private FxVisualizer fxVisualizer;
 	private byte[] bfft;
 	private final SlimLock lock;
-	private BluetoothConnectionManager bt;
-	private int speed;
 	private final AtomicInteger state;
+	private BluetoothConnectionManager bt;
 	private volatile int size, packagesSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength;
 	private volatile boolean connected, transmitting;
-	private Activity activity;
-	private long lastPlayerCommandTime;
+	private boolean jniCalled;
+	private int lastInfoMessage, lastPlayerCommandTime;
 
 	public BluetoothVisualizerControllerJni(ActivityHost activity) {
 		bfft = new byte[1024];
 		lock = new SlimLock();
 		state = new AtomicInteger();
-		setSize(UI.bluetoothVisualizerConfig & 7);
-		setSpeed((UI.bluetoothVisualizerConfig >> 3) & 3);
-		setFramesToSkip((UI.bluetoothVisualizerConfig >> 5) & 15);
-		lastPlayerCommandTime = SystemClock.uptimeMillis();
-		SimpleVisualizerJni.commonUpdateMultiplier(false);
-		BackgroundActivityMonitor.start(activity);
+		lastPlayerCommandTime = (int)SystemClock.uptimeMillis();
+		Player.bluetoothVisualizerLastErrorMessage = 0;
+		Player.bluetoothVisualizerState = 0;
+		bt = new BluetoothConnectionManager(activity, this);
+		final int err = bt.showDialogAndScan();
+		if (err != BluetoothConnectionManager.OK)
+			onBluetoothError(bt, err);
 	}
 
-	public static String getSizeString() {
-		int size = (UI.bluetoothVisualizerConfig & 3);
-		if (size < 0)
-			size = 0;
-		else if (size > 6)
-			size = 6;
-		return Integer.toString(1 << (2 + size));
+	public int getPackagesSent() {
+		return packagesSent;
 	}
 
-	public static String getSpeedString() {
-		final int speed = ((UI.bluetoothVisualizerConfig >> 2) & 3);
-		return Integer.toString((speed <= 0) ? 3 : ((speed >= 2) ? 1 : 2));
+	public int getLastInfoMessage() {
+		return lastInfoMessage;
 	}
 
-	public static String getFramesToSkipString() {
-		final int framesToSkip = ((UI.bluetoothVisualizerConfig >> 5) & 15);
-		return Integer.toString(60 / (((framesToSkip <= 0) ? FRAMES_TO_SKIP[0] : ((framesToSkip >= (FRAMES_TO_SKIP.length - 1)) ? FRAMES_TO_SKIP[FRAMES_TO_SKIP.length - 1] : FRAMES_TO_SKIP[framesToSkip])) + 1));
+	//public static String getSizeString() {
+	//	return Integer.toString(1 << (2 + getSize()));
+	//}
+
+	public void syncSize() {
+		this.size = PayloadBins4 + Player.getBluetoothVisualizerSize();
 	}
 
-	public void setSize(int size) {
-		if (size < 0)
-			size = 0;
-		else if (size > 6)
-			size = 6;
-		this.size = PayloadBins4 + size;
-		UI.bluetoothVisualizerConfig = (UI.bluetoothVisualizerConfig & (~7)) | size;
+	//public static String getSpeedString() {
+	//	return Integer.toString(3 - getSpeed());
+	//}
+
+	public void syncSpeed() {
+		SimpleVisualizerJni.commonSetSpeed(Player.getBluetoothVisualizerSpeed());
 	}
 
-	public void setSpeed(int speed) {
-		this.speed = ((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1));
-		SimpleVisualizerJni.commonSetSpeed(speed);
-		UI.bluetoothVisualizerConfig = (UI.bluetoothVisualizerConfig & (~(3 << 3))) | (this.speed << 3);
+	//public static String getFramesToSkipString() {
+	//	return Integer.toString(60 / (getFramesToSkip() + 1));
+	//}
+
+	public void syncFramesToSkip() {
+		framesToSkipOriginal = Player.getBluetoothVisualizerFramesToSkip();
+		framesToSkip = framesToSkipOriginal;
 	}
 
-	public void setFramesToSkip(int framesToSkip) {
-		if (framesToSkip < 0)
-			framesToSkip = 0;
-		else if (framesToSkip >= FRAMES_TO_SKIP.length)
-			framesToSkip = FRAMES_TO_SKIP.length - 1;
-		framesToSkipOriginal = FRAMES_TO_SKIP[framesToSkip];
-		this.framesToSkip = framesToSkipOriginal;
-		UI.bluetoothVisualizerConfig = (UI.bluetoothVisualizerConfig & (~(15 << 5))) | (framesToSkip << 5);
+	public void startTransmission() {
+		if (connected && !transmitting) {
+			if (!jniCalled) {
+				jniCalled = true;
+				SimpleVisualizerJni.commonUpdateMultiplier(false);
+				syncSize();
+				syncSpeed();
+				syncFramesToSkip();
+			} else {
+				framesToSkip = framesToSkipOriginal;
+			}
+			transmitting = true;
+			Player.bluetoothVisualizerState = 2;
+		}
+	}
+
+	public void stopTransmission() {
+		if (connected && transmitting) {
+			transmitting = false;
+			Player.bluetoothVisualizerState  = 1;
+		}
 	}
 
 	public void playingChanged() {
-		fxVisualizer.playingChanged();
+		if (fxVisualizer != null)
+			fxVisualizer.playingChanged();
+		if (connected)
+			generateAndSendState();
 	}
 
 	public void pause() {
-		fxVisualizer.pause();
+		if (fxVisualizer != null)
+			fxVisualizer.pause();
 	}
 
 	public void resume() {
@@ -174,10 +203,440 @@ public class BluetoothVisualizerControllerJni {
 	}
 
 	public void destroy() {
-		BackgroundActivityMonitor.bluetoothEnded();
-		if (fxVisualizer != null) {
-			fxVisualizer.destroy();
-			fxVisualizer = null;
+		if (bfft != null) {
+			version++;
+			connected = false;
+			transmitting = false;
+			Player.bluetoothVisualizerState = 0;
+			lock.lockHighPriority();
+			try {
+				bfft = null;
+				if (bt != null) {
+					bt.destroy();
+					bt = null;
+				}
+			} finally {
+				lock.releaseHighPriority();
+			}
+			if (fxVisualizer != null) {
+				fxVisualizer.destroy();
+				fxVisualizer = null;
+			}
+			Player.stopBluetoothVisualizer();
+			BackgroundActivityMonitor.bluetoothEnded();
 		}
+	}
+
+	//Runs on the MAIN thread
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onActivityPause() {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onActivityResume() {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onCreateContextMenu(ContextMenu menu) {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onClick() {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	}
+
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean isFullscreen() {
+		return false;
+	}
+
+	//Runs on the MAIN thread (called only if isFullscreen() returns false)
+	public Point getDesiredSize(int availableWidth, int availableHeight) {
+		return null;
+	}
+
+	//Runs on the MAIN thread (returned value MUST always be the same)
+	@Override
+	public boolean requiresHiddenControls() {
+		return false;
+	}
+
+	//Runs on ANY thread (returned value MUST always be the same)
+	@Override
+	public int getDesiredPointCount() {
+		return 1024;
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public void load(Context context) {
+		SimpleVisualizerJni.commonCheckNeonMode();
+	}
+
+	//Runs on ANY thread
+	@Override
+	public boolean isLoading() {
+		return false;
+	}
+
+	//Runs on ANY thread
+	@Override
+	public void cancelLoading() {
+	}
+
+	//Runs on the MAIN thread
+	@Override
+	public void configurationChanged(boolean landscape) {
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing) {
+		if (!lock.lockLowPriority())
+			return;
+		try {
+			if (transmitting) {
+				if (framesToSkip <= 0) {
+					framesToSkip = framesToSkipOriginal;
+					//WE MUST NEVER call any method from visualizer
+					//while the player is not actually playing
+					if (!playing)
+						Arrays.fill(bfft, 0, 1024, (byte)0);
+					else
+						visualizer.getFft(bfft);
+					bt.getOutputStream().write(bfft, 0, SimpleVisualizerJni.commonProcess(bfft, size));
+					packagesSent++;
+				} else {
+					framesToSkip--;
+				}
+			}
+			int stateI = state.getAndSet(0);
+			if (stateI != 0) {
+				//Build and send a Player state message
+				bfft[0] = StartOfHeading;
+				bfft[1] = (byte)MessagePlayerState;
+				bfft[3] = 0;
+				int len = 0;
+				len = writeByte(bfft, len, stateI & 3);
+				len = writeByte(bfft, len, stateVolume);
+				stateI = stateSongPosition;
+				len = writeByte(bfft, len, stateI);
+				len = writeByte(bfft, len, stateI >> 8);
+				len = writeByte(bfft, len, stateI >> 16);
+				len = writeByte(bfft, len, stateI >> 24);
+				stateI = stateSongLength;
+				len = writeByte(bfft, len, stateI);
+				len = writeByte(bfft, len, stateI >> 8);
+				len = writeByte(bfft, len, stateI >> 16);
+				len = writeByte(bfft, len, stateI >> 24);
+				bfft[2] = (byte)(len << 1);
+				bfft[4 + len] = EndOfTransmission;
+				bt.getOutputStream().write(bfft, 0, len + 5);
+				packagesSent++;
+			}
+		} catch (IOException ex) {
+			//Bluetooth error
+			if (connected)
+				MainHandler.sendMessage(this, MSG_BLUETOOTH_RXTX_ERROR);
+		} catch (Throwable ex) {
+		} finally {
+			lock.releaseLowPriority();
+		}
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public void release() {
+	}
+
+	//Runs on the MAIN thread (AFTER Visualizer.release())
+	@Override
+	public void releaseView() {
+	}
+
+	@Override
+	public void onBluetoothPairingStarted(BluetoothConnectionManager manager, String description, String address) {
+		lastInfoMessage = R.string.bt_connecting;
+	}
+
+	@Override
+	public void onBluetoothPairingFinished(BluetoothConnectionManager manager, String description, String address, boolean success) {
+		lastInfoMessage = 0;
+	}
+
+	@Override
+	public void onBluetoothCancelled(BluetoothConnectionManager manager) {
+		lastInfoMessage = 0;
+		Player.stopBluetoothVisualizer();
+	}
+
+	@Override
+	public void onBluetoothConnected(BluetoothConnectionManager manager) {
+		if (fxVisualizer == null && bt != null && Player.state == Player.STATE_INITIALIZED) {
+			lastInfoMessage = 0;
+			packagesSent = 0;
+			version++;
+			connected = true;
+			transmitting = false;
+			Player.bluetoothVisualizerState = 1;
+			generateAndSendState();
+			(new Thread(this, "Bluetooth RX Thread")).start();
+			fxVisualizer = new FxVisualizer(null, this, this);
+		}
+	}
+
+	@Override
+	public void onBluetoothError(BluetoothConnectionManager manager, int error) {
+		switch (error) {
+		case BluetoothConnectionManager.NOT_ENABLED:
+		case BluetoothConnectionManager.ERROR_NOT_ENABLED:
+			Player.bluetoothVisualizerLastErrorMessage = R.string.bt_needs_to_be_enabled;
+			break;
+		case BluetoothConnectionManager.ERROR_DISCOVERY:
+			Player.bluetoothVisualizerLastErrorMessage = R.string.bt_discovery_error;
+			break;
+		case BluetoothConnectionManager.ERROR_NOTHING_PAIRED:
+			Player.bluetoothVisualizerLastErrorMessage = R.string.bt_not_paired;
+			break;
+		case BluetoothConnectionManager.ERROR_STILL_PAIRING:
+			Player.bluetoothVisualizerLastErrorMessage = R.string.bt_pairing;
+			break;
+		case BluetoothConnectionManager.ERROR_CONNECTION:
+			Player.bluetoothVisualizerLastErrorMessage = R.string.bt_connection_error;
+			break;
+		case BluetoothConnectionManager.ERROR_COMMUNICATION:
+			Player.bluetoothVisualizerLastErrorMessage = R.string.bt_communication_error;
+			break;
+		default:
+			Player.bluetoothVisualizerLastErrorMessage = R.string.bt_not_supported;
+			break;
+		}
+		Player.stopBluetoothVisualizer();
+	}
+
+	@Override
+	public void run() {
+		final int myVersion = version;
+		try {
+			final InputStream inputStream = bt.getInputStream();
+			int state = 0, payloadLength = 0, payload = 0, currentMessage = 0;
+			while (connected && myVersion == version) {
+				final int data = inputStream.read();
+				if (data == StartOfHeading) {
+					//Restart the state machine
+					state &= (~(FlagEscape | FlagState));
+					continue;
+				}
+				switch ((state & FlagState)) {
+				case 0:
+					//This byte should be the message type
+					switch (data) {
+					case MessageStartBinTransmission:
+					case MessageStopBinTransmission:
+					case MessagePlayerCommand:
+						//Take the state machine to its next state
+						currentMessage = data;
+						state++;
+						continue;
+					default:
+						//Take the state machine to its error state
+						state |= FlagState;
+						continue;
+					}
+				case 1:
+					//This should be payload length's first byte
+					//(bits 0 - 6 left shifted by 1)
+					if ((data & 0x01) != 0) {
+						//Take the state machine to its error state
+						state |= FlagState;
+					} else {
+						payloadLength = data >> 1;
+						//Take the state machine to its next state
+						state++;
+					}
+					continue;
+				case 2:
+					//This should be payload length's second byte
+					//(bits 7 - 13 left shifted by 1)
+					if ((data & 0x01) != 0) {
+						//Take the state machine to its error state
+						state |= FlagState;
+					} else {
+						payloadLength |= (data << 6);
+
+						if (currentMessage == MessageStopBinTransmission) {
+							if (payloadLength != 0) {
+								//Take the state machine to its error state
+								state |= FlagState;
+								continue;
+							}
+							// Skip two states as this message has no payload
+							state += 2;
+						} else {
+							if (payloadLength != 1) {
+								if (currentMessage != MessagePlayerCommand || payloadLength != 2) {
+									//Take the state machine to its error state
+									state |= FlagState;
+									continue;
+								}
+							}
+							//Take the state machine to its next state
+							state++;
+							payload = 0;
+						}
+					}
+					continue;
+				case 3:
+					//We are receiving the payload
+
+					if (data == Escape) {
+						//Until this date, the only payloads which are
+						//valid for reception do not include escapable bytes...
+
+						//Take the state machine to its error state
+						state |= FlagState;
+						continue;
+					}
+
+					if (currentMessage == MessagePlayerCommand) {
+						payload = (payload << 8) | data;
+						payloadLength--;
+
+						//Keep the machine in state 3
+						if (payloadLength > 0)
+							continue;
+					} else {
+						payload = data;
+					}
+
+					//For now, the only payload received is 1 byte long
+					state++;
+					continue;
+				case 4:
+					//Take the state machine to its error state
+					state |= FlagState;
+
+					//Sanity check: data should be EoT
+					if (data == EndOfTransmission)
+						//Message correctly received
+						MainHandler.sendMessage(this, MSG_PLAYER_COMMAND, currentMessage, payload);
+				}
+			}
+		} catch (IOException ex) {
+			//Bluetooth error
+			if (connected)
+				MainHandler.sendMessage(this, MSG_BLUETOOTH_RXTX_ERROR);
+		} catch (Throwable ex) {
+		}
+	}
+
+	@Override
+	public boolean handleMessage(Message message) {
+		switch (message.what) {
+		case MSG_PLAYER_COMMAND:
+			if (connected && Player.state == Player.STATE_INITIALIZED) {
+				switch (message.arg1) {
+				case MessageStartBinTransmission:
+					switch (message.arg2) {
+					case PayloadBins4:
+					case PayloadBins8:
+					case PayloadBins16:
+					case PayloadBins32:
+					case PayloadBins64:
+					case PayloadBins128:
+					case PayloadBins256:
+						size = message.arg2;
+						startTransmission();
+						break;
+					}
+					break;
+				case MessageStopBinTransmission:
+					stopTransmission();
+					break;
+				case MessagePlayerCommand:
+					//The minimum interval must not take
+					//PayloadPlayerCommandUpdateState into account
+					if (message.arg2 == PayloadPlayerCommandUpdateState) {
+						generateAndSendState();
+						break;
+					}
+					final int now = (int)SystemClock.uptimeMillis();
+					//Minimum interval accepted between commands
+					if ((now - lastPlayerCommandTime) < 50)
+						break;
+					lastPlayerCommandTime = now;
+					switch (message.arg2) {
+					case PayloadPlayerCommandPrevious:
+					case PayloadPlayerCommandPlayPause:
+					case PayloadPlayerCommandNext:
+					case PayloadPlayerCommandPause:
+					case PayloadPlayerCommandPlay:
+						if (message.arg2 != PayloadPlayerCommandPlay || !Player.playing)
+							Player.handleMediaButton(message.arg2);
+						break;
+					case PayloadPlayerCommandIncreaseVolume:
+						Player.increaseVolume();
+						break;
+					case PayloadPlayerCommandDecreaseVolume:
+						Player.decreaseVolume();
+						break;
+					default:
+						if ((message.arg2 >> 8) == PayloadPlayerCommandSetVolume)
+							Player.setGenericVolumePercent((message.arg2 & 0xff) >> 1);
+						break;
+					}
+					break;
+				}
+			}
+			break;
+		case MSG_BLUETOOTH_RXTX_ERROR:
+			if (connected && bt != null)
+				onBluetoothError(bt, BluetoothConnectionManager.ERROR_COMMUNICATION);
+			break;
+		}
+		return true;
+	}
+
+	private void generateAndSendState() {
+		final Song s = Player.currentSong;
+		stateVolume = Player.getGenericVolumePercent();
+		stateSongPosition = Player.getCurrentPosition();
+		stateSongLength = ((s == null) ? -1 : s.lengthMS);
+		state.set(4 |
+			(Player.playing ? PayloadPlayerStateFlagPlaying : 0) |
+			(Player.isCurrentSongPreparing() ? PayloadPlayerStateFlagLoading : 0));
+	}
+
+	private static int writeByte(byte[] message, int payloadIndex, int x) {
+		x &= 0xff;
+		if (x == StartOfHeading || x == Escape) {
+			message[4 + payloadIndex] = Escape;
+			message[5 + payloadIndex] = (byte)(x ^ 1);
+			return payloadIndex + 2;
+		}
+		message[4 + payloadIndex] = (byte)x;
+		return payloadIndex + 1;
+	}
+
+	@Override
+	public void onFailure() {
+		Player.bluetoothVisualizerLastErrorMessage = R.string.visualizer_not_supported;
+		Player.stopBluetoothVisualizer();
+	}
+
+	@Override
+	public void onFinalCleanup() {
 	}
 }

@@ -342,7 +342,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static Object mediaRouterCallback;
 	private static Intent stickyBroadcast;
 	private static Runnable effectsObserver;
-	public static BluetoothVisualizerControllerJni bluetoothVisualizerController;
+	//I know this is far from "organized"... but this is the only way to prevent
+	//the class BluetoothVisualizerController from loading into memory without need!!!
+	public static Object bluetoothVisualizerController;
+	public static int bluetoothVisualizerLastErrorMessage, bluetoothVisualizerConfig, bluetoothVisualizerState;
 	//private static BluetoothAdapter bluetoothAdapter;
 	//private static BluetoothA2dp bluetoothA2dpProxy;
 	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
@@ -422,7 +425,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
 		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
-		UI.bluetoothVisualizerConfig = opts.getInt(OPT_BLUETOOTHVISUALIZERCONFIG, 2 | (2 << 3) | (3 << 5));
+		bluetoothVisualizerConfig = opts.getInt(OPT_BLUETOOTHVISUALIZERCONFIG, 2 | (2 << 3) | (3 << 5));
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
@@ -554,7 +557,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		opts.put(OPT_WIDGETTEXTCOLOR, UI.widgetTextColor);
 		opts.put(OPT_WIDGETICONCOLOR, UI.widgetIconColor);
 		opts.put(OPT_VISUALIZERORIENTATION, UI.visualizerOrientation);
-		opts.put(OPT_BLUETOOTHVISUALIZERCONFIG, UI.bluetoothVisualizerConfig);
+		opts.put(OPT_BLUETOOTHVISUALIZERCONFIG, bluetoothVisualizerConfig);
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
@@ -623,10 +626,50 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	}
 
 	public static void stopBluetoothVisualizer() {
+		bluetoothVisualizerState = 0;
 		if (bluetoothVisualizerController != null) {
-			bluetoothVisualizerController.destroy();
+			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
 			bluetoothVisualizerController = null;
+			b.destroy();
 		}
+	}
+
+	private static void updateBluetoothVisualizer(boolean songHasChanged) {
+		if (bluetoothVisualizerController != null) {
+			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
+			if (!songHasChanged && playing)
+				b.resetAndResume();
+			else
+				b.resume();
+			b.playingChanged();
+		}
+	}
+
+	public static int getBluetoothVisualizerSize() {
+		final int size = (bluetoothVisualizerConfig & 7);
+		return ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
+	}
+
+	public static void setBluetoothVisualizerSize(int size) {
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~7)) | ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
+	}
+
+	public static int getBluetoothVisualizerSpeed() {
+		final int speed = ((bluetoothVisualizerConfig >> 3) & 3);
+		return ((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1));
+	}
+
+	public static void setBluetoothVisualizerSpeed(int speed) {
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(3 << 3))) | (((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1)) << 3);
+	}
+
+	public static int getBluetoothVisualizerFramesToSkip() {
+		final int framesToSkip = ((bluetoothVisualizerConfig >> 5) & 15);
+		return ((framesToSkip <= 0) ? 0 : ((framesToSkip >= 11) ? 11 : framesToSkip));
+	}
+
+	public static void setBluetoothVisualizerFramesToSkip(int framesToSkip) {
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (((framesToSkip <= 0) ? 0 : ((framesToSkip >= 11) ? 11 : framesToSkip)) << 5);
 	}
 
 	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -1289,13 +1332,8 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 					UI.toast(thePlayer, sb);
 				}
 			}
-			if (bluetoothVisualizerController != null) {
-				if (!songHasChanged && playing)
-					bluetoothVisualizerController.resetAndResume();
-				else
-					bluetoothVisualizerController.resume();
-				bluetoothVisualizerController.playingChanged();
-			}
+			if (bluetoothVisualizerController != null)
+				updateBluetoothVisualizer(songHasChanged);
 			if (observer != null)
 				observer.onPlayerChanged(currentSong, songHasChanged, preparingHasChanged, ex);
 		}
@@ -2865,7 +2903,8 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				sendMessageAtTime(Message.obtain(this, MSG_TERMINATION_1), SystemClock.uptimeMillis());
 				break;
 			case MSG_TERMINATION_1:
-				stopBluetoothVisualizer();
+				if (bluetoothVisualizerController != null)
+					stopBluetoothVisualizer();
 				onPlayerChanged(null, false, null); //to update the widget
 				unregisterMediaButtonEventReceiver();
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
