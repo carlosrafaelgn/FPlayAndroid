@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.activity;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -176,7 +177,10 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 
 	public void activityFinished(ClientActivity activity, int requestCode, int code) {
 	}
-	
+
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	}
+
 	public View getNullContextMenuView() {
 		return null;
 	}

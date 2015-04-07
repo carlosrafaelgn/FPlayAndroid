@@ -622,7 +622,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
 			break;
 		case MNU_VISUALIZER_BLUETOOTH:
-			//getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, BluetoothVisualizerJni.class.getName()));
 			startActivity(new ActivitySettings(false, true), 0, null, false);
 			break;
 		case MNU_VISUALIZER_ALBUMART:

@@ -160,6 +160,10 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	public static final int VOLUME_CONTROL_STREAM = 1;
 	public static final int VOLUME_CONTROL_NONE = 2;
 	public static final int VOLUME_CONTROL_PERCENT = 3;
+	public static final int BLUETOOTH_VISUALIZER_STATE_INITIAL = 0;
+	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTING = 1;
+	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTED = 2;
+	public static final int BLUETOOTH_VISUALIZER_STATE_TRANSMITTING = 3;
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
@@ -617,16 +621,21 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			songs.serialize(context, null);
 	}
 	
-	public static boolean startBluetoothVisualizer(ActivityHost activity) {
+	public static boolean startBluetoothVisualizer(ActivityHost activity, boolean startTransmissionOnConnection) {
 		if (state != STATE_INITIALIZED)
 			return false;
 		stopBluetoothVisualizer();
-		bluetoothVisualizerController = new BluetoothVisualizerControllerJni(activity);
-		return true;
+		final BluetoothVisualizerControllerJni b = new BluetoothVisualizerControllerJni(activity, startTransmissionOnConnection);
+		if (bluetoothVisualizerLastErrorMessage == 0) {
+			bluetoothVisualizerController = b;
+			return true;
+		}
+		b.destroy();
+		return false;
 	}
 
 	public static void stopBluetoothVisualizer() {
-		bluetoothVisualizerState = 0;
+		bluetoothVisualizerState = BLUETOOTH_VISUALIZER_STATE_INITIAL;
 		if (bluetoothVisualizerController != null) {
 			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
 			bluetoothVisualizerController = null;

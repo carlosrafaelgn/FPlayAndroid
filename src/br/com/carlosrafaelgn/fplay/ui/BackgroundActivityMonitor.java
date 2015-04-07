@@ -49,7 +49,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 	private static final Timer timer = new Timer(new BackgroundActivityMonitor(), "Background Activity Monitor Timer", false, true, false);
 
 	public static void start(ActivityHost activity) {
-		if (Player.state != Player.STATE_INITIALIZED || Player.songs.isAdding() || Player.bluetoothVisualizerController != null || Player.bluetoothVisualizerLastErrorMessage != 0) {
+		if (Player.state != Player.STATE_INITIALIZED || Player.songs.isAdding() || Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL || Player.bluetoothVisualizerLastErrorMessage != 0) {
 			stop();
 			//...the parent of an activity's content view is always a FrameLayout.
 			//http://android-developers.blogspot.com.br/2009/03/android-layout-tricks-3-optimize-by.html
@@ -69,7 +69,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 				notification.setText(lastMsg);
 				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
 				((FrameLayout)parent).addView(notification);
-				if (Player.bluetoothVisualizerController == null)
+				if (Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_INITIAL)
 					timer.start(250);
 			}
 		}
@@ -102,7 +102,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 	
 	@Override
 	public void handleTimer(Timer timer, Object param) {
-		final int msg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : ((Player.bluetoothVisualizerController != null) ? R.string.bt_active : 0))));
+		final int msg = ((Player.state != Player.STATE_INITIALIZED) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : ((Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL) ? R.string.bt_active : 0))));
 		if (msg == 0) {
 			stop();
 		} else {

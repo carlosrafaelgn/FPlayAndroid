@@ -171,15 +171,12 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	private volatile DeviceItem deviceItem;
 	private volatile boolean cancelled;
 
-	public BluetoothConnectionManager(Activity activity, BluetoothObserver observer) {
-		this.activity = activity;
+	public BluetoothConnectionManager(BluetoothObserver observer) {
 		this.observer = observer;
 		try {
 			btAdapter = BluetoothAdapter.getDefaultAdapter();
 		} catch (Throwable ex) {
 		}
-		activity.registerReceiver(this, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-		activity.registerReceiver(this, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 	}
 
 	public InputStream getInputStream() {
@@ -306,8 +303,8 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		MainHandler.postToMainThread(this);
 	}
 
-	public int showDialogAndScan() {
-		if (btAdapter == null || activity == null)
+	public int showDialogAndScan(Activity activity) {
+		if (btAdapter == null)
 			return ERROR;
 		try {
 			if (!btAdapter.isEnabled()) {
@@ -317,6 +314,11 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		} catch (Throwable ex) {
 			return ERROR_NOT_ENABLED;
 		}
+
+		this.activity = activity;
+		activity.registerReceiver(this, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+		activity.registerReceiver(this, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
+
 		LinearLayout l = (LinearLayout)UI.createDialogView(activity, null);
 
 		LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);

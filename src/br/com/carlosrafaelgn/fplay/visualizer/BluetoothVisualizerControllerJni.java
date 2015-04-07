@@ -32,15 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 import android.os.Message;
 import android.os.SystemClock;
 import android.view.ContextMenu;
-import android.view.Menu;
-import android.view.View;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,8 +50,6 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
-import br.com.carlosrafaelgn.fplay.ui.UI;
-import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
@@ -108,49 +103,36 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	private BluetoothConnectionManager bt;
 	private volatile int size, packagesSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength;
 	private volatile boolean connected, transmitting;
-	private boolean jniCalled;
-	private int lastInfoMessage, lastPlayerCommandTime;
+	private boolean jniCalled, startTransmissionOnConnection;
+	private int lastPlayerCommandTime;
 
-	public BluetoothVisualizerControllerJni(ActivityHost activity) {
+	public BluetoothVisualizerControllerJni(ActivityHost activity, boolean startTransmissionOnConnection) {
 		bfft = new byte[1024];
 		lock = new SlimLock();
 		state = new AtomicInteger();
+		this.startTransmissionOnConnection = startTransmissionOnConnection;
 		lastPlayerCommandTime = (int)SystemClock.uptimeMillis();
 		Player.bluetoothVisualizerLastErrorMessage = 0;
-		Player.bluetoothVisualizerState = 0;
-		bt = new BluetoothConnectionManager(activity, this);
-		final int err = bt.showDialogAndScan();
+		Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING;
+		bt = new BluetoothConnectionManager(this);
+		final int err = bt.showDialogAndScan(activity);
 		if (err != BluetoothConnectionManager.OK)
 			onBluetoothError(bt, err);
+		else
+			BackgroundActivityMonitor.start(activity);
 	}
 
 	public int getPackagesSent() {
 		return packagesSent;
 	}
 
-	public int getLastInfoMessage() {
-		return lastInfoMessage;
-	}
-
-	//public static String getSizeString() {
-	//	return Integer.toString(1 << (2 + getSize()));
-	//}
-
 	public void syncSize() {
 		this.size = PayloadBins4 + Player.getBluetoothVisualizerSize();
 	}
 
-	//public static String getSpeedString() {
-	//	return Integer.toString(3 - getSpeed());
-	//}
-
 	public void syncSpeed() {
 		SimpleVisualizerJni.commonSetSpeed(Player.getBluetoothVisualizerSpeed());
 	}
-
-	//public static String getFramesToSkipString() {
-	//	return Integer.toString(60 / (getFramesToSkip() + 1));
-	//}
 
 	public void syncFramesToSkip() {
 		framesToSkipOriginal = Player.getBluetoothVisualizerFramesToSkip();
@@ -169,14 +151,14 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 				framesToSkip = framesToSkipOriginal;
 			}
 			transmitting = true;
-			Player.bluetoothVisualizerState = 2;
+			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_TRANSMITTING;
 		}
 	}
 
 	public void stopTransmission() {
 		if (connected && transmitting) {
 			transmitting = false;
-			Player.bluetoothVisualizerState  = 1;
+			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTED;
 		}
 	}
 
@@ -207,7 +189,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 			version++;
 			connected = false;
 			transmitting = false;
-			Player.bluetoothVisualizerState = 0;
+			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_INITIAL;
 			lock.lockHighPriority();
 			try {
 				bfft = null;
@@ -368,32 +350,30 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 
 	@Override
 	public void onBluetoothPairingStarted(BluetoothConnectionManager manager, String description, String address) {
-		lastInfoMessage = R.string.bt_connecting;
 	}
 
 	@Override
 	public void onBluetoothPairingFinished(BluetoothConnectionManager manager, String description, String address, boolean success) {
-		lastInfoMessage = 0;
 	}
 
 	@Override
 	public void onBluetoothCancelled(BluetoothConnectionManager manager) {
-		lastInfoMessage = 0;
 		Player.stopBluetoothVisualizer();
 	}
 
 	@Override
 	public void onBluetoothConnected(BluetoothConnectionManager manager) {
 		if (fxVisualizer == null && bt != null && Player.state == Player.STATE_INITIALIZED) {
-			lastInfoMessage = 0;
 			packagesSent = 0;
 			version++;
 			connected = true;
 			transmitting = false;
-			Player.bluetoothVisualizerState = 1;
+			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTED;
 			generateAndSendState();
 			(new Thread(this, "Bluetooth RX Thread")).start();
 			fxVisualizer = new FxVisualizer(null, this, this);
+			if (startTransmissionOnConnection)
+				startTransmission();
 		}
 	}
 

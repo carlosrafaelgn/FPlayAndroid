@@ -139,6 +139,13 @@ public final class SettingView extends View {
 		requestLayout();
 	}
 
+	public void setText(String text) {
+		this.text = text;
+		updateLayout();
+		invalidate();
+		requestLayout();
+	}
+
 	public void setSecondaryText(String secondaryText) {
 		if (this.secondaryText != null && secondaryText != null) {
 			this.secondaryText = secondaryText;

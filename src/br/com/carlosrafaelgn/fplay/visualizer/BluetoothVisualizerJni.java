@@ -234,7 +234,7 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 				if (lblMsg != null)
 					lblMsg.setText("");
 				if (bt != null) {
-					final int err = bt.showDialogAndScan();
+					final int err = bt.showDialogAndScan(null);
 					if (err != BluetoothConnectionManager.OK)
 						onBluetoothError(bt, err);
 				}
@@ -589,8 +589,8 @@ public class BluetoothVisualizerJni extends RelativeLayout implements Visualizer
 					connected = false;
 				} else {
 					btnConnect.setVisibility(View.INVISIBLE);
-					bt = new BluetoothConnectionManager(activity, this);
-					final int err = bt.showDialogAndScan();
+					bt = new BluetoothConnectionManager(this);
+					final int err = bt.showDialogAndScan(null);
 					if (err != BluetoothConnectionManager.OK && err != BluetoothConnectionManager.NOT_ENABLED)
 						onBluetoothError(bt, err);
 				}

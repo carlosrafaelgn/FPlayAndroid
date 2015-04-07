@@ -526,7 +526,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (exitOnDestroy)
 			Player.stopService();
 	}
-	
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (top != null)
+			top.onActivityResult(requestCode, resultCode, data);
+	}
+
 	@Override
 	public void onPlayerDestroyed() {
 		finalCleanup();
