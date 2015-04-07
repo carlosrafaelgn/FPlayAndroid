@@ -274,6 +274,7 @@
     <string name="msg_immersive">&#8634; Наведіть пристрій навколо (будьте обережні!)</string>
     <string name="msg_no_sensors">Вибачте, але пристрій не має необхідних датчиків :(</string>
     <string name="tutorial">Підручник&#8230;</string>
+    <string name="information">Інформація</string>
 
     <string name="bt_inactive">Bluetooth inactive</string>
     <string name="bt_active">Bluetooth active&#8230;</string>

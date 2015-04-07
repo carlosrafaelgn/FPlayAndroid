@@ -274,6 +274,7 @@
     <string name="msg_immersive">&#8634; Mueve tu dispositivo alrededor (ten cuidado!)</string>
     <string name="msg_no_sensors">Lo sentimos, pero el dispositivo no tiene los sensores necesarios :(</string>
     <string name="tutorial">Tutorial&#8230;</string>
+    <string name="information">Información</string>
 
     <string name="bt_inactive">Bluetooth inactivo</string>
     <string name="bt_active">Bluetooth activo&#8230;</string>

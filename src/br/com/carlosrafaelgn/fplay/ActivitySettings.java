@@ -271,6 +271,33 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, 62, 2, R.string.dlong)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(((d > 0) && (d < 125)) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optBtSize) {
+			lastMenuView = optBtSize;
+			UI.prepare(menu);
+			final int size = Player.getBluetoothVisualizerSize();
+			for (int i = 0; i <= 6; i++) {
+				menu.add(0, i, i, Integer.toString(1 << (2 + i)))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((size == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			}
+		} else if (view == optBtSpeed) {
+			lastMenuView = optBtSpeed;
+			UI.prepare(menu);
+			final int speed = Player.getBluetoothVisualizerSpeed();
+			for (int i = 0; i <= 2; i++) {
+				menu.add(0, i, i, Integer.toString(3 - i))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((speed == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			}
+		} else if (view == optBtFramesToSkip) {
+			lastMenuView = optBtFramesToSkip;
+			UI.prepare(menu);
+			final int framesToSkip = Player.getBluetoothVisualizerFramesToSkipIndex();
+			for (int i = 0; i <= 11; i++) {
+				menu.add(0, i, i, Integer.toString(Player.getBluetoothVisualizerFramesPerSecond(i)))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((framesToSkip == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			}
 		}
 	}
 	
@@ -359,6 +386,21 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optFadeInOther) {
 			Player.fadeInIncrementOnOther = item.getItemId();
 			optFadeInOther.setSecondaryText(getFadeInString(item.getItemId()));
+		} else if (lastMenuView == optBtSize) {
+			Player.setBluetoothVisualizerSize(item.getItemId());
+			optBtSize.setSecondaryText(getSizeString());
+			if (Player.bluetoothVisualizerController != null)
+				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncSize();
+		} else if (lastMenuView == optBtSpeed) {
+			Player.setBluetoothVisualizerSpeed(item.getItemId());
+			optBtSpeed.setSecondaryText(getSpeedString());
+			if (Player.bluetoothVisualizerController != null)
+				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncSpeed();
+		} else if (lastMenuView == optBtFramesToSkip) {
+			Player.setBluetoothVisualizerFramesToSkipIndex(item.getItemId());
+			optBtFramesToSkip.setSecondaryText(getFramesToSkipString());
+			if (Player.bluetoothVisualizerController != null)
+				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncFramesToSkip();
 		}
 		configsChanged = true;
 		lastMenuView = null;
@@ -425,7 +467,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 
 	private String getFramesToSkipString() {
-		return Integer.toString(60 / (Player.getBluetoothVisualizerFramesToSkip() + 1));
+		return Integer.toString(Player.getBluetoothVisualizerFramesPerSecond(Player.getBluetoothVisualizerFramesToSkipIndex()));
 	}
 
 	private String getSizeString() {
@@ -733,7 +775,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			refreshBluetoothStatus(true);
 
 			headers = new TextView[3];
-			addHeader(ctx, R.string.general, optBtMessage, 0);
+			addHeader(ctx, R.string.information, optBtMessage, 0);
 			panelSettings.addView(optBtMessage);
 			addHeader(ctx, R.string.general, optBtMessage, 1);
 			panelSettings.addView(optBtConnect);

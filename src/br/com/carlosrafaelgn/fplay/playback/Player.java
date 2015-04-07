@@ -41,6 +41,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.camera2.CameraCaptureSession;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
@@ -672,13 +673,24 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(3 << 3))) | (((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1)) << 3);
 	}
 
-	public static int getBluetoothVisualizerFramesToSkip() {
-		final int framesToSkip = ((bluetoothVisualizerConfig >> 5) & 15);
-		return ((framesToSkip <= 0) ? 0 : ((framesToSkip >= 11) ? 11 : framesToSkip));
+	public static int getBluetoothVisualizerFramesPerSecond(int framesToSkipIndex) {
+		//index          0, 1, 2, 3, 4, 5, 6, 7 , 8 , 9 , 10, 11
+		//frames to skip 0, 1, 2, 3, 4, 5, 9, 11, 14, 19, 29, 59
+		//frames/second  60,30,20,15,12,10, 6, 5 , 4 , 3 , 2 , 1
+		return ((framesToSkipIndex <= 5) ? (60 / (framesToSkipIndex + 1)) : (12 - framesToSkipIndex));
 	}
 
-	public static void setBluetoothVisualizerFramesToSkip(int framesToSkip) {
-		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (((framesToSkip <= 0) ? 0 : ((framesToSkip >= 11) ? 11 : framesToSkip)) << 5);
+	public static int getBluetoothVisualizerFramesToSkip() {
+		return (getBluetoothVisualizerFramesPerSecond(11 - getBluetoothVisualizerFramesToSkipIndex()) - 1);
+	}
+
+	public static int getBluetoothVisualizerFramesToSkipIndex() {
+		final int framesToSkipIndex = ((bluetoothVisualizerConfig >> 5) & 15);
+		return ((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex));
+	}
+
+	public static void setBluetoothVisualizerFramesToSkipIndex(int framesToSkipIndex) {
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex)) << 5);
 	}
 
 	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)

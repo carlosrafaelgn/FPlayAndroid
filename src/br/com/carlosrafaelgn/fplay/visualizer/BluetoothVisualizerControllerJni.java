@@ -57,8 +57,6 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	private static final int MSG_PLAYER_COMMAND = 0x0600;
 	private static final int MSG_BLUETOOTH_RXTX_ERROR = 0x0601;
 
-	private static final int[] FRAMES_TO_SKIP = { 0, 1, 2, 3, 4, 5, 9, 11, 14, 19, 29, 59 };
-
 	private static final int FlagState = 0x07;
 	private static final int FlagEscape = 0x08;
 
