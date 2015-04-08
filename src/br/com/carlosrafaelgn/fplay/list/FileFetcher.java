@@ -450,7 +450,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		final String fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.artists).toString() + FileSt.FAKE_PATH_SEPARATOR;
 		final String root = FileSt.ARTIST_ROOT + File.separator;
 		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
-		final String[] proj = { MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST };
+		final String[] proj = { MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST, MediaStore.Audio.Artists.NUMBER_OF_ALBUMS, MediaStore.Audio.Artists.NUMBER_OF_TRACKS };
 		final Cursor c = s.getContentResolver().query(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, proj, null, null, null);
 		while (c.moveToNext()) {
 			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
@@ -467,6 +467,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			final long id = c.getLong(0);
 			final FileSt f = new FileSt(root + id + fakeRoot + name, name, null, FileSt.TYPE_ARTIST);
 			f.artistIdForAlbumArt = id;
+			f.albums = c.getInt(2);
+			f.tracks = c.getInt(3);
 			tmp.add(f);
 		}
 		c.close();
@@ -509,7 +511,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			root = realPath + File.separator;
 		}
 		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
-		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART };
+		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART, MediaStore.Audio.Albums.NUMBER_OF_SONGS };
 		final Cursor c = s.getContentResolver().query((artist == null) ?
 				MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI :
 				MediaStore.Audio.Artists.Albums.getContentUri("external", Long.parseLong(artist)), proj, null, null, null);
@@ -520,7 +522,9 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return;
 			}
 			final String name = c.getString(1);
-			tmp.add(new FileSt(root + c.getLong(0) + fakeRoot + name, name, c.getString(2), FileSt.TYPE_ALBUM));
+			final FileSt f = new FileSt(root + c.getLong(0) + fakeRoot + name, name, c.getString(2), FileSt.TYPE_ALBUM);
+			f.tracks = c.getInt(3);
+			tmp.add(f);
 		}
 		c.close();
 

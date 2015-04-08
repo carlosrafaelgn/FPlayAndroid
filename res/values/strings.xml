@@ -142,8 +142,12 @@
     <string name="title">Title</string>
     <string name="artist">Artist</string>
     <string name="album">Album</string>
+    <string name="albumL">1 album</string>
+    <string name="albumsL">albums</string>
     <string name="album_art">Album art</string>
     <string name="track">Track</string>
+    <string name="trackL">1 track</string>
+    <string name="tracksL">tracks</string>
     <string name="duration">Duration</string>
     <string name="year">Year</string>
     <string name="no_info">-</string>

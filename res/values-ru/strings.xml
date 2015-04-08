@@ -142,8 +142,12 @@
     <string name="title">Название</string>
     <string name="artist">Исполнитель</string>
     <string name="album">Альбом</string>
+    <string name="albumL">1 альбом</string>
+    <string name="albumsL">альбомы</string>
     <string name="album_art">Обложка альбома</string>
     <string name="track">Трек</string>
+    <string name="trackL">1 трек</string>
+    <string name="tracksL">треков</string>
     <string name="duration">Продолжительность</string>
     <string name="year">год</string>
     <string name="no_info">-</string>
