@@ -239,7 +239,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, UI.verticalMargin + UI._22spYinBox);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, UI.verticalMargin + UI._22spBox + UI._2dp + (UI._18spBox - UI._18sp) >> 1, UI._18sp, txtColor2);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, UI.verticalMargin + UI._22spBox + UI._2dp + ((UI._18spBox - UI._18sp) >> 1), UI._18sp, txtColor2);
 		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI._8dp + UI._18sp + UI._4dp, UI.verticalMargin + UI._22spBox + UI._2dp + UI._18spYinBox);
 		int i = 0, y = descriptionY;
 		while (descriptionLines[i] != null) {
