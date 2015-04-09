@@ -81,6 +81,7 @@ import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
@@ -173,6 +174,7 @@ public final class UI {
 	public static final String ICON_DIAL = ":";
 	public static final String ICON_HEADSET = "{";
 	public static final String ICON_TRANSPARENT = "}";
+	public static final String ICON_FLAT = "/";
 	public static final String ICON_PALETTE = "[";
 	public static final String ICON_LANGUAGE = "]";
 	public static final String ICON_THEME = "\\";
@@ -245,6 +247,7 @@ public final class UI {
 	public static int color_menu_icon;
 	public static int color_menu_border;
 	public static int color_divider;
+	public static int color_divider_pressed;
 	public static int color_highlight;
 	public static int color_text_highlight;
 	public static int color_text;
@@ -389,7 +392,8 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft;
+		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt,
+		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders;
 	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, _DLGsp, _DLGsppad, _DLGdppad,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType, verticalMargin;
 	public static int[] lastViewCenterLocation = new int[2];
@@ -1000,6 +1004,7 @@ public final class UI {
 		colorState_highlight_static = new BgColorStateList(color_highlight);
 		colorState_text_highlight_static = new BgColorStateList(color_text_highlight);
 		colorState_text_highlight_reactive = new BgColorStateList(color_text_highlight, color_text_selected);
+		color_divider_pressed = ColorUtils.blend(color_divider, color_text_listitem, 0.7f);
 		if (!custom) {
 			color_text_title = color_highlight;
 			colorState_text_title_static = colorState_highlight_static;
@@ -1320,18 +1325,18 @@ public final class UI {
 	}
 
 	public static void showNextStartupMsg(final Activity activity) {
-		if (msgStartup >= 19) {
-			msgStartup = 19;
+		if (msgStartup >= 20) {
+			msgStartup = 20;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 19;
+		msgStartup = 20;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.there_are_new_features).toString() + " " + activity.getText(R.string.borders).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 		.setTitle(activity.getText(title))
 		.setView(createDialogView(activity, content))
@@ -1488,14 +1493,14 @@ public final class UI {
 	public static void drawBg(Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
-				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
-				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed, strokeSize, strokeSize);
+				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);//, strokeSize, strokeSize);
+				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
 				if (isFlat)
-					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected, strokeSize, strokeSize);
+					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);//, strokeSize, strokeSize);
 				else
-					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom), strokeSize, strokeSize);
+					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));//, strokeSize, strokeSize);
+				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
 			} else if ((state & STATE_MULTISELECTED) != 0) {
 				fillRect(canvas, color_selected_multi);
 			}
@@ -1583,7 +1588,7 @@ public final class UI {
 	@SuppressWarnings("deprecation")
 	public static void prepareNotificationViewColors(TextView view) {
 		view.setTextColor(UI.colorState_text_highlight_static);
-		view.setBackgroundDrawable(new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize));
+		view.setBackgroundDrawable(hasBorders ? new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_highlight));
 	}
 	
 	public static void toast(Context context, CharSequence text) {
@@ -1626,7 +1631,7 @@ public final class UI {
 			mnu.setItemClassConstructor(BgButton.class.getConstructor(Context.class));
 		} catch (NoSuchMethodException e) {
 		}
-		mnu.setBackground(new BorderDrawable(color_menu_border, color_menu, strokeSize, strokeSize, strokeSize, strokeSize));
+		mnu.setBackground(hasBorders ? new BorderDrawable(color_menu_border, color_menu, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_menu));
 		mnu.setPadding(0);
 		mnu.setItemTextSizeInPixels(_22sp);
 		mnu.setItemTextColor(colorState_text_menu_reactive);

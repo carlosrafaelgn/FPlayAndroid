@@ -523,10 +523,14 @@ public final class BgSeekBar extends View {
 			UI.rect.top = UI._8dp;
 			UI.rect.bottom -= UI._8dp;
 			UI.strokeRect(canvas, color, UI.strokeSize);
-			UI.rect.left = UI.strokeSize;
-			UI.rect.top += UI.strokeSize;
-			UI.rect.bottom -= UI.strokeSize;
-			UI.rect.right = UI.strokeSize + filledSize;
+			if (UI.hasBorders) {
+				UI.rect.left = UI.strokeSize;
+				UI.rect.top += UI.strokeSize;
+				UI.rect.bottom -= UI.strokeSize;
+				UI.rect.right = UI.strokeSize + filledSize;
+			} else {
+				UI.rect.right = filledSize;
+			}
 			UI.drawBgBorderless(canvas, state, false);
 			if (drawTextFirst)
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
@@ -538,15 +542,25 @@ public final class BgSeekBar extends View {
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + (thumbWidth >> 1) - UI._8dp, 0, UI._16dp, color);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI._8dp, bottom - UI._8dp, UI._16dp, color);
 			} else {
-				UI.rect.left = filledSize;
-				UI.rect.top = 0;
-				UI.rect.right = filledSize + thumbWidth;
-				UI.rect.bottom = bottom;
-				UI.fillRect(canvas, color);
-				UI.rect.left += UI.strokeSize;
-				UI.rect.top += UI.strokeSize;
-				UI.rect.right -= UI.strokeSize;
-				UI.rect.bottom -= UI.strokeSize;
+				if (UI.hasBorders) {
+					UI.rect.top = 0;
+					UI.rect.bottom = bottom;
+					UI.rect.left = filledSize;
+					UI.rect.right = filledSize + thumbWidth;
+					UI.fillRect(canvas, color);
+					UI.rect.left += UI.strokeSize;
+					UI.rect.top += UI.strokeSize;
+					UI.rect.right -= UI.strokeSize;
+					UI.rect.bottom -= UI.strokeSize;
+				} else {
+					UI.rect.left = filledSize - UI.strokeSize;
+					UI.rect.right = filledSize;
+					UI.fillRect(canvas, color);
+					UI.rect.top = 0;
+					UI.rect.bottom = bottom;
+					UI.rect.left = filledSize;
+					UI.rect.right = filledSize + thumbWidth;
+				}
 				UI.drawBgBorderless(canvas, state, false);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize, (bottom - thumbWidth) >> 1, thumbWidth, color);
 			}

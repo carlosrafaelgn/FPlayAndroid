@@ -84,7 +84,7 @@
     <string name="up">Arriba</string>
     <string name="home">Inicio</string>
     <string name="add_url_title">Añadir URL</string>
-    <string name="add_url">URL&#8230;</string>
+    <string name="add_url">URL</string>
     <string name="url">URL</string>
     <string name="description">Descripción</string>
     <string name="favorite">Favorito</string>
@@ -114,7 +114,7 @@
     <string name="visualizer">Visualizador</string>
     <string name="random_mode">Modo aleatorio</string>
     <string name="settings">Configuración</string>
-    <string name="about">Acerca de&#8230;</string>
+    <string name="about">Acerca de</string>
     <string name="exit">Salir</string>
     <string name="move">Mover</string>
     <string name="remove">Remover</string>
@@ -204,6 +204,7 @@
     <string name="highlight_background">Color de titulo de menu</string>
     <string name="icon">Icono</string>
     <string name="border">Borde</string>
+    <string name="borders">Bordes</string>
     <string name="divider">Divisor</string>
     <string name="text">Texto</string>
     <string name="text_secondary">Texto (secundario)</string>
@@ -243,7 +244,7 @@
     <string name="opengl_error">Error OpenGL</string>
     <string name="opengl_not_supported">No hay soporte para OpenGL ES 2.0</string>
     <string name="speed">Velocidad</string>
-    <string name="add_radio">Radio&#8230;</string>
+    <string name="add_radio">Radio</string>
     <string name="search">Buscar</string>
     <string name="genre">Género</string>
     <string name="search_term">Término de búsqueda</string>
@@ -277,7 +278,7 @@
     <string name="diffusion">Difusión</string>
     <string name="msg_immersive">&#8634; Mueve tu dispositivo alrededor (ten cuidado!)</string>
     <string name="msg_no_sensors">Lo sentimos, pero el dispositivo no tiene los sensores necesarios :(</string>
-    <string name="tutorial">Tutorial&#8230;</string>
+    <string name="tutorial">Tutorial</string>
     <string name="information">Información</string>
 
     <string name="bt_inactive">Bluetooth inactivo</string>

@@ -318,6 +318,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static final int OPTBIT_REPEATONE = 35;
 	private static final int OPTBIT_NOTFULLSCREEN = 36;
 	private static final int OPTBIT_CONTROLS_TO_THE_LEFT = 37;
+	private static final int OPTBIT_BORDERS = 38;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 	
@@ -462,6 +463,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
 			UI.setFlat(opts.getBit(OPTBIT_FLAT, true));
+			UI.hasBorders = opts.getBit(OPTBIT_BORDERS, false);
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
@@ -576,6 +578,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		opts.putBit(OPTBIT_DOUBLECLICKMODE, UI.doubleClickMode);
 		opts.putBit(OPTBIT_MARQUEETITLE, UI.marqueeTitle);
 		opts.putBit(OPTBIT_FLAT, UI.isFlat);
+		opts.putBit(OPTBIT_BORDERS, UI.hasBorders);
 		opts.putBit(OPTBIT_ALBUMART, UI.albumArt);
 		opts.putBit(OPTBIT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.putBit(OPTBIT_ISDIVIDERVISIBLE, UI.isDividerVisible);

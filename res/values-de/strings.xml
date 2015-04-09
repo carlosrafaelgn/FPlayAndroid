@@ -84,8 +84,8 @@
     <string name="up">Nach oben</string>
     <string name="home">Zurück</string>
     <string name="add_url_title">Netzwerkstream öffnen</string>
-    <string name="add_url">URL/Adresse&#8230;</string>
-    <string name="url">URL/Adresse</string>
+    <string name="add_url">Adresse</string>
+    <string name="url">Adresse</string>
     <string name="description">Beschreibung</string>
     <string name="favorite">Favorit</string>
     <string name="menu">Menu</string>
@@ -114,7 +114,7 @@
     <string name="visualizer">Visualisierung</string>
     <string name="random_mode">Zufallsmodus</string>
     <string name="settings">Einstellungen</string>
-    <string name="about">Info&#8230;</string>
+    <string name="about">Info</string>
     <string name="exit">Verlassen</string>
     <string name="move">Bewegen</string>
     <string name="remove">Entfernen</string>
@@ -204,6 +204,7 @@
     <string name="highlight_background">Hintergrund Hervorhebung</string>
     <string name="icon">Symbol</string>
     <string name="border">Abgrenzung</string>
+    <string name="borders">Abgrenzung</string>
     <string name="divider">Trennung</string>
     <string name="text">Text</string>
     <string name="text_secondary">Text (sekundär)</string>
@@ -243,7 +244,7 @@
     <string name="opengl_error">OpenGL Fehler</string>
     <string name="opengl_not_supported">Keine Unterstützung für OpenGL ES 2.0</string>
     <string name="speed">Geschwindigkeit</string>
-    <string name="add_radio">Radio&#8230;</string>
+    <string name="add_radio">Radio</string>
     <string name="search">Suchen</string>
     <string name="genre">Genre</string>
     <string name="search_term">Suchbegriff</string>
@@ -277,7 +278,7 @@
     <string name="diffusion">Diffusion</string>
     <string name="msg_immersive">&#8634; Bewegen Sie das Gerät (Vorsicht!)</string>
     <string name="msg_no_sensors">Tut mir leid, aber Ihr Gerät nicht über die erforderlichen Sensoren :(</string>
-    <string name="tutorial">Lernprogramm&#8230;</string>
+    <string name="tutorial">Lernprogramm</string>
     <string name="information">Informationen</string>
 
     <string name="bt_inactive">Bluetooth inaktiv</string>

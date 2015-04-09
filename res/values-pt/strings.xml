@@ -84,7 +84,7 @@
     <string name="up">Acima</string>
     <string name="home">Início</string>
     <string name="add_url_title">Adicionar URL</string>
-    <string name="add_url">URL&#8230;</string>
+    <string name="add_url">URL</string>
     <string name="url">URL</string>
     <string name="description">Descrição</string>
     <string name="favorite">Favorito</string>
@@ -114,7 +114,7 @@
     <string name="visualizer">Visualizador</string>
     <string name="random_mode">Modo aleatório</string>
     <string name="settings">Opções</string>
-    <string name="about">Sobre&#8230;</string>
+    <string name="about">Sobre</string>
     <string name="exit">Sair</string>
     <string name="move">Mover</string>
     <string name="remove">Remover</string>
@@ -204,6 +204,7 @@
     <string name="highlight_background">Fundo do destaque</string>
     <string name="icon">Ícone</string>
     <string name="border">Borda</string>
+    <string name="borders">Bordas</string>
     <string name="divider">Divisor</string>
     <string name="text">Texto</string>
     <string name="text_secondary">Texto (secundário)</string>
@@ -243,7 +244,7 @@
     <string name="opengl_error">Erro OpenGL</string>
     <string name="opengl_not_supported">Sem suporte a OpenGL ES 2.0</string>
     <string name="speed">Velocidade</string>
-    <string name="add_radio">Rádio&#8230;</string>
+    <string name="add_radio">Rádio</string>
     <string name="search">Procurar</string>
     <string name="genre">Gênero</string>
     <string name="search_term">Termo de pesquisa</string>
@@ -277,7 +278,7 @@
     <string name="diffusion">Difusão</string>
     <string name="msg_immersive">&#8634; Mova seu aparelho ao redor (seja cuidadoso!)</string>
     <string name="msg_no_sensors">Desculpe, mas seu aparelho não possui os sensores necessários :(</string>
-    <string name="tutorial">Tutorial&#8230;</string>
+    <string name="tutorial">Tutorial</string>
     <string name="information">Informações</string>
 
     <string name="bt_inactive">Bluetooth inativo</string>

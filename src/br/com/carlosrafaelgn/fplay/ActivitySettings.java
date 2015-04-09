@@ -81,7 +81,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtSpeed, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtSpeed, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -798,8 +798,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optKeepScreenOn.setOnClickListener(this);
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.theme), false, false, false);
 			optTheme.setOnClickListener(this);
-			optFlat = new SettingView(ctx, UI.ICON_THEME, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
+			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optFlat.setOnClickListener(this);
+			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);
+			optBorders.setOnClickListener(this);
 			optExpandSeekBar = new SettingView(ctx, UI.ICON_SEEKBAR, getText(R.string.expand_seek_bar).toString(), null, true, UI.expandSeekBar, false);
 			optExpandSeekBar.setOnClickListener(this);
 			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
@@ -876,6 +878,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optKeepScreenOn);
 			panelSettings.addView(optTheme);
 			panelSettings.addView(optFlat);
+			panelSettings.addView(optBorders);
 			panelSettings.addView(optExtraInfoMode);
 			panelSettings.addView(optForceOrientation);
 			panelSettings.addView(optTransition);
@@ -974,6 +977,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optKeepScreenOn = null;
 		optTheme = null;
 		optFlat = null;
+		optBorders = null;
 		optExpandSeekBar = null;
 		optVolumeControlType = null;
 		optDoNotAttenuateVolume = null;
@@ -1148,9 +1152,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			System.gc();
 		} else if (view == optFlat) {
 			UI.setFlat(optFlat.isChecked());
-			onCleanupLayout();
-			onCreateLayout(false);
+			//onCleanupLayout();
+			//onCreateLayout(false);
 			System.gc();
+		} else if (view == optBorders) {
+			UI.hasBorders = optBorders.isChecked();
 		} else if (view == optHandleCallKey) {
 			Player.handleCallKey = optHandleCallKey.isChecked();
 		} else if (view == optPlayWhenHeadsetPlugged) {

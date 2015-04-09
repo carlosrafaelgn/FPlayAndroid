@@ -68,7 +68,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public static int getViewHeight() {
 		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemsp + UI._14sp);
 		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
-		yForSecondary = ((usableHeight - (UI._LargeItemspBox + UI._2sp + UI._14spBox)) >> 1);
+		yForSecondary = ((usableHeight - (UI._LargeItemspBox + UI._8dp + UI._14spBox)) >> 1);
 		return height;
 	}
 
@@ -221,10 +221,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				icon = UI.ICON_ALBUMART;
 				break;
 			case FileSt.TYPE_ALBUM:
-			case FileSt.TYPE_ALBUM_ITEM:
 				trackCount = file.tracks;
 				if (trackCount >= 1)
 					secondaryTextWidth = UI.defaultControlContentsSize + (UI._8dp << 1) + UI._4dp + UI.measureText((secondaryText = ((trackCount == 1) ? trackStr : (Integer.toString(trackCount) + tracksStr))), UI._14sp);
+			case FileSt.TYPE_ALBUM_ITEM:
 				icon = UI.ICON_ALBUMART;
 				newAlbumArt = null;
 				if (UI.albumArt && albumArtFetcher != null && file.albumArt != null) {
@@ -359,7 +359,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, ((usableHeight - UI._LargeItemspBox) >> 1) + UI._LargeItemspYinBox);
 		} else {
 			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, yForSecondary + UI._LargeItemspYinBox);
-			UI.drawText(canvas, secondaryText, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth, yForSecondary + UI._LargeItemspBox + UI._14spYinBox + UI._2sp);
+			UI.drawText(canvas, secondaryText, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth, yForSecondary + UI._LargeItemspBox + UI._14spYinBox + UI._8dp);
 		}
 		super.dispatchDraw(canvas);
 	}

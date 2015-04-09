@@ -84,7 +84,7 @@
     <string name="up">Вверх</string>
     <string name="home">Домой</string>
     <string name="add_url_title">Добавить ссылку</string>
-    <string name="add_url">URL&#8230;</string>
+    <string name="add_url">Ссылка</string>
     <string name="url">Ссылка</string>
     <string name="description">Описание</string>
     <string name="favorite">Избранное</string>
@@ -114,7 +114,7 @@
     <string name="visualizer">Визуализатор</string>
     <string name="random_mode">Случайный режим</string>
     <string name="settings">Настройки</string>
-    <string name="about">О программе&#8230;</string>
+    <string name="about">О программе</string>
     <string name="exit">Выход</string>
     <string name="move">Переместить</string>
     <string name="remove">Удалить</string>
@@ -204,6 +204,7 @@
     <string name="highlight_background">Выделенный фон</string>
     <string name="icon">Иконка</string>
     <string name="border">Граница</string>
+    <string name="borders">Границы</string>
     <string name="divider">Разделитель</string>
     <string name="text">Текст</string>
     <string name="text_secondary">Текст (второстепенный)</string>
@@ -243,7 +244,7 @@
     <string name="opengl_error">OpenGL ошибке</string>
     <string name="opengl_not_supported">OpenGL ES 2.0 не поддерживается</string>
     <string name="speed">Скорость</string>
-    <string name="add_radio">Радио&#8230;</string>
+    <string name="add_radio">Радио</string>
     <string name="search">Искать</string>
     <string name="genre">Жанр</string>
     <string name="search_term">Критерии поиска</string>
@@ -277,7 +278,7 @@
     <string name="diffusion">Диффузия</string>
     <string name="msg_immersive">&#8634; Наведите устройство вокруг (будьте осторожны!)</string>
     <string name="msg_no_sensors">Извините, но устройство не имеет необходимых датчиков :(</string>
-    <string name="tutorial">Учебник&#8230;</string>
+    <string name="tutorial">Учебник</string>
     <string name="information">Информация</string>
 
     <string name="bt_inactive">Bluetooth inactive</string>

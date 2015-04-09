@@ -939,8 +939,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					UI.rect.right = scrollBarLeft + scrollBarWidth - UI._4dp;
 					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
 					if (tracking) {
-						UI.fillRect(canvas, UI.color_selected_pressed);
-						UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
+						UI.fillRect(canvas, UI.color_divider_pressed);
+						//UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
 					} else {
 						UI.fillRect(canvas, UI.color_divider);
 					}
