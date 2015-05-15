@@ -39,6 +39,7 @@
 #define MessageBins64 ((int)0x24)
 #define MessageBins128 ((int)0x25)
 #define MessageBins256 ((int)0x26)
+#define IgnoreInput ((int)0x80)
 
 #define DEFSPEED (0.140625f / 16.0f)
 
@@ -49,6 +50,7 @@
 extern const unsigned short COLORS[] __attribute__((aligned(16)));
 
 extern float floatBuffer[] __attribute__((aligned(16)));
+extern float previousM[] __attribute__((aligned(16)));
 #ifdef _MAY_HAVE_NEON_
 extern unsigned int neonMode, neonDone;
 extern int intBuffer[] __attribute__((aligned(16)));
@@ -57,5 +59,5 @@ extern int intBuffer[] __attribute__((aligned(16)));
 extern float commonCoefNew;
 extern unsigned int commonColorIndex, commonColorIndexApplied;
 
-extern void commonProcessNeon(signed char* bfft, int deltaMillis);
+extern void commonProcessNeon(signed char* bfft, int deltaMillis, int opt);
 //extern void processNeon(signed char* bfft, int deltaMillis);

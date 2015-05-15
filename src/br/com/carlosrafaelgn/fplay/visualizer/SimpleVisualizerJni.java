@@ -59,18 +59,19 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 
+	static final int IgnoreInput = 0x80;
 	static native void commonSetSpeed(int speed);
 	static native void commonSetColorIndex(int colorIndex);
 	static native int commonCheckNeonMode();
 	static native void commonUpdateMultiplier(boolean isVoice);
-	static native int commonProcess(byte[] bfft, int bt);
+	static native int commonProcess(byte[] waveform, int opt);
 
 	private static native void setLerp(boolean lerp);
 	private static native void init(int bgColor);
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
-	private static native void process(byte[] bfft, Surface surface);
-	private static native void processVoice(byte[] bfft, Surface surface);
+	private static native void process(byte[] waveform, Surface surface);
+	private static native void processVoice(byte[] waveform, Surface surface);
 
 	static native int glOnSurfaceCreated(int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess);
 	static native void glOnSurfaceChanged(int width, int height, int rotation, int dp1OrLess);
@@ -80,7 +81,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	static native void glSetImmersiveCfg(int diffusion, int riseSpeed);
 	static native void glReleaseView();
 
-	private byte[] bfft;
+	private byte[] waveform;
 	private final SlimLock lock;
 	private Point point;
 	private SurfaceHolder surfaceHolder;
@@ -90,7 +91,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	
 	public SimpleVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
-		bfft = new byte[2048];
+		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		init(UI.color_visualizer565);
 		lock = new SlimLock();
 		point = new Point();
@@ -232,8 +233,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
-	public int getDesiredPointCount() {
-		return 1024;
+	public boolean requiresSamples() {
+		return true;
 	}
 
 	//Runs on a SECONDARY thread
@@ -266,17 +267,20 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		if (!lock.lockLowPriority())
 			return;
 		try {
+
+			// TODO: Fix this and adapt both process and processVoice to work with waveforms
+
 			if (surface != null) {
 				//WE MUST NEVER call any method from visualizer
 				//while the player is not actually playing
 				if (!playing)
-					Arrays.fill(bfft, 0, 1024, (byte)0);
+					Arrays.fill(waveform, 0, 1024, (byte)0x80);
 				else
-					visualizer.getFft(bfft);
+					visualizer.getWaveForm(waveform);
 				if (!voice)
-					process(bfft, surface);
+					process(waveform, surface);
 				else
-					processVoice(bfft, surface);
+					processVoice(waveform, surface);
 			}
 		} finally {
 			lock.releaseLowPriority();
@@ -286,7 +290,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	//Runs on a SECONDARY thread
 	@Override
 	public void release() {
-		bfft = null;
+		waveform = null;
 		terminate();
 	}
 

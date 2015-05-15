@@ -41,7 +41,7 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 
 public interface Visualizer {
 	public static final String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
-	public static final int MAX_POINTS = 1024;
+	public static final int CAPTURE_SIZE = 1024;
 	public static final int MNU_VISUALIZER = 200;
 
 	//Runs on the MAIN thread
@@ -72,8 +72,8 @@ public interface Visualizer {
 	public boolean requiresHiddenControls();
 
 	//Runs on ANY thread (returned value MUST always be the same)
-	public int getDesiredPointCount();
-	
+	public boolean requiresSamples();
+
 	//Runs on a SECONDARY thread
 	public void load(Context context);
 	

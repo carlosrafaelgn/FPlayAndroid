@@ -369,7 +369,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		final boolean visualizerRequiresThread;
 		if (visualizer != null) {
 			visualizerRequiresHiddenControls = visualizer.requiresHiddenControls();
-			visualizerRequiresThread = (visualizer.getDesiredPointCount() > 0);
+			visualizerRequiresThread = visualizer.requiresSamples();
 		} else {
 			visualizerRequiresHiddenControls = false;
 			visualizerRequiresThread = false;

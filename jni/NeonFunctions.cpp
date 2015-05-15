@@ -35,146 +35,210 @@
 
 #include "CommonNeon.h"
 
-void commonProcessNeon(signed char* bfft, int deltaMillis) {
+void commonProcessNeon(signed char* bfft, int deltaMillis, int opt) {
 	float* fft = floatBuffer;
 	const float* multiplier = floatBuffer + 256;
 	unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
+	float* localPreviousM = previousM;
 
 	const float coefNew = commonCoefNew * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 
-	int* tmpBuffer = intBuffer;
-	for (int i = 0; i < 256; i += 8) {
-		//bfft[i] stores values from 0 to -128/127 (inclusive)
-		tmpBuffer[0] = ((int*)bfft)[0];
-		tmpBuffer[1] = ((int*)bfft)[1];
-		tmpBuffer[2] = ((int*)bfft)[2];
-		tmpBuffer[3] = ((int*)bfft)[3];
-		asm volatile (
-			//q6 = multiplier
-			"vld1.32 {d12, d13}, [%[multiplier]]!\n"
+	if ((opt & IgnoreInput)) {
+		for (int i = 0; i < 256; i += 8) {
+			asm volatile (
+				"vld1.32 {d0, d1}, [%[localPreviousM]]!\n" //q0 = previousM
+				"vld1.32 {d2, d3}, [%[localPreviousM]]!\n" //q1 = previousM
 
-			//d0 = re re re re re re re re
-			//d1 = im im im im im im im im
-			"vld2.8 {d0, d1}, [%[tmpBuffer]]\n"
+				"ldr r6, %[coefNew]\n"
+				"vdupq.32 q4, r6\n" //q4 = coefNew
 
-			"vmovl.s8 q1, d1\n" //q1 (d2,d3) = im im im im im im im im (int16)
-			"vmovl.s8 q0, d0\n" //q0 (d0,d1) = re re re re re re re re (int16)
+				"ldr r6, %[coefOld]\n"
+				"vdupq.32 q5, r6\n" //q5 = coefOld
 
-			"vmovl.s16 q3, d3\n" //q3 = im im im im (int32)
-			"vmovl.s16 q2, d2\n" //q2 = im im im im (int32)
-			"vmovl.s16 q1, d1\n" //q1 = re re re re (int32)
-			"vmovl.s16 q0, d0\n" //q0 = re re re re (int32)
+				"vld1.32 {d12, d13}, [%[fft]]\n" //q6 = fft (old)
+				"adds %[fft], #16\n"
+				"vld1.32 {d14, d15}, [%[fft]]\n" //q7 = fft (old)
+				"subs %[fft], #16\n"
 
-			"vmul.i32 q0, q0, q0\n" //q0 = re * re
-			"vmul.i32 q1, q1, q1\n" //q1 = re * re
+				"vcgeq.f32 q2, q0, q6\n" //q2 = (m >= old) (q0 >= q6)
+				"vcgeq.f32 q3, q1, q7\n" //q3 = (m >= old) (q1 >= q7)
 
-			"vmla.i32 q0, q2, q2\n" //q0 = q0 + (im * im)
-			"vmla.i32 q1, q3, q3\n" //q1 = q1 + (im * im)
+				"vmulq.f32 q6, q5, q6\n" //q6 = (coefOld * old)
+				"vmulq.f32 q7, q5, q7\n" //q7 = (coefOld * old)
 
-			"movs r6, #8\n"
-			"vdupq.32 q3, r6\n" //q3 = 8
+				"vmla.f32 q6, q4, q0\n" //q6 = q6 + (coefNew * m)
+				"vmla.f32 q7, q4, q1\n" //q7 = q7 + (coefNew * m)
 
-			"vcgeq.s32 q4, q0, q3\n" //q4 = (q0 >= 8)
-			"vcgeq.s32 q5, q1, q3\n" //q5 = (q1 >= 8)
+				//if q2 = 1, use q0, otherwise, use q6
+				"vandq q0, q0, q2\n"
+				"vmvn q2, q2\n" //q2 = ~q2
+				"vandq q6, q6, q2\n"
+				"vorrq q0, q0, q6\n"
 
-			"vcvt.f32.s32 q0, q0\n" //q0 = (float)q0
-			"vcvt.f32.s32 q1, q1\n" //q1 = (float)q1
+				//if q3 = 1, use q1, otherwise, use q7
+				"vandq q1, q1, q3\n"
+				"vmvn q3, q3\n" //q3 = ~q3
+				"vandq q7, q7, q3\n"
+				"vorrq q1, q1, q7\n"
 
-			//inspired by:
-			//https://code.google.com/p/math-neon/source/browse/trunk/math_sqrtfv.c?r=25
-			//http://www.mikusite.de/pages/vfp_neon.htm
+				"vst1.32 {d0, d1}, [%[fft]]!\n" //fft = q0 (q0 is m)
+				"vst1.32 {d2, d3}, [%[fft]]!\n" //fft = q1 (q1 is m)
 
-			//compute the sqrt of q0 (the more steps, the more precision!)
-			"vrsqrteq.f32 q3, q0\n" //q3 = ~1/sqrt(q0)
+				"vcvt.u32.f32 q0, q0\n" //q0 = (unsigned int)q0
+				"vcvt.u32.f32 q1, q1\n" //q1 = (unsigned int)q1
 
-			"vmulq.f32 q2, q3, q0\n"
-			"vrsqrtsq.f32 q2, q2, q3\n"
-			"vmulq.f32 q3, q3, q2\n"
+				"vshrq.u32 q0, q0, #7\n" //q0 = q0 >> 7
+				"vshrq.u32 q1, q1, #7\n" //q1 = q1 >> 7
 
-			"vmulq.f32 q2, q3, q0\n"
-			"vrsqrtsq.f32 q2, q2, q3\n"
-			"vmulq.f32 q3, q3, q2\n"
+				"vqmovn.u32 d4, q0\n" //d4 = (unsigned short)q0 [with saturation]
+				"vqmovn.u32 d5, q1\n" //d5 = (unsigned short)q1 [with saturation]
 
-			"vmulq.f32 q2, q3, q0\n"
-			"vrsqrtsq.f32 q2, q2, q3\n"
-			"vmulq.f32 q3, q3, q2\n"
+				"vqmovn.u16 d0, q2\n" //d0 = (unsigned char)q2 [with saturation]
 
-			"vmulq.f32 q0, q0, q3\n" //q0 = q0 * 1/sqrt(q0) :)
-			"vandq q0, q0, q4\n" //q0 = q0 & q4 (remove NaN's, as 1/0 = Infinity, and x * Infinity = NaN)
-			"vmulq.f32 q0, q0, q6\n"
+				"vst1.8 {d0}, [%[processedData]]!\n"
 
-			//compute the sqrt of q1 (the more steps, the more precision!)
-			"vrsqrteq.f32 q3, q1\n" //q3 = ~1/sqrt(q0)
+			: [processedData] "+r" (processedData), [fft] "+r" (fft), [localPreviousM] "+r" (localPreviousM)
+			: [coefNew] "m" (coefNew), [coefOld] "m" (coefOld)
+			: "cc", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+		}
+	} else {
+		int* tmpBuffer = intBuffer;
+		for (int i = 0; i < 256; i += 8) {
+			//bfft[i] stores values from 0 to -128/127 (inclusive)
+			tmpBuffer[0] = ((int*)bfft)[0];
+			tmpBuffer[1] = ((int*)bfft)[1];
+			tmpBuffer[2] = ((int*)bfft)[2];
+			tmpBuffer[3] = ((int*)bfft)[3];
+			asm volatile (
+				//q6 = multiplier
+				"vld1.32 {d12, d13}, [%[multiplier]]!\n"
 
-			"vmulq.f32 q2, q3, q1\n"
-			"vrsqrtsq.f32 q2, q2, q3\n"
-			"vmulq.f32 q3, q3, q2\n"
+				//d0 = re re re re re re re re
+				//d1 = im im im im im im im im
+				"vld2.8 {d0, d1}, [%[tmpBuffer]]\n"
 
-			"vmulq.f32 q2, q3, q1\n"
-			"vrsqrtsq.f32 q2, q2, q3\n"
-			"vmulq.f32 q3, q3, q2\n"
+				"vmovl.s8 q1, d1\n" //q1 (d2,d3) = im im im im im im im im (int16)
+				"vmovl.s8 q0, d0\n" //q0 (d0,d1) = re re re re re re re re (int16)
 
-			"vmulq.f32 q2, q3, q1\n"
-			"vrsqrtsq.f32 q2, q2, q3\n"
-			"vmulq.f32 q3, q3, q2\n"
+				"vmovl.s16 q3, d3\n" //q3 = im im im im (int32)
+				"vmovl.s16 q2, d2\n" //q2 = im im im im (int32)
+				"vmovl.s16 q1, d1\n" //q1 = re re re re (int32)
+				"vmovl.s16 q0, d0\n" //q0 = re re re re (int32)
 
-			"vmulq.f32 q1, q1, q3\n" //q1 = q1 * 1/sqrt(q1) :)
-			"vandq q1, q1, q5\n" //q1 = q1 & q5 (remove NaN's, as 1/0 = Infinity, and x * Infinity = NaN)
-			"vmulq.f32 q1, q1, q6\n"
+				"vmul.i32 q0, q0, q0\n" //q0 = re * re
+				"vmul.i32 q1, q1, q1\n" //q1 = re * re
 
-			"ldr r6, %[coefNew]\n"
-			"vdupq.32 q4, r6\n" //q4 = coefNew
+				"vmla.i32 q0, q2, q2\n" //q0 = q0 + (im * im)
+				"vmla.i32 q1, q3, q3\n" //q1 = q1 + (im * im)
 
-			"ldr r6, %[coefOld]\n"
-			"vdupq.32 q5, r6\n" //q5 = coefOld
+				"movs r6, #8\n"
+				"vdupq.32 q3, r6\n" //q3 = 8
 
-			"vld1.32 {d12, d13}, [%[fft]]\n" //q6 = fft (old)
-			"adds %[fft], #16\n"
-			"vld1.32 {d14, d15}, [%[fft]]\n" //q7 = fft (old)
-			"subs %[fft], #16\n"
+				"vcgeq.s32 q4, q0, q3\n" //q4 = (q0 >= 8)
+				"vcgeq.s32 q5, q1, q3\n" //q5 = (q1 >= 8)
 
-			"vcgeq.f32 q2, q0, q6\n" //q2 = (m >= old) (q0 >= q6)
-			"vcgeq.f32 q3, q1, q7\n" //q3 = (m >= old) (q1 >= q7)
+				"vcvt.f32.s32 q0, q0\n" //q0 = (float)q0
+				"vcvt.f32.s32 q1, q1\n" //q1 = (float)q1
 
-			"vmulq.f32 q6, q5, q6\n" //q6 = (coefOld * old)
-			"vmulq.f32 q7, q5, q7\n" //q7 = (coefOld * old)
+				//inspired by:
+				//https://code.google.com/p/math-neon/source/browse/trunk/math_sqrtfv.c?r=25
+				//http://www.mikusite.de/pages/vfp_neon.htm
 
-			"vmla.f32 q6, q4, q0\n" //q6 = q6 + (coefNew * m)
-			"vmla.f32 q7, q4, q1\n" //q7 = q7 + (coefNew * m)
+				//compute the sqrt of q0 (the more steps, the more precision!)
+				"vrsqrteq.f32 q3, q0\n" //q3 = ~1/sqrt(q0)
 
-			//if q2 = 1, use q0, otherwise, use q6
-			"vandq q0, q0, q2\n"
-			"vmvn q2, q2\n" //q2 = ~q2
-			"vandq q6, q6, q2\n"
-			"vorrq q0, q0, q6\n"
+				"vmulq.f32 q2, q3, q0\n"
+				"vrsqrtsq.f32 q2, q2, q3\n"
+				"vmulq.f32 q3, q3, q2\n"
 
-			//if q3 = 1, use q1, otherwise, use q7
-			"vandq q1, q1, q3\n"
-			"vmvn q3, q3\n" //q3 = ~q3
-			"vandq q7, q7, q3\n"
-			"vorrq q1, q1, q7\n"
+				"vmulq.f32 q2, q3, q0\n"
+				"vrsqrtsq.f32 q2, q2, q3\n"
+				"vmulq.f32 q3, q3, q2\n"
 
-			"vst1.32 {d0, d1}, [%[fft]]!\n"
-			"vst1.32 {d2, d3}, [%[fft]]!\n"
+				"vmulq.f32 q2, q3, q0\n"
+				"vrsqrtsq.f32 q2, q2, q3\n"
+				"vmulq.f32 q3, q3, q2\n"
 
-			"vcvt.u32.f32 q0, q0\n" //q0 = (unsigned int)q0
-			"vcvt.u32.f32 q1, q1\n" //q1 = (unsigned int)q1
+				"vmulq.f32 q0, q0, q3\n" //q0 = q0 * 1/sqrt(q0) :)
+				"vandq q0, q0, q4\n" //q0 = q0 & q4 (remove NaN's, as 1/0 = Infinity, and x * Infinity = NaN)
+				"vmulq.f32 q0, q0, q6\n"
 
-			"vshrq.u32 q0, q0, #7\n" //q0 = q0 >> 7
-			"vshrq.u32 q1, q1, #7\n" //q1 = q1 >> 7
+				//compute the sqrt of q1 (the more steps, the more precision!)
+				"vrsqrteq.f32 q3, q1\n" //q3 = ~1/sqrt(q0)
 
-			"vqmovn.u32 d4, q0\n" //d4 = (unsigned short)q0 [with saturation]
-			"vqmovn.u32 d5, q1\n" //d5 = (unsigned short)q1 [with saturation]
+				"vmulq.f32 q2, q3, q1\n"
+				"vrsqrtsq.f32 q2, q2, q3\n"
+				"vmulq.f32 q3, q3, q2\n"
 
-			"vqmovn.u16 d0, q2\n" //d0 = (unsigned char)q2 [with saturation]
+				"vmulq.f32 q2, q3, q1\n"
+				"vrsqrtsq.f32 q2, q2, q3\n"
+				"vmulq.f32 q3, q3, q2\n"
 
-			"vst1.8 {d0}, [%[processedData]]!\n"
+				"vmulq.f32 q2, q3, q1\n"
+				"vrsqrtsq.f32 q2, q2, q3\n"
+				"vmulq.f32 q3, q3, q2\n"
 
-		: [multiplier] "+r" (multiplier), [processedData] "+r" (processedData), [fft] "+r" (fft)
-		: [tmpBuffer] "r" (tmpBuffer), [coefNew] "m" (coefNew), [coefOld] "m" (coefOld)
-		: "cc", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
-		bfft += 16;
+				"vmulq.f32 q1, q1, q3\n" //q1 = q1 * 1/sqrt(q1) :)
+				"vandq q1, q1, q5\n" //q1 = q1 & q5 (remove NaN's, as 1/0 = Infinity, and x * Infinity = NaN)
+				"vmulq.f32 q1, q1, q6\n"
+
+				"vst1.32 {d0, d1}, [%[localPreviousM]]!\n" //previousM = q0 (q0 is m)
+				"vst1.32 {d2, d3}, [%[localPreviousM]]!\n" //previousM = q1 (q1 is m)
+
+				"ldr r6, %[coefNew]\n"
+				"vdupq.32 q4, r6\n" //q4 = coefNew
+
+				"ldr r6, %[coefOld]\n"
+				"vdupq.32 q5, r6\n" //q5 = coefOld
+
+				"vld1.32 {d12, d13}, [%[fft]]\n" //q6 = fft (old)
+				"adds %[fft], #16\n"
+				"vld1.32 {d14, d15}, [%[fft]]\n" //q7 = fft (old)
+				"subs %[fft], #16\n"
+
+				"vcgeq.f32 q2, q0, q6\n" //q2 = (m >= old) (q0 >= q6)
+				"vcgeq.f32 q3, q1, q7\n" //q3 = (m >= old) (q1 >= q7)
+
+				"vmulq.f32 q6, q5, q6\n" //q6 = (coefOld * old)
+				"vmulq.f32 q7, q5, q7\n" //q7 = (coefOld * old)
+
+				"vmla.f32 q6, q4, q0\n" //q6 = q6 + (coefNew * m)
+				"vmla.f32 q7, q4, q1\n" //q7 = q7 + (coefNew * m)
+
+				//if q2 = 1, use q0, otherwise, use q6
+				"vandq q0, q0, q2\n"
+				"vmvn q2, q2\n" //q2 = ~q2
+				"vandq q6, q6, q2\n"
+				"vorrq q0, q0, q6\n"
+
+				//if q3 = 1, use q1, otherwise, use q7
+				"vandq q1, q1, q3\n"
+				"vmvn q3, q3\n" //q3 = ~q3
+				"vandq q7, q7, q3\n"
+				"vorrq q1, q1, q7\n"
+
+				"vst1.32 {d0, d1}, [%[fft]]!\n" //fft = q0 (q0 is m)
+				"vst1.32 {d2, d3}, [%[fft]]!\n" //fft = q1 (q1 is m)
+
+				"vcvt.u32.f32 q0, q0\n" //q0 = (unsigned int)q0
+				"vcvt.u32.f32 q1, q1\n" //q1 = (unsigned int)q1
+
+				"vshrq.u32 q0, q0, #7\n" //q0 = q0 >> 7
+				"vshrq.u32 q1, q1, #7\n" //q1 = q1 >> 7
+
+				"vqmovn.u32 d4, q0\n" //d4 = (unsigned short)q0 [with saturation]
+				"vqmovn.u32 d5, q1\n" //d5 = (unsigned short)q1 [with saturation]
+
+				"vqmovn.u16 d0, q2\n" //d0 = (unsigned char)q2 [with saturation]
+
+				"vst1.8 {d0}, [%[processedData]]!\n"
+
+			: [multiplier] "+r" (multiplier), [processedData] "+r" (processedData), [fft] "+r" (fft), [localPreviousM] "+r" (localPreviousM)
+			: [tmpBuffer] "r" (tmpBuffer), [coefNew] "m" (coefNew), [coefOld] "m" (coefOld)
+			: "cc", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+			bfft += 16;
+		}
 	}
 }
 /*

@@ -98,12 +98,12 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public static final int TYPE_IMMERSIVE_PARTICLE = 4;
 
 	private final int type;
-	private byte[] bfft;
+	private byte[] waveform;
 	private volatile boolean supported, alerted, okToRender, imageChoosenAtLeastOnce;
 	private volatile int error;
 	private volatile Uri selectedUri;
 	private boolean browsing;
-	private int colorIndex, speed, viewWidth, viewHeight, diffusion, riseSpeed;
+	private int colorIndex, speed, viewWidth, viewHeight, diffusion, riseSpeed, ignoreInput;
 	private EGLConfig config;
 	private Activity activity;
 	private SensorManager sensorManager;
@@ -114,7 +114,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		super(context);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
 		type = ((t < TYPE_LIQUID || t > TYPE_IMMERSIVE_PARTICLE) ? TYPE_SPECTRUM : t);
-		bfft = new byte[2048];
+		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		setClickable(true);
 		setFocusableInTouchMode(false);
 		setFocusable(false);
@@ -122,6 +122,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE) ? 0 : 2);
 		diffusion = 1;
 		riseSpeed = 1;
+		ignoreInput = 0;
 		this.activity = activity;
 
 		//initialize these with default values to be used in
@@ -755,8 +756,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
-	public int getDesiredPointCount() {
-		return 1024;
+	public boolean requiresSamples() {
+		return true;
 	}
 	
 	//Runs on a SECONDARY thread (B)
@@ -785,13 +786,18 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing) {
 		if (okToRender) {
-			//WE MUST NEVER call any method from visualizer
-			//while the player is not actually playing
-			if (!playing)
-				Arrays.fill(bfft, 0, 1024, (byte)0);
-			else
-				visualizer.getFft(bfft);
-			SimpleVisualizerJni.commonProcess(bfft, 0);
+			//We use ignoreInput, because sampling 1024, 60 times a seconds,
+			//is useless, as there are only 44100 or 48000 samples in one second
+			if (ignoreInput == 0) {
+				//WE MUST NEVER call any method from visualizer
+				//while the player is not actually playing
+				if (!playing)
+					Arrays.fill(waveform, 0, 1024, (byte)0x80);
+				else
+					visualizer.getWaveForm(waveform);
+			}
+			SimpleVisualizerJni.commonProcess(waveform, ignoreInput);
+			ignoreInput ^= SimpleVisualizerJni.IgnoreInput;
 			//requestRender();
 		}
 	}
@@ -799,7 +805,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread (B)
 	@Override
 	public void release() {
-		bfft = null;
+		waveform = null;
 	}
 
 	//Runs on the MAIN thread (AFTER Visualizer.release())

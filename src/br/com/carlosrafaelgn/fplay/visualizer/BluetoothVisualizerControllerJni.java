@@ -95,21 +95,22 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	private static final int PayloadPlayerStateFlagLoading = 0x02;
 
 	private FxVisualizer fxVisualizer;
-	private byte[] bfft;
+	private byte[] waveform;
 	private final SlimLock lock;
 	private final AtomicInteger state;
 	private BluetoothConnectionManager bt;
-	private volatile int size, packagesSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength;
+	private volatile int size, packetsSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength;
 	private volatile boolean connected, transmitting;
 	private boolean jniCalled, startTransmissionOnConnection;
-	private int lastPlayerCommandTime;
+	private int lastPlayerCommandTime, ignoreInput;
 
 	public BluetoothVisualizerControllerJni(ActivityHost activity, boolean startTransmissionOnConnection) {
-		bfft = new byte[1024];
+		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		lock = new SlimLock();
 		state = new AtomicInteger();
 		this.startTransmissionOnConnection = startTransmissionOnConnection;
 		lastPlayerCommandTime = (int)SystemClock.uptimeMillis();
+		ignoreInput = 0;
 		Player.bluetoothVisualizerLastErrorMessage = 0;
 		Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING;
 		bt = new BluetoothConnectionManager(this);
@@ -120,8 +121,8 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 			BackgroundActivityMonitor.start(activity);
 	}
 
-	public int getPackagesSent() {
-		return packagesSent;
+	public int getPacketsSent() {
+		return packetsSent;
 	}
 
 	public void syncSize() {
@@ -183,14 +184,14 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	}
 
 	public void destroy() {
-		if (bfft != null) {
+		if (waveform != null) {
 			version++;
 			connected = false;
 			transmitting = false;
 			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_INITIAL;
 			lock.lockHighPriority();
 			try {
-				bfft = null;
+				waveform = null;
 				if (bt != null) {
 					bt.destroy();
 					bt = null;
@@ -255,8 +256,8 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
-	public int getDesiredPointCount() {
-		return 1024;
+	public boolean requiresSamples() {
+		return true;
 	}
 
 	//Runs on a SECONDARY thread
@@ -288,43 +289,49 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 			return;
 		try {
 			if (transmitting) {
-				if (framesToSkip <= 0) {
-					framesToSkip = framesToSkipOriginal;
+				//We use ignoreInput, because sampling 1024, 60 times a seconds,
+				//is useless, as there are only 44100 or 48000 samples in one second
+				if (ignoreInput == 0) {
 					//WE MUST NEVER call any method from visualizer
 					//while the player is not actually playing
 					if (!playing)
-						Arrays.fill(bfft, 0, 1024, (byte)0);
+						Arrays.fill(waveform, 0, 1024, (byte)0x80);
 					else
-						visualizer.getFft(bfft);
-					bt.getOutputStream().write(bfft, 0, SimpleVisualizerJni.commonProcess(bfft, size));
-					packagesSent++;
+						visualizer.getWaveForm(waveform);
+				}
+				if (framesToSkip <= 0) {
+					framesToSkip = framesToSkipOriginal;
+					bt.getOutputStream().write(waveform, 0, SimpleVisualizerJni.commonProcess(waveform, size | ignoreInput));
+					packetsSent++;
 				} else {
+					SimpleVisualizerJni.commonProcess(waveform, ignoreInput);
 					framesToSkip--;
 				}
+				ignoreInput ^= SimpleVisualizerJni.IgnoreInput;
 			}
 			int stateI = state.getAndSet(0);
 			if (stateI != 0) {
 				//Build and send a Player state message
-				bfft[0] = StartOfHeading;
-				bfft[1] = (byte)MessagePlayerState;
-				bfft[3] = 0;
+				waveform[0] = StartOfHeading;
+				waveform[1] = (byte)MessagePlayerState;
+				waveform[3] = 0;
 				int len = 0;
-				len = writeByte(bfft, len, stateI & 3);
-				len = writeByte(bfft, len, stateVolume);
+				len = writeByte(waveform, len, stateI & 3);
+				len = writeByte(waveform, len, stateVolume);
 				stateI = stateSongPosition;
-				len = writeByte(bfft, len, stateI);
-				len = writeByte(bfft, len, stateI >> 8);
-				len = writeByte(bfft, len, stateI >> 16);
-				len = writeByte(bfft, len, stateI >> 24);
+				len = writeByte(waveform, len, stateI);
+				len = writeByte(waveform, len, stateI >> 8);
+				len = writeByte(waveform, len, stateI >> 16);
+				len = writeByte(waveform, len, stateI >> 24);
 				stateI = stateSongLength;
-				len = writeByte(bfft, len, stateI);
-				len = writeByte(bfft, len, stateI >> 8);
-				len = writeByte(bfft, len, stateI >> 16);
-				len = writeByte(bfft, len, stateI >> 24);
-				bfft[2] = (byte)(len << 1);
-				bfft[4 + len] = EndOfTransmission;
-				bt.getOutputStream().write(bfft, 0, len + 5);
-				packagesSent++;
+				len = writeByte(waveform, len, stateI);
+				len = writeByte(waveform, len, stateI >> 8);
+				len = writeByte(waveform, len, stateI >> 16);
+				len = writeByte(waveform, len, stateI >> 24);
+				waveform[2] = (byte)(len << 1);
+				waveform[4 + len] = EndOfTransmission;
+				bt.getOutputStream().write(waveform, 0, len + 5);
+				packetsSent++;
 			}
 		} catch (IOException ex) {
 			//Bluetooth error
@@ -362,7 +369,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	@Override
 	public void onBluetoothConnected(BluetoothConnectionManager manager) {
 		if (fxVisualizer == null && bt != null && Player.state == Player.STATE_INITIALIZED) {
-			packagesSent = 0;
+			packetsSent = 0;
 			version++;
 			connected = true;
 			transmitting = false;

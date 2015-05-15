@@ -49,7 +49,6 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 	private Visualizer visualizer;
 	private FxVisualizerHandler handler;
 	private android.media.audiofx.Visualizer fxVisualizer;
-	private final int desiredPointCount;
 	private volatile boolean alive, paused, reset, playing, failed, visualizerReady;
 	private int audioSessionId;
 	private Timer timer;
@@ -58,7 +57,6 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 		this.contextForVisualizerLoading = contextForVisualizerLoading;
 		this.visualizer = visualizer;
 		this.handler = handler;
-		desiredPointCount = visualizer.getDesiredPointCount();
 		audioSessionId = -1;
 		alive = true;
 		reset = true;
@@ -139,7 +137,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 		}
 		if (fxVisualizer != null) {
 			try {
-				fxVisualizer.setCaptureSize(desiredPointCount);
+				fxVisualizer.setCaptureSize(Visualizer.CAPTURE_SIZE);
 				fxVisualizer.setEnabled(true);
 			} catch (Throwable ex) {
 				failed = true;

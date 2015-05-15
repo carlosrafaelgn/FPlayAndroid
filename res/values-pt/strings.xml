@@ -284,7 +284,7 @@
     <string name="bt_inactive">Bluetooth inativo</string>
     <string name="bt_active">Bluetooth ativo&#8230;</string>
     <string name="bt_error">Erro no Bluetooth!</string>
-    <string name="bt_packages_sent">Mensagens enviadas:</string>
+    <string name="bt_packets_sent">Mensagens enviadas:</string>
     <string name="bt_fps">Mensagens por segundo:</string>
     <string name="bt_sample_count">Bins por mensagem:</string>
     <string name="bt_connect">Conectar a um dispositivo Bluetooth&#8230;</string>

@@ -160,8 +160,8 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
-	public int getDesiredPointCount() {
-		return 0;
+	public boolean requiresSamples() {
+		return false;
 	}
 
 	//Runs on a SECONDARY thread

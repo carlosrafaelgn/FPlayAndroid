@@ -664,7 +664,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				}
 			} else {
 				btMessageText = 0;
-				optBtMessage.setText(getText(R.string.bt_packages_sent).toString() + " " + ((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).getPackagesSent());
+				optBtMessage.setText(getText(R.string.bt_packets_sent).toString() + " " + ((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).getPacketsSent());
 			}
 		} else {
 			if (btErrorMessage != 0) {
