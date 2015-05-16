@@ -40,6 +40,7 @@
 #define MessageBins128 ((int)0x25)
 #define MessageBins256 ((int)0x26)
 #define IgnoreInput ((int)0x80)
+#define ComputeVUMeter ((int)0x100)
 
 #define DEFSPEED (0.140625f / 16.0f)
 

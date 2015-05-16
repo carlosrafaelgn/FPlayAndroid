@@ -103,9 +103,36 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void setScalingMode() {
-		fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
-		fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
+	private void setScalingModeFFT() {
+		try {
+			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
+			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
+		} catch (Throwable ex) {
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	private void setScalingModeVUMeter() {
+		try {
+			//unfortunately, when SCALING_MODE_NORMALIZED is used, Android normalizes the samples
+			//making data better for FFT, and , on the other hand, making it very hard to detect
+			//changes in the actual volume! :(
+
+			//setMeasurementMode exists only from API 19+, and could be a workaround....
+			//https://android.googlesource.com/platform/frameworks/av/+/master/media/libeffects/visualizer/EffectVisualizer.cpp
+			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
+			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
+		} catch (Throwable ex) {
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private void disableRms() {
+		try {
+			//see comments above...
+			fxVisualizer.setMeasurementMode(android.media.audiofx.Visualizer.MEASUREMENT_MODE_NONE);
+		} catch (Throwable ex) {
+		}
 	}
 
 	private boolean initialize() {
@@ -147,11 +174,11 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 			}
 		}
 		if (fxVisualizer != null) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-				try {
-					setScalingMode();
-				} catch (Throwable ex) {
-				}
+			if (visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+				if ((visualizer.dataTypeRequired() & Visualizer.DATA_VUMETER) != 0)
+					setScalingModeVUMeter();
+				else
+					setScalingModeFFT();
 			}
 			return true;
 		}

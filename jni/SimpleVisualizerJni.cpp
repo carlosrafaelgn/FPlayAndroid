@@ -134,7 +134,7 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft((unsigned char*)bfft);
+		doFft((unsigned char*)bfft, 0);
 
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		bfft[1] = 0;
@@ -375,7 +375,7 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 		ANativeWindow_release(wnd);
 		return;
 	}
-	doFft((unsigned char*)bfft);
+	doFft((unsigned char*)bfft, 0);
 
 	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 	bfft[1] = 0;
@@ -429,6 +429,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
 	commonCoefNew = 0.0f;
+	rootMeanSquare = 0;
+	lastRootMeanSquare = 0;
+	vuMeter = 0;
 #ifdef _MAY_HAVE_NEON_
 	neonMode = 0;
 	neonDone = 0;

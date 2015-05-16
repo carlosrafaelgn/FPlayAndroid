@@ -756,8 +756,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
-	public boolean requiresSamples() {
-		return true;
+	public int dataTypeRequired() {
+		return DATA_FFT;
 	}
 	
 	//Runs on a SECONDARY thread (B)

@@ -60,6 +60,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	}
 
 	static final int IgnoreInput = 0x80;
+	static final int ComputeVUMeter = 0x100;
 	static native void commonSetSpeed(int speed);
 	static native void commonSetColorIndex(int colorIndex);
 	static native int commonCheckNeonMode();
@@ -234,8 +235,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
-	public boolean requiresSamples() {
-		return true;
+	public int dataTypeRequired() {
+		return DATA_FFT;
 	}
 
 	//Runs on a SECONDARY thread

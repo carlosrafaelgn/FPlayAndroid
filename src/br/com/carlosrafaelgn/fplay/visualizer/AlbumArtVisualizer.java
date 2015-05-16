@@ -160,8 +160,8 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
-	public boolean requiresSamples() {
-		return false;
+	public int dataTypeRequired() {
+		return DATA_NONE;
 	}
 
 	//Runs on a SECONDARY thread
