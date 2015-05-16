@@ -70,7 +70,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private static native void init(int bgColor);
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
-	private static native void process(byte[] waveform, Surface surface);
+	private static native void process(byte[] waveform, Surface surface, int opt);
 	private static native void processVoice(byte[] waveform, Surface surface);
 
 	static native int glOnSurfaceCreated(int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess);
@@ -85,7 +85,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private final SlimLock lock;
 	private Point point;
 	private SurfaceHolder surfaceHolder;
-	private int state, colorIndex;
+	private int state, colorIndex, ignoreInput;
 	private boolean lerp, voice;
 	private Surface surface;
 	
@@ -102,6 +102,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		surfaceHolder.addCallback(this);
 		state = 0;
 		colorIndex = 0;
+		ignoreInput = 0;
 		lerp = false;
 		voice = false;
 		setLerp(lerp);
@@ -267,20 +268,29 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		if (!lock.lockLowPriority())
 			return;
 		try {
-
-			// TODO: Fix this and adapt both process and processVoice to work with waveforms
-
 			if (surface != null) {
-				//WE MUST NEVER call any method from visualizer
-				//while the player is not actually playing
-				if (!playing)
-					Arrays.fill(waveform, 0, 1024, (byte)0x80);
-				else
-					visualizer.getWaveForm(waveform);
-				if (!voice)
-					process(waveform, surface);
-				else
+				if (!voice) {
+					//We use ignoreInput, because sampling 1024, 60 times a seconds,
+					//is useless, as there are only 44100 or 48000 samples in one second
+					if (ignoreInput == 0) {
+						//WE MUST NEVER call any method from visualizer
+						//while the player is not actually playing
+						if (!playing)
+							Arrays.fill(waveform, 0, 1024, (byte)0x80);
+						else
+							visualizer.getWaveForm(waveform);
+					}
+					process(waveform, surface, ignoreInput);
+					ignoreInput ^= SimpleVisualizerJni.IgnoreInput;
+				} else {
+					//WE MUST NEVER call any method from visualizer
+					//while the player is not actually playing
+					if (!playing)
+						Arrays.fill(waveform, 0, 1024, (byte)0x80);
+					else
+						visualizer.getWaveForm(waveform);
 					processVoice(waveform, surface);
+				}
 			}
 		} finally {
 			lock.releaseLowPriority();

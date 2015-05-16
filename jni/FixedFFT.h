@@ -115,19 +115,16 @@ int32_t doFft(uint8_t *inWaveform_outFft) {
 	int32_t i, summedAbsSamples = 0, workspace[CAPTURE_SIZE >> 1];
 
 	for (i = 0; i < CAPTURE_SIZE; i += 2) {
-		const uint8_t s0 = inWaveform_outFft[i] ^ 0x80;
-		const uint8_t s1 = inWaveform_outFft[i + 1] ^ 0x80;
-
 		//Hacker's Delight: abs(x) :)
-		int32_t x = (int32_t)((int8_t)s0);
-		int32_t y = x >> 7;
-		summedAbsSamples += ((x + y) ^ y);
+		const int32_t x0 = (int32_t)((int8_t)(inWaveform_outFft[i] ^ 0x80));
+		int32_t y = x0 >> 7;
+		summedAbsSamples += ((x0 + y) ^ y);
 
-		x = (int32_t)((int8_t)s1);
-		y = x >> 7;
-		summedAbsSamples += ((x + y) ^ y);
+		const int32_t x1 = (int32_t)((int8_t)(inWaveform_outFft[i + 1] ^ 0x80));
+		y = x1 >> 7;
+		summedAbsSamples += ((x1 + y) ^ y);
 
-		workspace[i >> 1] = ((uint32_t)s0 << 24) | ((uint32_t)s1 << 8);
+		workspace[i >> 1] = (x0 << 24) | ((x1 << 8) & 0xFFFF);
 	}
 
 	//********************
@@ -192,7 +189,8 @@ int32_t doFft(uint8_t *inWaveform_outFft) {
 	//END fixed_fft_real
 	//********************
 
-	for (i = 0; i < CAPTURE_SIZE; i += 2) {
+	//we do not need to process the last half, as commonProcess() will not use it! ;)
+	for (i = 0; i < (CAPTURE_SIZE >> 1); i += 2) {
 		short tmp = workspace[i >> 1] >> 21;
 		while (tmp > 127 || tmp < -128) tmp >>= 1;
 		inWaveform_outFft[i] = tmp;

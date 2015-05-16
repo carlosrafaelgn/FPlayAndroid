@@ -119,7 +119,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_LIQUID || type == TYPE_PARTICLE) ? 0 : 2);
+		speed = ((type == TYPE_LIQUID) ? 0 : 2);
 		diffusion = 1;
 		riseSpeed = 1;
 		ignoreInput = 0;
