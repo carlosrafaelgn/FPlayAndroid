@@ -177,6 +177,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						x -= UI.lastViewCenterLocation[0];
 						y -= UI.lastViewCenterLocation[1];
 					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
 					//leave prepared for next time
 					UI.storeViewCenterLocationForFade(null);
@@ -362,23 +363,19 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@Override
 	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-		if (Player.isMediaButton(keyCode))
-			return true;
-		return super.onKeyLongPress(keyCode, event);
+		return (Player.isMediaButton(keyCode) || super.onKeyLongPress(keyCode, event));
 	}
 
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		if (Player.isMediaButton(keyCode))
-			return true;
-		return super.onKeyUp(keyCode, event);
+		return (Player.isMediaButton(keyCode) || super.onKeyUp(keyCode, event));
 	}
 
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
 		final Uri data;
-		if (Player.state == Player.STATE_INITIALIZED && intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && (data = intent.getData()) != null) {
+		if (Player.state == Player.STATE_ALIVE && intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && (data = intent.getData()) != null) {
 			System.out.println(data.getPath());
 		}
 	}

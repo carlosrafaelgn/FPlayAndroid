@@ -122,6 +122,7 @@ public final class MainHandler extends Handler {
 					UI.toast(Player.getService(), msg.arg1);
 				}
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			return;
 		}

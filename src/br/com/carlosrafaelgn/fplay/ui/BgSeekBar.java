@@ -88,7 +88,7 @@ public final class BgSeekBar extends View {
 		max = 100;
 		sliderMode = false;
 		thumbWidth = (UI.defaultControlContentsSize * 3) >> 2;
-		setTextSizeIndex(2);
+		setTextSizeIndex(1);
 		super.setDrawingCacheEnabled(false);
 		super.setClickable(true);
 		super.setFocusableInTouchMode(!UI.hasTouch);
@@ -297,7 +297,8 @@ public final class BgSeekBar extends View {
 	public void setBackground(Drawable background) {
 		super.setBackground(null);
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

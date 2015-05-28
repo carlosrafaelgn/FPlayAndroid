@@ -77,7 +77,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private BgButton btnGoBack, btnRadio, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
-	private boolean loading, isAtHome, verifyAlbumWhenChecking, albumArtArea;
+	private boolean loading, isAtHome, verifyAlbumWhenChecking;
 
 	@Override
 	public CharSequence getTitle() {
@@ -468,7 +468,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		isAtHome = (to.length() == 0);
 		final boolean fav = ((to.length() > 1) && (to.charAt(0) == File.separatorChar));
 		final boolean others = !isAtHome;
-		albumArtArea = false;
 		if (fav) {
 			btnRadio.setVisibility(View.GONE);
 			btnURL.setVisibility(View.GONE);
@@ -480,7 +479,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			chkAlbumArt.setVisibility(View.GONE);
 			btnHome.setVisibility(View.VISIBLE);
 		} else if (others) {
-			albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));// (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
+			final boolean albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));// (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
 			btnRadio.setVisibility(View.GONE);
 			btnURL.setVisibility(View.GONE);
 			if (albumArtArea) {

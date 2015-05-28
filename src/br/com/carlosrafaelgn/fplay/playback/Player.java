@@ -46,8 +46,6 @@ import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.MediaRouter;
-import android.media.MediaRouter.RouteGroup;
-import android.media.MediaRouter.RouteInfo;
 import android.media.RemoteControlClient;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
@@ -81,7 +79,6 @@ import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
-import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
 //
@@ -115,100 +112,1401 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 //Allowing applications to play nice(r) with each other: Handling remote control buttons
 //http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
 //
-public final class Player extends Service implements Runnable, Timer.TimerHandler, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, AudioManager.OnAudioFocusChangeListener, ArraySorter.Comparer<FileSt> {
+
+//Many properties used to be private, but I decided to make them public, even though some of them
+//still have their setters, after I found out ProGuard does not inline static setters (or at least
+//I have not been able to figure out a way to do so....)
+
+//************************************************************************************
+//In a few devices, error -38 will happen on the MediaPlayer currently being played
+//when adding breakpoints to Player Core Thread
+//************************************************************************************
+
+public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
 	public static interface PlayerObserver {
 		public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		public void onPlayerControlModeChanged(boolean controlMode);
-		public void onPlayerGlobalVolumeChanged();
+		public void onPlayerGlobalVolumeChanged(int volume);
 		public void onPlayerAudioSinkChanged(int audioSink);
 		public void onPlayerMediaButtonPrevious();
 		public void onPlayerMediaButtonNext();
 	}
-	
+
 	public static interface PlayerTurnOffTimerObserver {
 		public void onPlayerTurnOffTimerTick();
 		public void onPlayerIdleTurnOffTimerTick();
 	}
-	
+
 	public static interface PlayerDestroyedObserver {
 		public void onPlayerDestroyed();
 	}
-	
+
 	private static final class TimeoutException extends Exception {
 		private static final long serialVersionUID = 4571328670214281144L;
 	}
-	
+
 	private static final class MediaServerDiedException extends Exception {
 		private static final long serialVersionUID = -902099312236606175L;
 	}
-	
+
 	private static final class FocusException extends Exception {
 		private static final long serialVersionUID = 6158088015763157546L;
 	}
-	
+
+	private static final int MSG_UPDATE_STATE = 0x0100;
+	private static final int MSG_PAUSE = 0x0101;
+	private static final int MSG_PLAYPAUSE = 0x0102;
+	private static final int MSG_SEEKTO = 0x0103;
+	private static final int MSG_SYNC_VOLUME = 0x0104;
+	private static final int MSG_PREPARE_NEXT_SONG = 0x0105;
+	private static final int MSG_OVERRIDE_VOLUME_MULTIPLIER = 0x0106;
+	private static final int MSG_BECOMING_NOISY = 0x0107;
+	private static final int MSG_AUDIO_SINK_CHANGED = 0x0108;
+	private static final int MSG_INITIALIZATION_STEP = 0x0109;
+	private static final int MSG_NEXT_MAY_HAVE_CHANGED = 0x010A;
+	private static final int MSG_LIST_CLEARED = 0x010B;
+	private static final int MSG_FOCUS_GAIN_TIMER = 0x010C;
+	private static final int MSG_FADE_IN_VOLUME_TIMER = 0x010D;
+	private static final int MSG_HEADSET_HOOK_TIMER = 0x010E;
+	private static final int MSG_TURN_OFF_TIMER = 0x010F;
+	private static final int MSG_IDLE_TURN_OFF_TIMER = 0x0110;
+	private static final int MSG_REGISTER_MEDIA_BUTTON_EVENT_RECEIVER = 0x0111;
+	private static final int MSG_SONG_LIST_DESERIALIZED = 0x0112;
+	private static final int MSG_PRE_PLAY = 0x0113;
+	private static final int MSG_POST_PLAY = 0x0114;
+	private static final int MSG_ENABLE_EFFECTS = 0x0115;
+	private static final int MSG_COMMIT_EQUALIZER = 0x0116;
+	private static final int MSG_COMMIT_BASS_BOOST = 0x0117;
+	private static final int MSG_COMMIT_VIRTUALIZER = 0x0118;
+
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
-	public static final int STATE_INITIALIZING_PENDING_LIST = 2;
-	public static final int STATE_INITIALIZING_PENDING_ACTIONS = 3;
-	public static final int STATE_INITIALIZED = 4;
-	public static final int STATE_TERMINATING = 5;
-	public static final int STATE_TERMINATED = 6;
+	public static final int STATE_INITIALIZING_STEP2 = 2;
+	public static final int STATE_ALIVE = 3;
+	public static final int STATE_TERMINATING = 4;
+	public static final int STATE_DEAD = 5;
+
+	public static final int PLAYER_STATE_NEW = 0;
+	public static final int PLAYER_STATE_PREPARING = 1;
+	public static final int PLAYER_STATE_LOADED = 2;
+
 	public static final int AUDIO_SINK_DEVICE = 1;
 	public static final int AUDIO_SINK_WIRE = 2;
 	public static final int AUDIO_SINK_BT = 4;
+
+	public static final int VOLUME_MIN_DB = -4000;
 	public static final int VOLUME_CONTROL_DB = 0;
 	public static final int VOLUME_CONTROL_STREAM = 1;
 	public static final int VOLUME_CONTROL_NONE = 2;
 	public static final int VOLUME_CONTROL_PERCENT = 3;
-	public static final int BLUETOOTH_VISUALIZER_STATE_INITIAL = 0;
-	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTING = 1;
-	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTED = 2;
-	public static final int BLUETOOTH_VISUALIZER_STATE_TRANSMITTING = 3;
+
+	private static final int SILENCE_NORMAL = 0;
+	private static final int SILENCE_FOCUS = 1;
+	private static final int SILENCE_NONE = -1;
+
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
 	public static final String ACTION_EXIT = "br.com.carlosrafaelgn.FPlay.EXIT";
-	public static final int MIN_VOLUME_DB = -4000;
-	private static final int MSG_UPDATE_STATE = 0x0100;
-	private static final int MSG_PLAY_NEXT_AUTO = 0x0101;
-	private static final int MSG_UPDATE_META = 0x0102;
-	private static final int MSG_INITIALIZATION_0 = 0x103;
-	private static final int MSG_INITIALIZATION_1 = 0x104;
-	private static final int MSG_INITIALIZATION_2 = 0x105;
-	private static final int MSG_INITIALIZATION_3 = 0x106;
-	private static final int MSG_INITIALIZATION_4 = 0x107;
-	private static final int MSG_INITIALIZATION_5 = 0x108;
-	private static final int MSG_INITIALIZATION_6 = 0x109;
-	private static final int MSG_INITIALIZATION_7 = 0x10a;
-	private static final int MSG_INITIALIZATION_8 = 0x10b;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0 = 0x0110;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1 = 0x0111;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2 = 0x0112;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3 = 0x0113;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4 = 0x0114;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5 = 0x0115;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_6 = 0x0116;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_7 = 0x0117;
-	private static final int MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_8 = 0x0118;
-	private static final int MSG_PREPARE_PLAYBACK_0 = 0x120;
-	private static final int MSG_PREPARE_PLAYBACK_1 = 0x121;
-	private static final int MSG_PREPARE_PLAYBACK_2 = 0x122;
-	private static final int MSG_RESET_EFFECTS_0 = 0x130;
-	private static final int MSG_RESET_EFFECTS_1 = 0x131;
-	private static final int MSG_RESET_EFFECTS_2 = 0x132;
-	private static final int MSG_RESET_EFFECTS_3 = 0x133;
-	private static final int MSG_RESET_EFFECTS_4 = 0x134;
-	private static final int MSG_RESET_EFFECTS_5 = 0x135;
-	private static final int MSG_RESET_EFFECTS_6 = 0x136;
-	private static final int MSG_RESET_EFFECTS_7 = 0x137;
-	private static final int MSG_RESET_EFFECTS_8 = 0x138;
-	private static final int MSG_TERMINATION_0 = 0x140;
-	private static final int MSG_TERMINATION_1 = 0x141;
-	private static final int MSG_TERMINATION_2 = 0x142;
-	private static final int MSG_ASYNC_PREPARATION = 0x150;
-	private static final int MSG_ASYNC_PREPARATION_FAILED = 0x151;
-	private static final int MSG_ASYNC_PREPARATION_NEXT = 0x152;
-	private static final int MSG_ASYNC_PREPARATION_NEXT_FAILED = 0x153;
+	private static String startCommand;
+
+	public static int state;
+	private static Thread thread;
+	private static Looper looper;
+	private static Player thePlayer;
+	private static Handler handler, localHandler;
+	private static AudioManager audioManager;
+	private static NotificationManager notificationManager;
+	private static TelephonyManager telephonyManager;
+	public static final SongList songs = SongList.getInstance();
+
+	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
+	//and Virtualizer classes from being garbage collected...
+	public static MainHandler _mainHandler;
+	public static final UI _ui = new UI();
+	public static final Equalizer _equalizer = new Equalizer();
+	public static final BassBoost _bassBoost = new BassBoost();
+	public static final Virtualizer _virtualizer = new Virtualizer();
+
+	public static boolean hasFocus;
+	public static int volumeStreamMax = 15, volumeControlType;
+	private static boolean volumeDimmed;
+	private static int volumeDB, volumeDBFading, volumeStream, silenceMode;
+	private static float volumeMultiplier;
+
+	private static int audioSink, audioSinkBeforeFocusLoss;
+
+	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
+	private static boolean resumePlaybackAfterFocusGain, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
+	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
+	private static MediaPlayer player, nextPlayer;
+
+	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
+	//so they will survive their respective activity's destruction
+	//(and even the class garbage collection)
+	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1;
+	public static boolean isMainActiveOnTop, alreadySelected;
+
+	//These are only set in the main thread
+	private static int localVolumeStream, localPlayerState;
+	public static int localVolumeDB;
+	public static boolean localPlaying;
+	public static Song localSong;
+	public static MediaPlayer localPlayer;
+
+	private static class CoreHandler extends Handler {
+		@Override
+		public void dispatchMessage(Message msg) {
+			//System.out.println(Integer.toHexString(msg.what));
+			switch (msg.what) {
+			case MSG_POST_PLAY:
+				_postPlay(msg.arg1, (Song[])msg.obj);
+				break;
+			case MSG_BECOMING_NOISY:
+				_becomingNoisy();
+				break;
+			case MSG_FADE_IN_VOLUME_TIMER:
+				_processFadeInVolumeTimer(msg.arg1);
+				break;
+			case MSG_AUDIO_SINK_CHANGED:
+				_audioSinkChanged(msg.arg1 != 0);
+				break;
+			case MSG_PAUSE:
+				if (playing)
+					_playPause();
+				break;
+			case MSG_PLAYPAUSE:
+				_playPause();
+				break;
+			case MSG_SEEKTO:
+				_seekTo(msg.arg1);
+				break;
+			case MSG_SYNC_VOLUME:
+				_syncVolume();
+				break;
+			case MSG_PREPARE_NEXT_SONG:
+				_prepareNextPlayer((Song)msg.obj);
+				break;
+			case MSG_FOCUS_GAIN_TIMER:
+				_processFocusGainTimer();
+				break;
+			case MSG_OVERRIDE_VOLUME_MULTIPLIER:
+				_overrideVolumeMultiplier(msg.arg1 != 0);
+				break;
+			case MSG_LIST_CLEARED:
+				_listCleared();
+				break;
+			case MSG_NEXT_MAY_HAVE_CHANGED:
+				_nextMayHaveChanged((Song)msg.obj);
+				break;
+			case MSG_ENABLE_EFFECTS:
+				_enableEffects(msg.arg1, (Runnable)msg.obj);
+				break;
+			case MSG_COMMIT_EQUALIZER:
+				Equalizer.commit(msg.arg1);
+				break;
+			case MSG_COMMIT_BASS_BOOST:
+				BassBoost.commit();
+				break;
+			case MSG_COMMIT_VIRTUALIZER:
+				Virtualizer.commit();
+				break;
+			case MSG_SONG_LIST_DESERIALIZED:
+				_songListDeserialized(msg.obj);
+				break;
+			}
+		}
+	}
+
+	private static class CoreLocalHandler extends Handler {
+		@Override
+		public void dispatchMessage(Message msg) {
+			//System.out.println("L " + Integer.toHexString(msg.what));
+			switch (msg.what) {
+			case MSG_PRE_PLAY:
+				prePlay(msg.arg1);
+				break;
+			case MSG_AUDIO_SINK_CHANGED:
+				if (observer != null)
+					observer.onPlayerAudioSinkChanged(audioSink);
+				break;
+			case MSG_UPDATE_STATE:
+				updateState(msg.arg1, msg.arg2);
+				break;
+			case MSG_REGISTER_MEDIA_BUTTON_EVENT_RECEIVER:
+				registerMediaButtonEventReceiver();
+				break;
+			case MSG_INITIALIZATION_STEP:
+				switch (state) {
+				case STATE_INITIALIZING:
+					state = STATE_INITIALIZING_STEP2;
+					break;
+				case STATE_INITIALIZING_STEP2:
+					state = STATE_ALIVE;
+					handler.sendMessageAtTime(Message.obtain(handler, MSG_OVERRIDE_VOLUME_MULTIPLIER, (volumeControlType != VOLUME_CONTROL_DB && volumeControlType != VOLUME_CONTROL_PERCENT) ? 1 : 0, 0), SystemClock.uptimeMillis());
+					setTurnOffTimer(turnOffTimerSelectedMinutes);
+					setIdleTurnOffTimer(idleTurnOffTimerSelectedMinutes);
+					executeStartCommand(initialForcePlayIdx);
+					break;
+				}
+				break;
+			case MSG_HEADSET_HOOK_TIMER:
+				processHeadsetHookTimer();
+				break;
+			case MSG_TURN_OFF_TIMER:
+				processTurnOffTimer();
+				break;
+			case MSG_IDLE_TURN_OFF_TIMER:
+				processIdleTurnOffTimer();
+				break;
+			}
+		}
+	}
+
+	@Override
+	public void onCreate() {
+		thePlayer = this;
+		startService(this);
+		startForeground(1, getNotification());
+		super.onCreate();
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		System.exit(0);
+	}
+
+	private static void executeStartCommand(int forcePlayIdx) {
+		if (forcePlayIdx >= 0) {
+			play(forcePlayIdx);
+			startCommand = null;
+		} else if (startCommand != null && state == STATE_ALIVE) {
+			if (startCommand.equals(ACTION_PREVIOUS))
+				previous();
+			else if (startCommand.equals(ACTION_PLAY_PAUSE))
+				playPause();
+			else if (startCommand.equals(ACTION_NEXT))
+				next();
+			else if (startCommand.equals(ACTION_EXIT))
+				stopService();
+			startCommand = null;
+		}
+	}
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		if (intent != null) {
+			startCommand = intent.getAction();
+			executeStartCommand(-1);
+		}
+		super.onStartCommand(intent, flags, startId);
+		return START_STICKY;
+	}
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		return null;
+	}
+
+	public static Service getService() {
+		return thePlayer;
+	}
+
+	public static boolean startService(Context context) {
+		switch (state) {
+		case STATE_NEW:
+			alreadySelected = true; //fix the initial selection when the app is started from the widget
+			state = STATE_INITIALIZING;
+			context.startService(new Intent(context, Player.class));
+			_mainHandler = MainHandler.initialize();
+			localHandler = new CoreLocalHandler();
+			notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
+			audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
+			telephonyManager = (TelephonyManager)context.getSystemService(TELEPHONY_SERVICE);
+			destroyedObservers = new ArrayList<PlayerDestroyedObserver>(4);
+			stickyBroadcast = new Intent();
+			loadConfig(context);
+			return true;
+		case STATE_INITIALIZING:
+			if (thePlayer != null && thread == null) {
+				//These broadcast actions are registered here, instead of in the manifest file,
+				//because a few tests showed that some devices will produce the notifications
+				//faster this way, specially AUDIO_BECOMING_NOISY. Moreover, by registering here,
+				//only one BroadcastReceiver is instantiated and used throughout the entire
+				//application's lifecycle, whereas when the manifest is used, a different instance
+				//is created to handle every notification! :)
+				//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
+				//in the application manifest according to the documentation of the method
+				//registerMediaButtonEventReceiver!!! :(
+				final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
+				//filter.addAction("android.intent.action.MEDIA_BUTTON");
+				filter.addAction("android.intent.action.CALL_BUTTON");
+				filter.addAction("android.intent.action.HEADSET_PLUG");
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+					filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
+				else
+					filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
+				filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
+				filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
+				//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
+				filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
+				externalReceiver = new ExternalReceiver();
+				thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter);
+
+				registerMediaButtonEventReceiver();
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+					registerMediaRouter(thePlayer);
+
+				thread = new Thread("Player Core Thread") {
+					@Override
+					public void run() {
+						Looper.prepare();
+						looper = Looper.myLooper();
+						handler = new CoreHandler();
+						_initializePlayers();
+						Equalizer.initialize(player.getAudioSessionId());
+						Equalizer.release();
+						BassBoost.initialize(player.getAudioSessionId());
+						BassBoost.release();
+						Virtualizer.initialize(player.getAudioSessionId());
+						Virtualizer.release();
+						_checkAudioSink(false, false);
+						localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
+						Looper.loop();
+						song = null;
+						_fullCleanup();
+						hasFocus = false;
+						if (audioManager != null && thePlayer != null)
+							audioManager.abandonAudioFocus(thePlayer);
+					}
+				};
+				thread.start();
+
+				while (handler == null)
+					Thread.yield();
+
+				songs.startDeserializing(thePlayer, null, true, false, false);
+			}
+			break;
+		}
+		return false;
+	}
+
+	public static void stopService() {
+		if (state != STATE_ALIVE)
+			return;
+		state = STATE_TERMINATING;
+
+		looper.quit();
+
+		if (bluetoothVisualizerController != null)
+			stopBluetoothVisualizer();
+
+		unregisterMediaButtonEventReceiver();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
+			unregisterMediaRouter(thePlayer);
+
+		if (destroyedObservers != null) {
+			for (int i = destroyedObservers.size() - 1; i >= 0; i--)
+				destroyedObservers.get(i).onPlayerDestroyed();
+			destroyedObservers.clear();
+			destroyedObservers = null;
+		}
+
+		if (thePlayer != null) {
+			if (externalReceiver != null)
+				thePlayer.getApplicationContext().unregisterReceiver(externalReceiver);
+			saveConfig(thePlayer, true);
+		}
+
+		try {
+			thread.join();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+
+		for (int i = statePlayer.length - 1; i >= 0; i--) {
+			statePlayer[i] = null;
+			stateEx[i] = null;
+		}
+		updateState(~0x27, 0);
+
+		thread = null;
+		observer = null;
+		turnOffTimerObserver = null;
+		_mainHandler = null;
+		handler = null;
+		localHandler = null;
+		notificationManager = null;
+		audioManager = null;
+		telephonyManager = null;
+		externalReceiver = null;
+		stickyBroadcast = null;
+		favoriteFolders.clear();
+		localSong = null;
+		localPlayer = null;
+		state = STATE_DEAD;
+		if (thePlayer != null) {
+			thePlayer.stopForeground(true);
+			thePlayer.stopSelf();
+			thePlayer = null;
+		} else {
+			System.exit(0);
+		}
+	}
+
+	private static void prePlay(int how) {
+		if (state != STATE_ALIVE)
+			return;
+		localSong = songs.getSongAndSetCurrent(how);
+		final Song[] songArray = new Song[] { localSong, songs.possibleNextSong };
+		songs.possibleNextSong = null;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_POST_PLAY, how, 0, songArray), SystemClock.uptimeMillis());
+	}
+
+	public static void previous() {
+		prePlay(SongList.HOW_PREVIOUS);
+	}
+
+	public static void play(int index) {
+		prePlay(index);
+	}
+
+	public static void pause() {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_PAUSE), SystemClock.uptimeMillis());
+	}
+
+	public static void playPause() {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_PLAYPAUSE), SystemClock.uptimeMillis());
+	}
+
+	public static void next() {
+		prePlay(SongList.HOW_NEXT_MANUAL);
+	}
+
+	public static void seekTo(int timeMS) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKTO, timeMS, 0), SystemClock.uptimeMillis());
+	}
+
+	public static void showStreamVolumeUI() {
+		try {
+			if (audioManager != null)
+				audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static int setVolume(int volume) {
+		if (state != STATE_ALIVE)
+			return Integer.MIN_VALUE;
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_STREAM:
+			if (volume < 0)
+				volume = 0;
+			else if (volume > volumeStreamMax)
+				volume = volumeStreamMax;
+			localVolumeStream = volume;
+			break;
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+			if (volume <= VOLUME_MIN_DB)
+				volume = VOLUME_MIN_DB;
+			else if (volume > 0)
+				volume = 0;
+			if (localVolumeDB == volume)
+				return Integer.MIN_VALUE;
+			localVolumeDB = volume;
+			break;
+		default:
+			showStreamVolumeUI();
+			return Integer.MIN_VALUE;
+		}
+		handler.sendEmptyMessageAtTime(MSG_SYNC_VOLUME, SystemClock.uptimeMillis());
+		return volume;
+	}
+
+	public static int decreaseVolume() {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_STREAM:
+			return setVolume(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) - 1);
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+			//http://stackoverflow.com/a/4413073/3569421
+			//(a/b)*b+(a%b) is equal to a
+			//-350 % 200 = -150
+			final int leftover = (Player.volumeDB % 200);
+			return setVolume(Player.volumeDB + ((leftover == 0) ? -200 : (-200 - leftover)));
+		}
+		showStreamVolumeUI();
+		return Integer.MIN_VALUE;
+	}
+
+	public static int increaseVolume() {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_STREAM:
+			return setVolume(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) + 1);
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+			//http://stackoverflow.com/a/4413073/3569421
+			//(a/b)*b+(a%b) is equal to a
+			//-350 % 200 = -150
+			final int leftover = (Player.volumeDB % 200);
+			return setVolume(Player.volumeDB + ((leftover == 0) ? 200 : -leftover));
+		}
+		showStreamVolumeUI();
+		return Integer.MIN_VALUE;
+	}
+
+	public static int getSystemStreamVolume() {
+		try {
+			if (audioManager != null)
+				return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return 0;
+	}
+
+	public static void setVolumeInPercentage(int percentage) {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_STREAM:
+			setVolume((percentage * volumeStreamMax) / 100);
+			break;
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+			setVolume((percentage >= 100) ? 0 : ((percentage <= 0) ? VOLUME_MIN_DB : (((100 - percentage) * VOLUME_MIN_DB) / 100)));
+			break;
+		}
+	}
+
+	public static int getVolumeInPercentage() {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_STREAM:
+			final int vol = getSystemStreamVolume();
+			return ((vol <= 0) ? 0 : ((vol >= volumeStreamMax) ? 100 : ((vol * 100) / volumeStreamMax)));
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+			return ((localVolumeDB >= 0) ? 100 : ((localVolumeDB <= VOLUME_MIN_DB) ? 0 : (((VOLUME_MIN_DB - localVolumeDB) * 100) / VOLUME_MIN_DB)));
+		}
+		return 0;
+	}
+
+	public static void setVolumeControlType(int volumeControlType) {
+		switch (volumeControlType) {
+		case VOLUME_CONTROL_DB:
+		case VOLUME_CONTROL_PERCENT:
+		case VOLUME_CONTROL_NONE:
+			Player.volumeControlType = volumeControlType;
+			if (handler != null)
+				handler.sendMessageAtTime(Message.obtain(handler, MSG_OVERRIDE_VOLUME_MULTIPLIER, (volumeControlType == VOLUME_CONTROL_NONE) ? 1 : 0, 0), SystemClock.uptimeMillis());
+			break;
+		default:
+			try {
+				if (audioManager != null)
+					volumeStreamMax = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+				if (volumeStreamMax < 1)
+					volumeStreamMax = 1;
+				if (handler != null)
+					handler.sendMessageAtTime(Message.obtain(handler, MSG_OVERRIDE_VOLUME_MULTIPLIER, 1, 0), SystemClock.uptimeMillis());
+				Player.volumeControlType = VOLUME_CONTROL_STREAM;
+			} catch (Throwable ex) {
+				Player.volumeControlType = VOLUME_CONTROL_NONE;
+				ex.printStackTrace();
+			}
+			break;
+		}
+	}
+
+	public static void enableEffects(boolean equalizer, boolean bassBoost, boolean virtualizer, Runnable callback) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_EFFECTS, (equalizer ? 1 : 0) | (bassBoost ? 2 : 0) | (virtualizer ? 4 : 0), 0, callback), SystemClock.uptimeMillis());
+	}
+
+	public static void commitEqualizer(int band) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_EQUALIZER, band, 0), SystemClock.uptimeMillis());
+	}
+
+	public static void commitBassBoost() {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendEmptyMessageAtTime(MSG_COMMIT_BASS_BOOST, SystemClock.uptimeMillis());
+	}
+
+	public static void commitVirtualizer() {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendEmptyMessageAtTime(MSG_COMMIT_VIRTUALIZER, SystemClock.uptimeMillis());
+	}
+
+	public static boolean isPreparing() {
+		return (localPlayerState == PLAYER_STATE_PREPARING || playerBuffering);
+	}
+
+	public static int getPosition() {
+		return (((localPlayer != null) && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() : ((localSong == null) ? -1 : storedSongTime));
+	}
+
+	public static int getAudioSessionId() {
+		return ((localPlayer == null) ? -1 : localPlayer.getAudioSessionId());
+	}
+
+	private static MediaPlayer _createPlayer() {
+		MediaPlayer mp = new MediaPlayer();
+		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		mp.setOnErrorListener(thePlayer);
+		mp.setOnPreparedListener(thePlayer);
+		mp.setOnSeekCompleteListener(thePlayer);
+		mp.setOnCompletionListener(thePlayer);
+		mp.setOnInfoListener(thePlayer);
+		mp.setWakeMode(thePlayer, PowerManager.PARTIAL_WAKE_LOCK);
+		return mp;
+	}
+
+	private static void _startPlayer() {
+		playAfterSeeking = false;
+		playing = true;
+		//when dimmed, decreased the volume by 20dB
+		float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
+		if (silenceMode != SILENCE_NONE) {
+			final int increment = ((silenceMode == SILENCE_FOCUS) ? fadeInIncrementOnFocus : ((howThePlayerStarted == SongList.HOW_CURRENT) ? fadeInIncrementOnPause : fadeInIncrementOnOther));
+			if (increment > 30) {
+				volumeDBFading = VOLUME_MIN_DB;
+				multiplier = 0;
+				handler.sendMessageAtTime(Message.obtain(handler, MSG_FADE_IN_VOLUME_TIMER, increment, 0), SystemClock.uptimeMillis() + 50);
+			}
+			silenceMode = SILENCE_NONE;
+		}
+		if (player != null) {
+			player.setVolume(multiplier, multiplier);
+			//System.out.println("start " + player);
+			player.start();
+		}
+		reviveAlreadyTried = false;
+	}
+
+	private static void _releasePlayer(MediaPlayer mediaPlayer) {
+		mediaPlayer.setOnErrorListener(null);
+		mediaPlayer.setOnPreparedListener(null);
+		mediaPlayer.setOnSeekCompleteListener(null);
+		mediaPlayer.setOnCompletionListener(null);
+		mediaPlayer.setOnInfoListener(null);
+		//System.out.println("release " + mediaPlayer);
+		mediaPlayer.reset();
+		mediaPlayer.release();
+	}
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	private static void _clearNextPlayer() {
+		//there is no need to call setNextMediaPlayer(null) after calling reset()
+		try {
+			player.setNextMediaPlayer(null);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	private static void _setNextPlayer() {
+		try {
+			if (player != null) {
+				player.setNextMediaPlayer(nextPlayer);
+				nextAlreadySetForPlaying = true;
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	private static void _fullCleanup() {
+		if (handler != null) {
+			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
+			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
+		}
+		if (localHandler != null)
+			localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+		playerState = PLAYER_STATE_NEW;
+		playerBuffering = false;
+		if (player != null) {
+			_releasePlayer(player);
+			player = null;
+		}
+		nextAlreadySetForPlaying = false;
+		nextPlayerState = PLAYER_STATE_NEW;
+		if (nextPlayer != null) {
+			_releasePlayer(nextPlayer);
+			nextPlayer = null;
+		}
+		silenceMode = SILENCE_NORMAL;
+		nextSong = null;
+		songScheduledForPreparation = null;
+		nextSongScheduledForPreparation = null;
+		playing = false;
+		playAfterSeeking = false;
+		prepareNextAfterSeeking = false;
+		resumePlaybackAfterFocusGain = false;
+		Equalizer.release();
+		BassBoost.release();
+		Virtualizer.release();
+	}
+
+	private static void _initializePlayers() {
+		if (player == null) {
+			player = _createPlayer();
+			if (nextPlayer != null) {
+				player.setAudioSessionId(nextPlayer.getAudioSessionId());
+			} else {
+				nextPlayer = _createPlayer();
+				nextPlayer.setAudioSessionId(player.getAudioSessionId());
+			}
+		} else if (nextPlayer == null) {
+			nextPlayer = _createPlayer();
+			nextPlayer.setAudioSessionId(player.getAudioSessionId());
+		}
+	}
+
+	private static boolean _requestFocus() {
+		if (thePlayer == null || audioManager == null || audioManager.requestAudioFocus(thePlayer, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+			hasFocus = false;
+			return false;
+		}
+		localHandler.sendEmptyMessageAtTime(MSG_REGISTER_MEDIA_BUTTON_EVENT_RECEIVER, SystemClock.uptimeMillis());
+		hasFocus = true;
+		volumeDimmed = false;
+		return true;
+	}
+
+	private static void _storeSongTime() {
+		try {
+			if (song == null || song.isHttp)
+				storedSongTime = -1;
+			else if (player != null && playerState == PLAYER_STATE_LOADED)
+				storedSongTime = player.getCurrentPosition();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	private static void _prepareNextPlayer(Song song) {
+		try {
+			if (song == nextSongScheduledForPreparation && nextPlayer != null) {
+				//Even though it happens very rarely, a few devices will freeze and produce an ANR
+				//when calling setDataSource from the main thread :(
+				//System.out.println("N setDataSource " + nextPlayer);
+				nextPlayer.setDataSource(nextSongScheduledForPreparation.path);
+				nextPlayer.prepareAsync();
+				nextPlayerState = PLAYER_STATE_PREPARING;
+			}
+		} catch (Throwable ex) {
+			nextPlayerState = PLAYER_STATE_NEW;
+			ex.printStackTrace();
+		}
+	}
+
+	private static void _scheduleNextPlayerForPreparation() {
+		nextAlreadySetForPlaying = false;
+		prepareNextAfterSeeking = false;
+		nextPlayerState = PLAYER_STATE_NEW;
+		if (handler != null && song != null && nextSong != null && !nextSong.isHttp && nextPreparationEnabled && song.lengthMS > 10000 && nextSong.lengthMS > 10000) {
+			handler.removeMessages(MSG_PREPARE_NEXT_SONG);
+			nextSongScheduledForPreparation = nextSong;
+			handler.sendMessageAtTime(Message.obtain(handler, MSG_PREPARE_NEXT_SONG, nextSong), SystemClock.uptimeMillis() + 5000);
+		}
+	}
+
+	private static void _handleFailure(Throwable ex) {
+		if (songWhenFirstErrorHappened == song || howThePlayerStarted != SongList.HOW_NEXT_AUTO) {
+			songWhenFirstErrorHappened = null;
+			_updateState(false, ex);
+		} else {
+			if (songWhenFirstErrorHappened == null)
+				songWhenFirstErrorHappened = song;
+			_updateState(false, null);
+			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_NEXT_AUTO, 0), SystemClock.uptimeMillis());
+		}
+	}
+
+	private static void _postPlay(int how, Song[] songArray) {
+		if (state != STATE_ALIVE)
+			return;
+		song = songArray[0];
+		if (!hasFocus && !_requestFocus()) {
+			_fullCleanup();
+			_updateState(false, new FocusException());
+			return;
+		}
+		//we must set this to false here, as the user could have manually
+		//started playback before the focus timer had the chance to trigger
+		resumePlaybackAfterFocusGain = false;
+		if (song == null) {
+			storedSongTime = -1;
+			songWhenFirstErrorHappened = null;
+			_fullCleanup();
+			_updateState(false, null);
+			return;
+		}
+		try {
+			howThePlayerStarted = how;
+			playerBuffering = false;
+			if (player == null || nextPlayer == null) {
+				_initializePlayers();
+				//don't even ask.......
+				//(a few devices won't disable one effect while the other effect is enabled)
+				Equalizer.release();
+				BassBoost.release();
+				Virtualizer.release();
+				final int sessionId = player.getAudioSessionId();
+				if (Equalizer.isEnabled()) {
+					Equalizer.initialize(sessionId);
+					Equalizer.setEnabled(true);
+				}
+				if (BassBoost.isEnabled()) {
+					BassBoost.initialize(sessionId);
+					BassBoost.setEnabled(true);
+				}
+				if (Virtualizer.isEnabled()) {
+					Virtualizer.initialize(sessionId);
+					Virtualizer.setEnabled(true);
+				}
+			}
+			//System.out.println("reset " + player);
+			player.reset();
+			if (nextSong == song && how != SongList.HOW_CURRENT) {
+				storedSongTime = -1;
+				if (nextPlayerState == PLAYER_STATE_LOADED) {
+					playerState = PLAYER_STATE_LOADED;
+					final MediaPlayer p = player;
+					player = nextPlayer;
+					nextPlayer = p;
+					nextSong = songArray[1];
+					if (!nextAlreadySetForPlaying || how != SongList.HOW_NEXT_AUTO) {
+						_startPlayer();
+					} else {
+						playing = true;
+						//when dimmed, decreased the volume by 20dB
+						final float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
+						player.setVolume(multiplier, multiplier);
+					}
+					songWhenFirstErrorHappened = null;
+					_scheduleNextPlayerForPreparation();
+					_updateState(false, null);
+					return;
+				} else {
+					//just wait for the next song to finish preparing
+					if (nextPlayerState == PLAYER_STATE_PREPARING) {
+						playing = false;
+						playerState = PLAYER_STATE_PREPARING;
+						nextPlayerState = PLAYER_STATE_NEW;
+						final MediaPlayer p = player;
+						player = nextPlayer;
+						nextPlayer = p;
+						nextSong = songArray[1];
+						_updateState(false, null);
+						return;
+					}
+				}
+			}
+			playing = false;
+			playerState = PLAYER_STATE_PREPARING;
+
+			if (how != SongList.HOW_CURRENT)
+				storedSongTime = -1;
+
+			if (song.path == null || song.path.length() == 0)
+				throw new IOException();
+			songScheduledForPreparation = song;
+			//Even though it happens very rarely, a few devices will freeze and produce an ANR
+			//when calling setDataSource from the main thread :(
+			//System.out.println("setDataSource " + player);
+			player.setDataSource(song.path);
+			player.prepareAsync();
+
+			nextPlayerState = PLAYER_STATE_NEW;
+			//System.out.println("N reset " + nextPlayer);
+			nextPlayer.reset();
+			nextSong = songArray[1];
+			nextSongScheduledForPreparation = null;
+			if (nextPreparationEnabled)
+				handler.removeMessages(MSG_PREPARE_NEXT_SONG);
+
+			_updateState(false, null);
+		} catch (Throwable ex) {
+			_fullCleanup();
+			//clear the flag here to allow _handleFailure to move to the next song
+			_handleFailure(ex);
+		}
+	}
+
+	private static void _playPause() {
+		if (state != STATE_ALIVE || playerState == PLAYER_STATE_PREPARING)
+			return;
+		try {
+			//we must set this to false here, as the user could have manually
+			//started playback before the focus timer had the chance to trigger
+			resumePlaybackAfterFocusGain = false;
+			if (playing) {
+				playing = false;
+				player.pause();
+				silenceMode = SILENCE_NORMAL;
+				_storeSongTime();
+				_updateState(false, null);
+			} else {
+				if (song == null || playerState == PLAYER_STATE_NEW || !hasFocus) {
+					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_CURRENT, 0), SystemClock.uptimeMillis());
+				} else {
+					howThePlayerStarted = SongList.HOW_CURRENT;
+					_startPlayer();
+					_updateState(false, null);
+				}
+			}
+		} catch (Throwable ex) {
+			_fullCleanup();
+			_updateState(false, ex);
+		}
+	}
+
+	private static void _seekTo(int timeMS) {
+		if (state != STATE_ALIVE || playerState == PLAYER_STATE_PREPARING)
+			return;
+		storedSongTime = timeMS;
+		if (playerState == PLAYER_STATE_LOADED) {
+			playAfterSeeking = playing;
+			playerState = PLAYER_STATE_PREPARING;
+			try {
+				if (playing) {
+					playing = false;
+					player.pause();
+				}
+				player.seekTo(timeMS);
+				_updateState(false, null);
+			} catch (Throwable ex) {
+				_fullCleanup();
+				_updateState(false, ex);
+			}
+		}
+	}
+
+	private static void _processFadeInVolumeTimer(int increment) {
+		volumeDBFading += increment;
+		//magnitude = 10 ^ (dB/20)
+		//x^p = a ^ (p * log a (x))
+		//10^p = e ^ (p * log e (10))
+		float multiplier = (float)Math.exp((double)volumeDBFading * 2.3025850929940456840179914546844 / 2000.0);
+		boolean send = true;
+		if (multiplier >= volumeMultiplier) {
+			multiplier = volumeMultiplier;
+			send = false;
+		}
+		//when dimmed, decreased the volume by 20dB
+		if (volumeDimmed)
+			multiplier *= 0.1f;
+		if (handler != null && hasFocus && player != null && playerState == PLAYER_STATE_LOADED) {
+			try {
+				player.setVolume(multiplier, multiplier);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			if (send)
+				handler.sendMessageAtTime(Message.obtain(handler, MSG_FADE_IN_VOLUME_TIMER, increment, 0), SystemClock.uptimeMillis() + 50);
+		}
+	}
+
+	private static void _syncVolume() {
+		if (state != STATE_ALIVE)
+			return;
+		if (volumeControlType == VOLUME_CONTROL_STREAM) {
+			if (volumeStream == localVolumeStream)
+				return;
+			volumeStream = localVolumeStream;
+			try {
+				if (audioManager != null)
+					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volumeStream <= 0) ? 0 : ((volumeStream >= volumeStreamMax) ? volumeStreamMax : volumeStream)), 0);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			return;
+		}
+		if (volumeDB == localVolumeDB)
+			return;
+		volumeDB = localVolumeDB;
+		volumeMultiplier = ((volumeDB <= VOLUME_MIN_DB) ? 0.0f : ((volumeDB >= 0) ? 1.0f : (float)Math.exp((double)volumeDB * 2.3025850929940456840179914546844 / 2000.0)));
+		//when dimmed, decreased the volume by 20dB
+		final float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
+		if (player != null) {
+			try {
+				player.setVolume(multiplier, multiplier);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+		if (nextPlayer != null) {
+			try {
+				nextPlayer.setVolume(multiplier, multiplier);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	private static void _overrideVolumeMultiplier(boolean toMax) {
+		if (state != STATE_ALIVE)
+			return;
+		volumeMultiplier = ((toMax || (volumeDB >= 0)) ? 1.0f : ((volumeDB <= VOLUME_MIN_DB) ? 0.0f : (float)Math.exp((double)volumeDB * 2.3025850929940456840179914546844 / 2000.0)));
+		//when dimmed, decreased the volume by 20dB
+		final float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
+		if (player != null) {
+			try {
+				player.setVolume(multiplier, multiplier);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+		if (nextPlayer != null) {
+			try {
+				nextPlayer.setVolume(multiplier, multiplier);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	private static void _processFocusGainTimer() {
+		if (state != STATE_ALIVE || !hasFocus)
+			return;
+		//someone else may have changed our values if the engine is shared
+		localHandler.sendEmptyMessageAtTime(MSG_REGISTER_MEDIA_BUTTON_EVENT_RECEIVER, SystemClock.uptimeMillis());
+		if (resumePlaybackAfterFocusGain) {
+			//do not restart playback in scenarios like this (it really scares people!):
+			//the person has answered a call, removed the headset, ended the call without
+			//the headset plugged in, and then the focus came back to us
+			if (audioSinkBeforeFocusLoss != AUDIO_SINK_DEVICE && audioSink == AUDIO_SINK_DEVICE) {
+				resumePlaybackAfterFocusGain = false;
+				_requestFocus();
+			} else if (!playing) {
+				localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_CURRENT, 0), SystemClock.uptimeMillis());
+			} else {
+				resumePlaybackAfterFocusGain = false;
+			}
+		}
+	}
+
+	private static void _enableEffects(int arg1, Runnable callback) {
+		//don't even ask.......
+		//(a few devices won't disable one effect while the other effect is enabled)
+		Equalizer.release();
+		BassBoost.release();
+		Virtualizer.release();
+		if ((arg1 & 1) != 0) {
+			if (player != null)
+				Equalizer.initialize(player.getAudioSessionId());
+			Equalizer.setEnabled(true);
+		} else {
+			Equalizer.setEnabled(false);
+		}
+		if ((arg1 & 2) != 0) {
+			if (player != null)
+				BassBoost.initialize(player.getAudioSessionId());
+			BassBoost.setEnabled(true);
+		} else {
+			BassBoost.setEnabled(false);
+		}
+		if ((arg1 & 4) != 0) {
+			if (player != null)
+				Virtualizer.initialize(player.getAudioSessionId());
+			Virtualizer.setEnabled(true);
+		} else {
+			Virtualizer.setEnabled(false);
+		}
+		if (callback != null)
+			MainHandler.postToMainThread(callback);
+	}
+
+	@Override
+	public void onAudioFocusChange(int focusChange) {
+		if (state != STATE_ALIVE)
+			return;
+		if (handler != null) {
+			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
+			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
+		}
+		if (localHandler != null)
+			localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+		volumeDimmed = false;
+		switch (focusChange) {
+		case AudioManager.AUDIOFOCUS_GAIN:
+			if (!hasFocus) {
+				hasFocus = true;
+				if (handler != null)
+					handler.sendMessageAtTime(Message.obtain(handler, MSG_FOCUS_GAIN_TIMER), SystemClock.uptimeMillis() + 1500);
+			} else {
+				//came here from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
+				if (player != null && playerState == PLAYER_STATE_LOADED) {
+					try {
+						player.setVolume(volumeMultiplier, volumeMultiplier);
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				}
+			}
+			break;
+		case AudioManager.AUDIOFOCUS_LOSS:
+		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+			//we just cannot replace resumePlaybackAfterFocusGain's value with
+			//playing, because if a second focus loss occurred BEFORE _focusGain
+			//had a chance to be called, then playing would be false, when in fact,
+			//we want resumePlaybackAfterFocusGain to remain true (and the audio sink
+			//must be untouched)
+			final boolean resume = (localPlaying || localPlayerState == PLAYER_STATE_PREPARING);
+			hasFocus = false;
+			_storeSongTime();
+			_fullCleanup();
+			silenceMode = SILENCE_FOCUS;
+			if (resume) {
+				resumePlaybackAfterFocusGain = true;
+				audioSinkBeforeFocusLoss = audioSink;
+			}
+			_updateState(false, null);
+			break;
+		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+			hasFocus = true;
+			if (!doNotAttenuateVolume) {
+				//when dimmed, decreased the volume by 20dB
+				final float multiplier = volumeMultiplier * 0.1f;
+				volumeDimmed = true;
+				if (player != null && playerState == PLAYER_STATE_LOADED) {
+					try {
+						player.setVolume(multiplier, multiplier);
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				}
+			}
+			break;
+		}
+	}
+
+	@Override
+	public void onCompletion(MediaPlayer mediaPlayer) {
+		if (state != STATE_ALIVE)
+			return;
+		if (playing && player == mediaPlayer)
+			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_NEXT_AUTO, 0), SystemClock.uptimeMillis());
+	}
+
+	@Override
+	public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+		if (state != STATE_ALIVE)
+			return true;
+		//System.out.println("onError " + mediaPlayer);
+		if (mediaPlayer == nextPlayer || mediaPlayer == player) {
+			if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+				_storeSongTime();
+				_fullCleanup();
+				if (reviveAlreadyTried) {
+					reviveAlreadyTried = false;
+					_updateState(false, new MediaServerDiedException());
+				} else {
+					reviveAlreadyTried = true;
+					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_CURRENT, 0), SystemClock.uptimeMillis());
+				}
+			} else if (mediaPlayer == nextPlayer) {
+				nextSong = null;
+				nextPlayerState = PLAYER_STATE_NEW;
+			} else {
+				final boolean prep = (playerState == PLAYER_STATE_PREPARING);
+				_fullCleanup();
+				if (prep && howThePlayerStarted == SongList.HOW_NEXT_AUTO)
+					//the error happened during currentSong's preparation
+					_handleFailure((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
+				else
+					_updateState(false, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
+			}
+		} else {
+			_fullCleanup();
+			_updateState(false, new Exception("Invalid MediaPlayer"));
+		}
+		return true;
+	}
+
+	@Override
+	public boolean onInfo(MediaPlayer mediaPlayer, int what, int extra) {
+		if (mediaPlayer == player) {
+			switch (what) {
+			case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+				if (!playerBuffering) {
+					playerBuffering = true;
+					_updateState(true, null);
+				}
+				break;
+			case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+				if (playerBuffering) {
+					playerBuffering = false;
+					_updateState(true, null);
+				}
+				break;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public void onPrepared(MediaPlayer mediaPlayer) {
+		if (state != STATE_ALIVE)
+			return;
+		if (mediaPlayer == nextPlayer) {
+			//System.out.println("N onPrepared " + mediaPlayer);
+			if (nextSongScheduledForPreparation == nextSong && nextSong != null) {
+				nextSongScheduledForPreparation = null;
+				nextPlayerState = PLAYER_STATE_LOADED;
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+					_setNextPlayer();
+			}
+		} else if (mediaPlayer == player) {
+			//System.out.println("onPrepared " + mediaPlayer);
+			if (songScheduledForPreparation == song && song != null) {
+				songScheduledForPreparation = null;
+				playerState = PLAYER_STATE_LOADED;
+				try {
+					if (!hasFocus) {
+						_fullCleanup();
+						_updateState(false, null);
+						return;
+					}
+					//when dimmed, decreased the volume by 20dB
+					float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
+					player.setVolume(multiplier, multiplier);
+					if (storedSongTime < 0 || song.isHttp) {
+						storedSongTime = -1;
+						_startPlayer();
+						_scheduleNextPlayerForPreparation();
+					} else {
+						playAfterSeeking = true;
+						prepareNextAfterSeeking = true;
+						playerState = PLAYER_STATE_PREPARING;
+						player.seekTo(storedSongTime);
+					}
+					songWhenFirstErrorHappened = null;
+					_updateState(false, null);
+				} catch (Throwable ex) {
+					_fullCleanup();
+					_handleFailure(ex);
+				}
+			}
+		} else {
+			//System.out.println("INV! onPrepared " + mediaPlayer);
+			_fullCleanup();
+			_updateState(false, new Exception("Invalid MediaPlayer"));
+		}
+	}
+
+	@Override
+	public void onSeekComplete(MediaPlayer mediaPlayer) {
+		if (state != STATE_ALIVE)
+			return;
+		if (mediaPlayer == player) {
+			try {
+				playerState = PLAYER_STATE_LOADED;
+				if (playAfterSeeking)
+					_startPlayer();
+				_updateState(false, null);
+				if (prepareNextAfterSeeking)
+					_scheduleNextPlayerForPreparation();
+			} catch (Throwable ex) {
+				_fullCleanup();
+				_updateState(false, ex);
+			}
+		}
+	}
+
+	//I know this is far from "organized"... but this is the only way to prevent
+	//the class BluetoothVisualizerController from loading into memory without need!!!
+	public static Object bluetoothVisualizerController;
+	public static int bluetoothVisualizerLastErrorMessage, bluetoothVisualizerConfig, bluetoothVisualizerState;
+	public static final int BLUETOOTH_VISUALIZER_STATE_INITIAL = 0;
+	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTING = 1;
+	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTED = 2;
+	public static final int BLUETOOTH_VISUALIZER_STATE_TRANSMITTING = 3;
+
+	public static boolean startBluetoothVisualizer(ActivityHost activity, boolean startTransmissionOnConnection) {
+		if (state != STATE_ALIVE)
+			return false;
+		stopBluetoothVisualizer();
+		final BluetoothVisualizerControllerJni b = new BluetoothVisualizerControllerJni(activity, startTransmissionOnConnection);
+		if (bluetoothVisualizerLastErrorMessage == 0) {
+			bluetoothVisualizerController = b;
+			return true;
+		}
+		b.destroy();
+		return false;
+	}
+
+	public static void stopBluetoothVisualizer() {
+		bluetoothVisualizerState = BLUETOOTH_VISUALIZER_STATE_INITIAL;
+		if (bluetoothVisualizerController != null) {
+			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
+			bluetoothVisualizerController = null;
+			b.destroy();
+		}
+	}
+
+	private static void updateBluetoothVisualizer(boolean songHasChanged) {
+		if (bluetoothVisualizerController != null) {
+			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
+			if (!songHasChanged && playing)
+				b.resetAndResume();
+			else
+				b.resume();
+			b.playingChanged();
+		}
+	}
+
+	public static int getBluetoothVisualizerSize() {
+		final int size = (bluetoothVisualizerConfig & 7);
+		return ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
+	}
+
+	public static void setBluetoothVisualizerSize(int size) {
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~7)) | ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
+	}
+
+	public static int getBluetoothVisualizerSpeed() {
+		final int speed = ((bluetoothVisualizerConfig >> 3) & 3);
+		return ((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1));
+	}
+
+	public static void setBluetoothVisualizerSpeed(int speed) {
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(3 << 3))) | (((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1)) << 3);
+	}
+
+	public static int getBluetoothVisualizerFramesPerSecond(int framesToSkipIndex) {
+		//index          0, 1, 2, 3, 4, 5, 6, 7 , 8 , 9 , 10, 11
+		//frames to skip 0, 1, 2, 3, 4, 5, 9, 11, 14, 19, 29, 59
+		//frames/second  60,30,20,15,12,10, 6, 5 , 4 , 3 , 2 , 1
+		return ((framesToSkipIndex <= 5) ? (60 / (framesToSkipIndex + 1)) : (12 - framesToSkipIndex));
+	}
+
+	public static int getBluetoothVisualizerFramesToSkip() {
+		return (getBluetoothVisualizerFramesPerSecond(11 - getBluetoothVisualizerFramesToSkipIndex()) - 1);
+	}
+
+	public static int getBluetoothVisualizerFramesToSkipIndex() {
+		final int framesToSkipIndex = ((bluetoothVisualizerConfig >> 5) & 15);
+		return ((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex));
+	}
+
+	public static void setBluetoothVisualizerFramesToSkipIndex(int framesToSkipIndex) {
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex)) << 5);
+	}
 
 	private static final int OPT_VOLUME = 0x0000;
 	private static final int OPT_CONTROLMODE = 0x0001;
@@ -265,7 +1563,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static final int OPT_RADIOLASTGENRE = 0x0033;
 	private static final int OPT_TRANSITION = 0x0034;
 	private static final int OPT_BLUETOOTHVISUALIZERCONFIG = 0x0035;
-	
+
 	//values 0x01xx are shared among all effects
 	static final int OPT_EQUALIZER_ENABLED = 0x0100;
 	static final int OPT_EQUALIZER_PRESET = 0x0101;
@@ -275,7 +1573,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	static final int OPT_BASSBOOST_STRENGTH = 0x0111;
 	static final int OPT_VIRTUALIZER_ENABLED = 0x0112;
 	static final int OPT_VIRTUALIZER_STRENGTH = 0x0113;
-	
+
 	private static final int OPTBIT_CONTROLMODE = 0;
 	private static final int OPTBIT_BASSBOOSTMODE = 1;
 	private static final int OPTBIT_NEXTPREPARATION = 2;
@@ -321,92 +1619,33 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 	private static final int OPTBIT_BORDERS = 38;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
-	
-	private static final int SILENCE_NORMAL = 0;
-	private static final int SILENCE_FOCUS = 1;
-	private static final int SILENCE_NONE = -1;
-	private static String startCommand;
-	private static boolean lastPlaying, wasPlayingBeforeFocusLoss, playAfterSeek, unpaused, lastPreparing, currentSongPreparing, currentSongBuffering,
-		prepareNextOnSeek, nextPreparing, nextPrepared, nextAlreadySetForPlaying, deserialized, dimmedVolume, reviveAlreadyRetried, appIdle;
-	private static float volume = 1, actualVolume = 1, volumeDBMultiplier;
+
+	private static int initialForcePlayIdx;
+	private static boolean appIdle;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
-	private static int lastTime = -1, lastHow, silenceMode, audioSink, audioSinkBeforeFocusLoss;
-	private static Player thePlayer;
-	private static Song lastSong, nextSong, firstError;
-	private static MediaPlayer currentPlayer, nextPlayer;
-	private static NotificationManager notificationManager;
-	private static AudioManager audioManager;
-	private static TelephonyManager telephonyManager;
-	private static ExternalReceiver externalReceiver;
-	private static Timer focusDelayTimer, prepareDelayTimer, volumeTimer, headsetHookTimer, turnOffTimer, idleTurnOffTimer;
-	private static ComponentName mediaButtonEventReceiver;
-	private static RemoteControlClient remoteControlClient;
-	private static MediaSession mediaSession;
-	private static MediaMetadata.Builder mediaSessionMetadataBuilder;
-	private static PlaybackState.Builder mediaSessionPlaybackStateBuilder;
-	private static Object mediaRouterCallback;
-	private static Intent stickyBroadcast;
-	private static Runnable effectsObserver;
-	//I know this is far from "organized"... but this is the only way to prevent
-	//the class BluetoothVisualizerController from loading into memory without need!!!
-	public static Object bluetoothVisualizerController;
-	public static int bluetoothVisualizerLastErrorMessage, bluetoothVisualizerConfig, bluetoothVisualizerState;
-	//private static BluetoothAdapter bluetoothAdapter;
-	//private static BluetoothA2dp bluetoothA2dpProxy;
-	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
-	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
-	public static PlayerObserver observer;
-	public static final SongList songs = SongList.getInstance();
-	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
-	//Virtualizer and PresetReverb classes from being garbage collected...
-	public static final UI _ui = new UI();
-	public static MainHandler _mainHandler;
-	public static PlayerHandler _playerHandler;
-	public static final Equalizer _equalizer = new Equalizer();
-	public static final BassBoost _bassBoost = new BassBoost();
-	public static final Virtualizer _virtualizer = new Virtualizer();
-	//public static final PresetReverb _presetReverb = new PresetReverb();
-	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
-	//so they will survive their respective activity's destruction
-	//(and even the class garbage collection)
-	private static HashSet<String> favoriteFolders;
+	private static final HashSet<String> favoriteFolders = new HashSet<String>();
 	public static String path, originalPath, radioSearchTerm;
-	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1, radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther;
-	public static boolean isMainActiveOnTop, alreadySelected, bassBoostMode, nextPreparationEnabled, clearListWhenPlayingFolders, goBackWhenPlayingFolders, handleCallKey, playWhenHeadsetPlugged, headsetHookDoublePressPauses, doNotAttenuateVolume, lastRadioSearchWasByGenre;
-
-	//Even though it happens very rarely, a few devices will freeze and produce an ANR
-	//when calling setDataSource from the main thread :(
-	private static Thread preparationThread;
-	private static final Object preparationSync = new Object(), preparationSyncNext = new Object();
-	private static volatile PreparationHandler preparationHandler;
-	private static volatile MediaPlayer preparationPlayer, preparationPlayerNext;
-	private static volatile Song preparationSong, preparationSongNext;
-	private static volatile int preparationVersion, preparationVersionNext;
-	//This flag is used to differentiate two distinct moments when currentSongPreparing == true:
-	//- When preparationMustBeWaitedFor is true, setDataSource has not finished yet
-	//- When preparationMustBeWaitedFor is false, setDataSource has already finished, but onPrepared() has not been caled
-	private static boolean preparationMustBeWaitedFor;
-	private static int preparationStartTime;
-
-	//These guys used to be private, but I decided to make them public, even though some of them still have
-	//their setters, after I found out ProGuard does not inline static setters (or at least I have
-	//not been able to figure out a way to do so....)
-	public static int idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, state, volumeDB, volumeControlType, globalMaxVolume = 15;
-	public static boolean playing, hasFocus, controlMode, currentSongLoaded;
-	public static Song currentSong;
+	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders;
+	public static int radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
 
 	public static SerializableMap loadConfigFromFile(Context context) {
 		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");
 		return ((opts == null) ? new SerializableMap() : opts);
 	}
-	
+
 	private static void loadConfig(Context context) {
 		final SerializableMap opts = loadConfigFromFile(context);
 		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
-		setVolumeDB(opts.getInt(OPT_VOLUME));
+		volumeDB = opts.getInt(OPT_VOLUME);
+		if (volumeDB < VOLUME_MIN_DB)
+			volumeDB = VOLUME_MIN_DB;
+		else if (volumeDB > 0)
+			volumeDB = 0;
+		localVolumeDB = volumeDB;
+		volumeMultiplier = ((volumeDB <= VOLUME_MIN_DB) ? 0.0f : ((volumeDB >= 0) ? 1.0f : (float)Math.exp((double)volumeDB * 2.3025850929940456840179914546844 / 2000.0)));
 		path = opts.getString(OPT_PATH);
 		originalPath = opts.getString(OPT_ORIGINALPATH);
-		lastTime = opts.getInt(OPT_LASTTIME, -1);
+		storedSongTime = opts.getInt(OPT_LASTTIME, -1);
 		fadeInIncrementOnFocus = opts.getInt(OPT_FADEININCREMENTONFOCUS, 125);
 		fadeInIncrementOnPause = opts.getInt(OPT_FADEININCREMENTONPAUSE, 125);
 		fadeInIncrementOnOther = opts.getInt(OPT_FADEININCREMENTONOTHER, 0);
@@ -442,15 +1681,14 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
 			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
 			if (volumeControlType == VOLUME_CONTROL_DB)
-				setVolumeControlType(context, (opts.hasBits() ? opts.getBit(OPTBIT_DISPLAYVOLUMEINDB) : opts.getBoolean(OPT_DISPLAYVOLUMEINDB)) ? VOLUME_CONTROL_DB : VOLUME_CONTROL_PERCENT);
+				setVolumeControlType((opts.hasBits() ? opts.getBit(OPTBIT_DISPLAYVOLUMEINDB) : opts.getBoolean(OPT_DISPLAYVOLUMEINDB)) ? VOLUME_CONTROL_DB : VOLUME_CONTROL_PERCENT);
 			else
-				setVolumeControlType(context, volumeControlType);
+				setVolumeControlType(volumeControlType);
 		} else {
 			//load the volume control type the new way
 			final int defVolumeControlType = (UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
-			setVolumeControlType(context,
-				opts.getBitI(OPTBIT_VOLUMECONTROLTYPE0, defVolumeControlType & 1) |
-				(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE1, defVolumeControlType >> 1) << 1));
+			setVolumeControlType(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE0, defVolumeControlType & 1) |
+					(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE1, defVolumeControlType >> 1) << 1));
 		}
 		//the concept of bit was added on version 38
 		if (opts.hasBits() || UI.lastVersionCode == 0) {
@@ -525,7 +1763,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		if (count > 0) {
 			if (count > 128)
 				count = 128;
-			favoriteFolders = new HashSet<String>(count);
+			favoriteFolders.clear();
 			for (int i = count - 1; i >= 0; i--) {
 				final String f = opts.getString(OPT_FAVORITEFOLDER0 + i);
 				if (f != null && f.length() > 1)
@@ -536,17 +1774,15 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		BassBoost.loadConfig(opts);
 		Virtualizer.loadConfig(opts);
 		//PresetReverb.loadConfig(opts);
-		if (favoriteFolders == null)
-			favoriteFolders = new HashSet<String>(8);
 	}
-	
+
 	public static void saveConfig(Context context, boolean saveSongs) {
 		final SerializableMap opts = new SerializableMap(96);
 		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
 		opts.put(OPT_VOLUME, volumeDB);
 		opts.put(OPT_PATH, path);
 		opts.put(OPT_ORIGINALPATH, originalPath);
-		opts.put(OPT_LASTTIME, lastTime);
+		opts.put(OPT_LASTTIME, storedSongTime);
 		opts.put(OPT_FADEININCREMENTONFOCUS, fadeInIncrementOnFocus);
 		opts.put(OPT_FADEININCREMENTONPAUSE, fadeInIncrementOnPause);
 		opts.put(OPT_FADEININCREMENTONOTHER, fadeInIncrementOnOther);
@@ -605,7 +1841,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		opts.putBit(OPTBIT_REPEATONE, songs.isRepeatingOne());
 		opts.putBit(OPTBIT_NOTFULLSCREEN, UI.notFullscreen);
 		opts.putBit(OPTBIT_CONTROLS_TO_THE_LEFT, UI.controlsToTheLeft);
-		if (favoriteFolders != null && favoriteFolders.size() > 0) {
+		if (favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
 			for (String f : favoriteFolders) {
@@ -623,179 +1859,380 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		if (saveSongs)
 			songs.serialize(context, null);
 	}
-	
-	public static boolean startBluetoothVisualizer(ActivityHost activity, boolean startTransmissionOnConnection) {
-		if (state != STATE_INITIALIZED)
-			return false;
-		stopBluetoothVisualizer();
-		final BluetoothVisualizerControllerJni b = new BluetoothVisualizerControllerJni(activity, startTransmissionOnConnection);
-		if (bluetoothVisualizerLastErrorMessage == 0) {
-			bluetoothVisualizerController = b;
-			return true;
-		}
-		b.destroy();
-		return false;
-	}
 
-	public static void stopBluetoothVisualizer() {
-		bluetoothVisualizerState = BLUETOOTH_VISUALIZER_STATE_INITIAL;
-		if (bluetoothVisualizerController != null) {
-			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
-			bluetoothVisualizerController = null;
-			b.destroy();
-		}
-	}
+	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
+		if (localSong == null)
+			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
+		else if (isPreparing())
+			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
+		else
+			views.setTextViewText(R.id.lblTitle, localSong.title);
 
-	private static void updateBluetoothVisualizer(boolean songHasChanged) {
-		if (bluetoothVisualizerController != null) {
-			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
-			if (!songHasChanged && playing)
-				b.resetAndResume();
-			else
-				b.resume();
-			b.playingChanged();
-		}
-	}
+		if (prepareButtons) {
+			Intent intent;
 
-	public static int getBluetoothVisualizerSize() {
-		final int size = (bluetoothVisualizerConfig & 7);
-		return ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
-	}
+			if (notification) {
+				UI.prepareNotificationPlaybackIcons(context);
+				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
+				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
+				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
+				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
 
-	public static void setBluetoothVisualizerSize(int size) {
-		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~7)) | ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
-	}
+				intent = new Intent(context, Player.class);
+				intent.setAction(Player.ACTION_EXIT);
+				views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
+			} else {
+				if (localSong == null)
+					views.setTextViewText(R.id.lblArtist, "-");
+				else
+					views.setTextViewText(R.id.lblArtist, localSong.extraInfo);
 
-	public static int getBluetoothVisualizerSpeed() {
-		final int speed = ((bluetoothVisualizerConfig >> 3) & 3);
-		return ((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1));
-	}
+				views.setTextColor(R.id.lblTitle, UI.widgetTextColor);
+				views.setTextColor(R.id.lblArtist, UI.widgetTextColor);
 
-	public static void setBluetoothVisualizerSpeed(int speed) {
-		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(3 << 3))) | (((speed <= 0) ? 0 : ((speed >= 2) ? 2 : 1)) << 3);
-	}
+				final PendingIntent p = getPendingIntent(context);
+				views.setOnClickPendingIntent(R.id.lblTitle, p);
+				views.setOnClickPendingIntent(R.id.lblArtist, p);
 
-	public static int getBluetoothVisualizerFramesPerSecond(int framesToSkipIndex) {
-		//index          0, 1, 2, 3, 4, 5, 6, 7 , 8 , 9 , 10, 11
-		//frames to skip 0, 1, 2, 3, 4, 5, 9, 11, 14, 19, 29, 59
-		//frames/second  60,30,20,15,12,10, 6, 5 , 4 , 3 , 2 , 1
-		return ((framesToSkipIndex <= 5) ? (60 / (framesToSkipIndex + 1)) : (12 - framesToSkipIndex));
-	}
-
-	public static int getBluetoothVisualizerFramesToSkip() {
-		return (getBluetoothVisualizerFramesPerSecond(11 - getBluetoothVisualizerFramesToSkipIndex()) - 1);
-	}
-
-	public static int getBluetoothVisualizerFramesToSkipIndex() {
-		final int framesToSkipIndex = ((bluetoothVisualizerConfig >> 5) & 15);
-		return ((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex));
-	}
-
-	public static void setBluetoothVisualizerFramesToSkipIndex(int framesToSkipIndex) {
-		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex)) << 5);
-	}
-
-	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private static void registerA2dpObserver(Context context) {
-		bluetoothAdapter = null;
-		bluetoothA2dpProxy = null;
-		try {
-			bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		} catch (Throwable ex) {
-		}
-		if (bluetoothAdapter == null)
-			return;
-		try {
-			bluetoothAdapter.getProfileProxy(context, new BluetoothProfile.ServiceListener() {
-				@Override
-				public void onServiceDisconnected(int profile) {
-				}
-				@Override
-				public void onServiceConnected(int profile, BluetoothProfile proxy) {
-					if (profile != BluetoothProfile.A2DP)
-						return;
-					if (bluetoothA2dpProxy != null) {
-						try {
-							bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dpProxy);
-						} catch (Throwable ex) {
-						}
-						bluetoothA2dpProxy = null;
-					}
-					bluetoothA2dpProxy = (BluetoothA2dp)proxy;
-				}
-			}, BluetoothProfile.A2DP);
-		} catch (Throwable ex) {
-		}
-	}
-	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private static boolean isA2dpPlaying() {
-		if (bluetoothA2dpProxy == null)
-			return false;
-		try {
-			final List<BluetoothDevice> l = bluetoothA2dpProxy.getConnectedDevices();
-			for (int i = l.size() - 1; i >= 0; i--) {
-				if (bluetoothA2dpProxy.isA2dpPlaying(l.get(i)))
-					return true;
+				UI.prepareWidgetPlaybackIcons(context);
+				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
+				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
+				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
 			}
-		} catch (Throwable ex) {
+
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_PREVIOUS);
+			views.setOnClickPendingIntent(R.id.btnPrev, PendingIntent.getService(context, 0, intent, 0));
+
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_PLAY_PAUSE);
+			views.setOnClickPendingIntent(R.id.btnPlay, PendingIntent.getService(context, 0, intent, 0));
+
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_NEXT);
+			views.setOnClickPendingIntent(R.id.btnNext, PendingIntent.getService(context, 0, intent, 0));
+		}
+		return views;
+	}
+
+	private static PendingIntent getPendingIntent(Context context) {
+		final Intent intent = new Intent(context, ActivityHost.class);
+		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		return PendingIntent.getActivity(context, 0, intent, 0);
+	}
+
+	private static Notification getNotification() {
+		final Notification notification = new Notification();
+		notification.icon = R.drawable.ic_notification;
+		notification.when = 0;
+		notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
+		notification.contentIntent = getPendingIntent(thePlayer);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification), true, true);
+		else
+			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification_simple), false, true);
+		return notification;
+	}
+
+	public static void setControlMode(boolean controlMode) {
+		Player.controlMode = controlMode;
+		if (observer != null)
+			observer.onPlayerControlModeChanged(controlMode);
+	}
+
+	@Override
+	public int compare(FileSt a, FileSt b) {
+		return a.name.compareToIgnoreCase(b.name);
+	}
+
+	public static void addFavoriteFolder(String path) {
+		synchronized (favoriteFolders) {
+			favoriteFolders.add(path);
+		}
+	}
+
+	public static void removeFavoriteFolder(String path) {
+		synchronized (favoriteFolders) {
+			favoriteFolders.remove(path);
+		}
+	}
+
+	public static boolean isFavoriteFolder(String path) {
+		synchronized (favoriteFolders) {
+			return favoriteFolders.contains(path);
+		}
+	}
+
+	public static FileSt[] getFavoriteFolders(int extra) {
+		FileSt[] ffs;
+		synchronized (favoriteFolders) {
+			final int count = favoriteFolders.size();
+			if (count == 0)
+				return new FileSt[extra];
+			ffs = new FileSt[count + extra];
+			int i = 0;
+			for (String f : favoriteFolders) {
+				final int idx = f.lastIndexOf('/');
+				ffs[i] = new FileSt(f, (idx >= 0 && idx < (f.length() - 1)) ? f.substring(idx + 1) : f, null, FileSt.TYPE_FAVORITE);
+				i++;
+			}
+		}
+		ArraySorter.sort(ffs, 0, ffs.length - extra, thePlayer);
+		return ffs;
+	}
+
+	public static void setSelectionAfterAdding(int positionToSelect) {
+		if (!alreadySelected) {
+			alreadySelected = true;
+			if (!songs.selecting && !songs.moving)
+				songs.setSelection(positionToSelect, false);
+			if (!isMainActiveOnTop)
+				Player.positionToSelect = positionToSelect;
+		}
+	}
+
+	public static void songListDeserialized(Song newCurrentSong, int forcePlayIdx, int positionToSelect, Throwable ex) {
+		if (positionToSelect >= 0)
+			setSelectionAfterAdding(positionToSelect);
+		if (newCurrentSong != null)
+			localSong = newCurrentSong;
+		if (handler != null) {
+			if (newCurrentSong != null)
+				handler.sendMessageAtTime(Message.obtain(handler, MSG_SONG_LIST_DESERIALIZED, newCurrentSong), SystemClock.uptimeMillis());
+			if (ex != null)
+				handler.sendMessageAtTime(Message.obtain(handler, MSG_SONG_LIST_DESERIALIZED, ex), SystemClock.uptimeMillis());
+		}
+		switch (state) {
+		case STATE_INITIALIZING:
+		case STATE_INITIALIZING_STEP2:
+			initialForcePlayIdx = forcePlayIdx;
+			localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
+			break;
+		}
+	}
+
+	public static boolean isConnectedToTheInternet() {
+		if (thePlayer != null) {
+			try {
+				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
+				final NetworkInfo info = mngr.getActiveNetworkInfo();
+				return (info != null && info.isConnected());
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 		}
 		return false;
 	}
-	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private static void unregisterA2dpObserver(Context context) {
-		try {
-			if (bluetoothAdapter != null && bluetoothA2dpProxy != null)
-				bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dpProxy);
-		} catch (Throwable ex) {
+
+	public static boolean isInternetConnectedViaWiFi() {
+		if (thePlayer != null) {
+			try {
+				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
+				final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+				final NetworkInfo info = mngr.getActiveNetworkInfo();
+				return (infoMob != null && info != null && !infoMob.isConnected() && info.isConnected());
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 		}
-		bluetoothAdapter = null;
-		bluetoothA2dpProxy = null;
-	}*/
-	
+		return false;
+	}
+
+	private static void processTurnOffTimer() {
+		if (state != STATE_ALIVE)
+			return;
+		if (turnOffTimerOrigin > 0) {
+			final int secondsLeft = (turnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 1000);
+			if (turnOffTimerObserver != null)
+				turnOffTimerObserver.onPlayerTurnOffTimerTick();
+			if (secondsLeft < 15) //less than half of our period
+				stopService();
+			else
+				localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+		}
+	}
+
+	public static void setTurnOffTimer(int minutes) {
+		if (state != STATE_ALIVE)
+			return;
+		turnOffTimerOrigin = 0;
+		turnOffTimerSelectedMinutes = 0;
+		localHandler.removeMessages(MSG_TURN_OFF_TIMER);
+		if (minutes > 0) {
+			if (minutes != 60 && minutes != 90 && minutes != 120)
+				turnOffTimerCustomMinutes = minutes;
+			//we must use SystemClock.elapsedRealtime because uptimeMillis
+			//does not take sleep time into account (and the user makes no
+			//difference between the time spent during sleep and the one
+			//while actually working)
+			turnOffTimerOrigin = SystemClock.elapsedRealtime();
+			turnOffTimerSelectedMinutes = minutes;
+			localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+		}
+	}
+
+	public static int getTurnOffTimerMinutesLeft() {
+		if (turnOffTimerOrigin <= 0)
+			return turnOffTimerSelectedMinutes;
+		final int m = turnOffTimerSelectedMinutes - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 60000L);
+		return ((m <= 0) ? 1 : m);
+	}
+
+	public static void setAppIdle(boolean appIdle) {
+		if (state != STATE_ALIVE)
+			return;
+		if (Player.appIdle != appIdle) {
+			Player.appIdle = appIdle;
+			if (idleTurnOffTimerSelectedMinutes > 0) {
+				localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
+				final boolean timerShouldBeOn = (!playing && appIdle);
+				if (!timerShouldBeOn) {
+					idleTurnOffTimerOrigin = 0;
+				} else {
+					//refer to setIdleTurnOffTimer for more information
+					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
+					localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+					if (turnOffTimerObserver != null)
+						turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+				}
+			}
+		}
+	}
+
+	private static void processIdleTurnOffTimer() {
+		if (state != STATE_ALIVE)
+			return;
+		boolean wasPlayingBeforeOngoingCall = false, sendMessage = false;
+		final boolean idle = (!playing && appIdle);
+		if (idle && telephonyManager != null) {
+			//check for ongoing call
+			try {
+				if (telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
+					wasPlayingBeforeOngoingCall = resumePlaybackAfterFocusGain;
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+		if (!idle || wasPlayingBeforeOngoingCall) {
+			if (idle) {
+				//consider time spent in calls as active time, but keep checking,
+				//because when the call ends, the audio focus could go to someone
+				//else, rendering us actually idle!
+				idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
+				sendMessage = true;
+			} else {
+				idleTurnOffTimerOrigin = 0; //it's safe to reset the origin
+			}
+			if (turnOffTimerObserver != null)
+				turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+		} else {
+			if (idleTurnOffTimerOrigin > 0) {
+				final int secondsLeft = (idleTurnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 1000);
+				if (turnOffTimerObserver != null)
+					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
+				if (secondsLeft < 15) //less than half of our period
+					stopService();
+				else
+					sendMessage = true;
+			}
+		}
+		if (sendMessage)
+			localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+	}
+
+	public static void setIdleTurnOffTimer(int minutes) {
+		if (state == STATE_ALIVE) {
+			idleTurnOffTimerOrigin = 0;
+			idleTurnOffTimerSelectedMinutes = 0;
+			localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
+			if (minutes > 0) {
+				if (minutes != 60 && minutes != 90 && minutes != 120)
+					idleTurnOffTimerCustomMinutes = minutes;
+				//we must use SystemClock.elapsedRealtime because uptimeMillis
+				//does not take sleep time into account (and the user makes no
+				//difference between the time spent during sleep and the one
+				//while actually working)
+				idleTurnOffTimerSelectedMinutes = minutes;
+				if (!playing && appIdle) {
+					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
+					localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+				}
+			}
+		}
+	}
+
+	public static int getIdleTurnOffTimerMinutesLeft() {
+		if (idleTurnOffTimerOrigin <= 0)
+			return idleTurnOffTimerSelectedMinutes;
+		final int m = idleTurnOffTimerSelectedMinutes - (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 60000L);
+		return ((m <= 0) ? 1 : m);
+	}
+
+	private static void _songListDeserialized(Object obj) {
+		if (obj instanceof Throwable) {
+			_updateState(false, (Throwable)obj);
+		} else {
+			song = (Song)obj;
+			_updateState(false, null);
+		}
+	}
+
+	private static Intent stickyBroadcast;
+	private static ExternalReceiver externalReceiver;
+	private static ComponentName mediaButtonEventReceiver;
+	@SuppressWarnings("deprecation")
+	private static RemoteControlClient remoteControlClient;
+	private static MediaSession mediaSession;
+	private static MediaMetadata.Builder mediaSessionMetadataBuilder;
+	private static PlaybackState.Builder mediaSessionPlaybackStateBuilder;
+	private static Object mediaRouterCallback;
+
+	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
+	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
+	public static PlayerObserver observer;
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private static void registerMediaRouter(Context context) {
 		final MediaRouter mr = (MediaRouter)context.getSystemService(MEDIA_ROUTER_SERVICE);
 		if (mr != null) {
 			mediaRouterCallback = new MediaRouter.Callback() {
 				@Override
-				public void onRouteVolumeChanged(MediaRouter router, RouteInfo info) {
+				public void onRouteVolumeChanged(MediaRouter router, MediaRouter.RouteInfo info) {
 				}
 				@Override
-				public void onRouteUnselected(MediaRouter router, int type, RouteInfo info) {
+				public void onRouteUnselected(MediaRouter router, int type, MediaRouter.RouteInfo info) {
 				}
 				@Override
-				public void onRouteUngrouped(MediaRouter router, RouteInfo info, RouteGroup group) {
+				public void onRouteUngrouped(MediaRouter router, MediaRouter.RouteInfo info, MediaRouter.RouteGroup group) {
 				}
 				@Override
-				public void onRouteSelected(MediaRouter router, int type, RouteInfo info) {
+				public void onRouteSelected(MediaRouter router, int type, MediaRouter.RouteInfo info) {
 				}
 				@Override
-				public void onRouteRemoved(MediaRouter router, RouteInfo info) {
+				public void onRouteRemoved(MediaRouter router, MediaRouter.RouteInfo info) {
 				}
 				@Override
-				public void onRouteGrouped(MediaRouter router, RouteInfo info, RouteGroup group, int index) {
+				public void onRouteGrouped(MediaRouter router, MediaRouter.RouteInfo info, MediaRouter.RouteGroup group, int index) {
 				}
 				@Override
-				public void onRouteChanged(MediaRouter router, RouteInfo info) {
+				public void onRouteChanged(MediaRouter router, MediaRouter.RouteInfo info) {
 					if (info.getPlaybackStream() == AudioManager.STREAM_MUSIC) {
 						//this actually works... nonetheless, I was not able to detected
 						//which is the audio sink used by this route.... :(
-						globalMaxVolume = info.getVolumeMax();
-						if (globalMaxVolume < 1)
-							globalMaxVolume = 1;
+						volumeStreamMax = info.getVolumeMax();
+						if (volumeStreamMax < 1)
+							volumeStreamMax = 1;
 						audioSinkChanged(false);
 					}
 				}
 				@Override
-				public void onRouteAdded(MediaRouter router, RouteInfo info) {
+				public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo info) {
 				}
 			};
 			mr.addCallback(MediaRouter.ROUTE_TYPE_LIVE_AUDIO | MediaRouter.ROUTE_TYPE_USER, (MediaRouter.Callback)mediaRouterCallback);
 		}
 	}
-	
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private static void unregisterMediaRouter(Context context) {
 		final MediaRouter mr = (MediaRouter)context.getSystemService(MEDIA_ROUTER_SERVICE);
@@ -804,18 +2241,19 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		mediaRouterCallback = null;
 	}
 
+	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 	private static void registerRemoteControlClientCallbacks() {
 		remoteControlClient.setOnGetPlaybackPositionListener(new RemoteControlClient.OnGetPlaybackPositionListener() {
 			@Override
 			public long onGetPlaybackPosition() {
-				return getCurrentPosition();
+				return getPosition();
 			}
 		});
 		remoteControlClient.setPlaybackPositionUpdateListener(new RemoteControlClient.OnPlaybackPositionUpdateListener() {
 			@Override
 			public void onPlaybackPositionUpdate(long pos) {
-				Player.seekTo((int)pos, (currentPlayer != null) && currentSongLoaded && playing);
+				seekTo((int)pos);
 			}
 		});
 	}
@@ -826,6 +2264,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		remoteControlClient.setPlaybackPositionUpdateListener(null);
 	}
 
+	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static void registerRemoteControlClient() {
 		try {
@@ -840,9 +2279,11 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			}
 			audioManager.registerRemoteControlClient(remoteControlClient);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static void unregisterRemoteControlClient() {
 		try {
@@ -853,6 +2294,7 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 				remoteControlClient = null;
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -905,15 +2347,17 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 
 					@Override
 					public void onSeekTo(long pos) {
-						Player.seekTo((int)pos, (currentPlayer != null) && currentSongLoaded && playing);
+						seekTo((int)pos);
 					}
 				});
 				mediaSession.setSessionActivity(getPendingIntent(thePlayer));
 				mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			}
-			mediaSession.setActive(true);
+			if (mediaSession != null)
+				mediaSession.setActive(true);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -928,9 +2372,11 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			}
 			mediaSessionPlaybackStateBuilder = null;
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	public static void registerMediaButtonEventReceiver() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			registerMediaSession();
@@ -944,7 +2390,8 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			}
 		}
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	public static void unregisterMediaButtonEventReceiver() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			unregisterMediaSession();
@@ -958,1236 +2405,28 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		}
 	}
 
-	@Override
-	public void run() {
-		Looper.prepare();
-		preparationHandler = new PreparationHandler(Looper.myLooper());
-		Looper.loop();
-	}
-
-	private static void initialize(Context context) {
-		if (state == STATE_NEW) {
-			alreadySelected = true; //fix the initial selection when the app is started from the widget
-			state = STATE_INITIALIZING;
-			_mainHandler = MainHandler.initialize();
-			if (notificationManager == null)
-				notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
-			if (audioManager == null)
-				audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
-			if (telephonyManager == null)
-				telephonyManager = (TelephonyManager)context.getSystemService(TELEPHONY_SERVICE);
-			if (destroyedObservers == null)
-				destroyedObservers = new ArrayList<Player.PlayerDestroyedObserver>(4);
-			if (stickyBroadcast == null)
-				stickyBroadcast = new Intent();
-			loadConfig(context);
-		}
-		if (thePlayer != null) {
-			if (preparationThread == null) {
-				preparationThread = new Thread(thePlayer, "Player Preparation Thread");
-				preparationThread.start();
-			}
-			if (_playerHandler == null)
-				_playerHandler = new PlayerHandler(context);
-			registerMediaButtonEventReceiver();
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-				registerMediaRouter(thePlayer);
-			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			//	registerA2dpObserver(thePlayer);
-			checkAudioSink(false, false);
-			if (focusDelayTimer == null)
-				focusDelayTimer = new Timer((Timer.TimerHandler)thePlayer, "Player Focus Delay Timer", true, true, false);
-			if (prepareDelayTimer == null)
-				prepareDelayTimer = new Timer((Timer.TimerHandler)thePlayer, "Player Prepare Delay Timer", true, true, false);
-			if (volumeTimer == null)
-				volumeTimer = new Timer((Timer.TimerHandler)thePlayer, "Player Volume Timer", false, true, true);
-			if (headsetHookTimer == null)
-				headsetHookTimer = new Timer((Timer.TimerHandler)thePlayer, "Headset Hook Timer", true, true, false);
-			sendMessage(MSG_INITIALIZATION_0);
-		}
-	}
-
-	private static void terminate() {
-		if (state == STATE_INITIALIZED) {
-			state = STATE_TERMINATING;
-			if (preparationHandler != null)
-				preparationHandler.sendEmptyMessageAtTime(MSG_TERMINATION_0, SystemClock.uptimeMillis());
-			setLastTime();
-			fullCleanup(null);
-			sendMessage(MSG_TERMINATION_0);
-		}
-	}
-	
-	public static boolean isConnectedToTheInternet() {
-		if (thePlayer != null) {
-			try {
-				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
-				final NetworkInfo info = mngr.getActiveNetworkInfo();
-				return (info != null && info.isConnected());
-			} catch (Throwable ex) {
-			}
-		}
-		return false;
-	}
-	
-	public static boolean isInternetConnectedViaWiFi() {
-		if (thePlayer != null) {
-			try {
-				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
-				final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-				final NetworkInfo info = mngr.getActiveNetworkInfo();
-				return (infoMob != null && info != null && !infoMob.isConnected() && info.isConnected());
-			} catch (Throwable ex) {
-			}
-		}
-		return false;
-	}
-	
-	@Override
-	public int compare(FileSt a, FileSt b) {
-		return a.name.compareToIgnoreCase(b.name);
-	}
-	
-	public static void addFavoriteFolder(String path) {
-		synchronized (favoriteFolders) {
-			favoriteFolders.add(path);
-		}
-	}
-	
-	public static void removeFavoriteFolder(String path) {
-		synchronized (favoriteFolders) {
-			favoriteFolders.remove(path);
-		}
-	}
-	
-	public static boolean isFavoriteFolder(String path) {
-		synchronized (favoriteFolders) {
-			return favoriteFolders.contains(path);
-		}
-	}
-	
-	public static FileSt[] getFavoriteFolders(int extra) {
-		FileSt[] ffs;
-		synchronized (favoriteFolders) {
-			final int count = favoriteFolders.size();
-			if (count == 0)
-				return new FileSt[extra];
-			ffs = new FileSt[count + extra];
-			int i = 0;
-			for (String f : favoriteFolders) {
-				final int idx = f.lastIndexOf('/');
-				ffs[i] = new FileSt(f, (idx >= 0 && idx < (f.length() - 1)) ? f.substring(idx + 1) : f, null, FileSt.TYPE_FAVORITE);
-				i++;
-			}
-		}
-		ArraySorter.sort(ffs, 0, ffs.length - extra, thePlayer);
-		return ffs;
-	}
-	
-	public static void setSelectionAfterAdding(int positionToSelect) {
-		if (!alreadySelected) {
-			alreadySelected = true;
-			if (!songs.selecting && !songs.moving)
-				songs.setSelection(positionToSelect, false);
-			if (!isMainActiveOnTop)
-				Player.positionToSelect = positionToSelect;
-		}
-	}
-	
-	/*public static void applyReverbToPlayers() {
-		PresetReverb.applyToPlayer(currentPlayer);
-		PesetReverb.applyToPlayer(currentPlayer);
-	}
-	
-	public static void releaseReverbFromPlayers() {
-		/*if (currentPlayer != null) {
-			try {
-				currentPlayer.attachAuxEffect(0);
-			} catch (Throwable ex) {
-			}
-		}
-		if (nextPlayer != null) {
-			try {
-				nextPlayer.attachAuxEffect(0);
-			} catch (Throwable ex) {
-			}
-		}
-	}*/
-	
-	private static void initializePlayers() {
-		if (currentPlayer == null) {
-			currentPlayer = createPlayer();
-			if (nextPlayer != null) {
-				currentPlayer.setAudioSessionId(nextPlayer.getAudioSessionId());
-			} else {
-				nextPlayer = createPlayer();
-				nextPlayer.setAudioSessionId(currentPlayer.getAudioSessionId());
-			}
-		} else if (nextPlayer == null) {
-			nextPlayer = createPlayer();
-			nextPlayer.setAudioSessionId(currentPlayer.getAudioSessionId());
-		}
-	}
-	
-	private static boolean requestFocus() {
-		if (thePlayer == null || audioManager == null || audioManager.requestAudioFocus(thePlayer, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-			hasFocus = false;
-			return false;
-		}
-		registerMediaButtonEventReceiver();
-		hasFocus = true;
-		return true;
-	}
-	
-	private static void abandonFocus() {
-		if (audioManager != null && thePlayer != null)
-			audioManager.abandonAudioFocus(thePlayer);
-		hasFocus = false;
-	}
-	
-	private static void setLastTime() {
-		try {
-			if (currentSong != null && currentSong.isHttp)
-				lastTime = -1;
-			else if (currentPlayer != null && currentSongLoaded && playing)
-				lastTime = currentPlayer.getCurrentPosition();
-		} catch (Throwable ex) {
-		}
-	}
-	
-	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	private static void broadcastStateChangeToRemoteControl(boolean preparing, boolean titleOrSongHaveChanged) {
-		try {
-			if (currentSong == null) {
-				remoteControlClient.setPlaybackState(RemoteControlClient.PLAYSTATE_STOPPED);
-			} else {
-				remoteControlClient.setPlaybackState(preparing ? RemoteControlClient.PLAYSTATE_BUFFERING : (playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED));
-				if (titleOrSongHaveChanged) {
-					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
-					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : currentSong.title);
-					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, currentSong.artist);
-					ed.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, currentSong.album);
-					ed.putLong(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER, currentSong.track);
-					ed.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, currentSong.lengthMS);
-					ed.putLong(MediaMetadataRetriever.METADATA_KEY_YEAR, currentSong.year);
-					ed.apply();
-				}
-			}
-		} catch (Throwable ex) {
-		}
-	}
-
-	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	private static void broadcastStateChangeToMediaSession(boolean preparing, boolean titleOrSongHaveChanged) {
-		try {
-			if (currentSong == null) {
-				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
-			} else {
-				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getCurrentPosition(), 1, SystemClock.elapsedRealtime()).build());
-				if (titleOrSongHaveChanged) {
-					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : currentSong.title);
-					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, currentSong.artist);
-					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, currentSong.album);
-					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, currentSong.track);
-					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, currentSong.lengthMS);
-					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_YEAR, currentSong.year);
-					mediaSession.setMetadata(mediaSessionMetadataBuilder.build());
-				}
-			}
-		} catch (Throwable ex) {
-		}
-	}
-
-	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean titleOrSongHaveChanged) {
-		//
-		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
-		//http://developer.android.com/reference/android/media/RemoteControlClient.html
-		//https://android.googlesource.com/platform/packages/apps/Music/+/master/src/com/android/music/MediaPlaybackService.java
-		//
-		//http://stackoverflow.com/questions/15527614/send-track-informations-via-a2dp-avrcp
-		//http://stackoverflow.com/questions/14536597/how-does-the-android-lockscreen-get-playing-song
-		//http://stackoverflow.com/questions/10510292/how-to-get-current-music-track-info
-		//
-		//https://android.googlesource.com/platform/packages/apps/Bluetooth/+/android-4.3_r0.9.1/src/com/android/bluetooth/a2dp/Avrcp.java
-		//
-		if (currentSong == null) {
-			stickyBroadcast.setAction("com.android.music.playbackcomplete");
-			stickyBroadcast.removeExtra("id");
-			stickyBroadcast.removeExtra("songid");
-			stickyBroadcast.removeExtra("track");
-			stickyBroadcast.removeExtra("artist");
-			stickyBroadcast.removeExtra("album");
-			stickyBroadcast.removeExtra("duration");
-			//stickyBroadcast.removeExtra("position");
-			stickyBroadcast.removeExtra("playing");
-		} else {
-			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
-			stickyBroadcast.setAction(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
-			//stickyBroadcast.setAction("com.android.music.playstatechanged");
-			stickyBroadcast.putExtra("id", currentSong.id);
-			stickyBroadcast.putExtra("songid", currentSong.id);
-			stickyBroadcast.putExtra("track", preparing ? thePlayer.getText(R.string.loading) : currentSong.title);
-			stickyBroadcast.putExtra("artist", currentSong.artist);
-			stickyBroadcast.putExtra("album", currentSong.album);
-			stickyBroadcast.putExtra("duration", (long)currentSong.lengthMS);
-			//stickyBroadcast.putExtra("position", (long)0);
-			stickyBroadcast.putExtra("playing", playing);
-		}
-		//thePlayer.sendBroadcast(stickyBroadcast);
-		thePlayer.sendStickyBroadcast(stickyBroadcast);
-		if (remoteControlClient != null)
-			broadcastStateChangeToRemoteControl(preparing, titleOrSongHaveChanged);
-		if (mediaSession != null)
-			broadcastStateChangeToMediaSession(preparing, titleOrSongHaveChanged);
-	}
-	
-	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
-		if (currentSong == null)
-			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
-		else if (isCurrentSongPreparing())
-			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
-		else
-			views.setTextViewText(R.id.lblTitle, currentSong.title);
-		
-		if (prepareButtons) {
-			Intent intent;
-			
-			if (notification) {
-				UI.prepareNotificationPlaybackIcons(context);
-				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
-				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
-				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
-				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
-				
-				intent = new Intent(context, Player.class);
-				intent.setAction(Player.ACTION_EXIT);
-				views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
-			} else {
-				if (currentSong == null)
-					views.setTextViewText(R.id.lblArtist, "-");
-				else
-					views.setTextViewText(R.id.lblArtist, currentSong.extraInfo);
-				
-				views.setTextColor(R.id.lblTitle, UI.widgetTextColor);
-				views.setTextColor(R.id.lblArtist, UI.widgetTextColor);
-				
-				final PendingIntent p = getPendingIntent(context);
-				views.setOnClickPendingIntent(R.id.lblTitle, p);
-				views.setOnClickPendingIntent(R.id.lblArtist, p);
-				
-				UI.prepareWidgetPlaybackIcons(context);
-				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
-				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
-				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
-			}
-			
-			intent = new Intent(context, Player.class);
-			intent.setAction(Player.ACTION_PREVIOUS);
-			views.setOnClickPendingIntent(R.id.btnPrev, PendingIntent.getService(context, 0, intent, 0));
-			
-			intent = new Intent(context, Player.class);
-			intent.setAction(Player.ACTION_PLAY_PAUSE);
-			views.setOnClickPendingIntent(R.id.btnPlay, PendingIntent.getService(context, 0, intent, 0));
-			
-			intent = new Intent(context, Player.class);
-			intent.setAction(Player.ACTION_NEXT);
-			views.setOnClickPendingIntent(R.id.btnNext, PendingIntent.getService(context, 0, intent, 0));
-		}		
-		return views;
-	}
-	
-	private static PendingIntent getPendingIntent(Context context) {
-		final Intent intent = new Intent(context, ActivityHost.class);
-		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		return PendingIntent.getActivity(context, 0, intent, 0);
-	}
-	
-	private static Notification getNotification() {
-		final Notification notification = new Notification();
-		notification.icon = R.drawable.ic_notification;
-		notification.when = 0;
-		notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
-		notification.contentIntent = getPendingIntent(thePlayer);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification), true, true);
-		else
-			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification_simple), false, true);
-		return notification;
-	}
-	
-	private static void onPlayerChanged(Song newCurrentSong, boolean metaHasChanged, Throwable ex) {
-		if (thePlayer != null) {
-			if (newCurrentSong != null)
-				currentSong = newCurrentSong;
-			final boolean songHasChanged = (metaHasChanged || (lastSong != currentSong));
-			final boolean playbackHasChanged = (lastPlaying != playing);
-			final boolean preparing = isCurrentSongPreparing();
-			final boolean preparingHasChanged = (lastPreparing != preparing);
-			if (!songHasChanged && !playbackHasChanged && !preparingHasChanged && ex == null)
-				return;
-			if (idleTurnOffTimer != null && idleTurnOffTimerSelectedMinutes > 0)
-				processIdleTurnOffTimer();
-			lastSong = currentSong;
-			lastPlaying = playing;
-			lastPreparing = preparing;
-			notificationManager.notify(1, getNotification());
-			WidgetMain.updateWidgets(thePlayer);
-			broadcastStateChange(playbackHasChanged, preparing, songHasChanged | preparingHasChanged);
-			if (ex != null) {
-				final String msg = ex.getMessage();
-				if (ex instanceof IllegalStateException) {
-					UI.toast(thePlayer, R.string.error_state);
-				} else if (ex instanceof FileNotFoundException) {
-					UI.toast(thePlayer, R.string.error_file_not_found);
-				} else if (ex instanceof TimeoutException) {
-					UI.toast(thePlayer, R.string.error_timeout);
-				} else if (ex instanceof MediaServerDiedException) {
-					UI.toast(thePlayer, R.string.error_server_died);
-				} else if (ex instanceof SecurityException) {
-					UI.toast(thePlayer, R.string.error_security);
-				} else if (msg == null || msg.length() == 0) {
-					UI.toast(thePlayer, R.string.error_playback);
-				} else if (ex instanceof IOException) {
-					UI.toast(thePlayer, (currentSong != null && currentSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_io);
-				} else {
-					final StringBuilder sb = new StringBuilder(thePlayer.getText(R.string.error_msg));
-					sb.append(msg);
-					UI.toast(thePlayer, sb);
-				}
-			}
-			if (bluetoothVisualizerController != null)
-				updateBluetoothVisualizer(songHasChanged);
-			if (observer != null)
-				observer.onPlayerChanged(currentSong, songHasChanged, preparingHasChanged, ex);
-		}
-	}
-	
-	private static void performFinalInitializationTasks() {
-		state = STATE_INITIALIZED;
-		setTurnOffTimer(turnOffTimerSelectedMinutes);
-		setIdleTurnOffTimer(idleTurnOffTimerSelectedMinutes);
-	}
-	
-	public static void onSongListDeserialized(Song newCurrentSong, int forcePlayIdx, int positionToSelect, Throwable ex) {
-		if (positionToSelect >= 0)
-			setSelectionAfterAdding(positionToSelect);
-		onPlayerChanged(newCurrentSong, false, ex);
-		switch (state) {
-		case STATE_INITIALIZING_PENDING_LIST:
-			performFinalInitializationTasks();
-			break;
-		case STATE_INITIALIZING:
-			state = STATE_INITIALIZING_PENDING_ACTIONS;
-			break;
-		}
-		executeStartCommand(forcePlayIdx);
-	}
-	
-	private static MediaPlayer createPlayer() {
-		MediaPlayer mp = new MediaPlayer();
-		mp.setOnErrorListener(thePlayer);
-		mp.setOnPreparedListener(thePlayer);
-		mp.setOnSeekCompleteListener(thePlayer);
-		mp.setOnCompletionListener(thePlayer);
-		mp.setOnInfoListener(thePlayer);
-		mp.setWakeMode(thePlayer, PowerManager.PARTIAL_WAKE_LOCK);
-		return mp;
-	}
-
-	private static void startPlayer(MediaPlayer mp) {
-		if (silenceMode != SILENCE_NONE && volumeTimer != null) {
-			final int incr = (unpaused ? fadeInIncrementOnPause : ((silenceMode == SILENCE_FOCUS) ? fadeInIncrementOnFocus : fadeInIncrementOnOther));
-			if (incr > 30) {
-				actualVolume = 0;
-				volumeDBMultiplier = MIN_VOLUME_DB;
-				volumeTimer.start(50, incr);
-			}
-		}
-		unpaused = false;
-		silenceMode = SILENCE_NONE;
-		if (mp != null) {
-			mp.setVolume(actualVolume, actualVolume);
-			mp.start();
-		}
-	}
-	
-	private static void stopPlayer(MediaPlayer mp) {
-		mp.reset();
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-			clearNextPlayer(mp);
-	}
-	
-	private static void releasePlayer(MediaPlayer mp) {
-		mp.setOnErrorListener(null);
-		mp.setOnPreparedListener(null);
-		mp.setOnSeekCompleteListener(null);
-		mp.setOnCompletionListener(null);
-		mp.setOnInfoListener(null);
-		stopPlayer(mp);
-		mp.release();
-	}
-	
-	private static void releaseInternal() {
-		Equalizer.release();
-		BassBoost.release();
-		Virtualizer.release();
-		//PresetReverb.release();
-		currentSongLoaded = false;
-		if (currentPlayer != null) {
-			releasePlayer(currentPlayer);
-			currentPlayer = null;
-		}
-		nextPreparing = false;
-		nextPrepared = false;
-		if (nextPlayer != null) {
-			releasePlayer(nextPlayer);
-			nextPlayer = null;
-		}
-	}
-	
-	private static void nextFailed(Song failedSong, int how, Throwable ex) {
-		if (firstError == failedSong || how != SongList.HOW_NEXT_AUTO) {
-			firstError = null;
-			sendMessage(MSG_UPDATE_STATE, ex);
-		} else {
-			if (firstError == null)
-				firstError = failedSong;
-			sendMessage(MSG_UPDATE_STATE, null);
-			sendMessage(MSG_PLAY_NEXT_AUTO);
-		}
-	}
-
-	private static void playInternal0(int how, Song song) {
-		if (state != STATE_INITIALIZED || !hasFocus) {
-			currentSongPreparing = false;
-			return;
-		}
-		int prepareNext = 0;
-		lastHow = how;
-		currentSongBuffering = false;
-		if (nextSong == song && how != SongList.HOW_CURRENT) {
-			int doInternal = 1;
-			lastTime = -1;
-			if (nextPrepared) {
-				if (how != SongList.HOW_NEXT_AUTO)
-					stopPlayer(currentPlayer);
-				nextPrepared = false;
-				try {
-					if (!nextAlreadySetForPlaying || how != SongList.HOW_NEXT_AUTO)
-						startPlayer(nextPlayer);
-					else
-						nextPlayer.setVolume(actualVolume, actualVolume);
-					nextAlreadySetForPlaying = false;
-					currentSongLoaded = true;
-					firstError = null;
-					if (how == SongList.HOW_NEXT_AUTO)
-						stopPlayer(currentPlayer);
-					prepareNext = 2;
-					doInternal = 0;
-					currentSongPreparing = false;
-				} catch (Throwable ex) {
-					song.possibleNextSong = null;
-					fullCleanup(song);
-					nextFailed(song, how, ex);
-					return;
-				}
-			} else {
-				stopPlayer(currentPlayer);
-				if (nextPreparing) {
-					currentSongLoaded = false;
-					currentSongPreparing = true;
-					doInternal = 0;
-				}
-			}
-			currentSong = song;
-			final MediaPlayer p = currentPlayer;
-			currentPlayer = nextPlayer;
-			nextPlayer = p;
-			sendMessageAtFrontOfQueue(MSG_PREPARE_PLAYBACK_1, how, doInternal | prepareNext, song);
-		} else {
-			stopPlayer(currentPlayer);
-			sendMessageAtFrontOfQueue(MSG_PREPARE_PLAYBACK_1, how, 1 | prepareNext, song);
-		}
-	}
-	
-	private static void playInternal1(boolean doInternal, boolean prepareNext, int how, Song song) {
-		if (state != STATE_INITIALIZED || !hasFocus) {
-			currentSongPreparing = false;
-			return;
-		}
-		if (doInternal) {
-			stopInternal(null);
-			//we need to reset the flags to true here, because stopInternal() sets them to false
-			preparationStartTime = (int)SystemClock.uptimeMillis();
-			currentSongPreparing = true;
-			preparationMustBeWaitedFor = true;
-			if (how != SongList.HOW_CURRENT)
-				lastTime = -1;
-			currentSong = song;
-			synchronized (preparationSync) {
-				currentPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-				preparationPlayer = currentPlayer;
-				preparationSong = currentSong;
-				preparationVersion++;
-			}
-			preparationHandler.sendMessageAtTime(Message.obtain(preparationHandler, MSG_ASYNC_PREPARATION, how, preparationVersion), SystemClock.uptimeMillis());
-			sendMessageAtFrontOfQueue(MSG_PREPARE_PLAYBACK_2, prepareNext ? 1 : 0, 0, song);
-		} else {
-			playInternal2(prepareNext, song);
-		}
-	}
-	
-	private static void playInternal2(boolean prepareNext, Song song) {
-		if (state != STATE_INITIALIZED || !hasFocus) {
-			currentSongPreparing = false;
-			return;
-		}
-		nextSong = song.possibleNextSong;
-		song.possibleNextSong = null;
-		if (nextSong == currentSong)
-			nextSong = null;
-		else if (prepareNext)
-			processPreparation();
-		playing = currentSongLoaded;
-		//wasPlaying = true;
-		sendMessage(MSG_UPDATE_STATE, null);
-	}
-
-	private static boolean resetDueToDelay() {
-		//reset everything as it appears to be taking too long for the loading process to finish
-		if ((((int)SystemClock.uptimeMillis()) - preparationStartTime) <= 5000)
-			return false;
-		preparationVersion++;
-		preparationVersionNext++;
-		fullCleanup(null);
-		return true;
-	}
-
-	private static Song playInternal(int how) {
-		if (thePlayer == null || state != STATE_INITIALIZED) {
-			return null;
-		} else if (currentSongPreparing && preparationMustBeWaitedFor) {
-			if (!resetDueToDelay())
-				return null;
-		}
-		if (!hasFocus && !requestFocus()) {
-			unpaused = false;
-			playing = false;
-			sendMessage(MSG_UPDATE_STATE, new FocusException());
-			return null;
-		}
-		//we must set this to false here, as the user could have manually
-		//started playback before the focus timer had the chance to trigger
-		wasPlayingBeforeFocusLoss = false;
-		final Song s = songs.getSongAndSetCurrent(how);
-		if (s == null) {
-			lastTime = -1;
-			firstError = null;
-			fullCleanup(null);
-			sendMessage(MSG_UPDATE_STATE, null);
-			return null;
-		}
-		preparationStartTime = (int)SystemClock.uptimeMillis();
-		if (currentPlayer == null || nextPlayer == null) {
-			initializePlayers();
-			currentSongPreparing = true;
-			preparationMustBeWaitedFor = true;
-			sendMessage(MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0, how, 0, s);
-		} else {
-			currentSongPreparing = true;
-			preparationMustBeWaitedFor = true;
-			playInternal0(how, s);
-		}
-		return s;
-	}
-	
-	private static void stopInternal(Song newCurrentSong) {
-		currentSong = newCurrentSong;
-		nextSong = null;
-		playing = false;
-		currentSongLoaded = false;
-		currentSongPreparing = false;
-		preparationMustBeWaitedFor = false;
-		currentSongBuffering = false;
-		prepareNextOnSeek = false;
-		nextPreparing = false;
-		nextPrepared = false;
-		nextAlreadySetForPlaying = false;
-		if (prepareDelayTimer != null)
-			prepareDelayTimer.stop();
-		synchronized (preparationSync) {
-			preparationPlayer = null;
-			preparationSong = null;
-			preparationVersion++;
-		}
-		synchronized (preparationSyncNext) {
-			preparationPlayerNext = null;
-			preparationSongNext = null;
-			preparationVersionNext++;
-		}
-		if (currentPlayer != null)
-			stopPlayer(currentPlayer);
-		if (nextPlayer != null)
-			stopPlayer(nextPlayer);
-	}
-	
-	private static void fullCleanup(Song newCurrentSong) {
-		wasPlayingBeforeFocusLoss = false;
-		unpaused = false;
-		silenceMode = SILENCE_NORMAL;
-		stopInternal(newCurrentSong);
-		abandonFocus();
-	}
-	
-	@SuppressWarnings("deprecation")
-	private static void checkAudioSink(boolean wiredHeadsetJustPlugged, boolean triggerNoisy) {
-		if (audioManager == null)
-			return;
-		final int oldAudioSink = audioSink;
-		//let the guessing begin!!! really, it is NOT possible to rely solely on
-		//these AudioManager.isXXX() methods, neither on MediaRouter...
-		//I would really be happy if things were as easy as the doc says... :(
-		//https://developer.android.com/training/managing-audio/audio-output.html
-		audioSink = 0;
-		try {
-			//isSpeakerphoneOn() has not actually returned true on any devices
-			//I have tested so far, anyway.... leaving this here won't hurt...
-			if (audioManager.isSpeakerphoneOn())
-				audioSink = AUDIO_SINK_DEVICE;
-		} catch (Throwable ex) {
-		}
-		try {
-			//apparently, devices tend to use the wired headset over bluetooth headsets
-			if (audioSink == 0 && (wiredHeadsetJustPlugged || audioManager.isWiredHeadsetOn()))
-				audioSink = AUDIO_SINK_WIRE;
-		} catch (Throwable ex) {
-		}
-		try {
-			//this whole A2dp thing is still not enough, as isA2dpPlaying()
-			//will return false if there is nothing playing, even in scenarios
-			//A2dp will certainly be used for playback later...
-			/*if (audioManager.isBluetoothA2dpOn()) {
-				//the device being on is not enough! we must be sure
-				//if it is actually being used for transmission...
-				if (thePlayer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-					if (audioSink == 0)
-						audioSink = AUDIO_SINK_BT;
-				} else {
-					if (audioSink == 0 || isA2dpPlaying())
-						audioSink = AUDIO_SINK_BT;
-				}
-			}*/
-			if (audioSink == 0 && audioManager.isBluetoothA2dpOn())
-				audioSink = AUDIO_SINK_BT;
-		} catch (Throwable ex) {
-		}
-		if (audioSink == 0)
-			audioSink = AUDIO_SINK_DEVICE;
-		if (oldAudioSink != audioSink && oldAudioSink != 0) {
-			switch (audioSink) {
-			case AUDIO_SINK_WIRE:
-				if (!playing && playWhenHeadsetPlugged) {
-					if (!hasFocus) {
-						try {
-							if (telephonyManager != null && telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
-								break;
-						} catch (Throwable ex) {
-						}
-					}
-					playPause();
-				}
-				break;
-			case AUDIO_SINK_DEVICE:
-				if (triggerNoisy)
-					becomingNoisyInternal();
-				break;
-			}
-		}
-		//I am calling the observer even if no changes have been detected, because
-		//I myself don't trust this code will correctly work as expected on every device....
-		if (observer != null)
-			observer.onPlayerAudioSinkChanged(audioSink);
-	}
-	
-	private static void becomingNoisyInternal() {
-		//this cleanup must be done, as sometimes, when changing between two output types,
-		//the effects are lost...
-		if (playing)
-			playPause();
-		stopInternal(currentSong);
-		releaseInternal();
-	}
-	
 	public static void becomingNoisy() {
-		becomingNoisyInternal();
-		checkAudioSink(false, false);
+		if (handler != null)
+			handler.sendEmptyMessageAtTime(MSG_BECOMING_NOISY, SystemClock.uptimeMillis());
 	}
-	
+
 	public static void audioSinkChanged(boolean wiredHeadsetJustPlugged) {
-		checkAudioSink(wiredHeadsetJustPlugged, true);
-	}
-	
-	public static boolean previous() {
-		return (playInternal(SongList.HOW_PREVIOUS) != null);
-	}
-	
-	public static boolean playPause() {
-		if (thePlayer == null || state != STATE_INITIALIZED) {
-			return false;
-		} else if (currentSongPreparing && preparationMustBeWaitedFor) {
-			if (!resetDueToDelay())
-				return false;
-		}
-		if (currentSong == null || !currentSongLoaded || !hasFocus) {
-			unpaused = true;
-			//the user deleted the current song before it had a chance to load
-			//therefore, ignore lastTime (as the song has changed)
-			if (playInternal(SongList.HOW_CURRENT) != currentSong)
-				lastTime = -1;
-		} else {
-			try {
-				//we must set this to false here, as the user could have manually
-				//started playback before the focus timer had the chance to trigger
-				wasPlayingBeforeFocusLoss = false;
-				if (playing) {
-					currentPlayer.pause();
-					silenceMode = SILENCE_NORMAL;
-					setLastTime();
-				} else {
-					unpaused = true;
-					startPlayer(currentPlayer);
-				}
-				playing = !playing;
-				//wasPlaying = playing;
-			} catch (Throwable ex) {
-				fullCleanup(currentSong);
-				sendMessage(MSG_UPDATE_STATE, ex);
-				return false;
-			}
-			sendMessage(MSG_UPDATE_STATE, null);
-		}
-		return true;
-	}
-	
-	public static boolean play(int index) {
-		return (playInternal(index) != null);
-	}
-	
-	public static boolean next() {
-		return (playInternal(SongList.HOW_NEXT_MANUAL) != null);
-	}
-	
-	public static boolean seekTo(int timeMS, boolean play) {
-		//seekTo does not reset the players even if it taking too long
-		//for the preparation process to finish
-		if (thePlayer == null || state != STATE_INITIALIZED || (currentSongPreparing && preparationMustBeWaitedFor))
-			return false;
-		if (!currentSongLoaded) {
-			lastTime = timeMS;
-		} else if (currentPlayer != null) {
-			lastTime = timeMS;
-			playAfterSeek = play;
-			currentSongPreparing = true;
-			currentPlayer.seekTo(timeMS);
-			sendMessage(MSG_UPDATE_STATE, null);
-		}
-		return true;
-	}
-	
-	public static void listCleared() {
-		fullCleanup(null);
-		lastTime = -1;
-		sendMessage(MSG_UPDATE_STATE, null);
-	}
-	
-	public static void nextMayHaveChanged(Song possibleNextSong) {
-		if (nextSong != possibleNextSong && nextPreparationEnabled) {
-			synchronized (preparationSyncNext) {
-				preparationPlayerNext = null;
-				preparationSongNext = null;
-				preparationVersionNext++;
-			}
-			if (currentPlayer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-				clearNextPlayer(currentPlayer);
-			if (nextPlayer != null)
-				nextPlayer.reset();
-			nextPrepared = false;
-			nextPreparing = false;
-			nextSong = possibleNextSong;
-			processPreparation();
-		}
+		if (handler != null)
+			handler.sendMessageAtTime(Message.obtain(handler, MSG_AUDIO_SINK_CHANGED, wiredHeadsetJustPlugged ? 1 : 0, 0), SystemClock.uptimeMillis());
 	}
 
-	public static boolean setVolumeDB(int volumeDB) {
-		final boolean ret;
-		if (volumeDB <= MIN_VOLUME_DB) {
-			volume = 0;
-			Player.volumeDB = MIN_VOLUME_DB;
-			ret = false;
-		} else if (volumeDB >= 0) {
-			volume = 1;
-			Player.volumeDB = 0;
-			ret = false;
-		} else {
-			//magnitude = 10 ^ (dB/20)
-			//x^p = a ^ (p * log a (x))
-			//10^p = e ^ (p * log e (10))
-			volume = (float)Math.exp((double)volumeDB * 2.3025850929940456840179914546844 / 2000.0);
-			Player.volumeDB = volumeDB;
-			ret = true;
-		}
-		if (volumeTimer != null)
-			volumeTimer.stop();
-		//when dimmed, decreased the volume by 20dB
-		actualVolume = (dimmedVolume ? (volume * 0.1f) : volume);
-		try {
-			if (currentPlayer != null && currentSongLoaded)
-				currentPlayer.setVolume(actualVolume, actualVolume);
-		} catch (Throwable ex) {
-		}
-		return ret;
-	}
-	
-	public static int getStreamMaxVolume() {
-		return globalMaxVolume;
-	}
-
-	public static void showStreamVolumeUI() {
-		try {
-			if (audioManager != null)
-				audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI);
-		} catch (Throwable ex) {
-		}
-	}
-
-	public static boolean decreaseVolume() {
-		try {
-			if (audioManager != null) {
-				switch (volumeControlType) {
-				case VOLUME_CONTROL_STREAM:
-					final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume <= 1) ? 0 : (volume - 1)), 0);
-					return (volume > 1);
-				case VOLUME_CONTROL_DB:
-				case VOLUME_CONTROL_PERCENT:
-					//http://stackoverflow.com/a/4413073/3569421
-					//(a/b)*b+(a%b) is equal to a
-					//-350 % 200 = -150
-					final int leftover = (Player.volumeDB % 200);
-					return Player.setVolumeDB(Player.volumeDB + ((leftover == 0) ? -200 : (-200 - leftover)));
-				}
-			}
-		} catch (Throwable ex) {
-			return false;
-		}
-		showStreamVolumeUI();
-		return false;
-	}
-	
-	public static boolean increaseVolume() {
-		try {
-			if (audioManager != null) {
-				switch (volumeControlType) {
-				case VOLUME_CONTROL_STREAM:
-					final int volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume >= globalMaxVolume) ? globalMaxVolume : (volume + 1)), 0);
-					return (volume < (globalMaxVolume- 1));
-				case VOLUME_CONTROL_DB:
-				case VOLUME_CONTROL_PERCENT:
-					//http://stackoverflow.com/a/4413073/3569421
-					//(a/b)*b+(a%b) is equal to a
-					//-350 % 200 = -150
-					final int leftover = (Player.volumeDB % 200);
-					return Player.setVolumeDB(Player.volumeDB + ((leftover == 0) ? 200 : -leftover));
-				}
-			}
-		} catch (Throwable ex) {
-			return false;
-		}
-		showStreamVolumeUI();
-		return false;
-	}
-	
-	public static int getStreamVolume() {
-		try {
-			if (audioManager != null)
-				return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		} catch (Throwable ex) {
-		}
-		return 0;
-	}
-	
-	public static void setStreamVolume(int volume) {
-		try {
-			if (audioManager != null) {
-				audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volume <= 0) ? 0 : ((volume >= globalMaxVolume) ? globalMaxVolume : volume)), 0);
-			}
-		} catch (Throwable ex) {
-		}
-	}
-
-	public static void setGenericVolumePercent(int percent) {
-		switch (volumeControlType) {
-		case VOLUME_CONTROL_STREAM:
-			setStreamVolume((percent * globalMaxVolume) / 100);
-			break;
-		case VOLUME_CONTROL_DB:
-		case VOLUME_CONTROL_PERCENT:
-			if (percent >= 100)
-				setVolumeDB(0);
-			if (percent <= 0)
-				setVolumeDB(MIN_VOLUME_DB);
-			setVolumeDB(((100 - percent) * MIN_VOLUME_DB) / 100);
-			break;
-		}
-	}
-
-	public static int getGenericVolumePercent() {
-		switch (volumeControlType) {
-		case VOLUME_CONTROL_STREAM:
-			final int vol = getStreamVolume();
-			if (vol <= 0)
-				return 0;
-			if (vol >= globalMaxVolume)
-				return 100;
-			return (vol * 100) / globalMaxVolume;
-		case VOLUME_CONTROL_DB:
-		case VOLUME_CONTROL_PERCENT:
-			if (volumeDB <= Player.MIN_VOLUME_DB)
-				return 0;
-			if (volumeDB >= 0)
-				return 100;
-			return ((Player.MIN_VOLUME_DB - volumeDB) * 100) / Player.MIN_VOLUME_DB;
-		}
-		return 0;
-	}
-
-	public static void setVolumeControlType(Context context, int volumeControlType) {
-		switch (volumeControlType) {
-		case VOLUME_CONTROL_DB:
-		case VOLUME_CONTROL_PERCENT:
-		case VOLUME_CONTROL_NONE:
-			Player.volumeControlType = volumeControlType;
-			break;
-		default:
-			try {
-				if (audioManager != null)
-					globalMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-				if (globalMaxVolume < 1)
-					globalMaxVolume = 1;
-				setVolumeDB(0);
-				Player.volumeControlType = VOLUME_CONTROL_STREAM;
-			} catch (Throwable ex) {
-				Player.volumeControlType = VOLUME_CONTROL_NONE;
-			}
-			break;
-		}
-	}
-	
-	public static void addDestroyedObserver(PlayerDestroyedObserver observer) {
-		if (destroyedObservers != null && !destroyedObservers.contains(observer))
-			destroyedObservers.add(observer);
-	}
-	
-	public static void removeDestroyedObserver(PlayerDestroyedObserver observer) {
-		if (destroyedObservers != null)
-			destroyedObservers.remove(observer);
-	}
-	
-	public static void setTurnOffTimer(int minutes) {
-		if (state == STATE_INITIALIZED) {
-			turnOffTimerOrigin = 0;
-			turnOffTimerSelectedMinutes = 0;
-			if (turnOffTimer != null) {
-				turnOffTimer.stop();
-				turnOffTimer.release();
-				turnOffTimer = null;
-			}
-			if (minutes > 0) {
-				turnOffTimer = new Timer((Timer.TimerHandler)thePlayer, "Turn Off Timer", true, true, false);
-				if (minutes != 60 && minutes != 90 && minutes != 120)
-					turnOffTimerCustomMinutes = minutes;
-				//we must use SystemClock.elapsedRealtime because uptimeMillis
-				//does not take sleep time into account (and the user makes no
-				//difference between the time spent during sleep and the one
-				//while actually working)
-				turnOffTimerOrigin = SystemClock.elapsedRealtime();
-				turnOffTimerSelectedMinutes = minutes;
-				turnOffTimer.start(30000);
-			}
-		}
-	}
-	
-	public static int getTurnOffTimerMinutesLeft() {
-		if (turnOffTimerOrigin <= 0)
-			return turnOffTimerSelectedMinutes;
-		final int m = turnOffTimerSelectedMinutes - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 60000L);
-		return ((m <= 0) ? 1 : m);
-	}
-
-	private static void processIdleTurnOffTimer() {
-		final boolean timerShouldBeOn = (!playing && appIdle);
-		if (idleTurnOffTimer.isAlive()) {
-			if (!timerShouldBeOn) {
-				idleTurnOffTimerOrigin = 0;
-				idleTurnOffTimer.stop();
-				if (turnOffTimerObserver != null)
-					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-			}
-		} else {
-			if (idleTurnOffTimerSelectedMinutes > 0) {
-				if (timerShouldBeOn && state == STATE_INITIALIZED) {
-					//refer to setIdleTurnOffTimer for more information
-					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
-					idleTurnOffTimer.start(30000);
-					if (turnOffTimerObserver != null)
-						turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-				}
-			} else {
-				idleTurnOffTimerOrigin = 0;
-				idleTurnOffTimerSelectedMinutes = 0;
-				idleTurnOffTimer.stop();
-				idleTurnOffTimer.release();
-				idleTurnOffTimer = null;
-				if (turnOffTimerObserver != null)
-					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-			}
-		}
-	}
-	
-	public static void setAppIdle(boolean appIdle) {
-		if (Player.appIdle != appIdle) {
-			Player.appIdle = appIdle;
-			if (idleTurnOffTimer != null && idleTurnOffTimerSelectedMinutes > 0)
-				processIdleTurnOffTimer();
-		}
-	}
-	
-	public static void setIdleTurnOffTimer(int minutes) {
-		if (state == STATE_INITIALIZED) {
-			idleTurnOffTimerOrigin = 0;
-			idleTurnOffTimerSelectedMinutes = 0;
-			if (idleTurnOffTimer != null) {
-				idleTurnOffTimer.stop();
-				idleTurnOffTimer.release();
-				idleTurnOffTimer = null;
-			}
-			if (minutes > 0) {
-				idleTurnOffTimer = new Timer((Timer.TimerHandler)thePlayer, "Idle Turn Off Timer", true, true, false);
-				if (minutes != 60 && minutes != 90 && minutes != 120)
-					idleTurnOffTimerCustomMinutes = minutes;
-				//we must use SystemClock.elapsedRealtime because uptimeMillis
-				//does not take sleep time into account (and the user makes no
-				//difference between the time spent during sleep and the one
-				//while actually working)
-				idleTurnOffTimerSelectedMinutes = minutes;
-				if (!playing && appIdle) {
-					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
-					idleTurnOffTimer.start(30000);
-				}
-			}
-		}
-	}
-	
-	public static int getIdleTurnOffTimerMinutesLeft() {
-		if (idleTurnOffTimerOrigin <= 0)
-			return idleTurnOffTimerSelectedMinutes;
-		final int m = idleTurnOffTimerSelectedMinutes - (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 60000L);
-		return ((m <= 0) ? 1 : m);
-	}
-
-	public static boolean isCurrentSongPreparing() {
-		return (currentSongPreparing || currentSongBuffering);
-	}
-
-	public static int getCurrentPosition() {
-		return (((currentPlayer != null) && currentSongLoaded) ? currentPlayer.getCurrentPosition() : ((currentSong == null) ? -1 : lastTime));
-	}
-	
-	public static int getAudioSessionId() {
-		return ((currentPlayer == null) ? -1 : currentPlayer.getAudioSessionId());
-	}
-
-	public static void setControlMode(boolean controlMode) {
-		Player.controlMode = controlMode;
-		if (observer != null)
-			observer.onPlayerControlModeChanged(controlMode);
-	}
-	
-	public static boolean startService(Context context) {
-		if (thePlayer == null && state == STATE_NEW) {
-			initialize(context);
-			context.startService(new Intent(context, Player.class));
-			return true;
-		}
-		return false;
-	}
-	
-	public static void stopService() {
-		//if the service is requested to stop, even before it gets a chance to fully initialize
-		//itself, then schedule its termination as a startCommand
-		startCommand = ACTION_EXIT;
-		terminate();
-	}
-	
-	public static Service getService() {
-		return thePlayer;
-	}
-	
-	@Override
-	public void onCreate() {
-		//StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
-		//	.detectAll()
-		//	.penaltyLog()
-		//	.build());
-		//StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-		//	.detectAll()
-		//	.penaltyLog()
-		//	.build());
-		thePlayer = this;
-		initialize(this);
-		startForeground(1, getNotification());
-		super.onCreate();
-	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		System.exit(0);
-	}
-	
-	private static void executeStartCommand(int forcePlayIdx) {
-		if (forcePlayIdx >= 0) {
-			play(forcePlayIdx);
-			startCommand = null;
-		} else if (startCommand != null && state == STATE_INITIALIZED) {
-			if (startCommand.equals(ACTION_PREVIOUS))
-				previous();
-			else if (startCommand.equals(ACTION_PLAY_PAUSE))
-				playPause();
-			else if (startCommand.equals(ACTION_NEXT))
+	private static void processHeadsetHookTimer() {
+		if (state != STATE_ALIVE)
+			return;
+		if (headsetHookLastTime != 0) {
+			headsetHookLastTime = 0;
+			if (headsetHookDoublePressPauses)
 				next();
-			else if (startCommand.equals(ACTION_EXIT))
-				stopService();
-			startCommand = null;
+			else
+				playPause();
 		}
 	}
-	
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		if (intent != null) {
-			startCommand = intent.getAction();
-			executeStartCommand(-1);
-		}
-		super.onStartCommand(intent, flags, startId);
-		return START_STICKY;
-	}
-	
-	@Override
-	public IBinder onBind(Intent intent) {
-		return null;
-	}
-	
+
 	public static boolean isMediaButton(int keyCode) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_MEDIA_PLAY:
@@ -2222,11 +2461,9 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			playPause();
 			break;
 		case KeyEvent.KEYCODE_HEADSETHOOK:
-			if (headsetHookTimer == null) {
-				playPause();
-			} else {
+			if (localHandler != null) {
 				if (headsetHookLastTime != 0) {
-					headsetHookTimer.stop();
+					localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
 					if ((SystemClock.uptimeMillis() - headsetHookLastTime) < 500) {
 						headsetHookLastTime = 0;
 						if (headsetHookDoublePressPauses)
@@ -2236,13 +2473,12 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 					}
 				} else {
 					headsetHookLastTime = SystemClock.uptimeMillis();
-					headsetHookTimer.start(500);
+					localHandler.sendEmptyMessageAtTime(MSG_HEADSET_HOOK_TIMER, headsetHookLastTime + 500);
 				}
 			}
 			break;
 		case KeyEvent.KEYCODE_MEDIA_STOP:
-			if (playing)
-				playPause();
+			pause();
 			break;
 		case KeyEvent.KEYCODE_CALL:
 			if (!handleCallKey)
@@ -2263,17 +2499,17 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 			break;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 			if (volumeControlType == VOLUME_CONTROL_STREAM) {
-				decreaseVolume();
+				keyCode = decreaseVolume();
 				if (observer != null)
-					observer.onPlayerGlobalVolumeChanged();
+					observer.onPlayerGlobalVolumeChanged(keyCode);
 				break;
 			}
 			break;
 		case KeyEvent.KEYCODE_VOLUME_UP:
 			if (volumeControlType == VOLUME_CONTROL_STREAM) {
-				increaseVolume();
+				keyCode = increaseVolume();
 				if (observer != null)
-					observer.onPlayerGlobalVolumeChanged();
+					observer.onPlayerGlobalVolumeChanged(keyCode);
 				break;
 			}
 			break;
@@ -2282,841 +2518,299 @@ public final class Player extends Service implements Runnable, Timer.TimerHandle
 		}
 		return true;
 	}
-	
-	private static void processFocusGain() {
-		//this method is called only when the player has recovered the focus,
-		//and in this scenario, currentPlayer will be null
-		//someone else may have changed our values if the engine is shared
-		registerMediaButtonEventReceiver();
-		if (wasPlayingBeforeFocusLoss) {
-			//do not restart playback in scenarios like this (it really scares people!):
-			//the person has answered a call, removed the headset, ended the call without
-			//the headset plugged in, and then the focus came back to us
-			if (audioSinkBeforeFocusLoss != AUDIO_SINK_DEVICE && audioSink == AUDIO_SINK_DEVICE) {
-				wasPlayingBeforeFocusLoss = false;
-				requestFocus();
-			} else if (state == STATE_INITIALIZED && !playing) {
-				playInternal(SongList.HOW_CURRENT);
-			} else {
-				wasPlayingBeforeFocusLoss = false;
-			}
-		}
-	}
-	
-	private static void processPreparation() {
-		if (prepareDelayTimer != null && currentSong != null && nextSong != null && !nextSong.isHttp && nextPreparationEnabled && currentSong.lengthMS > 10000 && nextSong.lengthMS > 10000)
-			prepareDelayTimer.start(5000, nextSong);
-	}
-	
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private static void clearNextPlayer(MediaPlayer player) {
-		try {
-			player.setNextMediaPlayer(null);
-		} catch (Throwable ex) {
-		}
-	}
-	
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private static void setNextPlayer() {
-		try {
-			if (currentPlayer != null) {
-				currentPlayer.setNextMediaPlayer(nextPlayer);
-				nextAlreadySetForPlaying = true;
-			}
-		} catch (Throwable ex) {
-			
-		}
-	}
-	
-	public static void resetEffects(Runnable observer) {
-		if (state == STATE_INITIALIZED) {
-			effectsObserver = observer;
-			sendMessage(MSG_RESET_EFFECTS_0, 0, 0);
-		}
-	}
-	
-	@Override
-	public void handleTimer(Timer timer, Object param) {
-		if (state != STATE_INITIALIZED)
+
+	public static void listCleared() {
+		if (state != STATE_ALIVE)
 			return;
-		if (timer == focusDelayTimer) {
-			if (thePlayer != null && hasFocus)
-				processFocusGain();
-		} else if (timer == prepareDelayTimer) {
-			if (thePlayer != null && hasFocus && nextSong == param) {
-				nextPreparing = false;
-				nextPrepared = false;
-				if (nextPlayer != null && nextSong != null && !nextSong.isHttp) {
-					nextPreparing = true;
-					synchronized (preparationSyncNext) {
-						nextPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		handler.sendEmptyMessageAtTime(MSG_LIST_CLEARED, SystemClock.uptimeMillis());
+	}
+
+	public static void nextMayHaveChanged(Song possibleNextSong) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_NEXT_MAY_HAVE_CHANGED, possibleNextSong), SystemClock.uptimeMillis());
+	}
+
+	public static void addDestroyedObserver(PlayerDestroyedObserver observer) {
+		if (destroyedObservers != null && !destroyedObservers.contains(observer))
+			destroyedObservers.add(observer);
+	}
+
+	public static void removeDestroyedObserver(PlayerDestroyedObserver observer) {
+		if (destroyedObservers != null)
+			destroyedObservers.remove(observer);
+	}
+
+	@SuppressWarnings("deprecation")
+	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean triggerNoisy) {
+		if (audioManager == null)
+			return;
+		final int oldAudioSink = audioSink;
+		//let the guessing begin!!! really, it is NOT possible to rely solely on
+		//these AudioManager.isXXX() methods, neither on MediaRouter...
+		//I would really be happy if things were as easy as the doc says... :(
+		//https://developer.android.com/training/managing-audio/audio-output.html
+		audioSink = 0;
+		try {
+			//isSpeakerphoneOn() has not actually returned true on any devices
+			//I have tested so far, anyway.... leaving this here won't hurt...
+			if (audioManager.isSpeakerphoneOn())
+				audioSink = AUDIO_SINK_DEVICE;
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		try {
+			//apparently, devices tend to use the wired headset over bluetooth headsets
+			if (audioSink == 0 && (wiredHeadsetJustPlugged || audioManager.isWiredHeadsetOn()))
+				audioSink = AUDIO_SINK_WIRE;
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		try {
+			//this whole A2dp thing is still not enough, as isA2dpPlaying()
+			//will return false if there is nothing playing, even in scenarios
+			//A2dp will certainly be used for playback later...
+			/*if (audioManager.isBluetoothA2dpOn()) {
+				//the device being on is not enough! we must be sure
+				//if it is actually being used for transmission...
+				if (thePlayer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+					if (audioSink == 0)
+						audioSink = AUDIO_SINK_BT;
+				} else {
+					if (audioSink == 0 || isA2dpPlaying())
+						audioSink = AUDIO_SINK_BT;
+				}
+			}*/
+			if (audioSink == 0 && audioManager.isBluetoothA2dpOn())
+				audioSink = AUDIO_SINK_BT;
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		if (audioSink == 0)
+			audioSink = AUDIO_SINK_DEVICE;
+		if (oldAudioSink != audioSink && oldAudioSink != 0) {
+			switch (audioSink) {
+			case AUDIO_SINK_WIRE:
+				if (!playing && playWhenHeadsetPlugged) {
+					if (!hasFocus) {
 						try {
-							nextPlayer.reset();
-							if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-								clearNextPlayer(nextPlayer);
+							if (telephonyManager != null && telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
+								break;
 						} catch (Throwable ex) {
+							ex.printStackTrace();
 						}
-						preparationPlayerNext = nextPlayer;
-						preparationSongNext = nextSong;
-						preparationVersionNext++;
 					}
-					preparationHandler.sendMessageAtTime(Message.obtain(preparationHandler, MSG_ASYNC_PREPARATION_NEXT, 0, preparationVersionNext), SystemClock.uptimeMillis());
-				}
-			}
-		} else if (timer == volumeTimer) {
-			volumeDBMultiplier += ((param == null) ? 125 : (Integer)param);
-			if (volumeDBMultiplier >= 0) {
-				timer.stop();
-				volumeDBMultiplier = 0;
-			}
-			//magnitude = 10 ^ (dB/20)
-			//x^p = a ^ (p * log a (x))
-			//10^p = e ^ (p * log e (10))
-			final float m = (float)Math.exp((double)volumeDBMultiplier * 2.3025850929940456840179914546844 / 2000.0);
-			//when dimmed, decreased the volume by 20dB
-			actualVolume = m * (dimmedVolume ? (volume * 0.1f) : volume);
-			if (thePlayer != null && hasFocus && currentPlayer != null && currentSongLoaded) {
-				try {
-					currentPlayer.setVolume(actualVolume, actualVolume);
-				} catch (Throwable ex) {
-				}
-			}
-		} else if (timer == headsetHookTimer) {
-			if (thePlayer != null && headsetHookLastTime != 0) {
-				headsetHookLastTime = 0;
-				if (headsetHookDoublePressPauses)
-					next();
-				else
 					playPause();
-			}
-		} else if (timer == turnOffTimer) {
-			if (turnOffTimerOrigin > 0) {
-				final int secondsLeft = (turnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 1000);
-				if (turnOffTimerObserver != null)
-					turnOffTimerObserver.onPlayerTurnOffTimerTick();
-				if (secondsLeft < 15) //less than half of our period
-					stopService();
-				else
-					turnOffTimer.start(30000);
-			}
-		} else if (timer == idleTurnOffTimer) {
-			boolean wasPlayingBeforeOngoingCall = false;
-			final boolean idle = (!playing && appIdle);
-			if (idle && telephonyManager != null) {
-				//check for ongoing call
-				try {
-					if (telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
-						wasPlayingBeforeOngoingCall = wasPlayingBeforeFocusLoss;
-				} catch (Throwable ex) {
 				}
-			}
-			if (!idle || wasPlayingBeforeOngoingCall) {
-				if (idle) {
-					//consider time spent in calls as active time, but keep checking,
-					//because when the call ends, the audio focus could go to someone
-					//else, rendering us actually idle!
-					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
-					idleTurnOffTimer.start(30000);
-				} else {
-					idleTurnOffTimerOrigin = 0; //it's safe to reset the origin
+				break;
+			case AUDIO_SINK_DEVICE:
+				if (triggerNoisy) {
+					//this cleanup must be done, as sometimes, when changing between two output types,
+					//the effects are lost...
+					if (playing)
+						_playPause();
+					_fullCleanup();
 				}
-				if (turnOffTimerObserver != null)
-					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-			} else {
-				if (idleTurnOffTimerOrigin > 0) {
-					final int secondsLeft = (idleTurnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 1000);
-					if (turnOffTimerObserver != null)
-						turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-					if (secondsLeft < 15) //less than half of our period
-						stopService();
-					else
-						idleTurnOffTimer.start(30000);
-				}
+				break;
 			}
 		}
+		//I am calling the observer even if no changes have been detected, because
+		//I myself don't trust this code will correctly work as expected on every device....
+		if (localHandler != null)
+			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_AUDIO_SINK_CHANGED, audioSink, 0), SystemClock.uptimeMillis());
 	}
-	
-	@Override
-	public void onAudioFocusChange(int focusChange) {
-		if (state != STATE_INITIALIZED)
-			return;
-		if (focusDelayTimer != null)
-			focusDelayTimer.stop();
-		if (volumeTimer != null)
-			volumeTimer.stop();
-		if (headsetHookTimer != null)
-			headsetHookTimer.stop();
-		actualVolume = volume;
-		dimmedVolume = false;
-		switch (focusChange) {
-		case AudioManager.AUDIOFOCUS_GAIN:
-			if (!hasFocus) {
-				hasFocus = true;
-				if (focusDelayTimer != null)
-					focusDelayTimer.start(1500);
-			} else {
-				//processFocusGain();
-				//came here from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
-				if (currentPlayer != null && currentSongLoaded) {
-					try {
-						currentPlayer.setVolume(actualVolume, actualVolume);
-					} catch (Throwable ex) {
-					}
-				}
-			}
-			break;
-		case AudioManager.AUDIOFOCUS_LOSS:
-		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-			//we just cannot replace wasPlayingBeforeFocusLoss's value with
-			//playing, because if a second focus loss occurred BEFORE focusDelayTimer
-			//had a chance to trigger, then playing would be false, when in fact,
-			//we want wasPlayingBeforeFocusLoss to remain true (and the audio sink
-			//must be untouched)
-			if (playing) {
-				wasPlayingBeforeFocusLoss = true;
-				audioSinkBeforeFocusLoss = audioSink;
-			}
-			hasFocus = false;
-			setLastTime();
-			stopInternal(currentSong);
-			silenceMode = SILENCE_FOCUS;
-			releaseInternal();
-			sendMessage(MSG_UPDATE_STATE, null);
-			break;
-		//sometimes, the player will give a MEDIA_ERROR_TIMED_OUT when gaining focus
-		//back again after excuting the code below... Therefore, I decided to handle
-		//transient losses just as normal losses
-		//case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-		//	hasFocus = false;
-		//	if (currentPlayer != null && playing) {
-		//		playing = false;
-		//		try {
-		//			currentPlayer.pause();
-		//			isQuiet = true;
-		//			setLastTime();
-		//		} catch (Throwable ex) {
-		//		}
-		//		updateState(true, null);
-		//	}
-		//	break;
-		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-			hasFocus = true;
-			if (!doNotAttenuateVolume) {
-				//when dimmed, decreased the volume by 20dB
-				actualVolume = volume * 0.1f;
-				dimmedVolume = true;
-				if (currentPlayer != null && currentSongLoaded) {
-					try {
-						currentPlayer.setVolume(actualVolume, actualVolume);
-					} catch (Throwable ex) {
-					}
-				}
-			}
-			break;
-		}
-	}
-	
-	@Override
-	public boolean onError(MediaPlayer mp, int what, int extra) {
-		if (state != STATE_INITIALIZED)
-			return true;
-		if (mp == nextPlayer || mp == currentPlayer) {
-			if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
-				setLastTime();
-				fullCleanup(currentSong);
-				releaseInternal();
-				if (reviveAlreadyRetried) {
-					reviveAlreadyRetried = false;
-					sendMessage(MSG_UPDATE_STATE, new MediaServerDiedException());
-				} else {
-					reviveAlreadyRetried = true;
-					playInternal(SongList.HOW_CURRENT);
-				}
-			} else if (mp == nextPlayer) {
-				nextSong = null;
-				nextPreparing = false;
-				nextPrepared = false;
-			} else {
-				final boolean prep = currentSongPreparing;
-				fullCleanup(currentSong);
-				if (prep && lastHow == SongList.HOW_NEXT_AUTO)
-					//the error happened during currentSong's preparation
-					nextFailed(currentSong, lastHow, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
-				else
-					sendMessage(MSG_UPDATE_STATE, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
-			}
-		} else {
-			fullCleanup(currentSong);
-			releaseInternal();
-			sendMessage(MSG_UPDATE_STATE, new Exception("Invalid MediaPlayer"));
-		}
-		return true;
-	}
-	
-	@Override
-	public void onPrepared(MediaPlayer mp) {
-		if (state != STATE_INITIALIZED)
-			return;
-		if (mp == nextPlayer && preparationSongNext == nextSong && nextSong != null) {
-			preparationSongNext = null;
-			nextPreparing = false;
-			nextPrepared = true;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-				setNextPlayer();
-		} else if (mp == currentPlayer && preparationSong == currentSong && currentSong != null) {
-			preparationSong = null;
-			try {
-				if (!hasFocus) {
-					fullCleanup(currentSong);
-					sendMessage(MSG_UPDATE_STATE, null);
-					return;
-				}
-				mp.setVolume(actualVolume, actualVolume);
-				if (lastTime < 0 || currentSong.isHttp) {
-					prepareNextOnSeek = false;
-					currentSongPreparing = false;
-					startPlayer(mp);
-					lastTime = -1;
-					playing = true;
-					reviveAlreadyRetried = false;
-				} else {
-					playAfterSeek = true;
-					prepareNextOnSeek = true;
-					currentSongPreparing = true;
-					mp.seekTo(lastTime);
-				}
-				//wasPlaying = true;
-				currentSongLoaded = true;
-				firstError = null;
-				sendMessage(MSG_UPDATE_STATE, null);
-				if (!prepareNextOnSeek)
-					processPreparation();
-			} catch (Throwable ex) {
-				fullCleanup(currentSong);
-				nextFailed(currentSong, lastHow, ex);
-			}
-		} else {
-			fullCleanup(currentSong);
-			sendMessage(MSG_UPDATE_STATE, new Exception("Invalid MediaPlayer"));
-		}
-	}
-	
-	@Override
-	public void onSeekComplete(MediaPlayer mp) {
-		if (state != STATE_INITIALIZED)
-			return;
-		if (mp == currentPlayer) {
-			try {
-				currentSongPreparing = false;
-				if (playAfterSeek) {
-					startPlayer(mp);
-					playing = true;
-					reviveAlreadyRetried = false;
-					//wasPlaying = true;
-				}
-				sendMessage(MSG_UPDATE_STATE, null);
-				if (prepareNextOnSeek) {
-					prepareNextOnSeek = false;
-					processPreparation();
-				}
-			} catch (Throwable ex) {
-				fullCleanup(currentSong);
-				sendMessage(MSG_UPDATE_STATE, ex);
-			}
-		}
-	}
-	
-	@Override
-	public void onCompletion(MediaPlayer mp) {
-		if (state != STATE_INITIALIZED)
-			return;
+
+	private static void _becomingNoisy() {
+		//this cleanup must be done, as sometimes, when changing between two output types,
+		//the effects are lost...
 		if (playing)
-			playInternal(SongList.HOW_NEXT_AUTO);
+			playPause();
+		_fullCleanup();
+		_checkAudioSink(false, false);
 	}
-	
-	@Override
-	public boolean onInfo(MediaPlayer mp, int what, int extra) {
-		if (mp == currentPlayer) {
-			switch (what) {
-			case MediaPlayer.MEDIA_INFO_BUFFERING_START:
-				if (!currentSongBuffering) {
-					currentSongBuffering = true;
-					sendMessage(MSG_UPDATE_META);
-				}
-				break;
-			case MediaPlayer.MEDIA_INFO_BUFFERING_END:
-				if (currentSongBuffering) {
-					currentSongBuffering = false;
-					sendMessage(MSG_UPDATE_META);
-				}
-				break;
-			}
-		}
-		return false;
+
+	private static void _audioSinkChanged(boolean wiredHeadsetJustPlugged) {
+		_checkAudioSink(wiredHeadsetJustPlugged, true);
 	}
-	
-	//All this PlayerHandler stuff was created to avoid creating new instances of the
-	//former ObjHolder class, every time an object had to be sent in a message
-	private static void sendMessage(int what) {
-		_playerHandler.sendMessageAtTime(Message.obtain(_playerHandler, what), SystemClock.uptimeMillis());
+
+	private static void _listCleared() {
+		_fullCleanup();
+		storedSongTime = -1;
+		_updateState(false, null);
 	}
-	
-	private static void sendMessage(int what, Object obj) {
-		_playerHandler.sendMessageAtTime(Message.obtain(_playerHandler, what, obj), SystemClock.uptimeMillis());
-	}
-	
-	private static void sendMessage(int what, int arg1, int arg2) {
-		_playerHandler.sendMessageAtTime(Message.obtain(_playerHandler, what, arg1, arg2), SystemClock.uptimeMillis());
-	}
-	
-	private static void sendMessage(int what, int arg1, int arg2, Object obj) {
-		_playerHandler.sendMessageAtTime(Message.obtain(_playerHandler, what, arg1, arg2, obj), SystemClock.uptimeMillis());
-	}
-	
-	private static void sendMessageAtFrontOfQueue(int what, int arg1, int arg2, Object obj) {
-		_playerHandler.sendMessageAtFrontOfQueue(Message.obtain(_playerHandler, what, arg1, arg2, obj));
-	}
-	
-	private static final class PlayerHandler extends Handler {
-		public PlayerHandler(Context context) {
-			super(context.getMainLooper());
-		}
-		
-		@Override
-		public void dispatchMessage(Message msg) {
-			switch (msg.what) {
-			case MSG_UPDATE_STATE:
-				onPlayerChanged(null, false, (Throwable)msg.obj);
-				break;
-			case MSG_PLAY_NEXT_AUTO:
-				playInternal(SongList.HOW_NEXT_AUTO);
-				break;
-			case MSG_UPDATE_META:
-				onPlayerChanged(null, true, null);
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_0:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				Equalizer.release();
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_1:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				BassBoost.release();
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_2:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				Virtualizer.release();
-				//@@@ PresetReverb.release();
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_3:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				if (Equalizer.isEnabled() && currentPlayer != null)
-					Equalizer.initialize(currentPlayer.getAudioSessionId());
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_4:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				if (Equalizer.isEnabled() && currentPlayer != null)
-					Equalizer.setEnabled(true, true);
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_5:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				if (BassBoost.isEnabled() && currentPlayer != null)
-					BassBoost.initialize(currentPlayer.getAudioSessionId());
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_6, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_6:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				if (BassBoost.isEnabled() && currentPlayer != null)
-					BassBoost.setEnabled(true, true);
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_7, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_7:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				if (Virtualizer.isEnabled() && currentPlayer != null)
-					Virtualizer.initialize(currentPlayer.getAudioSessionId());
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_8, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_EFFECTS_BEFORE_PLAYBACK_8:
-				if (!hasFocus) {
-					currentSongPreparing = false;
-					break;
-				}
-				if (Virtualizer.isEnabled() && currentPlayer != null)
-					Virtualizer.setEnabled(true, true);
-				sendMessageAtTime(Message.obtain(this, MSG_PREPARE_PLAYBACK_0, msg.arg1, msg.arg2, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_PREPARE_PLAYBACK_0:
-				playInternal0(msg.arg1, (Song)msg.obj);
-				break;
-			case MSG_PREPARE_PLAYBACK_1:
-				playInternal1((msg.arg2 & 1) != 0, (msg.arg2 & 2) != 0, msg.arg1, (Song)msg.obj);
-				break;
-			case MSG_PREPARE_PLAYBACK_2:
-				playInternal2(msg.arg1 != 0, (Song)msg.obj);
-				break;
-			case MSG_INITIALIZATION_0:
-				if (externalReceiver == null) {
-					//These broadcast actions are registered here, instead of in the manifest file,
-					//because a few tests showed that some devices will produce the notifications
-					//faster this way, specially AUDIO_BECOMING_NOISY. Moreover, by registering here,
-					//only one BroadcastReceiver is instantiated and used throughout the entire
-					//application's lifecycle, whereas when the manifest is used, a different instance
-					//is created to handle every notification! :)
-					//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
-					//in the application manifest according to the documentation of the method
-					//registerMediaButtonEventReceiver!!! :(
-					final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
-					//filter.addAction("android.intent.action.MEDIA_BUTTON");
-					filter.addAction("android.intent.action.CALL_BUTTON");
-					filter.addAction("android.intent.action.HEADSET_PLUG");
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-						filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
-					else
-						filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
-					filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
-					filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
-					//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
-					filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
-					externalReceiver = new ExternalReceiver();
-					thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter);
-				}
-				if (!deserialized) {
-					deserialized = true;
-					songs.startDeserializing(thePlayer, null, true, false, false);
-				}
-				sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_1), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_1:
-				initializePlayers();
-				sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_2), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_2:
-				if (currentPlayer != null)
-					Equalizer.initialize(currentPlayer.getAudioSessionId());
-				sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_3), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_3:
-				Equalizer.release();
-				sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_4), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_4:
-				if (currentPlayer != null)
-					BassBoost.initialize(currentPlayer.getAudioSessionId());
-				sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_5), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_5:
-				BassBoost.release();
-				sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_6), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_6:
-				if (currentPlayer != null)
-					Virtualizer.initialize(currentPlayer.getAudioSessionId());
-				sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_7), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_7:
-				Virtualizer.release();
-				//now that the effects have been initialized at least once, properly
-				//create and enabled them as necessary!
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_3, 1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_INITIALIZATION_8:
-				switch (state) {
-				case STATE_INITIALIZING_PENDING_ACTIONS:
-					performFinalInitializationTasks();
-					break;
-				case STATE_INITIALIZING:
-					state = STATE_INITIALIZING_PENDING_LIST;
-					break;
-				}
-				executeStartCommand(-1);
-				break;
-			case MSG_RESET_EFFECTS_0:
-				//don't even ask.......
-				//(a few devices won't disable one effect while the other effect is enabled)
-				if (state == STATE_INITIALIZED)
-					Equalizer.release();
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_1, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_1:
-				if (state == STATE_INITIALIZED)
-					BassBoost.release();
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_2, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_2:
-				if (state == STATE_INITIALIZED)
-					Virtualizer.release();
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_3, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_3:
-				if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
-					if (Equalizer.isEnabled() && currentPlayer != null)
-						Equalizer.initialize(currentPlayer.getAudioSessionId());
-				}
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_4, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_4:
-				if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
-					if (Equalizer.isEnabled() && currentPlayer != null)
-						Equalizer.setEnabled(true, true);
-				}
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_5, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_5:
-				if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
-					if (BassBoost.isEnabled() && currentPlayer != null)
-						BassBoost.initialize(currentPlayer.getAudioSessionId());
-				}
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_6, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_6:
-				if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
-					if (BassBoost.isEnabled() && currentPlayer != null)
-						BassBoost.setEnabled(true, true);
-				}
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_7, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_7:
-				if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
-					if (Virtualizer.isEnabled() && currentPlayer != null)
-						Virtualizer.initialize(currentPlayer.getAudioSessionId());
-				}
-				sendMessageAtTime(Message.obtain(this, MSG_RESET_EFFECTS_8, msg.arg1, 0), SystemClock.uptimeMillis());
-				break;
-			case MSG_RESET_EFFECTS_8:
-				if (msg.arg1 != 0 || state == STATE_INITIALIZED) {
-					if (Virtualizer.isEnabled() && currentPlayer != null)
-						Virtualizer.setEnabled(true, true);
-				}
-				if (msg.arg1 != 0)
-					sendMessageAtTime(Message.obtain(this, MSG_INITIALIZATION_8), SystemClock.uptimeMillis());
-				else if (effectsObserver != null)
-					MainHandler.postToMainThread(effectsObserver);
-				effectsObserver = null;
-				break;
-			case MSG_TERMINATION_0:
-				releaseInternal();
-				sendMessageAtTime(Message.obtain(this, MSG_TERMINATION_1), SystemClock.uptimeMillis());
-				break;
-			case MSG_TERMINATION_1:
-				if (bluetoothVisualizerController != null)
-					stopBluetoothVisualizer();
-				onPlayerChanged(null, false, null); //to update the widget
-				unregisterMediaButtonEventReceiver();
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
-					unregisterMediaRouter(thePlayer);
-				//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && thePlayer != null)
-				//	unregisterA2dpObserver(thePlayer);
-				sendMessageAtTime(Message.obtain(this, MSG_TERMINATION_2), SystemClock.uptimeMillis());
-				break;
-			case MSG_TERMINATION_2:
-				if (destroyedObservers != null) {
-					for (int i = destroyedObservers.size() - 1; i >= 0; i--)
-						destroyedObservers.get(i).onPlayerDestroyed();
-					destroyedObservers.clear();
-					destroyedObservers = null;
-				}
-				if (focusDelayTimer != null) {
-					focusDelayTimer.stop();
-					focusDelayTimer.release();
-					focusDelayTimer = null;
-				}
-				if (prepareDelayTimer != null) {
-					prepareDelayTimer.stop();
-					prepareDelayTimer.release();
-					prepareDelayTimer = null;
-				}
-				if (volumeTimer != null) {
-					volumeTimer.stop();
-					volumeTimer.release();
-					volumeTimer = null;
-				}
-				if (headsetHookTimer != null) {
-					headsetHookTimer.stop();
-					headsetHookTimer.release();
-					headsetHookTimer = null;
-				}
-				if (turnOffTimer != null) {
-					turnOffTimer.stop();
-					turnOffTimer.release();
-					turnOffTimer = null;
-				}
-				if (idleTurnOffTimer != null) {
-					idleTurnOffTimer.stop();
-					idleTurnOffTimer.release();
-					idleTurnOffTimer = null;
-				}
-				if (thePlayer != null) {
-					if (externalReceiver != null)
-						thePlayer.getApplicationContext().unregisterReceiver(externalReceiver);
-					saveConfig(thePlayer, true);
-				}
-				observer = null;
-				turnOffTimerObserver = null;
-				notificationManager = null;
-				audioManager = null;
-				telephonyManager = null;
-				externalReceiver = null;
-				effectsObserver = null;
-				stickyBroadcast = null;
-				if (favoriteFolders != null) {
-					favoriteFolders.clear();
-					favoriteFolders = null;
-				}
-				state = STATE_TERMINATED;
-				if (thePlayer != null) {
-					thePlayer.stopForeground(true);
-					thePlayer.stopSelf();
-					thePlayer = null;
-				} else {
-					System.exit(0);
-				}
-				break;
-			case MSG_ASYNC_PREPARATION:
-				if (preparationVersion == msg.arg2) {
-					preparationMustBeWaitedFor = false;
-					try {
-						if (currentPlayer != null) {
-							//PresetReverb.applyToPlayer(currentPlayer);
-							currentPlayer.prepareAsync();
-						}
-						break;
-					} catch (Throwable ex) {
-						msg.obj = ex;
-					}
-				} else {
-					break;
-				}
-				//let it fall through when an exception happens
-			case MSG_ASYNC_PREPARATION_FAILED:
-				if (preparationVersion == msg.arg2) {
-					preparationMustBeWaitedFor = false;
-					preparationSong = null;
-					if (currentSong != null)
-						currentSong.possibleNextSong = null;
-					fullCleanup(currentSong);
-					nextFailed(currentSong, msg.arg1, (Throwable)msg.obj);
-				}
-				break;
-			case MSG_ASYNC_PREPARATION_NEXT:
-				if (preparationVersionNext == msg.arg2) {
-					try {
-						if (nextPlayer != null) {
-							//PresetReverb.applyToPlayer(nextPlayer);
-							nextPlayer.prepareAsync();
-						}
-						break;
-					} catch (Throwable ex) {
-					}
-				} else {
-					break;
-				}
-				//let it fall through when an exception happens
-			case MSG_ASYNC_PREPARATION_NEXT_FAILED:
-				if (preparationVersionNext == msg.arg2) {
-					preparationSongNext = null;
-					nextSong = null;
-					nextPreparing = false;
-					if (nextPlayer != null)
-						nextPlayer.reset();
-				}
-				break;
-			}
-			msg.obj = null;
+
+	private static void _nextMayHaveChanged(Song possibleNextSong) {
+		if (nextSong != possibleNextSong && nextPreparationEnabled) {
+			nextSong = possibleNextSong;
+			if (playerState == PLAYER_STATE_LOADED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+				_clearNextPlayer();
+			if (nextPlayer != null)
+				nextPlayer.reset();
+			if (playerState == PLAYER_STATE_LOADED)
+				_scheduleNextPlayerForPreparation();
 		}
 	}
 
-	private static final class PreparationHandler extends Handler {
-		public PreparationHandler(Looper looper) {
-			super(looper);
-		}
+	private static Song stateLastSong;
+	private static boolean stateLastPlaying, stateLastPreparing;
+	private static int stateIndex;
+	private static final MediaPlayer[] statePlayer = new MediaPlayer[8];
+	private static final Throwable[] stateEx = new Throwable[8];
 
-		@Override
-		public void dispatchMessage(Message msg) {
-			if (state >= STATE_TERMINATING) {
-				final Looper looper = Looper.myLooper();
-				if (looper != null)
-					looper.quit();
+	@SuppressWarnings("deprecation")
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private static void broadcastStateChangeToRemoteControl(boolean preparing, boolean titleOrSongHaveChanged) {
+		try {
+			if (localSong == null) {
+				remoteControlClient.setPlaybackState(RemoteControlClient.PLAYSTATE_STOPPED);
+			} else {
+				remoteControlClient.setPlaybackState(preparing ? RemoteControlClient.PLAYSTATE_BUFFERING : (playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED));
+				if (titleOrSongHaveChanged) {
+					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : localSong.title);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, localSong.artist);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, localSong.album);
+					ed.putLong(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER, localSong.track);
+					ed.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, localSong.lengthMS);
+					//Oh!!!! METADATA_KEY_YEAR is only handled in API 19+ !!! :(
+					//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.4_r1/android/media/MediaMetadataEditor.java#MediaMetadataEditor.0METADATA_KEYS_TYPE
+					//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.1.2_r1/android/media/RemoteControlClient.java#RemoteControlClient.0METADATA_KEYS_TYPE_LONG
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+						ed.putLong(MediaMetadataRetriever.METADATA_KEY_YEAR, localSong.year);
+					ed.apply();
+				}
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	private static void broadcastStateChangeToMediaSession(boolean preparing, boolean titleOrSongHaveChanged) {
+		try {
+			if (localSong == null) {
+				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
+			} else {
+				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
+				if (titleOrSongHaveChanged) {
+					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : localSong.title);
+					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, localSong.artist);
+					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, localSong.album);
+					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, localSong.track);
+					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, localSong.lengthMS);
+					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_YEAR, localSong.year);
+					mediaSession.setMetadata(mediaSessionMetadataBuilder.build());
+				}
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean titleOrSongHaveChanged) {
+		//
+		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
+		//http://developer.android.com/reference/android/media/RemoteControlClient.html
+		//https://android.googlesource.com/platform/packages/apps/Music/+/master/src/com/android/music/MediaPlaybackService.java
+		//
+		//http://stackoverflow.com/questions/15527614/send-track-informations-via-a2dp-avrcp
+		//http://stackoverflow.com/questions/14536597/how-does-the-android-lockscreen-get-playing-song
+		//http://stackoverflow.com/questions/10510292/how-to-get-current-music-track-info
+		//
+		//https://android.googlesource.com/platform/packages/apps/Bluetooth/+/android-4.3_r0.9.1/src/com/android/bluetooth/a2dp/Avrcp.java
+		//
+		if (localSong == null) {
+			stickyBroadcast.setAction("com.android.music.playbackcomplete");
+			stickyBroadcast.removeExtra("id");
+			stickyBroadcast.removeExtra("songid");
+			stickyBroadcast.removeExtra("track");
+			stickyBroadcast.removeExtra("artist");
+			stickyBroadcast.removeExtra("album");
+			stickyBroadcast.removeExtra("duration");
+			//stickyBroadcast.removeExtra("position");
+			stickyBroadcast.removeExtra("playing");
+		} else {
+			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
+			stickyBroadcast.setAction(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
+			//stickyBroadcast.setAction("com.android.music.playstatechanged");
+			stickyBroadcast.putExtra("id", localSong.id);
+			stickyBroadcast.putExtra("songid", localSong.id);
+			stickyBroadcast.putExtra("track", preparing ? thePlayer.getText(R.string.loading) : localSong.title);
+			stickyBroadcast.putExtra("artist", localSong.artist);
+			stickyBroadcast.putExtra("album", localSong.album);
+			stickyBroadcast.putExtra("duration", (long)localSong.lengthMS);
+			//stickyBroadcast.putExtra("position", (long)0);
+			stickyBroadcast.putExtra("playing", playing);
+		}
+		//thePlayer.sendBroadcast(stickyBroadcast);
+		thePlayer.sendStickyBroadcast(stickyBroadcast);
+		if (remoteControlClient != null)
+			broadcastStateChangeToRemoteControl(preparing, titleOrSongHaveChanged);
+		if (mediaSession != null)
+			broadcastStateChangeToMediaSession(preparing, titleOrSongHaveChanged);
+	}
+
+	private static void updateState(int arg1, int stateIndex) {
+		localPlaying = ((arg1 & 0x04) != 0);
+		localPlayerState = (arg1 & 0x03);
+		localPlayer = statePlayer[stateIndex];
+		statePlayer[stateIndex] = null;
+		final Throwable ex = stateEx[stateIndex];
+		stateEx[stateIndex] = null;
+		notificationManager.notify(1, getNotification());
+		final boolean songHasChanged = ((arg1 & 0x08) != 0);
+		final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
+		final boolean preparing = ((arg1 & 0x20) != 0);
+		final boolean preparingHasChanged = ((arg1 & 0x40) != 0);
+		broadcastStateChange(playbackHasChanged, preparing, songHasChanged | preparingHasChanged);
+		if (idleTurnOffTimerSelectedMinutes > 0)
+			processIdleTurnOffTimer();
+		if (bluetoothVisualizerController != null)
+			updateBluetoothVisualizer(songHasChanged);
+		WidgetMain.updateWidgets(thePlayer);
+		if (ex != null) {
+			final String msg = ex.getMessage();
+			if (ex instanceof IllegalStateException) {
+				UI.toast(thePlayer, R.string.error_state);
+			} else if (ex instanceof FileNotFoundException) {
+				UI.toast(thePlayer, R.string.error_file_not_found);
+			} else if (ex instanceof TimeoutException) {
+				UI.toast(thePlayer, R.string.error_timeout);
+			} else if (ex instanceof MediaServerDiedException) {
+				UI.toast(thePlayer, R.string.error_server_died);
+			} else if (ex instanceof SecurityException) {
+				UI.toast(thePlayer, R.string.error_security);
+			} else if (ex instanceof IOException) {
+				UI.toast(thePlayer, (localSong != null && localSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_io);
+			} else if (msg == null || msg.length() == 0) {
+				UI.toast(thePlayer, R.string.error_playback);
+			} else {
+				final StringBuilder sb = new StringBuilder(thePlayer.getText(R.string.error_msg));
+				sb.append(' ');
+				sb.append(msg);
+				UI.toast(thePlayer, sb);
+			}
+		}
+		if (observer != null)
+			observer.onPlayerChanged(localSong, songHasChanged, preparingHasChanged, ex);
+	}
+
+	private static void _updateState(boolean metaHasChanged, Throwable ex) {
+		if (localHandler != null) {
+			final boolean songHasChanged = (metaHasChanged || (stateLastSong != song));
+			final boolean playbackHasChanged = (stateLastPlaying != playing);
+			final boolean preparing = (playerState == PLAYER_STATE_PREPARING || playerBuffering);
+			final boolean preparingHasChanged = (stateLastPreparing != preparing);
+			if (!songHasChanged && !playbackHasChanged && !preparingHasChanged && ex == null)
 				return;
-			}
-			final MediaPlayer mp;
-			switch (msg.what) {
-			case MSG_ASYNC_PREPARATION:
-				synchronized (preparationSync) {
-					if (state >= STATE_TERMINATING) {
-						final Looper looper = Looper.myLooper();
-						if (looper != null)
-							looper.quit();
-						return;
-					}
-					if (preparationPlayer == null || preparationSong == null || preparationVersion != msg.arg2)
-						return;
-					mp = preparationPlayer;
-					preparationPlayer = null;
-					try {
-						if (preparationSong.path == null || preparationSong.path.length() == 0) {
-							Player.sendMessage(MSG_ASYNC_PREPARATION_FAILED, msg.arg1, msg.arg2, new IOException());
-						} else {
-							mp.setDataSource(preparationSong.path);
-							Player.sendMessage(MSG_ASYNC_PREPARATION, 0, msg.arg2);
-						}
-					} catch (Throwable ex) {
-						Player.sendMessage(MSG_ASYNC_PREPARATION_FAILED, msg.arg1, msg.arg2, ex);
-					}
-				}
-				break;
-			case MSG_ASYNC_PREPARATION_NEXT:
-				synchronized (preparationSyncNext) {
-					if (state >= STATE_TERMINATING) {
-						final Looper looper = Looper.myLooper();
-						if (looper != null)
-							looper.quit();
-						return;
-					}
-					if (preparationPlayerNext == null || preparationSongNext == null || preparationVersionNext != msg.arg2)
-						return;
-					mp = preparationPlayerNext;
-					preparationPlayerNext = null;
-					try {
-						if (preparationSongNext.path == null || preparationSongNext.path.length() == 0) {
-							Player.sendMessage(MSG_ASYNC_PREPARATION_NEXT_FAILED, 0, msg.arg2, new IOException());
-						} else {
-							mp.setDataSource(preparationSongNext.path);
-							Player.sendMessage(MSG_ASYNC_PREPARATION_NEXT, 0, msg.arg2);
-						}
-					} catch (Throwable ex) {
-						Player.sendMessage(MSG_ASYNC_PREPARATION_NEXT_FAILED, 0, msg.arg2, ex);
-					}
-				}
-				break;
-			}
+			stateLastSong = song;
+			stateLastPlaying = playing;
+			stateLastPreparing = preparing;
+			final Message msg = Message.obtain(localHandler, MSG_UPDATE_STATE, playerState | (playing ? 0x04 : 0) | (songHasChanged ? 0x08 : 0) | (playbackHasChanged ? 0x10 : 0) | (preparing ? 0x20 : 0) | (preparingHasChanged ? 0x40 : 0), stateIndex);
+			statePlayer[stateIndex] = player;
+			stateEx[stateIndex] = ex;
+			stateIndex = (stateIndex + 1) & 7;
+			localHandler.sendMessageAtTime(msg, SystemClock.uptimeMillis());
 		}
 	}
 }

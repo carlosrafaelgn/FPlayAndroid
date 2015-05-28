@@ -39,7 +39,7 @@ public final class BassBoost {
 	private static boolean enabled, strengthSupported, supported;
 	private static android.media.audiofx.BassBoost theBooster;
 	
-	public static void loadConfig(SerializableMap opts) {
+	static void loadConfig(SerializableMap opts) {
 		if (opts.hasBits())
 			enabled = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
 		else
@@ -47,12 +47,12 @@ public final class BassBoost {
 		strength = opts.getInt(Player.OPT_BASSBOOST_STRENGTH);
 	}
 	
-	public static void saveConfig(SerializableMap opts) {
+	static void saveConfig(SerializableMap opts) {
 		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED, enabled);
 		opts.put(Player.OPT_BASSBOOST_STRENGTH, strength);
 	}
 	
-	public static void initialize(int newSessionId) {
+	static void initialize(int newSessionId) {
 		if (newSessionId != Integer.MIN_VALUE)
 			sessionId = newSessionId;
 		try {
@@ -60,15 +60,17 @@ public final class BassBoost {
 			strengthSupported = theBooster.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 			supported = false;
 		}
 	}
 	
-	public static void release() {
+	static void release() {
 		if (theBooster != null) {
 			try {
 				theBooster.release();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			theBooster = null;
 		}
@@ -86,19 +88,20 @@ public final class BassBoost {
 		return enabled;
 	}
 	
-	public static void setEnabled(boolean enabled, boolean actuallyApply) {
+	static void setEnabled(boolean enabled) {
 		BassBoost.enabled = enabled;
-		if (theBooster != null && actuallyApply) {
+		if (theBooster != null) {
 			try {
 				if (!enabled) {
 					theBooster.setEnabled(false);
 				} else if (sessionId != Integer.MIN_VALUE) {
 					if (!strengthSupported)
 						strength = 1000;
-					setStrength(strength, true);
+					commit();
 					theBooster.setEnabled(true);
 				}
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			BassBoost.enabled = theBooster.getEnabled();
 		}
@@ -112,19 +115,21 @@ public final class BassBoost {
 		return strength;
 	}
 	
-	public static void setStrength(int strength, boolean actuallyApply) {
+	public static void setStrength(int strength) {
 		if (strength > 1000)
 			strength = 1000;
 		else if (strength < 0)
 			strength = 0;
 		BassBoost.strength = strength;
-		if (actuallyApply) {
-			if (theBooster != null) {
-				try {
-					theBooster.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
-					BassBoost.strength = theBooster.getRoundedStrength();
-				} catch (Throwable ex) {
-				}
+	}
+
+	static void commit() {
+		if (theBooster != null) {
+			try {
+				theBooster.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
+				strength = theBooster.getRoundedStrength();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 	}

@@ -105,13 +105,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean playingBeforeSeek, selectCurrentWhenAttached, skipToDestruction, forceFadeOut;//, ignoreAnnouncement;
+	private boolean selectCurrentWhenAttached, skipToDestruction, forceFadeOut;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
 
 	@Override
 	public CharSequence getTitle() {
-		final Song currentSong = Player.currentSong;
+		final Song currentSong = Player.localSong;
 		return "FPlay: " + ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 	}
 
@@ -152,72 +152,83 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 	}
 	
-	private String volumeToString() {
-		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
-			return Integer.toString(Player.getStreamVolume());
-		} else {
-			int volumeDB = Player.volumeDB;
-			if (Player.volumeControlType == Player.VOLUME_CONTROL_DB) {
-				if (volumeDB <= Player.MIN_VOLUME_DB)
-					return "-\u221E dB";
-				if (volumeDB >= 0)
-					return "-0.00 dB";
-				volumeDB = -volumeDB;
-				volumeBuilder.delete(0, volumeBuilder.length());
-				volumeBuilder.append('-');
-				volumeBuilder.append(volumeDB / 100);
-				volumeBuilder.append('.');
-				volumeDB %= 100;
-				if (volumeDB < 10)
-					volumeBuilder.append('0');
-				volumeBuilder.append(volumeDB);
-				volumeBuilder.append(" dB");
-				return volumeBuilder.toString();
-			}
+	private String volumeToString(int volume) {
+		switch (Player.volumeControlType) {
+		case Player.VOLUME_CONTROL_STREAM:
+			//The parameter volume is only used to help properly synchronize when
+			//Player.volumeControlType == Player.VOLUME_CONTROL_STREAM
+			return Integer.toString(volume);
+		case Player.VOLUME_CONTROL_DB:
+			if (volume <= Player.VOLUME_MIN_DB)
+				return "-\u221E dB";
+			if (volume >= 0)
+				return "-0.00 dB";
+			volume = -volume;
 			volumeBuilder.delete(0, volumeBuilder.length());
-			volumeBuilder.append(Player.getGenericVolumePercent());
+			volumeBuilder.append('-');
+			volumeBuilder.append(volume / 100);
+			volumeBuilder.append('.');
+			volume %= 100;
+			if (volume < 10)
+				volumeBuilder.append('0');
+			volumeBuilder.append(volume);
+			volumeBuilder.append(" dB");
+			return volumeBuilder.toString();
+		default:
+			volumeBuilder.delete(0, volumeBuilder.length());
+			volumeBuilder.append(Player.getVolumeInPercentage());
 			volumeBuilder.append('%');
 			return volumeBuilder.toString();
 		}
 	}
 	
-	private void setVolumeIcon() {
+	private void setVolumeIcon(int volume) {
 		if (btnVolume != null) {
 			final int max;
-			final int v;
 			switch (Player.volumeControlType) {
 			case Player.VOLUME_CONTROL_STREAM:
-				max = Player.getStreamMaxVolume();
-				v = Player.getStreamVolume();
+				//The parameter volume is only used to help properly synchronize when
+				//Player.volumeControlType == Player.VOLUME_CONTROL_STREAM
+				max = Player.volumeStreamMax;
 				break;
 			case Player.VOLUME_CONTROL_DB:
 			case Player.VOLUME_CONTROL_PERCENT:
-				max = -Player.MIN_VOLUME_DB;
-				v = max + Player.volumeDB;
+				max = -Player.VOLUME_MIN_DB;
+				volume += max;
 				break;
 			default:
 				btnVolume.setText(UI.ICON_VOLUME4);
 				return;
 			}
-			if (v == max)
+			if (volume == max)
 				btnVolume.setText(UI.ICON_VOLUME4);
-			else if (v == 0)
+			else if (volume == 0)
 				btnVolume.setText(UI.ICON_VOLUME0);
-			else if (v > ((max + 1) >> 1))
+			else if (volume > ((max + 1) >> 1))
 				btnVolume.setText(UI.ICON_VOLUME3);
-			else if (v > (max >> 2))
+			else if (volume > (max >> 2))
 				btnVolume.setText(UI.ICON_VOLUME2);
 			else
 				btnVolume.setText(UI.ICON_VOLUME1);
 		}
 	}
 	
-	private void updateVolumeDisplay() {
-		if (barVolume != null) {
-			barVolume.setValue((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? Player.getStreamVolume() : ((Player.volumeDB - Player.MIN_VOLUME_DB) / 5));
-			barVolume.setText(volumeToString());
+	private void updateVolumeDisplay(int volume) {
+		final int value;
+		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
+			if (volume == Integer.MIN_VALUE)
+				volume = Player.getSystemStreamVolume();
+			value = volume;
 		} else {
-			setVolumeIcon();
+			if (volume == Integer.MIN_VALUE)
+				volume = Player.localVolumeDB;
+			value = (volume - Player.VOLUME_MIN_DB) / 5;
+		}
+		if (barVolume != null) {
+			barVolume.setValue(value);
+			barVolume.setText(volumeToString(volume));
+		} else {
+			setVolumeIcon(volume);
 		}
 	}
 	
@@ -333,7 +344,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private void addSongs(View sourceView) {
-		if (Player.state == Player.STATE_INITIALIZED) {
+		if (Player.state == Player.STATE_ALIVE) {
 			Player.alreadySelected = false;
 			//startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
 			startActivity(new ActivityBrowser2(), 0, sourceView, sourceView != null);
@@ -341,29 +352,35 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private boolean decreaseVolume() {
-		final boolean ret = Player.decreaseVolume();
-		setVolumeIcon();
-		return ret;
+		final int volume = Player.decreaseVolume();
+		if (volume != Integer.MIN_VALUE) {
+			setVolumeIcon(volume);
+			return true;
+		}
+		return false;
 	}
 	
 	private boolean increaseVolume() {
-		final boolean ret = Player.increaseVolume();
-		setVolumeIcon();
-		return ret;
+		final int volume = Player.increaseVolume();
+		if (volume != Integer.MIN_VALUE) {
+			setVolumeIcon(volume);
+			return true;
+		}
+		return false;
 	}
 	
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
-		final String icon = (Player.playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
+		final String icon = (Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		if (btnPlay != null) {
 			btnPlay.setText(icon);
-			btnPlay.setContentDescription(getText(Player.playing ? R.string.pause : R.string.play));
+			btnPlay.setContentDescription(getText(Player.localPlaying ? R.string.pause : R.string.play));
 		}
 		if (lblTitleIcon != null)
 			lblTitleIcon.setIcon(icon);
 		if (songHasChanged) {
 			if (lblTitle != null) {
-				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : ((barSeek == null && Player.isCurrentSongPreparing()) ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
+				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : ((barSeek == null && Player.isPreparing()) ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
 				lblTitle.setSelected(true);
 				//if (ignoreAnnouncement)
 				//	ignoreAnnouncement = false;
@@ -380,16 +397,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				lblLength.setText((currentSong == null) ? "-" : currentSong.length);
 		} else if (preparingHasChanged) {
 			if (barSeek != null) {
-				if (Player.isCurrentSongPreparing() && !barSeek.isTracking()) {
+				if (Player.isPreparing() && !barSeek.isTracking()) {
 					barSeek.setText(R.string.loading);
 					barSeek.setValue(0);
 				}
 			} else if (lblTitle != null) {
-				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isCurrentSongPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
+				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
 				lblTitle.setSelected(true);
 			}
 		}
-		if (Player.playing && !Player.controlMode) {
+		if (Player.localPlaying && !Player.controlMode) {
 			if (!tmrSong.isAlive())
 				tmrSong.start(250);
 		} else {
@@ -414,17 +431,17 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	@Override
-	public void onPlayerGlobalVolumeChanged() {
-		updateVolumeDisplay();
+	public void onPlayerGlobalVolumeChanged(int volume) {
+		updateVolumeDisplay(volume);
 	}
 	
 	@Override
 	public void onPlayerAudioSinkChanged(int audioSink) {
 		//when changing the output, the global volume usually changes
 		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
-			updateVolumeDisplay();
+			updateVolumeDisplay(Integer.MIN_VALUE);
 			if (barVolume != null)
-				barVolume.setMax(Player.getStreamMaxVolume());
+				barVolume.setMax(Player.volumeStreamMax);
 			tmrUpdateVolumeDisplay.start(750);
 		}
 	}
@@ -443,7 +460,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
  	public View getNullContextMenuView() {
-		return ((!Player.songs.selecting && !Player.songs.moving && Player.state == Player.STATE_INITIALIZED) ? btnMenu : null);
+		return ((!Player.songs.selecting && !Player.songs.moving && Player.state == Player.STATE_ALIVE) ? btnMenu : null);
 	}
 	
 	@Override
@@ -557,12 +574,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		final int id = item.getItemId();
 		if (id == MNU_EXIT) {
 			getHostActivity().setExitOnDestroy(true);
-			if (Player.playing)
-				Player.playPause();
+			Player.pause();
 			finish(0, null, false);
 			return true;
 		}
-		if (Player.state != Player.STATE_INITIALIZED)
+		if (Player.state != Player.STATE_ALIVE)
 			return true;
 		switch (item.getItemId()) {
 		case MNU_ADDSONGS:
@@ -639,12 +655,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (view == btnAdd) {
 			addSongs(view);
 		} else if (view == btnPrev) {
-			if (Player.previous() && !Player.controlMode)
+			Player.previous();
+			if (!Player.controlMode)
 				bringCurrentIntoView();
 		} else if (view == btnPlay) {
 			Player.playPause();
 		} else if (view == btnNext) {
-			if (Player.next() && !Player.controlMode)
+			Player.next();
+			if (!Player.controlMode)
 				bringCurrentIntoView();
 		} else if (view == btnMenu) {
 			CustomContextMenu.openContextMenu(btnMenu, this);
@@ -683,7 +701,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			if (UI.doubleClickMode) {
 				if (Player.songs.getFirstSelectedPosition() == position) {
-					if (Player.songs.getItemT(position) == Player.currentSong && !Player.playing)
+					if (Player.songs.getItemT(position) == Player.localSong && !Player.localPlaying)
 						Player.playPause();
 					else
 						Player.play(position);
@@ -692,7 +710,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				}
 			} else {
 				Player.songs.setSelection(position, position, true, true);
-				if (Player.songs.getItemT(position) == Player.currentSong && !Player.playing)
+				if (Player.songs.getItemT(position) == Player.localSong && !Player.localPlaying)
 					Player.playPause();
 				else
 					Player.play(position);
@@ -937,14 +955,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			
 			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
 			btnVolume = (BgButton)findViewById(R.id.btnVolume);
-			
-			if (UI.isLowDpiScreen && !UI.isLargeScreen) {
-				barVolume.setTextSizeIndex(1);
-				barSeek.setTextSizeIndex(1);
-			} else {
+
+			if (!UI.isLowDpiScreen || UI.isLargeScreen)
 				btnCancelSel.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			}
-			
+
 			if (UI.isLargeScreen) {
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblTitleStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblArtistStatic));
@@ -1008,7 +1022,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnVolume = null;
 				barVolume.setAdditionalContentDescription(getText(R.string.volume).toString());
 				barVolume.setOnBgSeekBarChangeListener(this);
-				barVolume.setMax((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? Player.globalMaxVolume : (-Player.MIN_VOLUME_DB / 5));
+				barVolume.setMax((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? Player.volumeStreamMax : (-Player.VOLUME_MIN_DB / 5));
 				barVolume.setVertical(UI.isLandscape && !UI.isLargeScreen);
 				barVolume.setKeyIncrement((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? 1 : 20);
 				vwVolume = barVolume;
@@ -1144,7 +1158,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				return true;
 			case UI.KEY_ENTER:
 				if (s >= 0) {
-					if (Player.songs.getItemT(s) == Player.currentSong && !Player.playing)
+					if (Player.songs.getItemT(s) == Player.localSong && !Player.localPlaying)
 						Player.playPause();
 					else
 						Player.play(s);
@@ -1158,13 +1172,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void resume(boolean selectCurrent) {
 		UI.songActivity = this;
 		Player.songs.setObserver(list);
-		updateVolumeDisplay();
+		updateVolumeDisplay(Integer.MIN_VALUE);
 		if (list != null) {
 			selectCurrentWhenAttached = selectCurrent;
 			list.notifyMeWhenFirstAttached(this);
 		}
 		//ignoreAnnouncement = true;
-		onPlayerChanged(Player.currentSong, true, true, null);
+		onPlayerChanged(Player.localSong, true, true, null);
 	}
 	
 	@Override
@@ -1287,17 +1301,17 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 			return;
 		} else if (timer == tmrUpdateVolumeDisplay) {
-			updateVolumeDisplay();
+			updateVolumeDisplay(Integer.MIN_VALUE);
 			return;
 		}
-		if (Player.isCurrentSongPreparing()) {
+		if (Player.isPreparing()) {
 			if (barSeek != null && !barSeek.isTracking()) {
 				barSeek.setText(R.string.loading);
 				barSeek.setValue(0);
 			}
 			return;
 		}
-		final int m = Player.getCurrentPosition(),
+		final int m = Player.getPosition(),
 				t = ((m < 0) ? -1 : (m / 1000));
 		if (t == lastTime) return;
 		lastTime = t;
@@ -1309,7 +1323,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			Song.formatTimeSec(t, timeBuilder);
 			if (barSeek != null && !barSeek.isTracking()) {
-				final Song s = Player.currentSong;
+				final Song s = Player.localSong;
 				int v = 0;
 				if (s != null && s.lengthMS > 0) {
 					if (m >= 214740) //avoid overflow! ;)
@@ -1324,7 +1338,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private int getMSFromBarValue(int value) {
-		final Song s = Player.currentSong;
+		final Song s = Player.localSong;
 		if (s == null || s.lengthMS <= 0 || value < 0)
 			return -1;
 		return (int)(((long)value * (long)s.lengthMS) / (long)MAX_SEEK);
@@ -1334,11 +1348,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
 		if (fromUser) {
 			if (seekBar == barVolume) {
-				if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM)
-					Player.setStreamVolume(value);
-				else
-					Player.setVolumeDB((value * 5) + Player.MIN_VOLUME_DB);
-				seekBar.setText(volumeToString());
+				seekBar.setText(volumeToString(Player.setVolume((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? value : ((value * 5) + Player.VOLUME_MIN_DB))));
 			} else if (seekBar == barSeek) {
 				value = getMSFromBarValue(value);
 				if (value < 0) {
@@ -1355,10 +1365,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public boolean onStartTrackingTouch(BgSeekBar seekBar) {
 		if (seekBar == barSeek) {
-			if (Player.currentSong != null && Player.currentSong.lengthMS > 0) {
-				playingBeforeSeek = Player.playing;
-				if (playingBeforeSeek)
-					Player.playPause();
+			if (Player.localSong != null && Player.localSong.lengthMS > 0) {
 				if (UI.expandSeekBar && !UI.isLargeScreen)
 					vwVolume.setVisibility(View.GONE);
 				return true;
@@ -1370,19 +1377,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
-		if (seekBar == barVolume && Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
-			updateVolumeDisplay();
-		} else if (seekBar == barSeek) {
-			if (Player.currentSong != null) {
+		if (seekBar == barSeek) {
+			if (Player.localSong != null) {
 				final int ms = getMSFromBarValue(seekBar.getValue());
-				if (cancelled || ms < 0) {
-					if (playingBeforeSeek)
-						Player.playPause();
-					else
-						handleTimer(tmrSong, null);
-				} else {
-					Player.seekTo(ms, playingBeforeSeek);
-				}
+				if (cancelled || ms < 0)
+					handleTimer(tmrSong, null);
+				else
+					Player.seekTo(ms);
 			}
 			if (UI.expandSeekBar && !UI.isLargeScreen)
 				vwVolume.setVisibility(View.VISIBLE);

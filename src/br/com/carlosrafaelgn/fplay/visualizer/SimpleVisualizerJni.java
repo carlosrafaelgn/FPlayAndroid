@@ -106,7 +106,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		ignoreInput = 0;
 		lerp = false;
 		voice = false;
-		setLerp(lerp);
+		setLerp(false);
 		commonSetColorIndex(colorIndex);
 	}
 	

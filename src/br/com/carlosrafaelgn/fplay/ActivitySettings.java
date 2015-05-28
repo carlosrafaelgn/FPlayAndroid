@@ -357,7 +357,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				System.gc();
 			}
 		} else if (lastMenuView == optVolumeControlType) {
-			Player.setVolumeControlType(getApplication(), item.getItemId());
+			Player.setVolumeControlType(item.getItemId());
 			optVolumeControlType.setSecondaryText(getVolumeString());
 		} else if (lastMenuView == optExtraInfoMode) {
 			Song.extraInfoMode = item.getItemId();

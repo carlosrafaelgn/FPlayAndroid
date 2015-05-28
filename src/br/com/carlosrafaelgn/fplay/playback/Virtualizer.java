@@ -39,7 +39,7 @@ public final class Virtualizer {
 	private static boolean enabled, strengthSupported, supported;
 	private static android.media.audiofx.Virtualizer theVirtualizer;
 	
-	public static void loadConfig(SerializableMap opts) {
+	static void loadConfig(SerializableMap opts) {
 		if (opts.hasBits())
 			enabled = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
 		else
@@ -47,12 +47,12 @@ public final class Virtualizer {
 		strength = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH);
 	}
 	
-	public static void saveConfig(SerializableMap opts) {
+	static void saveConfig(SerializableMap opts) {
 		opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED, enabled);
 		opts.put(Player.OPT_VIRTUALIZER_STRENGTH, strength);
 	}
 	
-	public static void initialize(int newSessionId) {
+	static void initialize(int newSessionId) {
 		if (newSessionId != Integer.MIN_VALUE)
 			sessionId = newSessionId;
 		try {
@@ -64,11 +64,12 @@ public final class Virtualizer {
 		}
 	}
 	
-	public static void release() {
+	static void release() {
 		if (theVirtualizer != null) {
 			try {
 				theVirtualizer.release();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			theVirtualizer = null;
 		}
@@ -86,19 +87,20 @@ public final class Virtualizer {
 		return enabled;
 	}
 	
-	public static void setEnabled(boolean enabled, boolean actuallyApply) {
+	static void setEnabled(boolean enabled) {
 		Virtualizer.enabled = enabled;
-		if (theVirtualizer != null && actuallyApply) {
+		if (theVirtualizer != null) {
 			try {
 				if (!enabled) {
 					theVirtualizer.setEnabled(false);
 				} else if (sessionId != Integer.MIN_VALUE) {
 					if (!strengthSupported)
 						strength = 1000;
-					setStrength(strength, true);
+					commit();
 					theVirtualizer.setEnabled(true);
 				}
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			Virtualizer.enabled = theVirtualizer.getEnabled();
 		}
@@ -112,19 +114,21 @@ public final class Virtualizer {
 		return strength;
 	}
 	
-	public static void setStrength(int strength, boolean actuallyApply) {
+	public static void setStrength(int strength) {
 		if (strength > 1000)
 			strength = 1000;
 		else if (strength < 0)
 			strength = 0;
 		Virtualizer.strength = strength;
-		if (actuallyApply) {
-			if (theVirtualizer != null) {
-				try {
-					theVirtualizer.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
-					Virtualizer.strength = theVirtualizer.getRoundedStrength();
-				} catch (Throwable ex) {
-				}
+	}
+
+	static void commit() {
+		if (theVirtualizer != null) {
+			try {
+				theVirtualizer.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
+				strength = theVirtualizer.getRoundedStrength();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 	}

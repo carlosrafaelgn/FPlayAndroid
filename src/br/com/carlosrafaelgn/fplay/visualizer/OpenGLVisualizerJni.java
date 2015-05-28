@@ -99,7 +99,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	private final int type;
 	private byte[] waveform;
-	private volatile boolean supported, alerted, okToRender, imageChoosenAtLeastOnce;
+	private volatile boolean supported, alerted, okToRender;
 	private volatile int error;
 	private volatile Uri selectedUri;
 	private boolean browsing;
@@ -151,6 +151,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
 			} catch (Throwable ex) {
 				sensorManager = null;
+				ex.printStackTrace();
 			}
 			try {
 				accel = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
@@ -206,8 +207,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public EGLSurface createWindowSurface(EGL10 egl, EGLDisplay display, EGLConfig config, Object native_window) {
 		try {
-			EGLSurface s = egl.eglCreateWindowSurface(display, (this.config != null) ? this.config : config, native_window, null);
-			return s;
+			return egl.eglCreateWindowSurface(display, (this.config != null) ? this.config : config, native_window, null);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -368,11 +368,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 					}
 				}
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			} finally {
 				egl.eglMakeCurrent(display, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
 				if (surface != null && surface != EGL10.EGL_NO_SURFACE)
 					egl.eglDestroySurface(display, surface);
-				surface = null;
 			}
 		}
 		this.config = null;
@@ -406,16 +406,19 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				if (!supported)
 					MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			} finally {
 				try {
 					if (bis != null)
 						bis.close();
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 				try {
 					if (ifc != null)
 						ifc.destroy();
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 			}
 		}
@@ -535,11 +538,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				SimpleVisualizerJni.glLoadBitmapFromJava(bitmap);
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		} finally {
 			if (input != null) {
 				try {
 					input.close();
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 			}
 			if (bitmap != null)
@@ -590,7 +595,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		//Based on: http://stackoverflow.com/a/4105966/3569421
 		if (activity != null && selectedUri == null && !browsing && okToRender) {
 			browsing = true;
-			imageChoosenAtLeastOnce = true;
+			//imageChoosenAtLeastOnce = true;
 			final Intent intent = new Intent();
 			intent.setType("image/*");
 			intent.setAction(Intent.ACTION_GET_CONTENT);

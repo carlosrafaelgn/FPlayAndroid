@@ -122,7 +122,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		msg.obj = null;
 		String uri = null;
 		Bitmap b = null, b2 = null;
-		ReleasableBitmapWrapper w = null;
+		ReleasableBitmapWrapper w;
 		FileSt file;
 		if (c == null || p == null || listener == null || (file = listener.fileForRequestId(msg.what)) == null)
 			return true;
@@ -249,13 +249,16 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				if (b != null)
 					b.recycle();
 			} catch (Throwable ex2) {
+				ex2.printStackTrace();
 			}
 			try {
 				if (b2 != null)
 					b2.recycle();
 			} catch (Throwable ex2) {
+				ex2.printStackTrace();
 			}
 			listener.albumArtFetched(null, msg.what);
+			ex.printStackTrace();
 			return true;
 		}
 		

@@ -252,7 +252,7 @@ public final class StateDrawable extends Drawable {
 	
  	@Override
 	public boolean getPadding(Rect padding) {
-		return ((current != null) ? current.getPadding(padding) : false);
+		return ((current != null) && current.getPadding(padding));
 	}
 	
 	@Override
@@ -284,6 +284,6 @@ public final class StateDrawable extends Drawable {
 	@TargetApi(Build.VERSION_CODES.KITKAT)
 	@Override
 	public boolean isAutoMirrored() {
-		return ((current == null) ? true : current.isAutoMirrored());
+		return ((current == null) || current.isAutoMirrored());
 	}
 }

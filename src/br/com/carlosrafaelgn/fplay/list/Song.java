@@ -54,7 +54,6 @@ public final class Song extends BaseItem {
 	public String title, artist, album, extraInfo;
 	public int track, lengthMS, year;
 	public String length;
-	public Song possibleNextSong;
 	public boolean alreadyPlayed, selected;
 	
 	private Song(String path, String title, String artist, String album, int track, int lengthMS, int year) {
@@ -137,7 +136,9 @@ public final class Song extends BaseItem {
 					if (s != null && s.length() > 0)
 						this.lengthMS = Integer.parseInt(s);
 				} catch (Throwable ex) { }
-			} catch (Throwable ex) { }
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 			retr.release();
 		}
 		validateFields(fileSt.name);

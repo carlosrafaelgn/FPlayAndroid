@@ -338,6 +338,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 			if (connected)
 				MainHandler.sendMessage(this, MSG_BLUETOOTH_RXTX_ERROR);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		} finally {
 			lock.releaseLowPriority();
 		}
@@ -368,7 +369,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 
 	@Override
 	public void onBluetoothConnected(BluetoothConnectionManager manager) {
-		if (fxVisualizer == null && bt != null && Player.state == Player.STATE_INITIALIZED) {
+		if (fxVisualizer == null && bt != null && Player.state == Player.STATE_ALIVE) {
 			packetsSent = 0;
 			version++;
 			connected = true;
@@ -524,6 +525,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 			if (connected)
 				MainHandler.sendMessage(this, MSG_BLUETOOTH_RXTX_ERROR);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -531,7 +533,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	public boolean handleMessage(Message message) {
 		switch (message.what) {
 		case MSG_PLAYER_COMMAND:
-			if (connected && Player.state == Player.STATE_INITIALIZED) {
+			if (connected && Player.state == Player.STATE_ALIVE) {
 				switch (message.arg1) {
 				case MessageStartBinTransmission:
 					switch (message.arg2) {
@@ -568,7 +570,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 					case PayloadPlayerCommandNext:
 					case PayloadPlayerCommandPause:
 					case PayloadPlayerCommandPlay:
-						if (message.arg2 != PayloadPlayerCommandPlay || !Player.playing)
+						if (message.arg2 != PayloadPlayerCommandPlay || !Player.localPlaying)
 							Player.handleMediaButton(message.arg2);
 						break;
 					case PayloadPlayerCommandIncreaseVolume:
@@ -579,7 +581,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 						break;
 					default:
 						if ((message.arg2 >> 8) == PayloadPlayerCommandSetVolume)
-							Player.setGenericVolumePercent((message.arg2 & 0xff) >> 1);
+							Player.setVolumeInPercentage((message.arg2 & 0xff) >> 1);
 						break;
 					}
 					break;
@@ -595,13 +597,13 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	}
 
 	private void generateAndSendState() {
-		final Song s = Player.currentSong;
-		stateVolume = Player.getGenericVolumePercent();
-		stateSongPosition = Player.getCurrentPosition();
+		final Song s = Player.localSong;
+		stateVolume = Player.getVolumeInPercentage();
+		stateSongPosition = Player.getPosition();
 		stateSongLength = ((s == null) ? -1 : s.lengthMS);
 		state.set(4 |
-			(Player.playing ? PayloadPlayerStateFlagPlaying : 0) |
-			(Player.isCurrentSongPreparing() ? PayloadPlayerStateFlagLoading : 0));
+			(Player.localPlaying ? PayloadPlayerStateFlagPlaying : 0) |
+			(Player.isPreparing() ? PayloadPlayerStateFlagLoading : 0));
 	}
 
 	private static int writeByte(byte[] message, int payloadIndex, int x) {

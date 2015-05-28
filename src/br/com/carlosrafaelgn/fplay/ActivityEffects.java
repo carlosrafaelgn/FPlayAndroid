@@ -62,7 +62,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	private ViewGroup panelSecondary;
 	private BgButton chkEqualizer, chkBass, chkVirtualizer;//, chkReverb;
 	private BgButton btnGoBack, btnMenu, btnChangeEffect;
-	private int min, max, barTextSizeIndex;
+	private int min, max;
 	private int[] frequencies;
 	private boolean enablingEffect, screenNotSoLarge;
 	private BgSeekBar[] bars;
@@ -127,8 +127,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		switch (item.getItemId()) {
 		case MNU_ZEROPRESET:
 			for (int i = Equalizer.getBandCount() - 1; i >= 0; i--)
-				Equalizer.setBandLevel(i, 0, false);
-			Equalizer.applyAllBandSettings();
+				Equalizer.setBandLevel(i, 0);
+			Player.commitEqualizer(-1);
 			updateBars();
 			break;
 		case MNU_LOADPRESET:
@@ -159,8 +159,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				return;
 			}
 			enablingEffect = true;
-			Equalizer.setEnabled(chkEqualizer.isChecked(), false);
-			Player.resetEffects(this);
+			Player.enableEffects(chkEqualizer.isChecked(), chkBass.isChecked(), chkVirtualizer.isChecked(), this);
 		} else if (view == chkBass) {
 			if (enablingEffect)
 				return;
@@ -170,8 +169,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				return;
 			}
 			enablingEffect = true;
-			BassBoost.setEnabled(chkBass.isChecked(), false);
-			Player.resetEffects(this);
+			Player.enableEffects(chkEqualizer.isChecked(), chkBass.isChecked(), chkVirtualizer.isChecked(), this);
 		} else if (view == chkVirtualizer) {
 			if (enablingEffect)
 				return;
@@ -181,18 +179,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				return;
 			}
 			enablingEffect = true;
-			Virtualizer.setEnabled(chkVirtualizer.isChecked(), false);
-			Player.resetEffects(this);
-		}// else if (view == chkReverb) {
-			/*if (chkReverb.isChecked()) {
-				PresetReverb.setPreset(1, true);
-				chkReverb.setChecked(PresetReverb.getPreset() != 0);
-			} else {
-				PresetReverb.setPreset(0, true);
-			}*/
-			/*chkReverb.setChecked(false);
-			UI.toast(getApplication(), R.string.coming_soon);
-		}*/
+			Player.enableEffects(chkEqualizer.isChecked(), chkBass.isChecked(), chkVirtualizer.isChecked(), this);
+		}
 	}
 	
 	@Override
@@ -275,7 +263,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			UI.isLargeScreen = true;
 			Player.bassBoostMode = false;
 		}
-		barTextSizeIndex = 2;
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
 		barBass.setMax(BassBoost.getMaxStrength());
 		barBass.setValue(BassBoost.getStrength());
@@ -306,9 +293,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				lp.topMargin = 0;
 				btnChangeEffect.setLayoutParams(lp);
 			}
-			barTextSizeIndex = 1;
-			barBass.setTextSizeIndex(1);
-			barVirtualizer.setTextSizeIndex(1);
 			lp = (LinearLayout.LayoutParams)chkEqualizer.getLayoutParams();
 			lp.bottomMargin = 0;
 			chkEqualizer.setLayoutParams(lp);
@@ -339,8 +323,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			if (UI.isLargeScreen) {
 				UI.prepareViewPaddingForLargeScreen(panelControls, 0, (screenNotSoLarge && !UI.isLandscape) ? UI._8dp : UI._16dp);
 				if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
-					((LinearLayout)panelControls).setOrientation(LinearLayout.VERTICAL);
-					((LinearLayout)panelControls).setWeightSum(0);
+					panelControls.setOrientation(LinearLayout.VERTICAL);
+					panelControls.setWeightSum(0);
 					final int margin = (screenNotSoLarge ? UI._8dp : (UI._16dp << 1));
 					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 					lp.leftMargin = margin;
@@ -375,9 +359,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);*/
 			if (btnChangeEffect != null)
 				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			barTextSizeIndex = 1;
-			barBass.setTextSizeIndex(1);
-			barVirtualizer.setTextSizeIndex(1);
 			panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
@@ -419,10 +400,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		if (!fromUser)
 			return;
 		if (seekBar == barBass) {
-			BassBoost.setStrength(value, false);
+			BassBoost.setStrength(value);
 			seekBar.setText(format(BassBoost.getStrength()));
 		} else if (seekBar == barVirtualizer) {
-			Virtualizer.setStrength(value, false);
+			Virtualizer.setStrength(value);
 			seekBar.setText(format(Virtualizer.getStrength()));
 		} else if (bars != null && frequencies != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
@@ -432,7 +413,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 						level = 0;
 						seekBar.setValue(-min / 10);
 					}
-					Equalizer.setBandLevel(i, level, false);
+					Equalizer.setBandLevel(i, level);
 					seekBar.setText(format(frequencies[i], Equalizer.getBandLevel(i)));
 					return;
 				}
@@ -448,23 +429,13 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	@Override
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
 		if (seekBar == barBass) {
-			//call getStrength() twice, as the value may change once
-			//it is actually applied...
-			BassBoost.setStrength(BassBoost.getStrength(), true);
-			final int s = BassBoost.getStrength();
-			seekBar.setValue(s);
-			seekBar.setText(format(s));
+			Player.commitBassBoost();
 		} else if (seekBar == barVirtualizer) {
-			//call getStrength() twice, as the value may change once
-			//it is actually applied...
-			Virtualizer.setStrength(Virtualizer.getStrength(), true);
-			final int s = Virtualizer.getStrength();
-			seekBar.setValue(s);
-			seekBar.setText(format(s));
+			Player.commitVirtualizer();
 		} else if (bars != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
-					Equalizer.setBandLevel(i, Equalizer.getBandLevel(i), true);
+					Player.commitEqualizer(i);
 					return;
 				}
 			}
@@ -572,8 +543,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 					bar.setInsideList(true);
 					if (size != 0)
 						bar.setSize(size, textSize, bgY, y);
-					else
-						bar.setTextSizeIndex(barTextSizeIndex);
 					bars[i] = bar;
 					bar.setId(i + 1);
 					bar.setNextFocusLeftId(i);
@@ -617,7 +586,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			final SerializableMap opts = SerializableMap.deserialize(getApplication(), path);
 			if (opts != null) {
 				Equalizer.deserializePreset(opts);
-				Equalizer.applyAllBandSettings();
+				Player.commitEqualizer(-1);
 				updateBars();
 			}
 		} else {

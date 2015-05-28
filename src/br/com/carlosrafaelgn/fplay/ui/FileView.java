@@ -268,7 +268,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public void setBackground(Drawable background) {
 		super.setBackground(null);
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

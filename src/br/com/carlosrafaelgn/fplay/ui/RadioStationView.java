@@ -159,7 +159,8 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	public void setBackground(Drawable background) {
 		super.setBackground(null);
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

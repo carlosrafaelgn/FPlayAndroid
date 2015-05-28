@@ -111,7 +111,7 @@ public final class Serializer {
 	
 	public static long deserializeLong(InputStream is) throws IOException {
 		return ((long)(is.read() & 0xff) | (long)((is.read() & 0xff) << 8) | (long)((is.read() & 0xff) << 16) | (long)((is.read() & 0xff) << 24) |
-				(long)((is.read() & 0xff) << 32) | (long)((is.read() & 0xff) << 40) | (long)((is.read() & 0xff) << 48) | (long)((is.read() & 0xff) << 56));
+			((long)(is.read() & 0xff) << 32) | ((long)(is.read() & 0xff) << 40) | ((long)(is.read() & 0xff) << 48) | ((long)(is.read() & 0xff) << 56));
 	}
 	
 	public static long deserializeLong(byte[] input, int offset) {

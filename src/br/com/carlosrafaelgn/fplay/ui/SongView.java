@@ -90,7 +90,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	public void setBackground(Drawable background) {
 		super.setBackground(null);
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

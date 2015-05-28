@@ -58,9 +58,7 @@ public final class RadioStation extends BaseItem {
 	
 	@Override
 	public boolean equals(Object o) {
-		if (o == this)
-			return true;
-		return ((o instanceof RadioStation) && ((RadioStation)o).m3uUri.equalsIgnoreCase(m3uUri));
+		return ((o == this) || ((o instanceof RadioStation) && ((RadioStation)o).m3uUri.equalsIgnoreCase(m3uUri)));
 	}
 	
 	@Override

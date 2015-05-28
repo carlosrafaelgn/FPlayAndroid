@@ -71,7 +71,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 	private static final int MSG_FINISHED = 0x0300;
 	private static final int MSG_MORE_RESULTS = 0x0301;
 	
-	public static final int POPULAR_GENRE_COUNT = 32;
+	//public static final int POPULAR_GENRE_COUNT = 32;
 	//I took these genres from http://dir.xiph.org/yp.xml
 	//... after grouping, counting, sorting and selecting properly ;)
 	public static final String[] GENRES = new String[] {
@@ -298,7 +298,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 		}
 	}
 	
-	private static boolean parseIcecastColumn2(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
+	private static boolean parseIcecastColumn2(XmlPullParser parser, String[] fields) throws Throwable {
 		boolean hasFields = false, linkContainsType = false;
 		int ev;
 		String v;
@@ -446,7 +446,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 					if (!parseIcecastColumn1(parser, fields, sb))
 						return false;
 				} else {
-					if (!parseIcecastColumn2(parser, fields, sb))
+					if (!parseIcecastColumn2(parser, fields))
 						return false;
 				}
 			}
@@ -536,11 +536,13 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 				if (bs != null)
 					bs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			try {
 				if (fs != null)
 					fs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 	}
@@ -567,11 +569,13 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 				if (bs != null)
 					bs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			try {
 				if (fs != null)
 					fs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 	}
@@ -606,6 +610,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 						favoritesLoaded = true;
 						favoritesChanged = false;
 					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
 				}
 			}
@@ -663,11 +668,10 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 				if (myVersion != version)
 					break;
 				AndroidHttpClient client = null;
-				HttpResponse response = null;
 				InputStream is = null;
 				try {
 					client = AndroidHttpClient.newInstance("Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36 Debian");
-					response = client.execute(new HttpGet(uri + pageNumber));
+					final HttpResponse response = client.execute(new HttpGet(uri + pageNumber));
 					final StatusLine statusLine = response.getStatusLine();
 					if (myVersion != version)
 						break;
@@ -688,15 +692,14 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 						if (client != null)
 							client.close();
 					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
 					try {
 						if (is != null)
 							is.close();
 					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
-					is = null;
-					client = null;
-					response = null;
 					System.gc();
 				}
 				pageNumber++;

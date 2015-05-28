@@ -255,7 +255,8 @@ public final class BgButton extends Button {
 	public void setBackground(Drawable background) {
 		super.setBackground(null);
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

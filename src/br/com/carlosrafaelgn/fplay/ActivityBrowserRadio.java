@@ -144,7 +144,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				@Override
 				public void run() {
 					AndroidHttpClient client = null;
-					HttpResponse response = null;
 					InputStream is = null;
 					InputStreamReader isr = null;
 					BufferedReader br = null;
@@ -154,7 +153,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 							return;
 						}
 						client = AndroidHttpClient.newInstance("Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36 Debian");
-						response = client.execute(new HttpGet(radioStation.m3uUri));
+						final HttpResponse response = client.execute(new HttpGet(radioStation.m3uUri));
 						final StatusLine statusLine = response.getStatusLine();
 						final int s = statusLine.getStatusCode();
 						if (s == HttpStatus.SC_OK) {
@@ -194,27 +193,26 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 							if (client != null)
 								client.close();
 						} catch (Throwable ex) {
+							ex.printStackTrace();
 						}
 						try {
 							if (is != null)
 								is.close();
 						} catch (Throwable ex) {
+							ex.printStackTrace();
 						}
 						try {
 							if (isr != null)
 								isr.close();
 						} catch (Throwable ex) {
+							ex.printStackTrace();
 						}
 						try {
 							if (br != null)
 								br.close();
 						} catch (Throwable ex) {
+							ex.printStackTrace();
 						}
-						br = null;
-						isr = null;
-						is = null;
-						client = null;
-						response = null;
 						System.gc();
 					}
 				}

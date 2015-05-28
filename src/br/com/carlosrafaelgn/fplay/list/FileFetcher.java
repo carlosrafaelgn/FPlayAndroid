@@ -128,8 +128,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		if (file.isDirectory()) return true;
 		final String name = file.getName();
 		final int i = name.lastIndexOf('.');
-		if (i < 0) return false;
-		return supportedTypes.contains(name.substring(i).toLowerCase(Locale.US));
+		return ((i >= 0) && supportedTypes.contains(name.substring(i).toLowerCase(Locale.US)));
 	}
 
 	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode, boolean createSections) {
@@ -211,6 +210,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				canonicalPathLC = pLC;
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		
 		for (int i = c - 1; i >= 0; i--) {
@@ -278,6 +278,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				count++;
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
@@ -286,6 +287,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				count++;
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		f = null;
 		
@@ -300,6 +302,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		try {
 			addStorage(s, Environment.getExternalStorageDirectory(), Environment.isExternalStorageRemovable(), internalCount, externalCount, usbCount, addedCount, addedPaths);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		
 		//the following is an improved version based on these ideas:
@@ -389,27 +392,32 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 						if (!it.pathLC.equals("/system") && !it.pathLC.equals("/data") && !it.pathLC.equals("/cache"))
 							addStorage(s, new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
 				}
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		} finally {
 			if (br != null) {
 				try {
 					br.close();
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 			}
 			if (isr != null) {
 				try {
 					isr.close();
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 			}
 			if (is != null) {
 				try {
 					is.close();
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 			}
 		}
@@ -439,6 +447,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				}
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 	

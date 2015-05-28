@@ -178,7 +178,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	@Override
 	public void setBackground(Drawable background) {
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -431,8 +432,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 
 	private void trackTouchEvent(int y) {
+		if (adapter == null)
+			return;
 		final int count = adapter.getCount();
-		if (adapter == null || count <= 0)
+		if (count <= 0)
 			return;
 		final int sbh = (scrollBarBottom - scrollBarTop), vh = (viewHeight - bottomPadding - topPadding);
 		y -= scrollBarThumbOffset + scrollBarTop;

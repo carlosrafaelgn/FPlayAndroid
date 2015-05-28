@@ -75,7 +75,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		try {
 			final PackageInfo inf = getApplication().getPackageManager().getPackageInfo(getApplication().getPackageName(), 0);
 			lblVersion.setText("v" + inf.versionName);
-		} catch (Throwable e) {
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		UI.smallTextAndColor((TextView)findViewById(R.id.lblAppBy));
 		final TextView lblMsg = (TextView)findViewById(R.id.lblMsg);
@@ -103,11 +104,15 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		sb.append(UI.formatIntAsFloat((int)(UI.density * 100.0f), true, true));
 		sb.append("\nsp: ");
 		sb.append(UI.formatIntAsFloat((int)(UI.scaledDensity * 100.0f), true, true));
-		sb.append("\n" + getText(R.string.resolution) + " (px): ");
+		sb.append('\n');
+		sb.append(getText(R.string.resolution));
+		sb.append(" (px): ");
 		sb.append(UI.screenWidth);
 		sb.append(" x ");
 		sb.append(UI.screenHeight);
-		sb.append("\n" + getText(R.string.resolution) + " (dp): ");
+		sb.append('\n');
+		sb.append(getText(R.string.resolution));
+		sb.append(" (dp): ");
 		sb.append(UI.formatIntAsFloat((int)(UI.pxToDp(UI.screenWidth) * 100.0f), true, true));
 		sb.append(" x ");
 		sb.append(UI.formatIntAsFloat((int)(UI.pxToDp(UI.screenHeight) * 100.0f), true, true));

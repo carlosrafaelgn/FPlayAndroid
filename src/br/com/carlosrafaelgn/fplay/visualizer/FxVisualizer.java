@@ -61,7 +61,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 		alive = true;
 		reset = true;
 		paused = false;
-		playing = Player.playing;
+		playing = Player.localPlaying;
 		failed = false;
 		visualizerReady = false;
 		timer = new Timer((Timer.TimerHandler)this, "Visualizer Thread", false, false, true);
@@ -69,7 +69,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 	}
 
 	public void playingChanged() {
-		playing = Player.playing;
+		playing = Player.localPlaying;
 	}
 
 	public void pause() {
@@ -108,6 +108,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
 			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -123,6 +124,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
 			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -132,6 +134,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 			//see comments above...
 			fxVisualizer.setMeasurementMode(android.media.audiofx.Visualizer.MEASUREMENT_MODE_NONE);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -146,12 +149,14 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 						fxVisualizer.setEnabled(true);
 						return true;
 					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
 				}
 				try {
 					fxVisualizer.release();
 				} catch (Throwable ex) {
 					fxVisualizer = null;
+					ex.printStackTrace();
 				}
 			}
 			fxVisualizer = new android.media.audiofx.Visualizer(g);
@@ -162,16 +167,14 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 			audioSessionId = -1;
 			return false;
 		}
-		if (fxVisualizer != null) {
-			try {
-				fxVisualizer.setCaptureSize(Visualizer.CAPTURE_SIZE);
-				fxVisualizer.setEnabled(true);
-			} catch (Throwable ex) {
-				failed = true;
-				fxVisualizer.release();
-				fxVisualizer = null;
-				audioSessionId = -1;
-			}
+		try {
+			fxVisualizer.setCaptureSize(Visualizer.CAPTURE_SIZE);
+			fxVisualizer.setEnabled(true);
+		} catch (Throwable ex) {
+			failed = true;
+			fxVisualizer.release();
+			fxVisualizer = null;
+			audioSessionId = -1;
 		}
 		if (fxVisualizer != null) {
 			if (visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -209,6 +212,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 					if (fxVisualizer != null)
 						fxVisualizer.setEnabled(false);
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 				timer.pause();
 				return;
@@ -234,10 +238,12 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 				try {
 					fxVisualizer.setEnabled(false);
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 				try {
 					fxVisualizer.release();
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 				fxVisualizer = null;
 			}

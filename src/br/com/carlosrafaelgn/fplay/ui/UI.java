@@ -586,6 +586,7 @@ public final class UI {
 			if ("de".equals(l))
 				return LOCALE_DE;
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		return LOCALE_US;
 	}
@@ -594,7 +595,7 @@ public final class UI {
 		return ((currentLocale == LOCALE_RU) || (currentLocale == LOCALE_UK));
 	}
 
-	private static void updateDecimalSeparator(Context context) {
+	private static void updateDecimalSeparator() {
 		try {
 			final DecimalFormatSymbols d = new DecimalFormatSymbols(getLocaleFromCode(currentLocale));
 			decimalSeparator = d.getDecimalSeparator();
@@ -612,7 +613,7 @@ public final class UI {
 			localeCode = LOCALE_NONE;
 		if (forcedLocale == 0 && localeCode == 0) {
 			currentLocale = getCurrentLocale(context);
-			updateDecimalSeparator(context);
+			updateDecimalSeparator();
 			return false;
 		}
 		final boolean wasCyrillic = isCurrentLocaleCyrillic();
@@ -635,7 +636,7 @@ public final class UI {
 		} catch (Throwable ex) {
 			currentLocale = getCurrentLocale(context);
 		}
-		updateDecimalSeparator(context);
+		updateDecimalSeparator();
 		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
 			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
 			return true;
@@ -673,11 +674,13 @@ public final class UI {
 			try {
 				isTV = ((((UiModeManager)context.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			try {
 				hasTouch = context.getPackageManager().hasSystemFeature("android.hardware.touchscreen");
 			} catch (Throwable ex) {
 				hasTouch = true;
+				ex.printStackTrace();
 			}
 		}
 		final DisplayInfo info = new DisplayInfo();
@@ -793,6 +796,7 @@ public final class UI {
 		try {
 			color = getAndroidThemeColor(context, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? android.R.style.TextAppearance_Material_Notification_Title : android.R.style.TextAppearance_StatusBar_EventContent_Title, android.R.attr.textColor);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		if ((color & 0xff000000) == 0)
 			color = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? 0xff999999 : 0xffffffff);
@@ -1629,7 +1633,8 @@ public final class UI {
 		final CustomContextMenu mnu = (CustomContextMenu)menu;
 		try {
 			mnu.setItemClassConstructor(BgButton.class.getConstructor(Context.class));
-		} catch (NoSuchMethodException e) {
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		mnu.setBackground(hasBorders ? new BorderDrawable(color_menu_border, color_menu, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_menu));
 		mnu.setPadding(0);
@@ -1739,6 +1744,7 @@ public final class UI {
 				//the color is treated as SRC, and the bitmap is treated as DST
 				glow.setColorFilter(glowFilter);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		try {
 			edge = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
@@ -1746,6 +1752,7 @@ public final class UI {
 				//hide the edge!!! ;)
 				edge.setColorFilter(glowFilter);//edgeFilter);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 	

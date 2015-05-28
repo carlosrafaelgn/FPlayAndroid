@@ -71,7 +71,9 @@ public final class Timer implements MainHandler.Callback {
 					synchronized (sync) {
 						try {
 							sync.wait();
-						} catch (InterruptedException e) { }
+						} catch (InterruptedException ex) {
+							ex.printStackTrace();
+						}
 					}
 					if (version != myVersion)
 						break;
@@ -84,20 +86,26 @@ public final class Timer implements MainHandler.Callback {
 						synchronized (sync) {
 							try {
 								sync.wait(actualInterval);
-							} catch (InterruptedException e) { }
+							} catch (InterruptedException ex) {
+								ex.printStackTrace();
+							}
 						}
 					} else {
 						synchronized (sync) {
 							try {
 								sync.wait(1); //just not to hog the CPU!
-							} catch (InterruptedException e) { }
+							} catch (InterruptedException ex) {
+								ex.printStackTrace();
+							}
 						}
 					}
 				} else {
 					synchronized (sync) {
 						try {
 							sync.wait(interval);
-						} catch (InterruptedException e) { }
+						} catch (InterruptedException ex) {
+							ex.printStackTrace();
+						}
 					}
 				}
 				if (paused)
@@ -253,7 +261,9 @@ public final class Timer implements MainHandler.Callback {
 				if (t != null) {
 					try {
 						t.join();
-					} catch (InterruptedException e) { }
+					} catch (InterruptedException ex) {
+						ex.printStackTrace();
+					}
 				}
 			}
 			alive = false;

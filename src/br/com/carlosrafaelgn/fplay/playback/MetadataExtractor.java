@@ -306,11 +306,13 @@ public final class MetadataExtractor {
 			f = ((file.file != null) ? new RandomAccessFile(file.file, "r") : new RandomAccessFile(file.path, "r"));
 			return extractID3v2Andv1(f, tmpPtr);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		} finally {
 			if (f != null) {
 				try {
 					f.close();
 				} catch (Throwable ex2) {
+					ex2.printStackTrace();
 				}
 			}
 		}

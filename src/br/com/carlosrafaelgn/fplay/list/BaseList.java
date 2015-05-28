@@ -41,10 +41,7 @@ import java.util.Arrays;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
-//
-//SINCE ALL CALLS MADE BY Player ARE MADE ON THE MAIN THREAD, THERE IS NO
-//NEED TO SYNCHRONIZE THE ACCESS TO THE ITEMS
-//
+//All methods of this class MUST BE called from the main thread
 public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	public static interface BaseSectionIndexer {
 		public boolean hasSections();
@@ -67,13 +64,13 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	protected BgListView listObserver;
 	protected DataSetObserver observer;
 	private OnBaseListSelectionChangedListener<E> listener;
-	protected final Object sync;
+	protected final Object currentAndCountMutex;
 	protected E[] items;
 	protected int count, current, firstSel, lastSel, originalSel, indexOfPreviouslyDeletedCurrentItem, modificationVersion;
 	
 	@SuppressWarnings("unchecked")
 	public BaseList(Class<E> c) {
-		this.sync = new Object();
+		this.currentAndCountMutex = new Object();
 		this.items = (E[])Array.newInstance(c, LIST_DELTA);
 		this.current = -1;
 		this.firstSel = -1;
@@ -99,10 +96,10 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		
 		if (position < 0 || position >= count)
 			position = count;
-		
-		setCapacity(count + 1);
-		
-		//synchronized (sync) {
+
+		//synchronized (currentAndCountMutex) {
+			setCapacity(count + 1);
+
 			modificationVersion++;
 			if (count != position)
 				System.arraycopy(items, position, items, position + 1, count - position);
@@ -130,10 +127,10 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			position = this.count;
 		if (count > items.length)
 			count = items.length;
-		
-		setCapacity(this.count + count);
-		
-		//synchronized (sync) {
+
+		//synchronized (currentAndCountMutex) {
+			setCapacity(this.count + count);
+
 			modificationVersion++;
 			if (this.count != position)
 				System.arraycopy(this.items, position, this.items, position + count, this.count - position);
@@ -154,7 +151,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 	
 	public final void clear() {
-		//synchronized (sync) {
+		//synchronized (currentAndCountMutex) {
 			clearingItems();
 			
 			modificationVersion++;
@@ -182,10 +179,10 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		if (count <= 0)
 			return false;
 		
-		if (firstSel != lastSel)
-			setSelection(firstSel, firstSel, false, false);
-		
-		//synchronized (sync) {
+		//synchronized (currentAndCountMutex) {
+			if (firstSel != lastSel)
+				setSelection(firstSel, firstSel, false, false);
+
 			removingItems(position, count);
 			
 			modificationVersion++;
@@ -224,9 +221,10 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			//}
 			lastSel = firstSel;
 			originalSel = firstSel;
+
+			setCapacity(this.count);
 		//}
-		setCapacity(this.count);
-		
+
 		notifyDataSetChanged(originalSel, CONTENT_REMOVED);
 
 		if (listener != null)
@@ -234,7 +232,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 
 		return true;
 	}
-	
+
 	public final void moveSelection(int to) {
 		int from = firstSel, count = lastSel - firstSel + 1;
 		if (from < 0 || to < 0 || count <= 0)
@@ -256,7 +254,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		}
 		Object[] tmp = new Object[count];
 		System.arraycopy(items, from, tmp, 0, count);
-		//synchronized (sync) {
+		//synchronized (currentAndCountMutex) {
 			modificationVersion++;
 			final int delta;
 			if (to < from) {

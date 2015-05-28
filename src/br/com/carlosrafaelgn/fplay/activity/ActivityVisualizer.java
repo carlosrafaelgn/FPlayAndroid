@@ -104,6 +104,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
 						View.SYSTEM_UI_FLAG_IMMERSIVE);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 		
@@ -120,6 +121,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 						View.SYSTEM_UI_FLAG_IMMERSIVE |
 						View.SYSTEM_UI_FLAG_VISIBLE);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 		
@@ -130,6 +132,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			try {
 				decor.setOnSystemUiVisibilityChangeListener(this);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 		
@@ -138,6 +141,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 				try {
 					decor.setOnSystemUiVisibilityChangeListener(null);
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 				decor = null;
 			}
@@ -242,7 +246,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		lp.rightMargin = UI._16dp;
 		lp.bottomMargin = 0;
 		btnPlay.setLayoutParams(lp);
-		btnPlay.setIcon(Player.playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
+		btnPlay.setIcon(Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		
 		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 		//p.addRule(info.isLandscape ? RelativeLayout.ALIGN_PARENT_LEFT : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -309,16 +313,12 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 
 	@Override
 	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-		if (Player.isMediaButton(keyCode))
-			return true;
-		return super.onKeyLongPress(keyCode, event);
+		return (Player.isMediaButton(keyCode) || super.onKeyLongPress(keyCode, event));
 	}
 
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		if (Player.isMediaButton(keyCode))
-			return true;
-		return super.onKeyUp(keyCode, event);
+		return (Player.isMediaButton(keyCode) || super.onKeyUp(keyCode, event));
 	}
 
 	@SuppressLint("InlinedApi")
@@ -345,7 +345,6 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		Player.addDestroyedObserver(this);
 
 		String name = null;
-		Class<?> clazz = null;
 		final Intent si = getIntent();
 		if (si != null && (name = si.getStringExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME)) != null) {
 			if (!name.startsWith("br.com.carlosrafaelgn.fplay"))
@@ -353,16 +352,17 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		}
 		if (name != null) {
 			try {
-				clazz = Class.forName(name);
+				final Class<?> clazz = Class.forName(name);
+				if (clazz != null) {
+					try {
+						info.getInfo(this);
+						visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class, Intent.class).newInstance(getApplication(), this, info.isLandscape, si);
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				}
 			} catch (Throwable ex) {
-			}
-		}
-		if (clazz != null) {
-			try {
-				info.getInfo(this);
-				visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class, Intent.class).newInstance(getApplication(), this, info.isLandscape, si);
-			} catch (Throwable ex) {
-				clazz = null;
+				ex.printStackTrace();
 			}
 		}
 
@@ -421,7 +421,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		btnMenu.setOnClickListener(this);
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		UI.mediumText(lblTitle);
-		final Song currentSong = Player.currentSong;
+		final Song currentSong = Player.localSong;
 		lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 
 		//if (UI.extraSpacing)
@@ -511,7 +511,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		Player.observer = this;
 		if (fxVisualizer != null)
 			fxVisualizer.resetAndResume();
-		onPlayerChanged(Player.currentSong, true, true, null);
+		onPlayerChanged(Player.localSong, true, true, null);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
 		if (visualizer != null && visualizerPaused) {
@@ -585,18 +585,18 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 		if (fxVisualizer != null) {
-			if (!songHasChanged && Player.playing)
+			if (!songHasChanged && Player.localPlaying)
 				fxVisualizer.resetAndResume();
 			else
 				fxVisualizer.resume();
 			fxVisualizer.playingChanged();
 		}
 		if (btnPlay != null) {
-			btnPlay.setText(Player.playing ? UI.ICON_PAUSE : UI.ICON_PLAY);
-			btnPlay.setContentDescription(getText(Player.playing ? R.string.pause : R.string.play));
+			btnPlay.setText(Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
+			btnPlay.setContentDescription(getText(Player.localPlaying ? R.string.pause : R.string.play));
 		}
 		if ((songHasChanged || preparingHasChanged) && lblTitle != null)
-			lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isCurrentSongPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
+			lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
 		final Visualizer v = visualizer;
 		if (v != null)
 			v.onPlayerChanged(currentSong, songHasChanged, ex);
@@ -607,7 +607,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	}
 	
 	@Override
-	public void onPlayerGlobalVolumeChanged() {
+	public void onPlayerGlobalVolumeChanged(int volume) {
 	}
 	
 	@Override

@@ -55,8 +55,16 @@ public final class Equalizer {
 				bandLevels[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0 + i, bandLevels[i]);
 		}		
 	}
-	
-	public static void loadConfig(SerializableMap opts) {
+
+	public static void serializePreset(SerializableMap opts) {
+		opts.put(Player.OPT_EQUALIZER_LEVELCOUNT, (bandLevels != null) ? bandLevels.length : 0);
+		if (bandLevels != null) {
+			for (int i = bandLevels.length - 1; i >= 0; i--)
+				opts.put(Player.OPT_EQUALIZER_LEVEL0 + i, bandLevels[i]);
+		}
+	}
+
+	static void loadConfig(SerializableMap opts) {
 		if (opts.hasBits())
 			enabled = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
 		else
@@ -64,27 +72,20 @@ public final class Equalizer {
 		deserializePreset(opts);
 		preset = opts.getInt(Player.OPT_EQUALIZER_PRESET, -1);
 	}
-	
-	public static void serializePreset(SerializableMap opts) {
-		opts.put(Player.OPT_EQUALIZER_LEVELCOUNT, (bandLevels != null) ? bandLevels.length : 0);
-		if (bandLevels != null) {
-			for (int i = bandLevels.length - 1; i >= 0; i--)
-				opts.put(Player.OPT_EQUALIZER_LEVEL0 + i, bandLevels[i]);
-		}		
-	}
-	
-	public static void saveConfig(SerializableMap opts) {
+
+	static void saveConfig(SerializableMap opts) {
 		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled);
 		opts.put(Player.OPT_EQUALIZER_PRESET, preset);
 		serializePreset(opts);
 	}
 	
-	public static void initialize(int newSessionId) {
+	static void initialize(int newSessionId) {
 		if (newSessionId != Integer.MIN_VALUE)
 			sessionId = newSessionId;
 		try {
 			theEqualizer = new android.media.audiofx.Equalizer(0, sessionId);
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 			return;
 		}
 		final int bandCount = theEqualizer.getNumberOfBands();
@@ -114,11 +115,12 @@ public final class Equalizer {
 		}
 	}
 	
-	public static void release() {
+	static void release() {
 		if (theEqualizer != null) {
 			try {
 				theEqualizer.release();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			theEqualizer = null;
 		}
@@ -148,6 +150,7 @@ public final class Equalizer {
 			try {
 				theEqualizer.usePreset((short)preset);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		} else if (preset < 0) {
 			Equalizer.preset = -1;
@@ -163,9 +166,9 @@ public final class Equalizer {
 		return enabled;
 	}
 	
-	public static void setEnabled(boolean enabled, boolean actuallyApply) {
+	static void setEnabled(boolean enabled) {
 		Equalizer.enabled = enabled;
-		if (theEqualizer != null && actuallyApply) {
+		if (theEqualizer != null) {
 			try {
 				if (!enabled) {
 					theEqualizer.setEnabled(false);
@@ -174,6 +177,7 @@ public final class Equalizer {
 					theEqualizer.setEnabled(true);
 				}
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			Equalizer.enabled = theEqualizer.getEnabled();
 		}
@@ -199,7 +203,7 @@ public final class Equalizer {
 		return ((bandLevels == null || band >= bandLevels.length) ? 0 : bandLevels[band]);
 	}
 	
-	public static void setBandLevel(int band, int level, boolean actuallyApply) {
+	public static void setBandLevel(int band, int level) {
 		if (bandLevels == null || band >= bandLevels.length)
 			return;
 		if (level > maxBandLevel)
@@ -207,26 +211,31 @@ public final class Equalizer {
 		else if (level < minBandLevel)
 			level = minBandLevel;
 		bandLevels[band] = level;
-		if (actuallyApply) {
-			if (preset >= 0) {
-				preset = -1;
-				applyAllBandSettings();
-			} else if (theEqualizer != null) {
-				try {
-					theEqualizer.setBandLevel((short)band, (short)level);
-				} catch (Throwable ex) {
-				}
+	}
+
+	static void commit(int band) {
+		if (preset >= 0) {
+			preset = -1;
+			applyAllBandSettings();
+		} else if (band < 0) {
+			applyAllBandSettings();
+		} else if (theEqualizer != null) {
+			try {
+				theEqualizer.setBandLevel((short)band, (short)bandLevels[band]);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 	}
 	
-	public static void applyAllBandSettings() {
+	private static void applyAllBandSettings() {
 		if (theEqualizer == null)
 			return;
 		if (preset >= 0 && preset < theEqualizer.getNumberOfPresets()) {
 			try {
 				theEqualizer.usePreset((short)preset);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			return;
 		}
@@ -251,10 +260,12 @@ public final class Equalizer {
 				}
 				theEqualizer.setProperties(s);
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 				for (int i = bandLevels.length - 1; i >= 0; i--) {
 					try {
 						theEqualizer.setBandLevel((short)i, (short)bandLevels[i]);
 					} catch (Throwable ex2) {
+						ex2.printStackTrace();
 					}
 				}
 			}

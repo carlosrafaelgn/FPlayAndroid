@@ -176,6 +176,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		try {
 			btAdapter = BluetoothAdapter.getDefaultAdapter();
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -193,6 +194,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 				if (btAdapter.isDiscovering())
 					btAdapter.cancelDiscovery();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			btAdapter = null;
 		}
@@ -217,6 +219,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			try {
 				inputStream.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			inputStream = null;
 		}
@@ -224,6 +227,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			try {
 				outputStream.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			outputStream = null;
 		}
@@ -231,6 +235,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			try {
 				btSocket.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			btSocket = null;
 		}
@@ -283,7 +288,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 				// try another method for connection, this should work on the HTC desire, credits to Michael Biermann
 				try {
 					Method mMethod = device.getClass().getMethod("createRfcommSocket", new Class[] { int.class });
-					btSocket = (BluetoothSocket)mMethod.invoke(device, Integer.valueOf(1));
+					btSocket = (BluetoothSocket)mMethod.invoke(device, 1);
 					btSocket.connect();
 				} catch (Throwable e1){
 					btSocket = null;
@@ -358,6 +363,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			if (btAdapter.isDiscovering())
 				btAdapter.cancelDiscovery();
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		try {
 			btAdapter.startDiscovery();
@@ -390,6 +396,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			if (btAdapter != null && btAdapter.isDiscovering())
 				btAdapter.cancelDiscovery();
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		if (lblTitle != null)
 			lblTitle.setVisibility(View.GONE);

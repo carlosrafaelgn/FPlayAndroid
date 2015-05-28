@@ -56,10 +56,7 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
-//
-//SINCE ALL CALLS MADE BY Player ARE MADE ON THE MAIN THREAD, THERE IS NO
-//NEED TO SYNCHRONIZE THE ACCESS TO THE ITEMS
-//
+//All methods of this class MUST BE called from the main thread, except those otherwise noted!!!
 public final class SongList extends BaseList<Song> implements FileFetcher.Listener, Comparer<Song> {
 	public static final int SORT_BY_TITLE = 0;
 	public static final int SORT_BY_ARTIST = 1;
@@ -73,6 +70,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	private boolean repeatOne;
 	public boolean selecting, moving;
 	private Song[] shuffledList;
+	public Song possibleNextSong;
 	private static final SongList theSongList = new SongList();
 	
 	private SongList() {
@@ -132,11 +130,13 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 								if (bs != null)
 									bs.close();
 							} catch (Throwable ex) {
+								ex.printStackTrace();
 							}
 							try {
 								if (fs != null)
 									fs.close();
 							} catch (Throwable ex) {
+								ex.printStackTrace();
 							}
 						}
 					}
@@ -148,13 +148,13 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	}
 	
 	public void addingStarted() {
-		synchronized (sync) {
+		synchronized (currentAndCountMutex) {
 			adding++;
 		}
 	}
 	
 	public void addingEnded() {
-		synchronized (sync) {
+		synchronized (currentAndCountMutex) {
 			adding = ((adding <= 1) ? 0 : (adding - 1));
 		}
 	}
@@ -287,7 +287,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		}
 		addingEnded();
 	}
-	
+
 	//--------------------------------------------------------------------------------------------
 	
 	private void fullSerialization(Context context, String path) throws IOException {
@@ -307,11 +307,13 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 				if (bs != null)
 					bs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			try {
 				if (fs != null)
 					fs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 	}
@@ -334,9 +336,11 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 						if (rf != null)
 							rf.close();
 					} catch (Throwable ex2) {
+						ex2.printStackTrace();
 					}
 					rf = null;
-					fullSerialization(context, path);
+					fullSerialization(context, null);
+					ex.printStackTrace();
 				}
 			}
 		} catch (Throwable ex) {
@@ -346,6 +350,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 				if (rf != null)
 					rf.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 		if (path == null)
@@ -385,12 +390,12 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 					listObserver.centerItem(positionToSelect);
 			}
 		}
-		Player.onSongListDeserialized((positionToSelect >= 0) ? items[positionToSelect] : null, ((play && positionToSelect >= 0) ? positionToSelect : -1), positionToSelect, ex);
+		Player.songListDeserialized((positionToSelect >= 0) ? items[positionToSelect] : null, ((play && positionToSelect >= 0) ? positionToSelect : -1), positionToSelect, ex);
 	}
-	
-	private Song getRandomSongAndSetCurrent(int how) {
+
+	private Song getRandomSongAndSetCurrentInternal(int how) {
 		if (shuffledItemsAlreadyPlayed >= count)
-			setRandomMode(true);
+			setRandomModeInternal(true);
 		int i;
 		Song s = null;
 		if (how == HOW_CURRENT) {
@@ -448,77 +453,85 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			s.alreadyPlayed = true;
 			shuffledItemsAlreadyPlayed++;
 		}
-		s.possibleNextSong = null;
+		possibleNextSong = null;
 		if (!selecting && !moving) {
 			firstSel = current;
 			lastSel = current;
 			originalSel = current;
 		}
-		notifyDataSetChanged(-1, SELECTION_CHANGED);
 		return s;
 	}
-	
+
 	public Song getSongAndSetCurrent(int how) {
-		if (shuffledList != null)
-			return getRandomSongAndSetCurrent(how);
-		if (how == HOW_CURRENT) {
-			how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
-			if (how < 0)
-				how = 0;
-			else if (how >= count)
-				how = count - 1;
-		} else if (how == HOW_PREVIOUS) {
-			how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current) - 1;
-			if (how < 0 || how >= count)
-				how = count - 1;
-		} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
-			if (repeatOne && how == HOW_NEXT_AUTO)
-				how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
-			else
-				how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
-			if (how < 0 || how >= count)
-				how = 0;
-		}
-		indexOfPreviouslyDeletedCurrentItem = -1;
-		indexOfPreviouslyDeletedCurrentShuffledItem = -1;
-		if (how < 0 || how >= count)
-			return null;
-		current = how;
-		final Song s = items[how];
-		s.possibleNextSong = (repeatOne ? null : items[((how == (count - 1)) ? 0 : (how + 1))]);
-		if (!selecting && !moving) {
-			firstSel = current;
-			lastSel = current;
-			originalSel = current;
-		}
+		final Song s;
+		//synchronized (currentAndCountMutex) {
+			if (shuffledList != null) {
+				s = getRandomSongAndSetCurrentInternal(how);
+			} else {
+				if (how == HOW_CURRENT) {
+					how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
+					if (how < 0)
+						how = 0;
+					else if (how >= count)
+						how = count - 1;
+				} else if (how == HOW_PREVIOUS) {
+					how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current) - 1;
+					if (how < 0 || how >= count)
+						how = count - 1;
+				} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
+					if (repeatOne && how == HOW_NEXT_AUTO)
+						how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
+					else
+						how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
+					if (how < 0 || how >= count)
+						how = 0;
+				}
+				indexOfPreviouslyDeletedCurrentItem = -1;
+				indexOfPreviouslyDeletedCurrentShuffledItem = -1;
+				if (how < 0 || how >= count)
+					return null;
+				current = how;
+				s = items[how];
+				possibleNextSong = (repeatOne ? null : items[((how == (count - 1)) ? 0 : (how + 1))]);
+				if (!selecting && !moving) {
+					firstSel = current;
+					lastSel = current;
+					originalSel = current;
+				}
+			}
+		//}
 		notifyDataSetChanged(-1, SELECTION_CHANGED);
 		return s;
 	}
-	
-	private void setShuffledCapacity(int capacity) {
-		if (capacity >= count) {
-			if (shuffledList == null)
-				shuffledList = new Song[capacity + LIST_DELTA];
-			else if (capacity > shuffledList.length || capacity <= (shuffledList.length - (2 * LIST_DELTA)))
-				shuffledList = Arrays.copyOf(shuffledList, capacity + LIST_DELTA);
-		}
-	}
-	
+
 	public boolean isRepeatingOne() {
 		return repeatOne;
 	}
 
 	public void setRepeatingOne(boolean repeatOne) {
-		this.repeatOne = repeatOne;
-		if (repeatOne)
-			setRandomMode(false);
+		//synchronized (currentAndCountMutex) {
+			this.repeatOne = repeatOne;
+			if (repeatOne)
+				setRandomModeInternal(false);
+		//}
 	}
 
 	public boolean isInRandomMode() {
 		return (shuffledList != null);
 	}
 
-	public void setRandomMode(boolean randomMode) {
+	private void setShuffledCapacity(int capacity) {
+		//synchronized (currentAndCountMutex) {
+			if (capacity >= count) {
+				if (shuffledList == null)
+					shuffledList = new Song[capacity + LIST_DELTA];
+				else if (capacity > shuffledList.length || capacity <= (shuffledList.length - (2 * LIST_DELTA)))
+					shuffledList = Arrays.copyOf(shuffledList, capacity + LIST_DELTA);
+			}
+		//}
+	}
+
+	private void setRandomModeInternal(boolean randomMode) {
 		if ((shuffledList != null) == randomMode && !randomMode)
 			return;
 		int i;
@@ -548,9 +561,15 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		currentShuffledItemIndex = -1;
 		shuffledItemsAlreadyPlayed = 0;
 	}
+
+	public void setRandomMode(boolean randomMode) {
+		//synchronized (currentAndCountMutex) {
+			setRandomModeInternal(randomMode);
+		//}
+	}
 	
 	public void updateExtraInfo() {
-		//synchronized (sync) {
+		//synchronized (currentAndCountMutex) {
 			//don't mess up with modificationVersion as it is not affected by this operation
 			for (int i = count - 1; i >= 0; i--)
 				items[i].updateExtraInfo();
@@ -560,7 +579,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	}
 	
 	public void sort(int mode) {
-		//synchronized (sync) {
+		//synchronized (currentAndCountMutex) {
 			sortMode = mode;
 			modificationVersion++;
 			final Song s = ((current >= 0 && current < count) ? items[current] : null);
