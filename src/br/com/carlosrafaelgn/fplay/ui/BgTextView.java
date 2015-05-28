@@ -37,6 +37,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.TextView;
@@ -109,7 +110,7 @@ public final class BgTextView extends TextView {
 	}
 	
 	@Override
-	protected void onDraw(Canvas canvas) {
+	protected void onDraw(@NonNull Canvas canvas) {
 		getDrawingRect(UI.rect);
 		UI.drawBg(canvas, state);
 		super.onDraw(canvas);

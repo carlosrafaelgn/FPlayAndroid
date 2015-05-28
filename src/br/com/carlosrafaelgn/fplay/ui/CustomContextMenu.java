@@ -44,6 +44,7 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.ActionProvider;
 import android.view.ContextMenu;
@@ -326,7 +327,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		}
 
 		@Override
-		public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
+		public boolean dispatchPopulateAccessibilityEvent(@NonNull AccessibilityEvent event) {
 			if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
 				event.getText().add(getContext().getText(R.string.menu));
 				return true;
@@ -906,26 +907,31 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	}
 	
 	//WARNING! EXTREME WORKAROUND BELOW THIS POINT (JUST TO REUSE EVERYTHING FOR SubMenu)! ;)
+	@NonNull
 	@Override
 	public CustomContextMenu setHeaderIcon(int iconRes) {
 		return this;
 	}
-	
+
+	@NonNull
 	@Override
 	public CustomContextMenu setHeaderIcon(Drawable icon) {
 		return this;
 	}
-	
+
+	@NonNull
 	@Override
 	public CustomContextMenu setHeaderTitle(int titleRes) {
 		return this;
 	}
-	
+
+	@NonNull
 	@Override
 	public CustomContextMenu setHeaderTitle(CharSequence title) {
 		return this;
 	}
-	
+
+	@NonNull
 	@Override
 	public CustomContextMenu setHeaderView(View view) {
 		return this;
@@ -935,13 +941,15 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	public MenuItem getItem() {
 		return parentItem;
 	}
-	
+
+	@NonNull
 	@Override
 	public SubMenu setIcon(int iconRes) {
 		if (parentItem != null) parentItem.setIcon(iconRes);
 		return this;
 	}
-	
+
+	@NonNull
 	@Override
 	public SubMenu setIcon(Drawable icon) {
 		if (parentItem != null) parentItem.setIcon(icon);

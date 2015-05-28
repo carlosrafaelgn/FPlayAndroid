@@ -282,14 +282,13 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		}
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-			if (f != null && f.exists() && f.isDirectory()) {
+			if (f.exists() && f.isDirectory()) {
 				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.downloads).toString(), null, FileSt.TYPE_DOWNLOADS);
 				count++;
 			}
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		f = null;
 		
 		if (cancelled)
 			return;
@@ -573,7 +572,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return;
 			}
 			//temporarily use specialType as the song's track number ;)
-			tmp.add(new FileSt(c.getString(0), c.getString(1), null, c.getInt(2), false));
+			tmp.add(new FileSt(c.getString(0), c.getString(1), c.getInt(2)));
 		}
 		c.close();
 

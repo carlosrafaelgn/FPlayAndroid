@@ -41,6 +41,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
@@ -292,7 +293,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	@Override
-	public void invalidateDrawable(Drawable drawable) {
+	public void invalidateDrawable(@NonNull Drawable drawable) {
 	}
 	
 	@Override
@@ -345,7 +346,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	//Android Custom Layout - onDraw() never gets called
 	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
-	protected void dispatchDraw(Canvas canvas) {
+	protected void dispatchDraw(@NonNull Canvas canvas) {
 		getDrawingRect(UI.rect);
 		final boolean albumItem = ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM));
 		if (albumItem && (state == 0))

@@ -36,6 +36,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Browser;
+import android.support.annotation.NonNull;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.style.URLSpan;
@@ -47,16 +48,17 @@ public final class SafeURLSpan extends URLSpan {
 	}
 	
 	@Override
-	public void onClick(View widget) {
+	public void onClick(@NonNull View widget) {
 		try {
 			final Uri uri = Uri.parse(getURL());
 			final Context context = widget.getContext();
 			final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-			if (context != null && intent != null) {
+			if (context != null) {
 				intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
 				context.startActivity(intent);
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 	

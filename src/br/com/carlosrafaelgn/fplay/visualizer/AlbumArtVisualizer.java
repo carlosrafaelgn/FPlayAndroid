@@ -39,6 +39,7 @@ import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.view.ContextMenu;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
@@ -265,7 +266,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	}
 
 	@Override
-	public void draw(Canvas canvas) {
+	public void draw(@NonNull Canvas canvas) {
 		if (bmp != null) {
 			canvas.drawBitmap(bmp.bitmap, srcRect, dstRect, null);
 		} else {

@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import android.content.res.ColorStateList;
+import android.support.annotation.NonNull;
 
 public final class BgColorStateList extends ColorStateList {
 	private static final int[][] states = new int[][] { new int[] {} };
@@ -84,7 +85,8 @@ public final class BgColorStateList extends ColorStateList {
 	public boolean isStateful() {
 		return (normalColor != alteredColor);
 	}
-	
+
+	@NonNull
 	@Override
 	public ColorStateList withAlpha(int alpha) {
 		return this;

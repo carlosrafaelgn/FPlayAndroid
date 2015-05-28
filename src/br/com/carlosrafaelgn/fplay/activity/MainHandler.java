@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -107,7 +108,7 @@ public final class MainHandler extends Handler {
 	}
 	
 	@Override
-	public void dispatchMessage(Message msg) {
+	public void dispatchMessage(@NonNull Message msg) {
 		switch (msg.what) {
 		case MSG_HANDLER_TOAST:
 			try {

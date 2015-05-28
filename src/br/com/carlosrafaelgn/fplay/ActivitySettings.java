@@ -1135,7 +1135,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
 				final View v = panelSettings.getChildAt(i);
 				if (v != null && (v instanceof SettingView))
-					((SettingView)v).invalidate();
+					v.invalidate();
 			}
 		} else if (view == optIsVerticalMarginLarge) {
 			final int oldVerticalMargin = UI.verticalMargin;

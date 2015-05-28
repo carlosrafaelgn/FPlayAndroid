@@ -58,6 +58,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
@@ -256,20 +257,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static class CoreHandler extends Handler {
 		@Override
-		public void dispatchMessage(Message msg) {
+		public void dispatchMessage(@NonNull Message msg) {
 			//System.out.println(Integer.toHexString(msg.what));
 			switch (msg.what) {
 			case MSG_POST_PLAY:
 				_postPlay(msg.arg1, (Song[])msg.obj);
 				break;
 			case MSG_BECOMING_NOISY:
-				_becomingNoisy();
+				if (playing)
+					_playPause();
+				//this cleanup must be done, as sometimes, when changing between two output types,
+				//the effects are lost...
+				_fullCleanup();
+				_checkAudioSink(false, false);
 				break;
 			case MSG_FADE_IN_VOLUME_TIMER:
 				_processFadeInVolumeTimer(msg.arg1);
 				break;
 			case MSG_AUDIO_SINK_CHANGED:
-				_audioSinkChanged(msg.arg1 != 0);
+				_checkAudioSink(msg.arg1 != 0, true);
 				break;
 			case MSG_PAUSE:
 				if (playing)
@@ -294,7 +300,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_overrideVolumeMultiplier(msg.arg1 != 0);
 				break;
 			case MSG_LIST_CLEARED:
-				_listCleared();
+				_fullCleanup();
+				storedSongTime = -1;
+				_updateState(false, null);
 				break;
 			case MSG_NEXT_MAY_HAVE_CHANGED:
 				_nextMayHaveChanged((Song)msg.obj);
@@ -320,7 +328,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static class CoreLocalHandler extends Handler {
 		@Override
-		public void dispatchMessage(Message msg) {
+		public void dispatchMessage(@NonNull Message msg) {
 			//System.out.println("L " + Integer.toHexString(msg.what));
 			switch (msg.what) {
 			case MSG_PRE_PLAY:
@@ -2612,7 +2620,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 							ex.printStackTrace();
 						}
 					}
-					playPause();
+					_playPause();
 				}
 				break;
 			case AUDIO_SINK_DEVICE:
@@ -2630,25 +2638,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//I myself don't trust this code will correctly work as expected on every device....
 		if (localHandler != null)
 			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_AUDIO_SINK_CHANGED, audioSink, 0), SystemClock.uptimeMillis());
-	}
-
-	private static void _becomingNoisy() {
-		//this cleanup must be done, as sometimes, when changing between two output types,
-		//the effects are lost...
-		if (playing)
-			playPause();
-		_fullCleanup();
-		_checkAudioSink(false, false);
-	}
-
-	private static void _audioSinkChanged(boolean wiredHeadsetJustPlugged) {
-		_checkAudioSink(wiredHeadsetJustPlugged, true);
-	}
-
-	private static void _listCleared() {
-		_fullCleanup();
-		storedSongTime = -1;
-		_updateState(false, null);
 	}
 
 	private static void _nextMayHaveChanged(Song possibleNextSong) {

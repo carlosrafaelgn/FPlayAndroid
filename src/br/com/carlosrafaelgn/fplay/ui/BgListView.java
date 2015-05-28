@@ -40,6 +40,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.util.AttributeSet;
@@ -158,7 +159,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 
 	@Override
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
+	public void onInitializeAccessibilityNodeInfo(@NonNull AccessibilityNodeInfo info) {
 		super.onInitializeAccessibilityNodeInfo(info);
 		info.setClassName("br.com.carlosrafaelgn.fplay.activity.ActivityHost");
 		if (itemCount == 0) {
@@ -475,7 +476,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	@Override
-	public boolean onTouchEvent(MotionEvent event) {
+	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN:
 			if (scrollBarThumbHeight == 0) break;
@@ -734,7 +735,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
 		if (isEnabled()) {
 			switch (keyCode) {
 			case UI.KEY_UP:
@@ -870,7 +871,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 	
 	@Override
-	protected void dispatchDraw(Canvas canvas) {
+	protected void dispatchDraw(@NonNull Canvas canvas) {
 		super.dispatchDraw(canvas);
 		if (itemCount == 0) {
 			if (emptyLayout != null) {

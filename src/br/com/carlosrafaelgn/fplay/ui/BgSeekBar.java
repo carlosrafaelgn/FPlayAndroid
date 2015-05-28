@@ -38,6 +38,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -403,7 +404,7 @@ public final class BgSeekBar extends View {
 	}
 
 	@Override
-	public boolean onTouchEvent(MotionEvent event) {
+	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		if (!isEnabled())
 			return false;
 		
@@ -450,7 +451,7 @@ public final class BgSeekBar extends View {
 	}
 	
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
 		//Base on: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/widget/AbsSeekBar.java#AbsSeekBar.onKeyDown%28int%2Candroid.view.KeyEvent%29
 		if (isEnabled()) {
 			int value = getValue();

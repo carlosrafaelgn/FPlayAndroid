@@ -91,11 +91,11 @@ public final class FileSt extends BaseItem {
 		this.specialType = specialType;
 	}
 	
-	public FileSt(String absolutePath, String name, String albumArt, int specialType, boolean isDirectory) {
-		this.isDirectory = isDirectory;
+	public FileSt(String absolutePath, String name, int specialType) {
+		this.isDirectory = false;//isDirectory;
 		this.path = absolutePath;
 		this.name = ((name.length() == 0) ? " " : name);
-		this.albumArt = (((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
+		this.albumArt = null;//(((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
 		this.specialType = specialType;
 	}
 	

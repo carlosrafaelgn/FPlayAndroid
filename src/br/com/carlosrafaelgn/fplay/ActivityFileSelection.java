@@ -410,6 +410,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		fileList = new FileList();
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_file_selection);

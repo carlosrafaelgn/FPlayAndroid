@@ -37,6 +37,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
@@ -336,7 +337,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
 		//
 		//Allowing applications to play nice(r) with each other: Handling remote control buttons
 		//http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
@@ -354,7 +355,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			}
 			break;
 		default:
-			if ((event == null || event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
+			if ((event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
 				return true;
 			break;
 		}
@@ -367,7 +368,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@Override
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
+	public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
 		return (Player.isMediaButton(keyCode) || super.onKeyUp(keyCode, event));
 	}
 
@@ -438,7 +439,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 	
 	@Override
-	protected void onSaveInstanceState(Bundle outState) {
+	protected void onSaveInstanceState(@NonNull Bundle outState) {
 		super.onSaveInstanceState(outState);
 		outState.clear(); //see the comments in the method above
 	}

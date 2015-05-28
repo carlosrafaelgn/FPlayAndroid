@@ -41,6 +41,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -379,6 +380,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		super.setBackground(null);
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -401,7 +403,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	}
 	
 	@Override
-	public void invalidateDrawable(Drawable drawable) {
+	public void invalidateDrawable(@NonNull Drawable drawable) {
 	}
 	
 	@Override

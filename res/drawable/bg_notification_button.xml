@@ -7,7 +7,6 @@
         </shape>
     </item>
     <item>
-        <color android:color="@null" />
     </item>
 
 </selector>

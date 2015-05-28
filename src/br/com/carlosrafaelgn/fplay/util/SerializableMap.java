@@ -232,9 +232,7 @@ public final class SerializableMap {
 	}
 	
 	public boolean getBit(int bitIndex) {
-		if (bitIndex >= bitCount)
-			return false;
-		return ((bitStorage[bitIndex >>> 3] & (1 << (bitIndex & 7))) != 0);
+		return (bitIndex < bitCount) && ((bitStorage[bitIndex >>> 3] & (1 << (bitIndex & 7))) != 0);
 	}
 	
 	public boolean getBit(int bitIndex, boolean defaultValue) {
@@ -302,9 +300,7 @@ public final class SerializableMap {
 	
 	public boolean getBoolean(int key) {
 		final Object o = dict.get(key);
-		if (o == null || !(o instanceof Integer))
-			return false;
-		return ((Integer)o != 0);
+		return (o != null) && (o instanceof Integer) && ((Integer)o != 0);
 	}
 	
 	public boolean getBoolean(int key, boolean defaultValue) {

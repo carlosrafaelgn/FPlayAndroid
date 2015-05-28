@@ -37,6 +37,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.view.KeyEvent;
@@ -241,7 +242,7 @@ public final class SettingView extends View {
 	}
 	
 	@Override
-	public void invalidateDrawable(Drawable drawable) {
+	public void invalidateDrawable(@NonNull Drawable drawable) {
 	}
 	
 	@Override
@@ -256,7 +257,7 @@ public final class SettingView extends View {
 	}
 
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_ENTER:
 		case KeyEvent.KEYCODE_NUMPAD_ENTER:

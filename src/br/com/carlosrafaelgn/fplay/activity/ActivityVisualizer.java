@@ -45,6 +45,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -118,8 +119,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 						//View.SYSTEM_UI_FLAG_LOW_PROFILE |
 						View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
 						//View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-						View.SYSTEM_UI_FLAG_IMMERSIVE |
-						View.SYSTEM_UI_FLAG_VISIBLE);
+						View.SYSTEM_UI_FLAG_IMMERSIVE);
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
@@ -285,7 +285,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 
 	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
 		//
 		//Allowing applications to play nice(r) with each other: Handling remote control buttons
 		//http://android-developers.blogspot.com.br/2010/06/allowing-applications-to-play-nicer.html
@@ -294,7 +294,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		//presses when your activity doesn’t have the focus. For when it does, we override
 		//the Activity.onKeyDown() or onKeyUp() methods for the user interface to trap the
 		//headset button-related events...
-		if ((event == null || event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
+		if ((event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
 			return true;
 		if (Player.isMediaButton(keyCode)) {
 			switch (keyCode) {
@@ -317,7 +317,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	}
 
 	@Override
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
+	public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
 		return (Player.isMediaButton(keyCode) || super.onKeyUp(keyCode, event));
 	}
 
@@ -461,13 +461,13 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 				fxVisualizer = new FxVisualizer(getApplication(), visualizer, this);
 		}
 
-		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer((Timer.TimerHandler)this, "UI Anim Timer", false, true, false) : null);
+		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer(this, "UI Anim Timer", false, true, false) : null);
 		
 		hideAllUIDelayed();
 	}
 	
 	@Override
-	protected void onSaveInstanceState(Bundle outState) {
+	protected void onSaveInstanceState(@NonNull Bundle outState) {
 		super.onSaveInstanceState(outState);
 		outState.clear();
 	}

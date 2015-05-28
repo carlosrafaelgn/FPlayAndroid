@@ -37,6 +37,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -285,7 +286,7 @@ public final class BgButton extends Button {
 	}
 
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_ENTER:
 		case KeyEvent.KEYCODE_NUMPAD_ENTER:
@@ -317,7 +318,7 @@ public final class BgButton extends Button {
 	}
 
 	@Override
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
+	public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_ENTER:
 		case KeyEvent.KEYCODE_NUMPAD_ENTER:
@@ -349,7 +350,7 @@ public final class BgButton extends Button {
 	}
 	
 	@Override
-	protected void onDraw(Canvas canvas) {
+	protected void onDraw(@NonNull Canvas canvas) {
 		getDrawingRect(UI.rect);
 		if (hideBorders)
 			UI.drawBgBorderless(canvas, state, false);
