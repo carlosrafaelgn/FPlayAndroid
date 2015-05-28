@@ -471,6 +471,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						BassBoost.release();
 						Virtualizer.initialize(player.getAudioSessionId());
 						Virtualizer.release();
+						if (Equalizer.isEnabled()) {
+							Equalizer.initialize(player.getAudioSessionId());
+							Equalizer.setEnabled(true);
+						}
+						if (BassBoost.isEnabled()) {
+							BassBoost.initialize(player.getAudioSessionId());
+							BassBoost.setEnabled(true);
+						}
+						if (Virtualizer.isEnabled()) {
+							Virtualizer.initialize(player.getAudioSessionId());
+							Virtualizer.setEnabled(true);
+						}
 						_checkAudioSink(false, false);
 						localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
 						Looper.loop();
