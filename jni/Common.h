@@ -54,6 +54,11 @@ int intBuffer[8] __attribute__((aligned(16)));
 float commonCoefNew;
 unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
 
+//Beat detection
+#define BEAT_STATE_VALLEY 0
+#define BEAT_STATE_PEAK 1
+unsigned int beatCounter, beatState, beatPeakOrValley, beatThreshold, beatDeltaMillis, beatSilenceDeltaMillis, beatSpeedBPM;
+
 unsigned int commonUptimeDeltaMillis(unsigned int* lastTime) {
 	struct timespec t;
 	t.tv_sec = 0;
@@ -145,6 +150,13 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 	rootMeanSquare = 0;
 	lastRootMeanSquare = 0;
 	vuMeter = 0;
+	beatCounter = 0;
+	beatState = BEAT_STATE_VALLEY;
+	beatPeakOrValley = 0;
+	beatThreshold = 0;
+	beatDeltaMillis = 0;
+	beatSilenceDeltaMillis = 0;
+	beatSpeedBPM = 0;
 	if (isVoice) {
 		for (int i = 0; i < 256; i++) {
 			fft[i] = 0;
@@ -172,6 +184,8 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 
 int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int opt) {
 	const unsigned int deltaMillis = commonUptimeDeltaMillis(&commonLastTime);
+	beatDeltaMillis += deltaMillis;
+	beatSilenceDeltaMillis += deltaMillis;
 	int i;
 	i = commonTime + deltaMillis;
 	while (((unsigned int)i) >= commonTimeLimit)
@@ -269,6 +283,53 @@ if (!neonMode) {
 	commonProcessNeon(bfft, deltaMillis, opt);
 }
 #endif
+
+	//Beat detection (we are using a threshold of 25%)
+	//processedData[0] = DC
+	//processedData[1] = 1 * 44100/1024 = 43Hz
+	//processedData[2] = 2 * 44100/1024 = 86Hz ----> Used for beat detection! Empirically tested :)
+	//processedData[3] = 3 * 44100/1024 = 129Hz
+	//processedData[4] = 4 * 44100/1024 = 172Hz
+	const unsigned int m = (unsigned int)processedData[2];
+	if (beatState == BEAT_STATE_VALLEY) {
+		if (m < beatPeakOrValley) {
+			//Just update the valley
+			beatPeakOrValley = m;
+			beatThreshold = ((m * 5) >> 2); //125%
+		} else if (m >= beatThreshold) {
+			//Check if we have crossed the threshold... Beat found! :D
+			//Use only even numbers to use this value in the Bluetooth transmission without processing
+			beatCounter += 2;
+			//Average:
+			//BPM = 60000 / beatDeltaMillis
+			//BPM / 2 = 60000 / (2 * beatDeltaMillis)
+			//BPM / 2 = 30000 / beatDeltaMillis
+			//Let's not worry about division by 0 since beatDeltaMillis is incremented at the
+			//beginning of this function (it would take 49 days and lot of concidence to reach 0!!!)
+			beatSpeedBPM = (beatSpeedBPM >> 1) + (30000 / beatDeltaMillis);
+			beatDeltaMillis = 0;
+			beatSilenceDeltaMillis = 0;
+			beatState = BEAT_STATE_PEAK;
+			beatPeakOrValley = m;
+			beatThreshold = ((m * 3) >> 2); //75%
+		}
+	} else {
+		if (m > beatPeakOrValley) {
+			//Just update the peak
+			beatPeakOrValley = m;
+			beatThreshold = ((m * 3) >> 2); //75%
+		} else if (m <= beatThreshold) {
+			//Check if we have crossed the threshold
+			beatState = BEAT_STATE_VALLEY;
+			beatPeakOrValley = m;
+			beatThreshold = ((m * 5) >> 2); //125%
+		}
+	}
+	if (beatSilenceDeltaMillis > 2000) {
+		beatSpeedBPM = ((beatSpeedBPM * 3) >> 2); //decrease the speed by 25% after 2s without beats
+		beatSilenceDeltaMillis = 0;
+	}
+
 	opt &= ~IgnoreInput;
 	if (!opt) {
 		if (bfft)

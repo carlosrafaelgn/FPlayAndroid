@@ -432,6 +432,13 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	rootMeanSquare = 0;
 	lastRootMeanSquare = 0;
 	vuMeter = 0;
+	beatCounter = 0;
+	beatState = BEAT_STATE_VALLEY;
+	beatPeakOrValley = 0;
+	beatThreshold = 0;
+	beatDeltaMillis = 0;
+	beatSilenceDeltaMillis = 0;
+	beatSpeedBPM = 0;
 #ifdef _MAY_HAVE_NEON_
 	neonMode = 0;
 	neonDone = 0;
