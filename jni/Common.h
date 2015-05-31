@@ -57,7 +57,9 @@ unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLi
 //Beat detection
 #define BEAT_STATE_VALLEY 0
 #define BEAT_STATE_PEAK 1
+#define BEAT_MIN_RISE_THRESHOLD 40
 unsigned int beatCounter, beatState, beatPeakOrValley, beatThreshold, beatDeltaMillis, beatSilenceDeltaMillis, beatSpeedBPM;
+float beatFilteredInput;
 
 unsigned int commonUptimeDeltaMillis(unsigned int* lastTime) {
 	struct timespec t;
@@ -153,10 +155,11 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 	beatCounter = 0;
 	beatState = BEAT_STATE_VALLEY;
 	beatPeakOrValley = 0;
-	beatThreshold = 0;
+	beatThreshold = BEAT_MIN_RISE_THRESHOLD;
 	beatDeltaMillis = 0;
 	beatSilenceDeltaMillis = 0;
 	beatSpeedBPM = 0;
+	beatFilteredInput = 0;
 	if (isVoice) {
 		for (int i = 0; i < 256; i++) {
 			fft[i] = 0;
@@ -285,53 +288,68 @@ if (!neonMode) {
 }
 #endif
 
-	//Beat detection (we are using a threshold of 25%)
-	//processedData[0] = DC
-	//processedData[1] = 1 * 44100/1024 = 43Hz
-	//processedData[2] = 2 * 44100/1024 = 86Hz ----> Used for beat detection! Empirically tested :)
-	//processedData[3] = 3 * 44100/1024 = 129Hz
-	//processedData[4] = 4 * 44100/1024 = 172Hz
-	const unsigned int m = (unsigned int)processedData[2];
-	if (beatState == BEAT_STATE_VALLEY) {
-		if (m < beatPeakOrValley) {
-			//Just update the valley
-			beatPeakOrValley = m;
-			beatThreshold = ((m * 5) >> 2); //125%
-		} else if (m >= beatThreshold) {
-			//Check if we have crossed the threshold... Beat found! :D
-			//Use only even numbers to use this value in the Bluetooth transmission without processing
-			beatCounter += 2;
-			//Average:
-			//BPM = 60000 / beatDeltaMillis
-			//BPM / 2 = 60000 / (2 * beatDeltaMillis)
-			//BPM / 2 = 30000 / beatDeltaMillis
-			//Let's not worry about division by 0 since beatDeltaMillis is incremented at the
-			//beginning of this function (it would take 49 days and lot of concidence to reach 0!!!)
-			beatSpeedBPM = (beatSpeedBPM >> 1) + (30000 / beatDeltaMillis);
-			beatDeltaMillis = 0;
+	if ((opt & ComputeBeatDetection)) {
+		//Beat detection (we are using a threshold of 25%)
+		//processedData[0] = DC
+		//processedData[1] = 1 * 44100/1024 = 43Hz
+		//processedData[2] = 2 * 44100/1024 = 86Hz
+		//processedData[3] = 3 * 44100/1024 = 129Hz
+		//processedData[4] = 4 * 44100/1024 = 172Hz
+		//processedData[5] = 5 * 44100/1024 = 215Hz
+		//processedData[6] = 6 * 44100/1024 = 258Hz
+		//processedData[7] = 7 * 44100/1024 = 301Hz
+		//filter again
+		beatFilteredInput = ((1.0f - 0.140625f) * beatFilteredInput) + (0.140625f * (float)processedData[(opt & ComputeBeatDetection) >> 12]);
+		const unsigned int m = (unsigned int)beatFilteredInput;
+		//__android_log_print(ANDROID_LOG_INFO, "JNI", "\t%d\t%d", (unsigned int)processedData[2], (unsigned int)processedData[3]);
+		if (beatState == BEAT_STATE_VALLEY) {
+			if (m < beatPeakOrValley) {
+				//Just update the valley
+				beatPeakOrValley = m;
+				beatThreshold = ((m * 5) >> 2); //125%
+				if (beatThreshold < BEAT_MIN_RISE_THRESHOLD)
+					beatThreshold = BEAT_MIN_RISE_THRESHOLD;
+			} else if (m >= beatThreshold && beatDeltaMillis >= 150) { //no more than 150 bpm
+				//Check if we have crossed the threshold... Beat found! :D
+				//Use only even numbers to use this value in the Bluetooth transmission without processing
+				beatCounter += 2;
+				//Average:
+				//BPM = 60000 / beatDeltaMillis
+				//BPM / 4 = 60000 / (4 * beatDeltaMillis)
+				//BPM / 4 = 15000 / beatDeltaMillis
+				//Since beatDeltaMillis accounts only for half of the period, we use 7500 instead of 15000
+				//Let's not worry about division by 0 since beatDeltaMillis is incremented at the
+				//beginning of this function (it would take 49 days and lot of concidence to reach 0!!!)
+				beatSpeedBPM = ((beatSpeedBPM * 3) >> 2) + (7500 / beatDeltaMillis);
+				//__android_log_print(ANDROID_LOG_INFO, "JNI", "%d %d", beatCounter >> 1, beatSpeedBPM);
+				beatDeltaMillis = 0;
+				beatSilenceDeltaMillis = 0;
+				beatState = BEAT_STATE_PEAK;
+				beatPeakOrValley = m;
+				beatThreshold = ((m * 3) >> 2); //75%
+			}
+		} else {
+			if (m > beatPeakOrValley) {
+				//Just update the peak
+				beatPeakOrValley = m;
+				beatThreshold = ((m * 3) >> 2); //75%
+			} else if (m <= beatThreshold && beatDeltaMillis >= 150) {
+				//Check if we have crossed the threshold
+				beatDeltaMillis = 0;
+				beatState = BEAT_STATE_VALLEY;
+				beatPeakOrValley = m;
+				beatThreshold = ((m * 5) >> 2); //125%
+				if (beatThreshold < BEAT_MIN_RISE_THRESHOLD)
+                	beatThreshold = BEAT_MIN_RISE_THRESHOLD;
+			}
+		}
+		if (beatSilenceDeltaMillis >= 2000) {
+			beatSpeedBPM = (beatSpeedBPM >> 1); //decrease the speed by 50% after 2s without beats
 			beatSilenceDeltaMillis = 0;
-			beatState = BEAT_STATE_PEAK;
-			beatPeakOrValley = m;
-			beatThreshold = ((m * 3) >> 2); //75%
 		}
-	} else {
-		if (m > beatPeakOrValley) {
-			//Just update the peak
-			beatPeakOrValley = m;
-			beatThreshold = ((m * 3) >> 2); //75%
-		} else if (m <= beatThreshold) {
-			//Check if we have crossed the threshold
-			beatState = BEAT_STATE_VALLEY;
-			beatPeakOrValley = m;
-			beatThreshold = ((m * 5) >> 2); //125%
-		}
-	}
-	if (beatSilenceDeltaMillis > 2000) {
-		beatSpeedBPM = ((beatSpeedBPM * 3) >> 2); //decrease the speed by 25% after 2s without beats
-		beatSilenceDeltaMillis = 0;
 	}
 
-	opt &= ~(IgnoreInput | ComputeFFT | ComputeVUMeter);
+	opt &= ~(IgnoreInput | ComputeFFT | ComputeVUMeter | ComputeBeatDetection);
 	if (!opt) {
 		if (bfft)
 			env->ReleasePrimitiveArrayCritical(jwaveform, bfft, JNI_ABORT);
@@ -345,18 +363,20 @@ if (!neonMode) {
 #define PACK_BIN(BIN) if ((BIN) == 0x01 || (BIN) == 0x1B) { *packet = 0x1B; packet[1] = ((unsigned char)(BIN) ^ 1); packet += 2; len += 2; } else { *packet = (unsigned char)(BIN); packet++; len++; }
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
 	unsigned char* packet = (unsigned char*)bfft;
-	int len = 0, last;
+	int len = 1, last;
 	unsigned char avg;
 	unsigned char b;
 	packet[0] = 1; //SOH - Start of Heading
 	packet[1] = (unsigned char)opt; //payload type
 	//packet[2] and packet[3] are the payload length
-	packet += 4;
+	packet[4] = (unsigned char)beatCounter;
+	packet += 5;
+	PACK_BIN(beatSpeedBPM);
 	//processedData stores the first 256 bins, out of the 512 captured by visualizer.getFft
-	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11000Hz for a SR of 44100Hz)
+	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11025Hz for a SR of 44100Hz)
 	//
-	//the mapping algorithms used in MessageBins4, MessageBins8, MessageBins16, MessageBins32, MessageBins64 and in MessageBins128
-	//were "empirically created", without too much of theory envolved ;)
+	//the mapping algorithms used in MessageBins4, MessageBins8, MessageBins16, MessageBins32,
+	//MessageBins64 and in MessageBins128 were created empirically ;)
 	switch (opt) {
 	case MessageBins4:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 2);

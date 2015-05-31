@@ -238,7 +238,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int audioSink, audioSinkBeforeFocusLoss;
 
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
-	private static boolean resumePlaybackAfterFocusGain, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
+	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayer player, nextPlayer;
 
@@ -577,11 +577,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void prePlay(int how) {
-		if (state != STATE_ALIVE)
+		if (state != STATE_ALIVE || postPlayPending)
 			return;
 		localSong = songs.getSongAndSetCurrent(how);
 		final Song[] songArray = new Song[] { localSong, songs.possibleNextSong };
 		songs.possibleNextSong = null;
+		postPlayPending = true;
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_POST_PLAY, how, 0, songArray), SystemClock.uptimeMillis());
 	}
 
@@ -875,6 +876,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		playAfterSeeking = false;
 		prepareNextAfterSeeking = false;
 		resumePlaybackAfterFocusGain = false;
+		postPlayPending = false;
 		Equalizer.release();
 		BassBoost.release();
 		Virtualizer.release();
@@ -978,6 +980,21 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		try {
 			howThePlayerStarted = how;
 			playerBuffering = false;
+			if (playerState == PLAYER_STATE_PREPARING) {
+				//probably the user is changing songs too fast!
+				playerState = PLAYER_STATE_NEW;
+				playerBuffering = false;
+				if (player != null) {
+					_releasePlayer(player);
+					player = null;
+				}
+				nextAlreadySetForPlaying = false;
+				nextPlayerState = PLAYER_STATE_NEW;
+				if (nextPlayer != null) {
+					_releasePlayer(nextPlayer);
+					nextPlayer = null;
+				}
+			}
 			if (player == null || nextPlayer == null) {
 				_initializePlayers();
 				//don't even ask.......
@@ -1001,6 +1018,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			}
 			//System.out.println("reset " + player);
 			player.reset();
+			postPlayPending = false;
 			if (nextSong == song && how != SongList.HOW_CURRENT) {
 				storedSongTime = -1;
 				if (nextPlayerState == PLAYER_STATE_LOADED) {

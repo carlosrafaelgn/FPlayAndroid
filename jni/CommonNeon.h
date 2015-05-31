@@ -43,6 +43,14 @@
 #define ComputeFFT ((int)0x0100)
 #define ComputeVUMeter ((int)0x0200)
 #define IgnoreInput ((int)0x0400)
+#define ComputeBeatDetection1 ((int)0x1000)
+#define ComputeBeatDetection2 ((int)0x2000)
+#define ComputeBeatDetection3 ((int)0x3000)
+#define ComputeBeatDetection4 ((int)0x4000)
+#define ComputeBeatDetection5 ((int)0x5000)
+#define ComputeBeatDetection6 ((int)0x6000)
+#define ComputeBeatDetection7 ((int)0x7000)
+#define ComputeBeatDetection ((int)0xF000)
 
 #define DEFSPEED (0.140625f / 16.0f)
 

@@ -62,6 +62,13 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	static final int ComputeFFT = 0x0100;
 	static final int ComputeVUMeter = 0x0200;
 	static final int IgnoreInput = 0x0400;
+	static final int ComputeBeatDetection1 = 0x1000;
+	static final int ComputeBeatDetection2 = 0x2000;
+	static final int ComputeBeatDetection3 = 0x3000;
+	static final int ComputeBeatDetection4 = 0x4000;
+	static final int ComputeBeatDetection5 = 0x5000;
+	static final int ComputeBeatDetection6 = 0x6000;
+	static final int ComputeBeatDetection7 = 0x7000;
 	static native void commonSetSpeed(int speed);
 	static native void commonSetColorIndex(int colorIndex);
 	static native int commonCheckNeonMode();
