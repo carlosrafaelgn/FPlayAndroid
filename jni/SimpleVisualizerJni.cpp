@@ -127,14 +127,14 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	signed char* bfft;
-	if (opt != IgnoreInput) {
+	if (!(opt & IgnoreInput)) {
 		bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
 		if (!bfft) {
 			ANativeWindow_unlockAndPost(wnd);
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft((unsigned char*)bfft, 0);
+		doFft((unsigned char*)bfft, ComputeFFT);
 
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		bfft[1] = 0;
@@ -328,7 +328,7 @@ if (!neonMode) {
 	ANativeWindow_release(wnd);
 }
 
-void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface) {
+void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface, int opt) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return;
@@ -369,24 +369,36 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	signed char* const bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
-	if (!bfft) {
-		ANativeWindow_unlockAndPost(wnd);
-		ANativeWindow_release(wnd);
-		return;
-	}
-	doFft((unsigned char*)bfft, 0);
+	signed char* bfft;
+	if (!(opt & IgnoreInput)) {
+		bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
+		if (!bfft) {
+			ANativeWindow_unlockAndPost(wnd);
+			ANativeWindow_release(wnd);
+			return;
+		}
+		doFft((unsigned char*)bfft, ComputeFFT);
 
-	//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-	bfft[1] = 0;
+		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
+		bfft[1] = 0;
+	} else {
+		bfft = 0;
+	}
+
 	float previous = 0;
 	
 	for (int i = 0; i < barBins; i++) {
 		//bfft[i] stores values from 0 to -128/127 (inclusive)
-		const int re = (int)bfft[i << 1];
-		const int im = (int)bfft[(i << 1) + 1];
-		const int amplSq = (re * re) + (im * im);
-		const float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+		float m;
+		if (bfft) {
+			const int re = (int)bfft[i << 1];
+			const int im = (int)bfft[(i << 1) + 1];
+			const int amplSq = (re * re) + (im * im);
+			m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+			previousM[i] = m;
+		} else {
+			m = previousM[i];
+		}
 		if (barW == 1) {
 			//v goes from 0 to 256+ (inclusive)
 			const int v = (int)m;
@@ -402,7 +414,8 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 			}
 		}
 	}
-	env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
+	if (bfft)
+		env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 	memcpy(inf.bits, alignedVoice, inf.stride * inf.height);
 	ANativeWindow_unlockAndPost(wnd);
 	ANativeWindow_release(wnd);
@@ -455,7 +468,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"terminate", "()V", (void*)terminate},
 		{"prepareSurface", "(Landroid/view/Surface;)I", (void*)prepareSurface},
 		{"process", "([BLandroid/view/Surface;I)V", (void*)process},
-		{"processVoice", "([BLandroid/view/Surface;)V", (void*)processVoice},
+		{"processVoice", "([BLandroid/view/Surface;I)V", (void*)processVoice},
 
 		{"glOnSurfaceCreated", "(IIIII)I", (void*)glOnSurfaceCreated},
 		{"glOnSurfaceChanged", "(IIII)V", (void*)glOnSurfaceChanged},

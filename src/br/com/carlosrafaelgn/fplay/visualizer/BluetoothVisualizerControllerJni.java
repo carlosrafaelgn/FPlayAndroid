@@ -257,7 +257,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	//Runs on ANY thread (returned value MUST always be the same)
 	@Override
 	public int dataTypeRequired() {
-		return DATA_FFT | DATA_VUMETER;
+		return DATA_FFT;
 	}
 
 	//Runs on a SECONDARY thread
@@ -301,10 +301,10 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 				}
 				if (framesToSkip <= 0) {
 					framesToSkip = framesToSkipOriginal;
-					bt.getOutputStream().write(waveform, 0, SimpleVisualizerJni.commonProcess(waveform, size | ignoreInput | SimpleVisualizerJni.ComputeVUMeter));
+					bt.getOutputStream().write(waveform, 0, SimpleVisualizerJni.commonProcess(waveform, size | ignoreInput | SimpleVisualizerJni.ComputeFFT));
 					packetsSent++;
 				} else {
-					SimpleVisualizerJni.commonProcess(waveform, ignoreInput | SimpleVisualizerJni.ComputeVUMeter);
+					SimpleVisualizerJni.commonProcess(waveform, ignoreInput | SimpleVisualizerJni.ComputeFFT);
 					framesToSkip--;
 				}
 				ignoreInput ^= SimpleVisualizerJni.IgnoreInput;

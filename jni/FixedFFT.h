@@ -111,10 +111,10 @@ static inline int32_t half(int32_t a) {
 #endif
 }
 
-int32_t doFft(uint8_t *inWaveform_outFft, int computeSquareAccum) {
+int32_t doFft(uint8_t *inWaveform_outFft, int opt) {
 	int32_t i, squareAccum = 0, workspace[CAPTURE_SIZE >> 1];
 
-	if (computeSquareAccum) {
+	if ((opt & ComputeVUMeter)) {
 		for (i = 0; i < CAPTURE_SIZE; i += 2) {
 			const int32_t x0 = (int32_t)((int8_t)(inWaveform_outFft[i] - 0x80));
 			squareAccum += (x0 * x0);
@@ -122,6 +122,8 @@ int32_t doFft(uint8_t *inWaveform_outFft, int computeSquareAccum) {
 			squareAccum += (x1 * x1);
 			workspace[i >> 1] = (x0 << 24) | ((x1 << 8) & 0xFFFF);
 		}
+		if (!(opt & ComputeFFT))
+			return squareAccum;
 	} else {
 		for (i = 0; i < CAPTURE_SIZE; i += 2) {
 			workspace[i >> 1] = ((int32_t)((int8_t)(inWaveform_outFft[i] - 0x80)) << 24) | (((int32_t)((int8_t)(inWaveform_outFft[i + 1] - 0x80)) << 8) & 0xFFFF);

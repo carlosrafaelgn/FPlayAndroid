@@ -39,8 +39,10 @@
 #define MessageBins64 ((int)0x24)
 #define MessageBins128 ((int)0x25)
 #define MessageBins256 ((int)0x26)
-#define IgnoreInput ((int)0x80)
-#define ComputeVUMeter ((int)0x100)
+#define ComputeBluetooth ((int)0xFF)
+#define ComputeFFT ((int)0x0100)
+#define ComputeVUMeter ((int)0x0200)
+#define IgnoreInput ((int)0x0400)
 
 #define DEFSPEED (0.140625f / 16.0f)
 

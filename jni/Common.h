@@ -192,24 +192,20 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		i -= commonTimeLimit;
 	commonTime = i;
 
-	i = (opt & ComputeVUMeter);
-	opt &= ~ComputeVUMeter;
-
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	signed char* bfft;
-	if (opt != IgnoreInput) {
-		//either IgnoreInput was not specified, or this is a request for bluetooth data
+	if (!(opt & IgnoreInput) || (opt & ComputeBluetooth)) {
 		bfft = (signed char*)env->GetPrimitiveArrayCritical(jwaveform, 0);
 		if (!bfft)
 			return 0;
 
 		if (!(opt & IgnoreInput)) {
-			if (!i)
-				doFft((unsigned char*)bfft, 0);
-			else
-				rootMeanSquare = sqrtf((float)doFft((unsigned char*)bfft, 1) * (1.0f / (float)(CAPTURE_SIZE)));
+			if ((opt & ComputeVUMeter))
+				rootMeanSquare = sqrtf((float)doFft((unsigned char*)bfft, opt) * (1.0f / (float)(CAPTURE_SIZE)));
+			else if ((opt & ComputeFFT))
+				doFft((unsigned char*)bfft, ComputeFFT);
 
 			//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 			bfft[1] = 0;
@@ -218,7 +214,7 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		bfft = 0;
 	}
 
-	if (i) {
+	if ((opt & ComputeVUMeter)) {
 		if (rootMeanSquare > lastRootMeanSquare) {
 			const float beta = 0.5f;//(0.5f / 16.0f) * (float)deltaMillis;
 			lastRootMeanSquare = ((1.0f - beta) * lastRootMeanSquare) + (beta * rootMeanSquare);
@@ -236,6 +232,11 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 				v = (v + 20.0f) * 12.75f;
 				vuMeter = ((v >= 255.0f) ? 255 : (int)v);
 			}
+		}
+		if (!(opt & ~(IgnoreInput | ComputeVUMeter))) {
+			if (bfft)
+				env->ReleasePrimitiveArrayCritical(jwaveform, bfft, JNI_ABORT);
+			return 0;
 		}
 	}
 
@@ -330,7 +331,7 @@ if (!neonMode) {
 		beatSilenceDeltaMillis = 0;
 	}
 
-	opt &= ~IgnoreInput;
+	opt &= ~(IgnoreInput | ComputeFFT | ComputeVUMeter);
 	if (!opt) {
 		if (bfft)
 			env->ReleasePrimitiveArrayCritical(jwaveform, bfft, JNI_ABORT);
