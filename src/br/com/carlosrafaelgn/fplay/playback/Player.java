@@ -849,13 +849,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static void _fullCleanup() {
-		if (handler != null) {
-			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
-			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
-		}
-		if (localHandler != null)
-			localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+	private static void _partialCleanup() {
 		playerState = PLAYER_STATE_NEW;
 		playerBuffering = false;
 		if (player != null) {
@@ -868,14 +862,24 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			_releasePlayer(nextPlayer);
 			nextPlayer = null;
 		}
-		silenceMode = SILENCE_NORMAL;
-		nextSong = null;
-		songScheduledForPreparation = null;
-		nextSongScheduledForPreparation = null;
 		playing = false;
 		playAfterSeeking = false;
 		prepareNextAfterSeeking = false;
 		resumePlaybackAfterFocusGain = false;
+		songScheduledForPreparation = null;
+		nextSongScheduledForPreparation = null;
+		if (handler != null) {
+			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
+			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
+		}
+		if (localHandler != null)
+			localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+	}
+
+	private static void _fullCleanup() {
+		_partialCleanup();
+		silenceMode = SILENCE_NORMAL;
+		nextSong = null;
 		postPlayPending = false;
 		Equalizer.release();
 		BassBoost.release();
@@ -977,24 +981,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			_updateState(false, null);
 			return;
 		}
+
 		try {
 			howThePlayerStarted = how;
 			playerBuffering = false;
-			if (playerState == PLAYER_STATE_PREPARING) {
+			if (playerState == PLAYER_STATE_PREPARING)
 				//probably the user is changing songs too fast!
-				playerState = PLAYER_STATE_NEW;
-				playerBuffering = false;
-				if (player != null) {
-					_releasePlayer(player);
-					player = null;
-				}
-				nextAlreadySetForPlaying = false;
-				nextPlayerState = PLAYER_STATE_NEW;
-				if (nextPlayer != null) {
-					_releasePlayer(nextPlayer);
-					nextPlayer = null;
-				}
-			}
+				_partialCleanup();
 			if (player == null || nextPlayer == null) {
 				_initializePlayers();
 				//don't even ask.......
