@@ -64,8 +64,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	}
 	
 	private void processEllipsis() {
-		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI._8dp << 1) - UI._4dp - lengthWidth, false);
-		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI._8dp << 1), false);
+		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI.controlMargin << 1) - UI.controlSmallMargin - lengthWidth, false);
+		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI.controlMargin << 1), false);
 	}
 
 	@Override
@@ -165,13 +165,13 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
 		if ((state & UI.STATE_CURRENT) != 0)
-			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI._4dp, UI.rect.bottom - UI.defaultControlContentsSize - UI._4dp, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, UI.verticalMargin + UI._22spYinBox);
+			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI.controlSmallMargin, UI.rect.bottom - UI.defaultControlContentsSize - UI.controlSmallMargin, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI.controlMargin, UI.verticalMargin + UI._22spYinBox);
 		if (song.isHttp)
-			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, UI.rect.right - UI._14spBox - UI._8dp, UI.verticalMargin, UI._14spBox, txtColor);
+			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, UI.rect.right - UI._14spBox - UI.controlMargin, UI.verticalMargin, UI._14spBox, txtColor);
 		else
-			UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI._8dp - lengthWidth, UI.verticalMargin + UI._14spYinBox);
-		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI._8dp, UI.verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
+			UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI.controlMargin - lengthWidth, UI.verticalMargin + UI._14spYinBox);
+		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI.controlMargin, UI.verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
 	}
 	
 	@Override

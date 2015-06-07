@@ -258,7 +258,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		height = h;
 		minSize = ((width <= height) ? width : height);
 		//add a 5% margin around the bitmap
-		if (minSize > UI._16dp)
+		if (minSize > UI.controlLargeMargin)
 			minSize -= ((minSize * 5) / 100);
 		if (minSize > absMax)
 			minSize = absMax;

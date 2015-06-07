@@ -116,7 +116,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	
 	@SuppressWarnings("deprecation")
 	private void init(Context context, int initialColor) {
-		setPadding(UI._DLGdppad, UI._DLGdppad, UI._DLGdppad, UI._DLGdppad);
+		setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
 		final int eachW = (UI._18sp * 7) >> 1;
 		final boolean smallScreen = (UI.isLowDpiScreen && !UI.isLargeScreen);
 		initialColor = 0xff000000 | (initialColor & 0x00ffffff);
@@ -139,18 +139,17 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		lbl.setBackgroundDrawable(new ColorDrawable(initialColor));
 		LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, smallScreen ? (UI.defaultControlSize) >> 1 : UI.defaultControlSize);
 		lp.weight = 1;
-		lp.rightMargin = UI._4dp;
+		lp.rightMargin = UI.controlSmallMargin;
 		l.addView(lbl, lp);
 		bgCurrent = new ColorDrawable(initialColor);
 		lblCurrent = new TextView(context);
 		lblCurrent.setBackgroundDrawable(bgCurrent);
 		lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, smallScreen ? (UI.defaultControlSize) >> 1 : UI.defaultControlSize);
 		lp.weight = 1;
-		lp.leftMargin = UI._4dp;
+		lp.leftMargin = UI.controlSmallMargin;
 		l.addView(lblCurrent, lp);
-		
+
 		final int textSize = (smallScreen ? UI._14sp : UI._18sp);
-		final int margin = (smallScreen ? UI._4dp : UI._8dp);
 		TextView lblTit = new TextView(context);
 		lblTit.setId(2);
 		lblTit.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
@@ -158,7 +157,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		lblTit.setGravity(Gravity.CENTER);
 		lblTit.setText("H");
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
@@ -169,7 +168,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		lblTit.setGravity(Gravity.CENTER);
 		lblTit.setText("S");
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
@@ -180,7 +179,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		lblTit.setGravity(Gravity.CENTER);
 		lblTit.setText("V");
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
@@ -192,7 +191,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		barH.setSliderMode(true);
 		barH.setVertical(true);
 		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
 		p.addRule(RelativeLayout.ALIGN_LEFT, 2);
 		p.addRule(RelativeLayout.BELOW, 2);
@@ -204,7 +203,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		barS.setSliderMode(true);
 		barS.setVertical(true);
 		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
 		p.addRule(RelativeLayout.ALIGN_LEFT, 3);
 		p.addRule(RelativeLayout.BELOW, 3);
@@ -216,7 +215,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		barV.setSliderMode(true);
 		barV.setVertical(true);
 		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
 		p.addRule(RelativeLayout.ALIGN_LEFT, 4);
 		p.addRule(RelativeLayout.BELOW, 4);
@@ -231,7 +230,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		txtH.setGravity(Gravity.CENTER);
 		txtH.setText(Integer.toString((int)(hsv.h * 360.0)));
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtH, p);
@@ -242,7 +241,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		txtS.setGravity(Gravity.CENTER);
 		txtS.setText(Integer.toString((int)(hsv.s * 100.0)));
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtS, p);
@@ -253,7 +252,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		txtV.setGravity(Gravity.CENTER);
 		txtV.setText(Integer.toString((int)(hsv.v * 100.0)));
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtV, p);
@@ -266,7 +265,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		txt.setGravity(Gravity.CENTER);
 		txt.setText(ColorUtils.toHexColor(initialColor));
 		p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = margin;
+		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
@@ -484,13 +483,13 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	@Override
 	public void onDraw(Canvas canvas, BgSeekBar seekBar, Rect rect, int filledSize) {
 		final Bitmap bmp = ((seekBar == barH) ? bmpH : ((seekBar == barS) ? bmpS : bmpV));
-		rect.bottom -= UI._8dp;
+		rect.bottom -= UI.controlMargin;
 		if (bmp != null) {
-			for (int i = rect.bottom - 1; i >= UI._8dp; i--)
+			for (int i = rect.bottom - 1; i >= UI.controlMargin; i--)
 				canvas.drawBitmap(bmp, 0, i, null);
 		}
-		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + UI.strokeSize - UI._8dp, 0, UI._16dp, sliderColor);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + UI.strokeSize - UI._8dp, rect.bottom, UI._16dp, sliderColor);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + UI.strokeSize - UI.controlMargin, 0, UI.controlLargeMargin, sliderColor);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + UI.strokeSize - UI.controlMargin, rect.bottom, UI.controlLargeMargin, sliderColor);
 	}
 	
 	@Override

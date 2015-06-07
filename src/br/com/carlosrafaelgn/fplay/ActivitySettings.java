@@ -236,6 +236,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.TRANSITION_ZOOM, 1, UI.getTransitionString(ctx, UI.TRANSITION_ZOOM))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(2, UI.TRANSITION_DISSOLVE, 2, UI.getTransitionString(ctx, UI.TRANSITION_DISSOLVE))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optScrollBarSongList || view == optScrollBarBrowser) {
 			lastMenuView = (SettingView)view;
 			UI.prepare(menu);
@@ -318,16 +321,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				
 				TextView lbl = new TextView(ctx);
 				lbl.setText(R.string.msg_turn_off);
-				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 				l.addView(lbl);
 				
 				txtCustomMinutes = new EditText(ctx);
 				txtCustomMinutes.setContentDescription(ctx.getText(R.string.msg_turn_off));
-				txtCustomMinutes.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+				txtCustomMinutes.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 				txtCustomMinutes.setInputType(InputType.TYPE_CLASS_NUMBER);
 				txtCustomMinutes.setSingleLine();
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-				p.topMargin = UI._DLGsppad;
+				p.topMargin = UI.dialogMargin;
 				txtCustomMinutes.setLayoutParams(p);
 				txtCustomMinutes.setText(Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes));
 				l.addView(txtCustomMinutes);
@@ -482,7 +485,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private void prepareHeader(TextView hdr) {
 		hdr.setMaxLines(2);
 		hdr.setEllipsize(TruncateAt.END);
-		hdr.setPadding(UI._8dp, UI._8sp, UI._8dp, UI._8sp);
+		hdr.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
 		if (UI.isLargeScreen)
 			UI.largeText(hdr);
 		else

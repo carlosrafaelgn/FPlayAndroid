@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.content.Context;
 import android.graphics.Paint.FontMetrics;
-import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
@@ -282,13 +281,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);*/
 		LinearLayout.LayoutParams lp;
 		if (!UI.isLargeScreen && UI.isLandscape) {
-			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			/*chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);*/
 			if (btnChangeEffect != null) {
-				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 				lp = (LinearLayout.LayoutParams)btnChangeEffect.getLayoutParams();
 				lp.topMargin = 0;
 				btnChangeEffect.setLayoutParams(lp);
@@ -306,60 +299,42 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			lp.bottomMargin = 0;
 			chkReverb.setLayoutParams(lp);*/
 			lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
-			lp.bottomMargin = UI._8dp;
+			lp.bottomMargin = UI.controlMargin;
 			barBass.setLayoutParams(lp);
 			lp = (LinearLayout.LayoutParams)barVirtualizer.getLayoutParams();
-			lp.bottomMargin = UI._8dp;
+			lp.bottomMargin = UI.controlMargin;
 			barVirtualizer.setLayoutParams(lp);
-			panelControls.setPadding(UI._16dp, UI.thickDividerSize, UI._16dp, 0);
-		} else if (UI.isLargeScreen || !UI.isLowDpiScreen) {
-			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			/*chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);*/
-			if (btnChangeEffect != null)
-				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			if (UI.isLargeScreen) {
-				UI.prepareViewPaddingForLargeScreen(panelControls, 0, (screenNotSoLarge && !UI.isLandscape) ? UI._8dp : UI._16dp);
-				if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
-					panelControls.setOrientation(LinearLayout.VERTICAL);
-					panelControls.setWeightSum(0);
-					final int margin = (screenNotSoLarge ? UI._8dp : (UI._16dp << 1));
-					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-					lp.leftMargin = margin;
-					lp.topMargin = margin;
-					lp.rightMargin = margin;
-					lp.bottomMargin = margin;
-					panelSecondary.setLayoutParams(lp);
-					lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0);
-					lp.weight = 1;
-					lp.leftMargin = margin;
-					lp.topMargin = (screenNotSoLarge ? UI._16dp : margin);
-					lp.rightMargin = margin;
-					lp.bottomMargin = margin;
-					panelEqualizer.setLayoutParams(lp);
-					if (screenNotSoLarge) {
-						lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
-						lp.bottomMargin = UI._16dp;
-						barBass.setLayoutParams(lp);
-						lp = (LinearLayout.LayoutParams)barVirtualizer.getLayoutParams();
-						lp.bottomMargin = UI._16dp;
-						barVirtualizer.setLayoutParams(lp);
-					}
+			panelControls.setPadding(UI.controlLargeMargin, UI.thickDividerSize, UI.controlLargeMargin, 0);
+		} else if (UI.isLargeScreen) {
+			UI.prepareViewPaddingForLargeScreen(panelControls, 0, (screenNotSoLarge && !UI.isLandscape) ? UI.controlMargin : UI.controlLargeMargin);
+			if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
+				panelControls.setOrientation(LinearLayout.VERTICAL);
+				panelControls.setWeightSum(0);
+				final int margin = (screenNotSoLarge ? UI.controlMargin : (UI.controlLargeMargin << 1));
+				lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				lp.leftMargin = margin;
+				lp.topMargin = margin;
+				lp.rightMargin = margin;
+				lp.bottomMargin = margin;
+				panelSecondary.setLayoutParams(lp);
+				lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0);
+				lp.weight = 1;
+				lp.leftMargin = margin;
+				lp.topMargin = (screenNotSoLarge ? UI.controlLargeMargin : margin);
+				lp.rightMargin = margin;
+				lp.bottomMargin = margin;
+				panelEqualizer.setLayoutParams(lp);
+				if (screenNotSoLarge) {
+					lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
+					lp.bottomMargin = UI.controlLargeMargin;
+					barBass.setLayoutParams(lp);
+					lp = (LinearLayout.LayoutParams)barVirtualizer.getLayoutParams();
+					lp.bottomMargin = UI.controlLargeMargin;
+					barVirtualizer.setLayoutParams(lp);
 				}
-			} else {
-				panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);
 			}
 		} else {
-			chkEqualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			chkBass.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			chkVirtualizer.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			/*chkReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			txtReverb.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);*/
-			if (btnChangeEffect != null)
-				btnChangeEffect.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-			panelControls.setPadding(UI._8dp, UI.thickDividerSize, UI._8dp, 0);
+			panelControls.setPadding(UI.controlMargin, UI.thickDividerSize, UI.controlMargin, 0);
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
 		prepareViewForMode();
@@ -496,22 +471,22 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			if (UI.usableScreenWidth > 0 && availableScreenW > UI.usableScreenWidth)
 				availableScreenW = UI.usableScreenWidth;
 			if (UI.isLargeScreen) {
-				availableScreenW -= ((UI.getViewPaddingForLargeScreen() << 1) + (UI._16dp << 1));
+				availableScreenW -= ((UI.getViewPaddingForLargeScreen() << 1) + (UI.controlLargeMargin << 1));
 				if (UI.isLandscape)
 					availableScreenW >>= 1;
 			} else {
-				availableScreenW -= (UI._8dp << 1);
+				availableScreenW -= (UI.controlMargin << 1);
 			}
 			while (hMargin > UI._1dp && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
 				hMargin--;
 			int size = 0, textSize = 0, bgY = 0, y = 0;
 			if (hMargin <= UI._1dp) {
 				//oops... the bars didn't fit inside the screen... we must adjust everything!
-				hMargin = ((bandCount >= 10) ? UI._1dp : UI._4dp);
+				hMargin = ((bandCount >= 10) ? UI._1dp : UI.controlSmallMargin);
 				size = UI.defaultControlSize - 1;
 				while (size > UI._4dp && ((bandCount * size) + ((bandCount - 1) * hMargin)) > availableScreenW)
 					size--;
-				textSize = size - (UI._8dp << 1) - (UI.strokeSize << 1) - (UI._1dp << 1);
+				textSize = size - (UI.controlMargin << 1) - (UI.strokeSize << 1) - (UI._1dp << 1);
 				if (textSize < UI._4dp)
 					textSize = UI._4dp;
 				UI.textPaint.setTextSize(textSize);

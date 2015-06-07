@@ -222,20 +222,20 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		panelTopHiding = 0;
 		panelTopAlpha = 1.0f;
 
-		lblTitle.setPadding(0, UI._4dp, 0, UI._4dp);
+		lblTitle.setPadding(0, UI.controlSmallMargin, 0, UI.controlSmallMargin);
 
 		//panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(info.isLandscape ? InterceptableLayout.LayoutParams.WRAP_CONTENT : InterceptableLayout.LayoutParams.MATCH_PARENT, info.isLandscape ? InterceptableLayout.LayoutParams.MATCH_PARENT : InterceptableLayout.LayoutParams.WRAP_CONTENT));
 		panelTop.setLayoutParams(new InterceptableLayout.LayoutParams(InterceptableLayout.LayoutParams.MATCH_PARENT, InterceptableLayout.LayoutParams.WRAP_CONTENT));
 		final int margin = (info.isLandscape ? UI.defaultControlSize : 0);
 		if (UI.extraSpacing)
-			panelTop.setPadding(UI._8dp + margin, UI._8dp, UI._8dp + margin, UI._8dp);
+			panelTop.setPadding(UI.controlMargin + margin, UI.controlMargin, UI.controlMargin + margin, UI.controlMargin);
 		else
 			panelTop.setPadding(margin, 0, margin, 0);
 		
 		LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)btnPrev.getLayoutParams();
 		//lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
 		//lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
-		lp.rightMargin = UI._16dp;
+		lp.rightMargin = UI.controlLargeMargin;
 		lp.bottomMargin = 0;
 		btnPrev.setLayoutParams(lp);
 		btnPrev.setIcon(UI.ICON_PREV);
@@ -243,7 +243,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		lp = (LinearLayout.LayoutParams)btnPlay.getLayoutParams();
 		//lp.rightMargin = (info.isLandscape ? 0 : UI._16dp);
 		//lp.bottomMargin = (info.isLandscape ? UI._16dp : 0);
-		lp.rightMargin = UI._16dp;
+		lp.rightMargin = UI.controlLargeMargin;
 		lp.bottomMargin = 0;
 		btnPlay.setLayoutParams(lp);
 		btnPlay.setIcon(Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);

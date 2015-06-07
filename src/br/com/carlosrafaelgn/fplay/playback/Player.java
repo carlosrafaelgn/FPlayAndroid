@@ -1704,10 +1704,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
-		int fade = opts.getInt(OPT_TRANSITION, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) ? UI.TRANSITION_FADE : UI.TRANSITION_NONE);
-		if (UI.lastVersionCode < 55 && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1)
-			fade = UI.TRANSITION_NONE;
-		UI.setTransition(fade);
+		UI.setTransition((UI.lastVersionCode < 74 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
 		//the volume control types changed on version 71
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
 			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);

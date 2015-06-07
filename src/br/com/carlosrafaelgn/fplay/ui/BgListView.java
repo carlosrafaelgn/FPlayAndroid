@@ -307,7 +307,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		} else {
 			UI.textPaint.setTextSize(UI._22sp);
 			final int w = viewWidth;
-			emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI._16dp << 1)) ? 0 : (w - (UI._16dp << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
+			emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI.controlLargeMargin << 1)) ? 0 : (w - (UI.controlLargeMargin << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
 		}
 	}
 	
@@ -354,8 +354,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				setCustomEmptyText(emptyLayout.getText());
 			switch (scrollBarType) {
 			case SCROLLBAR_LARGE:
-				scrollBarTop = topPadding + UI._4dp;
-				scrollBarBottom = h - bottomPadding - UI._4dp;
+				scrollBarTop = topPadding + UI.controlSmallMargin;
+				scrollBarBottom = h - bottomPadding - UI.controlSmallMargin;
 				updateScrollBarThumb();
 				break;
 			case SCROLLBAR_INDEXED:
@@ -585,8 +585,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				return;
 			}
 			scrollBarThumbHeight = (sbh * vh) / contentsHeight;
-			if (scrollBarThumbHeight < UI._8dp)
-				scrollBarThumbHeight = UI._8dp;
+			if (scrollBarThumbHeight < UI.controlMargin)
+				scrollBarThumbHeight = UI.controlMargin;
 			scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * ((getFirstVisiblePosition() * itemHeight) - v.getTop())) / (contentsHeight - vh));
 		}
 	}
@@ -612,8 +612,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			contentsHeight = scrollBarThumbHeight - (UI._1dp << 1);
 			if (contentsHeight > (scrollBarWidth - UI._1dp))
 				contentsHeight = (scrollBarWidth - UI._1dp);
-			if (contentsHeight < UI._2dp)
-				contentsHeight = UI._2dp;
+			if (contentsHeight < (UI._1dp << 1))
+				contentsHeight = (UI._1dp << 1);
 			UI.textPaint.setTextSize(contentsHeight);
 			final Paint.FontMetrics fm = UI.textPaint.getFontMetrics();
 			final int box = (int)(fm.descent - fm.ascent + 0.5f);
@@ -644,8 +644,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			super.setOnScrollListener(this);
 			ignorePadding = false;
 			this.scrollBarType = SCROLLBAR_LARGE;
-			scrollBarTop = topPadding + UI._4dp;
-			scrollBarBottom = viewHeight - bottomPadding - UI._4dp;
+			scrollBarTop = topPadding + UI.controlSmallMargin;
+			scrollBarBottom = viewHeight - bottomPadding - UI.controlSmallMargin;
 			scrollBarWidth = (UI.defaultControlSize >> 1);
 			updateScrollBarThumb();
 			break;
@@ -934,13 +934,13 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			case SCROLLBAR_LARGE:
 				UI.rect.left = scrollBarLeft + ((scrollBarWidth - UI.strokeSize) >> 1);
 				UI.rect.right = UI.rect.left + UI.strokeSize;
-				UI.rect.top = scrollBarTop + UI._4dp;
-				UI.rect.bottom = scrollBarBottom - UI._4dp;
+				UI.rect.top = scrollBarTop + UI.controlSmallMargin;
+				UI.rect.bottom = scrollBarBottom - UI.controlSmallMargin;
 				UI.fillRect(canvas, UI.color_divider);
 				if (scrollBarThumbHeight > 0) {
-					UI.rect.left = scrollBarLeft + UI._4dp;
+					UI.rect.left = scrollBarLeft + UI.controlSmallMargin;
 					UI.rect.top = scrollBarThumbTop;
-					UI.rect.right = scrollBarLeft + scrollBarWidth - UI._4dp;
+					UI.rect.right = scrollBarLeft + scrollBarWidth - UI.controlSmallMargin;
 					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
 					if (tracking) {
 						UI.fillRect(canvas, UI.color_divider_pressed);

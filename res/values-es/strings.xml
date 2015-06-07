@@ -258,6 +258,7 @@
     <string name="creamy">Cremoso</string>
     <string name="transition">Transición:</string>
     <string name="fade">Fade</string>
+    <string name="dissolve">Disolver</string>
     <string name="zoom">Zoom</string>
     <string name="repeat_all">Repetir todas</string>
     <string name="repeat_one">Repetir una</string>

@@ -258,6 +258,7 @@
     <string name="creamy">Сливочный</string>
     <string name="transition">Переход:</string>
     <string name="fade">Вянуть</string>
+    <string name="dissolve">Расплавлять</string>
     <string name="zoom">Зуммировать</string>
     <string name="repeat_all">Повтор всех</string>
     <string name="repeat_one">Повторите одну</string>

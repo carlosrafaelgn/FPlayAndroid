@@ -68,7 +68,7 @@ public final class TextIconDrawable extends Drawable {
 	
 	public TextIconDrawable(String icon) {
 		this.icon = icon;
-		this.width = UI.defaultCheckIconSize + UI._8sp + UI._8sp + 1;
+		this.width = UI.defaultCheckIconSize + UI.menuMargin;// UI._8sp + UI._8sp + 1;
 		this.height = UI.defaultCheckIconSize;
 		this.y = UI.defaultCheckIconSize >> 1;
 		this.outsideMenu = false;
@@ -79,7 +79,7 @@ public final class TextIconDrawable extends Drawable {
 	
 	public TextIconDrawable(String icon, int color) {
 		this.icon = icon;
-		this.width = UI.defaultCheckIconSize + UI._8sp;
+		this.width = UI.defaultCheckIconSize + UI.controlMargin;
 		this.height = UI.defaultCheckIconSize;
 		this.y = UI.defaultCheckIconSize >> 1;
 		this.outsideMenu = true;
@@ -90,7 +90,7 @@ public final class TextIconDrawable extends Drawable {
 	
 	public TextIconDrawable(String icon, int color, int size) {
 		this.icon = icon;
-		this.width = size + UI._8sp;
+		this.width = size + UI.controlMargin;
 		this.height = size;
 		this.y = size >> 1;
 		this.outsideMenu = true;
@@ -125,14 +125,14 @@ public final class TextIconDrawable extends Drawable {
 		paint.setColor((state == 0) ? color : UI.color_text_selected);
 		paint.setTextSize(height);
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top) >> 1) + y, paint);
-		if (!outsideMenu) {
+		/*if (!outsideMenu) {
 			UI.rect.left = rect.right - UI._8sp - 1;
 			UI.rect.right = UI.rect.left + UI.strokeSize;
 			UI.rect.top = rect.top + UI._2dp;
 			UI.rect.bottom = rect.bottom - UI._2dp;
 			paint.setColor((state == 0) ? UI.color_menu_border : UI.color_text_selected);
 			canvas.drawRect(UI.rect, paint);
-		}
+		}*/
 	}
 	
 	@Override

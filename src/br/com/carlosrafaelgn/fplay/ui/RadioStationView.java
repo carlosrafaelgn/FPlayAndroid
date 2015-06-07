@@ -59,7 +59,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	private static int height;
 
 	public static int getViewHeight() {
-		return (height = UI.verticalMargin + UI._22spBox + UI._2dp + UI._18spBox + (3 * UI._14spBox) + UI._4dp + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), UI.verticalMargin + (UI._14spBox << 1)) + UI._4dp);
+		return (height = UI.verticalMargin + UI._22spBox + UI.controlXSmallMargin + UI._18spBox + (3 * UI._14spBox) + UI.controlSmallMargin + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI.controlXSmallMargin + UI.strokeSize) : UI.controlXSmallMargin), UI.verticalMargin + (UI._14spBox << 1)) + UI.controlSmallMargin);
 	}
 
 	public RadioStationView(Context context) {
@@ -85,19 +85,20 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	}
 	
 	private void processEllipsis() {
-		if (width <= (UI._8dp << 1)) {
+		final int hMargin = (UI.controlMargin << 1);
+		if (width <= hMargin) {
 			ellipsizedTitle = "";
 			ellipsizedOnAir = "";
 			descriptionLines[0] = null;
 			tagsLines[0] = null;
 			return;
 		}
-		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - (UI._8dp << 1), true);
-		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - (UI._8dp << 1) - UI._18sp - UI._4dp, true);
+		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - hMargin, true);
+		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - hMargin - UI._18sp - UI.controlSmallMargin, true);
 		UI.textPaint.setTextSize(UI._14sp);
 		
 		//push the tags to the bottom!
-		StaticLayout layout = new StaticLayout(station.tags, UI.textPaint, width - (UI._8dp << 1) - UI.defaultControlSize, Alignment.ALIGN_NORMAL, 1, 0, false);
+		StaticLayout layout = new StaticLayout(station.tags, UI.textPaint, width - hMargin - UI.defaultControlSize, Alignment.ALIGN_NORMAL, 1, 0, false);
 		int i, visibleLines = Math.min(2, layout.getLineCount());
 		for (i = 0; i < visibleLines; i++)
 			tagsLines[i] = station.tags.substring(layout.getLineStart(i), layout.getLineEnd(i));
@@ -112,9 +113,9 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		tagsY = height - UI.verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
 		
 		//center the description vertically, considering all available space
-		final int top = UI.verticalMargin + UI._22spBox + UI._2dp + UI._18spBox, bottom = Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI._2dp + UI.strokeSize) : UI._2dp), UI.verticalMargin + (visibleLines * UI._14spBox));
+		final int top = UI.verticalMargin + UI._22spBox + UI.controlXSmallMargin + UI._18spBox, bottom = Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI.controlXSmallMargin + UI.strokeSize) : UI.controlXSmallMargin), UI.verticalMargin + (visibleLines * UI._14spBox));
 		
-		layout = new StaticLayout(station.description, UI.textPaint, width - (UI._8dp << 1), Alignment.ALIGN_NORMAL, 1, 0, false);
+		layout = new StaticLayout(station.description, UI.textPaint, width - hMargin, Alignment.ALIGN_NORMAL, 1, 0, false);
 		visibleLines = Math.min(3, layout.getLineCount());
 		for (i = 0; i < visibleLines; i++)
 			descriptionLines[i] = station.description.substring(layout.getLineStart(i), layout.getLineEnd(i));
@@ -240,19 +241,19 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI._8dp, UI.verticalMargin + UI._22spYinBox);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI._8dp, UI.verticalMargin + UI._22spBox + UI._2dp + ((UI._18spBox - UI._18sp) >> 1), UI._18sp, txtColor2);
-		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI._8dp + UI._18sp + UI._4dp, UI.verticalMargin + UI._22spBox + UI._2dp + UI._18spYinBox);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI.controlMargin, UI.verticalMargin + UI._22spYinBox);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.controlMargin, UI.verticalMargin + UI._22spBox + UI.controlXSmallMargin + ((UI._18spBox - UI._18sp) >> 1), UI._18sp, txtColor2);
+		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI.controlMargin + UI._18sp + UI.controlSmallMargin, UI.verticalMargin + UI._22spBox + UI.controlXSmallMargin + UI._18spYinBox);
 		int i = 0, y = descriptionY;
 		while (descriptionLines[i] != null) {
-			UI.drawText(canvas, descriptionLines[i], txtColor, UI._14sp, UI._8dp, y);
+			UI.drawText(canvas, descriptionLines[i], txtColor, UI._14sp, UI.controlMargin, y);
 			y += UI._14spBox;
 			i++;
 		}
 		i = 0;
 		y = tagsY;
 		while (tagsLines[i] != null) {
-			UI.drawText(canvas, tagsLines[i], txtColor2, UI._14sp, UI._8dp, y);
+			UI.drawText(canvas, tagsLines[i], txtColor2, UI._14sp, UI.controlMargin, y);
 			y += UI._14spBox;
 			i++;
 		}

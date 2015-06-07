@@ -853,19 +853,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.colorState_text_control_mode_reactive.getDefaultColor(), panelH >> 1);
 			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
 			
-			if (UI.isLowDpiScreen && !UI.isLargeScreen) {
-				final int lds = (UI.isLandscape ? UI.dpToPxI(12) : UI._8dp);
-				btnDecreaseVolume.setPadding(lds, lds, lds, lds);
-				btnIncreaseVolume.setPadding(lds, lds, lds, lds);
-				btnVolume.setPadding(lds, lds, lds, lds);
-				btnMenu.setPadding(lds, lds, lds, lds);
-			} else {
-				btnDecreaseVolume.setPadding(UI._16dp, UI._16dp, UI._16dp, UI._16dp);
-				btnIncreaseVolume.setPadding(UI._16dp, UI._16dp, UI._16dp, UI._16dp);
-				btnVolume.setPadding(UI._16dp, UI._16dp, UI._16dp, UI._16dp);
-				btnMenu.setPadding(UI._16dp, UI._16dp, UI._16dp, UI._16dp);
-			}
-			
+			final int lds = ((UI.isLowDpiScreen && !UI.isLargeScreen) ? (UI.isLandscape ? ((UI.controlMargin * 3) >> 1) : UI.controlMargin) : UI.controlLargeMargin);
+			btnDecreaseVolume.setPadding(lds, lds, lds, lds);
+			btnIncreaseVolume.setPadding(lds, lds, lds, lds);
+			btnVolume.setPadding(lds, lds, lds, lds);
+			btnMenu.setPadding(lds, lds, lds, lds);
+
 			if (UI.isLandscape) {
 				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (min * 9) / 100);
 				final int pa = (min * 7) / 100;
@@ -873,8 +866,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnNext.setPadding(pa, pa, pa, pa);
 			} else {
 				LinearLayout.LayoutParams p2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (max * 40) / 100);
-				p2.topMargin = UI._16dp;
-				p2.bottomMargin = UI._16dp;
+				p2.topMargin = UI.controlLargeMargin;
+				p2.bottomMargin = UI.controlLargeMargin;
 				lblTitle.setLayoutParams(p2);
 				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (max * 5) / 100);
 				final int ph = (min * 12) / 100, pv = (max * 12) / 100;
@@ -955,9 +948,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			
 			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
 			btnVolume = (BgButton)findViewById(R.id.btnVolume);
-
-			if (!UI.isLowDpiScreen || UI.isLargeScreen)
-				btnCancelSel.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 
 			if (UI.isLargeScreen) {
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblTitleStatic));
@@ -1048,21 +1038,21 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				} else {
 					panelSecondary.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
 					panelSelection.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
-					panelSecondary.setPadding(0, 0, 0, UI._8dp + UI.thickDividerSize);
+					panelSecondary.setPadding(0, 0, 0, UI.controlMargin + UI.thickDividerSize);
 				}
 				if (UI.extraSpacing) {
 					if (UI.isLandscape) {
-						panelControls.setPadding(UI._8dp, 0, UI._8dp, 0);
+						panelControls.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
 						final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)panelControls.getLayoutParams();
-						p.bottomMargin = UI._8dp;
+						p.bottomMargin = UI.controlMargin;
 						panelControls.setLayoutParams(p);
 					} else {
-						panelControls.setPadding(UI._8dp, 0, UI._8dp, UI._8dp);
+						panelControls.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin);
 					}
-					panelSelection.setPadding(UI._8dp, 0, UI._8dp, UI._8dp + (UI.isLandscape ? 0 : UI.thickDividerSize));
+					panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin + (UI.isLandscape ? 0 : UI.thickDividerSize));
 				} else {
 					if (!UI.isLandscape)
-						panelControls.setPadding(0, 0, 0, UI.isLowDpiScreen ? 0 : UI._8dp);
+						panelControls.setPadding(0, 0, 0, UI.isLowDpiScreen ? 0 : UI.controlMargin);
 					if (btnVolume != null) {
 						final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)btnVolume.getLayoutParams();
 						p.rightMargin = 0;

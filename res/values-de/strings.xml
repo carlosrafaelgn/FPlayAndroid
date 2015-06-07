@@ -258,6 +258,7 @@
     <string name="creamy">Kremig</string>
     <string name="transition">Übergang:</string>
     <string name="fade">Ein/Ausblenden</string>
+    <string name="dissolve">Schmelzen</string>
     <string name="zoom">Hinein/Herauszoomen</string>
     <string name="repeat_all">Alles Wiederholen</string>
     <string name="repeat_one">Einen Titel wiederholen</string>

@@ -261,11 +261,10 @@ public final class Song extends BaseItem {
 		}
 		int timeS = timeMS / 1000;
 		buf.append(timeS / 60);
-		buf.append('\'');
+		buf.append(':');
 		timeS %= 60;
 		if (timeS < 10) buf.append('0');
 		buf.append(timeS);
-		buf.append('\"');
 	}
 	
 	public static void formatTimeSec(int timeS, StringBuilder buf) {
@@ -275,10 +274,9 @@ public final class Song extends BaseItem {
 			return;
 		}
 		buf.append(timeS / 60);
-		buf.append('\'');
+		buf.append(':');
 		timeS %= 60;
 		if (timeS < 10) buf.append('0');
 		buf.append(timeS);
-		buf.append('\"');
 	}
 }

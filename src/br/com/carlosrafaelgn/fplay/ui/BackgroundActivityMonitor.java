@@ -57,17 +57,17 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 			if (parent != null && parent instanceof FrameLayout) {
 				notification = new TextView(activity);
 				FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-				p.leftMargin = UI._8dp;
-				p.topMargin = UI._8dp;
-				p.rightMargin = UI._8dp;
-				p.bottomMargin = UI._8dp;
+				p.leftMargin = UI.controlMargin;
+				p.topMargin = UI.controlMargin;
+				p.rightMargin = UI.controlMargin;
+				p.bottomMargin = UI.controlMargin;
 				p.gravity = Gravity.LEFT | Gravity.BOTTOM;
 				notification.setLayoutParams(p);
 				UI.smallText(notification);
 				UI.prepareNotificationViewColors(notification);
 				lastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : R.string.bt_active)));
 				notification.setText(lastMsg);
-				notification.setPadding(UI._2dp, UI._2dp, UI._2dp, UI._2dp);
+				notification.setPadding(UI.controlXSmallMargin, UI.controlXSmallMargin, UI.controlXSmallMargin, UI.controlXSmallMargin);
 				((FrameLayout)parent).addView(notification);
 				if (Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_INITIAL)
 					timer.start(250);

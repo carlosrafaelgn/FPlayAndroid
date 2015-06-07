@@ -357,38 +357,38 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			chkGenre.setText(R.string.genre);
 			chkGenre.setChecked(Player.lastRadioSearchWasByGenre);
 			chkGenre.setOnClickListener(this);
-			chkGenre.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			chkGenre.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			chkGenre.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._DLGsppad;
+			p.topMargin = UI.dialogMargin;
 			btnGenre = new Spinner(ctx);
 			btnGenre.setContentDescription(ctx.getText(R.string.genre));
 			btnGenre.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._DLGsppad << 1;
+			p.topMargin = UI.dialogMargin << 1;
 			chkTerm = new RadioButton(ctx);
 			chkTerm.setText(R.string.search_term);
 			chkTerm.setChecked(!Player.lastRadioSearchWasByGenre);
 			chkTerm.setOnClickListener(this);
-			chkTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			chkTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			chkTerm.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._DLGsppad;
+			p.topMargin = UI.dialogMargin;
 			txtTerm = new EditText(ctx);
 			txtTerm.setContentDescription(ctx.getText(R.string.search_term));
 			txtTerm.setText(Player.radioSearchTerm == null ? "" : Player.radioSearchTerm);
 			txtTerm.setOnClickListener(this);
-			txtTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			txtTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			txtTerm.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTerm.setSingleLine();
 			txtTerm.setLayoutParams(p);
 			
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._DLGsppad;
-			p.bottomMargin = UI._DLGsppad;
+			p.topMargin = UI.dialogMargin;
+			p.bottomMargin = UI.dialogMargin;
 			final TextView lbl = new TextView(ctx);
 			lbl.setAutoLinkMask(0);
 			lbl.setLinksClickable(true);
@@ -509,8 +509,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
-		rp.leftMargin = UI._8dp;
-		rp.rightMargin = UI._8dp;
+		rp.leftMargin = UI.controlMargin;
+		rp.rightMargin = UI.controlMargin;
 		sep2.setLayoutParams(rp);
 		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		btnPlay = (BgButton)findViewById(R.id.btnPlay);
@@ -595,9 +595,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		TextView txt = (TextView)convertView;
 		if (txt == null) {
 			txt = new TextView(getApplication());
-			txt.setPadding(UI._8dp, UI._4dp, UI._8dp, UI._4dp);
+			txt.setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
 			txt.setTypeface(UI.defaultTypeface);
-			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			txt.setTextColor(defaultTextColors);
 		}
 		txt.setText(getGenreString(position));
@@ -632,9 +632,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		TextView txt = (TextView)convertView;
 		if (txt == null) {
 			txt = new TextView(getApplication());
-			txt.setPadding(UI._DLGdppad, UI._8sp, UI._DLGdppad, UI._8sp);
+			txt.setPadding(UI.dialogMargin, UI.dialogDropDownVerticalMargin, UI.dialogMargin, UI.dialogDropDownVerticalMargin);
 			txt.setTypeface(UI.defaultTypeface);
-			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			txt.setTextColor(defaultTextColors);
 		}
 		txt.setText(getGenreString(position));

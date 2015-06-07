@@ -317,7 +317,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	static final class MenuDialog extends Dialog {
 		public MenuDialog(Context context, CustomContextMenu menu, View contents) {
-			super(context, R.style.TransparentDialog);
+			super(context, (UI.isLargeScreen || !UI.isLowDpiScreen) ? R.style.ShadowDialog : R.style.TransparentDialog);
 			setContentView(contents);
 			setCancelable(true);
 			setCanceledOnTouchOutside(true);
@@ -485,10 +485,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			}
 			final ScrollView scroll = new ScrollView(context);
 			final FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-			fp.leftMargin = UI._8dp;
-			fp.topMargin = UI._8dp;
-			fp.rightMargin = UI._8dp;
-			fp.bottomMargin = UI._8dp;
+			fp.leftMargin = UI.controlMargin;
+			fp.topMargin = UI.controlMargin;
+			fp.rightMargin = UI.controlMargin;
+			fp.bottomMargin = UI.controlMargin;
 			fp.gravity = Gravity.CENTER;
 			scroll.setLayoutParams(fp);
 			if (hasBackground) {

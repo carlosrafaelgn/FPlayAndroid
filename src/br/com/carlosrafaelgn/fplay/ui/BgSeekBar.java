@@ -214,12 +214,12 @@ public final class BgSeekBar extends View {
 		} else {
 			drawTextFirst = true;
 			textColor = UI.color_text_selected;
-			textX = UI._4dp;
+			textX = UI.controlSmallMargin;
 		}
 	}
 	
 	private void updateTextWidth() {
-		textWidth = UI._4dp + ((text == null || text.length() == 0) ? 0 : UI.measureText(text, textSize));
+		textWidth = UI.controlSmallMargin + ((text == null || text.length() == 0) ? 0 : UI.measureText(text, textSize));
 		updateTextX();
 		invalidate();
 	}
@@ -522,8 +522,8 @@ public final class BgSeekBar extends View {
 			final int right = UI.rect.right;
 			final int bottom = UI.rect.bottom;
 			final int color = UI.getBorderColor(state);
-			UI.rect.top = UI._8dp;
-			UI.rect.bottom -= UI._8dp;
+			UI.rect.top = UI.controlMargin;
+			UI.rect.bottom -= UI.controlMargin;
 			UI.strokeRect(canvas, color, UI.strokeSize);
 			if (UI.hasBorders) {
 				UI.rect.left = UI.strokeSize;
@@ -541,8 +541,8 @@ public final class BgSeekBar extends View {
 			if (!drawTextFirst)
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
 			if (sliderMode) {
-				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + (thumbWidth >> 1) - UI._8dp, 0, UI._16dp, color);
-				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI._8dp, bottom - UI._8dp, UI._16dp, color);
+				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + (thumbWidth >> 1) - UI.controlMargin, 0, UI.controlLargeMargin, color);
+				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI.controlMargin, bottom - UI.controlMargin, UI.controlLargeMargin, color);
 			} else {
 				if (UI.hasBorders) {
 					UI.rect.top = 0;

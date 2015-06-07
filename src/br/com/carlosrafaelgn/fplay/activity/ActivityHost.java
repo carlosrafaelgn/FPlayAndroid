@@ -32,10 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.view.KeyEvent;
@@ -56,6 +58,7 @@ import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
+import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 //
 //Handling Runtime Changes
@@ -165,39 +168,49 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				if (oldView != null) {
 					newView = view;
 					anim = new AnimationSet(true);
-					int x, y;
 					if (UI.transition == UI.TRANSITION_FADE) {
-						x = oldView.getWidth() >> 1;
-						y = 0;
-					} else {
-						x = UI.lastViewCenterLocation[0];
-						y = UI.lastViewCenterLocation[1];
-					}
-					try {
-						parent.getLocationOnScreen(UI.lastViewCenterLocation);
-						x -= UI.lastViewCenterLocation[0];
-						y -= UI.lastViewCenterLocation[1];
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
-					//leave prepared for next time
-					UI.storeViewCenterLocationForFade(null);
-					if (useFadeOutNextTime || forceFadeOut) {
-						if (UI.transition == UI.TRANSITION_FADE) {
-							anim.addAnimation(new ScaleAnimation(1, 0.75f, 1, 1, x, y));
-							anim.addAnimation(new TranslateAnimation(0, 0, 0, oldView.getHeight() >> 3));
+						//leave prepared for next time
+						UI.storeViewCenterLocationForFade(null);
+						if (useFadeOutNextTime || forceFadeOut) {
+							anim.addAnimation(new AlphaAnimation(1, 0));
 						} else {
-							anim.addAnimation(new ScaleAnimation(1, 0.3f, 1, 0.3f, x, y));
+							anim.addAnimation(new AlphaAnimation(0, 1));
 						}
-						anim.addAnimation(new AlphaAnimation(1, 0));
 					} else {
-						if (UI.transition == UI.TRANSITION_FADE) {
-							anim.addAnimation(new ScaleAnimation(0.75f, 1, 1, 1, x, y));
-							anim.addAnimation(new TranslateAnimation(0, 0, -(oldView.getHeight() >> 3), 0));
+						int x, y;
+						if (UI.transition == UI.TRANSITION_DISSOLVE) {
+							x = oldView.getWidth() >> 1;
+							y = 0;
 						} else {
-							anim.addAnimation(new ScaleAnimation(0.3f, 1, 0.3f, 1, x, y));
+							x = UI.lastViewCenterLocation[0];
+							y = UI.lastViewCenterLocation[1];
 						}
-						anim.addAnimation(new AlphaAnimation(0, 1));
+						try {
+							parent.getLocationOnScreen(UI.lastViewCenterLocation);
+							x -= UI.lastViewCenterLocation[0];
+							y -= UI.lastViewCenterLocation[1];
+						} catch (Throwable ex) {
+							ex.printStackTrace();
+						}
+						//leave prepared for next time
+						UI.storeViewCenterLocationForFade(null);
+						if (useFadeOutNextTime || forceFadeOut) {
+							if (UI.transition == UI.TRANSITION_DISSOLVE) {
+								anim.addAnimation(new ScaleAnimation(1, 0.75f, 1, 1, x, y));
+								anim.addAnimation(new TranslateAnimation(0, 0, 0, oldView.getHeight() >> 3));
+							} else {
+								anim.addAnimation(new ScaleAnimation(1, 0.3f, 1, 0.3f, x, y));
+							}
+							anim.addAnimation(new AlphaAnimation(1, 0));
+						} else {
+							if (UI.transition == UI.TRANSITION_DISSOLVE) {
+								anim.addAnimation(new ScaleAnimation(0.75f, 1, 1, 1, x, y));
+								anim.addAnimation(new TranslateAnimation(0, 0, -(oldView.getHeight() >> 3), 0));
+							} else {
+								anim.addAnimation(new ScaleAnimation(0.3f, 1, 0.3f, 1, x, y));
+							}
+							anim.addAnimation(new AlphaAnimation(0, 1));
+						}
 					}
 					anim.setDuration(330);
 					anim.setInterpolator(new AccelerateDecelerateInterpolator());
@@ -381,8 +394,20 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 	}
 
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	public void updateSystemColors() {
+		int bgColor = UI.color_window;
+		int turns = 0;
+		do {
+			bgColor = ColorUtils.blend(bgColor, 0xff000000, 0.8f);
+			turns++;
+		} while (ColorUtils.contrastRatio(bgColor, 0xffffffff) < 5 && turns < 5);
+		getWindow().setNavigationBarColor(bgColor);
+		getWindow().setStatusBarColor(bgColor);
+	}
+
 	@Override
-	protected final void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState) {
 		//StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
 		//	.detectAll()
 		//	.penaltyLog()
@@ -405,8 +430,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 		MainHandler.initialize();
 		UI.initialize(getApplication(), this);
-		if (Player.startService(getApplication()))
-			UI.setAndroidThemeAccordingly(this);
+		Player.startService(getApplication());
+		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
 		Player.alreadySelected = false; //fix the initial selection when the app is started from the widget
 		top = new ActivityMain();

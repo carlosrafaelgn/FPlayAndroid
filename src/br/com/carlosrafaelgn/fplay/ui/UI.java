@@ -79,6 +79,7 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
 import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
@@ -91,7 +92,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 73;
+	public static final int VERSION_CODE = 74;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -122,7 +123,8 @@ public final class UI {
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
 	public static final int TRANSITION_ZOOM = 2;
-	
+	public static final int TRANSITION_DISSOLVE = 3;
+
 	public static final int MSG_ADD = 0x0001;
 	public static final int MSG_PLAY = 0x0002;
 	
@@ -238,7 +240,6 @@ public final class UI {
 	public static final int IDX_COLOR_FOCUSED_BORDER = 22;
 	public static final int IDX_COLOR_FOCUSED_PRESSED = 23;
 	
-	public static final int color_transparent = 0x00000000;
 	public static int color_window;
 	public static int color_control_mode;
 	public static int color_visualizer, color_visualizer565;
@@ -394,8 +395,8 @@ public final class UI {
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders;
-	public static int _1dp, _2dp, _4dp, _8dp, _16dp, _2sp, _4sp, _8sp, _16sp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, _DLGsp, _DLGsppad, _DLGdppad,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType, verticalMargin;
+	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
@@ -638,7 +639,7 @@ public final class UI {
 		}
 		updateDecimalSeparator();
 		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
-			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
+			setUsingAlternateTypeface(context, true);
 			return true;
 		} else if (reloadEmptyListString) {
 			emptyListString = context.getText(R.string.empty_list).toString();
@@ -710,28 +711,26 @@ public final class UI {
 		thickDividerSize = dpToPxI(1.5f);// ((_1dp >= 2) ? _1dp : 2);
 		if (thickDividerSize < 2) thickDividerSize = 2;
 		if (thickDividerSize <= _1dp) thickDividerSize = _1dp + 1;
-		_2dp = dpToPxI(2);
 		_4dp = dpToPxI(4);
-		_8dp = dpToPxI(8);
-		_16dp = dpToPxI(16);
-		_2sp = spToPxI(2);
-		_4sp = spToPxI(4);
-		_8sp = spToPxI(8);
-		_16sp = spToPxI(16);
 		_22sp = spToPxI(22);
 		_18sp = spToPxI(18);
 		_14sp = spToPxI(14);
+		controlLargeMargin = dpToPxI(16);
+		controlMargin = controlLargeMargin >> 1;
+		controlSmallMargin = controlLargeMargin >> 2;
+		controlXSmallMargin = controlLargeMargin >> 3;
+		menuMargin = controlMargin;
 		if (isLargeScreen || !isLowDpiScreen) {
-			_DLGsp = _18sp;
-			_DLGsppad = _8sp;
-			_DLGdppad = _8dp;
+			dialogTextSize = _18sp;
+			dialogMargin = controlMargin;
+			menuMargin += controlSmallMargin;
 		} else {
-			_DLGsp = _16sp;
-			_DLGsppad = _4sp;
-			_DLGdppad = _4dp;
+			dialogTextSize = _14sp;
+			dialogMargin = controlMargin >> 1;
 		}
+		dialogDropDownVerticalMargin = (dialogMargin * 3) >> 1;
 		defaultControlContentsSize = dpToPxI(32);
-		defaultControlSize = defaultControlContentsSize + (UI._8sp << 1);
+		defaultControlSize = defaultControlContentsSize + (controlMargin << 1);
 		defaultCheckIconSize = dpToPxI(24); //both descent and ascent of iconsTypeface are 0!
 		if (!setForcedLocale(context, activityContext, forcedLocale, false))
 			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
@@ -1223,7 +1222,7 @@ public final class UI {
 		}
 	}
 
-	public static void setTheme(Activity activity, int theme) {
+	public static void setTheme(ActivityHost activityHost, int theme) {
 		UI.theme = theme;
 		Gradient.purgeAll();
 		internalToast = null;
@@ -1254,23 +1253,23 @@ public final class UI {
 			loadFPlayTheme();
 			break;
 		}
-		if (activity != null)
-			setAndroidThemeAccordingly(activity);
+		if (activityHost != null)
+			setAndroidThemeAccordingly(activityHost);
 	}
 
 	public static boolean isAndroidThemeLight() {
 		return ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) && (ColorUtils.relativeLuminance(color_list) >= 0.5));
 	}
 
-	public static void setAndroidThemeAccordingly(Activity activity) {
+	public static void setAndroidThemeAccordingly(ActivityHost activityHost) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			setAndroidThemeAccordingly21(activity);
+			setAndroidThemeAccordingly21(activityHost);
 		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)
-			setAndroidThemeAccordingly13(activity);
+			setAndroidThemeAccordingly13(activityHost);
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-	private static void setAndroidThemeAccordingly13(Activity activity) {
+	private static void setAndroidThemeAccordingly13(ActivityHost activityHost) {
 		//Even though android.R.style.Theme_Light_NoTitleBar_Fullscreen
 		//is available on API 10, 11 and 12, it DOES NOT make dialogs's
 		//background light :(
@@ -1280,17 +1279,18 @@ public final class UI {
 		//
 		//http://android-developers.blogspot.com.br/2012/01/holo-everywhere.html
 		if (isAndroidThemeLight())
-			activity.setTheme(android.R.style.Theme_Holo_Light_NoActionBar_Fullscreen);
+			activityHost.setTheme(android.R.style.Theme_Holo_Light_NoActionBar_Fullscreen);
 		else
-			activity.setTheme(android.R.style.Theme_Holo_NoActionBar_Fullscreen);
+			activityHost.setTheme(android.R.style.Theme_Holo_NoActionBar_Fullscreen);
 	}
 
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	private static void setAndroidThemeAccordingly21(Activity activity) {
+	private static void setAndroidThemeAccordingly21(ActivityHost activityHost) {
 		if (isAndroidThemeLight())
-			activity.setTheme(android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
+			activityHost.setTheme(android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
 		else
-			activity.setTheme(android.R.style.Theme_Material_NoActionBar_Fullscreen);
+			activityHost.setTheme(android.R.style.Theme_Material_NoActionBar_Fullscreen);
+		activityHost.updateSystemColors();
 	}
 
 	public static int getAndroidThemeColor(Context context, int style, int attribute) {
@@ -1307,8 +1307,9 @@ public final class UI {
 
 	public static void setTransition(int transition) {
 		switch (transition) {
-			case TRANSITION_FADE:
+			case TRANSITION_DISSOLVE:
 			case TRANSITION_ZOOM:
+			case TRANSITION_FADE:
 				UI.transition = transition;
 				break;
 			default:
@@ -1319,10 +1320,12 @@ public final class UI {
 
 	public static String getTransitionString(Context context, int transition) {
 		switch (transition) {
-			case TRANSITION_FADE:
-				return context.getText(R.string.fade).toString();
+			case TRANSITION_DISSOLVE:
+				return context.getText(R.string.dissolve).toString();
 			case TRANSITION_ZOOM:
 				return context.getText(R.string.zoom).toString();
+			case TRANSITION_FADE:
+				return context.getText(R.string.fade).toString();
 			default:
 				return context.getText(R.string.none).toString();
 		}
@@ -1361,7 +1364,7 @@ public final class UI {
 
 	public static void setVerticalMarginLarge(boolean isVerticalMarginLarge) {
 		UI.isVerticalMarginLarge = isVerticalMarginLarge;
-		UI.verticalMargin = (isVerticalMarginLarge ? _16sp : _8sp);
+		UI.verticalMargin = (isVerticalMarginLarge ? controlLargeMargin : controlMargin);
 	}
 
 	public static boolean showMsg(Activity activity, int msg) {
@@ -1603,7 +1606,7 @@ public final class UI {
 			prepareNotificationViewColors(v);
 			v.setGravity(Gravity.CENTER);
 			v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-			v.setPadding(_8dp, _8dp, _8dp, _8dp);
+			v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
 			t.setView(v);
 			t.setDuration(Toast.LENGTH_LONG);
 			internalToast = t;
@@ -1622,7 +1625,7 @@ public final class UI {
 		v.setBackgroundDrawable(background);
 		v.setGravity(Gravity.CENTER);
 		v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-		v.setPadding(_8dp, _8dp, _8dp, _8dp);
+		v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
 		v.setText(text);
 		t.setView(v);
 		t.setDuration(longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
@@ -1638,13 +1641,14 @@ public final class UI {
 		}
 		mnu.setBackground(hasBorders ? new BorderDrawable(color_menu_border, color_menu, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_menu));
 		mnu.setPadding(0);
-		mnu.setItemTextSizeInPixels(_22sp);
+		mnu.setItemTextSizeInPixels(_LargeItemsp);
 		mnu.setItemTextColor(colorState_text_menu_reactive);
+		mnu.setItemPadding(menuMargin);
 		mnu.setItemGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 	}
 	
 	public static void separator(Menu menu, int groupId, int order) {
-		((CustomContextMenu)menu).addSeparator(groupId, order, color_menu_border, strokeSize, _8dp, _2dp, _8dp, _2dp);		
+		((CustomContextMenu)menu).addSeparator(groupId, order, color_menu_border, strokeSize, defaultCheckIconSize + menuMargin + menuMargin, controlXSmallMargin, menuMargin, controlXSmallMargin);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -1659,14 +1663,14 @@ public final class UI {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 				UI.removeSplitTouch(l);
 			l.setOrientation(LinearLayout.VERTICAL);
-			l.setPadding(_DLGdppad, _DLGdppad, _DLGdppad, _DLGdppad);
+			l.setPadding(dialogMargin, dialogMargin, dialogMargin, dialogMargin);
 			l.setBaselineAligned(false);
 			return l;
 		}
 		final TextView txt = new TextView(context);
 		txt.setText(messageOnly);
-		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, _DLGsp);
-		txt.setPadding(_DLGdppad << 1, _DLGdppad << 1, _DLGdppad << 1, _DLGdppad << 1);
+		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
+		txt.setPadding(dialogMargin << 1, dialogMargin << 1, dialogMargin << 1, dialogMargin << 1);
 		return txt;
 	}
 	
@@ -1762,7 +1766,7 @@ public final class UI {
 		final int b = (bottomBorder ? thickDividerSize : 0);
 		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, true));
 		if (extraSpacing)
-			view.setPadding(_8dp, _8dp + t, _8dp, _8dp + b);
+			view.setPadding(controlMargin, controlMargin + t, controlMargin, controlMargin + b);
 		else
 			view.setPadding(0, t, 0, b);
 	}
@@ -1771,7 +1775,7 @@ public final class UI {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
 		if (extraSpacing)
-			view.setPadding(_8dp, _8dp + t, _8dp, _8dp + b);
+			view.setPadding(controlMargin, controlMargin + t, controlMargin, controlMargin + b);
 		else
 			view.setPadding(0, t, 0, b);
 	}
@@ -1782,7 +1786,7 @@ public final class UI {
 		final int b = (bottomBorder ? thickDividerSize : 0);
 		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, true));
 		if (extraSpacing)
-			view.setPadding(_8dp, _8dp + t, 0, _8dp + b);
+			view.setPadding(controlMargin, controlMargin + t, 0, controlMargin + b);
 		else
 			view.setPadding(0, t, 0, b);
 	}

@@ -84,9 +84,9 @@ public final class BgButton extends Button {
 		super.setDrawingCacheEnabled(false);
 		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
-		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.isLargeScreen ? UI._22sp : UI._18sp);
 		super.setGravity(Gravity.CENTER);
-		super.setPadding(UI._8sp, UI._8sp, UI._8sp, UI._8sp);
+		super.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
 		super.setFocusableInTouchMode(!UI.hasTouch);
 		super.setFocusable(true);
 		//Seriously?! Feature?!?!? :P
@@ -108,7 +108,7 @@ public final class BgButton extends Button {
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 		p.height = UI.defaultControlSize;
 		super.setLayoutParams(p);
-		super.setPadding(UI._8sp, 0, UI._8sp, 0);
+		super.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
 	}
 	
 	public void setIconNoChanges(String icon) {

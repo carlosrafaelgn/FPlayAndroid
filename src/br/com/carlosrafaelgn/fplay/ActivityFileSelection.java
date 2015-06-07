@@ -326,16 +326,16 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 
 				TextView lbl = new TextView(ctx);
 				lbl.setText(format(R.string.msg_enter_name, itemType));
-				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 				l.addView(lbl);
 
 				txtSaveAsName = new EditText(ctx);
 				txtSaveAsName.setContentDescription(lbl.getText());
-				txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+				txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 				txtSaveAsName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 				txtSaveAsName.setSingleLine();
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-				p.topMargin = UI._DLGsppad;
+				p.topMargin = UI.dialogMargin;
 				txtSaveAsName.setLayoutParams(p);
 				if (fileList != null && fileList.getSelection() >= 0)
 					txtSaveAsName.setText(fileList.getItemT(fileList.getSelection()).name);
@@ -445,8 +445,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 			rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 			rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
-			rp.leftMargin = UI._8dp;
-			rp.rightMargin = UI._8dp;
+			rp.leftMargin = UI.controlMargin;
+			rp.rightMargin = UI.controlMargin;
 			sep2.setLayoutParams(rp);
 			sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 			btnPlay = (BgButton)findViewById(R.id.btnPlay);

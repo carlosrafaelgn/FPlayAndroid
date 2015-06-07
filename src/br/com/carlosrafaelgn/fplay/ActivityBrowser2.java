@@ -96,8 +96,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			sep.setVisibility(View.GONE);
 			chkAll.setVisibility(View.GONE);
 			rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
-			rp.leftMargin = UI._8dp;
-			rp.rightMargin = UI._8dp;
+			rp.leftMargin = UI.controlMargin;
+			rp.rightMargin = UI.controlMargin;
 			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			chkFavorite.setNextFocusUpId(R.id.list);
 			btnHome.setLayoutParams(rp);
@@ -112,17 +112,15 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
 			rp.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
 			lblPath.setLayoutParams(rp);
-			if (UI.isLargeScreen)
-				lblPath.setPadding(UI._4dp, UI._4dp - UI.thickDividerSize, UI._4dp, UI._4dp);
-			else
-				lblPath.setPadding(UI._2dp, UI._2dp - UI.thickDividerSize, UI._2dp, UI._2dp);
+			final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
+			lblPath.setPadding(m, m - UI.thickDividerSize, m, m);
 			UI.prepareControlContainerPaddingOnly(panelSecondary, true, false);
 			btnGoBackToPlayer.setVisibility(View.VISIBLE);
 			sep.setVisibility(View.VISIBLE);
 			chkAll.setVisibility(View.VISIBLE);
 			rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
-			rp.leftMargin = UI._8dp;
-			rp.rightMargin = UI._8dp;
+			rp.leftMargin = UI.controlMargin;
+			rp.rightMargin = UI.controlMargin;
 			rp.addRule(RelativeLayout.LEFT_OF, R.id.sep);
 			chkFavorite.setNextFocusUpId(R.id.btnGoBackToPlayer);
 			btnHome.setLayoutParams(rp);
@@ -574,31 +572,31 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			
 			TextView lbl = new TextView(ctx);
 			lbl.setText(R.string.url);
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			l.addView(lbl);
 			
 			txtURL = new EditText(ctx);
 			txtURL.setContentDescription(ctx.getText(R.string.url));
-			txtURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			txtURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			txtURL.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
 			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._DLGsppad;
-			p.bottomMargin = UI._DLGsppad << 1;
+			p.topMargin = UI.dialogMargin;
+			p.bottomMargin = UI.dialogMargin << 1;
 			txtURL.setLayoutParams(p);
 			l.addView(txtURL);
 			
 			lbl = new TextView(ctx);
 			lbl.setText(R.string.description);
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			l.addView(lbl);
 			
 			txtTitle = new EditText(ctx);
 			txtTitle.setContentDescription(ctx.getText(R.string.description));
-			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._DLGsp);
+			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 			txtTitle.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTitle.setSingleLine();
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI._DLGsppad;
+			p.topMargin = UI.dialogMargin;
 			txtTitle.setLayoutParams(p);
 			l.addView(txtTitle);
 			
@@ -755,8 +753,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.chkAll);
-		rp.leftMargin = UI._8dp;
-		rp.rightMargin = UI._8dp;
+		rp.leftMargin = UI.controlMargin;
+		rp.rightMargin = UI.controlMargin;
 		sep.setLayoutParams(rp);
 		sep.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		chkAll = (BgButton)findViewById(R.id.chkAll);
@@ -776,8 +774,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
-		rp.leftMargin = UI._8dp;
-		rp.rightMargin = UI._8dp;
+		rp.leftMargin = UI.controlMargin;
+		rp.rightMargin = UI.controlMargin;
 		sep2.setLayoutParams(rp);
 		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		btnPlay = (BgButton)findViewById(R.id.btnPlay);
@@ -793,7 +791,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			if (UI.extraSpacing) {
 				final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
 				lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-				lp.rightMargin = UI._8dp;
+				lp.rightMargin = UI.controlMargin;
 				btnURL.setLayoutParams(lp);
 			}
 			UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, true);

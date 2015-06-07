@@ -258,6 +258,7 @@
     <string name="creamy">Вершковий</string>
     <string name="transition">Перехід:</string>
     <string name="fade">В\'янути</string>
+    <string name="dissolve">Розплавляти</string>
     <string name="zoom">Зумміровать</string>
     <string name="repeat_all">Повтор всіх</string>
     <string name="repeat_one">Повторіть одну</string>
