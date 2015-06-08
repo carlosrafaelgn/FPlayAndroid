@@ -1258,7 +1258,7 @@ public final class UI {
 	}
 
 	public static boolean isAndroidThemeLight() {
-		return ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) && (ColorUtils.relativeLuminance(color_list) >= 0.5));
+		return ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) && (ColorUtils.relativeLuminance(color_menu) >= 0.5));
 	}
 
 	public static void setAndroidThemeAccordingly(ActivityHost activityHost) {

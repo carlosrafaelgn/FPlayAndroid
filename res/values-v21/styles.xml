@@ -10,4 +10,10 @@
         <!-- API 21 theme customizations can go here. -->
     </style>
 
+    <style name="MenuDialog" parent="@android:style/Theme.Material.Dialog">
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
 </resources>

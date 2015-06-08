@@ -317,7 +317,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	static final class MenuDialog extends Dialog {
 		public MenuDialog(Context context, CustomContextMenu menu, View contents) {
-			super(context, (UI.isLargeScreen || !UI.isLowDpiScreen) ? R.style.ShadowDialog : R.style.TransparentDialog);
+			super(context, R.style.MenuDialog);
 			setContentView(contents);
 			setCancelable(true);
 			setCanceledOnTouchOutside(true);

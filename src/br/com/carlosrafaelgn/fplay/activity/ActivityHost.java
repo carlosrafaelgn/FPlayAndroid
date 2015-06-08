@@ -74,6 +74,21 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private View oldView, newView;
 	private AnimationSet anim;
 
+	private void setEnabledCheckForGroup(View view, boolean enabled) {
+		view.setEnabled(enabled);
+		if (view instanceof ViewGroup)
+			setEnabled((ViewGroup)view, enabled);
+	}
+
+	private void setEnabled(ViewGroup viewGroup, boolean enabled) {
+		for (int i = viewGroup.getChildCount() - 1; i >= 0; i--) {
+			View view = viewGroup.getChildAt(i);
+			view.setEnabled(enabled);
+			if (view instanceof ViewGroup)
+				setEnabled((ViewGroup)view, enabled);
+		}
+	}
+
 	private void updateTitle(CharSequence title, boolean announce) {
 		setTitle(title);
 		//announce should be false when starting/finishing an activity from a menu
@@ -102,7 +117,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					oldView = null;
 				}
 				if (newView != null) {
-					newView.setEnabled(true);
+					setEnabledCheckForGroup(newView, true);
 					newView = null;
 				}
 				parent = null;
@@ -226,8 +241,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (anim != null) {
 				BackgroundActivityMonitor.stop();
 				anim.setAnimationListener(this);
-				oldView.setEnabled(false);
-				view.setEnabled(false);
+				setEnabledCheckForGroup(oldView, false);
+				setEnabledCheckForGroup(view, false);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 				if (useFadeOutNextTime || forceFadeOut) {
 					oldView.bringToFront();
