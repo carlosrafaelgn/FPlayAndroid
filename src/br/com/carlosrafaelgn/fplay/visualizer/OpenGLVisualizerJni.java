@@ -759,7 +759,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		return true;
 	}
 
-	//Runs on ANY thread (returned value MUST always be the same)
+	//Runs on ANY thread
 	@Override
 	public int dataTypeRequired() {
 		return DATA_FFT;
@@ -801,7 +801,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				else
 					visualizer.getWaveForm(waveform);
 			}
-			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | SimpleVisualizerJni.ComputeFFT);
+			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | DATA_FFT);
 			ignoreInput ^= SimpleVisualizerJni.IgnoreInput;
 			//requestRender();
 		}

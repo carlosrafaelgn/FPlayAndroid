@@ -102,6 +102,15 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 		}
 	}
 
+	public void updateVisualizerDataType() {
+		if (visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+			if ((visualizer.dataTypeRequired() & Visualizer.DATA_VUMETER) != 0)
+				setScalingModeVUMeter();
+			else
+				setScalingModeFFT();
+		}
+	}
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private void setScalingModeFFT() {
 		try {
@@ -110,6 +119,8 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			disableRms();
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -126,6 +137,8 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			disableRms();
 	}
 
 	@TargetApi(Build.VERSION_CODES.KITKAT)
@@ -177,12 +190,7 @@ public class FxVisualizer implements Runnable, Timer.TimerHandler {
 			audioSessionId = -1;
 		}
 		if (fxVisualizer != null) {
-			if (visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-				if ((visualizer.dataTypeRequired() & Visualizer.DATA_VUMETER) != 0)
-					setScalingModeVUMeter();
-				else
-					setScalingModeFFT();
-			}
+			updateVisualizerDataType();
 			return true;
 		}
 		return false;

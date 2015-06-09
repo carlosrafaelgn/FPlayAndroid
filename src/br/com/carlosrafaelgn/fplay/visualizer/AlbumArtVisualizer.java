@@ -159,7 +159,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		return false;
 	}
 
-	//Runs on ANY thread (returned value MUST always be the same)
+	//Runs on ANY thread
 	@Override
 	public int dataTypeRequired() {
 		return DATA_NONE;

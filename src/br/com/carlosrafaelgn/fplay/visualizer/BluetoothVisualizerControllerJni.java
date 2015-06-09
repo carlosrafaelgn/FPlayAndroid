@@ -99,7 +99,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	private final SlimLock lock;
 	private final AtomicInteger state;
 	private BluetoothConnectionManager bt;
-	private volatile int size, packetsSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength;
+	private volatile int size, packetsSent, version, framesToSkip, framesToSkipOriginal, stateVolume, stateSongPosition, stateSongLength, dataType;
 	private volatile boolean connected, transmitting;
 	private boolean jniCalled, startTransmissionOnConnection;
 	private int lastPlayerCommandTime, ignoreInput;
@@ -138,6 +138,10 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 		framesToSkip = framesToSkipOriginal;
 	}
 
+	public void syncDataType() {
+		dataType = (Player.isBluetoothUsingVUMeter() ? (DATA_FFT | DATA_VUMETER) : DATA_FFT);
+	}
+
 	public void startTransmission() {
 		if (connected && !transmitting) {
 			if (!jniCalled) {
@@ -146,6 +150,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 				syncSize();
 				syncSpeed();
 				syncFramesToSkip();
+				syncDataType();
 			} else {
 				framesToSkip = framesToSkipOriginal;
 			}
@@ -254,10 +259,10 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 		return false;
 	}
 
-	//Runs on ANY thread (returned value MUST always be the same)
+	//Runs on ANY thread
 	@Override
 	public int dataTypeRequired() {
-		return DATA_FFT;
+		return dataType;
 	}
 
 	//Runs on a SECONDARY thread
@@ -301,10 +306,10 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 				}
 				if (framesToSkip <= 0) {
 					framesToSkip = framesToSkipOriginal;
-					bt.getOutputStream().write(waveform, 0, SimpleVisualizerJni.commonProcess(waveform, size | ignoreInput | SimpleVisualizerJni.ComputeFFT));
+					bt.getOutputStream().write(waveform, 0, SimpleVisualizerJni.commonProcess(waveform, size | ignoreInput | dataType));
 					packetsSent++;
 				} else {
-					SimpleVisualizerJni.commonProcess(waveform, ignoreInput | SimpleVisualizerJni.ComputeFFT);
+					SimpleVisualizerJni.commonProcess(waveform, ignoreInput | dataType);
 					framesToSkip--;
 				}
 				ignoreInput ^= SimpleVisualizerJni.IgnoreInput;

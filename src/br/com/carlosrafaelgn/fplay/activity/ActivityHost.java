@@ -117,7 +117,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					oldView = null;
 				}
 				if (newView != null) {
-					setEnabledCheckForGroup(newView, true);
+					//setEnabledCheckForGroup(newView, true);
 					newView = null;
 				}
 				parent = null;
@@ -242,7 +242,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				BackgroundActivityMonitor.stop();
 				anim.setAnimationListener(this);
 				setEnabledCheckForGroup(oldView, false);
-				setEnabledCheckForGroup(view, false);
+				//setEnabledCheckForGroup(view, false);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 				if (useFadeOutNextTime || forceFadeOut) {
 					oldView.bringToFront();

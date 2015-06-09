@@ -1462,6 +1462,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	//I know this is far from "organized"... but this is the only way to prevent
 	//the class BluetoothVisualizerController from loading into memory without need!!!
 	public static Object bluetoothVisualizerController;
+	//bluetoothVisualizerConfig bits:
+	//0 1 2 = size
+	//3 4 = speed
+	//5 6 7 8 = frames to skip (index)
+	//9 = vu meter
 	public static int bluetoothVisualizerLastErrorMessage, bluetoothVisualizerConfig, bluetoothVisualizerState;
 	public static final int BLUETOOTH_VISUALIZER_STATE_INITIAL = 0;
 	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTING = 1;
@@ -1537,6 +1542,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static void setBluetoothVisualizerFramesToSkipIndex(int framesToSkipIndex) {
 		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex)) << 5);
+	}
+
+	public static boolean isBluetoothUsingVUMeter() {
+		return ((bluetoothVisualizerConfig & (1 << 9)) != 0);
+	}
+
+	public static void setBluetoothUsingVUMeter(boolean usingVUMeter) {
+		if (usingVUMeter)
+			bluetoothVisualizerConfig |= (1 << 9);
+		else
+			bluetoothVisualizerConfig &= ~(1 << 9);
 	}
 
 	private static final int OPT_VOLUME = 0x0000;

@@ -59,8 +59,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 
-	static final int ComputeFFT = 0x0100;
-	static final int ComputeVUMeter = 0x0200;
+	//ComputeFFT and ComputeVUMeter are in Visualizer
 	static final int IgnoreInput = 0x0400;
 	static final int ComputeBeatDetection1 = 0x1000;
 	static final int ComputeBeatDetection2 = 0x2000;
@@ -242,7 +241,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		return true;
 	}
 
-	//Runs on ANY thread (returned value MUST always be the same)
+	//Runs on ANY thread
 	@Override
 	public int dataTypeRequired() {
 		return DATA_FFT;
@@ -290,9 +289,9 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 						visualizer.getWaveForm(waveform);
 				}
 				if (!voice)
-					process(waveform, surface, ignoreInput | ComputeFFT);
+					process(waveform, surface, ignoreInput | DATA_FFT);
 				else
-					processVoice(waveform, surface, ignoreInput | ComputeFFT);
+					processVoice(waveform, surface, ignoreInput | DATA_FFT);
 				ignoreInput ^= SimpleVisualizerJni.IgnoreInput;
 			}
 		} finally {
