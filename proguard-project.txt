@@ -31,7 +31,7 @@
 # added -optimizations !code/simplification/cast,!field/*,!class/merging/*
 # removed -dontusemixedcaseclassnames
 # **********************************************************************************************************
-
+-printmapping build/outputs/mapping/release/mapping.txt
 -allowaccessmodification
 -repackageclasses ''
 -keep public interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer
