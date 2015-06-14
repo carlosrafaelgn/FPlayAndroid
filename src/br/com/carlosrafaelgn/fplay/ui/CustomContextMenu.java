@@ -352,7 +352,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	private CustomContextMenu(View view, View.OnCreateContextMenuListener listener, Activity closeListener, Item parentItem, CustomContextMenu parentMenu) {
 		this.context = view.getContext();
-		this.items = new ArrayList<Item>(8);
+		this.items = new ArrayList<>(8);
 		this.listener = listener;
 		this.closeListener = closeListener;
 		this.view = view;

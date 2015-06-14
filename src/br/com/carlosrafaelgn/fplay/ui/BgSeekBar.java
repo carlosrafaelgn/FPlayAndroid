@@ -50,15 +50,15 @@ import android.view.accessibility.AccessibilityEvent;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class BgSeekBar extends View {
-	public static interface OnBgSeekBarChangeListener {
-		public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys);
-		public boolean onStartTrackingTouch(BgSeekBar seekBar);
-		public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled);
+	public interface OnBgSeekBarChangeListener {
+		void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys);
+		boolean onStartTrackingTouch(BgSeekBar seekBar);
+		void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled);
 	}
 	
-	public static interface OnBgSeekBarDrawListener {
-		public void onSizeChanged(BgSeekBar seekBar, int width, int height);
-		public void onDraw(Canvas canvas, BgSeekBar seekBar, Rect rect, int filledSize);
+	public interface OnBgSeekBarDrawListener {
+		void onSizeChanged(BgSeekBar seekBar, int width, int height);
+		void onDraw(Canvas canvas, BgSeekBar seekBar, Rect rect, int filledSize);
 	}
 	
 	private String additionalContentDescription, text;

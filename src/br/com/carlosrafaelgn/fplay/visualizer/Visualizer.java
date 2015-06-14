@@ -40,61 +40,61 @@ import android.view.ContextMenu;
 import br.com.carlosrafaelgn.fplay.list.Song;
 
 public interface Visualizer {
-	public static final String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
-	public static final int DATA_NONE = 0x0000;
-	public static final int DATA_FFT = 0x0100; //ComputeFFT
-	public static final int DATA_VUMETER = 0x0200; //ComputeVUMeter
-	public static final int CAPTURE_SIZE = 1024;
-	public static final int MNU_VISUALIZER = 200;
+	String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
+	int DATA_NONE = 0x0000;
+	int DATA_FFT = 0x0100; //ComputeFFT
+	int DATA_VUMETER = 0x0200; //ComputeVUMeter
+	int CAPTURE_SIZE = 1024;
+	int MNU_VISUALIZER = 200;
 
 	//Runs on the MAIN thread
-	public void onActivityResult(int requestCode, int resultCode, Intent data);
+	void onActivityResult(int requestCode, int resultCode, Intent data);
 
 	//Runs on the MAIN thread
-	public void onActivityPause();
+	void onActivityPause();
 
 	//Runs on the MAIN thread
-	public void onActivityResume();
+	void onActivityResume();
 
 	//Runs on the MAIN thread
-	public void onCreateContextMenu(ContextMenu menu);
+	void onCreateContextMenu(ContextMenu menu);
 
 	//Runs on the MAIN thread
-	public void onClick();
+	void onClick();
 
 	//Runs on the MAIN thread
-	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
+	void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
-	public boolean isFullscreen();
+	boolean isFullscreen();
 
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight);
+	Point getDesiredSize(int availableWidth, int availableHeight);
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
-	public boolean requiresHiddenControls();
+	boolean requiresHiddenControls();
 
 	//Runs on ANY thread
-	public int dataTypeRequired();
+	int dataTypeRequired();
 
 	//Runs on a SECONDARY thread
-	public void load(Context context);
+	void load(Context context);
 	
 	//Runs on ANY thread
-	public boolean isLoading();
+	boolean isLoading();
 	
 	//Runs on the MAIN thread
-	public void cancelLoading();
+	void cancelLoading();
 	
 	//Runs on the MAIN thread
-	public void configurationChanged(boolean landscape);
+	void configurationChanged(boolean landscape);
 	
 	//Runs on a SECONDARY thread
-	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing);
+	void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing);
 	
 	//Runs on a SECONDARY thread
-	public void release();
+	void release();
 
 	//Runs on the MAIN thread (AFTER release())
-	public void releaseView();
+	void releaseView();
 }

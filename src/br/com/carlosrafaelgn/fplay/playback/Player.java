@@ -124,22 +124,22 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 //************************************************************************************
 
 public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
-	public static interface PlayerObserver {
-		public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
-		public void onPlayerControlModeChanged(boolean controlMode);
-		public void onPlayerGlobalVolumeChanged(int volume);
-		public void onPlayerAudioSinkChanged(int audioSink);
-		public void onPlayerMediaButtonPrevious();
-		public void onPlayerMediaButtonNext();
+	public interface PlayerObserver {
+		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
+		void onPlayerControlModeChanged(boolean controlMode);
+		void onPlayerGlobalVolumeChanged(int volume);
+		void onPlayerAudioSinkChanged(int audioSink);
+		void onPlayerMediaButtonPrevious();
+		void onPlayerMediaButtonNext();
 	}
 
-	public static interface PlayerTurnOffTimerObserver {
-		public void onPlayerTurnOffTimerTick();
-		public void onPlayerIdleTurnOffTimerTick();
+	public interface PlayerTurnOffTimerObserver {
+		void onPlayerTurnOffTimerTick();
+		void onPlayerIdleTurnOffTimerTick();
 	}
 
-	public static interface PlayerDestroyedObserver {
-		public void onPlayerDestroyed();
+	public interface PlayerDestroyedObserver {
+		void onPlayerDestroyed();
 	}
 
 	private static final class TimeoutException extends Exception {
@@ -390,14 +390,20 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			play(forcePlayIdx);
 			startCommand = null;
 		} else if (startCommand != null && state == STATE_ALIVE) {
-			if (startCommand.equals(ACTION_PREVIOUS))
+			switch (startCommand) {
+			case ACTION_PREVIOUS:
 				previous();
-			else if (startCommand.equals(ACTION_PLAY_PAUSE))
+				break;
+			case ACTION_PLAY_PAUSE:
 				playPause();
-			else if (startCommand.equals(ACTION_NEXT))
+				break;
+			case ACTION_NEXT:
 				next();
-			else if (startCommand.equals(ACTION_EXIT))
+				break;
+			case ACTION_EXIT:
 				stopService();
+				break;
+			}
 			startCommand = null;
 		}
 	}
@@ -432,7 +438,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
 			telephonyManager = (TelephonyManager)context.getSystemService(TELEPHONY_SERVICE);
-			destroyedObservers = new ArrayList<PlayerDestroyedObserver>(4);
+			destroyedObservers = new ArrayList<>(4);
 			stickyBroadcast = new Intent();
 			loadConfig(context);
 			return true;
@@ -494,7 +500,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						_checkAudioSink(false, false);
 						localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
 						Looper.loop();
-						song = null;
+						if (song != null) {
+							_storeSongTime();
+							song = null;
+						} else {
+							storedSongTime = -1;
+						}
 						_fullCleanup();
 						hasFocus = false;
 						if (audioManager != null && thePlayer != null)
@@ -520,6 +531,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 		looper.quit();
 
+		try {
+			thread.join();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+
 		if (bluetoothVisualizerController != null)
 			stopBluetoothVisualizer();
 
@@ -538,12 +555,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (externalReceiver != null)
 				thePlayer.getApplicationContext().unregisterReceiver(externalReceiver);
 			saveConfig(thePlayer, true);
-		}
-
-		try {
-			thread.join();
-		} catch (Throwable ex) {
-			ex.printStackTrace();
 		}
 
 		for (int i = statePlayer.length - 1; i >= 0; i--) {
@@ -1670,7 +1681,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int initialForcePlayIdx;
 	private static boolean appIdle;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
-	private static final HashSet<String> favoriteFolders = new HashSet<String>();
+	private static final HashSet<String> favoriteFolders = new HashSet<>();
 	public static String path, originalPath, radioSearchTerm;
 	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders;
 	public static int radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;

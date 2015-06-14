@@ -38,8 +38,8 @@ import android.os.SystemClock;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 
 public final class Timer implements MainHandler.Callback {
-	public static interface TimerHandler {
-		public void handleTimer(Timer timer, Object param);
+	public interface TimerHandler {
+		void handleTimer(Timer timer, Object param);
 	}
 	
 	private static final int MSG_ONESHOT = 0x0200;

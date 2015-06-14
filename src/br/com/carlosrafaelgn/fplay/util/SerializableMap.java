@@ -54,11 +54,11 @@ public final class SerializableMap {
 	private int bitCount;
 	
 	public SerializableMap() {
-		dict = new SparseArray<Object>();
+		dict = new SparseArray<>();
 	}
 	
 	public SerializableMap(int initialCapacity) {
-		dict = new SparseArray<Object>(initialCapacity);
+		dict = new SparseArray<>(initialCapacity);
 	}
 	
 	public boolean serialize(Context context, String fileName) {
@@ -120,16 +120,19 @@ public final class SerializableMap {
 			bs.flush();
 			return true;
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		} finally {
 			try {
 				if (bs != null)
 					bs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			try {
 				if (fs != null)
 					fs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 		return false;
@@ -193,16 +196,19 @@ public final class SerializableMap {
 			}
 			return dict;
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 		} finally {
 			try {
 				if (bs != null)
 					bs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			try {
 				if (fs != null)
 					fs.close();
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 		return null;

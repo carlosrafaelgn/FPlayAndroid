@@ -160,7 +160,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 							is = response.getEntity().getContent();
 							isr = new InputStreamReader(is, "UTF-8");
 							br = new BufferedReader(isr, 1024);
-							ArrayList<String> lines = new ArrayList<String>(8);
+							ArrayList<String> lines = new ArrayList<>(8);
 							String line;
 							while ((line = br.readLine()) != null) {
 								line = line.trim();

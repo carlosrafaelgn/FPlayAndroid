@@ -233,7 +233,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 		this.items = new RadioStation[MAX_COUNT];
 		this.readyToFetch = true;
 		this.favoritesSync = new Object();
-		this.favorites = new HashSet<RadioStation>(32);
+		this.favorites = new HashSet<>(32);
 		this.tags = tags;
 		this.noOnAir = noOnAir;
 		this.noDescription = noDescription;

@@ -60,8 +60,8 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 //http://developer.android.com/guide/appendix/media-formats.html
 //
 public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>, FileFilter {
-	public static interface Listener {
-		public void onFilesFetched(FileFetcher fetcher, Throwable e);
+	public interface Listener {
+		void onFilesFetched(FileFetcher fetcher, Throwable e);
 	}
 	
 	private static final class RootItem {
@@ -104,7 +104,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private volatile boolean cancelled;
 	
 	static {
-		supportedTypes = new HashSet<String>(16);
+		supportedTypes = new HashSet<>(16);
 		supportedTypes.add(".3gp");
 		supportedTypes.add(".3ga");
 		supportedTypes.add(".mp4");

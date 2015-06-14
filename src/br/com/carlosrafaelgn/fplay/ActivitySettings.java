@@ -1052,6 +1052,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				try {
 					getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayArduino")));
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 			} else if (view == optBtConnect) {
 				if (Player.bluetoothVisualizerController == null) {
@@ -1224,6 +1225,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 						optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
 					}
 				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 				txtCustomMinutes = null;
 			}

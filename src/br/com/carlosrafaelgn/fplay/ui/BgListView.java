@@ -61,12 +61,12 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 
 public final class BgListView extends ListView implements ListView.OnScrollListener {
-	public static interface OnAttachedObserver {
-		public void onBgListViewAttached(BgListView list);
+	public interface OnAttachedObserver {
+		void onBgListViewAttached(BgListView list);
 	}
 	
-	public static interface OnBgListViewKeyDownObserver {
-		public boolean onBgListViewKeyDown(BgListView list, int keyCode);
+	public interface OnBgListViewKeyDownObserver {
+		boolean onBgListViewKeyDown(BgListView list, int keyCode);
 	}
 
 	public static final int SCROLLBAR_SYSTEM = 0;

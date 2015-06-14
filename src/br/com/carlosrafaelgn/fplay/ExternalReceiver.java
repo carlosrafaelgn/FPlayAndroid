@@ -51,30 +51,36 @@ public final class ExternalReceiver extends BroadcastReceiver {
 		final String a = intent.getAction();
 		if (a == null)
 			return;
-		if (a.equals("android.media.AUDIO_BECOMING_NOISY")) {
+		switch (a) {
+		case "android.media.AUDIO_BECOMING_NOISY":
 			Player.becomingNoisy();
-		} else if (a.equals("android.intent.action.HEADSET_PLUG")) {
+			break;
+		case "android.intent.action.HEADSET_PLUG":
 			if (Player.hasFocus)
 				Player.registerMediaButtonEventReceiver();
 			Player.audioSinkChanged(intent.getExtras().getInt("state", -1) > 0);
-		} else if (a.equals("android.intent.action.MEDIA_BUTTON")) {
+			break;
+		case "android.intent.action.MEDIA_BUTTON":
 			final Object o = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 			if (o == null || !(o instanceof KeyEvent))
 				return;
 			final KeyEvent e = (KeyEvent)o;
 			if (e.getAction() == KeyEvent.ACTION_DOWN)
 				Player.handleMediaButton(e.getKeyCode());
-		} else if (a.equals("android.intent.action.CALL_BUTTON")) {
+			break;
+		case "android.intent.action.CALL_BUTTON":
 			if (Player.hasFocus)
 				Player.handleMediaButton(KeyEvent.KEYCODE_CALL);
-		} else if (a.equals("android.media.ACTION_SCO_AUDIO_STATE_UPDATED") ||
-				a.equals("android.media.SCO_AUDIO_STATE_CHANGED") ||
-				a.equals("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED") ||
-				a.equals("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED") ||
-				a.equals("android.bluetooth.intent.action.HEADSET_STATE_CHANGED")) {
+			break;
+		case "android.media.ACTION_SCO_AUDIO_STATE_UPDATED":
+		case "android.media.SCO_AUDIO_STATE_CHANGED":
+		case "android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED":
+		case "android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED":
+		case "android.bluetooth.intent.action.HEADSET_STATE_CHANGED":
 			if (Player.hasFocus)
 				Player.registerMediaButtonEventReceiver();
 			Player.audioSinkChanged(false);
+			break;
 		}
 		if (isOrderedBroadcast())
 			abortBroadcast();

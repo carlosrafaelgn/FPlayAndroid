@@ -33,8 +33,8 @@
 package br.com.carlosrafaelgn.fplay.util;
 
 public final class ArraySorter {
-	public static interface Comparer<E> {
-		public int compare(E a, E b);
+	public interface Comparer<E> {
+		int compare(E a, E b);
 	}
 	
 	public static <E> void sort(E[] elements, int i, int n, Comparer<E> comparer) {

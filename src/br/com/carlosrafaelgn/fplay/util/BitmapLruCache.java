@@ -64,7 +64,7 @@ public final class BitmapLruCache {
 	
 	public BitmapLruCache(int maxSize) {
 		this.maxSize = maxSize;
-		this.map = new LinkedHashMap<String, ReleasableBitmapWrapper>(0, 0.75f, true);
+		this.map = new LinkedHashMap<>(0, 0.75f, true);
 	}
 	
 	public ReleasableBitmapWrapper get(String key) {

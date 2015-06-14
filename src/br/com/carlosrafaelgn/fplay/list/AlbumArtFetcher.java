@@ -56,12 +56,12 @@ import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 //http://developer.android.com/training/displaying-bitmaps/cache-bitmap.html
 //http://developer.android.com/reference/android/util/LruCache.html
 public final class AlbumArtFetcher implements Runnable, Handler.Callback {
-	public static interface AlbumArtFetcherListener {
+	public interface AlbumArtFetcherListener {
 		//Runs on a SECONDARY thread
-		public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId);
+		void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId);
 		
 		//Runs on a SECONDARY thread
-		public FileSt fileForRequestId(int requestId);
+		FileSt fileForRequestId(int requestId);
 	}
 	
 	private final Object sync;

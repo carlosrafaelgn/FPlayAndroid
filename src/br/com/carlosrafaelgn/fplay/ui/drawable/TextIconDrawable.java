@@ -47,7 +47,7 @@ public final class TextIconDrawable extends Drawable {
 	private int[] stateSet;
 	private int state;
 	private final int width, height, y, color;
-	private final boolean outsideMenu;
+	//private final boolean outsideMenu;
 	private String icon;
 	
 	static {
@@ -71,7 +71,7 @@ public final class TextIconDrawable extends Drawable {
 		this.width = UI.defaultCheckIconSize + UI.menuMargin;// UI._8sp + UI._8sp + 1;
 		this.height = UI.defaultCheckIconSize;
 		this.y = UI.defaultCheckIconSize >> 1;
-		this.outsideMenu = false;
+		//this.outsideMenu = false;
 		this.color = UI.color_menu_icon;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
@@ -82,7 +82,7 @@ public final class TextIconDrawable extends Drawable {
 		this.width = UI.defaultCheckIconSize + UI.controlMargin;
 		this.height = UI.defaultCheckIconSize;
 		this.y = UI.defaultCheckIconSize >> 1;
-		this.outsideMenu = true;
+		//this.outsideMenu = true;
 		this.color = color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
@@ -93,7 +93,7 @@ public final class TextIconDrawable extends Drawable {
 		this.width = size + UI.controlMargin;
 		this.height = size;
 		this.y = size >> 1;
-		this.outsideMenu = true;
+		//this.outsideMenu = true;
 		this.color = color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
@@ -104,7 +104,7 @@ public final class TextIconDrawable extends Drawable {
 		this.width = size + padding;
 		this.height = size;
 		this.y = size >> 1;
-		this.outsideMenu = true;
+		//this.outsideMenu = true;
 		this.color = color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);

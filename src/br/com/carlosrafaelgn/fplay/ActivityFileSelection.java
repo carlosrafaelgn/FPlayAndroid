@@ -57,10 +57,10 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
-	public static interface OnFileSelectionListener {
-		public void onFileSelected(int id, String path, String name);
-		public void onAddClicked(int id, String path, String name);
-		public void onPlayClicked(int id, String path, String name);
+	public interface OnFileSelectionListener {
+		void onFileSelected(int id, String path, String name);
+		void onAddClicked(int id, String path, String name);
+		void onPlayClicked(int id, String path, String name);
 	}
 	
 	private final boolean save, hasButtons;
@@ -251,6 +251,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 							updateOverallLayout();
 						}
 					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
 				} else {
 					final OnFileSelectionListener listener = ActivityFileSelection.this.listener;
@@ -276,7 +277,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				return;
 			}
 			final OnFileSelectionListener listener = this.listener;
-			finish(0, (list == null) ? null : list.getViewForPosition(position), true);
+			finish(0, list.getViewForPosition(position), true);
 			if (listener != null)
 				listener.onFileSelected(id, file.path, file.name);
 		} else {

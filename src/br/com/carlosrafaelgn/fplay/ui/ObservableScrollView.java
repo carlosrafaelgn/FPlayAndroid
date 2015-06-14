@@ -39,8 +39,8 @@ import android.view.ViewGroup;
 import android.widget.ScrollView;
 
 public final class ObservableScrollView extends ScrollView {
-	public static interface OnScrollListener {
-		public void onScroll(ObservableScrollView view, int l, int t, int oldl, int oldt);
+	public interface OnScrollListener {
+		void onScroll(ObservableScrollView view, int l, int t, int oldl, int oldt);
 	}
 	
 	private OnScrollListener listener;

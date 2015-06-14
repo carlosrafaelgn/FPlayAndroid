@@ -43,14 +43,14 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 
 //All methods of this class MUST BE called from the main thread
 public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
-	public static interface BaseSectionIndexer {
-		public boolean hasSections();
-		public String[] getSectionStrings();
-		public int[] getSectionPositions();
+	public interface BaseSectionIndexer {
+		boolean hasSections();
+		String[] getSectionStrings();
+		int[] getSectionPositions();
 	}
 
-	public static interface OnBaseListSelectionChangedListener<E extends BaseItem> {
-		public void onSelectionChanged(BaseList<E> list);
+	public interface OnBaseListSelectionChangedListener<E extends BaseItem> {
+		void onSelectionChanged(BaseList<E> list);
 	}
 
 	protected static final int LIST_DELTA = 32;

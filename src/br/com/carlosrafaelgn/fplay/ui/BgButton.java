@@ -51,8 +51,8 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class BgButton extends Button {
-	public static interface OnPressingChangeListener {
-		public void onPressingChanged(BgButton button, boolean pressed);
+	public interface OnPressingChangeListener {
+		void onPressingChanged(BgButton button, boolean pressed);
 	}
 
 	private static String selected, unselected;

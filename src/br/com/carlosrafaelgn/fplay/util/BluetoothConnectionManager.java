@@ -83,12 +83,12 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 
 	private static ColorStateList defaultTextColors, highlightTextColors;
 
-	public static interface BluetoothObserver {
-		public void onBluetoothPairingStarted(BluetoothConnectionManager manager, String description, String address);
-		public void onBluetoothPairingFinished(BluetoothConnectionManager manager, String description, String address, boolean success);
-		public void onBluetoothCancelled(BluetoothConnectionManager manager);
-		public void onBluetoothConnected(BluetoothConnectionManager manager);
-		public void onBluetoothError(BluetoothConnectionManager manager, int error);
+	public interface BluetoothObserver {
+		void onBluetoothPairingStarted(BluetoothConnectionManager manager, String description, String address);
+		void onBluetoothPairingFinished(BluetoothConnectionManager manager, String description, String address, boolean success);
+		void onBluetoothCancelled(BluetoothConnectionManager manager);
+		void onBluetoothConnected(BluetoothConnectionManager manager);
+		void onBluetoothError(BluetoothConnectionManager manager, int error);
 	}
 
 	private static final class DeviceItem extends BaseItem {
@@ -287,7 +287,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 				}
 				// try another method for connection, this should work on the HTC desire, credits to Michael Biermann
 				try {
-					Method mMethod = device.getClass().getMethod("createRfcommSocket", new Class[] { int.class });
+					Method mMethod = device.getClass().getMethod("createRfcommSocket", int.class);
 					btSocket = (BluetoothSocket)mMethod.invoke(device, 1);
 					btSocket.connect();
 				} catch (Throwable e1){

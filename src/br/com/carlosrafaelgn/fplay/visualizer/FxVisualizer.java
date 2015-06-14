@@ -41,9 +41,9 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
 public class FxVisualizer implements Runnable, Timer.TimerHandler {
-	public static interface FxVisualizerHandler {
-		public void onFailure();
-		public void onFinalCleanup();
+	public interface FxVisualizerHandler {
+		void onFailure();
+		void onFinalCleanup();
 	}
 	private Application contextForVisualizerLoading;
 	private Visualizer visualizer;

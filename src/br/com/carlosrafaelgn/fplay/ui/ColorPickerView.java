@@ -64,8 +64,8 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils.HSV;
 
 public final class ColorPickerView extends RelativeLayout implements View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgSeekBar.OnBgSeekBarDrawListener, TextWatcher, DialogInterface.OnDismissListener, DialogInterface.OnClickListener {
-	public static interface OnColorPickerViewListener {
-		public void onColorPicked(ColorPickerView picker, View parentView, int color);
+	public interface OnColorPickerViewListener {
+		void onColorPicked(ColorPickerView picker, View parentView, int color);
 	}
 	
 	private BgSeekBar barH, barS, barV;
