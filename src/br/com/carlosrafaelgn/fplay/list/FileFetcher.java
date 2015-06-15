@@ -96,7 +96,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	public String[] sections;
 	public int[] sectionPositions;
 	public int count;
-	public final boolean playAfterFetching, /*oldBrowserBehavior,*/ isInTouchMode, createSections;
+	public final boolean playAfterFetching, isInTouchMode, createSections;
 	private Throwable notifyE;
 	private Listener listener;
 	private boolean recursive;
@@ -157,7 +157,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		this.recursive = recursive;
 		this.recursiveIfFirstEmpty = recursiveIfFirstEmpty;
 		this.playAfterFetching = playAfterFetching;
-		//this.oldBrowserBehavior = UI.oldBrowserBehavior;
 		this.isInTouchMode = isInTouchMode;
 		this.createSections = createSections;
 		this.count = 0;
@@ -205,7 +204,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				final String pLC = p.toLowerCase(Locale.US);
 				if (pLC.equals(canonicalPathLC))
 					break;
-				path = file;
 				canonicalPath = p;
 				canonicalPathLC = pLC;
 			}
@@ -217,16 +215,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			if (canonicalPathLC.equals(addedPaths[i]))
 				return;
 		}
-		
-		/*
-		//check if the directory is empty before actually adding it
-		try {
-			final String[] files = path.list();
-			if (files == null || files.length == 0)
-				return;
-		} catch (Throwable ex) {
-			return;
-		}*/
 		
 		addedPaths[c] = canonicalPathLC;
 		addedCount[0] = c + 1;
@@ -273,7 +261,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		File f;
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
-			if (f != null && f.exists() && f.isDirectory()) {
+			if (f.exists() && f.isDirectory()) {
 				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.music).toString(), null, FileSt.TYPE_MUSIC);
 				count++;
 			}
@@ -337,7 +325,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		InputStreamReader isr = null;
 		BufferedReader br = null;
 		try {
-			final HashMap<String, RootItem> map = new HashMap<String, RootItem>(32);
+			final HashMap<String, RootItem> map = new HashMap<>(32);
 			String line;
 			is = Runtime.getRuntime().exec("mount").getInputStream();
 			isr = new InputStreamReader(is);
@@ -457,7 +445,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		
 		final String fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.artists).toString() + FileSt.FAKE_PATH_SEPARATOR;
 		final String root = FileSt.ARTIST_ROOT + File.separator;
-		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
+		final ArrayList<FileSt> tmp = new ArrayList<>(64);
 		final String[] proj = { MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST, MediaStore.Audio.Artists.NUMBER_OF_ALBUMS, MediaStore.Audio.Artists.NUMBER_OF_TRACKS };
 		final Cursor c = s.getContentResolver().query(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, proj, null, null, null);
 		while (c.moveToNext()) {
@@ -518,7 +506,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			fakeRoot = fakePath + FileSt.FAKE_PATH_SEPARATOR;
 			root = realPath + File.separator;
 		}
-		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
+		final ArrayList<FileSt> tmp = new ArrayList<>(64);
 		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART, MediaStore.Audio.Albums.NUMBER_OF_SONGS };
 		final Cursor c = s.getContentResolver().query((artist == null) ?
 				MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI :
@@ -554,7 +542,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		final int albumIdIdx = realPath.lastIndexOf(File.separatorChar) + 1;
 		final String artist = ((realPath.charAt(0) == FileSt.ARTIST_ROOT_CHAR) ? realPath.substring(2, albumIdIdx - 1) : null);
 		final String album = realPath.substring(albumIdIdx);
-		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
+		final ArrayList<FileSt> tmp = new ArrayList<>(64);
 		final String[] proj = { MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.TRACK };
 		final Cursor c = s.getContentResolver().query(
 				MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, proj,
@@ -926,48 +914,43 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 						fetchTracks(path);
 					} else {
 						fetchAlbums(path);
-						final boolean keepAlbumsAsItems = (!recursive);// && !oldBrowserBehavior);
-						if (recursive || keepAlbumsAsItems) {
-							//we actually need to fetch all tracks from all this artist's albums...
-							final FileSt[] albums = files;
-							final ArrayList<FileSt> tracks = new ArrayList<FileSt>(albums.length * 11);
-							for (int i = 0; i < albums.length; i++) {
-								if (cancelled || Player.state >= Player.STATE_TERMINATING) {
-									count = 0;
-									tracks.clear();
-									break;
-								}
-								try {
-									fetchTracks(albums[i].path);
-									if (files != null && count > 0) {
-										tracks.ensureCapacity(tracks.size() + count);
-										if (keepAlbumsAsItems) {
-											albums[i].specialType = FileSt.TYPE_ALBUM_ITEM;
-											tracks.add(albums[i]);
-										}
-										for (int j = 0; j < count; j++) {
-											tracks.add(files[j]);
-											files[j] = null;
-										}
-										files = null;
-									}
-								} catch (Throwable ex) {
-									e = ex;
-								}
-								albums[i] = null;
-							}
-							if (tracks.size() > 0) {
-								//ignore any errors if at least one track was fetched
-								e = null;
-								count = tracks.size();
-								files = new FileSt[count];
-								tracks.toArray(files);
-								tracks.clear();
-							} else {
+						//we actually need to fetch all tracks from all this artist's albums...
+						final FileSt[] albums = files;
+						final ArrayList<FileSt> tracks = new ArrayList<>(albums.length * 11);
+						for (int i = 0; i < albums.length; i++) {
+							if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 								count = 0;
-								if (files == null)
-									files = new FileSt[0];
+								tracks.clear();
+								break;
 							}
+							try {
+								fetchTracks(albums[i].path);
+								if (files != null && count > 0) {
+									tracks.ensureCapacity(tracks.size() + count);
+									albums[i].specialType = FileSt.TYPE_ALBUM_ITEM;
+									tracks.add(albums[i]);
+									for (int j = 0; j < count; j++) {
+										tracks.add(files[j]);
+										files[j] = null;
+									}
+									files = null;
+								}
+							} catch (Throwable ex) {
+								e = ex;
+							}
+							albums[i] = null;
+						}
+						if (tracks.size() > 0) {
+							//ignore any errors if at least one track was fetched
+							e = null;
+							count = tracks.size();
+							files = new FileSt[count];
+							tracks.toArray(files);
+							tracks.clear();
+						} else {
+							count = 0;
+							if (files == null)
+								files = new FileSt[0];
 						}
 					}
 				}

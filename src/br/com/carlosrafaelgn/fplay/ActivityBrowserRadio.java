@@ -37,7 +37,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.database.DataSetObserver;
-import android.net.http.AndroidHttpClient;
 import android.text.InputType;
 import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;
@@ -52,14 +51,11 @@ import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.HttpGet;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -143,21 +139,19 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			(new Thread("Checked Radio Station Adder Thread") {
 				@Override
 				public void run() {
-					AndroidHttpClient client = null;
 					InputStream is = null;
 					InputStreamReader isr = null;
 					BufferedReader br = null;
+					HttpURLConnection urlConnection = null;
 					try {
 						if (Player.state >= Player.STATE_TERMINATING) {
 							Player.songs.addingEnded();
 							return;
 						}
-						client = AndroidHttpClient.newInstance("Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36 Debian");
-						final HttpResponse response = client.execute(new HttpGet(radioStation.m3uUri));
-						final StatusLine statusLine = response.getStatusLine();
-						final int s = statusLine.getStatusCode();
-						if (s == HttpStatus.SC_OK) {
-							is = response.getEntity().getContent();
+						urlConnection = (HttpURLConnection)(new URL(radioStation.m3uUri)).openConnection();
+						final int s = urlConnection.getResponseCode();
+						if (s == 200) {
+							is = urlConnection.getInputStream();
 							isr = new InputStreamReader(is, "UTF-8");
 							br = new BufferedReader(isr, 1024);
 							ArrayList<String> lines = new ArrayList<>(8);
@@ -190,8 +184,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 						MainHandler.toast(ex);
 					} finally {
 						try {
-							if (client != null)
-								client.close();
+							if (urlConnection != null)
+								urlConnection.disconnect();
 						} catch (Throwable ex) {
 							ex.printStackTrace();
 						}

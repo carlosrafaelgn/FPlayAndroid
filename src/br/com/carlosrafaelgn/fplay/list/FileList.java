@@ -123,47 +123,43 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 				sections = fetcher.sections;
 				sectionPositions = fetcher.sectionPositions;
 			}
-			//if (listObserver != null || fetcher.oldBrowserBehavior) {
-				int p = ((/*fetcher.oldBrowserBehavior || */!fetcher.isInTouchMode) ? 0 : -1);
-				if (comingFrom != null && comingFrom.length() > 0) {
-					if (path == null || path.length() == 0) {
+			int p = (!fetcher.isInTouchMode ? 0 : -1);
+			if (comingFrom != null && comingFrom.length() > 0) {
+				if (path == null || path.length() == 0) {
+					for (int i = count - 1; i >= 0; i--) {
+						if (items[i].path.equals(comingFrom)) {
+							p = i;
+							break;
+						}
+					}
+				} else {
+					if (!path.startsWith(File.separator)) {
 						for (int i = count - 1; i >= 0; i--) {
-							if (items[i].path.equals(comingFrom)) {
+							if (items[i].path.startsWith(comingFrom)) {
 								p = i;
 								break;
 							}
 						}
 					} else {
-						if (!path.startsWith(File.separator)) {
-							for (int i = count - 1; i >= 0; i--) {
-								if (items[i].path.startsWith(comingFrom)) {
-									p = i;
-									break;
-								}
-							}
-						} else {
-							for (int i = count - 1; i >= 0; i--) {
-								if (items[i].name.equals(comingFrom)) {
-									p = i;
-									break;
-								}
+						for (int i = count - 1; i >= 0; i--) {
+							if (items[i].name.equals(comingFrom)) {
+								p = i;
+								break;
 							}
 						}
 					}
 				}
-				//there is no need for this call, as FileList does not override
-				//notifyDataSetChanged to check whatHappened... also, setSelection
-				//already calls notifyDataSetChanged
-				//notifyDataSetChanged(p, CONTENT_ADDED);
-				setSelection(p, false);
-				//if (!fetcher.oldBrowserBehavior && listObserver != null && listObserver.isInTouchMode()) {
-				//	setSelection(-1, false);
-				//	listObserver.scrollItemToTop(p, false);
-				//} else {
-				//	setSelection(p, false);
-				//}
-			//} else {
+			}
+			//there is no need for this call, as FileList does not override
+			//notifyDataSetChanged to check whatHappened... also, setSelection
+			//already calls notifyDataSetChanged
+			//notifyDataSetChanged(p, CONTENT_ADDED);
+			setSelection(p, false);
+			//if (listObserver != null && listObserver.isInTouchMode()) {
 			//	setSelection(-1, false);
+			//	listObserver.scrollItemToTop(p, false);
+			//} else {
+			//	setSelection(p, false);
 			//}
 		} finally {
 			this.fetcher = null;

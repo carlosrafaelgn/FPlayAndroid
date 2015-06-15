@@ -346,7 +346,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void addSongs(View sourceView) {
 		if (Player.state == Player.STATE_ALIVE) {
 			Player.alreadySelected = false;
-			//startActivity(UI.oldBrowserBehavior ? new ActivityBrowser() : new ActivityBrowser2());
 			startActivity(new ActivityBrowser2(), 0, sourceView, sourceView != null);
 		}
 	}

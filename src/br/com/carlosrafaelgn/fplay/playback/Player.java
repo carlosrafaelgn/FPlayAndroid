@@ -258,7 +258,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static class CoreHandler extends Handler {
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
-			//System.out.println(Integer.toHexString(msg.what));
 			switch (msg.what) {
 			case MSG_POST_PLAY:
 				_postPlay(msg.arg1, (Song[])msg.obj);
@@ -329,7 +328,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static class CoreLocalHandler extends Handler {
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
-			//System.out.println("L " + Integer.toHexString(msg.what));
 			switch (msg.what) {
 			case MSG_PRE_PLAY:
 				prePlay(msg.arg1);
@@ -354,7 +352,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					handler.sendMessageAtTime(Message.obtain(handler, MSG_OVERRIDE_VOLUME_MULTIPLIER, (volumeControlType != VOLUME_CONTROL_DB && volumeControlType != VOLUME_CONTROL_PERCENT) ? 1 : 0, 0), SystemClock.uptimeMillis());
 					setTurnOffTimer(turnOffTimerSelectedMinutes);
 					setIdleTurnOffTimer(idleTurnOffTimerSelectedMinutes);
-					executeStartCommand(initialForcePlayIdx);
+					executeStartCommand();
 					break;
 				}
 				break;
@@ -385,11 +383,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		System.exit(0);
 	}
 
-	private static void executeStartCommand(int forcePlayIdx) {
-		if (forcePlayIdx >= 0) {
-			play(forcePlayIdx);
-			startCommand = null;
-		} else if (startCommand != null && state == STATE_ALIVE) {
+	private static void executeStartCommand() {
+		if (startCommand != null && state == STATE_ALIVE) {
 			switch (startCommand) {
 			case ACTION_PREVIOUS:
 				previous();
@@ -411,10 +406,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent != null) {
-			startCommand = intent.getAction();
-			executeStartCommand(-1);
+			final String command = intent.getAction();
+			if (command != null) {
+				startCommand = command;
+				executeStartCommand();
+			}
 		}
-		super.onStartCommand(intent, flags, startId);
 		return START_STICKY;
 	}
 
@@ -428,8 +425,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static boolean startService(Context context) {
-		switch (state) {
-		case STATE_NEW:
+		final boolean stateNew = (state == STATE_NEW);
+		if (stateNew) {
+			MainHandler.initialize();
 			alreadySelected = true; //fix the initial selection when the app is started from the widget
 			state = STATE_INITIALIZING;
 			context.startService(new Intent(context, Player.class));
@@ -441,87 +439,91 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			destroyedObservers = new ArrayList<>(4);
 			stickyBroadcast = new Intent();
 			loadConfig(context);
-			return true;
-		case STATE_INITIALIZING:
-			if (thePlayer != null && thread == null) {
-				//These broadcast actions are registered here, instead of in the manifest file,
-				//because a few tests showed that some devices will produce the notifications
-				//faster this way, specially AUDIO_BECOMING_NOISY. Moreover, by registering here,
-				//only one BroadcastReceiver is instantiated and used throughout the entire
-				//application's lifecycle, whereas when the manifest is used, a different instance
-				//is created to handle every notification! :)
-				//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
-				//in the application manifest according to the documentation of the method
-				//registerMediaButtonEventReceiver!!! :(
-				final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
-				//filter.addAction("android.intent.action.MEDIA_BUTTON");
-				filter.addAction("android.intent.action.CALL_BUTTON");
-				filter.addAction("android.intent.action.HEADSET_PLUG");
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-					filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
-				else
-					filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
-				filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
-				filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
-				//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
-				filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
-				externalReceiver = new ExternalReceiver();
-				thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter);
-
-				registerMediaButtonEventReceiver();
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-					registerMediaRouter(thePlayer);
-
-				thread = new Thread("Player Core Thread") {
-					@Override
-					public void run() {
-						Looper.prepare();
-						looper = Looper.myLooper();
-						handler = new CoreHandler();
-						_initializePlayers();
-						Equalizer.initialize(player.getAudioSessionId());
-						Equalizer.release();
-						BassBoost.initialize(player.getAudioSessionId());
-						BassBoost.release();
-						Virtualizer.initialize(player.getAudioSessionId());
-						Virtualizer.release();
-						if (Equalizer.isEnabled()) {
-							Equalizer.initialize(player.getAudioSessionId());
-							Equalizer.setEnabled(true);
-						}
-						if (BassBoost.isEnabled()) {
-							BassBoost.initialize(player.getAudioSessionId());
-							BassBoost.setEnabled(true);
-						}
-						if (Virtualizer.isEnabled()) {
-							Virtualizer.initialize(player.getAudioSessionId());
-							Virtualizer.setEnabled(true);
-						}
-						_checkAudioSink(false, false);
-						localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
-						Looper.loop();
-						if (song != null) {
-							_storeSongTime();
-							song = null;
-						} else {
-							storedSongTime = -1;
-						}
-						_fullCleanup();
-						hasFocus = false;
-						if (audioManager != null && thePlayer != null)
-							audioManager.abandonAudioFocus(thePlayer);
-					}
-				};
-				thread.start();
-
-				while (handler == null)
-					Thread.yield();
-
-				songs.startDeserializing(thePlayer, null, true, false, false);
-			}
-			break;
 		}
-		return false;
+		//when the player starts from the widget, startService is not called twice, it is
+		//called only once, from within onCreate, when thePlayer is already != null
+		if (thePlayer != null && thread == null) {
+			createIntents(context);
+
+			//These broadcast actions are registered here, instead of in the manifest file,
+			//because a few tests showed that some devices will produce the notifications
+			//faster this way, specially AUDIO_BECOMING_NOISY. Moreover, by registering here,
+			//only one BroadcastReceiver is instantiated and used throughout the entire
+			//application's lifecycle, whereas when the manifest is used, a different instance
+			//is created to handle every notification! :)
+			//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
+			//in the application manifest according to the documentation of the method
+			//registerMediaButtonEventReceiver!!! :(
+			final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
+			//filter.addAction("android.intent.action.MEDIA_BUTTON");
+			filter.addAction("android.intent.action.CALL_BUTTON");
+			filter.addAction("android.intent.action.HEADSET_PLUG");
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
+			else
+				filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
+			filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
+			filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
+			//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
+			filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
+			externalReceiver = new ExternalReceiver();
+			thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter);
+
+			registerMediaButtonEventReceiver();
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+				registerMediaRouter(thePlayer);
+
+			thread = new Thread("Player Core Thread") {
+				@Override
+				public void run() {
+					Looper.prepare();
+					looper = Looper.myLooper();
+					handler = new CoreHandler();
+					_initializePlayers();
+					Equalizer.initialize(player.getAudioSessionId());
+					Equalizer.release();
+					BassBoost.initialize(player.getAudioSessionId());
+					BassBoost.release();
+					Virtualizer.initialize(player.getAudioSessionId());
+					Virtualizer.release();
+					if (Equalizer.isEnabled()) {
+						Equalizer.initialize(player.getAudioSessionId());
+						Equalizer.setEnabled(true);
+					}
+					if (BassBoost.isEnabled()) {
+						BassBoost.initialize(player.getAudioSessionId());
+						BassBoost.setEnabled(true);
+					}
+					if (Virtualizer.isEnabled()) {
+						Virtualizer.initialize(player.getAudioSessionId());
+						Virtualizer.setEnabled(true);
+					}
+					_checkAudioSink(false, false);
+					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
+					Looper.loop();
+					if (song != null) {
+						_storeSongTime();
+						song = null;
+					} else {
+						storedSongTime = -1;
+					}
+					_fullCleanup();
+					hasFocus = false;
+					if (audioManager != null && thePlayer != null)
+						audioManager.abandonAudioFocus(thePlayer);
+				}
+			};
+			thread.start();
+
+			while (handler == null)
+				Thread.yield();
+
+			songs.startDeserializing(thePlayer, null, true, false, false);
+		}
+		//fix the initial selection when the app is started from the widget
+		alreadySelected = false;
+		positionToSelect = songs.getCurrentPosition();
+		return stateNew;
 	}
 
 	public static void stopService() {
@@ -561,6 +563,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			statePlayer[i] = null;
 			stateEx[i] = null;
 		}
+		localSong = null;
 		updateState(~0x27, 0);
 
 		thread = null;
@@ -821,7 +824,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		if (player != null) {
 			player.setVolume(multiplier, multiplier);
-			//System.out.println("start " + player);
 			player.start();
 		}
 		reviveAlreadyTried = false;
@@ -833,7 +835,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		mediaPlayer.setOnSeekCompleteListener(null);
 		mediaPlayer.setOnCompletionListener(null);
 		mediaPlayer.setOnInfoListener(null);
-		//System.out.println("release " + mediaPlayer);
 		mediaPlayer.reset();
 		mediaPlayer.release();
 	}
@@ -939,7 +940,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (song == nextSongScheduledForPreparation && nextPlayer != null) {
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
-				//System.out.println("N setDataSource " + nextPlayer);
 				nextPlayer.setDataSource(nextSongScheduledForPreparation.path);
 				nextPlayer.prepareAsync();
 				nextPlayerState = PLAYER_STATE_PREPARING;
@@ -1020,7 +1020,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Virtualizer.setEnabled(true);
 				}
 			}
-			//System.out.println("reset " + player);
 			player.reset();
 			postPlayPending = false;
 			if (nextSong == song && how != SongList.HOW_CURRENT) {
@@ -1069,12 +1068,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			songScheduledForPreparation = song;
 			//Even though it happens very rarely, a few devices will freeze and produce an ANR
 			//when calling setDataSource from the main thread :(
-			//System.out.println("setDataSource " + player);
 			player.setDataSource(song.path);
 			player.prepareAsync();
 
 			nextPlayerState = PLAYER_STATE_NEW;
-			//System.out.println("N reset " + nextPlayer);
 			nextPlayer.reset();
 			nextSong = songArray[1];
 			nextSongScheduledForPreparation = null;
@@ -1349,7 +1346,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
 		if (state != STATE_ALIVE)
 			return true;
-		//System.out.println("onError " + mediaPlayer);
 		if (mediaPlayer == nextPlayer || mediaPlayer == player) {
 			if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
 				_storeSongTime();
@@ -1406,7 +1402,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		if (mediaPlayer == nextPlayer) {
-			//System.out.println("N onPrepared " + mediaPlayer);
 			if (nextSongScheduledForPreparation == nextSong && nextSong != null) {
 				nextSongScheduledForPreparation = null;
 				nextPlayerState = PLAYER_STATE_LOADED;
@@ -1414,7 +1409,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_setNextPlayer();
 			}
 		} else if (mediaPlayer == player) {
-			//System.out.println("onPrepared " + mediaPlayer);
 			if (songScheduledForPreparation == song && song != null) {
 				songScheduledForPreparation = null;
 				playerState = PLAYER_STATE_LOADED;
@@ -1445,7 +1439,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				}
 			}
 		} else {
-			//System.out.println("INV! onPrepared " + mediaPlayer);
 			_fullCleanup();
 			_updateState(false, new Exception("Invalid MediaPlayer"));
 		}
@@ -1678,10 +1671,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
-	private static int initialForcePlayIdx;
 	private static boolean appIdle;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
 	private static final HashSet<String> favoriteFolders = new HashSet<>();
+	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	public static String path, originalPath, radioSearchTerm;
 	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders;
 	public static int radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
@@ -1770,7 +1763,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
 			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, UI.isTV || (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			//UI.oldBrowserBehavior = opts.getBit(OPTBIT_OLDBROWSERBEHAVIOR);
 			//new settings (cannot be loaded the old way)
 			headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
 			doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
@@ -1807,7 +1799,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
 			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			//UI.oldBrowserBehavior = opts.getBoolean(OPT_OLDBROWSERBEHAVIOR);
 			//Load default values for new settings
 			UI.songListScrollBarType = (UI.isTV ? BgListView.SCROLLBAR_SYSTEM : BgListView.SCROLLBAR_LARGE);
 			UI.browserScrollBarType = (UI.isTV ? BgListView.SCROLLBAR_SYSTEM : BgListView.SCROLLBAR_INDEXED);
@@ -1883,7 +1874,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing);
 		opts.putBit(OPTBIT_WRAPAROUNDLIST, UI.wrapAroundList);
 		opts.putBit(OPTBIT_EXTRASPACING, UI.extraSpacing);
-		//opts.putBit(OPTBIT_OLDBROWSERBEHAVIOR, UI.oldBrowserBehavior);
 		opts.putBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES, headsetHookDoublePressPauses);
 		opts.putBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME, doNotAttenuateVolume);
 		opts.putBit(OPTBIT_SCROLLBAR_TO_THE_LEFT, UI.scrollBarToTheLeft);
@@ -1915,7 +1905,29 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			songs.serialize(context, null);
 	}
 
+	private static void createIntents(Context context) {
+		if (intentActivityHost == null) {
+			Intent intent = new Intent(context, ActivityHost.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+			intentActivityHost = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_PREVIOUS);
+			intentPrevious = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_PLAY_PAUSE);
+			intentPlayPause = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_NEXT);
+			intentNext = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(context, Player.class);
+			intent.setAction(Player.ACTION_EXIT);
+			intentExit = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		}
+	}
+
 	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
+		createIntents(context);
+
 		if (localSong == null)
 			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
 		else if (isPreparing())
@@ -1924,8 +1936,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			views.setTextViewText(R.id.lblTitle, localSong.title);
 
 		if (prepareButtons) {
-			Intent intent;
-
 			if (notification) {
 				UI.prepareNotificationPlaybackIcons(context);
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
@@ -1933,9 +1943,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
 				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
 
-				intent = new Intent(context, Player.class);
-				intent.setAction(Player.ACTION_EXIT);
-				views.setOnClickPendingIntent(R.id.btnExit, PendingIntent.getService(context, 0, intent, 0));
+				views.setOnClickPendingIntent(R.id.btnExit, intentExit);
 			} else {
 				if (localSong == null)
 					views.setTextViewText(R.id.lblArtist, "-");
@@ -1945,9 +1953,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				views.setTextColor(R.id.lblTitle, UI.widgetTextColor);
 				views.setTextColor(R.id.lblArtist, UI.widgetTextColor);
 
-				final PendingIntent p = getPendingIntent(context);
-				views.setOnClickPendingIntent(R.id.lblTitle, p);
-				views.setOnClickPendingIntent(R.id.lblArtist, p);
+				views.setOnClickPendingIntent(R.id.lblTitle, intentActivityHost);
+				views.setOnClickPendingIntent(R.id.lblArtist, intentActivityHost);
 
 				UI.prepareWidgetPlaybackIcons(context);
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
@@ -1955,25 +1962,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
 			}
 
-			intent = new Intent(context, Player.class);
-			intent.setAction(Player.ACTION_PREVIOUS);
-			views.setOnClickPendingIntent(R.id.btnPrev, PendingIntent.getService(context, 0, intent, 0));
-
-			intent = new Intent(context, Player.class);
-			intent.setAction(Player.ACTION_PLAY_PAUSE);
-			views.setOnClickPendingIntent(R.id.btnPlay, PendingIntent.getService(context, 0, intent, 0));
-
-			intent = new Intent(context, Player.class);
-			intent.setAction(Player.ACTION_NEXT);
-			views.setOnClickPendingIntent(R.id.btnNext, PendingIntent.getService(context, 0, intent, 0));
+			views.setOnClickPendingIntent(R.id.btnPrev, intentPrevious);
+			views.setOnClickPendingIntent(R.id.btnPlay, intentPlayPause);
+			views.setOnClickPendingIntent(R.id.btnNext, intentNext);
 		}
 		return views;
-	}
-
-	private static PendingIntent getPendingIntent(Context context) {
-		final Intent intent = new Intent(context, ActivityHost.class);
-		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		return PendingIntent.getActivity(context, 0, intent, 0);
 	}
 
 	private static Notification getNotification() {
@@ -1981,7 +1974,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		notification.icon = R.drawable.ic_notification;
 		notification.when = 0;
 		notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
-		notification.contentIntent = getPendingIntent(thePlayer);
+		notification.contentIntent = intentActivityHost;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification), true, true);
 		else
@@ -2060,7 +2053,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		switch (state) {
 		case STATE_INITIALIZING:
 		case STATE_INITIALIZING_STEP2:
-			initialForcePlayIdx = forcePlayIdx;
 			localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
 			break;
 		}
@@ -2405,7 +2397,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						seekTo((int)pos);
 					}
 				});
-				mediaSession.setSessionActivity(getPendingIntent(thePlayer));
+				mediaSession.setSessionActivity(intentActivityHost);
 				mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			}

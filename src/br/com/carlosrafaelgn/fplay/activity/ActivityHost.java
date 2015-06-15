@@ -443,12 +443,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			finish();
 			return;
 		}
-		MainHandler.initialize();
 		UI.initialize(getApplication(), this);
 		Player.startService(getApplication());
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
-		Player.alreadySelected = false; //fix the initial selection when the app is started from the widget
 		top = new ActivityMain();
 		top.finished = false;
 		top.activity = this;

@@ -248,7 +248,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			this.icon = icon;
 			return this;
 		}
-		
+
+		@SuppressWarnings("deprecation")
 		@Override
 		public MenuItem setIcon(int iconRes) {
 			this.icon = context.getResources().getDrawable(iconRes);

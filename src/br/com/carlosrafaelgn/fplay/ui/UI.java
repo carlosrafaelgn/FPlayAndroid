@@ -393,7 +393,7 @@ public final class UI {
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, /*oldBrowserBehavior,*/ extraSpacing, albumArt,
+		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
@@ -668,10 +668,9 @@ public final class UI {
 	
 	public static void initialize(Context context, Activity activityContext) {
 		accessibilityManager = (AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-		fullyInitialized = true;
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
-		if (Player.state == Player.STATE_NEW) {
+		if (!fullyInitialized) {
 			try {
 				isTV = ((((UiModeManager)context.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
 			} catch (Throwable ex) {
@@ -683,6 +682,7 @@ public final class UI {
 				hasTouch = true;
 				ex.printStackTrace();
 			}
+			fullyInitialized = true;
 		}
 		final DisplayInfo info = new DisplayInfo();
 		info.getInfo(context);
@@ -1734,6 +1734,7 @@ public final class UI {
 		return dialog;
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffectColor(Context context) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			return;

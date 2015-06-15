@@ -33,15 +33,10 @@
 package br.com.carlosrafaelgn.fplay.list;
 
 import android.content.Context;
-import android.net.http.AndroidHttpClient;
 import android.os.Message;
 import android.view.View;
 import android.view.ViewGroup;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.HttpGet;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
@@ -52,6 +47,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashSet;
 
@@ -667,30 +664,29 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 			do {
 				if (myVersion != version)
 					break;
-				AndroidHttpClient client = null;
 				InputStream is = null;
+				HttpURLConnection urlConnection = null;
 				try {
-					client = AndroidHttpClient.newInstance("Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36 Debian");
-					final HttpResponse response = client.execute(new HttpGet(uri + pageNumber));
-					final StatusLine statusLine = response.getStatusLine();
+					urlConnection = (HttpURLConnection)(new URL(uri + pageNumber)).openConnection();
 					if (myVersion != version)
 						break;
-					if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-						is = response.getEntity().getContent();
+					err = urlConnection.getResponseCode();
+					if (err == 200) {
+						is = urlConnection.getInputStream();
 						hasResults = parseIcecastResults(is, fields, myVersion, sb, currentStationIndex);
 						if (hasResults && myVersion == version)
 							MainHandler.sendMessage(RadioStationList.this, MSG_MORE_RESULTS, myVersion, currentStationIndex[0]);
+						err = 0;
 					} else {
 						hasResults = false;
-						err = statusLine.getStatusCode();
 					}
 				} catch (Throwable ex) {
 					hasResults = false;
 					err = -1;
 				} finally {
 					try {
-						if (client != null)
-							client.close();
+						if (urlConnection != null)
+							urlConnection.disconnect();
 					} catch (Throwable ex) {
 						ex.printStackTrace();
 					}

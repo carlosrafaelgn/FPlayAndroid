@@ -92,7 +92,7 @@ public final class MetadataExtractor {
 			break;
 		case 3: //UTF-8 encoded Unicode, in ID3v2.4
 			//BOM
-			ret = ((tmp[0] == 0xef && tmp[1] == 0xbb && tmp[2] == 0xbf) ?
+			ret = ((tmp[0] == (byte)0xef && tmp[1] == (byte)0xbb && tmp[2] == (byte)0xbf) ?
 					new String(tmp, 3, frameSize - 3, "UTF-8") :
 					new String(tmp, 0, frameSize, "UTF-8"));
 			break;
