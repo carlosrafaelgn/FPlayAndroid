@@ -506,7 +506,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.paused = true;
 			top.onPause();
 		}
-		Player.setAppIdle(true);
+		Player.setAppNotInForeground(true);
 		super.onPause();
 	}
 
@@ -516,7 +516,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			finish();
 			return;
 		}
-		Player.setAppIdle(false);
+		Player.setAppNotInForeground(false);
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(getApplication(), this);
 		if (top != null && top.paused) {

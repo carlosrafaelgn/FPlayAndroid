@@ -501,13 +501,13 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		Player.observer = null;
 		if (fxVisualizer != null)
 			fxVisualizer.pause();
-		Player.setAppIdle(true);
+		Player.setAppNotInForeground(true);
 		super.onPause();
 	}
 	
 	@Override
 	protected void onResume() {
-		Player.setAppIdle(false);
+		Player.setAppNotInForeground(false);
 		Player.observer = this;
 		if (fxVisualizer != null)
 			fxVisualizer.resetAndResume();

@@ -300,6 +300,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_LIST_CLEARED:
 				_fullCleanup();
+				song = null;
 				storedSongTime = -1;
 				_updateState(false, null);
 				break;
@@ -337,7 +338,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					observer.onPlayerAudioSinkChanged(audioSink);
 				break;
 			case MSG_UPDATE_STATE:
-				updateState(msg.arg1, msg.arg2);
+				updateState(msg.arg1, msg.arg2, (Song)msg.obj);
 				break;
 			case MSG_REGISTER_MEDIA_BUTTON_EVENT_RECEIVER:
 				registerMediaButtonEventReceiver();
@@ -563,13 +564,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			statePlayer[i] = null;
 			stateEx[i] = null;
 		}
-		localSong = null;
-		updateState(~0x27, 0);
+		updateState(~0x27, 0, null);
 
 		thread = null;
 		observer = null;
 		turnOffTimerObserver = null;
 		_mainHandler = null;
+		looper = null;
 		handler = null;
 		localHandler = null;
 		notificationManager = null;
@@ -1671,7 +1672,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
-	private static boolean appIdle;
+	private static boolean appNotInForeground;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
 	private static final HashSet<String> favoriteFolders = new HashSet<>();
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
@@ -2125,14 +2126,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return ((m <= 0) ? 1 : m);
 	}
 
-	public static void setAppIdle(boolean appIdle) {
+	public static void setAppNotInForeground(boolean appNotInForeground) {
 		if (state != STATE_ALIVE)
 			return;
-		if (Player.appIdle != appIdle) {
-			Player.appIdle = appIdle;
+		if (Player.appNotInForeground != appNotInForeground) {
+			Player.appNotInForeground = appNotInForeground;
 			if (idleTurnOffTimerSelectedMinutes > 0) {
 				localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
-				final boolean timerShouldBeOn = (!playing && appIdle);
+				final boolean timerShouldBeOn = (!playing && appNotInForeground);
 				if (!timerShouldBeOn) {
 					idleTurnOffTimerOrigin = 0;
 				} else {
@@ -2150,7 +2151,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		boolean wasPlayingBeforeOngoingCall = false, sendMessage = false;
-		final boolean idle = (!playing && appIdle);
+		final boolean idle = (!playing && appNotInForeground);
 		if (idle && telephonyManager != null) {
 			//check for ongoing call
 			try {
@@ -2188,22 +2189,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static void setIdleTurnOffTimer(int minutes) {
-		if (state == STATE_ALIVE) {
-			idleTurnOffTimerOrigin = 0;
-			idleTurnOffTimerSelectedMinutes = 0;
-			localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
-			if (minutes > 0) {
-				if (minutes != 60 && minutes != 90 && minutes != 120)
-					idleTurnOffTimerCustomMinutes = minutes;
-				//we must use SystemClock.elapsedRealtime because uptimeMillis
-				//does not take sleep time into account (and the user makes no
-				//difference between the time spent during sleep and the one
-				//while actually working)
-				idleTurnOffTimerSelectedMinutes = minutes;
-				if (!playing && appIdle) {
-					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
-					localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
-				}
+		if (state != STATE_ALIVE)
+			return;
+		idleTurnOffTimerOrigin = 0;
+		idleTurnOffTimerSelectedMinutes = 0;
+		localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
+		if (minutes > 0) {
+			if (minutes != 60 && minutes != 90 && minutes != 120)
+				idleTurnOffTimerCustomMinutes = minutes;
+			//we must use SystemClock.elapsedRealtime because uptimeMillis
+			//does not take sleep time into account (and the user makes no
+			//difference between the time spent during sleep and the one
+			//while actually working)
+			idleTurnOffTimerSelectedMinutes = minutes;
+			if (!playing && appNotInForeground) {
+				idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
+				localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
 			}
 		}
 	}
@@ -2778,13 +2779,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			broadcastStateChangeToMediaSession(preparing, titleOrSongHaveChanged);
 	}
 
-	private static void updateState(int arg1, int stateIndex) {
+	private static void updateState(int arg1, int stateIndex, Song newSong) {
 		localPlaying = ((arg1 & 0x04) != 0);
 		localPlayerState = (arg1 & 0x03);
 		localPlayer = statePlayer[stateIndex];
 		statePlayer[stateIndex] = null;
 		final Throwable ex = stateEx[stateIndex];
 		stateEx[stateIndex] = null;
+		localSong = newSong;
 		notificationManager.notify(1, getNotification());
 		final boolean songHasChanged = ((arg1 & 0x08) != 0);
 		final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
@@ -2834,7 +2836,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			stateLastSong = song;
 			stateLastPlaying = playing;
 			stateLastPreparing = preparing;
-			final Message msg = Message.obtain(localHandler, MSG_UPDATE_STATE, playerState | (playing ? 0x04 : 0) | (songHasChanged ? 0x08 : 0) | (playbackHasChanged ? 0x10 : 0) | (preparing ? 0x20 : 0) | (preparingHasChanged ? 0x40 : 0), stateIndex);
+			final Message msg = Message.obtain(localHandler, MSG_UPDATE_STATE, playerState | (playing ? 0x04 : 0) | (songHasChanged ? 0x08 : 0) | (playbackHasChanged ? 0x10 : 0) | (preparing ? 0x20 : 0) | (preparingHasChanged ? 0x40 : 0), stateIndex, song);
 			statePlayer[stateIndex] = player;
 			stateEx[stateIndex] = ex;
 			stateIndex = (stateIndex + 1) & 7;
