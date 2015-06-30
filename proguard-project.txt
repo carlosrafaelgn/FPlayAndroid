@@ -25,11 +25,10 @@
 #
 
 # **********************************************************************************************************
-# I made a the following changes to the file proguard-android-optimize.txt:
+# I made the following changes to the file proguard-android-optimize.txt:
 #
 # removed -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
 # added -optimizations !code/simplification/cast,!field/*,!class/merging/*
-# removed -dontusemixedcaseclassnames
 # **********************************************************************************************************
 -printmapping build/outputs/mapping/release/mapping.txt
 -allowaccessmodification

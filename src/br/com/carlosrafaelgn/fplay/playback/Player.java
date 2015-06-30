@@ -364,6 +364,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				processTurnOffTimer();
 				break;
 			case MSG_IDLE_TURN_OFF_TIMER:
+				idleTurnOffTimerSent = false;
 				processIdleTurnOffTimer();
 				break;
 			}
@@ -1672,7 +1673,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
-	private static boolean appNotInForeground;
+	private static boolean appNotInForeground, idleTurnOffTimerSent;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
 	private static final HashSet<String> favoriteFolders = new HashSet<>();
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
@@ -2087,8 +2088,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void processTurnOffTimer() {
-		if (state != STATE_ALIVE)
+		if (state > STATE_ALIVE)
 			return;
+		localHandler.removeMessages(MSG_TURN_OFF_TIMER);
 		if (turnOffTimerOrigin > 0) {
 			final int secondsLeft = (turnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - turnOffTimerOrigin) / 1000);
 			if (turnOffTimerObserver != null)
@@ -2101,11 +2103,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static void setTurnOffTimer(int minutes) {
-		if (state != STATE_ALIVE)
+		if (state > STATE_ALIVE)
 			return;
-		turnOffTimerOrigin = 0;
-		turnOffTimerSelectedMinutes = 0;
-		localHandler.removeMessages(MSG_TURN_OFF_TIMER);
 		if (minutes > 0) {
 			if (minutes != 60 && minutes != 90 && minutes != 120)
 				turnOffTimerCustomMinutes = minutes;
@@ -2115,8 +2114,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//while actually working)
 			turnOffTimerOrigin = SystemClock.elapsedRealtime();
 			turnOffTimerSelectedMinutes = minutes;
-			localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+		} else {
+			turnOffTimerOrigin = 0;
+			turnOffTimerSelectedMinutes = 0;
 		}
+		processTurnOffTimer();
 	}
 
 	public static int getTurnOffTimerMinutesLeft() {
@@ -2127,29 +2129,23 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static void setAppNotInForeground(boolean appNotInForeground) {
-		if (state != STATE_ALIVE)
+		if (state > STATE_ALIVE)
 			return;
 		if (Player.appNotInForeground != appNotInForeground) {
 			Player.appNotInForeground = appNotInForeground;
-			if (idleTurnOffTimerSelectedMinutes > 0) {
-				localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
-				final boolean timerShouldBeOn = (!playing && appNotInForeground);
-				if (!timerShouldBeOn) {
-					idleTurnOffTimerOrigin = 0;
-				} else {
-					//refer to setIdleTurnOffTimer for more information
-					idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
-					localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
-					if (turnOffTimerObserver != null)
-						turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
-				}
-			}
+			if (idleTurnOffTimerSelectedMinutes > 0)
+				processIdleTurnOffTimer();
 		}
 	}
 
 	private static void processIdleTurnOffTimer() {
-		if (state != STATE_ALIVE)
+		if (state > STATE_ALIVE)
 			return;
+		if (idleTurnOffTimerSelectedMinutes <= 0) {
+			idleTurnOffTimerSent = false;
+			localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
+			return;
+		}
 		boolean wasPlayingBeforeOngoingCall = false, sendMessage = false;
 		final boolean idle = (!playing && appNotInForeground);
 		if (idle && telephonyManager != null) {
@@ -2182,30 +2178,37 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					stopService();
 				else
 					sendMessage = true;
+			} else {
+				idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
+				sendMessage = true;
 			}
 		}
-		if (sendMessage)
-			localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+		if (sendMessage) {
+			if (!idleTurnOffTimerSent) {
+				idleTurnOffTimerSent = true;
+				localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
+			}
+		} else {
+			if (idleTurnOffTimerSent) {
+				idleTurnOffTimerSent = false;
+				localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
+			}
+		}
 	}
 
 	public static void setIdleTurnOffTimer(int minutes) {
-		if (state != STATE_ALIVE)
+		if (state > STATE_ALIVE)
 			return;
 		idleTurnOffTimerOrigin = 0;
-		idleTurnOffTimerSelectedMinutes = 0;
+		idleTurnOffTimerSent = false;
 		localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
 		if (minutes > 0) {
 			if (minutes != 60 && minutes != 90 && minutes != 120)
 				idleTurnOffTimerCustomMinutes = minutes;
-			//we must use SystemClock.elapsedRealtime because uptimeMillis
-			//does not take sleep time into account (and the user makes no
-			//difference between the time spent during sleep and the one
-			//while actually working)
 			idleTurnOffTimerSelectedMinutes = minutes;
-			if (!playing && appNotInForeground) {
-				idleTurnOffTimerOrigin = SystemClock.elapsedRealtime();
-				localHandler.sendEmptyMessageAtTime(MSG_IDLE_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
-			}
+			processIdleTurnOffTimer();
+		} else {
+			idleTurnOffTimerSelectedMinutes = 0;
 		}
 	}
 

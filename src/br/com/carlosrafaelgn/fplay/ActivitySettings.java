@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -53,6 +54,7 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -306,6 +308,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
+		//NullPointerException reported at Play Store.... :/
+		final ActivityHost ctx = getHostActivity();
+		final Application app = (ctx == null ? null : ctx.getApplication());
+		if (item == null || lastMenuView == null || ctx == null || app == null)
+			return true;
 		if (lastMenuView == optAutoTurnOff || lastMenuView == optAutoIdleTurnOff) {
 			if (item.getItemId() >= 0) {
 				if (lastMenuView == optAutoTurnOff) {
@@ -316,7 +323,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
 				}
 			} else {
-				final Context ctx = getHostActivity();
 				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 				
 				TextView lbl = new TextView(ctx);
@@ -335,7 +341,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				txtCustomMinutes.setText(Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes));
 				l.addView(txtCustomMinutes);
 				
-				UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
+				UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
 				.setTitle(R.string.msg_turn_off_title)
 				.setView(l)
 				.setPositiveButton(R.string.ok, this)
@@ -344,8 +350,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optForcedLocale) {
 			if (item.getItemId() != UI.forcedLocale) {
-				UI.setForcedLocale(getApplication(), getHostActivity(), item.getItemId(), true);
-				WidgetMain.updateWidgets(getApplication());
+				UI.setForcedLocale(app, ctx, item.getItemId(), true);
+				WidgetMain.updateWidgets(app);
 				onCleanupLayout();
 				onCreateLayout(false);
 				System.gc();
@@ -354,7 +360,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (item.getItemId() == UI.THEME_CUSTOM) {
 				startActivity(new ActivitySettings(true, false), 0, null, false);
 			} else {
-				UI.setTheme(getHostActivity(), item.getItemId());
+				UI.setTheme(ctx, item.getItemId());
 				onCleanupLayout();
 				onCreateLayout(false);
 				System.gc();
@@ -366,14 +372,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Song.extraInfoMode = item.getItemId();
 			optExtraInfoMode.setSecondaryText(getExtraInfoModeString(Song.extraInfoMode));
 			Player.songs.updateExtraInfo();
-			WidgetMain.updateWidgets(getApplication());
+			WidgetMain.updateWidgets(app);
 		} else if (lastMenuView == optForceOrientation) {
 			UI.forcedOrientation = item.getItemId();
-			getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
+			ctx.setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 			optForceOrientation.setSecondaryText(getOrientationString());
 		} else if (lastMenuView == optTransition) {
 			UI.setTransition(item.getItemId());
-			optTransition.setSecondaryText(UI.getTransitionString(getApplication(), item.getItemId()));
+			optTransition.setSecondaryText(UI.getTransitionString(app, item.getItemId()));
 		} else if (lastMenuView == optScrollBarSongList) {
 			UI.songListScrollBarType = item.getItemId();
 			optScrollBarSongList.setSecondaryText(getScrollBarString(item.getItemId()));
@@ -406,7 +412,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncFramesToSkip();
 		}
 		configsChanged = true;
-		lastMenuView = null;
 		return true;
 	}
 	
@@ -1197,6 +1202,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optExpandSeekBar) {
 			UI.expandSeekBar = optExpandSeekBar.isChecked();
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser) {
+			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;
 		}
