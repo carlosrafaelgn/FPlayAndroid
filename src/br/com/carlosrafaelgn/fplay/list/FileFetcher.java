@@ -104,23 +104,27 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private volatile boolean cancelled;
 	
 	static {
-		supportedTypes = new HashSet<>(16);
+		//http://developer.android.com/guide/appendix/media-formats.html
+		supportedTypes = new HashSet<>(18);
 		supportedTypes.add(".3gp");
 		supportedTypes.add(".3ga");
 		supportedTypes.add(".mp4");
 		supportedTypes.add(".m4a");
 		supportedTypes.add(".aac");
 		supportedTypes.add(".mp3");
-		supportedTypes.add(".flac");
 		supportedTypes.add(".mid");
 		supportedTypes.add(".xmf");
 		supportedTypes.add(".mxmf");
 		supportedTypes.add(".rtttl");
 		supportedTypes.add(".rtx");
+		supportedTypes.add(".ota");
+		supportedTypes.add(".imy");
 		supportedTypes.add(".ogg");
 		supportedTypes.add(".imy");
 		supportedTypes.add(".wav");
 		supportedTypes.add(".mkv");
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
+			supportedTypes.add(".flac");
 	}
 
 	@Override
