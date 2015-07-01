@@ -76,7 +76,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private FileSt checkedFile;
 	private BgButton btnGoBack, btnMenu, btnAdd, btnPlay;
 	private RelativeLayout panelSecondary;
-	private boolean loading;
+	private boolean loading, isCreatingLayout;
 	private TextIconDrawable btnMenuIcon;
 
 	public ActivityFileSelection(CharSequence title, int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
@@ -99,6 +99,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	}
 
 	private void updateOverallLayout() {
+		UI.animationReset();
 		if (!save) {
 			RelativeLayout.LayoutParams rp;
 			final int count = ((fileList != null) ? fileList.getCount() : 0);
@@ -108,7 +109,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
 				}
 				if (btnMenu != null)
-					btnMenu.setVisibility(View.VISIBLE);
+					UI.animationAddViewToShow(btnMenu);
 			} else {
 				if (checkedFile != null) {
 					checkedFile.isChecked = false;
@@ -119,7 +120,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					UI.setNextFocusForwardId(btnGoBack, R.id.list);
 				}
 				if (btnMenu != null)
-					btnMenu.setVisibility(View.GONE);
+					UI.animationAddViewToHide(btnMenu);
 			}
 			if (hasButtons) {
 				if (checkedFile == null) {
@@ -131,7 +132,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 							list.setLayoutParams(rp);
 							UI.setNextFocusForwardId(list, R.id.btnGoBack);
 						}
-						panelSecondary.setVisibility(View.GONE);
+						UI.animationAddViewToHide(panelSecondary);
 						if (btnMenu != null)
 							btnMenu.setNextFocusUpId(R.id.list);
 						if (btnGoBack != null) {
@@ -147,7 +148,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 						list.setLayoutParams(rp);
 						UI.setNextFocusForwardId(list, R.id.btnAdd);
 					}
-					panelSecondary.setVisibility(View.VISIBLE);
+					UI.animationAddViewToShow(panelSecondary);
 					if (btnMenu != null)
 						btnMenu.setNextFocusUpId(R.id.btnPlay);
 					if (btnGoBack != null) {
@@ -170,6 +171,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				btnMenu.setContentDescription(txt);
 			}
 		}
+		UI.animationCommit(isCreatingLayout, null);
 	}
 
 	private String format(int resId, String p1) {
@@ -204,8 +206,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				}
 			}
 		}
-		if (!started)
-			updateOverallLayout();
+		//if (!started)
+		//	updateOverallLayout();
 	}
 	
 	@Override
@@ -454,15 +456,23 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			btnPlay.setTextColor(UI.colorState_text_reactive);
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
-
-			UI.prepareControlContainer(panelSecondary, true, false);
+			if (hasButtons) {
+				UI.prepareControlContainer(panelSecondary, true, false);
+				if (UI.transition != UI.TRANSITION_NONE)
+					((View)panelSecondary.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
+				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, UI.thickDividerSize + UI.defaultControlSize + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
+				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+				panelSecondary.setLayoutParams(rp);
+			}
 		}
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		fileList.setPrivateFileType(fileType, list.isInTouchMode());
 		UI.prepareEdgeEffectColor(getApplication());
+		isCreatingLayout = true;
 		updateOverallLayout();
+		isCreatingLayout = false;
 	}
 	
 	@Override
@@ -478,12 +488,14 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onOrientationChanged() {
+		UI.animationReset();
 		if (UI.isLargeScreen && list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
+		UI.animationReset();
 		checkedFile = null;
 		btnGoBack = null;
 		btnMenu = null;

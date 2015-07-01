@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
+import android.annotation.TargetApi;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.text.method.LinkMovementMethod;
@@ -42,6 +43,7 @@ import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
@@ -67,6 +69,9 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		list.setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			setVerticalScrollBarPosition();
 		final TextView lblTitle = (TextView)findViewById(R.id.lblTitle);
 		lblTitle.setText("FPlay");
 		UI.largeTextAndColor(lblTitle);
@@ -130,6 +135,12 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		UI.prepareEdgeEffectColor(getApplication());
+	}
+
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void setVerticalScrollBarPosition() {
+		if (list != null)
+			list.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? View.SCROLLBAR_POSITION_LEFT : View.SCROLLBAR_POSITION_RIGHT);
 	}
 
 	@Override

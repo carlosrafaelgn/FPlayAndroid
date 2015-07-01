@@ -125,8 +125,8 @@
         android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/panelSecondary"
         android:layout_below="@+id/lblPath"
+        android:layout_alignParentBottom="true"
         android:nextFocusForward="@+id/btnGoBack" >
 
         <requestFocus />
@@ -137,7 +137,8 @@
         android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_alignParentBottom="true" >
+        android:layout_alignParentBottom="true"
+        android:visibility="gone">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBackToPlayer"
@@ -161,7 +162,7 @@
             android:layout_alignTop="@+id/btnGoBackToPlayer"
             android:layout_toLeftOf="@+id/sep2"
             android:contentDescription="@string/add"
-            android:nextFocusDown="@+id/btnGoBack"
+            android:nextFocusDown="@+id/btnHome"
             android:nextFocusForward="@+id/btnPlay"
             android:nextFocusLeft="@+id/btnGoBackToPlayer"
             android:nextFocusRight="@+id/btnPlay"
@@ -183,7 +184,7 @@
             android:layout_alignParentRight="true"
             android:layout_alignTop="@+id/btnGoBackToPlayer"
             android:contentDescription="@string/play"
-            android:nextFocusDown="@+id/btnGoBack"
+            android:nextFocusDown="@+id/chkAll"
             android:nextFocusForward="@+id/btnGoBack"
             android:nextFocusLeft="@+id/btnAdd"
             android:nextFocusRight="@+id/btnGoBack"

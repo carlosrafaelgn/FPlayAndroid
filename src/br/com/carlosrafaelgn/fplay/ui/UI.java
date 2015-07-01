@@ -52,7 +52,6 @@ import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Message;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextUtils.TruncateAt;
@@ -73,10 +72,9 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
-import android.view.animation.ScaleAnimation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -87,7 +85,6 @@ import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
 import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
@@ -1815,67 +1812,46 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	private static View animationFocusView;
 	private static int animationHideCount, animationShowCount, animationState;
-	private static View animationViewToSlide;
+	private static View animationViewToShowFirst;
 	private static View[] animationViewsToHideAndShow;
-	private static AnimationSet animationSetHide, animationSetShow;//animationSetHide, animationSetHideSlide, animationSetShow, animationSetShowSlide;
+	private static AnimationSet animationSetShowFirst, animationSetHide, animationSetShow;
 
 	private static void animationFinished(boolean abortAll) {
 		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || animationSetShow == null);
-		if (animationHideCount > 0 || animationShowCount > 0) {
+		if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
 			if (abortAll) {
 				animationState = ANIMATION_STATE_NONE;
+				if (animationSetShowFirst != null)
+					animationSetShowFirst.cancel();
 				if (animationSetHide != null)
 					animationSetHide.cancel();
-				//if (animationSetHideSlide != null)
-				//	animationSetHideSlide.cancel();
 				if (animationSetShow != null)
 					animationSetShow.cancel();
-				//if (animationSetShowSlide != null)
-				//	animationSetShowSlide.cancel();
 			}
 			if (abortAll || animationState == ANIMATION_STATE_HIDING) {
 				for (int i = 0; i < animationHideCount; i++) {
 					final View view = animationViewsToHideAndShow[i];
 					if (view != null) {
-						if (view == animationViewToSlide) {
-							animationViewToSlide = null;
-							final LayoutParams params = view.getLayoutParams();
-							if (params != null) {
-								params.height = 0;
-								view.setLayoutParams(params);
-							}
-						} else {
-							view.setVisibility(View.GONE);
-						}
+						view.setAnimation(null);
+						view.setVisibility(View.GONE);
 						animationViewsToHideAndShow[i] = null;
 					}
 				}
 				animationHideCount = 0;
+				if (animationViewToShowFirst != null) {
+					animationViewToShowFirst.setAnimation(null);
+					animationViewToShowFirst = null;
+				}
 			}
 			if (!finished) {
 				finished = true;
 				animationState = ANIMATION_STATE_SHOWING;
 				for (int i = 0; i < animationShowCount; i++) {
 					final View view = animationViewsToHideAndShow[16 + i];
-					if (view != null) {
-						if (view == animationViewToSlide) {
-							animationViewToSlide = null;
-							if (view.getHeight() == 0) {
-								finished = false;
-								final LayoutParams params = view.getLayoutParams();
-								if (params != null) {
-									params.height = LayoutParams.WRAP_CONTENT;
-									view.setLayoutParams(params);
-								}
-								view.startAnimation(animationSetShow);
-							}
-						} else {
-							if (view.getVisibility() != View.VISIBLE) {
-								finished = false;
-								view.setVisibility(View.VISIBLE);
-								view.startAnimation(animationSetShow);
-							}
-						}
+					if (view != null && view.getVisibility() != View.VISIBLE) {
+						finished = false;
+						view.setVisibility(View.VISIBLE);
+						view.startAnimation(animationSetShow);
 					}
 				}
 			}
@@ -1883,12 +1859,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				animationState = ANIMATION_STATE_NONE;
 				for (int i = 0; i < animationShowCount; i++) {
 					final View view = animationViewsToHideAndShow[16 + i];
-					if (view != null)
+					if (view != null) {
+						view.setAnimation(null);
 						animationViewsToHideAndShow[i] = null;
+					}
 				}
-				animationHideCount = 0;
 				animationShowCount = 0;
-				animationViewToSlide = null;
 			}
 		}
 		if (animationFocusView != null && finished) {
@@ -1907,16 +1883,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		animationHideCount++;
 	}
 
-	public static void animationSetViewToHideSliding(View view) {
-		if (animationViewsToHideAndShow == null)
-			animationViewsToHideAndShow = new View[32];
-		else if (animationHideCount >= 16 && view != null && view.getHeight() != 0)
-			return;
-		animationViewsToHideAndShow[animationHideCount] = view;
-		animationHideCount++;
-		animationViewToSlide = view;
-	}
-
 	public static void animationAddViewToShow(View view) {
 		if (animationViewsToHideAndShow == null)
 			animationViewsToHideAndShow = new View[32];
@@ -1926,14 +1892,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		animationShowCount++;
 	}
 
-	public static void animationSetViewToShowSliding(View view) {
-		if (animationViewsToHideAndShow == null)
-			animationViewsToHideAndShow = new View[32];
-		else if (animationShowCount >= 16 && view != null && view.getHeight() == 0)
-			return;
-		animationViewsToHideAndShow[16 + animationShowCount] = view;
-		animationShowCount++;
-		animationViewToSlide = view;
+	public static void animationSetViewToShowFirst(View view) {
+		animationViewToShowFirst = view;
 	}
 
 	public static void animationReset() {
@@ -1946,35 +1906,15 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			for (int i = 0; i < animationHideCount; i++) {
 				final View view = animationViewsToHideAndShow[i];
 				if (view != null) {
-					if (view == animationViewToSlide) {
-						animationViewToSlide = null;
-						if (view.getHeight() != 0) {
-							final LayoutParams params = view.getLayoutParams();
-							if (params != null) {
-								params.height = 0;
-								view.setLayoutParams(params);
-							}
-						}
-					} else {
-						view.setVisibility(View.GONE);
-					}
+					view.setVisibility(View.GONE);
+					animationViewsToHideAndShow[i] = null;
 				}
 			}
 			for (int i = 0; i < animationShowCount; i++) {
 				final View view = animationViewsToHideAndShow[16 + i];
 				if (view != null) {
-					if (view == animationViewToSlide) {
-						animationViewToSlide = null;
-						if (view.getHeight() == 0) {
-							final LayoutParams params = view.getLayoutParams();
-							if (params != null) {
-								params.height = LayoutParams.WRAP_CONTENT;
-								view.setLayoutParams(params);
-							}
-						}
-					} else {
-						view.setVisibility(View.VISIBLE);
-					}
+					view.setVisibility(View.VISIBLE);
+					animationViewsToHideAndShow[16 + i] = null;
 				}
 			}
 			if (focusView != null && focusView.isInTouchMode())
@@ -1982,10 +1922,17 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			animationState = ANIMATION_STATE_NONE;
 			animationHideCount = 0;
 			animationShowCount = 0;
-			animationViewToSlide = null;
+			animationViewToShowFirst = null;
 		} else {
 			if (animationSetHide == null) {
 				final AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
+				animationSetShowFirst = new AnimationSet(true);
+				animationSetShowFirst.addAnimation(new AlphaAnimation(0.0f, 1.0f));
+				animationSetShowFirst.setDuration(TRANSITION_DURATION_FOR_VIEWS);
+				animationSetShowFirst.setInterpolator(interpolator);
+				animationSetShowFirst.setRepeatCount(0);
+				animationSetShowFirst.setFillAfter(false);
+				animationSetShowFirst.setAnimationListener(Player.theUI);
 				animationSetHide = new AnimationSet(true);
 				animationSetHide.addAnimation(new AlphaAnimation(1.0f, 0.0f));
 				animationSetHide.setDuration(TRANSITION_DURATION_FOR_VIEWS);
@@ -1993,13 +1940,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				animationSetHide.setRepeatCount(0);
 				animationSetHide.setFillAfter(false);
 				animationSetHide.setAnimationListener(Player.theUI);
-				//animationSetHideSlide = new AnimationSet(true);
-				//animationSetHideSlide.addAnimation(new ScaleAnimation(1.0f, 1.0f, 1.0f, 0.0f, Animation.ABSOLUTE, 0.0f, Animation.RELATIVE_TO_SELF, 1.0f));
-				//animationSetHideSlide.setDuration(TRANSITION_DURATION_FOR_VIEWS);
-				//animationSetHideSlide.setInterpolator(interpolator);
-				//animationSetHideSlide.setRepeatCount(0);
-				//animationSetHideSlide.setFillAfter(false);
-				//animationSetHideSlide.setAnimationListener(Player.theUI);
 				animationSetShow = new AnimationSet(true);
 				animationSetShow.addAnimation(new AlphaAnimation(0.0f, 1.0f));
 				animationSetShow.setDuration(TRANSITION_DURATION_FOR_VIEWS);
@@ -2007,35 +1947,24 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				animationSetShow.setRepeatCount(0);
 				animationSetShow.setFillAfter(false);
 				animationSetShow.setAnimationListener(Player.theUI);
-				//animationSetShowSlide = new AnimationSet(true);
-				//animationSetShowSlide.addAnimation(new ScaleAnimation(1.0f, 1.0f, 0.0f, 1.0f, Animation.ABSOLUTE, 0.0f, Animation.RELATIVE_TO_SELF, 1.0f));
-				//animationSetShowSlide.setDuration(TRANSITION_DURATION_FOR_VIEWS);
-				//animationSetShowSlide.setInterpolator(interpolator);
-				//animationSetShowSlide.setRepeatCount(0);
-				//animationSetShowSlide.setFillAfter(false);
-				//animationSetShowSlide.setAnimationListener(Player.theUI);
 			} else {
+				animationSetShowFirst.reset();
 				animationSetHide.reset();
-				//animationSetHideSlide.reset();
 				animationSetShow.reset();
-				//animationSetShowSlide.reset();
 			}
-			if (animationHideCount > 0 || animationShowCount > 0) {
+			if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
 				animationState = ANIMATION_STATE_HIDING;
 				animationFocusView = focusView;
 				boolean ok = false;
+				if (animationViewToShowFirst != null) {
+					ok = true;
+					animationViewToShowFirst.startAnimation(animationSetShowFirst);
+				}
 				for (int i = 0; i < animationHideCount; i++) {
 					final View view = animationViewsToHideAndShow[i];
-					if (view != null) {
-						if (view == animationViewToSlide) {
-							if (view.getHeight() != 0) {
-								ok = true;
-								view.startAnimation(animationSetHide);
-							}
-						} else if (view.getVisibility() != View.GONE) {
-							ok = true;
-							view.startAnimation(animationSetHide);
-						}
+					if (view != null && view.getVisibility() != View.GONE) {
+						ok = true;
+						view.startAnimation(animationSetHide);
 					}
 				}
 				if (!ok)
@@ -2044,14 +1973,14 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				animationState = ANIMATION_STATE_NONE;
 				animationHideCount = 0;
 				animationShowCount = 0;
-				animationViewToSlide = null;
+				animationViewToShowFirst = null;
 			}
 		}
 	}
 
 	@Override
 	public void onAnimationEnd(Animation animation) {
-		if ((animation == animationSetHide && animationState == ANIMATION_STATE_HIDING) ||
+		if (((animation == animationSetShowFirst || animation == animationSetHide) && animationState == ANIMATION_STATE_HIDING) ||
 			(animation == animationSetShow && animationState == ANIMATION_STATE_SHOWING))
 			animationFinished(false);
 	}

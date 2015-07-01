@@ -91,11 +91,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
 			rp.height = 0;
 			lblPath.setLayoutParams(rp);
-			//panelSecondary.setPadding(0, 0, 0, 0);
-			UI.animationSetViewToHideSliding(panelSecondary);
-			//rp = (RelativeLayout.LayoutParams)panelSecondary.getLayoutParams();
-			//rp.height = 0;
-			//panelSecondary.setLayoutParams(rp);
+			if (panelSecondary.getVisibility() != View.GONE) {
+				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+				list.setLayoutParams(rp);
+				UI.animationAddViewToHide(panelSecondary);
+			}
 			UI.animationAddViewToHide(btnGoBackToPlayer);
 			UI.animationAddViewToHide(sep);
 			UI.animationAddViewToHide(chkAll);
@@ -113,11 +115,14 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			lblPath.setLayoutParams(rp);
 			final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
 			lblPath.setPadding(m, m - UI.thickDividerSize, m, m);
-			//UI.prepareControlContainerPaddingOnly(panelSecondary, true, false);
-			UI.animationSetViewToShowSliding(panelSecondary);
-			//rp = (RelativeLayout.LayoutParams)panelSecondary.getLayoutParams();
-			//rp.height = UI.thickDividerSize + UI.defaultControlSize + (UI.extraSpacing ? (UI.controlMargin << 1) : 0);
-			//panelSecondary.setLayoutParams(rp);
+			if (panelSecondary.getVisibility() != View.VISIBLE) {
+				panelSecondary.setVisibility(View.VISIBLE);
+				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+				rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
+				list.setLayoutParams(rp);
+				UI.animationSetViewToShowFirst(panelSecondary);
+			}
 			UI.animationAddViewToShow(btnGoBackToPlayer);
 			UI.animationAddViewToShow(sep);
 			UI.animationAddViewToShow(chkAll);
@@ -640,7 +645,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			if (Player.path.length() > 0)
 				navigateTo("", Player.path);
 		} else if (view == chkAll) {
-			if (loading)
+			if (loading || isAtHome)
 				return;
 			final boolean ck = chkAll.isChecked();
 			int i = fileList.getCount() - 1;
@@ -758,8 +763,11 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
 		if (UI.transition != UI.TRANSITION_NONE)
 			((View)panelSecondary.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, UI.thickDividerSize + UI.defaultControlSize + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
+		rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+		panelSecondary.setLayoutParams(rp);
 		sep = (TextView)findViewById(R.id.sep);
-		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
+		rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.chkAll);
 		rp.leftMargin = UI.controlMargin;
