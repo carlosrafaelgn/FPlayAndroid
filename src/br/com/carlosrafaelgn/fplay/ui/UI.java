@@ -72,7 +72,6 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -1148,22 +1147,24 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_control_mode = 0xffe0e0e0;
 		color_visualizer = 0xffe0e0e0;
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffb8b8b8;
+		color_divider = 0xffc4c4c4;
 		color_highlight = 0xff0000f1;
 		color_text_highlight = 0xffffffff;
 		color_text = 0xff000000;
 		color_text_listitem_secondary = 0xff0000f1;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
+		color_menu_border = 0xffc4c4c4;
 	}
 	
 	public static void loadDarkLightTheme() {
 		loadCommonColors(false);
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffb8b8b8;
+		color_divider = 0xffc4c4c4;
 		color_text_listitem_secondary = 0xff0000f1;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
+		color_menu_border = 0xffc4c4c4;
 	}
 	
 	public static void loadCreamyTheme() {
@@ -1174,6 +1175,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_text_listitem_secondary = 0xff0052a8;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
+		color_menu_border = 0xffaabbcc;
 		color_text_title = color_text;
 		colorState_text_title_static = colorState_text_static;
 	}
@@ -1185,7 +1187,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_list = 0xfffcfcfc;
 		color_menu = 0xfffcfcfc;
 		color_menu_icon = 0xff555555;
-		color_divider = 0xffbbbbbb;
+		color_divider = 0xffc4c4c4;
 		color_highlight = 0xffffcc66;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
@@ -1203,7 +1205,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_focused_border = 0xff696dbf;
 		color_focused_pressed = 0xffe5e6ff;
 		finishLoadingTheme(false);
-		color_menu_border = 0xffbbbbbb;
+		color_menu_border = 0xffc4c4c4;
 		color_text_title = color_text;
 		colorState_text_title_static = colorState_text_static;
 	}
@@ -1491,7 +1493,41 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			rect.top = top;
 		}
 	}
-	
+
+	public static void drawBgBorderless(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
+		dividerAllowed &= isDividerVisible;
+		if (dividerAllowed)
+			rect.bottom -= strokeSize;
+		if ((state & ~STATE_CURRENT) != 0) {
+			if ((state & STATE_PRESSED) != 0) {
+				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+				if (isFlat)
+					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+				else
+					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+			} else if ((state & STATE_MULTISELECTED) != 0) {
+				fillRect(canvas, color_selected_multi);
+			}
+		}
+		if (dividerAllowed) {
+			fillPaint.setColor(color_divider);
+			final int top = rect.top;
+			//rect.left += _8dp;
+			//rect.right -= _8dp;
+			rect.top = rect.bottom;
+			rect.left += dividerMarginLeft;
+			rect.bottom += strokeSize;
+			rect.right -= dividerMarginRight;
+			canvas.drawRect(rect, fillPaint);
+			//rect.left -= _8dp;
+			//rect.right += _8dp;
+			rect.top = top;
+			rect.left -= dividerMarginLeft;
+			rect.right += dividerMarginRight;
+		}
+	}
+
 	public static void drawBg(Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
@@ -1573,7 +1609,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		view.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
 		view.setPadding(p, topPadding, p, bottomPadding);
 	}
-	
+
 	public static void toast(Context context, Throwable ex) {
 		String s = ex.getMessage();
 		if (s != null && s.length() > 0)

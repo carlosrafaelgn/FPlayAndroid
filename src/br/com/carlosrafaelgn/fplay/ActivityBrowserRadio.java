@@ -224,14 +224,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (UI.browserActivity != this)
 			return;
 		loading = started;
-		if (panelLoading != null) {
-			UI.animationReset();
-			if (started)
-				UI.animationAddViewToShow(panelLoading);
-			else
-				UI.animationAddViewToHide(panelLoading);
-			UI.animationCommit(isCreatingLayout, null);
-		}
+		if (panelLoading != null)
+			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
 		if (list != null)
 			list.setCustomEmptyText(getText(started ? R.string.loading : (isAtFavorites ? R.string.no_favorites : R.string.no_stations)));
 		//if (!started)

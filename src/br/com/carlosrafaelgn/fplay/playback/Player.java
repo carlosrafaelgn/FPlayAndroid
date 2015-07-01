@@ -1722,7 +1722,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
-		UI.setTheme(null, opts.getInt(OPT_THEME, UI.THEME_FPLAY));
+		UI.setTheme(null, (UI.lastVersionCode < 74) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
@@ -1746,8 +1746,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			setVolumeControlType(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE0, defVolumeControlType & 1) |
 					(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE1, defVolumeControlType >> 1) << 1));
 		}
-		//the concept of bit was added on version 38
-		if (opts.hasBits() || UI.lastVersionCode == 0) {
+		//the concept of bit was added on version 38 (the old way was removed on version 74)
+		//if (opts.hasBits() || UI.lastVersionCode == 0) {
 			//load the bit flags the new way
 			controlMode = opts.getBit(OPTBIT_CONTROLMODE);
 			bassBoostMode = opts.getBit(OPTBIT_BASSBOOSTMODE);
@@ -1756,8 +1756,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON, true);
 			UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
-			UI.setFlat(opts.getBit(OPTBIT_FLAT, true));
-			UI.hasBorders = opts.getBit(OPTBIT_BORDERS, false);
+			UI.setFlat((UI.lastVersionCode < 74) || opts.getBit(OPTBIT_FLAT, true));
+			UI.hasBorders = ((UI.lastVersionCode >= 74) && opts.getBit(OPTBIT_BORDERS, false));
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
@@ -1784,7 +1784,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			songs.setRepeatingOne(opts.getBit(OPTBIT_REPEATONE));
 			UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
 			UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
-		} else {
+		/*} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
 			bassBoostMode = opts.getBoolean(OPT_BASSBOOSTMODE);
@@ -1812,7 +1812,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.browserScrollBarType = (UI.isTV ? BgListView.SCROLLBAR_SYSTEM : BgListView.SCROLLBAR_INDEXED);
 			lastRadioSearchWasByGenre = true;
 			UI.expandSeekBar = true;
-		}
+		}*/
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)

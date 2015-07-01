@@ -335,26 +335,14 @@ public final class SettingView extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBgBorderless(canvas, state, !hidingSeparator);
 		final int txtColor = ((state == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColorSecondary = ((state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		int x = UI.controlMargin;
-		if (icon != null) {
+		if (icon != null)
 			x += (UI.defaultControlContentsSize + UI.menuMargin);
+		UI.drawBgBorderless(canvas, state, !hidingSeparator, x, UI.controlMargin);
+		if (icon != null)
 			TextIconDrawable.drawIcon(canvas, icon, UI.controlMargin, (UI.rect.bottom - UI.defaultControlContentsSize) >> 1, UI.defaultControlContentsSize, txtColorSecondary);
-		}
-		if (!hidingSeparator && UI.isDividerVisible) {
-			final int right = UI.rect.right;
-			UI.rect.left = right - UI.controlMargin;
-			UI.rect.top = UI.rect.bottom - UI.strokeSize;
-			UI.fillRect(canvas, UI.color_list);
-			UI.rect.left = 0;
-			UI.rect.right = x;
-			UI.fillRect(canvas, UI.color_list);
-			UI.rect.left = 0;
-			UI.rect.top = 0;
-			UI.rect.right = right;
-		}
 		if (textLines != null) {
 			int y = textY, i = 0, start;
 			while ((start = textLines[i]) >= 0) {
