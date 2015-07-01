@@ -148,7 +148,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			CustomContextMenu.openContextMenu(btnMenu, this);
 		} else if (view == btnChangeEffect) {
 			Player.bassBoostMode = !Player.bassBoostMode;
-			prepareViewForMode();
+			prepareViewForMode(false);
 		} else if (view == chkEqualizer) {
 			if (enablingEffect)
 				return;
@@ -337,7 +337,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			panelControls.setPadding(UI.controlMargin, UI.thickDividerSize, UI.controlMargin, 0);
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
-		prepareViewForMode();
+		prepareViewForMode(true);
 		UI.prepareEdgeEffectColor(getApplication());
 	}
 	
@@ -349,6 +349,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 
 	@Override
 	protected void onCleanupLayout() {
+		UI.animationReset();
 		panelControls = null;
 		panelEqualizer = null;
 		panelSecondary = null;
@@ -430,7 +431,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		}
 	}
 	
-	private void prepareViewForMode() {
+	private void prepareViewForMode(boolean isCreatingLayout) {
 		LinearLayout.LayoutParams lp;
 		final Context ctx = getApplication();
 		if (btnChangeEffect == null || Player.bassBoostMode) {
@@ -442,10 +443,11 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			barVirtualizer.setText(format(Virtualizer.getStrength()));
 		}
 		if (Player.bassBoostMode) {
-			panelEqualizer.setVisibility(View.GONE);
-			panelSecondary.setVisibility(View.VISIBLE);
-			btnMenu.setVisibility(View.GONE);
-			
+			UI.animationReset();
+			UI.animationAddViewToHide(panelEqualizer);
+			UI.animationAddViewToHide(btnMenu);
+			UI.animationAddViewToShow(panelSecondary);
+			UI.animationCommit(isCreatingLayout, null);
 			btnGoBack.setNextFocusRightId(R.id.chkBass);
 			btnGoBack.setNextFocusDownId(R.id.chkBass);
 			UI.setNextFocusForwardId(btnGoBack, R.id.chkBass);
@@ -453,9 +455,11 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			btnChangeEffect.setNextFocusLeftId(R.id.barVirtualizer);//R.id.chkReverb);
 		} else {
 			if (btnChangeEffect != null) {
-				panelSecondary.setVisibility(View.GONE);
-				panelEqualizer.setVisibility(View.VISIBLE);
-				btnMenu.setVisibility(View.VISIBLE);
+				UI.animationReset();
+				UI.animationAddViewToHide(panelSecondary);
+				UI.animationAddViewToShow(panelEqualizer);
+				UI.animationAddViewToShow(btnMenu);
+				UI.animationCommit(isCreatingLayout, null);
 			}
 			chkEqualizer.setChecked(Equalizer.isEnabled());
 			

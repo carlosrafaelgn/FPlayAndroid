@@ -52,6 +52,7 @@ import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Message;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextUtils.TruncateAt;
@@ -68,8 +69,14 @@ import android.view.ViewParent;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.ScaleAnimation;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -80,6 +87,7 @@ import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
 import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
@@ -90,7 +98,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //Unit conversions are based on:
 //http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/util/TypedValue.java
 //
-public final class UI {
+public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
 	public static final int VERSION_CODE = 74;
 	
@@ -124,6 +132,8 @@ public final class UI {
 	public static final int TRANSITION_FADE = 1;
 	public static final int TRANSITION_ZOOM = 2;
 	public static final int TRANSITION_DISSOLVE = 3;
+	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 330;
+	public static final int TRANSITION_DURATION_FOR_VIEWS = 200;
 
 	public static final int MSG_ADD = 0x0001;
 	public static final int MSG_PLAY = 0x0002;
@@ -290,7 +300,7 @@ public final class UI {
 	public static BgColorStateList colorState_text_visualizer_reactive;
 
 	public static Typeface iconsTypeface, defaultTypeface;
-	
+
 	public static final class DisplayInfo {
 		public int usableScreenWidth, usableScreenHeight, screenWidth, screenHeight;
 		public boolean isLandscape, isLargeScreen, isLowDpiScreen;
@@ -1331,7 +1341,7 @@ public final class UI {
 		}
 	}
 
-	public static void showNextStartupMsg(final Activity activity) {
+	public static void showNextStartupMsg(Activity activity) {
 		if (msgStartup >= 20) {
 			msgStartup = 20;
 			return;
@@ -1345,21 +1355,9 @@ public final class UI {
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
 		final String content = activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.there_are_new_features).toString() + " " + activity.getText(R.string.borders).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
-		.setTitle(activity.getText(title))
-		.setView(createDialogView(activity, content))
-		.setPositiveButton(R.string.got_it, new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				showNextStartupMsg(activity);
-			}
-		})
-		.setOnCancelListener(new DialogInterface.OnCancelListener() {
-			@Override
-			public void onCancel(DialogInterface dialog) {
-				showNextStartupMsg(activity);
-			}
-		})
-		.create());
+			.setTitle(activity.getText(title))
+			.setView(createDialogView(activity, content))
+			.create());
 	}
 
 	public static void setVerticalMarginLarge(boolean isVerticalMarginLarge) {
@@ -1685,55 +1683,58 @@ public final class UI {
 		}
 	}
 	
-	public static AlertDialog prepareDialogAndShow(final AlertDialog dialog) {
+	public static AlertDialog prepareDialogAndShow(AlertDialog dialog) {
 		if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			//https://code.google.com/p/android/issues/detail?id=6360
-			dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-				private void scanChildren(ViewGroup parent) {
-					for (int i = parent.getChildCount(); i >= 0; i--) {
-						final View v = parent.getChildAt(i);
-						if (v instanceof ViewGroup)
-							scanChildren((ViewGroup)v);
-						else if (v instanceof TextView)
-							((TextView)v).setTypeface(defaultTypeface);
-					}
-				}
-				
-				@Override
-				public void onShow(DialogInterface dlg) {
-					Button btn;
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-						ViewParent parent = null;
-						if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
-							parent = btn.getParent();
-						else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
-							parent = btn.getParent();
-						else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
-							parent = btn.getParent();
-						if (parent != null && (parent instanceof ViewGroup))
-							removeSplitTouch((ViewGroup)parent);
-					}
-					if (alternateTypefaceActive) {
-						final View v = dialog.findViewById(android.R.id.content);
-						if (v != null && (v instanceof ViewGroup)) {
-							scanChildren((ViewGroup)v);
-						} else {
-							//at least try to change the buttons...
-							if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
-								btn.setTypeface(defaultTypeface);
-							if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
-								btn.setTypeface(defaultTypeface);
-							if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
-								btn.setTypeface(defaultTypeface);
-						}
-					}
-				}
-			});
+			dialog.setOnShowListener(Player.theUI);
 		}
 		dialog.show();
 		return dialog;
 	}
-	
+
+	private static void prepareDialogAndShowScanChildren(ViewGroup parent) {
+		for (int i = parent.getChildCount(); i >= 0; i--) {
+			final View v = parent.getChildAt(i);
+			if (v instanceof ViewGroup)
+				prepareDialogAndShowScanChildren((ViewGroup)v);
+			else if (v instanceof TextView)
+				((TextView)v).setTypeface(defaultTypeface);
+		}
+	}
+
+	@Override
+	public void onShow(DialogInterface dlg) {
+		final AlertDialog dialog = ((dlg instanceof AlertDialog) ? (AlertDialog)dlg : null);
+		if (dialog == null)
+			return;
+		Button btn;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			ViewParent parent = null;
+			if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
+				parent = btn.getParent();
+			else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
+				parent = btn.getParent();
+			else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
+				parent = btn.getParent();
+			if (parent != null && (parent instanceof ViewGroup))
+				removeSplitTouch((ViewGroup)parent);
+		}
+		if (alternateTypefaceActive) {
+			final View v = dialog.findViewById(android.R.id.content);
+			if (v != null && (v instanceof ViewGroup)) {
+				prepareDialogAndShowScanChildren((ViewGroup)v);
+			} else {
+				//at least try to change the buttons...
+				if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
+					btn.setTypeface(defaultTypeface);
+				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
+					btn.setTypeface(defaultTypeface);
+				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
+					btn.setTypeface(defaultTypeface);
+			}
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffectColor(Context context) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
@@ -1806,5 +1807,260 @@ public final class UI {
 			e.getText().add(text);
 			accessibilityManager.sendAccessibilityEvent(e);
 		}
+	}
+
+	private static final int ANIMATION_STATE_NONE = 0;
+	private static final int ANIMATION_STATE_HIDING = 1;
+	private static final int ANIMATION_STATE_SHOWING = 2;
+
+	private static View animationFocusView;
+	private static int animationHideCount, animationShowCount, animationState;
+	private static View animationViewToSlide;
+	private static View[] animationViewsToHideAndShow;
+	private static AnimationSet animationSetHide, animationSetShow;//animationSetHide, animationSetHideSlide, animationSetShow, animationSetShowSlide;
+
+	private static void animationFinished(boolean abortAll) {
+		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || animationSetShow == null);
+		if (animationHideCount > 0 || animationShowCount > 0) {
+			if (abortAll) {
+				animationState = ANIMATION_STATE_NONE;
+				if (animationSetHide != null)
+					animationSetHide.cancel();
+				//if (animationSetHideSlide != null)
+				//	animationSetHideSlide.cancel();
+				if (animationSetShow != null)
+					animationSetShow.cancel();
+				//if (animationSetShowSlide != null)
+				//	animationSetShowSlide.cancel();
+			}
+			if (abortAll || animationState == ANIMATION_STATE_HIDING) {
+				for (int i = 0; i < animationHideCount; i++) {
+					final View view = animationViewsToHideAndShow[i];
+					if (view != null) {
+						if (view == animationViewToSlide) {
+							animationViewToSlide = null;
+							final LayoutParams params = view.getLayoutParams();
+							if (params != null) {
+								params.height = 0;
+								view.setLayoutParams(params);
+							}
+						} else {
+							view.setVisibility(View.GONE);
+						}
+						animationViewsToHideAndShow[i] = null;
+					}
+				}
+				animationHideCount = 0;
+			}
+			if (!finished) {
+				finished = true;
+				animationState = ANIMATION_STATE_SHOWING;
+				for (int i = 0; i < animationShowCount; i++) {
+					final View view = animationViewsToHideAndShow[16 + i];
+					if (view != null) {
+						if (view == animationViewToSlide) {
+							animationViewToSlide = null;
+							if (view.getHeight() == 0) {
+								finished = false;
+								final LayoutParams params = view.getLayoutParams();
+								if (params != null) {
+									params.height = LayoutParams.WRAP_CONTENT;
+									view.setLayoutParams(params);
+								}
+								view.startAnimation(animationSetShow);
+							}
+						} else {
+							if (view.getVisibility() != View.VISIBLE) {
+								finished = false;
+								view.setVisibility(View.VISIBLE);
+								view.startAnimation(animationSetShow);
+							}
+						}
+					}
+				}
+			}
+			if (finished) {
+				animationState = ANIMATION_STATE_NONE;
+				for (int i = 0; i < animationShowCount; i++) {
+					final View view = animationViewsToHideAndShow[16 + i];
+					if (view != null)
+						animationViewsToHideAndShow[i] = null;
+				}
+				animationHideCount = 0;
+				animationShowCount = 0;
+				animationViewToSlide = null;
+			}
+		}
+		if (animationFocusView != null && finished) {
+			if (animationFocusView.isInTouchMode())
+				animationFocusView.requestFocus();
+			animationFocusView = null;
+		}
+	}
+
+	public static void animationAddViewToHide(View view) {
+		if (animationViewsToHideAndShow == null)
+			animationViewsToHideAndShow = new View[32];
+		else if (animationHideCount >= 16 && view != null && view.getVisibility() != View.GONE)
+			return;
+		animationViewsToHideAndShow[animationHideCount] = view;
+		animationHideCount++;
+	}
+
+	public static void animationSetViewToHideSliding(View view) {
+		if (animationViewsToHideAndShow == null)
+			animationViewsToHideAndShow = new View[32];
+		else if (animationHideCount >= 16 && view != null && view.getHeight() != 0)
+			return;
+		animationViewsToHideAndShow[animationHideCount] = view;
+		animationHideCount++;
+		animationViewToSlide = view;
+	}
+
+	public static void animationAddViewToShow(View view) {
+		if (animationViewsToHideAndShow == null)
+			animationViewsToHideAndShow = new View[32];
+		else if (animationShowCount >= 16 && view != null && view.getVisibility() != View.VISIBLE)
+			return;
+		animationViewsToHideAndShow[16 + animationShowCount] = view;
+		animationShowCount++;
+	}
+
+	public static void animationSetViewToShowSliding(View view) {
+		if (animationViewsToHideAndShow == null)
+			animationViewsToHideAndShow = new View[32];
+		else if (animationShowCount >= 16 && view != null && view.getHeight() == 0)
+			return;
+		animationViewsToHideAndShow[16 + animationShowCount] = view;
+		animationShowCount++;
+		animationViewToSlide = view;
+	}
+
+	public static void animationReset() {
+		animationFinished(true);
+	}
+
+	//DO NOT CALL THIS WITH forceSkipAnimation = false IF ANY VIEWS ARE NOT YET ATTACHED TO A WINDOW!!!
+	public static void animationCommit(boolean forceSkipAnimation, View focusView) {
+		if (transition == TRANSITION_NONE || forceSkipAnimation) {
+			for (int i = 0; i < animationHideCount; i++) {
+				final View view = animationViewsToHideAndShow[i];
+				if (view != null) {
+					if (view == animationViewToSlide) {
+						animationViewToSlide = null;
+						if (view.getHeight() != 0) {
+							final LayoutParams params = view.getLayoutParams();
+							if (params != null) {
+								params.height = 0;
+								view.setLayoutParams(params);
+							}
+						}
+					} else {
+						view.setVisibility(View.GONE);
+					}
+				}
+			}
+			for (int i = 0; i < animationShowCount; i++) {
+				final View view = animationViewsToHideAndShow[16 + i];
+				if (view != null) {
+					if (view == animationViewToSlide) {
+						animationViewToSlide = null;
+						if (view.getHeight() == 0) {
+							final LayoutParams params = view.getLayoutParams();
+							if (params != null) {
+								params.height = LayoutParams.WRAP_CONTENT;
+								view.setLayoutParams(params);
+							}
+						}
+					} else {
+						view.setVisibility(View.VISIBLE);
+					}
+				}
+			}
+			if (focusView != null && focusView.isInTouchMode())
+				focusView.requestFocus();
+			animationState = ANIMATION_STATE_NONE;
+			animationHideCount = 0;
+			animationShowCount = 0;
+			animationViewToSlide = null;
+		} else {
+			if (animationSetHide == null) {
+				final AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
+				animationSetHide = new AnimationSet(true);
+				animationSetHide.addAnimation(new AlphaAnimation(1.0f, 0.0f));
+				animationSetHide.setDuration(TRANSITION_DURATION_FOR_VIEWS);
+				animationSetHide.setInterpolator(interpolator);
+				animationSetHide.setRepeatCount(0);
+				animationSetHide.setFillAfter(false);
+				animationSetHide.setAnimationListener(Player.theUI);
+				//animationSetHideSlide = new AnimationSet(true);
+				//animationSetHideSlide.addAnimation(new ScaleAnimation(1.0f, 1.0f, 1.0f, 0.0f, Animation.ABSOLUTE, 0.0f, Animation.RELATIVE_TO_SELF, 1.0f));
+				//animationSetHideSlide.setDuration(TRANSITION_DURATION_FOR_VIEWS);
+				//animationSetHideSlide.setInterpolator(interpolator);
+				//animationSetHideSlide.setRepeatCount(0);
+				//animationSetHideSlide.setFillAfter(false);
+				//animationSetHideSlide.setAnimationListener(Player.theUI);
+				animationSetShow = new AnimationSet(true);
+				animationSetShow.addAnimation(new AlphaAnimation(0.0f, 1.0f));
+				animationSetShow.setDuration(TRANSITION_DURATION_FOR_VIEWS);
+				animationSetShow.setInterpolator(interpolator);
+				animationSetShow.setRepeatCount(0);
+				animationSetShow.setFillAfter(false);
+				animationSetShow.setAnimationListener(Player.theUI);
+				//animationSetShowSlide = new AnimationSet(true);
+				//animationSetShowSlide.addAnimation(new ScaleAnimation(1.0f, 1.0f, 0.0f, 1.0f, Animation.ABSOLUTE, 0.0f, Animation.RELATIVE_TO_SELF, 1.0f));
+				//animationSetShowSlide.setDuration(TRANSITION_DURATION_FOR_VIEWS);
+				//animationSetShowSlide.setInterpolator(interpolator);
+				//animationSetShowSlide.setRepeatCount(0);
+				//animationSetShowSlide.setFillAfter(false);
+				//animationSetShowSlide.setAnimationListener(Player.theUI);
+			} else {
+				animationSetHide.reset();
+				//animationSetHideSlide.reset();
+				animationSetShow.reset();
+				//animationSetShowSlide.reset();
+			}
+			if (animationHideCount > 0 || animationShowCount > 0) {
+				animationState = ANIMATION_STATE_HIDING;
+				animationFocusView = focusView;
+				boolean ok = false;
+				for (int i = 0; i < animationHideCount; i++) {
+					final View view = animationViewsToHideAndShow[i];
+					if (view != null) {
+						if (view == animationViewToSlide) {
+							if (view.getHeight() != 0) {
+								ok = true;
+								view.startAnimation(animationSetHide);
+							}
+						} else if (view.getVisibility() != View.GONE) {
+							ok = true;
+							view.startAnimation(animationSetHide);
+						}
+					}
+				}
+				if (!ok)
+					animationFinished(false);
+			} else {
+				animationState = ANIMATION_STATE_NONE;
+				animationHideCount = 0;
+				animationShowCount = 0;
+				animationViewToSlide = null;
+			}
+		}
+	}
+
+	@Override
+	public void onAnimationEnd(Animation animation) {
+		if ((animation == animationSetHide && animationState == ANIMATION_STATE_HIDING) ||
+			(animation == animationSetShow && animationState == ANIMATION_STATE_SHOWING))
+			animationFinished(false);
+	}
+
+	@Override
+	public void onAnimationRepeat(Animation animation) {
+	}
+
+	@Override
+	public void onAnimationStart(Animation animation) {
 	}
 }

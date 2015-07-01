@@ -42,6 +42,7 @@
 
     <LinearLayout
         android:id="@+id/panelControls"
+        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:baselineAligned="false"
@@ -50,6 +51,7 @@
 
         <LinearLayout
             android:id="@+id/panelEqualizer"
+            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -80,6 +82,7 @@
 
             <LinearLayout
                 android:id="@+id/panelSecondary"
+                android:splitMotionEvents="false"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"

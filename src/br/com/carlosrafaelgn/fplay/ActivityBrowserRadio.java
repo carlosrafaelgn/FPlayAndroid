@@ -84,7 +84,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private Spinner btnGenre;
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
-	private boolean loading, isAtFavorites;
+	private boolean loading, isAtFavorites, isCreatingLayout;
 
 	@Override
 	public CharSequence getTitle() {
@@ -92,15 +92,16 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	}
 
 	private void updateButtons() {
+		UI.animationReset();
 		if (!isAtFavorites != (btnFavorite.getVisibility() == View.VISIBLE)) {
 			if (isAtFavorites) {
-				btnFavorite.setVisibility(View.GONE);
-				btnSearch.setVisibility(View.GONE);
+				UI.animationAddViewToHide(btnFavorite);
+				UI.animationAddViewToHide(btnSearch);
 				btnGoBack.setNextFocusRightId(R.id.list);
 				UI.setNextFocusForwardId(btnGoBack, R.id.list);
 			} else {
-				btnFavorite.setVisibility(View.VISIBLE);
-				btnSearch.setVisibility(View.VISIBLE);
+				UI.animationAddViewToShow(btnFavorite);
+				UI.animationAddViewToShow(btnSearch);
 				btnGoBack.setNextFocusRightId(R.id.btnFavorite);
 				UI.setNextFocusForwardId(btnGoBack, R.id.btnFavorite);
 			}
@@ -108,21 +109,22 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		final int s = radioStationList.getSelection();
 		if ((s >= 0) != (btnAdd.getVisibility() == View.VISIBLE)) {
 			if (s >= 0) {
-				btnAdd.setVisibility(View.VISIBLE);
-				sep2.setVisibility(View.VISIBLE);
-				btnPlay.setVisibility(View.VISIBLE);
+				UI.animationAddViewToShow(btnAdd);
+				UI.animationAddViewToShow(sep2);
+				UI.animationAddViewToShow(btnPlay);
 				btnGoBack.setNextFocusLeftId(R.id.btnPlay);
 				btnGoBackToPlayer.setNextFocusRightId(R.id.btnAdd);
 				UI.setNextFocusForwardId(btnGoBackToPlayer, R.id.btnAdd);
 			} else {
-				btnAdd.setVisibility(View.GONE);
-				sep2.setVisibility(View.GONE);
-				btnPlay.setVisibility(View.GONE);
+				UI.animationAddViewToHide(btnAdd);
+				UI.animationAddViewToHide(sep2);
+				UI.animationAddViewToHide(btnPlay);
 				btnGoBack.setNextFocusLeftId(R.id.btnGoBackToPlayer);
 				btnGoBackToPlayer.setNextFocusRightId(R.id.btnGoBack);
 				UI.setNextFocusForwardId(btnGoBackToPlayer, R.id.btnGoBack);
 			}
 		}
+		UI.animationCommit(isCreatingLayout, null);
 	}
 	
 	private void addPlaySelectedItem(final boolean play) {
@@ -222,12 +224,18 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (UI.browserActivity != this)
 			return;
 		loading = started;
-		if (panelLoading != null)
-			panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
+		if (panelLoading != null) {
+			UI.animationReset();
+			if (started)
+				UI.animationAddViewToShow(panelLoading);
+			else
+				UI.animationAddViewToHide(panelLoading);
+			UI.animationCommit(isCreatingLayout, null);
+		}
 		if (list != null)
 			list.setCustomEmptyText(getText(started ? R.string.loading : (isAtFavorites ? R.string.no_favorites : R.string.no_stations)));
-		if (!started)
-			updateButtons();
+		//if (!started)
+		//	updateButtons();
 	}
 	
 	@Override
@@ -516,7 +524,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareEdgeEffectColor(getApplication());
+		isCreatingLayout = true;
 		updateButtons();
+		isCreatingLayout = false;
 		doSearch();
 	}
 	

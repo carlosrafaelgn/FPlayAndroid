@@ -223,16 +223,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
 	//and Virtualizer classes from being garbage collected...
-	public static MainHandler _mainHandler;
-	public static final UI _ui = new UI();
-	public static final Equalizer _equalizer = new Equalizer();
-	public static final BassBoost _bassBoost = new BassBoost();
-	public static final Virtualizer _virtualizer = new Virtualizer();
+	public static MainHandler theMainHandler;
+	public static final UI theUI = new UI();
+	public static final Equalizer theEqualizer = new Equalizer();
+	public static final BassBoost theBassBoost = new BassBoost();
+	public static final Virtualizer theVirtualizer = new Virtualizer();
 
 	public static boolean hasFocus;
 	public static int volumeStreamMax = 15, volumeControlType;
 	private static boolean volumeDimmed;
-	private static int volumeDB, volumeDBFading, volumeStream, silenceMode;
+	private static int volumeDB, volumeDBFading, silenceMode;
 	private static float volumeMultiplier;
 
 	private static int audioSink, audioSinkBeforeFocusLoss;
@@ -433,7 +433,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			alreadySelected = true; //fix the initial selection when the app is started from the widget
 			state = STATE_INITIALIZING;
 			context.startService(new Intent(context, Player.class));
-			_mainHandler = MainHandler.initialize();
+			theMainHandler = MainHandler.initialize();
 			localHandler = new CoreLocalHandler();
 			notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
@@ -570,7 +570,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		thread = null;
 		observer = null;
 		turnOffTimerObserver = null;
-		_mainHandler = null;
+		theMainHandler = null;
 		looper = null;
 		handler = null;
 		localHandler = null;
@@ -651,7 +651,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			else if (volume > volumeStreamMax)
 				volume = volumeStreamMax;
 			localVolumeStream = volume;
-			break;
+			//apparently a few devices don't like to have the streamVolume changed from another thread....
+			//maybe there is another reason for why it fails... I just haven't found yet :(
+			try {
+				if (audioManager != null)
+					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			return volume;
 		case VOLUME_CONTROL_DB:
 		case VOLUME_CONTROL_PERCENT:
 			if (volume <= VOLUME_MIN_DB)
@@ -1166,9 +1174,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		if (volumeControlType == VOLUME_CONTROL_STREAM) {
-			if (volumeStream == localVolumeStream)
-				return;
-			volumeStream = localVolumeStream;
+			final int volumeStream = localVolumeStream;
 			try {
 				if (audioManager != null)
 					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volumeStream <= 0) ? 0 : ((volumeStream >= volumeStreamMax) ? volumeStreamMax : volumeStream)), 0);

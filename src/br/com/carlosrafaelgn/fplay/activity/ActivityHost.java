@@ -109,6 +109,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	public void onAnimationEnd(Animation animation) {
+		if (anim != null) {
+			anim.setAnimationListener(null);
+			anim = null;
+		}
 		if (isFading) {
 			isFading = false;
 			if (parent != null) {
@@ -117,15 +121,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					oldView = null;
 				}
 				if (newView != null) {
+					newView.setAnimation(null);
 					//setEnabledCheckForGroup(newView, true);
 					newView = null;
 				}
 				parent = null;
 			}
-		}
-		if (anim != null) {
-			anim.setAnimationListener(null);
-			anim = null;
 		}
 		if (animation != null)
 			BackgroundActivityMonitor.start(this);
@@ -187,9 +188,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						//leave prepared for next time
 						UI.storeViewCenterLocationForFade(null);
 						if (useFadeOutNextTime || forceFadeOut) {
-							anim.addAnimation(new AlphaAnimation(1, 0));
+							anim.addAnimation(new AlphaAnimation(1.0f, 0.0f));
 						} else {
-							anim.addAnimation(new AlphaAnimation(0, 1));
+							anim.addAnimation(new AlphaAnimation(0.0f, 1.0f));
 						}
 					} else {
 						int x, y;
@@ -211,23 +212,23 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						UI.storeViewCenterLocationForFade(null);
 						if (useFadeOutNextTime || forceFadeOut) {
 							if (UI.transition == UI.TRANSITION_DISSOLVE) {
-								anim.addAnimation(new ScaleAnimation(1, 0.75f, 1, 1, x, y));
-								anim.addAnimation(new TranslateAnimation(0, 0, 0, oldView.getHeight() >> 3));
+								anim.addAnimation(new ScaleAnimation(1.0f, 0.75f, 1.0f, 1.0f, x, y));
+								anim.addAnimation(new TranslateAnimation(0.0f, 0.0f, 0.0f, (float)(oldView.getHeight() >> 3)));
 							} else {
-								anim.addAnimation(new ScaleAnimation(1, 0.3f, 1, 0.3f, x, y));
+								anim.addAnimation(new ScaleAnimation(1.0f, 0.3f, 1.0f, 0.3f, x, y));
 							}
-							anim.addAnimation(new AlphaAnimation(1, 0));
+							anim.addAnimation(new AlphaAnimation(1.0f, 0.0f));
 						} else {
 							if (UI.transition == UI.TRANSITION_DISSOLVE) {
-								anim.addAnimation(new ScaleAnimation(0.75f, 1, 1, 1, x, y));
-								anim.addAnimation(new TranslateAnimation(0, 0, -(oldView.getHeight() >> 3), 0));
+								anim.addAnimation(new ScaleAnimation(0.75f, 1.0f, 1.0f, 1.0f, x, y));
+								anim.addAnimation(new TranslateAnimation(0.0f, 0.0f, (float)-(oldView.getHeight() >> 3), 0.0f));
 							} else {
-								anim.addAnimation(new ScaleAnimation(0.3f, 1, 0.3f, 1, x, y));
+								anim.addAnimation(new ScaleAnimation(0.3f, 1.0f, 0.3f, 1.0f, x, y));
 							}
-							anim.addAnimation(new AlphaAnimation(0, 1));
+							anim.addAnimation(new AlphaAnimation(0.0f, 1.0f));
 						}
 					}
-					anim.setDuration(330);
+					anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES);
 					anim.setInterpolator(new AccelerateDecelerateInterpolator());
 					anim.setRepeatCount(0);
 					anim.setFillAfter(false);

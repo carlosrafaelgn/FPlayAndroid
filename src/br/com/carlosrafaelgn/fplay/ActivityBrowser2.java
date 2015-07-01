@@ -77,7 +77,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private BgButton btnGoBack, btnRadio, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
-	private boolean loading, isAtHome, verifyAlbumWhenChecking;
+	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
 
 	@Override
 	public CharSequence getTitle() {
@@ -91,16 +91,15 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
 			rp.height = 0;
 			lblPath.setLayoutParams(rp);
-			panelSecondary.setPadding(0, 0, 0, 0);
-			btnGoBackToPlayer.setVisibility(View.GONE);
-			sep.setVisibility(View.GONE);
-			chkAll.setVisibility(View.GONE);
-			rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
-			rp.leftMargin = UI.controlMargin;
-			rp.rightMargin = UI.controlMargin;
-			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+			//panelSecondary.setPadding(0, 0, 0, 0);
+			UI.animationSetViewToHideSliding(panelSecondary);
+			//rp = (RelativeLayout.LayoutParams)panelSecondary.getLayoutParams();
+			//rp.height = 0;
+			//panelSecondary.setLayoutParams(rp);
+			UI.animationAddViewToHide(btnGoBackToPlayer);
+			UI.animationAddViewToHide(sep);
+			UI.animationAddViewToHide(chkAll);
 			chkFavorite.setNextFocusUpId(R.id.list);
-			btnHome.setLayoutParams(rp);
 			btnHome.setNextFocusUpId(R.id.list);
 			btnHome.setNextFocusRightId(R.id.list);
 			UI.setNextFocusForwardId(btnHome, R.id.list);
@@ -114,16 +113,15 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			lblPath.setLayoutParams(rp);
 			final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
 			lblPath.setPadding(m, m - UI.thickDividerSize, m, m);
-			UI.prepareControlContainerPaddingOnly(panelSecondary, true, false);
-			btnGoBackToPlayer.setVisibility(View.VISIBLE);
-			sep.setVisibility(View.VISIBLE);
-			chkAll.setVisibility(View.VISIBLE);
-			rp = new RelativeLayout.LayoutParams(UI.defaultControlSize, UI.defaultControlSize);
-			rp.leftMargin = UI.controlMargin;
-			rp.rightMargin = UI.controlMargin;
-			rp.addRule(RelativeLayout.LEFT_OF, R.id.sep);
+			//UI.prepareControlContainerPaddingOnly(panelSecondary, true, false);
+			UI.animationSetViewToShowSliding(panelSecondary);
+			//rp = (RelativeLayout.LayoutParams)panelSecondary.getLayoutParams();
+			//rp.height = UI.thickDividerSize + UI.defaultControlSize + (UI.extraSpacing ? (UI.controlMargin << 1) : 0);
+			//panelSecondary.setLayoutParams(rp);
+			UI.animationAddViewToShow(btnGoBackToPlayer);
+			UI.animationAddViewToShow(sep);
+			UI.animationAddViewToShow(chkAll);
 			chkFavorite.setNextFocusUpId(R.id.btnGoBackToPlayer);
-			btnHome.setLayoutParams(rp);
 			btnHome.setNextFocusUpId((checkedCount != 0) ? R.id.btnAdd : R.id.btnGoBackToPlayer);
 			btnHome.setNextFocusRightId(R.id.chkAll);
 			UI.setNextFocusForwardId(btnHome, R.id.chkAll);
@@ -136,23 +134,25 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 	}
 	
-	private void updateButtons() {
+	private void updateButtons(boolean standaloneAnimation) {
+		if (standaloneAnimation)
+			UI.animationReset();
 		if (!isAtHome != (chkAll.getVisibility() == View.VISIBLE))
 			updateOverallLayout();
 		if ((checkedCount != 0) != (btnAdd.getVisibility() == View.VISIBLE)) {
 			if (checkedCount != 0) {
-				btnAdd.setVisibility(View.VISIBLE);
-				sep2.setVisibility(View.VISIBLE);
-				btnPlay.setVisibility(View.VISIBLE);
+				UI.animationAddViewToShow(btnAdd);
+				UI.animationAddViewToShow(sep2);
+				UI.animationAddViewToShow(btnPlay);
 				btnGoBack.setNextFocusLeftId(R.id.btnPlay);
 				btnHome.setNextFocusUpId(R.id.btnAdd);
 				chkAll.setNextFocusUpId(R.id.btnPlay);
 				btnGoBackToPlayer.setNextFocusRightId(R.id.btnAdd);
 				UI.setNextFocusForwardId(btnGoBackToPlayer, R.id.btnAdd);
 			} else {
-				btnAdd.setVisibility(View.GONE);
-				sep2.setVisibility(View.GONE);
-				btnPlay.setVisibility(View.GONE);
+				UI.animationAddViewToHide(btnAdd);
+				UI.animationAddViewToHide(sep2);
+				UI.animationAddViewToHide(btnPlay);
 				btnGoBack.setNextFocusLeftId(R.id.btnGoBackToPlayer);
 				btnHome.setNextFocusUpId(R.id.btnGoBackToPlayer);
 				chkAll.setNextFocusUpId(R.id.btnGoBackToPlayer);
@@ -160,6 +160,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				UI.setNextFocusForwardId(btnGoBackToPlayer, R.id.btnGoBack);
 			}
 		}
+		if (standaloneAnimation)
+			UI.animationCommit(isCreatingLayout, null);
 	}
 	
 	private void selectAlbumSongs(int position) {
@@ -177,7 +179,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		chkAll.setChecked(checkedCount == fileList.getCount());
 		fileList.notifyCheckedChanged();
-		updateButtons();
+		updateButtons(true);
 	}
 	
 	private void addPlayCheckedItems(final boolean play) {
@@ -258,7 +260,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				for (; c >= 0; c--)
 					fileList.getItemT(c).isChecked = false;
 				fileList.notifyCheckedChanged();
-				updateButtons();
+				updateButtons(true);
 			}
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
@@ -287,8 +289,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				}
 			}
 		}
-		if (!started)
-			updateButtons();
+		//if (!started)
+		//	updateButtons(true);
 	}
 	
 	@Override
@@ -362,7 +364,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				if (checkedCount < 0)
 					checkedCount = 0;
 			}
-			updateButtons();
+			updateButtons(true);
 		}
 		if (forceNotifyCheckedChanged) {
 			if (list != null) {
@@ -461,25 +463,26 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	}
 	
 	private void navigateTo(String to, String from) {
+		UI.animationReset();
 		if (isAtHome)
 			Player.originalPath = to;
 		isAtHome = (to.length() == 0);
 		final boolean fav = ((to.length() > 1) && (to.charAt(0) == File.separatorChar));
 		final boolean others = !isAtHome;
 		if (fav) {
-			btnRadio.setVisibility(View.GONE);
-			btnURL.setVisibility(View.GONE);
+			UI.animationAddViewToHide(btnRadio);
+			UI.animationAddViewToHide(btnURL);
 			btnGoBack.setNextFocusRightId(R.id.chkFavorite);
 			UI.setNextFocusForwardId(btnGoBack, R.id.chkFavorite);
 			btnHome.setNextFocusLeftId(R.id.chkFavorite);
 			chkFavorite.setChecked(Player.isFavoriteFolder(to));
-			chkFavorite.setVisibility(View.VISIBLE);
-			chkAlbumArt.setVisibility(View.GONE);
-			btnHome.setVisibility(View.VISIBLE);
+			UI.animationAddViewToShow(chkFavorite);
+			UI.animationAddViewToHide(chkAlbumArt);
+			UI.animationAddViewToShow(btnHome);
 		} else if (others) {
 			final boolean albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));// (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
-			btnRadio.setVisibility(View.GONE);
-			btnURL.setVisibility(View.GONE);
+			UI.animationAddViewToHide(btnRadio);
+			UI.animationAddViewToHide(btnURL);
 			if (albumArtArea) {
 				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);
 				UI.setNextFocusForwardId(btnGoBack, R.id.chkAlbumArt);
@@ -489,21 +492,25 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				UI.setNextFocusForwardId(btnGoBack, R.id.btnHome);
 				btnHome.setNextFocusLeftId(R.id.btnGoBack);
 			}
-			chkFavorite.setVisibility(View.GONE);
-			chkAlbumArt.setVisibility(albumArtArea ? View.VISIBLE : View.GONE);
-			btnHome.setVisibility(View.VISIBLE);
+			UI.animationAddViewToHide(chkFavorite);
+			if (albumArtArea)
+				UI.animationAddViewToShow(chkAlbumArt);
+			else
+				UI.animationAddViewToHide(chkAlbumArt);
+			UI.animationAddViewToShow(btnHome);
 		} else {
-			btnRadio.setVisibility(View.VISIBLE);
-			btnURL.setVisibility(View.VISIBLE);
+			UI.animationAddViewToShow(btnRadio);
+			UI.animationAddViewToShow(btnURL);
 			btnGoBack.setNextFocusRightId(R.id.btnRadio);
 			UI.setNextFocusForwardId(btnGoBack, R.id.btnRadio);
-			chkFavorite.setVisibility(View.GONE);
-			chkAlbumArt.setVisibility(View.GONE);
-			btnHome.setVisibility(View.GONE);
+			UI.animationAddViewToHide(chkFavorite);
+			UI.animationAddViewToHide(chkAlbumArt);
+			UI.animationAddViewToHide(btnHome);
 		}
 		checkedCount = 0;
 		chkAll.setChecked(false);
-		updateButtons();
+		updateButtons(false);
+		UI.animationCommit(isCreatingLayout, null);
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
 		final boolean sectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
@@ -539,6 +546,15 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
+			if (chkAll != null && checkedCount != 0) {
+				chkAll.setChecked(false);
+				checkedCount = 0;
+				for (int i = fileList.getCount() - 1; i >= 0; i--)
+					fileList.getItemT(i).isChecked = false;
+				fileList.notifyCheckedChanged();
+				updateButtons(true);
+				return;
+			}
 			if (Player.path.length() != 0) {
 				//does not work well... the focused item is always the first (but the selected item may vary)
 				//if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && list != null)
@@ -632,7 +648,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			for (; i >= 0; i--)
 				fileList.getItemT(i).isChecked = ck;
 			fileList.notifyCheckedChanged();
-			updateButtons();
+			updateButtons(true);
 		} else if (view == btnGoBackToPlayer) {
 			finish(0, view, true);
 		} else if (view == btnAdd) {
@@ -683,15 +699,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	protected boolean onBackPressed() {
 		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing || isAtHome)
 			return false;
-		if (chkAll != null && checkedCount != 0) {
-			chkAll.setChecked(false);
-			checkedCount = 0;
-			for (int i = fileList.getCount() - 1; i >= 0; i--)
-				fileList.getItemT(i).isChecked = false;
-			fileList.notifyCheckedChanged();
-			updateButtons();
-			return true;
-		}
 		onClick(btnGoBack);
 		return true;
 	}
@@ -749,6 +756,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
+		if (UI.transition != UI.TRANSITION_NONE)
+			((View)panelSecondary.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		sep = (TextView)findViewById(R.id.sep);
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
@@ -802,9 +811,14 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		UI.prepareEdgeEffectColor(getApplication());
 		//this is the opposite as in updateButtons(), to force updateOverallLayout()
 		//to be called at least once
-		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE))
+		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE)) {
+			UI.animationReset();
 			updateOverallLayout();
+			UI.animationCommit(true, null);
+		}
+		isCreatingLayout = true;
 		navigateTo(Player.path, null);
+		isCreatingLayout = false;
 	}
 	
 	@Override
@@ -822,12 +836,14 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	protected void onOrientationChanged() {
+		UI.animationReset();
 		if (UI.isLargeScreen && list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
+		UI.animationReset();
 		lastClickedFavorite = null;
 		lblPath = null;
 		list = null;

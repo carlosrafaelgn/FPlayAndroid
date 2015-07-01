@@ -82,7 +82,7 @@
             android:id="@+id/btnHome"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
+            android:layout_toLeftOf="@+id/sep"
             android:layout_marginLeft="8dp"
             android:contentDescription="@string/home"
             android:nextFocusDown="@+id/list"
@@ -136,7 +136,7 @@
         android:id="@+id/panelSecondary"
         android:splitMotionEvents="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_alignParentBottom="true" >
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
