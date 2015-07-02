@@ -68,10 +68,9 @@ import android.view.ViewParent;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
+import android.view.animation.Interpolator;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -413,8 +412,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static ActivityBrowserView browserActivity;
 	public static AccessibilityManager accessibilityManager;
 	
-	public static String emptyListString;
-	private static int emptyListStringHalfWidth, currentLocale, createdWidgetIconColor;
+	private static int currentLocale, createdWidgetIconColor;
 	private static boolean alternateTypefaceActive, fullyInitialized;
 	private static Toast internalToast;
 
@@ -447,6 +445,16 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		//hide the edge!!! ;)
 		//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
 		//  edgeFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.CLEAR);
+		animationInterpolator = new Interpolator() {
+			@Override
+			public float getInterpolation(float input) {
+				//faster version of AccelerateDecelerateInterpolator using this sine approximation:
+				//http://forum.devmaster.net/t/fast-and-accurate-sine-cosine/9648
+				//we use the result of sin in the range -PI/2 to PI/2
+				input = (input * 3.14159265f) - 1.57079632f;
+				return 0.5f + (0.5f * ((1.27323954f * input) - (0.40528473f * input * (input < 0.0f ? -input : input))));
+			}
+		};
 	}
 	
 	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
@@ -526,8 +534,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			_LargeItemspBox = _18spBox;
 			_LargeItemspYinBox = _18spYinBox;
 		}
-		emptyListString = context.getText(R.string.empty_list).toString();
-		emptyListStringHalfWidth = measureText(emptyListString, _22sp) >> 1;
 	}
 	
 	public static Locale getLocaleFromCode(int localeCode) {
@@ -647,9 +653,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
 			setUsingAlternateTypeface(context, true);
 			return true;
-		} else if (reloadEmptyListString) {
-			emptyListString = context.getText(R.string.empty_list).toString();
-			emptyListStringHalfWidth = measureText(emptyListString, _22sp) >> 1;
 		}
 		return false;
 	}
@@ -1417,12 +1420,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		canvas.drawText(text, start, end, x, y, textPaint);
 	}
 
-	public static void drawEmptyListString(Canvas canvas) {
-		textPaint.setColor(color_text_disabled);
-		textPaint.setTextSize(_22sp);
-		canvas.drawText(emptyListString, (UI.rect.right >> 1) - emptyListStringHalfWidth, ((UI.rect.bottom - _18spBox) >> 1) + _18spYinBox, textPaint);
-	}
-	
 	public static void fillRect(Canvas canvas, int fillColor) {
 		fillPaint.setColor(fillColor);
 		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
@@ -1847,23 +1844,33 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	private static final int ANIMATION_STATE_SHOWING = 2;
 
 	public static boolean animationEnabled;
+	public static final Interpolator animationInterpolator;
 	private static View animationFocusView;
 	private static int animationHideCount, animationShowCount, animationState;
 	private static View animationViewToShowFirst;
 	private static View[] animationViewsToHideAndShow;
-	private static AnimationSet animationSetShowFirst, animationSetHide, animationSetShow;
+	private static Animation animationShowFirst, animationHide, animationShow;
+
+	public static Animation animationCreateAlpha(float fromAlpha, float toAlpha) {
+		final Animation animation = new AlphaAnimation(fromAlpha, toAlpha);
+		animation.setDuration(TRANSITION_DURATION_FOR_VIEWS);
+		animation.setInterpolator(animationInterpolator);
+		animation.setRepeatCount(0);
+		animation.setFillAfter(false);
+		return animation;
+	}
 
 	private static void animationFinished(boolean abortAll) {
-		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || animationSetShow == null);
+		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || animationShow == null);
 		if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
 			if (abortAll) {
 				animationState = ANIMATION_STATE_NONE;
-				if (animationSetShowFirst != null)
-					animationSetShowFirst.cancel();
-				if (animationSetHide != null)
-					animationSetHide.cancel();
-				if (animationSetShow != null)
-					animationSetShow.cancel();
+				if (animationShowFirst != null)
+					animationShowFirst.cancel();
+				if (animationHide != null)
+					animationHide.cancel();
+				if (animationShow != null)
+					animationShow.cancel();
 			}
 			if (abortAll || animationState == ANIMATION_STATE_HIDING) {
 				for (int i = 0; i < animationHideCount; i++) {
@@ -1888,7 +1895,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					if (view != null && view.getVisibility() != View.VISIBLE) {
 						finished = false;
 						view.setVisibility(View.VISIBLE);
-						view.startAnimation(animationSetShow);
+						view.startAnimation(animationShow);
 					}
 				}
 			}
@@ -1961,33 +1968,14 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			animationShowCount = 0;
 			animationViewToShowFirst = null;
 		} else {
-			if (animationSetHide == null) {
-				final AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
-				animationSetShowFirst = new AnimationSet(true);
-				animationSetShowFirst.addAnimation(new AlphaAnimation(0.0f, 1.0f));
-				animationSetShowFirst.setDuration(TRANSITION_DURATION_FOR_VIEWS);
-				animationSetShowFirst.setInterpolator(interpolator);
-				animationSetShowFirst.setRepeatCount(0);
-				animationSetShowFirst.setFillAfter(false);
-				animationSetShowFirst.setAnimationListener(Player.theUI);
-				animationSetHide = new AnimationSet(true);
-				animationSetHide.addAnimation(new AlphaAnimation(1.0f, 0.0f));
-				animationSetHide.setDuration(TRANSITION_DURATION_FOR_VIEWS);
-				animationSetHide.setInterpolator(interpolator);
-				animationSetHide.setRepeatCount(0);
-				animationSetHide.setFillAfter(false);
-				animationSetHide.setAnimationListener(Player.theUI);
-				animationSetShow = new AnimationSet(true);
-				animationSetShow.addAnimation(new AlphaAnimation(0.0f, 1.0f));
-				animationSetShow.setDuration(TRANSITION_DURATION_FOR_VIEWS);
-				animationSetShow.setInterpolator(interpolator);
-				animationSetShow.setRepeatCount(0);
-				animationSetShow.setFillAfter(false);
-				animationSetShow.setAnimationListener(Player.theUI);
+			if (animationShowFirst == null) {
+				(animationShowFirst = animationCreateAlpha(0.0f, 1.0f)).setAnimationListener(Player.theUI);
+				(animationHide = animationCreateAlpha(1.0f, 0.0f)).setAnimationListener(Player.theUI);
+				(animationShow = animationCreateAlpha(0.0f, 1.0f)).setAnimationListener(Player.theUI);
 			} else {
-				animationSetShowFirst.reset();
-				animationSetHide.reset();
-				animationSetShow.reset();
+				animationShowFirst.reset();
+				animationHide.reset();
+				animationShow.reset();
 			}
 			if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
 				animationState = ANIMATION_STATE_HIDING;
@@ -1995,13 +1983,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				boolean ok = false;
 				if (animationViewToShowFirst != null) {
 					ok = true;
-					animationViewToShowFirst.startAnimation(animationSetShowFirst);
+					animationViewToShowFirst.startAnimation(animationShowFirst);
 				}
 				for (int i = 0; i < animationHideCount; i++) {
 					final View view = animationViewsToHideAndShow[i];
 					if (view != null && view.getVisibility() != View.GONE) {
 						ok = true;
-						view.startAnimation(animationSetHide);
+						view.startAnimation(animationHide);
 					}
 				}
 				if (!ok)
@@ -2017,8 +2005,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	@Override
 	public void onAnimationEnd(Animation animation) {
-		if (((animation == animationSetShowFirst || animation == animationSetHide) && animationState == ANIMATION_STATE_HIDING) ||
-			(animation == animationSetShow && animationState == ANIMATION_STATE_SHOWING))
+		if (((animation == animationShowFirst || animation == animationHide) && animationState == ANIMATION_STATE_HIDING) ||
+			(animation == animationShow && animationState == ANIMATION_STATE_SHOWING))
 			animationFinished(false);
 	}
 

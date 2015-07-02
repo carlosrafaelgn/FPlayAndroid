@@ -163,7 +163,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.onInitializeAccessibilityNodeInfo(info);
 		info.setClassName("br.com.carlosrafaelgn.fplay.activity.ActivityHost");
 		if (itemCount == 0) {
-			info.setText(emptyLayout == null ? UI.emptyListString : emptyLayout.getText());
+			info.setText(emptyLayout == null ? "" : emptyLayout.getText());
 		} else {
 			info.setText("");
 		}
@@ -882,9 +882,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				UI.textPaint.setTextSize(UI._22sp);
 				emptyLayout.draw(canvas);
 				canvas.translate(-x, -y);
-			} else {
-				getDrawingRect(UI.rect);
-				UI.drawEmptyListString(canvas);
 			}
 		} else {
 			switch (scrollBarType) {

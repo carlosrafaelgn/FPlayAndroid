@@ -44,7 +44,6 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
@@ -72,7 +71,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private boolean exitOnDestroy, isFading, useFadeOutNextTime, ignoreFadeNextTime;
 	private FrameLayout parent;
 	private View oldView, newView;
-	private AnimationSet anim;
+	private Animation anim;
 
 	private void setEnabledCheckForGroup(View view, boolean enabled) {
 		view.setEnabled(enabled);
@@ -183,16 +182,13 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				oldView = parent.getChildAt(0);
 				if (oldView != null) {
 					newView = view;
-					anim = new AnimationSet(true);
 					if (UI.transition == UI.TRANSITION_FADE) {
 						//leave prepared for next time
 						UI.storeViewCenterLocationForFade(null);
-						if (useFadeOutNextTime || forceFadeOut) {
-							anim.addAnimation(new AlphaAnimation(1.0f, 0.0f));
-						} else {
-							anim.addAnimation(new AlphaAnimation(0.0f, 1.0f));
-						}
+						anim = ((useFadeOutNextTime || forceFadeOut) ? new AlphaAnimation(1.0f, 0.0f) : new AlphaAnimation(0.0f, 1.0f));
 					} else {
+						final AnimationSet animationSet = new AnimationSet(true);
+						anim = animationSet;
 						int x, y;
 						if (UI.transition == UI.TRANSITION_DISSOLVE) {
 							x = oldView.getWidth() >> 1;
@@ -212,24 +208,24 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						UI.storeViewCenterLocationForFade(null);
 						if (useFadeOutNextTime || forceFadeOut) {
 							if (UI.transition == UI.TRANSITION_DISSOLVE) {
-								anim.addAnimation(new ScaleAnimation(1.0f, 0.75f, 1.0f, 1.0f, x, y));
-								anim.addAnimation(new TranslateAnimation(0.0f, 0.0f, 0.0f, (float)(oldView.getHeight() >> 3)));
+								animationSet.addAnimation(new ScaleAnimation(1.0f, 0.75f, 1.0f, 1.0f, x, y));
+								animationSet.addAnimation(new TranslateAnimation(0.0f, 0.0f, 0.0f, (float)(oldView.getHeight() >> 3)));
 							} else {
-								anim.addAnimation(new ScaleAnimation(1.0f, 0.3f, 1.0f, 0.3f, x, y));
+								animationSet.addAnimation(new ScaleAnimation(1.0f, 0.3f, 1.0f, 0.3f, x, y));
 							}
-							anim.addAnimation(new AlphaAnimation(1.0f, 0.0f));
+							animationSet.addAnimation(new AlphaAnimation(1.0f, 0.0f));
 						} else {
 							if (UI.transition == UI.TRANSITION_DISSOLVE) {
-								anim.addAnimation(new ScaleAnimation(0.75f, 1.0f, 1.0f, 1.0f, x, y));
-								anim.addAnimation(new TranslateAnimation(0.0f, 0.0f, (float)-(oldView.getHeight() >> 3), 0.0f));
+								animationSet.addAnimation(new ScaleAnimation(0.75f, 1.0f, 1.0f, 1.0f, x, y));
+								animationSet.addAnimation(new TranslateAnimation(0.0f, 0.0f, (float)-(oldView.getHeight() >> 3), 0.0f));
 							} else {
-								anim.addAnimation(new ScaleAnimation(0.3f, 1.0f, 0.3f, 1.0f, x, y));
+								animationSet.addAnimation(new ScaleAnimation(0.3f, 1.0f, 0.3f, 1.0f, x, y));
 							}
-							anim.addAnimation(new AlphaAnimation(0.0f, 1.0f));
+							animationSet.addAnimation(new AlphaAnimation(0.0f, 1.0f));
 						}
 					}
 					anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES);
-					anim.setInterpolator(new AccelerateDecelerateInterpolator());
+					anim.setInterpolator(UI.animationInterpolator);
 					anim.setRepeatCount(0);
 					anim.setFillAfter(false);
 				} else {

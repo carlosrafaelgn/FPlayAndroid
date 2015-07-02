@@ -38,6 +38,7 @@ import android.content.DialogInterface;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
@@ -78,6 +79,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private RelativeLayout panelSecondary;
 	private boolean loading, isCreatingLayout;
 	private TextIconDrawable btnMenuIcon;
+	private Animation animation;
+	private CharSequence msgEmptyList, msgLoading;
 
 	public ActivityFileSelection(CharSequence title, int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
 		if (fileType.charAt(0) != FileSt.PRIVATE_FILETYPE_ID)
@@ -192,13 +195,23 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			return;
 		loading = started;
 		if (list != null) {
-			list.setCustomEmptyText(started ? getText(R.string.loading) : null);
+			if (animation != null) {
+				if (started) {
+					list.setVisibility(View.INVISIBLE);
+				} else {
+					animation.cancel();
+					list.setVisibility(View.VISIBLE);
+					list.startAnimation(animation);
+				}
+			} else {
+				list.setCustomEmptyText(started ? msgLoading : msgEmptyList);
+			}
 			if (fileList != null) {
 				fileList.setObserver(started ? null : list);
 				final int count = fileList.getCount();
 				if (!started) {
 					if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
-						UI.announceAccessibilityText(count == 0 ? getText(R.string.empty_list) : FileView.makeContextDescription(true, getHostActivity(), fileList.getItemT(0)));
+						UI.announceAccessibilityText(count == 0 ? msgEmptyList : FileView.makeContextDescription(true, getHostActivity(), fileList.getItemT(0)));
 					if (count > 0 && !list.isInTouchMode()) {
 						fileList.setSelection(0, true);
 						list.centerItem(0);
@@ -422,9 +435,20 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		btnGoBack.setIcon(UI.ICON_GOBACK);
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
+		msgEmptyList = getText(R.string.empty_list);
+		msgLoading = getText(R.string.loading);
 		list = (BgListView)findViewById(R.id.list);
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
+		if (UI.animationEnabled) {
+			list.setCustomEmptyText(msgEmptyList);
+			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
+			animation = UI.animationCreateAlpha(0.0f, 1.0f);
+			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
+			lblLoading.setTextColor(UI.color_text_disabled);
+			UI.largeText(lblLoading);
+			lblLoading.setVisibility(View.VISIBLE);
+		}
 		fileList.setObserver(list);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
 		if (save) {
@@ -458,8 +482,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			btnPlay.setIcon(UI.ICON_PLAY);
 			if (hasButtons) {
 				UI.prepareControlContainer(panelSecondary, true, false);
-				if (UI.transition != UI.TRANSITION_NONE)
-					((View)panelSecondary.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, UI.thickDividerSize + UI.defaultControlSize + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
 				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 				panelSecondary.setLayoutParams(rp);
@@ -489,6 +511,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	@Override
 	protected void onOrientationChanged() {
 		UI.animationReset();
+		if (animation != null)
+			animation.cancel();
 		if (UI.isLargeScreen && list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
@@ -496,6 +520,10 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
+		if (animation != null) {
+			animation.cancel();
+			animation = null;
+		}
 		checkedFile = null;
 		btnGoBack = null;
 		btnMenu = null;
@@ -504,6 +532,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		list = null;
 		panelSecondary = null;
 		btnMenuIcon = null;
+		msgEmptyList = null;
+		msgLoading = null;
 	}
 	
 	@Override

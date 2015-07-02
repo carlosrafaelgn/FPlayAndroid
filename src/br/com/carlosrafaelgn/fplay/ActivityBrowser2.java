@@ -41,6 +41,7 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -78,6 +79,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
+	private Animation animation;
+	private CharSequence msgEmptyList, msgLoading;
 
 	@Override
 	public CharSequence getTitle() {
@@ -284,10 +287,20 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				list.centerItem(fileList.getSelection());
 		}
 		if (list != null) {
-			list.setCustomEmptyText(started ? getText(R.string.loading) : null);
+			if (animation != null) {
+				if (started) {
+					list.setVisibility(View.INVISIBLE);
+				} else {
+					animation.cancel();
+					list.setVisibility(View.VISIBLE);
+					list.startAnimation(animation);
+				}
+			} else {
+				list.setCustomEmptyText(started ? msgLoading : msgEmptyList);
+			}
 			if (!started && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && fileList != null) {
 				if (fileList.getCount() == 0) {
-					UI.announceAccessibilityText(getText(R.string.empty_list));
+					UI.announceAccessibilityText(msgEmptyList);
 				} else {
 					final int i = fileList.getFirstSelectedPosition();
 					UI.announceAccessibilityText(FileView.makeContextDescription(!isAtHome, getHostActivity(), fileList.getItemT(i < 0 ? 0 : i)));
@@ -736,8 +749,19 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.mediumText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
+		msgEmptyList = getText(R.string.empty_list);
+		msgLoading = getText(R.string.loading);
 		list = (BgListView)findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
+		if (UI.animationEnabled) {
+			list.setCustomEmptyText(msgEmptyList);
+			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
+			animation = UI.animationCreateAlpha(0.0f, 1.0f);
+			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
+			lblLoading.setTextColor(UI.color_text_disabled);
+			UI.largeText(lblLoading);
+			lblLoading.setVisibility(View.VISIBLE);
+		}
 		fileList.setObserver(list);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
@@ -761,8 +785,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
-		if (UI.transition != UI.TRANSITION_NONE)
-			((View)panelSecondary.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, UI.thickDividerSize + UI.defaultControlSize + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
 		rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 		panelSecondary.setLayoutParams(rp);
@@ -845,6 +867,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	protected void onOrientationChanged() {
 		UI.animationReset();
+		if (animation != null)
+			animation.cancel();
 		if (UI.isLargeScreen && list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
@@ -852,6 +876,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
+		if (animation != null) {
+			animation.cancel();
+			animation = null;
+		}
 		lastClickedFavorite = null;
 		lblPath = null;
 		list = null;
@@ -868,6 +896,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnAdd = null;
 		sep2 = null;
 		btnPlay = null;
+		msgEmptyList = null;
+		msgLoading = null;
 	}
 	
 	@Override

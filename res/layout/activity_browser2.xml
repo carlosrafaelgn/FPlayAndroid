@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityHost" >
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:splitMotionEvents="false"
+                tools:context=".ActivityHost">
 
     <RelativeLayout
         android:id="@+id/panelControls"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBack"
@@ -22,7 +22,7 @@
             android:nextFocusForward="@+id/chkFavorite"
             android:nextFocusLeft="@+id/list"
             android:nextFocusRight="@+id/chkFavorite"
-            android:nextFocusUp="@+id/list" />
+            android:nextFocusUp="@+id/list"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnRadio"
@@ -36,7 +36,7 @@
             android:nextFocusRight="@+id/btnURL"
             android:nextFocusUp="@+id/list"
             android:text="@string/add_radio"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnURL"
@@ -50,7 +50,7 @@
             android:nextFocusRight="@+id/list"
             android:nextFocusUp="@+id/list"
             android:text="@string/add_url"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/chkFavorite"
@@ -63,7 +63,7 @@
             android:nextFocusLeft="@+id/btnGoBack"
             android:nextFocusRight="@+id/btnHome"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/chkAlbumArt"
@@ -76,28 +76,28 @@
             android:nextFocusLeft="@+id/btnGoBack"
             android:nextFocusRight="@+id/btnHome"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnHome"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toLeftOf="@+id/sep"
             android:layout_marginLeft="8dp"
+            android:layout_toLeftOf="@+id/sep"
             android:contentDescription="@string/home"
             android:nextFocusDown="@+id/list"
             android:nextFocusForward="@+id/btnChkAll"
             android:nextFocusLeft="@+id/chkFavorite"
             android:nextFocusRight="@+id/btnChkAll"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <TextView
             android:id="@+id/sep"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/chkAll"
@@ -109,7 +109,7 @@
             android:nextFocusLeft="@+id/btnHome"
             android:nextFocusRight="@+id/list"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
     </RelativeLayout>
 
     <TextView
@@ -118,26 +118,35 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/panelControls"
         android:ellipsize="start"
-        android:maxLines="3" />
+        android:maxLines="3"/>
+
+    <TextView
+        android:id="@+id/lblLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:maxLines="1"
+        android:text="@string/loading"
+        android:visibility="gone"/>
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/lblPath"
         android:layout_alignParentBottom="true"
-        android:nextFocusForward="@+id/btnGoBack" >
+        android:layout_below="@+id/lblPath"
+        android:nextFocusForward="@+id/btnGoBack"
+        android:splitMotionEvents="false">
 
-        <requestFocus />
+        <requestFocus/>
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
     <RelativeLayout
         android:id="@+id/panelSecondary"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_alignParentBottom="true"
+        android:splitMotionEvents="false"
         android:visibility="gone">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -152,7 +161,7 @@
             android:nextFocusRight="@+id/btnAdd"
             android:nextFocusUp="@+id/list"
             android:text="@string/player"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnAdd"
@@ -167,14 +176,14 @@
             android:nextFocusLeft="@+id/btnGoBackToPlayer"
             android:nextFocusRight="@+id/btnPlay"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <TextView
             android:id="@+id/sep2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnPlay"
@@ -189,7 +198,7 @@
             android:nextFocusLeft="@+id/btnAdd"
             android:nextFocusRight="@+id/btnGoBack"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
     </RelativeLayout>
 
 </RelativeLayout>
