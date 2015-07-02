@@ -152,6 +152,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	
 	public final void clear() {
 		//synchronized (currentAndCountMutex) {
+			final int previousOriginalSel = originalSel;
 			clearingItems();
 			
 			modificationVersion++;
@@ -165,7 +166,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			indexOfPreviouslyDeletedCurrentItem = -1;
 		//}
 		notifyDataSetChanged(-1, LIST_CLEARED);
-		if (listener != null)
+		if (listener != null && previousOriginalSel != originalSel)
 			listener.onSelectionChanged(this);
 	}
 	
@@ -180,6 +181,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			return false;
 		
 		//synchronized (currentAndCountMutex) {
+			final int previousOriginalSel = originalSel;
 			if (firstSel != lastSel)
 				setSelection(firstSel, firstSel, false, false);
 
@@ -227,7 +229,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 
 		notifyDataSetChanged(originalSel, CONTENT_REMOVED);
 
-		if (listener != null)
+		if (listener != null && previousOriginalSel != originalSel)
 			listener.onSelectionChanged(this);
 
 		return true;
@@ -308,6 +310,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 	
 	public final void setSelection(int from, int to, int original, boolean notifyChanged, boolean byUserInteraction) {
+		final int previousOriginalSel = originalSel;
 		int gotoPosition = -1;
 		firstSel = -1;
 		lastSel = -1;
@@ -334,10 +337,11 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			originalSel = original;
 			gotoPosition = original;
 		}
-		if (notifyChanged)
+		if (notifyChanged) {
 			notifyDataSetChanged(byUserInteraction ? -1 : gotoPosition, SELECTION_CHANGED);
-		if (listener != null)
-			listener.onSelectionChanged(this);
+			if (listener != null && previousOriginalSel != originalSel)
+				listener.onSelectionChanged(this);
+		}
 	}
 	
 	public final int indexOf(E item) {

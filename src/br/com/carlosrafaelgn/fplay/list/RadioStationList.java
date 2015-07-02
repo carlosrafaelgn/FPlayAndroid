@@ -61,6 +61,10 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class RadioStationList extends BaseList<RadioStation> implements Runnable, ArraySorter.Comparer<RadioStation>, MainHandler.Callback {
+	public interface RadioStationAddedObserver {
+		void onRadioStationAdded();
+	}
+
 	//after analyzing the results obtained from http://dir.xiph.org/xxx
 	//I noticed that there are never more than 5 pages of results,
 	//with 20 results each ;)
@@ -224,6 +228,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 	private volatile int version;
 	private volatile String genreToFetch, searchTermToFetch;
 	private volatile Context context;
+	public RadioStationAddedObserver radioStationAddedObserver;
 	
 	public RadioStationList(String tags, String noOnAir, String noDescription, String noTags) {
 		super(RadioStation.class);
@@ -805,6 +810,8 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 				count = msg.arg2;
 				addingItems(c, c - count);
 				notifyDataSetChanged(-1, CONTENT_ADDED);
+				if (radioStationAddedObserver != null)
+					radioStationAddedObserver.onRadioStationAdded();
 			}
 			break;
 		}

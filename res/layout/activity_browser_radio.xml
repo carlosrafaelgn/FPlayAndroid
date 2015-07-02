@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityHost" >
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:splitMotionEvents="false"
+                tools:context=".ActivityHost">
 
     <RelativeLayout
         android:id="@+id/panelControls"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBack"
@@ -22,7 +22,7 @@
             android:nextFocusForward="@+id/btnFavorite"
             android:nextFocusLeft="@+id/list"
             android:nextFocusRight="@+id/btnFavorite"
-            android:nextFocusUp="@+id/btnGoBackToPlayer" />
+            android:nextFocusUp="@+id/btnGoBackToPlayer"/>
 
         <RelativeLayout
             android:id="@+id/panelLoading"
@@ -31,19 +31,19 @@
             android:layout_centerVertical="true"
             android:layout_marginLeft="8dp"
             android:layout_toRightOf="@+id/btnGoBack"
-            android:visibility="gone" >
+            android:visibility="gone">
 
             <ProgressBar
                 android:id="@+id/barLoading"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/lblLoading"
-                android:layout_alignRight="@+id/lblLoading"
-                android:indeterminate="true" />
+                android:layout_alignLeft="@+id/lblLoadingSmall"
+                android:layout_alignRight="@+id/lblLoadingSmall"
+                android:indeterminate="true"/>
 
             <TextView
-                android:id="@+id/lblLoading"
+                android:id="@+id/lblLoadingSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/barLoading"
@@ -51,7 +51,7 @@
                 android:gravity="center"
                 android:padding="2dp"
                 android:singleLine="true"
-                android:text="@string/loading" />
+                android:text="@string/loading"/>
         </RelativeLayout>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -64,7 +64,7 @@
             android:nextFocusForward="@+id/btnSearch"
             android:nextFocusLeft="@+id/btnGoBack"
             android:nextFocusRight="@+id/btnSearch"
-            android:nextFocusUp="@+id/btnGoBackToPlayer" />
+            android:nextFocusUp="@+id/btnGoBackToPlayer"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnSearch"
@@ -77,27 +77,36 @@
             android:nextFocusForward="@+id/list"
             android:nextFocusLeft="@+id/btnFavorite"
             android:nextFocusRight="@+id/list"
-            android:nextFocusUp="@+id/btnGoBackToPlayer" />
+            android:nextFocusUp="@+id/btnGoBackToPlayer"/>
     </RelativeLayout>
+
+    <TextView
+        android:id="@+id/lblLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:maxLines="1"
+        android:text="@string/loading"
+        android:visibility="gone"/>
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/panelSecondary"
         android:layout_below="@+id/panelControls"
-        android:nextFocusForward="@+id/btnGoBackToPlayer" >
+        android:nextFocusForward="@+id/btnGoBackToPlayer"
+        android:splitMotionEvents="false">
 
-        <requestFocus />
+        <requestFocus/>
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
     <RelativeLayout
         android:id="@+id/panelSecondary"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true" >
+        android:layout_alignParentBottom="true"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBackToPlayer"
@@ -110,7 +119,7 @@
             android:nextFocusLeft="@+id/list"
             android:nextFocusRight="@+id/btnAdd"
             android:nextFocusUp="@+id/list"
-            android:text="@string/player" />
+            android:text="@string/player"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnAdd"
@@ -125,14 +134,14 @@
             android:nextFocusLeft="@+id/btnGoBackToPlayer"
             android:nextFocusRight="@+id/btnPlay"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <TextView
             android:id="@+id/sep2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnPlay"
@@ -147,7 +156,7 @@
             android:nextFocusLeft="@+id/btnAdd"
             android:nextFocusRight="@+id/btnGoBack"
             android:nextFocusUp="@+id/list"
-            android:visibility="gone" />
+            android:visibility="gone"/>
     </RelativeLayout>
 
 </RelativeLayout>

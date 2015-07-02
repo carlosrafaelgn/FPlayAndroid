@@ -510,9 +510,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onOrientationChanged() {
-		UI.animationReset();
-		if (animation != null)
-			animation.cancel();
 		if (UI.isLargeScreen && list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
