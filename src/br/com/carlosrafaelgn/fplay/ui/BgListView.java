@@ -897,12 +897,12 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					if (tracking) {
 						if (UI.scrollBarToTheLeft) {
 							UI.rect.left = scrollBarLeft;
-							l = (float)(UI.rect.left + UI.defaultControlContentsSize + (scrollBarWidth >> 1));
+							l = (float)(UI.rect.left + UI.defaultControlContentsSize + (UI.defaultControlContentsSize >> 1) + (scrollBarWidth >> 1));
 						} else {
-							UI.rect.left = scrollBarLeft - UI.defaultControlContentsSize;
+							UI.rect.left = scrollBarLeft - UI.defaultControlContentsSize - (UI.defaultControlContentsSize >> 1);
 							l = (float)(UI.rect.left + (scrollBarWidth >> 1));
 						}
-						UI.rect.right = UI.rect.left + UI.defaultControlContentsSize + scrollBarWidth;
+						UI.rect.right = UI.rect.left + UI.defaultControlContentsSize + (UI.defaultControlContentsSize >> 1) + scrollBarWidth;
 					} else {
 						UI.rect.left = scrollBarLeft;
 						UI.rect.right = scrollBarLeft + scrollBarWidth;

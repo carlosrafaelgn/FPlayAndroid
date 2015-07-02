@@ -257,6 +257,7 @@
     <string name="by_dir_xiph_org">By Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
     <string name="creamy">Creamy</string>
     <string name="transition">Transition:</string>
+    <string name="animations">Animations</string>
     <string name="fade">Fade</string>
     <string name="dissolve">Dissolve</string>
     <string name="zoom">Zoom</string>

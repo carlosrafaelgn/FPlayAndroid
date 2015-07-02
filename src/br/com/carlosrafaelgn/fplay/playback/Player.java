@@ -1567,57 +1567,58 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			bluetoothVisualizerConfig &= ~(1 << 9);
 	}
 
+	//these options were deprecated on version 74 in favor of their bit equivalents
 	private static final int OPT_VOLUME = 0x0000;
-	private static final int OPT_CONTROLMODE = 0x0001;
+	//private static final int OPT_CONTROLMODE = 0x0001;
 	private static final int OPT_LASTTIME = 0x0002;
 	private static final int OPT_PATH = 0x0003;
 	private static final int OPT_ORIGINALPATH = 0x0004;
 	private static final int OPT_FAVORITEFOLDERCOUNT = 0x0005;
-	private static final int OPT_BASSBOOSTMODE = 0x0006;
+	//private static final int OPT_BASSBOOSTMODE = 0x0006;
 	private static final int OPT_FADEININCREMENTONFOCUS = 0x0007;
 	private static final int OPT_FADEININCREMENTONPAUSE = 0x0008;
 	private static final int OPT_FADEININCREMENTONOTHER = 0x0009;
-	private static final int OPT_NEXTPREPARATION = 0x000a;
-	private static final int OPT_PLAYFOLDERCLEARSLIST = 0x000b;
-	private static final int OPT_KEEPSCREENON = 0x000c;
+	//private static final int OPT_NEXTPREPARATION = 0x000a;
+	//private static final int OPT_PLAYFOLDERCLEARSLIST = 0x000b;
+	//private static final int OPT_KEEPSCREENON = 0x000c;
 	private static final int OPT_FORCEDORIENTATION = 0x000d;
 	private static final int OPT_DISPLAYVOLUMEINDB = 0x000e;
-	private static final int OPT_DOUBLECLICKMODE = 0x000f;
-	//these will no longer be used!
+	//private static final int OPT_DOUBLECLICKMODE = 0x000f;
+	//these 3 will no longer be used!
 	//private static final int OPT_MSGADDSHOWN = 0x0010;
 	//private static final int OPT_MSGPLAYSHOWN = 0x0011;
 	//private static final int OPT_MSGSTARTUPSHOWN = 0x0012;
-	private static final int OPT_MARQUEETITLE = 0x0013;
+	//private static final int OPT_MARQUEETITLE = 0x0013;
 	private static final int OPT_VOLUMECONTROLTYPE = 0x0014;
-	private static final int OPT_BLOCKBACKKEY = 0x0015;
+	//private static final int OPT_BLOCKBACKKEY = 0x0015;
 	private static final int OPT_TURNOFFTIMERCUSTOMMINUTES = 0x0016;
-	private static final int OPT_ISDIVIDERVISIBLE = 0x0017;
-	private static final int OPT_ISVERTICALMARGINLARGE = 0x0018;
-	private static final int OPT_HANDLECALLKEY = 0x0019;
-	private static final int OPT_PLAYWHENHEADSETPLUGGED = 0x001a;
-	private static final int OPT_USEALTERNATETYPEFACE = 0x001b;
-	private static final int OPT_GOBACKWHENPLAYINGFOLDERS = 0x001c;
-	private static final int OPT_RANDOMMODE = 0x001d;
+	//private static final int OPT_ISDIVIDERVISIBLE = 0x0017;
+	//private static final int OPT_ISVERTICALMARGINLARGE = 0x0018;
+	//private static final int OPT_HANDLECALLKEY = 0x0019;
+	//private static final int OPT_PLAYWHENHEADSETPLUGGED = 0x001a;
+	//private static final int OPT_USEALTERNATETYPEFACE = 0x001b;
+	//private static final int OPT_GOBACKWHENPLAYINGFOLDERS = 0x001c;
+	//private static final int OPT_RANDOMMODE = 0x001d;
 	private static final int OPT_FORCEDLOCALE = 0x001e;
 	private static final int OPT_THEME = 0x001f;
 	private static final int OPT_MSGS = 0x0020;
 	private static final int OPT_MSGSTARTUP = 0x0021;
-	private static final int OPT_WIDGETTRANSPARENTBG = 0x0022;
+	//private static final int OPT_WIDGETTRANSPARENTBG = 0x0022;
 	private static final int OPT_WIDGETTEXTCOLOR = 0x0023;
 	private static final int OPT_WIDGETICONCOLOR = 0x0024;
 	private static final int OPT_CUSTOMCOLORS = 0x0025;
 	private static final int OPT_LASTVERSIONCODE = 0x0026;
-	private static final int OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 0x0027;
-	private static final int OPT_WRAPAROUNDLIST = 0x0028;
-	private static final int OPT_EXTRASPACING = 0x0029;
+	//private static final int OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING = 0x0027;
+	//private static final int OPT_WRAPAROUNDLIST = 0x0028;
+	//private static final int OPT_EXTRASPACING = 0x0029;
 	//private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
 	private static final int OPT_VISUALIZERORIENTATION = 0x002B;
 	private static final int OPT_SONGEXTRAINFOMODE = 0x002C;
 	private static final int OPT_TURNOFFTIMERSELECTEDMINUTES = 0x002D;
 	private static final int OPT_IDLETURNOFFTIMERCUSTOMMINUTES = 0x002E;
 	private static final int OPT_IDLETURNOFFTIMERSELECTEDMINUTES = 0x002F;
-	private static final int OPT_FLAT = 0x0030;
-	private static final int OPT_ALBUMART = 0x0031;
+	//private static final int OPT_FLAT = 0x0030;
+	//private static final int OPT_ALBUMART = 0x0031;
 	private static final int OPT_RADIOSEARCHTERM = 0x0032;
 	private static final int OPT_RADIOLASTGENRE = 0x0033;
 	private static final int OPT_TRANSITION = 0x0034;
@@ -1676,6 +1677,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_NOTFULLSCREEN = 36;
 	private static final int OPTBIT_CONTROLS_TO_THE_LEFT = 37;
 	private static final int OPTBIT_BORDERS = 38;
+	private static final int OPTBIT_ANIMATIONS = 39;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -1758,6 +1760,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
 			UI.setFlat((UI.lastVersionCode < 74) || opts.getBit(OPTBIT_FLAT, true));
 			UI.hasBorders = ((UI.lastVersionCode >= 74) && opts.getBit(OPTBIT_BORDERS, false));
+			UI.animationEnabled = opts.getBit(OPTBIT_ANIMATIONS, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
@@ -1869,6 +1872,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_MARQUEETITLE, UI.marqueeTitle);
 		opts.putBit(OPTBIT_FLAT, UI.isFlat);
 		opts.putBit(OPTBIT_BORDERS, UI.hasBorders);
+		opts.putBit(OPTBIT_ANIMATIONS, UI.animationEnabled);
 		opts.putBit(OPTBIT_ALBUMART, UI.albumArt);
 		opts.putBit(OPTBIT_BLOCKBACKKEY, UI.blockBackKey);
 		opts.putBit(OPTBIT_ISDIVIDERVISIBLE, UI.isDividerVisible);
@@ -1983,10 +1987,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		notification.when = 0;
 		notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
 		notification.contentIntent = intentActivityHost;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				//any need for this technique???
+				//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
+				//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
+				notification.visibility = Notification.VISIBILITY_PUBLIC;
+				if (mediaSession != null)
+					notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
+			}
 			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification), true, true);
-		else
+		} else {
 			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification_simple), false, true);
+		}
 		return notification;
 	}
 

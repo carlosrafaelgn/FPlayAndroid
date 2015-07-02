@@ -1846,6 +1846,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	private static final int ANIMATION_STATE_HIDING = 1;
 	private static final int ANIMATION_STATE_SHOWING = 2;
 
+	public static boolean animationEnabled;
 	private static View animationFocusView;
 	private static int animationHideCount, animationShowCount, animationState;
 	private static View animationViewToShowFirst;
@@ -1938,7 +1939,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	//DO NOT CALL THIS WITH forceSkipAnimation = false IF ANY VIEWS ARE NOT YET ATTACHED TO A WINDOW!!!
 	public static void animationCommit(boolean forceSkipAnimation, View focusView) {
-		if (transition == TRANSITION_NONE || forceSkipAnimation) {
+		if (!animationEnabled || forceSkipAnimation) {
 			for (int i = 0; i < animationHideCount; i++) {
 				final View view = animationViewsToHideAndShow[i];
 				if (view != null) {
