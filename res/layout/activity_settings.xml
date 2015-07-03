@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityHost" >
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:splitMotionEvents="false"
+                tools:context=".ActivityHost">
 
     <RelativeLayout
         android:id="@+id/panelControls"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true" >
+        android:layout_alignParentTop="true"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBack"
@@ -19,9 +19,9 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:contentDescription="@string/go_back" >
+            android:contentDescription="@string/go_back">
 
-            <requestFocus />
+            <requestFocus/>
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -30,29 +30,29 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
-            android:text="@string/about" />
+            android:text="@string/about"/>
     </RelativeLayout>
 
     <TextView
         android:id="@+id/lblTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/panelControls" />
+        android:layout_below="@+id/panelControls"/>
 
     <br.com.carlosrafaelgn.fplay.ui.ObservableScrollView
         android:id="@+id/list"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/panelControls" >
+        android:layout_below="@+id/panelControls"
+        android:splitMotionEvents="false">
 
         <LinearLayout
             android:id="@+id/panelSettings"
-            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:baselineAligned="false"
-            android:orientation="vertical" />
+            android:orientation="vertical"
+            android:splitMotionEvents="false"/>
     </br.com.carlosrafaelgn.fplay.ui.ObservableScrollView>
 
 </RelativeLayout>

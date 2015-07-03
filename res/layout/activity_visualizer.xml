@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<br.com.carlosrafaelgn.fplay.ui.InterceptableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/panelControls"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="false"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityVisualizer" >
+<br.com.carlosrafaelgn.fplay.ui.InterceptableLayout android:id="@+id/panelControls"
+                                                    xmlns:android="http://schemas.android.com/apk/res/android"
+                                                    xmlns:tools="http://schemas.android.com/tools"
+                                                    android:layout_width="match_parent"
+                                                    android:layout_height="match_parent"
+                                                    android:fitsSystemWindows="false"
+                                                    android:splitMotionEvents="false"
+                                                    tools:context=".ActivityVisualizer">
 
     <RelativeLayout
         android:id="@+id/panelTop"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" >
+        android:layout_alignParentTop="true"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBack"
@@ -27,15 +27,15 @@
             android:nextFocusForward="@+id/btnPrev"
             android:nextFocusLeft="@+id/btnMenu"
             android:nextFocusRight="@+id/btnPrev"
-            android:nextFocusUp="@+id/btnMenu" />
+            android:nextFocusUp="@+id/btnMenu"/>
 
         <LinearLayout
             android:id="@+id/panelSecondary"
-            android:splitMotionEvents="false"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:baselineAligned="false"
-            android:orientation="horizontal" >
+            android:orientation="horizontal"
+            android:splitMotionEvents="false">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPrev"
@@ -46,7 +46,7 @@
                 android:nextFocusForward="@+id/btnPlay"
                 android:nextFocusLeft="@+id/btnGoBack"
                 android:nextFocusRight="@+id/btnPlay"
-                android:nextFocusUp="@+id/btnGoBack" />
+                android:nextFocusUp="@+id/btnGoBack"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPlay"
@@ -57,7 +57,7 @@
                 android:nextFocusForward="@+id/btnNext"
                 android:nextFocusLeft="@+id/btnPrev"
                 android:nextFocusRight="@+id/btnNext"
-                android:nextFocusUp="@+id/btnPrev" />
+                android:nextFocusUp="@+id/btnPrev"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnNext"
@@ -68,7 +68,7 @@
                 android:nextFocusForward="@+id/btnMenu"
                 android:nextFocusLeft="@+id/btnPlay"
                 android:nextFocusRight="@+id/btnMenu"
-                android:nextFocusUp="@+id/btnPlay" />
+                android:nextFocusUp="@+id/btnPlay"/>
         </LinearLayout>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -80,18 +80,18 @@
             android:nextFocusForward="@+id/btnGoBack"
             android:nextFocusLeft="@+id/btnNext"
             android:nextFocusRight="@+id/btnGoBack"
-            android:nextFocusUp="@+id/btnNext" />
+            android:nextFocusUp="@+id/btnNext"/>
 
         <TextView
             android:id="@+id/lblTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
             android:layout_below="@+id/panelSecondary"
+            android:layout_centerInParent="true"
+            android:ellipsize="end"
             android:gravity="center_horizontal"
             android:maxLines="2"
-            android:ellipsize="end"
-            android:text="@string/nothing_playing" />
+            android:text="@string/nothing_playing"/>
     </RelativeLayout>
 
 </br.com.carlosrafaelgn.fplay.ui.InterceptableLayout>

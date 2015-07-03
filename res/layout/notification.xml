@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="64dp"
-    android:splitMotionEvents="false"
-    android:minHeight="64dp" >
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:minHeight="64dp"
+                android:splitMotionEvents="false">
 
     <ImageView
         android:id="@+id/imgIcon"
@@ -14,16 +14,16 @@
         android:contentDescription="@string/fplay"
         android:padding="2dp"
         android:scaleType="centerInside"
-        android:src="@drawable/ic_launcher" />
+        android:src="@drawable/ic_launcher"/>
 
     <RelativeLayout
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/lblTitle"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@+id/btnExit"
-        android:layout_toRightOf="@+id/imgIcon" >
+        android:layout_toRightOf="@+id/imgIcon"
+        android:splitMotionEvents="false">
 
         <ImageButton
             android:id="@+id/btnPrev"
@@ -39,7 +39,7 @@
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
             android:paddingTop="4dp"
-            android:scaleType="centerInside" />
+            android:scaleType="centerInside"/>
 
         <ImageButton
             android:id="@+id/btnPlay"
@@ -57,7 +57,7 @@
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
             android:paddingTop="4dp"
-            android:scaleType="centerInside" />
+            android:scaleType="centerInside"/>
 
         <ImageButton
             android:id="@+id/btnNext"
@@ -73,7 +73,7 @@
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
             android:paddingTop="4dp"
-            android:scaleType="centerInside" />
+            android:scaleType="centerInside"/>
     </RelativeLayout>
 
     <TextView
@@ -88,7 +88,7 @@
         android:paddingBottom="2dp"
         android:paddingTop="2dp"
         android:singleLine="true"
-        android:textAppearance="@android:style/TextAppearance.StatusBar.EventContent" />
+        android:textAppearance="@android:style/TextAppearance.StatusBar.EventContent"/>
 
     <ImageButton
         android:id="@+id/btnExit"
@@ -104,6 +104,6 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:paddingTop="4dp"
-        android:scaleType="centerInside" />
+        android:scaleType="centerInside"/>
 
 </RelativeLayout>

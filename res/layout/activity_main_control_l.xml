@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/panelControls"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:baselineAligned="false"
-    android:orientation="vertical"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityHost" >
+<LinearLayout android:id="@+id/panelControls"
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:baselineAligned="false"
+              android:orientation="vertical"
+              android:splitMotionEvents="false"
+              tools:context=".ActivityHost">
 
     <RelativeLayout
         android:id="@+id/panelTop"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
-        android:layout_height="10dp" >
+        android:layout_height="10dp"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnDecreaseVolume"
@@ -25,14 +25,14 @@
             android:nextFocusForward="@+id/btnIncreaseVolume"
             android:nextFocusLeft="@+id/btnNext"
             android:nextFocusRight="@+id/btnIncreaseVolume"
-            android:nextFocusUp="@+id/btnPrev" />
+            android:nextFocusUp="@+id/btnPrev"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnVolume"
             android:layout_width="100dp"
             android:layout_height="match_parent"
             android:layout_toRightOf="@+id/btnDecreaseVolume"
-            android:contentDescription="@string/volume" />
+            android:contentDescription="@string/volume"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnIncreaseVolume"
@@ -44,7 +44,7 @@
             android:nextFocusForward="@+id/btnMenu"
             android:nextFocusLeft="@+id/btnDecreaseVolume"
             android:nextFocusRight="@+id/btnMenu"
-            android:nextFocusUp="@+id/lblTitle" />
+            android:nextFocusUp="@+id/lblTitle"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnMenu"
@@ -56,20 +56,20 @@
             android:nextFocusForward="@+id/btnPrev"
             android:nextFocusLeft="@+id/btnIncreaseVolume"
             android:nextFocusRight="@+id/btnPrev"
-            android:nextFocusUp="@+id/btnNext" >
+            android:nextFocusUp="@+id/btnNext">
 
-            <requestFocus />
+            <requestFocus/>
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
     </RelativeLayout>
 
     <LinearLayout
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="16dp"
         android:baselineAligned="false"
         android:orientation="horizontal"
-        android:weightSum="5" >
+        android:splitMotionEvents="false"
+        android:weightSum="5">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnPrev"
@@ -81,7 +81,7 @@
             android:nextFocusForward="@+id/lblTitle"
             android:nextFocusLeft="@+id/btnMenu"
             android:nextFocusRight="@+id/lblTitle"
-            android:nextFocusUp="@+id/btnDecreaseVolume" />
+            android:nextFocusUp="@+id/btnDecreaseVolume"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgTextView
             android:id="@+id/lblTitle"
@@ -101,7 +101,7 @@
             android:nextFocusRight="@+id/btnNext"
             android:nextFocusUp="@+id/btnIncreaseVolume"
             android:padding="2dp"
-            android:text="@string/nothing_playing" />
+            android:text="@string/nothing_playing"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnNext"
@@ -113,7 +113,7 @@
             android:nextFocusForward="@+id/btnDecreaseVolume"
             android:nextFocusLeft="@+id/lblTime"
             android:nextFocusRight="@+id/btnDecreaseVolume"
-            android:nextFocusUp="@+id/btnMenu" />
+            android:nextFocusUp="@+id/btnMenu"/>
     </LinearLayout>
 
 </LinearLayout>

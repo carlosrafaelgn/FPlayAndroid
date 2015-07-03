@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:baselineAligned="false"
-    android:orientation="vertical"
-    android:splitMotionEvents="false"
-    android:id="@+id/panelInfo"
-    tools:context=".ActivityHost" >
+<LinearLayout android:id="@+id/panelInfo"
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:baselineAligned="false"
+              android:orientation="vertical"
+              android:splitMotionEvents="false"
+              tools:context=".ActivityHost">
 
     <TextView
         android:id="@+id/lblTitle"
@@ -21,7 +21,7 @@
         android:paddingTop="2dp"
         android:scrollHorizontally="true"
         android:singleLine="true"
-        android:text="@string/nothing_playing" />
+        android:text="@string/nothing_playing"/>
 
     <TextView
         android:id="@+id/lblMsgSelMove"
@@ -36,21 +36,21 @@
         android:scrollHorizontally="true"
         android:singleLine="true"
         android:text="@string/msg_sel"
-        android:visibility="gone" />
+        android:visibility="gone"/>
 
     <LinearLayout
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:baselineAligned="false"
-        android:orientation="horizontal" >
+        android:orientation="horizontal"
+        android:splitMotionEvents="false">
 
         <RelativeLayout
             android:id="@+id/panelControls"
-            android:splitMotionEvents="false"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:paddingRight="8dp" >
+            android:paddingRight="8dp"
+            android:splitMotionEvents="false">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnAdd"
@@ -63,21 +63,21 @@
                 android:nextFocusForward="@+id/btnPrev"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/list" />
+                android:nextFocusUp="@+id/list"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPrev"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
                 android:layout_above="@+id/btnPlay"
+                android:layout_alignParentLeft="true"
                 android:layout_marginBottom="8dp"
                 android:contentDescription="@string/previous"
                 android:nextFocusDown="@+id/btnPlay"
                 android:nextFocusForward="@+id/btnPlay"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/btnAdd" />
+                android:nextFocusUp="@+id/btnAdd"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPlay"
@@ -91,7 +91,7 @@
                 android:nextFocusForward="@+id/btnNext"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/btnPrev" />
+                android:nextFocusUp="@+id/btnPrev"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnNext"
@@ -104,7 +104,7 @@
                 android:nextFocusForward="@+id/btnMenu"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/btnPlay" />
+                android:nextFocusUp="@+id/btnPlay"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMenu"
@@ -117,18 +117,18 @@
                 android:nextFocusForward="@+id/barVolume"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/btnNext" />
+                android:nextFocusUp="@+id/btnNext"/>
         </RelativeLayout>
 
         <LinearLayout
             android:id="@+id/panelSecondary"
-            android:splitMotionEvents="false"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:baselineAligned="false"
             android:orientation="vertical"
             android:paddingBottom="16dp"
-            android:paddingRight="8dp" >
+            android:paddingRight="8dp"
+            android:splitMotionEvents="false">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnVolume"
@@ -141,7 +141,7 @@
                 android:nextFocusLeft="@+id/btnPrev"
                 android:nextFocusRight="@+id/list"
                 android:nextFocusUp="@+id/btnMenu"
-                android:visibility="gone" />
+                android:visibility="gone"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
                 android:id="@+id/barVolume"
@@ -153,7 +153,7 @@
                 android:nextFocusForward="@+id/list"
                 android:nextFocusLeft="@+id/btnPrev"
                 android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/btnMenu" />
+                android:nextFocusUp="@+id/btnMenu"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
                 android:id="@+id/barSeek"
@@ -164,15 +164,15 @@
                 android:nextFocusForward="@+id/list"
                 android:nextFocusLeft="@+id/btnMenu"
                 android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/barVolume" />
+                android:nextFocusUp="@+id/barVolume"/>
         </LinearLayout>
 
         <RelativeLayout
             android:id="@+id/panelSelection"
-            android:splitMotionEvents="false"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:visibility="gone" >
+            android:splitMotionEvents="false"
+            android:visibility="gone">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMoveSel"
@@ -187,7 +187,7 @@
                 android:nextFocusForward="@+id/btnRemoveSel"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/list" />
+                android:nextFocusUp="@+id/list"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnRemoveSel"
@@ -201,7 +201,7 @@
                 android:nextFocusForward="@+id/btnCancelSel"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/btnMoveSel" />
+                android:nextFocusUp="@+id/btnMoveSel"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnCancelSel"
@@ -214,16 +214,16 @@
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/list"
                 android:nextFocusUp="@+id/btnRemoveSel"
-                android:text="@string/cancel" />
+                android:text="@string/cancel"/>
         </RelativeLayout>
 
         <br.com.carlosrafaelgn.fplay.ui.BgListView
             android:id="@+id/list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:nextFocusForward="@+id/btnPrev" >
+            android:nextFocusForward="@+id/btnPrev">
 
-            <requestFocus />
+            <requestFocus/>
         </br.com.carlosrafaelgn.fplay.ui.BgListView>
     </LinearLayout>
 

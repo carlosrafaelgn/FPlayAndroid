@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:baselineAligned="false"
-    android:orientation="horizontal"
-    android:weightSum="2"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityHost" >
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:baselineAligned="false"
+              android:orientation="horizontal"
+              android:splitMotionEvents="false"
+              android:weightSum="2"
+              tools:context=".ActivityHost">
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
-        android:splitMotionEvents="false"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:nextFocusForward="@+id/barVolume" >
+        android:nextFocusForward="@+id/barVolume"
+        android:splitMotionEvents="false">
 
-        <requestFocus />
+        <requestFocus/>
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
-    <include layout="@layout/activity_main_l_controls" />
+    <include layout="@layout/activity_main_l_controls"/>
 
 </LinearLayout>

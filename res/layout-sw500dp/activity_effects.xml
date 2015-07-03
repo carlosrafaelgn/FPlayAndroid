@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:baselineAligned="false"
-    android:orientation="vertical"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityHost" >
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:baselineAligned="false"
+              android:orientation="vertical"
+              android:splitMotionEvents="false"
+              tools:context=".ActivityHost">
 
     <RelativeLayout
         android:id="@+id/panelTop"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBack"
@@ -24,9 +24,9 @@
             android:nextFocusForward="@+id/btnMenu"
             android:nextFocusLeft="@+id/barVirtualizer"
             android:nextFocusRight="@+id/btnMenu"
-            android:nextFocusUp="@+id/chkEqualizer" >
+            android:nextFocusUp="@+id/chkEqualizer">
 
-            <requestFocus />
+            <requestFocus/>
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -39,21 +39,20 @@
             android:nextFocusForward="@+id/chkEqualizer"
             android:nextFocusLeft="@+id/btnGoBack"
             android:nextFocusRight="@+id/chkEqualizer"
-            android:nextFocusUp="@+id/barVirtualizer" />
+            android:nextFocusUp="@+id/barVirtualizer"/>
     </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/panelControls"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:baselineAligned="false"
         android:orientation="horizontal"
-        android:weightSum="5" >
+        android:splitMotionEvents="false"
+        android:weightSum="5">
 
         <LinearLayout
             android:id="@+id/panelEqualizer"
-            android:splitMotionEvents="false"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginBottom="32dp"
@@ -62,7 +61,8 @@
             android:layout_weight="3"
             android:baselineAligned="false"
             android:gravity="center_horizontal"
-            android:orientation="vertical" >
+            android:orientation="vertical"
+            android:splitMotionEvents="false">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/chkEqualizer"
@@ -71,12 +71,11 @@
                 android:layout_marginBottom="16dp"
                 android:nextFocusLeft="@+id/btnMenu"
                 android:nextFocusUp="@+id/btnGoBack"
-                android:text="@string/equalizer" />
+                android:text="@string/equalizer"/>
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/panelSecondary"
-            android:splitMotionEvents="false"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginBottom="32dp"
@@ -86,7 +85,8 @@
             android:layout_weight="2"
             android:baselineAligned="false"
             android:gravity="center"
-            android:orientation="vertical" >
+            android:orientation="vertical"
+            android:splitMotionEvents="false">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/chkBass"
@@ -97,7 +97,7 @@
                 android:nextFocusForward="@+id/barBass"
                 android:nextFocusRight="@+id/barBass"
                 android:nextFocusUp="@+id/btnMenu"
-                android:text="@string/bass_boost" />
+                android:text="@string/bass_boost"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
                 android:id="@+id/barBass"
@@ -108,7 +108,7 @@
                 android:nextFocusForward="@+id/chkVirtualizer"
                 android:nextFocusLeft="@+id/chkBass"
                 android:nextFocusRight="@+id/chkVirtualizer"
-                android:nextFocusUp="@+id/chkBass" />
+                android:nextFocusUp="@+id/chkBass"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/chkVirtualizer"
@@ -120,7 +120,7 @@
                 android:nextFocusLeft="@+id/barBass"
                 android:nextFocusRight="@+id/barVirtualizer"
                 android:nextFocusUp="@+id/barBass"
-                android:text="@string/virtualization" />
+                android:text="@string/virtualization"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
                 android:id="@+id/barVirtualizer"
@@ -131,7 +131,7 @@
                 android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/chkVirtualizer"
                 android:nextFocusRight="@+id/btnGoBack"
-                android:nextFocusUp="@+id/chkVirtualizer" />
+                android:nextFocusUp="@+id/chkVirtualizer"/>
 
             <!-- <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/chkReverb"

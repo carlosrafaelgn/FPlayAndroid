@@ -1344,21 +1344,22 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	public static void showNextStartupMsg(Activity activity) {
-		if (msgStartup >= 20) {
-			msgStartup = 20;
+		if (msgStartup >= 21) {
+			msgStartup = 21;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 20;
+		msgStartup = 21;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.there_are_new_features).toString() + " " + activity.getText(R.string.borders).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.animations).toString() + "\n- " + activity.getText(R.string.border).toString() + "\n\n" + activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.check_it_out).toString();
 		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
 			.setTitle(activity.getText(title))
 			.setView(createDialogView(activity, content))
+			.setPositiveButton(R.string.got_it, null)
 			.create());
 	}
 
@@ -1894,6 +1895,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					final View view = animationViewsToHideAndShow[16 + i];
 					if (view != null && view.getVisibility() != View.VISIBLE) {
 						finished = false;
+						final Object tag;
+						if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
+							view.setTag(null);
+							((TextView)view).setText((CharSequence)tag);
+						}
 						view.setVisibility(View.VISIBLE);
 						view.startAnimation(animationShow);
 					}
@@ -1905,8 +1911,14 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					final View view = animationViewsToHideAndShow[16 + i];
 					if (view != null) {
 						view.setAnimation(null);
-						if (abortAll)
+						if (abortAll && view.getVisibility() != View.VISIBLE) {
+							final Object tag;
+							if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
+								view.setTag(null);
+								((TextView)view).setText((CharSequence)tag);
+							}
 							view.setVisibility(View.VISIBLE);
+						}
 						animationViewsToHideAndShow[i] = null;
 					}
 				}
@@ -1959,6 +1971,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			for (int i = 0; i < animationShowCount; i++) {
 				final View view = animationViewsToHideAndShow[16 + i];
 				if (view != null) {
+					final Object tag;
+					if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
+						view.setTag(null);
+						((TextView)view).setText((CharSequence)tag);
+					}
 					view.setVisibility(View.VISIBLE);
 					animationViewsToHideAndShow[16 + i] = null;
 				}

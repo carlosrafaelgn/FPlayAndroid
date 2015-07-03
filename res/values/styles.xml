@@ -20,7 +20,7 @@
         -->
         <!-- <item name="android:soundEffectsEnabled">false</item> -->
     </style>
-    
+
     <style name="MenuDialog" parent="@android:style/Theme.Dialog">
         <item name="android:windowBackground">@color/color_transparent</item>
         <item name="android:windowFrame">@null</item>

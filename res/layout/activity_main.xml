@@ -1,220 +1,231 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    android:id="@+id/panelInfo"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:baselineAligned="false"
     android:orientation="vertical"
     android:splitMotionEvents="false"
-    android:id="@+id/panelInfo"
-    tools:context=".ActivityHost" >
-
-    <TextView
-        android:id="@+id/lblTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="marquee"
-        android:marqueeRepeatLimit="marquee_forever"
-        android:nextFocusDown="@+id/btnPrev"
-        android:nextFocusForward="@+id/btnPrev"
-        android:nextFocusLeft="@+id/list"
-        android:nextFocusRight="@+id/btnPrev"
-        android:nextFocusUp="@+id/list"
-        android:paddingBottom="4dp"
-        android:paddingLeft="4dp"
-        android:paddingRight="2dp"
-        android:paddingTop="2dp"
-        android:scrollHorizontally="true"
-        android:singleLine="true"
-        android:text="@string/nothing_playing" />
-
-    <TextView
-        android:id="@+id/lblMsgSelMove"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="marquee"
-        android:marqueeRepeatLimit="marquee_forever"
-        android:paddingBottom="4dp"
-        android:paddingLeft="4dp"
-        android:paddingRight="2dp"
-        android:paddingTop="2dp"
-        android:scrollHorizontally="true"
-        android:singleLine="true"
-        android:text="@string/msg_sel"
-        android:visibility="gone" />
-
-    <RelativeLayout
-        android:id="@+id/panelControls"
-        android:splitMotionEvents="false"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnAdd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_marginRight="16dp"
-            android:contentDescription="@string/add_songs"
-            android:nextFocusDown="@+id/barVolume"
-            android:nextFocusForward="@+id/btnPrev"
-            android:nextFocusLeft="@+id/list"
-            android:nextFocusRight="@+id/btnPrev"
-            android:nextFocusUp="@+id/list" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnPrev"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="16dp"
-            android:layout_toLeftOf="@+id/btnPlay"
-            android:contentDescription="@string/previous"
-            android:nextFocusDown="@+id/barVolume"
-            android:nextFocusForward="@+id/btnPlay"
-            android:nextFocusLeft="@+id/btnAdd"
-            android:nextFocusRight="@+id/btnPlay"
-            android:nextFocusUp="@+id/list" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnPlay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:contentDescription="@string/play"
-            android:nextFocusDown="@+id/barVolume"
-            android:nextFocusForward="@+id/btnNext"
-            android:nextFocusLeft="@+id/btnPrev"
-            android:nextFocusRight="@+id/btnNext"
-            android:nextFocusUp="@+id/list" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnNext"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="16dp"
-            android:layout_toRightOf="@+id/btnPlay"
-            android:contentDescription="@string/next"
-            android:nextFocusDown="@+id/barVolume"
-            android:nextFocusForward="@+id/btnMenu"
-            android:nextFocusLeft="@+id/btnPlay"
-            android:nextFocusRight="@+id/btnMenu"
-            android:nextFocusUp="@+id/list" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnMenu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:contentDescription="@string/menu"
-            android:nextFocusDown="@+id/barVolume"
-            android:nextFocusForward="@+id/barVolume"
-            android:nextFocusLeft="@+id/btnNext"
-            android:nextFocusRight="@+id/barVolume"
-            android:nextFocusUp="@+id/list" />
-    </RelativeLayout>
+    tools:context=".ActivityHost">
 
     <LinearLayout
-        android:id="@+id/panelSecondary"
-        android:splitMotionEvents="false"
+        android:id="@+id/panelTop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:baselineAligned="false"
-        android:orientation="horizontal" >
+        android:orientation="vertical"
+        android:splitMotionEvents="false">
 
-        <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
-            android:id="@+id/barSeek"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/lblTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:layout_weight="1"
-            android:nextFocusDown="@+id/list"
-            android:nextFocusForward="@+id/barVolume"
-            android:nextFocusLeft="@+id/btnMenu"
-            android:nextFocusRight="@+id/barVolume"
-            android:nextFocusUp="@+id/btnPrev" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
-            android:id="@+id/barVolume"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="16dp"
-            android:layout_weight="1"
-            android:nextFocusDown="@+id/list"
-            android:nextFocusForward="@+id/list"
-            android:nextFocusLeft="@+id/btnMenu"
-            android:nextFocusRight="@+id/list"
-            android:nextFocusUp="@+id/btnMenu" />
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnVolume"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="8dp"
-            android:contentDescription="@string/volume"
-            android:nextFocusDown="@+id/list"
-            android:nextFocusForward="@+id/list"
-            android:nextFocusLeft="@+id/btnMenu"
-            android:nextFocusRight="@+id/list"
-            android:nextFocusUp="@+id/btnMenu"
-            android:visibility="gone" />
-    </LinearLayout>
-
-    <RelativeLayout
-        android:id="@+id/panelSelection"
-        android:splitMotionEvents="false"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone" >
-
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnCancelSel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_centerInParent="true"
-            android:nextFocusDown="@+id/list"
-            android:nextFocusForward="@+id/btnMoveSel"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:nextFocusDown="@+id/btnPrev"
+            android:nextFocusForward="@+id/btnPrev"
             android:nextFocusLeft="@+id/list"
-            android:nextFocusRight="@+id/btnMoveSel"
+            android:nextFocusRight="@+id/btnPrev"
             android:nextFocusUp="@+id/list"
-            android:text="@string/cancel" />
+            android:paddingBottom="4dp"
+            android:paddingLeft="4dp"
+            android:paddingRight="2dp"
+            android:paddingTop="2dp"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            android:text="@string/nothing_playing"/>
 
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnMoveSel"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/lblMsgSelMove"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@+id/btnCancelSel"
-            android:layout_marginRight="8dp"
-            android:layout_toLeftOf="@+id/btnRemoveSel"
-            android:contentDescription="@string/move"
-            android:nextFocusDown="@+id/list"
-            android:nextFocusForward="@+id/btnRemoveSel"
-            android:nextFocusLeft="@+id/btnCancelSel"
-            android:nextFocusRight="@+id/btnRemoveSel"
-            android:nextFocusUp="@+id/list" />
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:paddingBottom="4dp"
+            android:paddingLeft="4dp"
+            android:paddingRight="2dp"
+            android:paddingTop="2dp"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            android:text="@string/msg_sel"
+            android:visibility="gone"/>
 
-        <br.com.carlosrafaelgn.fplay.ui.BgButton
-            android:id="@+id/btnRemoveSel"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:id="@+id/panelControls"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_alignTop="@+id/btnCancelSel"
-            android:contentDescription="@string/remove"
-            android:nextFocusDown="@+id/list"
-            android:nextFocusForward="@+id/list"
-            android:nextFocusLeft="@+id/btnMoveSel"
-            android:nextFocusRight="@+id/list"
-            android:nextFocusUp="@+id/list" />
-    </RelativeLayout>
+            android:splitMotionEvents="false">
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnAdd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_marginRight="16dp"
+                android:contentDescription="@string/add_songs"
+                android:nextFocusDown="@+id/barVolume"
+                android:nextFocusForward="@+id/btnPrev"
+                android:nextFocusLeft="@+id/list"
+                android:nextFocusRight="@+id/btnPrev"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnPrev"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="16dp"
+                android:layout_toLeftOf="@+id/btnPlay"
+                android:contentDescription="@string/previous"
+                android:nextFocusDown="@+id/barVolume"
+                android:nextFocusForward="@+id/btnPlay"
+                android:nextFocusLeft="@+id/btnAdd"
+                android:nextFocusRight="@+id/btnPlay"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnPlay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:contentDescription="@string/play"
+                android:nextFocusDown="@+id/barVolume"
+                android:nextFocusForward="@+id/btnNext"
+                android:nextFocusLeft="@+id/btnPrev"
+                android:nextFocusRight="@+id/btnNext"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnNext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_toRightOf="@+id/btnPlay"
+                android:contentDescription="@string/next"
+                android:nextFocusDown="@+id/barVolume"
+                android:nextFocusForward="@+id/btnMenu"
+                android:nextFocusLeft="@+id/btnPlay"
+                android:nextFocusRight="@+id/btnMenu"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnMenu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:contentDescription="@string/menu"
+                android:nextFocusDown="@+id/barVolume"
+                android:nextFocusForward="@+id/barVolume"
+                android:nextFocusLeft="@+id/btnNext"
+                android:nextFocusRight="@+id/barVolume"
+                android:nextFocusUp="@+id/list"/>
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/panelSecondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal"
+            android:splitMotionEvents="false">
+
+            <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
+                android:id="@+id/barSeek"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_weight="1"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/barVolume"
+                android:nextFocusLeft="@+id/btnMenu"
+                android:nextFocusRight="@+id/barVolume"
+                android:nextFocusUp="@+id/btnPrev"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
+                android:id="@+id/barVolume"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="16dp"
+                android:layout_weight="1"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/list"
+                android:nextFocusLeft="@+id/btnMenu"
+                android:nextFocusRight="@+id/list"
+                android:nextFocusUp="@+id/btnMenu"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnVolume"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:contentDescription="@string/volume"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/list"
+                android:nextFocusLeft="@+id/btnMenu"
+                android:nextFocusRight="@+id/list"
+                android:nextFocusUp="@+id/btnMenu"
+                android:visibility="gone"/>
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/panelSelection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:splitMotionEvents="false"
+            android:visibility="gone">
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnCancelSel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerInParent="true"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnMoveSel"
+                android:nextFocusLeft="@+id/list"
+                android:nextFocusRight="@+id/btnMoveSel"
+                android:nextFocusUp="@+id/list"
+                android:text="@string/cancel"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnMoveSel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@+id/btnCancelSel"
+                android:layout_marginRight="8dp"
+                android:layout_toLeftOf="@+id/btnRemoveSel"
+                android:contentDescription="@string/move"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnRemoveSel"
+                android:nextFocusLeft="@+id/btnCancelSel"
+                android:nextFocusRight="@+id/btnRemoveSel"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnRemoveSel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignTop="@+id/btnCancelSel"
+                android:contentDescription="@string/remove"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/list"
+                android:nextFocusLeft="@+id/btnMoveSel"
+                android:nextFocusRight="@+id/list"
+                android:nextFocusUp="@+id/list"/>
+        </RelativeLayout>
+
+    </LinearLayout>
 
     <br.com.carlosrafaelgn.fplay.ui.BgListView
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:nextFocusForward="@+id/btnAdd" >
+        android:nextFocusForward="@+id/btnAdd">
 
-        <requestFocus />
+        <requestFocus/>
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
 </LinearLayout>

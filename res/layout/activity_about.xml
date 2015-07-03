@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:baselineAligned="false"
-    android:orientation="vertical"
-    android:splitMotionEvents="false"
-    tools:context=".ActivityHost" >
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:baselineAligned="false"
+              android:orientation="vertical"
+              android:splitMotionEvents="false"
+              tools:context=".ActivityHost">
 
     <RelativeLayout
         android:id="@+id/panelControls"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:splitMotionEvents="false">
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnGoBack"
@@ -25,9 +25,9 @@
             android:nextFocusForward="@+id/lblMsg"
             android:nextFocusLeft="@+id/lblMsg"
             android:nextFocusRight="@+id/lblMsg"
-            android:nextFocusUp="@+id/lblMsg" >
+            android:nextFocusUp="@+id/lblMsg">
 
-            <requestFocus />
+            <requestFocus/>
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
 
         <ImageView
@@ -37,7 +37,7 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
             android:contentDescription="@string/about"
-            android:src="@drawable/ic_launcher" />
+            android:src="@drawable/ic_launcher"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -46,20 +46,20 @@
             android:layout_toLeftOf="@+id/imgIcon"
             android:baselineAligned="true"
             android:gravity="right|bottom"
-            android:orientation="horizontal" >
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/lblTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="8dp"
-                android:singleLine="true" />
+                android:singleLine="true"/>
 
             <TextView
                 android:id="@+id/lblVersion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:singleLine="true" />
+                android:singleLine="true"/>
         </LinearLayout>
 
         <TextView
@@ -69,20 +69,20 @@
             android:layout_below="@+id/imgIcon"
             android:gravity="right"
             android:padding="4dp"
-            android:text="@string/app_by" />
+            android:text="@string/app_by"/>
     </RelativeLayout>
 
     <ScrollView
         android:id="@+id/list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:baselineAligned="false"
             android:orientation="vertical"
-            android:padding="8dp" >
+            android:padding="8dp">
 
             <TextView
                 android:id="@+id/lblMsg"
@@ -93,7 +93,7 @@
                 android:nextFocusForward="@+id/btnGoBack"
                 android:nextFocusLeft="@+id/btnGoBack"
                 android:nextFocusRight="@+id/btnGoBack"
-                android:nextFocusUp="@+id/btnGoBack" />
+                android:nextFocusUp="@+id/btnGoBack"/>
 
             <TextView
                 android:id="@+id/lblDbg"
@@ -101,7 +101,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:focusable="false"
-                android:gravity="right" />
+                android:gravity="right"/>
         </LinearLayout>
     </ScrollView>
 

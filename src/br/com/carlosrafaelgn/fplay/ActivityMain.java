@@ -105,7 +105,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean selectCurrentWhenAttached, skipToDestruction, forceFadeOut, isCreatingLayout, isBackgroundSet;//, ignoreAnnouncement;
+	private boolean selectCurrentWhenAttached, skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
 
@@ -248,10 +248,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					p.height = h;
 					panelSelection.setLayoutParams(p);
 				}
-				if (!isBackgroundSet && UI.animationEnabled) {
-					isBackgroundSet = true;
-					((View)panelControls.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_window));
-				}
 			}
 			UI.animationReset();
 			UI.animationAddViewToShow(btnMoveSel);
@@ -286,11 +282,20 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void startMovingSelection() {
 		if (Player.songs.getFirstSelectedPosition() >= 0) {
 			UI.animationReset();
-			UI.animationAddViewToHide(btnMoveSel);//.setVisibility(View.INVISIBLE);
-			UI.animationAddViewToHide(btnRemoveSel);//.setVisibility(View.INVISIBLE);
+			UI.animationAddViewToHide(btnMoveSel);
+			UI.animationAddViewToHide(btnRemoveSel);
+			if (UI.animationEnabled) {
+				UI.animationAddViewToHide(btnCancelSel);
+				UI.animationAddViewToHide(lblMsgSelMove);
+				btnCancelSel.setTag(getText(R.string.done));
+				lblMsgSelMove.setTag(getText(R.string.msg_move));
+				UI.animationAddViewToShow(btnCancelSel);
+				UI.animationAddViewToShow(lblMsgSelMove);
+			} else {
+				btnCancelSel.setText(R.string.done);
+				lblMsgSelMove.setText(R.string.msg_move);
+			}
 			UI.animationCommit(isCreatingLayout, null);
-			btnCancelSel.setText(R.string.done);
-			lblMsgSelMove.setText(R.string.msg_move);
 			lblMsgSelMove.setSelected(true);
 			if (UI.isLargeScreen) {
 				btnCancelSel.setNextFocusLeftId(R.id.list);
@@ -1032,22 +1037,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (UI.isLargeScreen) {
 				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0, true));
 			} else {
-				if (UI.isLandscape && UI.extraSpacing) {
-					findViewById(R.id.panelInfo).setBackgroundDrawable(new ColorDrawable(UI.color_window));
-				} else {
-					lblTitle.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					lblMsgSelMove.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-				}
 				if (UI.isLandscape) {
+					findViewById(R.id.panelInfo).setBackgroundDrawable(new ColorDrawable(UI.color_window));
 					list.setTopLeftBorders();
-					if (!UI.extraSpacing) {
-						panelSecondary.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-						panelSelection.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					}
 				} else {
-					panelSecondary.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
-					panelSelection.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
+					findViewById(R.id.panelTop).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
 					panelSecondary.setPadding(0, 0, 0, UI.controlMargin + UI.thickDividerSize);
 				}
 				if (UI.extraSpacing) {
@@ -1073,7 +1067,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			btnCancelSel.setDefaultHeight();
 			UI.prepareEdgeEffectColor(getApplication());
 			final boolean m = Player.songs.moving;
-			isBackgroundSet = false;
 			isCreatingLayout = true;
 			if (m || Player.songs.selecting)
 				startSelecting();

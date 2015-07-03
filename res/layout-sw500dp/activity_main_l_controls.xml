@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/panelInfo"
-    android:splitMotionEvents="false"
-    android:layout_width="0dp"
-    android:layout_height="match_parent"
-    android:layout_weight="1"
-    android:padding="16dp" >
+<RelativeLayout android:id="@+id/panelInfo"
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:splitMotionEvents="false">
 
     <RelativeLayout
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/panelBottom"
-        android:layout_alignParentTop="true" >
+        android:layout_alignParentTop="true"
+        android:splitMotionEvents="false">
 
         <LinearLayout
-            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:baselineAligned="false"
-            android:orientation="vertical" >
+            android:orientation="vertical"
+            android:splitMotionEvents="false">
 
             <TextView
                 android:id="@+id/lblTitleStatic"
@@ -28,19 +28,19 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:singleLine="true"
-                android:text="@string/title" />
+                android:text="@string/title"/>
 
             <TextView
                 android:id="@+id/lblTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingLeft="8dp"
                 android:layout_marginBottom="32dp"
                 android:ellipsize="marquee"
                 android:marqueeRepeatLimit="marquee_forever"
+                android:paddingLeft="8dp"
                 android:scrollHorizontally="true"
                 android:singleLine="true"
-                android:text="@string/nothing_playing" />
+                android:text="@string/nothing_playing"/>
 
             <TextView
                 android:id="@+id/lblArtistStatic"
@@ -48,23 +48,23 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:singleLine="true"
-                android:text="@string/artist" />
+                android:text="@string/artist"/>
 
             <TextView
                 android:id="@+id/lblArtist"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingLeft="8dp"
                 android:layout_marginBottom="32dp"
                 android:ellipsize="end"
+                android:paddingLeft="8dp"
                 android:singleLine="true"
-                android:text="@string/no_info" />
+                android:text="@string/no_info"/>
 
             <RelativeLayout
-                android:splitMotionEvents="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp" >
+                android:layout_marginBottom="32dp"
+                android:splitMotionEvents="false">
 
                 <TextView
                     android:id="@+id/lblTrackStatic"
@@ -75,7 +75,7 @@
                     android:layout_marginBottom="8dp"
                     android:layout_marginRight="16dp"
                     android:singleLine="true"
-                    android:text="@string/track" />
+                    android:text="@string/track"/>
 
                 <TextView
                     android:id="@+id/lblTrack"
@@ -86,7 +86,7 @@
                     android:layout_below="@+id/lblTrackStatic"
                     android:paddingLeft="8dp"
                     android:singleLine="true"
-                    android:text="@string/no_info" />
+                    android:text="@string/no_info"/>
 
                 <TextView
                     android:id="@+id/lblAlbumStatic"
@@ -96,7 +96,7 @@
                     android:layout_marginBottom="8dp"
                     android:layout_toRightOf="@+id/lblTrackStatic"
                     android:singleLine="true"
-                    android:text="@string/album" />
+                    android:text="@string/album"/>
 
                 <TextView
                     android:id="@+id/lblAlbum"
@@ -107,7 +107,7 @@
                     android:ellipsize="end"
                     android:paddingLeft="8dp"
                     android:singleLine="true"
-                    android:text="@string/no_info" />
+                    android:text="@string/no_info"/>
             </RelativeLayout>
 
             <TextView
@@ -116,7 +116,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:singleLine="true"
-                android:text="@string/duration" />
+                android:text="@string/duration"/>
 
             <TextView
                 android:id="@+id/lblLength"
@@ -124,27 +124,27 @@
                 android:layout_height="wrap_content"
                 android:paddingLeft="8dp"
                 android:singleLine="true"
-                android:text="@string/no_info" />
+                android:text="@string/no_info"/>
         </LinearLayout>
     </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/panelBottom"
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:baselineAligned="false"
-        android:orientation="vertical" >
+        android:orientation="vertical"
+        android:splitMotionEvents="false">
 
         <LinearLayout
             android:id="@+id/panelSecondary"
-            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="32dp"
             android:baselineAligned="false"
-            android:orientation="horizontal" >
+            android:orientation="horizontal"
+            android:splitMotionEvents="false">
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
                 android:id="@+id/barSeek"
@@ -155,7 +155,7 @@
                 android:nextFocusForward="@+id/barVolume"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/barVolume"
-                android:nextFocusUp="@+id/list" />
+                android:nextFocusUp="@+id/list"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
                 android:id="@+id/barVolume"
@@ -167,7 +167,7 @@
                 android:nextFocusForward="@+id/btnAdd"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/btnAdd"
-                android:nextFocusUp="@+id/list" />
+                android:nextFocusUp="@+id/list"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnVolume"
@@ -180,14 +180,14 @@
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/btnAdd"
                 android:nextFocusUp="@+id/list"
-                android:visibility="gone" />
+                android:visibility="gone"/>
         </LinearLayout>
 
         <RelativeLayout
             android:id="@+id/panelControls"
-            android:splitMotionEvents="false"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" >
+            android:layout_height="wrap_content"
+            android:splitMotionEvents="false">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnAdd"
@@ -199,7 +199,7 @@
                 android:nextFocusForward="@+id/btnPrev"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/btnPrev"
-                android:nextFocusUp="@+id/barVolume" />
+                android:nextFocusUp="@+id/barVolume"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPrev"
@@ -212,20 +212,20 @@
                 android:nextFocusForward="@+id/btnPlay"
                 android:nextFocusLeft="@+id/btnAdd"
                 android:nextFocusRight="@+id/btnPlay"
-                android:nextFocusUp="@+id/barVolume" />
+                android:nextFocusUp="@+id/barVolume"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnPlay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="16dp"
                 android:layout_centerHorizontal="true"
+                android:layout_marginRight="16dp"
                 android:contentDescription="@string/play"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnNext"
                 android:nextFocusLeft="@+id/btnPrev"
                 android:nextFocusRight="@+id/btnNext"
-                android:nextFocusUp="@+id/barVolume" />
+                android:nextFocusUp="@+id/barVolume"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnNext"
@@ -237,7 +237,7 @@
                 android:nextFocusForward="@+id/btnMenu"
                 android:nextFocusLeft="@+id/btnPlay"
                 android:nextFocusRight="@+id/btnMenu"
-                android:nextFocusUp="@+id/barVolume" />
+                android:nextFocusUp="@+id/barVolume"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMenu"
@@ -249,7 +249,7 @@
                 android:nextFocusForward="@+id/list"
                 android:nextFocusLeft="@+id/btnNext"
                 android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/barVolume" />
+                android:nextFocusUp="@+id/barVolume"/>
         </RelativeLayout>
 
         <TextView
@@ -260,17 +260,17 @@
             android:gravity="center_vertical"
             android:singleLine="true"
             android:text="@string/msg_sel"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <LinearLayout
             android:id="@+id/panelSelection"
-            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:baselineAligned="false"
             android:gravity="right"
             android:orientation="horizontal"
-            android:visibility="gone" >
+            android:splitMotionEvents="false"
+            android:visibility="gone">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMoveSel"
@@ -282,7 +282,7 @@
                 android:nextFocusForward="@+id/btnRemoveSel"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/btnRemoveSel"
-                android:nextFocusUp="@+id/list" />
+                android:nextFocusUp="@+id/list"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnRemoveSel"
@@ -293,7 +293,7 @@
                 android:nextFocusForward="@+id/btnCancelSel"
                 android:nextFocusLeft="@+id/btnMoveSel"
                 android:nextFocusRight="@+id/btnCancelSel"
-                android:nextFocusUp="@+id/list" />
+                android:nextFocusUp="@+id/list"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnCancelSel"
@@ -305,7 +305,7 @@
                 android:nextFocusLeft="@+id/btnRemoveSel"
                 android:nextFocusRight="@+id/list"
                 android:nextFocusUp="@+id/list"
-                android:text="@string/cancel" />
+                android:text="@string/cancel"/>
         </LinearLayout>
     </LinearLayout>
 </RelativeLayout>

@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:splitMotionEvents="false"
-    android:padding="@dimen/widget_margin" >
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:padding="@dimen/widget_margin"
+             android:splitMotionEvents="false">
 
     <RelativeLayout
-        android:splitMotionEvents="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/ic_main_widget" >
+        android:background="@drawable/ic_main_widget"
+        android:splitMotionEvents="false">
 
         <RelativeLayout
-            android:splitMotionEvents="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
-            android:layout_toLeftOf="@+id/btnPrev" >
+            android:layout_toLeftOf="@+id/btnPrev"
+            android:splitMotionEvents="false">
 
             <TextView
                 android:id="@+id/lblTitle"
@@ -25,12 +25,12 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_widget_button"
                 android:clickable="true"
-                android:focusable="true"
                 android:ellipsize="end"
+                android:focusable="true"
                 android:gravity="center"
                 android:maxLines="2"
                 android:padding="2dp"
-                android:textSize="18sp" />
+                android:textSize="18sp"/>
 
             <TextView
                 android:id="@+id/lblArtist"
@@ -43,7 +43,7 @@
                 android:gravity="center"
                 android:padding="2dp"
                 android:singleLine="true"
-                android:textSize="14sp" />
+                android:textSize="14sp"/>
         </RelativeLayout>
 
         <ImageButton
@@ -58,7 +58,7 @@
             android:nextFocusForward="@+id/btnPlay"
             android:nextFocusLeft="@+id/lblTitle"
             android:nextFocusRight="@+id/btnPlay"
-            android:padding="8dp" />
+            android:padding="8dp"/>
 
         <ImageButton
             android:id="@+id/btnPlay"
@@ -72,7 +72,7 @@
             android:nextFocusForward="@+id/btnNext"
             android:nextFocusLeft="@+id/btnPrev"
             android:nextFocusRight="@+id/btnNext"
-            android:padding="8dp" />
+            android:padding="8dp"/>
 
         <ImageButton
             android:id="@+id/btnNext"
@@ -83,7 +83,7 @@
             android:contentDescription="@string/next"
             android:focusable="true"
             android:nextFocusLeft="@+id/btnPlay"
-            android:padding="8dp" />
+            android:padding="8dp"/>
     </RelativeLayout>
 
 </FrameLayout>
