@@ -1905,6 +1905,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					final View view = animationViewsToHideAndShow[16 + i];
 					if (view != null) {
 						view.setAnimation(null);
+						if (abortAll)
+							view.setVisibility(View.VISIBLE);
 						animationViewsToHideAndShow[i] = null;
 					}
 				}

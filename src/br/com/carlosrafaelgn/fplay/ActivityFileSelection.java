@@ -309,10 +309,12 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		final int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
-			((btnMenu.getVisibility() == View.VISIBLE) ? btnMenu : btnGoBack).requestFocus();
+			if (btnMenu != null && btnGoBack != null)
+				((btnMenu.getVisibility() == View.VISIBLE) ? btnMenu : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_RIGHT:
-			((btnAdd != null && panelSecondary != null && panelSecondary.getVisibility() == View.VISIBLE) ? btnAdd : btnGoBack).requestFocus();
+			if (btnAdd != null && btnGoBack != null && panelSecondary != null)
+				((panelSecondary.getVisibility() == View.VISIBLE) ? btnAdd : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_ENTER:
 			if (fileList != null && (p = fileList.getSelection()) >= 0)

@@ -160,8 +160,7 @@
             android:nextFocusLeft="@+id/list"
             android:nextFocusRight="@+id/btnAdd"
             android:nextFocusUp="@+id/list"
-            android:text="@string/player"
-            android:visibility="gone"/>
+            android:text="@string/player"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnAdd"

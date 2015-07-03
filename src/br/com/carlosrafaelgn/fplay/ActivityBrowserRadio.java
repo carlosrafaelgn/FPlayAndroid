@@ -309,13 +309,12 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
-			if (btnSearch.getVisibility() == View.VISIBLE)
-				btnSearch.requestFocus();
-			else
-				btnGoBack.requestFocus();
+			if (btnSearch != null && btnGoBack != null)
+				((btnSearch.getVisibility() == View.VISIBLE) ? btnSearch : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_RIGHT:
-			btnGoBackToPlayer.requestFocus();
+			if (btnGoBackToPlayer != null)
+				btnGoBackToPlayer.requestFocus();
 			return true;
 		case UI.KEY_ENTER:
 			if (radioStationList != null) {

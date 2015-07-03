@@ -101,7 +101,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				list.setLayoutParams(rp);
 				UI.animationAddViewToHide(panelSecondary);
 			}
-			UI.animationAddViewToHide(btnGoBackToPlayer);
+			//UI.animationAddViewToHide(btnGoBackToPlayer);
 			UI.animationAddViewToHide(sep);
 			UI.animationAddViewToHide(chkAll);
 			chkFavorite.setNextFocusUpId(R.id.list);
@@ -126,7 +126,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				list.setLayoutParams(rp);
 				UI.animationSetViewToShowFirst(panelSecondary);
 			}
-			UI.animationAddViewToShow(btnGoBackToPlayer);
+			//UI.animationAddViewToShow(btnGoBackToPlayer);
 			UI.animationAddViewToShow(sep);
 			UI.animationAddViewToShow(chkAll);
 			chkFavorite.setNextFocusUpId(R.id.btnGoBackToPlayer);
@@ -541,10 +541,12 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		final int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
-			((btnURL.getVisibility() == View.VISIBLE) ? btnURL : ((chkAll.getVisibility() == View.VISIBLE) ? chkAll : btnGoBack)).requestFocus();
+			if (btnURL != null && chkAll != null)
+				((btnURL.getVisibility() == View.VISIBLE) ? btnURL : ((chkAll.getVisibility() == View.VISIBLE) ? chkAll : btnGoBack)).requestFocus();
 			return true;
 		case UI.KEY_RIGHT:
-			((btnGoBackToPlayer.getVisibility() == View.VISIBLE) ? btnGoBackToPlayer : btnGoBack).requestFocus();
+			if (btnGoBackToPlayer != null && btnGoBack != null && panelSecondary != null)
+				((panelSecondary.getVisibility() == View.VISIBLE) ? btnGoBackToPlayer : btnGoBack).requestFocus();
 			return true;
 		case UI.KEY_ENTER:
 			if (fileList != null && (p = fileList.getSelection()) >= 0)
