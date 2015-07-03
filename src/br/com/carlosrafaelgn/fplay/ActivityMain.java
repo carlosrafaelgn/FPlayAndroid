@@ -105,7 +105,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
-	private boolean selectCurrentWhenAttached, skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
+	private boolean selectCurrentWhenAttached, skipToDestruction, forceFadeOut, isCreatingLayout, isBackgroundSet;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
 
@@ -231,7 +231,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			setVolumeIcon(volume);
 		}
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	private void startSelecting() {
 		if (firstSel >= 0) {
 			if (UI.isLargeScreen) {
@@ -246,6 +247,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				if (p != null && p.height != h) {
 					p.height = h;
 					panelSelection.setLayoutParams(p);
+				}
+				if (!isBackgroundSet && UI.animationEnabled) {
+					isBackgroundSet = true;
+					((View)panelControls.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_window));
 				}
 			}
 			UI.animationReset();
@@ -1068,6 +1073,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			btnCancelSel.setDefaultHeight();
 			UI.prepareEdgeEffectColor(getApplication());
 			final boolean m = Player.songs.moving;
+			isBackgroundSet = false;
 			isCreatingLayout = true;
 			if (m || Player.songs.selecting)
 				startSelecting();
