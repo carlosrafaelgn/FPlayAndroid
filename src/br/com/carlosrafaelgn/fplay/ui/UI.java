@@ -451,8 +451,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				//faster version of AccelerateDecelerateInterpolator using this sine approximation:
 				//http://forum.devmaster.net/t/fast-and-accurate-sine-cosine/9648
 				//we use the result of sin in the range -PI/2 to PI/2
-				input = (input * 3.14159265f) - 1.57079632f;
-				return 0.5f + (0.5f * ((1.27323954f * input) - (0.40528473f * input * (input < 0.0f ? -input : input))));
+				//input = (input * 3.14159265f) - 1.57079632f;
+				//return 0.5f + (0.5f * ((1.27323954f * input) - (0.40528473f * input * (input < 0.0f ? -input : input))));
+
+				//even faster version! using the Hermite interpolation (GLSL's smoothstep)
+				//https://www.opengl.org/sdk/docs/man/html/smoothstep.xhtml
+				return (input * input * (3.0f - (2.0f * input)));
 			}
 		};
 	}
