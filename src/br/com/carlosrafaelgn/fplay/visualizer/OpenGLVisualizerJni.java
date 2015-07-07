@@ -151,24 +151,27 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
 			} catch (Throwable ex) {
 				sensorManager = null;
-				ex.printStackTrace();
-			}
-			try {
-				accel = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-			} catch (Throwable ex) {
 				accel = null;
+				magnetic = null;
 			}
-			if (accel == null) {
+			if (sensorManager != null) {
 				try {
-					accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+					accel = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
 				} catch (Throwable ex) {
 					accel = null;
 				}
-			}
-			try {
-				magnetic = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-			} catch (Throwable ex) {
-				magnetic = null;
+				if (accel == null) {
+					try {
+						accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+					} catch (Throwable ex) {
+						accel = null;
+					}
+				}
+				try {
+					magnetic = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+				} catch (Throwable ex) {
+					magnetic = null;
+				}
 			}
 			if (accel == null || magnetic == null) {
 				sensorManager = null;

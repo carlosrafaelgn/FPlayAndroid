@@ -308,20 +308,33 @@ public:
 			commonUptimeDeltaMillis(&lastSensorTime);
 			return;
 		}
-		const float coefNew = (0.03125f / 16.0f) * (float)commonUptimeDeltaMillis(&lastSensorTime); //0.03125 @ 60fps (~16ms)
-		const float coefOld = 1.0f - coefNew;
+		//data from the acceleration sensor is less noisy than the one from the magnetic sensor,
+		//therefore we do not need to filter it so aggressively
+		const float delta = (float)commonUptimeDeltaMillis(&lastSensorTime);
+		float coefNew = (0.140625f / 16.0f) * delta; //0.140625f @ 60fps (~16ms)
+		float coefOld = 1.0f - coefNew;
 		accelData[0] = (oldAccelData[0] * coefOld) + (accelData[0] * coefNew);
 		accelData[1] = (oldAccelData[1] * coefOld) + (accelData[1] * coefNew);
 		accelData[2] = (oldAccelData[2] * coefOld) + (accelData[2] * coefNew);
 		oldAccelData[0] = accelData[0];
 		oldAccelData[1] = accelData[1];
 		oldAccelData[2] = accelData[2];
-		magneticData[0] = (oldMagneticData[0] * coefOld) + (magneticData[0] * coefNew);
-		magneticData[1] = (oldMagneticData[1] * coefOld) + (magneticData[1] * coefNew);
-		magneticData[2] = (oldMagneticData[2] * coefOld) + (magneticData[2] * coefNew);
-		oldMagneticData[0] = magneticData[0];
-		oldMagneticData[1] = magneticData[1];
-		oldMagneticData[2] = magneticData[2];
+		//apply an adptative filter: the larger the change, the faster the filter! :)
+		//this technique produced better results than using other filters, such as
+		//higher order low-pass filters (empirically tested)
+		for (int axis = 0; axis < 3; axis++) {
+			float absDelta = magneticData[axis] - oldMagneticData[axis];
+			*((int*)&absDelta) &= 0x7fffffff; //abs ;)
+			coefNew = (absDelta >= 1.5f ? 0.15f :
+				((0.05f * absDelta * absDelta) + (0.025f * absDelta))
+				//this parable also works fine, but is slower than the above...
+				//((0.065f * absDelta * absDelta) + (0.0025f * absDelta))
+			) * 0.0625f * delta; //0.0625 = / 16
+			coefOld = 1.0f - coefNew;
+			magneticData[axis] = (oldMagneticData[axis] * coefOld) + (magneticData[axis] * coefNew);
+			oldMagneticData[axis] = magneticData[axis];
+		}
+
 		//SensorManager.getRotationMatrix(matrix, null, accelData, magneticData);
 		//Original code -> AOSP: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.0.2_r1/android/hardware/SensorManager.java
 		//(just porting from Java to C++ to improve performance)
@@ -382,6 +395,21 @@ public:
 		//transpose this matrix, as it will be used as the camera/view matrix, and the
 		//view matrix is the inverse of the world matrix (luckly, the inverse of a pure
 		//rotation matrix is also its transpose!)
+
+		//row-major means array indices are distributed by rows, not by columns!
+		//for example, the matrix returned by SensorManager.getRotationMatrix()
+		//is distributed like this:
+		//   array index          value
+		// | 0  1  2  3  |   | Hx Hy Hz 0 |
+		// | 4  5  6  7  |   | Mx My Mz 0 |
+		// | 8  9  10 11 |   | Ax Ay Az 0 |
+		// | 12 13 14 15 |   | 0  0  0  1 |
+		//if it were column-major, the indices would be like this:
+		//   array index          value
+		// | 0  4  8  12 |   | Hx Hy Hz 0 |
+		// | 1  5  9  13 |   | Mx My Mz 0 |
+		// | 2  6  10 14 |   | Ax Ay Az 0 |
+		// | 3  7  11 15 |   | 0  0  0  1 |
 
 		//now, we apply a projection matrix with a fov of 50 deg
 		//based on D3DXMatrixPerspectiveFovRH
