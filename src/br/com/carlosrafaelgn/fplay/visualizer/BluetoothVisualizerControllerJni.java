@@ -312,7 +312,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 					SimpleVisualizerJni.commonProcess(waveform, ignoreInput | dataType);
 					framesToSkip--;
 				}
-				ignoreInput ^= SimpleVisualizerJni.IgnoreInput;
+				ignoreInput ^= IGNORE_INPUT;
 			}
 			int stateI = state.getAndSet(0);
 			if (stateI != 0) {

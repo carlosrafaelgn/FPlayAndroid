@@ -31,14 +31,9 @@
 // https://android.googlesource.com/platform/frameworks/av/+/master/media/libeffects/visualizer/EffectVisualizer.cpp
 // https://android.googlesource.com/platform/frameworks/base/+/master/media/jni/audioeffect/android_media_Visualizer.cpp
 
-#define CAPTURE_SIZE 1024
-
 #ifdef __arm__
 #include <machine/cpu-features.h>
 #endif
-
-#define LOG_FFT_SIZE 10
-#define MAX_FFT_SIZE 1024
 
 // Actually int32_t, but declare as uint32_t to avoid warnings due to overflow.
 // Be sure to cast all accesses before use, for example "(int32_t) twiddle[...]".
@@ -114,7 +109,7 @@ static inline int32_t half(int32_t a) {
 int32_t doFft(uint8_t *inWaveform_outFft, int opt) {
 	int32_t i, squareAccum = 0, workspace[CAPTURE_SIZE >> 1];
 
-	if ((opt & ComputeVUMeter)) {
+	if ((opt & DATA_VUMETER)) {
 		for (i = 0; i < CAPTURE_SIZE; i += 2) {
 			const int32_t x0 = (int32_t)((int8_t)(inWaveform_outFft[i] - 0x80));
 			squareAccum += (x0 * x0);
@@ -122,7 +117,7 @@ int32_t doFft(uint8_t *inWaveform_outFft, int opt) {
 			squareAccum += (x1 * x1);
 			workspace[i >> 1] = (x0 << 24) | ((x1 << 8) & 0xFFFF);
 		}
-		if (!(opt & ComputeFFT))
+		if (!(opt & DATA_FFT))
 			return squareAccum;
 	} else {
 		for (i = 0; i < CAPTURE_SIZE; i += 2) {

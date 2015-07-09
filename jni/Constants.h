@@ -31,23 +31,35 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-#include "Constants.h"
+#define CAPTURE_SIZE 1024
+#define LOG_FFT_SIZE 10
+#define MAX_FFT_SIZE 1024
 
-//for the alignment:
-//https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
+#define COEF_SPEED_0 (0.0625f / 16.0f) //0.0625f @ 60fps (~16ms)
+#define COEF_SPEED_1 (0.09375f / 16.0f) //0.09375 @ 60fps (~16ms)
+#define COEF_SPEED_2 (0.140625f / 16.0f) //0.140625f @ 60fps (~16ms)
+#define COEF_SPEED_DEF COEF_SPEED_2
 
-//to make the math easier COLORS has 257 int's (from 0 to 256) for each different color
-extern const unsigned short COLORS[] __attribute__((aligned(16)));
+//used during Bluetooth processing
+#define BLUETOOTH_BINS_4     0x0020
+#define BLUETOOTH_BINS_8     0x0021
+#define BLUETOOTH_BINS_16    0x0022
+#define BLUETOOTH_BINS_32    0x0023
+#define BLUETOOTH_BINS_64    0x0024
+#define BLUETOOTH_BINS_128   0x0025
+#define BLUETOOTH_BINS_256   0x0026
+#define BLUETOOTH_PROCESSING 0x00FF
 
-extern float floatBuffer[] __attribute__((aligned(16)));
-extern float previousM[] __attribute__((aligned(16)));
-#ifdef _MAY_HAVE_NEON_
-extern unsigned int neonMode, neonDone;
-extern int intBuffer[] __attribute__((aligned(16)));
-#endif
+#define DATA_NONE            0x0000
+#define DATA_FFT             0x0100
+#define DATA_VUMETER         0x0200
+#define IGNORE_INPUT         0x0400
 
-extern float commonCoefNew;
-extern unsigned int commonColorIndex, commonColorIndexApplied;
-
-extern void commonProcessNeon(signed char* bfft, int deltaMillis, int opt);
-//extern void processNeon(signed char* bfft, int deltaMillis);
+#define BEAT_DETECTION_1     0x1000
+#define BEAT_DETECTION_2     0x2000
+#define BEAT_DETECTION_3     0x3000
+#define BEAT_DETECTION_4     0x4000
+#define BEAT_DETECTION_5     0x5000
+#define BEAT_DETECTION_6     0x6000
+#define BEAT_DETECTION_7     0x7000
+#define BEAT_DETECTION       0xF000

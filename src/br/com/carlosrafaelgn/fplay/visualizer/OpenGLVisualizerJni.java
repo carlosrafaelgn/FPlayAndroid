@@ -805,7 +805,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 					visualizer.getWaveForm(waveform);
 			}
 			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | DATA_FFT);
-			ignoreInput ^= SimpleVisualizerJni.IgnoreInput;
+			ignoreInput ^= IGNORE_INPUT;
 			//requestRender();
 		}
 	}

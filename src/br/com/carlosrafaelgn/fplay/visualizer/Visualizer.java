@@ -41,11 +41,24 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 
 public interface Visualizer {
 	String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
-	int DATA_NONE = 0x0000;
-	int DATA_FFT = 0x0100; //ComputeFFT
-	int DATA_VUMETER = 0x0200; //ComputeVUMeter
-	int CAPTURE_SIZE = 1024;
+
 	int MNU_VISUALIZER = 200;
+
+	int CAPTURE_SIZE = 1024;
+
+	int DATA_NONE = 0x0000;
+	int DATA_FFT = 0x0100;
+	int DATA_VUMETER = 0x0200;
+	int IGNORE_INPUT = 0x0400;
+
+	int BEAT_DETECTION_1 = 0x1000;
+	int BEAT_DETECTION_2 = 0x2000;
+	int BEAT_DETECTION_3 = 0x3000;
+	int BEAT_DETECTION_4 = 0x4000;
+	int BEAT_DETECTION_5 = 0x5000;
+	int BEAT_DETECTION_6 = 0x6000;
+	int BEAT_DETECTION_7 = 0x7000;
+	int BEAT_DETECTION = 0xF000;
 
 	//Runs on the MAIN thread
 	void onActivityResult(int requestCode, int resultCode, Intent data);

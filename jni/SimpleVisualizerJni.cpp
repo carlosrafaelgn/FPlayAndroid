@@ -127,14 +127,14 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	signed char* bfft;
-	if (!(opt & IgnoreInput)) {
+	if (!(opt & IGNORE_INPUT)) {
 		bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
 		if (!bfft) {
 			ANativeWindow_unlockAndPost(wnd);
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft((unsigned char*)bfft, ComputeFFT);
+		doFft((unsigned char*)bfft, DATA_FFT);
 
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		bfft[1] = 0;
@@ -148,7 +148,7 @@ if (!neonMode) {
 	float* const fft = floatBuffer;
 	const float* const multiplier = floatBuffer + 256;
 
-	const float coefNew = DEFSPEED * (float)commonUptimeDeltaMillis(&commonLastTime);
+	const float coefNew = COEF_SPEED_DEF * (float)commonUptimeDeltaMillis(&commonLastTime);
 	const float coefOld = 1.0f - coefNew;
 
 	float previous = 0;
@@ -370,14 +370,14 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	signed char* bfft;
-	if (!(opt & IgnoreInput)) {
+	if (!(opt & IGNORE_INPUT)) {
 		bfft = (signed char*)env->GetPrimitiveArrayCritical(jbfft, 0);
 		if (!bfft) {
 			ANativeWindow_unlockAndPost(wnd);
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft((unsigned char*)bfft, ComputeFFT);
+		doFft((unsigned char*)bfft, DATA_FFT);
 
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		bfft[1] = 0;

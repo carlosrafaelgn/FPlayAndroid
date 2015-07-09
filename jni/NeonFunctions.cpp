@@ -44,7 +44,7 @@ void commonProcessNeon(signed char* bfft, int deltaMillis, int opt) {
 	const float coefNew = commonCoefNew * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 
-	if ((opt & IgnoreInput)) {
+	if ((opt & IGNORE_INPUT)) {
 		for (int i = 0; i < 256; i += 8) {
 			asm volatile (
 				"vld1.32 {d0, d1}, [%[localPreviousM]]!\n" //q0 = previousM
@@ -252,7 +252,7 @@ void processNeon(signed char* bfft, int deltaMillis) {
 	float* const fft = floatBuffer;
 	const float* const multiplier = floatBuffer + 256;
 
-	const float coefNew = DEFSPEED * (float)deltaMillis;
+	const float coefNew = COEF_SPEED_DEF * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 
 	//step 1: compute all magnitudes

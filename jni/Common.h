@@ -83,13 +83,13 @@ void commonSRand() {
 void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int speed) {
 	switch (speed) {
 	case 1:
-		commonCoefNew = 0.09375f / 16.0f; //0.09375 @ 60fps (~16ms)
+		commonCoefNew = COEF_SPEED_1;
 		break;
 	case 2:
-		commonCoefNew = 0.140625f / 16.0f;
+		commonCoefNew = COEF_SPEED_2;
 		break;
 	default:
-		commonCoefNew = 0.0625f / 16.0f;
+		commonCoefNew = COEF_SPEED_0;
 		break;
 	}
 }
@@ -199,16 +199,16 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	signed char* bfft;
-	if (!(opt & IgnoreInput) || (opt & ComputeBluetooth)) {
+	if (!(opt & IGNORE_INPUT) || (opt & BLUETOOTH_PROCESSING)) {
 		bfft = (signed char*)env->GetPrimitiveArrayCritical(jwaveform, 0);
 		if (!bfft)
 			return 0;
 
-		if (!(opt & IgnoreInput)) {
-			if ((opt & ComputeVUMeter))
+		if (!(opt & IGNORE_INPUT)) {
+			if ((opt & DATA_VUMETER))
 				rootMeanSquare = sqrtf((float)doFft((unsigned char*)bfft, opt) * (1.0f / (float)(CAPTURE_SIZE)));
-			else if ((opt & ComputeFFT))
-				doFft((unsigned char*)bfft, ComputeFFT);
+			else if ((opt & DATA_FFT))
+				doFft((unsigned char*)bfft, DATA_FFT);
 
 			//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 			bfft[1] = 0;
@@ -217,7 +217,7 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		bfft = 0;
 	}
 
-	if ((opt & ComputeVUMeter)) {
+	if ((opt & DATA_VUMETER)) {
 		if (rootMeanSquare > lastRootMeanSquare) {
 			const float beta = 0.5f;//(0.5f / 16.0f) * (float)deltaMillis;
 			lastRootMeanSquare = ((1.0f - beta) * lastRootMeanSquare) + (beta * rootMeanSquare);
@@ -236,7 +236,7 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 				vuMeter = ((v >= 255.0f) ? 255 : (int)v);
 			}
 		}
-		if (!(opt & ~(IgnoreInput | ComputeVUMeter))) {
+		if (!(opt & ~(IGNORE_INPUT | DATA_VUMETER))) {
 			if (bfft)
 				env->ReleasePrimitiveArrayCritical(jwaveform, bfft, JNI_ABORT);
 			return 0;
@@ -254,7 +254,7 @@ if (!neonMode) {
 	const float coefNew = commonCoefNew * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 
-	if ((opt & IgnoreInput)) {
+	if ((opt & IGNORE_INPUT)) {
 		for (i = 0; i < 256; i++) {
 			float m = previousM[i];
 			const float old = fft[i];
@@ -288,7 +288,7 @@ if (!neonMode) {
 }
 #endif
 
-	if ((opt & ComputeBeatDetection)) {
+	if ((opt & BEAT_DETECTION)) {
 		//Beat detection (we are using a threshold of 25%)
 		//processedData[0] = DC
 		//processedData[1] = 1 * 44100/1024 = 43Hz
@@ -299,7 +299,7 @@ if (!neonMode) {
 		//processedData[6] = 6 * 44100/1024 = 258Hz
 		//processedData[7] = 7 * 44100/1024 = 301Hz
 		//filter again
-		beatFilteredInput = ((1.0f - 0.140625f) * beatFilteredInput) + (0.140625f * (float)processedData[(opt & ComputeBeatDetection) >> 12]);
+		beatFilteredInput = ((1.0f - 0.140625f) * beatFilteredInput) + (0.140625f * (float)processedData[(opt & BEAT_DETECTION) >> 12]);
 		const unsigned int m = (unsigned int)beatFilteredInput;
 		//__android_log_print(ANDROID_LOG_INFO, "JNI", "\t%d\t%d", (unsigned int)processedData[2], (unsigned int)processedData[3]);
 		if (beatState == BEAT_STATE_VALLEY) {
@@ -349,7 +349,7 @@ if (!neonMode) {
 		}
 	}
 
-	opt &= ~(IgnoreInput | ComputeFFT | ComputeVUMeter | ComputeBeatDetection);
+	opt &= ~(IGNORE_INPUT | DATA_FFT | DATA_VUMETER | BEAT_DETECTION);
 	if (!opt) {
 		if (bfft)
 			env->ReleasePrimitiveArrayCritical(jwaveform, bfft, JNI_ABORT);
@@ -375,10 +375,10 @@ if (!neonMode) {
 	//processedData stores the first 256 bins, out of the 512 captured by visualizer.getFft
 	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11025Hz for a SR of 44100Hz)
 	//
-	//the mapping algorithms used in MessageBins4, MessageBins8, MessageBins16, MessageBins32,
-	//MessageBins64 and in MessageBins128 were created empirically ;)
+	//the mapping algorithms used in BLUETOOTH_BINS_4, BLUETOOTH_BINS_8, BLUETOOTH_BINS_16, BLUETOOTH_BINS_32,
+	//BLUETOOTH_BINS_64 and in BLUETOOTH_BINS_128 were created empirically ;)
 	switch (opt) {
-	case MessageBins4:
+	case BLUETOOTH_BINS_4:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 2);
 		PACK_BIN(avg);
 		avg = 0;
@@ -397,7 +397,7 @@ if (!neonMode) {
 		//avg >>= 7;
 		PACK_BIN(avg);
 		break;
-	case MessageBins8:
+	case BLUETOOTH_BINS_8:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
 		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
@@ -433,7 +433,7 @@ if (!neonMode) {
 		//avg >>= 6;
 		PACK_BIN(avg);
 		break;
-	case MessageBins16:
+	case BLUETOOTH_BINS_16:
 		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
 		PACK_BIN(avg);
 		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
@@ -464,7 +464,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageBins32:
+	case BLUETOOTH_BINS_32:
 		b = processedData[0];
 		PACK_BIN(b);
 		b = processedData[1];
@@ -496,7 +496,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageBins64:
+	case BLUETOOTH_BINS_64:
 		for (i = 0; i < 20; i++) { //for (i = 1; i < 21; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
@@ -517,7 +517,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageBins128:
+	case BLUETOOTH_BINS_128:
 		for (i = 0; i < 36; i++) { //for (i = 1; i < 37; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
@@ -531,7 +531,7 @@ if (!neonMode) {
 			PACK_BIN(avg);
 		}
 		break;
-	case MessageBins256:
+	case BLUETOOTH_BINS_256:
 		for (i = 0; i < 256; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
