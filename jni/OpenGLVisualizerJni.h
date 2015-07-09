@@ -819,24 +819,30 @@ void glSumData() {
 	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
+	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
+	//since the difference is visually unnoticeable
 	idx = glAmplitude;
 	for (i = 0; i < 6; i++)
-		glUniform1f(idx++, (float)processedData[i] / 255.0f);
+		glUniform1f(idx++, (float)processedData[i] * 0.00390625f);
 	for (; i < 20; i += 2)
-		glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f);
-	for (; i < 36; i += 4)
-		glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f);
+		glUniform1f(idx++, (float)MAX(processedData[i], processedData[i + 1]) * 0.00390625f);
+	for (; i < 36; i += 4) {
+		avg = MAX(processedData[i], processedData[i + 1]);
+		avg = MAX(avg, processedData[i + 2]);
+		avg = MAX(avg, processedData[i + 3]);
+		glUniform1f(idx++, (float)avg * 0.00390625f);
+	}
 	for (last = 44; last <= 100; last += 8) {
-		avg = 0;
+		avg = processedData[i++];
 		for (; i < last; i++)
 			avg = MAX(avg, processedData[i]);
-		glUniform1f(idx++, (float)avg / 255.0f);
+		glUniform1f(idx++, (float)avg * 0.00390625f);
 	}
 	for (last = 116; last <= 228; last += 16) {
-		avg = 0;
+		avg = processedData[i++];
 		for (; i < last; i++)
 			avg = MAX(avg, processedData[i]);
-		glUniform1f(idx++, (float)avg / 255.0f);
+		glUniform1f(idx++, (float)avg * 0.00390625f);
 	}
 #undef MAX
 }
@@ -889,15 +895,23 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)(floatBuffer + 512));
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2);
 		} else {
+#define MAX(A,B) (((A) > (B)) ? (A) : (B))
+			//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
+			//since the difference is visually unnoticeable
 			int i, idx = glAmplitude, last;
 			unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 			for (i = 0; i < 36; i++)
-				glUniform1f(idx++, (float)processedData[i] / 255.0f);
+				glUniform1f(idx++, (float)processedData[i] * 0.00390625f);
 			for (; i < 184; i += 2)
-				glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f);
-			for (; i < 252; i += 4)
-				glUniform1f(idx++, (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f);
+				glUniform1f(idx++, (float)MAX(processedData[i], processedData[i + 1]) * 0.00390625f);
+			for (; i < 252; i += 4) {
+				avg = MAX(processedData[i], processedData[i + 1]);
+				avg = MAX(avg, processedData[i + 2]);
+				avg = MAX(avg, processedData[i + 3]);
+				glUniform1f(idx++, (float)avg * 0.00390625f);
+			}
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 128 * 2);
+#undef MAX
 		}
 		break;
 	}

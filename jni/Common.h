@@ -217,23 +217,17 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		bfft = 0;
 	}
 
+	vuMeter = 0;
 	if ((opt & DATA_VUMETER)) {
-		if (rootMeanSquare > lastRootMeanSquare) {
-			const float beta = 0.5f;//(0.5f / 16.0f) * (float)deltaMillis;
-			lastRootMeanSquare = ((1.0f - beta) * lastRootMeanSquare) + (beta * rootMeanSquare);
-		} else {
-			const float beta = 0.075f;//(0.075f / 16.0f) * (float)deltaMillis;
-			lastRootMeanSquare = ((1.0f - beta) * lastRootMeanSquare) + (beta * rootMeanSquare);
-		}
-		if (lastRootMeanSquare < 1.0f) {
-			vuMeter = 0;
-		} else {
-			float v = 20.0f * log10f(lastRootMeanSquare / 42.0f);
-			if (v <= -20.0f) {
-				vuMeter = 0;
-			} else {
-				v = (v + 20.0f) * 12.75f;
-				vuMeter = ((v >= 255.0f) ? 255 : (int)v);
+		lastRootMeanSquare = ((rootMeanSquare > lastRootMeanSquare) ?
+								(0.5f * rootMeanSquare) + ((1.0f - 0.5f) * lastRootMeanSquare)
+								:
+								(0.075f * rootMeanSquare) + ((1.0f - 0.075f) * lastRootMeanSquare));
+		if (lastRootMeanSquare >= 1.0f) {
+			const float v = 20.0f * log10f(lastRootMeanSquare / 42.0f);
+			if (v > -20.0f) {
+				vuMeter = (int)((v + 20.0f) * 12.75f);
+				if (vuMeter > 255) vuMeter = 255;
 			}
 		}
 		if (!(opt & ~(IGNORE_INPUT | DATA_VUMETER))) {
@@ -311,8 +305,7 @@ if (!neonMode) {
 					beatThreshold = BEAT_MIN_RISE_THRESHOLD;
 			} else if (m >= beatThreshold && beatDeltaMillis >= 150) { //no more than 150 bpm
 				//Check if we have crossed the threshold... Beat found! :D
-				//Use only even numbers to use this value in the Bluetooth transmission without processing
-				beatCounter += 2;
+				beatCounter++;
 				//Average:
 				//BPM = 60000 / beatDeltaMillis
 				//BPM / 4 = 60000 / (4 * beatDeltaMillis)
@@ -363,15 +356,16 @@ if (!neonMode) {
 #define PACK_BIN(BIN) if ((BIN) == 0x01 || (BIN) == 0x1B) { *packet = 0x1B; packet[1] = ((unsigned char)(BIN) ^ 1); packet += 2; len += 2; } else { *packet = (unsigned char)(BIN); packet++; len++; }
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
 	unsigned char* packet = (unsigned char*)bfft;
-	int len = 1, last;
+	int len = 0, last;
 	unsigned char avg;
 	unsigned char b;
 	packet[0] = 1; //SOH - Start of Heading
 	packet[1] = (unsigned char)opt; //payload type
 	//packet[2] and packet[3] are the payload length
-	packet[4] = (unsigned char)beatCounter;
-	packet += 5;
+	packet += 4;
+	PACK_BIN(beatCounter);
 	PACK_BIN(beatSpeedBPM);
+	PACK_BIN(vuMeter);
 	//processedData stores the first 256 bins, out of the 512 captured by visualizer.getFft
 	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11025Hz for a SR of 44100Hz)
 	//
@@ -379,88 +373,82 @@ if (!neonMode) {
 	//BLUETOOTH_BINS_64 and in BLUETOOTH_BINS_128 were created empirically ;)
 	switch (opt) {
 	case BLUETOOTH_BINS_4:
-		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1] + (unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 2);
+		avg = MAX(processedData[0], processedData[1]);
+		avg = MAX(avg, processedData[2]);
+		avg = MAX(avg, processedData[3]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (i = 4; i < 36; i++) //for (i = 5; i < 37; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 5;
+		i = 4;
+		avg = processedData[i++];
+		for (; i < 36; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (; i < 100; i++) //for (; i < 101; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 6;
+		avg = processedData[i++];
+		for (; i < 100; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (; i < 228; i++) //for (; i < 229; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 7;
+		avg = processedData[i++];
+		for (; i < 228; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
 		break;
 	case BLUETOOTH_BINS_8:
-		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
+		avg = MAX(processedData[0], processedData[1]);
 		PACK_BIN(avg);
-		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
+		avg = MAX(processedData[2], processedData[3]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (i = 4; i < 20; i++) //for (i = 5; i < 21; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 4;
+		i = 4;
+		avg = processedData[i++];
+		for (; i < 20; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (; i < 36; i++) //for (; i < 37; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 4;
+		avg = processedData[i++];
+		for (; i < 36; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (; i < 68; i++) //for (; i < 69; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 5;
+		avg = processedData[i++];
+		for (; i < 68; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (; i < 100; i++) //for (; i < 101; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 5;
+		avg = processedData[i++];
+		for (; i < 100; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (; i < 164; i++) //for (; i < 165; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 6;
+		avg = processedData[i++];
+		for (; i < 164; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
-		avg = 0;
-		for (; i < 228; i++) //for (; i < 229; i++)
-			avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-		//avg >>= 6;
+		avg = processedData[i++];
+		for (; i < 228; i++)
+			avg = MAX(avg, processedData[i]);
 		PACK_BIN(avg);
 		break;
 	case BLUETOOTH_BINS_16:
-		avg = (unsigned char)(((unsigned int)processedData[0] + (unsigned int)processedData[1]) >> 1);
+		avg = MAX(processedData[0], processedData[1]);
 		PACK_BIN(avg);
-		avg = (unsigned char)(((unsigned int)processedData[2] + (unsigned int)processedData[3]) >> 1);
+		avg = MAX(processedData[2], processedData[3]);
 		PACK_BIN(avg);
-		for (i = 4; i < 20; i += 4) { //for (i = 5; i < 21; i += 4) {
-			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
+		for (i = 4; i < 20; i += 4) {
+			avg = MAX(processedData[i], processedData[i + 1]);
+			avg = MAX(avg, processedData[i + 2]);
+			avg = MAX(avg, processedData[i + 3]);
 			PACK_BIN(avg);
 		}
-		for (last = 28; last <= 36; last += 8) { //for (last = 29; last <= 37; last += 8) {
-			avg = 0;
+		for (last = 28; last <= 36; last += 8) {
+			avg = processedData[i++];
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 3;
+				avg = MAX(avg, processedData[i]);
 			PACK_BIN(avg);
 		}
-		for (last = 52; last <= 100; last += 16) { //for (last = 53; last <= 101; last += 16) {
-			avg = 0;
+		for (last = 52; last <= 100; last += 16) {
+			avg = processedData[i++];
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 4;
+				avg = MAX(avg, processedData[i]);
 			PACK_BIN(avg);
 		}
-		for (last = 132; last <= 228; last += 32) { //for (last = 133; last <= 229; last += 32) {
-			avg = 0;
+		for (last = 132; last <= 228; last += 32) {
+			avg = processedData[i++];
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 5;
+				avg = MAX(avg, processedData[i]);
 			PACK_BIN(avg);
 		}
 		break;
@@ -473,61 +461,64 @@ if (!neonMode) {
 		PACK_BIN(b);
 		b = processedData[3];
 		PACK_BIN(b);
-		for (i = 4; i < 20; i += 2) { //for (i = 5; i < 21; i += 2) {
-			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1);
+		for (i = 4; i < 20; i += 2) {
+			avg = MAX(processedData[i], processedData[i + 1]);
 			PACK_BIN(avg);
 		}
-		for (; i < 36; i += 4) { //for (; i < 37; i += 4) {
-			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
+		for (; i < 36; i += 4) {
+			avg = MAX(processedData[i], processedData[i + 1]);
+			avg = MAX(avg, processedData[i + 2]);
+			avg = MAX(avg, processedData[i + 3]);
 			PACK_BIN(avg);
 		}
-		for (last = 44; last <= 100; last += 8) { //for (last = 45; last <= 101; last += 8) {
-			avg = 0;
+		for (last = 44; last <= 100; last += 8) {
+			avg = processedData[i++];
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 3;
+				avg = MAX(avg, processedData[i]);
 			PACK_BIN(avg);
 		}
-		for (last = 116; last <= 228; last += 16) { //for (last = 117; last <= 229; last += 16) {
-			avg = 0;
+		for (last = 116; last <= 228; last += 16) {
+			avg = processedData[i++];
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 4;
+				avg = MAX(avg, processedData[i]);
 			PACK_BIN(avg);
 		}
 		break;
 	case BLUETOOTH_BINS_64:
-		for (i = 0; i < 20; i++) { //for (i = 1; i < 21; i++) {
+		for (i = 0; i < 20; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
 		}
-		for (; i < 36; i += 2) { //for (; i < 37; i += 2) {
-			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1);
+		for (; i < 36; i += 2) {
+			avg = MAX(processedData[i], processedData[i + 1]);
 			PACK_BIN(avg);
 		}
-		for (; i < 132; i += 4) { //for (; i < 133; i += 4) {
-			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
+		for (; i < 132; i += 4) {
+			avg = MAX(processedData[i], processedData[i + 1]);
+			avg = MAX(avg, processedData[i + 2]);
+			avg = MAX(avg, processedData[i + 3]);
 			PACK_BIN(avg);
 		}
-		for (last = 140; last <= 228; last += 8) { //for (last = 141; last <= 229; last += 8) {
-			avg = 0;
+		for (last = 140; last <= 228; last += 8) {
+			avg = processedData[i++];
 			for (; i < last; i++)
-				avg = MAX(avg, processedData[i]); //avg += (unsigned int)processedData[i];
-			//avg >>= 3;
+				avg = MAX(avg, processedData[i]);
 			PACK_BIN(avg);
 		}
 		break;
 	case BLUETOOTH_BINS_128:
-		for (i = 0; i < 36; i++) { //for (i = 1; i < 37; i++) {
+		for (i = 0; i < 36; i++) {
 			b = processedData[i];
 			PACK_BIN(b);
 		}
-		for (; i < 184; i += 2) { //for (; i < 185; i += 2) {
-			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1);
+		for (; i < 184; i += 2) {
+			avg = MAX(processedData[i], processedData[i + 1]);
 			PACK_BIN(avg);
 		}
-		for (; i < 252; i += 4) { //for (; i < 253; i += 4) {
-			avg = (unsigned char)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2);
+		for (; i < 252; i += 4) {
+			avg = MAX(processedData[i], processedData[i + 1]);
+			avg = MAX(avg, processedData[i + 2]);
+			avg = MAX(avg, processedData[i + 3]);
 			PACK_BIN(avg);
 		}
 		break;

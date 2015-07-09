@@ -242,27 +242,33 @@ public:
 
 		for (c = 0; c < BG_COLUMNS; c++) {
 #define MAX(A,B) (((A) > (B)) ? (A) : (B))
+			//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
+			//since the difference is visually unnoticeable
+
 			//increase the amplitudes as the frequency increases, in order to improve the effect
 			if (i < 6) {
-				a = (float)processedData[i] / 255.0f;
+				a = (float)processedData[i] * 0.00390625f;
 				i++;
 			} else if (i < 20) {
-				a = 1.5f * (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1]) >> 1) / 255.0f;
+				a = (float)MAX(processedData[i], processedData[i + 1]) * (1.5f * 0.00390625f);
 				i += 2;
 			} else if (i < 36) {
-				a = 1.5f * (float)(((unsigned int)processedData[i] + (unsigned int)processedData[i + 1] + (unsigned int)processedData[i + 2] + (unsigned int)processedData[i + 3]) >> 2) / 255.0f;
+				avg = MAX(processedData[i], processedData[i + 1]);
+				avg = MAX(avg, processedData[i + 2]);
+				avg = MAX(avg, processedData[i + 3]);
+				a = (float)avg * (1.5f * 0.00390625f);
 				i += 4;
 			} else if (i < 100) {
-				avg = 0;
+				avg = processedData[i++];
 				for (; i < last; i++)
 					avg = MAX(avg, processedData[i]);
-				a = 2.0f * (float)avg / 255.0f;
+				a = (float)avg * (2.0f * 0.00390625f);
 				last += 8;
 			} else {
-				avg = 0;
+				avg = processedData[i++];
 				for (; i < last2; i++)
 					avg = MAX(avg, processedData[i]);
-				a = 2.5f * (float)avg / 255.0f;
+				a = (float)avg * (2.5f * 0.00390625f);
 				last2 += 16;
 			}
 #undef MAX
