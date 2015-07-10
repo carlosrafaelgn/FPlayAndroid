@@ -139,7 +139,7 @@ public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothCo
 	}
 
 	public void syncDataType() {
-		dataType = (Player.isBluetoothUsingVUMeter() ? (DATA_FFT | DATA_VUMETER) : DATA_FFT);
+		dataType = (Player.isBluetoothUsingVUMeter() ? (DATA_FFT | DATA_VUMETER | BEAT_DETECTION_2) : DATA_FFT);
 		if (fxVisualizer != null)
 			fxVisualizer.updateVisualizerDataType();
 	}
