@@ -499,6 +499,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 					scroll.setBackgroundResource(backgroundId);
 			}
 			scroll.setPadding(paddingL, paddingT, paddingR, paddingB);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				scroll.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? ScrollView.SCROLLBAR_POSITION_LEFT : ScrollView.SCROLLBAR_POSITION_RIGHT);
 			scroll.addView(list);
 			menu = new MenuDialog(context, this, scroll);
 		} else {

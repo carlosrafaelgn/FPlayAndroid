@@ -45,6 +45,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.ColorStateList;
+import android.os.Build;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -337,6 +338,8 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		p.topMargin = UI.dialogMargin;
 		listView = new ListView(activity);
 		listView.setLayoutParams(p);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			listView.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? ListView.SCROLLBAR_POSITION_LEFT : ListView.SCROLLBAR_POSITION_RIGHT);
 
 		l.addView(lblTitle);
 		l.addView(barWait);
