@@ -73,18 +73,27 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private View oldView, newView;
 	private Animation anim;
 
-	private void setEnabledCheckForGroup(View view, boolean enabled) {
-		view.setEnabled(enabled);
-		if (view instanceof ViewGroup)
-			setEnabled((ViewGroup)view, enabled);
+	private void disableTopView() {
+		FrameLayout parent;
+		View view;
+		try {
+			parent = (FrameLayout)findViewById(android.R.id.content);
+		} catch (Throwable ex) {
+			parent = null;
+		}
+		if (parent != null && (view = parent.getChildAt(0)) != null) {
+			view.setEnabled(false);
+			if (view instanceof ViewGroup)
+				disableGroup((ViewGroup)view);
+		}
 	}
 
-	private void setEnabled(ViewGroup viewGroup, boolean enabled) {
+	private void disableGroup(ViewGroup viewGroup) {
 		for (int i = viewGroup.getChildCount() - 1; i >= 0; i--) {
 			View view = viewGroup.getChildAt(i);
-			view.setEnabled(enabled);
+			view.setEnabled(false);
 			if (view instanceof ViewGroup)
-				setEnabled((ViewGroup)view, enabled);
+				disableGroup((ViewGroup)view);
 		}
 	}
 
@@ -121,7 +130,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				}
 				if (newView != null) {
 					newView.setAnimation(null);
-					//setEnabledCheckForGroup(newView, true);
 					newView = null;
 				}
 				parent = null;
@@ -238,8 +246,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (anim != null) {
 				BackgroundActivityMonitor.stop();
 				anim.setAnimationListener(this);
-				setEnabledCheckForGroup(oldView, false);
-				//setEnabledCheckForGroup(view, false);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 				if (useFadeOutNextTime || forceFadeOut) {
 					oldView.bringToFront();
@@ -282,8 +288,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				top.paused = true;
 				top.onPause();
 			}
-			if (top != null)
+			if (top != null) {
+				disableTopView();
 				top.onCleanupLayout();
+			}
 		}
 		startActivityInternal(activity, announce);
 	}
@@ -297,6 +305,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			activity.paused = true;
 			activity.onPause();
 		}
+		disableTopView();
 		activity.onCleanupLayout();
 		activity.onDestroy();
 		if (top != null)

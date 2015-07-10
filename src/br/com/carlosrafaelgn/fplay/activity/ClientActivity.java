@@ -86,8 +86,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		if (fadeAllowed) {
 			View v;
 			try {
-				LayoutInflater l = (LayoutInflater)activity.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-				v = l.inflate(layoutResID, null);
+				v = ((LayoutInflater)activity.getSystemService(Activity.LAYOUT_INFLATER_SERVICE)).inflate(layoutResID, null);
 			} catch (Throwable ex) {
 				activity.setContentView(layoutResID);
 				return;
@@ -101,8 +100,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	public final void setContentView(int layoutResID) {
 		View v;
 		try {
-			LayoutInflater l = (LayoutInflater)activity.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-			v = l.inflate(layoutResID, null);
+			v = ((LayoutInflater)activity.getSystemService(Activity.LAYOUT_INFLATER_SERVICE)).inflate(layoutResID, null);
 		} catch (Throwable ex) {
 			activity.setContentView(layoutResID);
 			return;
