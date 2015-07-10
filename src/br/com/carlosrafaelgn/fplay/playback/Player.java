@@ -2076,6 +2076,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		case STATE_INITIALIZING_STEP2:
 			localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
 			break;
+		case STATE_ALIVE:
+			if (ex == null && forcePlayIdx >= 0)
+				play(forcePlayIdx);
+			break;
 		}
 	}
 

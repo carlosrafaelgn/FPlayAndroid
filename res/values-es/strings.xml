@@ -291,8 +291,9 @@
     <string name="bt_sample_count">Muestras por mensaje:</string>
     <string name="bt_connect">Conectar a un dispositivo Bluetooth&#8230;</string>
     <string name="bt_disconnect">Desconectar dispositivo Bluetooth</string>
-    <string name="bt_start">Iniciar el envío de muestras de frecuencia</string>
-    <string name="bt_stop">Detener el envío de muestras de frecuencia</string>
+    <string name="bt_start">Iniciar la transmisión</string>
+    <string name="bt_stop">Detener la transmisión</string>
+    <string name="bt_vumeter">VU meter + detección de BPM</string>
     <string name="bt_pairing">Por favor, intente conectarse de nuevo después de emparejar el dispositivo.</string>
     <string name="bt_connection_error">Se ha producido un error al conectar con el dispositivo Bluetooth :(</string>
     <string name="bt_communication_error">Se ha producido un error durante la comunicación con el dispositivo Bluetooth :(</string>

@@ -142,6 +142,11 @@ public final class SettingView extends View {
 		requestLayout();
 	}
 
+	public void setIcon(String icon) {
+		this.icon = icon;
+		invalidate();
+	}
+
 	public void setText(String text) {
 		this.text = text;
 		updateLayout();

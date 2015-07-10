@@ -390,7 +390,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 					listObserver.centerItem(positionToSelect);
 			}
 		}
-		Player.songListDeserialized((positionToSelect >= 0) ? items[positionToSelect] : null, ((play && positionToSelect >= 0) ? positionToSelect : -1), positionToSelect, ex);
+		Player.songListDeserialized((!append && (positionToSelect >= 0)) ? items[positionToSelect] : null, ((play && positionToSelect >= 0) ? positionToSelect : -1), positionToSelect, ex);
 	}
 
 	private Song getRandomSongAndSetCurrentInternal(int how) {

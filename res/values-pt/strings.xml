@@ -291,8 +291,9 @@
     <string name="bt_sample_count">Bins por mensagem:</string>
     <string name="bt_connect">Conectar a um dispositivo Bluetooth&#8230;</string>
     <string name="bt_disconnect">Desconectar dispositivo Bluetooth</string>
-    <string name="bt_start">Iniciar envio dos bins de frequência</string>
-    <string name="bt_stop">Parar envio dos bins de frequência</string>
+    <string name="bt_start">Iniciar transmissão</string>
+    <string name="bt_stop">Parar transmissão</string>
+    <string name="bt_vumeter">VU meter + detecção de BPM</string>
     <string name="bt_pairing">Por favor, tente conectar-se de novo depois de parear o dispositivo.</string>
     <string name="bt_connection_error">Ocorreu um erro ao se conectar ao dispositivo Bluetooth :(</string>
     <string name="bt_communication_error">Ocorreu um erro na comunicação com o dispositivo Bluetooth :(</string>

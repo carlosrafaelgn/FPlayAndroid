@@ -85,7 +85,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtSpeed, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -700,11 +700,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					if (btStartText != R.string.bt_stop) {
 						btStartText = R.string.bt_stop;
 						optBtStart.setText(getText(R.string.bt_stop).toString());
+						optBtStart.setIcon(UI.ICON_PAUSE);
 					}
 				} else {
 					if (btStartText != R.string.bt_start) {
 						btStartText = R.string.bt_start;
 						optBtStart.setText(getText(R.string.bt_start).toString());
+						optBtStart.setIcon(UI.ICON_PLAY);
 					}
 				}
 				break;
@@ -716,6 +718,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				if (btStartText != R.string.bt_start) {
 					btStartText = R.string.bt_start;
 					optBtStart.setText(getText(R.string.bt_start).toString());
+					optBtStart.setIcon(UI.ICON_PLAY);
 				}
 				break;
 			}
@@ -778,12 +781,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optBtMessage.setOnClickListener(this);
 			optBtConnect = new SettingView(ctx, UI.ICON_BLUETOOTH, "", null, false, false, false);
 			optBtConnect.setOnClickListener(this);
-			optBtStart = new SettingView(ctx, UI.ICON_VISUALIZER, "", null, false, false, false);
+			optBtStart = new SettingView(ctx, Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_TRANSMITTING ? UI.ICON_PAUSE : UI.ICON_PLAY, "", null, false, false, false);
 			optBtStart.setOnClickListener(this);
 			optBtFramesToSkip = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.bt_fps).toString(), getFramesToSkipString(), false, false, false);
 			optBtFramesToSkip.setOnClickListener(this);
 			optBtSize = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.bt_sample_count).toString(), getSizeString(), false, false, false);
 			optBtSize.setOnClickListener(this);
+			optBtVUMeter = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.bt_vumeter).toString(), null, true, Player.isBluetoothUsingVUMeter(), false);
+			optBtVUMeter.setOnClickListener(this);
 			optBtSpeed = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.sustain).toString(), getSpeedString(), false, false, false);
 			optBtSpeed.setOnClickListener(this);
 			refreshBluetoothStatus(true);
@@ -797,6 +802,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.settings, optBtStart, 2);
 			panelSettings.addView(optBtFramesToSkip);
 			panelSettings.addView(optBtSize);
+			panelSettings.addView(optBtVUMeter);
 			panelSettings.addView(optBtSpeed);
 			currentHeader = -1;
 		} else {
@@ -1038,6 +1044,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBtStart = null;
 		optBtFramesToSkip = null;
 		optBtSize = null;
+		optBtVUMeter = null;
 		optBtSpeed = null;
 		lastMenuView = null;
 		if (colorViews != null) {
@@ -1101,6 +1108,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					Player.startBluetoothVisualizer(getHostActivity(), true);
 					refreshBluetoothStatus(false);
 				}
+			} else if (view == optBtVUMeter) {
+				Player.setBluetoothUsingVUMeter(optBtVUMeter.isChecked());
+				if (Player.bluetoothVisualizerController != null)
+					((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncDataType();
 			} else if (view == optBtSize || view == optBtSpeed || view == optBtFramesToSkip) {
 				CustomContextMenu.openContextMenu(view, this);
 			}
