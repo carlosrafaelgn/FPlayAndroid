@@ -800,9 +800,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optBtConnect);
 			panelSettings.addView(optBtStart);
 			addHeader(ctx, R.string.settings, optBtStart, 2);
+			//panelSettings.addView(optBtVUMeter);
 			panelSettings.addView(optBtFramesToSkip);
 			panelSettings.addView(optBtSize);
-			panelSettings.addView(optBtVUMeter);
 			panelSettings.addView(optBtSpeed);
 			currentHeader = -1;
 		} else {

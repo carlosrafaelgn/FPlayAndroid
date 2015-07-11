@@ -215,9 +215,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				@Override
 				public void run() {
 					boolean addingFolder = false;
+					final ArrayList<FileSt> filesToAdd = new ArrayList<>(256);
 					try {
 						Throwable firstException = null;
-						final ArrayList<FileSt> filesToAdd = new ArrayList<>(256);
 						for (int i = 0; i < fs.length; i++) {
 							if (Player.state >= Player.STATE_TERMINATING) {
 								Player.songs.addingEnded();
@@ -256,6 +256,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 					} catch (Throwable ex) {
 						Player.songs.addingEnded();
 					}
+					filesToAdd.clear();
 				}
 			}).start();
 			if (play && addingFolder && Player.goBackWhenPlayingFolders) {

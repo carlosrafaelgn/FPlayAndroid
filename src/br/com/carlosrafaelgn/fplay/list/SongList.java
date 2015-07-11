@@ -65,6 +65,10 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public static final int HOW_PREVIOUS = -3;
 	public static final int HOW_NEXT_MANUAL = -2;
 	public static final int HOW_NEXT_AUTO = -1;
+
+	private static final int MSG_ADD_SONGS = 0x0700;
+	private static final int MSG_FINISHED_ADDING = 0x0701;
+
 	private volatile int adding;
 	private int currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem, sortMode;
 	private boolean repeatOne;
@@ -187,7 +191,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 		if (files != null && count > files.length)
 			count = files.length;
 		class Closure implements MainHandler.Callback {
-			public final Song[] songs;
+			public Song[] songs;
 			private int idx, positionToSelect;
 			private boolean firstTime;
 			private final boolean clearList, playAfterwards;
@@ -207,7 +211,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 						clear();
 					positionToSelect = getCount();
 				}
-				int localCount = msg.what;
+				int localCount = msg.arg1;
 				if (localCount > songs.length)
 					localCount = songs.length;
 				if (idx < localCount) {
@@ -219,6 +223,12 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 					Player.setSelectionAfterAdding(positionToSelect);
 					if (playAfterwards)
 						Player.play(positionToSelect);
+				}
+				if (msg.what == MSG_FINISHED_ADDING) {
+					for (int i = localCount - 1; i >= 0; i--)
+						songs[i] = null;
+					songs = null;
+					System.gc();
 				}
 				return true;
 			}
@@ -233,9 +243,9 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(files[i].path, files[i].name);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.state >= Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)
 									break;
-								MainHandler.sendMessage(c, f);
+								MainHandler.sendMessage(c, MSG_ADD_SONGS, f, 0);
 							}
 						}
 					}
@@ -246,9 +256,9 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(file.path, file.name);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.state >= Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)
 									break;
-								MainHandler.sendMessage(c, f);
+								MainHandler.sendMessage(c, MSG_ADD_SONGS, f, 0);
 							}
 						}
 					}
@@ -261,9 +271,9 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(files[i], tmpPtr);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.state >= Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)
 									break;
-								MainHandler.sendMessage(c, f);
+								MainHandler.sendMessage(c, MSG_ADD_SONGS, f, 0);
 							}
 						}
 					}
@@ -274,16 +284,16 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 							c.songs[f] = new Song(file, tmpPtr);
 							f++;
 							if ((f & 3) == 1) {
-								if (Player.state >= Player.STATE_TERMINATING)
+								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)
 									break;
-								MainHandler.sendMessage(c, f);
+								MainHandler.sendMessage(c, MSG_ADD_SONGS, f, 0);
 							}
 						}
 					}
 				}
 			}
 			if (Player.state < Player.STATE_TERMINATING)
-				MainHandler.sendMessage(c, f);
+				MainHandler.sendMessage(c, MSG_FINISHED_ADDING, f, 0);
 		}
 		addingEnded();
 	}

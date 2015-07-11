@@ -574,14 +574,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		looper = null;
 		handler = null;
 		localHandler = null;
+		notification = null;
+		notificationRemoteViews = null;
 		notificationManager = null;
 		audioManager = null;
 		telephonyManager = null;
 		externalReceiver = null;
 		stickyBroadcast = null;
+		intentActivityHost = null;
+		intentPrevious = null;
+		intentPlayPause = null;
+		intentNext = null;
+		intentExit = null;
 		favoriteFolders.clear();
 		localSong = null;
 		localPlayer = null;
+		stateLastSong = null;
 		state = STATE_DEAD;
 		if (thePlayer != null) {
 			thePlayer.stopForeground(true);
@@ -1681,6 +1689,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
+	private static Notification notification;
+	private static RemoteViews notificationRemoteViews;
 	private static boolean appNotInForeground, idleTurnOffTimerSent;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
 	private static final HashSet<String> favoriteFolders = new HashSet<>();
@@ -1937,7 +1947,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification) {
+	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification, boolean notificationFirstTime) {
 		createIntents(context);
 
 		if (localSong == null)
@@ -1950,12 +1960,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (prepareButtons) {
 			if (notification) {
 				UI.prepareNotificationPlaybackIcons(context);
-				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
-				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
-				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
+				if (notificationFirstTime) {
+					views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
+					views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
+					views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
 
-				views.setOnClickPendingIntent(R.id.btnExit, intentExit);
+					views.setOnClickPendingIntent(R.id.btnPrev, intentPrevious);
+					views.setOnClickPendingIntent(R.id.btnPlay, intentPlayPause);
+					views.setOnClickPendingIntent(R.id.btnNext, intentNext);
+
+					views.setOnClickPendingIntent(R.id.btnExit, intentExit);
+				}
 			} else {
 				if (localSong == null)
 					views.setTextViewText(R.id.lblArtist, "-");
@@ -1972,34 +1988,40 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
-			}
 
-			views.setOnClickPendingIntent(R.id.btnPrev, intentPrevious);
-			views.setOnClickPendingIntent(R.id.btnPlay, intentPlayPause);
-			views.setOnClickPendingIntent(R.id.btnNext, intentNext);
+				views.setOnClickPendingIntent(R.id.btnPrev, intentPrevious);
+				views.setOnClickPendingIntent(R.id.btnPlay, intentPlayPause);
+				views.setOnClickPendingIntent(R.id.btnNext, intentNext);
+			}
 		}
 		return views;
 	}
 
 	private static Notification getNotification() {
-		final Notification notification = new Notification();
-		notification.icon = R.drawable.ic_notification;
-		notification.when = 0;
-		notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
-		notification.contentIntent = intentActivityHost;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				//any need for this technique???
-				//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
-				//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
-				notification.visibility = Notification.VISIBILITY_PUBLIC;
-				if (mediaSession != null)
-					notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
+		boolean firstTime = false;
+		if (notification == null) {
+			firstTime = true;
+			notification = new Notification();
+			notification.icon = R.drawable.ic_notification;
+			notification.when = 0;
+			notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
+			notification.contentIntent = intentActivityHost;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+					//any need for this technique???
+					//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
+					//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
+					notification.visibility = Notification.VISIBILITY_PUBLIC;
+					if (mediaSession != null)
+						notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
+				}
+				notificationRemoteViews = new RemoteViews(thePlayer.getPackageName(), R.layout.notification);
+			} else {
+				notificationRemoteViews = new RemoteViews(thePlayer.getPackageName(), R.layout.notification_simple);
 			}
-			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification), true, true);
-		} else {
-			notification.contentView = prepareRemoteViews(thePlayer, new RemoteViews(thePlayer.getPackageName(), R.layout.notification_simple), false, true);
+			notification.contentView = notificationRemoteViews;
 		}
+		prepareRemoteViews(thePlayer, notificationRemoteViews, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
 		return notification;
 	}
 
@@ -2444,6 +2466,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				mediaSession.release();
 				mediaSession = null;
 			}
+			mediaSessionMetadataBuilder = null;
 			mediaSessionPlaybackStateBuilder = null;
 		} catch (Throwable ex) {
 			ex.printStackTrace();

@@ -363,9 +363,9 @@ if (!neonMode) {
 	packet[1] = (unsigned char)opt; //payload type
 	//packet[2] and packet[3] are the payload length
 	packet += 4;
-	PACK_BIN(beatCounter);
-	PACK_BIN(beatSpeedBPM);
-	PACK_BIN(vuMeter);
+	//PACK_BIN(beatCounter);
+	//PACK_BIN(beatSpeedBPM);
+	//PACK_BIN(vuMeter);
 	//processedData stores the first 256 bins, out of the 512 captured by visualizer.getFft
 	//which represents frequencies from DC to SampleRate / 4 (roughly from 0Hz to 11025Hz for a SR of 44100Hz)
 	//

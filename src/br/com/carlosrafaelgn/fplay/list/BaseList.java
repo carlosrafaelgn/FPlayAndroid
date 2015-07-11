@@ -53,6 +53,8 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		void onSelectionChanged(BaseList<E> list);
 	}
 
+	protected static final int MAX_COUNT = 2048;
+
 	protected static final int LIST_DELTA = 32;
 	
 	protected static final int SELECTION_CHANGED = 0;
@@ -91,6 +93,9 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 	
 	public final void add(E item, int position) {
+		if (count >= MAX_COUNT)
+			return;
+
 		if (firstSel != lastSel)
 			setSelection(firstSel, firstSel, false, false);
 		
@@ -120,6 +125,9 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 	
 	public final void add(int position, E[] items, int firstIndex, int count) {
+		if ((this.count + count) >= MAX_COUNT)
+			count = MAX_COUNT - this.count;
+
 		if (count <= 0)
 			return;
 		
