@@ -173,6 +173,10 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 
 	public abstract CharSequence getTitle();
 
+	public int getSystemBgColor() {
+		return UI.color_window;
+	}
+
 	public void activityFinished(ClientActivity activity, int requestCode, int code) {
 	}
 

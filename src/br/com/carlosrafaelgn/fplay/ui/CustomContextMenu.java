@@ -325,6 +325,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			setOnCancelListener(menu);
 			setOnDismissListener(menu);
 			setTitle(context.getText(R.string.menu));
+			UI.prepareDialogAnimations(this);
 		}
 
 		@Override

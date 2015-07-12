@@ -115,6 +115,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		return "FPlay: " + ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
 	}
 
+	@Override
+	public int getSystemBgColor() {
+		return (Player.controlMode ? UI.color_control_mode : UI.color_window);
+	}
+
 	private void saveListViewPosition() {
 		if (list != null && list.getAdapter() != null) {
 			final int i = list.getFirstVisiblePosition();

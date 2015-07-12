@@ -1744,7 +1744,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
-		UI.setTransition((UI.lastVersionCode < 74 && UI.isHighEndDevice) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.isHighEndDevice ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
+		UI.setTransition((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
 		//the volume control types changed on version 71
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
 			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
@@ -1770,7 +1770,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
 			UI.setFlat((UI.lastVersionCode < 74) || opts.getBit(OPTBIT_FLAT, true));
 			UI.hasBorders = ((UI.lastVersionCode >= 74) && opts.getBit(OPTBIT_BORDERS, false));
-			UI.animationEnabled = opts.getBit(OPTBIT_ANIMATIONS, UI.isHighEndDevice);
+			UI.animationEnabled = ((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) || opts.getBit(OPTBIT_ANIMATIONS, UI.deviceSupportsAnimations));
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);

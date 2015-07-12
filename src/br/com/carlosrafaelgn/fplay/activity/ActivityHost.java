@@ -72,6 +72,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
+	private int systemBgColor;
 
 	private void disableTopView() {
 		FrameLayout parent;
@@ -175,18 +176,24 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	@Override
 	public void setContentView(View view) {
 		super.setContentView(view);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			updateSystemColors(false);
 		BackgroundActivityMonitor.start(this);
 	}
 
 	@Override
 	public void setContentView(View view, ViewGroup.LayoutParams params) {
 		super.setContentView(view, params);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			updateSystemColors(false);
 		BackgroundActivityMonitor.start(this);
 	}
 
 	@Override
 	public void setContentView(int layoutResID) {
 		super.setContentView(layoutResID);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			updateSystemColors(false);
 		BackgroundActivityMonitor.start(this);
 	}
 
@@ -278,6 +285,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			oldView = null;
 			newView = null;
 			setContentView(view);
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			updateSystemColors(false);
 		}
 		useFadeOutNextTime = false;
 	}
@@ -433,8 +442,11 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	public void updateSystemColors() {
-		int bgColor = UI.color_window;
+	public void updateSystemColors(boolean force) {
+		int bgColor = ((top == null) ? UI.color_window : top.getSystemBgColor());
+		if (!force && systemBgColor == bgColor)
+			return;
+		systemBgColor = bgColor;
 		int turns = 0;
 		do {
 			bgColor = ColorUtils.blend(bgColor, 0xff000000, 0.8f);

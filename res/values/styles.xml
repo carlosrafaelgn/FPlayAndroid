@@ -21,6 +21,16 @@
         <!-- <item name="android:soundEffectsEnabled">false</item> -->
     </style>
 
+    <style name="NoAnimation">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@null</item>
+    </style>
+
+    <style name="FadeAnimation">
+        <item name="android:windowEnterAnimation">@anim/fadein</item>
+        <item name="android:windowExitAnimation">@anim/fadeout</item>
+    </style>
+
     <style name="MenuDialog" parent="@android:style/Theme.Dialog">
         <item name="android:windowBackground">@color/color_transparent</item>
         <item name="android:windowFrame">@null</item>

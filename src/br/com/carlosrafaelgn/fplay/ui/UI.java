@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -65,6 +66,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewParent;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
@@ -95,7 +97,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 75;
+	public static final int VERSION_CODE = 76;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -127,7 +129,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int TRANSITION_FADE = 1;
 	public static final int TRANSITION_ZOOM = 2;
 	public static final int TRANSITION_DISSOLVE = 3;
-	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 330;
+	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 300;
 	public static final int TRANSITION_DURATION_FOR_VIEWS = 200;
 
 	public static final int MSG_ADD = 0x0001;
@@ -397,7 +399,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
-	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, isHighEndDevice, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
+	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
@@ -711,7 +713,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		isLandscape = info.isLandscape;
 		isLowDpiScreen = info.isLowDpiScreen;
 		//let's do some guessing here... :/
-		isHighEndDevice = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) && (density >= 1.5f || isLargeScreen)));
+		deviceSupportsAnimations = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) && (density >= 1.5f || isLargeScreen)));
 
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()
@@ -1308,7 +1310,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			activityHost.setTheme(android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
 		else
 			activityHost.setTheme(android.R.style.Theme_Material_NoActionBar_Fullscreen);
-		activityHost.updateSystemColors();
+		activityHost.updateSystemColors(true);
 	}
 
 	public static int getAndroidThemeColor(Context context, int style, int attribute) {
@@ -1362,7 +1364,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
 		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.animations).toString() + "\n- " + activity.getText(R.string.border).toString() + "\n\n" + activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.check_it_out).toString();
-		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
+		prepareDialogAndShow((new AlertDialog.Builder(activity))
 			.setTitle(activity.getText(title))
 			.setView(createDialogView(activity, content))
 			.setPositiveButton(R.string.got_it, null)
@@ -1390,11 +1392,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		default:
 			return false;
 		}
-		UI.prepareDialogAndShow((new AlertDialog.Builder(activity))
-		.setTitle(activity.getText(title))
-		.setView(createDialogView(activity, activity.getText(content)))
-		.setPositiveButton(R.string.got_it, null)
-		.create());
+		prepareDialogAndShow((new AlertDialog.Builder(activity))
+			.setTitle(activity.getText(title))
+			.setView(createDialogView(activity, activity.getText(content)))
+			.setPositiveButton(R.string.got_it, null)
+			.create());
 		msgs |= msg;
 		return true;
 	}
@@ -1551,19 +1553,19 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	
 	public static int handleStateChanges(int state, boolean pressed, boolean focused, View view) {
 		boolean r = false;
-		final boolean op = ((state & UI.STATE_PRESSED) != 0), of = ((state & UI.STATE_FOCUSED) != 0);
+		final boolean op = ((state & STATE_PRESSED) != 0), of = ((state & STATE_FOCUSED) != 0);
 		if (op != pressed) {
 			if (pressed)
-				state |= UI.STATE_PRESSED;
+				state |= STATE_PRESSED;
 			else
-				state &= ~UI.STATE_PRESSED;
+				state &= ~STATE_PRESSED;
 			r = true;
 		}
 		if (of != focused) {
 			if (focused)
-				state |= UI.STATE_FOCUSED;
+				state |= STATE_FOCUSED;
 			else
-				state &= ~UI.STATE_FOCUSED;
+				state &= ~STATE_FOCUSED;
 			r = true;
 		}
 		if (r)
@@ -1629,7 +1631,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	
 	@SuppressWarnings("deprecation")
 	public static void prepareNotificationViewColors(TextView view) {
-		view.setTextColor(UI.colorState_text_highlight_static);
+		view.setTextColor(colorState_text_highlight_static);
 		view.setBackgroundDrawable(hasBorders ? new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_highlight));
 	}
 	
@@ -1696,7 +1698,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		if (messageOnly == null) {
 			final LinearLayout l = new LinearLayout(context);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-				UI.removeSplitTouch(l);
+				removeSplitTouch(l);
 			l.setOrientation(LinearLayout.VERTICAL);
 			l.setPadding(dialogMargin, dialogMargin, dialogMargin, dialogMargin);
 			l.setBaselineAligned(false);
@@ -1719,12 +1721,19 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			lastViewCenterLocation[1] += (view.getHeight() >> 1);
 		}
 	}
-	
+
+	public static void prepareDialogAnimations(Dialog dialog) {
+		final Window window = dialog.getWindow();
+		if (window != null)
+			window.setWindowAnimations(animationEnabled ? R.style.FadeAnimation : R.style.NoAnimation);
+	}
+
 	public static AlertDialog prepareDialogAndShow(AlertDialog dialog) {
 		if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			//https://code.google.com/p/android/issues/detail?id=6360
 			dialog.setOnShowListener(Player.theUI);
 		}
+		prepareDialogAnimations(dialog);
 		dialog.show();
 		return dialog;
 	}
