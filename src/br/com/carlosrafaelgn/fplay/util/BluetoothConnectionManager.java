@@ -112,7 +112,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 
 	private static final class DeviceList extends BaseList<DeviceItem> implements ArraySorter.Comparer<DeviceItem> {
 		public DeviceList() {
-			super(DeviceItem.class);
+			super(DeviceItem.class, 256);
 		}
 
 		@Override

@@ -231,7 +231,7 @@ public final class RadioStationList extends BaseList<RadioStation> implements Ru
 	public RadioStationAddedObserver radioStationAddedObserver;
 	
 	public RadioStationList(String tags, String noOnAir, String noDescription, String noTags) {
-		super(RadioStation.class);
+		super(RadioStation.class, MAX_COUNT);
 		this.items = new RadioStation[MAX_COUNT];
 		this.readyToFetch = true;
 		this.favoritesSync = new Object();

@@ -66,6 +66,8 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public static final int HOW_NEXT_MANUAL = -2;
 	public static final int HOW_NEXT_AUTO = -1;
 
+	private static final int MAX_COUNT = 2048;
+
 	private static final int MSG_ADD_SONGS = 0x0700;
 	private static final int MSG_FINISHED_ADDING = 0x0701;
 
@@ -78,7 +80,7 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	private static final SongList theSongList = new SongList();
 	
 	private SongList() {
-		super(Song.class);
+		super(Song.class, MAX_COUNT);
 		this.adding = 0;
 		this.indexOfPreviouslyDeletedCurrentShuffledItem = -1;
 	}

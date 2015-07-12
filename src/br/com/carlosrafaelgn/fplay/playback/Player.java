@@ -1620,7 +1620,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	//private static final int OPT_WRAPAROUNDLIST = 0x0028;
 	//private static final int OPT_EXTRASPACING = 0x0029;
 	//private static final int OPT_OLDBROWSERBEHAVIOR = 0x002A;
-	private static final int OPT_VISUALIZERORIENTATION = 0x002B;
+	//private static final int OPT_VISUALIZERORIENTATION = 0x002B;
 	private static final int OPT_SONGEXTRAINFOMODE = 0x002C;
 	private static final int OPT_TURNOFFTIMERSELECTEDMINUTES = 0x002D;
 	private static final int OPT_IDLETURNOFFTIMERCUSTOMMINUTES = 0x002E;
@@ -1686,6 +1686,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_CONTROLS_TO_THE_LEFT = 37;
 	private static final int OPTBIT_BORDERS = 38;
 	private static final int OPTBIT_ANIMATIONS = 39;
+	private static final int OPTBIT_VISUALIZER_PORTRAIT = 40;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -1739,12 +1740,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
-		UI.visualizerOrientation = opts.getInt(OPT_VISUALIZERORIENTATION, 0);
 		bluetoothVisualizerConfig = opts.getInt(OPT_BLUETOOTHVISUALIZERCONFIG, 2 | (2 << 3) | (3 << 5));
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
-		UI.setTransition((UI.lastVersionCode < 74 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
+		UI.setTransition((UI.lastVersionCode < 74 && UI.isHighEndDevice) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.isHighEndDevice ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
 		//the volume control types changed on version 71
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
 			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
@@ -1770,7 +1770,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
 			UI.setFlat((UI.lastVersionCode < 74) || opts.getBit(OPTBIT_FLAT, true));
 			UI.hasBorders = ((UI.lastVersionCode >= 74) && opts.getBit(OPTBIT_BORDERS, false));
-			UI.animationEnabled = opts.getBit(OPTBIT_ANIMATIONS, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
+			UI.animationEnabled = opts.getBit(OPTBIT_ANIMATIONS, UI.isHighEndDevice);
 			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
 			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
@@ -1797,6 +1797,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			songs.setRepeatingOne(opts.getBit(OPTBIT_REPEATONE));
 			UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
 			UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
+			UI.visualizerPortrait = opts.getBit(OPTBIT_VISUALIZER_PORTRAIT);
 		/*} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -1865,7 +1866,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_MSGSTARTUP, UI.msgStartup);
 		opts.put(OPT_WIDGETTEXTCOLOR, UI.widgetTextColor);
 		opts.put(OPT_WIDGETICONCOLOR, UI.widgetIconColor);
-		opts.put(OPT_VISUALIZERORIENTATION, UI.visualizerOrientation);
 		opts.put(OPT_BLUETOOTHVISUALIZERCONFIG, bluetoothVisualizerConfig);
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
@@ -1908,6 +1908,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_REPEATONE, songs.isRepeatingOne());
 		opts.putBit(OPTBIT_NOTFULLSCREEN, UI.notFullscreen);
 		opts.putBit(OPTBIT_CONTROLS_TO_THE_LEFT, UI.controlsToTheLeft);
+		opts.putBit(OPTBIT_VISUALIZER_PORTRAIT, UI.visualizerPortrait);
 		if (favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

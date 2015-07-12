@@ -337,7 +337,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 
 		info = new UI.DisplayInfo();
 
-		setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		setRequestedOrientation(UI.visualizerPortrait ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -637,7 +637,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(getApplication(), this);
 		UI.prepare(menu);
-		menu.add(0, MNU_ORIENTATION, 0, (UI.visualizerOrientation == 0) ? R.string.portrait : R.string.landscape)
+		menu.add(0, MNU_ORIENTATION, 0, UI.visualizerPortrait ? R.string.landscape : R.string.portrait)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_ORIENTATION));
 		final Visualizer v = visualizer;
@@ -651,8 +651,8 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			return true;
 		switch (item.getItemId()) {
 		case MNU_ORIENTATION:
-			UI.visualizerOrientation = ((UI.visualizerOrientation == 0) ? 1 : 0);
-			setRequestedOrientation((UI.visualizerOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			UI.visualizerPortrait = !UI.visualizerPortrait;
+			setRequestedOrientation(UI.visualizerPortrait ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 			break;
 		}
 		return true;

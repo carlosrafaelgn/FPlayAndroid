@@ -53,8 +53,6 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		void onSelectionChanged(BaseList<E> list);
 	}
 
-	protected static final int MAX_COUNT = 2048;
-
 	protected static final int LIST_DELTA = 32;
 	
 	protected static final int SELECTION_CHANGED = 0;
@@ -67,12 +65,14 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	protected DataSetObserver observer;
 	private OnBaseListSelectionChangedListener<E> listener;
 	protected final Object currentAndCountMutex;
+	private final int maxCount;
 	protected E[] items;
 	protected int count, current, firstSel, lastSel, originalSel, indexOfPreviouslyDeletedCurrentItem, modificationVersion;
 	
 	@SuppressWarnings("unchecked")
-	public BaseList(Class<E> c) {
+	public BaseList(Class<E> c, int maxCount) {
 		this.currentAndCountMutex = new Object();
+		this.maxCount = maxCount;
 		this.items = (E[])Array.newInstance(c, LIST_DELTA);
 		this.current = -1;
 		this.firstSel = -1;
@@ -93,7 +93,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 	
 	public final void add(E item, int position) {
-		if (count >= MAX_COUNT)
+		if (count >= maxCount)
 			return;
 
 		if (firstSel != lastSel)
@@ -125,8 +125,8 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 	
 	public final void add(int position, E[] items, int firstIndex, int count) {
-		if ((this.count + count) >= MAX_COUNT)
-			count = MAX_COUNT - this.count;
+		if ((this.count + count) >= maxCount)
+			count = maxCount - this.count;
 
 		if (count <= 0)
 			return;

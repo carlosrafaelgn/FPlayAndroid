@@ -55,7 +55,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	private int[] sectionPositions;
 	
 	public FileList() {
-		super(FileSt.class);
+		super(FileSt.class, 16384);
 		nullSections = new String[] { "" };
 		nullSectionPositions = new int[] { 0 };
 		sections = nullSections;

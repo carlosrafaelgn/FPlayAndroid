@@ -397,11 +397,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	
 	public static final Rect rect = new Rect();
 	public static char decimalSeparator;
-	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
-		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt,
+	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, isHighEndDevice, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
+		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, visualizerOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
+		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
@@ -710,6 +710,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		isLargeScreen = (isTV || info.isLargeScreen);
 		isLandscape = info.isLandscape;
 		isLowDpiScreen = info.isLowDpiScreen;
+		//let's do some guessing here... :/
+		isHighEndDevice = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) || ((density >= 2.0f) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)));
 
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()
