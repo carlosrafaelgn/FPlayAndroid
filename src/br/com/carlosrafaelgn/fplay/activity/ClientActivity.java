@@ -49,7 +49,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener {
 	ActivityHost activity;
 	ClientActivity previousActivity;
-	int requestCode;
+	int requestCode, postCreateCalled;
 	boolean finished, paused;
 	
 	public final int getDecorViewWidth() {
@@ -201,7 +201,10 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	
 	protected void onCreateLayout(boolean firstCreation) {
 	}
-	
+
+	protected void onPostCreateLayout(boolean firstCreation) {
+	}
+
 	protected void onResume() {
 	}
 	

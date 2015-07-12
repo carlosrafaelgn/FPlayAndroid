@@ -507,6 +507,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		list.setCustomEmptyText(msgLoading);
 		list.setEmptyListOnClickListener(this);
 		if (UI.animationEnabled) {
+			list.setVisibility(View.GONE);
 			(loadingPanelAnimationHide = UI.animationCreateAlpha(1.0f, 0.0f)).setAnimationListener(this);
 			loadingPanelAnimationShow = UI.animationCreateAlpha(0.0f, 1.0f);
 			radioStationList.radioStationAddedObserver = this;
@@ -516,6 +517,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			lblLoading.setTextColor(UI.color_text_disabled);
 			UI.largeText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);
+		} else if (firstCreation) {
+			list.setCustomEmptyText(msgLoading);
 		}
 		radioStationList.setObserver(list);
 		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
@@ -555,11 +558,15 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareEdgeEffectColor(getApplication());
+	}
+
+	@Override
+	protected void onPostCreateLayout(boolean firstCreation) {
 		isCreatingLayout = true;
 		doSearch();
 		isCreatingLayout = false;
 	}
-	
+
 	@Override
 	protected void onPause() {
 		radioStationList.saveFavorites(getApplication());

@@ -95,7 +95,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 74;
+	public static final int VERSION_CODE = 75;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -711,7 +711,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		isLandscape = info.isLandscape;
 		isLowDpiScreen = info.isLowDpiScreen;
 		//let's do some guessing here... :/
-		isHighEndDevice = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) || ((density >= 2.0f) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)));
+		isHighEndDevice = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) && (density >= 1.5f || isLargeScreen)));
 
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()

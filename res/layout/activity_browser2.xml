@@ -126,6 +126,7 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:maxLines="1"
+        android:paddingTop="22sp"
         android:text="@string/loading"
         android:visibility="gone"/>
 

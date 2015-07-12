@@ -413,7 +413,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			if (file == null) //same as above
 				return;
 			if (file.isDirectory && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
-				navigateTo(file.path, null);
+				navigateTo(file.path, null, false);
 			} else {
 				file.isChecked = !file.isChecked;
 				processItemCheckboxClickInternal(position, true);
@@ -481,7 +481,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		return true;
 	}
 	
-	private void navigateTo(String to, String from) {
+	private void navigateTo(String to, String from, boolean onlyUpdateButtons) {
 		UI.animationReset();
 		if (isAtHome)
 			Player.originalPath = to;
@@ -534,7 +534,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
 		final boolean sectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
 		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !sectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
-		fileList.setPath(to, from, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && sectionsEnabled);
+		if (!onlyUpdateButtons)
+			fileList.setPath(to, from, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && sectionsEnabled);
 	}
 	
 	@Override
@@ -581,7 +582,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				//if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && list != null)
 				//	list.requestFocusFromTouch();
 				if (Player.path.length() == 1 || Player.path.equals(Player.originalPath)) {
-					navigateTo("", Player.path);
+					navigateTo("", Player.path, false);
 					return;
 				}
 				if (Player.path.charAt(0) != File.separatorChar) {
@@ -590,13 +591,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 					final String fakePath = Player.path.substring(fakePathIdx + 1);
 					int i = realPath.lastIndexOf(File.separatorChar, realPath.length() - 1);
 					if (i < 0)
-						navigateTo("", Player.path);
+						navigateTo("", Player.path, false);
 					else
-						navigateTo(realPath.substring(0, i) + FileSt.FAKE_PATH_ROOT + fakePath.substring(0, fakePath.lastIndexOf(FileSt.FAKE_PATH_SEPARATOR_CHAR)), realPath + FileSt.FAKE_PATH_ROOT);
+						navigateTo(realPath.substring(0, i) + FileSt.FAKE_PATH_ROOT + fakePath.substring(0, fakePath.lastIndexOf(FileSt.FAKE_PATH_SEPARATOR_CHAR)), realPath + FileSt.FAKE_PATH_ROOT, false);
 				} else {
 					final int i = Player.path.lastIndexOf(File.separatorChar, Player.path.length() - 1);
 					final String originalPath = Player.path;
-					navigateTo((i <= 0) ? File.separator : Player.path.substring(0, i), ((i >= 0) && (i < originalPath.length())) ? originalPath.substring(i + 1) : null);
+					navigateTo((i <= 0) ? File.separator : Player.path.substring(0, i), ((i >= 0) && (i < originalPath.length())) ? originalPath.substring(i + 1) : null, false);
 				}
 			} else {
 				finish(0, view, true);
@@ -659,7 +660,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			}
 		} if (view == btnHome) {
 			if (Player.path.length() > 0)
-				navigateTo("", Player.path);
+				navigateTo("", Player.path, false);
 		} else if (view == chkAll) {
 			if (loading || isAtHome)
 				return;
@@ -757,6 +758,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		list = (BgListView)findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
 		if (UI.animationEnabled) {
+			if (firstCreation)
+				list.setVisibility(View.GONE);
 			list.setCustomEmptyText(msgEmptyList);
 			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
 			animation = UI.animationCreateAlpha(0.0f, 1.0f);
@@ -764,6 +767,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			lblLoading.setTextColor(UI.color_text_disabled);
 			UI.largeText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);
+		} else if (firstCreation) {
+			list.setCustomEmptyText(msgLoading);
 		}
 		fileList.setObserver(list);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
@@ -850,10 +855,17 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			UI.animationCommit(true, null);
 		}
 		isCreatingLayout = true;
-		navigateTo(Player.path, null);
+		navigateTo(Player.path, null, true);
 		isCreatingLayout = false;
 	}
-	
+
+	@Override
+	protected void onPostCreateLayout(boolean firstCreation) {
+		isCreatingLayout = true;
+		navigateTo(Player.path, null, !firstCreation);
+		isCreatingLayout = false;
+	}
+
 	@Override
 	protected void onPause() {
 		fileList.setObserver(null);

@@ -306,8 +306,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			emptyLayout = null;
 		} else {
 			UI.textPaint.setTextSize(UI._22sp);
-			final int w = viewWidth;
-			emptyLayout = new StaticLayout(text, UI.textPaint, (w < (UI.controlLargeMargin << 1)) ? 0 : (w - (UI.controlLargeMargin << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
+			emptyLayout = new StaticLayout(text, UI.textPaint, (viewWidth < (UI.controlLargeMargin << 1)) ? 0 : (viewWidth - (UI.controlLargeMargin << 1)), Alignment.ALIGN_CENTER, 1, 0, false);
 		}
 	}
 	

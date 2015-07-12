@@ -68,7 +68,7 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 //
 public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener {
 	private ClientActivity top;
-	private boolean exitOnDestroy, isFading, useFadeOutNextTime, ignoreFadeNextTime;
+	private boolean exitOnDestroy, isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation;
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
@@ -94,6 +94,18 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			view.setEnabled(false);
 			if (view instanceof ViewGroup)
 				disableGroup((ViewGroup)view);
+		}
+	}
+
+	private void createLayout(ClientActivity activity, boolean firstCreation) {
+		if (activity != null && !activity.finished) {
+			createLayoutCausedAnimation = false;
+			activity.postCreateCalled = (firstCreation ? 2 : 0);
+			activity.onCreateLayout(firstCreation);
+			if (!activity.finished && !createLayoutCausedAnimation && (activity.postCreateCalled & 1) == 0) {
+				activity.postCreateCalled = 1;
+				activity.onPostCreateLayout(firstCreation);
+			}
 		}
 	}
 
@@ -137,6 +149,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 		if (animation != null)
 			BackgroundActivityMonitor.start(this);
+		if (top != null && !top.finished && (top.postCreateCalled & 1) == 0) {
+			top.postCreateCalled |= 1;
+			top.onPostCreateLayout((top.postCreateCalled & 2) != 0);
+		}
 	}
 	
 	@Override
@@ -255,6 +271,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					view.startAnimation(anim);
 				}
 				isFading = true;
+				createLayoutCausedAnimation = true;
 			}
 		}
 		if (parent == null) {
@@ -274,7 +291,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		activity.paused = true;
 		activity.onCreate();
 		if (!activity.finished) {
-			activity.onCreateLayout(true);
+			createLayout(activity, true);
 			if (!activity.finished && activity.paused) {
 				activity.paused = false;
 				activity.onResume();
@@ -332,7 +349,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				//we must check because the top activity could have
 				//changed as a consequence of oldTop.activityFinished()
 				//being called
-				top.onCreateLayout(false);
+				createLayout(top, false);
 				if (top != null && !top.finished && top.paused) {
 					top.paused = false;
 					top.onResume();
@@ -462,7 +479,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		top.paused = true;
 		top.onCreate();
 		if (top != null && !top.finished) {
-			top.onCreateLayout(true);
+			createLayout(top, true);
 			if (top != null && !top.finished)
 				Player.addDestroyedObserver(this);
 			else

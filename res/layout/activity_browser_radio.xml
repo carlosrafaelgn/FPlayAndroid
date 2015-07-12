@@ -30,8 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_marginLeft="8dp"
-            android:layout_toRightOf="@+id/btnGoBack"
-            android:visibility="gone">
+            android:layout_toRightOf="@+id/btnGoBack">
 
             <ProgressBar
                 android:id="@+id/barLoading"
