@@ -57,7 +57,7 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 //All methods of this class MUST BE called from the main thread, except those otherwise noted!!!
-public final class SongList extends BaseList<Song> implements FileFetcher.Listener, Comparer<Song> {
+public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	public static final int SORT_BY_TITLE = 0;
 	public static final int SORT_BY_ARTIST = 1;
 	public static final int SORT_BY_ALBUM = 2;
@@ -122,16 +122,15 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 									songs[i] = Song.deserialize(bs);
 							}
 							done = true;
-							addingEnded();
 							MainHandler.postToMainThread(this);
 						} catch (Throwable ex) {
 							songs = null;
 							done = true;
 							if (!(ex instanceof FileNotFoundException))
 								this.ex = ex;
-							addingEnded();
 							MainHandler.postToMainThread(this);
 						} finally {
+							addingEnded();
 							try {
 								if (bs != null)
 									bs.close();
@@ -168,28 +167,11 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 	public boolean isAdding() {
 		return (adding > 0);
 	}
-	
-	@Override
-	public void onFilesFetched(FileFetcher fetcher, final Throwable e) {
-		if (e != null) {
-			addingEnded();
-			if (Player.state >= Player.STATE_TERMINATING)
-				return;
-			MainHandler.toast(e);
-		} else {
-			addFiles(fetcher.files, null, fetcher.count, fetcher.playAfterFetching, true, false);
-		}
-	}
-	
+
+	//addFiles MUST NOT be called from the main thread!
 	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, int count, boolean play, boolean isAddingFolder, boolean addAsURL) {
-		if (((files == null || files.length == 0) && (iterator == null)) || count <= 0) {
-			addingEnded();
+		if (((files == null || files.length == 0) && (iterator == null)) || count <= 0 || Player.state >= Player.STATE_TERMINATING)
 			return;
-		}
-		if (Player.state >= Player.STATE_TERMINATING) {
-			addingEnded();
-			return;
-		}
 		if (files != null && count > files.length)
 			count = files.length;
 		class Closure implements MainHandler.Callback {
@@ -297,11 +279,37 @@ public final class SongList extends BaseList<Song> implements FileFetcher.Listen
 			if (Player.state < Player.STATE_TERMINATING)
 				MainHandler.sendMessage(c, MSG_FINISHED_ADDING, f, 0);
 		}
-		addingEnded();
+	}
+
+	public boolean addPath(final String path, final boolean play) {
+		if (!FileFetcher.isFileAcceptable(path))
+			return false;
+		addingStarted();
+		try {
+			(new Thread("Path Adder Thread") {
+				@Override
+				public void run() {
+					try {
+						if (Player.state >= Player.STATE_TERMINATING)
+							return;
+						addFiles(new FileSt[] { new FileSt(new File(path)) }, null, 1, play, false, false);
+					} catch (Throwable ex) {
+						MainHandler.toast(ex);
+					} finally {
+						addingEnded();
+					}
+				}
+			}).start();
+			return true;
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+			addingEnded();
+			return false;
+		}
 	}
 
 	//--------------------------------------------------------------------------------------------
-	
+
 	private void fullSerialization(Context context, String path) throws IOException {
 		FileOutputStream fs = null;
 		BufferedOutputStream bs = null;

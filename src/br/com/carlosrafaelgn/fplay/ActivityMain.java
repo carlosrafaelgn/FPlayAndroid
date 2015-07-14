@@ -414,7 +414,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (lblAlbum != null)
 				lblAlbum.setText((currentSong == null) ? "-" : currentSong.album);
 			if (lblLength != null)
-				lblLength.setText((currentSong == null) ? "-" : currentSong.length);
+				lblLength.setText((currentSong == null || currentSong.length == null || currentSong.length.length() == 0) ? "-" : currentSong.length);
 		} else if (preparingHasChanged) {
 			if (barSeek != null) {
 				if (Player.isPreparing() && !barSeek.isTracking()) {

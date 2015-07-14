@@ -53,7 +53,7 @@ import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public class BluetoothVisualizerControllerJni implements Visualizer, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, Runnable, FxVisualizer.FxVisualizerHandler {
+public final class BluetoothVisualizerControllerJni implements Visualizer, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, Runnable, FxVisualizer.FxVisualizerHandler {
 	private static final int MSG_PLAYER_COMMAND = 0x0600;
 	private static final int MSG_BLUETOOTH_RXTX_ERROR = 0x0601;
 

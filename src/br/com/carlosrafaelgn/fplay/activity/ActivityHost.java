@@ -432,13 +432,22 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		return (Player.isMediaButton(keyCode) || super.onKeyUp(keyCode, event));
 	}
 
+	private void checkIntent(Intent intent) {
+		final Uri data;
+		if (Player.state >= Player.STATE_TERMINATING || intent == null || !Intent.ACTION_VIEW.equals(intent.getAction()) || (data = intent.getData()) == null)
+			return;
+		if (Player.state == Player.STATE_ALIVE) {
+			if (Player.songs.addPath(data.getPath(), true))
+				BackgroundActivityMonitor.start(this);
+		} else {
+			Player.pathToPlayWhenStarting = data.getPath();
+		}
+	}
+
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
-		final Uri data;
-		if (Player.state == Player.STATE_ALIVE && intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && (data = intent.getData()) != null) {
-			System.out.println(data.getPath());
-		}
+		checkIntent(intent);
 	}
 
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -492,10 +501,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		top.onCreate();
 		if (top != null && !top.finished) {
 			createLayout(top, true);
-			if (top != null && !top.finished)
+			if (top != null && !top.finished) {
 				Player.addDestroyedObserver(this);
-			else
+				checkIntent(getIntent());
+			} else {
 				finish();
+			}
 		} else {
 			finish();
 		}

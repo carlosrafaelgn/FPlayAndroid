@@ -211,7 +211,20 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			CustomContextMenu.openContextMenu(btnMenu, this);
 		return false;
 	}
-	
+
+	private void updateTitle(Song currentSong) {
+		if (lblTitle == null)
+			return;
+		if (currentSong == null) {
+			lblTitle.setText(getText(R.string.nothing_playing));
+		} else {
+			String txt = (Player.isPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title);
+			if (currentSong.extraInfo != null && currentSong.extraInfo.length() > 0 && (currentSong.extraInfo.length() > 1 || currentSong.extraInfo.charAt(0) != '-'))
+				txt += "\n" + currentSong.extraInfo;
+			lblTitle.setText(txt);
+		}
+	}
+
 	private void prepareViews(boolean updateInfo) {
 		if (info == null)
 			return;
@@ -294,16 +307,18 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		//presses when your activity doesn’t have the focus. For when it does, we override
 		//the Activity.onKeyDown() or onKeyUp() methods for the user interface to trap the
 		//headset button-related events...
-		if ((event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
-			return true;
-		if (Player.isMediaButton(keyCode)) {
-			switch (keyCode) {
-			case KeyEvent.KEYCODE_VOLUME_DOWN:
-			case KeyEvent.KEYCODE_VOLUME_UP:
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_VOLUME_DOWN:
+		case KeyEvent.KEYCODE_VOLUME_UP:
+			if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
 				Player.handleMediaButton(keyCode);
-				break;
+				return true;
 			}
-			return true;
+			break;
+		default:
+			if ((event.getRepeatCount() == 0) && Player.handleMediaButton(keyCode))
+				return true;
+			break;
 		}
 		if (panelTop != null && !(panelTopWasVisibleOk = (panelTopHiding == 0 && panelTop.getVisibility() == View.VISIBLE)))
 			showPanelTop(true);
@@ -421,8 +436,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		btnMenu.setOnClickListener(this);
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		UI.mediumText(lblTitle);
-		final Song currentSong = Player.localSong;
-		lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
+		updateTitle(Player.localSong);
 
 		//if (UI.extraSpacing)
 		//	panelTop.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
@@ -595,8 +609,8 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			btnPlay.setText(Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
 			btnPlay.setContentDescription(getText(Player.localPlaying ? R.string.pause : R.string.play));
 		}
-		if ((songHasChanged || preparingHasChanged) && lblTitle != null)
-			lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
+		if (songHasChanged || preparingHasChanged)
+			updateTitle(currentSong);
 		final Visualizer v = visualizer;
 		if (v != null)
 			v.onPlayerChanged(currentSong, songHasChanged, ex);

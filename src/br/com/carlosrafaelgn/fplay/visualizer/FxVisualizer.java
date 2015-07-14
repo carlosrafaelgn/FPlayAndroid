@@ -40,7 +40,7 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public class FxVisualizer implements Runnable, Timer.TimerHandler {
+public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 	public interface FxVisualizerHandler {
 		void onFailure();
 		void onFinalCleanup();

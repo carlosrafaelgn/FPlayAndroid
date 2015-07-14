@@ -97,7 +97,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 76;
+	public static final int VERSION_CODE = 77;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;

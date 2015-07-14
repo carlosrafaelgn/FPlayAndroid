@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileList;
@@ -193,8 +194,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private void addPlayCheckedItems(final boolean play) {
 		if (checkedCount <= 0)
 			return;
+		Player.songs.addingStarted();
+		BackgroundActivityMonitor.start(getHostActivity());
+		boolean addingFolder = false;
 		try {
-			boolean addingFolder = false;
 			int c = 0;
 			final FileSt[] fs = new FileSt[checkedCount];
 			for (int i = fileList.getCount() - 1, j = checkedCount - 1; i >= 0 && j >= 0; i--) {
@@ -209,8 +212,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 					j--;
 				}
 			}
-			Player.songs.addingStarted();
-			BackgroundActivityMonitor.start(getHostActivity());
 			(new Thread("Checked File Adder Thread") {
 				@Override
 				public void run() {
@@ -219,10 +220,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 					try {
 						Throwable firstException = null;
 						for (int i = 0; i < fs.length; i++) {
-							if (Player.state >= Player.STATE_TERMINATING) {
-								Player.songs.addingEnded();
+							if (Player.state >= Player.STATE_TERMINATING)
 								return;
-							}
 							final FileSt file = fs[i];
 							if (file == null)
 								continue;
@@ -246,34 +245,33 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 							}
 						}
 						if (filesToAdd.size() <= 0) {
-							if (firstException != null)
-								Player.songs.onFilesFetched(null, firstException);
-							else
-								Player.songs.addingEnded();
+							if (firstException != null && Player.state == Player.STATE_ALIVE)
+								MainHandler.toast(firstException);
 						} else {
 							Player.songs.addFiles(null, filesToAdd.iterator(), filesToAdd.size(), play, addingFolder, false);
 						}
 					} catch (Throwable ex) {
+						ex.printStackTrace();
+					} finally {
 						Player.songs.addingEnded();
 					}
 					filesToAdd.clear();
 				}
 			}).start();
-			if (play && addingFolder && Player.goBackWhenPlayingFolders) {
-				finish(0, null, true);
-			} else {
-				//Unselect everything after adding/playing
-				chkAll.setChecked(false);
-				c = fileList.getCount() - 1;
-				checkedCount = 0;
-				for (; c >= 0; c--)
-					fileList.getItemT(c).isChecked = false;
-				fileList.notifyCheckedChanged();
-				updateButtons(true);
-			}
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
 			UI.toast(getApplication(), ex.getMessage());
+		}
+		if (play && addingFolder && Player.goBackWhenPlayingFolders) {
+			finish(0, null, true);
+		} else {
+			//Unselect everything after adding/playing
+			chkAll.setChecked(false);
+			checkedCount = 0;
+			for (int c = fileList.getCount() - 1; c >= 0; c--)
+				fileList.getItemT(c).isChecked = false;
+			fileList.notifyCheckedChanged();
+			updateButtons(true);
 		}
 	}
 

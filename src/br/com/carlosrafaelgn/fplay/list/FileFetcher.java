@@ -135,6 +135,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		return ((i >= 0) && supportedTypes.contains(name.substring(i).toLowerCase(Locale.US)));
 	}
 
+	public static boolean isFileAcceptable(String name) {
+		int i;
+		return (name != null && (i = name.lastIndexOf('.')) >= 0 && supportedTypes.contains(name.substring(i).toLowerCase(Locale.US)));
+	}
+
 	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode, boolean createSections) {
 		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, false, false, isInTouchMode, createSections);
 		f.fetch();

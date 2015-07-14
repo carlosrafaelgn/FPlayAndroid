@@ -209,6 +209,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
 	public static final String ACTION_EXIT = "br.com.carlosrafaelgn.FPlay.EXIT";
+	public static String pathToPlayWhenStarting;
 	private static String startCommand;
 
 	public static int state;
@@ -386,22 +387,29 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void executeStartCommand() {
-		if (startCommand != null && state == STATE_ALIVE) {
-			switch (startCommand) {
-			case ACTION_PREVIOUS:
-				previous();
-				break;
-			case ACTION_PLAY_PAUSE:
-				playPause();
-				break;
-			case ACTION_NEXT:
-				next();
-				break;
-			case ACTION_EXIT:
-				stopService();
-				break;
+		if (state == STATE_ALIVE) {
+			if (pathToPlayWhenStarting != null) {
+				if (songs.addPath(pathToPlayWhenStarting, true))
+					startCommand = null;
+				pathToPlayWhenStarting = null;
 			}
-			startCommand = null;
+			if (startCommand != null) {
+				switch (startCommand) {
+				case ACTION_PREVIOUS:
+					previous();
+					break;
+				case ACTION_PLAY_PAUSE:
+					playPause();
+					break;
+				case ACTION_NEXT:
+					next();
+					break;
+				case ACTION_EXIT:
+					stopService();
+					break;
+				}
+				startCommand = null;
+			}
 		}
 	}
 

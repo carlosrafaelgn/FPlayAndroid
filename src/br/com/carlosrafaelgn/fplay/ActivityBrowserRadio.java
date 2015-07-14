@@ -133,14 +133,14 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private void addPlaySelectedItem(final boolean play) {
 		if (radioStationList.getSelection() < 0)
 			return;
+		final RadioStation radioStation = radioStationList.getItemT(radioStationList.getSelection());
+		if (radioStation.m3uUri == null || radioStation.m3uUri.length() < 0) {
+			UI.toast(getApplication(), R.string.error_file_not_found);
+			return;
+		}
+		Player.songs.addingStarted();
+		BackgroundActivityMonitor.start(getHostActivity());
 		try {
-			final RadioStation radioStation = radioStationList.getItemT(radioStationList.getSelection());
-			if (radioStation.m3uUri == null || radioStation.m3uUri.length() < 0) {
-				UI.toast(getApplication(), R.string.error_file_not_found);
-				return;
-			}
-			Player.songs.addingStarted();
-			BackgroundActivityMonitor.start(getHostActivity());
 			(new Thread("Checked Radio Station Adder Thread") {
 				@Override
 				public void run() {
@@ -149,10 +149,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 					BufferedReader br = null;
 					HttpURLConnection urlConnection = null;
 					try {
-						if (Player.state >= Player.STATE_TERMINATING) {
-							Player.songs.addingEnded();
+						if (Player.state >= Player.STATE_TERMINATING)
 							return;
-						}
 						urlConnection = (HttpURLConnection)(new URL(radioStation.m3uUri)).openConnection();
 						final int s = urlConnection.getResponseCode();
 						if (s == 200) {
@@ -168,12 +166,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 									line.regionMatches(true, 0, "https://", 0, 8)))
 									lines.add(line);
 							}
-							if (Player.state >= Player.STATE_TERMINATING) {
-								Player.songs.addingEnded();
+							if (Player.state >= Player.STATE_TERMINATING)
 								return;
-							}
 							if (lines.size() == 0) {
-								Player.songs.addingEnded();
 								MainHandler.toast(R.string.error_gen);
 							} else {
 								//instead of just using the first available address, let's use
@@ -181,13 +176,12 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 								Player.songs.addFiles(new FileSt[] { new FileSt(lines.get(lines.size() >> 1), radioStation.title, null, 0) }, null, 1, play, false, true);
 							}
 						} else {
-							Player.songs.addingEnded();
 							MainHandler.toast((s >= 400 && s < 500) ? R.string.error_file_not_found : R.string.error_gen);
 						}
 					} catch (Throwable ex) {
-						Player.songs.addingEnded();
 						MainHandler.toast(ex);
 					} finally {
+						Player.songs.addingEnded();
 						try {
 							if (urlConnection != null)
 								urlConnection.disconnect();
