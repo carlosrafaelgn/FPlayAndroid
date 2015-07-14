@@ -389,7 +389,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static void executeStartCommand() {
 		if (state == STATE_ALIVE) {
 			if (pathToPlayWhenStarting != null) {
-				if (songs.addPath(pathToPlayWhenStarting, true))
+				if (songs.addPathAndForceScrollIntoView(pathToPlayWhenStarting, true))
 					startCommand = null;
 				pathToPlayWhenStarting = null;
 			}

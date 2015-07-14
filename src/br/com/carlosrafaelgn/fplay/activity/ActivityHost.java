@@ -437,7 +437,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (Player.state >= Player.STATE_TERMINATING || intent == null || !Intent.ACTION_VIEW.equals(intent.getAction()) || (data = intent.getData()) == null)
 			return;
 		if (Player.state == Player.STATE_ALIVE) {
-			if (Player.songs.addPath(data.getPath(), true))
+			if (Player.songs.addPathAndForceScrollIntoView(data.getPath(), true))
 				BackgroundActivityMonitor.start(this);
 		} else {
 			Player.pathToPlayWhenStarting = data.getPath();

@@ -173,7 +173,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 							} else {
 								//instead of just using the first available address, let's use
 								//one from the middle ;)
-								Player.songs.addFiles(new FileSt[] { new FileSt(lines.get(lines.size() >> 1), radioStation.title, null, 0) }, null, 1, play, false, true);
+								Player.songs.addFiles(new FileSt[] { new FileSt(lines.get(lines.size() >> 1), radioStation.title, null, 0) }, null, 1, play, false, true, false);
 							}
 						} else {
 							MainHandler.toast((s >= 400 && s < 500) ? R.string.error_file_not_found : R.string.error_gen);

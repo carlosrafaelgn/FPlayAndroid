@@ -169,7 +169,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	}
 
 	//addFiles MUST NOT be called from the main thread!
-	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, int count, boolean play, boolean isAddingFolder, boolean addAsURL) {
+	public void addFiles(FileSt[] files, Iterator<FileSt> iterator, int count, boolean play, boolean isAddingFolder, boolean addAsURL, boolean forceScrollIntoView) {
 		if (((files == null || files.length == 0) && (iterator == null)) || count <= 0 || Player.state >= Player.STATE_TERMINATING)
 			return;
 		if (files != null && count > files.length)
@@ -178,13 +178,14 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			public Song[] songs;
 			private int idx, positionToSelect;
 			private boolean firstTime;
-			private final boolean clearList, playAfterwards;
-			Closure(int count, boolean clearList, boolean playAfterwards) {
+			private final boolean clearList, playAfterwards, forceScrollIntoView;
+			Closure(int count, boolean clearList, boolean playAfterwards, boolean forceScrollIntoView) {
 				songs = new Song[count];
 				idx = 0;
 				firstTime = true;
 				this.clearList = clearList;
 				this.playAfterwards = playAfterwards;
+				this.forceScrollIntoView = forceScrollIntoView;
 			}
 			@Override
 			public boolean handleMessage(Message msg) {
@@ -207,6 +208,8 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					Player.setSelectionAfterAdding(positionToSelect);
 					if (playAfterwards)
 						Player.play(positionToSelect);
+					if (forceScrollIntoView && listObserver != null)
+						listObserver.centerItemSmoothly(positionToSelect);
 				}
 				if (msg.what == MSG_FINISHED_ADDING) {
 					for (int i = localCount - 1; i >= 0; i--)
@@ -218,7 +221,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			}
 		}
 		if (count > 0) {
-			final Closure c = new Closure(count, play && isAddingFolder && Player.clearListWhenPlayingFolders, play);
+			final Closure c = new Closure(count, play && isAddingFolder && Player.clearListWhenPlayingFolders, play, forceScrollIntoView);
 			int f = 0;
 			if (addAsURL) {
 				if (files != null) {
@@ -281,7 +284,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public boolean addPath(final String path, final boolean play) {
+	public boolean addPathAndForceScrollIntoView(final String path, final boolean play) {
 		if (!FileFetcher.isFileAcceptable(path))
 			return false;
 		addingStarted();
@@ -292,7 +295,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					try {
 						if (Player.state >= Player.STATE_TERMINATING)
 							return;
-						addFiles(new FileSt[] { new FileSt(new File(path)) }, null, 1, play, false, false);
+						addFiles(new FileSt[] { new FileSt(new File(path)) }, null, 1, play, false, false, true);
 					} catch (Throwable ex) {
 						MainHandler.toast(ex);
 					} finally {
