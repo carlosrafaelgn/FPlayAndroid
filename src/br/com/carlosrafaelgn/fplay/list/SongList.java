@@ -209,7 +209,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					if (playAfterwards)
 						Player.play(positionToSelect);
 					if (forceScrollIntoView && listObserver != null)
-						listObserver.centerItemSmoothly(positionToSelect);
+						listObserver.centerItem(positionToSelect);
 				}
 				if (msg.what == MSG_FINISHED_ADDING) {
 					for (int i = localCount - 1; i >= 0; i--)

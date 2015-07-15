@@ -100,13 +100,47 @@
                 android:priority="1">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3gp" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@drawable/ic_launcher"
+                android:label="FPlay"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="application/ogg" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@drawable/ic_launcher"
+                android:label="FPlay"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="application/x-ogg" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@drawable/ic_launcher"
+                android:label="FPlay"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="application/itunes" />
+            </intent-filter>
+            <!-- beware: .*\\.EXT matches name.EXT but does match name.something.EXT!!! :( -->
+            <!-- do not include hardcoded 3GP and MP4 extensions, as they are widely used for videos -->
+            <intent-filter
+                android:icon="@drawable/ic_launcher"
+                android:label="FPlay"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3ga" android:mimeType="*/*" />
-                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mp4" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3gpa" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.m4a" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.aac" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mp3" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mid" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.rmi" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.xmf" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mxmf" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.rtttl" android:mimeType="*/*" />
@@ -114,10 +148,39 @@
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.ota" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.imy" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.ogg" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.oga" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.imy" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.wav" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mka" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mkv" android:mimeType="*/*" />
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.flac" android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@drawable/ic_launcher"
+                android:label="FPlay"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3GA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3GPA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.M4A" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.AAC" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MP3" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MID" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.RMI" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.XMF" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MXMF" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.RTTTL" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.RTX" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.OTA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.IMY" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.OGG" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.OGA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.IMY" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.WAV" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MKA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MKV" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.FLAC" android:mimeType="*/*" />
             </intent-filter>
             <!-- TV support! -->
             <intent-filter>
