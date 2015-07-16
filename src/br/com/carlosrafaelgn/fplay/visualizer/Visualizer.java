@@ -103,7 +103,7 @@ public interface Visualizer {
 	void configurationChanged(boolean landscape);
 	
 	//Runs on a SECONDARY thread
-	void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing);
+	void processFrame(android.media.audiofx.Visualizer visualizer);
 	
 	//Runs on a SECONDARY thread
 	void release();

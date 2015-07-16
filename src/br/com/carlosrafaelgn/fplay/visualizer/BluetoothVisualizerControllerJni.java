@@ -291,7 +291,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	//Runs on a SECONDARY thread
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing) {
+	public void processFrame(android.media.audiofx.Visualizer visualizer) {
 		if (!lock.lockLowPriority())
 			return;
 		try {
@@ -301,7 +301,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 				if (ignoreInput == 0) {
 					//WE MUST NEVER call any method from visualizer
 					//while the player is not actually playing
-					if (!playing)
+					if (visualizer == null)
 						Arrays.fill(waveform, 0, 1024, (byte)0x80);
 					else
 						visualizer.getWaveForm(waveform);

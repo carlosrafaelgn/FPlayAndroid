@@ -234,8 +234,8 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 					visualizerReady = true;
 				}
 			}
-			if (fxVisualizer != null && visualizer != null)
-				visualizer.processFrame(fxVisualizer, playing);
+			if (visualizer != null)
+				visualizer.processFrame(playing ? fxVisualizer : null);
 		}
 		if (!alive) {
 			timer.stop();

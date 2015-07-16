@@ -792,14 +792,14 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on a SECONDARY thread (B)
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer, boolean playing) {
+	public void processFrame(android.media.audiofx.Visualizer visualizer) {
 		if (okToRender) {
 			//We use ignoreInput, because sampling 1024, 60 times a seconds,
 			//is useless, as there are only 44100 or 48000 samples in one second
 			if (ignoreInput == 0) {
 				//WE MUST NEVER call any method from visualizer
 				//while the player is not actually playing
-				if (!playing)
+				if (visualizer == null)
 					Arrays.fill(waveform, 0, 1024, (byte)0x80);
 				else
 					visualizer.getWaveForm(waveform);
