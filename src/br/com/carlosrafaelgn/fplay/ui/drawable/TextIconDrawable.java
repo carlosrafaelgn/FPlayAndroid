@@ -45,7 +45,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 public final class TextIconDrawable extends Drawable {
 	private static final TextPaint paint;
 	private int[] stateSet;
-	private int state;
+	private int state, alpha, currentColor;
 	private final int width, height, y, color;
 	//private final boolean outsideMenu;
 	private String icon;
@@ -72,7 +72,9 @@ public final class TextIconDrawable extends Drawable {
 		this.height = UI.defaultCheckIconSize;
 		this.y = UI.defaultCheckIconSize >> 1;
 		//this.outsideMenu = false;
+		this.alpha = 255;
 		this.color = UI.color_menu_icon;
+		this.currentColor = this.color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
 	}
@@ -83,7 +85,9 @@ public final class TextIconDrawable extends Drawable {
 		this.height = UI.defaultCheckIconSize;
 		this.y = UI.defaultCheckIconSize >> 1;
 		//this.outsideMenu = true;
+		this.alpha = 255;
 		this.color = color;
+		this.currentColor = color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
 	}
@@ -94,7 +98,9 @@ public final class TextIconDrawable extends Drawable {
 		this.height = size;
 		this.y = size >> 1;
 		//this.outsideMenu = true;
+		this.alpha = 255;
 		this.color = color;
+		this.currentColor = color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
 	}
@@ -105,7 +111,9 @@ public final class TextIconDrawable extends Drawable {
 		this.height = size;
 		this.y = size >> 1;
 		//this.outsideMenu = true;
+		this.alpha = 255;
 		this.color = color;
+		this.currentColor = color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
 	}
@@ -122,7 +130,7 @@ public final class TextIconDrawable extends Drawable {
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
-		paint.setColor((state == 0) ? color : UI.color_text_selected);
+		paint.setColor(currentColor);
 		paint.setTextSize(height);
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top) >> 1) + y, paint);
 		/*if (!outsideMenu) {
@@ -159,6 +167,7 @@ public final class TextIconDrawable extends Drawable {
 		if (state == newState)
 			return false;
 		state = newState;
+		currentColor = (alpha << 24) | (((state == 0) ? color : UI.color_text_selected) & 0x00ffffff);
 		invalidateSelf();
 		return true;
 	}
@@ -170,6 +179,9 @@ public final class TextIconDrawable extends Drawable {
 	
 	@Override
 	public void setAlpha(int alpha) {
+		this.alpha = alpha;
+		currentColor = (alpha << 24) | (((state == 0) ? color : UI.color_text_selected) & 0x00ffffff);
+		invalidateSelf();
 	}
 	
 	@Override
@@ -183,7 +195,7 @@ public final class TextIconDrawable extends Drawable {
 	
 	@Override
 	public int getAlpha() {
-		return 255;
+		return alpha;
 	}
 	
 	@Override

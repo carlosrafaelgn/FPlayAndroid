@@ -62,15 +62,7 @@ public final class BorderDrawable extends Drawable {
 		this.bottomSize = bottomSize;
 		this.ignorePadding = ignorePadding;
 	}
-	
-	public int getStrokeColor() {
-		return strokeColor;
-	}
-	
-	public int getFillColor() {
-		return fillColor;
-	}
-	
+
 	public void changeColors(int strokeColor, int fillColor) {
 		this.strokeColor = strokeColor;
 		this.fillColor = fillColor;

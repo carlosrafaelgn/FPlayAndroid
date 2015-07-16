@@ -53,7 +53,7 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 	private Observer observer;
 	private float invDuration;
 	private boolean fadeOut, running;
-	private int version, startTime;
+	private int version, ellapsedTime, duration, lastTime;
 
 	public FastAnimator(View viewToFade, boolean fadeOut, Observer endObserver, int duration) {
 		this.viewToFade = viewToFade;
@@ -64,12 +64,14 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 				this.animation.setAnimationListener(this);
 		}
 		this.observer = endObserver;
-		this.invDuration = 1.0f / (float)(duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
+		this.duration = (duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
+		this.invDuration = 1.0f / (float)this.duration;
 	}
 
 	public FastAnimator(Observer observer, int duration) {
 		this.observer = observer;
-		this.invDuration = 1.0f / (float)(duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
+		this.duration = (duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
+		this.invDuration = 1.0f / (float)this.duration;
 	}
 
 	public void release() {
@@ -84,18 +86,19 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 			end();
 		running = true;
 		version++;
-		startTime = (int)SystemClock.uptimeMillis();
+		ellapsedTime = 0;
 		if (viewToFade != null) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 				viewToFade.setAlpha(fadeOut ? 1.0f : 0.0f);
-				MainHandler.sendMessageAtTime(this, MSG_ANIMATOR, version, 0, startTime + 16);
 			} else {
 				viewToFade.startAnimation(animation);
+				return;
 			}
 		} else if (observer != null) {
 			observer.onUpdate(this, 0.0f);
-			MainHandler.sendMessageAtTime(this, MSG_ANIMATOR, version, 0, startTime + 16);
 		}
+		lastTime = (int)SystemClock.uptimeMillis();
+		MainHandler.sendMessageAtTime(this, MSG_ANIMATOR, version, 0, lastTime + 16);
 	}
 
 	public void end() {
@@ -124,10 +127,14 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 	public boolean handleMessage(Message msg) {
 		if (msg.arg1 == version) {
 			final int now = (int)SystemClock.uptimeMillis();
-			float value = (float)(now - startTime) * invDuration;
-			if (value >= 1.0f) {
+			lastTime = now - lastTime;
+			//limit the delta so the user can actually see something changing on the screen
+			ellapsedTime += ((lastTime >= 32) ? 32 : lastTime);
+			lastTime = now;
+			if (ellapsedTime >= duration) {
 				end();
 			} else {
+				float value = (float)ellapsedTime * invDuration;
 				//interpolate using the same algorithm as the one used in UI.animationInterpolator
 				//(see UI class for more details)
 				value = (value * value * (3.0f - (2.0f * value)));

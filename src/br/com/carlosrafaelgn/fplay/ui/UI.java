@@ -1917,19 +1917,26 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				animationState = ANIMATION_STATE_SHOWING;
 				for (int i = 0; i < animationShowCount; i++) {
 					final View view = animationViewsToHideAndShow[16 + i];
-					if (view != null /*&& view.getVisibility() != View.VISIBLE*/) {
-						finished = false;
-						final Object tag;
-						if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
-							view.setTag(null);
-							((TextView)view).setText((CharSequence)tag);
+					if (view != null) {
+						if (view.getVisibility() != View.VISIBLE) {
+							finished = false;
+							final Object tag;
+							if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
+								view.setTag(null);
+								((TextView)view).setText((CharSequence)tag);
+							}
+							view.setVisibility(View.VISIBLE);
+							if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+								view.startAnimation(animationShow);
+							else
+								view.setAlpha(0.0f);
+						} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+							animationViewsToHideAndShow[16 + i] = null;
+							view.setAlpha(1.0f);
 						}
-						view.setVisibility(View.VISIBLE);
-						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
-							view.startAnimation(animationShow);
 					}
 				}
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				if (!finished && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 					animationAnimatorShow.start();
 			}
 			if (finished) {
@@ -1939,6 +1946,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					if (view != null) {
 						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
 							view.setAnimation(null);
+						else
+							view.setAlpha(1.0f);
 						if (abortAll && view.getVisibility() != View.VISIBLE) {
 							final Object tag;
 							if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
