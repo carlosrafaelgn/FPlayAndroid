@@ -49,6 +49,7 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 	private Visualizer visualizer;
 	private FxVisualizerHandler handler;
 	private android.media.audiofx.Visualizer fxVisualizer;
+	private boolean hasEverBeenAlive;
 	private volatile boolean alive, paused, reset, playing, failed, visualizerReady;
 	private int audioSessionId;
 	private Timer timer;
@@ -228,8 +229,17 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 			if (reset || fxVisualizer == null) {
 				reset = false;
 				if (!initialize()) {
-					alive = false;
+					if (hasEverBeenAlive) {
+						//the player may be undergoing an unstable condition, such as successive
+						//fast track changes... try again later
+						failed = false;
+						paused = true;
+						timer.pause();
+					} else {
+						alive = false;
+					}
 				} else if (!visualizerReady && alive && visualizer != null) {
+					hasEverBeenAlive = true;
 					visualizer.load(contextForVisualizerLoading);
 					visualizerReady = true;
 				}
