@@ -347,6 +347,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
 	protected void dispatchDraw(@NonNull Canvas canvas) {
+		if (ellipsizedName == null)
+			return;
 		getDrawingRect(UI.rect);
 		final boolean albumItem = ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM));
 		if (albumItem && (state == 0))

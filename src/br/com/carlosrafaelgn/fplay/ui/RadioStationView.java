@@ -237,6 +237,8 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
 	protected void dispatchDraw(@NonNull Canvas canvas) {
+		if (ellipsizedTitle == null)
+			return;
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		getDrawingRect(UI.rect);

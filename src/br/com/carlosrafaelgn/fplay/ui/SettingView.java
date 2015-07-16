@@ -339,6 +339,8 @@ public final class SettingView extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
+		if (textLines == null)
+			return;
 		getDrawingRect(UI.rect);
 		final int txtColor = ((state == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColorSecondary = ((state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
@@ -356,7 +358,7 @@ public final class SettingView extends View {
 				i += 2;
 			}
 		}
-		if (secondaryTextWidth > 0) {
+		if (secondaryText != null) {
 			UI.drawText(canvas, secondaryText, txtColorSecondary, UI._18sp, width - secondaryTextWidth - UI.controlMargin, height - UI.verticalMargin - UI._18spBox + UI._18spYinBox);
 		} else if (color != 0 || checkable) {
 			UI.rect.left = width - UI.controlMargin - UI.defaultCheckIconSize;

@@ -65,7 +65,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	
 	private void processEllipsis() {
 		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI.controlMargin << 1) - UI.controlSmallMargin - lengthWidth, false);
-		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI.controlMargin << 1), false);
+		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI.controlMargin << 1) - UI.controlSmallMargin - lengthWidth, false);
 	}
 
 	@Override
@@ -161,6 +161,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		if (ellipsizedTitle == null)
+			return;
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		getDrawingRect(UI.rect);
 		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
