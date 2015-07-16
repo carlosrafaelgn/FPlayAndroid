@@ -55,6 +55,7 @@ import br.com.carlosrafaelgn.fplay.ActivityMain;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
@@ -66,12 +67,13 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener {
+public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer {
 	private ClientActivity top;
 	private boolean exitOnDestroy, isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation;
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
+	private FastAnimator animator; //used only with UI.TRANSITION_FADE
 	private int systemBgColor;
 
 	private void disableTopView() {
@@ -130,7 +132,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	public void onAnimationEnd(Animation animation) {
-		if (anim != null) {
+		boolean setNull = false;
+		if (animator != null) {
+			animator.release();
+			animator = null;
+		} else if (anim != null) {
+			setNull = true;
 			anim.setAnimationListener(null);
 			anim = null;
 		}
@@ -142,14 +149,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					oldView = null;
 				}
 				if (newView != null) {
-					newView.setAnimation(null);
+					if (setNull)
+						newView.setAnimation(null);
 					newView = null;
 				}
 				parent = null;
 			}
 		}
-		if (animation != null)
-			BackgroundActivityMonitor.start(this);
+		BackgroundActivityMonitor.start(this);
 		if (top != null && !top.finished && (top.postCreateCalled & 1) == 0) {
 			top.postCreateCalled |= 1;
 			top.onPostCreateLayout((top.postCreateCalled & 2) != 0);
@@ -162,6 +169,16 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	public void onAnimationStart(Animation animation) {
+	}
+
+	@Override
+	public void onUpdate(FastAnimator animator, float value) {
+
+	}
+
+	@Override
+	public void onEnd(FastAnimator animator) {
+		onAnimationEnd(null);
 	}
 
 	public View findViewByIdDirect(int id) {
@@ -209,14 +226,16 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 		if (parent != null) {
 			anim = null;
+			animator = null;
 			try {
 				oldView = parent.getChildAt(0);
 				if (oldView != null) {
 					newView = view;
 					if (UI.transition == UI.TRANSITION_FADE) {
-						//leave prepared for next time
-						UI.storeViewCenterLocationForFade(null);
-						anim = ((useFadeOutNextTime || forceFadeOut) ? new AlphaAnimation(1.0f, 0.0f) : new AlphaAnimation(0.0f, 1.0f));
+						if (useFadeOutNextTime || forceFadeOut)
+							animator = new FastAnimator(oldView, true, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES);
+						else
+							animator = new FastAnimator(view, false, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES);
 					} else {
 						final AnimationSet animationSet = new AnimationSet(true);
 						anim = animationSet;
@@ -254,19 +273,27 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 							}
 							animationSet.addAnimation(new AlphaAnimation(0.0f, 1.0f));
 						}
+						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES);
+						anim.setInterpolator(UI.animationInterpolator);
+						anim.setRepeatCount(0);
+						anim.setFillAfter(false);
 					}
-					anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES);
-					anim.setInterpolator(UI.animationInterpolator);
-					anim.setRepeatCount(0);
-					anim.setFillAfter(false);
 				} else {
 					parent = null;
 				}
 			} catch (Throwable ex) {
 				anim = null;
+				animator = null;
 				parent = null;
 			}
-			if (anim != null) {
+			if (animator != null) {
+				BackgroundActivityMonitor.stop();
+				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+				((useFadeOutNextTime || forceFadeOut) ? oldView : view).bringToFront();
+				animator.start();
+				isFading = true;
+				createLayoutCausedAnimation = true;
+			} else if (anim != null) {
 				BackgroundActivityMonitor.stop();
 				anim.setAnimationListener(this);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -546,8 +573,11 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	protected void onPause() {
+		if (animator != null)
+			animator.end();
+		else if (anim != null)
+			anim.cancel();
 		BackgroundActivityMonitor.stop();
-		onAnimationEnd(null);
 		if (top != null && !top.paused) {
 			top.paused = true;
 			top.onPause();
@@ -582,6 +612,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (anim != null) {
 			anim.setAnimationListener(null);
 			anim = null;
+		}
+		if (animator != null) {
+			animator.release();
+			animator = null;
 		}
 		while (c != null) {
 			if (!c.finished) {

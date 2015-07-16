@@ -43,7 +43,6 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -69,13 +68,14 @@ import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
+import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.RadioStationView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter, RadioStationList.RadioStationAddedObserver, Animation.AnimationListener {
+public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer {
 	private TextView sep2;
 	private BgListView list;
 	private RadioStationList radioStationList;
@@ -86,7 +86,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
 	private boolean loading, isAtFavorites, isCreatingLayout, isHidingLoadingPanel;
-	private Animation animation, loadingPanelAnimationHide, loadingPanelAnimationShow;
+	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
 	@Override
@@ -222,11 +222,11 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			return;
 		loading = started;
 		if (panelLoading != null) {
-			if (loadingPanelAnimationHide != null && !isCreatingLayout) {
+			if (loadingPanelAnimatorHide != null && !isCreatingLayout) {
 				panelLoading.setVisibility(View.VISIBLE);
-				loadingPanelAnimationHide.cancel();
-				loadingPanelAnimationShow.cancel();
-				panelLoading.startAnimation(started ? loadingPanelAnimationShow : loadingPanelAnimationHide);
+				loadingPanelAnimatorHide.end();
+				loadingPanelAnimatorShow.end();
+				(started ? loadingPanelAnimatorShow : loadingPanelAnimatorHide).start();
 				isHidingLoadingPanel = !started;
 			} else {
 				panelLoading.setVisibility(started ? View.VISIBLE : View.GONE);
@@ -234,13 +234,13 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		}
 		if (list != null) {
 			list.setCustomEmptyText(started ? msgLoading : (isAtFavorites ? msgNoFavorites : msgNoStations));
-			if (animation != null) {
+			if (animator != null) {
 				if (started) {
 					list.setVisibility(View.INVISIBLE);
 				} else if (list.getVisibility() != View.VISIBLE) {
-					animation.cancel();
+					animator.end();
 					list.setVisibility(View.VISIBLE);
-					list.startAnimation(animation);
+					animator.start();
 				}
 			}
 		}
@@ -500,13 +500,14 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setCustomEmptyText(msgLoading);
 		list.setEmptyListOnClickListener(this);
+		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		if (UI.animationEnabled) {
 			list.setVisibility(View.GONE);
-			(loadingPanelAnimationHide = UI.animationCreateAlpha(1.0f, 0.0f)).setAnimationListener(this);
-			loadingPanelAnimationShow = UI.animationCreateAlpha(0.0f, 1.0f);
+			loadingPanelAnimatorHide = new FastAnimator(panelLoading, true, this, 0);
+			loadingPanelAnimatorShow = new FastAnimator(panelLoading, false, null, 0);
 			radioStationList.radioStationAddedObserver = this;
 			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
-			animation = UI.animationCreateAlpha(0.0f, 1.0f);
+			animator = new FastAnimator(list, false, null, 0);
 			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_disabled);
 			UI.largeText(lblLoading);
@@ -515,7 +516,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			list.setCustomEmptyText(msgLoading);
 		}
 		radioStationList.setObserver(list);
-		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
@@ -584,17 +584,17 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
-		if (animation != null) {
-			animation.cancel();
-			animation = null;
+		if (animator != null) {
+			animator.release();
+			animator = null;
 		}
-		if (loadingPanelAnimationHide != null) {
-			loadingPanelAnimationHide.cancel();
-			loadingPanelAnimationHide = null;
+		if (loadingPanelAnimatorHide != null) {
+			loadingPanelAnimatorHide.release();
+			loadingPanelAnimatorHide = null;
 		}
-		if (loadingPanelAnimationShow != null) {
-			loadingPanelAnimationShow.cancel();
-			loadingPanelAnimationShow = null;
+		if (loadingPanelAnimatorShow != null) {
+			loadingPanelAnimatorShow.release();
+			loadingPanelAnimatorShow = null;
 		}
 		list = null;
 		panelLoading = null;
@@ -695,28 +695,23 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public void onRadioStationAdded() {
-		if (list != null && animation != null && list.getVisibility() != View.VISIBLE) {
-			animation.cancel();
+		if (list != null && animator != null && list.getVisibility() != View.VISIBLE) {
+			animator.end();
 			list.setVisibility(View.VISIBLE);
-			list.startAnimation(animation);
+			animator.start();
 		}
 	}
 
 	@Override
-	public void onAnimationStart(Animation animation) {
+	public void onUpdate(FastAnimator animator, float value) {
 
 	}
 
 	@Override
-	public void onAnimationEnd(Animation animation) {
+	public void onEnd(FastAnimator animator) {
 		if (isHidingLoadingPanel && panelLoading != null) {
 			isHidingLoadingPanel = false;
 			panelLoading.setVisibility(View.GONE);
 		}
-	}
-
-	@Override
-	public void onAnimationRepeat(Animation animation) {
-
 	}
 }

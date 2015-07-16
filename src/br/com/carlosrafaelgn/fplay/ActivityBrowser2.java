@@ -41,7 +41,6 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -63,6 +62,7 @@ import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
@@ -80,7 +80,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
-	private Animation animation;
+	private FastAnimator animator;
 	private CharSequence msgEmptyList, msgLoading;
 
 	@Override
@@ -286,13 +286,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				list.centerItem(fileList.getSelection());
 		}
 		if (list != null) {
-			if (animation != null) {
+			if (animator != null) {
 				if (started) {
 					list.setVisibility(View.INVISIBLE);
 				} else {
-					animation.cancel();
+					animator.end();
 					list.setVisibility(View.VISIBLE);
-					list.startAnimation(animation);
+					animator.start();
 				}
 			} else {
 				list.setCustomEmptyText(started ? msgLoading : msgEmptyList);
@@ -760,7 +760,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				list.setVisibility(View.GONE);
 			list.setCustomEmptyText(msgEmptyList);
 			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
-			animation = UI.animationCreateAlpha(0.0f, 1.0f);
+			animator = new FastAnimator(list, false, null, 0);
 			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_disabled);
 			UI.largeText(lblLoading);
@@ -886,9 +886,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
-		if (animation != null) {
-			animation.cancel();
-			animation = null;
+		if (animator != null) {
+			animator.release();
+			animator = null;
 		}
 		lastClickedFavorite = null;
 		lblPath = null;

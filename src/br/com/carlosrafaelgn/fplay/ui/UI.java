@@ -1865,6 +1865,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	private static int animationHideCount, animationShowCount, animationState;
 	private static View animationViewToShowFirst;
 	private static View[] animationViewsToHideAndShow;
+	private static FastAnimator animationAnimatorShowFirst, animationAnimatorHide, animationAnimatorShow;
 	private static Animation animationShowFirst, animationHide, animationShow;
 
 	public static Animation animationCreateAlpha(float fromAlpha, float toAlpha) {
@@ -1877,29 +1878,37 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	private static void animationFinished(boolean abortAll) {
-		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || animationShow == null);
+		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || (animationShow == null && animationAnimatorShow == null));
 		if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
 			if (abortAll) {
 				animationState = ANIMATION_STATE_NONE;
 				if (animationShowFirst != null)
 					animationShowFirst.cancel();
+				if (animationAnimatorShowFirst != null)
+					animationAnimatorShowFirst.end();
 				if (animationHide != null)
 					animationHide.cancel();
+				if (animationAnimatorHide != null)
+					animationAnimatorHide.end();
 				if (animationShow != null)
 					animationShow.cancel();
+				if (animationAnimatorShow != null)
+					animationAnimatorShow.end();
 			}
 			if (abortAll || animationState == ANIMATION_STATE_HIDING) {
 				for (int i = 0; i < animationHideCount; i++) {
 					final View view = animationViewsToHideAndShow[i];
 					if (view != null) {
-						view.setAnimation(null);
+						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+							view.setAnimation(null);
 						view.setVisibility(View.GONE);
 						animationViewsToHideAndShow[i] = null;
 					}
 				}
 				animationHideCount = 0;
 				if (animationViewToShowFirst != null) {
-					animationViewToShowFirst.setAnimation(null);
+					if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+						animationViewToShowFirst.setAnimation(null);
 					animationViewToShowFirst = null;
 				}
 			}
@@ -1908,7 +1917,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				animationState = ANIMATION_STATE_SHOWING;
 				for (int i = 0; i < animationShowCount; i++) {
 					final View view = animationViewsToHideAndShow[16 + i];
-					if (view != null && view.getVisibility() != View.VISIBLE) {
+					if (view != null /*&& view.getVisibility() != View.VISIBLE*/) {
 						finished = false;
 						final Object tag;
 						if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
@@ -1916,16 +1925,20 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 							((TextView)view).setText((CharSequence)tag);
 						}
 						view.setVisibility(View.VISIBLE);
-						view.startAnimation(animationShow);
+						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+							view.startAnimation(animationShow);
 					}
 				}
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+					animationAnimatorShow.start();
 			}
 			if (finished) {
 				animationState = ANIMATION_STATE_NONE;
 				for (int i = 0; i < animationShowCount; i++) {
 					final View view = animationViewsToHideAndShow[16 + i];
 					if (view != null) {
-						view.setAnimation(null);
+						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+							view.setAnimation(null);
 						if (abortAll && view.getVisibility() != View.VISIBLE) {
 							final Object tag;
 							if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
@@ -2001,6 +2014,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			animationHideCount = 0;
 			animationShowCount = 0;
 			animationViewToShowFirst = null;
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			animationCommit11(focusView);
 		} else {
 			if (animationShowFirst == null) {
 				(animationShowFirst = animationCreateAlpha(0.0f, 1.0f)).setAnimationListener(Player.theUI);
@@ -2050,5 +2065,85 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	@Override
 	public void onAnimationStart(Animation animation) {
+	}
+
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private static void animationCommit11(View focusView) {
+		if (animationAnimatorShowFirst == null) {
+			animationAnimatorShowFirst = new FastAnimator(new FastAnimator.Observer() {
+				@Override
+				public void onUpdate(FastAnimator animator, float value) {
+					if (animationViewToShowFirst != null)
+						animationViewToShowFirst.setAlpha(value);
+				}
+
+				@Override
+				public void onEnd(FastAnimator animator) {
+					if (animationState == ANIMATION_STATE_HIDING)
+						animationFinished(false);
+				}
+			}, 0);
+			animationAnimatorHide = new FastAnimator(new FastAnimator.Observer() {
+				@Override
+				public void onUpdate(FastAnimator animator, float value) {
+					value = 1.0f - value;
+					for (int i = 0; i < animationHideCount; i++) {
+						final View view = animationViewsToHideAndShow[i];
+						if (view != null && view.getVisibility() != View.GONE)
+							view.setAlpha(value);
+					}
+				}
+
+				@Override
+				public void onEnd(FastAnimator animator) {
+					if (animationState == ANIMATION_STATE_HIDING)
+						animationFinished(false);
+				}
+			}, 0);
+			animationAnimatorShow = new FastAnimator(new FastAnimator.Observer() {
+				@Override
+				public void onUpdate(FastAnimator animator, float value) {
+					for (int i = 0; i < animationShowCount; i++) {
+						final View view = animationViewsToHideAndShow[16 + i];
+						if (view != null)
+							view.setAlpha(value);
+					}
+				}
+
+				@Override
+				public void onEnd(FastAnimator animator) {
+					if (animationState == ANIMATION_STATE_SHOWING)
+						animationFinished(false);
+				}
+			}, 0);
+		} else {
+			animationAnimatorShowFirst.end();
+			animationAnimatorHide.end();
+			animationAnimatorShow.end();
+		}
+		if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
+			animationState = ANIMATION_STATE_HIDING;
+			animationFocusView = focusView;
+			boolean ok = false;
+			if (animationViewToShowFirst != null) {
+				ok = true;
+				animationAnimatorShowFirst.start();
+			}
+			for (int i = 0; i < animationHideCount; i++) {
+				final View view = animationViewsToHideAndShow[i];
+				if (view != null && view.getVisibility() != View.GONE) {
+					ok = true;
+					animationAnimatorHide.start();
+					break;
+				}
+			}
+			if (!ok)
+				animationFinished(false);
+		} else {
+			animationState = ANIMATION_STATE_NONE;
+			animationHideCount = 0;
+			animationShowCount = 0;
+			animationViewToShowFirst = null;
+		}
 	}
 }
