@@ -73,11 +73,15 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Interpolator;
+import android.widget.AbsListView;
 import android.widget.Button;
+import android.widget.EdgeEffect;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.lang.reflect.Field;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
@@ -1782,27 +1786,49 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void prepareEdgeEffectColor(Context context) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			return;
-		//
-		//:D amazing hack/workaround, as explained here:
-		//
-		//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
-		Drawable glow, edge;
+	public static void prepareEdgeEffect(View view) {
+		final Context context = view.getContext();
 		try {
-			glow = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
-			if (glow != null)
-				//the color is treated as SRC, and the bitmap is treated as DST
-				glow.setColorFilter(glowFilter);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		try {
-			edge = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
-			if (edge != null)
-				//hide the edge!!! ;)
-				edge.setColorFilter(glowFilter);//edgeFilter);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
+				Field mEdgeGlow;
+				EdgeEffect edgeEffect;
+				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
+				if (mEdgeGlow != null) {
+					mEdgeGlow.setAccessible(true);
+					//mEdgeGlow.set(view, new BgEdgeEffect(context));
+					edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+					if (edgeEffect == null) {
+						edgeEffect = new EdgeEffect(context);
+						mEdgeGlow.set(view, edgeEffect);
+					}
+					edgeEffect.setColor(color_text_listitem);
+				}
+				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
+				if (mEdgeGlow != null) {
+					mEdgeGlow.setAccessible(true);
+					//mEdgeGlow.set(view, new BgEdgeEffect(context));
+					edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+					if (edgeEffect == null) {
+						edgeEffect = new EdgeEffect(context);
+						mEdgeGlow.set(view, edgeEffect);
+					}
+					edgeEffect.setColor(color_text_listitem);
+				}
+			} else {
+				//
+				//:D amazing hack/workaround, as explained here:
+				//
+				//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
+				Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+				if (drawable != null)
+					//the color is treated as SRC, and the bitmap is treated as DST
+					drawable.setColorFilter(glowFilter);
+				drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+				if (drawable != null)
+					//hide the edge!!! ;)
+					drawable.setColorFilter(glowFilter);//edgeFilter);
+			}
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}

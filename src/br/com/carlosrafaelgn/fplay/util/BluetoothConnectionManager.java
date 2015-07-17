@@ -67,6 +67,7 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseItem;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, View.OnClickListener, AlertDialog.OnClickListener, AlertDialog.OnCancelListener, AlertDialog.OnDismissListener, AdapterView.OnItemClickListener {
@@ -338,8 +339,11 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		p.topMargin = UI.dialogMargin;
 		listView = new ListView(activity);
 		listView.setLayoutParams(p);
+		listView.setOverScrollMode(ListView.OVER_SCROLL_IF_CONTENT_SCROLLS);
+		listView.setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			listView.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? ListView.SCROLLBAR_POSITION_LEFT : ListView.SCROLLBAR_POSITION_RIGHT);
+		UI.prepareEdgeEffect(listView);
 
 		l.addView(lblTitle);
 		l.addView(barWait);
@@ -383,8 +387,6 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			btnOK.setEnabled(false);
 			btnOK.setOnClickListener(this);
 		}
-
-		UI.prepareEdgeEffectColor(activity);
 
 		return OK;
 	}

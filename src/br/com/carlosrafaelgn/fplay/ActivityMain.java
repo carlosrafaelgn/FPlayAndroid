@@ -1070,7 +1070,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				}
 			}
 			btnCancelSel.setDefaultHeight();
-			UI.prepareEdgeEffectColor(getApplication());
 			final boolean m = Player.songs.moving;
 			isCreatingLayout = true;
 			if (m || Player.songs.selecting)

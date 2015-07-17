@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,26 +48,32 @@ public final class ObservableScrollView extends ScrollView {
 	
 	public ObservableScrollView(Context context) {
 		super(context);
-		
-		super.setDrawingCacheEnabled(false);
-		super.setChildrenDrawingCacheEnabled(false);
-		super.setAnimationCacheEnabled(false);
+		init();
 	}
 	
 	public ObservableScrollView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		
-		super.setDrawingCacheEnabled(false);
-		super.setChildrenDrawingCacheEnabled(false);
-		super.setAnimationCacheEnabled(false);
+		init();
 	}
 	
 	public ObservableScrollView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		
+		init();
+	}
+
+	private void init() {
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);
 		super.setAnimationCacheEnabled(false);
+		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
+		updateVerticalScrollbar();
+		UI.prepareEdgeEffect(this);
+	}
+
+	public void updateVerticalScrollbar() {
+		setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? View.SCROLLBAR_POSITION_LEFT : View.SCROLLBAR_POSITION_RIGHT);
 	}
 	
 	public void setOnScrollListener(OnScrollListener listener) {
@@ -112,22 +119,7 @@ public final class ObservableScrollView extends ScrollView {
 		}
 		return -1;
 	}
-	
-	public int getNextChildIndexWithClass(Class<? extends View> clazz, int startingY) {
-		final ViewGroup vg = (ViewGroup)getChildAt(0);
-		int i = getChildIndexAroundPosition(startingY);
-		if (i >= 0) {
-			final int c = vg.getChildCount();
-			do {
-				final View v = vg.getChildAt(i);
-				if (clazz.isInstance(v))
-					return i;
-				i++;
-			} while (i < c);
-		}
-		return -1;
-	}
-	
+
 	@Override
 	protected void onScrollChanged(int l, int t, int oldl, int oldt) {
 		super.onScrollChanged(l, t, oldl, oldt);

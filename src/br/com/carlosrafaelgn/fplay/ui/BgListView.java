@@ -128,6 +128,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		super.setOverscrollHeader(null); //Motorola bug!!! :P
 		super.setOverscrollFooter(null); //Motorola bug!!! :P
+		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
+		UI.prepareEdgeEffect(this);
 		//setPadding(0, 0, 0, 0);
 		//setFastScrollAlwaysVisible(true);
 		//setFastScrollEnabled(true);
@@ -139,7 +141,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//Changing the ListView shadow color and size
 		//http://stackoverflow.com/questions/5627063/changing-the-listview-shadow-color-and-size
 	}
-	
+
 	//massive workaround!!!
 	//
 	//according to this:

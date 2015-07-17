@@ -551,7 +551,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		UI.prepareControlContainer(panelSecondary, true, false);
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
-		UI.prepareEdgeEffectColor(getApplication());
 	}
 
 	@Override

@@ -72,7 +72,7 @@
             android:text="@string/app_by"/>
     </RelativeLayout>
 
-    <ScrollView
+    <br.com.carlosrafaelgn.fplay.ui.ObservableScrollView
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -103,6 +103,6 @@
                 android:focusable="false"
                 android:gravity="right"/>
         </LinearLayout>
-    </ScrollView>
+    </br.com.carlosrafaelgn.fplay.ui.ObservableScrollView>
 
 </LinearLayout>

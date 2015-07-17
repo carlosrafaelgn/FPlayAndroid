@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
@@ -41,7 +40,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.text.InputType;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
@@ -388,7 +386,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optScrollBarBrowser) {
 			UI.browserScrollBarType = item.getItemId();
 			optScrollBarBrowser.setSecondaryText(getScrollBarString(item.getItemId()));
-			list.setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
+			list.updateVerticalScrollbar();
 		} else if (lastMenuView == optFadeInFocus) {
 			Player.fadeInIncrementOnFocus = item.getItemId();
 			optFadeInFocus.setSecondaryText(getFadeInString(item.getItemId()));
@@ -760,9 +758,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		list.setHorizontalFadingEdgeEnabled(false);
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
-		list.setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			setVerticalScrollBarPosition();
 		//for lblTitle to look nice, we must have no paddings
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
@@ -954,13 +949,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (UI.isLargeScreen)
 			btnAbout.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		btnAbout.setDefaultHeight();
-		UI.prepareEdgeEffectColor(getApplication());
-	}
-
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private void setVerticalScrollBarPosition() {
-		if (list != null)
-			list.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? View.SCROLLBAR_POSITION_LEFT : View.SCROLLBAR_POSITION_RIGHT);
 	}
 
 	@Override
@@ -1201,8 +1189,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.controlsToTheLeft = optPlacePlaylistToTheRight.isChecked();
 		} else if (view == optScrollBarToTheLeft) {
 			UI.scrollBarToTheLeft = optScrollBarToTheLeft.isChecked();
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-				setVerticalScrollBarPosition();
+			list.updateVerticalScrollbar();
 		} else if (view == optWidgetTransparentBg) {
 			UI.widgetTransparentBg = optWidgetTransparentBg.isChecked();
 			WidgetMain.updateWidgets(getApplication());

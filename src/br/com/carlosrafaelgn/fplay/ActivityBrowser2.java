@@ -844,7 +844,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		UI.prepareControlContainer(panelSecondary, true, false);
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
-		UI.prepareEdgeEffectColor(getApplication());
 		//this is the opposite as in updateButtons(), to force updateOverallLayout()
 		//to be called at least once
 		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE)) {

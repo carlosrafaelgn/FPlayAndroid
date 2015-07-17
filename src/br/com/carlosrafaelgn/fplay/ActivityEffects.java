@@ -338,7 +338,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
 		prepareViewForMode(true);
-		UI.prepareEdgeEffectColor(getApplication());
 	}
 	
 	@Override

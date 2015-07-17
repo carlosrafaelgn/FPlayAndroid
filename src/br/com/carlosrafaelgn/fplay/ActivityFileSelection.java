@@ -493,7 +493,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		fileList.setPrivateFileType(fileType, list.isInTouchMode());
-		UI.prepareEdgeEffectColor(getApplication());
 		isCreatingLayout = true;
 		updateOverallLayout();
 		isCreatingLayout = false;

@@ -60,7 +60,6 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.lang.reflect.Constructor;
@@ -485,7 +484,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 				items[last].actionView.setId(2);
 				items[last].actionView.setNextFocusDownId(1);
 			}
-			final ScrollView scroll = new ScrollView(context);
+			final ObservableScrollView scroll = new ObservableScrollView(context);
 			final FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 			fp.leftMargin = UI.controlMargin;
 			fp.topMargin = UI.controlMargin;
@@ -500,8 +499,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 					scroll.setBackgroundResource(backgroundId);
 			}
 			scroll.setPadding(paddingL, paddingT, paddingR, paddingB);
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-				scroll.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? ScrollView.SCROLLBAR_POSITION_LEFT : ScrollView.SCROLLBAR_POSITION_RIGHT);
 			scroll.addView(list);
 			menu = new MenuDialog(context, this, scroll);
 		} else {
