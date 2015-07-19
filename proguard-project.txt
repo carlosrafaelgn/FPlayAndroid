@@ -41,3 +41,6 @@
 -keepclassmembers class * implements br.com.carlosrafaelgn.fplay.visualizer.Visualizer {
     public *;
 }
+-keep class android.widget.BgEdgeEffect {
+    public *;
+}

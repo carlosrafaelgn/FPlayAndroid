@@ -48,26 +48,34 @@ public final class ObservableScrollView extends ScrollView {
 	
 	public ObservableScrollView(Context context) {
 		super(context);
-		init();
+		init(false);
 	}
-	
+
+	public ObservableScrollView(Context context, boolean insideMenu) {
+		super(context);
+		init(insideMenu);
+	}
+
 	public ObservableScrollView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		init();
+		init(false);
 	}
 	
 	public ObservableScrollView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		init();
+		init(false);
 	}
 
-	private void init() {
+	private void init(boolean insideMenu) {
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);
 		super.setAnimationCacheEnabled(false);
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
 		updateVerticalScrollbar();
-		UI.prepareEdgeEffect(this);
+		if (insideMenu)
+			UI.prepareEdgeEffect(this, UI.color_menu_icon, UI.color_menu_border);
+		else
+			UI.prepareEdgeEffect(this, (UI.color_text_listitem_secondary != UI.color_highlight) ? UI.color_text_listitem_secondary : UI.color_text_listitem, UI.color_highlight);
 	}
 
 	public void updateVerticalScrollbar() {

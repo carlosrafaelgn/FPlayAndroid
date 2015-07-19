@@ -110,10 +110,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setCacheColorHint(UI.color_list);
 		super.setHorizontalFadingEdgeEnabled(false);
 		super.setVerticalFadingEdgeEnabled(false);
-		super.setFadingEdgeLength(0);
+		//super.setFadingEdgeLength(0);
 		super.setFocusableInTouchMode(!UI.hasTouch);
 		super.setFocusable(true);
-		
+
 		super.setScrollingCacheEnabled(false);
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);
@@ -129,7 +129,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setOverscrollHeader(null); //Motorola bug!!! :P
 		super.setOverscrollFooter(null); //Motorola bug!!! :P
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
-		UI.prepareEdgeEffect(this);
+		UI.prepareEdgeEffect(this, (UI.color_text_listitem_secondary != UI.color_highlight) ? UI.color_text_listitem_secondary : UI.color_text_listitem, UI.color_highlight);
 		//setPadding(0, 0, 0, 0);
 		//setFastScrollAlwaysVisible(true);
 		//setFastScrollEnabled(true);
@@ -475,7 +475,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		if (adapter != null && y >= 0 && y < adapter.getCount())
 			setSelectionAtTheTop(y);
 	}
-	
+
 	@Override
 	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		switch (event.getAction()) {
@@ -541,7 +541,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		}
 		return super.onTouchEvent(event);
 	}
-	
+
 	private void updateScrollBarSectionForFirstPosition() {
 		final int first = getFirstVisiblePosition();
 		if (first <= 0 || sections == null) {
@@ -870,7 +870,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	public void onScrollStateChanged(AbsListView view, int scrollState) {
 		this.scrollState = scrollState;
 	}
-	
+
 	@Override
 	protected void dispatchDraw(@NonNull Canvas canvas) {
 		super.dispatchDraw(canvas);
@@ -958,7 +958,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//not override this method... therefore, it does nothing!
 		//super.onDraw(canvas);
 	}
-	
+
 	@Override
 	public void onWindowFocusChanged(boolean hasWindowFocus) {
 		cancelTracking();

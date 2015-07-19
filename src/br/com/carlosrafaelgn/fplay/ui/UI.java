@@ -74,6 +74,7 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Interpolator;
 import android.widget.AbsListView;
+import android.widget.BgEdgeEffect;
 import android.widget.Button;
 import android.widget.EdgeEffect;
 import android.widget.LinearLayout;
@@ -1786,49 +1787,53 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void prepareEdgeEffect(View view) {
+	public static void prepareEdgeEffect(View view, int primaryColor, int secondaryColor) {
 		final Context context = view.getContext();
 		try {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 				Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 				Field mEdgeGlow;
 				EdgeEffect edgeEffect;
 				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
+				boolean ok = false;
 				if (mEdgeGlow != null) {
+					ok = true;
 					mEdgeGlow.setAccessible(true);
-					//mEdgeGlow.set(view, new BgEdgeEffect(context));
-					edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+					mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor, secondaryColor));
+					/*edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
 					if (edgeEffect == null) {
 						edgeEffect = new EdgeEffect(context);
 						mEdgeGlow.set(view, edgeEffect);
 					}
-					edgeEffect.setColor(color_text_listitem);
+					edgeEffect.setColor(color_text_listitem);*/
 				}
 				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
 				if (mEdgeGlow != null) {
+					ok = true;
 					mEdgeGlow.setAccessible(true);
-					//mEdgeGlow.set(view, new BgEdgeEffect(context));
-					edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+					mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor, secondaryColor));
+					/*edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
 					if (edgeEffect == null) {
 						edgeEffect = new EdgeEffect(context);
 						mEdgeGlow.set(view, edgeEffect);
 					}
-					edgeEffect.setColor(color_text_listitem);
+					edgeEffect.setColor(color_text_listitem);*/
 				}
-			} else {
-				//
-				//:D amazing hack/workaround, as explained here:
-				//
-				//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
-				Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
-				if (drawable != null)
-					//the color is treated as SRC, and the bitmap is treated as DST
-					drawable.setColorFilter(glowFilter);
-				drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
-				if (drawable != null)
-					//hide the edge!!! ;)
-					drawable.setColorFilter(glowFilter);//edgeFilter);
+				if (ok)
+					return;
 			}
+			//
+			//:D amazing hack/workaround, as explained here:
+			//
+			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
+			Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			if (drawable != null)
+				//the color is treated as SRC, and the bitmap is treated as DST
+				drawable.setColorFilter(glowFilter);
+			drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			if (drawable != null)
+				//hide the edge!!! ;)
+				drawable.setColorFilter(glowFilter);//edgeFilter);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
