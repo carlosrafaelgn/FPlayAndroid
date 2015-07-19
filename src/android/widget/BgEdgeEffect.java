@@ -111,16 +111,15 @@ public class BgEdgeEffect extends EdgeEffect {
 	private float mDuration, mPullDistance;
 
 	private int mX, mY, mWidth, mMaxHeight;
-	private final int mPrimaryColor, mSecondaryColor;
+	private final int mPrimaryColor;
 
 	/**
 	 * Construct a new EdgeEffect with a theme appropriate for the provided context.
 	 * @param context Context used to provide theming and resource information for the EdgeEffect
 	 */
-	public BgEdgeEffect(Context context, int primaryColor, int secondaryColor) {
+	public BgEdgeEffect(Context context, int primaryColor) {
 		super(context);
 		mPrimaryColor = primaryColor & 0x00ffffff;
-		mSecondaryColor = secondaryColor;
 	}
 
 	/**
@@ -208,7 +207,6 @@ public class BgEdgeEffect extends EdgeEffect {
 	 *                     Values may be from 0-1.
 	 */
 	public void onPull(float deltaDistance, float displacement) {
-		System.out.println(deltaDistance);
 		final int now = (int)SystemClock.uptimeMillis();
 
 		if (mState == STATE_PULL_DECAY && (now - mStartTime) < (int)mDuration)
@@ -322,7 +320,7 @@ public class BgEdgeEffect extends EdgeEffect {
 	 * @return The color of this edge effect in argb
 	 */
 	public int getColor() {
-		return mSecondaryColor;
+		return mPrimaryColor;
 	}
 
 	/**
@@ -388,7 +386,22 @@ public class BgEdgeEffect extends EdgeEffect {
 			}
 		}
 
+		//canvas.save();
+		UI.fillPaint.setAntiAlias(true);
+		UI.fillPaint.setColor(((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mPrimaryColor);
 		UI.rect.left = 0;
+		UI.rect.top = 0;
+		UI.rect.right = mWidth;
+		UI.rect.bottom = mMaxHeight;
+		canvas.clipRect(UI.rect);
+		UI.rectF.left = (float)-UI._22sp;
+		UI.rectF.right = (float)(mWidth + UI._22sp);
+		UI.rectF.bottom = (mScaleY * (float)mMaxHeight);
+		UI.rectF.top = -UI.rectF.bottom;
+		canvas.drawOval(UI.rectF, UI.fillPaint);
+		UI.fillPaint.setAntiAlias(false);
+		//canvas.restore();
+		/*UI.rect.left = 0;
 		UI.rect.top = 0;
 		UI.rect.right = mWidth;
 		UI.rect.bottom = (int)(mScaleY * (float)(mMaxHeight >> 2));
@@ -398,7 +411,7 @@ public class BgEdgeEffect extends EdgeEffect {
 		UI.rect.left = dx;
 		UI.rect.right = mWidth - dx;
 		UI.rect.bottom = (int)(mScaleY * (float)mMaxHeight);
-		UI.fillRect(canvas, ((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mPrimaryColor);
+		UI.fillRect(canvas, ((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mPrimaryColor);*/
 
 		return true;
 	}

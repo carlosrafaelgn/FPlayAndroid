@@ -49,6 +49,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -283,8 +284,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static int color_focused_border;
 	public static int color_focused_pressed;
 	public static int color_focused_pressed_border;
-	public static final int color_glow_dk = 0xff686868;
-	public static final int color_glow_lt = 0xffffffff;
+	//public static final int color_glow_dk = 0xff686868;
+	//public static final int color_glow_lt = 0xffffffff;
 	public static BgColorStateList colorState_text_white_reactive;
 	public static BgColorStateList colorState_text_menu_reactive;
 	public static BgColorStateList colorState_text_reactive;
@@ -403,6 +404,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 	
 	public static final Rect rect = new Rect();
+	public static final RectF rectF = new RectF();
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
@@ -1041,7 +1043,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-			glowFilter = new PorterDuffColorFilter((ColorUtils.contrastRatio(color_glow_dk, color_list) >= ColorUtils.contrastRatio(color_glow_lt, color_list)) ? color_glow_dk : color_glow_lt, PorterDuff.Mode.SRC_IN);
+			//glowFilter = new PorterDuffColorFilter((ColorUtils.contrastRatio(color_glow_dk, color_list) >= ColorUtils.contrastRatio(color_glow_lt, color_list)) ? color_glow_dk : color_glow_lt, PorterDuff.Mode.SRC_IN);
+			glowFilter = new PorterDuffColorFilter((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem, PorterDuff.Mode.SRC_IN);
 	}
 	
 	public static boolean loadCustomTheme() {
@@ -1787,7 +1790,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void prepareEdgeEffect(View view, int primaryColor, int secondaryColor) {
+	public static void prepareEdgeEffect(View view, int primaryColor) {
 		final Context context = view.getContext();
 		try {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
@@ -1799,27 +1802,33 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				if (mEdgeGlow != null) {
 					ok = true;
 					mEdgeGlow.setAccessible(true);
-					mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor, secondaryColor));
-					/*edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
-					if (edgeEffect == null) {
-						edgeEffect = new EdgeEffect(context);
-						mEdgeGlow.set(view, edgeEffect);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+						if (edgeEffect == null) {
+							edgeEffect = new EdgeEffect(context);
+							mEdgeGlow.set(view, edgeEffect);
+						}
+						edgeEffect.setColor(primaryColor);
+					} else {
+						mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor));
 					}
-					edgeEffect.setColor(color_text_listitem);*/
 				}
 				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
 				if (mEdgeGlow != null) {
 					ok = true;
 					mEdgeGlow.setAccessible(true);
-					mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor, secondaryColor));
-					/*edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
-					if (edgeEffect == null) {
-						edgeEffect = new EdgeEffect(context);
-						mEdgeGlow.set(view, edgeEffect);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+						if (edgeEffect == null) {
+							edgeEffect = new EdgeEffect(context);
+							mEdgeGlow.set(view, edgeEffect);
+						}
+						edgeEffect.setColor(primaryColor);
+					} else {
+						mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor));
 					}
-					edgeEffect.setColor(color_text_listitem);*/
 				}
-				if (ok)
+				if (ok || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 					return;
 			}
 			//
@@ -1838,7 +1847,41 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			ex.printStackTrace();
 		}
 	}
-	
+
+	@SuppressWarnings("deprecation")
+	public static void disableEdgeEffect(Context context) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+			return;
+		try {
+			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
+			Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			if (drawable != null)
+				drawable.setColorFilter(null);
+			drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			if (drawable != null)
+				drawable.setColorFilter(null);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	public static void reenableEdgeEffect(Context context) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+			return;
+		try {
+			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
+			Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			if (drawable != null)
+				drawable.setColorFilter(glowFilter);
+			drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			if (drawable != null)
+				drawable.setColorFilter(glowFilter);//edgeFilter);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder) {
 		final int t = (topBorder ? thickDividerSize : 0);

@@ -73,9 +73,9 @@ public final class ObservableScrollView extends ScrollView {
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
 		updateVerticalScrollbar();
 		if (insideMenu)
-			UI.prepareEdgeEffect(this, UI.color_menu_icon, UI.color_menu_border);
+			UI.prepareEdgeEffect(this, UI.color_menu_icon);
 		else
-			UI.prepareEdgeEffect(this, (UI.color_text_listitem_secondary != UI.color_highlight) ? UI.color_text_listitem_secondary : UI.color_text_listitem, UI.color_highlight);
+			UI.prepareEdgeEffect(this, (UI.color_text_listitem_secondary != UI.color_highlight) ? UI.color_text_listitem_secondary : UI.color_text_listitem);
 	}
 
 	public void updateVerticalScrollbar() {

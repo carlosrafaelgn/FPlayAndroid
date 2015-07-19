@@ -75,7 +75,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer {
+public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer {
 	private TextView sep2;
 	private BgListView list;
 	private RadioStationList radioStationList;
@@ -422,14 +422,17 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			btnGenre.setAdapter(this);
 			btnGenre.setSelection(getValidGenre(Player.radioLastGenre));
 			defaultTextColors = txtTerm.getTextColors();
-			
-			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
-			.setTitle(getText(R.string.search))
-			.setView(l)
-			.setPositiveButton(R.string.search, this)
-			.setNegativeButton(R.string.cancel, this)
-			.setOnCancelListener(this)
-			.create());
+
+			UI.disableEdgeEffect(ctx);
+			AlertDialog dialog = (new AlertDialog.Builder(ctx))
+				.setTitle(getText(R.string.search))
+				.setView(l)
+				.setPositiveButton(R.string.search, this)
+				.setNegativeButton(R.string.cancel, this)
+				.create();
+			dialog.setOnCancelListener(this);
+			dialog.setOnDismissListener(this);
+			UI.prepareDialogAndShow(dialog);
 		} else if (view == btnGoBackToPlayer) {
 			finish(-1, view, false);
 		} else if (view == btnAdd) {
@@ -467,7 +470,12 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	public void onCancel(DialogInterface dialog) {
 		onClick(dialog, AlertDialog.BUTTON_NEGATIVE);
 	}
-	
+
+	@Override
+	public void onDismiss(DialogInterface dialog) {
+		UI.reenableEdgeEffect(getHostActivity());
+	}
+
 	@Override
 	protected boolean onBackPressed() {
 		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing) {
