@@ -647,7 +647,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	private void setListPadding() {
 		//for lblTitle to look nice, we must have no paddings
-		UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		if (panelSettings != null)
+			UI.prepareViewPaddingForLargeScreen(panelSettings, 0, 0);
 		if (lblTitle != null) {
 			final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)lblTitle.getLayoutParams();
 			lp.leftMargin = UI.getViewPaddingForLargeScreen();
@@ -970,7 +971,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen && list != null)
+		if (UI.isLargeScreen)
 			setListPadding();
 	}
 	

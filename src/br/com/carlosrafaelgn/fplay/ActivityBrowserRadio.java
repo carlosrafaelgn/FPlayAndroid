@@ -559,6 +559,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		UI.prepareControlContainer(panelSecondary, true, false);
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		UI.removeInternalPaddingForEdgeEffect(list);
 	}
 
 	@Override
@@ -584,8 +585,11 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		if (list != null) {
+			if (UI.isLargeScreen)
+				UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+			UI.removeInternalPaddingForEdgeEffect(list);
+		}
 	}
 	
 	@Override

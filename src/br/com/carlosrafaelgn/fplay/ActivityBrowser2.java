@@ -844,6 +844,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		UI.prepareControlContainer(panelSecondary, true, false);
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		UI.removeInternalPaddingForEdgeEffect(list);
 		//this is the opposite as in updateButtons(), to force updateOverallLayout()
 		//to be called at least once
 		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE)) {
@@ -878,8 +879,11 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		if (list != null) {
+			if (UI.isLargeScreen)
+				UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+			UI.removeInternalPaddingForEdgeEffect(list);
+		}
 	}
 	
 	@Override

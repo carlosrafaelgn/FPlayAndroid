@@ -78,11 +78,12 @@
         android:layout_height="match_parent">
 
         <LinearLayout
+            android:id="@+id/panelSecondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:baselineAligned="false"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="4dp">
 
             <TextView
                 android:id="@+id/lblMsg"

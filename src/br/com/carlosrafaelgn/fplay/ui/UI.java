@@ -84,6 +84,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
@@ -1789,12 +1790,27 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 	}
 
+	public static void removeInternalPaddingForEdgeEffect(AbsListView view) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			return;
+		try {
+			final Method setOverScrollEffectPadding = AbsListView.class.getDeclaredMethod("setOverScrollEffectPadding", int.class, int.class);
+			if (setOverScrollEffectPadding != null) {
+				//ignore the scrollbar as it would be drawn over the edge effect anyway
+				final int padding = -(scrollBarToTheLeft ? view.getPaddingRight() : view.getPaddingLeft());
+				setOverScrollEffectPadding.invoke(view, padding, padding);
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffect(View view, int primaryColor) {
 		final Context context = view.getContext();
 		try {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-				Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
+				final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 				Field mEdgeGlow;
 				EdgeEffect edgeEffect;
 				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");

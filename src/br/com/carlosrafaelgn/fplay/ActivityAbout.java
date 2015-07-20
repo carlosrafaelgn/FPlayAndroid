@@ -37,6 +37,7 @@ import android.os.Build;
 import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
@@ -47,7 +48,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
 public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
-	private ObservableScrollView list;
+	private LinearLayout panelSecondary;
 	private BgButton btnGoBack;
 
 	@Override
@@ -62,7 +63,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		list = (ObservableScrollView)findViewById(R.id.list);
+		final ObservableScrollView list = (ObservableScrollView)findViewById(R.id.list);
 		list.setHorizontalFadingEdgeEnabled(false);
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
@@ -125,7 +126,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 		lblDbg.setText(sb.toString());
 		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+			panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
+			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI._4dp, UI._4dp);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
@@ -133,13 +135,13 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen && list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		if (UI.isLargeScreen && panelSecondary != null)
+			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI._4dp, UI._4dp);
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
-		list = null;
+		panelSecondary = null;
 		btnGoBack = null;
 	}
 	
