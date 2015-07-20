@@ -127,7 +127,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblDbg.setText(sb.toString());
 		if (UI.isLargeScreen) {
 			panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
-			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI._4dp, UI._4dp);
+			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI.controlMargin, UI.controlMargin);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
@@ -136,7 +136,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	@Override
 	protected void onOrientationChanged() {
 		if (UI.isLargeScreen && panelSecondary != null)
-			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI._4dp, UI._4dp);
+			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI.controlMargin, UI.controlMargin);
 	}
 	
 	@Override

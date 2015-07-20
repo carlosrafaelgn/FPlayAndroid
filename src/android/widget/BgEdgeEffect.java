@@ -107,8 +107,8 @@ public class BgEdgeEffect extends EdgeEffect {
 	private float mAlpha, mAlphaStart, mAlphaFinish;
 	private float mScaleY, mScaleYStart, mScaleYFinish;
 
-	private int mState, mStartTime;
-	private float mDuration, mPullDistance;
+	private int mState, mStartTime, mPullLastTime;
+	private float mDuration, mPullDistance, mTargetPullScaleY;
 
 	private int mX, mY, mWidth, mMaxHeight;
 	private final int mPrimaryColor;
@@ -192,8 +192,7 @@ public class BgEdgeEffect extends EdgeEffect {
 	public void onPull(float deltaDistance) {
 		onPull(deltaDistance, 0.5f);
 	}
-float mTargetPullScaleY;
-int mPullLastTime;
+
 	/**
 	 * A view should call this when content is pulled away from an edge by the user.
 	 * This will update the state of the current visual effect and its associated animation.
@@ -225,7 +224,7 @@ int mPullLastTime;
 		else
 			mPullDistance += deltaDistance;
 
-		float d = mPullDistance * 3.0f;
+		float d = mPullDistance * 5.0f;
 		d = ((d <= 0.0f) ? 0.0f : ((d >= 1.0f) ? 1.0f : d));
 		mTargetPullScaleY = d; //mScaleY = (d * d * (3.0f - (2.0f * d)));
 		//mAlpha = mScaleY * MAX_ALPHA;
@@ -334,7 +333,8 @@ int mPullLastTime;
 			t = 1.0f;
 
 		if (mState == STATE_PULL) {
-			mScaleY += (float)(now - mPullLastTime) * 0.0012f;
+			final float coefNew = (float)(now - mPullLastTime) * (0.140625f / 16.0f); //0.140625f @ 60fps (~16ms)
+			mScaleY = (mTargetPullScaleY * coefNew) + (mScaleY * (1.0f - coefNew));
 			mPullLastTime = now;
 			if (mScaleY > mTargetPullScaleY)
 				mScaleY = mTargetPullScaleY;

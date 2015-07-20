@@ -83,7 +83,7 @@
             android:layout_height="wrap_content"
             android:baselineAligned="false"
             android:orientation="vertical"
-            android:padding="4dp">
+            android:padding="8dp">
 
             <TextView
                 android:id="@+id/lblMsg"

@@ -721,7 +721,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		isLandscape = info.isLandscape;
 		isLowDpiScreen = info.isLowDpiScreen;
 		//let's do some guessing here... :/
-		deviceSupportsAnimations = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) && (density >= 1.5f || isLargeScreen)));
+		deviceSupportsAnimations = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) && (density >= 1.5f || isLargeScreen)));
 
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()
