@@ -110,8 +110,9 @@ public class BgEdgeEffect extends EdgeEffect {
 	private int mState, mStartTime, mPullLastTime;
 	private float mDuration, mPullDistance, mTargetPullScaleY;
 
-	private int mX, mY, mWidth, mMaxHeight;
-	private final int mPrimaryColor;
+	public int mOffsetY;
+	private int mX, mY, mWidth;
+	private final int mColor, mMaxHeight;
 
 	/**
 	 * Construct a new EdgeEffect with a theme appropriate for the provided context.
@@ -119,7 +120,9 @@ public class BgEdgeEffect extends EdgeEffect {
 	 */
 	public BgEdgeEffect(Context context, int primaryColor) {
 		super(context);
-		mPrimaryColor = primaryColor & 0x00ffffff;
+		mColor = primaryColor & 0x00ffffff;
+		//a little bit below SongView's height
+		mMaxHeight = (UI._1dp << 1) + UI.verticalMargin + UI._22spBox + UI._14spBox; // ((3 * UI.screenHeight) >> 5);
 	}
 
 	/**
@@ -130,7 +133,6 @@ public class BgEdgeEffect extends EdgeEffect {
 	 */
 	public void setSize(int width, int height) {
 		mWidth = width;
-		mMaxHeight = ((3 * UI.screenHeight) >> 5);
 	}
 
 	/**
@@ -149,11 +151,11 @@ public class BgEdgeEffect extends EdgeEffect {
 	 * Returns the bounds of the edge effect.
 	 */
 	public Rect getBounds(boolean reverse) {
-		final int dy = mY - (reverse ? mMaxHeight : 0);
+		final int dy = mY - (reverse ? (mMaxHeight + mOffsetY) : 0);
 		UI.rect.left = mX;
 		UI.rect.top = dy;
 		UI.rect.right = mX + mWidth;
-		UI.rect.bottom = dy + mMaxHeight;
+		UI.rect.bottom = dy + mMaxHeight + mOffsetY;
 		return UI.rect;
 	}
 
@@ -310,7 +312,7 @@ public class BgEdgeEffect extends EdgeEffect {
 	 * @return The color of this edge effect in argb
 	 */
 	public int getColor() {
-		return mPrimaryColor;
+		return mColor;
 	}
 
 	/**
@@ -387,30 +389,19 @@ public class BgEdgeEffect extends EdgeEffect {
 
 		canvas.save();
 		UI.fillPaint.setAntiAlias(true);
-		UI.fillPaint.setColor(((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mPrimaryColor);
+		UI.fillPaint.setColor(((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mColor);
 		UI.rect.left = 0;
-		UI.rect.top = 0;
+		UI.rect.top = mOffsetY;
 		UI.rect.right = mWidth;
-		UI.rect.bottom = mMaxHeight;
+		UI.rect.bottom = mMaxHeight + mOffsetY;
 		canvas.clipRect(UI.rect);
 		UI.rectF.left = (float)-UI._18sp;
 		UI.rectF.right = (float)(mWidth + UI._18sp);
-		UI.rectF.bottom = (mScaleY * (float)mMaxHeight);
-		UI.rectF.top = -UI.rectF.bottom;
+		UI.rectF.bottom = (mScaleY * (float)(mMaxHeight + mOffsetY));
+		UI.rectF.top = -UI.rectF.bottom + (float)mOffsetY;
 		canvas.drawOval(UI.rectF, UI.fillPaint);
 		UI.fillPaint.setAntiAlias(false);
 		canvas.restore();
-		/*UI.rect.left = 0;
-		UI.rect.top = 0;
-		UI.rect.right = mWidth;
-		UI.rect.bottom = (int)(mScaleY * (float)(mMaxHeight >> 2));
-		UI.fillRect(canvas, mSecondaryColor);
-
-		final int dx = (int)(mScaleY * (float)(mWidth >> 3));
-		UI.rect.left = dx;
-		UI.rect.right = mWidth - dx;
-		UI.rect.bottom = (int)(mScaleY * (float)mMaxHeight);
-		UI.fillRect(canvas, ((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mPrimaryColor);*/
 
 		return true;
 	}
@@ -421,6 +412,6 @@ public class BgEdgeEffect extends EdgeEffect {
 	 * @return The maximum height of the edge effect
 	 */
 	public int getMaxHeight() {
-		return mMaxHeight;
+		return mMaxHeight + mOffsetY;
 	}
 }

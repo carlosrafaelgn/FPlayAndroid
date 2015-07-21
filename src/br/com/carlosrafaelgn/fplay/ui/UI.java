@@ -1040,7 +1040,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			colorState_text_visualizer_static = colorState_text_static;
 			colorState_text_visualizer_reactive = colorState_text_reactive;
 		}
-		color_glow = ((UI.theme == THEME_FPLAY) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
+		color_glow = ((theme == THEME_FPLAY) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
 		glowFilter = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) ? new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN) : null);
@@ -1440,24 +1440,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		fillPaint.setColor(fillColor);
 		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 	}
-	
-	public static void fillRect(Canvas canvas, int fillColor, int insetX, int insetY) {
-		fillPaint.setColor(fillColor);
-		canvas.drawRect(rect.left + insetX, rect.top + insetY, rect.right - insetX, rect.bottom - insetY, fillPaint);
-	}
-	
+
 	public static void fillRect(Canvas canvas, Shader shader) {
 		fillPaint.setShader(shader);
 		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 		fillPaint.setShader(null);
 	}
-	
-	public static void fillRect(Canvas canvas, Shader shader, int insetX, int insetY) {
-		fillPaint.setShader(shader);
-		canvas.drawRect(rect.left + insetX, rect.top + insetY, rect.right - insetX, rect.bottom - insetY, fillPaint);
-		fillPaint.setShader(null);
-	}
-	
+
 	public static void strokeRect(Canvas canvas, int strokeColor, int thickness) {
 		fillPaint.setColor(strokeColor);
 		final int l = rect.left, t = rect.top, r = rect.right, b = rect.bottom;
@@ -1793,11 +1782,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			return;
 		try {
 			final Method setOverScrollEffectPadding = AbsListView.class.getDeclaredMethod("setOverScrollEffectPadding", int.class, int.class);
-			if (setOverScrollEffectPadding != null) {
-				//ignore the scrollbar as it would be drawn over the edge effect anyway
-				final int padding = -(scrollBarToTheLeft ? view.getPaddingRight() : view.getPaddingLeft());
-				setOverScrollEffectPadding.invoke(view, padding, padding);
-			}
+			if (setOverScrollEffectPadding != null)
+				setOverScrollEffectPadding.invoke(view, -view.getPaddingLeft(), -view.getPaddingRight());
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -1812,20 +1798,20 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					final int color = (insideMenu ? color_menu_icon : color_glow);
 					final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 					Field mEdgeGlow;
-					EdgeEffect edgeEffect;
+					//EdgeEffect edgeEffect;
 					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
 					boolean ok = false;
 					if (mEdgeGlow != null) {
 						ok = true;
 						mEdgeGlow.setAccessible(true);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
 							if (edgeEffect == null) {
 								edgeEffect = new EdgeEffect(context);
 								mEdgeGlow.set(view, edgeEffect);
 							}
 							edgeEffect.setColor(color);
-						} else {
+						} else*/ {
 							mEdgeGlow.set(view, new BgEdgeEffect(context, color));
 						}
 					}
@@ -1833,14 +1819,14 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					if (mEdgeGlow != null) {
 						ok = true;
 						mEdgeGlow.setAccessible(true);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
 							if (edgeEffect == null) {
 								edgeEffect = new EdgeEffect(context);
 								mEdgeGlow.set(view, edgeEffect);
 							}
 							edgeEffect.setColor(color);
-						} else {
+						} else*/ {
 							mEdgeGlow.set(view, new BgEdgeEffect(context, color));
 						}
 					}
@@ -1869,6 +1855,25 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				drawable.setColorFilter(glowFilter);//edgeFilter);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	public static void offsetTopEdgeEffect(View view) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+			try {
+				if (glowFilter == null) {
+					final Field mEdgeGlow = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class).getDeclaredField("mEdgeGlowTop");
+					if (mEdgeGlow != null) {
+						mEdgeGlow.setAccessible(true);
+						final BgEdgeEffect edgeEffect = (BgEdgeEffect)mEdgeGlow.get(view);
+						if (edgeEffect != null)
+							edgeEffect.mOffsetY = thickDividerSize;
+					}
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 		}
 	}
 
@@ -1910,27 +1915,18 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
-		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, true));
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b));
 		if (extraSpacing)
 			view.setPadding(controlMargin, controlMargin + t, controlMargin, controlMargin + b);
 		else
 			view.setPadding(0, t, 0, b);
 	}
-	
-	public static void prepareControlContainerPaddingOnly(View view, boolean topBorder, boolean bottomBorder) {
-		final int t = (topBorder ? thickDividerSize : 0);
-		final int b = (bottomBorder ? thickDividerSize : 0);
-		if (extraSpacing)
-			view.setPadding(controlMargin, controlMargin + t, controlMargin, controlMargin + b);
-		else
-			view.setPadding(0, t, 0, b);
-	}
-	
+
 	@SuppressWarnings("deprecation")
 	public static void prepareControlContainerWithoutRightPadding(View view, boolean topBorder, boolean bottomBorder) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
-		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, true));
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b));
 		if (extraSpacing)
 			view.setPadding(controlMargin, controlMargin + t, 0, controlMargin + b);
 		else

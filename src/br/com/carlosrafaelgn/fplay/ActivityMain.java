@@ -1040,33 +1040,27 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 
 			if (UI.isLargeScreen) {
-				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0, true));
+				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0));
 			} else {
 				if (UI.isLandscape) {
-					findViewById(R.id.panelInfo).setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					list.setTopLeftBorders();
+					lblTitle.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					lblMsgSelMove.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					panelSecondary.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
+					panelSelection.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
+					list.setTopBorder();
+					panelSecondary.setPadding(0, 0, UI.controlMargin + UI.thickDividerSize, UI.controlLargeMargin);
 				} else {
-					findViewById(R.id.panelTop).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, true));
+					findViewById(R.id.panelTop).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize));
 					panelSecondary.setPadding(0, 0, 0, UI.controlMargin + UI.thickDividerSize);
 				}
 				if (UI.extraSpacing) {
-					if (UI.isLandscape) {
-						panelControls.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
-						final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)panelControls.getLayoutParams();
-						p.bottomMargin = UI.controlMargin;
-						panelControls.setLayoutParams(p);
-					} else {
-						panelControls.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin);
-					}
-					panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin + (UI.isLandscape ? 0 : UI.thickDividerSize));
+					panelControls.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin);
+					panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin + (UI.isLandscape ? UI.thickDividerSize : 0), UI.controlMargin + (UI.isLandscape ? 0 : UI.thickDividerSize));
 				} else {
 					if (!UI.isLandscape)
 						panelControls.setPadding(0, 0, 0, UI.isLowDpiScreen ? 0 : UI.controlMargin);
-					if (btnVolume != null) {
-						final ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)btnVolume.getLayoutParams();
-						p.rightMargin = 0;
-						btnVolume.setLayoutParams(p);
-					}
+					panelSelection.setPadding(0, 0, UI.isLandscape ? UI.thickDividerSize : 0, 0);
 				}
 			}
 			btnCancelSel.setDefaultHeight();

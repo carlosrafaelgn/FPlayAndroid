@@ -130,10 +130,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setOverscrollFooter(null); //Motorola bug!!! :P
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
 		UI.prepareEdgeEffect(this, false);
-		//setPadding(0, 0, 0, 0);
-		//setFastScrollAlwaysVisible(true);
-		//setFastScrollEnabled(true);
-		//setScrollBarStyle(SCROLLBARS_INSIDE_INSET);
 		//List color turns black while Scrolling
 		//http://stackoverflow.com/questions/8531006/list-color-turns-black-while-scrolling
 		//Remove shadow from top and bottom of ListView in android?
@@ -172,9 +168,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 
 	@SuppressWarnings("deprecation")
-	public void setTopLeftBorders() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, UI.thickDividerSize, UI.thickDividerSize, 0, 0, true));
-		setPadding(UI.thickDividerSize, UI.thickDividerSize, 0, 0);
+	public void setTopBorder() {
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
+		setPadding(0, UI.thickDividerSize, 0, 0);
+		UI.offsetTopEdgeEffect(this);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -699,29 +696,21 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			super.setPadding(leftPadding, topPadding, rightPadding + scrollBarWidth, bottomPadding);
 		}
 		ignorePadding = false;
+		UI.removeInternalPaddingForEdgeEffect(this);
 	}
 	
 	@Override
 	public void setPadding(int left, int top, int right, int bottom) {
 		if (ignorePadding)
 			return;
-		/*switch (scrollBarType) {
-		case SCROLLBAR_LARGE:
-			scrollBarTop = top + UI._4dp;
-			scrollBarBottom = viewHeight - bottom - UI._4dp;
-			break;
-		case SCROLLBAR_INDEXED:
-			scrollBarTop = top;
-			scrollBarBottom = viewHeight - bottom;
-			break;
-		}*/
 		if (UI.scrollBarToTheLeft) {
-			scrollBarLeft = 0;//left;
+			scrollBarLeft = 0;
 			super.setPadding((leftPadding = left) + scrollBarWidth, (topPadding = top), (rightPadding = right), (bottomPadding = bottom));
 		} else {
-			scrollBarLeft = viewWidth - scrollBarWidth;//viewWidth - (right + scrollBarWidth);
+			scrollBarLeft = viewWidth - scrollBarWidth;
 			super.setPadding((leftPadding = left), (topPadding = top), (rightPadding = right) + scrollBarWidth, (bottomPadding = bottom));
 		}
+		UI.removeInternalPaddingForEdgeEffect(this);
 	}
 	
 	private void defaultKeyDown(int keyCode) {

@@ -491,7 +491,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		}
 		if (UI.isLargeScreen)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
-		UI.removeInternalPaddingForEdgeEffect(list);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		fileList.setPrivateFileType(fileType, list.isInTouchMode());
 		isCreatingLayout = true;
@@ -512,11 +511,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (list != null) {
-			if (UI.isLargeScreen)
-				UI.prepareViewPaddingForLargeScreen(list, 0, 0);
-			UI.removeInternalPaddingForEdgeEffect(list);
-		}
+		if (list != null && UI.isLargeScreen)
+			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
 	@Override

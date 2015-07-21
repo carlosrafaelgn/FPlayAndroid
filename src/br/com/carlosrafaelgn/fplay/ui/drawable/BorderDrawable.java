@@ -43,24 +43,13 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 public final class BorderDrawable extends Drawable {
 	private int strokeColor, fillColor, opacity, alpha;
 	private final int leftSize, topSize, rightSize, bottomSize;
-	private final boolean ignorePadding;
-	
+
 	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
 		changeColors(strokeColor, fillColor);
 		this.leftSize = leftSize;
 		this.topSize = topSize;
 		this.rightSize = rightSize;
 		this.bottomSize = bottomSize;
-		this.ignorePadding = false;
-	}
-	
-	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize, boolean ignorePadding) {
-		changeColors(strokeColor, fillColor);
-		this.leftSize = leftSize;
-		this.topSize = topSize;
-		this.rightSize = rightSize;
-		this.bottomSize = bottomSize;
-		this.ignorePadding = ignorePadding;
 	}
 
 	public void changeColors(int strokeColor, int fillColor) {
@@ -87,18 +76,7 @@ public final class BorderDrawable extends Drawable {
 		UI.fillPaint.setColor(fillColor);
 		canvas.drawRect(l + leftSize, t + topSize, r - rightSize, b - bottomSize, UI.fillPaint);
 	}
-	
-	@Override
-	public boolean getPadding(Rect padding) {
-		if (ignorePadding)
-			return false;
-		padding.left = leftSize;
-		padding.top = topSize;
-		padding.right = rightSize;
-		padding.bottom = bottomSize;
-		return true;
-	}
-	
+
 	@Override
 	public int getOpacity() {
 		return opacity;
@@ -130,11 +108,11 @@ public final class BorderDrawable extends Drawable {
 	
 	@Override
 	public int getMinimumWidth() {
-		return (ignorePadding ? 0 : (leftSize + rightSize));
+		return (leftSize + rightSize);
 	}
 	
 	@Override
 	public int getMinimumHeight() {
-		return (ignorePadding ? 0 : (topSize + bottomSize));
+		return (topSize + bottomSize);
 	}
 }
