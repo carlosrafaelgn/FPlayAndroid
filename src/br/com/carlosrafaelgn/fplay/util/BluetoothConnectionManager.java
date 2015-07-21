@@ -344,7 +344,6 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		listView.setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			listView.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? ListView.SCROLLBAR_POSITION_LEFT : ListView.SCROLLBAR_POSITION_RIGHT);
-		//UI.prepareEdgeEffect(listView);
 
 		l.addView(lblTitle);
 		l.addView(barWait);

@@ -129,7 +129,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setOverscrollHeader(null); //Motorola bug!!! :P
 		super.setOverscrollFooter(null); //Motorola bug!!! :P
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
-		UI.prepareEdgeEffect(this, (UI.color_text_listitem_secondary != UI.color_highlight) ? UI.color_text_listitem_secondary : UI.color_text_listitem);
+		UI.prepareEdgeEffect(this, false);
 		//setPadding(0, 0, 0, 0);
 		//setFastScrollAlwaysVisible(true);
 		//setFastScrollEnabled(true);

@@ -285,8 +285,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static int color_focused_border;
 	public static int color_focused_pressed;
 	public static int color_focused_pressed_border;
-	//public static final int color_glow_dk = 0xff686868;
-	//public static final int color_glow_lt = 0xffffffff;
+	public static int color_glow;
 	public static BgColorStateList colorState_text_white_reactive;
 	public static BgColorStateList colorState_text_menu_reactive;
 	public static BgColorStateList colorState_text_reactive;
@@ -1041,11 +1040,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			colorState_text_visualizer_static = colorState_text_static;
 			colorState_text_visualizer_reactive = colorState_text_reactive;
 		}
+		color_glow = ((UI.theme == THEME_FPLAY) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-			//glowFilter = new PorterDuffColorFilter((ColorUtils.contrastRatio(color_glow_dk, color_list) >= ColorUtils.contrastRatio(color_glow_lt, color_list)) ? color_glow_dk : color_glow_lt, PorterDuff.Mode.SRC_IN);
-			glowFilter = new PorterDuffColorFilter((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem, PorterDuff.Mode.SRC_IN);
+		glowFilter = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) ? new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN) : null);
 	}
 	
 	public static boolean loadCustomTheme() {
@@ -1806,47 +1804,57 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void prepareEdgeEffect(View view, int primaryColor) {
+	public static void prepareEdgeEffect(View view, boolean insideMenu) {
 		final Context context = view.getContext();
-		try {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-				final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
-				Field mEdgeGlow;
-				EdgeEffect edgeEffect;
-				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
-				boolean ok = false;
-				if (mEdgeGlow != null) {
-					ok = true;
-					mEdgeGlow.setAccessible(true);
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-						edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
-						if (edgeEffect == null) {
-							edgeEffect = new EdgeEffect(context);
-							mEdgeGlow.set(view, edgeEffect);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+			try {
+				if (glowFilter == null) {
+					final int color = (insideMenu ? color_menu_icon : color_glow);
+					final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
+					Field mEdgeGlow;
+					EdgeEffect edgeEffect;
+					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
+					boolean ok = false;
+					if (mEdgeGlow != null) {
+						ok = true;
+						mEdgeGlow.setAccessible(true);
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+							if (edgeEffect == null) {
+								edgeEffect = new EdgeEffect(context);
+								mEdgeGlow.set(view, edgeEffect);
+							}
+							edgeEffect.setColor(color);
+						} else {
+							mEdgeGlow.set(view, new BgEdgeEffect(context, color));
 						}
-						edgeEffect.setColor(primaryColor);
-					} else {
-						mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor));
 					}
-				}
-				mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
-				if (mEdgeGlow != null) {
-					ok = true;
-					mEdgeGlow.setAccessible(true);
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-						edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
-						if (edgeEffect == null) {
-							edgeEffect = new EdgeEffect(context);
-							mEdgeGlow.set(view, edgeEffect);
+					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
+					if (mEdgeGlow != null) {
+						ok = true;
+						mEdgeGlow.setAccessible(true);
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
+							if (edgeEffect == null) {
+								edgeEffect = new EdgeEffect(context);
+								mEdgeGlow.set(view, edgeEffect);
+							}
+							edgeEffect.setColor(color);
+						} else {
+							mEdgeGlow.set(view, new BgEdgeEffect(context, color));
 						}
-						edgeEffect.setColor(primaryColor);
-					} else {
-						mEdgeGlow.set(view, new BgEdgeEffect(context, primaryColor));
 					}
+					if (ok || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+						return;
 				}
-				if (ok || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-					return;
+			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
+		}
+		try {
+			//if everything else fails, fall back to the old method!
+			if (glowFilter == null)
+				glowFilter = new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN);
 			//
 			//:D amazing hack/workaround, as explained here:
 			//
@@ -1866,7 +1874,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	@SuppressWarnings("deprecation")
 	public static void disableEdgeEffect(Context context) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+		if (glowFilter == null)
 			return;
 		try {
 			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
@@ -1883,7 +1891,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	@SuppressWarnings("deprecation")
 	public static void reenableEdgeEffect(Context context) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+		if (glowFilter == null)
 			return;
 		try {
 			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
