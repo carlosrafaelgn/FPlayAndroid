@@ -194,12 +194,13 @@ public final class BgSeekBar extends View {
 	}
 	
 	public void setText(String text) {
-		this.text = text;
+		this.text = ((text == null) ? "" : text);
 		updateTextWidth();
 	}
 	
 	public void setText(int resId) {
-		this.text = getContext().getText(resId).toString();
+		final CharSequence text = getContext().getText(resId);
+		this.text = ((text == null) ? "" : text.toString());
 		updateTextWidth();
 	}
 	
@@ -507,6 +508,8 @@ public final class BgSeekBar extends View {
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
+		if (text == null)
+			return;
 		getDrawingRect(UI.rect);
 		if (vertical) {
 			canvas.save();

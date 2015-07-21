@@ -441,6 +441,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 						}
 						if (minWidth != 0)
 							btn.setMinWidth(minWidth);
+						btn.setMinHeight(UI.defaultControlSize);
 						if (itemTextAppearance != 0)
 							btn.setTextAppearance(context, itemTextAppearance);
 						if (itemGravity != 0)
