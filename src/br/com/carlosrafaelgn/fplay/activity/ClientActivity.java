@@ -32,10 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.os.Build;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -181,6 +183,10 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	}
 
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	}
+
+	@TargetApi(Build.VERSION_CODES.M)
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 	}
 
 	public View getNullContextMenuView() {

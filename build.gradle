@@ -19,13 +19,13 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 22
+    compileSdkVersion 23
     buildToolsVersion "20.0.0"
 
 	defaultConfig {
 		applicationId "br.com.carlosrafaelgn.fplay"
 		minSdkVersion 10
-		targetSdkVersion 22
+		targetSdkVersion 23
 	}
 
 	sourceSets {

@@ -9,7 +9,7 @@
 
     <uses-sdk
         android:minSdkVersion="10"
-        android:targetSdkVersion="22" />
+        android:targetSdkVersion="23" />
 
     <!-- http://developer.android.com/guide/topics/manifest/supports-screens-element.html -->
     <supports-screens

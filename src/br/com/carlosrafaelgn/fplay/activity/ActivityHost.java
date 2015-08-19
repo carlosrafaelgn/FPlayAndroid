@@ -650,6 +650,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.onActivityResult(requestCode, resultCode, data);
 	}
 
+	@TargetApi(Build.VERSION_CODES.M)
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (top != null)
+			top.onRequestPermissionsResult(requestCode, permissions, grantResults);
+	}
+
 	@Override
 	public void onPlayerDestroyed() {
 		finalCleanup();
