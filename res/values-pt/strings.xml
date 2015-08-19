@@ -47,6 +47,7 @@
     <string name="opt_use_alternate_typeface">Usar fonte amigável para dislexia</string>
     <string name="opt_auto_turn_off">Desligar o player automaticamente em:</string>
     <string name="opt_auto_idle_turn_off">Quando inativo, desligar o player automaticamente em:</string>
+    <string name="opt_auto_turn_off_playlist">Desligar o leitor quando chegar ao final da lista ("Não repetir" deve estar selecionado)</string>
     <string name="opt_keep_screen_on">Manter a tela sempre ligada</string>
     <string name="opt_volume_control_type">Tipo do controle de volume:</string>
     <string name="opt_is_divider_visible">Mostrar divisão entre os itens das listas</string>
@@ -263,6 +264,7 @@
     <string name="zoom">Zoom</string>
     <string name="repeat_all">Repetir todas</string>
     <string name="repeat_one">Repetir uma</string>
+    <string name="repeat_none">Não repetir</string>
     <string name="select_everything">Marcar tudo</string>
     <string name="unselect_everything">Desmarcar tudo</string>
     <string name="select">Marcar</string>

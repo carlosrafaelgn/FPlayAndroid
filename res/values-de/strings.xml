@@ -47,6 +47,7 @@
     <string name="opt_use_alternate_typeface">Dyslexie freundliche Schrift verwenden</string>
     <string name="opt_auto_turn_off">Player automatisch beenden nach:</string>
     <string name="opt_auto_idle_turn_off">Bei keiner Wiedergabe Player automatisch beenden nach:</string>
+    <string name="opt_auto_turn_off_playlist">Schalten Sie den Player bei Erreichen des Ende der Wiedergabeliste ("Wiederholen Sie nicht" muss ausgewählt werden)</string>
     <string name="opt_keep_screen_on">Bildschirm immer aktiv halten</string>
     <string name="opt_volume_control_type">Typ der Lautstärke-Einstellung:</string>
     <string name="opt_is_divider_visible">Begrenzer zwischen den Listeinträgen</string>
@@ -263,6 +264,7 @@
     <string name="zoom">Hinein/Herauszoomen</string>
     <string name="repeat_all">Alles Wiederholen</string>
     <string name="repeat_one">Einen Titel wiederholen</string>
+    <string name="repeat_none">Wiederholen Sie nicht</string>
     <string name="select_everything">Alles auswählen</string>
     <string name="unselect_everything">Alles abwählen</string>
     <string name="select">wählen</string>

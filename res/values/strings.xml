@@ -47,6 +47,7 @@
     <string name="opt_use_alternate_typeface">Use dyslexia-friendly typeface</string>
     <string name="opt_auto_turn_off">Automatically turn off the player after:</string>
     <string name="opt_auto_idle_turn_off">When idle, automatically turn off the player after:</string>
+    <string name="opt_auto_turn_off_playlist">Turn off the player when reaching the end of the list ("Repeat none" must be selected)</string>
     <string name="opt_keep_screen_on">Keep screen always on</string>
     <string name="opt_volume_control_type">Volume control type:</string>
     <string name="opt_is_divider_visible">Show divider between items in lists</string>
@@ -263,6 +264,7 @@
     <string name="zoom">Zoom</string>
     <string name="repeat_all">Repeat all</string>
     <string name="repeat_one">Repeat one</string>
+    <string name="repeat_none">Repeat none</string>
     <string name="select_everything">Select everything</string>
     <string name="unselect_everything">Unselect everything</string>
     <string name="select">Select</string>

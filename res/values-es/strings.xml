@@ -47,6 +47,7 @@
     <string name="opt_use_alternate_typeface">Usar fuente amigable para dislexia</string>
     <string name="opt_auto_turn_off">Apagar automáticamente el reproductor después de:</string>
     <string name="opt_auto_idle_turn_off">Cuando esté inactivo, apagar automáticamente el reproductor después de:</string>
+    <string name="opt_auto_turn_off_playlist">Apague el reproductor al llegar al final de la lista (se debe seleccionar "Repita ninguna")</string>
     <string name="opt_keep_screen_on">Manter pantalla siempre encendida</string>
     <string name="opt_volume_control_type">Tipo de control de volumen:</string>
     <string name="opt_is_divider_visible">Mostrar división entre los ítems de la lista</string>
@@ -263,6 +264,7 @@
     <string name="zoom">Zoom</string>
     <string name="repeat_all">Repetir todas</string>
     <string name="repeat_one">Repetir una</string>
+    <string name="repeat_none">Repita ninguna</string>
     <string name="select_everything">Seleccionar todo</string>
     <string name="unselect_everything">Deseleccionar todo</string>
     <string name="select">Seleccionar</string>
