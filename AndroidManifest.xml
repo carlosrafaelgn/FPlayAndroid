@@ -25,16 +25,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- To check the connection state -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- For android.media.audiofx.Visualizer -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- See this: http://developer.android.com/reference/android/bluetooth/BluetoothHeadset.html#ACTION_AUDIO_STATE_CHANGED -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <!-- For scanning bluetooth devices -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
-    <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- Apparently, a few devices require this.... -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- For exporting files/settings -->
@@ -42,6 +38,12 @@
     <!-- For android.media.audiofx.PresetReverb -->
     <!-- <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" /> -->
 
+    <!-- These two permissions are not classified as PROTECTION_NORMAL in Android M API 23
+     http://developer.android.com/preview/features/runtime-permissions.html -->
+    <!-- For android.media.audiofx.Visualizer -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <!--
     Just to make Google Play show the App even to phones without Bluetooth,
