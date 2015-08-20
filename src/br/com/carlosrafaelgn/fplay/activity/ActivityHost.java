@@ -32,9 +32,11 @@
 //
 package br.com.carlosrafaelgn.fplay.activity;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
@@ -531,6 +533,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (top != null && !top.finished) {
 				Player.addDestroyedObserver(this);
 				checkIntent(getIntent());
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+					if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+						requestPermissions(new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, 1);
+				}
 			} else {
 				finish();
 			}

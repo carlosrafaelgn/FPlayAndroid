@@ -32,13 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -54,7 +50,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
@@ -87,7 +82,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
 	private FastAnimator animator;
 	private CharSequence msgEmptyList, msgLoading;
-	private String pendingTo;
 
 	@Override
 	public CharSequence getTitle() {
@@ -555,15 +549,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 	}
 
-	@TargetApi(Build.VERSION_CODES.M)
-	@Override
-	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-		if (requestCode == 1 && pendingTo != null && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-			navigateTo(pendingTo, null, false);
-			pendingTo = null;
-		}
-	}
-
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
 		final int p;
@@ -886,14 +871,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 
 	@Override
 	protected void onPostCreateLayout(boolean firstCreation) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			final ActivityHost activity = getHostActivity();
-			if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-				pendingTo = ((Player.path == null) ? "" : Player.path);
-				activity.requestPermissions(new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, 1);
-				return;
-			}
-		}
 		isCreatingLayout = true;
 		navigateTo(Player.path, null, !firstCreation);
 		isCreatingLayout = false;
@@ -921,7 +898,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
-		pendingTo = null;
 		if (animator != null) {
 			animator.release();
 			animator = null;

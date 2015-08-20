@@ -32,8 +32,11 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Build;
 import android.text.Spannable;
@@ -53,6 +56,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
@@ -588,7 +592,50 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_EXIT));
 	}
-	
+
+	@TargetApi(Build.VERSION_CODES.M)
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+		if (requestCode > 100 && requestCode < 200 && Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+			openVisualizer(requestCode);
+	}
+
+	private void openVisualizer(int id) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			final ActivityHost activity = getHostActivity();
+			if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+				activity.requestPermissions(new String[]{ Manifest.permission.RECORD_AUDIO }, id);
+				return;
+			}
+		}
+		switch (id) {
+		case MNU_VISUALIZER:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
+			break;
+		case MNU_VISUALIZER_SPECTRUM:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
+			break;
+		case MNU_VISUALIZER_LIQUID:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_LIQUID));
+			break;
+		case MNU_VISUALIZER_SPIN:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_SPIN));
+			break;
+		case MNU_VISUALIZER_PARTICLE:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_PARTICLE));
+			break;
+		case MNU_VISUALIZER_IMMERSIVE_PARTICLE:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
+			break;
+		case MNU_VISUALIZER_BLUETOOTH:
+			startActivity(new ActivitySettings(false, true), 0, null, false);
+			break;
+		case MNU_VISUALIZER_ALBUMART:
+			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, AlbumArtVisualizer.class.getName()));
+			break;
+		}
+	}
+
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
 		final int id = item.getItemId();
@@ -600,7 +647,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 		if (Player.state != Player.STATE_ALIVE)
 			return true;
-		switch (item.getItemId()) {
+		switch (id) {
 		case MNU_ADDSONGS:
 			addSongs(null);
 			break;
@@ -640,28 +687,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			startActivity(new ActivityEffects(), 0, null, false);
 			break;
 		case MNU_VISUALIZER:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
-			break;
 		case MNU_VISUALIZER_SPECTRUM:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
-			break;
 		case MNU_VISUALIZER_LIQUID:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_LIQUID));
-			break;
 		case MNU_VISUALIZER_SPIN:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_SPIN));
-			break;
 		case MNU_VISUALIZER_PARTICLE:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_PARTICLE));
-			break;
 		case MNU_VISUALIZER_IMMERSIVE_PARTICLE:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
-			break;
 		case MNU_VISUALIZER_BLUETOOTH:
-			startActivity(new ActivitySettings(false, true), 0, null, false);
-			break;
 		case MNU_VISUALIZER_ALBUMART:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, AlbumArtVisualizer.class.getName()));
+			openVisualizer(id);
 			break;
 		case MNU_SETTINGS:
 			startActivity(new ActivitySettings(false, false), 0, null, false);
