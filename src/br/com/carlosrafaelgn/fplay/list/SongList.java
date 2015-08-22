@@ -65,6 +65,9 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	public static final int HOW_PREVIOUS = -3;
 	public static final int HOW_NEXT_MANUAL = -2;
 	public static final int HOW_NEXT_AUTO = -1;
+	public static final int REPEAT_ALL = 0;
+	public static final int REPEAT_ONE = 1;
+	public static final int REPEAT_NONE = 2;
 
 	private static final int MAX_COUNT = 2048;
 
@@ -72,9 +75,8 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	private static final int MSG_FINISHED_ADDING = 0x0701;
 
 	private volatile int adding;
-	private int currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem, sortMode;
-	private boolean repeatOne;
-	public boolean selecting, moving;
+	private int currentShuffledItemIndex, shuffledItemsAlreadyPlayed, indexOfPreviouslyDeletedCurrentShuffledItem, sortMode, repeatMode;
+	public boolean selecting, moving, okToTurnOffAfterReachingTheEnd;
 	private Song[] shuffledList;
 	public Song possibleNextSong;
 	private static final SongList theSongList = new SongList();
@@ -460,34 +462,33 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 		indexOfPreviouslyDeletedCurrentItem = -1;
 		indexOfPreviouslyDeletedCurrentShuffledItem = -1;
-		if (how < 0 || how >= count)
-			return null;
-		if (s == null) {
-			s = shuffledList[how];
-			for (i = count - 1; i >= 0; i--) {
-				if (items[i] == s) {
-					current = i;
-					currentShuffledItemIndex = how;
-					break;
+		if (how < 0 || how >= count) {
+			current = -1;
+			s = null;
+		} else {
+			if (s == null) {
+				s = shuffledList[how];
+				for (i = count - 1; i >= 0; i--) {
+					if (items[i] == s) {
+						current = i;
+						currentShuffledItemIndex = how;
+						break;
+					}
 				}
 			}
-		}
-		if (!s.alreadyPlayed) {
-			s.alreadyPlayed = true;
-			shuffledItemsAlreadyPlayed++;
+			if (!s.alreadyPlayed) {
+				s.alreadyPlayed = true;
+				shuffledItemsAlreadyPlayed++;
+			}
 		}
 		possibleNextSong = null;
-		if (!selecting && !moving) {
-			firstSel = current;
-			lastSel = current;
-			originalSel = current;
-		}
 		return s;
 	}
 
 	public Song getSongAndSetCurrent(int how) {
 		final Song s;
 		//synchronized (currentAndCountMutex) {
+			okToTurnOffAfterReachingTheEnd = false;
 			if (shuffledList != null) {
 				s = getRandomSongAndSetCurrentInternal(how);
 			} else {
@@ -502,40 +503,52 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					if (how < 0 || how >= count)
 						how = count - 1;
 				} else if (how == HOW_NEXT_AUTO || how == HOW_NEXT_MANUAL) {
-					if (repeatOne && how == HOW_NEXT_AUTO)
-						how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
-					else
+					if (how == HOW_NEXT_AUTO && repeatMode == REPEAT_NONE) {
 						how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
-					if (how < 0 || how >= count)
-						how = 0;
+						if (how < 0)
+							how = 0;
+						else if (how >= count)
+							how = -2;
+					} else {
+						if (repeatMode == REPEAT_ONE && how == HOW_NEXT_AUTO)
+							how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : current);
+						else
+							how = ((indexOfPreviouslyDeletedCurrentItem >= 0) ? indexOfPreviouslyDeletedCurrentItem : (current + 1));
+						if (how < 0 || how >= count)
+							how = 0;
+					}
 				}
 				indexOfPreviouslyDeletedCurrentItem = -1;
 				indexOfPreviouslyDeletedCurrentShuffledItem = -1;
-				if (how < 0 || how >= count)
-					return null;
-				current = how;
-				s = items[how];
-				possibleNextSong = (repeatOne ? null : items[((how == (count - 1)) ? 0 : (how + 1))]);
-				if (!selecting && !moving) {
-					firstSel = current;
-					lastSel = current;
-					originalSel = current;
+				if (how < 0 || how >= count) {
+					okToTurnOffAfterReachingTheEnd = (count > 0 && repeatMode == REPEAT_NONE && how == -2);
+					current = ((count > 0 && repeatMode == REPEAT_NONE) ? (count - 1) : -1);
+					s = null;
+					possibleNextSong = null;
+				} else {
+					current = how;
+					s = items[how];
+					possibleNextSong = ((repeatMode == REPEAT_ONE || (repeatMode == REPEAT_NONE && how == (count - 1))) ? null : items[((how == (count - 1)) ? 0 : (how + 1))]);
 				}
+			}
+			if (!selecting && !moving) {
+				firstSel = current;
+				lastSel = current;
+				originalSel = current;
 			}
 		//}
 		notifyDataSetChanged(-1, SELECTION_CHANGED);
 		return s;
 	}
 
-	public boolean isRepeatingOne() {
-		return repeatOne;
+	public int getRepeatMode() {
+		return repeatMode;
 	}
 
-	public void setRepeatingOne(boolean repeatOne) {
+	public void setRepeatMode(int repeatMode) {
 		//synchronized (currentAndCountMutex) {
-			this.repeatOne = repeatOne;
-			if (repeatOne)
-				setRandomModeInternal(false);
+			this.repeatMode = repeatMode;
+			setRandomModeInternal(false);
 		//}
 	}
 
@@ -559,13 +572,12 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			return;
 		int i;
 		if (!randomMode) {
-			if (shuffledList != null) {
-				for (i = count - 1; i >= 0; i--)
-					shuffledList[i] = null;
-				shuffledList = null;
-			}
+			//when randomMode == false, shuffledList != null!!
+			for (i = count - 1; i >= 0; i--)
+				shuffledList[i] = null;
+			shuffledList = null;
 		} else {
-			repeatOne = false;
+			repeatMode = REPEAT_ALL;
 			setShuffledCapacity(count);
 			for (i = count - 1; i >= 0; i--) {
 				final Song s = items[i];

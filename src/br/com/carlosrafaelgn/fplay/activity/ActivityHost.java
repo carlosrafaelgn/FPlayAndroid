@@ -71,12 +71,12 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 //
 public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer {
 	private ClientActivity top;
-	private boolean exitOnDestroy, isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation;
+	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation;
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
 	private FastAnimator animator; //used only with UI.TRANSITION_FADE
-	private int systemBgColor;
+	private int systemBgColor, exitOnDestroy;
 
 	private void disableTopView() {
 		FrameLayout parent;
@@ -129,7 +129,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 	
 	public void setExitOnDestroy(boolean exitOnDestroy) {
-		this.exitOnDestroy = exitOnDestroy;
+		this.exitOnDestroy = (exitOnDestroy ? 1 : 0);
 	}
 	
 	@Override
@@ -533,10 +533,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (top != null && !top.finished) {
 				Player.addDestroyedObserver(this);
 				checkIntent(getIntent());
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-					if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-						requestPermissions(new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, 1);
-				}
 			} else {
 				finish();
 			}
@@ -645,8 +641,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.removeDestroyedObserver(this);
 		finalCleanup();
 		super.onDestroy();
-		if (exitOnDestroy)
-			Player.stopService();
+		if (exitOnDestroy != 0)
+			Player.stopService(exitOnDestroy == 2);
 	}
 
 	@Override
@@ -657,9 +653,19 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
+	public void requestStoragePermission() {
+		requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+	}
+
+	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (requestCode == 1 && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED && Player.state == Player.STATE_ALIVE) {
+			exitOnDestroy = 2;
+			finish();
+			return;
+		}
 		if (top != null)
 			top.onRequestPermissionsResult(requestCode, permissions, grantResults);
 	}

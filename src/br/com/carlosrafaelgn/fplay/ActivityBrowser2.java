@@ -32,9 +32,13 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -50,6 +54,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
@@ -82,6 +87,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
 	private FastAnimator animator;
 	private CharSequence msgEmptyList, msgLoading;
+	private String pendingTo;
 
 	@Override
 	public CharSequence getTitle() {
@@ -532,20 +538,16 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
 		final boolean sectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
 		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !sectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
-		if (!onlyUpdateButtons) {
-			//it is faster to check only once, after creating the layout
-			/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-				final ActivityHost activity = getHostActivity();
-				if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-					pendingTo = to;
-					pendingFrom = from;
-					pendingSectionsEnabled = sectionsEnabled;
-					fileList.clear();
-					activity.requestPermissions(new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, 1);
-					return;
-				}
-			}*/
+		if (!onlyUpdateButtons)
 			fileList.setPath(to, from, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && sectionsEnabled);
+	}
+
+	@TargetApi(Build.VERSION_CODES.M)
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+		if (requestCode == 1 && pendingTo != null && grantResults != null) {
+			navigateTo(pendingTo, null, false);
+			pendingTo = null;
 		}
 	}
 
@@ -871,6 +873,14 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 
 	@Override
 	protected void onPostCreateLayout(boolean firstCreation) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			final ActivityHost activity = getHostActivity();
+			if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+				pendingTo = ((Player.path == null) ? "" : Player.path);
+				activity.requestStoragePermission();
+				return;
+			}
+		}
 		isCreatingLayout = true;
 		navigateTo(Player.path, null, !firstCreation);
 		isCreatingLayout = false;
@@ -898,6 +908,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
+		pendingTo = null;
 		if (animator != null) {
 			animator.release();
 			animator = null;

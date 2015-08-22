@@ -32,7 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -41,6 +43,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
@@ -72,6 +75,7 @@ import br.com.carlosrafaelgn.fplay.ExternalReceiver;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.WidgetMain;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
+import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -154,6 +158,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		private static final long serialVersionUID = 6158088015763157546L;
 	}
 
+	private static final class PermissionDeniedException extends SecurityException {
+		private static final long serialVersionUID = 8743650824658438278L;
+	}
+
 	private static final int MSG_UPDATE_STATE = 0x0100;
 	private static final int MSG_PAUSE = 0x0101;
 	private static final int MSG_PLAYPAUSE = 0x0102;
@@ -226,8 +234,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	//and Virtualizer classes from being garbage collected...
 	public static MainHandler theMainHandler;
 	public static final UI theUI = new UI();
+	@SuppressWarnings("unused")
 	public static final Equalizer theEqualizer = new Equalizer();
+	@SuppressWarnings("unused")
 	public static final BassBoost theBassBoost = new BassBoost();
+	@SuppressWarnings("unused")
 	public static final Virtualizer theVirtualizer = new Virtualizer();
 
 	public static boolean hasFocus;
@@ -405,7 +416,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					next();
 					break;
 				case ACTION_EXIT:
-					stopService();
+					stopService(false);
 					break;
 				}
 				startCommand = null;
@@ -536,7 +547,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return stateNew;
 	}
 
-	public static void stopService() {
+	public static void stopService(boolean restart) {
 		if (state != STATE_ALIVE)
 			return;
 		state = STATE_TERMINATING;
@@ -574,6 +585,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			stateEx[i] = null;
 		}
 		updateState(~0x27, 0, null);
+
+		if (restart && intentActivityHost != null) {
+			//http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
+			((AlarmManager)thePlayer.getSystemService(ALARM_SERVICE)).set(AlarmManager.RTC, System.currentTimeMillis() + 300, intentActivityHost);
+		}
 
 		thread = null;
 		observer = null;
@@ -987,10 +1003,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static void _handleFailure(Throwable ex) {
-		if (songWhenFirstErrorHappened == song || howThePlayerStarted != SongList.HOW_NEXT_AUTO) {
+	private static void _handleFailure(Throwable ex, boolean checkForPermission) {
+		if (checkForPermission) {
+			checkForPermission = false;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				if (thePlayer.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+					checkForPermission = true;
+			}
+		}
+		if (songWhenFirstErrorHappened == song || howThePlayerStarted != SongList.HOW_NEXT_AUTO || checkForPermission) {
 			songWhenFirstErrorHappened = null;
-			_updateState(false, ex);
+			_updateState(false, checkForPermission ? new PermissionDeniedException() : ex);
 		} else {
 			if (songWhenFirstErrorHappened == null)
 				songWhenFirstErrorHappened = song;
@@ -1108,7 +1131,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		} catch (Throwable ex) {
 			_fullCleanup();
 			//clear the flag here to allow _handleFailure to move to the next song
-			_handleFailure(ex);
+			_handleFailure(ex, true);
 		}
 	}
 
@@ -1389,7 +1412,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_fullCleanup();
 				if (prep && howThePlayerStarted == SongList.HOW_NEXT_AUTO)
 					//the error happened during currentSong's preparation
-					_handleFailure((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
+					_handleFailure((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException(), false);
 				else
 					_updateState(false, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
 			}
@@ -1459,7 +1482,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_updateState(false, null);
 				} catch (Throwable ex) {
 					_fullCleanup();
-					_handleFailure(ex);
+					_handleFailure(ex, false);
 				}
 			}
 		} else {
@@ -1695,6 +1718,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_BORDERS = 38;
 	private static final int OPTBIT_ANIMATIONS = 39;
 	private static final int OPTBIT_VISUALIZER_PORTRAIT = 40;
+	private static final int OPTBIT_REPEATNONE = 41;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -1787,7 +1811,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
 			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 			goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS);
-			songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE));
 			UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
 			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
 			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
@@ -1802,7 +1825,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, UI.isTV ? 0 : 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
 			lastRadioSearchWasByGenre = opts.getBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, true);
 			UI.expandSeekBar = opts.getBit(OPTBIT_EXPANDSEEKBAR, true);
-			songs.setRepeatingOne(opts.getBit(OPTBIT_REPEATONE));
+			songs.setRepeatMode(opts.getBit(OPTBIT_REPEATONE) ? SongList.REPEAT_ONE : (opts.getBit(OPTBIT_REPEATNONE) ? SongList.REPEAT_NONE : SongList.REPEAT_ALL));
+			songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE));
 			UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
 			UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
 			UI.visualizerPortrait = opts.getBit(OPTBIT_VISUALIZER_PORTRAIT);
@@ -1913,7 +1937,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_SCROLLBAR_BROWSER1, (UI.browserScrollBarType & 2) != 0);
 		opts.putBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, lastRadioSearchWasByGenre);
 		opts.putBit(OPTBIT_EXPANDSEEKBAR, UI.expandSeekBar);
-		opts.putBit(OPTBIT_REPEATONE, songs.isRepeatingOne());
+		opts.putBit(OPTBIT_REPEATONE, songs.getRepeatMode() == SongList.REPEAT_ONE);
+		opts.putBit(OPTBIT_REPEATNONE, songs.getRepeatMode() == SongList.REPEAT_NONE);
 		opts.putBit(OPTBIT_NOTFULLSCREEN, UI.notFullscreen);
 		opts.putBit(OPTBIT_CONTROLS_TO_THE_LEFT, UI.controlsToTheLeft);
 		opts.putBit(OPTBIT_VISUALIZER_PORTRAIT, UI.visualizerPortrait);
@@ -2006,6 +2031,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return views;
 	}
 
+	@SuppressWarnings("deprecation")
 	private static Notification getNotification() {
 		boolean firstTime = false;
 		if (notification == null) {
@@ -2127,6 +2153,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return false;
 	}
 
+	@SuppressWarnings({"deprecation", "unused"})
 	public static boolean isInternetConnectedViaWiFi() {
 		if (thePlayer != null) {
 			try {
@@ -2150,7 +2177,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (turnOffTimerObserver != null)
 				turnOffTimerObserver.onPlayerTurnOffTimerTick();
 			if (secondsLeft < 15) //less than half of our period
-				stopService();
+				stopService(false);
 			else
 				localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
 		}
@@ -2229,7 +2256,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				if (turnOffTimerObserver != null)
 					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
 				if (secondsLeft < 15) //less than half of our period
-					stopService();
+					stopService(false);
 				else
 					sendMessage = true;
 			} else {
@@ -2794,6 +2821,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean titleOrSongHaveChanged) {
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
@@ -2830,6 +2858,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			stickyBroadcast.putExtra("playing", playing);
 		}
 		//thePlayer.sendBroadcast(stickyBroadcast);
+		//maybe check if api >= 23, and if so, use sendBroadcast instead.....???
 		thePlayer.sendStickyBroadcast(stickyBroadcast);
 		if (remoteControlClient != null)
 			broadcastStateChangeToRemoteControl(preparing, titleOrSongHaveChanged);
@@ -2845,6 +2874,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		final Throwable ex = stateEx[stateIndex];
 		stateEx[stateIndex] = null;
 		localSong = newSong;
+		if (songs.okToTurnOffAfterReachingTheEnd) {
+			songs.okToTurnOffAfterReachingTheEnd = false;
+			//turn off if requested
+		}
 		notificationManager.notify(1, getNotification());
 		final boolean songHasChanged = ((arg1 & 0x08) != 0);
 		final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
@@ -2857,6 +2890,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			updateBluetoothVisualizer(songHasChanged);
 		WidgetMain.updateWidgets(thePlayer);
 		if (ex != null) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
+				((ClientActivity)observer).getHostActivity().requestStoragePermission();
 			final String msg = ex.getMessage();
 			if (ex instanceof IllegalStateException) {
 				UI.toast(thePlayer, R.string.error_state);

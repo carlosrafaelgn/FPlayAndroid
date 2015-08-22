@@ -99,7 +99,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ActivityItemView implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEATONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEAT_ONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -363,8 +363,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void bringCurrentIntoView() {
 		if (!Player.songs.moving && !Player.songs.selecting) {
 			final int p = Player.songs.getCurrentPosition();
-			if (p <= list.getFirstVisiblePosition() || p >= list.getLastVisiblePosition())
-				list.centerItemSmoothly(p);
+			if (p <= list.getFirstVisiblePosition() || p >= list.getLastVisiblePosition()) {
+				if (UI.animationEnabled)
+					list.centerItemSmoothly(p);
+				else
+					list.centerItem(p);
+			}
 		}
 	}
 	
@@ -403,6 +407,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (lblTitleIcon != null)
 			lblTitleIcon.setIcon(icon);
 		if (songHasChanged) {
+			Player.lastCurrent = -1; //force current song into view next time the UI changes
 			if (lblTitle != null) {
 				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : ((barSeek == null && Player.isPreparing()) ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
 				lblTitle.setSelected(true);
@@ -531,26 +536,44 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			s = menu;
 		}
-		if (Player.songs.isRepeatingOne()) {
-			s2 = s.addSubMenu(2, 0, 0, getText(R.string.repeat_one) + "\u2026")
-				.setIcon(new TextIconDrawable(UI.ICON_REPEATONE));
-		} else if (Player.songs.isInRandomMode()) {
-			s2 = s.addSubMenu(2, 0, 0, getText(R.string.random_mode) + "\u2026")
-				.setIcon(new TextIconDrawable(UI.ICON_SHUFFLE));
+		final int mnuId;
+		final String mnuIcon;
+		if (Player.songs.isInRandomMode()) {
+			mnuId = R.string.random_mode;
+			mnuIcon = UI.ICON_SHUFFLE;
 		} else {
-			s2 = s.addSubMenu(2, 0, 0, getText(R.string.repeat_all) + "\u2026")
-				.setIcon(new TextIconDrawable(UI.ICON_REPEAT));
+			switch (Player.songs.getRepeatMode()) {
+			case SongList.REPEAT_NONE:
+				mnuId = R.string.repeat_none;
+				mnuIcon = UI.ICON_REPEATNONE;
+				break;
+			case SongList.REPEAT_ONE:
+				mnuId = R.string.repeat_one;
+				mnuIcon = UI.ICON_REPEATONE;
+				break;
+			default:
+				mnuId = R.string.repeat_all;
+				mnuIcon = UI.ICON_REPEAT;
+				break;
+			}
 		}
+		s2 = s.addSubMenu(2, 0, 0, getText(mnuId) + "\u2026")
+			.setIcon(new TextIconDrawable(mnuIcon));
 		UI.prepare(s2);
 		s2.add(2, MNU_REPEAT, 0, getText(R.string.repeat_all))
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((Player.songs.isRepeatingOne() || Player.songs.isInRandomMode()) ? UI.ICON_RADIOUNCHK : UI.ICON_RADIOCHK));
-		s2.add(2, MNU_REPEATONE, 0, getText(R.string.repeat_one))
+			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_ALL && !Player.songs.isInRandomMode()) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		s2.add(2, MNU_REPEAT_ONE, 1, getText(R.string.repeat_one))
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(Player.songs.isRepeatingOne() ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		s2.add(2, MNU_RANDOMMODE, 0, getText(R.string.random_mode))
+			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_ONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		UI.separator(s2, 2, 2);
+		s2.add(2, MNU_RANDOMMODE, 3, getText(R.string.random_mode))
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		UI.separator(s2, 2, 4);
+		s2.add(2, MNU_REPEAT_NONE, 5, getText(R.string.repeat_none))
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		UI.separator(s, 2, 1);
 		s.add(2, MNU_EFFECTS, 2, R.string.audio_effects)
 			.setOnMenuItemClickListener(this)
@@ -674,14 +697,16 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.setControlMode(!Player.controlMode);
 			break;
 		case MNU_REPEAT:
-			Player.songs.setRepeatingOne(false);
-			Player.songs.setRandomMode(false);
+			Player.songs.setRepeatMode(SongList.REPEAT_ALL);
 			break;
-		case MNU_REPEATONE:
-			Player.songs.setRepeatingOne(true);
+		case MNU_REPEAT_ONE:
+			Player.songs.setRepeatMode(SongList.REPEAT_ONE);
 			break;
 		case MNU_RANDOMMODE:
-			Player.songs.setRandomMode(!Player.songs.isInRandomMode());
+			Player.songs.setRandomMode(true);
+			break;
+		case MNU_REPEAT_NONE:
+			Player.songs.setRepeatMode(SongList.REPEAT_NONE);
 			break;
 		case MNU_EFFECTS:
 			startActivity(new ActivityEffects(), 0, null, false);
