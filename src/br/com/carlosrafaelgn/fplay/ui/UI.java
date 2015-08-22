@@ -120,7 +120,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int LOCALE_UK = 4;
 	public static final int LOCALE_ES = 5;
 	public static final int LOCALE_DE = 6;
-	public static final int LOCALE_MAX = 6;
+	public static final int LOCALE_FR = 7;
+	public static final int LOCALE_MAX = 7;
 	
 	public static final int THEME_CUSTOM = -1;
 	public static final int THEME_BLUE_ORANGE = 0;
@@ -577,6 +578,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			if (!"de".equals(l.getLanguage()))
 				return new Locale("de");
 			break;
+		case LOCALE_FR:
+			if (!"fr".equals(l.getLanguage()))
+				return new Locale("fr");
+			break;
 		}
 		return l;
 	}
@@ -595,6 +600,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			return "Español";
 		case LOCALE_DE:
 			return "Deutsch";
+		case LOCALE_FR:
+			return "Français";
 		}
 		return context.getText(R.string.standard_language).toString();
 	}
@@ -612,6 +619,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				return LOCALE_ES;
 			if ("de".equals(l))
 				return LOCALE_DE;
+			if ("fr".equals(l))
+				return LOCALE_FR;
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}

@@ -83,7 +83,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -135,24 +135,27 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.LOCALE_US, 1, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_US))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_US) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_PTBR, 3, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_PTBR))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_PTBR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_RU, 4, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_RU))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_UK, 5, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_UK))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_ES, 2, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_ES))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_ES) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			menu.add(1, UI.LOCALE_DE, 0, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_DE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_DE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_US, 1, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_US))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_US) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_ES, 2, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_ES))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_ES) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_FR, 3, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_FR))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_FR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_PTBR, 4, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_PTBR))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_PTBR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_RU, 5, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_RU))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.LOCALE_UK, 6, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_UK))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optTheme) {
 			final Context ctx = getApplication();
 			final int o = UI.theme;
@@ -812,6 +815,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoTurnOff.setOnClickListener(this);
 			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
 			optAutoIdleTurnOff.setOnClickListener(this);
+			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
+			optAutoTurnOffPlaylist.setOnClickListener(this);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
 			optKeepScreenOn.setOnClickListener(this);
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.theme), false, false, false);
@@ -891,10 +896,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 			int hIdx = 0;
 			headers = new TextView[UI.isLargeScreen ? 7 : 6];
-			addHeader(ctx, R.string.msg_turn_off_title, optAutoIdleTurnOff, hIdx++);
+			addHeader(ctx, R.string.msg_turn_off_title, optAutoTurnOffPlaylist, hIdx++);
 			panelSettings.addView(optAutoTurnOff);
 			panelSettings.addView(optAutoIdleTurnOff);
-			addHeader(ctx, R.string.hdr_display, optAutoIdleTurnOff, hIdx++);
+			panelSettings.addView(optAutoTurnOffPlaylist);
+			addHeader(ctx, R.string.hdr_display, optAutoTurnOffPlaylist, hIdx++);
 			panelSettings.addView(optKeepScreenOn);
 			panelSettings.addView(optTheme);
 			panelSettings.addView(optFlat);
@@ -994,6 +1000,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
 		optAutoIdleTurnOff = null;
+		optAutoTurnOffPlaylist = null;
 		optKeepScreenOn = null;
 		optTheme = null;
 		optFlat = null;
@@ -1222,6 +1229,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.expandSeekBar = optExpandSeekBar.isChecked();
 		} else if (view == optAnimations) {
 			UI.animationEnabled = optAnimations.isChecked();
+		} else if (view == optAutoTurnOffPlaylist) {
+			Player.turnOffWhenPlaylistEnds = optAutoTurnOffPlaylist.isChecked();
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser) {
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);

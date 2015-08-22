@@ -187,6 +187,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_COMMIT_EQUALIZER = 0x0116;
 	private static final int MSG_COMMIT_BASS_BOOST = 0x0117;
 	private static final int MSG_COMMIT_VIRTUALIZER = 0x0118;
+	private static final int MSG_TURN_OFF_NOW = 0x0119;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -378,6 +379,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case MSG_IDLE_TURN_OFF_TIMER:
 				idleTurnOffTimerSent = false;
 				processIdleTurnOffTimer();
+				break;
+			case MSG_TURN_OFF_NOW:
+				stopService(false);
 				break;
 			}
 		}
@@ -1719,6 +1723,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_ANIMATIONS = 39;
 	private static final int OPTBIT_VISUALIZER_PORTRAIT = 40;
 	private static final int OPTBIT_REPEATNONE = 41;
+	private static final int OPTBIT_TURNOFFPLAYLIST = 42;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -1729,7 +1734,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final HashSet<String> favoriteFolders = new HashSet<>();
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	public static String path, originalPath, radioSearchTerm;
-	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders;
+	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds;
 	public static int radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
 
 	public static SerializableMap loadConfigFromFile(Context context) {
@@ -1830,6 +1835,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
 			UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
 			UI.visualizerPortrait = opts.getBit(OPTBIT_VISUALIZER_PORTRAIT);
+			turnOffWhenPlaylistEnds = opts.getBit(OPTBIT_TURNOFFPLAYLIST);
 		/*} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -1942,6 +1948,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_NOTFULLSCREEN, UI.notFullscreen);
 		opts.putBit(OPTBIT_CONTROLS_TO_THE_LEFT, UI.controlsToTheLeft);
 		opts.putBit(OPTBIT_VISUALIZER_PORTRAIT, UI.visualizerPortrait);
+		opts.putBit(OPTBIT_TURNOFFPLAYLIST, turnOffWhenPlaylistEnds);
 		if (favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
@@ -2877,6 +2884,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (songs.okToTurnOffAfterReachingTheEnd) {
 			songs.okToTurnOffAfterReachingTheEnd = false;
 			//turn off if requested
+			if (turnOffWhenPlaylistEnds)
+				localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_NOW, SystemClock.uptimeMillis() + 100);
 		}
 		notificationManager.notify(1, getNotification());
 		final boolean songHasChanged = ((arg1 & 0x08) != 0);
