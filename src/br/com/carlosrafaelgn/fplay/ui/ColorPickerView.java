@@ -468,7 +468,8 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
 		System.gc();
 	}
-	
+
+	@SuppressWarnings("SuspiciousNameCombination")
 	@Override
 	public void onSizeChanged(BgSeekBar seekBar, int width, int height) {
 		bmpRect.right = height;

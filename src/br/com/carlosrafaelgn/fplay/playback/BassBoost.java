@@ -40,10 +40,7 @@ public final class BassBoost {
 	private static android.media.audiofx.BassBoost theBooster;
 	
 	static void loadConfig(SerializableMap opts) {
-		if (opts.hasBits())
-			enabled = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
-		else
-			enabled = opts.getBoolean(Player.OPT_BASSBOOST_ENABLED);
+		enabled = (opts.hasBits() ? opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED) : opts.getBoolean(Player.OPT_BASSBOOST_ENABLED));
 		strength = opts.getInt(Player.OPT_BASSBOOST_STRENGTH);
 	}
 	
@@ -79,11 +76,7 @@ public final class BassBoost {
 	public static boolean isSupported() {
 		return supported;
 	}
-	
-	public static boolean isStrengthSupported() {
-		return strengthSupported;
-	}
-	
+
 	public static boolean isEnabled() {
 		return enabled;
 	}

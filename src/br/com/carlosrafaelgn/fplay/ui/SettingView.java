@@ -129,10 +129,9 @@ public final class SettingView extends View {
 			height += UI._18spBox + ((lineCount <= 1) ? 0 : (UI._14spBox >> 2));
 			textY = UI.verticalMargin + UI._LargeItemspYinBox;
 		} else {
-			if (textHeight <= UI.defaultControlContentsSize)
-				textY = ((height - textHeight) >> 1) + UI._LargeItemspYinBox;
-			else
-				textY = UI.verticalMargin + UI._LargeItemspYinBox;
+			textY = ((textHeight <= UI.defaultControlContentsSize) ?
+				(((height - textHeight) >> 1) + UI._LargeItemspYinBox) :
+				(UI.verticalMargin + UI._LargeItemspYinBox));
 		}
 	}
 

@@ -40,10 +40,7 @@ public final class Virtualizer {
 	private static android.media.audiofx.Virtualizer theVirtualizer;
 	
 	static void loadConfig(SerializableMap opts) {
-		if (opts.hasBits())
-			enabled = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
-		else
-			enabled = opts.getBoolean(Player.OPT_VIRTUALIZER_ENABLED);
+		enabled = (opts.hasBits() ? opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED) : opts.getBoolean(Player.OPT_VIRTUALIZER_ENABLED));
 		strength = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH);
 	}
 	
@@ -78,11 +75,7 @@ public final class Virtualizer {
 	public static boolean isSupported() {
 		return supported;
 	}
-	
-	public static boolean isStrengthSupported() {
-		return strengthSupported;
-	}
-	
+
 	public static boolean isEnabled() {
 		return enabled;
 	}
@@ -105,11 +98,7 @@ public final class Virtualizer {
 			Virtualizer.enabled = theVirtualizer.getEnabled();
 		}
 	}
-	
-	public static int getMaxStrength() {
-		return 1000;
-	}
-	
+
 	public static int getStrength() {
 		return strength;
 	}

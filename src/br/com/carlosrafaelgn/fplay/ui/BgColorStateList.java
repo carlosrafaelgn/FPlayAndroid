@@ -51,19 +51,11 @@ public final class BgColorStateList extends ColorStateList {
 		this.normalColor = normalColor;
 		this.alteredColor = alteredColor;
 	}
-	
-	public void setNormalColor(int normalColor) {
-		this.normalColor = normalColor;
-	}
-	
+
 	public void setNormalColorAlpha(int alpha) {
 		normalColor = (alpha << 24) | (normalColor & 0x00ffffff);
 	}
-	
-	public void setAlteredColor(int alteredColor) {
-		this.alteredColor = alteredColor;
-	}
-	
+
 	@Override
 	public int getColorForState(int[] stateSet, int defaultColor) {
 		if (stateSet != null) {

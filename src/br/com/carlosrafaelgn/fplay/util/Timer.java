@@ -47,7 +47,6 @@ public final class Timer implements MainHandler.Callback {
 	private final Object sync;
 	private final String name;
 	private final boolean oneShot, handledOnMain, compensatingForDelays;
-	private volatile Runnable runnable;
 	private volatile TimerHandler timerHandler;
 	private volatile int interval, version;
 	private volatile TimerThread thread;
@@ -112,9 +111,7 @@ public final class Timer implements MainHandler.Callback {
 					continue;
 				try {
 					if (version == myVersion) {
-						if (runnable != null)
-							runnable.run();
-						else if (timerHandler != null)
+						if (timerHandler != null)
 							timerHandler.handleTimer(Timer.this, param);
 					}
 				} catch (Throwable ex) {
@@ -134,20 +131,9 @@ public final class Timer implements MainHandler.Callback {
 			}
 		}
 	}
-	
-	public Timer(Runnable runnable, String name, boolean oneShot, boolean handledOnMain, boolean compensatingForDelays) {
-		this.sync = new Object();
-		this.runnable = runnable;
-		this.timerHandler = null;
-		this.name = name;
-		this.oneShot = oneShot;
-		this.handledOnMain = handledOnMain;
-		this.compensatingForDelays = compensatingForDelays;
-	}
-	
+
 	public Timer(TimerHandler timerHandler, String name, boolean oneShot, boolean handledOnMain, boolean compensatingForDelays) {
 		this.sync = new Object();
-		this.runnable = null;
 		this.timerHandler = timerHandler;
 		this.name = name;
 		this.oneShot = oneShot;
@@ -163,11 +149,11 @@ public final class Timer implements MainHandler.Callback {
 			alive = true;
 			thread = null;
 			if (oneShot) {
-				MainHandler.sendMessageDelayed(this, MSG_ONESHOT, version, 0, interval);
+				MainHandler.sendMessageAtTime(this, MSG_ONESHOT, version, 0, SystemClock.uptimeMillis() + interval);
 			} else {
 				if (compensatingForDelays)
 					nextTime = SystemClock.uptimeMillis() + interval;
-				MainHandler.sendMessageDelayed(this, MSG_INTERVAL, version, 0, interval);
+				MainHandler.sendMessageAtTime(this, MSG_INTERVAL, version, 0, SystemClock.uptimeMillis() + interval);
 			}
 		} else {
 			synchronized (sync) {
@@ -190,11 +176,11 @@ public final class Timer implements MainHandler.Callback {
 			paused = false;
 			thread = null;
 			if (oneShot) {
-				MainHandler.sendMessageDelayed(this, MSG_ONESHOT, version, 0, interval);
+				MainHandler.sendMessageAtTime(this, MSG_ONESHOT, version, 0, SystemClock.uptimeMillis() + interval);
 			} else {
 				if (compensatingForDelays)
 					nextTime = SystemClock.uptimeMillis() + interval;
-				MainHandler.sendMessageDelayed(this, MSG_INTERVAL, version, 0, interval);
+				MainHandler.sendMessageAtTime(this, MSG_INTERVAL, version, 0, SystemClock.uptimeMillis() + interval);
 			}
 		} else {
 			synchronized (sync) {
@@ -242,36 +228,8 @@ public final class Timer implements MainHandler.Callback {
 			alive = false;
 		}
 	}
-	
-	public void stopAndWait() {
-		paused = false;
-		if (alive) {
-			if (handledOnMain) {
-				version++;
-			} else {
-				Thread t;
-				synchronized (sync) {
-					version++;
-					t = thread;
-					if (thread != null) {
-						sync.notifyAll();
-						thread = null;
-					}
-				}
-				if (t != null) {
-					try {
-						t.join();
-					} catch (InterruptedException ex) {
-						ex.printStackTrace();
-					}
-				}
-			}
-			alive = false;
-		}
-	}
-	
+
 	public void release() {
-		runnable = null;
 		timerHandler = null;
 		param = null;
 	}
@@ -281,9 +239,7 @@ public final class Timer implements MainHandler.Callback {
 		if (msg.arg1 == version) {
 			switch (msg.what) {
 			case MSG_INTERVAL:
-				if (runnable != null)
-					runnable.run();
-				else if (timerHandler != null)
+				if (timerHandler != null)
 					timerHandler.handleTimer(this, param);
 				if (alive) {
 					if (compensatingForDelays) {
@@ -291,39 +247,21 @@ public final class Timer implements MainHandler.Callback {
 						nextTime = ((next < now) ? now : next);
 						MainHandler.sendMessageAtTime(this, MSG_INTERVAL, version, 0, nextTime);
 					} else {
-						MainHandler.sendMessageDelayed(this, MSG_INTERVAL, version, 0, interval);
+						MainHandler.sendMessageAtTime(this, MSG_INTERVAL, version, 0, SystemClock.uptimeMillis() + interval);
 					}
 				}
 				break;
 			case MSG_ONESHOT:
 				alive = false;
-				if (runnable != null)
-					runnable.run();
-				else if (timerHandler != null)
+				if (timerHandler != null)
 					timerHandler.handleTimer(this, param);
 				break;
 			}
 		}
 		return true;
 	}
-	
-	public int getInterval() {
-		return interval;
-	}
-	
-	public boolean isPaused() {
-		return paused;
-	}
-	
+
 	public boolean isAlive() {
 		return alive;
-	}
-	
-	public boolean isCompensatingForDelays() {
-		return compensatingForDelays;
-	}
-	
-	public boolean isHandledOnMain() {
-		return handledOnMain;
 	}
 }

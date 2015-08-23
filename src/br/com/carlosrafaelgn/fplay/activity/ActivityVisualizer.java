@@ -173,7 +173,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			return;
 		version++;
 		MainHandler.removeMessages(this, MSG_HIDE);
-		MainHandler.sendMessageDelayed(this, MSG_HIDE, version, 0, 4000);
+		MainHandler.sendMessageAtTime(this, MSG_HIDE, version, 0, SystemClock.uptimeMillis() + 4000);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)

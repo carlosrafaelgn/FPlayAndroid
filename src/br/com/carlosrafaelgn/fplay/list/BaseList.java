@@ -44,7 +44,6 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 //All methods of this class MUST BE called from the main thread
 public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	public interface BaseSectionIndexer {
-		boolean hasSections();
 		String[] getSectionStrings();
 		int[] getSectionPositions();
 	}
@@ -243,6 +242,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		return true;
 	}
 
+	@SuppressWarnings("SuspiciousSystemArraycopy")
 	public final void moveSelection(int to) {
 		int from = firstSel, count = lastSel - firstSel + 1;
 		if (from < 0 || to < 0 || count <= 0)
@@ -359,15 +359,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		}
 		return -1;
 	}
-	
-	public final int lastIndexOf(E item) {
-		for (int i = count - 1; i >= 0; i--) {
-			if (items[i] == item)
-				return i;
-		}
-		return -1;
-	}
-	
+
 	@Override
 	public final int getCount() {
 		return count;

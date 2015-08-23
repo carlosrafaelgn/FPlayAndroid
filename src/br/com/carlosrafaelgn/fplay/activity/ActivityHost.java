@@ -124,10 +124,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			UI.announceAccessibilityText(title);
 	}
 
-	public ClientActivity getTopActivity() {
-		return top;
-	}
-	
 	public void setExitOnDestroy(boolean exitOnDestroy) {
 		this.exitOnDestroy = (exitOnDestroy ? 1 : 0);
 	}
@@ -234,10 +230,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				if (oldView != null) {
 					newView = view;
 					if (UI.transition == UI.TRANSITION_FADE) {
-						if (useFadeOutNextTime || forceFadeOut)
-							animator = new FastAnimator(oldView, true, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES);
-						else
-							animator = new FastAnimator(view, false, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES);
+						animator = ((useFadeOutNextTime || forceFadeOut) ?
+							new FastAnimator(oldView, true, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES) :
+							new FastAnimator(view, false, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES));
 					} else {
 						final AnimationSet animationSet = new AnimationSet(true);
 						anim = animationSet;
@@ -363,10 +358,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		disableTopView();
 		activity.onCleanupLayout();
 		activity.onDestroy();
-		if (top != null)
-			top = top.previousActivity;
-		else
-			top = null;
+		top = ((top != null) ? top.previousActivity : null);
 		if (top != null)
 			updateTitle(top.getTitle(), announce);
 		else

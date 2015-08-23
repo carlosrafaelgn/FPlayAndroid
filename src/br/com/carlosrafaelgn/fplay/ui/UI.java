@@ -77,7 +77,6 @@ import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.BgEdgeEffect;
 import android.widget.Button;
-import android.widget.EdgeEffect;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -413,6 +412,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
+	public static String unknownArtist;
 	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
@@ -648,6 +648,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
 		if (forcedLocale == 0 && localeCode == 0) {
+			unknownArtist = context.getText(R.string.unknownArtist).toString();
 			currentLocale = getCurrentLocale(context);
 			updateDecimalSeparator();
 			return false;
@@ -672,6 +673,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		} catch (Throwable ex) {
 			currentLocale = getCurrentLocale(context);
 		}
+		unknownArtist = context.getText(R.string.unknownArtist).toString();
 		updateDecimalSeparator();
 		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
 			setUsingAlternateTypeface(context, true);

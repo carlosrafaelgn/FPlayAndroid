@@ -92,17 +92,23 @@ public final class Song extends BaseItem {
 			if (fields[MetadataExtractor.TRACK] != null) {
 				try {
 					this.track = Integer.parseInt(fields[MetadataExtractor.TRACK]);
-				} catch (Throwable ex) { }
+				} catch (Throwable ex) {
+					this.track = 0;
+				}
 			}
 			if (fields[MetadataExtractor.YEAR] != null) {
 				try {
 					this.year = Integer.parseInt(fields[MetadataExtractor.YEAR]);
-				} catch (Throwable ex) { }
+				} catch (Throwable ex) {
+					this.year = 0;
+				}
 			}
 			if (fields[MetadataExtractor.LENGTH] != null) {
 				try {
 					this.lengthMS = Integer.parseInt(fields[MetadataExtractor.LENGTH]);
-				} catch (Throwable ex) { }
+				} catch (Throwable ex) {
+					this.lengthMS = 0;
+				}
 			}
 		}
 		if (fields == null || this.lengthMS <= 0) {
@@ -113,29 +119,41 @@ public final class Song extends BaseItem {
 				if (fields == null) {
 					try {
 						this.title = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
-					} catch (Throwable ex) { }
+					} catch (Throwable ex) {
+						this.title = null;
+					}
 					try {
 						this.artist = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-					} catch (Throwable ex) { }
+					} catch (Throwable ex) {
+						this.artist = null;
+					}
 					try {
 						this.album = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-					} catch (Throwable ex) { }
+					} catch (Throwable ex) {
+						this.album = null;
+					}
 					try {
 						s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER);
 						if (s != null && s.length() > 0)
 							this.track = Integer.parseInt(s);
-					} catch (Throwable ex) { }
+					} catch (Throwable ex) {
+						this.track = 0;
+					}
 					try {
 						s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR);
 						if (s != null && s.length() > 0)
 							this.year = Integer.parseInt(s);
-					} catch (Throwable ex) { }
+					} catch (Throwable ex) {
+						this.year = 0;
+					}
 				}
 				try {
 					s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
 					if (s != null && s.length() > 0)
 						this.lengthMS = Integer.parseInt(s);
-				} catch (Throwable ex) { }
+				} catch (Throwable ex) {
+					this.lengthMS = 0;
+				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}

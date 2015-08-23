@@ -109,35 +109,19 @@ public final class BgSeekBar extends View {
 		updateTextX();
 		invalidate();
 	}
-	
-	public OnBgSeekBarChangeListener getOnBgSeekBarChangeListener() {
-		return listener;
-	}
-	
+
 	public void setOnBgSeekBarChangeListener(OnBgSeekBarChangeListener listener) {
 		this.listener = listener;
 	}
-	
-	public OnBgSeekBarDrawListener getOnBgSeekBarDrawListener() {
-		return drawListener;
-	}
-	
+
 	public void setOnBgSeekBarDrawListener(OnBgSeekBarDrawListener listener) {
 		this.drawListener = listener;
 	}
-	
-	public int getKeyIncrement() {
-		return keyIncrement;
-	}
-	
+
 	public void setKeyIncrement(int keyIncrement) {
 		this.keyIncrement = keyIncrement;
 	}
-	
-	public int getTextSizeIndex() {
-		return textSizeIdx;
-	}
-	
+
 	public void setTextSizeIndex(int index) {
 		size = UI.defaultControlSize;
 		switch (index) {
@@ -505,7 +489,8 @@ public final class BgSeekBar extends View {
 		}
 		return super.onKeyDown(keyCode, event);
 	}
-	
+
+	@SuppressWarnings("SuspiciousNameCombination")
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if (text == null)

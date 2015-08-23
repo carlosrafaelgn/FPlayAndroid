@@ -66,6 +66,7 @@ public final class ObservableScrollView extends ScrollView {
 		init(false);
 	}
 
+	@SuppressWarnings("deprecation")
 	private void init(boolean insideMenu) {
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);

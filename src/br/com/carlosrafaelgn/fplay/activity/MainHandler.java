@@ -90,15 +90,7 @@ public final class MainHandler extends Handler {
 	public static void sendMessage(MainHandler.Callback callback, int what, int arg1, int arg2) {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), SystemClock.uptimeMillis());
 	}
-	
-	public static void sendMessageDelayed(MainHandler.Callback callback, int what, long delayMillis) {
-		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, callback), SystemClock.uptimeMillis() + delayMillis);
-	}
-	
-	public static void sendMessageDelayed(MainHandler.Callback callback, int what, int arg1, int arg2, long delayMillis) {
-		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), SystemClock.uptimeMillis() + delayMillis);
-	}
-	
+
 	public static void sendMessageAtTime(MainHandler.Callback callback, int what, int arg1, int arg2, long when) {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), when);
 	}

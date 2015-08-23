@@ -65,10 +65,7 @@ public final class Equalizer {
 	}
 
 	static void loadConfig(SerializableMap opts) {
-		if (opts.hasBits())
-			enabled = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
-		else
-			enabled = opts.getBoolean(Player.OPT_EQUALIZER_ENABLED);
+		enabled = (opts.hasBits() ? opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED) : opts.getBoolean(Player.OPT_EQUALIZER_ENABLED));
 		deserializePreset(opts);
 		preset = opts.getInt(Player.OPT_EQUALIZER_PRESET, -1);
 	}
@@ -126,7 +123,7 @@ public final class Equalizer {
 		}
 	}
 	
-	public static boolean isUsingFactoryPreset() {
+	/*public static boolean isUsingFactoryPreset() {
 		return (preset >= 0);
 	}
 	
@@ -156,7 +153,7 @@ public final class Equalizer {
 			Equalizer.preset = -1;
 			applyAllBandSettings();
 		}
-	}
+	}*/
 	
 	public static boolean isSupported() {
 		return ((bandLevels != null) && (bandLevels.length > 0));

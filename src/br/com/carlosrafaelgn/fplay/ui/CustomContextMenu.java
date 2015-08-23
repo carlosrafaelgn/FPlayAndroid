@@ -381,15 +381,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		else
 			MainHandler.postToMainThread(mnu);
 	}
-	
-	public static void openContextMenu(View view, View.OnCreateContextMenuListener listener, Activity closeListener) {
-		final CustomContextMenu mnu = new CustomContextMenu(view, listener, closeListener, null, null);
-		if (MainHandler.isOnMainThread())
-			mnu.run();
-		else
-			MainHandler.postToMainThread(mnu);
-	}
-	
+
 	@Override
 	public int compare(Item a, Item b) {
 		if (a.groupId == b.groupId)
@@ -578,11 +570,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	public void onDismiss(DialogInterface dialog) {
 		if (!closed) close();
 	}
-	
-	public View addSeparator(int groupId, int order, int color, int height, int margin) {
-		return addSeparator(groupId, order, color, height, margin, margin, margin, margin);
-	}
-	
+
 	public View addSeparator(int groupId, int order, int color, int height, int marginLeft, int marginTop, int marginRight, int marginBottom) {
 		final TextView t = new TextView(context);
 		final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, height);

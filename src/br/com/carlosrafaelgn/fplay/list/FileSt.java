@@ -44,7 +44,6 @@ public final class FileSt extends BaseItem {
 	public static final String FAKE_PATH_SEPARATOR = "\u001A"; //Substitute!!! Old school techniques :D
 	public static final String ARTIST_PREFIX = ARTIST_ROOT + FAKE_PATH_ROOT;
 	public static final String ALBUM_PREFIX = ALBUM_ROOT + FAKE_PATH_ROOT;
-	public static final String ARTIST_ALBUM_PREFIX = ARTIST_ROOT + File.separator;
 	public static final char FAKE_PATH_SEPARATOR_CHAR = '\u001A';
 	public static final char PRIVATE_FILETYPE_ID = '#';
 	public static final int TYPE_ALL_FILES = 1;

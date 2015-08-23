@@ -175,10 +175,6 @@ public final class BgButton extends Button {
 		this.descriptionUnchecked = descriptionUnchecked;
 	}
 
-	public OnPressingChangeListener getOnPressingChangeListener() {
-		return pressingChangeListener;
-	}
-	
 	public void setOnPressingChangeListener(OnPressingChangeListener pressingChangeListener) {
 		this.pressingChangeListener = pressingChangeListener;
 	}
@@ -190,27 +186,13 @@ public final class BgButton extends Button {
 		h -= (getPaddingTop() + getPaddingBottom());
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, (w < h) ? w : h);
 	}
-	
-	public boolean isIconStretchable() {
-		return stretchable;
-	}
-	
+
 	public void setIconStretchable(boolean stretchable) {
 		this.stretchable = stretchable;
 		if (stretchable)
 			fixTextSize(getWidth(), getHeight());
 	}
-	
-	public boolean isCheckable() {
-		return checkable;
-	}
-	
-	public void setCheckable(boolean checkable) {
-		if (!checkable)
-			setChecked(false);
-		this.checkable = checkable;
-	}
-	
+
 	public void toggle() {
 		setChecked(!checked);
 	}

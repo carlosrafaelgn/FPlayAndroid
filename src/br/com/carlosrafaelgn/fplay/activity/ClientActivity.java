@@ -45,7 +45,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnCreateContextMenuListener;
 
-import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener {
@@ -67,11 +66,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	public final void addWindowFlags(int flags) {
 		activity.getWindow().addFlags(flags);
 	}
-	
-	public final void setWindowFlags(int flags, int mask) {
-		activity.getWindow().setFlags(flags, mask);
-	}
-	
+
 	public final void clearWindowFlags(int flags) {
 		activity.getWindow().clearFlags(flags);
 	}
@@ -124,19 +119,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	public final View findViewById(int id) {
 		return activity.findViewById(id);
 	}
-	
-	public final boolean isTopActivity() {
-		return (activity.getTopActivity() == this);
-	}
-	
-	public final ClientActivity getTopActivity() {
-		return activity.getTopActivity();
-	}
-	
-	public final ClientActivity getPreviousActivity() {
-		return previousActivity;
-	}
-	
+
 	public final void startActivity(ClientActivity activity, int requestCode, View sourceView, boolean announce) {
 		if (sourceView != null)
 			UI.storeViewCenterLocationForFade(sourceView);
@@ -149,22 +132,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 			UI.storeViewCenterLocationForFade(sourceView);
 		activity.finishActivity(this, null, code, announce);
 	}
-	
-	public final void finishAndStartNewActivity(int code, ClientActivity activity, int requestCode, View sourceView, boolean announce) {
-		if (sourceView != null)
-			UI.storeViewCenterLocationForFade(sourceView);
-		activity.requestCode = requestCode;
-		this.activity.finishActivity(this, activity, code, announce);
-	}
-	
-	public final void openContextMenu(View view) {
-		CustomContextMenu.openContextMenu(view, this);
-	}
-	
-	public final void setExitOnDestroy(boolean exitOnDestroy) {
-		activity.setExitOnDestroy(exitOnDestroy);
-	}
-	
+
 	public final CharSequence getText(int resId) {
 		return activity.getText(resId);
 	}

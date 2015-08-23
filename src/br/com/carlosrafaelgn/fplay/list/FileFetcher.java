@@ -35,9 +35,9 @@ package br.com.carlosrafaelgn.fplay.list;
 import android.annotation.TargetApi;
 import android.app.Service;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
-import android.provider.MediaStore;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -53,6 +53,7 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 //
@@ -90,7 +91,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	
 	private static final int LIST_DELTA = 32;
 	private static final HashSet<String> supportedTypes;
-	public String unknownArtist;
 	public final String path;
 	public FileSt[] files;
 	public String[] sections;
@@ -148,13 +148,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		f.fetch();
 		return f;
 	}
-	
-	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean createSections) {
-		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false, createSections);
-		f.fetch();
-		return f;
-	}
-	
+
 	public static FileFetcher fetchFilesInThisThread(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean createSections) {
 		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false, createSections);
 		f.run();
@@ -449,7 +443,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			ex.printStackTrace();
 		}
 	}
-	
+
 	private void fetchArtists() {
 		final Service s = Player.getService();
 		if (s == null)
@@ -457,9 +451,21 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		
 		final String fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.artists).toString() + FileSt.FAKE_PATH_SEPARATOR;
 		final String root = FileSt.ARTIST_ROOT + File.separator;
+		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
+		final String[] proj = { "_id", "artist", "number_of_albums", "number_of_tracks" };
+		final Cursor c = s.getContentResolver().query(Uri.parse("content://media/external/audio/artists"), proj, null, null, null);
+		//
+		//Despite its name, EXTERNAL_CONTENT_URI also comprises the internal storage
+		//(at least it does so in all devices I have tested!)
+		//
+		//final String[] proj = { MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST, MediaStore.Audio.Artists.NUMBER_OF_ALBUMS, MediaStore.Audio.Artists.NUMBER_OF_TRACKS };
+		//final Cursor c = s.getContentResolver().query(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, proj, null, null, null);
+		if (c == null) {
+			count = 0;
+			files = new FileSt[0];
+			return;
+		}
 		final ArrayList<FileSt> tmp = new ArrayList<>(64);
-		final String[] proj = { MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST, MediaStore.Audio.Artists.NUMBER_OF_ALBUMS, MediaStore.Audio.Artists.NUMBER_OF_TRACKS };
-		final Cursor c = s.getContentResolver().query(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, proj, null, null, null);
 		while (c.moveToNext()) {
 			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 				count = 0;
@@ -467,11 +473,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return;
 			}
 			String name = c.getString(1);
-			if (name.equals("<unknown>")) {
-				if (unknownArtist == null)
-					unknownArtist = s.getText(R.string.unknownArtist).toString();
-				name = unknownArtist;
-			}
+			if (name == null || name.equals("<unknown>"))
+				name = UI.unknownArtist;
 			final long id = c.getLong(0);
 			final FileSt f = new FileSt(root + id + fakeRoot + name, name, null, FileSt.TYPE_ARTIST);
 			f.artistIdForAlbumArt = id;
@@ -485,11 +488,12 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		files = new FileSt[count];
 		tmp.toArray(files);
 		ArraySorter.sort(files, 0, files.length, new ArraySorter.Comparer<FileSt>() {
+			@SuppressWarnings("StringEquality")
 			@Override
 			public int compare(FileSt a, FileSt b) {
-				if (a.name == unknownArtist)
+				if (a.name == UI.unknownArtist)
 					return -1;
-				else if (b.name == unknownArtist)
+				else if (b.name == UI.unknownArtist)
 					return 1;
 				return a.name.compareToIgnoreCase(b.name);
 			}
@@ -518,11 +522,21 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			fakeRoot = fakePath + FileSt.FAKE_PATH_SEPARATOR;
 			root = realPath + File.separator;
 		}
+		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
+		final String[] proj = { "_id", "album", "album_art", "numsongs" };
+		final Cursor c = s.getContentResolver().query(Uri.parse((artist == null) ?
+				"content://media/external/audio/albums" :
+				"content://media/external/audio/artists/" + artist + "/albums"), proj, null, null, null);
+		//final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART, MediaStore.Audio.Albums.NUMBER_OF_SONGS };
+		//final Cursor c = s.getContentResolver().query((artist == null) ?
+		//		MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI :
+		//		MediaStore.Audio.Artists.Albums.getContentUri("external", Long.parseLong(artist)), proj, null, null, null);
+		if (c == null) {
+			count = 0;
+			files = new FileSt[0];
+			return;
+		}
 		final ArrayList<FileSt> tmp = new ArrayList<>(64);
-		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART, MediaStore.Audio.Albums.NUMBER_OF_SONGS };
-		final Cursor c = s.getContentResolver().query((artist == null) ?
-				MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI :
-				MediaStore.Audio.Artists.Albums.getContentUri("external", Long.parseLong(artist)), proj, null, null, null);
 		while (c.moveToNext()) {
 			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 				count = 0;
@@ -554,17 +568,33 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		final int albumIdIdx = realPath.lastIndexOf(File.separatorChar) + 1;
 		final String artist = ((realPath.charAt(0) == FileSt.ARTIST_ROOT_CHAR) ? realPath.substring(2, albumIdIdx - 1) : null);
 		final String album = realPath.substring(albumIdIdx);
-		final ArrayList<FileSt> tmp = new ArrayList<>(64);
-		final String[] proj = { MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.TRACK };
+		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
+		final String[] proj = { "_data", "title", "track" };
 		final Cursor c = s.getContentResolver().query(
-				MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, proj,
-				(artist == null) ?
-				(MediaStore.Audio.Media.ALBUM_ID + "=?") :
-				(MediaStore.Audio.Media.ALBUM_ID + "=? AND " + MediaStore.Audio.Media.ARTIST_ID + "=?"),
-				(artist == null) ?
+			Uri.parse("content://media/external/audio/media"), proj,
+			(artist == null) ?
+				"album_id=?" :
+				"album_id=? AND artist_id=?",
+			(artist == null) ?
 				new String[] { album } :
 				new String[] { album, artist },
-				null);
+			null);
+		//final String[] proj = { MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.TRACK };
+		//final Cursor c = s.getContentResolver().query(
+		//	MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, proj,
+		//	(artist == null) ?
+		//		(MediaStore.Audio.Media.ALBUM_ID + "=?") :
+		//		(MediaStore.Audio.Media.ALBUM_ID + "=? AND " + MediaStore.Audio.Media.ARTIST_ID + "=?"),
+		//	(artist == null) ?
+		//		new String[] { album } :
+		//		new String[] { album, artist },
+		//	null);
+		if (c == null) {
+			count = 0;
+			files = new FileSt[0];
+			return;
+		}
+		final ArrayList<FileSt> tmp = new ArrayList<>(64);
 		while (c.moveToNext()) {
 			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 				count = 0;
@@ -592,149 +622,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		
 		tmp.clear();
 	}
-	
-	//
-	//Despite its name, EXTERNAL_CONTENT_URI also comprises the internal sdcard (at least
-	//it does so in all devices I have tested!)
-	//I'm keeping this old version here just in case.....
-	//
-	/*private void fetchArtists() {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-		
-		final String fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.artists).toString() + FileSt.FAKE_PATH_SEPARATOR;
-		final String root = FileSt.ARTIST_ROOT + File.separator;
-		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
-		final String[] proj = { MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST };
-		final long[] mask = new long[] { 0, 0xffffffffffffffffL };
-		final Uri[] uris = new Uri[] {
-				MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI ,
-				MediaStore.Audio.Artists.INTERNAL_CONTENT_URI };
-		
-		for (int i = uris.length - 1; i >= 0 && !cancelled; i--) {
-			final Cursor c = s.getContentResolver().query(uris[i], proj, null, null, null);
-			while (!cancelled && c.moveToNext()) {
-				final String name = c.getString(1);
-				tmp.add(new FileSt(root + (mask[i] ^ c.getLong(0)) + fakeRoot + name, name, FileSt.TYPE_ARTIST));
-			}
-			c.close();
-		}
-		
-		if (cancelled)
-			return;
-		
-		count = tmp.size();
-		files = new FileSt[count];
-		tmp.toArray(files);
-		ArraySorter.sort(files, 0, files.length, this);
-		
-		tmp.clear();
-	}
-	
-	private void fetchAlbums(String path) {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-		
-		String artist;
-		String fakeRoot;
-		String root;
-		if (path == null) {
-			artist = null;
-			fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.albums).toString() + FileSt.FAKE_PATH_SEPARATOR;
-			root = FileSt.ALBUM_ROOT + File.separator;
-		} else {
-			final int fakePathIdx = path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR);
-			final String realPath = path.substring(0, fakePathIdx);
-			final String fakePath = path.substring(fakePathIdx);
-			artist = realPath.substring(realPath.lastIndexOf(File.separatorChar) + 1);
-			fakeRoot = fakePath + FileSt.FAKE_PATH_SEPARATOR;
-			root = realPath + File.separator;
-		}
-		
-		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
-		final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM };
-		long[] mask;
-		Uri[] uris;
-		if (artist == null) {
-			mask = new long[] { 0, 0xffffffffffffffffL };
-			uris = new Uri[] {
-					MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-					MediaStore.Audio.Albums.INTERNAL_CONTENT_URI };
-		} else {
-			final long id = Long.parseLong(artist);
-			if (id < 0) {
-				mask = new long[] { 0xffffffffffffffffL };
-				uris = new Uri[] {
-						MediaStore.Audio.Artists.Albums.getContentUri("internal", id ^ 0xffffffffffffffffL) };
-			} else {
-				mask = new long[] { 0 };
-				uris = new Uri[] {
-						MediaStore.Audio.Artists.Albums.getContentUri("external", id) };
-			}
-		}
-		
-		for (int i = uris.length - 1; i >= 0 && !cancelled; i--) {
-			final Cursor c = s.getContentResolver().query(uris[i], proj, null, null, null);
-			while (!cancelled && c.moveToNext()) {
-				final String name = c.getString(1);
-				tmp.add(new FileSt(root + (mask[i] ^ c.getLong(0)) + fakeRoot + name, name, FileSt.TYPE_ALBUM));
-			}
-			c.close();
-		}
-		
-		if (cancelled)
-			return;
-		
-		count = tmp.size();
-		files = new FileSt[count];
-		tmp.toArray(files);
-		ArraySorter.sort(files, 0, files.length, this);
-		
-		tmp.clear();
-	}
-	
-	private void fetchTracks(String path) {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-		
-		final int fakePathIdx = path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR);
-		final String realPath = path.substring(0, fakePathIdx);
-		final long album = Long.parseLong(realPath.substring(realPath.lastIndexOf(File.separatorChar) + 1));
-		final ArrayList<FileSt> tmp = new ArrayList<FileSt>(64);
-		final String[] proj = { MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.TRACK };
-		final Cursor c = s.getContentResolver().query(
-				(album < 0) ? MediaStore.Audio.Media.INTERNAL_CONTENT_URI : MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, proj,
-				MediaStore.Audio.Media.ALBUM_ID + "=?",
-				new String[] { Long.toString((album < 0) ? (album ^ 0xffffffffffffffffL) : album) },
-				null);
-		while (!cancelled && c.moveToNext()) {
-			tmp.add(new FileSt(c.getString(0), c.getString(1), c.getInt(2), false));
-		}
-		c.close();
-		
-		if (cancelled)
-			return;
-		
-		count = tmp.size();
-		files = new FileSt[count];
-		tmp.toArray(files);
-		ArraySorter.sort(files, 0, files.length, new ArraySorter.Comparer<FileSt>() {
-			@Override
-			public int compare(FileSt a, FileSt b) {
-				if (a.specialType != b.specialType)
-					return a.specialType - b.specialType;
-				return a.name.compareToIgnoreCase(b.name);
-			}
-		});
-		for (int i = files.length - 1; i >= 0; i--)
-			files[i].specialType = 0;
-		
-		tmp.clear();
-	}*/
-	
+
+	@SuppressWarnings("UnusedAssignment")
 	private void fetchFiles(String path, boolean first) {
 		if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 			count = 0;
@@ -762,7 +651,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			count++;
 			files[i] = null;
 		}
-		files = null;
+		files = null; //help the garbage collector
 		final int e = count;
 		ArraySorter.sort(this.files, l, e - l, this);
 		if (first && !filesAdded && recursiveIfFirstEmpty)
@@ -807,7 +696,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		count = c;
 		ArraySorter.sort(this.files, 0, c, this);
 	}
-	
+
+	@SuppressWarnings("StringEquality")
 	public void computeSections() {
 		if (!createSections || count < 1) {
 			sections = null;
@@ -819,7 +709,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		int[] pos = new int[100];
 		char[] chars = new char[100];
 		char current, last = (char)Character.toUpperCase((int)files[0].name.charAt(0));
-		if (last < '@' || files[0].name == unknownArtist)
+		if (last < '@' || files[0].name == UI.unknownArtist)
 			last = '#';
 		chars[0] = last;
 		pos[0] = 0;

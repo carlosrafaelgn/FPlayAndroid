@@ -127,70 +127,70 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		if (c == null || p == null || listener == null || (file = listener.fileForRequestId(msg.what)) == null)
 			return true;
 
-		if (file.specialType == 0) {
-			//we are fetching the album art for a file
-			tempSelection[0] = file.path;
-			Cursor cursor = contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, audioAlbumIdProjection, audioDataSelection, tempSelection, null);
-			long albumId = Long.MIN_VALUE;
-			if (cursor != null) {
-				if (cursor.moveToNext())
-					albumId = cursor.getLong(0);
-				cursor.close();
-			}
-			if (albumId != Long.MIN_VALUE) {
-				if (opts.mCancel)
-					return true;
-
-				tempSelection[0] = Long.toString(albumId);
-				cursor = contentResolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumArtProjection, albumIdSelection, tempSelection, null);
+		try {
+			if (file.specialType == 0) {
+				//we are fetching the album art for a file
+				tempSelection[0] = file.path;
+				Cursor cursor = contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, audioAlbumIdProjection, audioDataSelection, tempSelection, null);
+				long albumId = Long.MIN_VALUE;
 				if (cursor != null) {
 					if (cursor.moveToNext())
-						uri = cursor.getString(0);
+						albumId = cursor.getLong(0);
 					cursor.close();
-
+				}
+				if (albumId != Long.MIN_VALUE) {
 					if (opts.mCancel)
 						return true;
 
-					if (uri != null) {
-						synchronized (sync) {
-							if (cache != null && (w = cache.get(uri)) != null) {
-								listener.albumArtFetched(w, msg.what);
-								return true;
+					tempSelection[0] = Long.toString(albumId);
+					cursor = contentResolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumArtProjection, albumIdSelection, tempSelection, null);
+					if (cursor != null) {
+						if (cursor.moveToNext())
+							uri = cursor.getString(0);
+						cursor.close();
+
+						if (opts.mCancel)
+							return true;
+
+						if (uri != null) {
+							synchronized (sync) {
+								if (cache != null && (w = cache.get(uri)) != null) {
+									listener.albumArtFetched(w, msg.what);
+									return true;
+								}
 							}
 						}
 					}
 				}
+			} else {
+				uri = file.albumArt;
 			}
-		} else {
-			uri = file.albumArt;
-		}
 
-		if (uri == null) {
-			if (contentResolver == null) {
-				file.artistIdForAlbumArt = 0;
-				return true;
-			}
-			//try to fetch the first album for this artist
-			final Cursor cursor = contentResolver.query(MediaStore.Audio.Artists.Albums.getContentUri("external", file.artistIdForAlbumArt), albumArtProjection, null, null, null);
-			while (uri == null && !opts.mCancel && cursor.moveToNext())
-				uri = cursor.getString(0);
-			cursor.close();
-			file.artistIdForAlbumArt = 0;
-			if (uri == null)
-				return true;
-			file.albumArt = uri;
-			synchronized (sync) {
-				if (cache != null && (w = cache.get(uri)) != null) {
-					listener.albumArtFetched(w, msg.what);
+			if (uri == null) {
+				if (contentResolver == null) {
+					file.artistIdForAlbumArt = 0;
 					return true;
 				}
+				//try to fetch the first album for this artist
+				final Cursor cursor = contentResolver.query(MediaStore.Audio.Artists.Albums.getContentUri("external", file.artistIdForAlbumArt), albumArtProjection, null, null, null);
+				while (uri == null && !opts.mCancel && cursor.moveToNext())
+					uri = cursor.getString(0);
+				cursor.close();
+				file.artistIdForAlbumArt = 0;
+				if (uri == null)
+					return true;
+				file.albumArt = uri;
+				synchronized (sync) {
+					if (cache != null && (w = cache.get(uri)) != null) {
+						listener.albumArtFetched(w, msg.what);
+						return true;
+					}
+				}
 			}
-		}
-		
-		if (opts.mCancel)
-			return true;
-		
-		try {
+
+			if (opts.mCancel)
+				return true;
+
 			opts.inJustDecodeBounds = true;
 			opts.inTempStorage = tempStorage;
 			BitmapFactory.decodeFile(uri, opts);
@@ -244,6 +244,13 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				b.recycle();
 				w = new ReleasableBitmapWrapper(b2);
 			}
+
+			synchronized (sync) {
+				if (cache != null) {
+					cache.put(uri, w);
+					listener.albumArtFetched(w, msg.what);
+				}
+			}
 		} catch (Throwable ex) {
 			try {
 				if (b != null)
@@ -261,21 +268,14 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 			ex.printStackTrace();
 			return true;
 		}
-		
-		synchronized (sync) {
-			if (cache != null) {
-				cache.put(uri, w);
-				listener.albumArtFetched(w, msg.what);
-			}
-		}
-		
+
 		return true;
 	}
 	
 	//Runs on the MAIN thread
 	public ReleasableBitmapWrapper getAlbumArt(FileSt file, int desiredSize, int requestId, AlbumArtFetcherListener listener) {
 		synchronized (sync) {
-			if (cache == null)
+			if (cache == null || file == null)
 				return null;
 			if (file.albumArt != null) {
 				final ReleasableBitmapWrapper bitmap = cache.get(file.albumArt);
