@@ -35,9 +35,9 @@
     <string name="msg_confirm_delete">Ви дійсно бажаєте видалити %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Перезаписати %1$s \"%2$s\"</string>
     <string name="msg_delete">Видалити %1$s \"%2$s\"</string>
-    <string name="msg_delete_button">Видалити %1$s&#8230;</string>
+    <string name="msg_delete_button">Видалити&#8230;</string>
     <string name="msg_create_new_title">Створити новий %s</string>
-    <string name="msg_create_new">Створити новий %s&#8230;</string>
+    <string name="msg_create_new">Створити новий&#8230;</string>
     <string name="msg_add">Ця кнопка додає в список відтворення всі композиції в папці та її підпапках.</string>
     <string name="msg_play">Ця кнопка додає в список відтворення всі композиції в папці та її підпапках і починає відтворення.</string>
     <string name="msg_error_download_path">Відсутня можливість отримати доступ до папки завантаження :(</string>

@@ -364,9 +364,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (!Player.songs.moving && !Player.songs.selecting) {
 			final int p = Player.songs.getCurrentPosition();
 			if (p <= list.getFirstVisiblePosition() || p >= list.getLastVisiblePosition()) {
-				if (UI.animationEnabled)
-					list.centerItemSmoothly(p);
-				else
+				//this smooth scroll has some serious issues in many devices,
+				//specially when scrolling large distances!
+				//if (UI.animationEnabled)
+				//	list.centerItemSmoothly(p);
+				//else
 					list.centerItem(p);
 			}
 		}

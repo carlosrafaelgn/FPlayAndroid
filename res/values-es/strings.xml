@@ -35,9 +35,9 @@
     <string name="msg_confirm_delete">Confirma que desea borrar %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Sobrescribir %1$s \"%2$s\"</string>
     <string name="msg_delete">Eliminar %1$s \"%2$s\"</string>
-    <string name="msg_delete_button">Eliminar %1$s&#8230;</string>
+    <string name="msg_delete_button">Eliminar&#8230;</string>
     <string name="msg_create_new_title">Crear nueva %s</string>
-    <string name="msg_create_new">Crear nueva %s&#8230;</string>
+    <string name="msg_create_new">Crear nueva&#8230;</string>
     <string name="msg_add">Este boton añade a la lista de reproducción, todas las canciones en la carpeta incluyendo las subcarpetas.</string>
     <string name="msg_play">Este boton añade a la lista de reproducción, todas las canciones en la carpeta incluyendo las subcarpetas e inicia la reproducción.</string>
     <string name="msg_error_download_path">No fue posible acceder a la carpeta de descarga :(</string>

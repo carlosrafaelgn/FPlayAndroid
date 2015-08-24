@@ -101,6 +101,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		return title;
 	}
 
+	@SuppressWarnings("StringEquality")
 	private void updateOverallLayout() {
 		UI.animationReset();
 		if (!save) {
@@ -162,12 +163,12 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			}
 		} else {
 			if (btnMenuIcon != null && btnMenu != null && btnMenuIcon.getIcon() != ((checkedFile != null) ? UI.ICON_DELETE : UI.ICON_SAVE)) {
-				final String txt;
+				final CharSequence txt;
 				if (checkedFile == null) {
-					txt = format(R.string.msg_create_new, itemType);
+					txt = getText(R.string.msg_create_new);
 					btnMenuIcon.setIcon(UI.ICON_SAVE);
 				} else {
-					txt = format(R.string.msg_delete_button, itemType);
+					txt = getText(R.string.msg_delete_button);
 					btnMenuIcon.setIcon(UI.ICON_DELETE);
 				}
 				btnMenu.setText(txt);
@@ -454,13 +455,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		fileList.setObserver(list);
 		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
 		if (save) {
-			final String txt = format(R.string.msg_create_new, itemType);
+			final CharSequence txt = getText(R.string.msg_create_new);
 			btnMenu.setText(txt);
 			btnMenu.setContentDescription(txt);
 			btnMenu.setDefaultHeight();
 			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_SAVE, UI.color_text, UI.defaultControlContentsSize)), null, null, null);
 		} else {
-			final String txt = format(R.string.msg_delete_button, itemType);
+			final CharSequence txt = getText(R.string.msg_delete_button);
 			btnMenu.setText(txt);
 			btnMenu.setContentDescription(txt);
 			btnMenu.setDefaultHeight();

@@ -36,9 +36,9 @@
     <string name="msg_confirm_delete">Do you really want to delete the %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Overwrite %1$s \"%2$s\"</string>
     <string name="msg_delete">Delete %1$s \"%2$s\"</string>
-    <string name="msg_delete_button">Delete %1$s&#8230;</string>
+    <string name="msg_delete_button">Delete&#8230;</string>
     <string name="msg_create_new_title">Create new %s</string>
-    <string name="msg_create_new">Create new %s&#8230;</string>
+    <string name="msg_create_new">Create new&#8230;</string>
     <string name="msg_add">This button adds to the playlist all songs in the folder and in its subfolders.</string>
     <string name="msg_play">This button adds to the playlist all songs in the folder and in its subfolders, and starts the playback.</string>
     <string name="msg_error_download_path">It was not possible to access the download folder :(</string>

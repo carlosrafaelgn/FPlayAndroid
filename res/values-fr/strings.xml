@@ -4,7 +4,7 @@
     <string name="fplay">FPlay</string>
     <string name="app_by">par Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Lecteur de musique avec une interface claire, equalizer, Bass Boost et couleurs personnalisables</string>
-    <string name="app_more_info">À la recherche de plus d\'informations?&lt;br/&gt;Le code source peut-être?&lt;br/&gt;Une question?&lt;br/&gt;Un bug?!?&lt;br/&gt;Simplement me contacter? :)&lt;br/&gt;&lt;br/&gt;Envoyez-moi un mail:&lt;br/&gt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;ou visitez le site GitHub du projet: &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Plein de poutous à ceux qui ont traduit FPlay :&lt;br/&gt;&lt;br/&gt;Sviat Hurskyi (&lt;a href=\"mailto:sviat.hurskyi@gmail.com\"&gt;sviat.hurskyi@gmail.com&lt;/a&gt;)&lt;br/&gt;Stefan Fitzenreiter (&lt;a href=\"mailto:sfitzenreiter@gmail.com\"&gt;sfitzenreiter@gmail.com&lt;/a&gt;)&lt;br/&gt;David Gonzalez (&lt;a href=\"mailto:redandy16@gmail.com\"&gt;redandy16@gmail.com&lt;/a&gt;)&lt;br/&gt;Soudain (&lt;a href=\"mailto:grorigan@gmail.com\"&gt;grorigan@gmail.com&lt;/a&gt;)&lt;br/&gt;&lt;br/&gt;Merci beaucoup!! :D</string>
+    <string name="app_more_info">À la recherche de plus d\'informations?&lt;br/&gt;Le code source peut-être?&lt;br/&gt;Une question?&lt;br/&gt;Un bug?!?&lt;br/&gt;Simplement me contacter? :)&lt;br/&gt;&lt;br/&gt;Envoyez-moi un mail:&lt;br/&gt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;ou visitez le site GitHub du projet: &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Plein de poutous à ceux qui ont traduit FPlay:&lt;br/&gt;&lt;br/&gt;Sviat Hurskyi (&lt;a href=\"mailto:sviat.hurskyi@gmail.com\"&gt;sviat.hurskyi@gmail.com&lt;/a&gt;)&lt;br/&gt;Stefan Fitzenreiter (&lt;a href=\"mailto:sfitzenreiter@gmail.com\"&gt;sfitzenreiter@gmail.com&lt;/a&gt;)&lt;br/&gt;David Gonzalez (&lt;a href=\"mailto:redandy16@gmail.com\"&gt;redandy16@gmail.com&lt;/a&gt;)&lt;br/&gt;Soudain (&lt;a href=\"mailto:grorigan@gmail.com\"&gt;grorigan@gmail.com&lt;/a&gt;)&lt;br/&gt;&lt;br/&gt;Merci beaucoup!! :D</string>
     <string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;La police utilisée pour faciliter la lecture aux dyslexiques est OpenDyslexic Regular, par Abelardo Gonzalez, disponible sur &lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; et est sous licence Creative Commons Attribution 3.0 Unported.&lt;br/&gt;&lt;br/&gt;La police de caractères utilisée pour dessiner les icônes vectorielles, icon.ttf, a été créée grâce à IcoMoon, par Keyamoon, disponible sur: &lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Certaines icônes vectorielles ont été créées par moi et d\'autres proviennent du pack libre d\'IcoMoon, par Keyamoon, sous licence Creative Commons Attribution 3.0.&lt;br/&gt;&lt;br/&gt;La classe BitmapLruCache est basée sur un code provenant de The Android Open Source Project, sous licence Apache 2.0.&lt;br/&gt;&lt;br/&gt;FPlay est est licencié sous les termes de la licence FreeBSD.</string>
     <string name="system_info">Informations système</string>
     <string name="resolution">Resolution</string>
@@ -31,13 +31,13 @@
     <string name="msg_turn_off_title">Arrêt automatique</string>
     <string name="msg_turn_off">Éteindre FPlay après combien de minutes?</string>
     <string name="msg_enter_name">Entrez un nom pour le nouveau %s&#58;</string>
-    <string name="msg_confirm_overwrite">Voulez-vous vraiment écraser le %1$s \"%2$s\" ?</string>
-    <string name="msg_confirm_delete">Voulez-vous vraiment supprimer le %1$s \"%2$s\" ?</string>
+    <string name="msg_confirm_overwrite">Voulez-vous vraiment écraser le %1$s \"%2$s\"?</string>
+    <string name="msg_confirm_delete">Voulez-vous vraiment supprimer le %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Écraser %1$s \"%2$s\"</string>
     <string name="msg_delete">Supprimer %1$s \"%2$s\"</string>
-    <string name="msg_delete_button">Supprimer %1$s&#8230;</string>
+    <string name="msg_delete_button">Supprimer&#8230;</string>
     <string name="msg_create_new_title">Créer un nouveau %s</string>
-    <string name="msg_create_new">Créer un nouveau %s&#8230;</string>
+    <string name="msg_create_new">Créer un nouveau&#8230;</string>
     <string name="msg_add">Ce bouton ajoute à la playlist tous les morceaux du dossier et de ses sous-dossiers.</string>
     <string name="msg_play">Ce bouton ajoute à la playlist tous les morceaux du dossier et de ses sous-dossiers, et démarre la lecture.</string>
     <string name="msg_error_download_path">Impossile d\'accéder au dossier de téléchargement :(</string>
@@ -46,7 +46,7 @@
     <string name="opt_use_alternate_typeface">Utiliser la fonte pour dyslexiques</string>
     <string name="opt_auto_turn_off">Fermer FPlay automatiquement après:</string>
     <string name="opt_auto_idle_turn_off">Si inactif, fermer FPlay automatiquement après:</string>
-    <string name="opt_auto_turn_off_playlist">Fermer FPlay une fois la fin de la liste atteinte (\"Ne pas répéter\" doit être sélectionné)</string>
+    <string name="opt_auto_turn_off_playlist">Fermer FPlay une fois la fin de la liste atteinte (\"Ne rien répéter\" doit être sélectionné)</string>
 	<string name="opt_keep_screen_on">Garder l\'écran allumé</string>
     <string name="opt_volume_control_type">Contrôle du volume:</string>
     <string name="opt_is_divider_visible">Séparer les items par des lignes dans les listes</string>
@@ -178,7 +178,7 @@
     <string name="light">Brillant</string>
     <string name="dark_light">Sombre/Brillant</string>
     <string name="new_setting">Nouveau paramètre!</string>
-    <string name="there_is_a_new_setting">Il y a un nouveau paramètre disponible dans le menu \"Réglages\" :</string>
+    <string name="there_is_a_new_setting">Il y a un nouveau paramètre disponible dans le menu \"Réglages\":</string>
     <string name="check_it_out">Vérifiez-le :)</string>
     <string name="color_theme">Thème (couleurs)</string>
     <string name="flat_details">Details en couleurs vives</string>
@@ -211,7 +211,7 @@
     <string name="window_text">Texte des fenêtres</string>
     <string name="window_text_disabled">Textes des fenêtres (désactivé)</string>
     <string name="highlight_text">Texte en surbrillance</string>
-	<string name="there_are_new_features">De nouvelles fonctionnalités sont disponibles dans le menu \"Réglages\" :</string>
+	<string name="there_are_new_features">De nouvelles fonctionnalités sont disponibles dans le menu \"Réglages\":</string>
     <string name="custom_widget">Widget paramétrable</string>
     <string name="custom_color_theme">Thème couleur paramétrable</string>
     <string name="add_artist">Ajouter un artiste</string>
@@ -259,7 +259,7 @@
     <string name="transition">Transition:</string>
 	<string name="animations">Animations</string>
     <string name="fade">Fondu</string>
-	<string name="dissolve">Fondu</string>
+	<string name="dissolve">Dissoudre</string>
     <string name="zoom">Zoom</string>
     <string name="repeat_all">Répéter tout</string>
     <string name="repeat_one">Répéter seul</string>
@@ -279,7 +279,7 @@
     <string name="place_the_playlist_to_the_right">Placer la playlist sur la droite</string>
     <string name="sustain">Soutenir:</string>
     <string name="diffusion">Diffusion</string>
-    <string name="msg_immersive">&#8634; Déplacez votre appareil autour de vous (soyez prudent !)</string>
+    <string name="msg_immersive">&#8634; Déplacez votre appareil autour de vous (soyez prudent!)</string>
     <string name="msg_no_sensors">Désolé, votre appareil n\'a pas les capteurs nécessaires :(</string>
     <string name="tutorial">Tutorial</string>
     <string name="information">Information</string>

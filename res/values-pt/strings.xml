@@ -35,9 +35,9 @@
     <string name="msg_confirm_delete">Quer mesmo excluir a %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Sobrescrever %1$s \"%2$s\"</string>
     <string name="msg_delete">Excluir %1$s \"%2$s\"</string>
-    <string name="msg_delete_button">Excluir %1$s&#8230;</string>
+    <string name="msg_delete_button">Excluir&#8230;</string>
     <string name="msg_create_new_title">Criar nova %s</string>
-    <string name="msg_create_new">Criar nova %s&#8230;</string>
+    <string name="msg_create_new">Criar nova&#8230;</string>
     <string name="msg_add">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas.</string>
     <string name="msg_play">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas, e inicia sua reprodução.</string>
     <string name="msg_error_download_path">Não foi possível acessar a pasta de downloads :(</string>
