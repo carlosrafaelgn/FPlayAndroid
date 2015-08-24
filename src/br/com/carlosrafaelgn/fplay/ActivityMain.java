@@ -1385,10 +1385,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				final Song s = Player.localSong;
 				int v = 0;
 				if (s != null && s.lengthMS > 0) {
-					if (m >= 214740) //avoid overflow! ;)
-						v = (int)(((long)m * (long)MAX_SEEK) / (long)s.lengthMS);
-					else
-						v = (m * MAX_SEEK) / s.lengthMS;
+					//avoid overflow! ;)
+					v = ((m >= 214740) ?
+						(int)(((long)m * (long)MAX_SEEK) / (long)s.lengthMS) :
+						((m * MAX_SEEK) / s.lengthMS));
 				}
 				barSeek.setText(timeBuilder.toString());
 				barSeek.setValue(v);
