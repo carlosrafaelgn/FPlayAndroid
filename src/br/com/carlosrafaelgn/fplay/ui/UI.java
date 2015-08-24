@@ -103,7 +103,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 77;
+	public static final int VERSION_CODE = 78;
 	
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -1371,18 +1371,18 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	public static void showNextStartupMsg(Activity activity) {
-		if (msgStartup >= 21) {
-			msgStartup = 21;
+		if (msgStartup >= 22) {
+			msgStartup = 22;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 21;
+		msgStartup = 22;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.animations).toString() + "\n- " + activity.getText(R.string.border).toString() + "\n\n" + activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.repeat_none).toString() + "\n- " + activity.getText(R.string.animations).toString() + "\n- " + activity.getText(R.string.border).toString() + "\n\n" + activity.getText(R.string.visualizer).toString() + ": Bluetooth + Arduino! :D\n\n" + activity.getText(R.string.check_it_out).toString();
 		prepareDialogAndShow((new AlertDialog.Builder(activity))
 			.setTitle(activity.getText(title))
 			.setView(createDialogView(activity, content))
