@@ -1356,15 +1356,21 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//had a chance to be called, then playing would be false, when in fact,
 			//we want resumePlaybackAfterFocusGain to remain true (and the audio sink
 			//must be untouched)
+			//also because of that, we must take resumePlaybackAfterFocusGain into
+			//consideration here, because _fullCleanup always sets it to false
+			final boolean oldResumePlaybackAfterFocusGain = resumePlaybackAfterFocusGain;
 			final boolean resume = (localPlaying || localPlayerState == PLAYER_STATE_PREPARING);
 			hasFocus = false;
 			_storeSongTime();
 			_fullCleanup();
 			silenceMode = SILENCE_FOCUS;
-			if (resume) {
+			if (resume || oldResumePlaybackAfterFocusGain)
 				resumePlaybackAfterFocusGain = true;
+			//change audioSinkBeforeFocusLoss only at the first time we lose focus!
+			//(if we lose focus several times in row, before we actually have had
+			//chance to play at least once, resume will be false)
+			if (resume)
 				audioSinkBeforeFocusLoss = audioSink;
-			}
 			_updateState(false, null);
 			break;
 		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
