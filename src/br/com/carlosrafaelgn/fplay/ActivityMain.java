@@ -467,7 +467,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	@Override
-	public void onPlayerAudioSinkChanged(int audioSink) {
+	public void onPlayerAudioSinkChanged() {
 		//when changing the output, the global volume usually changes
 		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
 			updateVolumeDisplay(Integer.MIN_VALUE);

@@ -35,21 +35,31 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Virtualizer {
-	private static int sessionId = Integer.MIN_VALUE, strength;
-	private static boolean enabled, strengthSupported, supported;
+	private static int sessionId = Integer.MIN_VALUE, strength, strength_wire, strength_bt;
+	private static boolean enabled, enabled_wire, enabled_bt, strengthSupported, supported;
 	private static android.media.audiofx.Virtualizer theVirtualizer;
-	
+
 	static void loadConfig(SerializableMap opts) {
-		enabled = (opts.hasBits() ? opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED) : opts.getBoolean(Player.OPT_VIRTUALIZER_ENABLED));
+		enabled = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
+		//use the regular enabled flag as the default for the new presets
+		enabled_wire = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED_WIRE, enabled);
+		enabled_bt = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED_BT, enabled);
 		strength = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH);
+		//use the regular strength as the default for the new presets
+		strength_wire = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH_WIRE, strength);
+		strength_bt = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH_BT, strength);
 	}
-	
+
 	static void saveConfig(SerializableMap opts) {
 		opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED, enabled);
+		opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED_WIRE, enabled_wire);
+		opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED_BT, enabled_bt);
 		opts.put(Player.OPT_VIRTUALIZER_STRENGTH, strength);
+		opts.put(Player.OPT_VIRTUALIZER_STRENGTH_WIRE, strength_wire);
+		opts.put(Player.OPT_VIRTUALIZER_STRENGTH_BT, strength_bt);
 	}
-	
-	static void initialize(int newSessionId) {
+
+	static void _initialize(int newSessionId) {
 		if (newSessionId != Integer.MIN_VALUE)
 			sessionId = newSessionId;
 		try {
@@ -60,8 +70,8 @@ public final class Virtualizer {
 			supported = false;
 		}
 	}
-	
-	static void release() {
+
+	static void _release() {
 		if (theVirtualizer != null) {
 			try {
 				theVirtualizer.release();
@@ -71,54 +81,112 @@ public final class Virtualizer {
 			theVirtualizer = null;
 		}
 	}
-	
+
 	public static boolean isSupported() {
 		return supported;
 	}
 
-	public static boolean isEnabled() {
-		return enabled;
-	}
-	
-	static void setEnabled(boolean enabled) {
-		Virtualizer.enabled = enabled;
-		if (theVirtualizer != null) {
-			try {
-				if (!enabled) {
-					theVirtualizer.setEnabled(false);
-				} else if (sessionId != Integer.MIN_VALUE) {
-					if (!strengthSupported)
-						strength = 1000;
-					commit();
-					theVirtualizer.setEnabled(true);
-				}
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			Virtualizer.enabled = theVirtualizer.getEnabled();
-		}
+	public static boolean isEnabled(int audioSink) {
+		return ((audioSink == Player.AUDIO_SINK_WIRE) ? enabled_wire : ((audioSink == Player.AUDIO_SINK_BT) ? enabled_bt : enabled));
 	}
 
-	public static int getStrength() {
-		return strength;
+	public static int getMaxStrength() {
+		return 1000;
 	}
-	
-	public static void setStrength(int strength) {
+
+	public static int getStrength(int audioSink) {
+		return ((audioSink == Player.AUDIO_SINK_WIRE) ? strength_wire : ((audioSink == Player.AUDIO_SINK_BT) ? strength_bt : strength));
+	}
+
+	public static void setStrength(int strength, int audioSink) {
 		if (strength > 1000)
 			strength = 1000;
 		else if (strength < 0)
 			strength = 0;
-		Virtualizer.strength = strength;
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			Virtualizer.strength_wire = strength;
+			break;
+		case Player.AUDIO_SINK_BT:
+			Virtualizer.strength_bt = strength;
+			break;
+		default:
+			Virtualizer.strength = strength;
+			break;
+		}
 	}
 
-	static void commit() {
-		if (theVirtualizer != null) {
-			try {
+	static void _setEnabled(boolean enabled, int audioSink) {
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			Virtualizer.enabled_wire = enabled;
+			break;
+		case Player.AUDIO_SINK_BT:
+			Virtualizer.enabled_bt = enabled;
+			break;
+		default:
+			Virtualizer.enabled = enabled;
+			break;
+		}
+		if (theVirtualizer == null || audioSink != Player.audioSinkUsedInEffects)
+			return;
+		try {
+			if (!enabled) {
+				theVirtualizer.setEnabled(false);
+			} else if (sessionId != Integer.MIN_VALUE) {
+				if (!strengthSupported) {
+					switch (audioSink) {
+					case Player.AUDIO_SINK_WIRE:
+						strength_wire = 1000;
+						break;
+					case Player.AUDIO_SINK_BT:
+						strength_bt = 1000;
+						break;
+					default:
+						strength = 1000;
+						break;
+					}
+				}
+				_commit(audioSink);
+				theVirtualizer.setEnabled(true);
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		enabled = theVirtualizer.getEnabled();
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			Virtualizer.enabled_wire = enabled;
+			break;
+		case Player.AUDIO_SINK_BT:
+			Virtualizer.enabled_bt = enabled;
+			break;
+		default:
+			Virtualizer.enabled = enabled;
+			break;
+		}
+	}
+
+	static void _commit(int audioSink) {
+		if (theVirtualizer == null || audioSink != Player.audioSinkUsedInEffects)
+			return;
+		try {
+			switch (audioSink) {
+			case Player.AUDIO_SINK_WIRE:
+				theVirtualizer.setStrength(strengthSupported ? (short)strength_wire : (short)((strength_wire == 0) ? 0 : 1000));
+				strength_wire = theVirtualizer.getRoundedStrength();
+				break;
+			case Player.AUDIO_SINK_BT:
+				theVirtualizer.setStrength(strengthSupported ? (short)strength_bt : (short)((strength_bt == 0) ? 0 : 1000));
+				strength_bt = theVirtualizer.getRoundedStrength();
+				break;
+			default:
 				theVirtualizer.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
 				strength = theVirtualizer.getRoundedStrength();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
+				break;
 			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 }

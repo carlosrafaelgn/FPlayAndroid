@@ -35,21 +35,31 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class BassBoost {
-	private static int sessionId = Integer.MIN_VALUE, strength;
-	private static boolean enabled, strengthSupported, supported;
+	private static int sessionId = Integer.MIN_VALUE, strength, strength_wire, strength_bt;
+	private static boolean enabled, enabled_wire, enabled_bt, strengthSupported, supported;
 	private static android.media.audiofx.BassBoost theBooster;
 	
 	static void loadConfig(SerializableMap opts) {
-		enabled = (opts.hasBits() ? opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED) : opts.getBoolean(Player.OPT_BASSBOOST_ENABLED));
+		enabled = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
+		//use the regular enabled flag as the default for the new presets
+		enabled_wire = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED_WIRE, enabled);
+		enabled_bt = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED_BT, enabled);
 		strength = opts.getInt(Player.OPT_BASSBOOST_STRENGTH);
+		//use the regular strength as the default for the new presets
+		strength_wire = opts.getInt(Player.OPT_BASSBOOST_STRENGTH_WIRE, strength);
+		strength_bt = opts.getInt(Player.OPT_BASSBOOST_STRENGTH_BT, strength);
 	}
-	
+
 	static void saveConfig(SerializableMap opts) {
 		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED, enabled);
+		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED_WIRE, enabled_wire);
+		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED_BT, enabled_bt);
 		opts.put(Player.OPT_BASSBOOST_STRENGTH, strength);
+		opts.put(Player.OPT_BASSBOOST_STRENGTH_WIRE, strength_wire);
+		opts.put(Player.OPT_BASSBOOST_STRENGTH_BT, strength_bt);
 	}
-	
-	static void initialize(int newSessionId) {
+
+	static void _initialize(int newSessionId) {
 		if (newSessionId != Integer.MIN_VALUE)
 			sessionId = newSessionId;
 		try {
@@ -61,8 +71,8 @@ public final class BassBoost {
 			supported = false;
 		}
 	}
-	
-	static void release() {
+
+	static void _release() {
 		if (theBooster != null) {
 			try {
 				theBooster.release();
@@ -72,58 +82,112 @@ public final class BassBoost {
 			theBooster = null;
 		}
 	}
-	
+
 	public static boolean isSupported() {
 		return supported;
 	}
 
-	public static boolean isEnabled() {
-		return enabled;
+	public static boolean isEnabled(int audioSink) {
+		return ((audioSink == Player.AUDIO_SINK_WIRE) ? enabled_wire : ((audioSink == Player.AUDIO_SINK_BT) ? enabled_bt : enabled));
 	}
-	
-	static void setEnabled(boolean enabled) {
-		BassBoost.enabled = enabled;
-		if (theBooster != null) {
-			try {
-				if (!enabled) {
-					theBooster.setEnabled(false);
-				} else if (sessionId != Integer.MIN_VALUE) {
-					if (!strengthSupported)
-						strength = 1000;
-					commit();
-					theBooster.setEnabled(true);
-				}
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			BassBoost.enabled = theBooster.getEnabled();
-		}
-	}
-	
+
 	public static int getMaxStrength() {
 		return 1000;
 	}
-	
-	public static int getStrength() {
-		return strength;
+
+	public static int getStrength(int audioSink) {
+		return ((audioSink == Player.AUDIO_SINK_WIRE) ? strength_wire : ((audioSink == Player.AUDIO_SINK_BT) ? strength_bt : strength));
 	}
-	
-	public static void setStrength(int strength) {
+
+	public static void setStrength(int strength, int audioSink) {
 		if (strength > 1000)
 			strength = 1000;
 		else if (strength < 0)
 			strength = 0;
-		BassBoost.strength = strength;
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			BassBoost.strength_wire = strength;
+			break;
+		case Player.AUDIO_SINK_BT:
+			BassBoost.strength_bt = strength;
+			break;
+		default:
+			BassBoost.strength = strength;
+			break;
+		}
 	}
 
-	static void commit() {
-		if (theBooster != null) {
-			try {
+	static void _setEnabled(boolean enabled, int audioSink) {
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			BassBoost.enabled_wire = enabled;
+			break;
+		case Player.AUDIO_SINK_BT:
+			BassBoost.enabled_bt = enabled;
+			break;
+		default:
+			BassBoost.enabled = enabled;
+			break;
+		}
+		if (theBooster == null || audioSink != Player.audioSinkUsedInEffects)
+			return;
+		try {
+			if (!enabled) {
+				theBooster.setEnabled(false);
+			} else if (sessionId != Integer.MIN_VALUE) {
+				if (!strengthSupported) {
+					switch (audioSink) {
+					case Player.AUDIO_SINK_WIRE:
+						strength_wire = 1000;
+						break;
+					case Player.AUDIO_SINK_BT:
+						strength_bt = 1000;
+						break;
+					default:
+						strength = 1000;
+						break;
+					}
+				}
+				_commit(audioSink);
+				theBooster.setEnabled(true);
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		enabled = theBooster.getEnabled();
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			BassBoost.enabled_wire = enabled;
+			break;
+		case Player.AUDIO_SINK_BT:
+			BassBoost.enabled_bt = enabled;
+			break;
+		default:
+			BassBoost.enabled = enabled;
+			break;
+		}
+	}
+
+	static void _commit(int audioSink) {
+		if (theBooster == null || audioSink != Player.audioSinkUsedInEffects)
+			return;
+		try {
+			switch (audioSink) {
+			case Player.AUDIO_SINK_WIRE:
+				theBooster.setStrength(strengthSupported ? (short)strength_wire : (short)((strength_wire == 0) ? 0 : 1000));
+				strength_wire = theBooster.getRoundedStrength();
+				break;
+			case Player.AUDIO_SINK_BT:
+				theBooster.setStrength(strengthSupported ? (short)strength_bt : (short)((strength_bt == 0) ? 0 : 1000));
+				strength_bt = theBooster.getRoundedStrength();
+				break;
+			default:
 				theBooster.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
 				strength = theBooster.getRoundedStrength();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
+				break;
 			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 }

@@ -132,7 +132,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		void onPlayerControlModeChanged(boolean controlMode);
 		void onPlayerGlobalVolumeChanged(int volume);
-		void onPlayerAudioSinkChanged(int audioSink);
+		void onPlayerAudioSinkChanged();
 		void onPlayerMediaButtonPrevious();
 		void onPlayerMediaButtonNext();
 	}
@@ -249,6 +249,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static float volumeMultiplier;
 
 	private static int audioSink, audioSinkBeforeFocusLoss;
+	static int audioSinkUsedInEffects;
+	public static int localAudioSinkUsedInEffects;
 
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
@@ -281,13 +283,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//this cleanup must be done, as sometimes, when changing between two output types,
 				//the effects are lost...
 				_fullCleanup();
-				_checkAudioSink(false, false);
+				_checkAudioSink(false, false, true);
 				break;
 			case MSG_FADE_IN_VOLUME_TIMER:
 				_processFadeInVolumeTimer(msg.arg1);
 				break;
 			case MSG_AUDIO_SINK_CHANGED:
-				_checkAudioSink(msg.arg1 != 0, true);
+				_checkAudioSink(msg.arg1 != 0, true, true);
 				break;
 			case MSG_PAUSE:
 				if (playing)
@@ -321,16 +323,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_nextMayHaveChanged((Song)msg.obj);
 				break;
 			case MSG_ENABLE_EFFECTS:
-				_enableEffects(msg.arg1, (Runnable)msg.obj);
+				_enableEffects(msg.arg1, msg.arg2, (Runnable)msg.obj);
 				break;
 			case MSG_COMMIT_EQUALIZER:
-				Equalizer.commit(msg.arg1);
+				Equalizer._commit(msg.arg1, msg.arg2);
 				break;
 			case MSG_COMMIT_BASS_BOOST:
-				BassBoost.commit();
+				BassBoost._commit(msg.arg2);
 				break;
 			case MSG_COMMIT_VIRTUALIZER:
-				Virtualizer.commit();
+				Virtualizer._commit(msg.arg2);
 				break;
 			case MSG_SONG_LIST_DESERIALIZED:
 				_songListDeserialized(msg.obj);
@@ -347,8 +349,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				prePlay(msg.arg1);
 				break;
 			case MSG_AUDIO_SINK_CHANGED:
+				localAudioSinkUsedInEffects = audioSink;
 				if (observer != null)
-					observer.onPlayerAudioSinkChanged(audioSink);
+					observer.onPlayerAudioSinkChanged();
 				break;
 			case MSG_UPDATE_STATE:
 				updateState(msg.arg1, msg.arg2, (Song)msg.obj);
@@ -505,25 +508,26 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					looper = Looper.myLooper();
 					handler = new CoreHandler();
 					_initializePlayers();
-					Equalizer.initialize(player.getAudioSessionId());
-					Equalizer.release();
-					BassBoost.initialize(player.getAudioSessionId());
-					BassBoost.release();
-					Virtualizer.initialize(player.getAudioSessionId());
-					Virtualizer.release();
-					if (Equalizer.isEnabled()) {
-						Equalizer.initialize(player.getAudioSessionId());
-						Equalizer.setEnabled(true);
+					Equalizer._initialize(player.getAudioSessionId());
+					Equalizer._release();
+					BassBoost._initialize(player.getAudioSessionId());
+					BassBoost._release();
+					Virtualizer._initialize(player.getAudioSessionId());
+					Virtualizer._release();
+					_checkAudioSink(false, false, false);
+					audioSinkUsedInEffects = audioSink;
+					if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
+						Equalizer._initialize(player.getAudioSessionId());
+						Equalizer._setEnabled(true, audioSinkUsedInEffects);
 					}
-					if (BassBoost.isEnabled()) {
-						BassBoost.initialize(player.getAudioSessionId());
-						BassBoost.setEnabled(true);
+					if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
+						BassBoost._initialize(player.getAudioSessionId());
+						BassBoost._setEnabled(true, audioSinkUsedInEffects);
 					}
-					if (Virtualizer.isEnabled()) {
-						Virtualizer.initialize(player.getAudioSessionId());
-						Virtualizer.setEnabled(true);
+					if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
+						Virtualizer._initialize(player.getAudioSessionId());
+						Virtualizer._setEnabled(true, audioSinkUsedInEffects);
 					}
-					_checkAudioSink(false, false);
 					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
 					Looper.loop();
 					if (song != null) {
@@ -806,28 +810,28 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	public static void enableEffects(boolean equalizer, boolean bassBoost, boolean virtualizer, Runnable callback) {
+	public static void enableEffects(boolean equalizer, boolean bassBoost, boolean virtualizer, int audioSink, Runnable callback) {
 		if (state != STATE_ALIVE)
 			return;
-		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_EFFECTS, (equalizer ? 1 : 0) | (bassBoost ? 2 : 0) | (virtualizer ? 4 : 0), 0, callback), SystemClock.uptimeMillis());
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_EFFECTS, (equalizer ? 1 : 0) | (bassBoost ? 2 : 0) | (virtualizer ? 4 : 0), audioSink, callback), SystemClock.uptimeMillis());
 	}
 
-	public static void commitEqualizer(int band) {
+	public static void commitEqualizer(int band, int audioSink) {
 		if (state != STATE_ALIVE)
 			return;
-		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_EQUALIZER, band, 0), SystemClock.uptimeMillis());
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_EQUALIZER, band, audioSink), SystemClock.uptimeMillis());
 	}
 
-	public static void commitBassBoost() {
+	public static void commitBassBoost(int audioSink) {
 		if (state != STATE_ALIVE)
 			return;
-		handler.sendEmptyMessageAtTime(MSG_COMMIT_BASS_BOOST, SystemClock.uptimeMillis());
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_BASS_BOOST, 0, audioSink), SystemClock.uptimeMillis());
 	}
 
-	public static void commitVirtualizer() {
+	public static void commitVirtualizer(int audioSink) {
 		if (state != STATE_ALIVE)
 			return;
-		handler.sendEmptyMessageAtTime(MSG_COMMIT_VIRTUALIZER, SystemClock.uptimeMillis());
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_VIRTUALIZER, 0, audioSink), SystemClock.uptimeMillis());
 	}
 
 	public static boolean isPreparing() {
@@ -939,9 +943,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		silenceMode = SILENCE_NORMAL;
 		nextSong = null;
 		postPlayPending = false;
-		Equalizer.release();
-		BassBoost.release();
-		Virtualizer.release();
+		Equalizer._release();
+		BassBoost._release();
+		Virtualizer._release();
 	}
 
 	private static void _initializePlayers() {
@@ -1052,26 +1056,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (playerState == PLAYER_STATE_PREPARING)
 				//probably the user is changing songs too fast!
 				_partialCleanup();
-			if (player == null || nextPlayer == null) {
+			if (player == null || nextPlayer == null || audioSinkUsedInEffects != audioSink) {
 				_initializePlayers();
-				//don't even ask.......
-				//(a few devices won't disable one effect while the other effect is enabled)
-				Equalizer.release();
-				BassBoost.release();
-				Virtualizer.release();
-				final int sessionId = player.getAudioSessionId();
-				if (Equalizer.isEnabled()) {
-					Equalizer.initialize(sessionId);
-					Equalizer.setEnabled(true);
-				}
-				if (BassBoost.isEnabled()) {
-					BassBoost.initialize(sessionId);
-					BassBoost.setEnabled(true);
-				}
-				if (Virtualizer.isEnabled()) {
-					Virtualizer.initialize(sessionId);
-					Virtualizer.setEnabled(true);
-				}
+				_reinitializeEffects();
 			}
 			player.reset();
 			postPlayPending = false;
@@ -1290,35 +1277,65 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static void _enableEffects(int arg1, Runnable callback) {
+	private static void _enableEffects(int enabledFlags, int audioSink, Runnable callback) {
 		//don't even ask.......
 		//(a few devices won't disable one effect while the other effect is enabled)
-		Equalizer.release();
-		BassBoost.release();
-		Virtualizer.release();
-		if ((arg1 & 1) != 0) {
-			if (player != null)
-				Equalizer.initialize(player.getAudioSessionId());
-			Equalizer.setEnabled(true);
-		} else {
-			Equalizer.setEnabled(false);
+		audioSinkUsedInEffects = Player.audioSink;
+		if (audioSinkUsedInEffects != audioSink) {
+			//just change the state, as these settings will not be actually applied
+			Equalizer._setEnabled((enabledFlags & 1) != 0, audioSink);
+			BassBoost._setEnabled((enabledFlags & 2) != 0, audioSink);
+			Virtualizer._setEnabled((enabledFlags & 4) != 0, audioSink);
+			return;
 		}
-		if ((arg1 & 2) != 0) {
+		Equalizer._release();
+		BassBoost._release();
+		Virtualizer._release();
+		if ((enabledFlags & 1) != 0) {
 			if (player != null)
-				BassBoost.initialize(player.getAudioSessionId());
-			BassBoost.setEnabled(true);
+				Equalizer._initialize(player.getAudioSessionId());
+			Equalizer._setEnabled(true, audioSink);
 		} else {
-			BassBoost.setEnabled(false);
+			Equalizer._setEnabled(false, audioSink);
 		}
-		if ((arg1 & 4) != 0) {
+		if ((enabledFlags & 2) != 0) {
 			if (player != null)
-				Virtualizer.initialize(player.getAudioSessionId());
-			Virtualizer.setEnabled(true);
+				BassBoost._initialize(player.getAudioSessionId());
+			BassBoost._setEnabled(true, audioSink);
 		} else {
-			Virtualizer.setEnabled(false);
+			BassBoost._setEnabled(false, audioSink);
+		}
+		if ((enabledFlags & 4) != 0) {
+			if (player != null)
+				Virtualizer._initialize(player.getAudioSessionId());
+			Virtualizer._setEnabled(true, audioSink);
+		} else {
+			Virtualizer._setEnabled(false, audioSink);
 		}
 		if (callback != null)
 			MainHandler.postToMainThread(callback);
+	}
+
+	private static void _reinitializeEffects() {
+		//don't even ask.......
+		//(a few devices won't disable one effect while the other effect is enabled)
+		Equalizer._release();
+		BassBoost._release();
+		Virtualizer._release();
+		final int sessionId = player.getAudioSessionId();
+		audioSinkUsedInEffects = audioSink;
+		if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
+			Equalizer._initialize(sessionId);
+			Equalizer._setEnabled(true, audioSinkUsedInEffects);
+		}
+		if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
+			BassBoost._initialize(sessionId);
+			BassBoost._setEnabled(true, audioSinkUsedInEffects);
+		}
+		if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
+			Virtualizer._initialize(sessionId);
+			Virtualizer._setEnabled(true, audioSinkUsedInEffects);
+		}
 	}
 
 	@Override
@@ -1674,14 +1691,20 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_BLUETOOTHVISUALIZERCONFIG = 0x0035;
 
 	//values 0x01xx are shared among all effects
-	static final int OPT_EQUALIZER_ENABLED = 0x0100;
-	static final int OPT_EQUALIZER_PRESET = 0x0101;
+	//static final int OPT_EQUALIZER_ENABLED = 0x0100;
+	//static final int OPT_EQUALIZER_PRESET = 0x0101;
 	static final int OPT_EQUALIZER_LEVELCOUNT = 0x0102;
 	static final int OPT_EQUALIZER_LEVEL0 = 0x20000;
-	static final int OPT_BASSBOOST_ENABLED = 0x0110;
+	static final int OPT_EQUALIZER_LEVEL0_WIRE = 0x21000;
+	static final int OPT_EQUALIZER_LEVEL0_BT = 0x22000;
+	//static final int OPT_BASSBOOST_ENABLED = 0x0110;
 	static final int OPT_BASSBOOST_STRENGTH = 0x0111;
-	static final int OPT_VIRTUALIZER_ENABLED = 0x0112;
+	//static final int OPT_VIRTUALIZER_ENABLED = 0x0112;
 	static final int OPT_VIRTUALIZER_STRENGTH = 0x0113;
+	static final int OPT_BASSBOOST_STRENGTH_WIRE = 0x0114;
+	static final int OPT_VIRTUALIZER_STRENGTH_WIRE = 0x0115;
+	static final int OPT_BASSBOOST_STRENGTH_BT = 0x0116;
+	static final int OPT_VIRTUALIZER_STRENGTH_BT = 0x0117;
 
 	private static final int OPTBIT_CONTROLMODE = 0;
 	private static final int OPTBIT_BASSBOOSTMODE = 1;
@@ -1730,6 +1753,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_VISUALIZER_PORTRAIT = 40;
 	private static final int OPTBIT_REPEATNONE = 41;
 	private static final int OPTBIT_TURNOFFPLAYLIST = 42;
+	static final int OPTBIT_EQUALIZER_ENABLED_WIRE = 43;
+	static final int OPTBIT_BASSBOOST_ENABLED_WIRE = 44;
+	static final int OPTBIT_VIRTUALIZER_ENABLED_WIRE = 45;
+	static final int OPTBIT_EQUALIZER_ENABLED_BT = 46;
+	static final int OPTBIT_BASSBOOST_ENABLED_BT = 47;
+	static final int OPTBIT_VIRTUALIZER_ENABLED_BT = 48;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2688,7 +2717,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@SuppressWarnings("deprecation")
-	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean triggerNoisy) {
+	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean triggerNoisy, boolean reinitializeEffects) {
 		if (audioManager == null)
 			return;
 		final int oldAudioSink = audioSink;
@@ -2715,7 +2744,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		try {
 			//this whole A2dp thing is still not enough, as isA2dpPlaying()
 			//will return false if there is nothing playing, even in scenarios
-			//A2dp will certainly be used for playback later...
+			//where A2dp will certainly be used for playback later...
 			/*if (audioManager.isBluetoothA2dpOn()) {
 				//the device being on is not enough! we must be sure
 				//if it is actually being used for transmission...
@@ -2746,6 +2775,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 							ex.printStackTrace();
 						}
 					}
+					if (reinitializeEffects && audioSinkUsedInEffects != audioSink && player != null)
+						_reinitializeEffects();
 					_playPause();
 				}
 				break;
@@ -2760,6 +2791,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			}
 		}
+		if (reinitializeEffects && audioSinkUsedInEffects != audioSink && player != null)
+			_reinitializeEffects();
 		//I am calling the observer even if no changes have been detected, because
 		//I myself don't trust this code will correctly work as expected on every device....
 		if (localHandler != null)

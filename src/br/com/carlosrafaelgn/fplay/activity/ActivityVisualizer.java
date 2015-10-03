@@ -625,7 +625,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	}
 	
 	@Override
-	public void onPlayerAudioSinkChanged(int audioSink) {
+	public void onPlayerAudioSinkChanged() {
 		if (fxVisualizer != null)
 			fxVisualizer.resetAndResume();
 	}
