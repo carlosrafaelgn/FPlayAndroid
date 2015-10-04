@@ -42,27 +42,98 @@ public final class Equalizer {
 	private static int[] bandLevels, bandLevels_wire, bandLevels_bt, bandFrequencies;
 	private static android.media.audiofx.Equalizer theEqualizer;
 
-	public static void deserializePreset(SerializableMap opts) {
+	public static void deserialize(SerializableMap opts, int audioSink) {
+		//use OPTBIT_EQUALIZER_ENABLED, OPT_EQUALIZER_LEVELCOUNT and OPT_EQUALIZER_LEVEL0 for all audio sinks!!!
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			enabled_wire = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
+			break;
+		case Player.AUDIO_SINK_BT:
+			enabled_bt = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
+			break;
+		default:
+			enabled = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
+			break;
+		}
 		int count = opts.getInt(Player.OPT_EQUALIZER_LEVELCOUNT);
 		if (count > 0) {
 			if (count > 512)
 				count = 512;
-			if (bandLevels == null)
+			int[] levels;
+			switch (audioSink) {
+			case Player.AUDIO_SINK_WIRE:
+				if (bandLevels_wire == null || bandLevels_wire.length != count)
+					bandLevels_wire = new int[count];
+				levels = bandLevels_wire;
+				break;
+			case Player.AUDIO_SINK_BT:
+				if (bandLevels_bt == null || bandLevels_bt.length != count)
+					bandLevels_bt = new int[count];
+				levels = bandLevels_bt;
+				break;
+			default:
+				if (bandLevels == null || bandLevels.length != count)
+					bandLevels = new int[count];
+				levels = bandLevels;
+				break;
+			}
+			for (int i = levels.length - 1; i >= 0; i--)
+				levels[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0 + i);
+		}
+	}
+
+	public static void serialize(SerializableMap opts, int audioSink) {
+		//use OPTBIT_EQUALIZER_ENABLED, OPT_EQUALIZER_LEVELCOUNT and OPT_EQUALIZER_LEVEL0 for all audio sinks!!!
+		int[] levels;
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled_wire);
+			levels = bandLevels_wire;
+			break;
+		case Player.AUDIO_SINK_BT:
+			opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled_bt);
+			levels = bandLevels_bt;
+			break;
+		default:
+			opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled);
+			levels = bandLevels;
+			break;
+		}
+		opts.put(Player.OPT_EQUALIZER_LEVELCOUNT, (levels != null) ? levels.length : 0);
+		if (levels != null) {
+			for (int i = levels.length - 1; i >= 0; i--)
+				opts.put(Player.OPT_EQUALIZER_LEVEL0 + i, levels[i]);
+		}
+	}
+
+	static void loadConfig(SerializableMap opts) {
+		enabled = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
+		//use the regular enabled flag as the default for the new presets
+		enabled_wire = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE, enabled);
+		enabled_bt = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED_BT, enabled);
+		int count = opts.getInt(Player.OPT_EQUALIZER_LEVELCOUNT);
+		if (count > 0) {
+			if (count > 512)
+				count = 512;
+			if (bandLevels == null || bandLevels.length != count)
 				bandLevels = new int[count];
-			if (bandLevels_wire == null || bandLevels_wire.length != bandLevels.length)
-				bandLevels_wire = new int[bandLevels.length];
-			if (bandLevels_bt == null || bandLevels_bt.length != bandLevels.length)
-				bandLevels_bt = new int[bandLevels.length];
+			if (bandLevels_wire == null || bandLevels_wire.length != count)
+				bandLevels_wire = new int[count];
+			if (bandLevels_bt == null || bandLevels_bt.length != count)
+				bandLevels_bt = new int[count];
 			for (int i = bandLevels.length - 1; i >= 0; i--) {
 				bandLevels[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0 + i, bandLevels[i]);
 				//use the regular levels as the default for the new presets
 				bandLevels_wire[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0_WIRE + i, bandLevels[i]);
 				bandLevels_bt[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0_BT + i, bandLevels[i]);
 			}
-		}		
+		}
 	}
 
-	public static void serializePreset(SerializableMap opts) {
+	static void saveConfig(SerializableMap opts) {
+		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled);
+		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE, enabled_wire);
+		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED_BT, enabled_bt);
 		opts.put(Player.OPT_EQUALIZER_LEVELCOUNT, (bandLevels != null) ? bandLevels.length : 0);
 		if (bandLevels != null) {
 			for (int i = bandLevels.length - 1; i >= 0; i--)
@@ -76,21 +147,6 @@ public final class Equalizer {
 			for (int i = bandLevels_bt.length - 1; i >= 0; i--)
 				opts.put(Player.OPT_EQUALIZER_LEVEL0_BT + i, bandLevels_bt[i]);
 		}
-	}
-
-	static void loadConfig(SerializableMap opts) {
-		enabled = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
-		//use the regular enabled flag as the default for the new presets
-		enabled_wire = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE, enabled);
-		enabled_bt = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED_BT, enabled);
-		deserializePreset(opts);
-	}
-
-	static void saveConfig(SerializableMap opts) {
-		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled);
-		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE, enabled_wire);
-		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED_BT, enabled_bt);
-		serializePreset(opts);
 	}
 
 	static void _initialize(int newSessionId) {

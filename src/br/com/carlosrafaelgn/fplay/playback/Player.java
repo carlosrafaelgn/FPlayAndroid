@@ -187,7 +187,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_COMMIT_EQUALIZER = 0x0116;
 	private static final int MSG_COMMIT_BASS_BOOST = 0x0117;
 	private static final int MSG_COMMIT_VIRTUALIZER = 0x0118;
-	private static final int MSG_TURN_OFF_NOW = 0x0119;
+	private static final int MSG_COMMIT_ALL_EFFECTS = 0x0119;
+	private static final int MSG_TURN_OFF_NOW = 0x011A;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -332,6 +333,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				BassBoost._commit(msg.arg2);
 				break;
 			case MSG_COMMIT_VIRTUALIZER:
+				Virtualizer._commit(msg.arg2);
+				break;
+			case MSG_COMMIT_ALL_EFFECTS:
+				Equalizer._commit(-1, msg.arg2);
+				BassBoost._commit(msg.arg2);
 				Virtualizer._commit(msg.arg2);
 				break;
 			case MSG_SONG_LIST_DESERIALIZED:
@@ -832,6 +838,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_VIRTUALIZER, 0, audioSink), SystemClock.uptimeMillis());
+	}
+
+	public static void commitAllEffects(int audioSink) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_ALL_EFFECTS, 0, audioSink), SystemClock.uptimeMillis());
 	}
 
 	public static boolean isPreparing() {

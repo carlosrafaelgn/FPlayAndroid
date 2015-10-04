@@ -308,4 +308,8 @@
     <string name="bt_not_found">No Bluetooth devices were found :(</string>
     <string name="bt_null_device_name">(BT Device)</string>
 
+    <string name="loudspeaker">Гучномовець</string>
+    <string name="earphones">Навушники</string>
+    <string name="bluetooth">Bluetooth</string>
+
 </resources>

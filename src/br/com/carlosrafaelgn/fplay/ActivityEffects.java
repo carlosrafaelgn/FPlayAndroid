@@ -43,6 +43,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -55,11 +56,11 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
-public final class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener {
+public final class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener, Player.PlayerObserver {
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
 	private LinearLayout panelControls, panelEqualizer, panelBars;
 	private ViewGroup panelSecondary;
-	private BgButton chkEqualizer, chkBass, chkVirtualizer;//, chkReverb;
+	private BgButton chkEqualizer, chkBass, chkVirtualizer;
 	private BgButton btnGoBack, btnMenu, btnChangeEffect;
 	private int min, max, audioSink;
 	private int[] frequencies;
@@ -107,18 +108,16 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		if (!Player.bassBoostMode) {
-			UI.prepare(menu);
-			menu.add(0, MNU_ZEROPRESET, 0, R.string.zero_preset)
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_REMOVE));
-			menu.add(0, MNU_LOADPRESET, 1, R.string.load_preset)
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_LOAD));
-			menu.add(0, MNU_SAVEPRESET, 2, R.string.save_preset)
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_SAVE));
-		}
+		UI.prepare(menu);
+		menu.add(0, MNU_ZEROPRESET, 0, R.string.zero_preset)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_REMOVE));
+		menu.add(0, MNU_LOADPRESET, 1, R.string.load_preset)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_LOAD));
+		menu.add(0, MNU_SAVEPRESET, 2, R.string.save_preset)
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_SAVE));
 	}
 	
 	@Override
@@ -127,8 +126,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		case MNU_ZEROPRESET:
 			for (int i = Equalizer.getBandCount() - 1; i >= 0; i--)
 				Equalizer.setBandLevel(i, 0, audioSink);
-			Player.commitEqualizer(-1, audioSink);
-			updateBars();
+			BassBoost.setStrength(0, audioSink);
+			Virtualizer.setStrength(0, audioSink);
+			Player.commitAllEffects(audioSink);
+			updateEffects();
 			break;
 		case MNU_LOADPRESET:
 			startActivity(new ActivityFileSelection(getText(R.string.load_preset), MNU_LOADPRESET, false, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null, false);
@@ -246,10 +247,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		chkVirtualizer.setOnClickListener(this);
 		chkVirtualizer.setTextColor(UI.colorState_text_listitem_reactive);
 		chkVirtualizer.formatAsLabelledCheckBox();
-		/*chkReverb = (BgButton)findViewById(R.id.chkReverb);
-		chkReverb.setOnClickListener(this);
-		chkReverb.setTextColor(UI.colorState_text_listitem_reactive);
-		chkReverb.formatAsLabelledCheckBox();*/
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
@@ -271,15 +268,12 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		barBass.setInsideList(true);
 		barBass.setAdditionalContentDescription(getText(R.string.bass_boost).toString());
 		barVirtualizer = (BgSeekBar)findViewById(R.id.barVirtualizer);
-		barVirtualizer.setMax(BassBoost.getMaxStrength());
-		barVirtualizer.setValue(BassBoost.getStrength(audioSink));
-		barVirtualizer.setKeyIncrement(BassBoost.getMaxStrength() / 50);
+		barVirtualizer.setMax(Virtualizer.getMaxStrength());
+		barVirtualizer.setValue(Virtualizer.getStrength(audioSink));
+		barVirtualizer.setKeyIncrement(Virtualizer.getMaxStrength() / 50);
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
 		barVirtualizer.setAdditionalContentDescription(getText(R.string.virtualization).toString());
-		/*final TextView txtReverb = (TextView)findViewById(R.id.txtReverb);
-		txtReverb.setTypeface(UI.defaultTypeface);
-		txtReverb.setTextColor(UI.colorState_text_listitem_secondary_static);*/
 		LinearLayout.LayoutParams lp;
 		if (!UI.isLargeScreen && UI.isLandscape) {
 			if (btnChangeEffect != null) {
@@ -296,9 +290,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			lp = (LinearLayout.LayoutParams)chkVirtualizer.getLayoutParams();
 			lp.bottomMargin = 0;
 			chkVirtualizer.setLayoutParams(lp);
-			/*lp = (LinearLayout.LayoutParams)chkReverb.getLayoutParams();
-			lp.bottomMargin = 0;
-			chkReverb.setLayoutParams(lp);*/
 			lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
 			lp.bottomMargin = UI.controlMargin;
 			barBass.setLayoutParams(lp);
@@ -340,7 +331,17 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
 		prepareViewForMode(true);
 	}
-	
+
+	@Override
+	protected void onResume() {
+		Player.observer = this;
+	}
+
+	@Override
+	protected void onPause() {
+		Player.observer = null;
+	}
+
 	@Override
 	protected void onOrientationChanged() {
 		onCleanupLayout();
@@ -357,7 +358,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		chkEqualizer = null;
 		chkBass = null;
 		chkVirtualizer = null;
-		//chkReverb = null;
 		btnGoBack = null;
 		btnMenu = null;
 		btnChangeEffect = null;
@@ -418,7 +418,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		}
 	}
 	
-	private void updateBars() {
+	private void updateEffects() {
+		chkEqualizer.setChecked(Equalizer.isEnabled(audioSink));
 		if (bars != null && frequencies != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
 				final BgSeekBar bar = bars[i];
@@ -429,36 +430,34 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				}
 			}
 		}
+		chkBass.setChecked(BassBoost.isEnabled(audioSink));
+		barBass.setValue(BassBoost.getStrength(audioSink));
+		barBass.setText(format(BassBoost.getStrength(audioSink)));
+		chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
+		barVirtualizer.setValue(Virtualizer.getStrength(audioSink));
+		barVirtualizer.setText(format(Virtualizer.getStrength(audioSink)));
 	}
 	
 	private void prepareViewForMode(boolean isCreatingLayout) {
 		LinearLayout.LayoutParams lp;
 		final Context ctx = getApplication();
-		if (btnChangeEffect == null || Player.bassBoostMode) {
-			chkBass.setChecked(BassBoost.isEnabled(audioSink));
-			barBass.setValue(BassBoost.getStrength(audioSink));
-			barBass.setText(format(BassBoost.getStrength(audioSink)));
-			chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
-			barVirtualizer.setValue(Virtualizer.getStrength(audioSink));
-			barVirtualizer.setText(format(Virtualizer.getStrength(audioSink)));
-		}
+		updateEffects();
 		if (Player.bassBoostMode) {
 			UI.animationReset();
 			UI.animationAddViewToHide(panelEqualizer);
-			UI.animationAddViewToHide(btnMenu);
 			UI.animationAddViewToShow(panelSecondary);
 			UI.animationCommit(isCreatingLayout, null);
-			btnGoBack.setNextFocusRightId(R.id.chkBass);
 			btnGoBack.setNextFocusDownId(R.id.chkBass);
-			UI.setNextFocusForwardId(btnGoBack, R.id.chkBass);
-			btnChangeEffect.setNextFocusUpId(R.id.barVirtualizer);//R.id.chkReverb);
-			btnChangeEffect.setNextFocusLeftId(R.id.barVirtualizer);//R.id.chkReverb);
+			btnMenu.setNextFocusRightId(R.id.chkBass);
+			btnMenu.setNextFocusDownId(R.id.chkBass);
+			UI.setNextFocusForwardId(btnMenu, R.id.chkBass);
+			btnChangeEffect.setNextFocusUpId(R.id.barVirtualizer);
+			btnChangeEffect.setNextFocusLeftId(R.id.barVirtualizer);
 		} else {
 			if (btnChangeEffect != null) {
 				UI.animationReset();
 				UI.animationAddViewToHide(panelSecondary);
 				UI.animationAddViewToShow(panelEqualizer);
-				UI.animationAddViewToShow(btnMenu);
 				UI.animationCommit(isCreatingLayout, null);
 			}
 			chkEqualizer.setChecked(Equalizer.isEnabled(audioSink));
@@ -541,9 +540,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 					bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
 					UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);
 				}
-				btnGoBack.setNextFocusRightId(R.id.btnMenu);
 				btnGoBack.setNextFocusDownId(R.id.chkEqualizer);
-				UI.setNextFocusForwardId(btnGoBack, R.id.btnMenu);
+				btnMenu.setNextFocusRightId(R.id.chkEqualizer);
+				btnMenu.setNextFocusDownId(R.id.chkEqualizer);
+				UI.setNextFocusForwardId(btnMenu, R.id.chkEqualizer);
 				btnChangeEffect.setNextFocusUpId(bandCount);
 				btnChangeEffect.setNextFocusLeftId(bandCount);
 			} else {
@@ -564,13 +564,17 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		if (id == MNU_LOADPRESET) {
 			final SerializableMap opts = SerializableMap.deserialize(getApplication(), path);
 			if (opts != null) {
-				Equalizer.deserializePreset(opts);
-				Player.commitEqualizer(-1, audioSink);
-				updateBars();
+				Equalizer.deserialize(opts, audioSink);
+				BassBoost.deserialize(opts, audioSink);
+				Virtualizer.deserialize(opts, audioSink);
+				Player.commitAllEffects(audioSink);
+				updateEffects();
 			}
 		} else {
-			final SerializableMap opts = new SerializableMap(Equalizer.getBandCount());
-			Equalizer.serializePreset(opts);
+			final SerializableMap opts = new SerializableMap(Equalizer.getBandCount() << 1);
+			Equalizer.serialize(opts, audioSink);
+			BassBoost.serialize(opts, audioSink);
+			Virtualizer.serialize(opts, audioSink);
 			opts.serialize(getApplication(), path);
 		}
 	}
@@ -581,5 +585,31 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	
 	@Override
 	public void onPlayClicked(int id, String path, String name) {
+	}
+
+	@Override
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
+	}
+
+	@Override
+	public void onPlayerControlModeChanged(boolean controlMode) {
+	}
+
+	@Override
+	public void onPlayerGlobalVolumeChanged(int volume) {
+	}
+
+	@Override
+	public void onPlayerAudioSinkChanged() {
+		audioSink = Player.localAudioSinkUsedInEffects;
+		updateEffects();
+	}
+
+	@Override
+	public void onPlayerMediaButtonPrevious() {
+	}
+
+	@Override
+	public void onPlayerMediaButtonNext() {
 	}
 }

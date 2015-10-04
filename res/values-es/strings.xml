@@ -308,4 +308,8 @@
     <string name="bt_not_found">No se han encontrado dispositivos Bluetooth :(</string>
     <string name="bt_null_device_name">(Dispositivo BT)</string>
 
+    <string name="loudspeaker">Altoparlante</string>
+    <string name="earphones">Auriculares</string>
+    <string name="bluetooth">Bluetooth</string>
+
 </resources>

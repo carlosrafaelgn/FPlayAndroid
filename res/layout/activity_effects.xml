@@ -36,8 +36,7 @@
             android:nextFocusForward="@+id/chkEqualizer"
             android:nextFocusLeft="@+id/btnGoBack"
             android:nextFocusRight="@+id/chkEqualizer"
-            android:nextFocusUp="@+id/btnChangeEffect"
-            android:visibility="gone"/>
+            android:nextFocusUp="@+id/btnChangeEffect"/>
     </RelativeLayout>
 
     <LinearLayout
@@ -98,9 +97,9 @@
                 android:layout_marginBottom="8dp"
                 android:nextFocusDown="@+id/barBass"
                 android:nextFocusForward="@+id/barBass"
-                android:nextFocusLeft="@+id/btnGoBack"
+                android:nextFocusLeft="@+id/btnMenu"
                 android:nextFocusRight="@+id/barBass"
-                android:nextFocusUp="@+id/btnGoBack"
+                android:nextFocusUp="@+id/btnMenu"
                 android:text="@string/bass_boost"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar

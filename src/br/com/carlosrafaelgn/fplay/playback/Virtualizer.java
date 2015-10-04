@@ -39,6 +39,42 @@ public final class Virtualizer {
 	private static boolean enabled, enabled_wire, enabled_bt, strengthSupported, supported;
 	private static android.media.audiofx.Virtualizer theVirtualizer;
 
+	public static void deserialize(SerializableMap opts, int audioSink) {
+		//use OPTBIT_VIRTUALIZER_ENABLED and OPT_VIRTUALIZER_STRENGTH for all audio sinks!!!
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			enabled_wire = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
+			strength_wire = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH);
+			break;
+		case Player.AUDIO_SINK_BT:
+			enabled_bt = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
+			strength_bt = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH);
+			break;
+		default:
+			enabled = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
+			strength = opts.getInt(Player.OPT_VIRTUALIZER_STRENGTH);
+			break;
+		}
+	}
+
+	public static void serialize(SerializableMap opts, int audioSink) {
+		//use OPTBIT_VIRTUALIZER_ENABLED and OPT_VIRTUALIZER_STRENGTH for all audio sinks!!!
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED, enabled_wire);
+			opts.put(Player.OPT_VIRTUALIZER_STRENGTH, strength_wire);
+			break;
+		case Player.AUDIO_SINK_BT:
+			opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED, enabled_bt);
+			opts.put(Player.OPT_VIRTUALIZER_STRENGTH, strength_bt);
+			break;
+		default:
+			opts.putBit(Player.OPTBIT_VIRTUALIZER_ENABLED, enabled);
+			opts.put(Player.OPT_VIRTUALIZER_STRENGTH, strength);
+			break;
+		}
+	}
+
 	static void loadConfig(SerializableMap opts) {
 		enabled = opts.getBit(Player.OPTBIT_VIRTUALIZER_ENABLED);
 		//use the regular enabled flag as the default for the new presets
