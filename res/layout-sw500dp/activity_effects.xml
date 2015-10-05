@@ -21,13 +21,24 @@
             android:layout_alignParentLeft="true"
             android:contentDescription="@string/go_back"
             android:nextFocusDown="@+id/chkEqualizer"
-            android:nextFocusForward="@+id/btnMenu"
+            android:nextFocusForward="@+id/btnAudioSink"
             android:nextFocusLeft="@+id/barVirtualizer"
-            android:nextFocusRight="@+id/btnMenu"
+            android:nextFocusRight="@+id/btnAudioSink"
             android:nextFocusUp="@+id/chkEqualizer">
 
             <requestFocus/>
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnAudioSink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:nextFocusDown="@+id/chkEqualizer"
+            android:nextFocusForward="@+id/btnMenu"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/btnMenu"
+            android:nextFocusUp="@+id/chkEqualizer"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnMenu"
@@ -37,7 +48,7 @@
             android:contentDescription="@string/menu"
             android:nextFocusDown="@+id/chkBass"
             android:nextFocusForward="@+id/chkEqualizer"
-            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusLeft="@+id/btnAudioSink"
             android:nextFocusRight="@+id/chkEqualizer"
             android:nextFocusUp="@+id/barVirtualizer"/>
     </RelativeLayout>

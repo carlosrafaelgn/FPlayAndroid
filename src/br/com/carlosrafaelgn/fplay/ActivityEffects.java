@@ -57,12 +57,12 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener, Player.PlayerObserver {
-	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102;
+	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102, MNU_AUDIOSINK_DEVICE = 103, MNU_AUDIOSINK_WIRE = 104, MNU_AUDIOSINK_BT = 105;
 	private LinearLayout panelControls, panelEqualizer, panelBars;
 	private ViewGroup panelSecondary;
 	private BgButton chkEqualizer, chkBass, chkVirtualizer;
-	private BgButton btnGoBack, btnMenu, btnChangeEffect;
-	private int min, max, audioSink;
+	private BgButton btnGoBack, btnAudioSink, btnMenu, btnChangeEffect;
+	private int min, max, audioSink, storedAudioSink;
 	private int[] frequencies;
 	private boolean enablingEffect, screenNotSoLarge;
 	private BgSeekBar[] bars;
@@ -100,7 +100,25 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		txtBuilder.append("%");
 		return txtBuilder.toString();
 	}
-	
+
+	private String getAudioSinkDescription(int audioSink, boolean markCurrent) {
+		String description = ((markCurrent && Player.localAudioSinkUsedInEffects == audioSink) ? "» " : "");
+		switch (audioSink) {
+		case Player.AUDIO_SINK_WIRE:
+			description += getText(R.string.earphones).toString();
+			break;
+		case Player.AUDIO_SINK_BT:
+			description += getText(R.string.bluetooth).toString();
+			break;
+		default:
+			description += getText(R.string.loudspeaker).toString();
+			break;
+		}
+		if (markCurrent && Player.localAudioSinkUsedInEffects == audioSink)
+			description += " «";
+		return description;
+	}
+
 	@Override
 	public View getNullContextMenuView() {
 		return btnMenu;
@@ -109,15 +127,27 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		UI.prepare(menu);
-		menu.add(0, MNU_ZEROPRESET, 0, R.string.zero_preset)
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_REMOVE));
-		menu.add(0, MNU_LOADPRESET, 1, R.string.load_preset)
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_LOAD));
-		menu.add(0, MNU_SAVEPRESET, 2, R.string.save_preset)
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_SAVE));
+		if (view == btnAudioSink) {
+			menu.add(0, MNU_AUDIOSINK_DEVICE, 0, getAudioSinkDescription(Player.AUDIO_SINK_DEVICE, true))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_DEVICE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, MNU_AUDIOSINK_WIRE, 1, getAudioSinkDescription(Player.AUDIO_SINK_WIRE, true))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_WIRE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, MNU_AUDIOSINK_BT, 2, getAudioSinkDescription(Player.AUDIO_SINK_BT, true))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_BT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else {
+			menu.add(0, MNU_ZEROPRESET, 0, R.string.zero_preset)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_REMOVE));
+			menu.add(0, MNU_LOADPRESET, 1, R.string.load_preset)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_LOAD));
+			menu.add(0, MNU_SAVEPRESET, 2, R.string.save_preset)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_SAVE));
+		}
 	}
 	
 	@Override
@@ -137,6 +167,21 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		case MNU_SAVEPRESET:
 			startActivity(new ActivityFileSelection(getText(R.string.save_preset), MNU_SAVEPRESET, true, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null, false);
 			break;
+		case MNU_AUDIOSINK_DEVICE:
+			audioSink = Player.AUDIO_SINK_DEVICE;
+			storedAudioSink = audioSink;
+			updateEffects();
+			break;
+		case MNU_AUDIOSINK_WIRE:
+			audioSink = Player.AUDIO_SINK_WIRE;
+			storedAudioSink = audioSink;
+			updateEffects();
+			break;
+		case MNU_AUDIOSINK_BT:
+			audioSink = Player.AUDIO_SINK_BT;
+			storedAudioSink = audioSink;
+			updateEffects();
+			break;
 		}
 		return true;
 	}
@@ -145,6 +190,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	public void onClick(View view) {
 		if (view == btnGoBack) {
 			finish(0, view, true);
+		} else if (view == btnAudioSink) {
+			CustomContextMenu.openContextMenu(btnAudioSink, this);
 		} else if (view == btnMenu) {
 			CustomContextMenu.openContextMenu(btnMenu, this);
 		} else if (view == btnChangeEffect) {
@@ -222,7 +269,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
-		audioSink = Player.localAudioSinkUsedInEffects;
+		audioSink = (storedAudioSink <= 0 ? Player.localAudioSinkUsedInEffects : storedAudioSink);
+		storedAudioSink = audioSink;
 		panelControls = (LinearLayout)findViewById(R.id.panelControls);
 		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list));
 		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
@@ -235,6 +283,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
+		btnAudioSink = (BgButton)findViewById(R.id.btnAudioSink);
+		btnAudioSink.setOnClickListener(this);
+		btnAudioSink.setDefaultHeight();
+		btnAudioSink.setCompoundDrawables(new TextIconDrawable(UI.ICON_SETTINGS, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		chkEqualizer = (BgButton)findViewById(R.id.chkEqualizer);
 		chkEqualizer.setOnClickListener(this);
 		chkEqualizer.setTextColor(UI.colorState_text_listitem_reactive);
@@ -419,7 +471,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	}
 	
 	private void updateEffects() {
-		chkEqualizer.setChecked(Equalizer.isEnabled(audioSink));
+		if (chkEqualizer != null)
+			chkEqualizer.setChecked(Equalizer.isEnabled(audioSink));
 		if (bars != null && frequencies != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
 				final BgSeekBar bar = bars[i];
@@ -430,12 +483,20 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				}
 			}
 		}
-		chkBass.setChecked(BassBoost.isEnabled(audioSink));
-		barBass.setValue(BassBoost.getStrength(audioSink));
-		barBass.setText(format(BassBoost.getStrength(audioSink)));
-		chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
-		barVirtualizer.setValue(Virtualizer.getStrength(audioSink));
-		barVirtualizer.setText(format(Virtualizer.getStrength(audioSink)));
+		if (chkBass != null)
+			chkBass.setChecked(BassBoost.isEnabled(audioSink));
+		if (barBass != null) {
+			barBass.setValue(BassBoost.getStrength(audioSink));
+			barBass.setText(format(BassBoost.getStrength(audioSink)));
+		}
+		if (chkVirtualizer != null)
+			chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
+		if (barVirtualizer != null) {
+			barVirtualizer.setValue(Virtualizer.getStrength(audioSink));
+			barVirtualizer.setText(format(Virtualizer.getStrength(audioSink)));
+		}
+		if (btnAudioSink != null)
+			btnAudioSink.setText(getAudioSinkDescription(audioSink, true));
 	}
 	
 	private void prepareViewForMode(boolean isCreatingLayout) {
@@ -602,6 +663,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	@Override
 	public void onPlayerAudioSinkChanged() {
 		audioSink = Player.localAudioSinkUsedInEffects;
+		storedAudioSink = audioSink;
 		updateEffects();
 	}
 

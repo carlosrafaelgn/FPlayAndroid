@@ -1298,6 +1298,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			Equalizer._setEnabled((enabledFlags & 1) != 0, audioSink);
 			BassBoost._setEnabled((enabledFlags & 2) != 0, audioSink);
 			Virtualizer._setEnabled((enabledFlags & 4) != 0, audioSink);
+			if (callback != null)
+				MainHandler.postToMainThread(callback);
 			return;
 		}
 		Equalizer._release();
