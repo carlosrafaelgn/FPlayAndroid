@@ -81,7 +81,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:nextFocusLeft="@+id/btnMenu"
-                android:nextFocusUp="@+id/btnGoBack"
+                android:nextFocusUp="@+id/btnAudioSink"
                 android:text="@string/equalizer"/>
         </LinearLayout>
 
