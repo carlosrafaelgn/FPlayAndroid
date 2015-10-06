@@ -101,8 +101,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		return txtBuilder.toString();
 	}
 
-	private String getAudioSinkDescription(int audioSink, boolean markCurrent) {
-		String description = ((markCurrent && Player.localAudioSinkUsedInEffects == audioSink) ? "» " : "");
+	private String getAudioSinkDescription(int audioSink, boolean ellipsize) {
+		String description = ((Player.localAudioSinkUsedInEffects == audioSink) ? "» " : "");
 		switch (audioSink) {
 		case Player.AUDIO_SINK_WIRE:
 			description += getText(R.string.earphones).toString();
@@ -114,8 +114,17 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			description += getText(R.string.loudspeaker).toString();
 			break;
 		}
-		if (markCurrent && Player.localAudioSinkUsedInEffects == audioSink)
+		if (Player.localAudioSinkUsedInEffects == audioSink)
 			description += " «";
+		if (ellipsize) {
+			final int availWidth = UI.usableScreenWidth -
+				(UI.extraSpacing ? (UI.controlMargin << 1) : 0) - //extra spacing in the header
+				(UI.defaultControlSize << 1) - //btnGoBack and btnMenu
+				(UI.controlMargin << 1) - //btnAudioSink's padding
+				UI.defaultControlContentsSize - //btnAudioSink's TextIconDrawable
+				UI.controlMargin; //bonus :)
+			description = UI.ellipsizeText(description, UI.isLargeScreen ? UI._22sp : UI._18sp, availWidth, false);
+		}
 		return description;
 	}
 
@@ -128,13 +137,13 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		UI.prepare(menu);
 		if (view == btnAudioSink) {
-			menu.add(0, MNU_AUDIOSINK_DEVICE, 0, getAudioSinkDescription(Player.AUDIO_SINK_DEVICE, true))
+			menu.add(0, MNU_AUDIOSINK_DEVICE, 0, getAudioSinkDescription(Player.AUDIO_SINK_DEVICE, false))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_DEVICE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(0, MNU_AUDIOSINK_WIRE, 1, getAudioSinkDescription(Player.AUDIO_SINK_WIRE, true))
+			menu.add(0, MNU_AUDIOSINK_WIRE, 1, getAudioSinkDescription(Player.AUDIO_SINK_WIRE, false))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_WIRE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(0, MNU_AUDIOSINK_BT, 2, getAudioSinkDescription(Player.AUDIO_SINK_BT, true))
+			menu.add(0, MNU_AUDIOSINK_BT, 2, getAudioSinkDescription(Player.AUDIO_SINK_BT, false))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_BT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else {
@@ -509,6 +518,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			UI.animationAddViewToShow(panelSecondary);
 			UI.animationCommit(isCreatingLayout, null);
 			btnGoBack.setNextFocusDownId(R.id.chkBass);
+			btnAudioSink.setNextFocusDownId(R.id.chkBass);
 			btnMenu.setNextFocusRightId(R.id.chkBass);
 			btnMenu.setNextFocusDownId(R.id.chkBass);
 			UI.setNextFocusForwardId(btnMenu, R.id.chkBass);
@@ -602,6 +612,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 					UI.setNextFocusForwardId(bars[bandCount - 1], R.id.btnChangeEffect);
 				}
 				btnGoBack.setNextFocusDownId(R.id.chkEqualizer);
+				btnAudioSink.setNextFocusDownId(R.id.chkEqualizer);
 				btnMenu.setNextFocusRightId(R.id.chkEqualizer);
 				btnMenu.setNextFocusDownId(R.id.chkEqualizer);
 				UI.setNextFocusForwardId(btnMenu, R.id.chkEqualizer);

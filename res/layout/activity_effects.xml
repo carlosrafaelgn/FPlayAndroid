@@ -20,11 +20,23 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:contentDescription="@string/go_back"
+            android:nextFocusForward="@+id/btnAudioSink"
             android:nextFocusLeft="@+id/btnChangeEffect"
+            android:nextFocusRight="@+id/btnAudioSink"
             android:nextFocusUp="@+id/btnChangeEffect">
 
             <requestFocus/>
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnAudioSink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:nextFocusForward="@+id/btnMenu"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/btnMenu"
+            android:nextFocusUp="@+id/btnChangeEffect"/>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnMenu"
@@ -32,9 +44,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:contentDescription="@string/menu"
-            android:nextFocusDown="@+id/chkEqualizer"
             android:nextFocusForward="@+id/chkEqualizer"
-            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusLeft="@+id/btnAudioSink"
             android:nextFocusRight="@+id/chkEqualizer"
             android:nextFocusUp="@+id/btnChangeEffect"/>
     </RelativeLayout>
@@ -65,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:nextFocusLeft="@+id/btnMenu"
-                android:nextFocusUp="@+id/btnMenu"
+                android:nextFocusUp="@+id/btnAudioSink"
                 android:text="@string/equalizer"/>
         </LinearLayout>
 
@@ -99,7 +110,7 @@
                 android:nextFocusForward="@+id/barBass"
                 android:nextFocusLeft="@+id/btnMenu"
                 android:nextFocusRight="@+id/barBass"
-                android:nextFocusUp="@+id/btnMenu"
+                android:nextFocusUp="@+id/btnAudioSink"
                 android:text="@string/bass_boost"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
@@ -162,7 +173,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:nextFocusDown="@+id/btnGoBack"
+            android:nextFocusDown="@+id/btnAudioSink"
             android:nextFocusForward="@+id/btnGoBack"
             android:nextFocusRight="@+id/btnGoBack"
             android:text="@string/more_effects"/>
