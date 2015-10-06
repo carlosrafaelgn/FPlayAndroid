@@ -228,7 +228,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Der Zurück/Back Knopf öffnet den Player während neue Titel hinzugefügt werden</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Zurück zum Player</string>
-    <string name="startup_message">Zugriff auf Icecast online Radio-Stationen</string>
+    <string name="startup_message">Es sind neue Funktionen verfügbar im \"Audio Effekte\" Menü:</string>
     <string name="sort_by_title">Nach Titel sortieren</string>
     <string name="sort_by_artist">Nach Interpret sortieren</string>
     <string name="sort_by_album">Nach Album sortieren </string>

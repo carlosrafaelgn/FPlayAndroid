@@ -228,7 +228,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Tecla Voltar física sempre retorna ao player quando estiver adicionando músicas</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Voltar ao player</string>
-    <string name="startup_message">Acesso a estações de rádio online Icecast</string>
+    <string name="startup_message">Há novas funcionalidades disponíveis no menu \"Efeitos de áudio\":</string>
     <string name="sort_by_title">Ordenar por título</string>
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>

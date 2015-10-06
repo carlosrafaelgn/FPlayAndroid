@@ -228,7 +228,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">Кнопка \"Назад\" всегда возвращает к проигрывателю во время добавления композиций</string>
     <string name="player">Проигрыватель</string>
     <string name="go_back_to_player">Вернуться к проигрывателю</string>
-    <string name="startup_message">Доступ к Icecast онлайн радиостанций</string>
+    <string name="startup_message">Доступны новые возможности в меню \"Звуковые эффекты\":</string>
     <string name="sort_by_title">Сортировать по название</string>
     <string name="sort_by_artist">Сортировать по исполнитель</string>
     <string name="sort_by_album">Сортировать по альбом</string>

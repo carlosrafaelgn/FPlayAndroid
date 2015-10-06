@@ -228,7 +228,7 @@
     <string name="opt_back_key_always_returns_to_player_when_browsing">La touche Retour renvoie toujours au player après avoir ajouté des morceaux</string>
     <string name="player">Player</string>
     <string name="go_back_to_player">Retour au player</string>
-    <string name="startup_message">Accès aux stations de radio en ligne Icecast</string>
+    <string name="startup_message">De nouvelles fonctionnalités sont disponibles dans le menu \"Effets audio\":</string>
     <string name="sort_by_title">Trier par titre</string>
     <string name="sort_by_artist">Trier par artiste</string>
     <string name="sort_by_album">Trier par album</string>
