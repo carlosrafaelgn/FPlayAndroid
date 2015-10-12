@@ -103,8 +103,10 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 80;
-	
+	public static final int VERSION_CODE = 81;
+	//VERSION_NAME must be kept in sync with AndroidManifest.xml
+	public static final String VERSION_NAME = "v1.46";
+
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
 	public static final int STATE_CURRENT = 4;

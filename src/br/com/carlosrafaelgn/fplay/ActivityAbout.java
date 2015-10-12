@@ -73,12 +73,14 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		UI.largeTextAndColor(lblTitle);
 		final TextView lblVersion = (TextView)findViewById(R.id.lblVersion);
 		UI.smallTextAndColor(lblVersion);
-		try {
-			final PackageInfo inf = getApplication().getPackageManager().getPackageInfo(getApplication().getPackageName(), 0);
-			lblVersion.setText("v" + inf.versionName);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
+		//hardcode this in order to try to speed up things a little bit
+		lblVersion.setText(UI.VERSION_NAME);
+		//try {
+		//	final PackageInfo inf = getApplication().getPackageManager().getPackageInfo(getApplication().getPackageName(), 0);
+		//	lblVersion.setText("v" + inf.versionName);
+		//} catch (Throwable ex) {
+		//	ex.printStackTrace();
+		//}
 		UI.smallTextAndColor((TextView)findViewById(R.id.lblAppBy));
 		final TextView lblMsg = (TextView)findViewById(R.id.lblMsg);
 		final StringBuilder sb = new StringBuilder(2048);
