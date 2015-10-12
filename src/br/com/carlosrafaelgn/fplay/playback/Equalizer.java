@@ -150,8 +150,6 @@ public final class Equalizer {
 	}
 
 	static void _initialize(int newSessionId) {
-		System.out.println("***** Equalizer init ******" + Player.audioSinkUsedInEffects);
-		(new Exception()).printStackTrace();
 		if (newSessionId != Integer.MIN_VALUE)
 			sessionId = newSessionId;
 		try {

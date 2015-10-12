@@ -360,7 +360,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					observer.onPlayerAudioSinkChanged();
 				break;
 			case MSG_UPDATE_STATE:
-				updateState(msg.arg1, msg.arg2, (Song)msg.obj);
+				updateState(msg.arg1, (Object[])msg.obj);
 				break;
 			case MSG_REGISTER_MEDIA_BUTTON_EVENT_RECEIVER:
 				registerMediaButtonEventReceiver();
@@ -594,11 +594,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			saveConfig(thePlayer, true);
 		}
 
-		for (int i = statePlayer.length - 1; i >= 0; i--) {
-			statePlayer[i] = null;
-			stateEx[i] = null;
-		}
-		updateState(~0x27, 0, null);
+		updateState(~0x27, new Object[] { null, null, null });
 
 		if (restart && intentActivityHost != null) {
 			//http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
@@ -638,22 +634,23 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static void prePlay(int how) {
+	private static boolean prePlay(int how) {
 		if (state != STATE_ALIVE || postPlayPending)
-			return;
+			return false;
 		localSong = songs.getSongAndSetCurrent(how);
 		final Song[] songArray = new Song[] { localSong, songs.possibleNextSong };
 		songs.possibleNextSong = null;
 		postPlayPending = true;
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_POST_PLAY, how, 0, songArray), SystemClock.uptimeMillis());
+		return true;
 	}
 
 	public static void previous() {
 		prePlay(SongList.HOW_PREVIOUS);
 	}
 
-	public static void play(int index) {
-		prePlay(index);
+	public static boolean play(int index) {
+		return prePlay(index);
 	}
 
 	public static void pause() {
@@ -851,7 +848,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static int getPosition() {
-		return (((localPlayer != null) && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() : ((localSong == null) ? -1 : storedSongTime));
+		try {
+			return (((localPlayer != null) && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() : ((localSong == null) ? -1 : storedSongTime));
+		} catch (Throwable ex) {
+			//localPlayer could throw a InvalidStateException (*very, very* rarely)
+			return -1;
+		}
 	}
 
 	public static int getAudioSessionId() {
@@ -1031,14 +1033,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					checkForPermission = true;
 			}
 		}
-		if (songWhenFirstErrorHappened == song || howThePlayerStarted != SongList.HOW_NEXT_AUTO || checkForPermission) {
+		if (songWhenFirstErrorHappened == song || howThePlayerStarted == SongList.HOW_CURRENT || howThePlayerStarted >= 0 || checkForPermission) {
 			songWhenFirstErrorHappened = null;
 			_updateState(false, checkForPermission ? new PermissionDeniedException() : ex);
 		} else {
+			//this used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 			if (songWhenFirstErrorHappened == null)
 				songWhenFirstErrorHappened = song;
 			_updateState(false, null);
-			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_NEXT_AUTO, 0), SystemClock.uptimeMillis());
+			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, howThePlayerStarted, 0), SystemClock.uptimeMillis());
 		}
 	}
 
@@ -1449,10 +1452,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextSong = null;
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
-				final boolean prep = (playerState == PLAYER_STATE_PREPARING);
 				_fullCleanup();
-				if (prep && howThePlayerStarted == SongList.HOW_NEXT_AUTO)
-					//the error happened during currentSong's preparation
+				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
+				//and the song was being prepared
+				if (howThePlayerStarted != SongList.HOW_CURRENT && howThePlayerStarted < 0)
 					_handleFailure((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException(), false);
 				else
 					_updateState(false, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
@@ -2827,9 +2830,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static Song stateLastSong;
 	private static boolean stateLastPlaying, stateLastPreparing;
-	private static int stateIndex;
-	private static final MediaPlayer[] statePlayer = new MediaPlayer[8];
-	private static final Throwable[] stateEx = new Throwable[8];
 
 	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
@@ -2926,14 +2926,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			broadcastStateChangeToMediaSession(preparing, titleOrSongHaveChanged);
 	}
 
-	private static void updateState(int arg1, int stateIndex, Song newSong) {
+	private static void updateState(int arg1, Object[] objs) {
 		localPlaying = ((arg1 & 0x04) != 0);
 		localPlayerState = (arg1 & 0x03);
-		localPlayer = statePlayer[stateIndex];
-		statePlayer[stateIndex] = null;
-		final Throwable ex = stateEx[stateIndex];
-		stateEx[stateIndex] = null;
-		localSong = newSong;
+		localSong = (Song)objs[0];
+		objs[0] = null;
+		localPlayer = (MediaPlayer)objs[1];
+		objs[1] = null;
 		if (songs.okToTurnOffAfterReachingTheEnd) {
 			songs.okToTurnOffAfterReachingTheEnd = false;
 			//turn off if requested
@@ -2951,7 +2950,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (bluetoothVisualizerController != null)
 			updateBluetoothVisualizer(songHasChanged);
 		WidgetMain.updateWidgets(thePlayer);
-		if (ex != null) {
+		Throwable ex = null;
+		if (objs[2] != null) {
+			ex = (Throwable)objs[2];
+			objs[2] = null;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
 				((ClientActivity)observer).getHostActivity().requestStoragePermission();
 			final String msg = ex.getMessage();
@@ -2991,11 +2993,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			stateLastSong = song;
 			stateLastPlaying = playing;
 			stateLastPreparing = preparing;
-			final Message msg = Message.obtain(localHandler, MSG_UPDATE_STATE, playerState | (playing ? 0x04 : 0) | (songHasChanged ? 0x08 : 0) | (playbackHasChanged ? 0x10 : 0) | (preparing ? 0x20 : 0) | (preparingHasChanged ? 0x40 : 0), stateIndex, song);
-			statePlayer[stateIndex] = player;
-			stateEx[stateIndex] = ex;
-			stateIndex = (stateIndex + 1) & 7;
-			localHandler.sendMessageAtTime(msg, SystemClock.uptimeMillis());
+			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_UPDATE_STATE, playerState | (playing ? 0x04 : 0) | (songHasChanged ? 0x08 : 0) | (playbackHasChanged ? 0x10 : 0) | (preparing ? 0x20 : 0) | (preparingHasChanged ? 0x40 : 0), 0, new Object[] { song, player, ex }), SystemClock.uptimeMillis());
 		}
 	}
 }

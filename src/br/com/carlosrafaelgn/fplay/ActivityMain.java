@@ -789,11 +789,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					Player.songs.setSelection(position, position, true, true);
 				}
 			} else {
-				Player.songs.setSelection(position, position, true, true);
+				boolean ok = true;
 				if (Player.songs.getItemT(position) == Player.localSong && !Player.localPlaying)
 					Player.playPause();
 				else
-					Player.play(position);
+					ok = Player.play(position);
+				if (ok)
+					Player.songs.setSelection(position, position, true, true);
 			}
 		}
 	}
