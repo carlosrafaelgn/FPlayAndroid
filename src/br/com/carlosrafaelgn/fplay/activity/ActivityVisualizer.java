@@ -162,7 +162,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	private TextView lblTitle;
 	private boolean visualizerViewFullscreen, visualizerRequiresHiddenControls, isWindowFocused, panelTopWasVisibleOk, visualizerPaused;
 	private float panelTopAlpha;
-	private int version, panelTopLastTime, panelTopHiding;
+	private int version, panelTopLastTime, panelTopHiding, requiredOrientation;
 	private Object systemUIObserver;
 	private Timer uiAnimTimer;
 	private BgColorStateList buttonColor, lblColor;
@@ -352,7 +352,6 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 
 		info = new UI.DisplayInfo();
 
-		setRequestedOrientation(UI.visualizerPortrait ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -383,12 +382,16 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 
 		final boolean visualizerRequiresThread;
 		if (visualizer != null) {
+			requiredOrientation = visualizer.requiredOrientation();
 			visualizerRequiresHiddenControls = visualizer.requiresHiddenControls();
-			visualizerRequiresThread = (visualizer.dataTypeRequired() != Visualizer.DATA_NONE);
+			visualizerRequiresThread = (visualizer.requiredDataType() != Visualizer.DATA_NONE);
 		} else {
+			requiredOrientation = Visualizer.ORIENTATION_NONE;
 			visualizerRequiresHiddenControls = false;
 			visualizerRequiresThread = false;
 		}
+
+		setRequestedOrientation((requiredOrientation == Visualizer.ORIENTATION_NONE) ? (UI.visualizerPortrait ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) : (requiredOrientation == Visualizer.ORIENTATION_PORTRAIT ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE));
 
 		getWindow().setBackgroundDrawable(new ColorDrawable(UI.color_visualizer565));
 		//keep the screen always on while the visualizer is active
@@ -651,9 +654,10 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(getApplication(), this);
 		UI.prepare(menu);
-		menu.add(0, MNU_ORIENTATION, 0, UI.visualizerPortrait ? R.string.landscape : R.string.portrait)
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_ORIENTATION));
+		if (requiredOrientation == Visualizer.ORIENTATION_NONE)
+			menu.add(0, MNU_ORIENTATION, 0, UI.visualizerPortrait ? R.string.landscape : R.string.portrait)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_ORIENTATION));
 		final Visualizer v = visualizer;
 		if (v != null)
 			v.onCreateContextMenu(menu);

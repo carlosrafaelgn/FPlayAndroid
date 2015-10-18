@@ -61,11 +61,11 @@ private:
 public:
 	GLSoundParticle() {
 		lastTime = commonTime;
-		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f);
+		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f));
 
 		sensorData = 0;
 		lastSensorTime = 0;
-		nextDiffusion = 1;
+		nextDiffusion = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 4 : 1);
 		rotation = 0;
 		yScale = 0.0f;
 		xScale = 0.0f;
@@ -163,7 +163,7 @@ public:
 
 	void setAspect(int width, int height, int rotation) {
 		this->rotation = rotation;
-		if (glType == TYPE_IMMERSIVE_PARTICLE) {
+		if (glType != TYPE_PARTICLE) {
 			if (width >= height) {
 				//landscape
 				//yScale = cot(fovY / 2) = cot(fovYInDegrees * PI / 360) //cot(x) = tan(PI/2 - x)
@@ -208,13 +208,11 @@ public:
 		float delta = (float)(commonTime - lastTime) * timeCoef;
 		lastTime = commonTime;
 
-		glClear(GL_COLOR_BUFFER_BIT);
-
 		float a;
 		int p = 0, c, ic, i = 2, last = 44, last2 = 116;
 		unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 
-		if (glType == TYPE_IMMERSIVE_PARTICLE) {
+		if (glType != TYPE_PARTICLE) {
 			if (nextDiffusion) {
 				//not perfect... but good enough ;)
 				c = nextDiffusion;

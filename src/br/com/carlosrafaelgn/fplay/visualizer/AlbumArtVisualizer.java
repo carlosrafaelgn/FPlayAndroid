@@ -161,8 +161,14 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	//Runs on ANY thread
 	@Override
-	public int dataTypeRequired() {
+	public int requiredDataType() {
 		return DATA_NONE;
+	}
+
+	//Runs on ANY thread
+	@Override
+	public int requiredOrientation() {
+		return ORIENTATION_NONE;
 	}
 
 	//Runs on a SECONDARY thread

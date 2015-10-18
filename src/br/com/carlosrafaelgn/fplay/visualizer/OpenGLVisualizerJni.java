@@ -41,11 +41,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Message;
@@ -65,6 +68,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -96,6 +100,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public static final int TYPE_SPIN = 2;
 	public static final int TYPE_PARTICLE = 3;
 	public static final int TYPE_IMMERSIVE_PARTICLE = 4;
+	public static final int TYPE_IMMERSIVE_PARTICLE_VR = 5;
 
 	private final int type;
 	private byte[] waveform;
@@ -109,19 +114,24 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private SensorManager sensorManager;
 	private WindowManager windowManager;
 	private Sensor accel, magnetic;
+	@SuppressWarnings("deprecation")
+	private Camera camera;
+	private SurfaceTexture cameraTexture;
+	private int cameraNativeOrientation;
+	private volatile boolean cameraOK;
 
 	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
 		super(context);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
-		type = ((t < TYPE_LIQUID || t > TYPE_IMMERSIVE_PARTICLE) ? TYPE_SPECTRUM : t);
+		type = ((t < TYPE_LIQUID || t > TYPE_IMMERSIVE_PARTICLE_VR) ? TYPE_SPECTRUM : t);
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		setClickable(true);
 		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
 		speed = ((type == TYPE_LIQUID) ? 0 : 2);
-		diffusion = 1;
-		riseSpeed = 1;
+		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 0);
+		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		ignoreInput = 0;
 		this.activity = activity;
 
@@ -146,7 +156,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			windowManager = null;
 		}
 
-		if (type == TYPE_IMMERSIVE_PARTICLE) {
+		if (type == TYPE_IMMERSIVE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE_VR) {
 			try {
 				sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
 			} catch (Throwable ex) {
@@ -389,9 +399,40 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		if (egl != null && display != null && context != null)
 			egl.eglDestroyContext(display, context);
 	}
-	
+
+	private void releaseCamera() {
+		if (camera != null) {
+			try {
+				camera.stopPreview();
+			} catch (Throwable ex2) {
+				ex2.printStackTrace();
+			}
+			try {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+					camera.setPreviewTexture(null);
+			} catch (Throwable ex2) {
+				ex2.printStackTrace();
+			}
+			try {
+				camera.release();
+			} catch (Throwable ex2) {
+				ex2.printStackTrace();
+			}
+			camera = null;
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			if (cameraTexture != null) {
+				cameraTexture.setOnFrameAvailableListener(null);
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+					cameraTexture.release();
+				cameraTexture = null;
+			}
+		}
+	}
+
 	//Runs on a SECONDARY thread (A)
 	@Override
+	@SuppressWarnings("deprecation")
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		if (type == TYPE_SPECTRUM)
 			SimpleVisualizerJni.commonSetColorIndex(colorIndex);
@@ -427,14 +468,73 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 		if (!supported)
 			return;
+		if (type == TYPE_IMMERSIVE_PARTICLE_VR) {
+			final String extensions = GLES20.glGetString(GLES20.GL_EXTENSIONS);
+			if (!extensions.contains("OES_EGL_image_external")) {
+				error = 0;
+				supported = false;
+				MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
+				return;
+			}
+			synchronized (this) {
+				try {
+					int cameraId = -1;
+					final Camera.CameraInfo info = new Camera.CameraInfo();
+					final int numberOfCameras = Camera.getNumberOfCameras();
+					for (int i = 0; i < numberOfCameras; i++) {
+						Camera.getCameraInfo(i, info);
+						if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+							cameraId = i;
+							break;
+						}
+					}
+					if (cameraId == -1) {
+						Camera.getCameraInfo(0, info);
+						cameraId = 0;
+					}
+					camera = ((cameraId >= 0) ? Camera.open(cameraId) : null);
+					cameraNativeOrientation = info.orientation;
+				} catch (Throwable ex) {
+					if (camera != null) {
+						camera.release();
+						camera = null;
+					}
+				}
+				if (camera == null) {
+					error = 0;
+					supported = false;
+					MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
+					return;
+				}
+			}
+		}
 		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer, type, UI.screenWidth, UI.screenHeight, (UI._1dp < 2) ? 1 : 0)) != 0) {
 			supported = false;
 			MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
+		} else if (type == TYPE_IMMERSIVE_PARTICLE_VR && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			synchronized (this) {
+				cameraTexture = new SurfaceTexture(SimpleVisualizerJni.glGetOESTexture());
+				cameraTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+					@Override
+					public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+						cameraOK = true;
+					}
+				});
+				try {
+					camera.setPreviewTexture(cameraTexture);
+				} catch (Throwable ex) {
+					releaseCamera();
+					error = 0;
+					supported = false;
+					MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
+				}
+			}
 		}
 	}
 	
 	//Runs on a SECONDARY thread (A)
 	@Override
+	@SuppressWarnings("deprecation")
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		if (!supported)
 			return;
@@ -450,6 +550,56 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		} else {
 			//silly assumption for phones....
 			rotation = ((width >= height) ? Surface.ROTATION_90 : Surface.ROTATION_0);
+		}
+
+		if (camera != null) {
+			synchronized (this) {
+				try {
+					int degrees = 0;
+					switch (rotation) {
+					case Surface.ROTATION_0:
+						degrees = 0;
+						break;
+					case Surface.ROTATION_90:
+						degrees = 90;
+						break;
+					case Surface.ROTATION_180:
+						degrees = 180;
+						break;
+					case Surface.ROTATION_270:
+						degrees = 270;
+						break;
+					}
+					camera.setDisplayOrientation((cameraNativeOrientation - degrees + 360) % 360);
+					final Camera.Parameters parameters = camera.getParameters();
+
+					//try to find the ideal preview size...
+					List<Camera.Size> localSizes = parameters.getSupportedPreviewSizes();
+					int largestW = 0, largestH = 0;
+					for (int i = localSizes.size() - 1; i >= 0; i--) {
+						final int w = localSizes.get(i).width, h = localSizes.get(i).height;
+						if (w < width && h < height && w >= largestW && h >= largestH) {
+							largestW = w;
+							largestH = h;
+						}
+					}
+					if (largestW == 0) {
+						largestW = localSizes.get(0).width;
+						largestH = localSizes.get(0).height;
+					}
+
+					parameters.setPreviewSize(largestW, largestH);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+						parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+					else
+						parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+					parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
+					camera.setParameters(parameters);
+					camera.startPreview();
+				} catch (Throwable ex) {
+					releaseCamera();
+				}
+			}
 		}
 
 		viewWidth = width;
@@ -563,6 +713,12 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			if (selectedUri != null) {
 				loadBitmap();
 				selectedUri = null;
+			}
+			if (cameraOK && cameraTexture != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+				synchronized (this) {
+					if (cameraTexture != null)
+						cameraTexture.updateTexImage();
+				}
 			}
 			SimpleVisualizerJni.glDrawFrame();
 		}
@@ -685,6 +841,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			break;
 		case TYPE_IMMERSIVE_PARTICLE:
 			UI.separator(menu, 1, 0);
+		case TYPE_IMMERSIVE_PARTICLE_VR:
 			s = menu.addSubMenu(1, 0, 1, ctx.getText(R.string.diffusion) + "\u2026")
 				.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
 			UI.prepare(s);
@@ -764,10 +921,16 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on ANY thread
 	@Override
-	public int dataTypeRequired() {
+	public int requiredDataType() {
 		return DATA_FFT;
 	}
-	
+
+	//Runs on ANY thread
+	@Override
+	public int requiredOrientation() {
+		return (type == TYPE_IMMERSIVE_PARTICLE_VR ? ORIENTATION_LANDSCAPE : ORIENTATION_NONE);
+	}
+
 	//Runs on a SECONDARY thread (B)
 	@Override
 	public void load(Context context) {
@@ -814,6 +977,9 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void release() {
 		waveform = null;
+		synchronized (this) {
+			releaseCamera();
+		}
 	}
 
 	//Runs on the MAIN thread (AFTER Visualizer.release())

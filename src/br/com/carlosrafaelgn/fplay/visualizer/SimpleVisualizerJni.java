@@ -72,6 +72,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private static native void process(byte[] waveform, Surface surface, int opt);
 	private static native void processVoice(byte[] waveform, Surface surface, int opt);
 
+	static native int glGetOESTexture();
 	static native int glOnSurfaceCreated(int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess);
 	static native void glOnSurfaceChanged(int width, int height, int rotation, int dp1OrLess);
 	static native int glLoadBitmapFromJava(Bitmap bitmap);
@@ -234,8 +235,14 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	//Runs on ANY thread
 	@Override
-	public int dataTypeRequired() {
+	public int requiredDataType() {
 		return DATA_FFT;
+	}
+
+	//Runs on ANY thread
+	@Override
+	public int requiredOrientation() {
+		return ORIENTATION_NONE;
 	}
 
 	//Runs on a SECONDARY thread

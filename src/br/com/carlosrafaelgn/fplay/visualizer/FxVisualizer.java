@@ -105,7 +105,7 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 
 	public void updateVisualizerDataType() {
 		if (visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-			if ((visualizer.dataTypeRequired() & Visualizer.DATA_VUMETER) != 0)
+			if ((visualizer.requiredDataType() & Visualizer.DATA_VUMETER) != 0)
 				setScalingModeVUMeter();
 			else
 				setScalingModeFFT();

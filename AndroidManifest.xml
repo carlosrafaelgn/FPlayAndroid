@@ -43,6 +43,8 @@
      http://developer.android.com/preview/features/runtime-permissions.html -->
     <!-- For android.media.audiofx.Visualizer -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- For the immersive visualizer -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
@@ -52,6 +54,13 @@
     -->
     <uses-feature
         android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <!--
+   Just to make Google Play show the App even to phones without a camera,
+   despite the uses-permission above!
+   -->
+    <uses-feature
+        android:name="android.hardware.camera"
         android:required="false" />
     <!--
     Support for devices without touch, devices without microphone and TVs

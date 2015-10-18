@@ -60,6 +60,10 @@ public interface Visualizer {
 	int BEAT_DETECTION_7 = 0x7000;
 	int BEAT_DETECTION = 0xF000;
 
+	int ORIENTATION_NONE = 0;
+	int ORIENTATION_LANDSCAPE = 1;
+	int ORIENTATION_PORTRAIT = 2;
+
 	//Runs on the MAIN thread
 	void onActivityResult(int requestCode, int resultCode, Intent data);
 
@@ -88,7 +92,10 @@ public interface Visualizer {
 	boolean requiresHiddenControls();
 
 	//Runs on ANY thread
-	int dataTypeRequired();
+	int requiredDataType();
+
+	//Runs on ANY thread
+	int requiredOrientation();
 
 	//Runs on a SECONDARY thread
 	void load(Context context);

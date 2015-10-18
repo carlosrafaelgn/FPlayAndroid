@@ -263,8 +263,14 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	//Runs on ANY thread
 	@Override
-	public int dataTypeRequired() {
+	public int requiredDataType() {
 		return dataType;
+	}
+
+	//Runs on ANY thread
+	@Override
+	public int requiredOrientation() {
+		return ORIENTATION_NONE;
 	}
 
 	//Runs on a SECONDARY thread
