@@ -67,7 +67,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		list.setHorizontalFadingEdgeEnabled(false);
 		list.setVerticalFadingEdgeEnabled(false);
 		list.setFadingEdgeLength(0);
-		list.setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		list.setBackgroundDrawable(new ColorDrawable(UI.color_list_original));
 		final TextView lblTitle = (TextView)findViewById(R.id.lblTitle);
 		lblTitle.setText("FPlay");
 		UI.largeTextAndColor(lblTitle);

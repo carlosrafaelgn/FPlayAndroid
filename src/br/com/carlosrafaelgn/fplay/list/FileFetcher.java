@@ -172,7 +172,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		(new Thread(this, "File Fetcher Thread")).start();
 	}
 	
-	public Throwable getThrowedException() {
+	public Throwable getThrownException() {
 		return notifyE;
 	}
 	

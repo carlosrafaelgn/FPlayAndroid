@@ -64,12 +64,59 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private final boolean hasCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth;
 	
-	private static int height, usableHeight, yForSecondary;
+	private static int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, extraLeftMargin, extraRightMargin, leftMargin, topMargin, rightMargin, bottomMargin;
+
+	public static void updateExtraMargins(boolean isScrollBarIndexed) {
+		if (isScrollBarIndexed) {
+			if (UI.scrollBarToTheLeft) {
+				extraLeftMargin = UI.controlSmallMargin;
+				extraRightMargin = 0;
+			} else {
+				extraLeftMargin = 0;
+				extraRightMargin = UI.controlSmallMargin;
+			}
+		} else {
+			extraLeftMargin = 0;
+			extraRightMargin = 0;
+		}
+		getViewHeight();
+	}
 
 	public static int getViewHeight() {
-		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemsp + UI._14sp);
-		usableHeight = height - (UI.isDividerVisible ? UI.strokeSize : 0);
-		yForSecondary = ((usableHeight - (UI._LargeItemspBox + UI.controlMargin + UI._14spBox)) >> 1);
+		if (UI.is3D) {
+			switch (UI.songListScrollBarType) {
+			case BgListView.SCROLLBAR_LARGE:
+				if (UI.scrollBarToTheLeft) {
+					leftMargin = 0;
+					rightMargin = UI.controlSmallMargin;
+				} else {
+					leftMargin = UI.controlSmallMargin;
+					rightMargin = UI.strokeSize;
+				}
+				break;
+			default:
+				leftMargin = UI.controlSmallMargin;
+				rightMargin = UI.controlSmallMargin;
+				break;
+			}
+			leftMargin += extraLeftMargin;
+			rightMargin += extraRightMargin;
+			topMargin = UI.controlSmallMargin;
+			bottomMargin = UI.strokeSize;
+		} else {
+			leftMargin = 0;
+			topMargin = 0;
+			rightMargin = 0;
+			bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
+		}
+		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemsp + UI._14sp) + topMargin + bottomMargin;
+		usableHeight = height - (topMargin + bottomMargin);
+
+		iconY = topMargin + ((usableHeight - UI.defaultControlContentsSize) >> 1);
+		nameYNoSecondary = topMargin + ((usableHeight - UI._LargeItemspBox) >> 1) + UI._LargeItemspYinBox;
+		final int sec = ((usableHeight - (UI._LargeItemspBox + UI.controlMargin + UI._14spBox)) >> 1);
+		nameY = topMargin + sec + UI._LargeItemspYinBox;
+		secondaryY = topMargin + sec + UI._LargeItemspBox + UI._14spYinBox + UI.controlMargin;
 		return height;
 	}
 
@@ -93,7 +140,9 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnCheckbox.setHideBorders(true);
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI.controlMargin;
-			p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
+			p.topMargin = topMargin;
+			p.rightMargin = rightMargin;
+			p.bottomMargin = bottomMargin;
 			btnCheckbox.setLayoutParams(p);
 			btnCheckbox.formatAsPlainCheckBox(false, true, false);
 			btnCheckbox.setContentDescription(context.getText(R.string.unselect), context.getText(R.string.select));
@@ -109,7 +158,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 	
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(file.name, UI._LargeItemsp, width - leftPadding - (checkBoxVisible ? UI.defaultControlSize : 0) - UI.controlMargin, true);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._LargeItemsp, width - leftPadding - (checkBoxVisible ? UI.defaultControlSize : 0) - UI.controlMargin - rightMargin, true);
 	}
 	
 	public void refreshItem() {
@@ -239,27 +288,27 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				break;
 			}
 			if (albumArt != null) {
-				bitmapLeftPadding = (usableHeight - albumArt.width) >> 1;
-				leftPadding = usableHeight + UI.controlMargin;
+				bitmapLeftPadding = leftMargin + ((usableHeight - albumArt.width) >> 1);
+				leftPadding = leftMargin + (usableHeight + UI.controlMargin);
 			} else {
 				switch (specialType) {
 				case FileSt.TYPE_ARTIST:
 				case FileSt.TYPE_ALBUM:
 				case FileSt.TYPE_ALBUM_ITEM:
 					if (UI.albumArt) {
-						bitmapLeftPadding = (usableHeight - UI.defaultControlContentsSize) >> 1;
-						leftPadding = usableHeight + UI.controlMargin;
+						bitmapLeftPadding = leftMargin + ((usableHeight - UI.defaultControlContentsSize) >> 1);
+						leftPadding = leftMargin + (usableHeight + UI.controlMargin);
 						break;
 					}
 				default:
-					bitmapLeftPadding = UI.controlMargin;
-					leftPadding = UI.defaultControlSize;
+					bitmapLeftPadding = leftMargin + UI.controlMargin;
+					leftPadding = leftMargin + UI.defaultControlSize;
 					break;
 				}
 			}
 		} else {
 			icon = null;
-			leftPadding = UI.controlMargin;
+			leftPadding = leftMargin + UI.controlMargin;
 		}
 		processEllipsis();
 	}
@@ -351,19 +400,19 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			return;
 		getDrawingRect(UI.rect);
 		final boolean albumItem = ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM));
-		if (albumItem && (state == 0))
-			canvas.drawColor(UI.color_selected);
-		final int st = state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2);
-		UI.drawBgBorderless(canvas, st, true);
+		int st = state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2);
+		if (albumItem)
+			st |= UI.STATE_SELECTED;
+		UI.drawBgListItem(canvas, st, true, leftMargin, rightMargin);
 		if (albumArt != null && albumArt.bitmap != null)
-			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, (usableHeight - albumArt.height) >> 1, null);
+			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((usableHeight - albumArt.height) >> 1), null);
 		else if (icon != null)
-			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, (usableHeight - UI.defaultControlContentsSize) >> 1, UI.defaultControlContentsSize, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary);
+			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, iconY, UI.defaultControlContentsSize, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary);
 		if (secondaryText == null) {
-			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, ((usableHeight - UI._LargeItemspBox) >> 1) + UI._LargeItemspYinBox);
+			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameYNoSecondary);
 		} else {
-			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, yForSecondary + UI._LargeItemspYinBox);
-			UI.drawText(canvas, secondaryText, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth, yForSecondary + UI._LargeItemspBox + UI._14spYinBox + UI.controlMargin);
+			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameY);
+			UI.drawText(canvas, secondaryText, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth - rightMargin, secondaryY);
 		}
 		super.dispatchDraw(canvas);
 	}
@@ -440,7 +489,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (albumArt != null)
 			albumArt.release();
 		albumArt = bitmap;
-		bitmapLeftPadding = (usableHeight - bitmap.width) >> 1;
+		bitmapLeftPadding = leftMargin + ((usableHeight - bitmap.width) >> 1);
 		invalidate();
 		return true;
 	}

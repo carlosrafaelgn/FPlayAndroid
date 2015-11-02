@@ -47,12 +47,42 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
 	private Song song;
 	private String ellipsizedTitle, ellipsizedExtraInfo;
-	private int state, width, lengthWidth, position;
-	
-	private static int height;
+	private int state, width, lengthX, lengthWidth, position;
+
+	private static int height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin, rightMargin;
 
 	public static int getViewHeight() {
-		return (height = (UI._1dp << 1) + (UI.verticalMargin << 1) + UI._22spBox + UI._14spBox);
+		final int bottomMargin;
+		if (UI.is3D) {
+			switch (UI.songListScrollBarType) {
+			case BgListView.SCROLLBAR_LARGE:
+				if (UI.scrollBarToTheLeft) {
+					leftMargin = 0;
+					rightMargin = UI.controlSmallMargin;
+				} else {
+					leftMargin = UI.controlSmallMargin;
+					rightMargin = UI.strokeSize;
+				}
+				break;
+			default:
+				leftMargin = UI.controlSmallMargin;
+				rightMargin = UI.controlSmallMargin;
+				break;
+			}
+			topMargin = UI.controlSmallMargin;
+			bottomMargin = UI.strokeSize;
+		} else {
+			leftMargin = 0;
+			topMargin = 0;
+			rightMargin = 0;
+			bottomMargin = 0;
+		}
+		height = (UI._1dp << 1) + (UI.verticalMargin << 1) + UI._22spBox + UI._14spBox + topMargin + bottomMargin;
+		textX = leftMargin + UI.controlMargin;
+		titleY = UI.verticalMargin + UI._22spYinBox + topMargin;
+		extraY = UI.verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox + topMargin;
+		currentY = height - UI.defaultControlContentsSize - UI.controlXtraSmallMargin - bottomMargin;
+		return height;
 	}
 
 	public SongView(Context context) {
@@ -64,8 +94,9 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	}
 	
 	private void processEllipsis() {
-		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, width - (UI.controlMargin << 1) - UI.controlSmallMargin - lengthWidth, false);
-		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, width - (UI.controlMargin << 1) - UI.controlSmallMargin - lengthWidth, false);
+		final int w = lengthX - textX - UI.controlMargin;
+		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, w, false);
+		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, w, false);
 	}
 
 	@Override
@@ -83,6 +114,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			return;
 		this.song = song;
 		lengthWidth = (song.isHttp ? UI._14spBox : UI.measureText(song.length, UI._14sp));
+		lengthX = width - lengthWidth - UI.controlMargin - rightMargin;
 		processEllipsis();
 	}
 	
@@ -155,6 +187,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (width != w) {
 			width = w;
+			currentX = w - UI.defaultControlContentsSize - rightMargin;
+			lengthX = width - lengthWidth - UI.controlMargin - rightMargin;
 			processEllipsis();
 		}
 	}
@@ -165,15 +199,15 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			return;
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		getDrawingRect(UI.rect);
-		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & ((BgListView)getParent()).extraState) >>> 2), true);
+		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2), true, leftMargin, rightMargin);
 		if ((state & UI.STATE_CURRENT) != 0)
-			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.rect.right - UI.defaultControlContentsSize - UI.controlSmallMargin, UI.rect.bottom - UI.defaultControlContentsSize - UI.controlSmallMargin, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI.controlMargin, UI.verticalMargin + UI._22spYinBox);
+			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, textX, titleY);
 		if (song.isHttp)
-			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, UI.rect.right - UI._14spBox - UI.controlMargin, UI.verticalMargin, UI._14spBox, txtColor);
+			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);
 		else
-			UI.drawText(canvas, song.length, txtColor, UI._14sp, width - UI.controlMargin - lengthWidth, UI.verticalMargin + UI._14spYinBox);
-		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, UI.controlMargin, UI.verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox);
+			UI.drawText(canvas, song.length, txtColor, UI._14sp, lengthX, UI.verticalMargin + UI._14spYinBox + topMargin);
+		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, textX, extraY);
 	}
 	
 	@Override

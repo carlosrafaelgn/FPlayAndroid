@@ -83,7 +83,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -511,8 +511,17 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		headers[index] = hdr;
 		hdr.setTag(index);
 		panelSettings.addView(hdr);
-		if (previousControl != null)
-			previousControl.setHidingSeparator(true);
+		if (previousControl != null) {
+			if (UI.is3D) {
+				LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)previousControl.getLayoutParams();
+				if (params == null)
+					params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				params.setMargins(0, 0, 0, UI.controlSmallMargin);
+				previousControl.setLayoutParams(params);
+			} else {
+				previousControl.setHidingSeparator(true);
+			}
+		}
 	}
 	
 	private boolean cancelGoBack() {
@@ -765,7 +774,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (!UI.isLargeScreen)
 			UI.offsetTopEdgeEffect(list);
 		//for lblTitle to look nice, we must have no paddings
-		list.setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		list.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
@@ -831,6 +840,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optVolumeControlType.setOnClickListener(this);
 			optDoNotAttenuateVolume = new SettingView(ctx, UI.ICON_INFORMATION, getText(R.string.opt_do_not_attenuate_volume).toString(), null, true, Player.doNotAttenuateVolume, false);
 			optDoNotAttenuateVolume.setOnClickListener(this);
+			opt3D = new SettingView(ctx, UI.ICON_DIVIDER, "3D", null, true, UI.is3D, false);
+			opt3D.setOnClickListener(this);
 			optIsDividerVisible = new SettingView(ctx, UI.ICON_DIVIDER, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible, false);
 			optIsDividerVisible.setOnClickListener(this);
 			optIsVerticalMarginLarge = new SettingView(ctx, UI.ICON_SPACELIST, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge, false);
@@ -903,14 +914,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.hdr_display, optAutoTurnOffPlaylist, hIdx++);
 			panelSettings.addView(optKeepScreenOn);
 			panelSettings.addView(optTheme);
+			panelSettings.addView(opt3D);
 			panelSettings.addView(optFlat);
 			panelSettings.addView(optBorders);
+			panelSettings.addView(optIsDividerVisible);
 			panelSettings.addView(optExtraInfoMode);
 			panelSettings.addView(optForceOrientation);
 			panelSettings.addView(optTransition);
 			panelSettings.addView(optAnimations);
 			panelSettings.addView(optNotFullscreen);
-			panelSettings.addView(optIsDividerVisible);
 			panelSettings.addView(optIsVerticalMarginLarge);
 			panelSettings.addView(optExtraSpacing);
 			if (!UI.isCurrentLocaleCyrillic())
@@ -1008,6 +1020,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optExpandSeekBar = null;
 		optVolumeControlType = null;
 		optDoNotAttenuateVolume = null;
+		opt3D = null;
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
 		optExtraSpacing = null;
@@ -1164,12 +1177,20 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				clearWindowFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 			else
 				addWindowFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		} else if (view == opt3D) {
+			UI.is3D = opt3D.isChecked();
+			UI.updateColorListBg();
+			onCleanupLayout();
+			onCreateLayout(false);
+			System.gc();
 		} else if (view == optIsDividerVisible) {
 			UI.isDividerVisible = optIsDividerVisible.isChecked();
-			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
-				final View v = panelSettings.getChildAt(i);
-				if (v != null && (v instanceof SettingView))
-					v.invalidate();
+			if (!UI.is3D) {
+				for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
+					final View v = panelSettings.getChildAt(i);
+					if (v != null && (v instanceof SettingView))
+						v.invalidate();
+				}
 			}
 		} else if (view == optIsVerticalMarginLarge) {
 			final int oldVerticalMargin = UI.verticalMargin;

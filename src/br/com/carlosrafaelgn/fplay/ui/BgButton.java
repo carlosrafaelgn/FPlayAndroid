@@ -335,7 +335,7 @@ public final class BgButton extends Button {
 	protected void onDraw(@NonNull Canvas canvas) {
 		getDrawingRect(UI.rect);
 		if (hideBorders)
-			UI.drawBgBorderless(canvas, state, false);
+			UI.drawBgBorderless(canvas, state);
 		else
 			UI.drawBg(canvas, state);
 		super.onDraw(canvas);

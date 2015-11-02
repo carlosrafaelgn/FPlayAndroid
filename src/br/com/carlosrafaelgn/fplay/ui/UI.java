@@ -261,6 +261,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static int color_control_mode;
 	public static int color_visualizer, color_visualizer565;
 	public static int color_list;
+	public static int color_list_bg;
+	public static int color_list_original;
 	public static int color_menu;
 	public static int color_menu_icon;
 	public static int color_menu_border;
@@ -409,10 +411,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final Rect rect = new Rect();
 	public static final RectF rectF = new RectF();
 	public static char decimalSeparator;
-	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
+	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders;
-	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
+	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static String unknownArtist;
 	public static int[] lastViewCenterLocation = new int[2];
@@ -756,7 +758,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		controlLargeMargin = dpToPxI(16);
 		controlMargin = controlLargeMargin >> 1;
 		controlSmallMargin = controlLargeMargin >> 2;
-		controlXSmallMargin = controlLargeMargin >> 3;
+		controlXtraSmallMargin = controlLargeMargin >> 3;
 		menuMargin = controlMargin;
 		if (isLargeScreen || !isLowDpiScreen) {
 			dialogTextSize = _18sp;
@@ -1015,7 +1017,22 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 		return true;
 	}
-	
+
+	public static void updateColorListBg() {
+		if (is3D) {
+			if (ColorUtils.relativeLuminance(color_list_original) >= 0.5) {
+				color_list = color_list_original;
+				color_list_bg = ColorUtils.blend(color_list_original, 0xff000000, 0.9286f);
+			} else {
+				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
+				color_list_bg = color_list_original;
+			}
+		} else {
+			color_list = color_list_original;
+			color_list_bg = color_list_original;
+		}
+	}
+
 	private static void finishLoadingTheme(boolean custom) {
 		//create a "safe 565" version for the visualizer background
 		//http://stackoverflow.com/questions/2442576/how-does-one-convert-16-bit-rgb565-to-24-bit-rgb888
@@ -1054,6 +1071,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			colorState_text_visualizer_static = colorState_text_static;
 			colorState_text_visualizer_reactive = colorState_text_reactive;
 		}
+		color_list_original = color_list;
+		updateColorListBg();
 		color_glow = ((theme == THEME_FPLAY) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
@@ -1373,18 +1392,18 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	public static void showNextStartupMsg(Activity activity) {
-		if (msgStartup >= 23) {
-			msgStartup = 23;
+		if (msgStartup >= 24) {
+			msgStartup = 24;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 23;
+		msgStartup = 24;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- 3D\n\n" + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		prepareDialogAndShow((new AlertDialog.Builder(activity))
 			.setTitle(activity.getText(title))
 			.setView(createDialogView(activity, content))
@@ -1480,10 +1499,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		return 0;
 	}
 	
-	public static void drawBgBorderless(Canvas canvas, int state, boolean dividerAllowed) {
-		dividerAllowed &= isDividerVisible;
-		if (dividerAllowed)
-			rect.bottom -= strokeSize;
+	public static void drawBgBorderless(Canvas canvas, int state) {//, boolean dividerAllowed) {
+		//dividerAllowed &= isDividerVisible;
+		//if (dividerAllowed)
+		//	rect.bottom -= strokeSize;
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
@@ -1496,21 +1515,17 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				fillRect(canvas, color_selected_multi);
 			}
 		}
-		if (dividerAllowed) {
-			fillPaint.setColor(color_divider);
-			final int top = rect.top;
-			//rect.left += _8dp;
-			//rect.right -= _8dp;
-			rect.top = rect.bottom;
-			rect.bottom += strokeSize;
-			canvas.drawRect(rect, fillPaint);
-			//rect.left -= _8dp;
-			//rect.right += _8dp;
-			rect.top = top;
-		}
+		//if (dividerAllowed) {
+		//	fillPaint.setColor(color_divider);
+		//	final int top = rect.top;
+		//	rect.top = rect.bottom;
+		//	rect.bottom += strokeSize;
+		//	canvas.drawRect(rect, fillPaint);
+		//	rect.top = top;
+		//}
 	}
 
-	public static void drawBgBorderless(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
+	public static void drawBgListItem2D(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
 		dividerAllowed &= isDividerVisible;
 		if (dividerAllowed)
 			rect.bottom -= strokeSize;
@@ -1542,6 +1557,37 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			rect.left -= dividerMarginLeft;
 			rect.right += dividerMarginRight;
 		}
+	}
+
+	public static void drawBgListItem(Canvas canvas, int state, boolean dividerAllowed, int leftMargin, int rightMargin) {
+		if (!is3D) {
+			drawBgListItem2D(canvas, state, dividerAllowed, leftMargin, rightMargin);
+			return;
+		}
+		fillPaint.setColor(color_divider);
+		//right shadow
+		canvas.drawRect(rect.right - rightMargin, controlSmallMargin + strokeSize, rect.right - rightMargin + strokeSize, rect.bottom, fillPaint);
+		//bottom shadow
+		canvas.drawRect(leftMargin + strokeSize, rect.bottom - strokeSize, rect.right - rightMargin, rect.bottom, fillPaint);
+		if ((state & ~STATE_CURRENT) != 0) {
+			if ((state & STATE_PRESSED) != 0) {
+				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+				if (isFlat) {
+					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+				} else {
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - controlSmallMargin - strokeSize));
+					canvas.drawRect(leftMargin, controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
+					fillPaint.setShader(null);
+					return;
+				}
+			} else if ((state & STATE_MULTISELECTED) != 0) {
+				fillPaint.setColor(color_selected_multi);
+			}
+		} else {
+			fillPaint.setColor(color_list);
+		}
+		canvas.drawRect(leftMargin, controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
 	}
 
 	public static void drawBg(Canvas canvas, int state) {
@@ -1695,7 +1741,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 	
 	public static void separator(Menu menu, int groupId, int order) {
-		((CustomContextMenu)menu).addSeparator(groupId, order, color_menu_border, strokeSize, defaultCheckIconSize + menuMargin + menuMargin, controlXSmallMargin, menuMargin, controlXSmallMargin);
+		((CustomContextMenu)menu).addSeparator(groupId, order, color_menu_border, strokeSize, defaultCheckIconSize + menuMargin + menuMargin, controlXtraSmallMargin, menuMargin, controlXtraSmallMargin);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)

@@ -238,7 +238,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 							} else {
 								addingFolder = true;
 								final FileFetcher ff = FileFetcher.fetchFilesInThisThread(file.path, null, false, true, true, false, false);
-								if (ff.getThrowedException() == null) {
+								final Throwable thrownException = ff.getThrownException();
+								if (thrownException == null) {
 									if (ff.count <= 0)
 										continue;
 									filesToAdd.ensureCapacity(filesToAdd.size() + ff.count);
@@ -246,7 +247,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 										filesToAdd.add(ff.files[j]);
 								} else {
 									if (firstException == null)
-										firstException = ff.getThrowedException();
+										firstException = thrownException;
 								}
 							}
 						}
@@ -538,6 +539,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
 		final boolean sectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
 		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !sectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
+		FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED);
 		if (!onlyUpdateButtons)
 			fileList.setPath(to, from, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && sectionsEnabled);
 	}
@@ -774,7 +776,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			if (firstCreation)
 				list.setVisibility(View.GONE);
 			list.setCustomEmptyText(msgEmptyList);
-			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
+			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			animator = new FastAnimator(list, false, null, 0);
 			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_disabled);
@@ -935,6 +937,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	protected void onDestroy() {
+		FileView.updateExtraMargins(false);
 		UI.browserActivity = null;
 		fileList.cancel();
 		fileList = null;

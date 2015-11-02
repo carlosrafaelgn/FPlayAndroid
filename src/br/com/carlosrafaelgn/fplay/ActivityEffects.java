@@ -281,7 +281,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		audioSink = (storedAudioSink <= 0 ? Player.localAudioSinkUsedInEffects : storedAudioSink);
 		storedAudioSink = audioSink;
 		panelControls = (LinearLayout)findViewById(R.id.panelControls);
-		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list_original));
 		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
 		panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 		if (panelSecondary instanceof ScrollView) {

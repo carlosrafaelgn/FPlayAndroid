@@ -52,8 +52,8 @@ public final class SettingView extends View {
 	private String icon, text, secondaryText;
 	private int[] textLines;
 	private boolean checkable, checked, hidingSeparator;
-	private int state, color, secondaryTextWidth, width, height, textY;
-	
+	private int state, color, secondaryTextWidth, width, height, textY, extraBorders;
+
 	public SettingView(Context context, String icon, String text, String secondaryText, boolean checkable, boolean checked, boolean color) {
 		super(context);
 		setClickable(true);
@@ -66,6 +66,7 @@ public final class SettingView extends View {
 		this.checkable = (secondaryText == null && checkable && !color);
 		this.checked = (this.checkable && checked);
 		this.color = ((secondaryText == null && !checkable && color) ? 0xff000000 : 0);
+		this.extraBorders = (UI.is3D ? UI.controlSmallMargin : 0);
 
 		secondaryTextWidth = ((secondaryText != null) ? UI.measureText(secondaryText, UI._18sp) : 0);
 
@@ -86,10 +87,10 @@ public final class SettingView extends View {
 	}
 
 	private void updateLayout() {
-		height = (UI.verticalMargin << 1);
+		height = extraBorders + (UI.verticalMargin << 1);
 		int textHeight, usableWidth;
 
-		usableWidth = width - (UI.controlMargin << 1);
+		usableWidth = width - (UI.controlMargin << 1) - (extraBorders << 1);
 		if (icon != null)
 			usableWidth -= (UI.defaultControlContentsSize + UI.menuMargin);
 		if (checkable || color != 0)
@@ -127,11 +128,11 @@ public final class SettingView extends View {
 		height += Math.max(textHeight, UI.defaultControlContentsSize);
 		if (secondaryTextWidth > 0) {
 			height += UI._18spBox + ((lineCount <= 1) ? 0 : (UI._14spBox >> 2));
-			textY = UI.verticalMargin + UI._LargeItemspYinBox;
+			textY = extraBorders + UI.verticalMargin + UI._LargeItemspYinBox;
 		} else {
 			textY = ((textHeight <= UI.defaultControlContentsSize) ?
 				(((height - textHeight) >> 1) + UI._LargeItemspYinBox) :
-				(UI.verticalMargin + UI._LargeItemspYinBox));
+				(extraBorders + UI.verticalMargin + UI._LargeItemspYinBox));
 		}
 	}
 
@@ -343,12 +344,15 @@ public final class SettingView extends View {
 		getDrawingRect(UI.rect);
 		final int txtColor = ((state == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColorSecondary = ((state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
-		int x = UI.controlMargin;
+		int x = UI.controlMargin + extraBorders;
 		if (icon != null)
 			x += (UI.defaultControlContentsSize + UI.menuMargin);
-		UI.drawBgBorderless(canvas, state, !hidingSeparator, x, UI.controlMargin);
+		if (UI.is3D)
+			UI.drawBgListItem(canvas, state, !hidingSeparator, UI.controlSmallMargin, UI.controlSmallMargin);
+		else
+			UI.drawBgListItem(canvas, state, !hidingSeparator, x, UI.controlMargin);
 		if (icon != null)
-			TextIconDrawable.drawIcon(canvas, icon, UI.controlMargin, (UI.rect.bottom - UI.defaultControlContentsSize) >> 1, UI.defaultControlContentsSize, txtColorSecondary);
+			TextIconDrawable.drawIcon(canvas, icon, UI.controlMargin + extraBorders, extraBorders + ((height - extraBorders - UI.defaultControlContentsSize) >> 1), UI.defaultControlContentsSize, txtColorSecondary);
 		if (textLines != null) {
 			int y = textY, i = 0, start;
 			while ((start = textLines[i]) >= 0) {
@@ -358,9 +362,9 @@ public final class SettingView extends View {
 			}
 		}
 		if (secondaryText != null) {
-			UI.drawText(canvas, secondaryText, txtColorSecondary, UI._18sp, width - secondaryTextWidth - UI.controlMargin, height - UI.verticalMargin - UI._18spBox + UI._18spYinBox);
+			UI.drawText(canvas, secondaryText, txtColorSecondary, UI._18sp, width - secondaryTextWidth - UI.controlMargin - extraBorders, height - UI.verticalMargin - UI._18spBox + UI._18spYinBox);
 		} else if (color != 0 || checkable) {
-			UI.rect.left = width - UI.controlMargin - UI.defaultCheckIconSize;
+			UI.rect.left = width - UI.controlMargin - UI.defaultCheckIconSize - extraBorders;
 			UI.rect.top = (height - UI.defaultCheckIconSize) >> 1;
 			if (color != 0) {
 				UI.rect.right = UI.rect.left + UI.defaultCheckIconSize;

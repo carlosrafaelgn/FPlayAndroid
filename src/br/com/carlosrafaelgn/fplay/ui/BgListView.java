@@ -85,7 +85,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private String[] sections;
 	private int[] sectionPositions;
 	public boolean skipUpDownTranslation;
-	int extraState;
+	public static int extraState;
 	
 	public BgListView(Context context) {
 		super(context);
@@ -104,10 +104,11 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	
 	@SuppressWarnings("deprecation")
 	private void init() {
+		extraState = 0;
 		super.setSelector(new NullDrawable());
 		super.setDivider(null);
 		super.setDividerHeight(0);
-		super.setCacheColorHint(UI.color_list);
+		super.setCacheColorHint(UI.color_list_bg);
 		super.setHorizontalFadingEdgeEnabled(false);
 		super.setVerticalFadingEdgeEnabled(false);
 		//super.setFadingEdgeLength(0);
@@ -125,7 +126,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			setVerticalScrollBarPosition();
 		ignorePadding = false;
-		super.setBackgroundDrawable(new ColorDrawable(UI.color_list));
+		super.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 		super.setOverscrollHeader(null); //Motorola bug!!! :P
 		super.setOverscrollFooter(null); //Motorola bug!!! :P
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
@@ -169,7 +170,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 
 	@SuppressWarnings("deprecation")
 	public void setTopBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list, 0, UI.thickDividerSize, 0, 0));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list_bg, 0, UI.thickDividerSize, 0, 0));
 		setPadding(0, UI.thickDividerSize, 0, 0);
 		UI.offsetTopEdgeEffect(this);
 	}
@@ -248,7 +249,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		return (ignoreTouchMode | super.isInTouchMode());
 	}
 	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void smoothScroll(int position, int y) {
 		smoothScrollToPositionFromTop(position, y);
 	}
@@ -264,7 +265,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			smoothScroll(position, y);
 		else
 			setSelectionFromTop(position, y);
-	}
+	}*/
 
 	public void centerItem(int position) {
 		//do not change to itemCount!
@@ -383,19 +384,13 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			if (position > l || position < 0 || (allowWrap && position == 0))
 				return l;
 			p = getLastVisiblePosition() - getFirstVisiblePosition();
-			if (p > 1)
-				p = position - (p - 1);
-			else
-				p = position - 1;
+			p = ((p > 1) ? (position - (p - 1)) : (position - 1));
 			return ((p <= 0) ? 0 : p);
 		case UI.KEY_PAGE_DOWN:
 			if ((allowWrap && position == l) || position > l || position < 0)
 				return 0;
 			p = getLastVisiblePosition() - getFirstVisiblePosition();
-			if (p > 1)
-				p = position + p - 1;
-			else
-				p = position + 1;
+			p = ((p > 1) ? (position + p - 1) : (position + 1));
 			return ((p >= l) ? l : p);
 		case UI.KEY_HOME:
 			return 0;
@@ -489,10 +484,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				}
 				final int y = (int)event.getY();
 				if (scrollBarType == SCROLLBAR_LARGE) {
-					if (y < scrollBarThumbTop || y >= (scrollBarThumbTop + scrollBarThumbHeight))
-						scrollBarThumbOffset = scrollBarThumbHeight >> 1;
-					else
-						scrollBarThumbOffset = y - scrollBarThumbTop;
+					scrollBarThumbOffset = ((y < scrollBarThumbTop || y >= (scrollBarThumbTop + scrollBarThumbHeight)) ? (scrollBarThumbHeight >> 1) : (y - scrollBarThumbTop));
 					trackTouchEvent(y);
 				} else {
 					invalidate();
@@ -578,6 +570,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			}
 			final int vh = (viewHeight - bottomPadding - topPadding);
 			contentsHeight = (itemCount * itemHeight);
+			//if (itemCount > 1 && UI.isDividerVisible)
+			//	contentsHeight += (itemCount - 1) * UI.dividerHeight;
 			if (contentsHeight <= vh) {
 				scrollBarThumbHeight = 0;
 				return;
@@ -586,6 +580,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			if (scrollBarThumbHeight < UI.controlMargin)
 				scrollBarThumbHeight = UI.controlMargin;
 			scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * ((getFirstVisiblePosition() * itemHeight) - v.getTop())) / (contentsHeight - vh));
+			//scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * ((getFirstVisiblePosition() * (UI.isDividerVisible ? (itemHeight + UI.dividerHeight) : itemHeight)) - v.getTop())) / (contentsHeight - vh));
 		}
 	}
 	
@@ -628,7 +623,11 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private void setVerticalScrollBarPosition() {
 		super.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? SCROLLBAR_POSITION_LEFT : SCROLLBAR_POSITION_RIGHT);
 	}
-	
+
+	public int getScrollBarType() {
+		return scrollBarType;
+	}
+
 	public void setScrollBarType(int scrollBarType) {
 		cancelTracking();
 		switch (scrollBarType) {
@@ -904,9 +903,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 						UI.rect.top += scrollBarThumbHeight;
 					}
 					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
-					UI.textPaint.setColor(UI.color_text_listitem);//UI.color_text_selected);
-					UI.fillRect(canvas, UI.color_list);//UI.color_selected_pressed);
-					//UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
+					UI.textPaint.setColor(UI.color_text_listitem);
+					UI.fillRect(canvas, UI.color_list);
 					canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
 					UI.textPaint.setColor(UI.color_text_highlight);
 					UI.rect.top = UI.rect.bottom;
@@ -929,12 +927,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					UI.rect.top = scrollBarThumbTop;
 					UI.rect.right = scrollBarLeft + scrollBarWidth - UI.controlSmallMargin;
 					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
-					if (tracking) {
-						UI.fillRect(canvas, UI.color_divider_pressed);
-						//UI.strokeRect(canvas, UI.color_selected_pressed_border, UI.strokeSize);
-					} else {
-						UI.fillRect(canvas, UI.color_divider);
-					}
+					UI.fillRect(canvas, tracking ? UI.color_divider_pressed : UI.color_divider);
 				}
 				break;
 			}

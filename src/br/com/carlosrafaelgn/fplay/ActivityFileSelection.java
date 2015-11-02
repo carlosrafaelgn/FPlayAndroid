@@ -445,7 +445,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		list.setOnKeyDownObserver(this);
 		if (UI.animationEnabled) {
 			list.setCustomEmptyText(msgEmptyList);
-			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
+			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			animator = new FastAnimator(list, false, null, 0);
 			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_disabled);

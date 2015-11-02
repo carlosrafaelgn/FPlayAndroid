@@ -1776,6 +1776,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPTBIT_EQUALIZER_ENABLED_BT = 46;
 	static final int OPTBIT_BASSBOOST_ENABLED_BT = 47;
 	static final int OPTBIT_VIRTUALIZER_ENABLED_BT = 48;
+	private static final int OPTBIT_3D = 49;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -1824,6 +1825,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
+		UI.is3D = opts.getBit(OPTBIT_3D, true);
 		UI.setTheme(null, (UI.lastVersionCode < 74) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
@@ -1975,6 +1977,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_ANIMATIONS, UI.animationEnabled);
 		opts.putBit(OPTBIT_ALBUMART, UI.albumArt);
 		opts.putBit(OPTBIT_BLOCKBACKKEY, UI.blockBackKey);
+		opts.putBit(OPTBIT_3D, UI.is3D);
 		opts.putBit(OPTBIT_ISDIVIDERVISIBLE, UI.isDividerVisible);
 		opts.putBit(OPTBIT_ISVERTICALMARGINLARGE, UI.isVerticalMarginLarge);
 		opts.putBit(OPTBIT_HANDLECALLKEY, handleCallKey);

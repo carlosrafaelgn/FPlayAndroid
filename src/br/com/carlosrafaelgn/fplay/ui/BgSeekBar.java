@@ -521,7 +521,7 @@ public final class BgSeekBar extends View {
 			} else {
 				UI.rect.right = filledSize;
 			}
-			UI.drawBgBorderless(canvas, state, false);
+			UI.drawBgBorderless(canvas, state);
 			if (drawTextFirst)
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
 			UI.rect.left = UI.rect.right;
@@ -551,7 +551,7 @@ public final class BgSeekBar extends View {
 					UI.rect.left = filledSize;
 					UI.rect.right = filledSize + thumbWidth;
 				}
-				UI.drawBgBorderless(canvas, state, false);
+				UI.drawBgBorderless(canvas, state);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize, (bottom - thumbWidth) >> 1, thumbWidth, color);
 			}
 		}

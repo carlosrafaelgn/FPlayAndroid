@@ -514,7 +514,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			loadingPanelAnimatorHide = new FastAnimator(panelLoading, true, this, 0);
 			loadingPanelAnimatorShow = new FastAnimator(panelLoading, false, null, 0);
 			radioStationList.radioStationAddedObserver = this;
-			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list));
+			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			animator = new FastAnimator(list, false, null, 0);
 			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_disabled);
