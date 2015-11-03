@@ -63,7 +63,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private boolean pendingAlbumArtRequest, checkBoxVisible;
 	private final boolean hasCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth;
-	
+
 	private static int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, extraLeftMargin, extraRightMargin, leftMargin, topMargin, rightMargin, bottomMargin;
 
 	public static void updateExtraMargins(boolean isScrollBarIndexed) {
@@ -84,7 +84,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	public static int getViewHeight() {
 		if (UI.is3D) {
-			switch (UI.songListScrollBarType) {
+			switch (UI.browserScrollBarType) {
+			case BgListView.SCROLLBAR_INDEXED:
 			case BgListView.SCROLLBAR_LARGE:
 				if (UI.scrollBarToTheLeft) {
 					leftMargin = 0;
@@ -156,11 +157,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		this.checkBoxVisible = hasCheckbox;
 		super.setDrawingCacheEnabled(false);
 	}
-	
+
 	private void processEllipsis() {
 		ellipsizedName = UI.ellipsizeText(file.name, UI._LargeItemsp, width - leftPadding - (checkBoxVisible ? UI.defaultControlSize : 0) - UI.controlMargin - rightMargin, true);
 	}
-	
+
 	public void refreshItem() {
 		//tiny workaround to force complete execution of setItemState()
 		checkBoxVisible = !checkBoxVisible;
@@ -325,37 +326,37 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public void setBackgroundDrawable(Drawable background) {
 		super.setBackgroundDrawable(null);
 	}
-	
+
 	@Override
 	public void setBackgroundResource(int resid) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public void setBackgroundColor(int color) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public Drawable getBackground() {
 		return null;
 	}
-	
+
 	@Override
 	public void invalidateDrawable(@NonNull Drawable drawable) {
 	}
-	
+
 	@Override
 	protected boolean verifyDrawable(Drawable drawable) {
 		return false;
 	}
-	
+
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return false;//(state != 0);
+		return false;
 	}
-	
+
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
@@ -366,23 +367,23 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			btnCheckbox.setTextColor(((state != 0) || ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM))) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 			//btnCheckbox.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_reactive : UI.colorState_text_listitem_reactive));
 	}
-	
+
 	@Override
 	protected int getSuggestedMinimumHeight() {
 		return height;
 	}
-	
+
 	@Override
 	public int getMinimumHeight() {
 		return height;
 	}
-	
+
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
 	}
-	
+
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
@@ -391,7 +392,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			processEllipsis();
 		}
 	}
-	
+
 	//Android Custom Layout - onDraw() never gets called
 	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
@@ -416,11 +417,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		}
 		super.dispatchDraw(canvas);
 	}
-	
+
 	@Override
 	protected void dispatchSetPressed(boolean pressed) {
 	}
-	
+
 	@Override
 	protected void onDetachedFromWindow() {
 		albumArtFetcher = null;
@@ -434,7 +435,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		ellipsizedName = null;
 		super.onDetachedFromWindow();
 	}
-	
+
 	@Override
 	public void onClick(View view) {
 		if (checkBoxVisible && view == btnCheckbox) {
@@ -446,14 +447,14 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				UI.browserActivity.processItemClick(position);
 		}
 	}
-	
+
 	@Override
 	public boolean onLongClick(View view) {
 		if (UI.browserActivity != null)
 			UI.browserActivity.processItemLongClick(position);
 		return true;
 	}
-	
+
 	//Runs on a SECONDARY thread
 	@Override
 	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
@@ -465,13 +466,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			bitmap.addRef();
 		h.sendMessageAtTime(Message.obtain(h, requestId, bitmap), SystemClock.uptimeMillis());
 	}
-	
+
 	//Runs on a SECONDARY thread
 	@Override
 	public FileSt fileForRequestId(int requestId) {
 		return ((requestId == this.requestId) ? file : null);
 	}
-	
+
 	//Runs on the MAIN thread
 	@Override
 	public boolean handleMessage(Message msg) {

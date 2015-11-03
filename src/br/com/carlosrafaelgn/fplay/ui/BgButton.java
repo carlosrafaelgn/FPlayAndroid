@@ -264,7 +264,7 @@ public final class BgButton extends Button {
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return false;//(state != 0);
+		return false;
 	}
 
 	@Override

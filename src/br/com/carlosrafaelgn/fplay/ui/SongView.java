@@ -92,7 +92,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		getViewHeight();
 		super.setDrawingCacheEnabled(false);
 	}
-	
+
 	private void processEllipsis() {
 		final int w = lengthX - textX - UI.controlMargin;
 		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, w, false);
@@ -117,7 +117,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		lengthX = width - lengthWidth - UI.controlMargin - rightMargin;
 		processEllipsis();
 	}
-	
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
 	public void setBackground(Drawable background) {
@@ -130,58 +130,58 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	public void setBackgroundDrawable(Drawable background) {
 		super.setBackgroundDrawable(null);
 	}
-	
+
 	@Override
 	public void setBackgroundResource(int resid) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public void setBackgroundColor(int color) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public Drawable getBackground() {
 		return null;
 	}
-	
+
 	@Override
 	public void invalidateDrawable(@NonNull Drawable drawable) {
 	}
-	
+
 	@Override
 	protected boolean verifyDrawable(Drawable drawable) {
 		return false;
 	}
-	
+
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return false;//((state & ~UI.STATE_CURRENT) != 0);
+		return false;
 	}
-	
+
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
 	}
-	
+
 	@Override
 	protected int getSuggestedMinimumHeight() {
 		return height;
 	}
-	
+
 	@Override
 	public int getMinimumHeight() {
 		return height;
 	}
-	
+
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
 	}
-	
+
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
@@ -192,7 +192,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			processEllipsis();
 		}
 	}
-	
+
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if (ellipsizedTitle == null)
@@ -209,11 +209,11 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			UI.drawText(canvas, song.length, txtColor, UI._14sp, lengthX, UI.verticalMargin + UI._14spYinBox + topMargin);
 		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, textX, extraY);
 	}
-	
+
 	@Override
 	protected void dispatchSetPressed(boolean pressed) {
 	}
-	
+
 	@Override
 	protected void onDetachedFromWindow() {
 		song = null;
@@ -221,13 +221,13 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		ellipsizedExtraInfo = null;
 		super.onDetachedFromWindow();
 	}
-	
+
 	@Override
 	public void onClick(View view) {
 		if (UI.songActivity != null)
 			UI.songActivity.processItemClick(position);
 	}
-	
+
 	@Override
 	public boolean onLongClick(View view) {
 		if (UI.songActivity != null)

@@ -112,7 +112,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int STATE_CURRENT = 4;
 	public static final int STATE_SELECTED = 8;
 	public static final int STATE_MULTISELECTED = 16;
-	public static final int STATE_CHECKED = 32;
 	
 	public static final int LOCALE_NONE = 0;
 	public static final int LOCALE_US = 1;
@@ -1499,30 +1498,24 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		return 0;
 	}
 	
-	public static void drawBgBorderless(Canvas canvas, int state) {//, boolean dividerAllowed) {
-		//dividerAllowed &= isDividerVisible;
-		//if (dividerAllowed)
-		//	rect.bottom -= strokeSize;
+	public static void drawBgBorderless(Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
-				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				if (isFlat)
-					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
-				else
-					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
-			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillRect(canvas, color_selected_multi);
+				if (isFlat) {
+					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+				} else {
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+					fillPaint.setShader(null);
+					return;
+				}
+			} else { //if ((state & STATE_MULTISELECTED) != 0) {
+				fillPaint.setColor(color_selected_multi);
 			}
+			canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 		}
-		//if (dividerAllowed) {
-		//	fillPaint.setColor(color_divider);
-		//	final int top = rect.top;
-		//	rect.top = rect.bottom;
-		//	rect.bottom += strokeSize;
-		//	canvas.drawRect(rect, fillPaint);
-		//	rect.top = top;
-		//}
 	}
 
 	public static void drawBgListItem2D(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
@@ -1531,31 +1524,25 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			rect.bottom -= strokeSize;
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
-				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				if (isFlat)
-					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
-				else
-					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
-			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillRect(canvas, color_selected_multi);
+				if (isFlat) {
+					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+				} else {
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+					fillPaint.setShader(null);
+				}
+			} else { //if ((state & STATE_MULTISELECTED) != 0) {
+				fillPaint.setColor(color_selected_multi);
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 			}
 		}
 		if (dividerAllowed) {
 			fillPaint.setColor(color_divider);
-			final int top = rect.top;
-			//rect.left += _8dp;
-			//rect.right -= _8dp;
-			rect.top = rect.bottom;
-			rect.left += dividerMarginLeft;
-			rect.bottom += strokeSize;
-			rect.right -= dividerMarginRight;
-			canvas.drawRect(rect, fillPaint);
-			//rect.left -= _8dp;
-			//rect.right += _8dp;
-			rect.top = top;
-			rect.left -= dividerMarginLeft;
-			rect.right += dividerMarginRight;
+			canvas.drawRect(rect.left + dividerMarginLeft, rect.bottom, rect.right - dividerMarginRight, rect.bottom += strokeSize, fillPaint);
 		}
 	}
 
@@ -1581,7 +1568,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					fillPaint.setShader(null);
 					return;
 				}
-			} else if ((state & STATE_MULTISELECTED) != 0) {
+			} else { //if ((state & STATE_MULTISELECTED) != 0) {
 				fillPaint.setColor(color_selected_multi);
 			}
 		} else {
@@ -1593,16 +1580,22 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static void drawBg(Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
-				fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);//, strokeSize, strokeSize);
+				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
-				if (isFlat)
-					fillRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);//, strokeSize, strokeSize);
-				else
-					fillRect(canvas, Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));//, strokeSize, strokeSize);
+				if (isFlat) {
+					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+				} else {
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+					fillPaint.setShader(null);
+				}
 				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
-			} else if ((state & STATE_MULTISELECTED) != 0) {
-				fillRect(canvas, color_selected_multi);
+			} else { //if ((state & STATE_MULTISELECTED) != 0) {
+				fillPaint.setColor(color_selected_multi);
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 			}
 		}
 	}

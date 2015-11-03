@@ -55,11 +55,39 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	private String ellipsizedTitle, ellipsizedOnAir;
 	private String[] descriptionLines, tagsLines;
 	private int state, width, position, descriptionY, tagsY;
-	
-	private static int height;
+
+	private static int height, textX, iconY, onAirY, leftMargin, topMargin, rightMargin, bottomMargin;
 
 	public static int getViewHeight() {
-		return (height = UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spBox + (3 * UI._14spBox) + UI.controlSmallMargin + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI.controlXtraSmallMargin + UI.strokeSize) : UI.controlXtraSmallMargin), UI.verticalMargin + (UI._14spBox << 1)) + UI.controlSmallMargin);
+		if (UI.is3D) {
+			switch (UI.browserScrollBarType) {
+			case BgListView.SCROLLBAR_INDEXED:
+			case BgListView.SCROLLBAR_LARGE:
+				if (UI.scrollBarToTheLeft) {
+					leftMargin = 0;
+					rightMargin = UI.controlSmallMargin;
+				} else {
+					leftMargin = UI.controlSmallMargin;
+					rightMargin = UI.strokeSize;
+				}
+				break;
+			default:
+				leftMargin = UI.controlSmallMargin;
+				rightMargin = UI.controlSmallMargin;
+				break;
+			}
+			topMargin = UI.controlSmallMargin;
+			bottomMargin = UI.strokeSize;
+		} else {
+			leftMargin = 0;
+			topMargin = 0;
+			rightMargin = 0;
+			bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
+		}
+		textX = leftMargin + UI.controlMargin;
+		iconY = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + ((UI._18spBox - UI._18sp) >> 1);
+		onAirY = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spYinBox;
+		return (height = topMargin + bottomMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spBox + (3 * UI._14spBox) + UI.controlSmallMargin + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI.controlXtraSmallMargin + UI.strokeSize) : UI.controlXtraSmallMargin), UI.verticalMargin + (UI._14spBox << 1)) + UI.controlSmallMargin);
 	}
 
 	public RadioStationView(Context context) {
@@ -73,7 +101,8 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		tagsLines = new String[3];
 		btnFavorite = new BgButton(context);
 		LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
+		p.rightMargin = rightMargin;
+		p.bottomMargin = bottomMargin;
 		btnFavorite.setLayoutParams(p);
 		btnFavorite.setHideBorders(true);
 		btnFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, true, true, true);
@@ -83,9 +112,9 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		addView(btnFavorite);
 		super.setDrawingCacheEnabled(false);
 	}
-	
+
 	private void processEllipsis() {
-		final int hMargin = (UI.controlMargin << 1);
+		final int hMargin = (UI.controlMargin << 1) + leftMargin + rightMargin;
 		if (width <= hMargin) {
 			ellipsizedTitle = "";
 			ellipsizedOnAir = "";
@@ -110,10 +139,10 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			else
 				tagsLines[1] += "\u2026";
 		}
-		tagsY = height - UI.verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
+		tagsY = height - bottomMargin - UI.verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
 		
 		//center the description vertically, considering all available space
-		final int top = UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spBox, bottom = Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI.controlXtraSmallMargin + UI.strokeSize) : UI.controlXtraSmallMargin), UI.verticalMargin + (visibleLines * UI._14spBox));
+		final int top = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spBox, bottom = bottomMargin + Math.max(UI.defaultControlSize + UI.controlXtraSmallMargin, UI.verticalMargin + (visibleLines * UI._14spBox));
 		
 		layout = new StaticLayout(station.description, UI.textPaint, width - hMargin, Alignment.ALIGN_NORMAL, 1, 0, false);
 		visibleLines = Math.min(3, layout.getLineCount());
@@ -155,7 +184,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			btnFavorite.setChecked(station.isFavorite);
 		processEllipsis();
 	}
-	
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
 	public void setBackground(Drawable background) {
@@ -168,37 +197,37 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	public void setBackgroundDrawable(Drawable background) {
 		super.setBackgroundDrawable(null);
 	}
-	
+
 	@Override
 	public void setBackgroundResource(int resid) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public void setBackgroundColor(int color) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public Drawable getBackground() {
 		return null;
 	}
-	
+
 	@Override
 	public void invalidateDrawable(@NonNull Drawable drawable) {
 	}
-	
+
 	@Override
 	protected boolean verifyDrawable(Drawable drawable) {
 		return false;
 	}
-	
+
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return false;//((state & ~UI.STATE_CURRENT) != 0);
+		return false;
 	}
-	
+
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
@@ -207,23 +236,23 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		if ((state == 0) != old && btnFavorite != null)
 			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 	}
-	
+
 	@Override
 	protected int getSuggestedMinimumHeight() {
 		return height;
 	}
-	
+
 	@Override
 	public int getMinimumHeight() {
 		return height;
 	}
-	
+
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
 	}
-	
+
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
@@ -232,7 +261,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			processEllipsis();
 		}
 	}
-	
+
 	//Android Custom Layout - onDraw() never gets called
 	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
@@ -242,30 +271,30 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		getDrawingRect(UI.rect);
-		UI.drawBgBorderless(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, UI.controlMargin, UI.verticalMargin + UI._22spYinBox);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, UI.controlMargin, UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + ((UI._18spBox - UI._18sp) >> 1), UI._18sp, txtColor2);
-		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, UI.controlMargin + UI._18sp + UI.controlSmallMargin, UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spYinBox);
+		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2), true, leftMargin, rightMargin);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, textX, topMargin + UI.verticalMargin + UI._22spYinBox);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, textX, iconY, UI._18sp, txtColor2);
+		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, textX + UI._18sp + UI.controlSmallMargin, onAirY);
 		int i = 0, y = descriptionY;
 		while (descriptionLines[i] != null) {
-			UI.drawText(canvas, descriptionLines[i], txtColor, UI._14sp, UI.controlMargin, y);
+			UI.drawText(canvas, descriptionLines[i], txtColor, UI._14sp, textX, y);
 			y += UI._14spBox;
 			i++;
 		}
 		i = 0;
 		y = tagsY;
 		while (tagsLines[i] != null) {
-			UI.drawText(canvas, tagsLines[i], txtColor2, UI._14sp, UI.controlMargin, y);
+			UI.drawText(canvas, tagsLines[i], txtColor2, UI._14sp, textX, y);
 			y += UI._14spBox;
 			i++;
 		}
 		super.dispatchDraw(canvas);
 	}
-	
+
 	@Override
 	protected void dispatchSetPressed(boolean pressed) {
 	}
-	
+
 	@Override
 	protected void onDetachedFromWindow() {
 		station = null;
@@ -276,7 +305,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		tagsLines = null;
 		super.onDetachedFromWindow();
 	}
-	
+
 	@Override
 	public void onClick(View view) {
 		if (view == btnFavorite) {
@@ -289,7 +318,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 				UI.browserActivity.processItemClick(position);
 		}
 	}
-	
+
 	@Override
 	public boolean onLongClick(View view) {
 		if (UI.browserActivity != null)

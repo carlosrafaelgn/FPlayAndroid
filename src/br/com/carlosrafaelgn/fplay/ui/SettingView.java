@@ -165,7 +165,7 @@ public final class SettingView extends View {
 	public boolean isChecked() {
 		return (checkable && checked);
 	}
-	
+
 	public void setChecked(boolean checked) {
 		if (checkable) {
 			this.checked = checked;
@@ -176,11 +176,11 @@ public final class SettingView extends View {
 	public void setHidingSeparator(boolean hidingSeparator) {
 		this.hidingSeparator = hidingSeparator;
 	}
-	
+
 	public int getColor() {
 		return color;
 	}
-	
+
 	public void setColor(int color) {
 		if (this.color != 0) {
 			this.color = (color | 0xff000000);
@@ -232,35 +232,35 @@ public final class SettingView extends View {
 	public void setBackgroundDrawable(Drawable background) {
 		super.setBackgroundDrawable(null);
 	}
-	
+
 	@Override
 	public void setBackgroundResource(int resid) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public void setBackgroundColor(int color) {
 		super.setBackgroundResource(0);
 	}
-	
+
 	@Override
 	public Drawable getBackground() {
 		return null;
 	}
-	
+
 	@Override
 	public void invalidateDrawable(@NonNull Drawable drawable) {
 	}
-	
+
 	@Override
 	protected boolean verifyDrawable(Drawable drawable) {
 		return false;
 	}
-	
+
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
-		return false;//(state != 0);
+		return false;
 	}
 
 	@Override
@@ -374,11 +374,11 @@ public final class SettingView extends View {
 			TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, UI.rect.left, UI.rect.top, UI.defaultCheckIconSize, txtColor);
 		}
 	}
-	
+
 	@Override
 	protected void dispatchSetPressed(boolean pressed) {
 	}
-	
+
 	@Override
 	protected void onDetachedFromWindow() {
 		icon = null;
