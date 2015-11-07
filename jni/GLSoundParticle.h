@@ -31,6 +31,9 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
+#include "LinearAlg.h"
+#include "HeadTracker.h"
+
 #define BG_COLUMNS 31
 #define BG_PARTICLES_BY_COLUMN 16
 #define BG_COUNT (BG_COLUMNS * BG_PARTICLES_BY_COLUMN)

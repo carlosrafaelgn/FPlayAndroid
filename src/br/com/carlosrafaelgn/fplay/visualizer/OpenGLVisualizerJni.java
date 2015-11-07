@@ -43,10 +43,6 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.net.Uri;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -85,7 +81,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
-public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, MenuItem.OnMenuItemClickListener, MainHandler.Callback, SensorEventListener {
+public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
 	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5, MNU_DIFFUSION0 = MNU_VISUALIZER + 6, MNU_DIFFUSION1 = MNU_VISUALIZER + 7, MNU_DIFFUSION2 = MNU_VISUALIZER + 8, MNU_DIFFUSION3 = MNU_VISUALIZER + 9, MNU_RISESPEED0 = MNU_VISUALIZER + 10, MNU_RISESPEED1 = MNU_VISUALIZER + 11, MNU_RISESPEED2 = MNU_VISUALIZER + 12, MNU_RISESPEED3 = MNU_VISUALIZER + 13;
 
 	private static final int MSG_OPENGL_ERROR = 0x0600;
@@ -111,9 +107,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private int colorIndex, speed, viewWidth, viewHeight, diffusion, riseSpeed, ignoreInput;
 	private EGLConfig config;
 	private Activity activity;
-	private SensorManager sensorManager;
 	private WindowManager windowManager;
-	private Sensor accel, magnetic;
+	private OpenGLVisualizerSensorManager sensorManager;
 	@SuppressWarnings("deprecation")
 	private Camera camera;
 	private SurfaceTexture cameraTexture;
@@ -157,36 +152,9 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 
 		if (type == TYPE_IMMERSIVE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE_VR) {
-			try {
-				sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-			} catch (Throwable ex) {
+			sensorManager = new OpenGLVisualizerSensorManager(context);
+			if (!sensorManager.isCapable) {
 				sensorManager = null;
-				accel = null;
-				magnetic = null;
-			}
-			if (sensorManager != null) {
-				try {
-					accel = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-				} catch (Throwable ex) {
-					accel = null;
-				}
-				if (accel == null) {
-					try {
-						accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-					} catch (Throwable ex) {
-						accel = null;
-					}
-				}
-				try {
-					magnetic = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-				} catch (Throwable ex) {
-					magnetic = null;
-				}
-			}
-			if (accel == null || magnetic == null) {
-				sensorManager = null;
-				accel = null;
-				magnetic = null;
 				UI.toast(activity, R.string.msg_no_sensors);
 			} else {
 				CharSequence originalText = activity.getText(R.string.msg_immersive);
@@ -809,17 +777,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	public void onActivityPause() {
 		if (sensorManager != null)
-			sensorManager.unregisterListener(this);
+			sensorManager.unregister();
 	}
 
 	//Runs on the MAIN thread
 	public void onActivityResume() {
-		if (sensorManager != null) {
-			//SENSOR_DELAY_UI provides a nice refresh rate, but SENSOR_DELAY_GAME
-			//provides an AWESOME refresh rate!
-			sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME);
-			sensorManager.registerListener(this, magnetic, SensorManager.SENSOR_DELAY_GAME);
-		}
+		if (sensorManager != null)
+			sensorManager.register();
 	}
 
 	//Runs on the MAIN thread
@@ -987,23 +951,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void releaseView() {
 		windowManager = null;
 		if (sensorManager != null) {
-			sensorManager.unregisterListener(this);
+			sensorManager.release();
 			sensorManager = null;
-			accel = null;
-			magnetic = null;
 		}
 		activity = null;
 		SimpleVisualizerJni.glReleaseView();
-	}
-
-	//Runs on the MAIN thread
-	@Override
-	public void onSensorChanged(SensorEvent sensorEvent) {
-		SimpleVisualizerJni.glOnSensorData((sensorEvent.sensor == accel) ? 1 : 2, sensorEvent.values);
-	}
-
-	//Runs on the MAIN thread
-	@Override
-	public void onAccuracyChanged(Sensor sensor, int i) {
 	}
 }
