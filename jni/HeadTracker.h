@@ -38,146 +38,137 @@
 //
 //***************************************************************************
 
+//***************************************************************
+// I applied one optimization here:
+// Since the only outcome from OrientationEKF is a pure rotation
+// matrix, I decided to keep both mEkfToHeadTracker and
+// mSensorToDisplay in a 3x3 matrix
+//***************************************************************
 class HeadTracker {
+private:
+	Matrix3x3 mEkfToHeadTracker, mSensorToDisplay;
+	uint64_t mLatestGyroEventClockTimeNs;
+	Vector3 mLatestGyro, mLatestAcc;
+	OrientationEKF mTracker;
+
 public:
-    private static final float DEFAULT_NECK_HORIZONTAL_OFFSET = 0.08f;
-    private static final float DEFAULT_NECK_VERTICAL_OFFSET = 0.075f;
-    private static final boolean DEFAULT_NECK_MODEL_ENABLED = false;
-    private final Display mDisplay;
-    private final float[] mEkfToHeadTracker;
-    private final float[] mSensorToDisplay;
-    private float mDisplayRotation;
-    private final float[] mNeckModelTranslation;
-    private final float[] mTmpHeadView;
-    private final float[] mTmpHeadView2;
-    private boolean mNeckModelEnabled;
-    private volatile boolean mTracking;
-    private OrientationEKF mTracker;
-    private SensorEventProvider mSensorEventProvider;
-    private Clock mClock;
-    private long mLatestGyroEventClockTimeNs;
-    private final Vector3d mGyroBias;
-    private final Vector3d mLatestGyro;
-    private final Vector3d mLatestAcc;
+	HeadTracker(int displayRotation) {
+		mLatestGyroEventClockTimeNs = 0;
+		mLatestGyro.x = 0;
+		mLatestGyro.y = 0;
+		mLatestGyro.z = 0;
+		mLatestAcc.x = 0;
+		mLatestAcc.y = 0;
+		mLatestAcc.z = 0;
+		displayRotationChanged(displayRotation);
+	}
 
-    public static HeadTracker createFromContext(final Context context) {
-        final SensorManager sensorManager = (SensorManager)context.getSystemService("sensor");
-        final Display display = ((WindowManager)context.getSystemService("window")).getDefaultDisplay();
-        return new HeadTracker(new DeviceSensorLooper(sensorManager), new SystemClock(), display);
+	void displayRotationChanged(int displayRotation) {
+		//Matrix.setRotateEulerM(this.mSensorToDisplay, 0, 0.0f, 0.0f, -rotation);
+        float cx = 1.0f, sx = 0.0f;
+        const float cy = 1.0f, sy = 0.0f;
+        float cz, sz;
+		switch (displayRotation) {
+		case 1: //ROTATION_90 (-90)
+			cz = 0.0f;
+			sz = -1.0f;
+			break;
+		case 2: //ROTATION_180 (-180)
+			cz = -1.0f;
+			sz = 0.0f;
+			break;
+		case 3: //ROTATION_270 (-270)
+			cz = 0.0f;
+			sz = 1.0f;
+			break;
+		default: //ROTATION_0
+			cz = 1.0f;
+			sz = 0.0f;
+			break;
+		}
+		float cxsy = cx * sy;
+		float sxsy = sx * sy;
+
+		mSensorToDisplay.m[0] = cy * cz;
+		mSensorToDisplay.m[1] = -cy * sz;
+		mSensorToDisplay.m[2] = sy;
+
+		mSensorToDisplay.m[3] = cxsy * cz + cx * sz;
+		mSensorToDisplay.m[4] = -cxsy * sz + cx * cz;
+		mSensorToDisplay.m[5] = -sx * cy;
+
+		mSensorToDisplay.m[6] = -sxsy * cz + sx * sz;
+		mSensorToDisplay.m[7] = sxsy * sz + sx * cz;
+		mSensorToDisplay.m[8] = cx * cy;
+
+		//Matrix.setRotateEulerM(this.mEkfToHeadTracker, 0, -90.0f, 0.0f,  rotation);
+        cx = 0.0f;
+        sx = -1.0f;
+		switch (displayRotation) {
+		case 1: //ROTATION_90
+			cz = 0.0f;
+			sz = 1.0f;
+			break;
+		case 2: //ROTATION_180
+			cz = -1.0f;
+			sz = 0.0f;
+			break;
+		case 3: //ROTATION_270
+			cz = 0.0f;
+			sz = -1.0f;
+			break;
+		default: //ROTATION_0
+			cz = 1.0f;
+			sz = 0.0f;
+			break;
+		}
+		cxsy = cx * sy;
+		sxsy = sx * sy;
+
+		mEkfToHeadTracker.m[0] = cy * cz;
+		mEkfToHeadTracker.m[1] = -cy * sz;
+		mEkfToHeadTracker.m[2] = sy;
+
+		mEkfToHeadTracker.m[3] = cxsy * cz + cx * sz;
+		mEkfToHeadTracker.m[4] = -cxsy * sz + cx * cz;
+		mEkfToHeadTracker.m[5] = -sx * cy;
+
+		mEkfToHeadTracker.m[6] = -sxsy * cz + sx * sz;
+		mEkfToHeadTracker.m[7] = sxsy * sz + sx * cz;
+		mEkfToHeadTracker.m[8] = cx * cy;
+	}
+
+	void onSensorReset() {
+		mTracker.reset();
+	}
+
+    void onSensorData(uint64_t sensorTimestamp, int sensorType, float* values) {
+		if (sensorType == 1) {
+			mLatestAcc.x = values[0];
+			mLatestAcc.y = values[1];
+			mLatestAcc.z = values[2];
+			mTracker.processAcc(mLatestAcc);
+		} else {
+			mLatestGyroEventClockTimeNs = commonUptimeNs();
+			mLatestGyro.x = values[0];
+			mLatestGyro.y = values[1];
+			mLatestGyro.z = values[2];
+			mTracker.processGyro(mLatestGyro, sensorTimestamp);
+		}
     }
 
-    public HeadTracker(final SensorEventProvider sensorEventProvider, final Clock clock, final Display display) {
-        super();
-        this.mEkfToHeadTracker = new float[16];
-        this.mSensorToDisplay = new float[16];
-        this.mDisplayRotation = Float.NaN;
-        this.mNeckModelTranslation = new float[16];
-        this.mTmpHeadView = new float[16];
-        this.mTmpHeadView2 = new float[16];
-        this.mNeckModelEnabled = DEFAULT_NECK_MODEL_ENABLED;
-        this.mGyroBias = new Vector3d();
-        this.mLatestGyro = new Vector3d();
-        this.mLatestAcc = new Vector3d();
-        this.mClock = clock;
-        this.mSensorEventProvider = sensorEventProvider;
-        this.mTracker = new OrientationEKF();
-        this.mDisplay = display;
-        Matrix.setIdentityM(this.mNeckModelTranslation, 0);
-        Matrix.translateM(this.mNeckModelTranslation, 0,
-                0.0f, -DEFAULT_NECK_VERTICAL_OFFSET, DEFAULT_NECK_HORIZONTAL_OFFSET);
-    }
+	void getLastHeadView(float* headView4x4) {
+		const float secondsSinceLastGyroEvent = (float)(commonUptimeNs() - mLatestGyroEventClockTimeNs) / 1000000000.0f;
+		const float secondsToPredictForward = secondsSinceLastGyroEvent + (1.0f / 30.0f);
 
-    public void onSensorChanged(final SensorEvent event) {
-        if (event.sensor.getType() == 1) {
-            this.mLatestAcc.set(event.values[0], event.values[1], event.values[2]);
-            this.mTracker.processAcc(this.mLatestAcc);
-        }
-        else if (event.sensor.getType() == 4) {
-            this.mLatestGyroEventClockTimeNs = this.mClock.nanoTime();
-            this.mLatestGyro.set(event.values[0], event.values[1], event.values[2]);
-            Vector3d.sub(this.mLatestGyro, this.mGyroBias, this.mLatestGyro);
-            this.mTracker.processGyro(this.mLatestGyro, event.timestamp);
-        }
-    }
+		mTracker.computePredictedGLMatrix(secondsToPredictForward);
+		Matrix3x3 mTmpHeadView;
+		Matrix3x3::mult(mSensorToDisplay, mTracker.rotationMatrix, mTmpHeadView);
+		Matrix3x3::mult(mTmpHeadView, mEkfToHeadTracker, mTmpHeadView);
 
-    public void onAccuracyChanged(final Sensor sensor, final int accuracy) {
-    }
-
-    public void startTracking() {
-        if (this.mTracking) {
-            return;
-        }
-        this.mTracker.reset();
-        this.mSensorEventProvider.registerListener((SensorEventListener)this);
-        this.mSensorEventProvider.start();
-        this.mTracking = true;
-    }
-
-    public void stopTracking() {
-        if (!this.mTracking) {
-            return;
-        }
-        this.mSensorEventProvider.unregisterListener((SensorEventListener)this);
-        this.mSensorEventProvider.stop();
-        this.mTracking = false;
-    }
-
-    public void setGyroBias(final float[] gyroBias) {
-        if (gyroBias == null) {
-            this.mGyroBias.setZero();
-            return;
-        }
-        if (gyroBias.length != 3) {
-            throw new IllegalArgumentException("Gyro bias should be an array of 3 values");
-        }
-        this.mGyroBias.set(gyroBias[0], gyroBias[1], gyroBias[2]);
-    }
-
-    public void setNeckModelEnabled(final boolean enabled) {
-        this.mNeckModelEnabled = enabled;
-    }
-
-    public void getLastHeadView(final float[] headView, final int offset) {
-        if (offset + 16 > headView.length) {
-            throw new IllegalArgumentException("Not enough space to write the result");
-        }
-        float rotation = 0.0f;
-        switch (this.mDisplay.getRotation()) {
-            case 0: {
-                rotation = 0.0f;
-                break;
-            }
-            case 1: {
-                rotation = 90.0f;
-                break;
-            }
-            case 2: {
-                rotation = 180.0f;
-                break;
-            }
-            case 3: {
-                rotation = 270.0f;
-                break;
-            }
-        }
-        if (rotation != this.mDisplayRotation) {
-            this.mDisplayRotation = rotation;
-            Matrix.setRotateEulerM(this.mSensorToDisplay, 0, 0.0f, 0.0f, -rotation);
-            Matrix.setRotateEulerM(this.mEkfToHeadTracker, 0, -90.0f, 0.0f, rotation);
-        }
-        synchronized (this.mTracker) {
-            final double secondsSinceLastGyroEvent = TimeUnit.NANOSECONDS.toSeconds(this.mClock.nanoTime() - this.mLatestGyroEventClockTimeNs);
-            final double secondsToPredictForward = secondsSinceLastGyroEvent + 1.0/30;
-            final double[] mat = this.mTracker.getPredictedGLMatrix(secondsToPredictForward);
-            for (int i = 0; i < headView.length; ++i) {
-                this.mTmpHeadView[i] = (float)mat[i];
-            }
-        }
-        Matrix.multiplyMM(this.mTmpHeadView2, 0, this.mSensorToDisplay, 0, this.mTmpHeadView, 0);
-        Matrix.multiplyMM(headView, offset, this.mTmpHeadView2, 0, this.mEkfToHeadTracker, 0);
-        if (this.mNeckModelEnabled) {
-            Matrix.multiplyMM(this.mTmpHeadView, 0, this.mNeckModelTranslation, 0, headView, offset);
-            Matrix.translateM(headView, offset, this.mTmpHeadView, 0, 0.0f, DEFAULT_NECK_VERTICAL_OFFSET, 0.0f);
-        }
-    }
+		for (int r = 0; r < 3; ++r) {
+			for (int c = 0; c < 3; ++c)
+				headView4x4[(c << 2) + r] = mTmpHeadView.c[r][c];
+		}
+	}
 };

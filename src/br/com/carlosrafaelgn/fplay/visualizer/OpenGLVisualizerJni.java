@@ -157,6 +157,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				sensorManager = null;
 				UI.toast(activity, R.string.msg_no_sensors);
 			} else {
+				sensorManager.start();
 				CharSequence originalText = activity.getText(R.string.msg_immersive);
 				final int iconIdx = originalText.toString().indexOf('\u21BA');
 				if (iconIdx >= 0) {
@@ -782,8 +783,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on the MAIN thread
 	public void onActivityResume() {
-		if (sensorManager != null)
+		if (sensorManager != null) {
+			sensorManager.reset();
 			sensorManager.register();
+		}
 	}
 
 	//Runs on the MAIN thread

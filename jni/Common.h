@@ -66,10 +66,18 @@ unsigned int commonUptimeDeltaMillis(unsigned int* lastTime) {
 	t.tv_sec = 0;
 	t.tv_nsec = 0;
 	clock_gettime(CLOCK_MONOTONIC, &t);
-	*((unsigned int*)&t) = (unsigned int)((((long)t.tv_sec) * 1000L) + (t.tv_nsec / 1000000L));
+	*((unsigned int*)&t) = (unsigned int)((t.tv_sec * 1000) + (t.tv_nsec / 1000000));
 	const unsigned int delta = *((unsigned int*)&t) - *lastTime;
 	*lastTime = *((unsigned int*)&t);
 	return ((delta >= 100) ? 100 : delta);
+}
+
+uint64_t commonUptimeNs() {
+	struct timespec t;
+	t.tv_sec = 0;
+	t.tv_nsec = 0;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	return ((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec;
 }
 
 void commonSRand() {

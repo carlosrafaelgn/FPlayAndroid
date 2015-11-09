@@ -974,12 +974,18 @@ void JNICALL glDrawFrame(JNIEnv* env, jclass clazz) {
 	}
 }
 
-void JNICALL glOnSensorData(JNIEnv* env, jclass clazz, int sensorType, jfloatArray jvalues) {
+void JNICALL glOnSensorReset(JNIEnv* env, jclass clazz) {
+	if (glSoundParticle)
+		glSoundParticle->onSensorReset();
+}
+
+void JNICALL glOnSensorData(JNIEnv* env, jclass clazz, uint64_t sensorTimestamp, int sensorType, jfloatArray jvalues) {
 	if (!glSoundParticle || !jvalues)
 		return;
 	float* values = (float*)env->GetPrimitiveArrayCritical(jvalues, 0);
-	glSoundParticle->onSensorData(sensorType, values);
+	float v[] = { values[0], values[1], values[2] };
 	env->ReleasePrimitiveArrayCritical(jvalues, values, JNI_ABORT);
+	glSoundParticle->onSensorData(sensorTimestamp, sensorType, v);
 }
 
 void JNICALL glSetImmersiveCfg(JNIEnv* env, jclass clazz, int diffusion, int riseSpeed) {

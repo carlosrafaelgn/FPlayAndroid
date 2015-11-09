@@ -394,13 +394,18 @@ private:
 	}
 };
 
+//***************************************************************
+// I applied one optimization here:
+// Since the only outcome from OrientationEKF is a pure rotation
+// matrix, I decided to keep it in a 3x3 matrix
+//***************************************************************
 class OrientationEKF {
 public:
-	float rotationMatrix[16];
+	Matrix3x3 rotationMatrix;
 private:
 	Matrix3x3 so3SensorFromWorld, so3LastMotion, mP, mQ, mRaccel, mS, mH, mK;
 	Vector3 mNu, mz, mh, mu, mx, down;
-	uint64_t sensorTimeStampGyro;
+	uint64_t sensorTimestampGyro;
 	Vector3 lastGyro;
 	float previousAccelNorm, movingAverageAccelNormChange, filteredGyroTimestep;
 	int numGyroTimestepSamples;
@@ -414,7 +419,7 @@ public:
 	}
 
 	void reset() {
-		sensorTimeStampGyro = 0;
+		sensorTimestampGyro = 0;
 		so3SensorFromWorld.setIdentity();
 		so3LastMotion.setIdentity();
 		mP.setZero();
@@ -437,34 +442,18 @@ public:
 		alignedToGravity = false;
 	}
 
-	void getPredictedGLMatrix(float secondsAfterLastGyroEvent) {
+	void computePredictedGLMatrix(float secondsAfterLastGyroEvent) {
 		Vector3 pmu = lastGyro;
 		pmu.scale(-secondsAfterLastGyroEvent);
-
-		Matrix3x3 so3PredictedMotion;
-		So3Util::sO3FromMu(pmu, so3PredictedMotion);
-		Matrix3x3::mult(so3PredictedMotion, so3SensorFromWorld, so3PredictedMotion);
-
-		//glMatrixFromSo3(so3PredictedMotion);
-		for (int r = 0; r < 3; ++r) {
-			for (int c = 0; c < 3; ++c)
-				rotationMatrix[(c << 2) + r] = so3PredictedMotion.c[r][c];
-		}
-		/*rotationMatrix[3] = 0.0;
-		rotationMatrix[7] = 0.0;
-		rotationMatrix[11] = 0.0;
-
-		rotationMatrix[12] = 0.0;
-		rotationMatrix[13] = 0.0;
-		rotationMatrix[14] = 0.0;
-		rotationMatrix[15] = 1.0;*/
+		So3Util::sO3FromMu(pmu, rotationMatrix);
+		Matrix3x3::mult(rotationMatrix, so3SensorFromWorld, rotationMatrix);
 	}
 
-	void processGyro(const Vector3 &gyro, uint64_t sensorTimeStamp) {
+	void processGyro(const Vector3 &gyro, uint64_t sensorTimestamp) {
 		const float kTimeThreshold = 0.04f;
 		const float kdTDefault = 0.01f;
-		if (sensorTimeStampGyro) {
-			float dT = (sensorTimeStamp - sensorTimeStampGyro) * 1.0E-9f;
+		if (sensorTimestampGyro) {
+			float dT = (sensorTimestamp - sensorTimestampGyro) * 1.0E-9f;
 			if (dT > kTimeThreshold) {
 				dT = (gyroFilterValid ? filteredGyroTimestep : kdTDefault );
 			} else {
@@ -489,7 +478,7 @@ public:
 			processGyroTempM2.scale(dT * dT);
 			mP.plusEquals(processGyroTempM2);
 		}
-		sensorTimeStampGyro = sensorTimeStamp;
+		sensorTimestampGyro = sensorTimestamp;
 		lastGyro = gyro;
 	}
 

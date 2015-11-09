@@ -45,6 +45,7 @@ import android.os.SystemClock;
 public final class OpenGLVisualizerSensorManager extends Thread implements Handler.Callback, SensorEventListener {
 	private static final int MSG_REGISTER = 0x0600;
 	private static final int MSG_UNREGISTER = 0x0601;
+	private static final int MSG_RESET = 0x0602;
 	private Looper looper;
 	private Handler handler;
 	private SensorManager sensorManager;
@@ -89,6 +90,17 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 			accel = null;
 			gyro = null;
 		}
+	}
+
+	public void reset() {
+		synchronized (this) {
+			if (handler != null)
+				handler.sendEmptyMessageAtTime(MSG_RESET, SystemClock.uptimeMillis());
+		}
+	}
+
+	private void _reset() {
+		SimpleVisualizerJni.glOnSensorReset();
 	}
 
 	public void register() {
@@ -145,13 +157,16 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 		case MSG_UNREGISTER:
 			_unregister();
 			break;
+		case MSG_RESET:
+			_reset();
+			break;
 		}
 		return true;
 	}
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
-		SimpleVisualizerJni.glOnSensorData((event.sensor == accel) ? 1 : 2, event.values);
+		SimpleVisualizerJni.glOnSensorData(event.timestamp, (event.sensor == accel) ? Sensor.TYPE_ACCELEROMETER : Sensor.TYPE_GYROSCOPE, event.values);
 	}
 
 	@Override
