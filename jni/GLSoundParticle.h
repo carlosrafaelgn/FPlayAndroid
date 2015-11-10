@@ -359,23 +359,23 @@ public:
 			Vector3 v;
 			switch (rotation) {
 			case 1: //ROTATION_90
-				v.x = -values[1];
-				v.y = values[0];
+				v.x = (ftype)-values[1];
+				v.y = (ftype)values[0];
 				break;
 			case 2: //ROTATION_180
-				v.x = -values[0];
-				v.y = -values[1];
+				v.x = (ftype)-values[0];
+				v.y = (ftype)-values[1];
 				break;
 			case 3: //ROTATION_270
-				v.x = values[1];
-				v.y = -values[0];
+				v.x = (ftype)values[1];
+				v.y = (ftype)-values[0];
 				break;
 			default: //ROTATION_0
-				v.x = values[0];
-				v.y = values[1];
+				v.x = (ftype)values[0];
+				v.y = (ftype)values[1];
 				break;
 			}
-			v.z = values[2];
+			v.z = (ftype)values[2];
 			mutex.enter1();
 			headTracker->onSensorData(sensorTimestamp, sensorType, v);
 			mutex.leave1();

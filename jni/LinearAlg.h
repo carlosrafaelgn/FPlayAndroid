@@ -38,42 +38,64 @@
 //
 //***************************************************************************
 
+#define USE_DOUBLE
+
+#ifdef USE_DOUBLE
+	#define ftype double
+	#define fint int64_t
+	#define fintabs(A) *((int64_t*)&A) &= 0x7fffffffffffffffLL
+	#define fsqrt sqrt
+	#define fsin sin
+	#define fcos cos
+	#define fasin asin
+	#define facos acos
+#else
+	#define ftype float
+	#define fint int
+	#define fintabs(A) *((int*)&A) &= 0x7fffffff
+	#define fsqrt sqrtf
+	#define fsin sinf
+	#define fcos cosf
+	#define fasin asinf
+	#define facos acosf
+#endif
+
 class Vector3 {
 public:
 	union {
-		float c[3];
+		ftype c[3];
 		struct {
-			float x, y, z;
+			ftype x, y, z;
 		};
 	};
 
 	void setZero() {
-		x = 0.0f;
-		y = 0.0f;
-		z = 0.0f;
+		x = (ftype)0.0;
+		y = (ftype)0.0;
+		z = (ftype)0.0;
 	}
 
-	void scale(const float f) {
+	void scale(const ftype f) {
 		x *= f;
 		y *= f;
 		z *= f;
 	}
 
-	float length() const {
-		return sqrtf((x * x) + (y * y) + (z * z));
+	ftype length() const {
+		return fsqrt((x * x) + (y * y) + (z * z));
 	}
 
 	void normalize() {
-		float f = sqrtf((x * x) + (y * y) + (z * z));
-		if ((*(int*)&f)) {
-			f = 1.0f / f;
+		ftype f = fsqrt((x * x) + (y * y) + (z * z));
+		if ((*(fint*)&f)) {
+			f = (ftype)1.0 / f;
 			x *= f;
 			y *= f;
 			z *= f;
 		}
 	}
 
-	static float dot(const Vector3 &a, const Vector3 &b) {
+	static ftype dot(const Vector3 &a, const Vector3 &b) {
 		return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 	}
 
@@ -84,19 +106,19 @@ public:
 	}
 
 	static void cross(const Vector3 &a, const Vector3 &b, Vector3 &result) {
-		const float x = (a.y * b.z) - (a.z * b.y);
-		const float y = (a.z * b.x) - (a.x * b.z);
-		const float z = (a.x * b.y) - (a.y * b.x);
+		const ftype x = (a.y * b.z) - (a.z * b.y);
+		const ftype y = (a.z * b.x) - (a.x * b.z);
+		const ftype z = (a.x * b.y) - (a.y * b.x);
 		result.x = x;
 		result.y = y;
 		result.z = z;
 	}
 
 	int largestAbsComponent() const {
-		float xAbs = x, yAbs = y, zAbs = z;
-		*((int*)&xAbs) &= 0x7fffffff;
-		*((int*)&yAbs) &= 0x7fffffff;
-		*((int*)&zAbs) &= 0x7fffffff;
+		ftype xAbs = x, yAbs = y, zAbs = z;
+		fintabs(xAbs);
+		fintabs(yAbs);
+		fintabs(zAbs);
 		if (xAbs > yAbs) {
 			if (xAbs > zAbs)
 				return 0;
@@ -111,10 +133,10 @@ public:
 		int k = v.largestAbsComponent() - 1;
 		if (k < 0)
 			k = 2;
-		result.x = 0.0f;
-		result.y = 0.0f;
-		result.z = 0.0f;
-		result.c[k] = 1.0f;
+		result.x = (ftype)0.0;
+		result.y = (ftype)0.0;
+		result.z = (ftype)0.0;
+		result.c[k] = (ftype)1.0;
 		cross(v, result, result);
 		result.normalize();
 	}
@@ -123,35 +145,35 @@ public:
 class Matrix3x3 {
 public:
 	union {
-		float m[9];
-		float c[3][3];
+		ftype m[9];
+		ftype c[3][3];
 	};
 
 	void setZero() {
-		m[0] = 0.0f;
-		m[1] = 0.0f;
-		m[2] = 0.0f;
-		m[3] = 0.0f;
-		m[4] = 0.0f;
-		m[5] = 0.0f;
-		m[6] = 0.0f;
-		m[7] = 0.0f;
-		m[8] = 0.0f;
+		m[0] = (ftype)0.0;
+		m[1] = (ftype)0.0;
+		m[2] = (ftype)0.0;
+		m[3] = (ftype)0.0;
+		m[4] = (ftype)0.0;
+		m[5] = (ftype)0.0;
+		m[6] = (ftype)0.0;
+		m[7] = (ftype)0.0;
+		m[8] = (ftype)0.0;
 	}
 
 	void setIdentity() {
-		m[0] = 1.0f;
-		m[1] = 0.0f;
-		m[2] = 0.0f;
-		m[3] = 0.0f;
-		m[4] = 1.0f;
-		m[5] = 0.0f;
-		m[6] = 0.0f;
-		m[7] = 0.0f;
-		m[8] = 1.0f;
+		m[0] = (ftype)1.0;
+		m[1] = (ftype)0.0;
+		m[2] = (ftype)0.0;
+		m[3] = (ftype)0.0;
+		m[4] = (ftype)1.0;
+		m[5] = (ftype)0.0;
+		m[6] = (ftype)0.0;
+		m[7] = (ftype)0.0;
+		m[8] = (ftype)1.0;
 	}
 
-	void setSameDiagonal(float f) {
+	void setSameDiagonal(ftype f) {
 		m[0] = f;
 		m[4] = f;
 		m[8] = f;
@@ -163,7 +185,7 @@ public:
 		m[col + 6] = v.z;
 	}
 
-	void scale(float f) {
+	void scale(ftype f) {
 		for (int i = 0; i < 9; i++)
 			m[i] *= f;
 	}
@@ -179,7 +201,7 @@ public:
 	}
 
 	void transpose() {
-		float tmp = m[1];
+		ftype tmp = m[1];
 		m[1] = m[3];
 		m[3] = tmp;
 		tmp = m[2];
@@ -191,9 +213,9 @@ public:
 	}
 
 	void transpose(Matrix3x3 &result) const {
-		const float m1 = m[1];
-		const float m2 = m[2];
-		const float m5 = m[5];
+		const ftype m1 = m[1];
+		const ftype m2 = m[2];
+		const ftype m5 = m[5];
 		result.m[0] = m[0];
 		result.m[1] = m[3];
 		result.m[2] = m[6];
@@ -218,7 +240,7 @@ public:
 	}
 
 	static void mult(const Matrix3x3 &a, const Matrix3x3 &b, Matrix3x3 &result) {
-		float dst[9];
+		ftype dst[9];
 		dst[0] = a.m[0] * b.m[0] + a.m[1] * b.m[3] + a.m[2] * b.m[6];
 		dst[1] = a.m[0] * b.m[1] + a.m[1] * b.m[4] + a.m[2] * b.m[7];
 		dst[2] = a.m[0] * b.m[2] + a.m[1] * b.m[5] + a.m[2] * b.m[8];
@@ -228,31 +250,31 @@ public:
 		dst[6] = a.m[6] * b.m[0] + a.m[7] * b.m[3] + a.m[8] * b.m[6];
 		dst[7] = a.m[6] * b.m[1] + a.m[7] * b.m[4] + a.m[8] * b.m[7];
 		dst[8] = a.m[6] * b.m[2] + a.m[7] * b.m[5] + a.m[8] * b.m[8];
-		memcpy(result.m, dst, 9 * sizeof(float));
+		memcpy(result.m, dst, 9 * sizeof(ftype));
 	}
 
 	static void mult(const Matrix3x3 &a, const Vector3 &v, Vector3 &result) {
-		const float x = a.m[0] * v.x + a.m[1] * v.y + a.m[2] * v.z;
-		const float y = a.m[3] * v.x + a.m[4] * v.y + a.m[5] * v.z;
-		const float z = a.m[6] * v.x + a.m[7] * v.y + a.m[8] * v.z;
+		const ftype x = a.m[0] * v.x + a.m[1] * v.y + a.m[2] * v.z;
+		const ftype y = a.m[3] * v.x + a.m[4] * v.y + a.m[5] * v.z;
+		const ftype z = a.m[6] * v.x + a.m[7] * v.y + a.m[8] * v.z;
 		result.x = x;
 		result.y = y;
 		result.z = z;
 	}
 
-	float determinant() const {
+	ftype determinant() const {
 		return (c[0][0] * (c[1][1] * c[2][2] - c[2][1] * c[1][2]))
 		- (c[0][1] * (c[1][0] * c[2][2] - c[1][2] * c[2][0]))
 		+ (c[0][2] * (c[1][0] * c[2][1] - c[1][1] * c[2][0]));
 	}
 
 	bool invert(Matrix3x3 &result) const {
-		const float d = determinant();
-		if (!(*(int*)&d))
+		const ftype d = determinant();
+		if (!(*(fint*)&d))
 			return false;
-		const float invdet = 1.0f / d;
+		const ftype invdet = (ftype)1.0 / d;
 
-		float dst[9];
+		ftype dst[9];
 		dst[0] = ((m[4] * m[8]) - (m[7] * m[5])) * invdet;
 		dst[1] = -((m[1] * m[8]) - (m[2] * m[7])) * invdet;
 		dst[2] = ((m[1] * m[5]) - (m[2] * m[4])) * invdet;
@@ -262,7 +284,7 @@ public:
 		dst[6] = ((m[3] * m[7]) - (m[6] * m[4])) * invdet;
 		dst[7] = -((m[0] * m[7]) - (m[6] * m[1])) * invdet;
 		dst[8] = ((m[0] * m[4]) - (m[3] * m[1])) * invdet;
-		memcpy(result.m, dst, 9 * sizeof(float));
+		memcpy(result.m, dst, 9 * sizeof(ftype));
 
 		return true;
 	}
@@ -273,9 +295,9 @@ public:
 	static void sO3FromTwoVec(const Vector3 &a, const Vector3 &b, Matrix3x3 &result) {
 		Vector3 sO3FromTwoVecA, sO3FromTwoVecB, sO3FromTwoVecN, temp31;
 		Vector3::cross(a, b, sO3FromTwoVecN);
-		if (sO3FromTwoVecN.length() == 0.0f) {
-			const float dot = Vector3::dot(a, b);
-			if (dot >= 0.0f) {
+		if (sO3FromTwoVecN.length() == (ftype)0.0) {
+			const ftype dot = Vector3::dot(a, b);
+			if (dot >= (ftype)0.0) {
 				result.setIdentity();
 			} else {
 				Vector3::ortho(a, sO3FromTwoVecN);
@@ -304,66 +326,66 @@ public:
 
 	static void rotationPiAboutAxis(const Vector3 &v, Matrix3x3 &result) {
 		Vector3 rotationPiAboutAxisTemp = v;
-		rotationPiAboutAxisTemp.scale(3.141592653589793f / rotationPiAboutAxisTemp.length());
-		rodriguesSo3Exp(rotationPiAboutAxisTemp, 0.0f, 0.20264236728467558f, result);
+		rotationPiAboutAxisTemp.scale((ftype)3.141592653589793 / rotationPiAboutAxisTemp.length());
+		rodriguesSo3Exp(rotationPiAboutAxisTemp, (ftype)0.0, (ftype)0.20264236728467558, result);
 	}
 
 	static void sO3FromMu(const Vector3 &w, Matrix3x3 &result) {
-		const float thetaSq = Vector3::dot(w, w);
-		const float theta = sqrtf(thetaSq);
-		double kA;
-		double kB;
-		if (thetaSq < 1.0E-8f) {
-			kA = 1.0f - (0.1666666716337204f * thetaSq);
-			kB = 0.5f;
-		} else if (thetaSq < 1.0E-6f) {
-			kB = 0.5f - (0.0416666679084301f * thetaSq);
-			kA = 1.0f - (thetaSq * 0.1666666716337204f * (1.0f - 0.1666666716337204f * thetaSq));
+		const ftype thetaSq = Vector3::dot(w, w);
+		const ftype theta = fsqrt(thetaSq);
+		ftype kA;
+		ftype kB;
+		if (thetaSq < (ftype)1.0E-8) {
+			kA = (ftype)1.0 - ((ftype)0.1666666716337204 * thetaSq);
+			kB = (ftype)0.5;
+		} else if (thetaSq < (ftype)1.0E-6) {
+			kB = (ftype)0.5 - ((ftype)0.0416666679084301 * thetaSq);
+			kA = (ftype)1.0 - (thetaSq * (ftype)0.1666666716337204 * ((ftype)1.0 - (ftype)0.1666666716337204 * thetaSq));
 		} else {
-			const float invTheta = 1.0f / theta;
-			kA = sinf(theta) * invTheta;
-			kB = (1.0f - cosf(theta)) * (invTheta * invTheta);
+			const ftype invTheta = (ftype)1.0 / theta;
+			kA = fsin(theta) * invTheta;
+			kB = ((ftype)1.0 - fcos(theta)) * (invTheta * invTheta);
 		}
 		rodriguesSo3Exp(w, kA, kB, result);
 	}
 
 	static void muFromSO3(const Matrix3x3 &so3, Vector3 &result) {
-		const float cosAngle = (so3.c[0][0] + so3.c[1][1] + so3.c[2][2] - 1.0f) * 0.5f;
+		const ftype cosAngle = (so3.c[0][0] + so3.c[1][1] + so3.c[2][2] - (ftype)1.0) * (ftype)0.5;
 
-		result.x = (so3.c[2][1] - so3.c[1][2]) * 0.5f;
-		result.y = (so3.c[0][2] - so3.c[2][0]) * 0.5f;
-		result.z = (so3.c[1][0] - so3.c[0][1]) * 0.5f;
+		result.x = (so3.c[2][1] - so3.c[1][2]) * (ftype)0.5;
+		result.y = (so3.c[0][2] - so3.c[2][0]) * (ftype)0.5;
+		result.z = (so3.c[1][0] - so3.c[0][1]) * (ftype)0.5;
 
-		const float sinAngleAbs = result.length();
+		const ftype sinAngleAbs = result.length();
 
-		if (cosAngle > 0.7071067811865476f) {
-			if (sinAngleAbs > 0.0f)
-				result.scale(asinf(sinAngleAbs) / sinAngleAbs);
-		} else if (cosAngle > -0.7071067811865476f) {
-			result.scale(acosf(cosAngle) / sinAngleAbs);
+		if (cosAngle > (ftype)0.7071067811865476) {
+			if (sinAngleAbs > (ftype)0.0)
+				result.scale(fasin(sinAngleAbs) / sinAngleAbs);
+		} else if (cosAngle > (ftype)-0.7071067811865476) {
+			result.scale(facos(cosAngle) / sinAngleAbs);
 		} else {
-			const float angle = 3.141592653589793f - asinf(sinAngleAbs);
-			const float d0 = so3.c[0][0] - cosAngle;
-			const float d = so3.c[1][1] - cosAngle;
-			const float d2 = so3.c[2][2] - cosAngle;
+			const ftype angle = (ftype)3.141592653589793 - fasin(sinAngleAbs);
+			const ftype d0 = so3.c[0][0] - cosAngle;
+			const ftype d = so3.c[1][1] - cosAngle;
+			const ftype d2 = so3.c[2][2] - cosAngle;
 			Vector3 r2;
 
 			if ((d0 * d0) > (d * d) && (d0 * d0) > (d2 * d2)) {
 				r2.x = d0;
-				r2.y = (so3.c[1][0] + so3.c[0][1]) * 0.5f;
-				r2.z = (so3.c[0][2] + so3.c[2][0]) * 0.5f;
+				r2.y = (so3.c[1][0] + so3.c[0][1]) * (ftype)0.5;
+				r2.z = (so3.c[0][2] + so3.c[2][0]) * (ftype)0.5;
 			} else if ((d * d) > (d2 * d2)) {
-				r2.x = (so3.c[1][0] + so3.c[0][1]) * 0.5f;
+				r2.x = (so3.c[1][0] + so3.c[0][1]) * (ftype)0.5;
 				r2.y = d;
-				r2.z = (so3.c[2][1] + so3.c[1][2]) * 0.5f;
+				r2.z = (so3.c[2][1] + so3.c[1][2]) * (ftype)0.5;
 			} else {
-				r2.x = (so3.c[0][2] + so3.c[2][0]) * 0.5f;
-				r2.y = (so3.c[2][1] + so3.c[1][2]) * 0.5f;
+				r2.x = (so3.c[0][2] + so3.c[2][0]) * (ftype)0.5;
+				r2.y = (so3.c[2][1] + so3.c[1][2]) * (ftype)0.5;
 				r2.z = d2;
 			}
 
-			if (Vector3::dot(r2, result) < 0.0f)
-				r2.scale(-1.0f);
+			if (Vector3::dot(r2, result) < (ftype)0.0)
+				r2.scale((ftype)-1.0);
 			r2.normalize();
 			r2.scale(angle);
 
@@ -372,15 +394,15 @@ public:
 	}
 
 private:
-	static void rodriguesSo3Exp(const Vector3 &w, float kA, float kB, Matrix3x3 &result) {
-		const float wx2 = w.x * w.x;
-		const float wy2 = w.y * w.y;
-		const float wz2 = w.z * w.z;
-		result.c[0][0] = 1.0f - (kB * (wy2 + wz2));
-		result.c[1][1] = 1.0f - (kB * (wx2 + wz2));
-		result.c[2][2] = 1.0f - (kB * (wx2 + wy2));
-		float a = kA * w.z;
-		float b = kB * (w.x * w.y);
+	static void rodriguesSo3Exp(const Vector3 &w, ftype kA, ftype kB, Matrix3x3 &result) {
+		const ftype wx2 = w.x * w.x;
+		const ftype wy2 = w.y * w.y;
+		const ftype wz2 = w.z * w.z;
+		result.c[0][0] = (ftype)1.0 - (kB * (wy2 + wz2));
+		result.c[1][1] = (ftype)1.0 - (kB * (wx2 + wz2));
+		result.c[2][2] = (ftype)1.0 - (kB * (wx2 + wy2));
+		ftype a = kA * w.z;
+		ftype b = kB * (w.x * w.y);
 		result.c[0][1] = b - a;
 		result.c[1][0] = b + a;
 		a = kA * w.y;
@@ -409,7 +431,7 @@ private:
 	Matrix3x3 so3SensorFromWorld, so3LastMotion, mP, mQ;
 	Vector3 mz, down, lastGyro;
 	uint64_t sensorTimestampGyro;
-	float previousAccelNorm, movingAverageAccelNormChange, filteredGyroTimestep;
+	ftype previousAccelNorm, movingAverageAccelNormChange, filteredGyroTimestep;
 	int numGyroTimestepSamples;
 	bool timestepFilterInit, gyroFilterValid, alignedToGravity;
 
@@ -425,17 +447,17 @@ public:
 		so3SensorFromWorld.setIdentity();
 		so3LastMotion.setIdentity();
 		mP.setZero();
-		mP.setSameDiagonal(25.0f);
+		mP.setSameDiagonal((ftype)25.0);
 		mQ.setZero();
-		mQ.setSameDiagonal(1.0f);
+		mQ.setSameDiagonal((ftype)1.0);
 		mz.setZero();
-		down.x = 0.0f;
-		down.y = 0.0f;
-		down.z = 9.81f;
+		down.x = (ftype)0.0;
+		down.y = (ftype)0.0;
+		down.z = (ftype)9.81;
 		alignedToGravity = false;
 	}
 
-	void computePredictedGLMatrix(float secondsAfterLastGyroEvent) {
+	void computePredictedGLMatrix(ftype secondsAfterLastGyroEvent) {
 		Vector3 pmu = lastGyro;
 		pmu.scale(-secondsAfterLastGyroEvent);
 		So3Util::sO3FromMu(pmu, rotationMatrix);
@@ -443,21 +465,21 @@ public:
 	}
 
 	void processGyro(const Vector3 &gyro, uint64_t sensorTimestamp) {
-		const float kTimeThreshold = 0.04f;
-		const float kdTDefault = 0.01f;
+		const ftype kTimeThreshold = (ftype)0.04;
+		const ftype kdTDefault = (ftype)0.01;
 		if (sensorTimestampGyro) {
-			float dT = (sensorTimestamp - sensorTimestampGyro) * 1.0E-9f;
+			ftype dT = (sensorTimestamp - sensorTimestampGyro) * (ftype)1.0E-9;
 			if (dT > kTimeThreshold) {
-				dT = (gyroFilterValid ? filteredGyroTimestep : kdTDefault );
+				dT = (gyroFilterValid ? filteredGyroTimestep : kdTDefault);
 			} else {
-				const float kFilterCoeff = 0.95f;
+				const ftype kFilterCoeff = (ftype)0.95;
 				const int kMinSamples = 10;
 				if (!timestepFilterInit) {
 					filteredGyroTimestep = dT;
 					numGyroTimestepSamples = 1;
 					timestepFilterInit = true;
 				} else {
-					filteredGyroTimestep = kFilterCoeff * filteredGyroTimestep + (1.0f - kFilterCoeff) * dT;
+					filteredGyroTimestep = kFilterCoeff * filteredGyroTimestep + ((ftype)1.0 - kFilterCoeff) * dT;
 					if (++numGyroTimestepSamples > kMinSamples)
 						gyroFilterValid = true;
 				}
@@ -478,17 +500,17 @@ public:
 	void processAcc(const Vector3 &acc) {
 		mz = acc;
 
-		const float currentAccelNorm = mz.length();
-		float currentAccelNormChange = abs(currentAccelNorm - previousAccelNorm);
-		*((int*)&currentAccelNormChange) &= 0x7fffffff; //abs ;)
+		const ftype currentAccelNorm = mz.length();
+		ftype currentAccelNormChange = currentAccelNorm - previousAccelNorm;
+		fintabs(currentAccelNormChange);
 		previousAccelNorm = currentAccelNorm;
-		const float kSmoothingFactor = 0.5f;
+		const ftype kSmoothingFactor = (ftype)0.5;
 		movingAverageAccelNormChange = kSmoothingFactor * (currentAccelNormChange + movingAverageAccelNormChange);
-		const float kMaxAccelNormChange = 0.15f;
-		const float kMinAccelNoiseSigma = 0.75f;
-		const float kMaxAccelNoiseSigma = 7.0f;
-		const float normChangeRatio = movingAverageAccelNormChange / kMaxAccelNormChange;
-		float accelNoiseSigma = kMinAccelNoiseSigma + normChangeRatio * (kMaxAccelNoiseSigma - kMinAccelNoiseSigma);
+		const ftype kMaxAccelNormChange = (ftype)0.15;
+		const ftype kMinAccelNoiseSigma = (ftype)0.75;
+		const ftype kMaxAccelNoiseSigma = (ftype)7.0;
+		const ftype normChangeRatio = movingAverageAccelNormChange / kMaxAccelNormChange;
+		ftype accelNoiseSigma = kMinAccelNoiseSigma + normChangeRatio * (kMaxAccelNoiseSigma - kMinAccelNoiseSigma);
 		if (accelNoiseSigma > kMaxAccelNoiseSigma)
 			accelNoiseSigma = kMaxAccelNoiseSigma;
 
@@ -503,8 +525,8 @@ public:
 			mH.setZero();
 			mK.setZero();
 			accObservationFunctionForNumericalJacobian(so3SensorFromWorld, mNu);
-			const float eps = 1.0E-7;
-			for (int dof = 0; dof < 3; ++dof) {
+			const ftype eps = (ftype)1.0E-7;
+			for (int dof = 0; dof < 3; dof++) {
 				Vector3 delta;
 				delta.setZero();
 				delta.c[dof] = eps;
@@ -514,7 +536,7 @@ public:
 				Vector3 processAccTempV1, processAccTempV2;
 				accObservationFunctionForNumericalJacobian(processAccTempM2, processAccTempV1);
 				Vector3::sub(mNu, processAccTempV1, processAccTempV2);
-				processAccTempV2.scale(1.0 / eps);
+				processAccTempV2.scale((ftype)1.0 / eps);
 				mH.setColumn(dof, processAccTempV2);
 			}
 			Matrix3x3 processAccTempM3, processAccTempM4, processAccTempM5;

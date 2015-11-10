@@ -76,14 +76,14 @@ public:
     }
 
 	void getLastHeadView(float* headView4x4) {
-		const float secondsSinceLastGyroEvent = (float)(commonUptimeNs() - mLatestGyroEventClockTimeNs) / 1000000000.0f;
-		const float secondsToPredictForward = secondsSinceLastGyroEvent + (1.0f / 30.0f);
+		const ftype secondsSinceLastGyroEvent = (ftype)(commonUptimeNs() - mLatestGyroEventClockTimeNs) / (ftype)1000000000.0;
+		const ftype secondsToPredictForward = secondsSinceLastGyroEvent + (ftype)(1.0 / 30.0);
 
 		mTracker.computePredictedGLMatrix(secondsToPredictForward);
 
 		for (int r = 0; r < 3; ++r) {
 			for (int c = 0; c < 3; ++c)
-				headView4x4[(c << 2) + r] = mTracker.rotationMatrix.c[r][c];
+				headView4x4[(c << 2) + r] = (float)mTracker.rotationMatrix.c[r][c];
 		}
 	}
 };
