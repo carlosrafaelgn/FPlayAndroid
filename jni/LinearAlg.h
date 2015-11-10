@@ -394,19 +394,21 @@ private:
 	}
 };
 
-//***************************************************************
-// I applied one optimization here:
-// Since the only outcome from OrientationEKF is a pure rotation
+//******************************************************************
+// I applied two optimizations here:
+// - Since the only outcome from OrientationEKF is a pure rotation
 // matrix, I decided to keep it in a 3x3 matrix
-//***************************************************************
+//
+// - I removed many vectors and matrices, as they are only
+// used locally
+//******************************************************************
 class OrientationEKF {
 public:
 	Matrix3x3 rotationMatrix;
 private:
-	Matrix3x3 so3SensorFromWorld, so3LastMotion, mP, mQ, mRaccel, mS, mH, mK;
-	Vector3 mNu, mz, mh, mu, mx, down;
+	Matrix3x3 so3SensorFromWorld, so3LastMotion, mP, mQ;
+	Vector3 mz, down, lastGyro;
 	uint64_t sensorTimestampGyro;
-	Vector3 lastGyro;
 	float previousAccelNorm, movingAverageAccelNormChange, filteredGyroTimestep;
 	int numGyroTimestepSamples;
 	bool timestepFilterInit, gyroFilterValid, alignedToGravity;
@@ -426,16 +428,7 @@ public:
 		mP.setSameDiagonal(25.0f);
 		mQ.setZero();
 		mQ.setSameDiagonal(1.0f);
-		mRaccel.setZero();
-		mRaccel.setSameDiagonal(0.5625f);
-		mS.setZero();
-		mH.setZero();
-		mK.setZero();
-		mNu.setZero();
 		mz.setZero();
-		mh.setZero();
-		mu.setZero();
-		mx.setZero();
 		down.x = 0.0f;
 		down.y = 0.0f;
 		down.z = 9.81f;
@@ -469,7 +462,7 @@ public:
 						gyroFilterValid = true;
 				}
 			}
-			mu = gyro;
+			Vector3 mu = gyro;
 			mu.scale(-dT);
 			So3Util::sO3FromMu(mu, so3LastMotion);
 			Matrix3x3::mult(so3LastMotion, so3SensorFromWorld, so3SensorFromWorld);
@@ -498,9 +491,17 @@ public:
 		float accelNoiseSigma = kMinAccelNoiseSigma + normChangeRatio * (kMaxAccelNoiseSigma - kMinAccelNoiseSigma);
 		if (accelNoiseSigma > kMaxAccelNoiseSigma)
 			accelNoiseSigma = kMaxAccelNoiseSigma;
+
+		Matrix3x3 mRaccel;
+		mRaccel.setZero();
 		mRaccel.setSameDiagonal(accelNoiseSigma * accelNoiseSigma);
 
 		if (alignedToGravity) {
+			Matrix3x3 mS, mH, mK;
+			Vector3 mNu, mx;
+			mS.setZero();
+			mH.setZero();
+			mK.setZero();
 			accObservationFunctionForNumericalJacobian(so3SensorFromWorld, mNu);
 			const float eps = 1.0E-7;
 			for (int dof = 0; dof < 3; ++dof) {
@@ -550,6 +551,7 @@ private:
 	}
 
 	void accObservationFunctionForNumericalJacobian(const Matrix3x3 &so3SensorFromWorldPred, Vector3 &result) {
+		Vector3 mh;
 		Matrix3x3::mult(so3SensorFromWorldPred, down, mh);
 		Matrix3x3 accObservationFunctionForNumericalJacobianTempM;
 		So3Util::sO3FromTwoVec(mh, mz, accObservationFunctionForNumericalJacobianTempM);

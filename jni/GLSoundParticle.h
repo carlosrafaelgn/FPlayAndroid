@@ -74,7 +74,12 @@ public:
 		xScale = 0.0f;
 		headTracker = ((glType == TYPE_PARTICLE) ? 0 : new HeadTracker());
 
+#define zNear 1.0f
+#define zFar 50.0f
+#define fovA (zFar / (zNear - zFar))
+#define fovB ((zNear * zFar) / (zNear - zFar))
 		memset(matrix, 0, sizeof(float) * 16);
+		matrix[14] = fovB;
 
 #define FULL 0.75f
 #define HALF 0.325f
@@ -271,10 +276,6 @@ public:
 
 			//optimization: assume m3, m7, m11, m12, m13, m14 were 0
 			//and m15 was 1 before applying the fov matrix
-#define zNear 1.0f
-#define zFar 50.0f
-#define A (zFar / (zNear - zFar))
-#define B ((zNear * zFar) / (zNear - zFar))
 			const float m2 = matrix[2], m6 = matrix[6], m10 = matrix[10]; //, m14 = matrix[14];
 			matrix[0] *= xScale;
 			matrix[4] *= xScale;
@@ -284,18 +285,18 @@ public:
 			matrix[5] *= yScale;
 			matrix[9] *= yScale;
 			//matrix[13] *= yScale;
-			matrix[2] = (A * m2); // + (B * matrix[3]);
-			matrix[6] = (A * m6); // + (B * matrix[7]);
-			matrix[10] = (A * m10); // + (B * matrix[11]);
-			matrix[14] = B; //(A * m14) + (B * matrix[15]);
+			matrix[2] = (fovA * m2); // + (fovB * matrix[3]);
+			matrix[6] = (fovA * m6); // + (fovB * matrix[7]);
+			matrix[10] = (fovA * m10); // + (fovB * matrix[11]);
+			//matrix[14] = fovB; //(fovA * m14) + (fovB * matrix[15]);
 			matrix[3] = -m2;
 			matrix[7] = -m6;
 			matrix[11] = -m10;
 			//matrix[15] = -m14;
 #undef zNear
 #undef zFar
-#undef A
-#undef B
+#undef fovA
+#undef fovB
 			glUniformMatrix4fv(glMatrix, 1, 0, matrix);
 		}
 

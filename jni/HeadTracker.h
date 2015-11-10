@@ -38,7 +38,7 @@
 //
 //***************************************************************************
 
-//***************************************************************
+//******************************************************************
 // I applied many optimizations here:
 // - Since the only outcome from OrientationEKF is a pure rotation
 // matrix, I decided to keep both mEkfToHeadTracker and
@@ -51,7 +51,7 @@
 //
 // - I removed mLatestGyro and mLatestAcc, as they are only
 // used locally
-//***************************************************************
+//******************************************************************
 class HeadTracker {
 private:
 	uint64_t mLatestGyroEventClockTimeNs;
