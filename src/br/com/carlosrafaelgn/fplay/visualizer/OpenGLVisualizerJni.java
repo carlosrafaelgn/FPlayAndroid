@@ -125,7 +125,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setFocusable(false);
 		colorIndex = 0;
 		speed = ((type == TYPE_LIQUID) ? 0 : 2);
-		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 0);
+		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		ignoreInput = 0;
 		this.activity = activity;

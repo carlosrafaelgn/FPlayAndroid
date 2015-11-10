@@ -288,8 +288,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"vTexCoord = inTexCoord;" \
 		"vColor = smoothedColor;" \
 
-		/*baseX goes from -0.9 / 0.9, which we will map to pi / 0*/ \
-		"smoothedColor.x = -1.7 * (baseX + pos.x + (diffusion * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)));" \
+		/*baseX goes from -0.9 / 0.9, which we will map to a full circle */ \
+		/*(using 1.7 instead of 3.14 maps to pi / 0)*/ \
+		"smoothedColor.x = -3.14 * (baseX + pos.x + (diffusion * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)));" \
 		/*spread the particles in a semicylinder with a radius of 3 and height of 12*/ \
 		"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x), bottom * sin(smoothedColor.x), 6.0 * pos.y, 1.0);" \
 		/*"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x) + (inPosition.x * a * 5.0), bottom * sin(smoothedColor.x) + (inPosition.y * a * 5.0), 6.0 * pos.y, 1.0);"*/ \

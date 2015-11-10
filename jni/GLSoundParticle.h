@@ -69,7 +69,7 @@ public:
 		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f));
 
 		rotation = 0;
-		nextDiffusion = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 4 : 1);
+		nextDiffusion = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 4 : 2);
 		yScale = 0.0f;
 		xScale = 0.0f;
 		headTracker = ((glType == TYPE_PARTICLE) ? 0 : new HeadTracker());
