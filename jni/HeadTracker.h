@@ -39,121 +39,39 @@
 //***************************************************************************
 
 //***************************************************************
-// I applied one optimization here:
-// Since the only outcome from OrientationEKF is a pure rotation
+// I applied many optimizations here:
+// - Since the only outcome from OrientationEKF is a pure rotation
 // matrix, I decided to keep both mEkfToHeadTracker and
 // mSensorToDisplay in a 3x3 matrix
+//
+// - I completely removed the matrices mEkfToHeadTracker and
+// mSensorToDisplay. Instead of using them, I already pass the
+// values to onSensorData adjusted according to the device
+// rotation
+//
+// - I removed mLatestGyro and mLatestAcc, as they are only
+// used locally
 //***************************************************************
 class HeadTracker {
 private:
-	Matrix3x3 mEkfToHeadTracker, mSensorToDisplay;
 	uint64_t mLatestGyroEventClockTimeNs;
-	Vector3 mLatestGyro, mLatestAcc;
 	OrientationEKF mTracker;
 
 public:
-	HeadTracker(int displayRotation) {
+	HeadTracker() {
 		mLatestGyroEventClockTimeNs = 0;
-		mLatestGyro.x = 0;
-		mLatestGyro.y = 0;
-		mLatestGyro.z = 0;
-		mLatestAcc.x = 0;
-		mLatestAcc.y = 0;
-		mLatestAcc.z = 0;
-		displayRotationChanged(displayRotation);
-	}
-
-	void displayRotationChanged(int displayRotation) {
-		//Matrix.setRotateEulerM(this.mSensorToDisplay, 0, 0.0f, 0.0f, -rotation);
-        float cx = 1.0f, sx = 0.0f;
-        const float cy = 1.0f, sy = 0.0f;
-        float cz, sz;
-		switch (displayRotation) {
-		case 1: //ROTATION_90 (-90)
-			cz = 0.0f;
-			sz = -1.0f;
-			break;
-		case 2: //ROTATION_180 (-180)
-			cz = -1.0f;
-			sz = 0.0f;
-			break;
-		case 3: //ROTATION_270 (-270)
-			cz = 0.0f;
-			sz = 1.0f;
-			break;
-		default: //ROTATION_0
-			cz = 1.0f;
-			sz = 0.0f;
-			break;
-		}
-		float cxsy = cx * sy;
-		float sxsy = sx * sy;
-
-		mSensorToDisplay.m[0] = cy * cz;
-		mSensorToDisplay.m[1] = -cy * sz;
-		mSensorToDisplay.m[2] = sy;
-
-		mSensorToDisplay.m[3] = cxsy * cz + cx * sz;
-		mSensorToDisplay.m[4] = -cxsy * sz + cx * cz;
-		mSensorToDisplay.m[5] = -sx * cy;
-
-		mSensorToDisplay.m[6] = -sxsy * cz + sx * sz;
-		mSensorToDisplay.m[7] = sxsy * sz + sx * cz;
-		mSensorToDisplay.m[8] = cx * cy;
-
-		//Matrix.setRotateEulerM(this.mEkfToHeadTracker, 0, -90.0f, 0.0f,  rotation);
-        cx = 0.0f;
-        sx = -1.0f;
-		switch (displayRotation) {
-		case 1: //ROTATION_90
-			cz = 0.0f;
-			sz = 1.0f;
-			break;
-		case 2: //ROTATION_180
-			cz = -1.0f;
-			sz = 0.0f;
-			break;
-		case 3: //ROTATION_270
-			cz = 0.0f;
-			sz = -1.0f;
-			break;
-		default: //ROTATION_0
-			cz = 1.0f;
-			sz = 0.0f;
-			break;
-		}
-		cxsy = cx * sy;
-		sxsy = sx * sy;
-
-		mEkfToHeadTracker.m[0] = cy * cz;
-		mEkfToHeadTracker.m[1] = -cy * sz;
-		mEkfToHeadTracker.m[2] = sy;
-
-		mEkfToHeadTracker.m[3] = cxsy * cz + cx * sz;
-		mEkfToHeadTracker.m[4] = -cxsy * sz + cx * cz;
-		mEkfToHeadTracker.m[5] = -sx * cy;
-
-		mEkfToHeadTracker.m[6] = -sxsy * cz + sx * sz;
-		mEkfToHeadTracker.m[7] = sxsy * sz + sx * cz;
-		mEkfToHeadTracker.m[8] = cx * cy;
 	}
 
 	void onSensorReset() {
 		mTracker.reset();
 	}
 
-    void onSensorData(uint64_t sensorTimestamp, int sensorType, float* values) {
+    void onSensorData(uint64_t sensorTimestamp, int sensorType, const Vector3& values) {
 		if (sensorType == 1) {
-			mLatestAcc.x = values[0];
-			mLatestAcc.y = values[1];
-			mLatestAcc.z = values[2];
-			mTracker.processAcc(mLatestAcc);
+			mTracker.processAcc(values);
 		} else {
 			mLatestGyroEventClockTimeNs = commonUptimeNs();
-			mLatestGyro.x = values[0];
-			mLatestGyro.y = values[1];
-			mLatestGyro.z = values[2];
-			mTracker.processGyro(mLatestGyro, sensorTimestamp);
+			mTracker.processGyro(values, sensorTimestamp);
 		}
     }
 
@@ -162,13 +80,10 @@ public:
 		const float secondsToPredictForward = secondsSinceLastGyroEvent + (1.0f / 30.0f);
 
 		mTracker.computePredictedGLMatrix(secondsToPredictForward);
-		Matrix3x3 mTmpHeadView;
-		Matrix3x3::mult(mSensorToDisplay, mTracker.rotationMatrix, mTmpHeadView);
-		Matrix3x3::mult(mTmpHeadView, mEkfToHeadTracker, mTmpHeadView);
 
 		for (int r = 0; r < 3; ++r) {
 			for (int c = 0; c < 3; ++c)
-				headView4x4[(c << 2) + r] = mTmpHeadView.c[r][c];
+				headView4x4[(c << 2) + r] = mTracker.rotationMatrix.c[r][c];
 		}
 	}
 };

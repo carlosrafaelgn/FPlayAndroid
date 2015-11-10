@@ -48,7 +48,7 @@ private:
 	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT];
 	unsigned char bgColor[BG_COUNT];
 
-	unsigned int nextDiffusion;
+	unsigned int rotation, nextDiffusion;
 	float matrix[16], xScale, yScale;
 
 	HeadTracker* headTracker;
@@ -68,10 +68,11 @@ public:
 		lastTime = commonTime;
 		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f));
 
+		rotation = 0;
 		nextDiffusion = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 4 : 1);
 		yScale = 0.0f;
 		xScale = 0.0f;
-		headTracker = ((glType == TYPE_PARTICLE) ? 0 : new HeadTracker(0));
+		headTracker = ((glType == TYPE_PARTICLE) ? 0 : new HeadTracker());
 
 		memset(matrix, 0, sizeof(float) * 16);
 
@@ -165,7 +166,7 @@ public:
 
 	void setAspect(int width, int height, int rotation) {
 		if (headTracker) { //if (glType != TYPE_PARTICLE) {
-			headTracker->displayRotationChanged(rotation);
+			this->rotation = rotation;
 			if (width >= height) {
 				//landscape
 				//yScale = cot(fovY / 2) = cot(fovYInDegrees * PI / 360) //cot(x) = tan(PI/2 - x)
@@ -352,10 +353,30 @@ public:
 			headTracker->onSensorReset();
 	}
 
-	void onSensorData(uint64_t sensorTimestamp, int sensorType, float* values) {
+	void onSensorData(uint64_t sensorTimestamp, int sensorType, const float* values) {
 		if (headTracker) {
+			Vector3 v;
+			switch (rotation) {
+			case 1: //ROTATION_90
+				v.x = -values[1];
+				v.y = values[0];
+				break;
+			case 2: //ROTATION_180
+				v.x = -values[0];
+				v.y = -values[1];
+				break;
+			case 3: //ROTATION_270
+				v.x = values[1];
+				v.y = -values[0];
+				break;
+			default: //ROTATION_0
+				v.x = values[0];
+				v.y = values[1];
+				break;
+			}
+			v.z = values[2];
 			mutex.enter1();
-			headTracker->onSensorData(sensorTimestamp, sensorType, values);
+			headTracker->onSensorData(sensorTimestamp, sensorType, v);
 			mutex.leave1();
 		}
 	}
