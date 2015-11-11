@@ -66,7 +66,8 @@ private:
 public:
 	GLSoundParticle() {
 		lastTime = commonTime;
-		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f));
+		//timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f));
+		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : 0.001f);
 
 		rotation = 0;
 		nextDiffusion = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 4 : 2);

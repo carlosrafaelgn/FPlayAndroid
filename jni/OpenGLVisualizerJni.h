@@ -272,18 +272,28 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"float a = mix(0.0625, 0.484375, amplitude)," \
 			"bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
 		"bottom = bottom * bottom * bottom * 0.125;" \
-		"a = (0.75 * a) + (0.25 * bottom);" \
+		/*now that the particles are spread in a full circle, I decided*/ \
+		/*to increase their size by 50% (I also moved the "* 5" here) */ \
+		/*"a = (0.75 * a) + (0.25 * bottom);"*/ \
+		"a = (4.125 * a) + (1.375 * bottom);" \
 
 		"vec3 smoothedColor = color + bottom + (0.25 * amplitude);" \
 		/*make the particles smoothly appear at the bottom and diminish at the top*/ \
-		/*(from here on, bottom will store the radius)*/ \
-		"bottom = 3.0;" \
-		"if (pos.y > 1.0) {" \
-			"a *= 1.0 - smoothstep(1.0, 1.2, pos.y);" \
+		/*(from here on, bottom will store the particle's distance from the center - the radius)*/ \
+		"if (pos.y > 0.9) {" \
+			"bottom = 1.0 - smoothstep(0.9, 1.2, pos.y);" \
+			"a *= bottom;" \
+			/*let's make the radius decrease from 3 to 1.5 at the top*/ \
+			"bottom = (1.5 + (1.5 * bottom));" \
 		"} else if (pos.y < -0.8) {" \
 			"bottom = smoothstep(-1.2, -0.8, pos.y);" \
+			/*make the particles larger than usual at the bottom*/ \
+			/*(they will sprout 50% bigger)*/ \
+			"a *= (1.5 - (0.5 * bottom));" \
 			"smoothedColor *= bottom;" \
 			"bottom *= 3.0;" \
+		"} else {" \
+			"bottom = 3.0;" \
 		"}" \
 		"vTexCoord = inTexCoord;" \
 		"vColor = smoothedColor;" \
@@ -296,7 +306,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		/*"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x) + (inPosition.x * a * 5.0), bottom * sin(smoothedColor.x) + (inPosition.y * a * 5.0), 6.0 * pos.y, 1.0);"*/ \
 
 		/*gl_Position is different from p, because we want the particles to be always facing the camera*/ \
-		"gl_Position = vec4(p.x + (inPosition.x * aspect.x * a * 5.0), p.y + (inPosition.y * aspect.y * a * 5.0), p.z, p.w);" \
+		"gl_Position = vec4(p.x + (inPosition.x * aspect.x * a), p.y + (inPosition.y * aspect.y * a), p.z, p.w);" \
 		"}";
 		break;
 	default:
