@@ -1050,6 +1050,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			return;
 		song = songArray[0];
 		if (!hasFocus && !_requestFocus()) {
+			if (how != SongList.HOW_CURRENT)
+				storedSongTime = -1;
 			_fullCleanup();
 			_updateState(false, new FocusException());
 			return;

@@ -280,11 +280,12 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"vec3 smoothedColor = color + bottom + (0.25 * amplitude);" \
 		/*make the particles smoothly appear at the bottom and diminish at the top*/ \
 		/*(from here on, bottom will store the particle's distance from the center - the radius)*/ \
-		"if (pos.y > 0.9) {" \
-			"bottom = 1.0 - smoothstep(0.9, 1.2, pos.y);" \
-			"a *= bottom;" \
-			/*let's make the radius decrease from 3 to 1.5 at the top*/ \
-			"bottom = (1.5 + (1.5 * bottom));" \
+		"if (pos.y > 0.0) {" \
+			/*let's make the radius decrease from 3 to 1 at the top*/ \
+			"bottom = 3.0 - (2.0 * pos.y);" \
+			/*make the particles smaller as they approach the top (y > 0.8)*/ \
+			"if (pos.y > 0.9)" \
+				"a *= 1.0 - ((pos.y - 0.9) / 0.3);" \
 		"} else if (pos.y < -0.8) {" \
 			"bottom = smoothstep(-1.2, -0.8, pos.y);" \
 			/*make the particles larger than usual at the bottom*/ \
