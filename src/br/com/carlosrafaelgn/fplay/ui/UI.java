@@ -183,7 +183,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final String ICON_OPTCHK = "q";
 	public static final String ICON_OPTUNCHK = "Q";
 	public static final String ICON_GRIP = "G";
-	public static final String ICON_FPLAY = "♫";
+	public static final String ICON_FPLAY = "7";
 	public static final String ICON_SLIDERTOP = "\"";
 	public static final String ICON_SLIDERBOTTOM = "\'";
 	public static final String ICON_RIGHT = "6";
