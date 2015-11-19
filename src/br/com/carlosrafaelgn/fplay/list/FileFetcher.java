@@ -53,7 +53,6 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 //
@@ -91,7 +90,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	
 	private static final int LIST_DELTA = 32;
 	private static final HashSet<String> supportedTypes;
-	public final String path;
+	public final String path, unknownArtist;
 	public FileSt[] files;
 	public String[] sections;
 	public int[] sectionPositions;
@@ -158,6 +157,13 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean isInTouchMode, boolean createSections) {
 		this.files = new FileSt[LIST_DELTA];
 		this.path = path;
+		String unk;
+		try {
+			unk = Player.getService().getText(R.string.unknownArtist).toString();
+		} catch (Throwable ex) {
+			unk = "(???)";
+		}
+		unknownArtist = unk;
 		this.listener = listener;
 		this.notifyFromMain = notifyFromMain;
 		this.recursive = recursive;
@@ -474,7 +480,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			}
 			String name = c.getString(1);
 			if (name == null || name.equals("<unknown>"))
-				name = UI.unknownArtist;
+				name = unknownArtist;
 			final long id = c.getLong(0);
 			final FileSt f = new FileSt(root + id + fakeRoot + name, name, null, FileSt.TYPE_ARTIST);
 			f.artistIdForAlbumArt = id;
@@ -491,9 +497,9 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			@SuppressWarnings("StringEquality")
 			@Override
 			public int compare(FileSt a, FileSt b) {
-				if (a.name == UI.unknownArtist)
+				if (a.name == unknownArtist)
 					return -1;
-				else if (b.name == UI.unknownArtist)
+				else if (b.name == unknownArtist)
 					return 1;
 				return a.name.compareToIgnoreCase(b.name);
 			}
@@ -709,7 +715,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		int[] pos = new int[100];
 		char[] chars = new char[100];
 		char current, last = (char)Character.toUpperCase((int)files[0].name.charAt(0));
-		if (last < '@' || files[0].name == UI.unknownArtist)
+		if (last < '@' || files[0].name == unknownArtist)
 			last = '#';
 		chars[0] = last;
 		pos[0] = 0;

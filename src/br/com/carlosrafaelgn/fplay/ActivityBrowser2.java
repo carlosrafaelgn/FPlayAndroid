@@ -697,7 +697,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
-		if (which == AlertDialog.BUTTON_POSITIVE) {
+		if (which == AlertDialog.BUTTON_POSITIVE && txtURL != null && txtTitle != null) {
 			String url = txtURL.getText().toString().trim();
 			if (url.length() >= 4) {
 				int s = 7;
