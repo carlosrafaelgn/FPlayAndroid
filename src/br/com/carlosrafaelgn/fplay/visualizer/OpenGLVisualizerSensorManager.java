@@ -49,10 +49,10 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 	private Looper looper;
 	private Handler handler;
 	private SensorManager sensorManager;
-	private Sensor accel, gyro;
-	public final boolean isCapable;
+	private Sensor accel, gyro, mag;
+	public final boolean isCapable, hasGyro;
 
-	public OpenGLVisualizerSensorManager(Context context) {
+	public OpenGLVisualizerSensorManager(Context context, boolean forceMagnetic) {
 		super("OpenGL Visualizer Sensor Manager Thread");
 		try {
 			sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
@@ -60,6 +60,7 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 			sensorManager = null;
 			accel = null;
 			gyro = null;
+			mag = null;
 		}
 		if (sensorManager != null) {
 			try {
@@ -67,13 +68,33 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 			} catch (Throwable ex) {
 				accel = null;
 			}
-			try {
-				gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-			} catch (Throwable ex) {
-				gyro = null;
+			if (!forceMagnetic) {
+				try {
+					gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+				} catch (Throwable ex) {
+					gyro = null;
+				}
+			}
+			//let's create a fallback mechanism: the magnetic sensor will be used in
+			//devices where the gyroscope is not present
+			if (gyro == null) {
+				try {
+					mag = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+				} catch (Throwable ex) {
+					mag = null;
+				}
 			}
 		}
-		isCapable = (accel != null && gyro != null);
+		isCapable = (accel != null && (gyro != null || mag != null));
+		if (!isCapable) {
+			sensorManager = null;
+			accel = null;
+			gyro = null;
+			mag = null;
+			hasGyro = false;
+		} else {
+			hasGyro = (gyro != null);
+		}
 	}
 
 	public void release() {
@@ -89,6 +110,7 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 			sensorManager = null;
 			accel = null;
 			gyro = null;
+			mag = null;
 		}
 	}
 
@@ -111,11 +133,17 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 	}
 
 	private void _register() {
-		if (sensorManager != null && accel != null && gyro != null) {
+		if (sensorManager != null && accel != null && (gyro != null || mag != null)) {
 			//SENSOR_DELAY_UI provides a nice refresh rate, SENSOR_DELAY_GAME
 			//provides an awesome refresh rate, but SENSOR_DELAY_FASTEST is the fastest!
-			sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST);
-			sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_FASTEST);
+			//...different algorithms, different refresh rates!
+			if (gyro != null) {
+				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST);
+				sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_FASTEST);
+			} else {
+				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME);
+				sensorManager.registerListener(this, mag, SensorManager.SENSOR_DELAY_GAME);
+			}
 		}
 	}
 

@@ -152,7 +152,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 
 		if (type == TYPE_IMMERSIVE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE_VR) {
-			sensorManager = new OpenGLVisualizerSensorManager(context);
+			sensorManager = new OpenGLVisualizerSensorManager(context, false);
 			if (!sensorManager.isCapable) {
 				sensorManager = null;
 				UI.toast(activity, R.string.msg_no_sensors);
@@ -477,7 +477,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				}
 			}
 		}
-		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer, type, UI.screenWidth, UI.screenHeight, (UI._1dp < 2) ? 1 : 0)) != 0) {
+		if ((error = SimpleVisualizerJni.glOnSurfaceCreated(UI.color_visualizer, type, UI.screenWidth, UI.screenHeight, (UI._1dp < 2) ? 1 : 0, (sensorManager != null && sensorManager.hasGyro) ? 1 : 0)) != 0) {
 			supported = false;
 			MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 		} else if (type == TYPE_IMMERSIVE_PARTICLE_VR && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {

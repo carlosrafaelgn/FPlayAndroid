@@ -172,7 +172,7 @@ int JNICALL glGetOESTexture(JNIEnv* env, jclass clazz) {
 	return glOESTexture;
 }
 
-int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess) {
+int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess, int hasGyro) {
 	commonSRand();
 	glType = type;
 	glProgram = 0;
@@ -476,7 +476,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 
 		if (glSoundParticle)
 			delete glSoundParticle;
-		glSoundParticle = new GLSoundParticle();
+		glSoundParticle = new GLSoundParticle(hasGyro);
 
 		//create a rectangle for the particles, cropping a 10-pixel border, to improve speed
 #define left (-(32.0f - 10.0f) / 32.0f)

@@ -38,6 +38,87 @@
 #define BG_PARTICLES_BY_COLUMN 16
 #define BG_COUNT (BG_COLUMNS * BG_PARTICLES_BY_COLUMN)
 
+class SimpleTracker {
+private:
+	unsigned int sensorData, lastSensorTime;
+	float oldAccelData[3], oldMagneticData[3], tmpAccelData[3], tmpMagneticData[3];
+
+public:
+	float accelData[3], magneticData[3];
+
+	SimpleTracker() {
+		onSensorReset();
+	}
+
+	void onSensorReset() {
+		sensorData = 0;
+		lastSensorTime = 0;
+		memset(accelData, 0, sizeof(float) * 3);
+		memset(magneticData, 0, sizeof(float) * 3);
+		memset(oldAccelData, 0, sizeof(float) * 3);
+		memset(oldMagneticData, 0, sizeof(float) * 3);
+	}
+
+	void onSensorData(int sensorType, const float* values) {
+		if (sensorType == 1) {
+			tmpAccelData[0] = values[0];
+			tmpAccelData[1] = values[1];
+			tmpAccelData[2] = values[2];
+			sensorData |= 1;
+		} else {
+			tmpMagneticData[0] = values[0];
+			tmpMagneticData[1] = values[1];
+			tmpMagneticData[2] = values[2];
+			sensorData |= 2;
+		}
+		if (sensorData != 3)
+			return;
+		sensorData = 0;
+		if (lastSensorTime == 0) {
+			accelData[0] = tmpAccelData[0];
+			accelData[1] = tmpAccelData[1];
+			accelData[2] = tmpAccelData[2];
+			oldAccelData[0] = tmpAccelData[0];
+			oldAccelData[1] = tmpAccelData[1];
+			oldAccelData[2] = tmpAccelData[2];
+			magneticData[0] = tmpMagneticData[0];
+			magneticData[1] = tmpMagneticData[1];
+			magneticData[2] = tmpMagneticData[2];
+			oldMagneticData[0] = tmpMagneticData[0];
+			oldMagneticData[1] = tmpMagneticData[1];
+			oldMagneticData[2] = tmpMagneticData[2];
+			commonUptimeDeltaMillis(&lastSensorTime);
+			return;
+		}
+		//data from the acceleration sensor is less noisy than the one from the magnetic sensor,
+		//therefore we do not need to filter it so aggressively
+		const float delta = (float)commonUptimeDeltaMillis(&lastSensorTime);
+		float coefNew = (0.140625f / 16.0f) * delta; //0.140625f @ 60fps (~16ms)
+		float coefOld = 1.0f - coefNew;
+		accelData[0] = (oldAccelData[0] * coefOld) + (tmpAccelData[0] * coefNew);
+		accelData[1] = (oldAccelData[1] * coefOld) + (tmpAccelData[1] * coefNew);
+		accelData[2] = (oldAccelData[2] * coefOld) + (tmpAccelData[2] * coefNew);
+		oldAccelData[0] = accelData[0];
+		oldAccelData[1] = accelData[1];
+		oldAccelData[2] = accelData[2];
+		//apply an adptative filter: the larger the change, the faster the filter! :)
+		//this technique produced better results than using other filters, such as
+		//higher order low-pass filters (empirically tested)
+		for (int axis = 0; axis < 3; axis++) {
+			float absDelta = tmpMagneticData[axis] - oldMagneticData[axis];
+			*((int*)&absDelta) &= 0x7fffffff; //abs ;)
+			coefNew = (absDelta >= 1.5f ? 0.15f :
+				((0.05f * absDelta * absDelta) + (0.025f * absDelta))
+				//this parable also works fine, but is slower than the above...
+				//((0.065f * absDelta * absDelta) + (0.0025f * absDelta))
+			) * 0.0625f * delta; //0.0625 = / 16
+			coefOld = 1.0f - coefNew;
+			magneticData[axis] = (oldMagneticData[axis] * coefOld) + (tmpMagneticData[axis] * coefNew);
+			oldMagneticData[axis] = magneticData[axis];
+		}
+	}
+};
+
 class GLSoundParticle {
 private:
 	unsigned int lastTime;
@@ -52,6 +133,7 @@ private:
 	float matrix[16], xScale, yScale;
 
 	HeadTracker* headTracker;
+	SimpleTracker* simpleTracker;
 
 	SimpleMutex mutex;
 
@@ -64,7 +146,7 @@ private:
 	}
 
 public:
-	GLSoundParticle() {
+	GLSoundParticle(int hasGyro) {
 		lastTime = commonTime;
 		//timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f));
 		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : 0.001f);
@@ -73,14 +155,15 @@ public:
 		nextDiffusion = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 4 : 2);
 		yScale = 0.0f;
 		xScale = 0.0f;
-		headTracker = ((glType == TYPE_PARTICLE) ? 0 : new HeadTracker());
+		headTracker = ((glType == TYPE_PARTICLE || !hasGyro) ? 0 : new HeadTracker());
+		simpleTracker = ((glType == TYPE_PARTICLE || hasGyro) ? 0 : new SimpleTracker());
 
 #define zNear 1.0f
 #define zFar 50.0f
 #define fovA (zFar / (zNear - zFar))
 #define fovB ((zNear * zFar) / (zNear - zFar))
 		memset(matrix, 0, sizeof(float) * 16);
-		matrix[14] = fovB;
+		matrix[14] = fovB; //-1 //for the fov matrix
 
 #define FULL 0.75f
 #define HALF 0.325f
@@ -125,6 +208,10 @@ public:
 		if (headTracker) {
 			delete headTracker;
 			headTracker = 0;
+		}
+		if (simpleTracker) {
+			delete simpleTracker;
+			simpleTracker = 0;
 		}
 	}
 
@@ -171,7 +258,7 @@ public:
 	}
 
 	void setAspect(int width, int height, int rotation) {
-		if (headTracker) { //if (glType != TYPE_PARTICLE) {
+		if (glType != TYPE_PARTICLE) {
 			this->rotation = rotation;
 			if (width >= height) {
 				//landscape
@@ -221,7 +308,7 @@ public:
 		int p = 0, c, ic, i = 2, last = 44, last2 = 116;
 		unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 
-		if (headTracker) { //if (glType != TYPE_PARTICLE) {
+		if (glType != TYPE_PARTICLE) {
 			if (nextDiffusion) {
 				//not perfect... but good enough ;)
 				c = nextDiffusion;
@@ -242,59 +329,157 @@ public:
 				}
 				glUniform1f(glGetUniformLocation(glProgram, "diffusion"), *((float*)&c));
 			}
-			mutex.enter0();
-			headTracker->getLastHeadView(matrix);
-			mutex.leave0();
+			if (headTracker) {
+				mutex.enter0();
+				headTracker->getLastHeadView(matrix);
+				mutex.leave0();
 
-			//HeadTracker::getRotationMatrix() returns the matrix in row-major order and
-			//OpenGL needs the matrices in column-major order... nevertheless we must not
-			//transpose this matrix, as it will be used as the camera/view matrix, and the
-			//view matrix is the inverse of the world matrix (luckly, the inverse of a pure
-			//rotation matrix is also its transpose!)
+				//HeadTracker::getRotationMatrix() returns the matrix in row-major order and
+				//OpenGL needs the matrices in column-major order... nevertheless we must not
+				//transpose this matrix, as it will be used as the camera/view matrix, and the
+				//view matrix is the inverse of the world matrix (luckly, the inverse of a pure
+				//rotation matrix is also its transpose!)
 
-			//row-major means array indices are distributed by rows, not by columns!
-			//for example, the matrix returned by SensorManager.getRotationMatrix()
-			//is distributed like this:
-			//   array index          value
-			// | 0  1  2  3  |   | Hx Hy Hz 0 |
-			// | 4  5  6  7  |   | Mx My Mz 0 |
-			// | 8  9  10 11 |   | Ax Ay Az 0 |
-			// | 12 13 14 15 |   | 0  0  0  1 |
-			//if it were column-major, the indices would be like this:
-			//   array index          value
-			// | 0  4  8  12 |   | Hx Hy Hz 0 |
-			// | 1  5  9  13 |   | Mx My Mz 0 |
-			// | 2  6  10 14 |   | Ax Ay Az 0 |
-			// | 3  7  11 15 |   | 0  0  0  1 |
+				//row-major means array indices are distributed by rows, not by columns!
+				//for example, the matrix returned by SensorManager.getRotationMatrix()
+				//is distributed like this:
+				//   array index          value
+				// | 0  1  2  3  |   | Hx Hy Hz 0 |
+				// | 4  5  6  7  |   | Mx My Mz 0 |
+				// | 8  9  10 11 |   | Ax Ay Az 0 |
+				// | 12 13 14 15 |   | 0  0  0  1 |
+				//if it were column-major, the indices would be like this:
+				//   array index          value
+				// | 0  4  8  12 |   | Hx Hy Hz 0 |
+				// | 1  5  9  13 |   | Mx My Mz 0 |
+				// | 2  6  10 14 |   | Ax Ay Az 0 |
+				// | 3  7  11 15 |   | 0  0  0  1 |
 
-			//now, we apply a projection matrix with a fov of 50 deg
-			//based on D3DXMatrixPerspectiveFovRH
-			//http://msdn.microsoft.com/en-us/library/windows/desktop/bb205351(v=vs.85).aspx
-			//...as a matter of fact, this is a port from my original JavaScript implementation:
-			//http://carlosrafaelgn.com.br/WebGL/Matrix4.js -> perspectiveFovFromLeft
+				//now, we apply a projection matrix with a fov of 50 deg
+				//based on D3DXMatrixPerspectiveFovRH
+				//http://msdn.microsoft.com/en-us/library/windows/desktop/bb205351(v=vs.85).aspx
+				//...as a matter of fact, this is a port from my original JavaScript implementation:
+				//http://carlosrafaelgn.com.br/WebGL/Matrix4.js -> perspectiveFovFromLeft
 
-			//matrix = fov * view
+				//matrix = fov * view
 
-			//optimization: assume m3, m7, m11, m12, m13, m14 were 0
-			//and m15 was 1 before applying the fov matrix
-			const float m2 = matrix[2], m6 = matrix[6], m10 = matrix[10]; //, m14 = matrix[14];
-			matrix[0] *= xScale;
-			matrix[4] *= xScale;
-			matrix[8] *= xScale;
-			//matrix[12] *= xScale;
-			matrix[1] *= yScale;
-			matrix[5] *= yScale;
-			matrix[9] *= yScale;
-			//matrix[13] *= yScale;
-			matrix[2] = (fovA * m2); // + (fovB * matrix[3]);
-			matrix[6] = (fovA * m6); // + (fovB * matrix[7]);
-			matrix[10] = (fovA * m10); // + (fovB * matrix[11]);
-			//matrix[14] = fovB; //(fovA * m14) + (fovB * matrix[15]);
-			matrix[3] = -m2;
-			matrix[7] = -m6;
-			matrix[11] = -m10;
-			//matrix[15] = -m14;
-#undef zNear
+				//optimization: assume m3, m7, m11, m12, m13, m14 were 0
+				//and m15 was 1 before applying the fov matrix
+				const float m2 = matrix[2], m6 = matrix[6], m10 = matrix[10]; //, m14 = matrix[14];
+				matrix[0] *= xScale;
+				matrix[4] *= xScale;
+				matrix[8] *= xScale;
+				//matrix[12] *= xScale;
+				matrix[1] *= yScale;
+				matrix[5] *= yScale;
+				matrix[9] *= yScale;
+				//matrix[13] *= yScale;
+				matrix[2] = (fovA * m2); // + (fovB * matrix[3]);
+				matrix[6] = (fovA * m6); // + (fovB * matrix[7]);
+				matrix[10] = (fovA * m10); // + (fovB * matrix[11]);
+				//matrix[14] = fovB; //(fovA * m14) + (fovB * matrix[15]);
+				matrix[3] = -m2;
+				matrix[7] = -m6;
+				matrix[11] = -m10;
+				//matrix[15] = -m14;
+			} else if (simpleTracker) {
+				//SensorManager.getRotationMatrix(matrix, null, accelData, magneticData);
+				//Original code -> AOSP: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.0.2_r1/android/hardware/SensorManager.java
+				//(just porting from Java to C++ to improve performance)
+				mutex.enter0();
+				float Ax = simpleTracker->accelData[0];
+				float Ay = simpleTracker->accelData[1];
+				float Az = simpleTracker->accelData[2];
+				float Ex = simpleTracker->magneticData[0];
+				float Ey = simpleTracker->magneticData[1];
+				float Ez = simpleTracker->magneticData[2];
+				mutex.leave0();
+				float Hx = (Ey * Az) - (Ez * Ay);
+				float Hy = (Ez * Ax) - (Ex * Az);
+				float Hz = (Ex * Ay) - (Ey * Ax);
+				const float normH = (float)sqrtf((Hx * Hx) + (Hy * Hy) + (Hz * Hz));
+				if (normH >= 0.1f) {
+					//otherwise, the device is supposed to be close to free fall (or in space?),
+					//or close to magnetic north pole. Typical values are > 100...
+					//and we should leave the matrix as-is!
+					const float invH = 1.0f / normH;
+					Hx *= invH;
+					Hy *= invH;
+					Hz *= invH;
+					const float invA = 1.0f / (float)sqrtf((Ax * Ax) + (Ay * Ay) + (Az * Az));
+					Ax *= invA;
+					Ay *= invA;
+					Az *= invA;
+					Ex = (Ay * Hz) - (Az * Hy);
+					Ey = (Az * Hx) - (Ax * Hz);
+					Ez = (Ax * Hy) - (Ay * Hx);
+
+					//SensorManager.getRotationMatrix() returns the matrix in row-major order and
+					//OpenGL needs the matrices in column-major order... nevertheless we must not
+					//transpose this matrix, as it will be used as the camera/view matrix, and the
+					//view matrix is the inverse of the world matrix (luckly, the inverse of a pure
+					//rotation matrix is also its transpose!)
+
+					//row-major means array indices are distributed by rows, not by columns!
+					//for example, the matrix returned by SensorManager.getRotationMatrix()
+					//is distributed like this:
+					//   array index          value
+					// | 0  1  2  3  |   | Hx Hy Hz 0 |
+					// | 4  5  6  7  |   | Mx My Mz 0 |
+					// | 8  9  10 11 |   | Ax Ay Az 0 |
+					// | 12 13 14 15 |   | 0  0  0  1 |
+					//if it were column-major, the indices would be like this:
+					//   array index          value
+					// | 0  4  8  12 |   | Hx Hy Hz 0 |
+					// | 1  5  9  13 |   | Mx My Mz 0 |
+					// | 2  6  10 14 |   | Ax Ay Az 0 |
+					// | 3  7  11 15 |   | 0  0  0  1 |
+
+					//now, we apply a projection matrix with a fov of 50 deg
+					//based on D3DXMatrixPerspectiveFovRH
+					//http://msdn.microsoft.com/en-us/library/windows/desktop/bb205351(v=vs.85).aspx
+					//...as a matter of fact, this is a port from my original JavaScript implementation:
+					//http://carlosrafaelgn.com.br/WebGL/Matrix4.js
+
+					//matrix = fov * view
+
+					//optimizations:
+					//- assume m3, m7, m11, m12, m13, m14 are 0 and m15 is 1 before applying the fov matrix
+					//- use macros intead of storing everything in the actual matrix, just to read everything
+					//back again to apply the fov
+#define m0 Hx
+#define m1 Hy
+#define m2 Hz
+#define m4 Ex
+#define m5 Ey
+#define m6 Ez
+#define m8 Ax
+#define m9 Ay
+#define m10 Az
+					matrix[0] = m0 * xScale;
+					matrix[4] = m4 * xScale;
+					matrix[8] = m8 * xScale;
+					matrix[1] = m1 * yScale;
+					matrix[5] = m5 * yScale;
+					matrix[9] = m9 * yScale;
+					matrix[2] = m2 * fovA;
+					matrix[6] = m6 * fovA;
+					matrix[10] = m10 * fovA;
+					matrix[3] = -m2; //m2 * fovB;
+					matrix[7] = -m6; //m6 * fovB;
+					matrix[11] = -m10; //m10 * fovB;
+#undef m0
+#undef m1
+#undef m2
+#undef m4
+#undef m5
+#undef m6
+#undef m8
+#undef m9
+#undef m10
+				}
+			}
+#undef zNear //defined inside the constructor
 #undef zFar
 #undef fovA
 #undef fovB
@@ -353,9 +538,12 @@ public:
 	void onSensorReset() {
 		if (headTracker)
 			headTracker->onSensorReset();
+		else if (simpleTracker)
+			simpleTracker->onSensorReset();
 	}
 
 	void onSensorData(uint64_t sensorTimestamp, int sensorType, const float* values) {
+		//http://developer.download.nvidia.com/tegra/docs/tegra_android_accelerometer_v5f.pdf
 		if (headTracker) {
 			Vector3 v;
 			switch (rotation) {
@@ -379,6 +567,30 @@ public:
 			v.z = (ftype)values[2];
 			mutex.enter1();
 			headTracker->onSensorData(sensorTimestamp, sensorType, v);
+			mutex.leave1();
+		} else if (simpleTracker) {
+			float v[3];
+			switch (rotation) {
+			case 1: //ROTATION_90
+				v[0] = -values[1];
+				v[1] = values[0];
+				break;
+			case 2: //ROTATION_180
+				v[0] = -values[0];
+				v[1] = -values[1];
+				break;
+			case 3: //ROTATION_270
+				v[0] = values[1];
+				v[1] = -values[0];
+				break;
+			default: //ROTATION_0
+				v[0] = values[0];
+				v[1] = values[1];
+				break;
+			}
+			v[2] = values[2];
+			mutex.enter1();
+			simpleTracker->onSensorData(sensorType, v);
 			mutex.leave1();
 		}
 	}

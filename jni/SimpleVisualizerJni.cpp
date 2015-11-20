@@ -472,7 +472,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"processVoice", "([BLandroid/view/Surface;I)V", (void*)processVoice},
 
 		{"glGetOESTexture", "()I", (void*)glGetOESTexture},
-		{"glOnSurfaceCreated", "(IIIII)I", (void*)glOnSurfaceCreated},
+		{"glOnSurfaceCreated", "(IIIIII)I", (void*)glOnSurfaceCreated},
 		{"glOnSurfaceChanged", "(IIII)V", (void*)glOnSurfaceChanged},
 		{"glLoadBitmapFromJava", "(Landroid/graphics/Bitmap;)I", (void*)glLoadBitmapFromJava},
 		{"glDrawFrame", "()V", (void*)glDrawFrame},
