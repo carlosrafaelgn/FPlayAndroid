@@ -539,17 +539,38 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 						degrees = 270;
 						break;
 					}
-					camera.setDisplayOrientation((cameraNativeOrientation - degrees + 360) % 360);
+					final int cameraDisplayOrientation = (cameraNativeOrientation - degrees + 360) % 360;
+					camera.setDisplayOrientation(cameraDisplayOrientation);
 					final Camera.Parameters parameters = camera.getParameters();
 
 					//try to find the ideal preview size...
 					List<Camera.Size> localSizes = parameters.getSupportedPreviewSizes();
 					int largestW = 0, largestH = 0;
-					for (int i = localSizes.size() - 1; i >= 0; i--) {
-						final int w = localSizes.get(i).width, h = localSizes.get(i).height;
-						if (w < width && h < height && w >= largestW && h >= largestH) {
-							largestW = w;
-							largestH = h;
+					float smallestRatioError = 10000.0f;
+					final float viewRatio = (float)width / (float)height;
+					if (cameraDisplayOrientation == 0 || cameraDisplayOrientation == 180) {
+						for (int i = localSizes.size() - 1; i >= 0; i--) {
+							final int w = localSizes.get(i).width, h = localSizes.get(i).height;
+							final float ratioError = Math.abs(((float)w / (float)h) - viewRatio);
+							if (w < width && h < height && w >= largestW && h >= largestH && ratioError <= (smallestRatioError + 0.001f)) {
+								smallestRatioError = ratioError;
+								largestW = w;
+								largestH = h;
+							}
+						}
+					} else {
+						//getSupportedPreviewSizes IS NOT AFFECTED BY setDisplayOrientation
+						//therefore, w and h MUST BE SWAPPED in 2 places
+						for (int i = localSizes.size() - 1; i >= 0; i--) {
+							final int w = localSizes.get(i).width, h = localSizes.get(i).height;
+							//SWAP HERE
+							final float ratioError = Math.abs(((float)h / (float)w) - viewRatio);
+							if (h < width && w < height //SWAP HERE
+								&& w >= largestW && h >= largestH && ratioError <= (smallestRatioError + 0.001f)) {
+								smallestRatioError = ratioError;
+								largestW = w;
+								largestH = h;
+							}
 						}
 					}
 					if (largestW == 0) {

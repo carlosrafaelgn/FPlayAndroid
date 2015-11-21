@@ -592,13 +592,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		s2.add(2, MNU_VISUALIZER_PARTICLE, 2, "Sound Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR, 3, "Into the Particles (VR)")
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
-		s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 4, "Into the Particles")
+		s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 3, "Into the Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			s2.add(2, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR, 4, "Into the Particles (VR)")
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
 		UI.separator(s2, 2, 5);
 		s2.add(2, MNU_VISUALIZER_ALBUMART, 6, R.string.album_art)
 			.setOnMenuItemClickListener(this)

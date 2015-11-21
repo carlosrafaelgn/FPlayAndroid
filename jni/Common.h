@@ -72,6 +72,14 @@ unsigned int commonUptimeDeltaMillis(unsigned int* lastTime) {
 	return ((delta >= 100) ? 100 : delta);
 }
 
+unsigned int commonUptimeMillis() {
+	struct timespec t;
+	t.tv_sec = 0;
+	t.tv_nsec = 0;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	return (unsigned int)((t.tv_sec * 1000) + (t.tv_nsec / 1000000));
+}
+
 uint64_t commonUptimeNs() {
 	struct timespec t;
 	t.tv_sec = 0;

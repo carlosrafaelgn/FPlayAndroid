@@ -91,7 +91,7 @@ static const char* const rectangleVShader = "attribute vec4 inPosition; attribut
 static const char* const textureFShader = "precision mediump float; varying vec2 vTexCoord; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vTexCoord); }";
 static const char* const textureFShaderOES = "#extension GL_OES_EGL_image_external : require\nprecision mediump float; varying vec2 vTexCoord; uniform samplerExternalOES texColorOES; void main() { gl_FragColor = texture2D(texColorOES, vTexCoord); }";
 
-static unsigned int glProgram, glProgram2, glType, glBuf[4];
+static unsigned int glProgram, glProgram2, glType, glBuf[5];
 static int glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix, glPos, glColor, glBaseX, glTheta, glOESTexture;
 
 float glSmoothStep(float edge0, float edge1, float x) {
@@ -181,6 +181,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	glBuf[1] = 0;
 	glBuf[2] = 0;
 	glBuf[3] = 0;
+	glBuf[4] = 0;
 	glTime = 0;
 	glAmplitude = 0;
 	glVerticesPerRow = 0;
@@ -255,19 +256,23 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		"}";
 		break;
 	case TYPE_PARTICLE:
-		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; void main() {" \
+		vertexShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; void main() {" \
+		"int idx = int(inIndex);" \
+		"vec2 pos = posArr[idx];" \
 		"float a = mix(0.0625, 0.34375, amplitude);" \
 		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
 		"bottom = bottom * bottom * bottom * 0.125;" \
 		"a = (0.75 * a) + (0.25 * bottom);" \
-		"gl_Position = vec4(baseX + pos.x + (5.0 * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)) + (inPosition.x * aspect.x * a), pos.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
+		"gl_Position = vec4(baseX + pos.x + (5.0 * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + thetaArr[idx])) + (inPosition.x * aspect.x * a), pos.y + (inPosition.y * aspect.y * a), 0.0, 1.0);" \
 		"vTexCoord = inTexCoord;" \
-		"vColor = color + bottom + (0.25 * amplitude);" \
+		"vColor = colorArr[idx] + bottom + (0.25 * amplitude);" \
 		"}";
 		break;
 	case TYPE_IMMERSIVE_PARTICLE:
 	case TYPE_IMMERSIVE_PARTICLE_VR:
-		vertexShader = "attribute vec2 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 pos; uniform vec2 aspect; uniform vec3 color; uniform float theta; uniform mat4 mvpMat; void main() {" \
+		vertexShader = "attribute vec2 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; uniform mat4 mvpMat; void main() {" \
+		"int idx = int(inIndex);" \
+		"vec2 pos = posArr[idx];" \
 		/*start with the original computation*/ \
 		"float a = mix(0.0625, 0.484375, amplitude)," \
 			"bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
@@ -277,7 +282,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		/*"a = (0.75 * a) + (0.25 * bottom);"*/ \
 		"a = (4.125 * a) + (1.375 * bottom);" \
 
-		"vec3 smoothedColor = color + bottom + (0.25 * amplitude);" \
+		"vec3 smoothedColor = colorArr[idx] + bottom + (0.25 * amplitude);" \
 		/*make the particles smoothly appear at the bottom and diminish at the top*/ \
 		/*(from here on, bottom will store the particle's distance from the center - the radius)*/ \
 		"if (pos.y > 0.0) {" \
@@ -301,7 +306,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 
 		/*baseX goes from -0.9 / 0.9, which we will map to a full circle */ \
 		/*(using 1.7 instead of 3.14 maps to pi / 0)*/ \
-		"smoothedColor.x = -3.14 * (baseX + pos.x + (diffusion * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + theta)));" \
+		"smoothedColor.x = -3.14 * (baseX + pos.x + (diffusion * (pos.y + 1.0) * pos.x * sin((2.0 * pos.y) + thetaArr[idx])));" \
 		/*spread the particles in a semicylinder with a radius of 3 and height of 12*/ \
 		"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x), bottom * sin(smoothedColor.x), 6.0 * pos.y, 1.0);" \
 		/*"vec4 p = mvpMat * vec4(bottom * cos(smoothedColor.x) + (inPosition.x * a * 5.0), bottom * sin(smoothedColor.x) + (inPosition.y * a * 5.0), 6.0 * pos.y, 1.0);"*/ \
@@ -444,7 +449,9 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		glGenBuffers(2, glBuf);
 		if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
 	} else if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE_VR) {
-		if (type == TYPE_IMMERSIVE_PARTICLE_VR) {
+		glBindAttribLocation(glProgram, 2, "inIndex");
+        if (glGetError()) return -12;
+        if (type == TYPE_IMMERSIVE_PARTICLE_VR) {
 			//create a second program to render the camera preview
 			if ((l = createProgram(
 				rectangleVShader,
@@ -452,26 +459,26 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 				&glProgram2)))
 				return l;
 
-			glBindAttribLocation(glProgram2, 2, "inPosition");
+			glBindAttribLocation(glProgram2, 3, "inPosition");
 			if (glGetError()) return -10;
-			glBindAttribLocation(glProgram2, 3, "inTexCoord");
+			glBindAttribLocation(glProgram2, 4, "inTexCoord");
 			if (glGetError()) return -11;
 			glLinkProgram(glProgram2);
 			if (glGetError()) return -12;
 
-			glGenBuffers(4, glBuf);
-			if (glGetError() || !glBuf[0] || !glBuf[1] || !glBuf[2] || !glBuf[3]) return -13;
+			glGenBuffers(5, glBuf);
+			if (glGetError() || !glBuf[0] || !glBuf[1] || !glBuf[2] || !glBuf[3] || !glBuf[4]) return -13;
 
 			//create a rectangle that occupies the entire screen
-			glBindBuffer(GL_ARRAY_BUFFER, glBuf[2]);
-			glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
 			glBindBuffer(GL_ARRAY_BUFFER, glBuf[3]);
+			glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, glBuf[4]);
 			glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsRect, GL_STATIC_DRAW);
 
 			if (glGetError()) return -14;
 		} else {
-			glGenBuffers(2, glBuf);
-			if (glGetError() || !glBuf[0] || !glBuf[1]) return -13;
+			glGenBuffers(3, glBuf);
+			if (glGetError() || !glBuf[0] || !glBuf[1] || !glBuf[2]) return -13;
 		}
 
 		if (glSoundParticle)
@@ -483,38 +490,76 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 #define top ((32.0f - 10.0f) / 32.0f)
 #define right ((32.0f - 10.0f) / 32.0f)
 #define bottom (-(32.0f - 10.0f) / 32.0f)
-		floatBuffer[0] = left;
-		floatBuffer[1] = bottom;
-		floatBuffer[2] = right;
-		floatBuffer[3] = bottom;
-		floatBuffer[4] = left;
-		floatBuffer[5] = top;
-		floatBuffer[6] = right;
-		floatBuffer[7] = top;
+		//let's create BG_PARTICLES_BY_COLUMN copies of the same rectangle, divided into 2 triangles
+		for (int i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
+			const int idx = i * (3 * 2 * 2);
+			//triangle 1 (CCW)
+			floatBuffer[idx + 0 ] = left;
+			floatBuffer[idx + 1 ] = bottom;
+			floatBuffer[idx + 2 ] = right;
+			floatBuffer[idx + 3 ] = top;
+			floatBuffer[idx + 4 ] = left;
+			floatBuffer[idx + 5 ] = top;
+
+			//triangle 2 (CCW)
+			floatBuffer[idx + 6 ] = left;
+			floatBuffer[idx + 7 ] = bottom;
+			floatBuffer[idx + 8 ] = right;
+			floatBuffer[idx + 9 ] = bottom;
+			floatBuffer[idx + 10] = right;
+			floatBuffer[idx + 11] = top;
+		}
 #undef left
 #undef top
 #undef right
 #undef bottom
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, (BG_PARTICLES_BY_COLUMN * 3 * 2 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
 #define left (10.0f / 64.0f)
 #define top (10.0f / 64.0f)
 #define right (54.0f / 64.0f)
 #define bottom (54.0f / 64.0f)
-		floatBuffer[0] = left;
-		floatBuffer[1] = bottom;
-		floatBuffer[2] = right;
-		floatBuffer[3] = bottom;
-		floatBuffer[4] = left;
-		floatBuffer[5] = top;
-		floatBuffer[6] = right;
-		floatBuffer[7] = top;
+		//let's create BG_PARTICLES_BY_COLUMN copies of the same rectangle, divided into 2 triangles
+		for (int i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
+			const int idx = i * (3 * 2 * 2);
+			//triangle 1 (CCW)
+			floatBuffer[idx + 0 ] = left;
+			floatBuffer[idx + 1 ] = bottom;
+			floatBuffer[idx + 2 ] = right;
+			floatBuffer[idx + 3 ] = top;
+			floatBuffer[idx + 4 ] = left;
+			floatBuffer[idx + 5 ] = top;
+
+			//triangle 2 (CCW)
+			floatBuffer[idx + 6 ] = left;
+			floatBuffer[idx + 7 ] = bottom;
+			floatBuffer[idx + 8 ] = right;
+			floatBuffer[idx + 9 ] = bottom;
+			floatBuffer[idx + 10] = right;
+			floatBuffer[idx + 11] = top;
+		}
 #undef left
 #undef top
 #undef right
 #undef bottom
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
-		glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, (BG_PARTICLES_BY_COLUMN * 3 * 2 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
+		//now let's fill in the buffer used to store the indices
+		for (int i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
+			const float f = (float)i;
+			const int idx = i * (3 * 2);
+			//triangle 1 (CCW)
+			floatBuffer[idx + 0] = f;
+			floatBuffer[idx + 1] = f;
+			floatBuffer[idx + 2] = f;
+
+			//triangle 2 (CCW)
+			floatBuffer[idx + 3] = f;
+			floatBuffer[idx + 4] = f;
+			floatBuffer[idx + 5] = f;
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[2]);
+		glBufferData(GL_ARRAY_BUFFER, (BG_PARTICLES_BY_COLUMN * 3 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
 
 		if (glGetError()) return -14;
 
@@ -693,10 +738,10 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		glMatrix = glGetUniformLocation(glProgram, "mvpMat");
 	case TYPE_PARTICLE:
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
-		glPos = glGetUniformLocation(glProgram, "pos");
-		glColor = glGetUniformLocation(glProgram, "color");
+		glPos = glGetUniformLocation(glProgram, "posArr");
+		glColor = glGetUniformLocation(glProgram, "colorArr");
 		glBaseX = glGetUniformLocation(glProgram, "baseX");
-		glTheta = glGetUniformLocation(glProgram, "theta");
+		glTheta = glGetUniformLocation(glProgram, "thetaArr");
 		glUniform1i(glGetUniformLocation(glProgram, "texColor"), 0);
 		break;
 	default:
@@ -709,14 +754,6 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	}
 	if (glGetError()) return -21;
 
-	if (type == TYPE_LIQUID) {
-		glUseProgram(glProgram2);
-		if (glGetError()) return -22;
-
-		glUniform1i(glGetUniformLocation(glProgram2, "texColor"), 0);
-		if (glGetError()) return -23;
-	}
-
 	if (type == TYPE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE_VR) {
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
@@ -725,6 +762,20 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 		glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+
+		glEnableVertexAttribArray(2);
+		glBindBuffer(GL_ARRAY_BUFFER, glBuf[2]);
+		glVertexAttribPointer(2, 1, GL_FLOAT, false, 0, 0);
+
+		if (type == TYPE_IMMERSIVE_PARTICLE_VR) {
+			glEnableVertexAttribArray(3);
+			glBindBuffer(GL_ARRAY_BUFFER, glBuf[3]);
+			glVertexAttribPointer(3, 4, GL_FLOAT, false, 0, 0);
+
+			glEnableVertexAttribArray(4);
+			glBindBuffer(GL_ARRAY_BUFFER, glBuf[4]);
+			glVertexAttribPointer(4, 2, GL_FLOAT, false, 0, 0);
+		}
 	} else if (type != TYPE_SPIN) {
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
@@ -739,11 +790,16 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
 	}
 	if (type == TYPE_LIQUID) {
+		glUseProgram(glProgram2);
+		if (glGetError()) return -22;
+
+		glUniform1i(glGetUniformLocation(glProgram2, "texColor"), 0);
+		if (glGetError()) return -23;
+
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 		glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
-	}
-	if (type == TYPE_LIQUID || type == TYPE_IMMERSIVE_PARTICLE_VR) {
+
 		glEnableVertexAttribArray(2);
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[2]);
 		glVertexAttribPointer(2, 4, GL_FLOAT, false, 0, 0);
