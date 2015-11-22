@@ -74,7 +74,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	static native int glGetOESTexture();
 	static native int glOnSurfaceCreated(int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess, int hasGyro);
-	static native void glOnSurfaceChanged(int width, int height, int rotation, int dp1OrLess);
+	static native void glOnSurfaceChanged(int width, int height, int rotation, int cameraPreviewW, int cameraPreviewH, int dp1OrLess);
 	static native int glLoadBitmapFromJava(Bitmap bitmap);
 	static native void glDrawFrame();
 	static native void glOnSensorReset();

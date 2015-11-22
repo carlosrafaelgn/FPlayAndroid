@@ -388,6 +388,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				ex2.printStackTrace();
 			}
 			camera = null;
+			cameraOK = false;
 		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			if (cameraTexture != null) {
@@ -521,6 +522,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			rotation = ((width >= height) ? Surface.ROTATION_90 : Surface.ROTATION_0);
 		}
 
+		int cameraPreviewW = 0, cameraPreviewH = 0;
 		if (camera != null) {
 			synchronized (this) {
 				try {
@@ -544,7 +546,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 					final Camera.Parameters parameters = camera.getParameters();
 
 					//try to find the ideal preview size...
-					List<Camera.Size> localSizes = parameters.getSupportedPreviewSizes();
+					final List<Camera.Size> localSizes = parameters.getSupportedPreviewSizes();
 					int largestW = 0, largestH = 0;
 					float smallestRatioError = 10000.0f;
 					final float viewRatio = (float)width / (float)height;
@@ -556,11 +558,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 								smallestRatioError = ratioError;
 								largestW = w;
 								largestH = h;
+								cameraPreviewW = w;
+								cameraPreviewH = h;
 							}
 						}
 					} else {
 						//getSupportedPreviewSizes IS NOT AFFECTED BY setDisplayOrientation
-						//therefore, w and h MUST BE SWAPPED in 2 places
+						//therefore, w and h MUST BE SWAPPED in 3 places
 						for (int i = localSizes.size() - 1; i >= 0; i--) {
 							final int w = localSizes.get(i).width, h = localSizes.get(i).height;
 							//SWAP HERE
@@ -570,6 +574,9 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 								smallestRatioError = ratioError;
 								largestW = w;
 								largestH = h;
+								//SWAP HERE
+								cameraPreviewW = h;
+								cameraPreviewH = w;
 							}
 						}
 					}
@@ -579,11 +586,23 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 					}
 
 					parameters.setPreviewSize(largestW, largestH);
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-						parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-					else
-						parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-					parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
+
+					final List<String> localFocusModes = parameters.getSupportedFocusModes();
+					if (localFocusModes != null) {
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH &&
+							localFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+							parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+						} else if (localFocusModes.contains(Camera.Parameters.FOCUS_MODE_EDOF)) {
+							parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_EDOF);
+						} else if (localFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+							parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+						}
+					}
+
+					final List<String> localWhiteBalance = parameters.getSupportedWhiteBalance();
+					if (localWhiteBalance != null && localWhiteBalance.contains(Camera.Parameters.WHITE_BALANCE_AUTO))
+						parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
+
 					camera.setParameters(parameters);
 					camera.startPreview();
 				} catch (Throwable ex) {
@@ -594,12 +613,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 		viewWidth = width;
 		viewHeight = height;
-		SimpleVisualizerJni.glOnSurfaceChanged(width, height, rotation, (UI._1dp < 2) ? 1 : 0);
+		SimpleVisualizerJni.glOnSurfaceChanged(width, height, rotation, cameraPreviewW, cameraPreviewH, (UI._1dp < 2) ? 1 : 0);
 		okToRender = true;
-		/*if (type == TYPE_LIQUID && !imageChoosenAtLeastOnce) {
-			imageChoosenAtLeastOnce = true;
-			MainHandler.sendMessage(this, MSG_CHOOSE_IMAGE);
-		}*/
 	}
 	
 	//Runs on the MAIN thread
@@ -744,7 +759,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		//Based on: http://stackoverflow.com/a/4105966/3569421
 		if (activity != null && selectedUri == null && !browsing && okToRender) {
 			browsing = true;
-			//imageChoosenAtLeastOnce = true;
 			final Intent intent = new Intent();
 			intent.setType("image/*");
 			intent.setAction(Intent.ACTION_GET_CONTENT);

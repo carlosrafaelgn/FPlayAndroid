@@ -819,7 +819,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	return 0;
 }
 
-void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height, int rotation, int dp1OrLess) {
+void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height, int rotation, int cameraPreviewW, int cameraPreviewH, int dp1OrLess) {
 	glViewport(0, 0, width, height);
 	if (glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
 		if (glType == TYPE_SPIN) {
@@ -894,6 +894,46 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 				glUniform2f(glGetUniformLocation(glProgram, "aspect"), (float)height / (float)width, 1.0f);
 			else
 				glUniform2f(glGetUniformLocation(glProgram, "aspect"), 1.0f, (float)width / (float)height);
+			if (glType == TYPE_IMMERSIVE_PARTICLE_VR && glBuf[4] && cameraPreviewW > 0 && cameraPreviewH > 0) {
+				glBindBuffer(GL_ARRAY_BUFFER, glBuf[4]);
+				const float viewRatio = (float)width / (float)height;
+				const float cameraRatio = (float)cameraPreviewW / (float)cameraPreviewH;
+				float ratioError = viewRatio - cameraRatio;
+				*((int*)&ratioError) &= 0x7fffffff; //abs ;)
+				if (ratioError <= 0.01f) {
+					glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsRect, GL_STATIC_DRAW);
+				} else {
+					//is the camera ratio is too different from the view ratio, compensate for that
+					//difference using the texture coords
+					//(THIS ALGORITHM WAS A BIT SIMPLIFIED BECAUSE WE KNOW THAT
+					//cameraPreviewW < width AND cameraPreviewH < height)
+					float leftTex, topTex, rightTex = (float)width, bottomTex = (float)height;
+					if (cameraRatio < viewRatio) {
+						//crop top and bottom
+						const float newH = bottomTex * ((float)cameraPreviewW / rightTex);
+						const float diff = (((float)cameraPreviewH - newH) * 0.5f) / (float)cameraPreviewH;
+						leftTex = 0.0f;
+						topTex = diff;
+						rightTex = 1.0f;
+						bottomTex = 1.0f - diff;
+					} else {
+						//crop left and right
+						const float newW = rightTex * ((float)cameraPreviewH / bottomTex);
+						const float diff = (((float)cameraPreviewW - newW) * 0.5f) / (float)cameraPreviewW;
+						leftTex = diff;
+						topTex = 0.0f;
+						rightTex = 1.0f - diff;
+						bottomTex = 1.0f;
+					}
+					float texCoordsRect[] = {
+						leftTex, bottomTex,
+						rightTex, bottomTex,
+						leftTex, topTex,
+						rightTex, topTex
+					};
+					glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), texCoordsRect, GL_STATIC_DRAW);
+				}
+			}
 		}
 	} else {
 		glVerticesPerRow = 0;
