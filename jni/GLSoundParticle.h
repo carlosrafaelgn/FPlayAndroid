@@ -40,8 +40,8 @@
 
 class SimpleTracker {
 private:
-	unsigned int sensorData, lastSensorTime;
-	float oldAccelData[3], oldMagneticData[3], tmpAccelData[3], tmpMagneticData[3];
+	unsigned int lastAccelTime, lastMagneticTime;
+	float oldAccelData[3], oldMagneticData[3];
 
 public:
 	float accelData[3], magneticData[3];
@@ -51,8 +51,8 @@ public:
 	}
 
 	void onSensorReset() {
-		sensorData = 0;
-		lastSensorTime = 0;
+		lastAccelTime = 0;
+		lastMagneticTime = 0;
 		memset(accelData, 0, sizeof(float) * 3);
 		memset(magneticData, 0, sizeof(float) * 3);
 		memset(oldAccelData, 0, sizeof(float) * 3);
@@ -61,60 +61,54 @@ public:
 
 	void onSensorData(int sensorType, const float* values) {
 		if (sensorType == 1) {
-			tmpAccelData[0] = values[0];
-			tmpAccelData[1] = values[1];
-			tmpAccelData[2] = values[2];
-			sensorData |= 1;
+			if (!lastAccelTime) {
+				lastAccelTime = commonUptimeMillis();
+				accelData[0] = values[0];
+				oldAccelData[0] = values[0];
+				accelData[1] = values[1];
+				oldAccelData[1] = values[1];
+				accelData[2] = values[2];
+				oldAccelData[2] = values[2];
+				return;
+			}
+			//data from the acceleration sensor is less noisy than the one from the magnetic sensor,
+			//therefore we do not need to filter it so aggressively
+			const float delta = (float)commonUptimeDeltaMillis(&lastAccelTime);
+			const float coefNew = (0.140625f / 16.0f) * delta; //0.140625f @ 60fps (~16ms)
+			const float coefOld = 1.0f - coefNew;
+			accelData[0] = (oldAccelData[0] * coefOld) + (values[0] * coefNew);
+			accelData[1] = (oldAccelData[1] * coefOld) + (values[1] * coefNew);
+			accelData[2] = (oldAccelData[2] * coefOld) + (values[2] * coefNew);
+			oldAccelData[0] = accelData[0];
+			oldAccelData[1] = accelData[1];
+			oldAccelData[2] = accelData[2];
 		} else {
-			tmpMagneticData[0] = values[0];
-			tmpMagneticData[1] = values[1];
-			tmpMagneticData[2] = values[2];
-			sensorData |= 2;
-		}
-		if (sensorData != 3)
-			return;
-		sensorData = 0;
-		if (lastSensorTime == 0) {
-			accelData[0] = tmpAccelData[0];
-			accelData[1] = tmpAccelData[1];
-			accelData[2] = tmpAccelData[2];
-			oldAccelData[0] = tmpAccelData[0];
-			oldAccelData[1] = tmpAccelData[1];
-			oldAccelData[2] = tmpAccelData[2];
-			magneticData[0] = tmpMagneticData[0];
-			magneticData[1] = tmpMagneticData[1];
-			magneticData[2] = tmpMagneticData[2];
-			oldMagneticData[0] = tmpMagneticData[0];
-			oldMagneticData[1] = tmpMagneticData[1];
-			oldMagneticData[2] = tmpMagneticData[2];
-			commonUptimeDeltaMillis(&lastSensorTime);
-			return;
-		}
-		//data from the acceleration sensor is less noisy than the one from the magnetic sensor,
-		//therefore we do not need to filter it so aggressively
-		const float delta = (float)commonUptimeDeltaMillis(&lastSensorTime);
-		float coefNew = (0.140625f / 16.0f) * delta; //0.140625f @ 60fps (~16ms)
-		float coefOld = 1.0f - coefNew;
-		accelData[0] = (oldAccelData[0] * coefOld) + (tmpAccelData[0] * coefNew);
-		accelData[1] = (oldAccelData[1] * coefOld) + (tmpAccelData[1] * coefNew);
-		accelData[2] = (oldAccelData[2] * coefOld) + (tmpAccelData[2] * coefNew);
-		oldAccelData[0] = accelData[0];
-		oldAccelData[1] = accelData[1];
-		oldAccelData[2] = accelData[2];
-		//apply an adptative filter: the larger the change, the faster the filter! :)
-		//this technique produced better results than using other filters, such as
-		//higher order low-pass filters (empirically tested)
-		for (int axis = 0; axis < 3; axis++) {
-			float absDelta = tmpMagneticData[axis] - oldMagneticData[axis];
-			*((int*)&absDelta) &= 0x7fffffff; //abs ;)
-			coefNew = (absDelta >= 1.5f ? 0.15f :
-				((0.05f * absDelta * absDelta) + (0.025f * absDelta))
-				//this parable also works fine, but is slower than the above...
-				//((0.065f * absDelta * absDelta) + (0.0025f * absDelta))
-			) * 0.0625f * delta; //0.0625 = / 16
-			coefOld = 1.0f - coefNew;
-			magneticData[axis] = (oldMagneticData[axis] * coefOld) + (tmpMagneticData[axis] * coefNew);
-			oldMagneticData[axis] = magneticData[axis];
+			if (!lastMagneticTime) {
+				lastMagneticTime = commonUptimeMillis();
+				magneticData[0] = values[0];
+				oldMagneticData[0] = values[0];
+				magneticData[1] = values[1];
+				oldMagneticData[1] = values[1];
+				magneticData[2] = values[2];
+				oldMagneticData[2] = values[2];
+				return;
+			}
+			//apply an adptative filter: the larger the change, the faster the filter! :)
+			//this technique produced better results than using other filters, such as
+			//higher order low-pass filters (empirically tested)
+			const float delta = (float)commonUptimeDeltaMillis(&lastMagneticTime);
+			for (int axis = 0; axis < 3; axis++) {
+				float absDeltaValue = values[axis] - oldMagneticData[axis];
+				*((int*)&absDeltaValue) &= 0x7fffffff; //abs ;)
+				const float coefNew = (absDeltaValue >= 1.5f ? 0.15f :
+					((0.05f * absDeltaValue * absDeltaValue) + (0.025f * absDeltaValue))
+					//this parable also works fine, but is slower than the above...
+					//((0.065f * absDeltaValue * absDeltaValue) + (0.0025f * absDeltaValue))
+				) * 0.0625f * delta; //0.0625 = / 16
+				const float coefOld = 1.0f - coefNew;
+				magneticData[axis] = (oldMagneticData[axis] * coefOld) + (values[axis] * coefNew);
+				oldMagneticData[axis] = magneticData[axis];
+			}
 		}
 	}
 };

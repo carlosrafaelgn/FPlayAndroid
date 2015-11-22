@@ -65,6 +65,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -409,30 +410,75 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		SimpleVisualizerJni.commonSetSpeed(speed);
 		if (GLVersion == -1) {
 			supported = true;
-			Process ifc = null;
-			BufferedReader bis = null;
 			try {
-				ifc = Runtime.getRuntime().exec("getprop ro.opengles.version");
-				bis = new BufferedReader(new InputStreamReader(ifc.getInputStream()));
-				String line = bis.readLine();
-				GLVersion = Integer.parseInt(line);
-				supported = (GLVersion >= 0x00020000);
-				if (!supported)
-					MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			} finally {
-				try {
-					if (bis != null)
-						bis.close();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
+				//https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGetString.xml
+				final String version = gl.glGetString(GL10.GL_VERSION).toLowerCase(Locale.US);
+				if (version.indexOf("opengl es ") == 0 &&
+					version.length() > 12 &&
+					version.charAt(10) >= '0' &&
+					version.charAt(10) <= '9') {
+					final int len = version.length();
+					GLVersion = 0;
+					int i = 10;
+					char c = 0;
+					for (; i < len; i++) {
+						c = version.charAt(i);
+						if (c < '0' || c > '9')
+							break;
+						GLVersion = (GLVersion << 4) | ((c - '0') << 16);
+					}
+					if (GLVersion == 0) {
+						GLVersion = -1;
+					} else {
+						if (c == '.') {
+							i++;
+							int shift = 12;
+							for (; i < len; i++) {
+								if (shift < 0)
+									break;
+								c = version.charAt(i);
+								if (c < '0' || c > '9')
+									break;
+								GLVersion |= ((c - '0') << shift);
+								shift -= 4;
+							}
+						}
+						supported = (GLVersion >= 0x00020000);
+						if (!supported)
+							MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
+					}
 				}
+			} catch (Throwable ex) {
+				GLVersion = -1;
+				ex.printStackTrace();
+			}
+			if (GLVersion == -1) {
+				//if the method above fails, try to get opengl version the hard way!
+				Process ifc = null;
+				BufferedReader bis = null;
 				try {
-					if (ifc != null)
-						ifc.destroy();
+					ifc = Runtime.getRuntime().exec("getprop ro.opengles.version");
+					bis = new BufferedReader(new InputStreamReader(ifc.getInputStream()));
+					String line = bis.readLine();
+					GLVersion = Integer.parseInt(line);
+					supported = (GLVersion >= 0x00020000);
+					if (!supported)
+						MainHandler.sendMessage(this, MSG_OPENGL_ERROR);
 				} catch (Throwable ex) {
 					ex.printStackTrace();
+				} finally {
+					try {
+						if (bis != null)
+							bis.close();
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+					try {
+						if (ifc != null)
+							ifc.destroy();
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
 				}
 			}
 		}
