@@ -83,7 +83,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -848,6 +848,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optIsVerticalMarginLarge.setOnClickListener(this);
 			optExtraSpacing = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.opt_extra_spacing).toString(), null, true, UI.extraSpacing, false);
 			optExtraSpacing.setOnClickListener(this);
+			if (!UI.isLargeScreen) {
+				optPlaceTitleAtTheBottom = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.place_title_at_the_bottom).toString(), null, true, UI.placeTitleAtTheBottom, false);
+				optPlaceTitleAtTheBottom.setOnClickListener(this);
+			}
 			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.forcedLocale), false, false, false);
 			optForcedLocale.setOnClickListener(this);
 			if (UI.isLargeScreen) {
@@ -904,9 +908,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFadeInPause.setOnClickListener(this);
 			optFadeInOther = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
 			optFadeInOther.setOnClickListener(this);
+			optAnnounceCurrentSong = new SettingView(ctx, UI.ICON_MIC, getText(R.string.announce_current_song).toString(), null, true, Player.announceCurrentSong, false);
+			optAnnounceCurrentSong.setOnClickListener(this);
+			optFollowCurrentSong = new SettingView(ctx, UI.ICON_SCROLLBAR, getText(R.string.follow_current_song).toString(), null, true, Player.followCurrentSong, false);
+			optFollowCurrentSong.setOnClickListener(this);
 
 			int hIdx = 0;
-			headers = new TextView[UI.isLargeScreen ? 7 : 6];
+			headers = new TextView[7];
 			addHeader(ctx, R.string.msg_turn_off_title, optAutoTurnOffPlaylist, hIdx++);
 			panelSettings.addView(optAutoTurnOff);
 			panelSettings.addView(optAutoIdleTurnOff);
@@ -925,19 +933,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(optNotFullscreen);
 			panelSettings.addView(optIsVerticalMarginLarge);
 			panelSettings.addView(optExtraSpacing);
+			if (!UI.isLargeScreen)
+				panelSettings.addView(optPlaceTitleAtTheBottom);
 			if (!UI.isCurrentLocaleCyrillic())
 				panelSettings.addView(optUseAlternateTypeface);
 			panelSettings.addView(optForcedLocale);
-			SettingView lastSettingView = optForcedLocale;
-			if (UI.isLargeScreen) {
-				addHeader(ctx, R.string.accessibility, lastSettingView, hIdx++);
+			addHeader(ctx, R.string.accessibility, optForcedLocale, hIdx++);
+			if (UI.isLargeScreen)
 				panelSettings.addView(optPlacePlaylistToTheRight);
-				panelSettings.addView(optScrollBarToTheLeft);
-				lastSettingView = optScrollBarToTheLeft;
-			}
-			addHeader(ctx, R.string.scrollbar, lastSettingView, hIdx++);
-			if (!UI.isLargeScreen)
-				panelSettings.addView(optScrollBarToTheLeft);
+			panelSettings.addView(optAnnounceCurrentSong);
+			panelSettings.addView(optScrollBarToTheLeft);
+			addHeader(ctx, R.string.scrollbar, optScrollBarToTheLeft, hIdx++);
+			panelSettings.addView(optFollowCurrentSong);
 			panelSettings.addView(optScrollBarSongList);
 			panelSettings.addView(optScrollBarBrowser);
 			addHeader(ctx, R.string.widget, optScrollBarBrowser, hIdx++);
@@ -1024,6 +1031,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsDividerVisible = null;
 		optIsVerticalMarginLarge = null;
 		optExtraSpacing = null;
+		optPlaceTitleAtTheBottom = null;
 		optForcedLocale = null;
 		optPlacePlaylistToTheRight = null;
 		optScrollBarToTheLeft = null;
@@ -1057,6 +1065,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBtSize = null;
 		optBtVUMeter = null;
 		optBtSpeed = null;
+		optAnnounceCurrentSong = null;
+		optFollowCurrentSong = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -1205,6 +1215,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			onCleanupLayout();
 			onCreateLayout(false);
 			System.gc();
+		} else if (view == optPlaceTitleAtTheBottom) {
+			UI.placeTitleAtTheBottom = optPlaceTitleAtTheBottom.isChecked();
 		} else if (view == optFlat) {
 			UI.setFlat(optFlat.isChecked());
 			//onCleanupLayout();
@@ -1252,6 +1264,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.animationEnabled = optAnimations.isChecked();
 		} else if (view == optAutoTurnOffPlaylist) {
 			Player.turnOffWhenPlaylistEnds = optAutoTurnOffPlaylist.isChecked();
+		} else if (view == optAnnounceCurrentSong) {
+			Player.announceCurrentSong = optAnnounceCurrentSong.isChecked();
+		} else if (view == optFollowCurrentSong) {
+			Player.followCurrentSong = optFollowCurrentSong.isChecked();
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser) {
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);

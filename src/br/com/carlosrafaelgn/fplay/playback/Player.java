@@ -1667,7 +1667,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	//private static final int OPT_PLAYFOLDERCLEARSLIST = 0x000b;
 	//private static final int OPT_KEEPSCREENON = 0x000c;
 	private static final int OPT_FORCEDORIENTATION = 0x000d;
-	private static final int OPT_DISPLAYVOLUMEINDB = 0x000e;
+	//private static final int OPT_DISPLAYVOLUMEINDB = 0x000e;
 	//private static final int OPT_DOUBLECLICKMODE = 0x000f;
 	//these 3 will no longer be used!
 	//private static final int OPT_MSGADDSHOWN = 0x0010;
@@ -1779,6 +1779,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPTBIT_BASSBOOST_ENABLED_BT = 47;
 	static final int OPTBIT_VIRTUALIZER_ENABLED_BT = 48;
 	private static final int OPTBIT_3D = 49;
+	private static final int OPTBIT_FOLLOW_CURRENT_SONG = 50;
+	private static final int OPTBIT_ANNOUNCE_CURRENT_SONG = 51;
+	private static final int OPTBIT_PLACE_TITLE_AT_THE_BOTTOM = 52;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -1789,7 +1792,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final HashSet<String> favoriteFolders = new HashSet<>();
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	public static String path, originalPath, radioSearchTerm;
-	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds;
+	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
 	public static int radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
 
 	public static SerializableMap loadConfigFromFile(Context context) {
@@ -1826,7 +1829,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		idleTurnOffTimerSelectedMinutes = opts.getInt(OPT_IDLETURNOFFTIMERSELECTEDMINUTES, 0);
 		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
-		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS, null);
+		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS);
 		UI.is3D = opts.getBit(OPTBIT_3D, true);
 		UI.setTheme(null, (UI.lastVersionCode < 74) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
@@ -1842,7 +1845,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
 			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
 			if (volumeControlType == VOLUME_CONTROL_DB)
-				setVolumeControlType((opts.hasBits() ? opts.getBit(OPTBIT_DISPLAYVOLUMEINDB) : opts.getBoolean(OPT_DISPLAYVOLUMEINDB)) ? VOLUME_CONTROL_DB : VOLUME_CONTROL_PERCENT);
+				setVolumeControlType(opts.getBit(OPTBIT_DISPLAYVOLUMEINDB) ? VOLUME_CONTROL_DB : VOLUME_CONTROL_PERCENT);
 			else
 				setVolumeControlType(volumeControlType);
 		} else {
@@ -1892,6 +1895,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
 			UI.visualizerPortrait = opts.getBit(OPTBIT_VISUALIZER_PORTRAIT);
 			turnOffWhenPlaylistEnds = opts.getBit(OPTBIT_TURNOFFPLAYLIST);
+			followCurrentSong = opts.getBit(OPTBIT_FOLLOW_CURRENT_SONG, true);
+			announceCurrentSong = opts.getBit(OPTBIT_ANNOUNCE_CURRENT_SONG);
+			UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
 		/*} else {
 			//load bit flags the old way
 			controlMode = opts.getBoolean(OPT_CONTROLMODE);
@@ -2006,6 +2012,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_CONTROLS_TO_THE_LEFT, UI.controlsToTheLeft);
 		opts.putBit(OPTBIT_VISUALIZER_PORTRAIT, UI.visualizerPortrait);
 		opts.putBit(OPTBIT_TURNOFFPLAYLIST, turnOffWhenPlaylistEnds);
+		opts.putBit(OPTBIT_FOLLOW_CURRENT_SONG, followCurrentSong);
+		opts.putBit(OPTBIT_ANNOUNCE_CURRENT_SONG, announceCurrentSong);
+		opts.putBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM, UI.placeTitleAtTheBottom);
 		if (favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
@@ -2956,6 +2965,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			updateBluetoothVisualizer(songHasChanged);
 		WidgetMain.updateWidgets(thePlayer);
 		Throwable ex = null;
+		if (songHasChanged && announceCurrentSong && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && state == STATE_ALIVE)
+			UI.announceAccessibilityText(localSong == null ? thePlayer.getText(R.string.nothing_playing) : localSong.title);
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];
 			objs[2] = null;

@@ -311,5 +311,8 @@
     <string name="loudspeaker">Lautsprecher</string>
     <string name="earphones">Kopfhörer</string>
     <string name="bluetooth">Bluetooth</string>
+    <string name="follow_current_song">Folgen aktuellen Titel auf dem Hauptbildschirm</string>
+    <string name="announce_current_song">Kündigen Sie Änderungen an der aktuellen Titel</string>
+    <string name="place_title_at_the_bottom">Platzieren Sie den Titel an der Unterseite</string>
 
 </resources>

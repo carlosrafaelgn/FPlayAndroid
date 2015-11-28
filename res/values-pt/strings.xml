@@ -311,5 +311,8 @@
     <string name="loudspeaker">Alto-falante</string>
     <string name="earphones">Fones de ouvido</string>
     <string name="bluetooth">Bluetooth</string>
+    <string name="follow_current_song">Seguir música atual na tela principal</string>
+    <string name="announce_current_song">Anunciar quando a música atual mudar</string>
+    <string name="place_title_at_the_bottom">Posicionar o título na parte inferior</string>
 
 </resources>

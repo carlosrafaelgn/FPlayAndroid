@@ -311,5 +311,8 @@
     <string name="loudspeaker">Гучномовець</string>
     <string name="earphones">Навушники</string>
     <string name="bluetooth">Bluetooth</string>
+    <string name="follow_current_song">Дотримуйтесь поточну пісню на головному екрані</string>
+    <string name="announce_current_song">Оголошувати зміни поточної пісні</string>
+    <string name="place_title_at_the_bottom">Помістіть назва внизу</string>
 
 </resources>

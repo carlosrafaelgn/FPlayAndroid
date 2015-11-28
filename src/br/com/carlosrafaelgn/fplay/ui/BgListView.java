@@ -79,7 +79,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private OnClickListener emptyListClickListener;
 	private StaticLayout emptyLayout;
 	private BaseList<? extends BaseItem> adapter;
-	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking;
+	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking, touching;
 	private int leftPadding, topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
 		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState;
 	private String[] sections;
@@ -249,6 +249,15 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		return (ignoreTouchMode | super.isInTouchMode());
 	}
 	
+	public boolean changingCurrentWouldScareUser() {
+		return (
+				(!isInTouchMode()) ||
+				(UI.accessibilityManager != null && UI.accessibilityManager.isEnabled()) ||
+				touching ||
+				(scrollState != SCROLL_STATE_IDLE)
+		);
+	}
+
 	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void smoothScroll(int position, int y) {
 		smoothScrollToPositionFromTop(position, y);
@@ -506,6 +515,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				trackIndexedTouchEvent((int)event.getY());
 			return true;
 		case MotionEvent.ACTION_UP:
+			touching = false;
 			if (tracking) {
 				tracking = false;
 				if (scrollBarType == SCROLLBAR_LARGE)
@@ -519,6 +529,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			}
 			break;
 		case MotionEvent.ACTION_CANCEL:
+			touching = false;
 			if (tracking) {
 				tracking = false;
 				if (scrollBarType == SCROLLBAR_LARGE)
