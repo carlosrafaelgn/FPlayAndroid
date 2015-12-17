@@ -102,20 +102,20 @@ public final class ObservableScrollView extends ScrollView {
 				e = m - 1;
 			}
 		}
-		//not an exact match...
+		//not an exact match... maybe y is a coordinate over an empty space
 		if (c <= 0)
 			return -1;
-		if (m < 0)
+		if (m <= 0)
 			return 0;
 		else if (m >= c)
 			return c - 1;
-		return m;
+		return m - 1;
 	}
 	
 	public int getPreviousChildIndexWithClass(Class<? extends View> clazz, int startingY) {
-		final ViewGroup vg = (ViewGroup)getChildAt(0);
 		int i = getChildIndexAroundPosition(startingY);
 		if (i >= 0) {
+			final ViewGroup vg = (ViewGroup)getChildAt(0);
 			do {
 				final View v = vg.getChildAt(i);
 				if (clazz.isInstance(v))
