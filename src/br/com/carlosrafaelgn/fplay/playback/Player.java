@@ -2624,7 +2624,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			handler.sendMessageAtTime(Message.obtain(handler, MSG_AUDIO_SINK_CHANGED, wiredHeadsetJustPlugged ? 1 : 0, 0), SystemClock.uptimeMillis());
 	}
 
-	private static int getHeadsetHookAction(int pressCount) {
+	public static int getHeadsetHookAction(int pressCount) {
 		return ((headsetHookActions >> ((pressCount == 1) ? 0 : ((pressCount == 2) ? 8 : 16))) & 0xFF);
 	}
 
