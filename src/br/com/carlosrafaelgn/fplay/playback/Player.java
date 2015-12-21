@@ -948,8 +948,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
 			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
 		}
-		if (localHandler != null)
-			localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+		resetHeadsetHook();
 	}
 
 	private static void _fullCleanup() {
@@ -1365,8 +1364,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
 			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
 		}
-		if (localHandler != null)
-			localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+		resetHeadsetHook();
 		volumeDimmed = false;
 		switch (focusChange) {
 		case AudioManager.AUDIOFOCUS_GAIN:
@@ -1708,6 +1706,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_RADIOLASTGENRE = 0x0033;
 	private static final int OPT_TRANSITION = 0x0034;
 	private static final int OPT_BLUETOOTHVISUALIZERCONFIG = 0x0035;
+	private static final int OPT_HEADSETHOOKACTIONS = 0x0036;
 
 	//values 0x01xx are shared among all effects
 	//static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -1755,7 +1754,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPTBIT_EQUALIZER_ENABLED = 23;
 	static final int OPTBIT_BASSBOOST_ENABLED = 24;
 	static final int OPTBIT_VIRTUALIZER_ENABLED = 25;
-	private static final int OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES = 26;
+	//this bit has been removed on version 83
+	//private static final int OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES = 26;
 	private static final int OPTBIT_DO_NOT_ATTENUATE_VOLUME = 27;
 	private static final int OPTBIT_SCROLLBAR_TO_THE_LEFT = 28;
 	private static final int OPTBIT_SCROLLBAR_SONGLIST0 = 29;
@@ -1788,11 +1788,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static Notification notification;
 	private static RemoteViews notificationRemoteViews;
 	private static boolean appNotInForeground, idleTurnOffTimerSent;
-	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, headsetHookLastTime;
+	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin;
 	private static final HashSet<String> favoriteFolders = new HashSet<>();
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
+	private static int headsetHookActions, headsetHookPressCount;
 	public static String path, originalPath, radioSearchTerm;
-	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, headsetHookDoublePressPauses, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
+	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
 	public static int radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
 
 	public static SerializableMap loadConfigFromFile(Context context) {
@@ -1841,6 +1842,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		UI.setTransition((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
+		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
 		//the volume control types changed on version 71
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
 			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
@@ -1880,7 +1882,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
 			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, UI.isTV || (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 			//new settings (cannot be loaded the old way)
-			headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
+			//headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
 			doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
 			UI.scrollBarToTheLeft = opts.getBit(OPTBIT_SCROLLBAR_TO_THE_LEFT);
 			UI.songListScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST1, 0) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST0, UI.isTV ? 0 : 1);
@@ -1971,6 +1973,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
 		opts.put(OPT_TRANSITION, UI.transition);
+		opts.put(OPT_HEADSETHOOKACTIONS, headsetHookActions);
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);
 		opts.putBit(OPTBIT_BASSBOOSTMODE, bassBoostMode);
 		opts.putBit(OPTBIT_NEXTPREPARATION, nextPreparationEnabled);
@@ -1997,7 +2000,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing);
 		opts.putBit(OPTBIT_WRAPAROUNDLIST, UI.wrapAroundList);
 		opts.putBit(OPTBIT_EXTRASPACING, UI.extraSpacing);
-		opts.putBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES, headsetHookDoublePressPauses);
+		//opts.putBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES, headsetHookDoublePressPauses);
 		opts.putBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME, doNotAttenuateVolume);
 		opts.putBit(OPTBIT_SCROLLBAR_TO_THE_LEFT, UI.scrollBarToTheLeft);
 		opts.putBit(OPTBIT_SCROLLBAR_SONGLIST0, (UI.songListScrollBarType & 1) != 0);
@@ -2621,15 +2624,31 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			handler.sendMessageAtTime(Message.obtain(handler, MSG_AUDIO_SINK_CHANGED, wiredHeadsetJustPlugged ? 1 : 0, 0), SystemClock.uptimeMillis());
 	}
 
+	private static int getHeadsetHookAction(int pressCount) {
+		return ((headsetHookActions >> ((pressCount == 1) ? 0 : ((pressCount == 2) ? 8 : 16))) & 0xFF);
+	}
+
+	private static void resetHeadsetHook() {
+		headsetHookPressCount = 0;
+		if (localHandler != null)
+			localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+	}
+
 	private static void processHeadsetHookTimer() {
 		if (state != STATE_ALIVE)
 			return;
-		if (headsetHookLastTime != 0) {
-			headsetHookLastTime = 0;
-			if (headsetHookDoublePressPauses)
-				next();
-			else
-				playPause();
+		final int action = getHeadsetHookAction(headsetHookPressCount);
+		resetHeadsetHook();
+		switch (action) {
+		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+			playPause();
+			break;
+		case KeyEvent.KEYCODE_MEDIA_NEXT:
+			next();
+			break;
+		case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+			previous();
+			break;
 		}
 	}
 
@@ -2668,19 +2687,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			break;
 		case KeyEvent.KEYCODE_HEADSETHOOK:
 			if (localHandler != null) {
-				if (headsetHookLastTime != 0) {
-					localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
-					if ((SystemClock.uptimeMillis() - headsetHookLastTime) < 500) {
-						headsetHookLastTime = 0;
-						if (headsetHookDoublePressPauses)
-							playPause();
-						else
-							next();
-					}
-				} else {
-					headsetHookLastTime = SystemClock.uptimeMillis();
-					localHandler.sendEmptyMessageAtTime(MSG_HEADSET_HOOK_TIMER, headsetHookLastTime + 500);
-				}
+				localHandler.removeMessages(MSG_HEADSET_HOOK_TIMER);
+				headsetHookPressCount++;
+				if (headsetHookPressCount >= 3)
+					processHeadsetHookTimer();
+				else
+					localHandler.sendEmptyMessageAtTime(MSG_HEADSET_HOOK_TIMER, SystemClock.uptimeMillis() + 500);
 			}
 			break;
 		case KeyEvent.KEYCODE_MEDIA_STOP:
