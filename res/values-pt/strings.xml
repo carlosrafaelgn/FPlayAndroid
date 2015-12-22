@@ -51,7 +51,7 @@
     <string name="opt_volume_control_type">Tipo do controle de volume:</string>
     <string name="opt_is_divider_visible">Mostrar divisão entre os itens das listas</string>
     <string name="opt_is_vertical_margin_large">Usar espaçamento largo entre os itens das listas</string>
-    <string name="opt_handle_call_key">Usar a tecla Chamar/Discar como Play/Pause</string>
+    <string name="opt_handle_call_key">Usar a tecla Chamar/Discar como Tocar/Pausar</string>
     <string name="opt_do_not_attenuate_volume">Não atenuar o volume da música quando ocorrer alguma notificação do sistema</string>
     <string name="opt_play_when_headset_plugged">Tocar automaticamente quando um fone de ouvido com fio for conectado</string>
     <string name="opt_block_back_key">Impedir que a tecla Voltar retorne à tela inicial</string>
@@ -62,7 +62,7 @@
     <string name="opt_go_back_when_playing_folders">Voltar para a lista ao tocar uma pasta, uma nova lista, um álbum ou um artista</string>
     <string name="opt_force_orientation">Forçar orientação da tela como:</string>
     <string name="opt_fade_in_focus">Duração do fade in do volume depois de uma chamada, ou de outra interrupção externa:</string>
-    <string name="opt_fade_in_pause">Duração do fade in do volume ao retomar depois de um pause:</string>
+    <string name="opt_fade_in_pause">Duração do fade in do volume ao retomar depois de uma pausa:</string>
     <string name="opt_fade_in_other">Duração do fade in do volume ao iniciar novas músicas quando estiver em silêncio:</string>
     <string name="hdr_display">Aparência e Tela</string>
     <string name="hdr_playback">Reprodução</string>
@@ -134,7 +134,7 @@
     <string name="play_album">Tocar álbum</string>
     <string name="remove_favorite">Remover favorito</string>
     <string name="previous">Anterior</string>
-    <string name="pause">Pause</string>
+    <string name="pause">Pausar</string>
     <string name="next">Próxima</string>
     <string name="play">Tocar</string>
     <string name="add">Adicionar</string>
@@ -314,5 +314,9 @@
     <string name="follow_current_song">Seguir música atual na tela principal</string>
     <string name="announce_current_song">Anunciar quando a música atual mudar</string>
     <string name="place_title_at_the_bottom">Posicionar o título na parte inferior</string>
+    <string name="headset_hook_1">Um toque na tecla do fone de ouvido</string>
+    <string name="headset_hook_2">Dois toques na tecla do fone de ouvido</string>
+    <string name="headset_hook_3">Três toques na tecla do fone de ouvido</string>
+    <string name="nothing">Nada</string>
 
 </resources>

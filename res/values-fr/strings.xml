@@ -314,5 +314,9 @@
     <string name="follow_current_song">Suivez morceau en cours sur l\'écran principal</string>
     <string name="announce_current_song">Annoncer lorsque la morceau en cours change</string>
     <string name="place_title_at_the_bottom">Placez le titre au fond</string>
+    <string name="headset_hook_1">Un clic sur le bouton de l\'écouteur</string>
+    <string name="headset_hook_2">Deux clics sur le bouton de l\'écouteur</string>
+    <string name="headset_hook_3">Trois clics sur le bouton de l\'écouteur</string>
+    <string name="nothing">Rien</string>
 
 </resources>

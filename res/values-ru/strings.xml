@@ -314,5 +314,9 @@
     <string name="follow_current_song">Следуйте текущую песню на главном экране</string>
     <string name="announce_current_song">Объявлять изменения текущей песни</string>
     <string name="place_title_at_the_bottom">Поместите название внизу</string>
+    <string name="headset_hook_1">Один щелчок по кнопке гарнитуры</string>
+    <string name="headset_hook_2">Два щелчка на кнопке гарнитуры</string>
+    <string name="headset_hook_3">Три щелчка на кнопке гарнитуры</string>
+    <string name="nothing">Ничего</string>
 
 </resources>

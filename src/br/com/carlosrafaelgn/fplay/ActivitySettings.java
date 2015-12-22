@@ -45,6 +45,7 @@ import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -83,7 +84,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, lastMenuView;
+	private SettingView optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -279,6 +280,24 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, 62, 2, R.string.dlong)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(((d > 0) && (d < 125)) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optHeadsetHook1 || view == optHeadsetHook2 || view == optHeadsetHook3) {
+			lastMenuView = (SettingView)view;
+			UI.prepare(menu);
+			final int pressCount = ((view == optHeadsetHook1) ? 1 : ((view == optHeadsetHook2) ? 2 : 3));
+			final int action = Player.getHeadsetHookAction(pressCount);
+			menu.add(0, 0, 0, R.string.nothing)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((action == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			UI.separator(menu, 0, 1);
+			menu.add(1, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0, getText(R.string.play) + "/" + getText(R.string.pause))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, KeyEvent.KEYCODE_MEDIA_NEXT, 1, R.string.next)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_NEXT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, KeyEvent.KEYCODE_MEDIA_PREVIOUS, 2, R.string.previous)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_PREVIOUS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optBtSize) {
 			lastMenuView = optBtSize;
 			UI.prepare(menu);
@@ -399,6 +418,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optFadeInOther) {
 			Player.fadeInIncrementOnOther = item.getItemId();
 			optFadeInOther.setSecondaryText(getFadeInString(item.getItemId()));
+		} else if (lastMenuView == optHeadsetHook1 || lastMenuView == optHeadsetHook2 || lastMenuView == optHeadsetHook3) {
+			final int pressCount = ((lastMenuView == optHeadsetHook1) ? 1 : ((lastMenuView == optHeadsetHook2) ? 2 : 3));
+			Player.setHeadsetHookAction(pressCount, item.getItemId());
+			lastMenuView.setSecondaryText(getHeadsetHookString(pressCount));
 		} else if (lastMenuView == optBtSize) {
 			Player.setBluetoothVisualizerSize(item.getItemId());
 			optBtSize.setSecondaryText(getSizeString());
@@ -488,6 +511,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	private String getSpeedString() {
 		return Integer.toString(3 - Player.getBluetoothVisualizerSpeed());
+	}
+
+	private String getHeadsetHookString(int pressCount) {
+		switch (Player.getHeadsetHookAction(pressCount)) {
+		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+			return getText(R.string.play) + "/" + getText(R.string.pause);
+		case KeyEvent.KEYCODE_MEDIA_NEXT:
+			return getText(R.string.next).toString();
+		case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+			return getText(R.string.previous).toString();
+		}
+		return getText(R.string.nothing).toString();
 	}
 
 	@SuppressWarnings("deprecation")
@@ -874,6 +909,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optWidgetIconColor.setColor(UI.widgetIconColor);
 			optHandleCallKey = new SettingView(ctx, UI.ICON_DIAL, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey, false);
 			optHandleCallKey.setOnClickListener(this);
+			optHeadsetHook1 = new SettingView(ctx, UI.ICON_HEADSETHOOK1, getText(R.string.headset_hook_1).toString(), getHeadsetHookString(1), false, false, false);
+			optHeadsetHook1.setOnClickListener(this);
+			optHeadsetHook2 = new SettingView(ctx, UI.ICON_HEADSETHOOK2, getText(R.string.headset_hook_2).toString(), getHeadsetHookString(2), false, false, false);
+			optHeadsetHook2.setOnClickListener(this);
+			optHeadsetHook3 = new SettingView(ctx, UI.ICON_HEADSETHOOK3, getText(R.string.headset_hook_3).toString(), getHeadsetHookString(3), false, false, false);
+			optHeadsetHook3.setOnClickListener(this);
 			optPlayWhenHeadsetPlugged = new SettingView(ctx, UI.ICON_HEADSET, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
 			optPlayWhenHeadsetPlugged.setOnClickListener(this);
 			optBlockBackKey = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
@@ -954,6 +995,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.hdr_playback, optWidgetIconColor, hIdx++);
 			panelSettings.addView(optPlayWhenHeadsetPlugged);
 			panelSettings.addView(optHandleCallKey);
+			panelSettings.addView(optHeadsetHook1);
+			panelSettings.addView(optHeadsetHook2);
+			panelSettings.addView(optHeadsetHook3);
 			panelSettings.addView(optExpandSeekBar);
 			panelSettings.addView(optVolumeControlType);
 			panelSettings.addView(optDoNotAttenuateVolume);
@@ -1041,6 +1085,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optWidgetTextColor = null;
 		optWidgetIconColor = null;
 		optHandleCallKey = null;
+		optHeadsetHook1 = null;
+		optHeadsetHook2 = null;
+		optHeadsetHook3 = null;
 		optPlayWhenHeadsetPlugged = null;
 		optBlockBackKey = null;
 		optBackKeyAlwaysReturnsToPlayerWhenBrowsing = null;
@@ -1268,7 +1315,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.announceCurrentSong = optAnnounceCurrentSong.isChecked();
 		} else if (view == optFollowCurrentSong) {
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
-		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser) {
+		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser || view == optHeadsetHook1 || view == optHeadsetHook2 || view == optHeadsetHook3) {
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;

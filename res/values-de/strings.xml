@@ -314,5 +314,9 @@
     <string name="follow_current_song">Folgen aktuellen Titel auf dem Hauptbildschirm</string>
     <string name="announce_current_song">Kündigen Sie Änderungen an der aktuellen Titel</string>
     <string name="place_title_at_the_bottom">Platzieren Sie den Titel an der Unterseite</string>
+    <string name="headset_hook_1">Ein Klick auf den Kopfhörertaste</string>
+    <string name="headset_hook_2">Zwei Klicks auf der Kopfhörertaste</string>
+    <string name="headset_hook_3">Drei Klicks auf der Kopfhörertaste</string>
+    <string name="nothing">Nichts</string>
 
 </resources>
