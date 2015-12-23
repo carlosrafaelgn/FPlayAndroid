@@ -314,9 +314,9 @@
     <string name="follow_current_song">Seguir canción actual en la pantalla principal</string>
     <string name="announce_current_song">Avisar cuando la canción actual cambia</string>
     <string name="place_title_at_the_bottom">Poner el título en la parte inferior</string>
-    <string name="headset_hook_1">Un toque sobre la tecla del auricular</string>
-    <string name="headset_hook_2">Dos toques sobre la tecla del auricular</string>
-    <string name="headset_hook_3">Tres toques sobre la tecla del auricular</string>
+    <string name="headset_hook_1">Un toque sobre la tecla del auricular:</string>
+    <string name="headset_hook_2">Dos toques sobre la tecla del auricular:</string>
+    <string name="headset_hook_3">Tres toques sobre la tecla del auricular:</string>
     <string name="nothing">Nada</string>
 
 </resources>

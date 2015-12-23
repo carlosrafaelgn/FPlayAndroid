@@ -966,7 +966,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.addView(opt3D);
 			panelSettings.addView(optFlat);
 			panelSettings.addView(optBorders);
-			panelSettings.addView(optIsDividerVisible);
+			if (!UI.is3D)
+				panelSettings.addView(optIsDividerVisible);
 			panelSettings.addView(optExtraInfoMode);
 			panelSettings.addView(optForceOrientation);
 			panelSettings.addView(optTransition);
