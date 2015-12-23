@@ -318,5 +318,6 @@
     <string name="headset_hook_2">Два щелчка на кнопке гарнитуры:</string>
     <string name="headset_hook_3">Три щелчка на кнопке гарнитуры:</string>
     <string name="nothing">Ничего</string>
+    <string name="path">Путь</string>
 
 </resources>

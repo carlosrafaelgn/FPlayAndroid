@@ -258,13 +258,18 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int IDX_COLOR_FOCUSED_GRAD_DK = 21;
 	public static final int IDX_COLOR_FOCUSED_BORDER = 22;
 	public static final int IDX_COLOR_FOCUSED_PRESSED = 23;
-	
+
+	public static final int PLACEMENT_WINDOW = 0;
+	public static final int PLACEMENT_MENU = 1;
+	public static final int PLACEMENT_ALERT = 2;
+
 	public static int color_window;
 	public static int color_control_mode;
 	public static int color_visualizer, color_visualizer565;
 	public static int color_list;
 	public static int color_list_bg;
 	public static int color_list_original;
+	public static int color_list_shadow;
 	public static int color_menu;
 	public static int color_menu_icon;
 	public static int color_menu_border;
@@ -958,7 +963,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		serializeThemeColor(colors, 3 * IDX_COLOR_WINDOW, color_window);
 		serializeThemeColor(colors, 3 * IDX_COLOR_CONTROL_MODE, color_control_mode);
 		serializeThemeColor(colors, 3 * IDX_COLOR_VISUALIZER, color_visualizer);
-		serializeThemeColor(colors, 3 * IDX_COLOR_LIST, color_list);
+		serializeThemeColor(colors, 3 * IDX_COLOR_LIST, color_list_original);
 		serializeThemeColor(colors, 3 * IDX_COLOR_MENU, color_menu);
 		serializeThemeColor(colors, 3 * IDX_COLOR_MENU_ICON, color_menu_icon);
 		serializeThemeColor(colors, 3 * IDX_COLOR_MENU_BORDER, color_menu_border);
@@ -988,7 +993,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_window = deserializeThemeColor(colors, 3 * IDX_COLOR_WINDOW);
 		color_control_mode = deserializeThemeColor(colors, 3 * IDX_COLOR_CONTROL_MODE);
 		color_visualizer = deserializeThemeColor(colors, 3 * IDX_COLOR_VISUALIZER);
-		color_list = deserializeThemeColor(colors, 3 * IDX_COLOR_LIST);
+		color_list_original = deserializeThemeColor(colors, 3 * IDX_COLOR_LIST);
+		color_list = color_list_original;
 		color_menu = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU);
 		color_menu_icon = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU_ICON);
 		color_menu_border = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU_BORDER);
@@ -1022,13 +1028,16 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			if (ColorUtils.relativeLuminance(color_list_original) >= 0.5) {
 				color_list = color_list_original;
 				color_list_bg = ColorUtils.blend(color_list_original, 0xff000000, 0.9286f);
+				color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.77777777f);
 			} else {
 				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
 				color_list_bg = color_list_original;
+				color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.77777777f);
 			}
 		} else {
 			color_list = color_list_original;
 			color_list_bg = color_list_original;
+			color_list_shadow = color_divider;
 		}
 	}
 
@@ -1518,7 +1527,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 	}
 
-	public static void drawBgListItem2D(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
+	private static void drawBgListItem2D(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
 		dividerAllowed &= isDividerVisible;
 		if (dividerAllowed)
 			rect.bottom -= strokeSize;
@@ -1551,7 +1560,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			drawBgListItem2D(canvas, state, dividerAllowed, leftMargin, rightMargin);
 			return;
 		}
-		fillPaint.setColor(color_divider);
+		fillPaint.setColor(color_list_shadow);
 		//right shadow
 		canvas.drawRect(rect.right - rightMargin, controlSmallMargin + strokeSize, rect.right - rightMargin + strokeSize, rect.bottom, fillPaint);
 		//bottom shadow
@@ -1753,11 +1762,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			l.setBaselineAligned(false);
 			return l;
 		}
+		final ObservableScrollView scrollView = new ObservableScrollView(context, PLACEMENT_ALERT);
 		final TextView txt = new TextView(context);
 		txt.setText(messageOnly);
 		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
 		txt.setPadding(dialogMargin << 1, dialogMargin << 1, dialogMargin << 1, dialogMargin << 1);
-		return txt;
+		scrollView.addView(txt);
+		return scrollView;
 	}
 	
 	public static void storeViewCenterLocationForFade(View view) {
@@ -1778,10 +1789,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	public static AlertDialog prepareDialogAndShow(AlertDialog dialog) {
-		if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+		//if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			//https://code.google.com/p/android/issues/detail?id=6360
 			dialog.setOnShowListener(Player.theUI);
-		}
+		//}
 		prepareDialogAnimations(dialog);
 		dialog.show();
 		return dialog;
@@ -1801,6 +1812,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public void onShow(DialogInterface dlg) {
 		final AlertDialog dialog = ((dlg instanceof AlertDialog) ? (AlertDialog)dlg : null);
 		if (dialog == null)
+			return;
+		if (dialog.getWindow() != null)
+			dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+		if (!alternateTypefaceActive && Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+			//https://code.google.com/p/android/issues/detail?id=6360
 			return;
 		Button btn;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -1843,12 +1859,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void prepareEdgeEffect(View view, boolean insideMenu) {
+	public static void prepareEdgeEffect(View view, int placement) {
 		final Context context = view.getContext();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 			try {
 				if (glowFilter == null) {
-					final int color = (insideMenu ? color_menu_icon : color_glow);
+					final int color = (placement == PLACEMENT_ALERT ? (isAndroidThemeLight() ? 0xff000000 : 0xffffffff) : (placement == PLACEMENT_MENU ? color_menu_icon : color_glow));
 					final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 					Field mEdgeGlow;
 					//EdgeEffect edgeEffect;

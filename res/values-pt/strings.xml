@@ -318,5 +318,6 @@
     <string name="headset_hook_2">Dois toques na tecla do fone de ouvido:</string>
     <string name="headset_hook_3">Três toques na tecla do fone de ouvido:</string>
     <string name="nothing">Nada</string>
+    <string name="path">Caminho</string>
 
 </resources>

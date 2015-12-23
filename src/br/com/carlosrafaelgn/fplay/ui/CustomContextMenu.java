@@ -477,7 +477,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 				items[last].actionView.setId(2);
 				items[last].actionView.setNextFocusDownId(1);
 			}
-			final ObservableScrollView scroll = new ObservableScrollView(context, true);
+			final ObservableScrollView scroll = new ObservableScrollView(context, UI.PLACEMENT_MENU);
 			final FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 			fp.leftMargin = UI.controlMargin;
 			fp.topMargin = UI.controlMargin;

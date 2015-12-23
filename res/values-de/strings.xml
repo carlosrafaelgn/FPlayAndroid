@@ -318,5 +318,6 @@
     <string name="headset_hook_2">Zwei Klicks auf der Kopfhörertaste:</string>
     <string name="headset_hook_3">Drei Klicks auf der Kopfhörertaste:</string>
     <string name="nothing">Nichts</string>
+    <string name="path">Pfad</string>
 
 </resources>

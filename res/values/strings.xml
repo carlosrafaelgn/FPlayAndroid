@@ -319,5 +319,6 @@
     <string name="headset_hook_2">Two clicks on the headset button:</string>
     <string name="headset_hook_3">Three clicks on the headset button:</string>
     <string name="nothing">Nothing</string>
+    <string name="path">Path</string>
 
 </resources>

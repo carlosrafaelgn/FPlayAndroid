@@ -318,5 +318,6 @@
     <string name="headset_hook_2">Два натискає на кнопку гарнітури:</string>
     <string name="headset_hook_3">Три натискає на кнопку гарнітури:</string>
     <string name="nothing">Нічого</string>
+    <string name="path">Шлях</string>
 
 </resources>

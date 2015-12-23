@@ -34,11 +34,13 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Build;
+import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils.TruncateAt;
@@ -52,6 +54,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -105,7 +108,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
-	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
+	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
@@ -241,6 +244,72 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 	}
 
+	private void showMoreInfo() {
+		final int p;
+		if ((p = Player.songs.getSelection()) < 0 || p >= Player.songs.getCount())
+			return;
+		final Song song = Player.songs.getItemT(p);
+		if (song == null)
+			return;
+		final StringBuilder stringBuilder = new StringBuilder(1024);
+
+		stringBuilder.append(getText(R.string.path));
+		stringBuilder.append('\n');
+		stringBuilder.append(song.path);
+
+		stringBuilder.append("\n\n");
+		stringBuilder.append(getText(R.string.title));
+		stringBuilder.append('\n');
+		stringBuilder.append(song.title);
+
+		if (song.artist.length() > 0 && !song.artist.equals("-")) {
+			stringBuilder.append("\n\n");
+			stringBuilder.append(getText(R.string.artist));
+			stringBuilder.append('\n');
+			stringBuilder.append(song.artist);
+		}
+
+		if (song.artist.length() > 0 && !song.artist.equals("-")) {
+			stringBuilder.append("\n\n");
+			stringBuilder.append(getText(R.string.album));
+			stringBuilder.append('\n');
+			stringBuilder.append(song.album);
+		}
+
+		if (song.track > 0) {
+			stringBuilder.append("\n\n");
+			stringBuilder.append(getText(R.string.track));
+			stringBuilder.append('\n');
+			stringBuilder.append(song.track);
+		}
+
+		if (song.year > 0) {
+			stringBuilder.append("\n\n");
+			stringBuilder.append(getText(R.string.year));
+			stringBuilder.append('\n');
+			stringBuilder.append(song.year);
+		}
+
+		if (song.lengthMS > 0) {
+			stringBuilder.append("\n\n");
+			stringBuilder.append(getText(R.string.duration));
+			stringBuilder.append('\n');
+			stringBuilder.append(song.length);
+		}
+
+		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
+		final EditText txt = new EditText(getHostActivity());
+		txt.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		txt.setText(stringBuilder.toString());
+		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
+		l.addView(txt);
+		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
+			.setTitle(R.string.information)
+			.setView(l)
+			.setPositiveButton(R.string.ok, null)
+			.create());
+	}
+
 	@SuppressWarnings("deprecation")
 	private void startSelecting() {
 		if (firstSel >= 0) {
@@ -259,6 +328,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				}
 			}
 			UI.animationReset();
+			UI.animationAddViewToShow(btnMoreInfo);
 			UI.animationAddViewToShow(btnMoveSel);
 			UI.animationAddViewToShow(btnRemoveSel);
 			btnCancelSel.setText(R.string.cancel);
@@ -272,13 +342,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			lblMsgSelMove.setSelected(true);
 			if (UI.isLargeScreen) {
 				btnCancelSel.setNextFocusLeftId(R.id.btnRemoveSel);
-				UI.setNextFocusForwardId(list, R.id.btnMoveSel);
+				UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
 			} else if (UI.isLandscape) {
 				btnCancelSel.setNextFocusUpId(R.id.btnRemoveSel);
-				UI.setNextFocusForwardId(list, R.id.btnMoveSel);
+				UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
 			} else {
-				btnCancelSel.setNextFocusRightId(R.id.btnMoveSel);
-				UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoveSel);
+				btnCancelSel.setNextFocusRightId(R.id.btnMoreInfo);
+				UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoreInfo);
 				UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 			}
 			Player.songs.selecting = true;
@@ -291,6 +361,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void startMovingSelection() {
 		if (Player.songs.getFirstSelectedPosition() >= 0) {
 			UI.animationReset();
+			UI.animationAddViewToHide(btnMoreInfo);
 			UI.animationAddViewToHide(btnMoveSel);
 			UI.animationAddViewToHide(btnRemoveSel);
 			if (UI.animationEnabled) {
@@ -354,7 +425,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			UI.animationAddViewToShow(lblTitle);
 		lblTitle.setSelected(true);
 		UI.animationAddViewToHide(panelSelection);
-		UI.setNextFocusForwardId(list, UI.isLargeScreen ? vwVolumeId : R.id.btnPrev);
+		UI.setNextFocusForwardId(list, UI.isLargeScreen ? vwVolumeId : R.id.btnAdd);
 		UI.animationAddViewToShow(panelControls);
 		UI.animationAddViewToShow(panelSecondary);
 		UI.animationCommit(isCreatingLayout, null);
@@ -757,6 +828,8 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				bringCurrentIntoView();
 		} else if (view == btnMenu) {
 			CustomContextMenu.openContextMenu(btnMenu, this);
+		} else if (view == btnMoreInfo) {
+			showMoreInfo();
 		} else if (view == btnMoveSel) {
 			startMovingSelection();
 		} else if (view == btnRemoveSel) {
@@ -1030,6 +1103,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			panelControls = (ViewGroup)findViewById(R.id.panelControls);
 			panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
+			btnMoreInfo = (BgButton)findViewById(R.id.btnMoreInfo);
+			btnMoreInfo.setOnClickListener(this);
+			btnMoreInfo.setIcon(UI.ICON_INFORMATION, UI.isLargeScreen || !UI.isLandscape, true);
 			btnMoveSel = (BgButton)findViewById(R.id.btnMoveSel);
 			btnMoveSel.setOnClickListener(this);
 			btnMoveSel.setIcon(UI.ICON_MOVE, UI.isLargeScreen || !UI.isLandscape, true);
@@ -1168,9 +1244,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
 		switch (keyCode) {
 		case UI.KEY_LEFT:
-			if (btnCancelSel != null && btnMoveSel != null && btnRemoveSel != null && btnMenu != null && vwVolume != null) {
+			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnRemoveSel != null && btnMenu != null && vwVolume != null) {
 				if (Player.songs.selecting)
-					(UI.isLargeScreen ? btnCancelSel : (UI.isLandscape ? btnMoveSel : btnRemoveSel)).requestFocus();
+					(UI.isLargeScreen ? btnCancelSel : (UI.isLandscape ? btnMoreInfo : btnRemoveSel)).requestFocus();
 				else if (Player.songs.moving)
 					btnCancelSel.requestFocus();
 				else if (UI.isLargeScreen)
@@ -1180,15 +1256,13 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 			return true;
 		case UI.KEY_RIGHT:
-			if (btnCancelSel != null && btnMoveSel != null && btnAdd != null && btnPrev != null && vwVolume != null) {
+			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnAdd != null && vwVolume != null) {
 				if (Player.songs.selecting)
-					((UI.isLargeScreen || UI.isLandscape) ? btnMoveSel : btnCancelSel).requestFocus();
+					((UI.isLargeScreen || UI.isLandscape) ? btnMoreInfo : btnCancelSel).requestFocus();
 				else if (Player.songs.moving)
 					btnCancelSel.requestFocus();
 				else if (UI.isLargeScreen)
 					(UI.isLandscape ? btnAdd : vwVolume).requestFocus();
-				else if (UI.isLandscape)
-					btnPrev.requestFocus();
 				else
 					btnAdd.requestFocus();
 			}
@@ -1328,6 +1402,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		panelControls = null;
 		panelSecondary = null;
 		panelSelection = null;
+		btnMoreInfo = null;
 		btnMoveSel = null;
 		btnRemoveSel = null;
 		btnCancelSel = null;

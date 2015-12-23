@@ -43,37 +43,37 @@ public final class ObservableScrollView extends ScrollView {
 	public interface OnScrollListener {
 		void onScroll(ObservableScrollView view, int l, int t, int oldl, int oldt);
 	}
-	
+
 	private OnScrollListener listener;
 	
 	public ObservableScrollView(Context context) {
 		super(context);
-		init(false);
+		init(UI.PLACEMENT_WINDOW);
 	}
 
-	public ObservableScrollView(Context context, boolean insideMenu) {
+	public ObservableScrollView(Context context, int placement) {
 		super(context);
-		init(insideMenu);
+		init(placement);
 	}
 
 	public ObservableScrollView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		init(false);
+		init(UI.PLACEMENT_WINDOW);
 	}
 	
 	public ObservableScrollView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		init(false);
+		init(UI.PLACEMENT_WINDOW);
 	}
 
 	@SuppressWarnings("deprecation")
-	private void init(boolean insideMenu) {
+	private void init(int placement) {
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);
 		super.setAnimationCacheEnabled(false);
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
 		updateVerticalScrollbar();
-		UI.prepareEdgeEffect(this, insideMenu);
+		UI.prepareEdgeEffect(this, placement);
 	}
 
 	public void updateVerticalScrollbar() {

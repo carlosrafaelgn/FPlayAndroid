@@ -130,7 +130,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		super.setOverscrollHeader(null); //Motorola bug!!! :P
 		super.setOverscrollFooter(null); //Motorola bug!!! :P
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
-		UI.prepareEdgeEffect(this, false);
+		UI.prepareEdgeEffect(this, UI.PLACEMENT_WINDOW);
 		//List color turns black while Scrolling
 		//http://stackoverflow.com/questions/8531006/list-color-turns-black-while-scrolling
 		//Remove shadow from top and bottom of ListView in android?

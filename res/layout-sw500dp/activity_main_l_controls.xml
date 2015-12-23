@@ -273,14 +273,25 @@
             android:visibility="gone">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnMoreInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/information"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnMoveSel"
+                android:nextFocusLeft="@+id/list"
+                android:nextFocusRight="@+id/btnMoveSel"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMoveSel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="16dp"
+                android:layout_marginLeft="8dp"
                 android:contentDescription="@string/move"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnRemoveSel"
-                android:nextFocusLeft="@+id/list"
+                android:nextFocusLeft="@+id/btnMoreInfo"
                 android:nextFocusRight="@+id/btnRemoveSel"
                 android:nextFocusUp="@+id/list"/>
 
@@ -288,6 +299,7 @@
                 android:id="@+id/btnRemoveSel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
                 android:contentDescription="@string/remove"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnCancelSel"
