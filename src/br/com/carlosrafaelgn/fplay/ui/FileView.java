@@ -60,10 +60,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private FileSt file;
 	private BgButton btnCheckbox;
 	private String icon, ellipsizedName, secondaryText, albumStr, albumsStr, trackStr, tracksStr;
-	private boolean pendingAlbumArtRequest, checkBoxVisible;
+	private boolean pendingAlbumArtRequest, checkBoxVisible, btnCheckBoxMarginsPreparedForIndexedScrollBars;
 	private final boolean hasCheckbox;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth;
 
+	private static boolean scrollBarCurrentlyIndexed;
 	private static int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, extraLeftMargin, extraRightMargin, leftMargin, topMargin, rightMargin, bottomMargin;
 
 	public static void updateExtraMargins(boolean isScrollBarIndexed) {
@@ -79,6 +80,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			extraLeftMargin = 0;
 			extraRightMargin = 0;
 		}
+		scrollBarCurrentlyIndexed = isScrollBarIndexed;
 		getViewHeight();
 	}
 
@@ -139,6 +141,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			LayoutParams p;
 			btnCheckbox = new BgButton(context);
 			btnCheckbox.setHideBorders(true);
+			btnCheckBoxMarginsPreparedForIndexedScrollBars = scrollBarCurrentlyIndexed;
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI.controlMargin;
 			p.topMargin = topMargin;
@@ -210,6 +213,15 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				btnCheckbox.setTextColor(((state != 0) || (specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 				//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : ((specialType == FileSt.TYPE_ALBUM_ITEM) ? UI.colorState_text_reactive : UI.colorState_text_listitem_reactive));
 			btnCheckbox.setChecked(file.isChecked);
+			if (btnCheckBoxMarginsPreparedForIndexedScrollBars != scrollBarCurrentlyIndexed) {
+				btnCheckBoxMarginsPreparedForIndexedScrollBars = scrollBarCurrentlyIndexed;
+				final LayoutParams p = (LayoutParams)btnCheckbox.getLayoutParams();
+				p.leftMargin = UI.controlMargin;
+				p.topMargin = topMargin;
+				p.rightMargin = rightMargin;
+				p.bottomMargin = bottomMargin;
+				btnCheckbox.setLayoutParams(p);
+			}
 		}
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!

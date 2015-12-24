@@ -43,6 +43,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
 import br.com.carlosrafaelgn.fplay.playback.Equalizer;
@@ -171,10 +172,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			updateEffects();
 			break;
 		case MNU_LOADPRESET:
-			startActivity(new ActivityFileSelection(getText(R.string.load_preset), MNU_LOADPRESET, false, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null, false);
+			startActivity(ActivityFileSelection.createPresetSelector(getHostActivity(), getText(R.string.load_preset), MNU_LOADPRESET, false, false, this), 0, null, false);
 			break;
 		case MNU_SAVEPRESET:
-			startActivity(new ActivityFileSelection(getText(R.string.save_preset), MNU_SAVEPRESET, true, false, getText(R.string.item_preset).toString(), "#pset", this), 0, null, false);
+			startActivity(ActivityFileSelection.createPresetSelector(getHostActivity(), getText(R.string.save_preset), MNU_SAVEPRESET, true, false, this), 0, null, false);
 			break;
 		case MNU_AUDIOSINK_DEVICE:
 			audioSink = Player.AUDIO_SINK_DEVICE;
@@ -632,9 +633,9 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	}
 	
 	@Override
-	public void onFileSelected(int id, String path, String name) {
+	public void onFileSelected(int id, FileSt file) {
 		if (id == MNU_LOADPRESET) {
-			final SerializableMap opts = SerializableMap.deserialize(getApplication(), path);
+			final SerializableMap opts = SerializableMap.deserialize(getApplication(), file.path);
 			if (opts != null) {
 				Equalizer.deserialize(opts, audioSink);
 				BassBoost.deserialize(opts, audioSink);
@@ -647,16 +648,21 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			Equalizer.serialize(opts, audioSink);
 			BassBoost.serialize(opts, audioSink);
 			Virtualizer.serialize(opts, audioSink);
-			opts.serialize(getApplication(), path);
+			opts.serialize(getApplication(), file.path);
 		}
 	}
-	
+
 	@Override
-	public void onAddClicked(int id, String path, String name) {
+	public void onAddClicked(int id, FileSt file) {
 	}
-	
+
 	@Override
-	public void onPlayClicked(int id, String path, String name) {
+	public void onPlayClicked(int id, FileSt file) {
+	}
+
+	@Override
+	public boolean onDeleteClicked(int id, FileSt file) {
+		return false;
 	}
 
 	@Override

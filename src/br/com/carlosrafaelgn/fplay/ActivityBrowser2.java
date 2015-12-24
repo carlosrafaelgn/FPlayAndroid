@@ -51,7 +51,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
@@ -72,6 +71,7 @@ import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ActivityBrowser2 extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver {
 	private static final int MNU_REMOVEFAVORITE = 100;
@@ -222,7 +222,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				@Override
 				public void run() {
 					boolean addingFolder = false;
-					final ArrayList<FileSt> filesToAdd = new ArrayList<>(256);
+					final TypedRawArrayList<FileSt> filesToAdd = new TypedRawArrayList<>(FileSt.class, 256);
 					try {
 						Throwable firstException = null;
 						for (int i = 0; i < fs.length; i++) {

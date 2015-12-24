@@ -59,9 +59,10 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
 	public interface OnFileSelectionListener {
-		void onFileSelected(int id, String path, String name);
-		void onAddClicked(int id, String path, String name);
-		void onPlayClicked(int id, String path, String name);
+		void onFileSelected(int id, FileSt file);
+		void onAddClicked(int id, FileSt file);
+		void onPlayClicked(int id, FileSt file);
+		boolean onDeleteClicked(int id, FileSt file);
 	}
 	
 	private final boolean save, hasButtons;
@@ -82,7 +83,15 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private FastAnimator animator;
 	private CharSequence msgEmptyList, msgLoading;
 
-	public ActivityFileSelection(CharSequence title, int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
+	public static ActivityFileSelection createPlaylistSelector(Context context, CharSequence title, int id, boolean save, boolean hasButtons, OnFileSelectionListener listener) {
+		return new ActivityFileSelection(title, id, save, hasButtons, context.getText(R.string.item_list).toString(), FileSt.FILETYPE_PLAYLIST, listener);
+	}
+
+	public static ActivityFileSelection createPresetSelector(Context context, CharSequence title, int id, boolean save, boolean hasButtons, OnFileSelectionListener listener) {
+		return new ActivityFileSelection(title, id, save, hasButtons, context.getText(R.string.item_preset).toString(), FileSt.FILETYPE_PRESET, listener);
+	}
+
+	private ActivityFileSelection(CharSequence title, int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
 		if (fileType.charAt(0) != FileSt.PRIVATE_FILETYPE_ID)
 			throw new IllegalArgumentException("fileType must start with " + FileSt.PRIVATE_FILETYPE_ID);
 		this.title = title;
@@ -246,15 +255,17 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		fileList.notifyCheckedChanged();
 	}
 	
-	private void confirm(final String path, final String name, final int deleteIndex) {
+	private void confirm(final FileSt file, final int deleteIndex) {
 		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 		.setTitle(getText(R.string.oops))
-		.setView(UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, name)))
+		.setView(UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)))
 		.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
+				final OnFileSelectionListener listener = ActivityFileSelection.this.listener;
 				if (deleteIndex >= 0) {
 					try {
-						getApplication().deleteFile(path);
+						if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, file))
+							getApplication().deleteFile(file.path);
 						final int p;
 						if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
 							checkedFile.isChecked = false;
@@ -270,10 +281,9 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 						ex.printStackTrace();
 					}
 				} else {
-					final OnFileSelectionListener listener = ActivityFileSelection.this.listener;
 					finish(0, null, false);
 					if (listener != null)
-						listener.onFileSelected(ActivityFileSelection.this.id, path, name);
+						listener.onFileSelected(ActivityFileSelection.this.id, file);
 				}
 			}
 		})
@@ -289,13 +299,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
 			final FileSt file = fileList.getItemT(position);
 			if (save) {
-				confirm(file.path, file.name, -1);
+				confirm(file, -1);
 				return;
 			}
 			final OnFileSelectionListener listener = this.listener;
 			finish(0, list.getViewForPosition(position), true);
 			if (listener != null)
-				listener.onFileSelected(id, file.path, file.name);
+				listener.onFileSelected(id, file);
 		} else {
 			fileList.setSelection(position, true);
 		}
@@ -370,13 +380,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				if (fileList != null && checkedFile != null) {
 					final int s = fileList.indexOf(checkedFile);
 					if (s >= 0)
-						confirm(checkedFile.path, checkedFile.name, s);
+						confirm(checkedFile, s);
 				}
 			}
 		} else if (view == btnAdd) {
 			if (hasButtons && checkedFile != null) {
 				if (listener != null)
-					listener.onAddClicked(id, checkedFile.path, checkedFile.name);
+					listener.onAddClicked(id, checkedFile);
 				checkedFile.isChecked = false;
 				checkedFile = null;
 				if (fileList != null)
@@ -386,7 +396,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		} else if (view == btnPlay) {
 			if (hasButtons && checkedFile != null) {
 				if (listener != null)
-					listener.onPlayClicked(id, checkedFile.path, checkedFile.name);
+					listener.onPlayClicked(id, checkedFile);
 				if (Player.goBackWhenPlayingFolders) {
 					finish(0, (list == null || fileList == null) ? null : list.getViewForPosition(fileList.indexOf(checkedFile)), true);
 				} else {
@@ -409,8 +419,9 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			if (n.length() > 64)
 				n = n.substring(0, 64);
 			for (int i = fileList.getCount() - 1; i >= 0; i--) {
-				if (fileList.getItemT(i).name.equals(n)) {
-					confirm(n + fileType, n, -1);
+				final FileSt f = fileList.getItemT(i);
+				if (f.name.equals(n)) {
+					confirm(f, -1);
 					txtSaveAsName = null;
 					return;
 				}
@@ -418,7 +429,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			final OnFileSelectionListener listener = this.listener;
 			finish(0, null, false);
 			if (listener != null)
-				listener.onFileSelected(ActivityFileSelection.this.id, n + fileType, n);
+				listener.onFileSelected(ActivityFileSelection.this.id, new FileSt(n + fileType, n, 0));
 		}
 		txtSaveAsName = null;
 	}

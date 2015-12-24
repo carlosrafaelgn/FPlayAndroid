@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,6 +53,7 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 //
 //Supported Media Formats
@@ -87,7 +87,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			return fs_specLC.equals(((RootItem)o).fs_specLC);
 		}
 	}
-	
+
 	private static final int LIST_DELTA = 32;
 	private static final HashSet<String> supportedTypes;
 	public final String path, unknownArtist;
@@ -101,7 +101,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private boolean recursive;
 	private final boolean notifyFromMain, recursiveIfFirstEmpty;
 	private volatile boolean cancelled;
-	
+
 	static {
 		//http://developer.android.com/guide/appendix/media-formats.html
 		supportedTypes = new HashSet<>(21);
@@ -471,7 +471,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			files = new FileSt[0];
 			return;
 		}
-		final ArrayList<FileSt> tmp = new ArrayList<>(64);
+		final TypedRawArrayList<FileSt> tmp = new TypedRawArrayList<>(FileSt.class, 64);
 		while (c.moveToNext()) {
 			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 				count = 0;
@@ -491,9 +491,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		c.close();
 
 		count = tmp.size();
-		files = new FileSt[count];
-		tmp.toArray(files);
-		ArraySorter.sort(files, 0, files.length, new ArraySorter.Comparer<FileSt>() {
+		files = tmp.getRawArray();
+		ArraySorter.sort(files, 0, count, new ArraySorter.Comparer<FileSt>() {
 			@SuppressWarnings("StringEquality")
 			@Override
 			public int compare(FileSt a, FileSt b) {
@@ -504,8 +503,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return a.name.compareToIgnoreCase(b.name);
 			}
 		});
-		
-		tmp.clear();
 	}
 	
 	private void fetchAlbums(String path) {
@@ -542,7 +539,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			files = new FileSt[0];
 			return;
 		}
-		final ArrayList<FileSt> tmp = new ArrayList<>(64);
+		final TypedRawArrayList<FileSt> tmp = new TypedRawArrayList<>(FileSt.class, 64);
 		while (c.moveToNext()) {
 			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 				count = 0;
@@ -557,11 +554,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		c.close();
 
 		count = tmp.size();
-		files = new FileSt[count];
-		tmp.toArray(files);
-		ArraySorter.sort(files, 0, files.length, this);
-		
-		tmp.clear();
+		files = tmp.getRawArray();
+		ArraySorter.sort(files, 0, count, this);
 	}
 	
 	private void fetchTracks(String path) {
@@ -600,7 +594,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			files = new FileSt[0];
 			return;
 		}
-		final ArrayList<FileSt> tmp = new ArrayList<>(64);
+		final TypedRawArrayList<FileSt> tmp = new TypedRawArrayList<>(FileSt.class, 64);
 		while (c.moveToNext()) {
 			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 				count = 0;
@@ -613,9 +607,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		c.close();
 
 		count = tmp.size();
-		files = new FileSt[count];
-		tmp.toArray(files);
-		ArraySorter.sort(files, 0, files.length, new ArraySorter.Comparer<FileSt>() {
+		files = tmp.getRawArray();
+		ArraySorter.sort(files, 0, count, new ArraySorter.Comparer<FileSt>() {
 			@Override
 			public int compare(FileSt a, FileSt b) {
 				if (a.specialType != b.specialType)
@@ -623,10 +616,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return a.name.compareToIgnoreCase(b.name);
 			}
 		});
-		for (int i = files.length - 1; i >= 0; i--)
+		for (int i = count - 1; i >= 0; i--)
 			files[i].specialType = 0;
-		
-		tmp.clear();
 	}
 
 	@SuppressWarnings("UnusedAssignment")
@@ -673,14 +664,52 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				fetchFiles(this.files[i].path, false);
 		}
 	}
-	
+
+	private void fetchPublicPlaylists() {
+		final Service s = Player.getService();
+		if (s == null)
+			return;
+
+		final String[] proj = { "_id", "name" };
+		final Cursor c = s.getContentResolver().query(Uri.parse("content://media/external/audio/playlists"), proj, null, null, null);
+		if (c == null) {
+			count = 0;
+			files = new FileSt[0];
+			return;
+		}
+		final TypedRawArrayList<FileSt> tmp = new TypedRawArrayList<>(FileSt.class, 64);
+		while (c.moveToNext()) {
+			if (cancelled || Player.state >= Player.STATE_TERMINATING) {
+				count = 0;
+				c.close();
+				return;
+			}
+			final FileSt f = new FileSt("", c.getString(1), 0);
+			f.artistIdForAlbumArt = c.getLong(0); //reuse the field to save a couple of parses
+			tmp.add(f);
+		}
+		c.close();
+
+		count = tmp.size();
+		files = tmp.getRawArray();
+		ArraySorter.sort(files, 0, count, this);
+	}
+
 	private void fetchPrivateFiles(String fileType) {
+		final Service s = Player.getService();
+		if (s == null)
+			return;
+
 		if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 			count = 0;
 			return;
 		}
-		final String[] files = Player.getService().fileList();
+		final String[] files = s.fileList();
 		if (files == null || files.length == 0) {
+			if (FileSt.FILETYPE_PLAYLIST.equals(fileType)) {
+				fetchPublicPlaylists();
+				return;
+			}
 			if (this.files == null)
 				this.files = new FileSt[0];
 			return;
@@ -698,6 +727,24 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				this.files[c] = new FileSt(f, f.substring(0, f.length() - l), null, 0);
 				c++;
 			}
+		}
+		if (FileSt.FILETYPE_PLAYLIST.equals(fileType)) {
+			if (c != 0) {
+				//the lists saved as private files existed on versions < 83, so we need to export them now
+				for (i = 0; i < c; i++) {
+					try {
+						final Song[] songs = SongList.deserialize(s, this.files[i].path, null);
+						if (songs != null && songs.length > 0)
+							SongList.exportTo(s, songs, songs.length, 0, this.files[i].name);
+						//s.deleteFile(this.files[i].path);
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+					this.files[i] = null;
+				}
+			}
+			fetchPublicPlaylists();
+			return;
 		}
 		count = c;
 		ArraySorter.sort(this.files, 0, c, this);
@@ -824,7 +871,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 						fetchAlbums(path);
 						//we actually need to fetch all tracks from all this artist's albums...
 						final FileSt[] albums = files;
-						final ArrayList<FileSt> tracks = new ArrayList<>(albums.length * 11);
+						final TypedRawArrayList<FileSt> tracks = new TypedRawArrayList<>(FileSt.class, albums.length * 11);
 						for (int i = 0; i < albums.length; i++) {
 							if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 								count = 0;
@@ -852,9 +899,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 							//ignore any errors if at least one track was fetched
 							e = null;
 							count = tracks.size();
-							files = new FileSt[count];
-							tracks.toArray(files);
-							tracks.clear();
+							files = tracks.getRawArray();
 						} else {
 							count = 0;
 							if (files == null)

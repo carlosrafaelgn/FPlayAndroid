@@ -46,6 +46,8 @@ public final class FileSt extends BaseItem {
 	public static final String ALBUM_PREFIX = ALBUM_ROOT + FAKE_PATH_ROOT;
 	public static final char FAKE_PATH_SEPARATOR_CHAR = '\u001A';
 	public static final char PRIVATE_FILETYPE_ID = '#';
+	public static final String FILETYPE_PLAYLIST = "#lst";
+	public static final String FILETYPE_PRESET = "#pset";
 	public static final int TYPE_ALL_FILES = 1;
 	public static final int TYPE_INTERNAL_STORAGE = 2;
 	public static final int TYPE_EXTERNAL_STORAGE = 3;
@@ -59,7 +61,7 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_ALBUM_ITEM = 11;
 	public static final int TYPE_EXTERNAL_STORAGE_USB = 12;
 	public final boolean isDirectory;
-	public final String path, name;
+	public String path, name;
 	public String albumArt;
 	public int specialType, tracks, albums;
 	public long artistIdForAlbumArt;

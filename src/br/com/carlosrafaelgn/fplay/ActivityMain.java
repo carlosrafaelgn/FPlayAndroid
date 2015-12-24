@@ -61,6 +61,7 @@ import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
+import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -762,10 +763,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			break;
 		case MNU_LOADLIST:
 			Player.alreadySelected = false;
-			startActivity(new ActivityFileSelection(getText(R.string.load_list), MNU_LOADLIST, false, true, getText(R.string.item_list).toString(), "#lst", this), 0, null, false);
+			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.load_list), MNU_LOADLIST, false, true, this), 0, null, false);
 			break;
 		case MNU_SAVELIST:
-			startActivity(new ActivityFileSelection(getText(R.string.save_list), MNU_SAVELIST, true, false, getText(R.string.item_list).toString(), "#lst", this), 0, null, false);
+			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.save_list), MNU_SAVELIST, true, false, this), 0, null, false);
 			break;
 		case MNU_SORT_BY_TITLE:
 			Player.songs.sort(SongList.SORT_BY_TITLE);
@@ -1553,34 +1554,40 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			}
 		}
 	}
-	
+
 	@Override
-	public void onFileSelected(int id, String path, String name) {
+	public void onFileSelected(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
-			Player.songs.startDeserializing(getApplication(), path, true, false, false);
+			Player.songs.startDeserializingOrImportingFrom(getApplication(), file.artistIdForAlbumArt, true, false, false);
 			BackgroundActivityMonitor.start(getHostActivity());
 		} else {
-			Player.songs.serialize(getApplication(), path);
-		}
-	}
-	
-	@Override
-	public void onAddClicked(int id, String path, String name) {
-		if (id == MNU_LOADLIST) {
-			Player.songs.startDeserializing(getApplication(), path, false, true, false);
+			Player.songs.startExportingTo(getApplication(), file.artistIdForAlbumArt, file.name);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
-	
+
 	@Override
-	public void onPlayClicked(int id, String path, String name) {
+	public void onAddClicked(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
-			Player.songs.startDeserializing(getApplication(), path, false, !Player.clearListWhenPlayingFolders, true);
+			Player.songs.startDeserializingOrImportingFrom(getApplication(), file.artistIdForAlbumArt, false, true, false);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
-	
+
+	@Override
+	public void onPlayClicked(int id, FileSt file) {
+		if (id == MNU_LOADLIST) {
+			Player.songs.startDeserializingOrImportingFrom(getApplication(), file.artistIdForAlbumArt, false, !Player.clearListWhenPlayingFolders, true);
+			BackgroundActivityMonitor.start(getHostActivity());
+		}
+	}
+
+	@Override
+	public boolean onDeleteClicked(int id, FileSt file) {
+		return true;
+	}
+
 	@Override
 	public void onPressingChanged(BgButton button, boolean pressed) {
 		if (button == btnDecreaseVolume) {

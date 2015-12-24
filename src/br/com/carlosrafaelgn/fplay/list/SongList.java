@@ -33,6 +33,8 @@
 package br.com.carlosrafaelgn.fplay.list;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Message;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,6 +57,7 @@ import br.com.carlosrafaelgn.fplay.ui.SongView;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 //All methods of this class MUST BE called from the main thread, except those otherwise noted!!!
 public final class SongList extends BaseList<Song> implements Comparer<Song> {
@@ -92,13 +95,111 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	}
 	
 	//--------------------------------------------------------------------------------------------
-	//These six methods are the only ones that can be called from any thread (all the others must be called from the main thread)
-	public void startDeserializing(final Context context, final String path, final boolean entireListBeingLoaded, final boolean append, final boolean play) {
+	//These eleven methods are the only ones that can be called from any thread (all the others must be called from the main thread)
+
+	public static void serialize(Context context, int current, Song[] songs, int count, String path) throws IOException {
+		FileOutputStream fs = null;
+		BufferedOutputStream bs = null;
+		try {
+			fs = context.openFileOutput(path, 0);
+			bs = new BufferedOutputStream(fs, 4096);
+			Serializer.serializeInt(bs, current);
+			Serializer.serializeInt(bs, 0x0100);
+			Serializer.serializeInt(bs, count);
+			for (int i = 0; i < count; i++)
+				songs[i].serialize(bs);
+			bs.flush();
+		} finally {
+			try {
+				if (bs != null)
+					bs.close();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			try {
+				if (fs != null)
+					fs.close();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	public static Song[] deserialize(Context context, String path, int[] current) throws IOException {
+		FileInputStream fs = null;
+		BufferedInputStream bs = null;
+		try {
+			fs = context.openFileInput(path);
+			bs = new BufferedInputStream(fs, 4096);
+			if (current != null)
+				current[0] = Serializer.deserializeInt(bs);
+			else
+				Serializer.deserializeInt(bs);
+			final int version = Serializer.deserializeInt(bs);
+			final int count = Serializer.deserializeInt(bs);
+			if (version == 0x0100 && count > 0) {
+				final Song[] songs = new Song[count];
+				for (int i = 0; i < count; i++)
+					songs[i] = Song.deserialize(bs);
+				return songs;
+			}
+			return null;
+		} finally {
+			try {
+				if (bs != null)
+					bs.close();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			try {
+				if (fs != null)
+					fs.close();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	public static void exportTo(Context context, Song[] songs, int count, long publicPlaylistId, String newPublicPlaylistName) throws Throwable {
+
+	}
+
+	public static Song[] importFrom(Context context, long publicPlaylistId) throws Throwable {
+		final String[] proj = { "_data", "title" };
+		final Cursor c = context.getContentResolver().query(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId + "/members"), proj, null, null, null);
+		final TypedRawArrayList<Song> songs = new TypedRawArrayList<>(Song.class, 64);
+		try {
+			if (c == null)
+				return null;
+			final byte[][] tmpPtr = new byte[][]{new byte[256]};
+			final FileSt file = new FileSt("", "", 0);
+			while (c.moveToNext()) {
+				file.path = c.getString(0);
+				file.name = c.getString(1);
+				songs.add(new Song(file, tmpPtr));
+			}
+			songs.trimToSize();
+			return songs.getRawArray();
+		} catch (Throwable ex) {
+			songs.clear();
+			throw ex;
+		} finally {
+			if (c != null) {
+				try {
+					c.close();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+	}
+
+	public void startDeserializingOrImportingFrom(final Context context, final long publicPlaylistId, final boolean entireListBeingLoaded, final boolean append, final boolean play) {
 		try {
 			addingStarted();
 			(new Thread("List Deserializer Thread") {
 				private boolean done;
-				private int current;
+				private int[] current = new int[] { -1 };
 				private Song[] songs;
 				private Throwable ex;
 				@Override
@@ -106,23 +207,13 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					if (done) {
 						if (songs == null)
 							songs = new Song[0];
-						deserializationEnded(songs, current, entireListBeingLoaded, append, play, ex);
+						deserializationEnded(songs, current[0], entireListBeingLoaded, append, play, ex);
+						current = null;
 						songs = null;
 						ex = null;
 					} else {
-						FileInputStream fs = null;
-						BufferedInputStream bs = null;
 						try {
-							fs = context.openFileInput((path == null) ? "_List" : path);
-							bs = new BufferedInputStream(fs, 4096);
-							current = Serializer.deserializeInt(bs);
-							final int version = Serializer.deserializeInt(bs);
-							final int count = Serializer.deserializeInt(bs);
-							if (version == 0x0100 && count > 0) {
-								songs = new Song[count];
-								for (int i = 0; i < count; i++)
-									songs[i] = Song.deserialize(bs);
-							}
+							songs = ((publicPlaylistId == 0) ? deserialize(context, "_List", current) : importFrom(context, publicPlaylistId));
 							done = true;
 							MainHandler.postToMainThread(this);
 						} catch (Throwable ex) {
@@ -133,18 +224,6 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 							MainHandler.postToMainThread(this);
 						} finally {
 							addingEnded();
-							try {
-								if (bs != null)
-									bs.close();
-							} catch (Throwable ex) {
-								ex.printStackTrace();
-							}
-							try {
-								if (fs != null)
-									fs.close();
-							} catch (Throwable ex) {
-								ex.printStackTrace();
-							}
 						}
 					}
 				}
@@ -153,7 +232,11 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			addingEnded();
 		}
 	}
-	
+
+	public void startExportingTo(final Context context, final long publicPlaylistId, final String newPublicPlaylistName) {
+
+	}
+
 	public void addingStarted() {
 		synchronized (currentAndCountMutex) {
 			adding++;
@@ -315,40 +398,10 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 
 	//--------------------------------------------------------------------------------------------
 
-	private void fullSerialization(Context context, String path) throws IOException {
-		FileOutputStream fs = null;
-		BufferedOutputStream bs = null;
+	public boolean serialize(Context context) {
 		try {
-			fs = context.openFileOutput((path == null) ? "_List" : path, 0);
-			bs = new BufferedOutputStream(fs, 4096);
-			Serializer.serializeInt(bs, current);
-			Serializer.serializeInt(bs, 0x0100);
-			Serializer.serializeInt(bs, count);
-			for (int i = 0; i < count; i++)
-				items[i].serialize(bs);
-			bs.flush();
-		} finally {
-			try {
-				if (bs != null)
-					bs.close();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			try {
-				if (fs != null)
-					fs.close();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-		}
-	}
-	
-	public boolean serialize(Context context, String path) {
-		RandomAccessFile rf = null;
-		try {
-			if (modificationVersion > 1 || path != null) {
-				fullSerialization(context, path);
-			} else {
+			if (modificationVersion <= 1) {
+				RandomAccessFile rf = null;
 				try {
 					final File f = context.getFileStreamPath("_List");
 					rf = new RandomAccessFile(f, "rw");
@@ -356,33 +409,27 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					final byte[] buf = new byte[4];
 					Serializer.serializeInt(buf, 0, current);
 					rf.write(buf);
+					modificationVersion = 1;
+					return true;
 				} catch (Throwable ex) {
+					ex.printStackTrace();
+				} finally {
 					try {
 						if (rf != null)
 							rf.close();
-					} catch (Throwable ex2) {
-						ex2.printStackTrace();
+					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
-					rf = null;
-					fullSerialization(context, null);
-					ex.printStackTrace();
 				}
 			}
+			serialize(context, current, items, count, "_List");
+			modificationVersion = 1;
+			return true;
 		} catch (Throwable ex) {
 			return false;
-		} finally {
-			try {
-				if (rf != null)
-					rf.close();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
 		}
-		if (path == null)
-			modificationVersion = 1;
-		return true;
 	}
-	
+
 	private void deserializationEnded(Song[] songs, int current, boolean entireListBeingLoaded, boolean append, boolean play, Throwable ex) {
 		final int originalCount = count;
 		int positionToSelect = -1;

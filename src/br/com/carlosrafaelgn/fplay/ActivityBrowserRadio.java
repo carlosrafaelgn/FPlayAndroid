@@ -56,7 +56,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
@@ -74,6 +73,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer {
 	private TextView sep2;
@@ -157,7 +157,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 							is = urlConnection.getInputStream();
 							isr = new InputStreamReader(is, "UTF-8");
 							br = new BufferedReader(isr, 1024);
-							ArrayList<String> lines = new ArrayList<>(8);
+							TypedRawArrayList<String> lines = new TypedRawArrayList<>(String.class, 8);
 							String line;
 							while ((line = br.readLine()) != null) {
 								line = line.trim();

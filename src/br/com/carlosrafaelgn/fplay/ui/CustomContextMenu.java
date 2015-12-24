@@ -63,12 +63,12 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, Comparer<CustomContextMenu.Item>, View.OnClickListener, OnCancelListener, OnDismissListener {
 	static final class Item implements MenuItem {
@@ -338,7 +338,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	}
 	
 	private Context context;
-	private ArrayList<Item> items;
+	private TypedRawArrayList<Item> items;
 	private View.OnCreateContextMenuListener listener;
 	private Activity closeListener;
 	private View view;
@@ -353,7 +353,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	private CustomContextMenu(View view, View.OnCreateContextMenuListener listener, Activity closeListener, Item parentItem, CustomContextMenu parentMenu) {
 		this.context = view.getContext();
-		this.items = new ArrayList<>(8);
+		this.items = new TypedRawArrayList<>(Item.class, 8);
 		this.listener = listener;
 		this.closeListener = closeListener;
 		this.view = view;
@@ -403,9 +403,9 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		}
 		
 		if (menu == null) {
-			final Item[] items = new Item[this.items.size()];
-			this.items.toArray(items);
-			ArraySorter.sort(items, 0, items.length, this);
+			final int itemsLength = this.items.size();
+			final Item[] items = this.items.getRawArray();
+			ArraySorter.sort(items, 0, itemsLength, this);
 			
 			final LinearLayout list = new LinearLayout(context);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
@@ -417,7 +417,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			
 			final int minWidth = ((context instanceof Activity) ? (((Activity)context).getWindowManager().getDefaultDisplay().getWidth() >> ((UI.isLargeScreen || UI.isLandscape) ? 2 : 1)) : 0);
 			int first = -1, last = -1;
-			for (int i = 0; i < items.length; i++) {
+			for (int i = 0; i < itemsLength; i++) {
 				final Item it = items[i];
 				if (it.visible) {
 					if (it.actionView == null) {
@@ -497,8 +497,9 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		} else {
 			//we must manually reset the drawbles here, because they are always removed
 			//from the views in their onDetachedFromWindow()
-			for (int i = items.size() - 1; i >= 0; i--) {
-				final Item it = items.get(i);
+			final Item[] items = this.items.getRawArray();
+			for (int i = this.items.size() - 1; i >= 0; i--) {
+				final Item it = items[i];
 				if (it.icon != null && it.actionView != null && (it.actionView instanceof TextView))
 					((TextView)it.actionView).setCompoundDrawables(it.icon, null, null, null);
 			}
@@ -542,8 +543,9 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		//as there are really few elements, and clicks happen only once in a while,
 		//it was not worth keeping an extra HashMap in this class ;)
 		Item it = null;
-		for (int i = items.size() - 1; i >= 0; i--) {
-			final Item iti = items.get(i);
+		final Item[] items = this.items.getRawArray();
+		for (int i = this.items.size() - 1; i >= 0; i--) {
+			final Item iti = items[i];
 			if (iti != null && iti.actionView == view) {
 				it = iti;
 				break;
@@ -774,8 +776,9 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		//help the gc
 		context = null;
 		if (items != null) {
-			for (int i = items.size() - 1; i >= 0; i--) {
-				final Item it = items.get(i);
+			final Item[] items = this.items.getRawArray();
+			for (int i = this.items.size() - 1; i >= 0; i--) {
+				final Item it = items[i];
 				it.context = null;
 				it.menuItemClickListener = null;
 				it.icon = null;
@@ -790,8 +793,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 					it.subMenu = null;
 				}
 			}
-			items.clear();
-			items = null;
+			this.items.clear();
+			this.items = null;
 		}
 		listener = null;
 		closeListener = null;
@@ -808,8 +811,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public MenuItem findItem(int id) {
-		for (int i = items.size() - 1; i >= 0; i--) {
-			if (items.get(i).itemId == id) return items.get(i);
+		final Item[] items = this.items.getRawArray();
+		for (int i = this.items.size() - 1; i >= 0; i--) {
+			final Item it = items[i];
+			if (it.itemId == id) return it;
 		}
 		return null;
 	}
@@ -821,8 +826,9 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public boolean hasVisibleItems() {
-		for (int i = items.size() - 1; i >= 0; i--) {
-			if (items.get(i).visible) return true;
+		final Item[] items = this.items.getRawArray();
+		for (int i = this.items.size() - 1; i >= 0; i--) {
+			if (items[i].visible) return true;
 		}
 		return false;
 	}
@@ -854,9 +860,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public void removeItem(int id) {
-		for (int i = 0; i < items.size(); i++) {
-			if (items.get(i).itemId == id) {
-				items.remove(i);
+		final Item[] items = this.items.getRawArray();
+		for (int i = this.items.size() - 1; i >= 0; i--) {
+			if (items[i].itemId == id) {
+				this.items.remove(i);
 				return;
 			}
 		}
@@ -864,22 +871,28 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public void setGroupCheckable(int group, boolean checkable, boolean exclusive) {
-		for (int i = items.size() - 1; i >= 0; i--) {
-			if (items.get(i).groupId == group) items.get(i).checkable = checkable;
+		final Item[] items = this.items.getRawArray();
+		for (int i = this.items.size() - 1; i >= 0; i--) {
+			final Item it = items[i];
+			if (it.groupId == group) it.checkable = checkable;
 		}
 	}
 	
 	@Override
 	public void setGroupEnabled(int group, boolean enabled) {
-		for (int i = items.size() - 1; i >= 0; i--) {
-			if (items.get(i).groupId == group) items.get(i).enabled = enabled;
+		final Item[] items = this.items.getRawArray();
+		for (int i = this.items.size() - 1; i >= 0; i--) {
+			final Item it = items[i];
+			if (it.groupId == group) it.enabled = enabled;
 		}
 	}
 	
 	@Override
 	public void setGroupVisible(int group, boolean visible) {
-		for (int i = items.size() - 1; i >= 0; i--) {
-			if (items.get(i).groupId == group) items.get(i).visible = visible;
+		final Item[] items = this.items.getRawArray();
+		for (int i = this.items.size() - 1; i >= 0; i--) {
+			final Item it = items[i];
+			if (it.groupId == group) it.visible = visible;
 		}
 	}
 	

@@ -68,7 +68,6 @@ import android.widget.RemoteViews;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 
 import br.com.carlosrafaelgn.fplay.ExternalReceiver;
@@ -84,6 +83,7 @@ import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
 //
@@ -470,7 +470,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
 			audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
 			telephonyManager = (TelephonyManager)context.getSystemService(TELEPHONY_SERVICE);
-			destroyedObservers = new ArrayList<>(4);
+			destroyedObservers = new TypedRawArrayList<>(PlayerDestroyedObserver.class, 4);
 			stickyBroadcast = new Intent();
 			loadConfig(context);
 		}
@@ -553,7 +553,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			while (handler == null)
 				Thread.yield();
 
-			songs.startDeserializing(thePlayer, null, true, false, false);
+			songs.startDeserializingOrImportingFrom(thePlayer, 0, true, false, false);
 		}
 		//fix the initial selection when the app is started from the widget
 		alreadySelected = false;
@@ -2034,7 +2034,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//PresetReverb.saveConfig(opts);
 		opts.serialize(context, "_Player");
 		if (saveSongs)
-			songs.serialize(context, null);
+			songs.serialize(context);
 	}
 
 	private static void createIntents(Context context) {
@@ -2395,7 +2395,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static PlaybackState.Builder mediaSessionPlaybackStateBuilder;
 	private static Object mediaRouterCallback;
 
-	private static ArrayList<PlayerDestroyedObserver> destroyedObservers;
+	private static TypedRawArrayList<PlayerDestroyedObserver> destroyedObservers;
 	public static PlayerTurnOffTimerObserver turnOffTimerObserver;
 	public static PlayerObserver observer;
 
