@@ -32,14 +32,10 @@
     <!-- For scanning bluetooth devices -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
-    <!-- Apparently, a few devices require this.... -->
+    <!-- Apparently, a few devices require this.... (not only to make android.media.audiofx.PresetReverb work, but to control volume and other settings)  -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <!-- For exporting files/settings -->
-    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
-    <!-- For android.media.audiofx.PresetReverb -->
-    <!-- <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" /> -->
 
-    <!-- These two permissions are not classified as PROTECTION_NORMAL in Android M API 23
+    <!-- These four permissions are not classified as PROTECTION_NORMAL in Android M API 23
      http://developer.android.com/preview/features/runtime-permissions.html -->
     <!-- For android.media.audiofx.Visualizer -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -47,6 +43,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- For exporting playlists -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <!--
     Just to make Google Play show the App even to phones without Bluetooth,

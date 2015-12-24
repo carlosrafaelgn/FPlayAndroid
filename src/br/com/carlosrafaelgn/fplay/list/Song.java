@@ -56,7 +56,7 @@ public final class Song extends BaseItem {
 	public String length;
 	public boolean alreadyPlayed, selected;
 	
-	private Song(String path, String title, String artist, String album, int track, int lengthMS, int year) {
+	public Song(String path, String title, String artist, String album, int track, int lengthMS, int year) {
 		this.path = path;
 		this.isHttp = (path.startsWith("http://") || path.startsWith("https://"));
 		this.title = title;
@@ -200,10 +200,7 @@ public final class Song extends BaseItem {
 			lengthMS = -1;
 		if (year <= 0)
 			year = -1;
-		if (isHttp)
-			length = "";
-		else
-			length = formatTime(lengthMS);
+		length = (isHttp ? "" : formatTime(lengthMS));
 	}
 	
 	@Override

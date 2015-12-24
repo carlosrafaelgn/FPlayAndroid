@@ -553,7 +553,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			while (handler == null)
 				Thread.yield();
 
-			songs.startDeserializingOrImportingFrom(thePlayer, 0, true, false, false);
+			songs.startDeserializingOrImportingFrom(thePlayer, null, true, false, false);
 		}
 		//fix the initial selection when the app is started from the widget
 		alreadySelected = false;
@@ -2997,7 +2997,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			ex = (Throwable)objs[2];
 			objs[2] = null;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
-				((ClientActivity)observer).getHostActivity().requestStoragePermission();
+				((ClientActivity)observer).getHostActivity().requestReadStoragePermission();
 			final String msg = ex.getMessage();
 			if (ex instanceof IllegalStateException) {
 				UI.toast(thePlayer, R.string.error_state);

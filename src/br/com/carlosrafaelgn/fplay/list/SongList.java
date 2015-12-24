@@ -32,10 +32,13 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -51,6 +54,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 
+import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.SongView;
@@ -95,7 +99,40 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	}
 	
 	//--------------------------------------------------------------------------------------------
-	//These eleven methods are the only ones that can be called from any thread (all the others must be called from the main thread)
+	//These fifteen methods are the only ones that can be called from any thread (all the others must be called from the main thread)
+
+	public static void delete(Context context, String path) {
+		context.deleteFile(path);
+	}
+
+	public static void delete(Context context, long publicPlaylistId) {
+		context.getContentResolver().delete(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId), null, null);
+	}
+
+	public static void delete(Context context, FileSt file) {
+		if (file.isPrivatePlaylist())
+			delete(context, file.path);
+		else
+			delete(context, file.artistIdForAlbumArt);
+	}
+
+	public static long getPlaylistId(Context context, String publicPlaylistName) {
+		Cursor c = null;
+		try {
+			final String[] proj = { "_id", "name" };
+			c = context.getContentResolver().query(Uri.parse("content://media/external/audio/playlists"), proj, null, null, null);
+			if (c != null) {
+				while (c.moveToNext()) {
+					if (c.getString(1).equalsIgnoreCase(publicPlaylistName))
+						return c.getLong(0);
+				}
+			}
+			return 0;
+		} finally {
+			if (c != null)
+				c.close();
+		}
+	}
 
 	public static void serialize(Context context, int current, Song[] songs, int count, String path) throws IOException {
 		FileOutputStream fs = null;
@@ -160,24 +197,103 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public static void exportTo(Context context, Song[] songs, int count, long publicPlaylistId, String newPublicPlaylistName) throws Throwable {
+	public static void exportTo(Context context, Song[] songs, int count, long publicPlaylistId, String newPublicPlaylistName, String fallbackPrivatePlaylistPath) throws Throwable {
+		if (publicPlaylistId == 0 && (newPublicPlaylistName == null || newPublicPlaylistName.length() == 0))
+			throw new IllegalArgumentException();
 
+		Cursor c = null;
+		final ContentValues values = new ContentValues();
+		boolean deleteAllSongsFirst = false;
+		final ContentResolver resolver = context.getContentResolver();
+
+		if (publicPlaylistId != 0) {
+			deleteAllSongsFirst = true;
+		} else {
+			//try to find a playlist with that same name, if not found create a new one
+			publicPlaylistId = getPlaylistId(context, newPublicPlaylistName);
+			if (publicPlaylistId == 0) {
+				//create a new empty playlist
+				values.put("name", newPublicPlaylistName);
+				values.put("date_added", System.currentTimeMillis());
+				values.put("date_modified", System.currentTimeMillis());
+				try {
+					final String[] proj = { "_id" };
+					c = resolver.query(resolver.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, values), proj, null, null, null);
+					if (c == null)
+						throw new IOException();
+					c.moveToNext();
+					publicPlaylistId = c.getLong(0);
+				} finally {
+					if (c != null) {
+						c.close();
+						c = null;
+					}
+				}
+			} else {
+				deleteAllSongsFirst = true;
+			}
+		}
+
+		final Uri playlistUri = Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId + "/members");
+
+		if (deleteAllSongsFirst) {
+			try {
+				final String[] proj = { "audio_id" };
+				c = resolver.query(playlistUri, proj, null, null, null);
+				if (c == null)
+					throw new IOException();
+				while (c.moveToNext())
+					resolver.delete(playlistUri, "audio_id=" + c.getLong(0), null);
+			} finally {
+				if (c != null) {
+					c.close();
+					c = null;
+				}
+			}
+		}
+
+		final String[] proj = { "_id" };
+		final String[] args = new String[1];
+		final Uri mediaUri = Uri.parse("content://media/external/audio/media");
+		for (int i = 0; i < count; i++) {
+			long audio_id;
+			try {
+				args[0] = songs[i].path;
+				c = resolver.query(mediaUri, proj, "_data=?", args, null);
+				if (c == null)
+					throw new IOException();
+				if (!c.moveToNext()) {
+					//since this song could not be found on the mediastore, delete the public playlist,
+					//and serialize all the songs as a private playlist
+					c.close();
+					c = null;
+					delete(context, publicPlaylistId);
+					serialize(context, -1, songs, count, fallbackPrivatePlaylistPath);
+					return;
+				}
+				audio_id = c.getLong(0);
+			} finally {
+				if (c != null) {
+					c.close();
+					c = null;
+				}
+			}
+			values.clear();
+			values.put("play_order", i);
+			values.put("audio_id", audio_id);
+			resolver.insert(playlistUri, values);
+		}
 	}
 
 	public static Song[] importFrom(Context context, long publicPlaylistId) throws Throwable {
-		final String[] proj = { "_data", "title" };
-		final Cursor c = context.getContentResolver().query(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId + "/members"), proj, null, null, null);
+		final String[] proj = { "_data", "title", "artist", "album", "track", "duration", "year" };
+		final Cursor c = context.getContentResolver().query(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId + "/members"), proj, null, null, "play_order ASC");
 		final TypedRawArrayList<Song> songs = new TypedRawArrayList<>(Song.class, 64);
 		try {
 			if (c == null)
 				return null;
-			final byte[][] tmpPtr = new byte[][]{new byte[256]};
-			final FileSt file = new FileSt("", "", 0);
-			while (c.moveToNext()) {
-				file.path = c.getString(0);
-				file.name = c.getString(1);
-				songs.add(new Song(file, tmpPtr));
-			}
+			while (c.moveToNext())
+				songs.add(new Song(c.getString(0), c.getString(1), c.getString(2), c.getString(3), c.getInt(4) % 1000, (int)c.getLong(5), c.getInt(6)));
 			songs.trimToSize();
 			return songs.getRawArray();
 		} catch (Throwable ex) {
@@ -194,7 +310,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public void startDeserializingOrImportingFrom(final Context context, final long publicPlaylistId, final boolean entireListBeingLoaded, final boolean append, final boolean play) {
+	public void startDeserializingOrImportingFrom(final Context context, final FileSt file, final boolean entireListBeingLoaded, final boolean append, final boolean play) {
 		try {
 			addingStarted();
 			(new Thread("List Deserializer Thread") {
@@ -213,7 +329,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 						ex = null;
 					} else {
 						try {
-							songs = ((publicPlaylistId == 0) ? deserialize(context, "_List", current) : importFrom(context, publicPlaylistId));
+							songs = ((file == null) ? deserialize(context, "_List", current) : (file.isPrivatePlaylist() ? deserialize(context, file.path, current) : importFrom(context, file.artistIdForAlbumArt)));
 							done = true;
 							MainHandler.postToMainThread(this);
 						} catch (Throwable ex) {
@@ -233,8 +349,45 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public void startExportingTo(final Context context, final long publicPlaylistId, final String newPublicPlaylistName) {
-
+	public void startExportingTo(final Context context, final FileSt file) {
+		try {
+			addingStarted();
+			//we need to create a copy here, so the list can change while the other thread is running
+			final Song[] songs = new Song[count];
+			final int current = this.current;
+			System.arraycopy(items, 0, songs, 0, count);
+			(new Thread("List Serializer Thread") {
+				@Override
+				public void run() {
+					try {
+						boolean forcePrivatePlaylist = false;
+						for (int i = songs.length - 1; i >= 0; i--) {
+							if (songs[i].isHttp) {
+								forcePrivatePlaylist = true;
+								break;
+							}
+						}
+						final String path = (file.isPrivatePlaylist() ? file.path : (file.name + FileSt.FILETYPE_PLAYLIST));
+						if (!forcePrivatePlaylist) {
+							delete(context, path);
+							exportTo(context, songs, count, file.artistIdForAlbumArt, file.name, path);
+						} else {
+							if (file.artistIdForAlbumArt == 0)
+								file.artistIdForAlbumArt = getPlaylistId(context, file.name);
+							if (file.artistIdForAlbumArt != 0)
+								delete(context, file.artistIdForAlbumArt);
+							serialize(context, current, songs, count, path);
+						}
+					} catch (Throwable ex) {
+						MainHandler.toast((ex instanceof FileNotFoundException) ? R.string.error_file_not_found : R.string.error_gen);
+					} finally {
+						addingEnded();
+					}
+				}
+			}).start();
+		} catch (Throwable ex) {
+			addingEnded();
+		}
 	}
 
 	public void addingStarted() {

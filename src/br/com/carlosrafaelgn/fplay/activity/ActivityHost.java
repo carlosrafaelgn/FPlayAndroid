@@ -645,8 +645,23 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
-	public void requestStoragePermission() {
+	public boolean isReadStoragePermissionGranted() {
+		return (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+	}
+
+	@TargetApi(Build.VERSION_CODES.M)
+	public void requestReadStoragePermission() {
 		requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+	}
+
+	@TargetApi(Build.VERSION_CODES.M)
+	public boolean isWriteStoragePermissionGranted() {
+		return (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+	}
+
+	@TargetApi(Build.VERSION_CODES.M)
+	public void requestWriteStoragePermission() {
+		requestPermissions(new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE }, 2);
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)

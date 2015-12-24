@@ -59,7 +59,6 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -112,7 +111,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
-	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId;
+	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand;
 	private boolean selectCurrentWhenAttached, skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
@@ -699,15 +698,19 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-		if (requestCode > 100 && requestCode < 200 && Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+		if (requestCode > 100 && requestCode < 200 && Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 			openVisualizer(requestCode);
+		} else if (requestCode == 2 && pendingListCommand != 0) {
+			if (Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+				selectPlaylist(pendingListCommand);
+			pendingListCommand = 0;
+		}
 	}
 
 	private void openVisualizer(int id) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			final ActivityHost activity = getHostActivity();
-			if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-				activity.requestPermissions(new String[]{ Manifest.permission.RECORD_AUDIO }, id);
+			if (getHostActivity().checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+				getHostActivity().requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, id);
 				return;
 			}
 		}
@@ -743,6 +746,15 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 	}
 
+	private void selectPlaylist(int how) {
+		if (how == 1) {
+			Player.alreadySelected = false;
+			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.load_list), MNU_LOADLIST, false, true, this), 0, null, false);
+		} else {
+			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.save_list), MNU_SAVELIST, true, false, this), 0, null, false);
+		}
+	}
+
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
 		final int id = item.getItemId();
@@ -762,11 +774,24 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.songs.clear();
 			break;
 		case MNU_LOADLIST:
-			Player.alreadySelected = false;
-			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.load_list), MNU_LOADLIST, false, true, this), 0, null, false);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				if (!getHostActivity().isWriteStoragePermissionGranted()) {
+					pendingListCommand = 1;
+					getHostActivity().requestWriteStoragePermission();
+					break;
+				}
+			}
+			selectPlaylist(1);
 			break;
 		case MNU_SAVELIST:
-			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.save_list), MNU_SAVELIST, true, false, this), 0, null, false);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				if (!getHostActivity().isWriteStoragePermissionGranted()) {
+					pendingListCommand = 2;
+					getHostActivity().requestWriteStoragePermission();
+					break;
+				}
+			}
+			selectPlaylist(2);
 			break;
 		case MNU_SORT_BY_TITLE:
 			Player.songs.sort(SongList.SORT_BY_TITLE);
@@ -939,6 +964,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		tmrSong = new Timer(this, "Song Timer", false, true, true);
 		tmrUpdateVolumeDisplay = new Timer(this, "Update Volume Display Timer", true, true, false);
 		tmrVolume = new Timer(this, "Volume Timer", false, true, true);
+		pendingListCommand = 0;
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -1373,6 +1399,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		Player.songs.setObserver(null);
 		Player.observer = null;
 		lastTime = -2;
+		pendingListCommand = 0;
 		if (!Player.controlMode)
 			Player.lastCurrent = Player.songs.getCurrentPosition();
 		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
@@ -1559,10 +1586,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onFileSelected(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
-			Player.songs.startDeserializingOrImportingFrom(getApplication(), file.artistIdForAlbumArt, true, false, false);
+			Player.songs.startDeserializingOrImportingFrom(getApplication(), file, true, false, false);
 			BackgroundActivityMonitor.start(getHostActivity());
 		} else {
-			Player.songs.startExportingTo(getApplication(), file.artistIdForAlbumArt, file.name);
+			Player.songs.startExportingTo(getApplication(), file);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
@@ -1570,7 +1597,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public void onAddClicked(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
-			Player.songs.startDeserializingOrImportingFrom(getApplication(), file.artistIdForAlbumArt, false, true, false);
+			Player.songs.startDeserializingOrImportingFrom(getApplication(), file, false, true, false);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
@@ -1578,13 +1605,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public void onPlayClicked(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
-			Player.songs.startDeserializingOrImportingFrom(getApplication(), file.artistIdForAlbumArt, false, !Player.clearListWhenPlayingFolders, true);
+			Player.songs.startDeserializingOrImportingFrom(getApplication(), file, false, !Player.clearListWhenPlayingFolders, true);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
 
 	@Override
 	public boolean onDeleteClicked(int id, FileSt file) {
+		SongList.delete(getApplication(), file);
 		return true;
 	}
 

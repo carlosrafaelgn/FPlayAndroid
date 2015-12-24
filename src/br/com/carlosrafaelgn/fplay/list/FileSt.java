@@ -61,10 +61,10 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_ALBUM_ITEM = 11;
 	public static final int TYPE_EXTERNAL_STORAGE_USB = 12;
 	public final boolean isDirectory;
-	public String path, name;
+	public final String path, name;
 	public String albumArt;
 	public int specialType, tracks, albums;
-	public long artistIdForAlbumArt;
+	public long artistIdForAlbumArt; //when dealing with playlists, artistIdForAlbumArt stores the playlist id
 	public File file;
 	public boolean isChecked;
 	
@@ -93,10 +93,10 @@ public final class FileSt extends BaseItem {
 	}
 	
 	public FileSt(String absolutePath, String name, int specialType) {
-		this.isDirectory = false;//isDirectory;
+		this.isDirectory = false;
 		this.path = absolutePath;
 		this.name = ((name.length() == 0) ? " " : name);
-		this.albumArt = null;//(((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
+		this.albumArt = null;
 		this.specialType = specialType;
 	}
 	
@@ -106,6 +106,10 @@ public final class FileSt extends BaseItem {
 	}
 	
 	public static boolean isValidPrivateFileName(String name) {
-		return ((name != null) && (name.length() != 0) && (name.indexOf(File.separatorChar) < 0));
+		return ((name != null) && (name.length() != 0) && (name.indexOf(File.separatorChar) < 0) && !name.contains(FILETYPE_PLAYLIST) && !name.contains(FILETYPE_PRESET));
+	}
+
+	public boolean isPrivatePlaylist() {
+		return ((path != null) && path.endsWith(FILETYPE_PLAYLIST));
 	}
 }

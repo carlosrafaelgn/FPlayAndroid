@@ -32,12 +32,10 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.text.InputType;
 import android.util.TypedValue;
@@ -53,7 +51,6 @@ import android.widget.TextView;
 import java.io.File;
 import java.util.Locale;
 
-import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
@@ -876,10 +873,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	@Override
 	protected void onPostCreateLayout(boolean firstCreation) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			final ActivityHost activity = getHostActivity();
-			if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+			if (!getHostActivity().isReadStoragePermissionGranted()) {
 				pendingTo = ((Player.path == null) ? "" : Player.path);
-				activity.requestStoragePermission();
+				getHostActivity().requestReadStoragePermission();
 				return;
 			}
 		}
