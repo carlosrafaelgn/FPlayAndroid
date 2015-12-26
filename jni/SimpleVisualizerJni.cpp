@@ -442,9 +442,13 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
 	commonCoefNew = 0.0f;
-	rootMeanSquare = 0;
-	lastRootMeanSquare = 0;
-	vuMeter = 0;
+	rootMeanSquare = 0.0f;
+	vuMeter = 0.0f;
+	vuMeterUnfiltered = 0.f;
+	vuMeterFilterState[0] = 0.0f;
+	vuMeterFilterState[1] = 0.0f;
+	vuMeterFilterState[2] = 0.0f;
+	vuMeterFilterState[3] = 0.0f;
 	beatCounter = 0;
 	beatState = BEAT_STATE_VALLEY;
 	beatPeakOrValley = 0;

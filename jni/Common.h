@@ -44,8 +44,9 @@ const unsigned short COLORS[] __attribute__((aligned(16))) = { 	/*Blue */ 0x0000
 																		/*Green*/ 0x0000, 0x0000, 0x0000, 0x0020, 0x0020, 0x0040, 0x0040, 0x0060, 0x0060, 0x0080, 0x00a0, 0x00a0, 0x00c0, 0x00e0, 0x00e0, 0x0100, 0x0120, 0x0140, 0x0160, 0x0160, 0x0180, 0x01a0, 0x01c0, 0x01e0, 0x01e0, 0x0200, 0x0220, 0x0240, 0x0260, 0x0280, 0x0280, 0x02a0, 0x02c0, 0x02e0, 0x0300, 0x0320, 0x0340, 0x0360, 0x0360, 0x0380, 0x03a0, 0x03c0, 0x03e0, 0x0400, 0x0400, 0x0420, 0x0440, 0x0440, 0x0460, 0x0480, 0x0480, 0x04a0, 0x04c0, 0x04c0, 0x04c0, 0x04e0, 0x04e0, 0x0ce0, 0x0d00, 0x0d00, 0x0d00, 0x1520, 0x1520, 0x1540, 0x1540, 0x1d40, 0x1d60, 0x1d60, 0x2580, 0x2580, 0x25a0, 0x2da0, 0x2da0, 0x2dc0, 0x35c0, 0x35e0, 0x35e0, 0x3e00, 0x3e00, 0x3e00, 0x4620, 0x4620, 0x4e40, 0x4e40, 0x4e60, 0x5660, 0x5660, 0x5e80, 0x5e80, 0x5ea0, 0x66a0, 0x66c0, 0x66c0, 0x6ec0, 0x6ee0, 0x76e0, 0x7700, 0x7f00, 0x7f00, 0x7f20, 0x8720, 0x8720, 0x8f40, 0x8f40, 0x8f40, 0x9760, 0x9760, 0x9f80, 0x9f80, 0x9f80, 0xa780, 0xa7a0, 0xafa0, 0xafa0, 0xafc0, 0xb7c0, 0xb7c0, 0xbfc0, 0xbfc0, 0xbfe0, 0xc7e0, 0xc7e0, 0xc7e0, 0xcfe0, 0xcfe0, 0xcfe0, 0xd7e0, 0xd7e0, 0xdfe0, 0xdfe0, 0xdfe0, 0xdfe0, 0xe7e0, 0xe7e0, 0xe7e0, 0xefe0, 0xefe0, 0xefe0, 0xefe0, 0xf7e0, 0xf7e0, 0xf7e0, 0xf7e0, 0xf7e0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffc0, 0xffc0, 0xffc0, 0xffa0, 0xffa0, 0xffa0, 0xff80, 0xff80, 0xff80, 0xff60, 0xff60, 0xff40, 0xff40, 0xff40, 0xff20, 0xff00, 0xff00, 0xfee0, 0xfee0, 0xfec0, 0xfec0, 0xfea0, 0xfea0, 0xfe80, 0xfe60, 0xfe60, 0xfe40, 0xfe20, 0xfe20, 0xfe00, 0xfe00, 0xfde0, 0xfdc0, 0xfda0, 0xfda0, 0xfd80, 0xfd60, 0xfd60, 0xfd40, 0xfd20, 0xfd00, 0xfd00, 0xfce0, 0xfcc0, 0xfca0, 0xfca0, 0xfc80, 0xfc60, 0xfc40, 0xfc40, 0xfc20, 0xfc00, 0xfbe0, 0xfbe0, 0xfbc0, 0xfba0, 0xfb80, 0xfb60, 0xfb60, 0xfb40, 0xfb20, 0xfb00, 0xfb00, 0xfae0, 0xfac0, 0xfaa0, 0xfaa0, 0xfa80, 0xfa60, 0xfa60, 0xfa40, 0xfa20, 0xfa00, 0xfa00, 0xf9e0, 0xf9c0, 0xf9c0, 0xf9a0, 0xf980, 0xf980, 0xf960, 0xf960, 0xf940, 0xf920, 0xf920, 0xf900, 0xf8e0, 0xf8e0, 0xf8c0, 0xf8c0, 0xf8a0, 0xf8a0, 0xf880, 0xf880, 0xf860, 0xf860, 0xf860, 0xf840, 0xf840, 0xf820, 0xf820, 0xf820, 0xf800, 0xf800, 0xf800, 0xf800 };
 float floatBuffer[(256 * 2) + (256 / 4)] __attribute__((aligned(16)));
 float previousM[256] __attribute__((aligned(16)));
-float rootMeanSquare, lastRootMeanSquare;
-int vuMeter;
+//vuMeter ranges from 0 to 1, and should be mapped to (-40dB to 6.5dB)
+//vuMeterUnfiltered ranges from 0 to over 1, and should be mapped to (-40dB to over 6.5dB)
+float rootMeanSquare, vuMeter, vuMeterUnfiltered, vuMeterFilterState[4];
 #ifdef _MAY_HAVE_NEON_
 unsigned int neonMode, neonDone;
 int intBuffer[8] __attribute__((aligned(16)));
@@ -165,9 +166,13 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 	float* const fft = floatBuffer;
 	float* const multiplier = fft + 256;
 	unsigned char* const processedData = (unsigned char*)(fft + 512);
-	rootMeanSquare = 0;
-	lastRootMeanSquare = 0;
-	vuMeter = 0;
+	rootMeanSquare = 0.0f;
+	vuMeter = 0.0f;
+	vuMeterUnfiltered = 0.0f;
+	vuMeterFilterState[0] = 0.0f;
+	vuMeterFilterState[1] = 0.0f;
+	vuMeterFilterState[2] = 0.0f;
+	vuMeterFilterState[3] = 0.0f;
 	beatCounter = 0;
 	beatState = BEAT_STATE_VALLEY;
 	beatPeakOrValley = 0;
@@ -233,19 +238,25 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		bfft = 0;
 	}
 
-	vuMeter = 0;
+	int vuMeterI = 0;
 	if ((opt & DATA_VUMETER)) {
-		lastRootMeanSquare = ((rootMeanSquare > lastRootMeanSquare) ?
-								(0.5f * rootMeanSquare) + ((1.0f - 0.5f) * lastRootMeanSquare)
-								:
-								(0.075f * rootMeanSquare) + ((1.0f - 0.075f) * lastRootMeanSquare));
-		if (lastRootMeanSquare >= 1.0f) {
-			const float v = 20.0f * log10f(lastRootMeanSquare / 42.0f);
-			if (v > -20.0f) {
-				vuMeter = (int)((v + 20.0f) * 12.75f);
-				if (vuMeter > 255) vuMeter = 255;
-			}
-		}
+		//vuMeterUnfiltered goes from 0 to over 1 (-40dB to over 6.5dB)
+		vuMeterUnfiltered = ((rootMeanSquare > 0.42f) ? (((20.0f * log10f(rootMeanSquare / 42.0f)) + 40.0f) / 46.5f) : 0.0f);
+		//2nd order Butterworth low pass filter, with cutoff frequency = 0.05 (in a scale from 0 to 0.5)
+		const float vuOut = (0.020083366f * vuMeterUnfiltered) + //x
+							(0.040166731f * vuMeterFilterState[0]) + //x-1
+							(0.020083366f * vuMeterFilterState[1]) + //x-2
+							(1.561018076f * vuMeterFilterState[2]) + //y-1
+							(-0.641351538f * vuMeterFilterState[3]); //y-2
+
+		vuMeterFilterState[1] = vuMeterFilterState[0];
+		vuMeterFilterState[0] = vuMeterUnfiltered;
+		vuMeterFilterState[3] = vuMeterFilterState[2];
+		vuMeterFilterState[2] = vuOut;
+
+		vuMeter = ((vuOut >= 1.0f) ? 1.0f : ((vuOut <= 0.0f) ? 0.0f : vuOut));
+		vuMeterI = (int)(vuMeter * 255.0f);
+
 		if (!(opt & ~(IGNORE_INPUT | DATA_VUMETER))) {
 			if (bfft)
 				env->ReleasePrimitiveArrayCritical(jwaveform, bfft, JNI_ABORT);
@@ -358,7 +369,7 @@ if (!neonMode) {
 		}
 	}
 
-	opt &= ~(IGNORE_INPUT | DATA_FFT | DATA_VUMETER | BEAT_DETECTION);
+	opt &= BLUETOOTH_PROCESSING;
 	if (!opt) {
 		if (bfft)
 			env->ReleasePrimitiveArrayCritical(jwaveform, bfft, JNI_ABORT);
