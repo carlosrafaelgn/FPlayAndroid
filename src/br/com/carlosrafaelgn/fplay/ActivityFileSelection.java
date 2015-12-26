@@ -35,7 +35,9 @@ package br.com.carlosrafaelgn.fplay;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.text.InputFilter;
 import android.text.InputType;
+import android.text.Spanned;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.EditText;
@@ -57,7 +59,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver {
+public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver, InputFilter {
 	public interface OnFileSelectionListener {
 		void onFileSelected(int id, FileSt file);
 		void onAddClicked(int id, FileSt file);
@@ -257,38 +259,38 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	private void confirm(final FileSt file, final int deleteIndex) {
 		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-		.setTitle(getText(R.string.oops))
-		.setView(UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)))
-		.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				final OnFileSelectionListener listener = ActivityFileSelection.this.listener;
-				if (deleteIndex >= 0) {
-					try {
-						if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, file))
-							getApplication().deleteFile(file.path);
-						final int p;
-						if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
-							checkedFile.isChecked = false;
-							checkedFile = null;
-							if (fileList.getSelection() != p)
-								fileList.setSelection(p, true);
-							fileList.removeSelection();
-							if (list != null && list.isInTouchMode() && fileList.getSelection() >= 0)
-								fileList.setSelection(-1, true);
-							updateOverallLayout();
+			.setTitle(getText(R.string.oops))
+			.setView(UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)))
+			.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+					final OnFileSelectionListener listener = ActivityFileSelection.this.listener;
+					if (deleteIndex >= 0) {
+						try {
+							if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, file))
+								getApplication().deleteFile(file.path);
+							final int p;
+							if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
+								checkedFile.isChecked = false;
+								checkedFile = null;
+								if (fileList.getSelection() != p)
+									fileList.setSelection(p, true);
+								fileList.removeSelection();
+								if (list != null && list.isInTouchMode() && fileList.getSelection() >= 0)
+									fileList.setSelection(-1, true);
+								updateOverallLayout();
+							}
+						} catch (Throwable ex) {
+							ex.printStackTrace();
 						}
-					} catch (Throwable ex) {
-						ex.printStackTrace();
+					} else {
+						finish(0, null, false);
+						if (listener != null)
+							listener.onFileSelected(ActivityFileSelection.this.id, file);
 					}
-				} else {
-					finish(0, null, false);
-					if (listener != null)
-						listener.onFileSelected(ActivityFileSelection.this.id, file);
 				}
-			}
-		})
-		.setNegativeButton(R.string.cancel, this)
-		.create());
+			})
+			.setNegativeButton(R.string.cancel, this)
+			.create());
 	}
 	
 	@Override
@@ -341,7 +343,35 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		}
 		return false;
 	}
-	
+
+	@Override
+	public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+		if (end <= start)
+			return null;
+
+		final StringBuilder sb = new StringBuilder(end - start);
+
+		for (int i = start; i < end; i++) {
+			final char c = source.charAt(i);
+			switch (c) {
+			case '/':
+			case '*':
+			case '\"':
+			case ':':
+			case '?':
+			case '\\':
+			case '|':
+			case '<':
+			case '>':
+				continue;
+			}
+			sb.append(c);
+		}
+
+		//returning null means "no changes"
+		return ((sb.length() == (end - start)) ? null : sb);
+	}
+
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
@@ -362,6 +392,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				txtSaveAsName.setContentDescription(lbl.getText());
 				txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
 				txtSaveAsName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+				txtSaveAsName.setFilters(new InputFilter[] { this, new InputFilter.LengthFilter(64) });
 				txtSaveAsName.setSingleLine();
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 				p.topMargin = UI.dialogMargin;

@@ -106,7 +106,24 @@ public final class FileSt extends BaseItem {
 	}
 	
 	public static boolean isValidPrivateFileName(String name) {
-		return ((name != null) && (name.length() != 0) && (name.indexOf(File.separatorChar) < 0) && !name.contains(FILETYPE_PLAYLIST) && !name.contains(FILETYPE_PRESET));
+		if ((name != null) && (name.length() != 0) && !name.endsWith(FILETYPE_PLAYLIST) && !name.endsWith(FILETYPE_PRESET)) {
+			for (int i = name.length() - 1; i >= 0; i--) {
+				switch (name.charAt(i)) {
+				case '/':
+				case '*':
+				case '\"':
+				case ':':
+				case '?':
+				case '\\':
+				case '|':
+				case '<':
+				case '>':
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
 	public boolean isPrivatePlaylist() {
