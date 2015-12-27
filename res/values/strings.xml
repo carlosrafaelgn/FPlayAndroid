@@ -320,5 +320,6 @@
     <string name="headset_hook_3">Three clicks on the headset button:</string>
     <string name="nothing">Nothing</string>
     <string name="path">Path</string>
+    <string name="radio_directory">Online radio directory</string>
 
 </resources>

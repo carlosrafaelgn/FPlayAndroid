@@ -319,5 +319,6 @@
     <string name="headset_hook_3">Três toques na tecla do fone de ouvido:</string>
     <string name="nothing">Nada</string>
     <string name="path">Caminho</string>
+    <string name="radio_directory">Diretório de rádios online</string>
 
 </resources>

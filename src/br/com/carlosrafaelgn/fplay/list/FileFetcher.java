@@ -261,7 +261,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		
 		files = Player.getFavoriteFolders(16);
 		count = files.length - 16;
-		
+
 		String desc = s.getText(R.string.artists).toString();
 		files[count] = new FileSt(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ARTIST_ROOT);
 		count++;
@@ -269,7 +269,13 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		desc = s.getText(R.string.albums).toString();
 		files[count] = new FileSt(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ALBUM_ROOT);
 		count++;
-		
+
+		files[count] = new FileSt("", "SHOUTcast", null, FileSt.TYPE_SHOUTCAST);
+		count++;
+
+		files[count] = new FileSt("", "Icecast", null, FileSt.TYPE_ICECAST);
+		count++;
+
 		File f;
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);

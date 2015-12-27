@@ -78,7 +78,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private FileList fileList;
 	private RelativeLayout panelSecondary;
 	private EditText txtURL, txtTitle;
-	private BgButton btnGoBack, btnRadio, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
+	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
@@ -414,6 +414,14 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			final FileSt file = fileList.getItemT(position);
 			if (file == null) //same as above
 				return;
+			switch (file.specialType) {
+			case FileSt.TYPE_ICECAST:
+				startActivity(new ActivityBrowserRadio(true), 1, list.getViewForPosition(position), true);
+				return;
+			case FileSt.TYPE_SHOUTCAST:
+				startActivity(new ActivityBrowserRadio(false), 1, list.getViewForPosition(position), true);
+				return;
+			}
 			if (file.isDirectory && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
 				navigateTo(file.path, null, false);
 			} else {
@@ -491,7 +499,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		final boolean fav = ((to.length() > 1) && (to.charAt(0) == File.separatorChar));
 		final boolean others = !isAtHome;
 		if (fav) {
-			UI.animationAddViewToHide(btnRadio);
 			UI.animationAddViewToHide(btnURL);
 			btnGoBack.setNextFocusRightId(R.id.chkFavorite);
 			UI.setNextFocusForwardId(btnGoBack, R.id.chkFavorite);
@@ -502,7 +509,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			UI.animationAddViewToShow(btnHome);
 		} else if (others) {
 			final boolean albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));// (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
-			UI.animationAddViewToHide(btnRadio);
 			UI.animationAddViewToHide(btnURL);
 			if (albumArtArea) {
 				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);
@@ -520,10 +526,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				UI.animationAddViewToHide(chkAlbumArt);
 			UI.animationAddViewToShow(btnHome);
 		} else {
-			UI.animationAddViewToShow(btnRadio);
 			UI.animationAddViewToShow(btnURL);
-			btnGoBack.setNextFocusRightId(R.id.btnRadio);
-			UI.setNextFocusForwardId(btnGoBack, R.id.btnRadio);
+			btnGoBack.setNextFocusRightId(R.id.btnURL);
+			UI.setNextFocusForwardId(btnGoBack, R.id.btnURL);
 			UI.animationAddViewToHide(chkFavorite);
 			UI.animationAddViewToHide(chkAlbumArt);
 			UI.animationAddViewToHide(btnHome);
@@ -614,8 +619,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			} else {
 				finish(0, view, true);
 			}
-		} else if (view == btnRadio) {
-			startActivity(new ActivityBrowserRadio(), 1, view, true);
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
@@ -786,10 +789,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		btnRadio = (BgButton)findViewById(R.id.btnRadio);
-		btnRadio.setOnClickListener(this);
-		btnRadio.setDefaultHeight();
-		btnRadio.setCompoundDrawables(new TextIconDrawable(UI.ICON_RADIO, UI.color_text, UI.defaultControlContentsSize), null, null, null);
 		btnURL = (BgButton)findViewById(R.id.btnURL);
 		btnURL.setOnClickListener(this);
 		btnURL.setDefaultHeight();
@@ -916,7 +915,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		list = null;
 		panelSecondary = null;
 		btnGoBack = null;
-		btnRadio = null;
 		btnURL = null;
 		chkFavorite = null;
 		chkAlbumArt = null;

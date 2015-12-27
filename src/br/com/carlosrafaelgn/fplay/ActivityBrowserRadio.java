@@ -76,6 +76,7 @@ import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer {
+	private final boolean useIcecast;
 	private TextView sep2;
 	private BgListView list;
 	private RadioStationList radioStationList;
@@ -88,6 +89,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private boolean loading, isAtFavorites, isCreatingLayout, isHidingLoadingPanel;
 	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
+
+	public ActivityBrowserRadio(boolean useIcecast) {
+		this.useIcecast = useIcecast;
+	}
 
 	@Override
 	public CharSequence getTitle() {

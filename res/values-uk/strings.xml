@@ -319,5 +319,6 @@
     <string name="headset_hook_3">Три натискає на кнопку гарнітури:</string>
     <string name="nothing">Нічого</string>
     <string name="path">Шлях</string>
+    <string name="radio_directory">Каталог інтернет радіо</string>
 
 </resources>

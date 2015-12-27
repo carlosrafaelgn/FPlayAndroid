@@ -247,24 +247,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (file.isDirectory) {
 			ReleasableBitmapWrapper newAlbumArt;
 			switch (specialType) {
-			case FileSt.TYPE_INTERNAL_STORAGE:
-				icon = UI.ICON_SCREEN;
-				break;
-			case FileSt.TYPE_ALL_FILES:
-				icon = UI.ICON_ROOT;
-				break;
-			case FileSt.TYPE_EXTERNAL_STORAGE:
-				icon = UI.ICON_SD;
-				break;
-			case FileSt.TYPE_EXTERNAL_STORAGE_USB:
-				icon = UI.ICON_USB;
-				break;
-			case FileSt.TYPE_FAVORITE:
-				icon = UI.ICON_FAVORITE_ON;
-				break;
-			case FileSt.TYPE_ARTIST_ROOT:
-				icon = UI.ICON_MIC;
-				break;
 			case FileSt.TYPE_ARTIST:
 				albumCount = file.albums;
 				trackCount = file.tracks;
@@ -295,6 +277,34 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 					pendingAlbumArtRequest = (newAlbumArt == null);
 				}
 				albumArt = newAlbumArt;
+				break;
+			case FileSt.TYPE_ICECAST:
+				icon = UI.ICON_ICECAST;
+				if (getContext() != null)
+					secondaryTextWidth = UI.controlSmallMargin + UI.measureText(secondaryText = getContext().getText(R.string.radio_directory).toString(), UI._14sp);
+				break;
+			case FileSt.TYPE_SHOUTCAST:
+				icon = UI.ICON_SHOUTCAST;
+				if (getContext() != null)
+					secondaryTextWidth = UI.controlSmallMargin + UI.measureText(secondaryText = getContext().getText(R.string.radio_directory).toString(), UI._14sp);
+				break;
+			case FileSt.TYPE_INTERNAL_STORAGE:
+				icon = UI.ICON_SCREEN;
+				break;
+			case FileSt.TYPE_ALL_FILES:
+				icon = UI.ICON_ROOT;
+				break;
+			case FileSt.TYPE_EXTERNAL_STORAGE:
+				icon = UI.ICON_SD;
+				break;
+			case FileSt.TYPE_EXTERNAL_STORAGE_USB:
+				icon = UI.ICON_USB;
+				break;
+			case FileSt.TYPE_FAVORITE:
+				icon = UI.ICON_FAVORITE_ON;
+				break;
+			case FileSt.TYPE_ARTIST_ROOT:
+				icon = UI.ICON_MIC;
 				break;
 			default:
 				icon = UI.ICON_FOLDER;
@@ -412,20 +422,26 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (ellipsizedName == null)
 			return;
 		getDrawingRect(UI.rect);
-		final boolean albumItem = ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM));
+		final int specialType = ((file == null) ? 0 : file.specialType);
 		int st = state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2);
-		if (albumItem)
+		if (specialType == FileSt.TYPE_ALBUM_ITEM)
 			st |= UI.STATE_SELECTED;
 		UI.drawBgListItem(canvas, st, true, leftMargin, rightMargin);
 		if (albumArt != null && albumArt.bitmap != null)
 			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((usableHeight - albumArt.height) >> 1), null);
 		else if (icon != null)
-			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, iconY, UI.defaultControlContentsSize, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary);
+			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, iconY, UI.defaultControlContentsSize, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary);
 		if (secondaryText == null) {
-			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameYNoSecondary);
+			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameYNoSecondary);
+			//switch (specialType) {
+			//case FileSt.TYPE_ICECAST:
+			//case FileSt.TYPE_SHOUTCAST:
+			//	UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, leftPadding, topMargin + usableHeight - UI._14spBox + UI._14spYinBox);
+			//	break;
+			//}
 		} else {
-			UI.drawText(canvas, ellipsizedName, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameY);
-			UI.drawText(canvas, secondaryText, ((st != 0) || albumItem) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth - rightMargin, secondaryY);
+			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameY);
+			UI.drawText(canvas, secondaryText, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth - rightMargin, secondaryY);
 		}
 		super.dispatchDraw(canvas);
 	}
