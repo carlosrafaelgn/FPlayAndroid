@@ -221,6 +221,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final String ICON_HEADSETHOOK1 = "i";
 	public static final String ICON_HEADSETHOOK2 = "j";
 	public static final String ICON_HEADSETHOOK3 = "k";
+	public static final String ICON_ICECAST = "K";
+	public static final String ICON_ICECASTTEXT = "O"; //height = 3.587 / 16
+	public static final String ICON_SHOUTCAST = "J";
+	public static final String ICON_SHOUTCASTTEXT = "T"; //height = 2.279 / 16
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
