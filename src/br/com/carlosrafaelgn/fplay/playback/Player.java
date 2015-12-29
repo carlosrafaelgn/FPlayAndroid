@@ -1707,6 +1707,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_TRANSITION = 0x0034;
 	private static final int OPT_BLUETOOTHVISUALIZERCONFIG = 0x0035;
 	private static final int OPT_HEADSETHOOKACTIONS = 0x0036;
+	private static final int OPT_RADIOLASTGENRESHOUTCAST = 0x0037;
 
 	//values 0x01xx are shared among all effects
 	//static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -1794,7 +1795,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int headsetHookActions, headsetHookPressCount;
 	public static String path, originalPath, radioSearchTerm;
 	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
-	public static int radioLastGenre, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
+	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
 
 	public static SerializableMap loadConfigFromFile(Context context) {
 		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");
@@ -1841,6 +1842,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
+		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 21);
 		UI.setTransition((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
 		//the volume control types changed on version 71
@@ -1972,6 +1974,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
+		opts.put(OPT_RADIOLASTGENRESHOUTCAST, radioLastGenreShoutcast);
 		opts.put(OPT_TRANSITION, UI.transition);
 		opts.put(OPT_HEADSETHOOKACTIONS, headsetHookActions);
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);

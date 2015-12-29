@@ -416,10 +416,10 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				return;
 			switch (file.specialType) {
 			case FileSt.TYPE_ICECAST:
-				startActivity(new ActivityBrowserRadio(true), 1, list.getViewForPosition(position), true);
+				startActivity(new ActivityBrowserRadio(false), 1, list.getViewForPosition(position), true);
 				return;
 			case FileSt.TYPE_SHOUTCAST:
-				startActivity(new ActivityBrowserRadio(false), 1, list.getViewForPosition(position), true);
+				startActivity(new ActivityBrowserRadio(true), 1, list.getViewForPosition(position), true);
 				return;
 			}
 			if (file.isDirectory && file.specialType != FileSt.TYPE_ALBUM_ITEM) {

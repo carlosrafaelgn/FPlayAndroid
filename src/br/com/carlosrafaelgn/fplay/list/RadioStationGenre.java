@@ -37,12 +37,18 @@ import android.content.Context;
 import java.io.DataInputStream;
 import java.io.InputStream;
 
-public final class ShoutcastRadioStationGenre {
+public final class RadioStationGenre {
 	public final int id;
 	public final String name;
-	public ShoutcastRadioStationGenre[] children;
+	public RadioStationGenre[] children;
 
-	private ShoutcastRadioStationGenre(DataInputStream dataInputStream, byte[] temp) throws Throwable {
+	public RadioStationGenre() {
+		//fallback....
+		id = 250;
+		name = "Rock";
+	}
+
+	private RadioStationGenre(DataInputStream dataInputStream, byte[] temp) throws Throwable {
 		id = dataInputStream.readInt();
 		final int len = dataInputStream.readUnsignedShort();
 		if (len > temp.length || len != dataInputStream.read(temp, 0, len))
@@ -50,28 +56,35 @@ public final class ShoutcastRadioStationGenre {
 		name = new String(temp, 0, len, "UTF-8");
 	}
 
-	public static ShoutcastRadioStationGenre[] loadGenres(Context context) {
+	@Override
+	public String toString() {
+		return name;
+	}
+
+	public static RadioStationGenre[] loadGenres(Context context, boolean loadShoutcast) {
 		InputStream inputStream = null;
 		DataInputStream dataInputStream = null;
 		try {
 			final byte[] temp = new byte[128];
-			inputStream = context.getAssets().open("binary/genres.dat");
+			inputStream = context.getAssets().open(loadShoutcast ? "binary/genres.dat" : "binary/genresIcecast.dat");
 			dataInputStream = new DataInputStream(inputStream);
-			final  int version = dataInputStream.readUnsignedShort();
+			final int version = dataInputStream.readUnsignedShort();
 			if (version != 1)
 				return null;
 			final int count = dataInputStream.readUnsignedShort();
-			if (count <= 0 || count > 100)
+			if (count <= 0 || count > 200)
 				return null;
-			ShoutcastRadioStationGenre[] parents = new ShoutcastRadioStationGenre[count];
+			RadioStationGenre[] parents = new RadioStationGenre[count];
 			for (int p = 0; p < count; p++) {
-				parents[p] = new ShoutcastRadioStationGenre(dataInputStream, temp);
+				parents[p] = new RadioStationGenre(dataInputStream, temp);
+				if (!loadShoutcast)
+					continue;
 				int childCount = dataInputStream.readUnsignedShort();
 				if (childCount <= 0 || childCount > 100)
 					continue;
-				parents[p].children = new ShoutcastRadioStationGenre[childCount];
+				parents[p].children = new RadioStationGenre[childCount];
 				for (int c = 0; c < childCount; c++)
-					parents[p].children[c] = new ShoutcastRadioStationGenre(dataInputStream, temp);
+					parents[p].children[c] = new RadioStationGenre(dataInputStream, temp);
 			}
 			return parents;
 		} catch (Throwable ex) {

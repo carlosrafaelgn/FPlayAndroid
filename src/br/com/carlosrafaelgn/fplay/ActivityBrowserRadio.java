@@ -56,12 +56,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
+import br.com.carlosrafaelgn.fplay.list.IcecastRadioStationList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
+import br.com.carlosrafaelgn.fplay.list.RadioStationGenre;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
+import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -76,9 +80,10 @@ import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, SpinnerAdapter, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer {
-	private final boolean useIcecast;
+	private final boolean useShoutcast;
 	private TextView sep2;
 	private BgListView list;
+	private RadioStationGenre[] genres;
 	private RadioStationList radioStationList;
 	private RelativeLayout panelSecondary, panelLoading;
 	private RadioButton chkGenre, chkTerm;
@@ -90,8 +95,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
-	public ActivityBrowserRadio(boolean useIcecast) {
-		this.useIcecast = useIcecast;
+	public ActivityBrowserRadio(boolean useShoutcast) {
+		this.useShoutcast = useShoutcast;
 	}
 
 	@Override
@@ -281,23 +286,47 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (radioStationList.getSelection() != position)
 			radioStationList.setSelection(position, true);
 	}
-	
-	private static int getValidGenre(int genre) {
-		return ((genre < 0) ? 0 : ((genre >= RadioStationList.GENRES.length) ? (RadioStationList.GENRES.length - 1) : genre));
+
+	private int validateGenreIndex(int index) {
+		if (genres == null)
+			return 0;
+		int parent = index & 0xffff;
+		if (parent >= genres.length)
+			parent = genres.length - 1;
+		if (index <= 0xffff)
+			return parent;
+		final RadioStationGenre genre = genres[parent];
+		if (genre.children == null || genre.children.length == 0)
+			return parent;
+		int child = (index >>> 16) - 1;
+		if (child >= genre.children.length)
+			child = genre.children.length - 1;
+		return parent | (child << 16);
 	}
-	
-	private static String getGenreString(int genre) {
-		return RadioStationList.GENRES[getValidGenre(genre)];
+
+	private RadioStationGenre getGenre(int index) {
+		if (genres == null)
+			return null;
+		final int parent = index & 0xffff;
+		final RadioStationGenre genre = genres[(parent >= genres.length) ? (genres.length - 1) : parent];
+		if (index <= 0xffff || genre.children == null || genre.children.length == 0)
+			return genre;
+		index = (index >>> 16) - 1;
+		return genre.children[(index >= genre.children.length) ? (genre.children.length - 1) : index];
 	}
-	
+
+	private String getGenreString(int position) {
+		return ((genres == null) ? "" : genres[(position <= 0) ? 0 : ((position >= genres.length) ? (genres.length - 1) : position)].name);
+	}
+
 	private void doSearch() {
 		final int selection = radioStationList.getSelection();
 		if (Player.radioSearchTerm != null && Player.radioSearchTerm.length() < 1)
 			Player.radioSearchTerm = null;
 		if (Player.lastRadioSearchWasByGenre || Player.radioSearchTerm == null)
-			radioStationList.fetchIcecast(getApplication(), getGenreString(Player.radioLastGenre), null);
+			radioStationList.fetchStations(getApplication(), getGenre(useShoutcast ? Player.radioLastGenreShoutcast : Player.radioLastGenre), null);
 		else
-			radioStationList.fetchIcecast(getApplication(), null, Player.radioSearchTerm);
+			radioStationList.fetchStations(getApplication(), null, Player.radioSearchTerm);
 		//do not call updateButtons() if onSelectionChanged() got called before!
 		if (selection < 0)
 			updateButtons();
@@ -425,7 +454,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			l.addView(lbl);
 			
 			btnGenre.setAdapter(this);
-			btnGenre.setSelection(getValidGenre(Player.radioLastGenre));
+			btnGenre.setSelection(Player.radioLastGenre);
 			defaultTextColors = txtTerm.getTextColors();
 
 			UI.disableEdgeEffect(ctx);
@@ -460,7 +489,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	public void onClick(DialogInterface dialog, int which) {
 		if (which == AlertDialog.BUTTON_POSITIVE) {
 			Player.lastRadioSearchWasByGenre = chkGenre.isChecked();
-			Player.radioLastGenre = btnGenre.getSelectedItemPosition();
+			if (useShoutcast)
+				Player.radioLastGenreShoutcast = btnGenre.getSelectedItemPosition();
+			else
+				Player.radioLastGenre = btnGenre.getSelectedItemPosition();
 			Player.radioSearchTerm = txtTerm.getText().toString().trim();
 			doSearch();
 		}
@@ -496,7 +528,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected void onCreate() {
 		UI.browserActivity = this;
-		radioStationList = new RadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString());
+		radioStationList = (useShoutcast ? new ShoutcastRadioStationList("-", getText(R.string.no_description).toString()) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString()));
 		radioStationList.setOnBaseListSelectionChangedListener(this);
 	}
 	
@@ -568,7 +600,14 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	protected void onPostCreateLayout(boolean firstCreation) {
-		isCreatingLayout = true;
+		genres = RadioStationGenre.loadGenres(getHostActivity(), useShoutcast);
+		if (genres == null)
+			genres = new RadioStationGenre[] { new RadioStationGenre() };
+		if (useShoutcast)
+			Player.radioLastGenreShoutcast = validateGenreIndex(Player.radioLastGenreShoutcast);
+		else
+			Player.radioLastGenre = validateGenreIndex(Player.radioLastGenre);
+
 		doSearch();
 		isCreatingLayout = false;
 	}
@@ -609,6 +648,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			loadingPanelAnimatorShow = null;
 		}
 		list = null;
+		genres = null;
 		panelLoading = null;
 		panelSecondary = null;
 		btnGoBack = null;
@@ -636,12 +676,12 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	public int getCount() {
-		return RadioStationList.GENRES.length;
+		return (genres == null ? 0 : genres.length);
 	}
 
 	@Override
 	public Object getItem(int position) {
-		return getGenreString(position);
+		return (genres == null ? null : genres[position]);
 	}
 
 	@Override

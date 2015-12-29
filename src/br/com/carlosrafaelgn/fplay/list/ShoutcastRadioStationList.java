@@ -32,29 +32,27 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
-import android.view.View;
-import android.view.ViewGroup;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 
-import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.RadioStationView;
+public final class ShoutcastRadioStationList extends RadioStationList {
+	private final String noOnAir, noDescription;
 
-public final class ShoutcastRadioStationList extends BaseList<RadioStation> {
-
-	private static final int MAX_COUNT = 100;
-
-	public ShoutcastRadioStationList() {
-		super(RadioStation.class, MAX_COUNT);
+	public ShoutcastRadioStationList(String noOnAir, String noDescription) {
+		this.noOnAir = noOnAir;
+		this.noDescription = noDescription;
 	}
 
 	@Override
-	public View getView(int position, View convertView, ViewGroup parent) {
-		final RadioStationView view = ((convertView != null) ? (RadioStationView)convertView : new RadioStationView(Player.getService()));
-		view.setItemState(items[position], position, getItemState(position));
-		return view;
-	}
-
-	@Override
-	public int getViewHeight() {
-		return RadioStationView.getViewHeight();
+	protected void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm) {
+		int err = 0;
+		try {
+		} catch (Throwable ex) {
+			err = -1;
+		} finally {
+			fetchStationsInternalFinished(myVersion, err);
+		}
 	}
 }
