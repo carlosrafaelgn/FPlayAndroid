@@ -320,5 +320,6 @@
     <string name="nothing">Ничего</string>
     <string name="path">Путь</string>
     <string name="radio_directory">Каталог интернет радио</string>
+    <string name="all_kinds">Все типы</string>
 
 </resources>

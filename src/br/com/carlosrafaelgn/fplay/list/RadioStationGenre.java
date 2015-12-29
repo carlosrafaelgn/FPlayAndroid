@@ -37,6 +37,8 @@ import android.content.Context;
 import java.io.DataInputStream;
 import java.io.InputStream;
 
+import br.com.carlosrafaelgn.fplay.R;
+
 public final class RadioStationGenre {
 	public final int id;
 	public final String name;
@@ -46,6 +48,11 @@ public final class RadioStationGenre {
 		//fallback....
 		id = 250;
 		name = "Rock";
+	}
+
+	private RadioStationGenre(String name) {
+		id = 0;
+		this.name = name;
 	}
 
 	private RadioStationGenre(DataInputStream dataInputStream, byte[] temp) throws Throwable {
@@ -65,6 +72,7 @@ public final class RadioStationGenre {
 		InputStream inputStream = null;
 		DataInputStream dataInputStream = null;
 		try {
+			final RadioStationGenre[] allKinds = (loadShoutcast ? new RadioStationGenre[] { new RadioStationGenre(context.getText(R.string.all_kinds).toString()) } : null);
 			final byte[] temp = new byte[128];
 			inputStream = context.getAssets().open(loadShoutcast ? "binary/genres.dat" : "binary/genresIcecast.dat");
 			dataInputStream = new DataInputStream(inputStream);
@@ -80,10 +88,13 @@ public final class RadioStationGenre {
 				if (!loadShoutcast)
 					continue;
 				int childCount = dataInputStream.readUnsignedShort();
-				if (childCount <= 0 || childCount > 100)
+				if (childCount <= 0 || childCount > 100) {
+					parents[p].children = allKinds;
 					continue;
-				parents[p].children = new RadioStationGenre[childCount];
-				for (int c = 0; c < childCount; c++)
+				}
+				parents[p].children = new RadioStationGenre[childCount + 1];
+				parents[p].children[0] = allKinds[0];
+				for (int c = 1; c <= childCount; c++)
 					parents[p].children[c] = new RadioStationGenre(dataInputStream, temp);
 			}
 			return parents;

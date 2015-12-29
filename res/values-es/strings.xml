@@ -320,5 +320,6 @@
     <string name="nothing">Nada</string>
     <string name="path">Ruta</string>
     <string name="radio_directory">Directorio de radios online</string>
+    <string name="all_kinds">Todos los tipos</string>
 
 </resources>

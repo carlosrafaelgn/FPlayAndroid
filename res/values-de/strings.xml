@@ -320,5 +320,6 @@
     <string name="nothing">Nichts</string>
     <string name="path">Pfad</string>
     <string name="radio_directory">Online Radio Verzeichnis</string>
+    <string name="all_kinds">Alle Arten</string>
 
 </resources>
