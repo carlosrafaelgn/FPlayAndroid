@@ -65,13 +65,13 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	//with 20 results each ;)
 	//as for SHOUTcast... their limit is 500, but we will truncate to 100.........
 	public static final int MAX_COUNT = 100;
-	private static final int MSG_FINISHED = 0x0300;
+	private static final int MSG_ERROR = 0x0300;
 	private static final int MSG_MORE_RESULTS = 0x0301;
 
 	private boolean loading, favoritesLoaded, favoritesChanged;
 	protected final Object favoritesSync;
 	protected final HashSet<RadioStation> favorites;
-	private volatile boolean readyToFetch, isSavingFavorites;
+	private volatile boolean readyToFetch, isSavingFavorites, reset, moreResults;
 	protected volatile int version;
 	private volatile RadioStationGenre genreToFetch;
 	private volatile String searchTermToFetch;
@@ -97,7 +97,9 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	}
 	
 	public final void cancel() {
-		version++;
+		version++; //this is enough to cancel the other thread
+		if (version <= 0) //we wrapped around (protection to ensure -version will always work properly)
+			version = 1;
 		if (loading)
 			loadingProcessChanged(false);
 	}
@@ -230,6 +232,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		final RadioStationGenre genre = genreToFetch;
 		final String searchTerm = searchTermToFetch;
 		final boolean isSavingFavorites = this.isSavingFavorites;
+		final boolean reset = this.reset;
 		this.context = null;
 		readyToFetch = true;
 		
@@ -278,15 +281,15 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 					} catch (Throwable ex) {
 						err = -2;
 					} finally {
-						if (myVersion == version)
-							MainHandler.sendMessage(this, MSG_FINISHED, myVersion, err);
+						if (myVersion == version && err < 0)
+							MainHandler.sendMessage(this, MSG_ERROR, myVersion, err);
 					}
 				}
 			}
 			return;
 		}
 
-		fetchStationsInternal(myVersion, genre, searchTerm);
+		fetchStationsInternal(context, myVersion, genre, searchTerm, reset);
 	}
 
 	public final void addFavoriteStation(RadioStation station) {
@@ -307,23 +310,29 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		}
 	}
 
-	protected final void fetchStationsInternalResultsFound(int myVersion, int currentStationIndex) {
+	protected final void fetchStationsInternalResultsFound(int myVersion, int currentStationIndex, boolean moreResults) {
 		if (myVersion == version)
-			MainHandler.sendMessage(this, MSG_MORE_RESULTS, myVersion, currentStationIndex);
+			MainHandler.sendMessage(this, MSG_MORE_RESULTS, moreResults ? myVersion : -myVersion, currentStationIndex);
 	}
 
-	protected final void fetchStationsInternalFinished(int myVersion, int err) {
+	protected final void fetchStationsInternalError(int myVersion, int err) {
 		if (myVersion == version)
-			MainHandler.sendMessage(this, MSG_FINISHED, myVersion, err);
+			MainHandler.sendMessage(this, MSG_ERROR, myVersion, err);
 	}
 
-	protected abstract void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm);
+	protected abstract void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset);
 
-	public final void fetchStations(Context context, RadioStationGenre genre, String searchTerm) {
+	public final boolean fetchStations(Context context, RadioStationGenre genre, String searchTerm, boolean reset) {
 		while (!readyToFetch)
 			Thread.yield();
 		cancel();
-		clear();
+		if (reset) {
+			moreResults = true;
+			clear();
+		}
+		if (!moreResults)
+			return false;
+		this.reset = reset;
 		loadingProcessChanged(true);
 		final Thread t = new Thread(this, "Radio Station Fetcher Thread");
 		isSavingFavorites = false;
@@ -333,9 +342,11 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		readyToFetch = false;
 		try {
 			t.start();
+			return true;
 		} catch (Throwable ex) {
 			readyToFetch = true;
 			loadingProcessChanged(false);
+			return false;
 		}
 	}
 	
@@ -381,15 +392,17 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	
 	@Override
 	public final boolean handleMessage(Message msg) {
-		if (msg.arg1 != version)
+		if (Math.abs(msg.arg1) != version)
 			return true;
 		switch (msg.what) {
-		case MSG_FINISHED:
+		case MSG_ERROR:
+			moreResults = false;
 			loadingProcessChanged(false);
-			if (msg.arg2 != 0)
-				UI.toast(Player.getService(), ((msg.arg2 != -2) && !Player.isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_gen);
+			UI.toast(Player.getService(), ((msg.arg2 != -2) && !Player.isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_gen);
 			break;
 		case MSG_MORE_RESULTS:
+			moreResults = (msg.arg1 > 0);
+			loadingProcessChanged(false);
 			//protection against out of order messages... does this really happen? ;)
 			if (msg.arg2 > count) {
 				//items are always appended :)

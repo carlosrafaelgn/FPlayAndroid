@@ -433,9 +433,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				Player.radioSearchTerm = null;
 		}
 		if (Player.lastRadioSearchWasByGenre || Player.radioSearchTerm == null)
-			radioStationList.fetchStations(getApplication(), getGenre(), null);
+			radioStationList.fetchStations(getApplication(), getGenre(), null, true);
 		else
-			radioStationList.fetchStations(getApplication(), null, Player.radioSearchTerm);
+			radioStationList.fetchStations(getApplication(), null, Player.radioSearchTerm, true);
 		//do not call updateButtons() if onSelectionChanged() got called before!
 		if (selection < 0)
 			updateButtons();

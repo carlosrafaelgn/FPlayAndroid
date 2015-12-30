@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.content.Context;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
@@ -42,6 +44,7 @@ import java.net.URLEncoder;
 
 public final class IcecastRadioStationList extends RadioStationList {
 	private final String tags, noOnAir, noDescription, noTags;
+	private int pageNumber, currentStationIndex;
 
 	public IcecastRadioStationList(String tags, String noOnAir, String noDescription, String noTags) {
 		this.tags = tags;
@@ -206,7 +209,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 		return true;
 	}
 
-	private boolean parseIcecastResults(InputStream is, String[] fields, int myVersion, StringBuilder sb, int[] currentStationIndex) throws Throwable {
+	private boolean parseIcecastResults(InputStream is, String[] fields, int myVersion, StringBuilder sb) throws Throwable {
 		int b = 0;
 		while (b >= 0) {
 			if ((b = is.read()) == (int)'<' &&
@@ -240,7 +243,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 			//special feature! (check out kXML2 source and you will find it!)
 			parser.setFeature("http://xmlpull.org/v1/doc/features.html#relaxed", true);
 			int ev;
-			while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && currentStationIndex[0] < MAX_COUNT) {
+			while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && currentStationIndex < MAX_COUNT) {
 				if (ev == XmlPullParser.END_TAG && parser.getName().equals("table"))
 					break;
 				if (ev == XmlPullParser.START_TAG && parser.getName().equals("tr")) {
@@ -253,7 +256,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 						}
 						if (myVersion != version)
 							break;
-						items[currentStationIndex[0]++] = station;
+						items[currentStationIndex++] = station;
 						hasResults = true;
 					}
 				}
@@ -265,62 +268,69 @@ public final class IcecastRadioStationList extends RadioStationList {
 	}
 
 	@Override
-	protected void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm) {
+	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset) {
 		int err = 0;
 		try {
-			int pageNumber = 0;
+			if (reset && myVersion == version) {
+				pageNumber = 0;
+				currentStationIndex = 0;
+			}
 			boolean hasResults;
 			String[] fields = new String[8];
 			final StringBuilder sb = new StringBuilder(256);
-			final int[] currentStationIndex = { 0 };
 
 			//genre MUST be one of the predefined genres (due to the encoding)
 			final String uri = ((genre != null) ?
 				("http://dir.xiph.org/by_genre/" + genre.name.replace(" ", "%20") + "?page=") :
 				("http://dir.xiph.org/search?search=" + URLEncoder.encode(searchTerm, "UTF-8") + "&page="));
-			do {
+			if (myVersion != version)
+				return;
+			if (pageNumber >= 5) {
+				fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
+				return;
+			}
+			InputStream is = null;
+			HttpURLConnection urlConnection = null;
+			try {
+				urlConnection = (HttpURLConnection)(new URL(uri + pageNumber)).openConnection();
 				if (myVersion != version)
-					break;
-				InputStream is = null;
-				HttpURLConnection urlConnection = null;
-				try {
-					urlConnection = (HttpURLConnection)(new URL(uri + pageNumber)).openConnection();
-					if (myVersion != version)
-						break;
-					err = urlConnection.getResponseCode();
-					if (err == 200) {
-						is = urlConnection.getInputStream();
-						hasResults = parseIcecastResults(is, fields, myVersion, sb, currentStationIndex);
-						if (hasResults)
-							fetchStationsInternalResultsFound(myVersion, currentStationIndex[0]);
-						err = 0;
-					} else {
-						hasResults = false;
-					}
-				} catch (Throwable ex) {
+					return;
+				err = urlConnection.getResponseCode();
+				if (myVersion != version)
+					return;
+				if (err == 200) {
+					is = urlConnection.getInputStream();
+					hasResults = parseIcecastResults(is, fields, myVersion, sb);
+				} else {
 					hasResults = false;
-					err = -1;
-				} finally {
-					try {
-						if (urlConnection != null)
-							urlConnection.disconnect();
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
-					try {
-						if (is != null)
-							is.close();
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
-					System.gc();
 				}
+				fetchStationsInternalResultsFound(myVersion, currentStationIndex, hasResults);
+				err = 0;
+				if (myVersion != version)
+					return;
 				pageNumber++;
-			} while (hasResults && pageNumber < 5);
+			} catch (Throwable ex) {
+				err = -1;
+			} finally {
+				try {
+					if (urlConnection != null)
+						urlConnection.disconnect();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+				try {
+					if (is != null)
+						is.close();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+				System.gc();
+			}
 		} catch (Throwable ex) {
 			err = -1;
 		} finally {
-			fetchStationsInternalFinished(myVersion, err);
+			if (err < 0)
+				fetchStationsInternalError(myVersion, err);
 		}
 	}
 }

@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.content.Context;
+
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -39,6 +41,8 @@ import java.net.URLEncoder;
 
 public final class ShoutcastRadioStationList extends RadioStationList {
 	private final String noOnAir, noDescription;
+	private int pageNumber, currentStationIndex;
+	private String baseUrl;
 
 	public ShoutcastRadioStationList(String noOnAir, String noDescription) {
 		this.noOnAir = noOnAir;
@@ -46,13 +50,47 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 	}
 
 	@Override
-	protected void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm) {
+	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset) {
 		int err = 0;
+		InputStream datInputStream = null;
 		try {
+			if (reset && myVersion == version) {
+				pageNumber = 0;
+				currentStationIndex = 0;
+			}
+			boolean hasResults;
+
+			if (baseUrl == null) {
+				final byte[] tmp = new byte[67];
+				final byte[] tmp2 = {0x00, 0x08, 0x04, 0x0c, 0x02, 0x0a, 0x06, 0x0e, 0x01, 0x09, 0x05, 0x0d, 0x03, 0x0b, 0x07, 0x0f};
+				datInputStream = context.getAssets().open("binary/url.dat");
+				if (datInputStream.read(tmp, 0, 67) == 67) {
+					for (int i = 0; i < 67; i++) {
+						final byte b = tmp[i];
+						tmp[i] = (byte)((tmp2[b & 0x0f] << 4) | tmp2[(b >> 4) & 0x0f]);
+					}
+				}
+				datInputStream.close();
+				datInputStream = null;
+				//Sorry, everyone!!!
+				//As a part of the process of getting a DevID, they ask you not to make it publicly available :(
+				//But.... you can get your own DevID for FREE here: http://www.shoutcast.com/Partners :)
+				baseUrl = new String(tmp, 0, 67, "UTF-8");
+			}
+
+			fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
 		} catch (Throwable ex) {
 			err = -1;
 		} finally {
-			fetchStationsInternalFinished(myVersion, err);
+			if (datInputStream != null) {
+				try {
+					datInputStream.close();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			}
+			if (err < 0)
+				fetchStationsInternalError(myVersion, err);
 		}
 	}
 }
