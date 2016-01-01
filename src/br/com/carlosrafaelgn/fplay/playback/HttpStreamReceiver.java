@@ -32,15 +32,16 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,10 +50,13 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 //This class acts as a "man in the middle", receiving data from the actual server,
 //buffering it, and finally serving it to the MediaPlayer class
 public final class HttpStreamReceiver implements Runnable {
+	private static final int TIMEOUT = 5000;
+	private static final int MAX_TIMEOUT_COUNT = 5;
+
 	private final URL url;
 	private final Object clientSync, serverSync;
 	private final AtomicInteger storedLength;
-	private volatile boolean alive;
+	private volatile boolean alive, finished;
 	private volatile int serverPortReady;
 	private volatile byte[] buffer;
 	private Thread clientThread, serverThread;
@@ -62,8 +66,9 @@ public final class HttpStreamReceiver implements Runnable {
 	private final class ServerRunnable implements Runnable {
 		@Override
 		public void run() {
-			int readIndex;
-			Socket client = null;
+			final int bufferLen = buffer.length;
+			int readIndex = 0, timeoutCount = 0;
+			OutputStream outputStream;
 
 			try {
 				final InetAddress address = Inet4Address.getByAddress(new byte[] { 127, 0, 0, 1 });
@@ -89,32 +94,74 @@ public final class HttpStreamReceiver implements Runnable {
 			try {
 				if (serverPortReady <= 0)
 					return;
-				serverSocket.setSoTimeout(5000);
+				serverSocket.setSoTimeout(TIMEOUT);
 				playerSocket = serverSocket.accept();
 				playerSocket.setReceiveBufferSize(1024);
 				playerSocket.setSendBufferSize(32 * 1024);
-				playerSocket.setSoTimeout(5000);
+				playerSocket.setSoTimeout(TIMEOUT);
 				playerSocket.setTcpNoDelay(true);
+				//we will just ignore any bytes received
+				outputStream = playerSocket.getOutputStream();
+
+				//just send the data to the client
+				while (alive && !finished) {
+					if (readIndex >= bufferLen)
+						readIndex = 0;
+					final int maxLen1 = bufferLen - readIndex;
+					final int maxLen2 = storedLength.get();
+					if (maxLen2 <= 0) {
+						synchronized (serverSync) {
+							if (!alive || finished)
+								break;
+							try {
+								serverSync.wait();
+							} catch (Throwable ex) {
+								//ignore the interruptions
+							}
+						}
+						continue;
+					}
+					final int len = ((maxLen1 <= maxLen2) ? maxLen1 : maxLen2);
+					try {
+						outputStream.write(buffer, readIndex, len);
+						timeoutCount = 0;
+						storedLength.addAndGet(-len);
+						readIndex += len;
+						synchronized (clientSync) {
+							clientSync.notify();
+						}
+					} catch (SocketTimeoutException ex) {
+						timeoutCount++;
+						if (timeoutCount >= MAX_TIMEOUT_COUNT)
+							throw ex;
+					}
+				}
 			} catch (Throwable ex) {
+				//abort everything
 			} finally {
-				try {
-					if (playerSocket != null)
-						playerSocket.close();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-				try {
-					if (serverSocket != null)
-						serverSocket.close();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
+				closeSocket(playerSocket);
+				closeSocket(serverSocket);
 			}
 		}
 	}
 
-	private static void closeSocket() {
-
+	private static void closeSocket(Closeable socket) {
+		if (socket == null)
+			return;
+		try {
+			if (socket instanceof Socket) {
+				final Socket s = (Socket)socket;
+				s.shutdownInput();
+				s.shutdownOutput();
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		try {
+			socket.close();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	public HttpStreamReceiver(String url) throws MalformedURLException {
@@ -138,15 +185,15 @@ public final class HttpStreamReceiver implements Runnable {
 
 	@Override
 	public void run() {
-		int writeIndex, len;
+		final int bufferLen = buffer.length;
+		int writeIndex, len, timeoutCount = 0;
 		InputStream inputStream;
-		byte[] tmp = new byte[512];
 
 		try {
 			clientSocket = new Socket(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort());
 			clientSocket.setReceiveBufferSize(32 * 1024);
 			clientSocket.setSendBufferSize(1024);
-			clientSocket.setSoTimeout(5000);
+			clientSocket.setSoTimeout(TIMEOUT);
 			clientSocket.setTcpNoDelay(true);
 			clientSocket.getOutputStream().write((
 				"GET " + url.getPath() + "?" + url.getQuery() + " HTTP/1.1\r\nHost:" +
@@ -156,42 +203,150 @@ public final class HttpStreamReceiver implements Runnable {
 					"\r\nAccept: */*\r\nReferer: " + url.toExternalForm() +
 					"\r\nRange: bytes=0-\r\n\r\n").getBytes());
 			inputStream = clientSocket.getInputStream();
-			while (alive) {
+
+			//first: wait to receive the HTTP/1.1 2xx response
+			//second: check the content-type
+			//last: wait for an empty line (a line break followed by a line break)
+			len = 0;
+			boolean okToGo = false;
+			String contentType = null;
+			writeIndex = 0;
+			//if the header exceeds 16k bytes, something is likely to be wrong...
+			hdrLoop:
+			while (alive && writeIndex < 16384) {
 				try {
-					len = inputStream.read(tmp, 0, 512);
-				} catch (Throwable ex) {
-					len = 0;
+					int b;
+					switch ((b = inputStream.read())) {
+					case -1:
+						throw new IOException();
+					case '\r':
+						//don't place CR's into the buffer
+						writeIndex++;
+						break;
+					case '\n':
+						if (okToGo && contentType != null) {
+							if (len == 0) {
+								//after receiving the final empty line, just queue a fake response to be served
+								final byte[] hdr = ("HTTP/1.1 200 OK\r\nContent-Type: " + contentType +
+									"\r\nicy-name: FPlayStream \r\nicy-pub: 1\r\n\r\n").getBytes();
+								contentType = null;
+								if (buffer != null) {
+									System.arraycopy(hdr, 0, buffer, 0, hdr.length);
+									writeIndex = hdr.length;
+									storedLength.addAndGet(hdr.length);
+									synchronized (serverSync) {
+										serverSync.notify();
+									}
+								}
+								break hdrLoop;
+							}
+							len = 0;
+							continue;
+						}
+						writeIndex++;
+						String line = new String(buffer, 0, len);
+						if (!okToGo) {
+							if (line.startsWith("HTTP")) {
+								len = line.indexOf(' ');
+								if (len <= 0) {
+									len = 0;
+									continue;
+								}
+								if (line.length() <= (len + 3)) {
+									len = 0;
+									continue;
+								}
+								//we need a line like "HTTP/1.1 2xx"
+								if (line.charAt(len + 1) != '2')
+									throw new IOException();
+								okToGo = true;
+							}
+						} else {
+							line = line.toLowerCase();
+							if (line.startsWith("content-type")) {
+								len = line.indexOf(':');
+								if (len <= 0) {
+									len = 0;
+									continue;
+								}
+								if (line.length() <= (len + 6)) {
+									len = 0;
+									continue;
+								}
+								//we need a line like "content-type: audio/xxx"
+								contentType = line.substring(len + 1).trim();
+							}
+						}
+						len = 0;
+						break;
+					default:
+						writeIndex++;
+						if (len < 512)
+							buffer[len++] = (byte)b;
+						break;
+					}
+					timeoutCount = 0;
+				} catch (SocketTimeoutException ex) {
+					timeoutCount++;
+					if (timeoutCount >= MAX_TIMEOUT_COUNT)
+						throw ex;
 				}
-				if (len < 0)
-					break;
-
 			}
-			//while (alive) {
+			//oops... the header exceed our limit
+			if (writeIndex >= 16384)
+				throw new IOException();
 
-			//}
+			//from now on, just fill the buffer
+			timeoutCount = 0;
+			while (alive) {
+				if (writeIndex >= bufferLen)
+					writeIndex = 0;
+				final int maxLen1 = bufferLen - writeIndex;
+				final int maxLen2 = bufferLen - storedLength.get();
+				if (maxLen2 <= 0) {
+					//the buffer is still full, just wait sometime
+					synchronized (clientSync) {
+						if (!alive)
+							break;
+						try {
+							clientSync.wait(TIMEOUT);
+						} catch (Throwable ex) {
+							//ignore the interruptions
+						}
+					}
+					continue;
+				}
+				try {
+					if ((len = inputStream.read(buffer, writeIndex, maxLen1 <= maxLen2 ? maxLen1 : maxLen2)) == -1) {
+						//that's it! end of stream (probably this was just a file rather than a stream...)
+						finished = true;
+						synchronized (serverSync) {
+							serverSync.notify();
+						}
+						break;
+					}
+				} catch (SocketTimeoutException ex) {
+					timeoutCount++;
+					if (timeoutCount >= MAX_TIMEOUT_COUNT)
+						throw ex;
+				}
+				timeoutCount = 0;
+				storedLength.addAndGet(len);
+				writeIndex += len;
+				synchronized (serverSync) {
+					serverSync.notify();
+				}
+			}
 		} catch (Throwable ex) {
 			//abort everything!
 		} finally {
-			try {
-				if (clientSocket != null)
-					clientSocket.shutdownInput();
-				if (clientSocket != null)
-					clientSocket.shutdownOutput();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			try {
-				if (clientSocket != null)
-					clientSocket.close();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
+			closeSocket(clientSocket);
 		}
 	}
 
-	public void start() throws IOException {
+	public boolean start() {
 		if (alive || clientThread == null || serverThread == null || buffer == null)
-			return;
+			return false;
 		alive = true;
 		serverPortReady = 0;
 		serverThread.start();
@@ -205,8 +360,7 @@ public final class HttpStreamReceiver implements Runnable {
 				}
 			}
 		}
-		if (serverPortReady <= 0)
-			throw new IOException();
+		return (serverPortReady > 0);
 	}
 
 	public void stop() {
@@ -218,24 +372,9 @@ public final class HttpStreamReceiver implements Runnable {
 		synchronized (serverSync) {
 			serverSync.notify();
 		}
-		try {
-			if (clientSocket != null)
-				clientSocket.close();
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		try {
-			if (playerSocket != null)
-				playerSocket.close();
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		try {
-			if (serverSocket != null)
-				serverSocket.close();
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
+		closeSocket(clientSocket);
+		closeSocket(playerSocket);
+		closeSocket(serverSocket);
 		buffer = null;
 		clientThread = null;
 		serverThread = null;
