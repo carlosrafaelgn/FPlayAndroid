@@ -190,6 +190,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_COMMIT_VIRTUALIZER = 0x0118;
 	private static final int MSG_COMMIT_ALL_EFFECTS = 0x0119;
 	private static final int MSG_TURN_OFF_NOW = 0x011A;
+	private static final int MSG_RADIO_STATION_RESOLVED = 0x011B;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -254,10 +255,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static int audioSinkUsedInEffects;
 	public static int localAudioSinkUsedInEffects;
 
-	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
+	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState, radioStationResolverVersion;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayer player, nextPlayer;
+	private static RadioStationResolver radioStationResolver;
 
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
 	//so they will survive their respective activity's destruction
@@ -343,6 +345,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_SONG_LIST_DESERIALIZED:
 				_songListDeserialized(msg.obj);
+				break;
+			case MSG_RADIO_STATION_RESOLVED:
+				_radioStationResolved(msg.arg1, msg.arg2, msg.obj);
 				break;
 			}
 		}
@@ -926,6 +931,32 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	private static void _radioStationResolved(int version, int err, Object result) {
+		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
+			return;
+		_releaseRadioStationResolver();
+		if (err == 0 && result instanceof String) {
+			try {
+				//Even though it happens very rarely, a few devices will freeze and produce an ANR
+				//when calling setDataSource from the main thread :(
+				player.setDataSource(result.toString());
+				player.prepareAsync();
+				return;
+			} catch (Throwable ex) {
+				result = ex;
+			}
+		}
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (result == null || !(result instanceof TimeoutException)) ? -1004 : -110);
+	}
+
+	private static void _releaseRadioStationResolver() {
+		if (radioStationResolver != null) {
+			radioStationResolverVersion++;
+			radioStationResolver.cancel();
+			radioStationResolver = null;
+		}
+	}
+
 	private static void _partialCleanup() {
 		playerState = PLAYER_STATE_NEW;
 		playerBuffering = false;
@@ -945,6 +976,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		resumePlaybackAfterFocusGain = false;
 		songScheduledForPreparation = null;
 		nextSongScheduledForPreparation = null;
+		_releaseRadioStationResolver();
 		if (handler != null) {
 			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
 			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
@@ -1096,6 +1128,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						player.setVolume(multiplier, multiplier);
 					}
 					songWhenFirstErrorHappened = null;
+					_releaseRadioStationResolver();
 					_scheduleNextPlayerForPreparation();
 					_updateState(false, null);
 					return;
@@ -1109,6 +1142,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						player = nextPlayer;
 						nextPlayer = p;
 						nextSong = songArray[1];
+						_releaseRadioStationResolver();
 						_updateState(false, null);
 						return;
 					}
@@ -1123,10 +1157,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (song.path == null || song.path.length() == 0)
 				throw new IOException();
 			songScheduledForPreparation = song;
-			//Even though it happens very rarely, a few devices will freeze and produce an ANR
-			//when calling setDataSource from the main thread :(
-			player.setDataSource(song.path);
-			player.prepareAsync();
+
+			_releaseRadioStationResolver();
+
+			final Song.RadioStationExtraInfo extraInfo;
+			if (!song.isHttp || (extraInfo = song.extractRadioStationExtraInfo()) == null) {
+				//Even though it happens very rarely, a few devices will freeze and produce an ANR
+				//when calling setDataSource from the main thread :(
+				player.setDataSource(song.path);
+				player.prepareAsync();
+			} else {
+				radioStationResolver = new RadioStationResolver(MSG_RADIO_STATION_RESOLVED, radioStationResolverVersion, handler, extraInfo);
+				radioStationResolver.start();
+			}
 
 			nextPlayerState = PLAYER_STATE_NEW;
 			nextPlayer.reset();

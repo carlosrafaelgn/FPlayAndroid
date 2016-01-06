@@ -37,6 +37,7 @@ import android.content.Context;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -250,7 +251,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 					if (myVersion != version)
 						break;
 					if (parseIcecastRow(parser, fields, sb) && myVersion == version) {
-						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6].length() == 0 ? noTags : fields[6], fields[7], false);
+						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6].length() == 0 ? noTags : fields[6], fields[7], false, false);
 						synchronized (favoritesSync) {
 							station.isFavorite = favorites.contains(station);
 						}
@@ -273,18 +274,17 @@ public final class IcecastRadioStationList extends RadioStationList {
 		InputStream inputStream = null;
 		HttpURLConnection urlConnection = null;
 		try {
-			final int oldStationIndex = currentStationIndex;
-			boolean hasResults;
+			final int oldStationIndex = (reset ? 0 : currentStationIndex);
 			do {
 				if (myVersion == version) {
-					//icecast returns up to 20 results per page
+					//icecast returns up to 20 results per page and up to 5 pages
 					if (reset) {
 						reset = false;
 						pageNumber = 0;
 						currentStationIndex = 0;
 					} else {
 						pageNumber++;
-						if (pageNumber > 10 || currentStationIndex > 90) {
+						if (pageNumber > 4 || currentStationIndex > 90) {
 							fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
 							return;
 						}
@@ -305,13 +305,13 @@ public final class IcecastRadioStationList extends RadioStationList {
 					return;
 				if (err == 200) {
 					inputStream = urlConnection.getInputStream();
-					hasResults = parseIcecastResults(inputStream, fields, myVersion, sb);
+					parseIcecastResults(inputStream, fields, myVersion, sb);
 				} else {
-					hasResults = false;
+					throw new IOException();
 				}
 				//if we were not able to add at least 10 new stations, repeat the entire procedure
-			} while (myVersion == version && hasResults && currentStationIndex < (oldStationIndex + 10));
-			fetchStationsInternalResultsFound(myVersion, currentStationIndex, hasResults);
+			} while (myVersion == version && currentStationIndex < (oldStationIndex + 10));
+			fetchStationsInternalResultsFound(myVersion, currentStationIndex, true);
 			err = 0;
 		} catch (Throwable ex) {
 			err = -1;

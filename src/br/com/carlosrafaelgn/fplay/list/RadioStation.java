@@ -39,13 +39,13 @@ import java.io.OutputStream;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class RadioStation extends BaseItem {
-	public final String title, uri, type, /*listeners,*/ description, onAir, tags, m3uUrl;
+	public final String title, stationSiteUrl, type, /*listeners,*/ description, onAir, tags, m3uUrl;
 	private final int hash;
-	public boolean isFavorite;
+	public boolean isFavorite, isShoutcast;
 	
-	public RadioStation(String title, String uri, String type, String description, String onAir, String tags, String m3uUrl, boolean isFavorite) {
+	public RadioStation(String title, String stationSiteUrl, String type, String description, String onAir, String tags, String m3uUrl, boolean isFavorite, boolean isShoutcast) {
 		this.title = title;
-		this.uri = uri;
+		this.stationSiteUrl = stationSiteUrl;
 		this.type = type;
 		//this.listeners = listeners;
 		this.description = description;
@@ -53,6 +53,7 @@ public final class RadioStation extends BaseItem {
 		this.tags = tags;
 		this.m3uUrl = m3uUrl;
 		this.isFavorite = isFavorite;
+		this.isShoutcast = isShoutcast;
 		this.hash = m3uUrl.hashCode();
 	}
 	
@@ -74,28 +75,28 @@ public final class RadioStation extends BaseItem {
 	public void serialize(OutputStream os) throws IOException {
 		//NEVER change this order! (changing will destroy existing data)
 		Serializer.serializeString(os, title);
-		Serializer.serializeString(os, uri);
+		Serializer.serializeString(os, stationSiteUrl);
 		Serializer.serializeString(os, type);
 		Serializer.serializeString(os, description);
 		Serializer.serializeString(os, onAir);
 		Serializer.serializeString(os, tags);
 		Serializer.serializeString(os, m3uUrl);
-		Serializer.serializeInt(os, 0); //flags
+		Serializer.serializeInt(os, isShoutcast ? 1 : 0); //flags
 		Serializer.serializeInt(os, 0); //flags
 	}
 	
 	public static RadioStation deserialize(InputStream is, boolean isFavorite) throws IOException {
-		String title, uri, type, description, onAir, tags, m3uUri;
+		String title, stationSiteUrl, type, description, onAir, tags, m3uUri;
 		//NEVER change this order! (changing will destroy existing data)
 		title = Serializer.deserializeString(is);
-		uri = Serializer.deserializeString(is);
+		stationSiteUrl = Serializer.deserializeString(is);
 		type = Serializer.deserializeString(is);
 		description = Serializer.deserializeString(is);
 		onAir = Serializer.deserializeString(is);
 		tags = Serializer.deserializeString(is);
 		m3uUri = Serializer.deserializeString(is);
+		final int flags = Serializer.deserializeInt(is); //flags
 		Serializer.deserializeInt(is); //flags
-		Serializer.deserializeInt(is); //flags
-		return new RadioStation(title, uri, type, description, onAir, tags, m3uUri, isFavorite);
+		return new RadioStation(title, stationSiteUrl, type, description, onAir, tags, m3uUri, isFavorite, (flags & 1) != 0);
 	}
 }

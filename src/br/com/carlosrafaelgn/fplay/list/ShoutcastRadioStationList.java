@@ -53,7 +53,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 		this.noDescription = noDescription;
 	}
 
-	private boolean parseShoutcastStation(XmlPullParser parser, String[] fields) throws Throwable {
+	private boolean parseShoutcastStation(XmlPullParser parser, String[] fields) {
 		fields[0] = ""; //title
 		fields[1] = ""; //url
 		fields[2] = ""; //type
@@ -62,7 +62,30 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 		fields[5] = ""; //onAir
 		fields[6] = ""; //tags
 		fields[7] = ""; //m3uUrl
-
+		try {
+			for (int i = parser.getAttributeCount() - 1; i >= 0; i--) {
+				final String attribute = parser.getAttributeName(i);
+				if ("name".equals(attribute))
+					fields[0] = parser.getAttributeValue(i);
+				else if ("id".equals(attribute))
+					fields[1] = parser.getAttributeValue(i);
+				else if ("mt".equals(attribute))
+					fields[2] = parser.getAttributeValue(i);
+				else if ("lc".equals(attribute))
+					fields[3] = parser.getAttributeValue(i);
+				else if ("ct".equals(attribute))
+					fields[5] = parser.getAttributeValue(i);
+				else if ("br".equals(attribute))
+					fields[6] = parser.getAttributeValue(i) + "kbps";
+			}
+			if (fields[0].length() == 0 || fields[1].length() == 0)
+				return false;
+			fields[7] = "http://yp.shoutcast.com/sbin/tunein-station.m3u?id=" + fields[1];
+			if (fields[3].length() != 0)
+				fields[4] = "Listeners: " + fields[3];
+		} catch (Throwable ex) {
+			return false;
+		}
 		return true;
 	}
 
@@ -90,7 +113,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 					}
 				} else if (parser.getName().equals("station")) {
 					if (parseShoutcastStation(parser, fields) && myVersion == version) {
-						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6], fields[7], false);
+						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6], fields[7], false, true);
 						synchronized (favoritesSync) {
 							station.isFavorite = favorites.contains(station);
 						}
@@ -155,9 +178,9 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				inputStream = urlConnection.getInputStream();
 				hasResults = parseShoutcastResults(inputStream, fields, myVersion);
 			} else {
-				hasResults = false;
+				throw new IOException();
 			}
-			fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
+			fetchStationsInternalResultsFound(myVersion, currentStationIndex, hasResults);
 			err = 0;
 		} catch (Throwable ex) {
 			err = -1;

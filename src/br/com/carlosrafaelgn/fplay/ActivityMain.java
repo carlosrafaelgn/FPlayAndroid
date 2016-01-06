@@ -255,7 +255,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 
 		stringBuilder.append(getText(R.string.path));
 		stringBuilder.append('\n');
-		stringBuilder.append(song.path);
+		stringBuilder.append(song.getHumanReadablePath());
 
 		stringBuilder.append("\n\n");
 		stringBuilder.append(getText(R.string.title));
