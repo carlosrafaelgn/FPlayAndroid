@@ -34,6 +34,10 @@ package br.com.carlosrafaelgn.fplay.list;
 
 import android.content.Context;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -49,48 +53,130 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 		this.noDescription = noDescription;
 	}
 
+	private boolean parseShoutcastStation(XmlPullParser parser, String[] fields) throws Throwable {
+		fields[0] = ""; //title
+		fields[1] = ""; //url
+		fields[2] = ""; //type
+		fields[3] = ""; //listeners
+		fields[4] = ""; //description
+		fields[5] = ""; //onAir
+		fields[6] = ""; //tags
+		fields[7] = ""; //m3uUrl
+
+		return true;
+	}
+
+	private boolean parseShoutcastResults(InputStream is, String[] fields, int myVersion) throws Throwable {
+		boolean hasResults = false;
+		//According to these docs, kXML parser will accept some XML documents
+		//that should actually be rejected (A robust "relaxed" mode for parsing
+		//HTML or SGML files):
+		//http://developer.android.com/training/basics/network-ops/xml.html
+		//http://kxml.org/index.html
+		XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+		XmlPullParser parser = factory.newPullParser();
+		parser.setInput(is, "UTF-8");
+		//special feature! (check out kXML2 source and you will find it!)
+		parser.setFeature("http://xmlpull.org/v1/doc/features.html#relaxed", true);
+		int ev;
+		while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && currentStationIndex < MAX_COUNT) {
+			if (ev == XmlPullParser.START_TAG) {
+				if (myVersion != version)
+					break;
+				if (parser.getName().equals("statusCode")) {
+					if (parser.nextToken() == XmlPullParser.TEXT) {
+						if (Integer.parseInt(parser.getText()) != 200)
+							throw new IOException();
+					}
+				} else if (parser.getName().equals("station")) {
+					if (parseShoutcastStation(parser, fields) && myVersion == version) {
+						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6], fields[7], false);
+						synchronized (favoritesSync) {
+							station.isFavorite = favorites.contains(station);
+						}
+						if (myVersion != version)
+							break;
+						items[currentStationIndex++] = station;
+						hasResults = true;
+					}
+				}
+			}
+		}
+		return hasResults;
+	}
+
 	@Override
 	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset) {
 		int err = 0;
-		InputStream datInputStream = null;
+		InputStream inputStream = null;
+		HttpURLConnection urlConnection = null;
 		try {
-			if (reset && myVersion == version) {
-				pageNumber = 0;
-				currentStationIndex = 0;
+			if (myVersion == version) {
+				//for shoutcast, pageNumber stores the "limit" parameter
+				if (reset) {
+					pageNumber = 0;
+					currentStationIndex = 0;
+				} else {
+					pageNumber += 20;
+					if (pageNumber >= 100) {
+						fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
+						return;
+					}
+				}
 			}
 			boolean hasResults;
+			String[] fields = new String[8];
 
 			if (baseUrl == null) {
 				final byte[] tmp = new byte[67];
 				final byte[] tmp2 = {0x00, 0x08, 0x04, 0x0c, 0x02, 0x0a, 0x06, 0x0e, 0x01, 0x09, 0x05, 0x0d, 0x03, 0x0b, 0x07, 0x0f};
-				datInputStream = context.getAssets().open("binary/url.dat");
-				if (datInputStream.read(tmp, 0, 67) == 67) {
+				inputStream = context.getAssets().open("binary/url.dat");
+				if (inputStream.read(tmp, 0, 67) == 67) {
 					for (int i = 0; i < 67; i++) {
 						final byte b = tmp[i];
 						tmp[i] = (byte)((tmp2[b & 0x0f] << 4) | tmp2[(b >> 4) & 0x0f]);
 					}
 				}
-				datInputStream.close();
-				datInputStream = null;
+				inputStream.close();
+				inputStream = null;
 				//Sorry, everyone!!!
 				//As a part of the process of getting a DevID, they ask you not to make it publicly available :(
 				//But.... you can get your own DevID for FREE here: http://www.shoutcast.com/Partners :)
 				baseUrl = new String(tmp, 0, 67, "UTF-8");
 			}
-
+			urlConnection = (HttpURLConnection)(new URL(baseUrl + "&f=xml&mt=audio/mpeg&limit=" + pageNumber + ",20&" +
+				((genre != null) ? ("genre_id=" + genre.id) : ("search=" + URLEncoder.encode(searchTerm, "UTF-8"))))).openConnection();
+			if (myVersion != version)
+				return;
+			err = urlConnection.getResponseCode();
+			if (myVersion != version)
+				return;
+			if (err == 200) {
+				inputStream = urlConnection.getInputStream();
+				hasResults = parseShoutcastResults(inputStream, fields, myVersion);
+			} else {
+				hasResults = false;
+			}
 			fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
+			err = 0;
 		} catch (Throwable ex) {
 			err = -1;
 		} finally {
-			if (datInputStream != null) {
-				try {
-					datInputStream.close();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
+			try {
+				if (urlConnection != null)
+					urlConnection.disconnect();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			try {
+				if (inputStream != null)
+					inputStream.close();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			if (err < 0)
 				fetchStationsInternalError(myVersion, err);
+			System.gc();
 		}
 	}
 }

@@ -184,13 +184,13 @@ public final class IcecastRadioStationList extends RadioStationList {
 
 	private boolean parseIcecastRow(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
 		fields[0] = ""; //title
-		fields[1] = ""; //uri
+		fields[1] = ""; //url
 		fields[2] = ""; //type
 		fields[3] = ""; //listeners
 		fields[4] = ""; //description
 		fields[5] = ""; //onAir
 		fields[6] = ""; //tags
-		fields[7] = ""; //m3uUri
+		fields[7] = ""; //m3uUrl
 		int ev, colCount = 0;
 		while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && colCount < 2) {
 			if (ev == XmlPullParser.END_TAG && parser.getName().equals("tr"))
@@ -270,67 +270,67 @@ public final class IcecastRadioStationList extends RadioStationList {
 	@Override
 	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset) {
 		int err = 0;
+		InputStream inputStream = null;
+		HttpURLConnection urlConnection = null;
 		try {
-			if (reset && myVersion == version) {
-				pageNumber = 0;
-				currentStationIndex = 0;
-			}
+			final int oldStationIndex = currentStationIndex;
 			boolean hasResults;
-			String[] fields = new String[8];
-			final StringBuilder sb = new StringBuilder(256);
+			do {
+				if (myVersion == version) {
+					//icecast returns up to 20 results per page
+					if (reset) {
+						reset = false;
+						pageNumber = 0;
+						currentStationIndex = 0;
+					} else {
+						pageNumber++;
+						if (pageNumber > 10 || currentStationIndex > 90) {
+							fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
+							return;
+						}
+					}
+				}
+				String[] fields = new String[8];
+				final StringBuilder sb = new StringBuilder(256);
 
-			//genre MUST be one of the predefined genres (due to the encoding)
-			final String uri = ((genre != null) ?
-				("http://dir.xiph.org/by_genre/" + genre.name.replace(" ", "%20") + "?page=") :
-				("http://dir.xiph.org/search?search=" + URLEncoder.encode(searchTerm, "UTF-8") + "&page="));
-			if (myVersion != version)
-				return;
-			if (pageNumber >= 5) {
-				fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
-				return;
-			}
-			InputStream is = null;
-			HttpURLConnection urlConnection = null;
-			try {
-				urlConnection = (HttpURLConnection)(new URL(uri + pageNumber)).openConnection();
+				//genre MUST be one of the predefined genres (due to the encoding)
+				final String url = ((genre != null) ?
+					("http://dir.xiph.org/by_genre/" + genre.name.replace(" ", "%20") + "?page=") :
+					("http://dir.xiph.org/search?search=" + URLEncoder.encode(searchTerm, "UTF-8") + "&page="));
+				urlConnection = (HttpURLConnection)(new URL(url + pageNumber)).openConnection();
 				if (myVersion != version)
 					return;
 				err = urlConnection.getResponseCode();
 				if (myVersion != version)
 					return;
 				if (err == 200) {
-					is = urlConnection.getInputStream();
-					hasResults = parseIcecastResults(is, fields, myVersion, sb);
+					inputStream = urlConnection.getInputStream();
+					hasResults = parseIcecastResults(inputStream, fields, myVersion, sb);
 				} else {
 					hasResults = false;
 				}
-				fetchStationsInternalResultsFound(myVersion, currentStationIndex, hasResults);
-				err = 0;
-				if (myVersion != version)
-					return;
-				pageNumber++;
-			} catch (Throwable ex) {
-				err = -1;
-			} finally {
-				try {
-					if (urlConnection != null)
-						urlConnection.disconnect();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-				try {
-					if (is != null)
-						is.close();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-				System.gc();
-			}
+				//if we were not able to add at least 10 new stations, repeat the entire procedure
+			} while (myVersion == version && hasResults && currentStationIndex < (oldStationIndex + 10));
+			fetchStationsInternalResultsFound(myVersion, currentStationIndex, hasResults);
+			err = 0;
 		} catch (Throwable ex) {
 			err = -1;
 		} finally {
+			try {
+				if (urlConnection != null)
+					urlConnection.disconnect();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			try {
+				if (inputStream != null)
+					inputStream.close();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 			if (err < 0)
 				fetchStationsInternalError(myVersion, err);
+			System.gc();
 		}
 	}
 }

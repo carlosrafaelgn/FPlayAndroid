@@ -39,11 +39,11 @@ import java.io.OutputStream;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class RadioStation extends BaseItem {
-	public final String title, uri, type, /*listeners,*/ description, onAir, tags, m3uUri;
+	public final String title, uri, type, /*listeners,*/ description, onAir, tags, m3uUrl;
 	private final int hash;
 	public boolean isFavorite;
 	
-	public RadioStation(String title, String uri, String type, String description, String onAir, String tags, String m3uUri, boolean isFavorite) {
+	public RadioStation(String title, String uri, String type, String description, String onAir, String tags, String m3uUrl, boolean isFavorite) {
 		this.title = title;
 		this.uri = uri;
 		this.type = type;
@@ -51,14 +51,14 @@ public final class RadioStation extends BaseItem {
 		this.description = description;
 		this.onAir = onAir;
 		this.tags = tags;
-		this.m3uUri = m3uUri;
+		this.m3uUrl = m3uUrl;
 		this.isFavorite = isFavorite;
-		this.hash = m3uUri.hashCode();
+		this.hash = m3uUrl.hashCode();
 	}
 	
 	@Override
 	public boolean equals(Object o) {
-		return ((o == this) || ((o instanceof RadioStation) && ((RadioStation)o).m3uUri.equalsIgnoreCase(m3uUri)));
+		return ((o == this) || ((o instanceof RadioStation) && ((RadioStation)o).m3uUrl.equalsIgnoreCase(m3uUrl)));
 	}
 	
 	@Override
@@ -79,7 +79,7 @@ public final class RadioStation extends BaseItem {
 		Serializer.serializeString(os, description);
 		Serializer.serializeString(os, onAir);
 		Serializer.serializeString(os, tags);
-		Serializer.serializeString(os, m3uUri);
+		Serializer.serializeString(os, m3uUrl);
 		Serializer.serializeInt(os, 0); //flags
 		Serializer.serializeInt(os, 0); //flags
 	}

@@ -222,7 +222,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		r = a.onAir.compareToIgnoreCase(b.onAir);
 		if (r != 0)
 			return r;
-		return a.m3uUri.compareTo(b.m3uUri);
+		return a.m3uUrl.compareTo(b.m3uUrl);
 	}
 
 	@Override

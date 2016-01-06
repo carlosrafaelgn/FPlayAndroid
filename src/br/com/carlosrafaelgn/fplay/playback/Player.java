@@ -66,6 +66,7 @@ import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
@@ -3005,7 +3006,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (ex instanceof IllegalStateException) {
 				UI.toast(thePlayer, R.string.error_state);
 			} else if (ex instanceof FileNotFoundException) {
-				UI.toast(thePlayer, R.string.error_file_not_found);
+				UI.toast(thePlayer, (localSong != null && localSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_file_not_found);
 			} else if (ex instanceof TimeoutException) {
 				UI.toast(thePlayer, R.string.error_timeout);
 			} else if (ex instanceof MediaServerDiedException) {
@@ -3013,7 +3014,20 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			} else if (ex instanceof SecurityException) {
 				UI.toast(thePlayer, R.string.error_security);
 			} else if (ex instanceof IOException) {
-				UI.toast(thePlayer, (localSong != null && localSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_io);
+				int err = R.string.error_io;
+				if (localSong != null) {
+					if (localSong.isHttp) {
+						err = (!isConnectedToTheInternet() ? R.string.error_connection : R.string.error_io);
+					} else {
+						try {
+							if (!(new File(localSong.path)).exists())
+								err = R.string.error_file_not_found;
+						} catch (Throwable ex2) {
+							err = R.string.error_file_not_found;
+						}
+					}
+				}
+				UI.toast(thePlayer, err);
 			} else if (msg == null || msg.length() == 0) {
 				UI.toast(thePlayer, R.string.error_playback);
 			} else {

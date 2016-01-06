@@ -233,7 +233,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (radioStationList.getSelection() < 0)
 			return;
 		final RadioStation radioStation = radioStationList.getItemT(radioStationList.getSelection());
-		if (radioStation.m3uUri == null || radioStation.m3uUri.length() < 0) {
+		if (radioStation.m3uUrl == null || radioStation.m3uUrl.length() < 0) {
 			UI.toast(getApplication(), R.string.error_file_not_found);
 			return;
 		}
@@ -250,7 +250,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 					try {
 						if (Player.state >= Player.STATE_TERMINATING)
 							return;
-						urlConnection = (HttpURLConnection)(new URL(radioStation.m3uUri)).openConnection();
+						urlConnection = (HttpURLConnection)(new URL(radioStation.m3uUrl)).openConnection();
 						final int s = urlConnection.getResponseCode();
 						if (s == 200) {
 							is = urlConnection.getInputStream();

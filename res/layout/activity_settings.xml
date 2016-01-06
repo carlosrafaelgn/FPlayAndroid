@@ -25,6 +25,25 @@
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnBluetooth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/sep"
+            android:contentDescription="@string/bluetooth"
+            android:layout_alignParentTop="true"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/btnAbout"
+            android:nextFocusForward="@+id/btnAbout"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/sep"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:visibility="gone"/>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnAbout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
