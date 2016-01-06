@@ -1160,15 +1160,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 			_releaseRadioStationResolver();
 
-			final Song.RadioStationExtraInfo extraInfo;
-			if (!song.isHttp || (extraInfo = song.extractRadioStationExtraInfo()) == null) {
+			if (!song.isHttp || (radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, radioStationResolverVersion, handler, song.path)) == null) {
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(song.path);
 				player.prepareAsync();
-			} else {
-				radioStationResolver = new RadioStationResolver(MSG_RADIO_STATION_RESOLVED, radioStationResolverVersion, handler, extraInfo);
-				radioStationResolver.start();
 			}
 
 			nextPlayerState = PLAYER_STATE_NEW;

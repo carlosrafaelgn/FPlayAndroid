@@ -42,8 +42,6 @@ import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class Song extends BaseItem {
-	public static final String UNIT_SEPARATOR = "\u001F";
-	public static final char UNIT_SEPARATOR_CHAR = '\u001F';
 	public static final int EXTRA_ARTIST = 0;
 	public static final int EXTRA_ALBUM = 1;
 	public static final int EXTRA_TRACK_ARTIST = 2;
@@ -57,18 +55,6 @@ public final class Song extends BaseItem {
 	public int track, lengthMS, year;
 	public String length;
 	public boolean alreadyPlayed, selected;
-
-	public static final class RadioStationExtraInfo {
-		public final String streamUrl, m3uUrl, title;
-		public final boolean isShoutcast;
-
-		public RadioStationExtraInfo(String streamUrl, String m3uUrl, String title, boolean isShoutcast) {
-			this.streamUrl = streamUrl;
-			this.m3uUrl = m3uUrl;
-			this.title = title;
-			this.isShoutcast = isShoutcast;
-		}
-	}
 
 	public Song(String path, String title, String artist, String album, int track, int lengthMS, int year) {
 		this.path = path;
@@ -223,21 +209,8 @@ public final class Song extends BaseItem {
 	}
 
 	public String getHumanReadablePath() {
-		final int i = path.indexOf(UNIT_SEPARATOR_CHAR);
+		final int i = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR);
 		return ((i <= 0) ? path : path.substring(0, i));
-	}
-
-	public RadioStationExtraInfo extractRadioStationExtraInfo() {
-		if (!isHttp)
-			return null;
-		final int i = path.indexOf(UNIT_SEPARATOR_CHAR);
-		if (i <= 0)
-			return null;
-		final int i2 = path.indexOf(UNIT_SEPARATOR_CHAR, i + 1);
-		final int i3 = path.indexOf(UNIT_SEPARATOR_CHAR, i2 + 1);
-		if (i2 <= (i + 1) || i3 <= (i2 + 1))
-			return null;
-		return new RadioStationExtraInfo(path.substring(0, i), path.substring(i + 1, i2), path.substring(i2 + 1, i3), path.substring(i3 + 1).equals("1"));
 	}
 
 	public void updateExtraInfo() {
@@ -325,9 +298,5 @@ public final class Song extends BaseItem {
 		timeS %= 60;
 		if (timeS < 10) buf.append('0');
 		buf.append(timeS);
-	}
-
-	public static String buildRadioFullPath(String streamUrl, String m3uUrl, String title, boolean isShoutcast) {
-		return streamUrl + UNIT_SEPARATOR + m3uUrl + UNIT_SEPARATOR + title + UNIT_SEPARATOR + (isShoutcast ? "1" : "0");
 	}
 }

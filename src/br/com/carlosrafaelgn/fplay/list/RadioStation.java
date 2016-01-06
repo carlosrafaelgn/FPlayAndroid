@@ -39,10 +39,12 @@ import java.io.OutputStream;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class RadioStation extends BaseItem {
+	public static final String UNIT_SEPARATOR = "\u001F";
+	public static final char UNIT_SEPARATOR_CHAR = '\u001F';
 	public final String title, stationSiteUrl, type, /*listeners,*/ description, onAir, tags, m3uUrl;
 	private final int hash;
 	public boolean isFavorite, isShoutcast;
-	
+
 	public RadioStation(String title, String stationSiteUrl, String type, String description, String onAir, String tags, String m3uUrl, boolean isFavorite, boolean isShoutcast) {
 		this.title = title;
 		this.stationSiteUrl = stationSiteUrl;
@@ -56,22 +58,26 @@ public final class RadioStation extends BaseItem {
 		this.isShoutcast = isShoutcast;
 		this.hash = m3uUrl.hashCode();
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		return ((o == this) || ((o instanceof RadioStation) && ((RadioStation)o).m3uUrl.equalsIgnoreCase(m3uUrl)));
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return hash;
 	}
-	
+
 	@Override
 	public String toString() {
 		return title;
 	}
-	
+
+	public String buildFullPath(String streamUrl) {
+		return streamUrl + UNIT_SEPARATOR + m3uUrl + UNIT_SEPARATOR + title + UNIT_SEPARATOR + (isShoutcast ? "1" : "0");
+	}
+
 	public void serialize(OutputStream os) throws IOException {
 		//NEVER change this order! (changing will destroy existing data)
 		Serializer.serializeString(os, title);
@@ -84,7 +90,7 @@ public final class RadioStation extends BaseItem {
 		Serializer.serializeInt(os, isShoutcast ? 1 : 0); //flags
 		Serializer.serializeInt(os, 0); //flags
 	}
-	
+
 	public static RadioStation deserialize(InputStream is, boolean isFavorite) throws IOException {
 		String title, stationSiteUrl, type, description, onAir, tags, m3uUri;
 		//NEVER change this order! (changing will destroy existing data)

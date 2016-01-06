@@ -52,12 +52,6 @@ import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
@@ -67,6 +61,7 @@ import br.com.carlosrafaelgn.fplay.list.RadioStationGenre;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.playback.RadioStationResolver;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
@@ -77,7 +72,6 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
-import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, AdapterView.OnItemSelectedListener {
 	private static final class RadioStationAdapter implements SpinnerAdapter {
@@ -243,69 +237,19 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			(new Thread("Checked Radio Station Adder Thread") {
 				@Override
 				public void run() {
-					InputStream is = null;
-					InputStreamReader isr = null;
-					BufferedReader br = null;
-					HttpURLConnection urlConnection = null;
 					try {
 						if (Player.state >= Player.STATE_TERMINATING)
 							return;
-						urlConnection = (HttpURLConnection)(new URL(radioStation.m3uUrl)).openConnection();
-						final int s = urlConnection.getResponseCode();
-						if (s == 200) {
-							is = urlConnection.getInputStream();
-							isr = new InputStreamReader(is, "UTF-8");
-							br = new BufferedReader(isr, 1024);
-							TypedRawArrayList<String> lines = new TypedRawArrayList<>(String.class, 8);
-							String line;
-							while ((line = br.readLine()) != null) {
-								line = line.trim();
-								if (line.length() > 0 && line.charAt(0) != '#' &&
-									(line.regionMatches(true, 0, "http://", 0, 7) ||
-									line.regionMatches(true, 0, "https://", 0, 8)))
-									lines.add(line);
-							}
-							if (Player.state >= Player.STATE_TERMINATING)
-								return;
-							if (lines.size() == 0) {
-								MainHandler.toast(R.string.error_gen);
-							} else {
-								//instead of just using the first available address, let's use
-								//one from the middle ;)
-								Player.songs.addFiles(new FileSt[] { new FileSt(lines.get(lines.size() >> 1), radioStation.title, null, 0) }, null, 1, play, false, true, false);
-							}
-						} else {
-							MainHandler.toast((s >= 400 && s < 500) ? R.string.error_file_not_found : R.string.error_gen);
-						}
-					} catch (Throwable ex) {
-						MainHandler.toast(ex);
+						final int[] resultCode = { 0 };
+						final String streamUrl = RadioStationResolver.resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, resultCode);
+						if (Player.state >= Player.STATE_TERMINATING)
+							return;
+						if (streamUrl == null)
+							MainHandler.toast(((resultCode[0] >= 300 && resultCode[0] < 500) || resultCode[0] == 0) ? R.string.error_file_not_found : (resultCode[0] < 0 ? R.string.error_io : R.string.error_gen));
+						else
+							Player.songs.addFiles(new FileSt[]{new FileSt(radioStation.buildFullPath(streamUrl), radioStation.title, null, 0)}, null, 1, play, false, true, false);
 					} finally {
 						Player.songs.addingEnded();
-						try {
-							if (urlConnection != null)
-								urlConnection.disconnect();
-						} catch (Throwable ex) {
-							ex.printStackTrace();
-						}
-						try {
-							if (is != null)
-								is.close();
-						} catch (Throwable ex) {
-							ex.printStackTrace();
-						}
-						try {
-							if (isr != null)
-								isr.close();
-						} catch (Throwable ex) {
-							ex.printStackTrace();
-						}
-						try {
-							if (br != null)
-								br.close();
-						} catch (Throwable ex) {
-							ex.printStackTrace();
-						}
-						System.gc();
 					}
 				}
 			}).start();
