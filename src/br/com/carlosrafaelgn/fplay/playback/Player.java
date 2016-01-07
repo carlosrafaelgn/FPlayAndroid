@@ -69,6 +69,8 @@ import android.widget.RemoteViews;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashSet;
 
 import br.com.carlosrafaelgn.fplay.ExternalReceiver;
@@ -931,11 +933,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static void _radioStationResolved(int version, int err, Object result) {
+	private static void _radioStationResolved(int version, int httpCode, Object result) {
 		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseRadioStationResolver();
-		if (err == 0 && result instanceof String) {
+		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
 			try {
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
@@ -946,7 +948,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				result = ex;
 			}
 		}
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (result == null || !(result instanceof TimeoutException)) ? -1004 : -110);
+		//1001 = internal constant (not used by original MediaPlayer class) used to indicate that the file has not been found
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? 1001 : ((result == null || !(result instanceof TimeoutException)) ? -1004 : -110));
 	}
 
 	private static void _releaseRadioStationResolver() {
@@ -1493,12 +1496,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
 				_fullCleanup();
+				final Throwable result = ((extra == 1001) ? new FileNotFoundException() : ((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException()));
 				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 				//and the song was being prepared
 				if (howThePlayerStarted != SongList.HOW_CURRENT && howThePlayerStarted < 0)
-					_handleFailure((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException(), false);
+					_handleFailure(result, false);
 				else
-					_updateState(false, (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException());
+					_updateState(false, result);
 			}
 		} else {
 			_fullCleanup();
@@ -2257,6 +2261,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				play(forcePlayIdx);
 			break;
 		}
+	}
+
+	public static HttpURLConnection createConnection(String url) throws Throwable {
+		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(url)).openConnection();
+		urlConnection.setInstanceFollowRedirects(false);
+		urlConnection.setConnectTimeout(30000);
+		urlConnection.setDoInput(true);
+		urlConnection.setDoOutput(false);
+		urlConnection.setReadTimeout(30000);
+		urlConnection.setRequestMethod("GET");
+		urlConnection.setUseCaches(false);
+		return urlConnection;
 	}
 
 	public static boolean isConnectedToTheInternet() {

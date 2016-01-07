@@ -40,9 +40,10 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
 
+import br.com.carlosrafaelgn.fplay.list.IcecastRadioStationList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
+import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class RadioStationResolver extends Thread {
@@ -52,6 +53,7 @@ public final class RadioStationResolver extends Thread {
 	private String streamUrl, m3uUrl, title;
 	private final boolean isShoutcast;
 	private Handler handler;
+	private HttpStreamReceiver streamReceiver;
 
 	private RadioStationResolver(int msg, int arg1, Handler handler, String streamUrl, String m3uUrl, String title, boolean isShoutcast) {
 		super("Radio Station Resolver Thread");
@@ -64,6 +66,12 @@ public final class RadioStationResolver extends Thread {
 		this.m3uUrl = m3uUrl;
 		this.title = title;
 		this.isShoutcast = isShoutcast;
+		try {
+			streamReceiver = new HttpStreamReceiver(streamUrl, -1, false);
+		} catch (Throwable ex) {
+			streamReceiver = null;
+		}
+		setDaemon(true);
 	}
 
 	public static RadioStationResolver resolveIfNeeded(int msg, int arg1, Handler handler, String path) {
@@ -86,7 +94,7 @@ public final class RadioStationResolver extends Thread {
 		BufferedReader br = null;
 		HttpURLConnection urlConnection = null;
 		try {
-			urlConnection = (HttpURLConnection)(new URL(m3uUrl)).openConnection();
+			urlConnection = Player.createConnection(m3uUrl);
 			err = urlConnection.getResponseCode();
 			if (err == 200) {
 				is = urlConnection.getInputStream();
@@ -147,25 +155,71 @@ public final class RadioStationResolver extends Thread {
 
 	@Override
 	public void run() {
-		int err = -1;
+		final String streamUrl = this.streamUrl, m3uUrl = this.m3uUrl, title = this.title;
+		if (streamUrl == null || m3uUrl == null || title == null)
+			return;
+		int httpCode = -1;
 		Object result = null;
 		try {
-			err = 0;
-			result = "";
+			//first step: try to connect to the stream url, if it is possible, no further actions are required
+			try {
+				if (streamReceiver != null && streamReceiver.start() && streamReceiver.sendRequestAndParseResponse() != null) {
+					synchronized (sync) {
+						if (streamReceiver != null) {
+							httpCode = 200;
+							result = streamReceiver.getResolvedURL();
+							streamReceiver.stop();
+							streamReceiver = null;
+						}
+					}
+					return;
+				}
+			} catch (Throwable ex) {
+				httpCode = -1;
+			}
+
+			if (!alive)
+				return;
+
+			//second: try to resolve the stream url again (maybe something has changed)
+			result = resolveStreamUrlFromM3uUrl(m3uUrl, null);
+			if (!alive)
+				return;
+			if (result != null) {
+				httpCode = 200;
+				return;
+			}
+
+			//third: perform a new search for this radio station (this is the most time consuming operation)
+			final RadioStation radioStation = (isShoutcast ? new ShoutcastRadioStationList("", "") : new IcecastRadioStationList("", "", "", "")).tryToFetchRadioStationAgain(Player.getService(), title);
+			if (!alive)
+				return;
+			if (radioStation != null) {
+				result = resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, null);
+				if (!alive)
+					return;
+				if (result != null) {
+					httpCode = 200;
+					return;
+				}
+			}
+
+			httpCode = 0;
+			result = null;
 		} catch (Throwable ex) {
-			err = -1;
+			httpCode = -1;
 			result = ex;
 		} finally {
 			synchronized (sync) {
 				if (alive) {
 					alive = false;
 					if (handler != null) {
-						handler.sendMessageAtTime(Message.obtain(handler, msg, arg1, err, result), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, msg, arg1, httpCode, result), SystemClock.uptimeMillis());
 						handler = null;
 					}
-					streamUrl = null;
-					m3uUrl = null;
-					title = null;
+					this.streamUrl = null;
+					this.m3uUrl = null;
+					this.title = null;
 				}
 			}
 		}
@@ -178,6 +232,10 @@ public final class RadioStationResolver extends Thread {
 			streamUrl = null;
 			m3uUrl = null;
 			title = null;
+			if (streamReceiver != null) {
+				streamReceiver.stop();
+				streamReceiver = null;
+			}
 		}
 	}
 }

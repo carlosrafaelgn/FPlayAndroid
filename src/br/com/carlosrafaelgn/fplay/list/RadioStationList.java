@@ -389,7 +389,27 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			readyToFetch = true;
 		}
 	}
-	
+
+	public final RadioStation tryToFetchRadioStationAgain(Context context, String title) {
+		try {
+			//fetchStationsInternalResultsFound and fetchStationsInternalError will never
+			//call MainHandler.sendMessage because the versions do not match
+			version++;
+			fetchStationsInternal(context, version + 1, null, title, true);
+			if (items == null)
+				return null;
+			int i = 0;
+			RadioStation radioStation;
+			while (i < items.length && (radioStation = items[i]) != null) {
+				if (title.equalsIgnoreCase(radioStation.title))
+					return radioStation;
+			}
+			return null;
+		} catch (Throwable ex) {
+			return null;
+		}
+	}
+
 	@Override
 	public final boolean handleMessage(Message msg) {
 		if (Math.abs(msg.arg1) != version)

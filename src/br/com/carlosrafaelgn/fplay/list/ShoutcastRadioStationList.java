@@ -40,8 +40,9 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
+
+import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class ShoutcastRadioStationList extends RadioStationList {
 	private final String noOnAir, noDescription;
@@ -167,8 +168,8 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				//But.... you can get your own DevID for FREE here: http://www.shoutcast.com/Partners :)
 				baseUrl = new String(tmp, 0, 67, "UTF-8");
 			}
-			urlConnection = (HttpURLConnection)(new URL(baseUrl + "&f=xml&mt=audio/mpeg&limit=" + pageNumber + ",20&" +
-				((genre != null) ? ("genre_id=" + genre.id) : ("search=" + URLEncoder.encode(searchTerm, "UTF-8"))))).openConnection();
+			urlConnection = Player.createConnection(baseUrl + "&f=xml&mt=audio/mpeg&limit=" + pageNumber + ",20&" +
+				((genre != null) ? ("genre_id=" + genre.id) : ("search=" + URLEncoder.encode(searchTerm, "UTF-8"))));
 			if (myVersion != version)
 				return;
 			err = urlConnection.getResponseCode();

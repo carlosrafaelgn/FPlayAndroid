@@ -40,8 +40,9 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
+
+import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class IcecastRadioStationList extends RadioStationList {
 	private final String tags, noOnAir, noDescription, noTags;
@@ -297,7 +298,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 				final String url = ((genre != null) ?
 					("http://dir.xiph.org/by_genre/" + genre.name.replace(" ", "%20") + "?page=") :
 					("http://dir.xiph.org/search?search=" + URLEncoder.encode(searchTerm, "UTF-8") + "&page="));
-				urlConnection = (HttpURLConnection)(new URL(url + pageNumber)).openConnection();
+				urlConnection = Player.createConnection(url + pageNumber);
 				if (myVersion != version)
 					return;
 				err = urlConnection.getResponseCode();
