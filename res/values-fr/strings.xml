@@ -321,5 +321,6 @@
     <string name="path">Chemin</string>
     <string name="radio_directory">Répertoire de la radio online</string>
     <string name="all_kinds">Tout types</string>
+    <string name="listeners">Auditeurs</string>
 
 </resources>

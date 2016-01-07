@@ -45,11 +45,12 @@ import java.net.URLEncoder;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class ShoutcastRadioStationList extends RadioStationList {
-	private final String noOnAir, noDescription;
+	private final String listeners, noOnAir, noDescription;
 	private int pageNumber, currentStationIndex;
 	private String baseUrl;
 
-	public ShoutcastRadioStationList(String noOnAir, String noDescription) {
+	public ShoutcastRadioStationList(String listeners, String noOnAir, String noDescription) {
+		this.listeners = listeners + ": ";
 		this.noOnAir = noOnAir;
 		this.noDescription = noDescription;
 	}
@@ -83,7 +84,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				return false;
 			fields[7] = "http://yp.shoutcast.com/sbin/tunein-station.m3u?id=" + fields[1];
 			if (fields[3].length() != 0)
-				fields[4] = "Listeners: " + fields[3];
+				fields[4] = listeners + fields[3];
 		} catch (Throwable ex) {
 			return false;
 		}

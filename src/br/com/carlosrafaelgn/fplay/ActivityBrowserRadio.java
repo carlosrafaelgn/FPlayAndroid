@@ -634,7 +634,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected void onCreate() {
 		UI.browserActivity = this;
-		radioStationList = (useShoutcast ? new ShoutcastRadioStationList("-", getText(R.string.no_description).toString()) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString()));
+		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.listeners).toString(), "-", getText(R.string.no_description).toString()) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString()));
 		radioStationList.setOnBaseListSelectionChangedListener(this);
 	}
 	

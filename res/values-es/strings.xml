@@ -321,5 +321,6 @@
     <string name="path">Ruta</string>
     <string name="radio_directory">Directorio de radios online</string>
     <string name="all_kinds">Todos los tipos</string>
+    <string name="listeners">Oyentes</string>
 
 </resources>

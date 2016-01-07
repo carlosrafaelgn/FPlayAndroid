@@ -191,7 +191,7 @@ public final class RadioStationResolver extends Thread {
 			}
 
 			//third: perform a new search for this radio station (this is the most time consuming operation)
-			final RadioStation radioStation = (isShoutcast ? new ShoutcastRadioStationList("", "") : new IcecastRadioStationList("", "", "", "")).tryToFetchRadioStationAgain(Player.getService(), title);
+			final RadioStation radioStation = (isShoutcast ? new ShoutcastRadioStationList("", "", "") : new IcecastRadioStationList("", "", "", "")).tryToFetchRadioStationAgain(Player.getService(), title);
 			if (!alive)
 				return;
 			if (radioStation != null) {

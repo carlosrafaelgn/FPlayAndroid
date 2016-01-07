@@ -321,5 +321,6 @@
     <string name="path">Шлях</string>
     <string name="radio_directory">Каталог інтернет радіо</string>
     <string name="all_kinds">Всі типи</string>
+    <string name="listeners">Слухачі</string>
 
 </resources>

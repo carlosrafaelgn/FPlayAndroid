@@ -322,5 +322,6 @@
     <string name="path">Path</string>
     <string name="radio_directory">Online radio directory</string>
     <string name="all_kinds">All kinds</string>
+    <string name="listeners">Listeners</string>
 
 </resources>
