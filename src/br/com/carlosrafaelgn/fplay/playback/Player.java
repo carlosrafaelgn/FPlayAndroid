@@ -943,6 +943,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static boolean _radioResolutionNeeded() {
 		synchronized (internetObjectsSync) {
+			HttpStreamReceiver.bytesReceivedSoFar = 0;
 			return ((radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) != null);
 		}
 	}

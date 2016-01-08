@@ -58,6 +58,8 @@ public final class HttpStreamReceiver implements Runnable {
 	private static final int MAX_TIMEOUT_COUNT = 5;
 	private static final int MIN_BUFFER_LENGTH = 16 * 1024;
 
+	public static int bytesReceivedSoFar;
+
 	private final URL url;
 	private final Object sync, clientOkToWorkSignal, serverOkToWorkSignal;
 	private final AtomicInteger storedLength;
@@ -303,6 +305,7 @@ public final class HttpStreamReceiver implements Runnable {
 	}
 
 	public HttpStreamReceiver(int errorMsg, int arg1, Handler errorHandler, String url, int bufferLength, boolean createThreads) throws MalformedURLException {
+		bytesReceivedSoFar = 0;
 		final URL temp = new URL(url);
 		String path = temp.getPath();
 		String query = temp.getQuery();
@@ -510,6 +513,7 @@ public final class HttpStreamReceiver implements Runnable {
 						}
 						break;
 					}
+					bytesReceivedSoFar += len;
 					timeoutCount = 0;
 					//before notifying the server for the first, let's wait for the buffer to fill up
 					if (bufferingCounter >= 0) {
