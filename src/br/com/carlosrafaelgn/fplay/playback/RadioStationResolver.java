@@ -163,7 +163,7 @@ public final class RadioStationResolver extends Thread {
 		try {
 			//first step: try to connect to the stream url, if it is possible, no further actions are required
 			try {
-				if (streamReceiver != null && streamReceiver.start() && streamReceiver.sendRequestAndParseResponse() != null) {
+				if (streamReceiver != null && streamReceiver.start() && streamReceiver.sendRequestAndParseResponse()) {
 					synchronized (sync) {
 						if (streamReceiver != null) {
 							httpCode = 200;

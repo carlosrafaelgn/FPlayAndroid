@@ -258,6 +258,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static int audioSinkUsedInEffects;
 	public static int localAudioSinkUsedInEffects;
 
+	private static final Object internetObjectsSync = new Object();
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState, radioStationResolverVersion, httpStreamReceiverVersion;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
@@ -354,7 +355,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_radioStationResolved(msg.arg1, msg.arg2, msg.obj);
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_ERROR:
-				_httpStreamReceiverError(msg.arg1);
+				_httpStreamReceiverError(msg.arg1, msg.arg2);
 				break;
 			}
 		}
@@ -578,6 +579,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		state = STATE_TERMINATING;
+
+		_releaseInternetObjects();
 
 		looper.quit();
 
@@ -938,17 +941,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	private static boolean _radioResolutionNeeded() {
+		synchronized (internetObjectsSync) {
+			return ((radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) != null);
+		}
+	}
+
 	private static void _radioStationResolved(int version, int httpCode, Object result) {
 		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
 		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
 			try {
-				httpStreamReceiver = new HttpStreamReceiver(MSG_HTTP_STREAM_RECEIVER_ERROR, ++httpStreamReceiverVersion, handler, result.toString());
-				if (httpStreamReceiver.start())
-					result = httpStreamReceiver.getLocalURL();
-				else
-					_releaseInternetObjects();
+				synchronized (internetObjectsSync) {
+					httpStreamReceiver = new HttpStreamReceiver(MSG_HTTP_STREAM_RECEIVER_ERROR, ++httpStreamReceiverVersion, handler, result.toString());
+					if (httpStreamReceiver.start())
+						result = httpStreamReceiver.getLocalURL();
+					else
+						_releaseInternetObjects();
+				}
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(result.toString());
@@ -962,23 +973,27 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? 1001 : ((result == null || !(result instanceof TimeoutException)) ? -1004 : -110));
 	}
 
-	private static void _httpStreamReceiverError(int version) {
+	private static void _httpStreamReceiverError(int version, int errorCode) {
 		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? 1001 : -110);
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? 1001 : ((errorCode != 0) ? -1004 : -110));
 	}
 
 	private static void _releaseInternetObjects() {
-		if (radioStationResolver != null) {
-			radioStationResolverVersion++;
-			radioStationResolver.cancel();
-			radioStationResolver = null;
-		}
-		if (httpStreamReceiver != null) {
-			httpStreamReceiverVersion++;
-			httpStreamReceiver.stop();
-			httpStreamReceiver = null;
+		if (radioStationResolver != null || httpStreamReceiver != null) {
+			synchronized (internetObjectsSync) {
+				if (radioStationResolver != null) {
+					radioStationResolverVersion++;
+					radioStationResolver.cancel();
+					radioStationResolver = null;
+				}
+				if (httpStreamReceiver != null) {
+					httpStreamReceiverVersion++;
+					httpStreamReceiver.stop();
+					httpStreamReceiver = null;
+				}
+			}
 		}
 	}
 
@@ -1176,6 +1191,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			playing = false;
 			playerState = PLAYER_STATE_PREPARING;
 
+			_releaseInternetObjects();
+
 			if (how != SongList.HOW_CURRENT)
 				storedSongTime = -1;
 
@@ -1183,9 +1200,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				throw new IOException();
 			songScheduledForPreparation = song;
 
-			_releaseInternetObjects();
-
-			if (!song.isHttp || (radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) == null) {
+			if (!song.isHttp || !_radioResolutionNeeded()) {
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(song.path);
