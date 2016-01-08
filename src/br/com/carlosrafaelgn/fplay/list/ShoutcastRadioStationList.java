@@ -43,19 +43,21 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ShoutcastRadioStationList extends RadioStationList {
-	private final String listeners, noOnAir, noDescription;
+	private final String tags, listeners, noOnAir, noDescription;
 	private int pageNumber, currentStationIndex;
 	private String baseUrl;
 
-	public ShoutcastRadioStationList(String listeners, String noOnAir, String noDescription) {
+	public ShoutcastRadioStationList(String tags, String listeners, String noOnAir, String noDescription) {
+		this.tags = tags + ": ";
 		this.listeners = listeners + ": ";
 		this.noOnAir = noOnAir;
 		this.noDescription = noDescription;
 	}
 
-	private boolean parseShoutcastStation(XmlPullParser parser, String[] fields) {
+	private boolean parseShoutcastStation(XmlPullParser parser, TypedRawArrayList<String> tempGenres, String[] fields) {
 		fields[0] = ""; //title
 		fields[1] = ""; //url
 		fields[2] = ""; //type
@@ -64,6 +66,8 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 		fields[5] = ""; //onAir
 		fields[6] = ""; //tags
 		fields[7] = ""; //m3uUrl
+		String br = null, genre;
+		tempGenres.clear();
 		try {
 			for (int i = parser.getAttributeCount() - 1; i >= 0; i--) {
 				final String attribute = parser.getAttributeName(i);
@@ -78,13 +82,23 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				else if ("ct".equals(attribute))
 					fields[5] = parser.getAttributeValue(i);
 				else if ("br".equals(attribute))
-					fields[6] = parser.getAttributeValue(i) + "kbps";
+					br = parser.getAttributeValue(i) + "kbps";
+				else if (("genre".equals(attribute) || "genre2".equals(attribute) || "genre3".equals(attribute) || "genre4".equals(attribute)) &&
+					tempGenres.size() < 4 && !tempGenres.contains((genre = parser.getAttributeValue(i))))
+					tempGenres.add(genre);
 			}
 			if (fields[0].length() == 0 || fields[1].length() == 0)
 				return false;
 			fields[7] = "http://yp.shoutcast.com/sbin/tunein-station.m3u?id=" + fields[1];
 			if (fields[3].length() != 0)
 				fields[4] = listeners + fields[3];
+			if (br != null && br.length() != 0)
+				fields[4] = ((fields[4].length() == 0) ? br : (fields[4] + "\n" + br));
+			if (tempGenres.size() != 0) {
+				fields[6] = tags + tempGenres.get(0);
+				for (int i = 1; i < tempGenres.size(); i++)
+					fields[6] += ", " + parser.getAttributeValue(i);
+			}
 		} catch (Throwable ex) {
 			return false;
 		}
@@ -104,6 +118,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 		//special feature! (check out kXML2 source and you will find it!)
 		parser.setFeature("http://xmlpull.org/v1/doc/features.html#relaxed", true);
 		int ev;
+		final TypedRawArrayList<String> tempGenres = new TypedRawArrayList<>(String.class, 4);
 		while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && currentStationIndex < MAX_COUNT) {
 			if (ev == XmlPullParser.START_TAG) {
 				if (myVersion != version)
@@ -114,7 +129,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 							throw new IOException();
 					}
 				} else if (parser.getName().equals("station")) {
-					if (parseShoutcastStation(parser, fields) && myVersion == version) {
+					if (parseShoutcastStation(parser, tempGenres, fields) && myVersion == version) {
 						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6], fields[7], false, true);
 						synchronized (favoritesSync) {
 							station.isFavorite = favorites.contains(station);
@@ -127,6 +142,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				}
 			}
 		}
+		tempGenres.clear();
 		return hasResults;
 	}
 

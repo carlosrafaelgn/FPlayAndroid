@@ -67,7 +67,7 @@ public final class RadioStationResolver extends Thread {
 		this.title = title;
 		this.isShoutcast = isShoutcast;
 		try {
-			streamReceiver = new HttpStreamReceiver(streamUrl, -1, false);
+			streamReceiver = new HttpStreamReceiver(0, 0, null, streamUrl, -1, false);
 		} catch (Throwable ex) {
 			streamReceiver = null;
 		}
@@ -191,7 +191,7 @@ public final class RadioStationResolver extends Thread {
 			}
 
 			//third: perform a new search for this radio station (this is the most time consuming operation)
-			final RadioStation radioStation = (isShoutcast ? new ShoutcastRadioStationList("", "", "") : new IcecastRadioStationList("", "", "", "")).tryToFetchRadioStationAgain(Player.getService(), title);
+			final RadioStation radioStation = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new IcecastRadioStationList("", "", "", "")).tryToFetchRadioStationAgain(Player.getService(), title);
 			if (!alive)
 				return;
 			if (radioStation != null) {

@@ -109,7 +109,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 				if (ev == XmlPullParser.START_TAG && parser.getName().equals("a")) {
 					if (parser.nextToken() == XmlPullParser.TEXT) {
 						if (sb.length() > 0) {
-							sb.append(' ');
+							sb.append(", ");
 						} else {
 							sb.append(tags);
 							sb.append(": ");

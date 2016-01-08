@@ -189,7 +189,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	private void updateButtons() {
 		UI.animationReset();
-		if (!isAtFavorites != (btnFavorite.getVisibility() == View.VISIBLE)) {
+		if (isAtFavorites == (btnFavorite.getVisibility() == View.VISIBLE)) {
 			if (isAtFavorites) {
 				UI.animationAddViewToHide(btnFavorite);
 				UI.animationAddViewToHide(btnSearch);
@@ -634,7 +634,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	protected void onCreate() {
 		UI.browserActivity = this;
-		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.listeners).toString(), "-", getText(R.string.no_description).toString()) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString()));
+		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", getText(R.string.no_description).toString()) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString()));
 		radioStationList.setOnBaseListSelectionChangedListener(this);
 	}
 	

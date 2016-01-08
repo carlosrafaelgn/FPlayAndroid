@@ -193,6 +193,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_COMMIT_ALL_EFFECTS = 0x0119;
 	private static final int MSG_TURN_OFF_NOW = 0x011A;
 	private static final int MSG_RADIO_STATION_RESOLVED = 0x011B;
+	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x011C;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -257,11 +258,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static int audioSinkUsedInEffects;
 	public static int localAudioSinkUsedInEffects;
 
-	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState, radioStationResolverVersion;
+	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState, radioStationResolverVersion, httpStreamReceiverVersion;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayer player, nextPlayer;
 	private static RadioStationResolver radioStationResolver;
+	private static HttpStreamReceiver httpStreamReceiver;
 
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
 	//so they will survive their respective activity's destruction
@@ -350,6 +352,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_RADIO_STATION_RESOLVED:
 				_radioStationResolved(msg.arg1, msg.arg2, msg.obj);
+				break;
+			case MSG_HTTP_STREAM_RECEIVER_ERROR:
+				_httpStreamReceiverError(msg.arg1);
 				break;
 			}
 		}
@@ -936,9 +941,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static void _radioStationResolved(int version, int httpCode, Object result) {
 		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
 			return;
-		_releaseRadioStationResolver();
+		_releaseInternetObjects();
 		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
 			try {
+				httpStreamReceiver = new HttpStreamReceiver(MSG_HTTP_STREAM_RECEIVER_ERROR, ++httpStreamReceiverVersion, handler, result.toString());
+				if (httpStreamReceiver.start())
+					result = httpStreamReceiver.getLocalURL();
+				else
+					_releaseInternetObjects();
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(result.toString());
@@ -952,11 +962,23 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? 1001 : ((result == null || !(result instanceof TimeoutException)) ? -1004 : -110));
 	}
 
-	private static void _releaseRadioStationResolver() {
+	private static void _httpStreamReceiverError(int version) {
+		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
+			return;
+		_releaseInternetObjects();
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? 1001 : -110);
+	}
+
+	private static void _releaseInternetObjects() {
 		if (radioStationResolver != null) {
 			radioStationResolverVersion++;
 			radioStationResolver.cancel();
 			radioStationResolver = null;
+		}
+		if (httpStreamReceiver != null) {
+			httpStreamReceiverVersion++;
+			httpStreamReceiver.stop();
+			httpStreamReceiver = null;
 		}
 	}
 
@@ -979,7 +1001,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		resumePlaybackAfterFocusGain = false;
 		songScheduledForPreparation = null;
 		nextSongScheduledForPreparation = null;
-		_releaseRadioStationResolver();
+		_releaseInternetObjects();
 		if (handler != null) {
 			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
 			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
@@ -1131,7 +1153,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						player.setVolume(multiplier, multiplier);
 					}
 					songWhenFirstErrorHappened = null;
-					_releaseRadioStationResolver();
+					_releaseInternetObjects();
 					_scheduleNextPlayerForPreparation();
 					_updateState(false, null);
 					return;
@@ -1145,7 +1167,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						player = nextPlayer;
 						nextPlayer = p;
 						nextSong = songArray[1];
-						_releaseRadioStationResolver();
+						_releaseInternetObjects();
 						_updateState(false, null);
 						return;
 					}
@@ -1161,9 +1183,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				throw new IOException();
 			songScheduledForPreparation = song;
 
-			_releaseRadioStationResolver();
+			_releaseInternetObjects();
 
-			if (!song.isHttp || (radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, radioStationResolverVersion, handler, song.path)) == null) {
+			if (!song.isHttp || (radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) == null) {
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(song.path);
@@ -1886,7 +1908,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
-		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 21);
+		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		UI.setTransition((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
 		//the volume control types changed on version 71
@@ -2575,15 +2597,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				mediaSession = new MediaSession(thePlayer, "FPlay");
 				mediaSession.setCallback(new MediaSession.Callback() {
 					@Override
-					public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
-						if (mediaButtonIntent != null) {
-							final Object o = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-							if (o == null || !(o instanceof KeyEvent))
-								return false;
-							final KeyEvent e = (KeyEvent)o;
-							if (e.getAction() == KeyEvent.ACTION_DOWN)
-								handleMediaButton(e.getKeyCode());
-						}
+					public boolean onMediaButtonEvent(@NonNull Intent mediaButtonIntent) {
+						final Object o = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+						if (o == null || !(o instanceof KeyEvent))
+							return false;
+						final KeyEvent e = (KeyEvent)o;
+						if (e.getAction() == KeyEvent.ACTION_DOWN)
+							handleMediaButton(e.getKeyCode());
 						return true;
 					}
 

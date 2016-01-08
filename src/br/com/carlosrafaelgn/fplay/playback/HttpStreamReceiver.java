@@ -32,6 +32,10 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import android.os.Handler;
+import android.os.Message;
+import android.os.SystemClock;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -55,9 +59,11 @@ public final class HttpStreamReceiver implements Runnable {
 	private final URL url;
 	private final Object clientSync, serverSync;
 	private final AtomicInteger storedLength;
+	private final int errorMsg, arg1;
 	private volatile boolean alive, finished;
 	private volatile int serverPortReady;
 	private volatile byte[] buffer;
+	private Handler errorHandler;
 	private Thread clientThread, serverThread;
 	private Socket clientSocket, playerSocket;
 	private ServerSocket serverSocket;
@@ -115,6 +121,7 @@ public final class HttpStreamReceiver implements Runnable {
 						readIndex = 0;
 					final int maxLen1 = bufferLen - readIndex;
 					final int maxLen2 = storedLength.get();
+					System.out.println();
 					if (maxLen2 <= 0) {
 						synchronized (serverSync) {
 							if (!alive || finished)
@@ -143,7 +150,13 @@ public final class HttpStreamReceiver implements Runnable {
 					}
 				}
 			} catch (Throwable ex) {
-				//abort everything
+				//abort everything!
+				try {
+					if (errorHandler != null)
+						errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, -1), SystemClock.uptimeMillis());
+				} catch (Throwable ex2) {
+					errorHandler = null;
+				}
 			} finally {
 				synchronized (serverSync) {
 					closeSocket(playerSocket);
@@ -183,11 +196,11 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 	}
 
-	public HttpStreamReceiver(String url) throws MalformedURLException {
-		this(url, 256 * 1024, true);
+	public HttpStreamReceiver(int errorMsg, int arg1, Handler errorHandler, String url) throws MalformedURLException {
+		this(errorMsg, arg1, errorHandler, url, 256 * 1024, true);
 	}
 
-	public HttpStreamReceiver(String url, int bufferLength, boolean createThreads) throws MalformedURLException {
+	public HttpStreamReceiver(int errorMsg, int arg1, Handler errorHandler, String url, int bufferLength, boolean createThreads) throws MalformedURLException {
 		final URL temp = new URL(url);
 		String path = temp.getPath();
 		String query = temp.getQuery();
@@ -211,6 +224,9 @@ public final class HttpStreamReceiver implements Runnable {
 		serverSync = new Object();
 		storedLength = new AtomicInteger();
 		buffer = new byte[bufferLength <= (16 * 1024) ? (16 * 1024) : bufferLength];
+		this.errorMsg = errorMsg;
+		this.arg1 = arg1;
+		this.errorHandler = errorHandler;
 		if (createThreads) {
 			clientThread = new Thread(this, "HttpStreamReceiver Client");
 			serverThread = new Thread(new ServerRunnable(), "HttpStreamReceiver Server");
@@ -380,6 +396,12 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 		} catch (Throwable ex) {
 			//abort everything!
+			try {
+				if (errorHandler != null)
+					errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, -1), SystemClock.uptimeMillis());
+			} catch (Throwable ex2) {
+				errorHandler = null;
+			}
 		} finally {
 			synchronized (clientSync) {
 				closeSocket(clientSocket);
@@ -411,6 +433,7 @@ public final class HttpStreamReceiver implements Runnable {
 
 	public void stop() {
 		alive = false;
+		errorHandler = null;
 		synchronized (clientSync) {
 			clientThread = null;
 			clientSync.notify();
