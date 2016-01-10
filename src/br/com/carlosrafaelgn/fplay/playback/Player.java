@@ -194,6 +194,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_TURN_OFF_NOW = 0x011A;
 	private static final int MSG_RADIO_STATION_RESOLVED = 0x011B;
 	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x011C;
+	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x011D;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -219,6 +220,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
+
+	public static final int ERROR_NOT_FOUND = 1001; //1001 = internal constant (not used by original MediaPlayer class) used to indicate that the file has not been found
+	public static final int ERROR_IO = -1004; //MediaPlayer.MEDIA_ERROR_IO
+	public static final int ERROR_TIMED_OUT = -110; //MediaPlayer.MEDIA_ERROR_TIMED_OUT
 
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
@@ -405,6 +410,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_TURN_OFF_NOW:
 				stopService(false);
+				break;
+			case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
+				if (msg.obj != null)
+					httpStreamReceiverMetadataUpdate(msg.arg1, msg.obj.toString());
 				break;
 			}
 		}
@@ -941,10 +950,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static boolean _radioResolutionNeeded() {
+	private static void _resolveHttp() {
 		synchronized (internetObjectsSync) {
 			HttpStreamReceiver.bytesReceivedSoFar = 0;
-			return ((radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) != null);
+			//force all http songs to go through httpStreamReceiver
+			if ((radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) == null)
+				_radioStationResolved(radioStationResolverVersion, 200, song.path);
 		}
 	}
 
@@ -955,7 +966,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
 			try {
 				synchronized (internetObjectsSync) {
-					httpStreamReceiver = new HttpStreamReceiver(MSG_HTTP_STREAM_RECEIVER_ERROR, ++httpStreamReceiverVersion, handler, result.toString());
+					httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, result.toString());
 					if (httpStreamReceiver.start())
 						result = httpStreamReceiver.getLocalURL();
 					else
@@ -970,15 +981,36 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				result = ex;
 			}
 		}
-		//1001 = internal constant (not used by original MediaPlayer class) used to indicate that the file has not been found
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? 1001 : ((result == null || !(result instanceof TimeoutException)) ? -1004 : -110));
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? ERROR_NOT_FOUND : ((result == null || !(result instanceof TimeoutException)) ? ERROR_IO : ERROR_TIMED_OUT));
 	}
 
 	private static void _httpStreamReceiverError(int version, int errorCode) {
 		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? 1001 : ((errorCode != 0) ? -1004 : -110));
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, ((errorCode == -1) || !isConnectedToTheInternet()) ? ERROR_NOT_FOUND : ((errorCode != 0) ? ERROR_IO : ERROR_TIMED_OUT));
+	}
+
+	private static void httpStreamReceiverMetadataUpdate(int version, String metadata) {
+		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || localSong == null || localPlayer == null || thePlayer == null)
+			return;
+		int i;
+		if ((i = metadata.indexOf("StreamTitle")) < 0)
+			return;
+		if ((i = metadata.indexOf('=', i + 11)) < 0)
+			return;
+		if ((i = metadata.indexOf('\'', i + 1)) < 0)
+			return;
+		final int firstChar = i + 1;
+		int loopCount = 0;
+		do {
+			loopCount++;
+			if ((i = metadata.indexOf('\'', i + 1)) < 0)
+				return;
+		} while (metadata.charAt(i - 1) == '\\');
+		metadata = metadata.substring(firstChar, i);
+		if (loopCount > 1)
+			metadata = metadata.replace("\\'", "\'");
 	}
 
 	private static void _releaseInternetObjects() {
@@ -1201,11 +1233,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				throw new IOException();
 			songScheduledForPreparation = song;
 
-			if (!song.isHttp || !_radioResolutionNeeded()) {
+			if (!song.isHttp) {
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(song.path);
 				player.prepareAsync();
+			} else {
+				_resolveHttp();
 			}
 
 			nextPlayerState = PLAYER_STATE_NEW;
@@ -1534,7 +1568,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
 				_fullCleanup();
-				final Throwable result = ((extra == 1001) ? new FileNotFoundException() : ((extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT) ? new TimeoutException() : new IOException()));
+				final Throwable result = ((extra == ERROR_NOT_FOUND) ? new FileNotFoundException() : ((extra == ERROR_TIMED_OUT) ? new TimeoutException() : new IOException()));
 				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 				//and the song was being prepared
 				if (howThePlayerStarted != SongList.HOW_CURRENT && howThePlayerStarted < 0)

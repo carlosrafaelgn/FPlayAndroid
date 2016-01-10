@@ -67,7 +67,7 @@ public final class RadioStationResolver extends Thread {
 		this.title = title;
 		this.isShoutcast = isShoutcast;
 		try {
-			streamReceiver = new HttpStreamReceiver(0, 0, null, streamUrl, -1, false);
+			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, 0, streamUrl, -1, false);
 		} catch (Throwable ex) {
 			streamReceiver = null;
 		}
@@ -163,7 +163,7 @@ public final class RadioStationResolver extends Thread {
 		try {
 			//first step: try to connect to the stream url, if it is possible, no further actions are required
 			try {
-				if (streamReceiver != null && streamReceiver.start() && streamReceiver.sendRequestAndParseResponse(0)) {
+				if (streamReceiver != null && streamReceiver.pingServer()) {
 					synchronized (sync) {
 						if (streamReceiver != null) {
 							httpCode = 200;

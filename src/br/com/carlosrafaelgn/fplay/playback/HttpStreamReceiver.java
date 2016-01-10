@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -56,22 +57,27 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 public final class HttpStreamReceiver implements Runnable {
 	private static final int TIMEOUT = 5000;
 	private static final int MAX_TIMEOUT_COUNT = 5;
-	private static final int MIN_BUFFER_LENGTH = 16 * 1024;
-	private static final int MAX_METADATA_SIZE = (255 * 16);
-	private static final int PACKET_SIZE = 2048;
+	private static final int MAX_METADATA_LENGTH = (0xFF * 16);
+	private static final int MAX_HEADER_PACKET_LENGTH = 512; //an average response header has ~360 bytes (for a request header, even less than that)
+	private static final int MAX_PACKET_LENGTH = 2048;
+	private static final int MIN_BUFFER_LENGTH = 4 * MAX_PACKET_LENGTH;
+	private static final int EXTERNAL_BUFFER_LENGTH = (128 * 1024); //5.3s worth of data @ 192kbps
 
 	public static int bytesReceivedSoFar;
 
+	//God save the Internet :) (this was all the documentation I found!!!)
+	//http://www.smackfu.com/stuff/programming/shoutcast.html
+	//http://stackoverflow.com/questions/6061057/developing-the-client-for-the-icecast-server
 	private URL url;
 	private final Object sync, clientOkToWorkSignal, serverOkToWorkSignal;
 	private final AtomicInteger storedLength;
-	private final int errorMsg, arg1;
+	private final int errorMsg, metadataMsg, arg1;
 	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady;
 	private volatile ByteBuffer buffer;
 	private String contentType, icyUrl, icyGenre;
 	private int icyBitrate, icyMetaInterval;
-	private Handler errorHandler;
+	private Handler errorHandler, metadataHandler;
 	private Thread clientThread, serverThread;
 	private SocketChannel clientSocket, playerSocket;
 	private ServerSocketChannel serverSocket;
@@ -87,20 +93,22 @@ public final class HttpStreamReceiver implements Runnable {
 				playerSocket = localSocket;
 			}
 			final Socket s = localSocket.socket();
-			s.setReceiveBufferSize(1024);
-			s.setSendBufferSize(2 * MIN_BUFFER_LENGTH);
+			s.setReceiveBufferSize(MAX_HEADER_PACKET_LENGTH);
+			s.setSendBufferSize(MIN_BUFFER_LENGTH);
 			s.setSoTimeout(TIMEOUT);
 			s.setTcpNoDelay(true);
 
-			final ByteBuffer tmp = ByteBuffer.allocateDirect(512);
+			//since we are only accessing it from Java, using a DirectByteBuffer is
+			//slower than using a ByteArrayBuffer
+			final ByteBuffer tmp = ByteBuffer.wrap(new byte[MAX_HEADER_PACKET_LENGTH]);
 			int totalBytesRead = 0, lineLen = 0, timeoutCount = 0;
 			tmp.limit(0);
 			tmp.position(0);
 			while (alive && totalBytesRead < MIN_BUFFER_LENGTH) {
 				try {
 					if (tmp.remaining() == 0) {
-						//read at most 64 bytes at a time
-						tmp.limit(64);
+						//read at most MAX_HEADER_PACKET_LENGTH bytes at a time
+						tmp.limit(MAX_HEADER_PACKET_LENGTH);
 						tmp.position(0);
 						final int readLen = localSocket.read(tmp);
 						timeoutCount = 0;
@@ -235,10 +243,10 @@ public final class HttpStreamReceiver implements Runnable {
 						continue;
 					}
 					int len = ((maxLen1 <= maxLen2) ? maxLen1 : maxLen2);
-					//if we limit the amount to be written to PACKET_SIZE bytes we won't block
+					//if we limit the amount to be written to MAX_PACKET_LENGTH bytes we won't block
 					//playerSocket.write for long periods
-					if (len > PACKET_SIZE)
-						len = PACKET_SIZE;
+					if (len > MAX_PACKET_LENGTH)
+						len = MAX_PACKET_LENGTH;
 					readBuffer.limit(readBuffer.position() + len);
 					try {
 						len = playerSocket.write(readBuffer);
@@ -270,7 +278,7 @@ public final class HttpStreamReceiver implements Runnable {
 					return;
 				try {
 					if (errorHandler != null)
-						errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : -1), SystemClock.uptimeMillis());
+						errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
 				} catch (Throwable ex2) {
 					errorHandler = null;
 				}
@@ -282,6 +290,57 @@ public final class HttpStreamReceiver implements Runnable {
 					serverSocket = null;
 				}
 			}
+		}
+	}
+
+	private static String detectCharsetAndDecode(byte[] buffer, int offset, int length) {
+		//maybe one day we could place this method in its own class...
+		boolean appearsUtf8 = true;
+		int pendingUtf8Bytes = 0;
+		length += offset;
+		for (int i = offset; i < length; i++) {
+			int b = ((int)buffer[i] & 0xFF);
+			if (pendingUtf8Bytes == 0) {
+				if (b <= 0x7F)
+					continue;
+				if (b >= 0xC0) { //11000000
+					if (b < 0xE0) { //11100000
+						pendingUtf8Bytes = 1;
+					} else if (b < 0xF0) { //11110000
+						pendingUtf8Bytes = 2;
+					} else if (b < 0xF8) { //11111000
+						pendingUtf8Bytes = 3;
+					} else if (b < 0xFC) { //11111100
+						pendingUtf8Bytes = 4;
+					} else if (b < 0xFE) { //11111110
+						pendingUtf8Bytes = 5;
+					} else {
+						appearsUtf8 = false;
+						break;
+					}
+				} else {
+					appearsUtf8 = false;
+					break;
+				}
+			} else {
+				if (b >= 0x80 && b <= 0xBF) {
+					pendingUtf8Bytes--;
+				} else {
+					appearsUtf8 = false;
+					break;
+				}
+			}
+		}
+		try {
+			if (appearsUtf8)
+				return new String(buffer, offset, length - offset, "UTF-8");
+		} catch (Throwable ex) {
+			//???
+		}
+		try {
+			return new String(buffer, offset, length - offset, "ISO-8859-1");
+		} catch (Throwable ex) {
+			return null;
 		}
 	}
 
@@ -338,21 +397,24 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(int errorMsg, int arg1, Handler errorHandler, String url) throws MalformedURLException {
-		this(errorMsg, arg1, errorHandler, url, 256 * 1024, true);
+	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler metadataHandler, int metadataMsg, int arg1, String url) throws MalformedURLException {
+		this(errorHandler, errorMsg, metadataHandler, metadataMsg, arg1, url, EXTERNAL_BUFFER_LENGTH, true);
 	}
 
-	public HttpStreamReceiver(int errorMsg, int arg1, Handler errorHandler, String url, int bufferLength, boolean createThreads) throws MalformedURLException {
+	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler metadataHandler, int metadataMsg, int arg1, String url, int bufferLength, boolean createThreads) throws MalformedURLException {
 		bytesReceivedSoFar = 0;
+		alive = true;
 		this.url = normalizeIcyUrl(url);
 		sync = new Object();
 		clientOkToWorkSignal = new Object();
 		serverOkToWorkSignal = new Object();
 		storedLength = new AtomicInteger();
 		buffer = ByteBuffer.allocateDirect(bufferLength <= MIN_BUFFER_LENGTH ? MIN_BUFFER_LENGTH : bufferLength);
-		this.errorMsg = errorMsg;
-		this.arg1 = arg1;
 		this.errorHandler = errorHandler;
+		this.errorMsg = errorMsg;
+		this.metadataHandler = metadataHandler;
+		this.metadataMsg = metadataMsg;
+		this.arg1 = arg1;
 		if (createThreads) {
 			clientThread = new Thread(this, "HttpStreamReceiver Client");
 			clientThread.setDaemon(true);
@@ -361,18 +423,30 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 	}
 
-	public boolean sendRequestAndParseResponse(int redirectCount) throws IOException {
-		if (redirectCount >= 3)
+	public boolean pingServer() throws IOException {
+		return sendRequestAndParseResponse(0);
+	}
+
+	private boolean sendRequestAndParseResponse(int redirectCount) throws IOException {
+		if (!alive)
 			return false;
-		//God save the Internet!!! :)
-		//http://www.smackfu.com/stuff/programming/shoutcast.html
-		//http://stackoverflow.com/questions/6061057/developing-the-client-for-the-icecast-server
+		if (redirectCount >= 3)
+			throw new FileNotFoundException();
 		headerOk = false;
 		contentType = null;
 		icyUrl = null;
 		icyGenre = null;
 		icyBitrate = 0;
 		icyMetaInterval = 0;
+		if (clientSocket != null) {
+			//this allows pingServer() to be called multiple times
+			synchronized (sync) {
+				if (clientSocket != null) {
+					closeSocket(clientSocket);
+					clientSocket = null;
+				}
+			}
+		}
 		final SocketChannel localSocket = SocketChannel.open(new InetSocketAddress(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort()));
 		synchronized (sync) {
 			if (!alive) {
@@ -382,8 +456,8 @@ public final class HttpStreamReceiver implements Runnable {
 			clientSocket = localSocket;
 		}
 		final Socket s = localSocket.socket();
-		s.setReceiveBufferSize(2 * MIN_BUFFER_LENGTH);
-		s.setSendBufferSize(256);
+		s.setReceiveBufferSize(EXTERNAL_BUFFER_LENGTH);
+		s.setSendBufferSize(MAX_HEADER_PACKET_LENGTH);
 		s.setSoTimeout(TIMEOUT);
 		s.setTcpNoDelay(true);
 		final byte[] httpCommand = ("GET " + url.getFile() + " HTTP/1.1\r\nHost:" +
@@ -398,22 +472,22 @@ public final class HttpStreamReceiver implements Runnable {
 		buffer.position(0);
 		localSocket.write(buffer);
 
-		//first: wait to receive the HTTP/1.1 2xx response
-		//second: check the content-type
-		//last: wait for an empty line (a line break followed by a line break)
+		//first: wait to receive the HTTPx 2xx or ICYx 2xx response
+		//second: check the content-type and the other icy-xxx headers
+		//last: wait for an empty line (a line break followed by another line break)
 
-		final byte[] tmpLine = new byte[64];
+		final byte[] tmpLine = new byte[128];
 		int totalBytesRead = 0, lineLen = 0, timeoutCount = 0;
 		buffer.limit(0);
 		buffer.position(0);
 		boolean okToGo = false, shouldRedirectOnCompletion = false;
 
-		//if the header exceeds 16k bytes, something is likely to be wrong...
+		//if the header exceeds MIN_BUFFER_LENGTH bytes, something is likely to be wrong...
 		while (alive && totalBytesRead < MIN_BUFFER_LENGTH) {
 			try {
 				if (buffer.remaining() == 0) {
-					//read at most 256 bytes at a time
-					buffer.limit(256);
+					//read at most MAX_HEADER_PACKET_LENGTH bytes at a time
+					buffer.limit(MAX_HEADER_PACKET_LENGTH);
 					buffer.position(0);
 					final int readLen = localSocket.read(buffer);
 					timeoutCount = 0;
@@ -464,7 +538,7 @@ public final class HttpStreamReceiver implements Runnable {
 								lineLen = 0;
 								continue;
 							}
-							//we need a line like "HTTP/1.0 2xx", "HTTP/1.1 2xx" or "ICY 2xx"
+							//we need a line like "HTTPx 2xx" or "ICYx 2xx"
 							okToGo = true;
 							switch (line.charAt(lineLen + 1)) {
 							case '2':
@@ -472,7 +546,9 @@ public final class HttpStreamReceiver implements Runnable {
 							case '3':
 								shouldRedirectOnCompletion = true;
 								break;
-							default:
+							case '4': //assume all 4xx codes as 404
+								throw new FileNotFoundException();
+							default: //we do not accept 1xx and 5xx replies
 								throw new IOException();
 							}
 						}
@@ -518,7 +594,7 @@ public final class HttpStreamReceiver implements Runnable {
 					break;
 				default:
 					totalBytesRead++;
-					if (lineLen < 64)
+					if (lineLen < 128)
 						tmpLine[lineLen++] = b;
 					break;
 				}
@@ -544,7 +620,6 @@ public final class HttpStreamReceiver implements Runnable {
 			bufferLen = buffer.capacity();
 			writeBuffer = buffer;
 		}
-		//final int criticalLevel = ((bufferLen * 9) / 10);
 		int timeoutCount = 0, bufferingCounter, audioCountdown, metaCountdown = 0;
 
 		try {
@@ -554,14 +629,13 @@ public final class HttpStreamReceiver implements Runnable {
 			//sendRequestAndParseResponse() left the buffer/writeBuffer with a few remaining
 			//bytes (which are audio that must be accounted for)
 			audioCountdown = writeBuffer.remaining();
-			System.out.println("remaining " + audioCountdown);
+			writeBuffer.position(writeBuffer.limit());
 			bufferingCounter = audioCountdown;
 			audioCountdown = icyMetaInterval - audioCountdown;
-			System.out.println("initial " + audioCountdown);
 
 			//do not allocate a direct buffer for the metadata, as we will have to access
 			//that data constantly from Java
-			final byte[] metaBuffer = ((icyMetaInterval > 0) ? new byte[MAX_METADATA_SIZE] : null);
+			final byte[] metaBuffer = ((icyMetaInterval > 0) ? new byte[MAX_METADATA_LENGTH] : null);
 			final ByteBuffer metaByteBuffer = ((metaBuffer != null) ? ByteBuffer.wrap(metaBuffer) : null);
 
 			//from now on, just fill our local buffer
@@ -582,15 +656,18 @@ public final class HttpStreamReceiver implements Runnable {
 							metaCountdown = (((int)metaBuffer[0] & 0xFF) << 4);
 							metaByteBuffer.limit(metaCountdown);
 							metaByteBuffer.position(0);
-							System.out.println("meta started " + metaCountdown);
 						} else {
 							metaCountdown -= len;
 							if (metaCountdown <= 0) {
 								//we finished reading all the metadata!
 								metaCountdown = 0;
-								//..........
-								System.out.println("meta finished " + metaByteBuffer.position());
-								System.out.println(new String(metaBuffer, 0, metaByteBuffer.position(), "UTF-8"));
+								if (metadataHandler != null) {
+									int i = metaByteBuffer.position() - 1;
+									while (i > 0 && metaBuffer[i] == 0)
+										i--;
+									if (i >= 0)
+										metadataHandler.sendMessageAtTime(Message.obtain(metadataHandler, metadataMsg, arg1, 0, detectCharsetAndDecode(metaBuffer, 0, i + 1)), SystemClock.uptimeMillis());
+								}
 							}
 						}
 					} catch (SocketTimeoutException ex) {
@@ -608,29 +685,25 @@ public final class HttpStreamReceiver implements Runnable {
 				if (maxLen2 <= 0) {
 					//the buffer is still full... because of metadata, we will
 					//have to start discarding old data :(
-					storedLength.addAndGet(-PACKET_SIZE);
-					final int newPosition = writeBuffer.position() - PACKET_SIZE;
+					storedLength.addAndGet(-MAX_PACKET_LENGTH);
+					final int newPosition = writeBuffer.position() - MAX_PACKET_LENGTH;
 					writeBuffer.position((newPosition < 0) ? (bufferLen - newPosition) : newPosition);
 					continue;
 				}
-				//if we are already running, but almost running out of data, let's halt and buffer more data
-				//if (bufferingCounter < 0 && maxLen2 >= criticalLevel) {
-				//	bufferingCounter = 0;
-				//}
 				len = ((maxLen1 <= maxLen2) ? maxLen1 : maxLen2);
 
 				//we cannot read metadata as audio
 				if (metaByteBuffer != null && len > audioCountdown)
 					len = audioCountdown;
 
-				//if we limit the amount to be read to PACKET_SIZE bytes we won't block
+				//if we limit the amount to be read to MAX_PACKET_LENGTH bytes we won't block
 				//clientSocket.read for long periods
 				if (bufferingCounter >= 0) {
-					if (len > (PACKET_SIZE >> 1))
-						len = (PACKET_SIZE >> 1);
+					if (len > (MAX_PACKET_LENGTH >> 1))
+						len = (MAX_PACKET_LENGTH >> 1);
 				} else {
-					if (len > PACKET_SIZE)
-						len = PACKET_SIZE;
+					if (len > MAX_PACKET_LENGTH)
+						len = MAX_PACKET_LENGTH;
 				}
 
 				writeBuffer.limit(writeBuffer.position() + len);
@@ -646,7 +719,6 @@ public final class HttpStreamReceiver implements Runnable {
 
 					audioCountdown -= len;
 					if (audioCountdown <= 0) {
-						System.out.println("reset! " + audioCountdown);
 						metaCountdown = -1;
 						audioCountdown = icyMetaInterval;
 					}
@@ -681,7 +753,7 @@ public final class HttpStreamReceiver implements Runnable {
 				return;
 			try {
 				if (errorHandler != null)
-					errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : -1), SystemClock.uptimeMillis());
+					errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
 			} catch (Throwable ex2) {
 				errorHandler = null;
 			}
@@ -694,12 +766,8 @@ public final class HttpStreamReceiver implements Runnable {
 	}
 
 	public boolean start() {
-		if (alive || buffer == null)
+		if (!alive || buffer == null || serverThread == null || clientThread == null)
 			return false;
-		alive = true;
-		serverPortReady = 0;
-		if (serverThread == null || clientThread == null)
-			return true;
 		clientThread.start();
 		serverThread.start();
 		synchronized (sync) {
@@ -724,6 +792,7 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 		synchronized (sync) {
 			errorHandler = null;
+			metadataHandler = null;
 			serverPortReady = 0;
 			if (serverThread != null) {
 				serverThread.interrupt();
