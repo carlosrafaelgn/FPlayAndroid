@@ -212,15 +212,15 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		return false;
 	}
 
-	private void updateTitle(Song currentSong) {
+	private void updateTitle() {
 		if (lblTitle == null)
 			return;
-		if (currentSong == null) {
+		if (Player.localSong == null) {
 			lblTitle.setText(getText(R.string.nothing_playing));
 		} else {
-			String txt = (Player.isPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title);
-			if (currentSong.extraInfo != null && currentSong.extraInfo.length() > 0 && (currentSong.extraInfo.length() > 1 || currentSong.extraInfo.charAt(0) != '-'))
-				txt += "\n" + currentSong.extraInfo;
+			String txt = Player.getCurrentTitle(Player.isPreparing());
+			if (Player.localSong.extraInfo != null && Player.localSong.extraInfo.length() > 0 && (Player.localSong.extraInfo.length() > 1 || Player.localSong.extraInfo.charAt(0) != '-'))
+				txt += "\n" + Player.localSong.extraInfo;
 			lblTitle.setText(txt);
 		}
 	}
@@ -439,7 +439,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		btnMenu.setOnClickListener(this);
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		UI.mediumText(lblTitle);
-		updateTitle(Player.localSong);
+		updateTitle();
 
 		//if (UI.extraSpacing)
 		//	panelTop.setPadding(UI._8dp, UI._8dp, UI._8dp, UI._8dp);
@@ -613,12 +613,17 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			btnPlay.setContentDescription(getText(Player.localPlaying ? R.string.pause : R.string.play));
 		}
 		if (songHasChanged || preparingHasChanged)
-			updateTitle(currentSong);
+			updateTitle();
 		final Visualizer v = visualizer;
 		if (v != null)
 			v.onPlayerChanged(currentSong, songHasChanged, ex);
 	}
-	
+
+	@Override
+	public void onPlayerMetadataChanged(Song currentSong) {
+		updateTitle();
+	}
+
 	@Override
 	public void onPlayerControlModeChanged(boolean controlMode) {
 	}

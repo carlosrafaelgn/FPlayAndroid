@@ -75,7 +75,7 @@ public final class HttpStreamReceiver implements Runnable {
 	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady;
 	private volatile ByteBuffer buffer;
-	private String contentType, icyUrl, icyGenre;
+	private String contentType, icyName, icyUrl, icyGenre;
 	private int icyBitrate, icyMetaInterval;
 	private Handler errorHandler, metadataHandler;
 	private Thread clientThread, serverThread;
@@ -434,6 +434,7 @@ public final class HttpStreamReceiver implements Runnable {
 			throw new FileNotFoundException();
 		headerOk = false;
 		contentType = null;
+		icyName = null;
 		icyUrl = null;
 		icyGenre = null;
 		icyBitrate = 0;
@@ -572,6 +573,15 @@ public final class HttpStreamReceiver implements Runnable {
 							icyUrl = line.substring(lineLen + 1).trim();
 						} else if (line.regionMatches(true, 0, "icy-genre", 0, 9)) {
 							icyGenre = line.substring(lineLen + 1).trim();
+						} else if (line.regionMatches(true, 0, "icy-name", 0, 8)) {
+							final String name = line.substring(lineLen + 1).trim();
+							if (name.length() != 0)
+								icyName = name;
+						} else if (line.regionMatches(true, 0, "icy-description", 0, 15)) {
+							//use the description as the name only if not overwriting an existing name
+							final String description = line.substring(lineLen + 1).trim();
+							if (description.length() != 0 && icyName == null)
+								icyName = description;
 						} else if (line.regionMatches(true, 0, "icy-metaint", 0, 11)) {
 							try {
 								final int metaint = Integer.parseInt(line.substring(lineLen + 1).trim());
@@ -728,13 +738,13 @@ public final class HttpStreamReceiver implements Runnable {
 					//before notifying the server for the first time, let's wait for the buffer to fill up
 					if (bufferingCounter >= 0) {
 						bufferingCounter += len;
-						if (bufferingCounter >= MIN_BUFFER_LENGTH) {
+						//if (bufferingCounter >= MIN_BUFFER_LENGTH) {
 							storedLength.addAndGet(bufferingCounter);
 							synchronized (serverOkToWorkSignal) {
 								serverOkToWorkSignal.notify();
 							}
 							bufferingCounter = -1;
-						}
+						//}
 					} else {
 						storedLength.addAndGet(len);
 						synchronized (serverOkToWorkSignal) {
@@ -819,5 +829,13 @@ public final class HttpStreamReceiver implements Runnable {
 
 	public String getLocalURL() {
 		return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
+	}
+
+	public String getIcyName() {
+		return icyName;
+	}
+
+	public String getIcyUrl() {
+		return icyUrl;
 	}
 }

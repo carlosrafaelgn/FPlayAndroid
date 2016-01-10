@@ -133,6 +133,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
 	public interface PlayerObserver {
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
+		void onPlayerMetadataChanged(Song currentSong);
 		void onPlayerControlModeChanged(boolean controlMode);
 		void onPlayerGlobalVolumeChanged(int volume);
 		void onPlayerAudioSinkChanged();
@@ -872,6 +873,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return (localPlayerState == PLAYER_STATE_PREPARING || playerBuffering);
 	}
 
+	public static String getCurrentTitle(boolean preparing) {
+		return ((thePlayer == null) ? "" :
+			((localSong == null) ? thePlayer.getText(R.string.nothing_playing).toString() :
+				(!preparing ? localSong.title :
+					(thePlayer.getText(R.string.loading) + " " + localSong.title))));
+	}
+
 	public static int getPosition() {
 		try {
 			return (((localPlayer != null) && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() : ((localSong == null) ? -1 : storedSongTime));
@@ -1008,9 +1016,28 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if ((i = metadata.indexOf('\'', i + 1)) < 0)
 				return;
 		} while (metadata.charAt(i - 1) == '\\');
-		metadata = metadata.substring(firstChar, i);
+		metadata = metadata.substring(firstChar, i).trim();
 		if (loopCount > 1)
 			metadata = metadata.replace("\\'", "\'");
+		if (metadata.length() > 0) {
+			String name = null, url = null;
+			synchronized (internetObjectsSync) {
+				if (httpStreamReceiver != null) {
+					name = httpStreamReceiver.getIcyName();
+					url = httpStreamReceiver.getIcyUrl();
+				}
+			}
+			if (name != null && name.length() > 0) {
+				localSong.artist = name;
+				localSong.extraInfo = name;
+			}
+			if (url != null && url.length() > 0)
+				localSong.album = url;
+			localSong.title = metadata;
+			broadcastStateChange(true, isPreparing(), true);
+			if (observer != null)
+				observer.onPlayerMetadataChanged(localSong);
+		}
 	}
 
 	private static void _releaseInternetObjects() {
@@ -2179,12 +2206,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification, boolean notificationFirstTime) {
 		createIntents(context);
 
-		if (localSong == null)
-			views.setTextViewText(R.id.lblTitle, context.getText(R.string.nothing_playing));
-		else if (isPreparing())
-			views.setTextViewText(R.id.lblTitle, context.getText(R.string.loading));
-		else
-			views.setTextViewText(R.id.lblTitle, localSong.title);
+		views.setTextViewText(R.id.lblTitle, getCurrentTitle(isPreparing()));
 
 		if (prepareButtons) {
 			if (notification) {
@@ -3010,7 +3032,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				remoteControlClient.setPlaybackState(preparing ? RemoteControlClient.PLAYSTATE_BUFFERING : (playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED));
 				if (titleOrSongHaveChanged) {
 					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
-					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : localSong.title);
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, getCurrentTitle(preparing));
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, localSong.artist);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, localSong.album);
 					ed.putLong(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER, localSong.track);
@@ -3036,7 +3058,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			} else {
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
 				if (titleOrSongHaveChanged) {
-					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, preparing ? thePlayer.getText(R.string.loading).toString() : localSong.title);
+					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, getCurrentTitle(preparing));
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, localSong.artist);
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, localSong.album);
 					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, localSong.track);
@@ -3052,6 +3074,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@SuppressWarnings("deprecation")
 	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean titleOrSongHaveChanged) {
+		notificationManager.notify(1, getNotification());
+		WidgetMain.updateWidgets(thePlayer);
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
 		//http://developer.android.com/reference/android/media/RemoteControlClient.html
@@ -3079,7 +3103,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//stickyBroadcast.setAction("com.android.music.playstatechanged");
 			stickyBroadcast.putExtra("id", localSong.id);
 			stickyBroadcast.putExtra("songid", localSong.id);
-			stickyBroadcast.putExtra("track", preparing ? thePlayer.getText(R.string.loading) : localSong.title);
+			stickyBroadcast.putExtra("track", getCurrentTitle(preparing));
 			stickyBroadcast.putExtra("artist", localSong.artist);
 			stickyBroadcast.putExtra("album", localSong.album);
 			stickyBroadcast.putExtra("duration", (long)localSong.lengthMS);
@@ -3108,7 +3132,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (turnOffWhenPlaylistEnds)
 				localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_NOW, SystemClock.uptimeMillis() + 100);
 		}
-		notificationManager.notify(1, getNotification());
 		final boolean songHasChanged = ((arg1 & 0x08) != 0);
 		final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
 		final boolean preparing = ((arg1 & 0x20) != 0);
@@ -3118,10 +3141,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			processIdleTurnOffTimer();
 		if (bluetoothVisualizerController != null)
 			updateBluetoothVisualizer(songHasChanged);
-		WidgetMain.updateWidgets(thePlayer);
 		Throwable ex = null;
 		if (songHasChanged && announceCurrentSong && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && state == STATE_ALIVE)
-			UI.announceAccessibilityText(localSong == null ? thePlayer.getText(R.string.nothing_playing) : localSong.title);
+			UI.announceAccessibilityText(getCurrentTitle(false));
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];
 			objs[2] = null;

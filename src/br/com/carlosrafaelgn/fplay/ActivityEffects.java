@@ -670,6 +670,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	}
 
 	@Override
+	public void onPlayerMetadataChanged(Song currentSong) {
+	}
+
+	@Override
 	public void onPlayerControlModeChanged(boolean controlMode) {
 	}
 

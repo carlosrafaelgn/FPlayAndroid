@@ -63,12 +63,14 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
+import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.SongView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
@@ -118,8 +120,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 
 	@Override
 	public CharSequence getTitle() {
-		final Song currentSong = Player.localSong;
-		return "FPlay: " + ((currentSong == null) ? getText(R.string.nothing_playing) : currentSong.title);
+		return "FPlay: " + Player.getCurrentTitle(false);
 	}
 
 	@Override
@@ -269,9 +270,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			stringBuilder.append(song.artist);
 		}
 
-		if (song.artist.length() > 0 && !song.artist.equals("-")) {
+		if (song.album.length() > 0 && !song.album.equals("-")) {
 			stringBuilder.append("\n\n");
-			stringBuilder.append(getText(R.string.album));
+			stringBuilder.append(song.isHttp ? getText(R.string.url) : getText(R.string.album));
 			stringBuilder.append('\n');
 			stringBuilder.append(song.album);
 		}
@@ -460,7 +461,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 		return false;
 	}
-	
+
 	private boolean increaseVolume() {
 		final int volume = Player.increaseVolume();
 		if (volume != Integer.MIN_VALUE) {
@@ -469,7 +470,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 		final String icon = (Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
@@ -484,7 +485,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (Player.followCurrentSong && list != null && !list.changingCurrentWouldScareUser())
 				bringCurrentIntoView();
 			if (lblTitle != null) {
-				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : ((barSeek == null && Player.isPreparing()) ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
+				lblTitle.setText(Player.getCurrentTitle(barSeek == null && Player.isPreparing()));
 				lblTitle.setSelected(true);
 				//if (ignoreAnnouncement)
 				//	ignoreAnnouncement = false;
@@ -506,11 +507,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					barSeek.setValue(0);
 				}
 			} else if (lblTitle != null) {
-				lblTitle.setText((currentSong == null) ? getText(R.string.nothing_playing) : (Player.isPreparing() ? (getText(R.string.loading) + " " + currentSong.title) : currentSong.title));
+				lblTitle.setText(Player.getCurrentTitle(Player.isPreparing()));
 				lblTitle.setSelected(true);
 			}
 		}
-		if (Player.localPlaying && !Player.controlMode) {
+		if ((Player.localPlaying || Player.isPreparing()) && !Player.controlMode) {
 			if (!tmrSong.isAlive())
 				tmrSong.start(250);
 		} else {
@@ -519,7 +520,19 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		lastTime = -2;
 		handleTimer(tmrSong, null);
 	}
-	
+
+	@Override
+	public void onPlayerMetadataChanged(Song currentSong) {
+		onPlayerChanged(currentSong, true, true, null);
+		if (list != null) {
+			for (int i = list.getChildCount() - 1; i >= 0; i--) {
+				final View view = list.getChildAt(i);
+				if (view instanceof SongView)
+					((SongView)view).updateIfCurrent();
+			}
+		}
+	}
+
 	@Override
 	public void onPlayerControlModeChanged(boolean controlMode) {
 		if (Player.songs.selecting || Player.songs.moving)
@@ -1095,7 +1108,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			lblTitle.setTextColor(UI.colorState_text_title_static);
 			
 			lblArtist = (TextView)findViewById(R.id.lblArtist);
-			if (UI.isLargeScreen != (lblArtist != null))
+			if (UI.isLargeScreen == (lblArtist == null))
 				UI.isLargeScreen = (lblArtist != null);
 			
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
@@ -1490,9 +1503,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			updateVolumeDisplay(Integer.MIN_VALUE);
 			return;
 		}
+		final Song s = Player.localSong;
 		if (Player.isPreparing()) {
 			if (barSeek != null && !barSeek.isTracking()) {
-				barSeek.setText(R.string.loading);
+				if (s.isHttp) {
+					barSeek.setText(getText(R.string.loading) + " " + (HttpStreamReceiver.bytesReceivedSoFar >>> 10) + "k");
+				} else {
+					barSeek.setText(R.string.loading);
+				}
 				barSeek.setValue(0);
 			}
 			return;
@@ -1509,7 +1527,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			Song.formatTimeSec(t, timeBuilder);
 			if (barSeek != null && !barSeek.isTracking()) {
-				final Song s = Player.localSong;
 				int v = 0;
 				if (s != null && s.lengthMS > 0) {
 					//avoid overflow! ;)

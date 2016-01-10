@@ -72,6 +72,7 @@ public final class Song extends BaseItem {
 		this.path = url.trim();
 		this.isHttp = true;
 		this.title = title.trim();
+		this.artist = this.title;
 		validateFields(null);
 	}
 	
@@ -215,7 +216,7 @@ public final class Song extends BaseItem {
 
 	public void updateExtraInfo() {
 		if (isHttp) {
-			extraInfo = "";
+			extraInfo = artist;
 		} else {
 			switch (extraInfoMode) {
 			case EXTRA_ARTIST:

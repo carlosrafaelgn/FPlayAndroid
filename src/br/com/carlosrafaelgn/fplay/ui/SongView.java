@@ -99,6 +99,13 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, w, false);
 	}
 
+	public void updateIfCurrent() {
+		if ((state & UI.STATE_CURRENT) != 0) {
+			processEllipsis();
+			invalidate();
+		}
+	}
+
 	@Override
 	public CharSequence getContentDescription() {
 		if (song != null)
@@ -204,7 +211,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, textX, titleY);
 		if (song.isHttp)
-			TextIconDrawable.drawIcon(canvas, UI.ICON_LINK, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);
+			TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);
 		else
 			UI.drawText(canvas, song.length, txtColor, UI._14sp, lengthX, UI.verticalMargin + UI._14spYinBox + topMargin);
 		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, textX, extraY);
