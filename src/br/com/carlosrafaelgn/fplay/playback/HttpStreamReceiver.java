@@ -63,8 +63,6 @@ public final class HttpStreamReceiver implements Runnable {
 	private static final int MIN_BUFFER_LENGTH = 4 * MAX_PACKET_LENGTH;
 	private static final int EXTERNAL_BUFFER_LENGTH = (128 * 1024); //5.3s worth of data @ 192kbps
 
-	public static int bytesReceivedSoFar;
-
 	//God save the Internet :) (this was all the documentation I found!!!)
 	//http://www.smackfu.com/stuff/programming/shoutcast.html
 	//http://stackoverflow.com/questions/6061057/developing-the-client-for-the-icecast-server
@@ -81,6 +79,7 @@ public final class HttpStreamReceiver implements Runnable {
 	private Thread clientThread, serverThread;
 	private SocketChannel clientSocket, playerSocket;
 	private ServerSocketChannel serverSocket;
+	public int bytesReceivedSoFar;
 
 	private final class ServerRunnable implements Runnable {
 		private void readPlayerRequestAndSendResponseHeader() throws IOException {
@@ -402,7 +401,6 @@ public final class HttpStreamReceiver implements Runnable {
 	}
 
 	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler metadataHandler, int metadataMsg, int arg1, String url, int bufferLength, boolean createThreads) throws MalformedURLException {
-		bytesReceivedSoFar = 0;
 		alive = true;
 		this.url = normalizeIcyUrl(url);
 		sync = new Object();
@@ -415,6 +413,7 @@ public final class HttpStreamReceiver implements Runnable {
 		this.metadataHandler = metadataHandler;
 		this.metadataMsg = metadataMsg;
 		this.arg1 = arg1;
+		bytesReceivedSoFar = -1;
 		if (createThreads) {
 			clientThread = new Thread(this, "HttpStreamReceiver Client");
 			clientThread.setDaemon(true);
@@ -697,7 +696,8 @@ public final class HttpStreamReceiver implements Runnable {
 					//have to start discarding old data :(
 					storedLength.addAndGet(-MAX_PACKET_LENGTH);
 					final int newPosition = writeBuffer.position() - MAX_PACKET_LENGTH;
-					writeBuffer.position((newPosition < 0) ? (bufferLen - newPosition) : newPosition);
+					writeBuffer.limit((newPosition < 0) ? (bufferLen + newPosition) : newPosition);
+					writeBuffer.position(writeBuffer.limit());
 					continue;
 				}
 				len = ((maxLen1 <= maxLen2) ? maxLen1 : maxLen2);

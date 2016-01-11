@@ -264,7 +264,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static int audioSinkUsedInEffects;
 	public static int localAudioSinkUsedInEffects;
 
-	private static final Object internetObjectsSync = new Object();
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState, radioStationResolverVersion, httpStreamReceiverVersion;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
@@ -882,11 +881,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static int getPosition() {
 		try {
-			return (((localPlayer != null) && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() : ((localSong == null) ? -1 : storedSongTime));
+			return ((httpStreamReceiver != null) ? -1 :
+				((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() :
+					((localSong == null) ? -1 : storedSongTime)));
 		} catch (Throwable ex) {
 			//localPlayer could throw a InvalidStateException (*very, very* rarely)
 			return -1;
 		}
+	}
+
+	public static int getHttpPosition() {
+		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
+		final HttpStreamReceiver receiver = httpStreamReceiver;
+		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
 	}
 
 	public static int getAudioSessionId() {
@@ -958,28 +965,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static void _resolveHttp() {
-		synchronized (internetObjectsSync) {
-			HttpStreamReceiver.bytesReceivedSoFar = 0;
-			//force all http songs to go through httpStreamReceiver
-			if ((radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) == null)
-				_radioStationResolved(radioStationResolverVersion, 200, song.path);
-		}
-	}
-
 	private static void _radioStationResolved(int version, int httpCode, Object result) {
 		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
 		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
 			try {
-				synchronized (internetObjectsSync) {
-					httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, result.toString());
-					if (httpStreamReceiver.start())
-						result = httpStreamReceiver.getLocalURL();
-					else
-						_releaseInternetObjects();
-				}
+				httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, result.toString());
+				if (httpStreamReceiver.start())
+					result = httpStreamReceiver.getLocalURL();
+				else
+					_releaseInternetObjects();
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(result.toString());
@@ -1021,11 +1017,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			metadata = metadata.replace("\\'", "\'");
 		if (metadata.length() > 0) {
 			String name = null, url = null;
-			synchronized (internetObjectsSync) {
-				if (httpStreamReceiver != null) {
-					name = httpStreamReceiver.getIcyName();
-					url = httpStreamReceiver.getIcyUrl();
-				}
+			//by doing like this, we do not need to synchronize the access to httpStreamReceiver
+			final HttpStreamReceiver receiver = httpStreamReceiver;
+			if (receiver != null) {
+				name = receiver.getIcyName();
+				url = receiver.getIcyUrl();
 			}
 			if (name != null && name.length() > 0) {
 				localSong.artist = name;
@@ -1041,19 +1037,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void _releaseInternetObjects() {
-		if (radioStationResolver != null || httpStreamReceiver != null) {
-			synchronized (internetObjectsSync) {
-				if (radioStationResolver != null) {
-					radioStationResolverVersion++;
-					radioStationResolver.cancel();
-					radioStationResolver = null;
-				}
-				if (httpStreamReceiver != null) {
-					httpStreamReceiverVersion++;
-					httpStreamReceiver.stop();
-					httpStreamReceiver = null;
-				}
-			}
+		if (radioStationResolver != null) {
+			radioStationResolverVersion++;
+			radioStationResolver.cancel();
+			radioStationResolver = null;
+		}
+		if (httpStreamReceiver != null) {
+			httpStreamReceiverVersion++;
+			httpStreamReceiver.stop();
+			httpStreamReceiver = null;
 		}
 	}
 
@@ -1213,9 +1205,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			postPlayPending = false;
 			if (nextSong == song && how != SongList.HOW_CURRENT) {
 				storedSongTime = -1;
-				if (nextPlayerState == PLAYER_STATE_LOADED) {
+				final MediaPlayer p = player;
+				switch (nextPlayerState) {
+				case PLAYER_STATE_LOADED:
 					playerState = PLAYER_STATE_LOADED;
-					final MediaPlayer p = player;
 					player = nextPlayer;
 					nextPlayer = p;
 					nextSong = songArray[1];
@@ -1232,20 +1225,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_scheduleNextPlayerForPreparation();
 					_updateState(false, null);
 					return;
-				} else {
+				case PLAYER_STATE_PREPARING:
 					//just wait for the next song to finish preparing
-					if (nextPlayerState == PLAYER_STATE_PREPARING) {
-						playing = false;
-						playerState = PLAYER_STATE_PREPARING;
-						nextPlayerState = PLAYER_STATE_NEW;
-						final MediaPlayer p = player;
-						player = nextPlayer;
-						nextPlayer = p;
-						nextSong = songArray[1];
-						_releaseInternetObjects();
-						_updateState(false, null);
-						return;
-					}
+					playing = false;
+					playerState = PLAYER_STATE_PREPARING;
+					nextPlayerState = PLAYER_STATE_NEW;
+					player = nextPlayer;
+					nextPlayer = p;
+					nextSong = songArray[1];
+					_releaseInternetObjects();
+					_updateState(false, null);
+					return;
 				}
 			}
 			playing = false;
@@ -1266,7 +1256,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				player.setDataSource(song.path);
 				player.prepareAsync();
 			} else {
-				_resolveHttp();
+				if ((radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) == null) {
+					//force all http songs to go through httpStreamReceiver (even if they do not need to be resolved)
+					_radioStationResolved(radioStationResolverVersion, 200, song.path);
+				}
 			}
 
 			nextPlayerState = PLAYER_STATE_NEW;

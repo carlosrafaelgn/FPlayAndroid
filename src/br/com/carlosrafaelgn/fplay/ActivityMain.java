@@ -63,7 +63,6 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
-import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -1507,10 +1506,18 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (Player.isPreparing()) {
 			if (barSeek != null && !barSeek.isTracking()) {
 				if (s.isHttp) {
-					barSeek.setText(getText(R.string.loading) + " " + (HttpStreamReceiver.bytesReceivedSoFar >>> 10) + "k");
+					final int m = Player.getHttpPosition();
+					barSeek.setText((m == -1) ? getText(R.string.loading).toString() : (getText(R.string.loading) + " " + (Player.getHttpPosition() >>> 10) + "kiB"));
 				} else {
 					barSeek.setText(R.string.loading);
 				}
+				barSeek.setValue(0);
+			}
+			return;
+		} else if (s != null && s.isHttp) {
+			if (barSeek != null) {
+				final int m = Player.getHttpPosition();
+				barSeek.setText((m == -1) ? "-" : ((m >>> 10) + "kiB"));
 				barSeek.setValue(0);
 			}
 			return;
