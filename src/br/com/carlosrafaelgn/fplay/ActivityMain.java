@@ -1507,7 +1507,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (barSeek != null && !barSeek.isTracking()) {
 				if (s.isHttp) {
 					final int m = Player.getHttpPosition();
-					barSeek.setText((m == -1) ? getText(R.string.loading).toString() : (getText(R.string.loading) + " " + (Player.getHttpPosition() >>> 10) + "kiB"));
+					barSeek.setText((m == -1) ? getText(R.string.connecting).toString() : ((Player.getHttpPosition() >>> 10) + "kiB " + getText(R.string.loading)));
 				} else {
 					barSeek.setText(R.string.loading);
 				}

@@ -322,5 +322,6 @@
     <string name="radio_directory">Directorio de radios online</string>
     <string name="all_kinds">Todos los tipos</string>
     <string name="listeners">Oyentes</string>
+    <string name="connecting">Conectando…</string>
 
 </resources>

@@ -67,7 +67,7 @@ public final class RadioStationResolver extends Thread {
 		this.title = title;
 		this.isShoutcast = isShoutcast;
 		try {
-			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, 0, streamUrl, -1, false);
+			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, null, 0, 0, 0, streamUrl, -1, false);
 		} catch (Throwable ex) {
 			streamReceiver = null;
 		}
@@ -168,7 +168,7 @@ public final class RadioStationResolver extends Thread {
 						if (streamReceiver != null) {
 							httpCode = 200;
 							result = streamReceiver.getResolvedURL();
-							streamReceiver.stop();
+							streamReceiver.release();
 							streamReceiver = null;
 						}
 					}
@@ -233,7 +233,7 @@ public final class RadioStationResolver extends Thread {
 			m3uUrl = null;
 			title = null;
 			if (streamReceiver != null) {
-				streamReceiver.stop();
+				streamReceiver.release();
 				streamReceiver = null;
 			}
 		}
