@@ -1045,6 +1045,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				localSong.album = url;
 			localSong.title = metadata;
 			broadcastStateChange(true, isPreparing(), true);
+			//this will force a serialization when closing the app (saving this update)
+			songs.markAsChanged();
 			if (observer != null)
 				observer.onPlayerMetadataChanged(localSong);
 		}

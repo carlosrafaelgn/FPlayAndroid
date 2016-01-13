@@ -551,6 +551,10 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 
 	//--------------------------------------------------------------------------------------------
 
+	public void markAsChanged() {
+		modificationVersion++;
+	}
+
 	public boolean serialize(Context context) {
 		try {
 			if (modificationVersion <= 1) {

@@ -176,31 +176,43 @@ public final class HttpStreamReceiver implements Runnable {
 				createAudioTrack(properties[0], properties[1]);
 
 				short[] tmpShortOutput = new short[properties[0] * properties[3]]; //1 frame @ mono/stereo, 16 bits per sample
+				boolean okToProcessMoreInput = true;
+				int timedoutFrameCount = 0;
 
 				while (alive) {
-					if (buffer.waitUntilCanRead(inputFrameSize) < 0)
-						break;
+					if (okToProcessMoreInput) {
+						if (buffer.waitUntilCanRead(inputFrameSize) < 0)
+							break;
 
-					//get the next available input buffer
-					int inputBufferIndex;
-					while ((inputBufferIndex = mediaCodec.dequeueInputBuffer(10000)) < 0) {
-						if (!alive)
-							return;
+						//get the next available input buffer
+						int inputBufferIndex;
+						while ((inputBufferIndex = mediaCodec.dequeueInputBuffer(10000)) < 0) {
+							if (!alive)
+								return;
+						}
+						buffer.readArray(inputBuffers[inputBufferIndex], 0, inputFrameSize);
+						buffer.commitRead(inputFrameSize);
+
+						//queue the input buffer for decoding
+						mediaCodec.queueInputBuffer(inputBufferIndex, 0, inputFrameSize, currentUs, 0);
+						currentUs += usPerFrame;
 					}
-					buffer.readArray(inputBuffers[inputBufferIndex], 0, inputFrameSize);
-					buffer.commitRead(inputFrameSize);
-
-					//queue the input buffer for decoding
-					mediaCodec.queueInputBuffer(inputBufferIndex, 0, inputFrameSize, currentUs, 0);
-					currentUs += usPerFrame;
 
 					//wait for the decoding process to complete
 					int outputBufferIndex;
 					try {
+						info.flags = 0;
+						info.offset = 0;
+						info.presentationTimeUs = 0;
+						info.size = 0;
 						OutputLoop:
-						while ((outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 200000)) < 0) {
+						while ((outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 50000)) < 0) {
 							if (!alive)
 								return;
+							info.flags = 0;
+							info.offset = 0;
+							info.presentationTimeUs = 0;
+							info.size = 0;
 							switch (outputBufferIndex) {
 							case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
 								outputBuffers = mediaCodec.getOutputBuffers();
@@ -212,10 +224,26 @@ public final class HttpStreamReceiver implements Runnable {
 								}
 								break;
 							case MediaCodec.INFO_TRY_AGAIN_LATER:
+								timedoutFrameCount++;
+								if (timedoutFrameCount > 10) {
+									//force an empty buffer with BUFFER_FLAG_END_OF_STREAM, because a few devices
+									//return MediaCodec.INFO_TRY_AGAIN_LATER often when using only regular buffers
+									okToProcessMoreInput = false;
+									int inputBufferIndex;
+									while ((inputBufferIndex = mediaCodec.dequeueInputBuffer(10000)) < 0) {
+										if (!alive)
+											return;
+									}
+									inputBuffers[inputBufferIndex].limit(0);
+									inputBuffers[inputBufferIndex].position(0);
+									mediaCodec.queueInputBuffer(inputBufferIndex, 0, 0, currentUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+								}
 								info.size = Integer.MAX_VALUE;
 								break OutputLoop;
 							}
 						}
+						if (outputBufferIndex >= 0)
+							timedoutFrameCount = 0;
 					} catch (Throwable ex) {
 						//exceptions usually happen here when the data inside inputBuffer was invalid
 						//(this happens if the other thread overwrites our data before we actually
@@ -291,6 +319,12 @@ public final class HttpStreamReceiver implements Runnable {
 					} else if (info.size <= 0) {
 						//just release the output buffer
 						mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
+					}
+
+					if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+						okToProcessMoreInput = true;
+						currentUs = 0;
+						mediaCodec.flush();
 					}
 
 					inputFrameSize = waitToReadMpegHeader(null);
@@ -1110,6 +1144,34 @@ public final class HttpStreamReceiver implements Runnable {
 
 			//header byte 0
 			int b = buffer.peekReadArray(0);
+
+			if (b == 0x49 && buffer.peekReadArray(1) == 0x44 && buffer.peekReadArray(2) == 0x33) {
+				//process the ID3 tag by skipping it comletely
+				buffer.waitUntilCanRead(10);
+				//refer to MetadataExtractor.java -> extractID3v2Andv1()
+				final int flags = buffer.peekReadArray(5);
+				final int sizeBytes0 = buffer.peekReadArray(6);
+				final int sizeBytes1 = buffer.peekReadArray(7);
+				final int sizeBytes2 = buffer.peekReadArray(8);
+				final int sizeBytes3 = buffer.peekReadArray(9);
+				int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
+					(
+						(sizeBytes3 & 0x7f) |
+						((sizeBytes2 & 0x7f) << 7) |
+						((sizeBytes1 & 0x7f) << 14) |
+						((sizeBytes0 & 0x7f) << 21)
+					) + 10; //the first 10 bytes
+				while (size > 0) {
+					final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+					size -= len;
+					buffer.readBuffer.position(buffer.readBuffer.limit());
+					buffer.commitRead(len);
+				}
+
+				//proceed as if none of this had happened
+				buffer.waitUntilCanRead(4);
+				b = buffer.peekReadArray(0);
+			}
 
 			if (b != 0xFF)
 				continue;
