@@ -184,7 +184,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public CharSequence getTitle() {
-		return getText(R.string.add_radio);
+		return getText(R.string.radio);
 	}
 
 	private void updateButtons() {

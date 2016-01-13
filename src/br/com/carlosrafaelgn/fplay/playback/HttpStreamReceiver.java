@@ -616,18 +616,14 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler preparedHandler, int preparedMsg, Handler metadataHandler, int metadataMsg, int arg1, int audioSessionId, String url) throws MalformedURLException {
-		this(errorHandler, errorMsg, preparedHandler, preparedMsg, metadataHandler, metadataMsg, arg1, audioSessionId, url, EXTERNAL_BUFFER_LENGTH, true);
-	}
-
-	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler preparedHandler, int preparedMsg, Handler metadataHandler, int metadataMsg, int arg1, int audioSessionId, String url, int bufferLength, boolean createThreads) throws MalformedURLException {
+	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler preparedHandler, int preparedMsg, Handler metadataHandler, int metadataMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String url, boolean createThreads) throws MalformedURLException {
 		alive = true;
 		paused = true;
 		this.url = normalizeIcyUrl(url);
 		sync = new Object();
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
 		//when isPerformingFullPlayback is true, we will need to use the data inside this buffer from Java very often!
-		buffer = new CircularIOBuffer(bufferLength <= MIN_BUFFER_LENGTH ? MIN_BUFFER_LENGTH : bufferLength, !isPerformingFullPlayback);
+		buffer = new CircularIOBuffer(bytesBeforeDecoding <= 0 ? MIN_BUFFER_LENGTH : (bytesBeforeDecoding <= EXTERNAL_BUFFER_LENGTH ? EXTERNAL_BUFFER_LENGTH : (bytesBeforeDecoding + MIN_BUFFER_LENGTH)), !isPerformingFullPlayback);
 		this.errorHandler = errorHandler;
 		this.errorMsg = errorMsg;
 		this.preparedHandler = preparedHandler;
@@ -637,9 +633,8 @@ public final class HttpStreamReceiver implements Runnable {
 		this.arg1 = arg1;
 		this.audioSessionId = audioSessionId;
 		bytesReceivedSoFar = -1;
-		//one day these two will be configurable
-		initialNetworkBufferLengthInBytes = MIN_BUFFER_LENGTH;
-		initialAudioBufferInMS = 1500;
+		initialNetworkBufferLengthInBytes = bytesBeforeDecoding;
+		initialAudioBufferInMS = secondsBeforePlaying;
 		if (createThreads) {
 			clientThread = new Thread(this, "HttpStreamReceiver Client");
 			clientThread.setDaemon(true);

@@ -244,7 +244,7 @@
     <string name="opengl_error">OpenGL ошибке</string>
     <string name="opengl_not_supported">OpenGL ES 2.0 не поддерживается</string>
     <string name="speed">Скорость</string>
-    <string name="add_radio">Радио</string>
+    <string name="radio">Радио</string>
     <string name="search">Искать</string>
     <string name="genre">Жанр</string>
     <string name="search_term">Критерии поиска</string>
@@ -323,5 +323,9 @@
     <string name="all_kinds">Все типы</string>
     <string name="listeners">Слушатели</string>
     <string name="connecting">Подключение…</string>
+    <string name="bytes_before_decoding">Начать, декодирование после загрузки сколько байт:</string>
+    <string name="seconds_before_playback">Начать воспроизведение после декодирования сколько секунд:</string>
+    <string name="second">секунда</string>
+    <string name="seconds">секунды</string>
 
 </resources>

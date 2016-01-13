@@ -41,6 +41,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.text.InputType;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
@@ -85,7 +86,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, lastMenuView;
+	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optSecondsBeforePlayback, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -326,6 +327,24 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((framesToSkip == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			}
+		} else if (view == optBytesBeforeDecoding) {
+			lastMenuView = optBytesBeforeDecoding;
+			UI.prepare(menu);
+			final int bytesBeforeDecodingIndex = Player.getBytesBeforeDecodingIndex();
+			for (int i = 0; i <= 7; i++) {
+				menu.add(0, i, i, getBytesBeforeDecodingString(i))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((bytesBeforeDecodingIndex == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			}
+		} else if (view == optSecondsBeforePlayback) {
+			lastMenuView = optSecondsBeforePlayback;
+			UI.prepare(menu);
+			final int secondsBeforePlaybackIndex = Player.getSecondsBeforePlaybackIndex();
+			for (int i = 0; i <= 4; i++) {
+				menu.add(0, i, i, getSecondsBeforePlaybackString(i))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((secondsBeforePlaybackIndex == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			}
 		}
 	}
 	
@@ -438,11 +457,26 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optBtFramesToSkip.setSecondaryText(getFramesToSkipString());
 			if (Player.bluetoothVisualizerController != null)
 				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncFramesToSkip();
+		} else if (lastMenuView == optBytesBeforeDecoding) {
+			Player.setBytesBeforeDecodingIndex(item.getItemId());
+			optBytesBeforeDecoding.setSecondaryText(getBytesBeforeDecodingString(item.getItemId()));
+		} else if (lastMenuView == optSecondsBeforePlayback) {
+			Player.setSecondsBeforePlayingIndex(item.getItemId());
+			optSecondsBeforePlayback.setSecondaryText(getSecondsBeforePlaybackString(item.getItemId()));
 		}
 		configsChanged = true;
 		return true;
 	}
-	
+
+	private String getBytesBeforeDecodingString(int index) {
+		return (Player.getBytesBeforeDecoding(index) >> 10) + " kiB";
+	}
+
+	private String getSecondsBeforePlaybackString(int index) {
+		final int sec = Player.getSecondsBeforePlayback(index);
+		return UI.formatIntAsFloat(sec / 100, false, true) + " " + ((sec == 1000) ? getText(R.string.second) : getText(R.string.seconds));
+	}
+
 	private String getMinuteString(int minutes) {
 		if (minutes <= 0)
 			return getText(R.string.never).toString();
@@ -950,9 +984,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optFadeInOther = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_other).toString(), getFadeInString(Player.fadeInIncrementOnOther), false, false, false);
 			optAnnounceCurrentSong = new SettingView(ctx, UI.ICON_MIC, getText(R.string.announce_current_song).toString(), null, true, Player.announceCurrentSong, false);
 			optFollowCurrentSong = new SettingView(ctx, UI.ICON_SCROLLBAR, getText(R.string.follow_current_song).toString(), null, true, Player.followCurrentSong, false);
+			optBytesBeforeDecoding = new SettingView(ctx, UI.ICON_RADIO, getText(R.string.bytes_before_decoding).toString(), getBytesBeforeDecodingString(Player.getBytesBeforeDecodingIndex()), false, false, false);
+			optSecondsBeforePlayback = new SettingView(ctx, UI.ICON_RADIO, getText(R.string.seconds_before_playback).toString(), getSecondsBeforePlaybackString(Player.getSecondsBeforePlaybackIndex()), false, false, false);
 
 			int hIdx = 0;
-			headers = new TextView[7];
+			headers = new TextView[8];
 			addHeader(ctx, R.string.msg_turn_off_title, optAutoTurnOffPlaylist, hIdx++);
 			addOption(optAutoTurnOff);
 			addOption(optAutoIdleTurnOff);
@@ -990,7 +1026,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optWidgetTransparentBg);
 			addOption(optWidgetTextColor);
 			addOption(optWidgetIconColor);
-			addHeader(ctx, R.string.hdr_playback, optWidgetIconColor, hIdx++);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+				addHeader(ctx, R.string.radio, optWidgetIconColor, hIdx++);
+				addOption(optBytesBeforeDecoding);
+				addOption(optSecondsBeforePlayback);
+			}
+			addHeader(ctx, R.string.hdr_playback, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? optSecondsBeforePlayback : optWidgetIconColor, hIdx++);
 			addOption(optPlayWhenHeadsetPlugged);
 			addOption(optHandleCallKey);
 			addOption(optHeadsetHook1);
@@ -1119,6 +1160,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBtSpeed = null;
 		optAnnounceCurrentSong = null;
 		optFollowCurrentSong = null;
+		optBytesBeforeDecoding = null;
+		optSecondsBeforePlayback = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -1328,7 +1371,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.announceCurrentSong = optAnnounceCurrentSong.isChecked();
 		} else if (view == optFollowCurrentSong) {
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
-		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser || view == optHeadsetHook1 || view == optHeadsetHook2 || view == optHeadsetHook3) {
+		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser || view == optHeadsetHook1 || view == optHeadsetHook2 || view == optHeadsetHook3 || view == optBytesBeforeDecoding || view == optSecondsBeforePlayback) {
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;

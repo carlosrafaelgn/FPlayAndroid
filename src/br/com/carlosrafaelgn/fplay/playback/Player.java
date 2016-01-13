@@ -265,12 +265,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static int audioSinkUsedInEffects;
 	public static int localAudioSinkUsedInEffects;
 
-	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState, radioStationResolverVersion, httpStreamReceiverVersion;
+	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayer player, nextPlayer;
-	private static RadioStationResolver radioStationResolver;
-	private static HttpStreamReceiver httpStreamReceiver;
 
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
 	//so they will survive their respective activity's destruction
@@ -972,107 +970,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static void _radioStationResolved(int version, int httpCode, Object result) {
-		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
-			return;
-		_releaseInternetObjects();
-		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
-			try {
-				//force the player to always start playing as if coming from a pause
-				silenceMode = SILENCE_NORMAL;
-				playerBuffering = true;
-				httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, handler, MSG_HTTP_STREAM_RECEIVER_PREPARED, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, player.getAudioSessionId(), result.toString());
-				if (httpStreamReceiver.start()) {
-					if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
-						return;
-					result = httpStreamReceiver.getLocalURL();
-				} else {
-					_releaseInternetObjects();
-				}
-				playerBuffering = false;
-				//Even though it happens very rarely, a few devices will freeze and produce an ANR
-				//when calling setDataSource from the main thread :(
-				player.setDataSource(result.toString());
-				player.prepareAsync();
-				return;
-			} catch (Throwable ex) {
-				result = ex;
-			}
-		}
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? ERROR_NOT_FOUND : ((result == null || !(result instanceof TimeoutException)) ? ERROR_IO : ERROR_TIMED_OUT));
-	}
-
-	private static void _httpStreamReceiverError(int version, int errorCode) {
-		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
-			return;
-		_releaseInternetObjects();
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, ((errorCode == -1) || !isConnectedToTheInternet()) ? ERROR_NOT_FOUND : ((errorCode != 0) ? ERROR_IO : ERROR_TIMED_OUT));
-	}
-
-	private static void httpStreamReceiverMetadataUpdate(int version, String metadata) {
-		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || localSong == null || localPlayer == null || thePlayer == null)
-			return;
-		int i;
-		if ((i = metadata.indexOf("StreamTitle")) < 0)
-			return;
-		if ((i = metadata.indexOf('=', i + 11)) < 0)
-			return;
-		if ((i = metadata.indexOf('\'', i + 1)) < 0)
-			return;
-		final int firstChar = i + 1;
-		int loopCount = 0;
-		do {
-			loopCount++;
-			if ((i = metadata.indexOf('\'', i + 1)) < 0)
-				return;
-		} while (metadata.charAt(i - 1) == '\\');
-		metadata = metadata.substring(firstChar, i).trim();
-		if (loopCount > 1)
-			metadata = metadata.replace("\\'", "\'");
-		if (metadata.length() > 0) {
-			String name = null, url = null;
-			//by doing like this, we do not need to synchronize the access to httpStreamReceiver
-			final HttpStreamReceiver receiver = httpStreamReceiver;
-			if (receiver != null) {
-				name = receiver.getIcyName();
-				url = receiver.getIcyUrl();
-			}
-			if (name != null && name.length() > 0) {
-				localSong.artist = name;
-				localSong.extraInfo = name;
-			}
-			if (url != null && url.length() > 0)
-				localSong.album = url;
-			localSong.title = metadata;
-			broadcastStateChange(true, isPreparing(), true);
-			//this will force a serialization when closing the app (saving this update)
-			songs.markAsChanged();
-			if (observer != null)
-				observer.onPlayerMetadataChanged(localSong);
-		}
-	}
-
-	private static void _httpStreamReceiverPrepared(int version) {
-		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
-			return;
-		playerBuffering = false;
-		thePlayer.onPrepared(player);
-	}
-
-	private static void _releaseInternetObjects() {
-		if (radioStationResolver != null) {
-			radioStationResolverVersion++;
-			radioStationResolver.cancel();
-			radioStationResolver = null;
-		}
-		if (httpStreamReceiver != null) {
-			httpStreamReceiverVersion++;
-			httpStreamReceiver.release();
-			httpStreamReceiverActsLikePlayer = false;
-			httpStreamReceiver = null;
-		}
-	}
-
 	private static void _partialCleanup() {
 		playerState = PLAYER_STATE_NEW;
 		playerBuffering = false;
@@ -1733,6 +1630,163 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	private static int radioStationResolverVersion, httpStreamReceiverVersion, httpOptions;
+	private static RadioStationResolver radioStationResolver;
+	private static HttpStreamReceiver httpStreamReceiver;
+
+	public static int getBytesBeforeDecoding(int index) {
+		switch (index) {
+		case 0:
+			return (4 << 10);
+		case 2:
+			return (16 << 10);
+		case 3:
+			return (32 << 10);
+		case 4:
+			return (48 << 10);
+		case 5:
+			return (64 << 10);
+		case 6:
+			return (128 << 10);
+		case 7:
+			return (256 << 10);
+		default:
+			return (8 << 10);
+		}
+	}
+
+	public static int getBytesBeforeDecodingIndex() {
+		return (httpOptions & 0x0F);
+	}
+
+	public static void setBytesBeforeDecodingIndex(int bytesBeforeDecodingIndex) {
+		httpOptions = (httpOptions & ~0x0F) | (bytesBeforeDecodingIndex & 0x0F);
+	}
+
+	public static int getSecondsBeforePlayback(int index) {
+		switch (index) {
+		case 0:
+			return 500;
+		case 1:
+			return 1000;
+		case 3:
+			return 2000;
+		case 4:
+			return 2500;
+		default:
+			return 1500;
+		}
+	}
+
+	public static int getSecondsBeforePlaybackIndex() {
+		return ((httpOptions >>> 4) & 0x0F);
+	}
+
+	public static void setSecondsBeforePlayingIndex(int secondsBeforePlayingIndex) {
+		httpOptions = (httpOptions & ~0xF0) | ((secondsBeforePlayingIndex & 0x0F) << 4);
+	}
+
+	private static void _radioStationResolved(int version, int httpCode, Object result) {
+		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
+			return;
+		_releaseInternetObjects();
+		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
+			try {
+				//force the player to always start playing as if coming from a pause
+				silenceMode = SILENCE_NORMAL;
+				playerBuffering = true;
+				httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, handler, MSG_HTTP_STREAM_RECEIVER_PREPARED, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), player.getAudioSessionId(), result.toString(), true);
+				if (httpStreamReceiver.start()) {
+					if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
+						return;
+					result = httpStreamReceiver.getLocalURL();
+				} else {
+					_releaseInternetObjects();
+				}
+				playerBuffering = false;
+				//Even though it happens very rarely, a few devices will freeze and produce an ANR
+				//when calling setDataSource from the main thread :(
+				player.setDataSource(result.toString());
+				player.prepareAsync();
+				return;
+			} catch (Throwable ex) {
+				result = ex;
+			}
+		}
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? ERROR_NOT_FOUND : ((result == null || !(result instanceof TimeoutException)) ? ERROR_IO : ERROR_TIMED_OUT));
+	}
+
+	private static void _httpStreamReceiverError(int version, int errorCode) {
+		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
+			return;
+		_releaseInternetObjects();
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, ((errorCode == -1) || !isConnectedToTheInternet()) ? ERROR_NOT_FOUND : ((errorCode != 0) ? ERROR_IO : ERROR_TIMED_OUT));
+	}
+
+	private static void httpStreamReceiverMetadataUpdate(int version, String metadata) {
+		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || localSong == null || localPlayer == null || thePlayer == null)
+			return;
+		int i;
+		if ((i = metadata.indexOf("StreamTitle")) < 0)
+			return;
+		if ((i = metadata.indexOf('=', i + 11)) < 0)
+			return;
+		if ((i = metadata.indexOf('\'', i + 1)) < 0)
+			return;
+		final int firstChar = i + 1;
+		int loopCount = 0;
+		do {
+			loopCount++;
+			if ((i = metadata.indexOf('\'', i + 1)) < 0)
+				return;
+		} while (metadata.charAt(i - 1) == '\\');
+		metadata = metadata.substring(firstChar, i).trim();
+		if (loopCount > 1)
+			metadata = metadata.replace("\\'", "\'");
+		if (metadata.length() > 0) {
+			String name = null, url = null;
+			//by doing like this, we do not need to synchronize the access to httpStreamReceiver
+			final HttpStreamReceiver receiver = httpStreamReceiver;
+			if (receiver != null) {
+				name = receiver.getIcyName();
+				url = receiver.getIcyUrl();
+			}
+			if (name != null && name.length() > 0) {
+				localSong.artist = name;
+				localSong.extraInfo = name;
+			}
+			if (url != null && url.length() > 0)
+				localSong.album = url;
+			localSong.title = metadata;
+			broadcastStateChange(true, isPreparing(), true);
+			//this will force a serialization when closing the app (saving this update)
+			songs.markAsChanged();
+			if (observer != null)
+				observer.onPlayerMetadataChanged(localSong);
+		}
+	}
+
+	private static void _httpStreamReceiverPrepared(int version) {
+		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
+			return;
+		playerBuffering = false;
+		thePlayer.onPrepared(player);
+	}
+
+	private static void _releaseInternetObjects() {
+		if (radioStationResolver != null) {
+			radioStationResolverVersion++;
+			radioStationResolver.cancel();
+			radioStationResolver = null;
+		}
+		if (httpStreamReceiver != null) {
+			httpStreamReceiverVersion++;
+			httpStreamReceiver.release();
+			httpStreamReceiverActsLikePlayer = false;
+			httpStreamReceiver = null;
+		}
+	}
+
 	//I know this is far from "organized"... but this is the only way to prevent
 	//the class BluetoothVisualizerController from loading into memory without need!!!
 	public static Object bluetoothVisualizerController;
@@ -1887,6 +1941,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_BLUETOOTHVISUALIZERCONFIG = 0x0035;
 	private static final int OPT_HEADSETHOOKACTIONS = 0x0036;
 	private static final int OPT_RADIOLASTGENRESHOUTCAST = 0x0037;
+	private static final int OPT_HTTPOPTIONS = 0x0038;
 
 	//values 0x01xx are shared among all effects
 	//static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -2022,6 +2077,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
+		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000021);
 		UI.setTransition((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
 		//the volume control types changed on version 71
@@ -2154,6 +2210,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
 		opts.put(OPT_RADIOLASTGENRESHOUTCAST, radioLastGenreShoutcast);
+		opts.put(OPT_HTTPOPTIONS, httpOptions);
 		opts.put(OPT_TRANSITION, UI.transition);
 		opts.put(OPT_HEADSETHOOKACTIONS, headsetHookActions);
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);

@@ -244,7 +244,7 @@
     <string name="opengl_error">Error OpenGL</string>
     <string name="opengl_not_supported">No hay soporte para OpenGL ES 2.0</string>
     <string name="speed">Velocidad</string>
-    <string name="add_radio">Radio</string>
+    <string name="radio">Radio</string>
     <string name="search">Buscar</string>
     <string name="genre">Género</string>
     <string name="search_term">Término de búsqueda</string>
@@ -323,5 +323,9 @@
     <string name="all_kinds">Todos los tipos</string>
     <string name="listeners">Oyentes</string>
     <string name="connecting">Conectando…</string>
+    <string name="bytes_before_decoding">Bytes para descargar antes de comenzar a decodificar:</string>
+    <string name="seconds_before_playback">Segundos para decodificar antes de iniciar la reproducción:</string>
+    <string name="second">segundo</string>
+    <string name="seconds">segundos</string>
 
 </resources>

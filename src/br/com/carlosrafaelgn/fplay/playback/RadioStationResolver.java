@@ -67,7 +67,7 @@ public final class RadioStationResolver extends Thread {
 		this.title = title;
 		this.isShoutcast = isShoutcast;
 		try {
-			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, null, 0, 0, 0, streamUrl, -1, false);
+			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, null, 0, 0, 0, 0, 0, streamUrl, false);
 		} catch (Throwable ex) {
 			streamReceiver = null;
 		}
