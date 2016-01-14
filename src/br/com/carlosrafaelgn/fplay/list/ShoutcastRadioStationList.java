@@ -147,7 +147,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 	}
 
 	@Override
-	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset) {
+	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages) {
 		int err = 0;
 		InputStream inputStream = null;
 		HttpURLConnection urlConnection = null;
@@ -160,7 +160,8 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				} else {
 					pageNumber += 20;
 					if (pageNumber >= 100) {
-						fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
+						if (sendMessages)
+							fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
 						return;
 					}
 				}
@@ -198,7 +199,8 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 			} else {
 				throw new IOException();
 			}
-			fetchStationsInternalResultsFound(myVersion, currentStationIndex, hasResults);
+			if (sendMessages)
+				fetchStationsInternalResultsFound(myVersion, currentStationIndex, hasResults);
 			err = 0;
 		} catch (Throwable ex) {
 			err = -1;
@@ -215,7 +217,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
-			if (err < 0)
+			if (err < 0 && sendMessages)
 				fetchStationsInternalError(myVersion, err);
 			System.gc();
 		}

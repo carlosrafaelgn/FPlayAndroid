@@ -930,7 +930,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		if (httpStreamReceiverActsLikePlayer) {
 			httpStreamReceiver.setVolume(multiplier, multiplier);
-			httpStreamReceiver.play();
+			//httpStreamReceiver starts playing automatically (we just need to fix the volume, as
+			//it always starts playing muted)
 		} else if (player != null) {
 			player.setVolume(multiplier, multiplier);
 			player.start();
@@ -1220,7 +1221,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_CURRENT, 0), SystemClock.uptimeMillis());
 				} else {
 					howThePlayerStarted = SongList.HOW_CURRENT;
-					_startPlayer();
+					if (httpStreamReceiverActsLikePlayer) {
+						//every time httpStreamReceiver starts, it is a preparation!
+						playerBuffering = true;
+						songScheduledForPreparation = song;
+						httpStreamReceiver.start();
+					} else {
+						_startPlayer();
+					}
 					_updateState(false, null);
 				}
 			}
@@ -1692,10 +1700,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		_releaseInternetObjects();
 		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
 			try {
+				song._updateRadioPath(result.toString());
 				//force the player to always start playing as if coming from a pause
 				silenceMode = SILENCE_NORMAL;
 				playerBuffering = true;
-				httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, handler, MSG_HTTP_STREAM_RECEIVER_PREPARED, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), player.getAudioSessionId(), result.toString(), true);
+				httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, handler, MSG_HTTP_STREAM_RECEIVER_PREPARED, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), player.getAudioSessionId(), result.toString());
 				if (httpStreamReceiver.start()) {
 					if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 						return;
@@ -1713,7 +1722,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				result = ex;
 			}
 		}
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (!isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? ERROR_NOT_FOUND : ((result == null || !(result instanceof TimeoutException)) ? ERROR_IO : ERROR_TIMED_OUT));
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (result == null || !isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? ERROR_NOT_FOUND : (!(result instanceof TimeoutException) ? ERROR_IO : ERROR_TIMED_OUT));
 	}
 
 	private static void _httpStreamReceiverError(int version, int errorCode) {
@@ -1751,6 +1760,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				name = receiver.getIcyName();
 				url = receiver.getIcyUrl();
 			}
+			//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
 			if (name != null && name.length() > 0) {
 				localSong.artist = name;
 				localSong.extraInfo = name;

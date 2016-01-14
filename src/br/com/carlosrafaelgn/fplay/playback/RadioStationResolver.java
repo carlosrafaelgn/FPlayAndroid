@@ -43,6 +43,7 @@ import java.net.HttpURLConnection;
 
 import br.com.carlosrafaelgn.fplay.list.IcecastRadioStationList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
+import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
@@ -54,6 +55,7 @@ public final class RadioStationResolver extends Thread {
 	private final boolean isShoutcast;
 	private Handler handler;
 	private HttpStreamReceiver streamReceiver;
+	private RadioStationList radioStationList;
 
 	private RadioStationResolver(int msg, int arg1, Handler handler, String streamUrl, String m3uUrl, String title, boolean isShoutcast) {
 		super("Radio Station Resolver Thread");
@@ -67,7 +69,7 @@ public final class RadioStationResolver extends Thread {
 		this.title = title;
 		this.isShoutcast = isShoutcast;
 		try {
-			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, null, 0, 0, 0, 0, 0, streamUrl, false);
+			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, null, 0, 0, 0, 0, 0, streamUrl);
 		} catch (Throwable ex) {
 			streamReceiver = null;
 		}
@@ -191,7 +193,12 @@ public final class RadioStationResolver extends Thread {
 			}
 
 			//third: perform a new search for this radio station (this is the most time consuming operation)
-			final RadioStation radioStation = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new IcecastRadioStationList("", "", "", "")).tryToFetchRadioStationAgain(Player.getService(), title);
+			synchronized (sync) {
+				if (!alive)
+					return;
+				radioStationList = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new IcecastRadioStationList("", "", "", ""));
+			}
+			final RadioStation radioStation = radioStationList.tryToFetchRadioStationAgain(Player.getService(), title);
 			if (!alive)
 				return;
 			if (radioStation != null) {
@@ -226,8 +233,8 @@ public final class RadioStationResolver extends Thread {
 	}
 
 	public void cancel() {
+		alive = false;
 		synchronized (sync) {
-			alive = false;
 			handler = null;
 			streamUrl = null;
 			m3uUrl = null;
@@ -235,6 +242,10 @@ public final class RadioStationResolver extends Thread {
 			if (streamReceiver != null) {
 				streamReceiver.release();
 				streamReceiver = null;
+			}
+			if (radioStationList != null) {
+				radioStationList.cancel();
+				radioStationList = null;
 			}
 		}
 	}

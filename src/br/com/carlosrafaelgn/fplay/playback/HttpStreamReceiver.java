@@ -75,9 +75,9 @@ public final class HttpStreamReceiver implements Runnable {
 	private final Object sync;
 	private final int errorMsg, preparedMsg, metadataMsg, arg1, audioSessionId, initialNetworkBufferLengthInBytes, initialAudioBufferInMS;
 	private final CircularIOBuffer buffer;
-	private volatile boolean alive, finished, headerOk, paused;
-	private volatile float volumeLeft, volumeRight;
+	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady;
+	private boolean released;
 	private String contentType, icyName, icyUrl, icyGenre;
 	private int icyBitRate, icyMetaInterval;
 	private Handler errorHandler, preparedHandler, metadataHandler;
@@ -120,7 +120,7 @@ public final class HttpStreamReceiver implements Runnable {
 			if (bufferSize < (sampleRate << 3)) //2 seconds @ stereo, 16 bits per sample (* 8)
 				bufferSize = (sampleRate << 3);
 			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM, audioSessionId);
-			audioTrack.setStereoVolume(volumeLeft, volumeRight);
+			audioTrack.setStereoVolume(0.0f, 0.0f);
 		}
 
 		private void releaseMediaCodec() {
@@ -277,6 +277,8 @@ public final class HttpStreamReceiver implements Runnable {
 
 							//send the decoded audio to audioTrack
 							synchronized (sync) {
+								if (!alive)
+									break;
 								actuallyWrittenShorts = audioTrack.write(tmpShortOutput, 0, info.size);
 							}
 							if (actuallyWrittenShorts < 0)
@@ -285,11 +287,14 @@ public final class HttpStreamReceiver implements Runnable {
 							if (initialShortCounter > 0) {
 								initialShortCounter -= actuallyWrittenShorts;
 								if (initialShortCounter <= 0) {
-									if (preparedHandler != null)
-										preparedHandler.sendMessageAtTime(Message.obtain(preparedHandler, preparedMsg, arg1, 0), SystemClock.uptimeMillis());
 									synchronized (sync) {
-										if (!paused)
-											audioTrack.play();
+										if (!alive)
+											break;
+										audioTrack.setStereoVolume(0.0f, 0.0f);
+										audioTrack.play();
+										audioTrack.setStereoVolume(0.0f, 0.0f);
+										if (preparedHandler != null)
+											preparedHandler.sendMessageAtTime(Message.obtain(preparedHandler, preparedMsg, arg1, 0), SystemClock.uptimeMillis());
 									}
 								}
 							}
@@ -300,14 +305,19 @@ public final class HttpStreamReceiver implements Runnable {
 							} else {
 								if (actuallyWrittenShorts == 0) {
 									synchronized (sync) {
-										if (paused)
+										if (!alive)
 											break;
-										else
-											audioTrack.play();
+										try {
+											audioTrack.play(); //???
+										} catch (Throwable ex) {
+											//ignore any errors in this rather weird state!
+										}
 									}
 								}
 								//wait and retry the operation later
 								synchronized (sync) {
+									if (!alive)
+										break;
 									try {
 										sync.wait(5);
 									} catch (Throwable ex) {
@@ -333,17 +343,21 @@ public final class HttpStreamReceiver implements Runnable {
 				}
 			} catch (Throwable ex) {
 				//abort everything!
-				if (!alive)
-					return;
-				try {
-					if (errorHandler != null)
-						errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, -2), SystemClock.uptimeMillis());
-				} catch (Throwable ex2) {
-					errorHandler = null;
+				synchronized (sync) {
+					if (!alive)
+						return;
+					try {
+						if (errorHandler != null)
+							errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, -2), SystemClock.uptimeMillis());
+					} catch (Throwable ex2) {
+						errorHandler = null;
+					}
 				}
 			} finally {
 				releaseMediaCodec();
-				releaseAudioTrack();
+				synchronized (sync) {
+					releaseAudioTrack();
+				}
 			}
 		}
 	}
@@ -493,13 +507,15 @@ public final class HttpStreamReceiver implements Runnable {
 				}
 			} catch (Throwable ex) {
 				//abort everything!
-				if (!alive)
-					return;
-				try {
-					if (errorHandler != null)
-						errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
-				} catch (Throwable ex2) {
-					errorHandler = null;
+				synchronized (sync) {
+					if (!alive)
+						return;
+					try {
+						if (errorHandler != null)
+							errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
+					} catch (Throwable ex2) {
+						errorHandler = null;
+					}
 				}
 			} finally {
 				synchronized (sync) {
@@ -616,9 +632,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler preparedHandler, int preparedMsg, Handler metadataHandler, int metadataMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String url, boolean createThreads) throws MalformedURLException {
-		alive = true;
-		paused = true;
+	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler preparedHandler, int preparedMsg, Handler metadataHandler, int metadataMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String url) throws MalformedURLException {
 		this.url = normalizeIcyUrl(url);
 		sync = new Object();
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
@@ -635,12 +649,6 @@ public final class HttpStreamReceiver implements Runnable {
 		bytesReceivedSoFar = -1;
 		initialNetworkBufferLengthInBytes = bytesBeforeDecoding;
 		initialAudioBufferInMS = secondsBeforePlaying;
-		if (createThreads) {
-			clientThread = new Thread(this, "HttpStreamReceiver Client");
-			clientThread.setDaemon(true);
-			serverThread = new Thread(isPerformingFullPlayback ? new FullPlaybackRunnable() : new ServerRunnable(), "HttpStreamReceiver Server");
-			serverThread.setDaemon(true);
-		}
 	}
 
 	private boolean waitForHeaders() {
@@ -959,13 +967,15 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 		} catch (Throwable ex) {
 			//abort everything!
-			if (!alive)
-				return;
-			try {
-				if (errorHandler != null)
-					errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
-			} catch (Throwable ex2) {
-				errorHandler = null;
+			synchronized (sync) {
+				if (!alive)
+					return;
+				try {
+					if (errorHandler != null)
+						errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
+				} catch (Throwable ex2) {
+					errorHandler = null;
+				}
 			}
 		} finally {
 			synchronized (sync) {
@@ -976,8 +986,40 @@ public final class HttpStreamReceiver implements Runnable {
 	}
 
 	public boolean start() {
-		if (!alive || buffer == null || serverThread == null || clientThread == null)
+		if (alive || released)
 			return false;
+		if (clientThread != null) {
+			try {
+				clientThread.join(50000);
+			} catch (Throwable ex) {
+				//we tried to wait...
+			}
+		}
+		if (serverThread != null) {
+			try {
+				serverThread.join(50000);
+			} catch (Throwable ex) {
+				//we tried to wait...
+			}
+		}
+
+		alive = true;
+
+		//reset the internal state
+		headerOk = false;
+		contentType = null;
+		icyName = null;
+		icyUrl = null;
+		icyGenre = null;
+		icyBitRate = 0;
+		icyMetaInterval = 0;
+		bytesReceivedSoFar = -1;
+		buffer.reset();
+
+		clientThread = new Thread(this, "HttpStreamReceiver Client");
+		clientThread.setDaemon(true);
+		serverThread = new Thread(isPerformingFullPlayback ? new FullPlaybackRunnable() : new ServerRunnable(), "HttpStreamReceiver Server");
+		serverThread.setDaemon(true);
 		clientThread.start();
 		serverThread.start();
 		if (isPerformingFullPlayback)
@@ -996,12 +1038,10 @@ public final class HttpStreamReceiver implements Runnable {
 
 	@SuppressWarnings("deprecation")
 	public void setVolume(float left, float right) {
-		//let's remove the synchronized for the sake of speed during the fadeins
+		if (!isPerformingFullPlayback || !alive || released)
+			return;
+		//let's remove the synchronization for the sake of speed during the fadeins
 		//synchronized (sync) {
-			if (!alive)
-				return;
-			volumeLeft = left;
-			volumeRight = right;
 			try {
 				if (audioTrack != null)
 					audioTrack.setStereoVolume(left, right);
@@ -1012,57 +1052,47 @@ public final class HttpStreamReceiver implements Runnable {
 	}
 
 	public void pause() {
+		if (!isPerformingFullPlayback || !alive || released)
+			return;
+		alive = false;
 		synchronized (sync) {
-			if (!alive || paused)
-				return;
-			paused = true;
 			try {
 				if (audioTrack != null)
 					audioTrack.pause();
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
-			sync.notifyAll();
+			releaseThreadsAndSockets();
 		}
+		bytesReceivedSoFar = -1;
 	}
 
-	public void play() {
-		synchronized (sync) {
-			if (!alive || !paused)
-				return;
-			paused = false;
-			try {
-				if (audioTrack != null)
-					audioTrack.play();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			sync.notifyAll();
-		}
+	private void releaseThreadsAndSockets() {
+		buffer.abortPendingReadsAndWrites();
+		serverPortReady = 0;
+		if (serverThread != null)
+			serverThread.interrupt();
+		if (clientThread != null)
+			clientThread.interrupt();
+		closeSocket(clientSocket);
+		clientSocket = null;
+		closeSocket(playerSocket);
+		playerSocket = null;
+		closeSocket(serverSocket);
+		serverSocket = null;
+		sync.notifyAll();
 	}
 
 	public void release() {
 		alive = false;
-		buffer.release();
+		released = true;
 		synchronized (sync) {
 			errorHandler = null;
+			preparedHandler = null;
 			metadataHandler = null;
-			serverPortReady = 0;
-			if (serverThread != null) {
-				serverThread.interrupt();
-				serverThread = null;
-			}
-			if (clientThread != null) {
-				clientThread.interrupt();
-				clientThread = null;
-			}
-			closeSocket(clientSocket);
-			clientSocket = null;
-			closeSocket(playerSocket);
-			playerSocket = null;
-			closeSocket(serverSocket);
-			serverSocket = null;
-			sync.notifyAll();
+			releaseThreadsAndSockets();
+			clientThread = null;
+			serverThread = null;
 		}
 	}
 
@@ -1130,114 +1160,136 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 	};
 
+	private int isByteAtOffsetAValidMpegHeader(int offset, int[] properties) {
+		//header byte 0
+		int b = buffer.peekReadArray(offset);
+
+		if (b == 0x49 && buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
+			//process the ID3 tag by skipping it comletely
+			buffer.waitUntilCanRead(10);
+
+			if (!alive)
+				return -1;
+
+			//refer to MetadataExtractor.java -> extractID3v2Andv1()
+			final int flags = buffer.peekReadArray(offset + 5);
+			final int sizeBytes0 = buffer.peekReadArray(offset + 6);
+			final int sizeBytes1 = buffer.peekReadArray(offset + 7);
+			final int sizeBytes2 = buffer.peekReadArray(offset + 8);
+			final int sizeBytes3 = buffer.peekReadArray(offset + 9);
+			int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
+				(
+					(sizeBytes3 & 0x7f) |
+						((sizeBytes2 & 0x7f) << 7) |
+						((sizeBytes1 & 0x7f) << 14) |
+						((sizeBytes0 & 0x7f) << 21)
+				) + 10; //the first 10 bytes
+			while (size > 0 && alive) {
+				final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+				size -= len;
+				buffer.readBuffer.position(buffer.readBuffer.limit());
+				buffer.commitRead(len);
+			}
+
+			if (!alive)
+				return -1;
+
+			//proceed as if none of this had happened
+			buffer.waitUntilCanRead(4);
+			b = buffer.peekReadArray(offset);
+		}
+
+		if (b != 0xFF)
+			return -1;
+
+		//could be the first byte of our header, let's just check the next 3 bytes
+
+		//header byte 1
+		b = buffer.peekReadArray(offset + 1);
+
+		//11 bits: sync word
+		if ((b & 0xE0) != 0xE0)
+			return -1;
+
+		//2 bits: version must be != 1
+		final int version = ((b >>> 3) & 0x03);
+		if (version == 1)
+			return -1;
+
+		//2 bits: version must be != 1
+		final int layer = ((b >>> 1) & 0x03);
+		if (layer == 0)
+			return -1;
+
+		//1 bit: error protection bit (ignored)
+
+		//header byte 2
+		b = buffer.peekReadArray(offset + 2);
+
+		//4 bits: bit rate
+		final int bitRate = MPEG_BIT_RATE[version & 1][layer - 1][b >>> 4];
+		if (bitRate == 0)
+			return -1;
+
+		//2 bits: sample rate
+		final int sampleRate = MPEG_SAMPLE_RATE[version][(b >>> 2) & 0x03];
+		if (sampleRate == 0)
+			return -1;
+
+		//1 bit: padding (if == 1, add 1 slot to the frame size)
+		final int padding = ((b >>> 1) & 0x01);
+
+		//1 bit: private bit (ignored)
+
+		//header byte 3
+		b = buffer.peekReadArray(offset + 3);
+
+		//2 bits: channel mode
+		if (properties != null) {
+			properties[0] = (((b >>> 6) == 3) ? 1 : 2); //channel count
+			properties[1] = sampleRate;
+			properties[2] = bitRate;
+			properties[3] = MPEG_SAMPLES_PER_FRAME[version & 1][layer - 1];
+		}
+
+		//2 bits: mode extension (ignored)
+
+		//1 bit: copyright (ignored)
+
+		//1 bit: original (ignored)
+
+		//2 bits: emphasis (must be != 2)
+		if ((b & 0x03) == 2)
+			return -1;
+
+		int frameSize = (((MPEG_COEFF[version & 1][layer - 1] * bitRate) / sampleRate) + padding);
+		if (layer == 3) //Layer I
+			frameSize <<= 2; //slot size * 4
+
+		return frameSize;
+	}
+
 	private int waitToReadMpegHeader(int[] properties) {
 		//we will look for the MPEG header
 		//http://www.mp3-tech.org/programmer/frame_header.html
 		//https://en.wikipedia.org/wiki/MP3
-		for (int usedBytes = 0; alive; usedBytes++, buffer.readBuffer.position(buffer.readBuffer.position() + 1)) {
+		while (alive) {
 			buffer.waitUntilCanRead(4);
 
-			//header byte 0
-			int b = buffer.peekReadArray(0);
-
-			if (b == 0x49 && buffer.peekReadArray(1) == 0x44 && buffer.peekReadArray(2) == 0x33) {
-				//process the ID3 tag by skipping it comletely
-				buffer.waitUntilCanRead(10);
-				//refer to MetadataExtractor.java -> extractID3v2Andv1()
-				final int flags = buffer.peekReadArray(5);
-				final int sizeBytes0 = buffer.peekReadArray(6);
-				final int sizeBytes1 = buffer.peekReadArray(7);
-				final int sizeBytes2 = buffer.peekReadArray(8);
-				final int sizeBytes3 = buffer.peekReadArray(9);
-				int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
-					(
-						(sizeBytes3 & 0x7f) |
-						((sizeBytes2 & 0x7f) << 7) |
-						((sizeBytes1 & 0x7f) << 14) |
-						((sizeBytes0 & 0x7f) << 21)
-					) + 10; //the first 10 bytes
-				while (size > 0) {
-					final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
-					size -= len;
-					buffer.readBuffer.position(buffer.readBuffer.limit());
-					buffer.commitRead(len);
-				}
-
-				//proceed as if none of this had happened
-				buffer.waitUntilCanRead(4);
-				b = buffer.peekReadArray(0);
+			final int frameSize = isByteAtOffsetAValidMpegHeader(0, properties);
+			if (frameSize <= 0) {
+				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+				continue;
 			}
 
-			if (b != 0xFF)
+			buffer.waitUntilCanRead(frameSize + 4);
+
+			//if the byte at offset 0 was actually a header, then THERE MUST be another header
+			//right after it (extra validation)
+			if (isByteAtOffsetAValidMpegHeader(frameSize, properties) <= 0) {
+				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 				continue;
-
-			//could be the first byte of our header, let's just check the next 3 bytes
-
-			//header byte 1
-			b = buffer.peekReadArray(1);
-
-			//11 bits: sync word
-			if ((b & 0xE0) != 0xE0)
-				continue;
-
-			//2 bits: version must be != 1
-			final int version = ((b >>> 3) & 0x03);
-			if (version == 1)
-				continue;
-
-			//2 bits: version must be != 1
-			final int layer = ((b >>> 1) & 0x03);
-			if (layer == 0)
-				continue;
-
-			//1 bit: error protection bit (ignored)
-
-			//header byte 2
-			b = buffer.peekReadArray(2);
-
-			//4 bits: bit rate
-			final int bitRate = MPEG_BIT_RATE[version & 1][layer - 1][b >>> 4];
-			if (bitRate == 0)
-				continue;
-
-			//2 bits: sample rate
-			final int sampleRate = MPEG_SAMPLE_RATE[version][(b >>> 2) & 0x03];
-			if (sampleRate == 0)
-				continue;
-
-			//1 bit: padding (if == 1, add 1 slot to the frame size)
-			final int padding = ((b >>> 1) & 0x01);
-
-			//1 bit: private bit (ignored)
-
-			//header byte 3
-			b = buffer.peekReadArray(3);
-
-			//2 bits: channel mode
-			if (properties != null) {
-				properties[0] = (((b >>> 6) == 3) ? 1 : 2); //channel count
-				properties[1] = sampleRate;
-				properties[2] = bitRate;
-				properties[3] = MPEG_SAMPLES_PER_FRAME[version & 1][layer - 1];
 			}
-
-			//2 bits: mode extension (ignored)
-
-			//1 bit: copyright (ignored)
-
-			//1 bit: original (ignored)
-
-			//2 bits: emphasis (must be != 2)
-			if ((b & 0x03) == 2)
-				continue;
-
-			int frameSize = (((MPEG_COEFF[version & 1][layer - 1] * bitRate) / sampleRate) + padding);
-			if (layer == 3) //Layer I
-				frameSize <<= 2; //slot size * 4
-
-			//usedBytes is very likely to be always 0 (under normal circumstances)
-			if (usedBytes != 0)
-				buffer.commitRead(usedBytes);
 
 			return frameSize;
 		}

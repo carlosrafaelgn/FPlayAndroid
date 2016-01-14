@@ -270,7 +270,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 	}
 
 	@Override
-	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset) {
+	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages) {
 		int err = 0;
 		InputStream inputStream = null;
 		HttpURLConnection urlConnection = null;
@@ -286,7 +286,8 @@ public final class IcecastRadioStationList extends RadioStationList {
 					} else {
 						pageNumber++;
 						if (pageNumber > 4 || currentStationIndex > 90) {
-							fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
+							if (sendMessages)
+								fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
 							return;
 						}
 					}
@@ -312,7 +313,8 @@ public final class IcecastRadioStationList extends RadioStationList {
 				}
 				//if we were not able to add at least 10 new stations, repeat the entire procedure
 			} while (myVersion == version && currentStationIndex < (oldStationIndex + 10));
-			fetchStationsInternalResultsFound(myVersion, currentStationIndex, true);
+			if (sendMessages)
+				fetchStationsInternalResultsFound(myVersion, currentStationIndex, true);
 			err = 0;
 		} catch (Throwable ex) {
 			err = -1;
@@ -329,7 +331,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
-			if (err < 0)
+			if (err < 0 && sendMessages)
 				fetchStationsInternalError(myVersion, err);
 			System.gc();
 		}

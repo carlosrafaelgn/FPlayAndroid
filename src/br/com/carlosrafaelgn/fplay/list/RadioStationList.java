@@ -289,7 +289,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			return;
 		}
 
-		fetchStationsInternal(context, myVersion, genre, searchTerm, reset);
+		fetchStationsInternal(context, myVersion, genre, searchTerm, reset, true);
 	}
 
 	public final void addFavoriteStation(RadioStation station) {
@@ -320,7 +320,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			MainHandler.sendMessage(this, MSG_ERROR, myVersion, err);
 	}
 
-	protected abstract void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset);
+	protected abstract void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages);
 
 	public final boolean fetchStations(Context context, RadioStationGenre genre, String searchTerm, boolean reset) {
 		while (!readyToFetch)
@@ -392,10 +392,9 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 
 	public final RadioStation tryToFetchRadioStationAgain(Context context, String title) {
 		try {
-			//fetchStationsInternalResultsFound and fetchStationsInternalError will never
-			//call MainHandler.sendMessage because the versions do not match
 			version++;
-			fetchStationsInternal(context, version + 1, null, title, true);
+			loading = false;
+			fetchStationsInternal(context, version, null, title, true, false);
 			if (items == null)
 				return null;
 			int i = 0;
@@ -403,6 +402,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			while (i < items.length && (radioStation = items[i]) != null) {
 				if (title.equalsIgnoreCase(radioStation.title))
 					return radioStation;
+				i++;
 			}
 			return null;
 		} catch (Throwable ex) {

@@ -56,7 +56,14 @@ public final class CircularIOBuffer {
 		readBuffer = writeBuffer.asReadOnlyBuffer();
 	}
 
-	public void release() {
+	public void reset() {
+		alive = true;
+		filledSize = 0;
+		writeBuffer.limit(0);
+		readBuffer.limit(0);
+	}
+
+	public void abortPendingReadsAndWrites() {
 		alive = false;
 		synchronized (sync) {
 			sync.notifyAll();
@@ -90,6 +97,13 @@ public final class CircularIOBuffer {
 		synchronized (sync) {
 			filledSize = ((filledSize <= length) ? 0 : (filledSize - length));
 			sync.notifyAll();
+		}
+	}
+
+	public void advanceBufferAndCommitReadOneByteWithoutNotification() {
+		readBuffer.position(readBuffer.position() + 1);
+		synchronized (sync) {
+			filledSize = ((filledSize <= 1) ? 0 : (filledSize - 1));
 		}
 	}
 
