@@ -39,11 +39,32 @@ import java.io.OutputStream;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class RadioStation extends BaseItem {
-	public static final String UNIT_SEPARATOR = "\u001F";
-	public static final char UNIT_SEPARATOR_CHAR = '\u001F';
+	private static final String UNIT_SEPARATOR = "\u001F";
+	private static final char UNIT_SEPARATOR_CHAR = '\u001F';
 	public final String title, stationSiteUrl, type, /*listeners,*/ description, onAir, tags, m3uUrl;
 	private final int hash;
 	public boolean isFavorite, isShoutcast;
+
+	public static String[] splitPath(String path) {
+		final int i = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR);
+		if (i <= 0)
+			return null;
+		final int i2 = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR, i + 1);
+		final int i3 = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR, i2 + 1);
+		if (i2 <= (i + 1) || i3 <= (i2 + 1))
+			return null;
+		return new String[] {
+			path.substring(0, i),
+			path.substring(i + 1, i2),
+			path.substring(i2 + 1, i3),
+			path.substring(i3 + 1)
+		};
+	}
+
+	public static String extractUrl(String path) {
+		final int i = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR);
+		return ((i <= 0) ? path : path.substring(0, i));
+	}
 
 	public RadioStation(String title, String stationSiteUrl, String type, String description, String onAir, String tags, String m3uUrl, boolean isFavorite, boolean isShoutcast) {
 		this.title = title;

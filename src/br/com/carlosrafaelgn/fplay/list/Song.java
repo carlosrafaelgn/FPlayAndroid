@@ -49,7 +49,7 @@ public final class Song extends BaseItem {
 	public static final int EXTRA_TRACK_ARTIST_ALBUM = 4;
 	public static final int EXTRA_ARTIST_ALBUM = 5;
 	public static int extraInfoMode;
-	public String path; //the only thread/method allowed to change the path is Player._radioStationResolved()
+	public String path; //the only thread/method allowed to change the path is Player._httpStreamReceiverUrlUpdated()
 	public boolean isHttp;
 	public String title, artist, album, extraInfo;
 	public int track, lengthMS, year;
@@ -210,17 +210,7 @@ public final class Song extends BaseItem {
 	}
 
 	public String getHumanReadablePath() {
-		final int i = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR);
-		return ((i <= 0) ? path : path.substring(0, i));
-	}
-
-	public void _updateRadioPath(String newPath) {
-		if (path.startsWith(newPath))
-			return;
-		final int i = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR);
-		if (i <= 0)
-			return;
-		path = newPath + path.substring(i);
+		return RadioStation.extractUrl(path);
 	}
 
 	public void updateExtraInfo() {

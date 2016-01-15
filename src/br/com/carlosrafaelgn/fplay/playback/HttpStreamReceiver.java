@@ -57,6 +57,7 @@ import java.nio.ShortBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class HttpStreamReceiver implements Runnable {
@@ -72,15 +73,17 @@ public final class HttpStreamReceiver implements Runnable {
 	//http://www.smackfu.com/stuff/programming/shoutcast.html
 	//http://stackoverflow.com/questions/6061057/developing-the-client-for-the-icecast-server
 	private URL url;
+	private final String path;
 	private final Object sync;
-	private final int errorMsg, preparedMsg, metadataMsg, arg1, audioSessionId, initialNetworkBufferLengthInBytes, initialAudioBufferInMS;
+	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, arg1, audioSessionId, initialNetworkBufferLengthInBytes, initialAudioBufferInMS;
 	private final CircularIOBuffer buffer;
 	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady;
+	private RadioStationResolver resolver;
 	private boolean released;
 	private String contentType, icyName, icyUrl, icyGenre;
 	private int icyBitRate, icyMetaInterval;
-	private Handler errorHandler, preparedHandler, metadataHandler;
+	private Handler handler;
 	private Thread clientThread, serverThread;
 	private SocketChannel clientSocket, playerSocket;
 	private ServerSocketChannel serverSocket;
@@ -293,8 +296,8 @@ public final class HttpStreamReceiver implements Runnable {
 										audioTrack.setStereoVolume(0.0f, 0.0f);
 										audioTrack.play();
 										audioTrack.setStereoVolume(0.0f, 0.0f);
-										if (preparedHandler != null)
-											preparedHandler.sendMessageAtTime(Message.obtain(preparedHandler, preparedMsg, arg1, 0), SystemClock.uptimeMillis());
+										if (handler != null)
+											handler.sendMessageAtTime(Message.obtain(handler, preparedMsg, arg1, 0), SystemClock.uptimeMillis());
 									}
 								}
 							}
@@ -346,12 +349,8 @@ public final class HttpStreamReceiver implements Runnable {
 				synchronized (sync) {
 					if (!alive)
 						return;
-					try {
-						if (errorHandler != null)
-							errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, -2), SystemClock.uptimeMillis());
-					} catch (Throwable ex2) {
-						errorHandler = null;
-					}
+					if (handler != null)
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, -2), SystemClock.uptimeMillis());
 				}
 			} finally {
 				releaseMediaCodec();
@@ -510,12 +509,8 @@ public final class HttpStreamReceiver implements Runnable {
 				synchronized (sync) {
 					if (!alive)
 						return;
-					try {
-						if (errorHandler != null)
-							errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
-					} catch (Throwable ex2) {
-						errorHandler = null;
-					}
+					if (handler != null)
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
 				}
 			} finally {
 				synchronized (sync) {
@@ -632,22 +627,23 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(Handler errorHandler, int errorMsg, Handler preparedHandler, int preparedMsg, Handler metadataHandler, int metadataMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String url) throws MalformedURLException {
-		this.url = normalizeIcyUrl(url);
+	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
+		this.url = normalizeIcyUrl(RadioStation.extractUrl(path));
+		this.path = path;
 		sync = new Object();
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
 		//when isPerformingFullPlayback is true, we will need to use the data inside this buffer from Java very often!
-		buffer = new CircularIOBuffer(bytesBeforeDecoding <= 0 ? MIN_BUFFER_LENGTH : (bytesBeforeDecoding <= EXTERNAL_BUFFER_LENGTH ? EXTERNAL_BUFFER_LENGTH : (bytesBeforeDecoding + MIN_BUFFER_LENGTH)), !isPerformingFullPlayback);
-		this.errorHandler = errorHandler;
+		//when isPerformingFullPlayback is false, and we will be just acting as a man-in-the-middle, then create a very small buffer
+		buffer = new CircularIOBuffer((!isPerformingFullPlayback || bytesBeforeDecoding <= 0) ? MIN_BUFFER_LENGTH : (bytesBeforeDecoding <= EXTERNAL_BUFFER_LENGTH ? EXTERNAL_BUFFER_LENGTH : (bytesBeforeDecoding + MIN_BUFFER_LENGTH)), !isPerformingFullPlayback);
+		this.handler = handler;
 		this.errorMsg = errorMsg;
-		this.preparedHandler = preparedHandler;
 		this.preparedMsg = preparedMsg;
-		this.metadataHandler = metadataHandler;
 		this.metadataMsg = metadataMsg;
+		this.urlMsg = urlMsg;
 		this.arg1 = arg1;
 		this.audioSessionId = audioSessionId;
 		bytesReceivedSoFar = -1;
-		initialNetworkBufferLengthInBytes = bytesBeforeDecoding;
+		initialNetworkBufferLengthInBytes = ((!isPerformingFullPlayback || bytesBeforeDecoding <= 0) ? 0 : bytesBeforeDecoding);
 		initialAudioBufferInMS = secondsBeforePlaying;
 	}
 
@@ -667,10 +663,6 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 		}
 		return alive;
-	}
-
-	public boolean pingServer() throws IOException {
-		return (sendRequestAndParseResponse(0) >= 0);
 	}
 
 	private int sendRequestAndParseResponse(int redirectCount) throws IOException {
@@ -870,6 +862,74 @@ public final class HttpStreamReceiver implements Runnable {
 		throw new IOException();
 	}
 
+	private int resolveUrlAndSendRequest() throws Throwable {
+		Throwable lastEx = null;
+
+		int res;
+		try {
+			res = sendRequestAndParseResponse(0);
+			if (res >= 0)
+				return res;
+		} catch (Throwable ex) {
+			lastEx = ex;
+		}
+
+		if (!alive)
+			return -1;
+
+		synchronized (sync) {
+			closeSocket(clientSocket);
+			clientSocket = null;
+		}
+
+		final String[] parts = RadioStation.splitPath(path);
+		//if there is nothing else we can do, just throw an exception
+		if (parts == null)
+			throw (lastEx == null ? new FileNotFoundException() : lastEx);
+
+		try {
+			synchronized (sync) {
+				if (!alive)
+					return -1;
+				resolver = new RadioStationResolver(parts[1], parts[2], parts[3].equals("1"));
+			}
+
+			final String[] newPath = new String[1];
+			final String newUrl = resolver.resolve(newPath);
+
+			if (!alive)
+				return -1;
+			if (newUrl == null)
+				throw new FileNotFoundException();
+
+			url = normalizeIcyUrl(newUrl);
+
+			res = sendRequestAndParseResponse(0);
+			if (res >= 0) {
+				//notify that the url has changed
+				synchronized (sync) {
+					if (!alive)
+						return -1;
+					if (handler != null)
+						handler.sendMessageAtTime(Message.obtain(handler, urlMsg, arg1, 0, newPath[0]), SystemClock.uptimeMillis());
+				}
+				return res;
+			}
+
+			if (!alive)
+				return -1;
+
+			throw new FileNotFoundException();
+		} finally {
+			synchronized (sync) {
+				if (resolver != null) {
+					resolver.release();
+					resolver = null;
+				}
+			}
+		}
+	}
+
 	private int processMetadata(ByteBuffer metaByteBuffer, int metaCountdown) throws IOException {
 		int len;
 		if (metaCountdown < 0) {
@@ -890,12 +950,15 @@ public final class HttpStreamReceiver implements Runnable {
 			if (metaCountdown <= 0) {
 				//we finished reading all the metadata!
 				metaCountdown = 0;
-				if (metadataHandler != null) {
-					int i = metaByteBuffer.position() - 1;
-					while (i > 0 && array[i] == 0)
-						i--;
-					if (i >= 0)
-						metadataHandler.sendMessageAtTime(Message.obtain(metadataHandler, metadataMsg, arg1, 0, detectCharsetAndDecode(array, 0, i + 1)), SystemClock.uptimeMillis());
+				int i = metaByteBuffer.position() - 1;
+				while (i > 0 && array[i] == 0)
+					i--;
+				if (i >= 0) {
+					final String metadata = detectCharsetAndDecode(array, 0, i + 1);
+					synchronized (sync) {
+						if (handler != null)
+							handler.sendMessageAtTime(Message.obtain(handler, metadataMsg, arg1, 0, metadata), SystemClock.uptimeMillis());
+					}
 				}
 			}
 		}
@@ -907,7 +970,7 @@ public final class HttpStreamReceiver implements Runnable {
 		try {
 			int timeoutCount = 0, metaCountdown = 0, bufferingCounter, audioCountdown;
 
-			if ((bufferingCounter = sendRequestAndParseResponse(0)) < 0)
+			if ((bufferingCounter = resolveUrlAndSendRequest()) < 0)
 				return;
 			audioCountdown = icyMetaInterval - bufferingCounter;
 
@@ -971,10 +1034,10 @@ public final class HttpStreamReceiver implements Runnable {
 				if (!alive)
 					return;
 				try {
-					if (errorHandler != null)
-						errorHandler.sendMessageAtTime(Message.obtain(errorHandler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
+					if (handler != null)
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
 				} catch (Throwable ex2) {
-					errorHandler = null;
+					handler = null;
 				}
 			}
 		} finally {
@@ -1087,17 +1150,15 @@ public final class HttpStreamReceiver implements Runnable {
 		alive = false;
 		released = true;
 		synchronized (sync) {
-			errorHandler = null;
-			preparedHandler = null;
-			metadataHandler = null;
+			if (resolver != null) {
+				resolver.release();
+				resolver = null;
+			}
+			handler = null;
 			releaseThreadsAndSockets();
 			clientThread = null;
 			serverThread = null;
 		}
-	}
-
-	public String getResolvedURL() {
-		return ((url == null) ? null : url.toExternalForm());
 	}
 
 	public String getLocalURL() {

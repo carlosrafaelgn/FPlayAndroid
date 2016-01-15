@@ -32,10 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
-import android.os.Handler;
-import android.os.Message;
-import android.os.SystemClock;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -47,46 +43,19 @@ import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
-public final class RadioStationResolver extends Thread {
+public final class RadioStationResolver {
 	private final Object sync;
 	private volatile boolean alive;
-	private final int msg, arg1;
-	private String streamUrl, m3uUrl, title;
+	private final String m3uUrl, title;
 	private final boolean isShoutcast;
-	private Handler handler;
-	private HttpStreamReceiver streamReceiver;
 	private RadioStationList radioStationList;
 
-	private RadioStationResolver(int msg, int arg1, Handler handler, String streamUrl, String m3uUrl, String title, boolean isShoutcast) {
-		super("Radio Station Resolver Thread");
+	public RadioStationResolver(String m3uUrl, String title, boolean isShoutcast) {
 		sync = new Object();
 		alive = true;
-		this.msg = msg;
-		this.arg1 = arg1;
-		this.handler = handler;
-		this.streamUrl = streamUrl;
 		this.m3uUrl = m3uUrl;
 		this.title = title;
 		this.isShoutcast = isShoutcast;
-		try {
-			streamReceiver = new HttpStreamReceiver(null, 0, null, 0, null, 0, 0, 0, 0, 0, streamUrl);
-		} catch (Throwable ex) {
-			streamReceiver = null;
-		}
-		setDaemon(true);
-	}
-
-	public static RadioStationResolver resolveIfNeeded(int msg, int arg1, Handler handler, String path) {
-		final int i = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR);
-		if (i <= 0)
-			return null;
-		final int i2 = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR, i + 1);
-		final int i3 = path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR, i2 + 1);
-		if (i2 <= (i + 1) || i3 <= (i2 + 1))
-			return null;
-		final RadioStationResolver resolver = new RadioStationResolver(msg, arg1, handler, path.substring(0, i), path.substring(i + 1, i2), path.substring(i2 + 1, i3), path.substring(i3 + 1).equals("1"));
-		resolver.start();
-		return resolver;
 	}
 
 	public static String resolveStreamUrlFromM3uUrl(String m3uUrl, int[] resultCode) {
@@ -155,94 +124,45 @@ public final class RadioStationResolver extends Thread {
 		}
 	}
 
-	@Override
-	public void run() {
-		final String streamUrl = this.streamUrl, m3uUrl = this.m3uUrl, title = this.title;
-		if (streamUrl == null || m3uUrl == null || title == null)
-			return;
-		int httpCode = -1;
-		Object result = null;
-		try {
-			//first step: try to connect to the stream url, if it is possible, no further actions are required
-			try {
-				if (streamReceiver != null && streamReceiver.pingServer()) {
-					synchronized (sync) {
-						if (streamReceiver != null) {
-							httpCode = 200;
-							result = streamReceiver.getResolvedURL();
-							streamReceiver.release();
-							streamReceiver = null;
-						}
-					}
-					return;
-				}
-			} catch (Throwable ex) {
-				httpCode = -1;
-			}
+	public String resolve(String[] newPath) {
+		if (!alive)
+			return null;
 
-			if (!alive)
-				return;
+		String result;
 
-			//second: try to resolve the stream url again (maybe something has changed)
-			result = resolveStreamUrlFromM3uUrl(m3uUrl, null);
+		//first: try to resolve the stream url again (maybe something has changed)
+		result = resolveStreamUrlFromM3uUrl(m3uUrl, null);
+		if (!alive)
+			return null;
+		if (result != null) {
+			if (newPath != null)
+				newPath[0] = (new RadioStation(title, "", "", "", "", "", m3uUrl, false, isShoutcast)).buildFullPath(result);
+			return result;
+		}
+
+		//second: perform a new search for this radio station (this is the most time consuming operation)
+		synchronized (sync) {
 			if (!alive)
-				return;
+				return null;
+			radioStationList = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new IcecastRadioStationList("", "", "", ""));
+		}
+		final RadioStation radioStation = radioStationList.tryToFetchRadioStationAgain(Player.getService(), title);
+		if (!alive)
+			return null;
+		if (radioStation != null) {
+			result = resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, null);
 			if (result != null) {
-				httpCode = 200;
-				return;
-			}
-
-			//third: perform a new search for this radio station (this is the most time consuming operation)
-			synchronized (sync) {
-				if (!alive)
-					return;
-				radioStationList = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new IcecastRadioStationList("", "", "", ""));
-			}
-			final RadioStation radioStation = radioStationList.tryToFetchRadioStationAgain(Player.getService(), title);
-			if (!alive)
-				return;
-			if (radioStation != null) {
-				result = resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, null);
-				if (!alive)
-					return;
-				if (result != null) {
-					httpCode = 200;
-					return;
-				}
-			}
-
-			httpCode = 0;
-			result = null;
-		} catch (Throwable ex) {
-			httpCode = -1;
-			result = ex;
-		} finally {
-			synchronized (sync) {
-				if (alive) {
-					alive = false;
-					if (handler != null) {
-						handler.sendMessageAtTime(Message.obtain(handler, msg, arg1, httpCode, result), SystemClock.uptimeMillis());
-						handler = null;
-					}
-					this.streamUrl = null;
-					this.m3uUrl = null;
-					this.title = null;
-				}
+				if (newPath != null)
+					newPath[0] = radioStation.buildFullPath(result);
+				return result;
 			}
 		}
+		return null;
 	}
 
-	public void cancel() {
+	public void release() {
 		alive = false;
 		synchronized (sync) {
-			handler = null;
-			streamUrl = null;
-			m3uUrl = null;
-			title = null;
-			if (streamReceiver != null) {
-				streamReceiver.release();
-				streamReceiver = null;
-			}
 			if (radioStationList != null) {
 				radioStationList.cancel();
 				radioStationList = null;

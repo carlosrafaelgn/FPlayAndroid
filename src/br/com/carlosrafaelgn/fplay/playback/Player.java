@@ -193,10 +193,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_COMMIT_VIRTUALIZER = 0x0118;
 	private static final int MSG_COMMIT_ALL_EFFECTS = 0x0119;
 	private static final int MSG_TURN_OFF_NOW = 0x011A;
-	private static final int MSG_RADIO_STATION_RESOLVED = 0x011B;
-	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x011C;
+	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x011B;
+	private static final int MSG_HTTP_STREAM_RECEIVER_PREPARED = 0x011C;
 	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x011D;
-	private static final int MSG_HTTP_STREAM_RECEIVER_PREPARED = 0x011E;
+	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x011E;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -355,14 +355,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case MSG_SONG_LIST_DESERIALIZED:
 				_songListDeserialized(msg.obj);
 				break;
-			case MSG_RADIO_STATION_RESOLVED:
-				_radioStationResolved(msg.arg1, msg.arg2, msg.obj);
-				break;
 			case MSG_HTTP_STREAM_RECEIVER_ERROR:
 				_httpStreamReceiverError(msg.arg1, msg.arg2);
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_PREPARED:
 				_httpStreamReceiverPrepared(msg.arg1);
+				break;
+			case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
+				if (localHandler != null)
+					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, msg.arg1, 0, msg.obj), SystemClock.uptimeMillis());
+				break;
+			case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
+				if (msg.obj != null)
+					_httpStreamReceiverUrlUpdated(msg.arg1, msg.obj.toString());
 				break;
 			}
 		}
@@ -1179,10 +1184,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				player.setDataSource(song.path);
 				player.prepareAsync();
 			} else {
-				if ((radioStationResolver = RadioStationResolver.resolveIfNeeded(MSG_RADIO_STATION_RESOLVED, ++radioStationResolverVersion, handler, song.path)) == null) {
-					//force all http songs to go through httpStreamReceiver (even if they do not need to be resolved)
-					_radioStationResolved(radioStationResolverVersion, 200, song.path);
-				}
+				_createInternetObjects();
 			}
 
 			nextPlayerState = PLAYER_STATE_NEW;
@@ -1638,8 +1640,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	private static int radioStationResolverVersion, httpStreamReceiverVersion, httpOptions;
-	private static RadioStationResolver radioStationResolver;
+	private static int httpStreamReceiverVersion, httpOptions;
 	private static HttpStreamReceiver httpStreamReceiver;
 
 	public static int getBytesBeforeDecoding(int index) {
@@ -1692,37 +1693,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static void setSecondsBeforePlayingIndex(int secondsBeforePlayingIndex) {
 		httpOptions = (httpOptions & ~0xF0) | ((secondsBeforePlayingIndex & 0x0F) << 4);
-	}
-
-	private static void _radioStationResolved(int version, int httpCode, Object result) {
-		if (state != STATE_ALIVE || version != radioStationResolverVersion || song == null || player == null || thePlayer == null)
-			return;
-		_releaseInternetObjects();
-		if (httpCode >= 200 && httpCode < 300 && result instanceof String) {
-			try {
-				song._updateRadioPath(result.toString());
-				//force the player to always start playing as if coming from a pause
-				silenceMode = SILENCE_NORMAL;
-				playerBuffering = true;
-				httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, handler, MSG_HTTP_STREAM_RECEIVER_PREPARED, localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), player.getAudioSessionId(), result.toString());
-				if (httpStreamReceiver.start()) {
-					if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
-						return;
-					result = httpStreamReceiver.getLocalURL();
-				} else {
-					_releaseInternetObjects();
-				}
-				playerBuffering = false;
-				//Even though it happens very rarely, a few devices will freeze and produce an ANR
-				//when calling setDataSource from the main thread :(
-				player.setDataSource(result.toString());
-				player.prepareAsync();
-				return;
-			} catch (Throwable ex) {
-				result = ex;
-			}
-		}
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, (result == null || !isConnectedToTheInternet() || (httpCode >= 300 && httpCode < 500)) ? ERROR_NOT_FOUND : (!(result instanceof TimeoutException) ? ERROR_IO : ERROR_TIMED_OUT));
 	}
 
 	private static void _httpStreamReceiverError(int version, int errorCode) {
@@ -1783,12 +1753,33 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		thePlayer.onPrepared(player);
 	}
 
-	private static void _releaseInternetObjects() {
-		if (radioStationResolver != null) {
-			radioStationResolverVersion++;
-			radioStationResolver.cancel();
-			radioStationResolver = null;
+	private static void _httpStreamReceiverUrlUpdated(int version, String newPath) {
+		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
+			return;
+		song.path = newPath;
+	}
+
+	private static void _createInternetObjects() throws IOException {
+		//force the player to always start playing as if coming from a pause
+		silenceMode = SILENCE_NORMAL;
+		playerBuffering = true;
+		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), player.getAudioSessionId(), song.path);
+		if (httpStreamReceiver.start()) {
+			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
+				return;
+			playerBuffering = false;
+			//Even though it happens very rarely, a few devices will freeze and produce an ANR
+			//when calling setDataSource from the main thread :(
+			player.setDataSource(httpStreamReceiver.getLocalURL());
+			player.prepareAsync();
+		} else {
+			//when start() returns false, this means we were unable to create the local server
+			_releaseInternetObjects();
+			throw new PermissionDeniedException();
 		}
+	}
+
+	private static void _releaseInternetObjects() {
 		if (httpStreamReceiver != null) {
 			httpStreamReceiverVersion++;
 			httpStreamReceiver.release();
