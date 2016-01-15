@@ -73,7 +73,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 							hasFields = false;
 						} else {
 							v = parser.getText().trim();
-							hasFields = (v.equals("MP3") || v.equals("Ogg Vorbis"));
+							hasFields = (v.equals("MP3"));// || v.equals("Ogg Vorbis")); HttpStreamReceiver cannot handle anything but MP3 yet...
 							fields[2] = v;
 						}
 					} else {
