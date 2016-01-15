@@ -879,11 +879,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return (localPlayerState == PLAYER_STATE_PREPARING || playerBuffering);
 	}
 
-	public static String getCurrentTitle(boolean preparing) {
-		return ((thePlayer == null) ? "" :
-			((localSong == null) ? thePlayer.getText(R.string.nothing_playing).toString() :
+	public static String getCurrentTitle(Context context, boolean preparing) {
+		return ((context == null) ? "" :
+			((localSong == null) ? context.getText(R.string.nothing_playing).toString() :
 				(!preparing ? localSong.title :
-					(thePlayer.getText(R.string.loading) + " " + localSong.title))));
+					(context.getText(R.string.loading) + " " + localSong.title))));
 	}
 
 	public static int getPosition() {
@@ -2300,7 +2300,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification, boolean notificationFirstTime) {
 		createIntents(context);
 
-		views.setTextViewText(R.id.lblTitle, getCurrentTitle(isPreparing()));
+		views.setTextViewText(R.id.lblTitle, getCurrentTitle(context, isPreparing()));
 
 		if (prepareButtons) {
 			if (notification) {
@@ -3126,7 +3126,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				remoteControlClient.setPlaybackState(preparing ? RemoteControlClient.PLAYSTATE_BUFFERING : (playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED));
 				if (titleOrSongHaveChanged) {
 					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
-					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, getCurrentTitle(preparing));
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, getCurrentTitle(thePlayer, preparing));
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, localSong.artist);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, localSong.album);
 					ed.putLong(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER, localSong.track);
@@ -3152,7 +3152,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			} else {
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
 				if (titleOrSongHaveChanged) {
-					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, getCurrentTitle(preparing));
+					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, getCurrentTitle(thePlayer, preparing));
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, localSong.artist);
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, localSong.album);
 					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, localSong.track);
@@ -3197,7 +3197,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//stickyBroadcast.setAction("com.android.music.playstatechanged");
 			stickyBroadcast.putExtra("id", localSong.id);
 			stickyBroadcast.putExtra("songid", localSong.id);
-			stickyBroadcast.putExtra("track", getCurrentTitle(preparing));
+			stickyBroadcast.putExtra("track", getCurrentTitle(thePlayer, preparing));
 			stickyBroadcast.putExtra("artist", localSong.artist);
 			stickyBroadcast.putExtra("album", localSong.album);
 			stickyBroadcast.putExtra("duration", (long)localSong.lengthMS);
@@ -3237,7 +3237,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			updateBluetoothVisualizer(songHasChanged);
 		Throwable ex = null;
 		if (songHasChanged && announceCurrentSong && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && state == STATE_ALIVE)
-			UI.announceAccessibilityText(getCurrentTitle(false));
+			UI.announceAccessibilityText(getCurrentTitle(thePlayer, false));
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];
 			objs[2] = null;

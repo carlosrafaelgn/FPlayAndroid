@@ -218,7 +218,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		if (Player.localSong == null) {
 			lblTitle.setText(getText(R.string.nothing_playing));
 		} else {
-			String txt = Player.getCurrentTitle(Player.isPreparing());
+			String txt = Player.getCurrentTitle(getApplication(), Player.isPreparing());
 			if (Player.localSong.extraInfo != null && Player.localSong.extraInfo.length() > 0 && (Player.localSong.extraInfo.length() > 1 || Player.localSong.extraInfo.charAt(0) != '-'))
 				txt += "\n" + Player.localSong.extraInfo;
 			lblTitle.setText(txt);

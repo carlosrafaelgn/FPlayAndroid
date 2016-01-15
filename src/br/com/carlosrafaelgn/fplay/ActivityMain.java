@@ -119,7 +119,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 
 	@Override
 	public CharSequence getTitle() {
-		return "FPlay: " + Player.getCurrentTitle(false);
+		return "FPlay: " + Player.getCurrentTitle(getApplication(), false);
 	}
 
 	@Override
@@ -484,7 +484,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (Player.followCurrentSong && list != null && !list.changingCurrentWouldScareUser())
 				bringCurrentIntoView();
 			if (lblTitle != null) {
-				lblTitle.setText(Player.getCurrentTitle(barSeek == null && Player.isPreparing()));
+				lblTitle.setText(Player.getCurrentTitle(getApplication(), barSeek == null && Player.isPreparing()));
 				lblTitle.setSelected(true);
 				//if (ignoreAnnouncement)
 				//	ignoreAnnouncement = false;
@@ -506,7 +506,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					barSeek.setValue(0);
 				}
 			} else if (lblTitle != null) {
-				lblTitle.setText(Player.getCurrentTitle(Player.isPreparing()));
+				lblTitle.setText(Player.getCurrentTitle(getApplication(), Player.isPreparing()));
 				lblTitle.setSelected(true);
 			}
 		}
