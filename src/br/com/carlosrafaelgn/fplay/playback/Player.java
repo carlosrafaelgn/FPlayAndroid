@@ -1746,7 +1746,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (url != null && url.length() > 0)
 				localSong.album = url;
 			localSong.title = metadata;
-			broadcastStateChange(true, isPreparing(), true);
+			broadcastStateChange(getCurrentTitle(thePlayer, isPreparing()), isPreparing(), true);
 			//this will force a serialization when closing the app (saving this update)
 			songs.markAsChanged();
 			if (observer != null)
@@ -3126,7 +3126,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	private static void broadcastStateChangeToRemoteControl(boolean preparing, boolean titleOrSongHaveChanged) {
+	private static void broadcastStateChangeToRemoteControl(String title, boolean preparing, boolean titleOrSongHaveChanged) {
 		try {
 			if (localSong == null) {
 				remoteControlClient.setPlaybackState(RemoteControlClient.PLAYSTATE_STOPPED);
@@ -3134,7 +3134,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				remoteControlClient.setPlaybackState(preparing ? RemoteControlClient.PLAYSTATE_BUFFERING : (playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED));
 				if (titleOrSongHaveChanged) {
 					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
-					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, getCurrentTitle(thePlayer, preparing));
+					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, title);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, localSong.artist);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, localSong.album);
 					ed.putLong(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER, localSong.track);
@@ -3153,14 +3153,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	private static void broadcastStateChangeToMediaSession(boolean preparing, boolean titleOrSongHaveChanged) {
+	private static void broadcastStateChangeToMediaSession(String title, boolean preparing, boolean titleOrSongHaveChanged) {
 		try {
 			if (localSong == null) {
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			} else {
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
 				if (titleOrSongHaveChanged) {
-					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, getCurrentTitle(thePlayer, preparing));
+					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, title);
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, localSong.artist);
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, localSong.album);
 					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, localSong.track);
@@ -3175,7 +3175,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@SuppressWarnings("deprecation")
-	private static void broadcastStateChange(boolean playbackHasChanged, boolean preparing, boolean titleOrSongHaveChanged) {
+	private static void broadcastStateChange(String title, boolean preparing, boolean titleOrSongHaveChanged) {
 		notificationManager.notify(1, getNotification());
 		WidgetMain.updateWidgets(thePlayer);
 		//
@@ -3201,11 +3201,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			stickyBroadcast.removeExtra("playing");
 		} else {
 			//apparently, a few 4.3 devices have an issue with com.android.music.metachanged....
-			stickyBroadcast.setAction(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
-			//stickyBroadcast.setAction("com.android.music.playstatechanged");
+			//stickyBroadcast.setAction(playbackHasChanged ? "com.android.music.playstatechanged" : "com.android.music.metachanged");
+			stickyBroadcast.setAction("com.android.music.playstatechanged");
 			stickyBroadcast.putExtra("id", localSong.id);
 			stickyBroadcast.putExtra("songid", localSong.id);
-			stickyBroadcast.putExtra("track", getCurrentTitle(thePlayer, preparing));
+			stickyBroadcast.putExtra("track", title);
 			stickyBroadcast.putExtra("artist", localSong.artist);
 			stickyBroadcast.putExtra("album", localSong.album);
 			stickyBroadcast.putExtra("duration", (long)localSong.lengthMS);
@@ -3216,9 +3216,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//maybe check if api >= 23, and if so, use sendBroadcast instead.....???
 		thePlayer.sendStickyBroadcast(stickyBroadcast);
 		if (remoteControlClient != null)
-			broadcastStateChangeToRemoteControl(preparing, titleOrSongHaveChanged);
+			broadcastStateChangeToRemoteControl(title, preparing, titleOrSongHaveChanged);
 		if (mediaSession != null)
-			broadcastStateChangeToMediaSession(preparing, titleOrSongHaveChanged);
+			broadcastStateChangeToMediaSession(title, preparing, titleOrSongHaveChanged);
 	}
 
 	private static void updateState(int arg1, Object[] objs) {
@@ -3235,17 +3235,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_NOW, SystemClock.uptimeMillis() + 100);
 		}
 		final boolean songHasChanged = ((arg1 & 0x08) != 0);
-		final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
+		//final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
 		final boolean preparing = ((arg1 & 0x20) != 0);
 		final boolean preparingHasChanged = ((arg1 & 0x40) != 0);
-		broadcastStateChange(playbackHasChanged, preparing, songHasChanged | preparingHasChanged);
+		final String title = ((localSong == null) ? null : getCurrentTitle(thePlayer, preparing));
+		broadcastStateChange(title, preparing, songHasChanged | preparingHasChanged);
 		if (idleTurnOffTimerSelectedMinutes > 0)
 			processIdleTurnOffTimer();
 		if (bluetoothVisualizerController != null)
 			updateBluetoothVisualizer(songHasChanged);
 		Throwable ex = null;
 		if (songHasChanged && announceCurrentSong && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && state == STATE_ALIVE)
-			UI.announceAccessibilityText(getCurrentTitle(thePlayer, false));
+			UI.announceAccessibilityText(title);
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];
 			objs[2] = null;
