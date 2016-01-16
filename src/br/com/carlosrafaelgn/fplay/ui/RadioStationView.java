@@ -95,7 +95,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
-		setGravity(Gravity.RIGHT | Gravity.BOTTOM);
+		setGravity(Gravity.END | Gravity.BOTTOM);
 		getViewHeight();
 		descriptionLines = new String[4];
 		tagsLines = new String[3];
@@ -211,15 +211,6 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	@Override
 	public Drawable getBackground() {
 		return null;
-	}
-
-	@Override
-	public void invalidateDrawable(@NonNull Drawable drawable) {
-	}
-
-	@Override
-	protected boolean verifyDrawable(Drawable drawable) {
-		return false;
 	}
 
 	@Override

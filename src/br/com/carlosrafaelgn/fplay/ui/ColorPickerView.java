@@ -41,7 +41,6 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -400,16 +399,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 	public Drawable getBackground() {
 		return null;
 	}
-	
-	@Override
-	public void invalidateDrawable(@NonNull Drawable drawable) {
-	}
-	
-	@Override
-	protected boolean verifyDrawable(Drawable drawable) {
-		return false;
-	}
-	
+
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {

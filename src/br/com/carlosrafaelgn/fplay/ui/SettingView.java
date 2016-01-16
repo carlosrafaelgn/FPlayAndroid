@@ -249,15 +249,6 @@ public final class SettingView extends View {
 	}
 
 	@Override
-	public void invalidateDrawable(@NonNull Drawable drawable) {
-	}
-
-	@Override
-	protected boolean verifyDrawable(Drawable drawable) {
-		return false;
-	}
-
-	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
 		return false;

@@ -33,6 +33,8 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import android.content.res.ColorStateList;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 public final class BgColorStateList extends ColorStateList {
@@ -83,4 +85,27 @@ public final class BgColorStateList extends ColorStateList {
 	public ColorStateList withAlpha(int alpha) {
 		return this;
 	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeInt(normalColor);
+		dest.writeInt(alteredColor);
+	}
+
+	public static final Parcelable.Creator<BgColorStateList> CREATOR = new Parcelable.Creator<BgColorStateList>() {
+		@Override
+		public BgColorStateList[] newArray(int size) {
+			return new BgColorStateList[size];
+		}
+
+		@Override
+		public BgColorStateList createFromParcel(Parcel source) {
+			return new BgColorStateList(source.readInt(), source.readInt());
+		}
+	};
 }

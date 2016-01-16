@@ -256,7 +256,7 @@
     <string name="no_favorites">Aún no hay favoritas!\n\nMarque estaciones de radio como favoritas para que pueda encontrarlas aquí :)</string>
     <string name="no_stations">Ninguna estación de radio ha sido encontrada :(\n\nToque aquí para ver sus estaciones de radio favoritas :)</string>
     <string name="expand_seek_bar">Expandir la barra de búsqueda antes de buscar</string>
-    <string name="by_dir_xiph_org">Por Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
+    <string name="by_x">Por X</string>
     <string name="creamy">Cremoso</string>
     <string name="transition">Transición:</string>
     <string name="animations">Animaciones</string>

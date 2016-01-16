@@ -256,7 +256,7 @@
     <string name="no_favorites">Нет избранных еще!\n\nКак только вы выбираете ваши любимые радиостанции, вы найдете их здесь :)</string>
     <string name="no_stations">Невозможно найти радиостанции :(\n\nНажмите здесь, чтобы просмотреть свои любимые радиостанции :)</string>
     <string name="expand_seek_bar">Развернуть искать бар перед поиском</string>
-    <string name="by_dir_xiph_org">От Icecast - &lt;a href=\"http://dir.xiph.org\"&gt;dir.xiph.org&lt;/a&gt;</string>
+    <string name="by_x">От X</string>
     <string name="creamy">Сливочный</string>
     <string name="transition">Переход:</string>
     <string name="animations">Анимации</string>

@@ -46,7 +46,7 @@ public final class TextIconDrawable extends Drawable {
 	private static final TextPaint paint;
 	private int[] stateSet;
 	private int state, alpha, currentColor;
-	private final int width, height, y, color;
+	private final int width, height, textSize, color;
 	//private final boolean outsideMenu;
 	private String icon;
 	
@@ -70,7 +70,7 @@ public final class TextIconDrawable extends Drawable {
 		this.icon = icon;
 		this.width = UI.defaultCheckIconSize + UI.menuMargin;// UI._8sp + UI._8sp + 1;
 		this.height = UI.defaultCheckIconSize;
-		this.y = UI.defaultCheckIconSize >> 1;
+		this.textSize = UI.defaultCheckIconSize;
 		//this.outsideMenu = false;
 		this.alpha = 255;
 		this.color = UI.color_menu_icon;
@@ -83,7 +83,7 @@ public final class TextIconDrawable extends Drawable {
 		this.icon = icon;
 		this.width = UI.defaultCheckIconSize + UI.controlMargin;
 		this.height = UI.defaultCheckIconSize;
-		this.y = UI.defaultCheckIconSize >> 1;
+		this.textSize = UI.defaultCheckIconSize;
 		//this.outsideMenu = true;
 		this.alpha = 255;
 		this.color = color;
@@ -96,7 +96,7 @@ public final class TextIconDrawable extends Drawable {
 		this.icon = icon;
 		this.width = size + UI.controlMargin;
 		this.height = size;
-		this.y = size >> 1;
+		this.textSize = size;
 		//this.outsideMenu = true;
 		this.alpha = 255;
 		this.color = color;
@@ -109,7 +109,20 @@ public final class TextIconDrawable extends Drawable {
 		this.icon = icon;
 		this.width = size + padding;
 		this.height = size;
-		this.y = size >> 1;
+		this.textSize = size;
+		//this.outsideMenu = true;
+		this.alpha = 255;
+		this.color = color;
+		this.currentColor = color;
+		this.stateSet = super.getState();
+		super.setBounds(0, 0, width, height);
+	}
+
+	public TextIconDrawable(String icon, int color, int width, int height, int textSize) {
+		this.icon = icon;
+		this.width = width;
+		this.height = height;
+		this.textSize = textSize;
 		//this.outsideMenu = true;
 		this.alpha = 255;
 		this.color = color;
@@ -131,8 +144,8 @@ public final class TextIconDrawable extends Drawable {
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
 		paint.setColor(currentColor);
-		paint.setTextSize(height);
-		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top) >> 1) + y, paint);
+		paint.setTextSize(textSize);
+		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top + height) >> 1), paint);
 		/*if (!outsideMenu) {
 			UI.rect.left = rect.right - UI._8sp - 1;
 			UI.rect.right = UI.rect.left + UI.strokeSize;

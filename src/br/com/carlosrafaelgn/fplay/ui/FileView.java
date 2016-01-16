@@ -135,7 +135,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
-		setGravity(Gravity.RIGHT);
+		setGravity(Gravity.END);
 		getViewHeight();
 		if (hasCheckbox) {
 			LayoutParams p;
@@ -362,15 +362,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	public Drawable getBackground() {
 		return null;
-	}
-
-	@Override
-	public void invalidateDrawable(@NonNull Drawable drawable) {
-	}
-
-	@Override
-	protected boolean verifyDrawable(Drawable drawable) {
-		return false;
 	}
 
 	@Override

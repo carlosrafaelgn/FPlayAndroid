@@ -61,7 +61,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 				p.topMargin = UI.controlMargin;
 				p.rightMargin = UI.controlMargin;
 				p.bottomMargin = UI.controlMargin;
-				p.gravity = Gravity.LEFT | Gravity.BOTTOM;
+				p.gravity = Gravity.START | Gravity.BOTTOM;
 				notification.setLayoutParams(p);
 				UI.smallText(notification);
 				UI.prepareNotificationViewColors(notification);

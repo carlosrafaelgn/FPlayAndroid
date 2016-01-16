@@ -37,8 +37,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.database.DataSetObserver;
+import android.net.Uri;
 import android.text.InputType;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
+import android.text.style.ImageSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -164,6 +168,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	}
 
 	private final boolean useShoutcast;
+	private Uri externalUri;
+	private SpannableStringBuilder message;
 	private TextView sep2;
 	private BgListView list;
 	private RadioStationGenre[] genres;
@@ -509,10 +515,30 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			lbl.setLinkTextColor(new BgColorStateList(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5));
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 			lbl.setGravity(Gravity.CENTER_HORIZONTAL);
-			lbl.setText(SafeURLSpan.parseSafeHtml(getText(R.string.by_dir_xiph_org)));
+			if (externalUri == null) {
+				final String msg, iconA, iconB;
+				final int w;
+				if (useShoutcast) {
+					externalUri = Uri.parse("http://shoutcast.com");
+					msg = "A B <a href=\"http://shoutcast.com\">shoutcast.com</a>";
+					w = (int)((UI._14sp << 4) / 2.279f);
+					iconA = UI.ICON_SHOUTCAST;
+					iconB = UI.ICON_SHOUTCASTTEXT;
+				} else {
+					externalUri = Uri.parse("http://dir.xiph.org");
+					msg = "A B <a href=\"http://dir.xiph.org\">dir.xiph.org</a>";
+					w = (int)((UI._14sp << 4) / 3.587f);
+					iconA = UI.ICON_ICECAST;
+					iconB = UI.ICON_ICECASTTEXT;
+				}
+				message = new SpannableStringBuilder(SafeURLSpan.parseSafeHtml(msg));
+				message.setSpan(new ImageSpan(new TextIconDrawable(iconA, lbl.getTextColors().getDefaultColor(), UI._18sp, 0), ImageSpan.ALIGN_BASELINE), 0, 1, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+				message.setSpan(new ImageSpan(new TextIconDrawable(iconB, lbl.getTextColors().getDefaultColor(), w, UI._14sp, w), ImageSpan.ALIGN_BASELINE), 2, 3, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+			}
+			lbl.setText(message);
 			lbl.setMovementMethod(LinkMovementMethod.getInstance());
 			lbl.setLayoutParams(p);
-			
+
 			l.addView(chkGenre);
 			l.addView(btnGenre);
 			if (btnGenreSecondary != null)
@@ -520,7 +546,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			l.addView(chkTerm);
 			l.addView(txtTerm);
 			l.addView(lbl);
-			
+
 			final ColorStateList defaultTextColors = txtTerm.getTextColors();
 			final int primaryGenreIndex = getPrimaryGenreIndex();
 			adapter = new RadioStationAdapter(getApplication(), defaultTextColors, genres);

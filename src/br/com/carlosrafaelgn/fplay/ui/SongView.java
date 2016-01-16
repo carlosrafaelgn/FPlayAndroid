@@ -37,7 +37,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
@@ -151,15 +150,6 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	@Override
 	public Drawable getBackground() {
 		return null;
-	}
-
-	@Override
-	public void invalidateDrawable(@NonNull Drawable drawable) {
-	}
-
-	@Override
-	protected boolean verifyDrawable(Drawable drawable) {
-		return false;
 	}
 
 	@Override
