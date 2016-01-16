@@ -45,6 +45,10 @@ import java.net.URLEncoder;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class IcecastRadioStationList extends RadioStationList {
+	//icecast returns up to MAX_PAGE_RESULTS results per page and up to MAX_PAGE_COUNT pages
+	private static final int MAX_PAGE_RESULTS = 20;
+	private static final int MAX_PAGE_COUNT = 5;
+
 	private final String tags, noOnAir, noDescription, noTags;
 	private int pageNumber, currentStationIndex;
 
@@ -55,25 +59,26 @@ public final class IcecastRadioStationList extends RadioStationList {
 		this.noTags = noTags;
 	}
 
-	private static boolean parseIcecastColumn2(XmlPullParser parser, String[] fields) throws Throwable {
-		boolean hasFields = false, linkContainsType = false;
+	private static int parseIcecastColumn2(XmlPullParser parser, String[] fields) throws Throwable {
+		int res = -1;
+		boolean linkContainsType = false;
 		int ev;
 		String v;
 		while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT) {
 			if (ev == XmlPullParser.END_TAG && parser.getName().equals("td"))
 				break;
 			if (ev == XmlPullParser.START_TAG) {
-				if (parser.getName().equals("p") && hasFields) {
+				if (parser.getName().equals("p") && res >= 0) {
 					linkContainsType = true;
 				} else if (parser.getName().equals("a")) {
 					if (linkContainsType) {
 						if (parser.nextToken() != XmlPullParser.TEXT) {
 							//impossible to determine the type of the stream...
 							//just drop it!
-							hasFields = false;
+							res = -1;
 						} else {
 							v = parser.getText().trim();
-							hasFields = (v.equals("MP3"));// || v.equals("Ogg Vorbis")); HttpStreamReceiver cannot handle anything but MP3 yet...
+							res = (v.equals("MP3") ? 1 : 0);// || v.equals("Ogg Vorbis")); HttpStreamReceiver cannot handle anything but MP3 yet...
 							fields[2] = v;
 						}
 					} else {
@@ -81,7 +86,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 							if (parser.getAttributeName(a).equals("href") &&
 								(v = parser.getAttributeValue(a)).endsWith("m3u")) {
 								fields[7] = ((v.charAt(0) == '/') ? ("http://dir.xiph.org" + v) : (v)).trim();
-								hasFields = true;
+								res = 1;
 								break;
 							}
 						}
@@ -89,7 +94,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 				}
 			}
 		}
-		return hasFields;
+		return res;
 	}
 
 	private boolean parseIcecastColumn1(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
@@ -184,7 +189,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 		return hasFields;
 	}
 
-	private boolean parseIcecastRow(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
+	private int parseIcecastRow(XmlPullParser parser, String[] fields, StringBuilder sb) throws Throwable {
 		fields[0] = ""; //title
 		fields[1] = ""; //url
 		fields[2] = ""; //type
@@ -193,7 +198,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 		fields[5] = ""; //onAir
 		fields[6] = ""; //tags
 		fields[7] = ""; //m3uUrl
-		int ev, colCount = 0;
+		int ev, colCount = 0, res = -1;
 		while ((ev = parser.nextToken()) != XmlPullParser.END_DOCUMENT && colCount < 2) {
 			if (ev == XmlPullParser.END_TAG && parser.getName().equals("tr"))
 				break;
@@ -201,14 +206,15 @@ public final class IcecastRadioStationList extends RadioStationList {
 				colCount++;
 				if (colCount == 1) {
 					if (!parseIcecastColumn1(parser, fields, sb))
-						return false;
+						break;
 				} else {
-					if (!parseIcecastColumn2(parser, fields))
-						return false;
+					res = parseIcecastColumn2(parser, fields);
+					if (res < 0)
+						break;
 				}
 			}
 		}
-		return true;
+		return res;
 	}
 
 	private boolean parseIcecastResults(InputStream is, String[] fields, int myVersion, StringBuilder sb) throws Throwable {
@@ -232,7 +238,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 		}
 		if (b < 0)
 			return false;
-		boolean hasResults = false;
+		int resultCount = 0;
 		//According to these docs, kXML parser will accept some XML documents
 		//that should actually be rejected (A robust "relaxed" mode for parsing
 		//HTML or SGML files):
@@ -251,7 +257,11 @@ public final class IcecastRadioStationList extends RadioStationList {
 				if (ev == XmlPullParser.START_TAG && parser.getName().equals("tr")) {
 					if (myVersion != version)
 						break;
-					if (parseIcecastRow(parser, fields, sb) && myVersion == version) {
+					//1 = OK
+					//0 = invalid stream type
+					//-1 = error
+					switch (parseIcecastRow(parser, fields, sb)) {
+					case 1:
 						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6].length() == 0 ? noTags : fields[6], fields[7], false, false);
 						synchronized (favoritesSync) {
 							station.isFavorite = favorites.contains(station);
@@ -259,14 +269,16 @@ public final class IcecastRadioStationList extends RadioStationList {
 						if (myVersion != version)
 							break;
 						items[currentStationIndex++] = station;
-						hasResults = true;
+					case 0:
+						resultCount++;
+						break;
 					}
 				}
 			}
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return hasResults;
+		return (resultCount >= MAX_PAGE_RESULTS);
 	}
 
 	@Override
@@ -275,17 +287,17 @@ public final class IcecastRadioStationList extends RadioStationList {
 		InputStream inputStream = null;
 		HttpURLConnection urlConnection = null;
 		try {
+			boolean couldHaveMoreResults;
 			final int oldStationIndex = (reset ? 0 : currentStationIndex);
 			do {
 				if (myVersion == version) {
-					//icecast returns up to 20 results per page and up to 5 pages
 					if (reset) {
 						reset = false;
 						pageNumber = 0;
 						currentStationIndex = 0;
 					} else {
 						pageNumber++;
-						if (pageNumber > 4 || currentStationIndex > 90) {
+						if (pageNumber >= MAX_PAGE_COUNT || currentStationIndex > 90) {
 							if (sendMessages)
 								fetchStationsInternalResultsFound(myVersion, currentStationIndex, false);
 							return;
@@ -307,14 +319,14 @@ public final class IcecastRadioStationList extends RadioStationList {
 					return;
 				if (err == 200) {
 					inputStream = urlConnection.getInputStream();
-					parseIcecastResults(inputStream, fields, myVersion, sb);
+					couldHaveMoreResults = parseIcecastResults(inputStream, fields, myVersion, sb);
 				} else {
 					throw new IOException();
 				}
 				//if we were not able to add at least 10 new stations, repeat the entire procedure
-			} while (myVersion == version && currentStationIndex < (oldStationIndex + 10));
+			} while (myVersion == version && currentStationIndex < (oldStationIndex + 10) && couldHaveMoreResults);
 			if (sendMessages)
-				fetchStationsInternalResultsFound(myVersion, currentStationIndex, true);
+				fetchStationsInternalResultsFound(myVersion, currentStationIndex, couldHaveMoreResults);
 			err = 0;
 		} catch (Throwable ex) {
 			err = -1;

@@ -166,6 +166,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		private static final long serialVersionUID = 8743650824658438278L;
 	}
 
+	private static final class UnsupportedFormatException extends IOException {
+		private static final long serialVersionUID = 7845932937323727492L;
+	}
+
 	private static final int MSG_UPDATE_STATE = 0x0100;
 	private static final int MSG_PAUSE = 0x0101;
 	private static final int MSG_PLAYPAUSE = 0x0102;
@@ -224,6 +228,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int SILENCE_NONE = -1;
 
 	public static final int ERROR_NOT_FOUND = 1001; //1001 = internal constant (not used by original MediaPlayer class) used to indicate that the file has not been found
+	public static final int ERROR_UNSUPPORTED_FORMAT = -1010; //MediaPlayer.MEDIA_ERROR_UNSUPPORTED
 	public static final int ERROR_IO = -1004; //MediaPlayer.MEDIA_ERROR_IO
 	public static final int ERROR_TIMED_OUT = -110; //MediaPlayer.MEDIA_ERROR_TIMED_OUT
 
@@ -1535,7 +1540,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
 				_fullCleanup();
-				final Throwable result = ((extra == ERROR_NOT_FOUND) ? new FileNotFoundException() : ((extra == ERROR_TIMED_OUT) ? new TimeoutException() : new IOException()));
+				final Throwable result = ((extra == ERROR_NOT_FOUND) ? new FileNotFoundException() :
+					((extra == ERROR_TIMED_OUT) ? new TimeoutException() :
+						((extra == ERROR_UNSUPPORTED_FORMAT) ? new UnsupportedFormatException() :
+							new IOException())));
 				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 				//and the song was being prepared
 				if (howThePlayerStarted != SongList.HOW_CURRENT && howThePlayerStarted < 0)
@@ -1699,7 +1707,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, ((errorCode == -1) || !isConnectedToTheInternet()) ? ERROR_NOT_FOUND : ((errorCode != 0) ? ERROR_IO : ERROR_TIMED_OUT));
+		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? ERROR_NOT_FOUND : errorCode);
 	}
 
 	private static void httpStreamReceiverMetadataUpdate(int version, String metadata) {
@@ -3246,8 +3254,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			final String msg = ex.getMessage();
 			if (ex instanceof IllegalStateException) {
 				UI.toast(thePlayer, R.string.error_state);
+			} else if (ex instanceof UnsupportedFormatException) {
+				UI.toast(thePlayer, R.string.error_unsupported_format);
 			} else if (ex instanceof FileNotFoundException) {
-				UI.toast(thePlayer, (localSong != null && localSong.isHttp && !isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_file_not_found);
+				UI.toast(thePlayer, (localSong != null && localSong.isHttp) ?
+					(!isConnectedToTheInternet() ? R.string.error_connection : R.string.error_server_not_found) :
+						R.string.error_file_not_found);
 			} else if (ex instanceof TimeoutException) {
 				UI.toast(thePlayer, R.string.error_timeout);
 			} else if (ex instanceof MediaServerDiedException) {

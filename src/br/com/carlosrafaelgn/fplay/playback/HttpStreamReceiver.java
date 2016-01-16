@@ -350,7 +350,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, -2), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, Player.ERROR_IO), SystemClock.uptimeMillis());
 				}
 			} finally {
 				releaseMediaCodec();
@@ -510,7 +510,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? Player.ERROR_TIMED_OUT : ((ex instanceof FileNotFoundException) ? Player.ERROR_NOT_FOUND : Player.ERROR_IO)), SystemClock.uptimeMillis());
 				}
 			} finally {
 				synchronized (sync) {
@@ -762,10 +762,6 @@ public final class HttpStreamReceiver implements Runnable {
 							buffer.readBuffer.limit(buffer.writeBuffer.limit());
 							buffer.readBuffer.position(buffer.writeBuffer.position());
 							buffer.writeBuffer.position(buffer.writeBuffer.limit());
-							headerOk = true;
-							synchronized (sync) {
-								sync.notify();
-							}
 							return leftovers;
 						}
 						throw new IOException();
@@ -972,6 +968,24 @@ public final class HttpStreamReceiver implements Runnable {
 
 			if ((bufferingCounter = resolveUrlAndSendRequest()) < 0)
 				return;
+
+			//we only support mpeg streams
+			if (!contentType.equalsIgnoreCase("audio/mpeg")) {
+				//abort everything!
+				synchronized (sync) {
+					if (!alive)
+						return;
+					if (handler != null)
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, Player.ERROR_UNSUPPORTED_FORMAT), SystemClock.uptimeMillis());
+				}
+				return;
+			} else {
+				headerOk = true;
+				synchronized (sync) {
+					sync.notify();
+				}
+			}
+
 			audioCountdown = icyMetaInterval - bufferingCounter;
 
 			//do not allocate a direct buffer for the metadata, as we will have to constantly access that data from Java
@@ -1033,12 +1047,8 @@ public final class HttpStreamReceiver implements Runnable {
 			synchronized (sync) {
 				if (!alive)
 					return;
-				try {
-					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
-				} catch (Throwable ex2) {
-					handler = null;
-				}
+				if (handler != null)
+					handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
 			}
 		} finally {
 			synchronized (sync) {
