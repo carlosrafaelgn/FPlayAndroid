@@ -50,7 +50,7 @@ public final class RadioStationGenre {
 		name = "Rock";
 	}
 
-	private RadioStationGenre(String name) {
+	public RadioStationGenre(String name) {
 		id = 0;
 		this.name = name;
 	}

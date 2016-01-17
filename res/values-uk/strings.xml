@@ -256,7 +256,7 @@
     <string name="no_favorites">Немає обраних ще!\n\nЯк тільки ви вибираєте ваші улюблені радіостанції, ви знайдете їх тут :)</string>
     <string name="no_stations">Неможливо знайти радіостанції :(\n\nНатисніть тут, щоб переглянути свої улюблені радіостанції :)</string>
     <string name="expand_seek_bar">Розгорнути шукати бар перед пошуком</string>
-    <string name="by_x">Від X</string>
+    <string name="provided_by">Живлення від</string>
     <string name="creamy">Вершковий</string>
     <string name="transition">Перехід:</string>
     <string name="animations">Анімації</string>

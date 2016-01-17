@@ -256,7 +256,7 @@
     <string name="no_favorites">Es gibt noch keine Favoriten!\n\nMarkiere Radiosender als Favorit um sie hier wiederzufinden :)</string>
     <string name="no_stations">Keine Radiosender gefunden :(\n\nHier berühren um Favoriten der Radiosender zu sehen :)</string>
     <string name="expand_seek_bar">Lautstärkebalken erweitern bei Nutzung</string>
-    <string name="by_x">Von X</string>
+    <string name="provided_by">Bereitgestellt von</string>
     <string name="creamy">Kremig</string>
     <string name="transition">Übergang:</string>
     <string name="animations">Animationen</string>

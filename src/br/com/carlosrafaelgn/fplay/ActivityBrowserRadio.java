@@ -50,7 +50,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
@@ -173,11 +172,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private TextView sep2;
 	private BgListView list;
 	private RadioStationGenre[] genres;
-	private RadioStationAdapter adapter, adapterSecondary;
+	private RadioStationAdapter adapterType, adapter, adapterSecondary;
 	private RadioStationList radioStationList;
 	private RelativeLayout panelSecondary, panelLoading;
-	private RadioButton chkGenre, chkTerm;
-	private Spinner btnGenre, btnGenreSecondary;
+	private Spinner btnType, btnGenre, btnGenreSecondary;
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
 	private boolean loading, isAtFavorites, isCreatingLayout, isHidingLoadingPanel, ignoreFirstNotification;
@@ -459,12 +457,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 			
 			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			chkGenre = new RadioButton(ctx);
-			chkGenre.setText(R.string.genre);
-			chkGenre.setChecked(Player.lastRadioSearchWasByGenre);
-			chkGenre.setOnClickListener(this);
-			chkGenre.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-			chkGenre.setLayoutParams(p);
+			btnType = new Spinner(ctx);
+			btnType.setLayoutParams(p);
 
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI.dialogMargin;
@@ -485,15 +479,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			}
 
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin << 1;
-			chkTerm = new RadioButton(ctx);
-			chkTerm.setText(R.string.search_term);
-			chkTerm.setChecked(!Player.lastRadioSearchWasByGenre);
-			chkTerm.setOnClickListener(this);
-			chkTerm.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-			chkTerm.setLayoutParams(p);
-			
-			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI.dialogMargin;
 			txtTerm = new EditText(ctx);
 			txtTerm.setContentDescription(ctx.getText(R.string.search_term));
@@ -509,45 +494,56 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			p.topMargin = UI.dialogMargin;
 			p.bottomMargin = UI.dialogMargin;
 			final TextView lbl = new TextView(ctx);
+			lbl.setSingleLine(false);
+			lbl.setMaxLines(4);
 			lbl.setAutoLinkMask(0);
 			lbl.setLinksClickable(true);
 			//http://developer.android.com/design/style/color.html
+			lbl.setTextColor(new BgColorStateList(UI.isAndroidThemeLight() ? 0xff000000 : 0xffffffff));
 			lbl.setLinkTextColor(new BgColorStateList(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5));
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 			lbl.setGravity(Gravity.CENTER_HORIZONTAL);
 			if (externalUri == null) {
-				final String msg, iconA, iconB;
+				final String providedBy = getText(R.string.provided_by).toString(), msg, iconA, iconB;
 				final int w;
 				if (useShoutcast) {
 					externalUri = Uri.parse("http://shoutcast.com");
-					msg = "A B <a href=\"http://shoutcast.com\">shoutcast.com</a>";
-					w = (int)((UI._14sp << 4) / 2.279f);
+					msg = "<br/>A B (<a href=\"http://shoutcast.com\">shoutcast.com</a>)";
+					w = (int)((UI._18sp << 4) / 2.279f);
 					iconA = UI.ICON_SHOUTCAST;
 					iconB = UI.ICON_SHOUTCASTTEXT;
 				} else {
 					externalUri = Uri.parse("http://dir.xiph.org");
-					msg = "A B <a href=\"http://dir.xiph.org\">dir.xiph.org</a>";
-					w = (int)((UI._14sp << 4) / 3.587f);
+					msg = "<br/>A B <small>(<a href=\"http://dir.xiph.org\">dir.xiph.org</a>)</small>";
+					w = (int)((UI._18sp << 4) / 3.587f);
 					iconA = UI.ICON_ICECAST;
 					iconB = UI.ICON_ICECASTTEXT;
 				}
-				message = new SpannableStringBuilder(SafeURLSpan.parseSafeHtml(msg));
-				message.setSpan(new ImageSpan(new TextIconDrawable(iconA, lbl.getTextColors().getDefaultColor(), UI._18sp, 0), ImageSpan.ALIGN_BASELINE), 0, 1, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-				message.setSpan(new ImageSpan(new TextIconDrawable(iconB, lbl.getTextColors().getDefaultColor(), w, UI._14sp, w), ImageSpan.ALIGN_BASELINE), 2, 3, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+				message = new SpannableStringBuilder(SafeURLSpan.parseSafeHtml(providedBy + msg));
+				message.setSpan(new ImageSpan(new TextIconDrawable(iconA, lbl.getTextColors().getDefaultColor(), UI.spToPxI(22), 0), ImageSpan.ALIGN_BASELINE), providedBy.length() + 1, providedBy.length() + 2, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+				message.setSpan(new ImageSpan(new TextIconDrawable(iconB, lbl.getTextColors().getDefaultColor(), w, UI._18sp, w), ImageSpan.ALIGN_BASELINE), providedBy.length() + 3, providedBy.length() + 4, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
 			}
 			lbl.setText(message);
 			lbl.setMovementMethod(LinkMovementMethod.getInstance());
 			lbl.setLayoutParams(p);
 
-			l.addView(chkGenre);
+			l.addView(btnType);
 			l.addView(btnGenre);
 			if (btnGenreSecondary != null)
 				l.addView(btnGenreSecondary);
-			l.addView(chkTerm);
 			l.addView(txtTerm);
 			l.addView(lbl);
 
 			final ColorStateList defaultTextColors = txtTerm.getTextColors();
+
+			adapterType = new RadioStationAdapter(getApplication(), defaultTextColors, new RadioStationGenre[] {
+				new RadioStationGenre(getText(R.string.genre).toString()),
+				new RadioStationGenre(getText(R.string.search_term).toString())
+			});
+			btnType.setAdapter(adapterType);
+			btnType.setSelection(Player.lastRadioSearchWasByGenre ? 0 : 1);
+			btnType.setOnItemSelectedListener(this);
+
 			final int primaryGenreIndex = getPrimaryGenreIndex();
 			adapter = new RadioStationAdapter(getApplication(), defaultTextColors, genres);
 			btnGenre.setAdapter(adapter);
@@ -576,26 +572,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			addPlaySelectedItem(false);
 		} else if (view == btnPlay) {
 			addPlaySelectedItem(true);
-		} else if (view == chkGenre || view == btnGenre) {
-			chkGenre.setChecked(true);
-			chkTerm.setChecked(false);
-			if (txtTerm != null)
-				txtTerm.setVisibility(View.GONE);
-			if (btnGenre != null)
-				btnGenre.setVisibility(View.VISIBLE);
-			if (btnGenreSecondary != null)
-				btnGenreSecondary.setVisibility(View.VISIBLE);
-		} else if (view == chkTerm || view == txtTerm) {
-			chkGenre.setChecked(false);
-			chkTerm.setChecked(true);
-			if (btnGenre != null)
-				btnGenre.setVisibility(View.GONE);
-			if (btnGenreSecondary != null)
-				btnGenreSecondary.setVisibility(View.GONE);
-			if (txtTerm != null) {
-				txtTerm.setVisibility(View.VISIBLE);
-				txtTerm.requestFocus();
-			}
 		} else if (view == list) {
 			if (!isAtFavorites && !loading && (radioStationList == null || radioStationList.getCount() == 0))
 				onClick(btnFavorite);
@@ -605,8 +581,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
 		if (which == AlertDialog.BUTTON_POSITIVE) {
-			if (chkGenre != null)
-				Player.lastRadioSearchWasByGenre = chkGenre.isChecked();
+			if (btnType != null)
+				Player.lastRadioSearchWasByGenre = (btnType.getSelectedItemPosition() == 0);
 			if (btnGenre != null) {
 				if (useShoutcast) {
 					Player.radioLastGenreShoutcast = btnGenre.getSelectedItemPosition();
@@ -620,9 +596,13 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				Player.radioSearchTerm = txtTerm.getText().toString();
 			doSearch();
 		}
-		chkGenre = null;
+		btnType = null;
 		btnGenre = null;
 		btnGenreSecondary = null;
+		if (adapterType != null) {
+			adapterType.release();
+			adapterType = null;
+		}
 		if (adapter != null) {
 			adapter.release();
 			adapter = null;
@@ -631,7 +611,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			adapterSecondary.release();
 			adapterSecondary = null;
 		}
-		chkTerm = null;
 		txtTerm = null;
 	}
 	
@@ -840,6 +819,19 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			//since RadioStationAdapter does not keep track of its DataSetObservers,
 			//we must reset the adapter here
 			btnGenreSecondary.setAdapter(adapterSecondary);
+		} else if (parent == btnType && btnGenre != null && txtTerm != null) {
+			if (position == 0) {
+				txtTerm.setVisibility(View.GONE);
+				btnGenre.setVisibility(View.VISIBLE);
+				if (btnGenreSecondary != null)
+					btnGenreSecondary.setVisibility(View.VISIBLE);
+			} else {
+				btnGenre.setVisibility(View.GONE);
+				if (btnGenreSecondary != null)
+					btnGenreSecondary.setVisibility(View.GONE);
+				txtTerm.setVisibility(View.VISIBLE);
+				txtTerm.requestFocus();
+			}
 		}
 	}
 

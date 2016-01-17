@@ -257,7 +257,7 @@
     <string name="no_favorites">No favorites yet!\n\nMark radio stations as favorite so you can find them here :)</string>
     <string name="no_stations">No radio stations found :(\n\nTouch here to view your favorite radio stations :)</string>
     <string name="expand_seek_bar">Expand the seek bar before seeking</string>
-    <string name="by_x">By X</string>
+    <string name="provided_by">Provided by</string>
     <string name="creamy">Creamy</string>
     <string name="transition">Transition:</string>
     <string name="animations">Animations</string>

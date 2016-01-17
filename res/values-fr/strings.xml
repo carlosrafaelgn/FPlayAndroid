@@ -256,7 +256,7 @@
     <string name="no_favorites">Pas encore de favori!\n\nMarquez comme favories les stations de radio pour pouvoir les retrouver ici :)</string>
     <string name="no_stations">Pas de station radio trouvée :(\n\nAppuyez ici pour trouver vos stations favories :)</string>
     <string name="expand_seek_bar">Développer la barre de recherche avant de chercher</string>
-    <string name="by_x">Par X</string>
+    <string name="provided_by">Fourni par</string>
     <string name="creamy">Crémeux</string>
     <string name="transition">Transition:</string>
 	<string name="animations">Animations</string>
