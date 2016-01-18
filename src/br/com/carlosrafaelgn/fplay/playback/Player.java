@@ -381,6 +381,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static class CoreLocalHandler extends Handler {
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
+			if (thePlayer == null || state > STATE_ALIVE)
+				return;
 			switch (msg.what) {
 			case MSG_PRE_PLAY:
 				prePlay(msg.arg1);

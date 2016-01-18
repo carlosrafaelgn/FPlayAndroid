@@ -137,8 +137,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int TRANSITION_FADE = 1;
 	public static final int TRANSITION_ZOOM = 2;
 	public static final int TRANSITION_DISSOLVE = 3;
-	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 300;
-	public static final int TRANSITION_DURATION_FOR_VIEWS = 300;
+	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 200;
+	public static final int TRANSITION_DURATION_FOR_VIEWS = 200;
 
 	public static final int MSG_ADD = 0x0001;
 	public static final int MSG_PLAY = 0x0002;

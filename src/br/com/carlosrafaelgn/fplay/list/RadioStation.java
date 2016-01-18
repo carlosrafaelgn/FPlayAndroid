@@ -77,12 +77,12 @@ public final class RadioStation extends BaseItem {
 		this.m3uUrl = m3uUrl;
 		this.isFavorite = isFavorite;
 		this.isShoutcast = isShoutcast;
-		this.hash = m3uUrl.hashCode();
+		this.hash = title.hashCode();
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		return ((o == this) || ((o instanceof RadioStation) && ((RadioStation)o).m3uUrl.equalsIgnoreCase(m3uUrl)));
+		return ((o == this) || ((o instanceof RadioStation) && ((RadioStation)o).title.equalsIgnoreCase(title)));
 	}
 
 	@Override
