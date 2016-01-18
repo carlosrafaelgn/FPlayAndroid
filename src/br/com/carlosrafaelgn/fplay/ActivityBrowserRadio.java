@@ -498,8 +498,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			lbl.setMaxLines(4);
 			lbl.setAutoLinkMask(0);
 			lbl.setLinksClickable(true);
-			//http://developer.android.com/design/style/color.html
 			//lbl.setTextColor(new BgColorStateList(UI.isAndroidThemeLight() ? 0xff000000 : 0xffffffff));
+			//http://developer.android.com/design/style/color.html
 			lbl.setLinkTextColor(new BgColorStateList(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5));
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 			lbl.setGravity(Gravity.CENTER_HORIZONTAL);

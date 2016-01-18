@@ -270,7 +270,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 							}
 							animationSet.addAnimation(new AlphaAnimation(0.0f, 1.0f));
 						}
-						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES);
+						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
 						anim.setInterpolator(UI.animationInterpolator);
 						anim.setRepeatCount(0);
 						anim.setFillAfter(false);
@@ -666,9 +666,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@TargetApi(Build.VERSION_CODES.M)
 	@Override
-	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-		if (requestCode == 1 && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED && Player.state == Player.STATE_ALIVE) {
+		if (requestCode == 1 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && Player.state == Player.STATE_ALIVE) {
 			exitOnDestroy = 2;
 			finish();
 			return;
