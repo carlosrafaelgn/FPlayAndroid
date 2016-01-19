@@ -10,12 +10,14 @@
         <!-- API 21 theme customizations can go here. -->
         <item name="android:colorPrimary">#ff444abf</item>
         <item name="android:colorAccent">#ff444abf</item>
+        <item name="android:colorControlNormal">#ff6d6d6d</item>
     </style>
 
     <style name="AppBaseThemeDark" parent="@android:style/Theme.Material.NoActionBar.Fullscreen">
         <!-- API 21 theme customizations can go here. -->
         <item name="android:colorPrimary">#ff444abf</item>
         <item name="android:colorAccent">#ff9ea6ff</item>
+        <item name="android:colorControlNormal">#ffc7c7c7</item>
     </style>
 
     <style name="MenuDialog" parent="@android:style/Theme.Material.Dialog">

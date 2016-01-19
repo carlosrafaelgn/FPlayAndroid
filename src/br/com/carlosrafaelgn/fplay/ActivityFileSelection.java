@@ -38,7 +38,6 @@ import android.content.DialogInterface;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
-import android.util.TypedValue;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -383,22 +382,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				final Context ctx = getHostActivity();
 				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 
-				TextView lbl = new TextView(ctx);
-				lbl.setText(format(R.string.msg_enter_name, itemType));
-				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
+				final TextView lbl = UI.createDialogTextView(ctx, 0, null, format(R.string.msg_enter_name, itemType));
 				l.addView(lbl);
 
-				txtSaveAsName = new EditText(ctx);
-				txtSaveAsName.setContentDescription(lbl.getText());
-				txtSaveAsName.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-				txtSaveAsName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-				txtSaveAsName.setFilters(new InputFilter[] { this, new InputFilter.LengthFilter(64) });
-				txtSaveAsName.setSingleLine();
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 				p.topMargin = UI.dialogMargin;
-				txtSaveAsName.setLayoutParams(p);
-				if (fileList != null && fileList.getSelection() >= 0)
-					txtSaveAsName.setText(fileList.getItemT(fileList.getSelection()).name);
+				txtSaveAsName = UI.createDialogEditText(ctx, 0, p, (fileList != null && fileList.getSelection() >= 0) ? fileList.getItemT(fileList.getSelection()).name : null, lbl.getText(), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+				txtSaveAsName.setFilters(new InputFilter[]{this, new InputFilter.LengthFilter(64)});
 				l.addView(txtSaveAsName);
 
 				UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))

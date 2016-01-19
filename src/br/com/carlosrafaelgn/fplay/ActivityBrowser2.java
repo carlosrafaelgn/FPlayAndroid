@@ -149,9 +149,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	private void updateButtons(boolean standaloneAnimation) {
 		if (standaloneAnimation)
 			UI.animationReset();
-		if (!isAtHome != (chkAll.getVisibility() == View.VISIBLE))
+		if (isAtHome == (chkAll.getVisibility() == View.VISIBLE))
 			updateOverallLayout();
-		if ((checkedCount != 0) != (btnAdd.getVisibility() == View.VISIBLE)) {
+		if ((checkedCount == 0) == (btnAdd.getVisibility() == View.VISIBLE)) {
 			if (checkedCount != 0) {
 				UI.animationAddViewToShow(btnAdd);
 				UI.animationAddViewToShow(sep2);
@@ -623,34 +623,19 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 			
-			TextView lbl = new TextView(ctx);
-			lbl.setText(R.string.url);
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-			l.addView(lbl);
-			
-			txtURL = new EditText(ctx);
-			txtURL.setContentDescription(ctx.getText(R.string.url));
-			txtURL.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-			txtURL.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
+			l.addView(UI.createDialogTextView(ctx, 0, null, ctx.getText(R.string.url)));
+
 			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI.dialogMargin;
 			p.bottomMargin = UI.dialogMargin << 1;
-			txtURL.setLayoutParams(p);
+			txtURL = UI.createDialogEditText(ctx, 1, p, null, ctx.getText(R.string.url), InputType.TYPE_TEXT_VARIATION_URI);
 			l.addView(txtURL);
-			
-			lbl = new TextView(ctx);
-			lbl.setText(R.string.description);
-			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-			l.addView(lbl);
-			
-			txtTitle = new EditText(ctx);
-			txtTitle.setContentDescription(ctx.getText(R.string.description));
-			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-			txtTitle.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-			txtTitle.setSingleLine();
+
+			l.addView(UI.createDialogTextView(ctx, 0, null, ctx.getText(R.string.description)));
+
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI.dialogMargin;
-			txtTitle.setLayoutParams(p);
+			txtTitle = UI.createDialogEditText(ctx, 0, p, null, ctx.getText(R.string.description), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			l.addView(txtTitle);
 			
 			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))

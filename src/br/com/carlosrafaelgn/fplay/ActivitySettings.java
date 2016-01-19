@@ -367,20 +367,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else {
 				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 				
-				TextView lbl = new TextView(ctx);
-				lbl.setText(R.string.msg_turn_off);
-				lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-				l.addView(lbl);
-				
-				txtCustomMinutes = new EditText(ctx);
-				txtCustomMinutes.setContentDescription(ctx.getText(R.string.msg_turn_off));
-				txtCustomMinutes.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-				txtCustomMinutes.setInputType(InputType.TYPE_CLASS_NUMBER);
-				txtCustomMinutes.setSingleLine();
+				l.addView(UI.createDialogTextView(ctx, 0, null, getText(R.string.msg_turn_off)));
+
 				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 				p.topMargin = UI.dialogMargin;
-				txtCustomMinutes.setLayoutParams(p);
-				txtCustomMinutes.setText(Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes));
+				txtCustomMinutes = UI.createDialogEditText(ctx, 0, p, Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes), ctx.getText(R.string.msg_turn_off), InputType.TYPE_CLASS_NUMBER);
 				l.addView(txtCustomMinutes);
 				
 				UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))

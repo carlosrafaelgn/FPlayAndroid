@@ -54,7 +54,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -298,11 +297,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 
 		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
-		final EditText txt = new EditText(getHostActivity());
-		txt.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		txt.setText(stringBuilder.toString());
-		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-		l.addView(txt);
+		l.addView(UI.createDialogEditText(getHostActivity(), 0, null, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS));
 		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
 			.setTitle(R.string.information)
 			.setView(l)

@@ -324,10 +324,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		LinearLayout l = (LinearLayout)UI.createDialogView(activity, null);
 
 		LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		lblTitle = new TextView(activity);
-		lblTitle.setText(R.string.bt_scanning);
-		lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-		lblTitle.setLayoutParams(p);
+		lblTitle = UI.createDialogTextView(activity, 0, p, activity.getText(R.string.bt_scanning));
 
 		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin >> 1;

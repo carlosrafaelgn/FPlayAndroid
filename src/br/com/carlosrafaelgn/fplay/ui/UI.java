@@ -54,6 +54,7 @@ import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.text.InputType;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextUtils.TruncateAt;
@@ -77,6 +78,7 @@ import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.BgEdgeEffect;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -269,8 +271,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int PLACEMENT_ALERT = 2;
 
 	//keep in sync with v21/styles.xml
-	public static final int color_fplay_dk = 0xff444abf;
-	public static final int color_fplay_lt = 0xff9ea6ff;
+	public static final int color_dialog_fplay_dk = 0xff444abf;
+	public static final int color_dialog_fplay_lt = 0xff9ea6ff;
+	public static final int color_dialog_text_dk = 0xff1f1f1f;
+	public static final int color_dialog_text_lt = 0xffffffff;
+	public static final int color_dialog_normal_dk = 0xff6d6d6d;
+	public static final int color_dialog_normal_lt = 0xffc7c7c7;
 
 	public static int color_window;
 	public static int color_control_mode;
@@ -1738,7 +1744,45 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			view.setNextFocusForwardId(nextFocusForwardId);
 	}
-	
+
+	public static TextView createDialogTextView(Context context, int id, LayoutParams layoutParams, CharSequence text) {
+		final TextView textView = new TextView(context);
+		if (id != 0)
+			textView.setId(id);
+		textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
+		if (layoutParams != null)
+			textView.setLayoutParams(layoutParams);
+		if (text != null)
+			textView.setText(text);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			textView.setTextColor(isAndroidThemeLight() ? color_dialog_text_dk : color_dialog_text_lt);
+		return textView;
+	}
+
+	public static EditText createDialogEditText(Context context, int id, LayoutParams layoutParams, CharSequence text, CharSequence contentDescription, int inputType) {
+		final EditText editText = new EditText(context);
+		if (id != 0)
+			editText.setId(id);
+		editText.setSingleLine((inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) == 0);
+		editText.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
+		editText.setInputType(inputType);
+		if (layoutParams != null)
+			editText.setLayoutParams(layoutParams);
+		if (text != null)
+			editText.setText(text);
+		if (contentDescription != null)
+			editText.setContentDescription(contentDescription);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			//lollipop bug!!!!!
+			//http://stackoverflow.com/questions/28112829/edittext-android-l-stylin
+			//http://stackoverflow.com/questions/27123278/lollipop-editbox-styling/27132324#27132324
+			//https://code.google.com/p/android/issues/detail?id=80180
+			editText.setBackgroundTintList(isAndroidThemeLight() ? new BgColorStateList(color_dialog_normal_dk, color_dialog_fplay_dk) : new BgColorStateList(color_dialog_normal_lt, color_dialog_fplay_lt));
+			editText.setBackgroundTintMode(PorterDuff.Mode.SRC_ATOP);
+		}
+		return editText;
+	}
+
 	public static View createDialogView(Context context, CharSequence messageOnly) {
 		if (messageOnly == null) {
 			final LinearLayout l = new LinearLayout(context);
@@ -1752,9 +1796,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			return l;
 		}
 		final ObservableScrollView scrollView = new ObservableScrollView(context, PLACEMENT_ALERT);
-		final TextView txt = new TextView(context);
-		txt.setText(messageOnly);
-		txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
+		final TextView txt = createDialogTextView(context, 0, null, messageOnly);
 		txt.setPadding(dialogMargin << 1, dialogMargin << 1, dialogMargin << 1, dialogMargin << 1);
 		scrollView.addView(txt);
 		return scrollView;
@@ -1825,7 +1867,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 		if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			final View v = dialog.findViewById(android.R.id.content);
-			final int buttonColor = (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ? 0 : (isAndroidThemeLight() ? color_fplay_dk : color_fplay_lt));
+			final int buttonColor = (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ? 0 : (isAndroidThemeLight() ? color_dialog_fplay_dk : color_dialog_fplay_lt));
 			if (v != null && (v instanceof ViewGroup)) {
 				prepareDialogAndShowScanChildren((ViewGroup)v, buttonColor);
 			} else {
