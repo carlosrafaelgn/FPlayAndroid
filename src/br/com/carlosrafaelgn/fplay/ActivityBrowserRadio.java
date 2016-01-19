@@ -508,7 +508,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				final int w;
 				if (useShoutcast) {
 					externalUri = Uri.parse("http://shoutcast.com");
-					msg = "<br/>A B (<a href=\"http://shoutcast.com\">shoutcast.com</a>)";
+					msg = "<br/>A B <small>(<a href=\"http://shoutcast.com\">shoutcast.com</a>)</small>";
 					w = (int)((UI._18sp << 4) / 2.279f);
 					iconA = UI.ICON_SHOUTCAST;
 					iconB = UI.ICON_SHOUTCASTTEXT;

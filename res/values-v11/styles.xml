@@ -9,6 +9,10 @@
         <!-- API 11 theme customizations can go here. -->
     </style>
 
+    <style name="AppBaseThemeDark" parent="@android:style/Theme.Holo.NoActionBar.Fullscreen">
+        <!-- API 11 theme customizations can go here. -->
+    </style>
+
     <style name="MenuDialog" parent="@android:style/Theme.Holo.Dialog">
         <item name="android:backgroundDimEnabled">true</item>
         <item name="android:windowIsTranslucent">true</item>

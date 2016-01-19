@@ -147,7 +147,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		layout = new StaticLayout(station.description, UI.textPaint, width - hMargin, Alignment.ALIGN_NORMAL, 1, 0, false);
 		visibleLines = Math.min(3, layout.getLineCount());
 		for (i = 0; i < visibleLines; i++)
-			descriptionLines[i] = station.description.substring(layout.getLineStart(i), layout.getLineEnd(i));
+			descriptionLines[i] = station.description.substring(layout.getLineStart(i), layout.getLineEnd(i)).trim();
 		descriptionLines[i] = null;
 		if (layout.getLineCount() > 3) {
 			//ellipsize last line...

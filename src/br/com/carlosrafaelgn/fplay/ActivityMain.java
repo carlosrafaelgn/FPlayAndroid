@@ -960,8 +960,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else
 			clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		if (UI.notFullscreen)
-			clearWindowFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 		//whenever the activity is being displayed, the volume keys must control
 		//the music volume and nothing else!

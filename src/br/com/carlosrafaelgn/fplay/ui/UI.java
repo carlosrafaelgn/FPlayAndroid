@@ -268,6 +268,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int PLACEMENT_MENU = 1;
 	public static final int PLACEMENT_ALERT = 2;
 
+	//keep in sync with v21/styles.xml
+	public static final int color_fplay_dk = 0xff444abf;
+	public static final int color_fplay_lt = 0xff9ea6ff;
+
 	public static int color_window;
 	public static int color_control_mode;
 	public static int color_visualizer, color_visualizer565;
@@ -1335,35 +1339,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	public static void setAndroidThemeAccordingly(ActivityHost activityHost) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			setAndroidThemeAccordingly21(activityHost);
-		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)
-			setAndroidThemeAccordingly13(activityHost);
-	}
-
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-	private static void setAndroidThemeAccordingly13(ActivityHost activityHost) {
-		//Even though android.R.style.Theme_Light_NoTitleBar_Fullscreen
-		//is available on API 10, 11 and 12, it DOES NOT make dialogs's
-		//background light :(
-		//
-		//Theme.DeviceDefault.Light.NoActionBar.Fullscreen appeared
-		//only on API 14... :(
-		//
-		//http://android-developers.blogspot.com.br/2012/01/holo-everywhere.html
-		if (isAndroidThemeLight())
-			activityHost.setTheme(android.R.style.Theme_Holo_Light_NoActionBar_Fullscreen);
-		else
-			activityHost.setTheme(android.R.style.Theme_Holo_NoActionBar_Fullscreen);
-	}
-
-	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	private static void setAndroidThemeAccordingly21(ActivityHost activityHost) {
-		if (isAndroidThemeLight())
-			activityHost.setTheme(android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
-		else
-			activityHost.setTheme(android.R.style.Theme_Material_NoActionBar_Fullscreen);
-		activityHost.updateSystemColors(true);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+			activityHost.setTheme(isAndroidThemeLight() ? R.style.AppTheme : R.style.AppThemeDark);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+				activityHost.updateSystemColors(true);
+		}
+		if (UI.notFullscreen)
+			activityHost.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 	}
 
 	public static int getAndroidThemeColor(Context context, int style, int attribute) {
@@ -1763,7 +1745,9 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 				removeSplitTouch(l);
 			l.setOrientation(LinearLayout.VERTICAL);
-			l.setPadding(dialogMargin, dialogMargin, dialogMargin, dialogMargin);
+			final int hMargin = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? (dialogMargin + controlMargin) : dialogMargin);
+			final int topMargin = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? (dialogMargin + controlLargeMargin) : dialogMargin);
+			l.setPadding(hMargin, topMargin, hMargin, dialogMargin);
 			l.setBaselineAligned(false);
 			return l;
 		}
@@ -1803,13 +1787,17 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		return dialog;
 	}
 
-	private static void prepareDialogAndShowScanChildren(ViewGroup parent) {
+	private static void prepareDialogAndShowScanChildren(ViewGroup parent, int buttonColor) {
 		for (int i = parent.getChildCount(); i >= 0; i--) {
 			final View v = parent.getChildAt(i);
-			if (v instanceof ViewGroup)
-				prepareDialogAndShowScanChildren((ViewGroup)v);
-			else if (v instanceof TextView)
-				((TextView)v).setTypeface(defaultTypeface);
+			if (v instanceof ViewGroup) {
+				prepareDialogAndShowScanChildren((ViewGroup)v, buttonColor);
+			} else if (v instanceof TextView) {
+				if (alternateTypefaceActive)
+					((TextView)v).setTypeface(defaultTypeface);
+				if (buttonColor != 0 && (v instanceof Button))
+					((Button)v).setTextColor(buttonColor);
+			}
 		}
 	}
 
@@ -1835,18 +1823,31 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			if (parent != null && (parent instanceof ViewGroup))
 				removeSplitTouch((ViewGroup)parent);
 		}
-		if (alternateTypefaceActive) {
+		if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			final View v = dialog.findViewById(android.R.id.content);
+			final int buttonColor = (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ? 0 : (isAndroidThemeLight() ? color_fplay_dk : color_fplay_lt));
 			if (v != null && (v instanceof ViewGroup)) {
-				prepareDialogAndShowScanChildren((ViewGroup)v);
+				prepareDialogAndShowScanChildren((ViewGroup)v, buttonColor);
 			} else {
 				//at least try to change the buttons...
-				if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
-					btn.setTypeface(defaultTypeface);
-				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
-					btn.setTypeface(defaultTypeface);
-				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
-					btn.setTypeface(defaultTypeface);
+				if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null) {
+					if (alternateTypefaceActive)
+						btn.setTypeface(defaultTypeface);
+					if (buttonColor != 0)
+						btn.setTextColor(buttonColor);
+				}
+				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null) {
+					if (alternateTypefaceActive)
+						btn.setTypeface(defaultTypeface);
+					if (buttonColor != 0)
+						btn.setTextColor(buttonColor);
+				}
+				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null) {
+					if (alternateTypefaceActive)
+						btn.setTypeface(defaultTypeface);
+					if (buttonColor != 0)
+						btn.setTextColor(buttonColor);
+				}
 			}
 		}
 	}
