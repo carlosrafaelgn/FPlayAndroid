@@ -522,7 +522,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					trackTouchEvent((int)event.getY());
 				else
 					invalidate();
-				return true;
+				event.setLocation(scrollBarLeft + UI._1dp, event.getY());
 			} else if (emptyListClickListener != null && itemCount == 0) {
 				playSoundEffect(SoundEffectConstants.CLICK);
 				emptyListClickListener.onClick(this);
@@ -537,6 +537,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				else
 					invalidate();
 			}
+			break;
+		default:
+			if (tracking)
+				return true;
 			break;
 		}
 		return super.onTouchEvent(event);
