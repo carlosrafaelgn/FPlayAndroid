@@ -329,5 +329,6 @@
     <string name="seconds_before_playback">Secondes pour décoder avant de commencer la lecture:</string>
     <string name="second">seconde</string>
     <string name="seconds">secondes</string>
+    <string name="slide">Glisser</string>
 
 </resources>

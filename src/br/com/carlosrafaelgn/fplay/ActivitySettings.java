@@ -241,10 +241,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.TRANSITION_FADE, 0, UI.getTransitionString(ctx, UI.TRANSITION_FADE))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_ZOOM, 1, UI.getTransitionString(ctx, UI.TRANSITION_ZOOM))
+			menu.add(1, UI.TRANSITION_SLIDE, 1, UI.getTransitionString(ctx, UI.TRANSITION_SLIDE))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.TRANSITION_ZOOM, 2, UI.getTransitionString(ctx, UI.TRANSITION_ZOOM))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(2, UI.TRANSITION_DISSOLVE, 2, UI.getTransitionString(ctx, UI.TRANSITION_DISSOLVE))
+			menu.add(2, UI.TRANSITION_DISSOLVE, 3, UI.getTransitionString(ctx, UI.TRANSITION_DISSOLVE))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optScrollBarSongList || view == optScrollBarBrowser) {

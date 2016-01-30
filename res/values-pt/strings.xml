@@ -329,5 +329,6 @@
     <string name="seconds_before_playback">Segundos para decodificar antes de iniciar a reprodução:</string>
     <string name="second">segundo</string>
     <string name="seconds">segundos</string>
+    <string name="slide">Deslizar</string>
 
 </resources>

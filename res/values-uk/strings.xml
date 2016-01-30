@@ -329,5 +329,6 @@
     <string name="seconds_before_playback">Початок відтворення через декодування скільки секунд:</string>
     <string name="second">секунда</string>
     <string name="seconds">секунди</string>
+    <string name="slide">Ковзати</string>
 
 </resources>

@@ -329,5 +329,6 @@
     <string name="seconds_before_playback">Начать воспроизведение после декодирования сколько секунд:</string>
     <string name="second">секунда</string>
     <string name="seconds">секунды</string>
+    <string name="slide">Скользить</string>
 
 </resources>

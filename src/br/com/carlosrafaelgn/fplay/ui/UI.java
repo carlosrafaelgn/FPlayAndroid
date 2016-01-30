@@ -139,6 +139,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int TRANSITION_FADE = 1;
 	public static final int TRANSITION_ZOOM = 2;
 	public static final int TRANSITION_DISSOLVE = 3;
+	public static final int TRANSITION_SLIDE = 4;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES_SLOW = 300;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 200; //used to be 300
 	public static final int TRANSITION_DURATION_FOR_VIEWS = 200; //used to be 300
@@ -1371,6 +1372,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			case TRANSITION_DISSOLVE:
 			case TRANSITION_ZOOM:
 			case TRANSITION_FADE:
+			case TRANSITION_SLIDE:
 				UI.transition = transition;
 				break;
 			default:
@@ -1387,6 +1389,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				return context.getText(R.string.zoom).toString();
 			case TRANSITION_FADE:
 				return context.getText(R.string.fade).toString();
+			case TRANSITION_SLIDE:
+				return context.getText(R.string.slide).toString();
 			default:
 				return context.getText(R.string.none).toString();
 		}

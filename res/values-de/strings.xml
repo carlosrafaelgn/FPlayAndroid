@@ -329,5 +329,6 @@
     <string name="seconds_before_playback">Starten Sie die Wiedergabe nach der Decodierung wie viele Sekunden:</string>
     <string name="second">Sekunde</string>
     <string name="seconds">Sekunden</string>
+    <string name="slide">Gleiten</string>
 
 </resources>
