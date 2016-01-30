@@ -180,7 +180,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private Spinner btnType, btnGenre, btnGenreSecondary;
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
-	private boolean loading, isAtFavorites, isCreatingLayout, isHidingLoadingPanel, ignoreFirstNotification;
+	private boolean loading, isAtFavorites, isHidingLoadingPanel, ignoreFirstNotification;
 	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
@@ -226,7 +226,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				UI.setNextFocusForwardId(btnGoBackToPlayer, R.id.btnGoBack);
 			}
 		}
-		UI.animationCommit(isCreatingLayout, null);
+		UI.animationCommit(false, null);
 	}
 	
 	private void addPlaySelectedItem(final boolean play) {
@@ -271,7 +271,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			return;
 		loading = started;
 		if (panelLoading != null) {
-			if (loadingPanelAnimatorHide != null && !isCreatingLayout) {
+			if (loadingPanelAnimatorHide != null) {
 				panelLoading.setVisibility(View.VISIBLE);
 				loadingPanelAnimatorHide.end();
 				loadingPanelAnimatorShow.end();
@@ -726,7 +726,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			Player.radioLastGenre = validateGenreIndex(Player.radioLastGenre);
 
 		doSearch();
-		isCreatingLayout = false;
 	}
 
 	@Override
