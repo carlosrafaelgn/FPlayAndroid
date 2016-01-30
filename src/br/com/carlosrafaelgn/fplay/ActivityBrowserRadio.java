@@ -180,7 +180,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private Spinner btnType, btnGenre, btnGenreSecondary;
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
-	private boolean loading, isAtFavorites, isHidingLoadingPanel, ignoreFirstNotification;
+	private boolean loading, isAtFavorites, isHidingLoadingPanel, ignoreFirstNotification, nextLoadPending, animateListBox;
 	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
@@ -264,7 +264,16 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			UI.toast(getApplication(), ex.getMessage());
 		}
 	}
-	
+
+	private void loadMoreIfPossible() {
+		if (loading) {
+			nextLoadPending = true;
+			return;
+		}
+		nextLoadPending = false;
+		doSearch(false);
+	}
+
 	@Override
 	public void loadingProcessChanged(boolean started) {
 		if (UI.browserActivity != this)
@@ -283,7 +292,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		}
 		if (list != null) {
 			list.setCustomEmptyText(started ? msgLoading : (isAtFavorites ? msgNoFavorites : msgNoStations));
-			if (animator != null) {
+			if (animator != null && animateListBox) {
 				if (started) {
 					list.setVisibility(View.INVISIBLE);
 				} else if (list.getVisibility() != View.VISIBLE) {
@@ -293,6 +302,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				}
 			}
 		}
+		if (!started && nextLoadPending)
+			loadMoreIfPossible();
 		//if (!started)
 		//	updateButtons();
 	}
@@ -375,7 +386,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		return genre.children[(index >= genre.children.length) ? (genre.children.length - 1) : index];
 	}
 
-	private void doSearch() {
+	private void doSearch(boolean firstSearch) {
+		animateListBox = firstSearch;
 		final int selection = radioStationList.getSelection();
 		if (Player.radioSearchTerm != null) {
 			Player.radioSearchTerm = Player.radioSearchTerm.trim();
@@ -383,11 +395,11 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				Player.radioSearchTerm = null;
 		}
 		if (Player.lastRadioSearchWasByGenre || Player.radioSearchTerm == null)
-			radioStationList.fetchStations(getApplication(), getGenre(), null, true);
+			radioStationList.fetchStations(getApplication(), getGenre(), null, firstSearch);
 		else
-			radioStationList.fetchStations(getApplication(), null, Player.radioSearchTerm, true);
+			radioStationList.fetchStations(getApplication(), null, Player.radioSearchTerm, firstSearch);
 		//do not call updateButtons() if onSelectionChanged() got called before!
-		if (selection < 0)
+		if (firstSearch && selection < 0)
 			updateButtons();
 	}
 	
@@ -439,7 +451,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-
+		if (visibleItemCount >= totalItemCount || (firstVisibleItem + visibleItemCount) > ((3 * totalItemCount) >> 2))
+			loadMoreIfPossible();
 	}
 
 	@Override
@@ -451,7 +464,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
 				isAtFavorites = false;
-				doSearch();
+				doSearch(true);
 			} else {
 				finish(0, view, true);
 			}
@@ -599,7 +612,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			}
 			if (txtTerm != null)
 				Player.radioSearchTerm = txtTerm.getText().toString();
-			doSearch();
+			doSearch(true);
 		}
 		btnType = null;
 		btnGenre = null;
@@ -725,7 +738,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		else
 			Player.radioLastGenre = validateGenreIndex(Player.radioLastGenre);
 
-		doSearch();
+		doSearch(true);
 	}
 
 	@Override
