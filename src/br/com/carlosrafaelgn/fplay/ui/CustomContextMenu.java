@@ -63,7 +63,6 @@ import android.widget.TextView;
 import java.lang.reflect.Constructor;
 
 import br.com.carlosrafaelgn.fplay.R;
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
