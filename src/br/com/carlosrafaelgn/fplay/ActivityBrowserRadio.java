@@ -48,6 +48,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -77,7 +78,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, AdapterView.OnItemSelectedListener {
+public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, AdapterView.OnItemSelectedListener, BgListView.OnScrollListener {
 	private static final class RadioStationAdapter implements SpinnerAdapter {
 		private Context context;
 		private ColorStateList defaultTextColors;
@@ -437,6 +438,15 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	}
 
 	@Override
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+	}
+
+	@Override
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+	}
+
+	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
@@ -651,6 +661,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setCustomEmptyText(msgLoading);
 		list.setEmptyListOnClickListener(this);
+		list.setOnScrollListener(this);
 		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		if (UI.animationEnabled) {
 			list.setVisibility(View.GONE);
@@ -791,7 +802,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public void onUpdate(FastAnimator animator, float value) {
-
 	}
 
 	@Override
@@ -832,6 +842,5 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public void onNothingSelected(AdapterView<?> parent) {
-
 	}
 }

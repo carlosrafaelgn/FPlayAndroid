@@ -77,6 +77,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private OnAttachedObserver attachedObserver;
 	private OnBgListViewKeyDownObserver keyDownObserver;
 	private OnClickListener emptyListClickListener;
+	private OnScrollListener scrollListener;
 	private StaticLayout emptyLayout;
 	private BaseList<? extends BaseItem> adapter;
 	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking, touching;
@@ -680,7 +681,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			sections = null;
 			sectionPositions = null;
 			ignorePadding = true;
-			super.setOnScrollListener(null);
+			super.setOnScrollListener(scrollListener);
 			super.setVerticalScrollBarEnabled(false);
 			ignorePadding = false;
 			this.scrollBarType = SCROLLBAR_NONE;
@@ -692,7 +693,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			sections = null;
 			sectionPositions = null;
 			ignorePadding = true;
-			super.setOnScrollListener(null);
+			super.setOnScrollListener(scrollListener);
 			super.setVerticalScrollBarEnabled(true);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 				setVerticalScrollBarPosition();
@@ -712,7 +713,14 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		ignorePadding = false;
 		UI.removeInternalPaddingForEdgeEffect(this);
 	}
-	
+
+	@Override
+	public void setOnScrollListener(OnScrollListener l) {
+		scrollListener = l;
+		if (scrollBarType == SCROLLBAR_NONE || scrollBarType == SCROLLBAR_SYSTEM)
+			super.setOnScrollListener(l);
+	}
+
 	@Override
 	public void setPadding(int left, int top, int right, int bottom) {
 		if (ignorePadding)
@@ -857,6 +865,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	
 	@Override
 	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+		if (scrollListener != null)
+			scrollListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
 		if (tracking)
 			return;
 		switch (scrollBarType) {
@@ -871,6 +881,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	
 	@Override
 	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		if (scrollListener != null)
+			scrollListener.onScrollStateChanged(view, scrollState);
 		this.scrollState = scrollState;
 	}
 
@@ -967,6 +979,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		attachedObserver = null;
 		keyDownObserver = null;
 		emptyListClickListener = null;
+		scrollListener = null;
 		emptyLayout = null;
 		sections = null;
 		sectionPositions = null;
