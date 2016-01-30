@@ -38,8 +38,6 @@ import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
@@ -70,7 +68,7 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
-public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, Comparer<CustomContextMenu.Item>, View.OnClickListener, OnCancelListener, OnDismissListener {
+public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, Comparer<CustomContextMenu.Item>, View.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener {
 	static final class Item implements MenuItem {
 		Context context;
 		OnMenuItemClickListener menuItemClickListener;
@@ -336,7 +334,12 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			return super.dispatchPopulateAccessibilityEvent(event);
 		}
 	}
-	
+
+	private static final int PREVENT_MENU = 1;
+	private static final int PREVENT_SUB_MENU = 2;
+
+	private static int menuPrevention;
+
 	private Context context;
 	private TypedRawArrayList<Item> items;
 	private View.OnCreateContextMenuListener listener;
@@ -375,11 +378,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	}*/
 	
 	public static void openContextMenu(View view, View.OnCreateContextMenuListener listener) {
-		final CustomContextMenu mnu = new CustomContextMenu(view, listener, null, null, null);
-		if (MainHandler.isOnMainThread())
-			mnu.run();
-		else
-			MainHandler.postToMainThread(mnu);
+		if ((menuPrevention & PREVENT_MENU) == 0) {
+			menuPrevention |= PREVENT_MENU;
+			(new CustomContextMenu(view, listener, null, null, null)).run();
+		}
 	}
 
 	@Override
@@ -554,7 +556,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		if (it != null && it.enabled) {
 			UI.storeViewCenterLocationForFade(it.actionView);
 			if (it.subMenu != null) {
-				it.subMenu.run();
+				if ((menuPrevention & PREVENT_SUB_MENU) == 0) {
+					menuPrevention |= PREVENT_SUB_MENU;
+					it.subMenu.run();
+				}
 				return;
 			}
 			clickedItem = it;
@@ -742,6 +747,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public void close() {
+		menuPrevention = 0;
+
 		if (parentItem != null && !closingByItemClick) {
 			//preserve everything for now, but call the listener
 			if (!closed) {
