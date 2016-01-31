@@ -2089,7 +2089,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000021);
-		UI.setTransition((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) ? UI.TRANSITION_FADE : opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_FADE : UI.TRANSITION_NONE));
+		UI.transition = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_SLIDE : UI.TRANSITION_NONE);
+		UI.setTransition((UI.lastVersionCode < 83 && UI.transition != UI.TRANSITION_NONE) ? UI.TRANSITION_SLIDE : UI.transition);
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
 		//the volume control types changed on version 71
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
