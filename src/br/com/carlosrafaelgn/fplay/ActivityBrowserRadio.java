@@ -180,7 +180,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private Spinner btnType, btnGenre, btnGenreSecondary;
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
-	private boolean loading, isAtFavorites, isHidingLoadingPanel, ignoreFirstNotification, nextLoadPending, animateListBox;
+	private boolean loading, isAtFavorites, isHidingLoadingPanel, ignoreFirstNotification, animateListBox;
 	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
@@ -265,15 +265,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		}
 	}
 
-	private void loadMoreIfPossible() {
-		if (loading) {
-			nextLoadPending = true;
-			return;
-		}
-		nextLoadPending = false;
-		doSearch(false);
-	}
-
 	@Override
 	public void loadingProcessChanged(boolean started) {
 		if (UI.browserActivity != this)
@@ -302,8 +293,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				}
 			}
 		}
-		if (!started && nextLoadPending)
-			loadMoreIfPossible();
 		//if (!started)
 		//	updateButtons();
 	}
@@ -451,8 +440,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-		if (visibleItemCount >= totalItemCount || (firstVisibleItem + visibleItemCount) > ((3 * totalItemCount) >> 2))
-			loadMoreIfPossible();
+		if (totalItemCount > 0 && !loading && radioStationList != null && radioStationList.hasMoreResults() && (visibleItemCount >= totalItemCount || (firstVisibleItem + visibleItemCount) >= (totalItemCount - 5)))
+			doSearch(false);
 	}
 
 	@Override

@@ -84,8 +84,13 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		this.readyToFetch = true;
 		this.favoritesSync = new Object();
 		this.favorites = new HashSet<>(32);
+		this.moreResults = true;
 	}
-	
+
+	public final boolean hasMoreResults() {
+		return moreResults;
+	}
+
 	public final boolean isLoading() {
 		return loading;
 	}
