@@ -440,7 +440,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-		if (totalItemCount > 0 && !loading && radioStationList != null && radioStationList.hasMoreResults() && (visibleItemCount >= totalItemCount || (firstVisibleItem + visibleItemCount) >= (totalItemCount - 5)))
+		if (!isAtFavorites && totalItemCount > 0 && !loading && radioStationList != null && radioStationList.hasMoreResults() && (visibleItemCount >= totalItemCount || (firstVisibleItem + visibleItemCount) >= (totalItemCount - 5)))
 			doSearch(false);
 	}
 
