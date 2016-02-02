@@ -171,7 +171,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private final boolean useShoutcast;
 	private Uri externalUri;
 	private SpannableStringBuilder message;
-	private TextView sep2;
+	private TextView sep2, lblLoading;
 	private BgListView list;
 	private RadioStationGenre[] genres;
 	private RadioStationAdapter adapterType, adapter, adapterSecondary;
@@ -285,6 +285,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			list.setCustomEmptyText(started ? msgLoading : (isAtFavorites ? msgNoFavorites : msgNoStations));
 			if (animator != null && animateListBox) {
 				if (started) {
+					lblLoading.setVisibility(View.VISIBLE);
 					list.setVisibility(View.INVISIBLE);
 				} else if (list.getVisibility() != View.VISIBLE) {
 					animator.end();
@@ -670,9 +671,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			loadingPanelAnimatorHide = new FastAnimator(panelLoading, true, this, 0);
 			loadingPanelAnimatorShow = new FastAnimator(panelLoading, false, null, 0);
 			radioStationList.radioStationAddedObserver = this;
-			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
-			animator = new FastAnimator(list, false, null, 0);
-			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
+			animator = new FastAnimator(list, false, this, 0);
+			lblLoading = (TextView)findViewById(R.id.lblLoading);
+			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			lblLoading.setTextColor(UI.color_text_disabled);
 			UI.largeText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);
@@ -775,6 +776,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		btnGoBackToPlayer = null;
 		btnAdd = null;
 		sep2 = null;
+		lblLoading = null;
 		btnPlay = null;
 		msgNoFavorites = null;
 		msgNoStations = null;
@@ -807,9 +809,14 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	public void onEnd(FastAnimator animator) {
-		if (isHidingLoadingPanel && panelLoading != null) {
-			isHidingLoadingPanel = false;
-			panelLoading.setVisibility(View.GONE);
+		if (animator == this.animator) {
+			if (lblLoading != null)
+				lblLoading.setVisibility(View.GONE);
+		} else {
+			if (isHidingLoadingPanel && panelLoading != null) {
+				isHidingLoadingPanel = false;
+				panelLoading.setVisibility(View.GONE);
+			}
 		}
 	}
 

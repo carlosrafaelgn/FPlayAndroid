@@ -70,10 +70,10 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
-public final class ActivityBrowser2 extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver {
+public final class ActivityBrowser2 extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, FastAnimator.Observer {
 	private static final int MNU_REMOVEFAVORITE = 100;
 	private FileSt lastClickedFavorite;
-	private TextView lblPath, sep, sep2;
+	private TextView lblPath, sep, sep2, lblLoading;
 	private BgListView list;
 	private FileList fileList;
 	private RelativeLayout panelSecondary;
@@ -103,6 +103,12 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
 				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 				list.setLayoutParams(rp);
+				if (lblLoading != null) {
+					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+					rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+					rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+					lblLoading.setLayoutParams(rp);
+				}
 				UI.animationAddViewToHide(panelSecondary);
 			}
 			//UI.animationAddViewToHide(btnGoBackToPlayer);
@@ -128,6 +134,12 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
 				rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
 				list.setLayoutParams(rp);
+				if (lblLoading != null) {
+					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+					rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+					rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
+					lblLoading.setLayoutParams(rp);
+				}
 				UI.animationSetViewToShowFirst(panelSecondary);
 			}
 			//UI.animationAddViewToShow(btnGoBackToPlayer);
@@ -292,6 +304,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		if (list != null) {
 			if (animator != null) {
 				if (started) {
+					lblLoading.setVisibility(View.VISIBLE);
 					list.setVisibility(View.INVISIBLE);
 				} else {
 					animator.end();
@@ -761,12 +774,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			if (firstCreation)
 				list.setVisibility(View.GONE);
 			list.setCustomEmptyText(msgEmptyList);
-			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
-			animator = new FastAnimator(list, false, null, 0);
-			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
+			animator = new FastAnimator(list, false, this, 0);
+			lblLoading = (TextView)findViewById(R.id.lblLoading);
+			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			lblLoading.setTextColor(UI.color_text_disabled);
 			UI.largeText(lblLoading);
-			lblLoading.setVisibility(View.VISIBLE);
+			//when returning from the radio
+			lblLoading.setVisibility((fileList.getCount() > 0) ? View.GONE : View.VISIBLE);
 		} else if (firstCreation) {
 			list.setCustomEmptyText(msgLoading);
 		}
@@ -897,6 +911,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		lastClickedFavorite = null;
 		lblPath = null;
+		lblLoading = null;
 		list = null;
 		panelSecondary = null;
 		btnGoBack = null;
@@ -924,5 +939,15 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			albumArtFetcher.stopAndCleanup();
 			albumArtFetcher = null;
 		}
+	}
+
+	@Override
+	public void onUpdate(FastAnimator animator, float value) {
+	}
+
+	@Override
+	public void onEnd(FastAnimator animator) {
+		if (lblLoading != null)
+			lblLoading.setVisibility(View.GONE);
 	}
 }
