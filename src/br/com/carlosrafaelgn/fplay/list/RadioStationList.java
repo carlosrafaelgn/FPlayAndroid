@@ -479,6 +479,8 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 					cache.copyData(items, count, moreResults);
 					writeCache(cache);
 				}
+			} else if (!containsFavorites && cache != null) {
+				cache.moreResults = moreResults;
 			}
 			break;
 		}
