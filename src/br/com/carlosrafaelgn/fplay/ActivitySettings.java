@@ -463,7 +463,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 
 	private String getBytesBeforeDecodingString(int index) {
-		return (Player.getBytesBeforeDecoding(index) >> 10) + " kiB";
+		return (Player.getBytesBeforeDecoding(index) >> 10) + " KiB";
 	}
 
 	private String getSecondsBeforePlaybackString(int index) {

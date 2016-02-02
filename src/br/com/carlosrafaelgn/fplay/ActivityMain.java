@@ -1500,7 +1500,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (barSeek != null && !barSeek.isTracking()) {
 				if (s.isHttp) {
 					final int m = Player.getHttpPosition();
-					barSeek.setText((m == -1) ? getText(R.string.connecting).toString() : ((Player.getHttpPosition() >>> 10) + " kiB " + getText(R.string.loading)));
+					barSeek.setText((m == -1) ? getText(R.string.connecting).toString() : ((Player.getHttpPosition() >>> 10) + " KiB " + getText(R.string.loading)));
 				} else {
 					barSeek.setText(R.string.loading);
 				}
@@ -1510,7 +1510,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else if (s != null && s.isHttp) {
 			if (barSeek != null) {
 				final int m = Player.getHttpPosition();
-				barSeek.setText((m == -1) ? "-" : ((m >>> 10) + " kiB"));
+				barSeek.setText((m == -1) ? "-" : ((m >>> 10) + " KiB"));
 				barSeek.setValue(0);
 			}
 			return;
