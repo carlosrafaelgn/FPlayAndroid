@@ -68,7 +68,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	private static final int MSG_ERROR = 0x0300;
 	private static final int MSG_MORE_RESULTS = 0x0301;
 
-	private boolean loading, favoritesLoaded, favoritesChanged;
+	private boolean loading, favoritesLoaded, favoritesChanged, containsFavorites;
 	protected final Object favoritesSync;
 	protected final HashSet<RadioStation> favorites;
 	private volatile boolean readyToFetch, isSavingFavorites, reset, moreResults;
@@ -76,15 +76,18 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	private volatile RadioStationGenre genreToFetch;
 	private volatile String searchTermToFetch;
 	private volatile Context context;
+	private RadioStationCache cache;
 	public RadioStationAddedObserver radioStationAddedObserver;
 	
-	public RadioStationList() {
+	public RadioStationList(RadioStationCache cache) {
 		super(RadioStation.class, MAX_COUNT);
 		this.items = new RadioStation[MAX_COUNT];
 		this.readyToFetch = true;
 		this.favoritesSync = new Object();
 		this.favorites = new HashSet<>(32);
 		this.moreResults = true;
+		if (cache != null && cache.stations != null && cache.stations.length >= cache.count && cache.count > 0)
+			this.cache = cache;
 	}
 
 	public final boolean hasMoreResults() {
@@ -331,6 +334,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		while (!readyToFetch)
 			Thread.yield();
 		cancel();
+		containsFavorites = false;
 		if (reset) {
 			moreResults = true;
 			clear();
@@ -354,7 +358,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			return false;
 		}
 	}
-	
+
 	public final void fetchFavorites(Context context) {
 		while (!readyToFetch)
 			Thread.yield();
@@ -362,6 +366,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		clear();
 		loadingProcessChanged(true);
 		final Thread t = new Thread(this, "Icecast Favorite Stations Fetcher Thread");
+		containsFavorites = true;
 		isSavingFavorites = false;
 		genreToFetch = null;
 		searchTermToFetch = null;
@@ -374,7 +379,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			loadingProcessChanged(false);
 		}
 	}
-	
+
 	public final void saveFavorites(Context context) {
 		while (!readyToFetch)
 			Thread.yield();
@@ -394,6 +399,33 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			readyToFetch = true;
 		}
 	}
+
+	public final boolean restoreCacheIfValid() {
+		cache = RadioStationCache.getIfNotExpired(cache);
+		if (cache == null)
+			return false;
+		while (!readyToFetch)
+			Thread.yield();
+		cancel();
+		this.reset = false;
+		containsFavorites = false;
+		isSavingFavorites = false;
+		readCache(cache);
+		return true;
+	}
+
+	protected void readCache(RadioStationCache cache) {
+		clear();
+		this.cache = cache;
+		System.arraycopy(cache.stations, 0, items, 0, cache.count);
+		count = cache.count;
+		moreResults = cache.moreResults;
+		notifyDataSetChanged(-1, CONTENT_ADDED);
+	}
+
+	protected abstract void writeCache(RadioStationCache cache);
+
+	protected abstract void storeCache(RadioStationCache cache);
 
 	public final RadioStation tryToFetchRadioStationAgain(Context context, String title) {
 		try {
@@ -426,7 +458,8 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			UI.toast(Player.getService(), ((msg.arg2 != -2) && !Player.isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_gen);
 			break;
 		case MSG_MORE_RESULTS:
-			moreResults = (msg.arg1 > 0);
+			if (!containsFavorites)
+				moreResults = (msg.arg1 > 0);
 			loadingProcessChanged(false);
 			//protection against out of order messages... does this really happen? ;)
 			if (msg.arg2 > count) {
@@ -438,19 +471,27 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 				notifyDataSetChanged(-1, CONTENT_ADDED);
 				if (radioStationAddedObserver != null)
 					radioStationAddedObserver.onRadioStationAdded();
+				if (!containsFavorites) {
+					if (cache == null) {
+						cache = new RadioStationCache();
+						storeCache(cache);
+					}
+					cache.copyData(items, count, moreResults);
+					writeCache(cache);
+				}
 			}
 			break;
 		}
 		return true;
 	}
-	
+
 	@Override
 	public final View getView(int position, View convertView, ViewGroup parent) {
 		final RadioStationView view = ((convertView != null) ? (RadioStationView)convertView : new RadioStationView(Player.getService()));
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}
-	
+
 	@Override
 	public final int getViewHeight() {
 		return RadioStationView.getViewHeight();

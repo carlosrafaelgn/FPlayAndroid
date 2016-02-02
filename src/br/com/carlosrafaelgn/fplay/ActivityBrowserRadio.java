@@ -376,6 +376,17 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		return genre.children[(index >= genre.children.length) ? (genre.children.length - 1) : index];
 	}
 
+	private void restoreCacheOrDoSearch() {
+		if (radioStationList.restoreCacheIfValid()) {
+			animateListBox = true;
+			loadingProcessChanged(true);
+			updateButtons();
+			loadingProcessChanged(false);
+		} else {
+			doSearch(true);
+		}
+	}
+
 	private void doSearch(boolean firstSearch) {
 		animateListBox = firstSearch;
 		final int selection = radioStationList.getSelection();
@@ -454,7 +465,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
 				isAtFavorites = false;
-				doSearch(true);
+				restoreCacheOrDoSearch();
 			} else {
 				finish(0, view, true);
 			}
@@ -728,7 +739,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		else
 			Player.radioLastGenre = validateGenreIndex(Player.radioLastGenre);
 
-		doSearch(true);
+		restoreCacheOrDoSearch();
 	}
 
 	@Override

@@ -53,6 +53,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 	private int pageNumber, currentStationIndex;
 
 	public IcecastRadioStationList(String tags, String noOnAir, String noDescription, String noTags) {
+		super(RadioStationCache.getIfNotExpired(Player.radioStationCache));
 		this.tags = tags;
 		this.noOnAir = noOnAir;
 		this.noDescription = noDescription;
@@ -347,5 +348,23 @@ public final class IcecastRadioStationList extends RadioStationList {
 				fetchStationsInternalError(myVersion, err);
 			System.gc();
 		}
+	}
+
+	@Override
+	protected void readCache(RadioStationCache cache) {
+		super.readCache(cache);
+		pageNumber = cache.pageNumber;
+		currentStationIndex = cache.currentStationIndex;
+	}
+
+	@Override
+	protected void writeCache(RadioStationCache cache) {
+		cache.pageNumber = pageNumber;
+		cache.currentStationIndex = currentStationIndex;
+	}
+
+	@Override
+	protected void storeCache(RadioStationCache cache) {
+		Player.radioStationCache = cache;
 	}
 }

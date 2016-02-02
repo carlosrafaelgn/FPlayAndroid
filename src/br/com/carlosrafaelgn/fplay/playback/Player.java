@@ -663,6 +663,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			favoriteFolders.clear();
 			favoriteFolders = null;
 		}
+		radioStationCache = null;
+		radioStationCacheShoutcast = null;
 		localSong = null;
 		localPlayer = null;
 		stateLastSong = null;
@@ -2044,6 +2046,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static String path, originalPath, radioSearchTerm;
 	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
 	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
+	public static Object radioStationCache, radioStationCacheShoutcast;
 
 	public static SerializableMap loadConfigFromFile(Context context) {
 		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");

@@ -51,6 +51,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 	private String baseUrl;
 
 	public ShoutcastRadioStationList(String tags, String listeners, String noOnAir, String noDescription) {
+		super(RadioStationCache.getIfNotExpired(Player.radioStationCacheShoutcast));
 		this.tags = tags + ": ";
 		this.listeners = listeners + ": ";
 		this.noOnAir = noOnAir;
@@ -221,5 +222,23 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				fetchStationsInternalError(myVersion, err);
 			System.gc();
 		}
+	}
+
+	@Override
+	protected void readCache(RadioStationCache cache) {
+		super.readCache(cache);
+		pageNumber = cache.pageNumber;
+		currentStationIndex = cache.currentStationIndex;
+	}
+
+	@Override
+	protected void writeCache(RadioStationCache cache) {
+		cache.pageNumber = pageNumber;
+		cache.currentStationIndex = currentStationIndex;
+	}
+
+	@Override
+	protected void storeCache(RadioStationCache cache) {
+		Player.radioStationCacheShoutcast = cache;
 	}
 }
