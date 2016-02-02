@@ -659,7 +659,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		intentPlayPause = null;
 		intentNext = null;
 		intentExit = null;
-		favoriteFolders.clear();
+		if (favoriteFolders != null) {
+			favoriteFolders.clear();
+			favoriteFolders = null;
+		}
 		localSong = null;
 		localPlayer = null;
 		stateLastSong = null;
@@ -2035,7 +2038,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static RemoteViews notificationRemoteViews;
 	private static boolean appNotInForeground, idleTurnOffTimerSent;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin;
-	private static final HashSet<String> favoriteFolders = new HashSet<>();
+	private static HashSet<String> favoriteFolders;
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	private static int headsetHookActions, headsetHookPressCount;
 	public static String path, originalPath, radioSearchTerm;
@@ -2182,12 +2185,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (count > 0) {
 			if (count > 128)
 				count = 128;
-			favoriteFolders.clear();
+			favoriteFolders = new HashSet<>(count);
 			for (int i = count - 1; i >= 0; i--) {
 				final String f = opts.getString(OPT_FAVORITEFOLDER0 + i);
 				if (f != null && f.length() > 1)
 					favoriteFolders.add(f);
 			}
+		} else {
+			if (favoriteFolders != null)
+				favoriteFolders.clear();
+			favoriteFolders = null;
 		}
 		Equalizer.loadConfig(opts);
 		BassBoost.loadConfig(opts);
@@ -2269,7 +2276,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_FOLLOW_CURRENT_SONG, followCurrentSong);
 		opts.putBit(OPTBIT_ANNOUNCE_CURRENT_SONG, announceCurrentSong);
 		opts.putBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM, UI.placeTitleAtTheBottom);
-		if (favoriteFolders.size() > 0) {
+		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;
 			for (String f : favoriteFolders) {
@@ -2394,36 +2401,34 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static void addFavoriteFolder(String path) {
-		synchronized (favoriteFolders) {
-			favoriteFolders.add(path);
-		}
+		if (favoriteFolders == null)
+			favoriteFolders = new HashSet<>();
+		favoriteFolders.add(path);
 	}
 
 	public static void removeFavoriteFolder(String path) {
-		synchronized (favoriteFolders) {
-			favoriteFolders.remove(path);
-		}
+		if (favoriteFolders == null)
+			return;
+		favoriteFolders.remove(path);
+		if (favoriteFolders.size() == 0)
+			favoriteFolders = null;
 	}
 
 	public static boolean isFavoriteFolder(String path) {
-		synchronized (favoriteFolders) {
-			return favoriteFolders.contains(path);
-		}
+		return (favoriteFolders != null && favoriteFolders.contains(path));
 	}
 
 	public static FileSt[] getFavoriteFolders(int extra) {
 		FileSt[] ffs;
-		synchronized (favoriteFolders) {
-			final int count = favoriteFolders.size();
-			if (count == 0)
-				return new FileSt[extra];
-			ffs = new FileSt[count + extra];
-			int i = 0;
-			for (String f : favoriteFolders) {
-				final int idx = f.lastIndexOf('/');
-				ffs[i] = new FileSt(f, (idx >= 0 && idx < (f.length() - 1)) ? f.substring(idx + 1) : f, null, FileSt.TYPE_FAVORITE);
-				i++;
-			}
+		final int count = (favoriteFolders == null ? 0 : favoriteFolders.size());
+		if (count == 0)
+			return new FileSt[extra];
+		ffs = new FileSt[count + extra];
+		int i = 0;
+		for (String f : favoriteFolders) {
+			final int idx = f.lastIndexOf('/');
+			ffs[i] = new FileSt(f, (idx >= 0 && idx < (f.length() - 1)) ? f.substring(idx + 1) : f, null, FileSt.TYPE_FAVORITE);
+			i++;
 		}
 		ArraySorter.sort(ffs, 0, ffs.length - extra, thePlayer);
 		return ffs;

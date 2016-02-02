@@ -155,7 +155,13 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 	
 	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean isInTouchMode, boolean createSections) {
-		this.files = new FileSt[LIST_DELTA];
+		if (path == null || path.length() == 0) {
+			this.files = Player.getFavoriteFolders(16);
+			this.count = this.files.length - 16;
+		} else {
+			this.files = new FileSt[LIST_DELTA];
+			this.count = 0;
+		}
 		this.path = path;
 		String unk;
 		try {
@@ -171,7 +177,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		this.playAfterFetching = playAfterFetching;
 		this.isInTouchMode = isInTouchMode;
 		this.createSections = createSections;
-		this.count = 0;
 	}
 	
 	private void fetch() {
@@ -259,9 +264,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		if (s == null)
 			return;
 		
-		files = Player.getFavoriteFolders(16);
-		count = files.length - 16;
-
 		String desc = s.getText(R.string.artists).toString();
 		files[count] = new FileSt(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ARTIST_ROOT);
 		count++;
