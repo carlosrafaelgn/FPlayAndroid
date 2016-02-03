@@ -66,6 +66,10 @@ public final class RadioStation extends BaseItem {
 		return ((i <= 0) ? path : path.substring(0, i));
 	}
 
+	public static boolean isRadioUrl(String path) {
+		return (path.indexOf(RadioStation.UNIT_SEPARATOR_CHAR) > 0);
+	}
+
 	public RadioStation(String title, String stationSiteUrl, String type, String description, String onAir, String tags, String m3uUrl, boolean isFavorite, boolean isShoutcast) {
 		this.title = title;
 		this.stationSiteUrl = stationSiteUrl;

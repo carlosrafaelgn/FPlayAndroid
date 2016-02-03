@@ -630,7 +630,7 @@ public final class HttpStreamReceiver implements Runnable {
 	}
 
 	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
-		this.url = normalizeIcyUrl(RadioStation.extractUrl(path));
+		this.url = (RadioStation.isRadioUrl(path) ? normalizeIcyUrl(RadioStation.extractUrl(path)) : new URL(path));
 		this.path = path;
 		sync = new Object();
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
