@@ -454,8 +454,27 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public void processItemLongClick(int position) {
-		if (!isAtHome || loading || list == null || fileList == null || position < 0 || position >= fileList.getCount())
+		if (loading || list == null || fileList == null || position < 0 || position >= fileList.getCount())
 			return;
+		if (!isAtHome) {
+			final boolean forceHideButtons = (btnAdd != null && btnAdd.getVisibility() != View.VISIBLE);
+			//unselect everything, then select the item, and finally play
+			int i = fileList.getCount() - 1;
+			checkedCount = 0;
+			for (; i >= 0; i--)
+				fileList.getItemT(i).isChecked = false;
+			final FileSt file = fileList.getItemT(position);
+			file.isChecked = true;
+			processItemCheckboxClickInternal(position, false);
+			addPlayCheckedItems(true);
+			if (forceHideButtons) {
+				//hide all the buttons to prevent a flick
+				btnAdd.setVisibility(View.GONE);
+				sep2.setVisibility(View.GONE);
+				btnPlay.setVisibility(View.GONE);
+			}
+			return;
+		}
 		lastClickedFavorite = fileList.getItemT(position);
 		if (lastClickedFavorite.specialType == FileSt.TYPE_FAVORITE) {
 			if (UI.doubleClickMode && fileList.getSelection() != position)
