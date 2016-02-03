@@ -468,7 +468,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			processItemCheckboxClickInternal(position, false);
 			addPlayCheckedItems(true);
 			if (forceHideButtons) {
-				//hide all the buttons to prevent a flick
+				//hide all the buttons to prevent flickering
 				btnAdd.setVisibility(View.GONE);
 				sep2.setVisibility(View.GONE);
 				btnPlay.setVisibility(View.GONE);
