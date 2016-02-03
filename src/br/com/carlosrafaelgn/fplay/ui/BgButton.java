@@ -165,7 +165,7 @@ public final class BgButton extends Button {
 			CharSequence c = super.getContentDescription();
 			if (c == null)
 				c = getText();
-			return c + ": " + (checked ? selected : unselected);
+			return c + UI.collon() + (checked ? selected : unselected);
 		}
 		return super.getContentDescription();
 	}

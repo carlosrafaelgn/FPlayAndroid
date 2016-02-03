@@ -118,7 +118,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 
 	@Override
 	public CharSequence getTitle() {
-		return "FPlay: " + Player.getCurrentTitle(getApplication(), false);
+		return "FPlay" + UI.collon() + Player.getCurrentTitle(getApplication(), false);
 	}
 
 	@Override

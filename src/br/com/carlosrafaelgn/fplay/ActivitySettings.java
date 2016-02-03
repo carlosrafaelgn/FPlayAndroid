@@ -932,7 +932,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
 			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
-			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + ":", UI.getThemeString(ctx, UI.theme), false, false, false);
+			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(ctx, UI.theme), false, false, false);
 			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);
 			optExpandSeekBar = new SettingView(ctx, UI.ICON_SEEKBAR, getText(R.string.expand_seek_bar).toString(), null, true, UI.expandSeekBar, false);

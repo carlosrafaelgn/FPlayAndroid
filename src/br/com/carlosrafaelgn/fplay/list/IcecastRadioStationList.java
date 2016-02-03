@@ -43,6 +43,7 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class IcecastRadioStationList extends RadioStationList {
 	//icecast returns up to MAX_PAGE_RESULTS results per page and up to MAX_PAGE_COUNT pages
@@ -118,7 +119,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 							sb.append(", ");
 						} else {
 							sb.append(tags);
-							sb.append(": ");
+							sb.append(UI.collon());
 						}
 						sb.append(parser.getText());
 					} else {

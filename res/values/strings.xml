@@ -31,7 +31,7 @@
     <string name="msg_select_favorite_remove">Please, select a favorite to remove</string>
     <string name="msg_turn_off_title">Automatic shutdown</string>
     <string name="msg_turn_off">Turn off the player after how many minutes?</string>
-    <string name="msg_enter_name">Enter a name for the new %s&#58;</string>
+    <string name="msg_enter_name">Enter a name for the new %s:</string>
     <string name="msg_confirm_overwrite">Do you really want to overwrite the %1$s \"%2$s\"?</string>
     <string name="msg_confirm_delete">Do you really want to delete the %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Overwrite %1$s \"%2$s\"</string>

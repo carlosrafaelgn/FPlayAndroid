@@ -190,7 +190,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				break;
 			}
 		}
-		return initial + " " + file.name + ": " + ctx.getText(file.isChecked ? R.string.selected : R.string.unselected);
+		return initial + " " + file.name + UI.collon() + ctx.getText(file.isChecked ? R.string.selected : R.string.unselected);
 	}
 
 	@Override

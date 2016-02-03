@@ -78,9 +78,9 @@ public final class SettingView extends View {
 	@Override
 	public CharSequence getContentDescription() {
 		if (secondaryText != null)
-			return text + ": " + secondaryText;
+			return text + UI.collon() + secondaryText;
 		else if (checkable)
-			return text + ": " + getContext().getText(checked ? R.string.yes : R.string.no);
+			return text + UI.collon() + getContext().getText(checked ? R.string.yes : R.string.no);
 		else if (color != 0)
 			return text;
 		return super.getContentDescription();

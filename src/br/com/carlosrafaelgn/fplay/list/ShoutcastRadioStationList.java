@@ -43,6 +43,7 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ShoutcastRadioStationList extends RadioStationList {
@@ -52,8 +53,8 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 
 	public ShoutcastRadioStationList(String tags, String listeners, String noOnAir, String noDescription) {
 		super(RadioStationCache.getIfNotExpired(Player.radioStationCacheShoutcast));
-		this.tags = tags + ": ";
-		this.listeners = listeners + ": ";
+		this.tags = tags + UI.collon();
+		this.listeners = listeners + UI.collon();
 		this.noOnAir = noOnAir;
 		this.noDescription = noDescription;
 	}
