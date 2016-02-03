@@ -272,9 +272,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		loading = started;
 		if (panelLoading != null) {
 			if (loadingPanelAnimatorHide != null) {
-				panelLoading.setVisibility(View.VISIBLE);
 				loadingPanelAnimatorHide.end();
 				loadingPanelAnimatorShow.end();
+				panelLoading.setVisibility(View.VISIBLE);
 				(started ? loadingPanelAnimatorShow : loadingPanelAnimatorHide).start();
 				isHidingLoadingPanel = !started;
 			} else {
@@ -284,11 +284,13 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		if (list != null) {
 			list.setCustomEmptyText(started ? msgLoading : (isAtFavorites ? msgNoFavorites : msgNoStations));
 			if (animator != null && animateListBox) {
+				animator.end();
+				//when the animation ends, lblLoading is made hidden...
+				//that's why we set the visibility after calling end()
+				lblLoading.setVisibility(View.VISIBLE);
 				if (started) {
-					lblLoading.setVisibility(View.VISIBLE);
 					list.setVisibility(View.INVISIBLE);
 				} else if (list.getVisibility() != View.VISIBLE) {
-					animator.end();
 					list.setVisibility(View.VISIBLE);
 					animator.start();
 				}

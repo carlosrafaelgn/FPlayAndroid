@@ -103,12 +103,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
 				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 				list.setLayoutParams(rp);
-				if (lblLoading != null) {
+				//do not change lblLoading's layout, as it covers the background behind panelSecondary
+				/*if (lblLoading != null) {
 					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 					rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
 					rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 					lblLoading.setLayoutParams(rp);
-				}
+				}*/
 				UI.animationAddViewToHide(panelSecondary);
 			}
 			//UI.animationAddViewToHide(btnGoBackToPlayer);
@@ -134,12 +135,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
 				rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
 				list.setLayoutParams(rp);
-				if (lblLoading != null) {
+				//do not change lblLoading's layout, as it covers the background behind panelSecondary
+				/*if (lblLoading != null) {
 					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 					rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
 					rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
 					lblLoading.setLayoutParams(rp);
-				}
+				}*/
 				UI.animationSetViewToShowFirst(panelSecondary);
 			}
 			//UI.animationAddViewToShow(btnGoBackToPlayer);
@@ -303,11 +305,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		if (list != null) {
 			if (animator != null) {
+				animator.end();
+				//when the animation ends, lblLoading is made hidden...
+				//that's why we set the visibility after calling end()
+				lblLoading.setVisibility(View.VISIBLE);
 				if (started) {
-					lblLoading.setVisibility(View.VISIBLE);
 					list.setVisibility(View.INVISIBLE);
 				} else {
-					animator.end();
 					list.setVisibility(View.VISIBLE);
 					animator.start();
 				}
@@ -778,6 +782,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			list.setCustomEmptyText(msgEmptyList);
 			animator = new FastAnimator(list, false, this, 0);
 			lblLoading = (TextView)findViewById(R.id.lblLoading);
+			//try to center the text by making up for panelSecondary
+			lblLoading.setPadding(0, 0, 0, UI.defaultControlSize + UI._1dp + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			lblLoading.setTextColor(UI.color_text_disabled);
 			UI.largeText(lblLoading);
