@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.playback;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;

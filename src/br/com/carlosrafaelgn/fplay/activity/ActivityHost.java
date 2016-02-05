@@ -49,6 +49,7 @@ import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
+import android.view.animation.Interpolator;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
@@ -69,9 +70,9 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer {
+public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer, Interpolator {
 	private ClientActivity top;
-	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy;
+	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate;
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
@@ -179,6 +180,15 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		onAnimationEnd(null);
 	}
 
+	@Override
+	public float getInterpolation(float input) {
+		//making ActivityHost implement Interpolator saves us one class and one instance ;)
+		if (accelerate)
+			return input * input;
+		input = 1.0f - input;
+		return (1.0f - (input * input));
+	}
+
 	public View findViewByIdDirect(int id) {
 		return super.findViewById(id);
 	}
@@ -237,8 +247,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						anim = ((useFadeOutNextTime || forceFadeOut) ?
 							new TranslateAnimation(0.0f, 0.0f, 0.0f, (float)oldView.getHeight()) :
 							new TranslateAnimation(0.0f, 0.0f, (float)oldView.getHeight(), 0.0f));
+						accelerate = (useFadeOutNextTime || forceFadeOut);
 						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
-						anim.setInterpolator(UI.animationInterpolator);
+						anim.setInterpolator(this);
 						anim.setRepeatCount(0);
 						anim.setFillAfter(false);
 					} else {
@@ -279,7 +290,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 							animationSet.addAnimation(new AlphaAnimation(0.0f, 1.0f));
 						}
 						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
-						anim.setInterpolator(UI.animationInterpolator);
+						anim.setInterpolator(Player.theUI);
 						anim.setRepeatCount(0);
 						anim.setFillAfter(false);
 					}
@@ -669,7 +680,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@TargetApi(Build.VERSION_CODES.M)
 	public void requestWriteStoragePermission() {
-		requestPermissions(new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE }, 2);
+		requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)

@@ -103,7 +103,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //Unit conversions are based on:
 //http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/util/TypedValue.java
 //
-public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener {
+public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
 	public static final int VERSION_CODE = 83;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
@@ -482,22 +482,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		//hide the edge!!! ;)
 		//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
 		//  edgeFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.CLEAR);
-		animationInterpolator = new Interpolator() {
-			@Override
-			public float getInterpolation(float input) {
-				//faster version of AccelerateDecelerateInterpolator using this sine approximation:
-				//http://forum.devmaster.net/t/fast-and-accurate-sine-cosine/9648
-				//we use the result of sin in the range -PI/2 to PI/2
-				//input = (input * 3.14159265f) - 1.57079632f;
-				//return 0.5f + (0.5f * ((1.27323954f * input) - (0.40528473f * input * (input < 0.0f ? -input : input))));
-
-				//even faster version! using the Hermite interpolation (GLSL's smoothstep)
-				//https://www.opengl.org/sdk/docs/man/html/smoothstep.xhtml
-				return (input * input * (3.0f - (2.0f * input)));
-			}
-		};
 	}
-	
+
 	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
 		int dec;
 		if (useTwoDecimalPlaces) {
@@ -2089,7 +2075,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	private static final int ANIMATION_STATE_SHOWING = 2;
 
 	public static boolean animationEnabled;
-	public static final Interpolator animationInterpolator;
 	private static View animationFocusView;
 	private static int animationHideCount, animationShowCount, animationState;
 	private static View animationViewToShowFirst;
@@ -2097,10 +2082,25 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	private static FastAnimator animationAnimatorShowFirst, animationAnimatorHide, animationAnimatorShow;
 	private static Animation animationShowFirst, animationHide, animationShow;
 
+	@Override
+	public float getInterpolation(float input) {
+		//making UI implement Interpolator saves us one class and one instance ;)
+
+		//faster version of AccelerateDecelerateInterpolator using this sine approximation:
+		//http://forum.devmaster.net/t/fast-and-accurate-sine-cosine/9648
+		//we use the result of sin in the range -PI/2 to PI/2
+		//input = (input * 3.14159265f) - 1.57079632f;
+		//return 0.5f + (0.5f * ((1.27323954f * input) - (0.40528473f * input * (input < 0.0f ? -input : input))));
+
+		//even faster version! using the Hermite interpolation (GLSL's smoothstep)
+		//https://www.opengl.org/sdk/docs/man/html/smoothstep.xhtml
+		return (input * input * (3.0f - (2.0f * input)));
+	}
+
 	public static Animation animationCreateAlpha(float fromAlpha, float toAlpha) {
 		final Animation animation = new AlphaAnimation(fromAlpha, toAlpha);
 		animation.setDuration(TRANSITION_DURATION_FOR_VIEWS);
-		animation.setInterpolator(animationInterpolator);
+		animation.setInterpolator(Player.theUI);
 		animation.setRepeatCount(0);
 		animation.setFillAfter(false);
 		return animation;
