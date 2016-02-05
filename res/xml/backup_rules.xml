@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        http://developer.android.com/intl/pt-br/training/backup/autosyncapi.html
+        I added this database (which does not exist) to the black list, to make
+        make other files become white-listed
+    -->
+    <exclude domain="database" path="device_info.db" />
+</full-backup-content>

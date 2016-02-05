@@ -77,13 +77,18 @@
         android:name="android.software.leanback"
         android:required="false" />
 
+    <!-- http://developer.android.com/intl/pt-br/reference/android/app/backup/BackupManager.html -->
     <application
         android:allowBackup="true"
         android:allowClearUserData="true"
+        android:killAfterRestore="true"
+        android:restoreAnyVersion="false"
         android:description="@string/app_description"
         android:icon="@drawable/ic_launcher"
+        android:banner="@drawable/ic_launcher"
         android:label="FPlay"
         android:supportsRtl="true"
+        android:fullBackupContent="@xml/backup_rules"
         android:theme="@style/AppTheme" >
         <activity
             android:name="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
