@@ -423,7 +423,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				processIdleTurnOffTimer();
 				break;
 			case MSG_TURN_OFF_NOW:
-				stopService(false);
+				stopService();
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
 				if (msg.obj != null)
@@ -466,7 +466,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					next();
 					break;
 				case ACTION_EXIT:
-					stopService(false);
+					stopService();
 					break;
 				}
 				startCommand = null;
@@ -598,7 +598,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return stateNew;
 	}
 
-	public static void stopService(boolean restart) {
+	public static void stopService() {
 		if (state != STATE_ALIVE)
 			return;
 		state = STATE_TERMINATING;
@@ -635,10 +635,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 		updateState(~0x27, new Object[] { null, null, null });
 
-		if (restart && intentActivityHost != null) {
+		/*if (restart && intentActivityHost != null) {
 			//http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
 			((AlarmManager)thePlayer.getSystemService(ALARM_SERVICE)).set(AlarmManager.RTC, System.currentTimeMillis() + 300, intentActivityHost);
-		}
+		}*/
 
 		thread = null;
 		observer = null;
@@ -2522,7 +2522,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (turnOffTimerObserver != null)
 				turnOffTimerObserver.onPlayerTurnOffTimerTick();
 			if (secondsLeft < 15) //less than half of our period
-				stopService(false);
+				stopService();
 			else
 				localHandler.sendEmptyMessageAtTime(MSG_TURN_OFF_TIMER, SystemClock.uptimeMillis() + 30000);
 		}
@@ -2601,7 +2601,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				if (turnOffTimerObserver != null)
 					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
 				if (secondsLeft < 15) //less than half of our period
-					stopService(false);
+					stopService();
 				else
 					sendMessage = true;
 			} else {

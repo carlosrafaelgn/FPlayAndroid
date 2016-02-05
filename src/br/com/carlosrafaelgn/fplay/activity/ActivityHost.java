@@ -71,12 +71,12 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 //
 public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer {
 	private ClientActivity top;
-	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation;
+	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy;
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
 	private FastAnimator animator; //used only with UI.TRANSITION_FADE
-	private int systemBgColor, exitOnDestroy;
+	private int systemBgColor;
 
 	private void disableTopView() {
 		FrameLayout parent;
@@ -124,8 +124,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			UI.announceAccessibilityText(title);
 	}
 
-	public void setExitOnDestroy(boolean exitOnDestroy) {
-		this.exitOnDestroy = (exitOnDestroy ? 1 : 0);
+	public void setExitOnDestroy() {
+		this.exitOnDestroy = true;
 	}
 	
 	@Override
@@ -641,8 +641,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.removeDestroyedObserver(this);
 		finalCleanup();
 		super.onDestroy();
-		if (exitOnDestroy != 0)
-			Player.stopService(exitOnDestroy == 2);
+		if (exitOnDestroy)
+			Player.stopService();
 	}
 
 	@Override
@@ -676,11 +676,11 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	@Override
 	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-		if (requestCode == 1 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && Player.state == Player.STATE_ALIVE) {
+		/*if (requestCode == 1 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && Player.state == Player.STATE_ALIVE) {
 			exitOnDestroy = 2;
 			finish();
 			return;
-		}
+		}*/
 		if (top != null)
 			top.onRequestPermissionsResult(requestCode, permissions, grantResults);
 	}

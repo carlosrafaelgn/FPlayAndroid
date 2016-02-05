@@ -766,7 +766,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public boolean onMenuItemClick(MenuItem item) {
 		final int id = item.getItemId();
 		if (id == MNU_EXIT) {
-			getHostActivity().setExitOnDestroy(true);
+			getHostActivity().setExitOnDestroy();
 			Player.pause();
 			finish(0, null, false);
 			return true;
