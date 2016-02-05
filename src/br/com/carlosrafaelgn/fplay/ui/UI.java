@@ -436,7 +436,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
-		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom;
+		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];

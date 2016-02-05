@@ -327,6 +327,8 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	public void processItemLongClick(int position) {
 		if (radioStationList.getSelection() != position)
 			radioStationList.setSelection(position, true);
+		if (UI.playWithLongPress)
+			addPlaySelectedItem(true);
 	}
 
 	private int validateGenreIndex(int index) {

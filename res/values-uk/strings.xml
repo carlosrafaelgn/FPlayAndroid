@@ -330,5 +330,6 @@
     <string name="second">секунда</string>
     <string name="seconds">секунди</string>
     <string name="slide">Ковзати</string>
+    <string name="play_with_long_press">Тривале натискання починає відтворення при додаванні пісні</string>
 
 </resources>

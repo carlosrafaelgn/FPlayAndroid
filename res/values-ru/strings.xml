@@ -330,5 +330,6 @@
     <string name="second">секунда</string>
     <string name="seconds">секунды</string>
     <string name="slide">Скользить</string>
+    <string name="play_with_long_press">Длительное нажатие начинает воспроизведение при добавлении песни</string>
 
 </resources>

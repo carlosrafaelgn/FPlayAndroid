@@ -457,6 +457,8 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		if (loading || list == null || fileList == null || position < 0 || position >= fileList.getCount())
 			return;
 		if (!isAtHome) {
+			if (!UI.playWithLongPress)
+				return;
 			final boolean forceHideButtons = (btnAdd != null && btnAdd.getVisibility() != View.VISIBLE);
 			//unselect everything, then select the item, and finally play
 			int i = fileList.getCount() - 1;

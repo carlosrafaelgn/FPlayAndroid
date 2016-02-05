@@ -86,7 +86,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optSecondsBeforePlayback, lastMenuView;
+	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optSecondsBeforePlayback, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -935,6 +935,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(ctx, UI.theme), false, false, false);
 			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);
+			optPlayWithLongPress = new SettingView(ctx, UI.ICON_PLAY, getText(R.string.play_with_long_press).toString(), null, true, UI.playWithLongPress, false);
 			optExpandSeekBar = new SettingView(ctx, UI.ICON_SEEKBAR, getText(R.string.expand_seek_bar).toString(), null, true, UI.expandSeekBar, false);
 			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
 			optDoNotAttenuateVolume = new SettingView(ctx, UI.ICON_INFORMATION, getText(R.string.opt_do_not_attenuate_volume).toString(), null, true, Player.doNotAttenuateVolume, false);
@@ -1031,6 +1032,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optHeadsetHook1);
 			addOption(optHeadsetHook2);
 			addOption(optHeadsetHook3);
+			addOption(optPlayWithLongPress);
 			addOption(optExpandSeekBar);
 			addOption(optVolumeControlType);
 			addOption(optDoNotAttenuateVolume);
@@ -1108,6 +1110,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optTheme = null;
 		optFlat = null;
 		optBorders = null;
+		optPlayWithLongPress = null;
 		optExpandSeekBar = null;
 		optVolumeControlType = null;
 		optDoNotAttenuateVolume = null;
@@ -1355,6 +1358,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.clearListWhenPlayingFolders = optClearListWhenPlayingFolders.isChecked();
 		} else if (view == optGoBackWhenPlayingFolders) {
 			Player.goBackWhenPlayingFolders = optGoBackWhenPlayingFolders.isChecked();
+		} else if (view == optPlayWithLongPress) {
+			UI.playWithLongPress = optPlayWithLongPress.isChecked();
 		} else if (view == optExpandSeekBar) {
 			UI.expandSeekBar = optExpandSeekBar.isChecked();
 		} else if (view == optAnimations) {

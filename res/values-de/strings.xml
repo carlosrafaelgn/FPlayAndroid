@@ -330,5 +330,6 @@
     <string name="second">Sekunde</string>
     <string name="seconds">Sekunden</string>
     <string name="slide">Gleiten</string>
+    <string name="play_with_long_press">Ein langer Druck beginnt mit der Wiedergabe, wenn Lieder hinzufügen</string>
 
 </resources>
