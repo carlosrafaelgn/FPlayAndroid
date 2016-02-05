@@ -140,6 +140,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int TRANSITION_ZOOM = 2;
 	public static final int TRANSITION_DISSOLVE = 3;
 	public static final int TRANSITION_SLIDE = 4;
+	public static final int TRANSITION_SLIDE_2 = 5;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES_SLOW = 300;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 200; //used to be 300
 	public static final int TRANSITION_DURATION_FOR_VIEWS = 200; //used to be 300
@@ -1367,10 +1368,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	public static void setTransition(int transition) {
 		switch (transition) {
-			case TRANSITION_DISSOLVE:
-			case TRANSITION_ZOOM:
-			case TRANSITION_FADE:
-			case TRANSITION_SLIDE:
+		case TRANSITION_DISSOLVE:
+		case TRANSITION_ZOOM:
+		case TRANSITION_FADE:
+		case TRANSITION_SLIDE:
+		case TRANSITION_SLIDE_2:
 				UI.transition = transition;
 				break;
 			default:
@@ -1381,14 +1383,16 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	public static String getTransitionString(Context context, int transition) {
 		switch (transition) {
-			case TRANSITION_DISSOLVE:
-				return context.getText(R.string.dissolve).toString();
-			case TRANSITION_ZOOM:
-				return context.getText(R.string.zoom).toString();
-			case TRANSITION_FADE:
-				return context.getText(R.string.fade).toString();
-			case TRANSITION_SLIDE:
-				return context.getText(R.string.slide).toString();
+		case TRANSITION_DISSOLVE:
+			return context.getText(R.string.dissolve).toString();
+		case TRANSITION_ZOOM:
+			return context.getText(R.string.zoom).toString();
+		case TRANSITION_FADE:
+			return context.getText(R.string.fade).toString();
+		case TRANSITION_SLIDE:
+			return context.getText(R.string.slide).toString();
+		case TRANSITION_SLIDE_2:
+			return context.getText(R.string.slide).toString() + " 2";
 			default:
 				return context.getText(R.string.none).toString();
 		}

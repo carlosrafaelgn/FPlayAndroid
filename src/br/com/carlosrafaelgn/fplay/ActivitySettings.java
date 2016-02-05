@@ -220,36 +220,39 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.prepare(menu);
 			final int o = UI.forcedOrientation;
 			menu.add(0, 0, 0, R.string.none)
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
 			menu.add(1, -1, 0, R.string.landscape)
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o < 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o < 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			menu.add(1, 1, 1, R.string.portrait)
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o > 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o > 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optTransition) {
 			lastMenuView = optTransition;
 			UI.prepare(menu);
 			final Context ctx = getApplication();
 			final int o = UI.transition;
 			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(ctx, UI.TRANSITION_NONE))
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
 			menu.add(1, UI.TRANSITION_FADE, 0, UI.getTransitionString(ctx, UI.TRANSITION_FADE))
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			menu.add(1, UI.TRANSITION_SLIDE, 1, UI.getTransitionString(ctx, UI.TRANSITION_SLIDE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_ZOOM, 2, UI.getTransitionString(ctx, UI.TRANSITION_ZOOM))
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(2, UI.TRANSITION_DISSOLVE, 3, UI.getTransitionString(ctx, UI.TRANSITION_DISSOLVE))
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.TRANSITION_SLIDE_2, 2, UI.getTransitionString(ctx, UI.TRANSITION_SLIDE_2))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.TRANSITION_ZOOM, 3, UI.getTransitionString(ctx, UI.TRANSITION_ZOOM))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(2, UI.TRANSITION_DISSOLVE, 4, UI.getTransitionString(ctx, UI.TRANSITION_DISSOLVE))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optScrollBarSongList || view == optScrollBarBrowser) {
 			lastMenuView = (SettingView)view;
 			UI.prepare(menu);

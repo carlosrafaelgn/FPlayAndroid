@@ -252,6 +252,29 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						anim.setInterpolator(this);
 						anim.setRepeatCount(0);
 						anim.setFillAfter(false);
+					} else if (UI.transition == UI.TRANSITION_SLIDE_2) {
+						final AnimationSet animationSet = new AnimationSet(false);
+						anim = animationSet;
+						Animation tmp;
+						accelerate = (useFadeOutNextTime || forceFadeOut);
+						if (accelerate) {
+							tmp = new TranslateAnimation(Animation.ABSOLUTE, 0.0f, Animation.ABSOLUTE, 0.0f, Animation.ABSOLUTE, 0.0f, Animation.ABSOLUTE, UI.defaultControlSize << 1);
+							tmp.setInterpolator(this);
+							animationSet.addAnimation(tmp);
+							tmp = new AlphaAnimation(1.0f, 0.0f);
+							tmp.setInterpolator(Player.theUI);
+							animationSet.addAnimation(tmp);
+						} else {
+							tmp = new TranslateAnimation(Animation.ABSOLUTE, 0.0f, Animation.ABSOLUTE, 0.0f, Animation.ABSOLUTE, UI.defaultControlSize << 1, Animation.ABSOLUTE, 0.0f);
+							tmp.setInterpolator(this);
+							animationSet.addAnimation(tmp);
+							tmp = new AlphaAnimation(0.0f, 1.0f);
+							tmp.setInterpolator(Player.theUI);
+							animationSet.addAnimation(tmp);
+						}
+						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
+						anim.setRepeatCount(0);
+						anim.setFillAfter(false);
 					} else {
 						final AnimationSet animationSet = new AnimationSet(true);
 						anim = animationSet;
