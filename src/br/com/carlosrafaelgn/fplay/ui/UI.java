@@ -1409,19 +1409,19 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	public static void showNextStartupMsg(Activity activity) {
-		if (msgStartup >= 27) {
-			msgStartup = 27;
+		if (msgStartup >= 28) {
+			msgStartup = 28;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 27;
+		msgStartup = 28;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + ":\n- Into the Particles (VR)\n\n" : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.there_are_new_features).toString() + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + activity.getText(R.string.radio) : "") + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + activity.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") + activity.getText(R.string.transition) + "\n- " + activity.getText(R.string.slide) + "\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + punctuationSpace(":\n- Into the Particles (VR)\n\n") : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.there_are_new_features).toString() + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + activity.getText(R.string.radio) : "") + "\n- " + activity.getText(R.string.play_with_long_press) + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + activity.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") + activity.getText(R.string.transition) + "\n- " + activity.getText(R.string.slide) + "\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + punctuationSpace(":\n- Into the Particles (VR)\n\n") : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		prepareDialogAndShow((new AlertDialog.Builder(activity))
 			.setTitle(activity.getText(title))
 			.setView(createDialogView(activity, content))
