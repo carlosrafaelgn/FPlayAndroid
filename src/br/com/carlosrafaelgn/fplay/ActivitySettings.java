@@ -983,7 +983,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optSecondsBeforePlayback = new SettingView(ctx, UI.ICON_RADIO, getText(R.string.seconds_before_playback).toString(), getSecondsBeforePlaybackString(Player.getSecondsBeforePlaybackIndex()), false, false, false);
 
 			int hIdx = 0;
-			headers = new TextView[8];
+			headers = new TextView[(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? 8 : 7];
 			addHeader(ctx, R.string.msg_turn_off_title, optAutoTurnOffPlaylist, hIdx++);
 			addOption(optAutoTurnOff);
 			addOption(optAutoIdleTurnOff);
