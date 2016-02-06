@@ -58,7 +58,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver, InputFilter {
+public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver, InputFilter, FastAnimator.Observer {
 	public interface OnFileSelectionListener {
 		void onFileSelected(int id, FileSt file);
 		void onAddClicked(int id, FileSt file);
@@ -75,6 +75,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private Formatter formatter;
 	private EditText txtSaveAsName;
 	private BgListView list;
+	private TextView lblLoading;
 	private FileList fileList;
 	private FileSt checkedFile;
 	private BgButton btnGoBack, btnMenu, btnAdd, btnPlay;
@@ -207,10 +208,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		loading = started;
 		if (list != null) {
 			if (animator != null) {
+				animator.end();
+				//when the animation ends, lblLoading is made hidden...
+				//that's why we set the visibility after calling end()
+				lblLoading.setVisibility(View.VISIBLE);
 				if (started) {
 					list.setVisibility(View.INVISIBLE);
 				} else {
-					animator.end();
 					list.setVisibility(View.VISIBLE);
 					animator.start();
 				}
@@ -476,11 +480,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
 		if (UI.animationEnabled) {
+			if (firstCreation)
+				list.setVisibility(View.GONE);
 			list.setCustomEmptyText(msgEmptyList);
-			((View)list.getParent()).setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
-			animator = new FastAnimator(list, false, null, 0);
-			final TextView lblLoading = (TextView)findViewById(R.id.lblLoading);
+			animator = new FastAnimator(list, false, this, 0);
+			lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_disabled);
+			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			UI.largeText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);
 		}
@@ -565,6 +571,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		btnAdd = null;
 		btnPlay = null;
 		list = null;
+		lblLoading = null;
 		panelSecondary = null;
 		btnMenuIcon = null;
 		msgEmptyList = null;
@@ -580,5 +587,15 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		listener = null;
 		formatterSB = null;
 		formatter = null;
+	}
+
+	@Override
+	public void onUpdate(FastAnimator animator, float value) {
+	}
+
+	@Override
+	public void onEnd(FastAnimator animator) {
+		if (lblLoading != null)
+			lblLoading.setVisibility(View.GONE);
 	}
 }
