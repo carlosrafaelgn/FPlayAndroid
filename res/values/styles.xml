@@ -41,9 +41,19 @@
         <item name="android:windowExitAnimation">@null</item>
     </style>
 
+    <style name="SlideSmoothAnimation">
+        <item name="android:windowEnterAnimation">@anim/slidein</item>
+        <item name="android:windowExitAnimation">@anim/slideout</item>
+    </style>
+
     <style name="FadeAnimation">
         <item name="android:windowEnterAnimation">@anim/fadein</item>
         <item name="android:windowExitAnimation">@anim/fadeout</item>
+    </style>
+
+    <style name="DissolveAnimation">
+        <item name="android:windowEnterAnimation">@anim/dissolvein</item>
+        <item name="android:windowExitAnimation">@anim/dissolveout</item>
     </style>
 
     <style name="MenuDialog" parent="@android:style/Theme.Dialog">

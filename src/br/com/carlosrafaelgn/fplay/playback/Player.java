@@ -2095,8 +2095,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000021);
-		UI.transition = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? UI.TRANSITION_SLIDE : UI.TRANSITION_NONE);
-		UI.setTransition((UI.lastVersionCode < 83 && UI.transition != UI.TRANSITION_NONE) ? UI.TRANSITION_SLIDE : UI.transition);
+		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : 0);
+		UI.setTransitions((UI.lastVersionCode < 85 && UI.transitions != 0) ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : UI.transitions);
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
 		//the volume control types changed on version 71
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
@@ -2234,7 +2234,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
 		opts.put(OPT_RADIOLASTGENRESHOUTCAST, radioLastGenreShoutcast);
 		opts.put(OPT_HTTPOPTIONS, httpOptions);
-		opts.put(OPT_TRANSITION, UI.transition);
+		opts.put(OPT_TRANSITION, UI.transitions);
 		opts.put(OPT_HEADSETHOOKACTIONS, headsetHookActions);
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);
 		opts.putBit(OPTBIT_BASSBOOSTMODE, bassBoostMode);

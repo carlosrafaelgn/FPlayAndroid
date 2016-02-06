@@ -88,7 +88,7 @@
     <string name="url">Adresse</string>
     <string name="description">Beschreibung</string>
     <string name="favorite">Favorit</string>
-    <string name="menu">Menu</string>
+    <string name="menu">Menü</string>
     <string name="decrease_volume">Lautstärke verringern</string>
     <string name="increase_volume">Lautstärke erhöhen</string>
     <string name="add_songs">Titel hinzufügen</string>
@@ -331,5 +331,7 @@
     <string name="seconds">Sekunden</string>
     <string name="slide">Gleiten</string>
     <string name="play_with_long_press">Ein langer Druck beginnt mit der Wiedergabe, wenn Lieder hinzufügen</string>
+    <string name="smooth">Glatt</string>
+    <string name="transition_popup">Übergang (Menü):</string>
 
 </resources>

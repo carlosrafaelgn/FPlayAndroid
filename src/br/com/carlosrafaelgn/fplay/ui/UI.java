@@ -105,9 +105,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 83;
+	public static final int VERSION_CODE = 85;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
-	public static final String VERSION_NAME = "v1.48";
+	public static final String VERSION_NAME = "v1.50";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -140,7 +140,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int TRANSITION_ZOOM = 2;
 	public static final int TRANSITION_DISSOLVE = 3;
 	public static final int TRANSITION_SLIDE = 4;
-	public static final int TRANSITION_SLIDE_2 = 5;
+	public static final int TRANSITION_SLIDE_SMOOTH = 5;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES_SLOW = 300;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 200; //used to be 300
 	public static final int TRANSITION_DURATION_FOR_VIEWS = 200; //used to be 300
@@ -458,7 +458,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
 	//not been able to figure out a way to do so....)
 	public static boolean isUsingAlternateTypeface, isFlat;
-	public static int forcedLocale, theme, transition;
+	public static int forcedLocale, theme, transitions;
 	
 	public static float density, scaledDensity, xdpi_1_72;
 	
@@ -1366,52 +1366,82 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		Gradient.purgeAll();
 	}
 
+	public static void setTransitions(int transitions) {
+		setTransition(transitions & 0xFF);
+		setPopupTransition(transitions >>> 8);
+	}
+
 	public static void setTransition(int transition) {
 		switch (transition) {
+		case TRANSITION_SLIDE_SMOOTH:
+		case TRANSITION_SLIDE:
+		case TRANSITION_FADE:
 		case TRANSITION_DISSOLVE:
 		case TRANSITION_ZOOM:
-		case TRANSITION_FADE:
-		case TRANSITION_SLIDE:
-		case TRANSITION_SLIDE_2:
-				UI.transition = transition;
+			UI.transitions = (UI.transitions & (~0xFF)) | transition;
+			break;
+		default:
+			UI.transitions = (UI.transitions & (~0xFF));
+			break;
+		}
+	}
+
+	public static void setPopupTransition(int transition) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+			switch (transition) {
+			case TRANSITION_SLIDE_SMOOTH:
+			case TRANSITION_FADE:
+			case TRANSITION_DISSOLVE:
+				UI.transitions = (UI.transitions & (~0xFF00)) | (transition << 8);
 				break;
 			default:
-				UI.transition = TRANSITION_NONE;
+				UI.transitions = (UI.transitions & (~0xFF00));
 				break;
+			}
+		} else {
+			switch (transition) {
+			case TRANSITION_SLIDE_SMOOTH:
+			case TRANSITION_FADE:
+				UI.transitions = (UI.transitions & (~0xFF00)) | (transition << 8);
+				break;
+			default:
+				UI.transitions = (UI.transitions & (~0xFF00));
+				break;
+			}
 		}
 	}
 
 	public static String getTransitionString(Context context, int transition) {
 		switch (transition) {
+		case TRANSITION_SLIDE_SMOOTH:
+			return context.getText(R.string.slide).toString() + " (" + context.getText(R.string.smooth).toString() + ")";
+		case TRANSITION_SLIDE:
+			return context.getText(R.string.slide).toString();
+		case TRANSITION_FADE:
+			return context.getText(R.string.fade).toString();
 		case TRANSITION_DISSOLVE:
 			return context.getText(R.string.dissolve).toString();
 		case TRANSITION_ZOOM:
 			return context.getText(R.string.zoom).toString();
-		case TRANSITION_FADE:
-			return context.getText(R.string.fade).toString();
-		case TRANSITION_SLIDE:
-			return context.getText(R.string.slide).toString();
-		case TRANSITION_SLIDE_2:
-			return context.getText(R.string.slide).toString() + " 2";
-			default:
-				return context.getText(R.string.none).toString();
+		default:
+			return context.getText(R.string.none).toString();
 		}
 	}
 
 	public static void showNextStartupMsg(Activity activity) {
-		if (msgStartup >= 28) {
-			msgStartup = 28;
+		if (msgStartup >= 29) {
+			msgStartup = 29;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 28;
+		msgStartup = 29;
 		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.startup_message).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
 		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + ":\n- Into the Particles (VR)\n\n" : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.there_are_new_features).toString() + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + activity.getText(R.string.radio) : "") + "\n- " + activity.getText(R.string.play_with_long_press) + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + activity.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") + activity.getText(R.string.transition) + "\n- " + activity.getText(R.string.slide) + "\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + punctuationSpace(":\n- Into the Particles (VR)\n\n") : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
+		final String content = activity.getText(R.string.there_are_new_features).toString() + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + activity.getText(R.string.radio) : "") + "\n- " + activity.getText(R.string.play_with_long_press) + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + activity.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") + activity.getText(R.string.transition) + "\n- " + getTransitionString(activity, TRANSITION_SLIDE_SMOOTH) + "\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + punctuationSpace(":\n- Into the Particles (VR)\n\n") : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
 		prepareDialogAndShow((new AlertDialog.Builder(activity))
 			.setTitle(activity.getText(title))
 			.setView(createDialogView(activity, content))
@@ -1820,10 +1850,24 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 	}
 
-	public static void prepareDialogAnimations(Dialog dialog) {
+	public static void preparePopupTransition(Dialog dialog) {
 		final Window window = dialog.getWindow();
-		if (window != null)
-			window.setWindowAnimations(animationEnabled ? R.style.FadeAnimation : R.style.NoAnimation);
+		if (window != null) {
+			switch (transitions >>> 8) {
+			case TRANSITION_SLIDE_SMOOTH:
+				window.setWindowAnimations(R.style.SlideSmoothAnimation);
+				break;
+			case TRANSITION_FADE:
+				window.setWindowAnimations(R.style.FadeAnimation);
+				break;
+			case TRANSITION_DISSOLVE:
+				window.setWindowAnimations(R.style.DissolveAnimation);
+				break;
+			default:
+				window.setWindowAnimations(R.style.NoAnimation);
+				break;
+			}
+		}
 	}
 
 	public static AlertDialog prepareDialogAndShow(AlertDialog dialog) {
@@ -1831,7 +1875,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			//https://code.google.com/p/android/issues/detail?id=6360
 			dialog.setOnShowListener(Player.theUI);
 		//}
-		prepareDialogAnimations(dialog);
+		preparePopupTransition(dialog);
 		dialog.show();
 		return dialog;
 	}

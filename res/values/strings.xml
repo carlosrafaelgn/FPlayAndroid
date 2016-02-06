@@ -332,5 +332,7 @@
     <string name="seconds">seconds</string>
     <string name="slide">Slide</string>
     <string name="play_with_long_press">Use a long press to play music when adding songs</string>
+    <string name="smooth">Smooth</string>
+    <string name="transition_popup">Transition (Menu):</string>
 
 </resources>

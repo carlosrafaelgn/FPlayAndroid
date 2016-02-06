@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+     android:duration="200"
+     android:fillAfter="false"
+     android:repeatCount="0"
+     android:shareInterpolator="true"
+     android:interpolator="@android:anim/accelerate_interpolator">
+
+    <!--
+        all properties, except shareInterpolator and interpolator, must be repeated below, otherwise
+        this set will not work on Androids < 14
+        http://developer.android.com/intl/pt-br/reference/android/view/animation/AnimationSet.html
+        http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/view/animation/AnimationSet.java#AnimationSet.%3Cinit%3E%28android.content.Context%2Candroid.util.AttributeSet%29
+        http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.0.1_r1/android/view/animation/AnimationSet.java#AnimationSet.%3Cinit%3E%28android.content.Context%2Candroid.util.AttributeSet%29
+    -->
+
+    <translate
+        android:duration="200"
+        android:fillAfter="false"
+        android:repeatCount="0"
+
+        android:fromYDelta="0"
+        android:toYDelta="5%p"/>
+
+    <alpha
+        android:duration="200"
+        android:fillAfter="false"
+        android:repeatCount="0"
+
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0"/>
+</set>

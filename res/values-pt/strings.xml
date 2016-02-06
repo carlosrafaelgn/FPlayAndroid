@@ -331,5 +331,7 @@
     <string name="seconds">segundos</string>
     <string name="slide">Deslizar</string>
     <string name="play_with_long_press">Usar um toque longo para iniciar a reprodução ao adicionar músicas</string>
+    <string name="smooth">Suave</string>
+    <string name="transition_popup">Transição (Menu):</string>
 
 </resources>

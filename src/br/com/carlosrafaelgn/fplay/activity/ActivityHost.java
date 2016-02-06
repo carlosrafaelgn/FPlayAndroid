@@ -223,7 +223,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	void setContentViewWithTransition(View view, boolean fadeAllowed, boolean forceFadeOut) {
-		if (fadeAllowed && !ignoreFadeNextTime && UI.transition != UI.TRANSITION_NONE) {
+		final int transition = UI.transitions & 0xFF;
+		if (fadeAllowed && !ignoreFadeNextTime && transition != UI.TRANSITION_NONE) {
 			try {
 				parent = (FrameLayout)findViewById(android.R.id.content);
 			} catch (Throwable ex) {
@@ -239,20 +240,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				oldView = parent.getChildAt(0);
 				if (oldView != null) {
 					newView = view;
-					if (UI.transition == UI.TRANSITION_FADE) {
-						animator = ((useFadeOutNextTime || forceFadeOut) ?
-							new FastAnimator(oldView, true, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES) :
-							new FastAnimator(view, false, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES));
-					} else if (UI.transition == UI.TRANSITION_SLIDE) {
-						anim = ((useFadeOutNextTime || forceFadeOut) ?
-							new TranslateAnimation(0.0f, 0.0f, 0.0f, (float)oldView.getHeight()) :
-							new TranslateAnimation(0.0f, 0.0f, (float)oldView.getHeight(), 0.0f));
-						accelerate = (useFadeOutNextTime || forceFadeOut);
-						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
-						anim.setInterpolator(this);
-						anim.setRepeatCount(0);
-						anim.setFillAfter(false);
-					} else if (UI.transition == UI.TRANSITION_SLIDE_2) {
+					if (transition == UI.TRANSITION_SLIDE_SMOOTH) {
 						final AnimationSet animationSet = new AnimationSet(false);
 						anim = animationSet;
 						Animation tmp;
@@ -275,11 +263,24 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
 						anim.setRepeatCount(0);
 						anim.setFillAfter(false);
+					} else if (transition == UI.TRANSITION_SLIDE) {
+						anim = ((useFadeOutNextTime || forceFadeOut) ?
+							new TranslateAnimation(0.0f, 0.0f, 0.0f, (float)oldView.getHeight()) :
+							new TranslateAnimation(0.0f, 0.0f, (float)oldView.getHeight(), 0.0f));
+						accelerate = (useFadeOutNextTime || forceFadeOut);
+						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
+						anim.setInterpolator(this);
+						anim.setRepeatCount(0);
+						anim.setFillAfter(false);
+					} else if (transition == UI.TRANSITION_FADE) {
+						animator = ((useFadeOutNextTime || forceFadeOut) ?
+							new FastAnimator(oldView, true, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES) :
+							new FastAnimator(view, false, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES));
 					} else {
 						final AnimationSet animationSet = new AnimationSet(true);
 						anim = animationSet;
 						int x, y;
-						if (UI.transition == UI.TRANSITION_DISSOLVE) {
+						if (transition == UI.TRANSITION_DISSOLVE) {
 							x = oldView.getWidth() >> 1;
 							y = 0;
 						} else {
@@ -296,7 +297,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						//leave prepared for next time
 						UI.storeViewCenterLocationForFade(null);
 						if (useFadeOutNextTime || forceFadeOut) {
-							if (UI.transition == UI.TRANSITION_DISSOLVE) {
+							if (transition == UI.TRANSITION_DISSOLVE) {
 								animationSet.addAnimation(new ScaleAnimation(1.0f, 0.75f, 1.0f, 1.0f, x, y));
 								animationSet.addAnimation(new TranslateAnimation(0.0f, 0.0f, 0.0f, (float)(oldView.getHeight() >> 3)));
 							} else {
@@ -304,7 +305,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 							}
 							animationSet.addAnimation(new AlphaAnimation(1.0f, 0.0f));
 						} else {
-							if (UI.transition == UI.TRANSITION_DISSOLVE) {
+							if (transition == UI.TRANSITION_DISSOLVE) {
 								animationSet.addAnimation(new ScaleAnimation(0.75f, 1.0f, 1.0f, 1.0f, x, y));
 								animationSet.addAnimation(new TranslateAnimation(0.0f, 0.0f, (float)-(oldView.getHeight() >> 3), 0.0f));
 							} else {
