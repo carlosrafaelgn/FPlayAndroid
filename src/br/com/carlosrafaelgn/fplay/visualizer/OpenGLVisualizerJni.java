@@ -347,8 +347,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 							//yes! this combination works!!!
 							return ctx;
 						}
-						this.config = null;
 					}
+					// clean up before trying again...
+					egl.eglDestroyContext(display, ctx);
+					this.config = null;
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
