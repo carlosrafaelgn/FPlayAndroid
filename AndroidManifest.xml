@@ -84,8 +84,8 @@
         android:killAfterRestore="true"
         android:restoreAnyVersion="false"
         android:description="@string/app_description"
-        android:icon="@drawable/ic_launcher"
-        android:banner="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:banner="@mipmap/ic_launcher"
         android:label="FPlay"
         android:supportsRtl="true"
         android:fullBackupContent="@xml/backup_rules"
@@ -110,7 +110,7 @@
              http://stackoverflow.com/questions/3760276/android-intent-filter-associate-app-with-file-extension
              -->
             <intent-filter
-                android:icon="@drawable/ic_launcher"
+                android:icon="@mipmap/ic_launcher"
                 android:label="FPlay"
                 android:priority="1">
                 <action android:name="android.intent.action.VIEW" />
@@ -118,7 +118,7 @@
                 <data android:scheme="file" android:host="*" android:mimeType="audio/*" />
             </intent-filter>
             <intent-filter
-                android:icon="@drawable/ic_launcher"
+                android:icon="@mipmap/ic_launcher"
                 android:label="FPlay"
                 android:priority="1">
                 <action android:name="android.intent.action.VIEW" />
@@ -126,7 +126,7 @@
                 <data android:scheme="file" android:host="*" android:mimeType="application/ogg" />
             </intent-filter>
             <intent-filter
-                android:icon="@drawable/ic_launcher"
+                android:icon="@mipmap/ic_launcher"
                 android:label="FPlay"
                 android:priority="1">
                 <action android:name="android.intent.action.VIEW" />
@@ -134,7 +134,7 @@
                 <data android:scheme="file" android:host="*" android:mimeType="application/x-ogg" />
             </intent-filter>
             <intent-filter
-                android:icon="@drawable/ic_launcher"
+                android:icon="@mipmap/ic_launcher"
                 android:label="FPlay"
                 android:priority="1">
                 <action android:name="android.intent.action.VIEW" />
@@ -144,7 +144,7 @@
             <!-- beware: .*\\.EXT matches name.EXT but does match name.something.EXT!!! :( -->
             <!-- do not include hardcoded 3GP and MP4 extensions, as they are widely used for videos -->
             <intent-filter
-                android:icon="@drawable/ic_launcher"
+                android:icon="@mipmap/ic_launcher"
                 android:label="FPlay"
                 android:priority="1">
                 <action android:name="android.intent.action.VIEW" />
@@ -171,7 +171,7 @@
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.flac" android:mimeType="*/*" />
             </intent-filter>
             <intent-filter
-                android:icon="@drawable/ic_launcher"
+                android:icon="@mipmap/ic_launcher"
                 android:label="FPlay"
                 android:priority="1">
                 <action android:name="android.intent.action.VIEW" />

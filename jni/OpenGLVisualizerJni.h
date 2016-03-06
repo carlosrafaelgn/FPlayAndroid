@@ -622,7 +622,6 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	} else {
 		glDisable(GL_BLEND);
 	}
-	glEnable(GL_TEXTURE_2D);
 	glGetError(); //clear any eventual error flags
 	
 	glTex[0] = 0;
