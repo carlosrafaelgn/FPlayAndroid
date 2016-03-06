@@ -464,6 +464,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	
 	public static final Paint fillPaint;
 	public static final TextPaint textPaint;
+	private static int glowFilterColor;
 	private static PorterDuffColorFilter glowFilter;
 	//private static final PorterDuffColorFilter edgeFilter;
 	
@@ -2007,8 +2008,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 		try {
 			//if everything else fails, fall back to the old method!
-			if (glowFilter == null)
-				glowFilter = new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN);
+			final int color = (placement == PLACEMENT_ALERT ? (isAndroidThemeLight() ? 0xff000000 : 0xffffffff) : (placement == PLACEMENT_MENU ? color_menu_icon : color_glow));
+			if (glowFilter == null || glowFilterColor != color) {
+				glowFilterColor = color;
+				glowFilter = new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN);
+			}
 			//
 			//:D amazing hack/workaround, as explained here:
 			//

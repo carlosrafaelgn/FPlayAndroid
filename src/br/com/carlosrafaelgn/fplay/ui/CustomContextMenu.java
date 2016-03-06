@@ -334,10 +334,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		}
 	}
 
-	private static final int PREVENT_MENU = 1;
-	private static final int PREVENT_SUB_MENU = 2;
-
-	private static int menuPrevention;
+	//used to prevent the caller from opening maore than one menu
+	private static int menuPreventionBits;
 
 	private Context context;
 	private TypedRawArrayList<Item> items;
@@ -352,8 +350,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	private MenuDialog menu;
 	private Item clickedItem, parentItem;
 	private CustomContextMenu parentMenu;
+	private ObservableScrollView scroll;
+	private final int menuPreventionBitMask;
 	
-	private CustomContextMenu(View view, View.OnCreateContextMenuListener listener, Activity closeListener, Item parentItem, CustomContextMenu parentMenu) {
+	private CustomContextMenu(View view, View.OnCreateContextMenuListener listener, Activity closeListener, Item parentItem, CustomContextMenu parentMenu, int menuPreventionBitMask) {
 		this.context = view.getContext();
 		this.items = new TypedRawArrayList<>(Item.class, 8);
 		this.listener = listener;
@@ -362,6 +362,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		this.closed = false;
 		this.parentItem = parentItem;
 		this.parentMenu = parentMenu;
+		this.menuPreventionBitMask = menuPreventionBitMask;
 	}
 	
 	/*public static void registerForContextMenu(View view, final View.OnCreateContextMenuListener listener) {
@@ -377,9 +378,10 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	}*/
 	
 	public static void openContextMenu(View view, View.OnCreateContextMenuListener listener) {
-		if ((menuPrevention & PREVENT_MENU) == 0) {
-			menuPrevention |= PREVENT_MENU;
-			(new CustomContextMenu(view, listener, null, null, null)).run();
+		//top level menus use the first bit (1) and submenus will use the next bits (2, 4, 8...)
+		if ((menuPreventionBits & 1) == 0) {
+			menuPreventionBits |= 1;
+			(new CustomContextMenu(view, listener, null, null, null, 1)).run();
 		}
 	}
 
@@ -478,7 +480,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 				items[last].actionView.setId(2);
 				items[last].actionView.setNextFocusDownId(1);
 			}
-			final ObservableScrollView scroll = new ObservableScrollView(context, UI.PLACEMENT_MENU);
+			scroll = new ObservableScrollView(context, UI.PLACEMENT_MENU);
 			final FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 			fp.leftMargin = UI.controlMargin;
 			fp.topMargin = UI.controlMargin;
@@ -555,8 +557,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		if (it != null && it.enabled) {
 			UI.storeViewCenterLocationForFade(it.actionView);
 			if (it.subMenu != null) {
-				if ((menuPrevention & PREVENT_SUB_MENU) == 0) {
-					menuPrevention |= PREVENT_SUB_MENU;
+				if ((menuPreventionBits & it.subMenu.menuPreventionBitMask) == 0) {
+					menuPreventionBits |= it.subMenu.menuPreventionBitMask;
 					it.subMenu.run();
 				}
 				return;
@@ -706,7 +708,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	@Override
 	public SubMenu addSubMenu(CharSequence title) {
 		final Item i = new Item(context, 0, 0, 0, title);
-		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this);
+		//top level menus use the first bit (1) and submenus will use the next bits (2, 4, 8...)
+		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this, menuPreventionBitMask << 1);
 		i.subMenu = m;
 		items.add(i);
 		return m;
@@ -715,7 +718,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	@Override
 	public SubMenu addSubMenu(int titleRes) {
 		final Item i = new Item(context, 0, 0, 0, context.getText(titleRes));
-		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this);
+		//top level menus use the first bit (1) and submenus will use the next bits (2, 4, 8...)
+		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this, menuPreventionBitMask << 1);
 		i.subMenu = m;
 		items.add(i);
 		return m;
@@ -724,7 +728,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	@Override
 	public SubMenu addSubMenu(int groupId, int itemId, int order, CharSequence title) {
 		final Item i = new Item(context, groupId, itemId, order, title);
-		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this);
+		//top level menus use the first bit (1) and submenus will use the next bits (2, 4, 8...)
+		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this, menuPreventionBitMask << 1);
 		i.subMenu = m;
 		items.add(i);
 		return m;
@@ -733,7 +738,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	@Override
 	public SubMenu addSubMenu(int groupId, int itemId, int order, int titleRes) {
 		final Item i = new Item(context, groupId, itemId, order, context.getText(titleRes));
-		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this);
+		//top level menus use the first bit (1) and submenus will use the next bits (2, 4, 8...)
+		final CustomContextMenu m = new CustomContextMenu(view, listener, closeListener, i, this, menuPreventionBitMask << 1);
 		i.subMenu = m;
 		items.add(i);
 		return m;
@@ -746,7 +752,13 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	
 	@Override
 	public void close() {
-		menuPrevention = 0;
+		menuPreventionBits &= ~menuPreventionBitMask;
+
+		//change the edge effect color back to its original value when closing a top level menu
+		//(only necessary on API < 14)
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH && parentItem == null && scroll != null) {
+			UI.prepareEdgeEffect(scroll, UI.PLACEMENT_WINDOW);
+		}
 
 		if (parentItem != null && !closingByItemClick) {
 			//preserve everything for now, but call the listener
@@ -813,6 +825,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		clickedItem = null;
 		parentItem = null;
 		parentMenu = null;
+		scroll = null;
 	}
 	
 	@Override
