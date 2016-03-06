@@ -58,7 +58,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver, InputFilter, FastAnimator.Observer {
+public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver, InputFilter, FastAnimator.Observer, Runnable {
 	public interface OnFileSelectionListener {
 		void onFileSelected(int id, FileSt file);
 		void onAddClicked(int id, FileSt file);
@@ -114,6 +114,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 
 	@SuppressWarnings("StringEquality")
 	private void updateOverallLayout() {
+		boolean setObserver = false;
 		UI.animationReset();
 		if (!save) {
 			RelativeLayout.LayoutParams rp;
@@ -156,6 +157,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 						}
 					}
 				} else if (panelSecondary != null && panelSecondary.getVisibility() != View.VISIBLE) {
+					if (UI.animationEnabled) {
+						if (lblLoading != null) {
+							setObserver = true;
+							//to prevent a black area behind the panelSecondary's animation
+							lblLoading.setVisibility(View.VISIBLE);
+						}
+					}
 					if (list != null) {
 						rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 						rp.addRule(RelativeLayout.BELOW, R.id.panelControls);
@@ -187,6 +195,16 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			}
 		}
 		UI.animationCommit(isCreatingLayout, null);
+		if (setObserver)
+			UI.animationFinishedObserver = this;
+	}
+
+	@Override
+	public void run() {
+		//the animation has just finished, time to hide lblLoading
+		if (lblLoading != null) {
+			lblLoading.setVisibility(View.GONE);
+		}
 	}
 
 	private String format(int resId, String p1) {

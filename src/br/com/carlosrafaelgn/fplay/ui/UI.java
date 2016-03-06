@@ -105,9 +105,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 85;
+	public static final int VERSION_CODE = 86;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
-	public static final String VERSION_NAME = "v1.50";
+	public static final String VERSION_NAME = "v1.51";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -2133,6 +2133,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	private static View[] animationViewsToHideAndShow;
 	private static FastAnimator animationAnimatorShowFirst, animationAnimatorHide, animationAnimatorShow;
 	private static Animation animationShowFirst, animationHide, animationShow;
+	public static Runnable animationFinishedObserver;
 
 	@Override
 	public float getInterpolation(float input) {
@@ -2247,6 +2248,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			if (animationFocusView.isInTouchMode())
 				animationFocusView.requestFocus();
 			animationFocusView = null;
+		}
+		if (animationFinishedObserver != null) {
+			animationFinishedObserver.run();
+			animationFinishedObserver = null;
 		}
 	}
 
