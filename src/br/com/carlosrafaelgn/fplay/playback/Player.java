@@ -2145,7 +2145,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				UI.songListScrollBarType = BgListView.SCROLLBAR_LARGE;
 			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, UI.isTV ? 0 : 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
 			lastRadioSearchWasByGenre = opts.getBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, true);
-			UI.expandSeekBar = opts.getBit(OPTBIT_EXPANDSEEKBAR, true);
+			UI.expandSeekBar = opts.getBit(OPTBIT_EXPANDSEEKBAR);
 			songs.setRepeatMode(opts.getBit(OPTBIT_REPEATONE) ? SongList.REPEAT_ONE : (opts.getBit(OPTBIT_REPEATNONE) ? SongList.REPEAT_NONE : SongList.REPEAT_ALL));
 			songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE));
 			UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);

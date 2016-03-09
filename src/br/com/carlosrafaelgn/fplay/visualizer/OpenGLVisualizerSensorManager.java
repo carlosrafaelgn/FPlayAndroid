@@ -133,16 +133,16 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 	}
 
 	private void _register() {
-		if (sensorManager != null && accel != null && (gyro != null || mag != null)) {
+		if (sensorManager != null && accel != null && (gyro != null || mag != null) && handler != null) {
 			//SENSOR_DELAY_UI provides a nice refresh rate, SENSOR_DELAY_GAME
 			//provides an awesome refresh rate, but SENSOR_DELAY_FASTEST is the fastest!
 			//...different algorithms, different refresh rates!
 			if (gyro != null) {
-				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST);
-				sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_FASTEST);
+				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST, handler);
+				sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_FASTEST, handler);
 			} else {
-				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME);
-				sensorManager.registerListener(this, mag, SensorManager.SENSOR_DELAY_GAME);
+				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME, handler);
+				sensorManager.registerListener(this, mag, SensorManager.SENSOR_DELAY_GAME, handler);
 			}
 		}
 	}
