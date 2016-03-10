@@ -120,7 +120,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		public View getView(int position, View convertView, ViewGroup parent) {
 			TextView txt = (TextView)convertView;
 			if (txt == null) {
-				txt = new TextView(Player.getService());
+				txt = new TextView(Player.theApplication);
 				txt.setPadding(UI.dialogMargin, UI.dialogDropDownVerticalMargin, UI.dialogMargin, UI.dialogDropDownVerticalMargin);
 				txt.setTypeface(UI.defaultTypeface);
 				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
@@ -334,7 +334,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 
 		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
-		UI.disableEdgeEffect(activity);
+		UI.disableEdgeEffect();
 		listView = new ListView(activity);
 		listView.setLayoutParams(p);
 		listView.setOverScrollMode(ListView.OVER_SCROLL_IF_CONTENT_SCROLLS);

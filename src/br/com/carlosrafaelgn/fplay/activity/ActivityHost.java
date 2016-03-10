@@ -551,8 +551,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			finish();
 			return;
 		}
-		UI.initialize(getApplication(), this);
-		Player.startService(getApplication());
+		Player.theApplication = getApplicationContext();
+		UI.initialize(this);
+		Player.startService();
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
 		top = new ActivityMain();
@@ -597,7 +598,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		super.onConfigurationChanged(newConfig);
 		final boolean i = UI.isLandscape;
 		ActivityMain.localeHasBeenChanged = false;
-		UI.initialize(getApplication(), this);
+		UI.initialize(this);
 		if (i != UI.isLandscape) {
 			if (top != null) {
 				ignoreFadeNextTime = true;
@@ -631,7 +632,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 		Player.setAppNotInForeground(false);
 		if (UI.forcedLocale != UI.LOCALE_NONE)
-			UI.reapplyForcedLocale(getApplication(), this);
+			UI.reapplyForcedLocale(this);
 		if (top != null && top.paused) {
 			top.paused = false;
 			top.onResume();

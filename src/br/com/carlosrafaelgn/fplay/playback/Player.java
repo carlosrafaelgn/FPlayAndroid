@@ -241,6 +241,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int state;
 	private static Thread thread;
 	private static Looper looper;
+	public static Context theApplication; //once the app has been started, this is never null
 	private static Player thePlayer;
 	private static Handler handler, localHandler;
 	private static AudioManager audioManager;
@@ -249,7 +250,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final SongList songs = SongList.getInstance();
 
 	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
-	//and Virtualizer classes from being garbage collected...
+	//Virtualizer and ExternalFx classes from being garbage collected...
 	public static MainHandler theMainHandler;
 	public static final UI theUI = new UI();
 	@SuppressWarnings("unused")
@@ -258,6 +259,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final BassBoost theBassBoost = new BassBoost();
 	@SuppressWarnings("unused")
 	public static final Virtualizer theVirtualizer = new Virtualizer();
+	@SuppressWarnings("unused")
+	public static final ExternalFx theExternalFx = new ExternalFx();
 
 	public static boolean hasFocus;
 	public static int volumeStreamMax = 15, volumeControlType;
@@ -435,7 +438,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	@Override
 	public void onCreate() {
 		thePlayer = this;
-		startService(this);
+		theApplication = getApplicationContext();
+		startService();
 		startForeground(1, getNotification());
 		super.onCreate();
 	}
@@ -490,30 +494,26 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return null;
 	}
 
-	public static Service getService() {
-		return thePlayer;
-	}
-
-	public static boolean startService(Context context) {
+	public static boolean startService() {
 		final boolean stateNew = (state == STATE_NEW);
 		if (stateNew) {
 			MainHandler.initialize();
 			alreadySelected = true; //fix the initial selection when the app is started from the widget
 			state = STATE_INITIALIZING;
-			context.startService(new Intent(context, Player.class));
+			theApplication.startService(new Intent(theApplication, Player.class));
 			theMainHandler = MainHandler.initialize();
 			localHandler = new CoreLocalHandler();
-			notificationManager = (NotificationManager)context.getSystemService(NOTIFICATION_SERVICE);
-			audioManager = (AudioManager)context.getSystemService(AUDIO_SERVICE);
-			telephonyManager = (TelephonyManager)context.getSystemService(TELEPHONY_SERVICE);
+			notificationManager = (NotificationManager)theApplication.getSystemService(NOTIFICATION_SERVICE);
+			audioManager = (AudioManager)theApplication.getSystemService(AUDIO_SERVICE);
+			telephonyManager = (TelephonyManager)theApplication.getSystemService(TELEPHONY_SERVICE);
 			destroyedObservers = new TypedRawArrayList<>(PlayerDestroyedObserver.class, 4);
 			stickyBroadcast = new Intent();
-			loadConfig(context);
+			loadConfig();
 		}
 		//when the player starts from the widget, startService is not called twice, it is
 		//called only once, from within onCreate, when thePlayer is already != null
 		if (thePlayer != null && thread == null) {
-			createIntents(context);
+			createIntents();
 
 			//These broadcast actions are registered here, instead of in the manifest file,
 			//because a few tests showed that some devices will produce the notifications
@@ -541,7 +541,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 			registerMediaButtonEventReceiver();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-				registerMediaRouter(thePlayer);
+				registerMediaRouter();
 
 			thread = new Thread("Player Core Thread") {
 				@Override
@@ -556,19 +556,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					BassBoost._release();
 					Virtualizer._initialize(player.getAudioSessionId());
 					Virtualizer._release();
+					ExternalFx._checkSupport(player.getAudioSessionId());
 					_checkAudioSink(false, false, false);
 					audioSinkUsedInEffects = audioSink;
-					if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
-						Equalizer._initialize(player.getAudioSessionId());
-						Equalizer._setEnabled(true, audioSinkUsedInEffects);
-					}
-					if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
-						BassBoost._initialize(player.getAudioSessionId());
-						BassBoost._setEnabled(true, audioSinkUsedInEffects);
-					}
-					if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
-						Virtualizer._initialize(player.getAudioSessionId());
-						Virtualizer._setEnabled(true, audioSinkUsedInEffects);
+					if (ExternalFx.isEnabled()) {
+						ExternalFx._initialize(player.getAudioSessionId());
+						ExternalFx._setEnabled(true);
+					} else {
+						if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
+							Equalizer._initialize(player.getAudioSessionId());
+							Equalizer._setEnabled(true, audioSinkUsedInEffects);
+						}
+						if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
+							BassBoost._initialize(player.getAudioSessionId());
+							BassBoost._setEnabled(true, audioSinkUsedInEffects);
+						}
+						if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
+							Virtualizer._initialize(player.getAudioSessionId());
+							Virtualizer._setEnabled(true, audioSinkUsedInEffects);
+						}
 					}
 					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
 					Looper.loop();
@@ -589,7 +595,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			while (handler == null)
 				Thread.yield();
 
-			songs.startDeserializingOrImportingFrom(thePlayer, null, true, false, false);
+			songs.startDeserializingOrImportingFrom(null, true, false, false);
 		}
 		//fix the initial selection when the app is started from the widget
 		alreadySelected = false;
@@ -617,7 +623,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 		unregisterMediaButtonEventReceiver();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
-			unregisterMediaRouter(thePlayer);
+			unregisterMediaRouter();
 
 		if (destroyedObservers != null) {
 			for (int i = destroyedObservers.size() - 1; i >= 0; i--)
@@ -629,7 +635,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (thePlayer != null) {
 			if (externalReceiver != null)
 				thePlayer.getApplicationContext().unregisterReceiver(externalReceiver);
-			saveConfig(thePlayer, true);
+			saveConfig(true);
 		}
 
 		updateState(~0x27, new Object[] { null, null, null });
@@ -890,11 +896,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return (localPlayerState == PLAYER_STATE_PREPARING || playerBuffering);
 	}
 
-	public static String getCurrentTitle(Context context, boolean preparing) {
-		return ((context == null) ? "" :
-			((localSong == null) ? context.getText(R.string.nothing_playing).toString() :
+	public static String getCurrentTitle(boolean preparing) {
+		return ((localSong == null) ? theApplication.getText(R.string.nothing_playing).toString() :
 				(!preparing ? localSong.title :
-					(context.getText(R.string.loading) + " " + localSong.title))));
+					(theApplication.getText(R.string.loading) + " " + localSong.title)));
 	}
 
 	public static int getPosition() {
@@ -1022,6 +1027,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer._release();
 		BassBoost._release();
 		Virtualizer._release();
+		ExternalFx._release();
 	}
 
 	private static void _initializePlayers() {
@@ -1752,7 +1758,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (url != null && url.length() > 0)
 				localSong.album = url;
 			localSong.title = metadata;
-			broadcastStateChange(getCurrentTitle(thePlayer, isPreparing()), isPreparing(), true);
+			broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
 			//this will force a serialization when closing the app (saving this update)
 			songs.markAsChanged();
 			if (observer != null)
@@ -2006,6 +2012,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPTBIT_VIRTUALIZER_ENABLED = 25;
 	//this bit has been removed on version 83
 	//private static final int OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES = 26;
+	//this bit has been recycled on version 87
+	static final int OPTBIT_EXTERNALFX_ENABLED = 26;
 	private static final int OPTBIT_DO_NOT_ATTENUATE_VOLUME = 27;
 	private static final int OPTBIT_SCROLLBAR_TO_THE_LEFT = 28;
 	private static final int OPTBIT_SCROLLBAR_SONGLIST0 = 29;
@@ -2048,13 +2056,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
 	public static Object radioStationCache, radioStationCacheShoutcast;
 
-	public static SerializableMap loadConfigFromFile(Context context) {
-		final SerializableMap opts = SerializableMap.deserialize(context, "_Player");
+	public static SerializableMap loadConfigFromFile() {
+		final SerializableMap opts = SerializableMap.deserialize("_Player");
 		return ((opts == null) ? new SerializableMap() : opts);
 	}
 
-	private static void loadConfig(Context context) {
-		final SerializableMap opts = loadConfigFromFile(context);
+	private static void loadConfig() {
+		final SerializableMap opts = loadConfigFromFile();
 		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
 		volumeDB = opts.getInt(OPT_VOLUME);
 		if (volumeDB < VOLUME_MIN_DB)
@@ -2130,7 +2138,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			UI.setVerticalMarginLarge(opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
 			handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
 			playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
-			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+			UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 			goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS);
 			UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
 			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
@@ -2203,10 +2211,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer.loadConfig(opts);
 		BassBoost.loadConfig(opts);
 		Virtualizer.loadConfig(opts);
+		ExternalFx.loadConfig(opts);
 		//PresetReverb.loadConfig(opts);
 	}
 
-	public static void saveConfig(Context context, boolean saveSongs) {
+	public static void saveConfig(boolean saveSongs) {
 		final SerializableMap opts = new SerializableMap(96);
 		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
 		opts.put(OPT_VOLUME, volumeDB);
@@ -2294,40 +2303,41 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer.saveConfig(opts);
 		BassBoost.saveConfig(opts);
 		Virtualizer.saveConfig(opts);
+		ExternalFx.saveConfig(opts);
 		//PresetReverb.saveConfig(opts);
-		opts.serialize(context, "_Player");
+		opts.serialize("_Player");
 		if (saveSongs)
-			songs.serialize(context);
+			songs.serialize();
 	}
 
-	private static void createIntents(Context context) {
+	private static void createIntents() {
 		if (intentActivityHost == null) {
-			Intent intent = new Intent(context, ActivityHost.class);
+			Intent intent = new Intent(theApplication, ActivityHost.class);
 			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			intentActivityHost = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			intent = new Intent(context, Player.class);
+			intentActivityHost = PendingIntent.getActivity(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_PREVIOUS);
-			intentPrevious = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			intent = new Intent(context, Player.class);
+			intentPrevious = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_PLAY_PAUSE);
-			intentPlayPause = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			intent = new Intent(context, Player.class);
+			intentPlayPause = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_NEXT);
-			intentNext = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			intent = new Intent(context, Player.class);
+			intentNext = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_EXIT);
-			intentExit = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intentExit = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		}
 	}
 
-	public static RemoteViews prepareRemoteViews(Context context, RemoteViews views, boolean prepareButtons, boolean notification, boolean notificationFirstTime) {
-		createIntents(context);
+	public static RemoteViews prepareRemoteViews(RemoteViews views, boolean prepareButtons, boolean notification, boolean notificationFirstTime) {
+		createIntents();
 
-		views.setTextViewText(R.id.lblTitle, getCurrentTitle(context, isPreparing()));
+		views.setTextViewText(R.id.lblTitle, getCurrentTitle(isPreparing()));
 
 		if (prepareButtons) {
 			if (notification) {
-				UI.prepareNotificationPlaybackIcons(context);
+				UI.prepareNotificationPlaybackIcons();
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
 				if (notificationFirstTime) {
 					views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
@@ -2352,7 +2362,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				views.setOnClickPendingIntent(R.id.lblTitle, intentActivityHost);
 				views.setOnClickPendingIntent(R.id.lblArtist, intentActivityHost);
 
-				UI.prepareWidgetPlaybackIcons(context);
+				UI.prepareWidgetPlaybackIcons();
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
@@ -2384,13 +2394,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					if (mediaSession != null)
 						notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
 				}
-				notificationRemoteViews = new RemoteViews(thePlayer.getPackageName(), R.layout.notification);
+				notificationRemoteViews = new RemoteViews(theApplication.getPackageName(), R.layout.notification);
 			} else {
-				notificationRemoteViews = new RemoteViews(thePlayer.getPackageName(), R.layout.notification_simple);
+				notificationRemoteViews = new RemoteViews(theApplication.getPackageName(), R.layout.notification_simple);
 			}
 			notification.contentView = notificationRemoteViews;
 		}
-		prepareRemoteViews(thePlayer, notificationRemoteViews, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
+		prepareRemoteViews(notificationRemoteViews, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
 		return notification;
 	}
 
@@ -2668,8 +2678,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static PlayerObserver observer;
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private static void registerMediaRouter(Context context) {
-		final MediaRouter mr = (MediaRouter)context.getSystemService(MEDIA_ROUTER_SERVICE);
+	private static void registerMediaRouter() {
+		final MediaRouter mr = (MediaRouter)theApplication.getSystemService(MEDIA_ROUTER_SERVICE);
 		if (mr != null) {
 			mediaRouterCallback = new MediaRouter.Callback() {
 				@Override
@@ -2710,8 +2720,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private static void unregisterMediaRouter(Context context) {
-		final MediaRouter mr = (MediaRouter)context.getSystemService(MEDIA_ROUTER_SERVICE);
+	private static void unregisterMediaRouter() {
+		final MediaRouter mr = (MediaRouter)theApplication.getSystemService(MEDIA_ROUTER_SERVICE);
 		if (mediaRouterCallback != null && mr != null)
 			mr.removeCallback((MediaRouter.Callback)mediaRouterCallback);
 		mediaRouterCallback = null;
@@ -3190,7 +3200,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	@SuppressWarnings("deprecation")
 	private static void broadcastStateChange(String title, boolean preparing, boolean titleOrSongHaveChanged) {
 		notificationManager.notify(1, getNotification());
-		WidgetMain.updateWidgets(thePlayer);
+		WidgetMain.updateWidgets();
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
 		//http://developer.android.com/reference/android/media/RemoteControlClient.html
@@ -3251,7 +3261,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
 		final boolean preparing = ((arg1 & 0x20) != 0);
 		final boolean preparingHasChanged = ((arg1 & 0x40) != 0);
-		final String title = ((localSong == null) ? null : getCurrentTitle(thePlayer, preparing));
+		final String title = ((localSong == null) ? null : getCurrentTitle(preparing));
 		broadcastStateChange(title, preparing, songHasChanged | preparingHasChanged);
 		if (idleTurnOffTimerSelectedMinutes > 0)
 			processIdleTurnOffTimer();
@@ -3267,19 +3277,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				((ClientActivity)observer).getHostActivity().requestReadStoragePermission();
 			final String msg = ex.getMessage();
 			if (ex instanceof IllegalStateException) {
-				UI.toast(thePlayer, R.string.error_state);
+				UI.toast(R.string.error_state);
 			} else if (ex instanceof UnsupportedFormatException) {
-				UI.toast(thePlayer, R.string.error_unsupported_format);
+				UI.toast(R.string.error_unsupported_format);
 			} else if (ex instanceof FileNotFoundException) {
-				UI.toast(thePlayer, (localSong != null && localSong.isHttp) ?
+				UI.toast((localSong != null && localSong.isHttp) ?
 					(!isConnectedToTheInternet() ? R.string.error_connection : R.string.error_server_not_found) :
 						R.string.error_file_not_found);
 			} else if (ex instanceof TimeoutException) {
-				UI.toast(thePlayer, R.string.error_timeout);
+				UI.toast(R.string.error_timeout);
 			} else if (ex instanceof MediaServerDiedException) {
-				UI.toast(thePlayer, R.string.error_server_died);
+				UI.toast(R.string.error_server_died);
 			} else if (ex instanceof SecurityException) {
-				UI.toast(thePlayer, R.string.error_security);
+				UI.toast(R.string.error_security);
 			} else if (ex instanceof IOException) {
 				int err = R.string.error_io;
 				if (localSong != null) {
@@ -3294,14 +3304,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						}
 					}
 				}
-				UI.toast(thePlayer, err);
+				UI.toast(err);
 			} else if (msg == null || msg.length() == 0) {
-				UI.toast(thePlayer, R.string.error_playback);
+				UI.toast(R.string.error_playback);
 			} else {
 				final StringBuilder sb = new StringBuilder(thePlayer.getText(R.string.error_msg));
 				sb.append(' ');
 				sb.append(msg);
-				UI.toast(thePlayer, sb);
+				UI.toast(sb);
 			}
 		}
 		if (observer != null)

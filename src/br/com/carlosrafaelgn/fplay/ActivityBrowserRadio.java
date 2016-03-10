@@ -80,18 +80,15 @@ import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
 public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, AdapterView.OnItemSelectedListener, BgListView.OnScrollListener {
 	private static final class RadioStationAdapter implements SpinnerAdapter {
-		private Context context;
 		private ColorStateList defaultTextColors;
 		public RadioStationGenre[] genres;
 
-		public RadioStationAdapter(Context context, ColorStateList defaultTextColors, RadioStationGenre[] genres) {
-			this.context = context;
+		public RadioStationAdapter(ColorStateList defaultTextColors, RadioStationGenre[] genres) {
 			this.defaultTextColors = defaultTextColors;
 			this.genres = genres;
 		}
 
 		public void release() {
-			context = null;
 			defaultTextColors = null;
 			genres = null;
 		}
@@ -120,7 +117,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		public View getView(int position, View convertView, ViewGroup parent) {
 			TextView txt = (TextView)convertView;
 			if (txt == null) {
-				txt = new TextView(context);
+				txt = new TextView(Player.theApplication);
 				txt.setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
 				txt.setTypeface(UI.defaultTypeface);
 				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
@@ -157,7 +154,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		public View getDropDownView(int position, View convertView, ViewGroup parent) {
 			TextView txt = (TextView)convertView;
 			if (txt == null) {
-				txt = new TextView(context);
+				txt = new TextView(Player.theApplication);
 				txt.setPadding(UI.dialogMargin, UI.dialogDropDownVerticalMargin, UI.dialogMargin, UI.dialogDropDownVerticalMargin);
 				txt.setTypeface(UI.defaultTypeface);
 				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
@@ -234,7 +231,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			return;
 		final RadioStation radioStation = radioStationList.getItemT(radioStationList.getSelection());
 		if (radioStation.m3uUrl == null || radioStation.m3uUrl.length() < 0) {
-			UI.toast(getApplication(), R.string.error_file_not_found);
+			UI.toast(R.string.error_file_not_found);
 			return;
 		}
 		Player.songs.addingStarted();
@@ -261,7 +258,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			}).start();
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
-			UI.toast(getApplication(), ex.getMessage());
+			UI.toast(ex.getMessage());
 		}
 	}
 
@@ -302,7 +299,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	public View createView() {
-		return new RadioStationView(Player.getService());
+		return new RadioStationView(Player.theApplication);
 	}
 	
 	@Override
@@ -400,9 +397,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				Player.radioSearchTerm = null;
 		}
 		if (Player.lastRadioSearchWasByGenre || Player.radioSearchTerm == null)
-			radioStationList.fetchStations(getApplication(), getGenre(), null, firstSearch);
+			radioStationList.fetchStations(getGenre(), null, firstSearch);
 		else
-			radioStationList.fetchStations(getApplication(), null, Player.radioSearchTerm, firstSearch);
+			radioStationList.fetchStations(null, Player.radioSearchTerm, firstSearch);
 		//do not call updateButtons() if onSelectionChanged() got called before!
 		if (firstSearch && selection < 0)
 			updateButtons();
@@ -477,7 +474,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			final int selection = radioStationList.getSelection();
 			isAtFavorites = true;
 			radioStationList.cancel();
-			radioStationList.fetchFavorites(getApplication());
+			radioStationList.fetchFavorites();
 			//do not call updateButtons() if onSelectionChanged() got called before!
 			if (selection < 0)
 				updateButtons();
@@ -559,7 +556,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 			final ColorStateList defaultTextColors = txtTerm.getTextColors();
 
-			adapterType = new RadioStationAdapter(getApplication(), defaultTextColors, new RadioStationGenre[] {
+			adapterType = new RadioStationAdapter(defaultTextColors, new RadioStationGenre[] {
 				new RadioStationGenre(getText(R.string.genre).toString()),
 				new RadioStationGenre(getText(R.string.search_term).toString())
 			});
@@ -568,20 +565,20 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			btnType.setOnItemSelectedListener(this);
 
 			final int primaryGenreIndex = getPrimaryGenreIndex();
-			adapter = new RadioStationAdapter(getApplication(), defaultTextColors, genres);
+			adapter = new RadioStationAdapter(defaultTextColors, genres);
 			btnGenre.setAdapter(adapter);
 			btnGenre.setSelection(primaryGenreIndex);
 			if (btnGenreSecondary != null) {
 				ignoreFirstNotification = true;
 				btnGenre.setOnItemSelectedListener(this);
-				adapterSecondary = new RadioStationAdapter(getApplication(), defaultTextColors, genres[primaryGenreIndex].children);
+				adapterSecondary = new RadioStationAdapter(defaultTextColors, genres[primaryGenreIndex].children);
 				btnGenreSecondary.setAdapter(adapterSecondary);
 				btnGenreSecondary.setSelection(getSecondaryGenreIndex());
 			}
 
-			UI.disableEdgeEffect(ctx);
+			UI.disableEdgeEffect();
 			AlertDialog dialog = (new AlertDialog.Builder(ctx))
-				.setTitle(getText(R.string.search))
+				.setTitle(R.string.search)
 				.setView(l)
 				.setPositiveButton(R.string.search, this)
 				.setNegativeButton(R.string.cancel, this)
@@ -748,7 +745,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 
 	@Override
 	protected void onPause() {
-		radioStationList.saveFavorites(getApplication());
+		radioStationList.saveFavorites();
 		radioStationList.setObserver(null);
 	}
 	

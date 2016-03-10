@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
-import android.app.Service;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -80,8 +79,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	public AlbumArtFetcher() {
 		sync = new Object();
 		opts = new BitmapFactory.Options();
-		final Service s = Player.getService();
-		contentResolver = ((s != null) ? s.getContentResolver() : null);
+		contentResolver = Player.theApplication.getContentResolver();
 		audioDataSelection = MediaStore.Audio.AudioColumns.DATA + "=?";
 		albumIdSelection = MediaStore.Audio.Albums._ID + "=?";
 		albumArtProjection = new String[] { MediaStore.Audio.Albums.ALBUM_ART };
@@ -173,9 +171,11 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				}
 				//try to fetch the first album for this artist
 				final Cursor cursor = contentResolver.query(MediaStore.Audio.Artists.Albums.getContentUri("external", file.artistIdForAlbumArt), albumArtProjection, null, null, null);
-				while (uri == null && !opts.mCancel && cursor.moveToNext())
-					uri = cursor.getString(0);
-				cursor.close();
+				if (cursor != null) {
+					while (uri == null && !opts.mCancel && cursor.moveToNext())
+						uri = cursor.getString(0);
+					cursor.close();
+				}
 				file.artistIdForAlbumArt = 0;
 				if (uri == null)
 					return true;

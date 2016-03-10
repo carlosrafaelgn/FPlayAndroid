@@ -108,11 +108,11 @@ public final class MainHandler extends Handler {
 					return;
 				if (msg.obj != null) {
 					if (msg.obj instanceof Throwable)
-						UI.toast(Player.getService(), (Throwable)msg.obj);
+						UI.toast((Throwable)msg.obj);
 					else
-						UI.toast(Player.getService(), msg.obj.toString());
+						UI.toast(msg.obj.toString());
 				} else {
-					UI.toast(Player.getService(), msg.arg1);
+					UI.toast(msg.arg1);
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();

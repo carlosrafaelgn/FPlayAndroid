@@ -45,26 +45,26 @@ public final class WidgetMain extends AppWidgetProvider {
 	private static AppWidgetManager appWidgetManager;
 	private static ComponentName widgetComponent;
 	
-	private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-		appWidgetManager.updateAppWidget(appWidgetId, Player.prepareRemoteViews(context, new RemoteViews(context.getPackageName(), UI.widgetTransparentBg ? R.layout.main_widget_transparent : R.layout.main_widget), true, false, false));
+	private static void updateAppWidget(AppWidgetManager appWidgetManager, int appWidgetId) {
+		appWidgetManager.updateAppWidget(appWidgetId, Player.prepareRemoteViews(new RemoteViews(Player.theApplication.getPackageName(), UI.widgetTransparentBg ? R.layout.main_widget_transparent : R.layout.main_widget), true, false, false));
 	}
 	
-	public static void updateWidgets(Context context) {
+	public static void updateWidgets() {
 		if (appWidgetManager == null)
-			appWidgetManager = AppWidgetManager.getInstance(context);
+			appWidgetManager = AppWidgetManager.getInstance(Player.theApplication);
 		if (widgetComponent == null)
-			widgetComponent = new ComponentName(context, WidgetMain.class);
+			widgetComponent = new ComponentName(Player.theApplication, WidgetMain.class);
 		final int[] appWidgetIds = appWidgetManager.getAppWidgetIds(widgetComponent);
 		if (appWidgetIds == null)
 			return;
 		for (int i = appWidgetIds.length - 1; i >= 0; i--)
-			updateAppWidget(context, appWidgetManager, appWidgetIds[i]);
+			updateAppWidget(appWidgetManager, appWidgetIds[i]);
 	}
 	
 	@Override
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
 		UI.loadWidgetRelatedSettings(context);
 		for (int i = appWidgetIds.length - 1; i >= 0; i--)
-			updateAppWidget(context, appWidgetManager, appWidgetIds[i]);
+			updateAppWidget(appWidgetManager, appWidgetIds[i]);
 	}
 }

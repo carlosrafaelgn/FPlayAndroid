@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
-import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;

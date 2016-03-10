@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
-import android.content.Context;
 import android.os.Message;
 import android.view.View;
 import android.view.ViewGroup;
@@ -75,7 +74,6 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	protected volatile int version;
 	private volatile RadioStationGenre genreToFetch;
 	private volatile String searchTermToFetch;
-	private volatile Context context;
 	private RadioStationCache cache;
 	public RadioStationAddedObserver radioStationAddedObserver;
 	
@@ -154,11 +152,11 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		}
 	}
 
-	private void loadFavoritesInternal(Context context) throws IOException {
+	private void loadFavoritesInternal() throws IOException {
 		FileInputStream fs = null;
 		BufferedInputStream bs = null;
 		try {
-			fs = context.openFileInput("_RadioFav");
+			fs = Player.theApplication.openFileInput("_RadioFav");
 			bs = new BufferedInputStream(fs, 4096);
 			final int version = Serializer.deserializeInt(bs);
 			final int count = Math.min(Serializer.deserializeInt(bs), MAX_COUNT);
@@ -189,13 +187,13 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		}
 	}
 
-	private void saveFavoritesInternal(Context context) throws IOException {
+	private void saveFavoritesInternal() throws IOException {
 		FileOutputStream fs = null;
 		BufferedOutputStream bs = null;
 		try {
 			final int count = Math.min(MAX_COUNT, favorites.size());
 			int i = 0;
-			fs = context.openFileOutput("_RadioFav", 0);
+			fs = Player.theApplication.openFileOutput("_RadioFav", 0);
 			bs = new BufferedOutputStream(fs, 4096);
 			Serializer.serializeInt(bs, 0x0100);
 			Serializer.serializeInt(bs, count);
@@ -236,21 +234,19 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	@Override
 	public final void run() {
 		final int myVersion = version;
-		final Context context = this.context;
 		final RadioStationGenre genre = genreToFetch;
 		final String searchTerm = searchTermToFetch;
 		final boolean isSavingFavorites = this.isSavingFavorites;
 		final boolean reset = this.reset;
-		this.context = null;
 		readyToFetch = true;
 		
 		int err = 0;
 		
-		if (!favoritesLoaded && !isSavingFavorites && context != null) {
+		if (!favoritesLoaded && !isSavingFavorites) {
 			synchronized (favoritesSync) {
 				if (!favoritesLoaded) {
 					try {
-						loadFavoritesInternal(context);
+						loadFavoritesInternal();
 						favoritesLoaded = true;
 						favoritesChanged = false;
 					} catch (Throwable ex) {
@@ -265,8 +261,8 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			synchronized (favoritesSync) {
 				if (isSavingFavorites) {
 					try {
-						if (favoritesLoaded && favoritesChanged && context != null) {
-							saveFavoritesInternal(context);
+						if (favoritesLoaded && favoritesChanged) {
+							saveFavoritesInternal();
 							favoritesChanged = false;
 						}
 					} catch (Throwable ex) {
@@ -274,7 +270,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 					}
 				} else {
 					try {
-						if (favoritesLoaded && context != null) {
+						if (favoritesLoaded) {
 							if (myVersion != version)
 								return;
 							final RadioStation[] stations = new RadioStation[favorites.size()];
@@ -297,7 +293,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			return;
 		}
 
-		fetchStationsInternal(context, myVersion, genre, searchTerm, reset, true);
+		fetchStationsInternal(myVersion, genre, searchTerm, reset, true);
 	}
 
 	public final void addFavoriteStation(RadioStation station) {
@@ -328,9 +324,9 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			MainHandler.sendMessage(this, MSG_ERROR, myVersion, err);
 	}
 
-	protected abstract void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages);
+	protected abstract void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages);
 
-	public final boolean fetchStations(Context context, RadioStationGenre genre, String searchTerm, boolean reset) {
+	public final boolean fetchStations(RadioStationGenre genre, String searchTerm, boolean reset) {
 		while (!readyToFetch)
 			Thread.yield();
 		cancel();
@@ -347,7 +343,6 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		isSavingFavorites = false;
 		genreToFetch = genre;
 		searchTermToFetch = searchTerm;
-		this.context = context;
 		readyToFetch = false;
 		try {
 			t.start();
@@ -359,7 +354,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		}
 	}
 
-	public final void fetchFavorites(Context context) {
+	public final void fetchFavorites() {
 		while (!readyToFetch)
 			Thread.yield();
 		cancel();
@@ -370,7 +365,6 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		isSavingFavorites = false;
 		genreToFetch = null;
 		searchTermToFetch = null;
-		this.context = context;
 		readyToFetch = false;
 		try {
 			t.start();
@@ -380,7 +374,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		}
 	}
 
-	public final void saveFavorites(Context context) {
+	public final void saveFavorites() {
 		while (!readyToFetch)
 			Thread.yield();
 		synchronized (favoritesSync) {
@@ -391,7 +385,6 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		isSavingFavorites = true;
 		genreToFetch = null;
 		searchTermToFetch = null;
-		this.context = context;
 		readyToFetch = false;
 		try {
 			t.start();
@@ -427,11 +420,11 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 
 	protected abstract void storeCache(RadioStationCache cache);
 
-	public final RadioStation tryToFetchRadioStationAgain(Context context, String title) {
+	public final RadioStation tryToFetchRadioStationAgain(String title) {
 		try {
 			version++;
 			loading = false;
-			fetchStationsInternal(context, version, null, title, true, false);
+			fetchStationsInternal(version, null, title, true, false);
 			if (items == null)
 				return null;
 			int i = 0;
@@ -455,7 +448,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		case MSG_ERROR:
 			moreResults = false;
 			loadingProcessChanged(false);
-			UI.toast(Player.getService(), ((msg.arg2 != -2) && !Player.isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_gen);
+			UI.toast(((msg.arg2 != -2) && !Player.isConnectedToTheInternet()) ? R.string.error_connection : R.string.error_gen);
 			break;
 		case MSG_MORE_RESULTS:
 			if (!containsFavorites)
@@ -489,7 +482,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 
 	@Override
 	public final View getView(int position, View convertView, ViewGroup parent) {
-		final RadioStationView view = ((convertView != null) ? (RadioStationView)convertView : new RadioStationView(Player.getService()));
+		final RadioStationView view = ((convertView != null) ? (RadioStationView)convertView : new RadioStationView(Player.theApplication));
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}

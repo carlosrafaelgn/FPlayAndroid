@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -130,7 +129,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optForcedLocale) {
-			final Context ctx = getApplication();
 			final int o = UI.forcedLocale;
 			lastMenuView = optForcedLocale;
 			UI.prepare(menu);
@@ -138,55 +136,54 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.LOCALE_DE, 0, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_DE))
+			menu.add(1, UI.LOCALE_DE, 0, UI.getLocaleDescriptionFromCode(UI.LOCALE_DE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_DE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_US, 1, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_US))
+			menu.add(1, UI.LOCALE_US, 1, UI.getLocaleDescriptionFromCode(UI.LOCALE_US))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_US) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_ES, 2, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_ES))
+			menu.add(1, UI.LOCALE_ES, 2, UI.getLocaleDescriptionFromCode(UI.LOCALE_ES))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_ES) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_FR, 3, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_FR))
+			menu.add(1, UI.LOCALE_FR, 3, UI.getLocaleDescriptionFromCode(UI.LOCALE_FR))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_FR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_PTBR, 4, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_PTBR))
+			menu.add(1, UI.LOCALE_PTBR, 4, UI.getLocaleDescriptionFromCode(UI.LOCALE_PTBR))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_PTBR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_RU, 5, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_RU))
+			menu.add(1, UI.LOCALE_RU, 5, UI.getLocaleDescriptionFromCode(UI.LOCALE_RU))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.LOCALE_UK, 6, UI.getLocaleDescriptionFromCode(ctx, UI.LOCALE_UK))
+			menu.add(1, UI.LOCALE_UK, 6, UI.getLocaleDescriptionFromCode(UI.LOCALE_UK))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optTheme) {
-			final Context ctx = getApplication();
 			final int o = UI.theme;
 			lastMenuView = optTheme;
 			UI.prepare(menu);
-			menu.add(0, UI.THEME_CUSTOM, 0, UI.getThemeString(ctx, UI.THEME_CUSTOM))
+			menu.add(0, UI.THEME_CUSTOM, 0, UI.getThemeString(UI.THEME_CUSTOM))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_CUSTOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.THEME_FPLAY, 0, UI.getThemeString(ctx, UI.THEME_FPLAY))
+			menu.add(1, UI.THEME_FPLAY, 0, UI.getThemeString(UI.THEME_FPLAY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_CREAMY, 1, UI.getThemeString(ctx, UI.THEME_CREAMY))
+			menu.add(1, UI.THEME_CREAMY, 1, UI.getThemeString(UI.THEME_CREAMY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_CREAMY) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_DARK_LIGHT, 2, UI.getThemeString(ctx, UI.THEME_DARK_LIGHT))
+			menu.add(1, UI.THEME_DARK_LIGHT, 2, UI.getThemeString(UI.THEME_DARK_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_DARK_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_BLUE_ORANGE, 3, UI.getThemeString(ctx, UI.THEME_BLUE_ORANGE))
+			menu.add(1, UI.THEME_BLUE_ORANGE, 3, UI.getThemeString(UI.THEME_BLUE_ORANGE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_BLUE, 4, UI.getThemeString(ctx, UI.THEME_BLUE))
+			menu.add(1, UI.THEME_BLUE, 4, UI.getThemeString(UI.THEME_BLUE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_ORANGE, 5, UI.getThemeString(ctx, UI.THEME_ORANGE))
+			menu.add(1, UI.THEME_ORANGE, 5, UI.getThemeString(UI.THEME_ORANGE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_LIGHT, 6, UI.getThemeString(ctx, UI.THEME_LIGHT))
+			menu.add(1, UI.THEME_LIGHT, 6, UI.getThemeString(UI.THEME_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {
@@ -232,44 +229,42 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optTransition) {
 			lastMenuView = optTransition;
 			UI.prepare(menu);
-			final Context ctx = getApplication();
 			final int o = UI.transitions & 0xFF;
-			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(ctx, UI.TRANSITION_NONE))
+			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(UI.TRANSITION_NONE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 0, UI.getTransitionString(ctx, UI.TRANSITION_SLIDE_SMOOTH))
+			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 0, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_SLIDE, 1, UI.getTransitionString(ctx, UI.TRANSITION_SLIDE))
+			menu.add(1, UI.TRANSITION_SLIDE, 1, UI.getTransitionString(UI.TRANSITION_SLIDE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_FADE, 2, UI.getTransitionString(ctx, UI.TRANSITION_FADE))
+			menu.add(1, UI.TRANSITION_FADE, 2, UI.getTransitionString(UI.TRANSITION_FADE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_DISSOLVE, 3, UI.getTransitionString(ctx, UI.TRANSITION_DISSOLVE))
+			menu.add(1, UI.TRANSITION_DISSOLVE, 3, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_ZOOM, 4, UI.getTransitionString(ctx, UI.TRANSITION_ZOOM))
+			menu.add(1, UI.TRANSITION_ZOOM, 4, UI.getTransitionString(UI.TRANSITION_ZOOM))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optPopupTransition) {
 			lastMenuView = optPopupTransition;
 			UI.prepare(menu);
-			final Context ctx = getApplication();
 			final int o = UI.transitions >>> 8;
-			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(ctx, UI.TRANSITION_NONE))
+			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(UI.TRANSITION_NONE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 0, UI.getTransitionString(ctx, UI.TRANSITION_SLIDE_SMOOTH))
+			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 0, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_FADE, 1, UI.getTransitionString(ctx, UI.TRANSITION_FADE))
+			menu.add(1, UI.TRANSITION_FADE, 1, UI.getTransitionString(UI.TRANSITION_FADE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-				menu.add(1, UI.TRANSITION_DISSOLVE, 2, UI.getTransitionString(ctx, UI.TRANSITION_DISSOLVE))
+				menu.add(1, UI.TRANSITION_DISSOLVE, 2, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optScrollBarSongList || view == optScrollBarBrowser) {
@@ -377,8 +372,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public boolean onMenuItemClick(MenuItem item) {
 		//NullPointerException reported at Play Store.... :/
 		final ActivityHost ctx = getHostActivity();
-		final Application app = (ctx == null ? null : ctx.getApplication());
-		if (item == null || lastMenuView == null || ctx == null || app == null)
+		if (item == null || lastMenuView == null || ctx == null)
 			return true;
 		if (lastMenuView == optAutoTurnOff || lastMenuView == optAutoIdleTurnOff) {
 			if (item.getItemId() >= 0) {
@@ -408,8 +402,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optForcedLocale) {
 			if (item.getItemId() != UI.forcedLocale) {
-				UI.setForcedLocale(app, ctx, item.getItemId(), true);
-				WidgetMain.updateWidgets(app);
+				UI.setForcedLocale(ctx, item.getItemId(), true);
+				WidgetMain.updateWidgets();
 				onCleanupLayout();
 				onCreateLayout(false);
 				System.gc();
@@ -430,17 +424,17 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Song.extraInfoMode = item.getItemId();
 			optExtraInfoMode.setSecondaryText(getExtraInfoModeString(Song.extraInfoMode));
 			Player.songs.updateExtraInfo();
-			WidgetMain.updateWidgets(app);
+			WidgetMain.updateWidgets();
 		} else if (lastMenuView == optForceOrientation) {
 			UI.forcedOrientation = item.getItemId();
-			ctx.setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
+			getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
 			optForceOrientation.setSecondaryText(getOrientationString());
 		} else if (lastMenuView == optTransition) {
 			UI.setTransition(item.getItemId());
-			optTransition.setSecondaryText(UI.getTransitionString(app, item.getItemId()));
+			optTransition.setSecondaryText(UI.getTransitionString(item.getItemId()));
 		} else if (lastMenuView == optPopupTransition) {
 			UI.setPopupTransition(item.getItemId());
-			optPopupTransition.setSecondaryText(UI.getTransitionString(app, item.getItemId()));
+			optPopupTransition.setSecondaryText(UI.getTransitionString(item.getItemId()));
 		} else if (lastMenuView == optScrollBarSongList) {
 			UI.songListScrollBarType = item.getItemId();
 			optScrollBarSongList.setSecondaryText(getScrollBarString(item.getItemId()));
@@ -710,10 +704,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		final byte[] colors = ((UI.customColors != null && UI.customColors.length >= 72 && !forceCurrent) ? UI.customColors : UI.serializeThemeToArray());
 		if (createControls)
 			colorViews = new SettingView[colorOrder.length];
-		for (int i = 0; i < colorOrder.length; i++) {
-			final int idx = colorOrder[i];
+		for (int idx : colorOrder) {
 			if (createControls)
-				colorViews[idx] = new SettingView(ctx, null, UI.getThemeColorDescription(ctx, idx).toString(), null, false, false, true);
+				colorViews[idx] = new SettingView(ctx, null, UI.getThemeColorDescription(idx).toString(), null, false, false, true);
 			colorViews[idx].setColor(UI.deserializeThemeColor(colors, idx * 3));
 		}
 		if (createControls) {
@@ -907,7 +900,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		lastColorView = -1;
 		
 		final Context ctx = getHostActivity();
-		
+
 		list = (ObservableScrollView)findViewById(R.id.list);
 		list.setHorizontalFadingEdgeEnabled(false);
 		list.setVerticalFadingEdgeEnabled(false);
@@ -957,7 +950,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
 			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
-			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(ctx, UI.theme), false, false, false);
+			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(UI.theme), false, false, false);
 			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);
 			optPlayWithLongPress = new SettingView(ctx, UI.ICON_PLAY, getText(R.string.play_with_long_press).toString(), null, true, UI.playWithLongPress, false);
@@ -970,7 +963,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optExtraSpacing = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.opt_extra_spacing).toString(), null, true, UI.extraSpacing, false);
 			if (!UI.isLargeScreen)
 				optPlaceTitleAtTheBottom = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.place_title_at_the_bottom).toString(), null, true, UI.placeTitleAtTheBottom, false);
-			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(ctx, UI.forcedLocale), false, false, false);
+			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(UI.forcedLocale), false, false, false);
 			if (UI.isLargeScreen)
 				optPlacePlaylistToTheRight = new SettingView(ctx, UI.ICON_HAND, getText(R.string.place_the_playlist_to_the_right).toString(), null, true, UI.controlsToTheLeft, false);
 			optScrollBarToTheLeft = new SettingView(ctx, UI.ICON_HAND, getText(R.string.scrollbar_to_the_left).toString(), null, true, UI.scrollBarToTheLeft, false);
@@ -996,8 +989,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optGoBackWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
 			optExtraInfoMode = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.secondary_line_of_text).toString(), getExtraInfoModeString(Song.extraInfoMode), false, false, false);
 			optForceOrientation = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
-			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(ctx, UI.transitions & 0xFF), false, false, false);
-			optPopupTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition_popup).toString(), UI.getTransitionString(ctx, UI.transitions >>> 8), false, false, false);
+			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(UI.transitions & 0xFF), false, false, false);
+			optPopupTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition_popup).toString(), UI.getTransitionString(UI.transitions >>> 8), false, false, false);
 			optAnimations = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.animations).toString(), null, true, UI.animationEnabled, false);
 			optNotFullscreen = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.fullscreen).toString(), null, true, !UI.notFullscreen, false);
 			optFadeInFocus = new SettingView(ctx, UI.ICON_FADE, getText(R.string.opt_fade_in_focus).toString(), getFadeInString(Player.fadeInIncrementOnFocus), false, false, false);
@@ -1295,7 +1288,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (!UI.isCurrentLocaleCyrillic() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
-			UI.setUsingAlternateTypeface(getHostActivity(), desired);
+			UI.setUsingAlternateTypeface(desired);
 			if (UI.isUsingAlternateTypeface != desired) {
 				optUseAlternateTypeface.setChecked(UI.isUsingAlternateTypeface);
 			} else {
@@ -1363,7 +1356,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			list.updateVerticalScrollbar();
 		} else if (view == optWidgetTransparentBg) {
 			UI.widgetTransparentBg = optWidgetTransparentBg.isChecked();
-			WidgetMain.updateWidgets(getApplication());
+			WidgetMain.updateWidgets();
 		} else if (view == optWidgetTextColor) {
 			ColorPickerView.showDialog(getHostActivity(), UI.widgetTextColor, view, this);
 		} else if (view == optWidgetIconColor) {
@@ -1485,11 +1478,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (parentView == optWidgetTextColor) {
 			UI.widgetTextColor = color;
 			optWidgetTextColor.setColor(color);
-			WidgetMain.updateWidgets(getApplication());
+			WidgetMain.updateWidgets();
 		} else if (parentView == optWidgetIconColor) {
 			UI.widgetIconColor = color;
 			optWidgetIconColor.setColor(color);
-			WidgetMain.updateWidgets(getApplication());
+			WidgetMain.updateWidgets();
 		}
 	}
 	
@@ -1538,7 +1531,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public void run() {
 		if (bluetoothMode)
 			refreshBluetoothStatus(true);
-		else if (Player.state < Player.STATE_TERMINATING && Player.getService() != null)
-			Player.saveConfig(Player.getService(), false);
+		else if (Player.state < Player.STATE_TERMINATING)
+			Player.saveConfig(false);
 	}
 }

@@ -32,13 +32,14 @@
 //
 package br.com.carlosrafaelgn.fplay.util;
 
-import android.content.Context;
 import android.util.SparseArray;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+
+import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class SerializableMap {
 	private static final int TYPE_INT = 0;
@@ -61,11 +62,11 @@ public final class SerializableMap {
 		dict = new SparseArray<>(initialCapacity);
 	}
 
-	public boolean serialize(Context context, String fileName) {
+	public boolean serialize(String fileName) {
 		FileOutputStream fs = null;
 		BufferedOutputStream bs = null;
 		try {
-			fs = context.openFileOutput(fileName, 0);
+			fs = Player.theApplication.openFileOutput(fileName, 0);
 			bs = new BufferedOutputStream(fs, 1024);
 			final byte[] buf = new byte[16];
 			
@@ -138,11 +139,11 @@ public final class SerializableMap {
 		return false;
 	}
 
-	public static SerializableMap deserialize(Context context, String fileName) {
+	public static SerializableMap deserialize(String fileName) {
 		FileInputStream fs = null;
 		BufferedInputStream bs = null;
 		try {
-			fs = context.openFileInput(fileName);
+			fs = Player.theApplication.openFileInput(fileName);
 			bs = new BufferedInputStream(fs, 1024);
 			byte[] buf = new byte[16];
 			int tmp;

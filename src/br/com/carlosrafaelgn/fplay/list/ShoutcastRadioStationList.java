@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
-import android.content.Context;
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
@@ -149,7 +147,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 	}
 
 	@Override
-	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages) {
+	protected void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages) {
 		int err = 0;
 		InputStream inputStream = null;
 		HttpURLConnection urlConnection = null;
@@ -174,7 +172,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 			if (baseUrl == null) {
 				final byte[] tmp = new byte[67];
 				final byte[] tmp2 = { 0x00, 0x08, 0x04, 0x0c, 0x02, 0x0a, 0x06, 0x0e, 0x01, 0x09, 0x05, 0x0d, 0x03, 0x0b, 0x07, 0x0f };
-				inputStream = context.getAssets().open("binary/url.dat");
+				inputStream = Player.theApplication.getAssets().open("binary/url.dat");
 				if (inputStream.read(tmp, 0, 67) == 67) {
 					for (int i = 0; i < 67; i++) {
 						final byte b = tmp[i];

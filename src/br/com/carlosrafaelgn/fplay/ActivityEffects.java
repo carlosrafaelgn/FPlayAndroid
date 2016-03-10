@@ -172,10 +172,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			updateEffects();
 			break;
 		case MNU_LOADPRESET:
-			startActivity(ActivityFileSelection.createPresetSelector(getHostActivity(), getText(R.string.load_preset), MNU_LOADPRESET, false, false, this), 0, null, false);
+			startActivity(ActivityFileSelection.createPresetSelector(getText(R.string.load_preset), MNU_LOADPRESET, false, false, this), 0, null, false);
 			break;
 		case MNU_SAVEPRESET:
-			startActivity(ActivityFileSelection.createPresetSelector(getHostActivity(), getText(R.string.save_preset), MNU_SAVEPRESET, true, false, this), 0, null, false);
+			startActivity(ActivityFileSelection.createPresetSelector(getText(R.string.save_preset), MNU_SAVEPRESET, true, false, this), 0, null, false);
 			break;
 		case MNU_AUDIOSINK_DEVICE:
 			audioSink = Player.AUDIO_SINK_DEVICE;
@@ -212,7 +212,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				return;
 			if (!Equalizer.isSupported()) {
 				chkEqualizer.setChecked(false);
-				UI.toast(getApplication(), R.string.effect_not_supported);
+				UI.toast(R.string.effect_not_supported);
 				return;
 			}
 			enablingEffect = true;
@@ -222,7 +222,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				return;
 			if (!BassBoost.isSupported()) {
 				chkBass.setChecked(false);
-				UI.toast(getApplication(), R.string.effect_not_supported);
+				UI.toast(R.string.effect_not_supported);
 				return;
 			}
 			enablingEffect = true;
@@ -232,7 +232,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				return;
 			if (!Virtualizer.isSupported()) {
 				chkVirtualizer.setChecked(false);
-				UI.toast(getApplication(), R.string.effect_not_supported);
+				UI.toast(R.string.effect_not_supported);
 				return;
 			}
 			enablingEffect = true;
@@ -511,7 +511,6 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	
 	private void prepareViewForMode(boolean isCreatingLayout) {
 		LinearLayout.LayoutParams lp;
-		final Context ctx = getApplication();
 		updateEffects();
 		if (Player.bassBoostMode) {
 			UI.animationReset();
@@ -572,6 +571,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				y = bgY + yInBox;
 			}
 			if (panelBars == null) {
+				final Context ctx = getHostActivity();
 				panelBars = new LinearLayout(ctx);
 				lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
 				panelBars.setLayoutParams(lp);
@@ -635,7 +635,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	@Override
 	public void onFileSelected(int id, FileSt file) {
 		if (id == MNU_LOADPRESET) {
-			final SerializableMap opts = SerializableMap.deserialize(getApplication(), file.path);
+			final SerializableMap opts = SerializableMap.deserialize(file.path);
 			if (opts != null) {
 				Equalizer.deserialize(opts, audioSink);
 				BassBoost.deserialize(opts, audioSink);
@@ -648,7 +648,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			Equalizer.serialize(opts, audioSink);
 			BassBoost.serialize(opts, audioSink);
 			Virtualizer.serialize(opts, audioSink);
-			opts.serialize(getApplication(), file.path);
+			opts.serialize(file.path);
 		}
 	}
 

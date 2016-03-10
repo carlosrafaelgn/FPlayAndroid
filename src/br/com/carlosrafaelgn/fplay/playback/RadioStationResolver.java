@@ -146,7 +146,7 @@ public final class RadioStationResolver {
 				return null;
 			radioStationList = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new IcecastRadioStationList("", "", "", ""));
 		}
-		final RadioStation radioStation = radioStationList.tryToFetchRadioStationAgain(Player.getService(), title);
+		final RadioStation radioStation = radioStationList.tryToFetchRadioStationAgain(title);
 		if (!alive)
 			return null;
 		if (radioStation != null) {

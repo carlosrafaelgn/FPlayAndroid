@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Point;
@@ -68,8 +67,8 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	private volatile String nextPath;
 	private volatile ReleasableBitmapWrapper nextBmp;
 
-	public AlbumArtVisualizer(Context context, Activity activity, boolean landscape, Intent extras) {
-		super(context);
+	public AlbumArtVisualizer(Activity activity, boolean landscape, Intent extras) {
+		super(activity);
 		sync = new Object();
 		absMax = Math.max(UI.dpToPxI(100.0f), Math.min(Math.min(UI.dpToPxI(300.0f), (UI.usableScreenWidth * 80) / 100), (UI.usableScreenHeight * 80 / 100)));
 		point = new Point();
@@ -173,7 +172,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	//Runs on a SECONDARY thread
 	@Override
-	public void load(Context context) {
+	public void load() {
 	}
 	
 	//Runs on ANY thread

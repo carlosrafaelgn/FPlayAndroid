@@ -42,6 +42,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
+import br.com.carlosrafaelgn.fplay.playback.Player;
+
 public final class OpenGLVisualizerSensorManager extends Thread implements Handler.Callback, SensorEventListener {
 	private static final int MSG_REGISTER = 0x0600;
 	private static final int MSG_UNREGISTER = 0x0601;
@@ -52,10 +54,10 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 	private Sensor accel, gyro, mag;
 	public final boolean isCapable, hasGyro;
 
-	public OpenGLVisualizerSensorManager(Context context, boolean forceMagnetic) {
+	public OpenGLVisualizerSensorManager(boolean forceMagnetic) {
 		super("OpenGL Visualizer Sensor Manager Thread");
 		try {
-			sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+			sensorManager = (SensorManager)Player.theApplication.getSystemService(Context.SENSOR_SERVICE);
 		} catch (Throwable ex) {
 			sensorManager = null;
 			accel = null;

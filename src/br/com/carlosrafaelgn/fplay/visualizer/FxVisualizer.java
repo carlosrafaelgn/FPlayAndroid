@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.annotation.TargetApi;
-import android.app.Application;
 import android.os.Build;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -45,7 +44,6 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 		void onFailure();
 		void onFinalCleanup();
 	}
-	private Application contextForVisualizerLoading;
 	private Visualizer visualizer;
 	private FxVisualizerHandler handler;
 	private android.media.audiofx.Visualizer fxVisualizer;
@@ -54,8 +52,7 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 	private int audioSessionId;
 	private Timer timer;
 
-	public FxVisualizer(Application contextForVisualizerLoading, Visualizer visualizer, FxVisualizerHandler handler) {
-		this.contextForVisualizerLoading = contextForVisualizerLoading;
+	public FxVisualizer(Visualizer visualizer, FxVisualizerHandler handler) {
 		this.visualizer = visualizer;
 		this.handler = handler;
 		audioSessionId = -1;
@@ -209,7 +206,6 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 			handler = null;
 		}
 		timer = null;
-		contextForVisualizerLoading = null;
 		visualizer = null;
 	}
 
@@ -240,7 +236,7 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 					}
 				} else if (!visualizerReady && alive && visualizer != null) {
 					hasEverBeenAlive = true;
-					visualizer.load(contextForVisualizerLoading);
+					visualizer.load();
 					visualizerReady = true;
 				}
 			}

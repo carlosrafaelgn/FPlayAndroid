@@ -278,7 +278,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			}).start();
 		} catch (Throwable ex) {
 			Player.songs.addingEnded();
-			UI.toast(getApplication(), ex.getMessage());
+			UI.toast(ex.getMessage());
 		}
 		if (play && addingFolder && Player.goBackWhenPlayingFolders) {
 			finish(0, null, true);
@@ -333,7 +333,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	public View createView() {
-		return new FileView(Player.getService(), albumArtFetcher, true);
+		return new FileView(Player.theApplication, albumArtFetcher, true);
 	}
 
 	private void processItemCheckboxClickInternal(int position, boolean forceNotifyCheckedChanged) {
@@ -496,7 +496,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 				fileList.removeSelection();
 				fileList.setSelection(-1, false);
 			} else {
-				UI.toast(getApplication(), R.string.msg_select_favorite_remove);
+				UI.toast(R.string.msg_select_favorite_remove);
 			}
 			lastClickedFavorite = null;
 			break;
@@ -662,7 +662,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		} else if (view == btnURL) {
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
-			
+
 			l.addView(UI.createDialogTextView(ctx, 0, null, ctx.getText(R.string.url)));
 
 			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -679,7 +679,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			l.addView(txtTitle);
 			
 			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
-			.setTitle(getText(R.string.add_url_title))
+			.setTitle(R.string.add_url_title)
 			.setView(l)
 			.setPositiveButton(R.string.add, this)
 			.setNegativeButton(R.string.cancel, this)

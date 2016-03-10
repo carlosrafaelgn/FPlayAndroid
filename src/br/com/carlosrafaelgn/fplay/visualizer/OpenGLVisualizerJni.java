@@ -77,6 +77,7 @@ import javax.microedition.khronos.opengles.GL10;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
@@ -116,8 +117,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private int cameraNativeOrientation;
 	private volatile boolean cameraOK;
 
-	public OpenGLVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
-		super(context);
+	public OpenGLVisualizerJni(Activity activity, boolean landscape, Intent extras) {
+		super(activity);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
 		type = ((t < TYPE_LIQUID || t > TYPE_IMMERSIVE_PARTICLE_VR) ? TYPE_SPECTRUM : t);
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
@@ -147,26 +148,26 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		}
 
 		try {
-			windowManager = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+			windowManager = (WindowManager)Player.theApplication.getSystemService(Context.WINDOW_SERVICE);
 		} catch (Throwable ex) {
 			windowManager = null;
 		}
 
 		if (type == TYPE_IMMERSIVE_PARTICLE || type == TYPE_IMMERSIVE_PARTICLE_VR) {
-			sensorManager = new OpenGLVisualizerSensorManager(context, false);
+			sensorManager = new OpenGLVisualizerSensorManager(false);
 			if (!sensorManager.isCapable) {
 				sensorManager = null;
-				UI.toast(activity, R.string.msg_no_sensors);
+				UI.toast(R.string.msg_no_sensors);
 			} else {
 				sensorManager.start();
-				CharSequence originalText = activity.getText(R.string.msg_immersive);
+				CharSequence originalText = Player.theApplication.getText(R.string.msg_immersive);
 				final int iconIdx = originalText.toString().indexOf('\u21BA');
 				if (iconIdx >= 0) {
 					final SpannableStringBuilder txt = new SpannableStringBuilder(originalText);
 					txt.setSpan(new ImageSpan(new TextIconDrawable(UI.ICON_3DPAN, UI.colorState_text_visualizer_static.getDefaultColor(), UI._22sp, 0), DynamicDrawableSpan.ALIGN_BASELINE), iconIdx, iconIdx + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 					originalText = txt;
 				}
-				UI.customToast(activity, originalText, true, UI._22sp, UI.colorState_text_visualizer_static.getDefaultColor(), new ColorDrawable(0x7f000000 | (UI.color_visualizer565 & 0x00ffffff)));
+				UI.customToast(originalText, true, UI._22sp, UI.colorState_text_visualizer_static.getDefaultColor(), new ColorDrawable(0x7f000000 | (UI.color_visualizer565 & 0x00ffffff)));
 			}
 		}
 		
@@ -676,7 +677,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	}
 
 	private void loadBitmap() {
-		if (activity == null || selectedUri == null)
+		if (selectedUri == null)
 			return;
 
 		/*String path = null;
@@ -707,7 +708,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		InputStream input = null;
 		Bitmap bitmap = null;
 		try {
-			input = activity.getContentResolver().openInputStream(selectedUri);
+			input = Player.theApplication.getContentResolver().openInputStream(selectedUri);
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inJustDecodeBounds = true;
 			bitmap = BitmapFactory.decodeStream(input, null, opts);
@@ -723,7 +724,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				largest >>= 1;
 			}
 
-			input = activity.getContentResolver().openInputStream(selectedUri);
+			input = Player.theApplication.getContentResolver().openInputStream(selectedUri);
 			opts.inJustDecodeBounds = false;
 			opts.inPreferredConfig = Bitmap.Config.RGB_565;
 			opts.inDither = true;
@@ -783,10 +784,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		case MSG_OPENGL_ERROR:
 			if (!alerted) {
 				alerted = true;
-				if (activity == null)
-					break;
-				final Context ctx = activity.getApplication();
-				UI.toast(ctx, ctx.getText(R.string.sorry) + " " + ((error != 0) ? (ctx.getText(R.string.opengl_error).toString() + UI.collon() + error) : ctx.getText(R.string.opengl_not_supported).toString()) + " :(");
+				UI.toast(Player.theApplication.getText(R.string.sorry) + " " + ((error != 0) ? (Player.theApplication.getText(R.string.opengl_error).toString() + UI.collon() + error) : Player.theApplication.getText(R.string.opengl_not_supported).toString()) + " :(");
 			}
 			break;
 		case MSG_CHOOSE_IMAGE:
@@ -875,9 +873,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on the MAIN thread
 	@Override
 	public void onCreateContextMenu(ContextMenu menu) {
-		if (activity == null)
-			return;
-		final Context ctx = activity.getApplication();
 		Menu s;
 		switch (type) {
 		case TYPE_LIQUID:
@@ -892,34 +887,34 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		case TYPE_IMMERSIVE_PARTICLE:
 			UI.separator(menu, 1, 0);
 		case TYPE_IMMERSIVE_PARTICLE_VR:
-			s = menu.addSubMenu(1, 0, 1, ctx.getText(R.string.diffusion) + "\u2026")
+			s = menu.addSubMenu(1, 0, 1, Player.theApplication.getText(R.string.diffusion) + "\u2026")
 				.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
 			UI.prepare(s);
-			s.add(0, MNU_DIFFUSION0, 0, ctx.getText(R.string.diffusion) + UI.punctuationSpace(": 0"))
+			s.add(0, MNU_DIFFUSION0, 0, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 0"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((diffusion == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			s.add(0, MNU_DIFFUSION1, 1, ctx.getText(R.string.diffusion) + UI.punctuationSpace(": 1"))
+			s.add(0, MNU_DIFFUSION1, 1, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 1"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((diffusion != 0 && diffusion != 2 && diffusion != 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			s.add(0, MNU_DIFFUSION2, 2, ctx.getText(R.string.diffusion) + UI.punctuationSpace(": 2"))
+			s.add(0, MNU_DIFFUSION2, 2, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 2"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((diffusion == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			s.add(0, MNU_DIFFUSION3, 3, ctx.getText(R.string.diffusion) + UI.punctuationSpace(": 3"))
+			s.add(0, MNU_DIFFUSION3, 3, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 3"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((diffusion == 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			s = menu.addSubMenu(1, 0, 2, ctx.getText(R.string.speed) + "\u2026")
+			s = menu.addSubMenu(1, 0, 2, Player.theApplication.getText(R.string.speed) + "\u2026")
 				.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
 			UI.prepare(s);
-			s.add(0, MNU_RISESPEED0, 0, ctx.getText(R.string.speed) + UI.punctuationSpace(": 0"))
+			s.add(0, MNU_RISESPEED0, 0, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 0"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((riseSpeed == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			s.add(0, MNU_RISESPEED1, 1, ctx.getText(R.string.speed) + UI.punctuationSpace(": 1"))
+			s.add(0, MNU_RISESPEED1, 1, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 1"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((riseSpeed != 0 && riseSpeed != 2 && riseSpeed != 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			s.add(0, MNU_RISESPEED2, 2, ctx.getText(R.string.speed) + UI.punctuationSpace(": 2"))
+			s.add(0, MNU_RISESPEED2, 2, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 2"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((riseSpeed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			s.add(0, MNU_RISESPEED3, 3, ctx.getText(R.string.speed) + UI.punctuationSpace(": 3"))
+			s.add(0, MNU_RISESPEED3, 3, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 3"))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((riseSpeed == 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			break;
@@ -931,13 +926,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			break;
 		}
 		UI.separator(menu, 2, 0);
-		menu.add(2, MNU_SPEED0, 1, ctx.getText(R.string.sustain) + " 3")
+		menu.add(2, MNU_SPEED0, 1, Player.theApplication.getText(R.string.sustain) + " 3")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED1, 2, ctx.getText(R.string.sustain) + " 2")
+		menu.add(2, MNU_SPEED1, 2, Player.theApplication.getText(R.string.sustain) + " 2")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-		menu.add(2, MNU_SPEED2, 3, ctx.getText(R.string.sustain) + " 1")
+		menu.add(2, MNU_SPEED2, 3, Player.theApplication.getText(R.string.sustain) + " 1")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 	}
@@ -983,7 +978,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on a SECONDARY thread (B)
 	@Override
-	public void load(Context context) {
+	public void load() {
 		SimpleVisualizerJni.commonCheckNeonMode();
 	}
 	

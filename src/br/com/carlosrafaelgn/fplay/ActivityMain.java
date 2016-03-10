@@ -118,7 +118,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 
 	@Override
 	public CharSequence getTitle() {
-		return "FPlay" + UI.collon() + Player.getCurrentTitle(getApplication(), false);
+		return "FPlay" + UI.collon() + Player.getCurrentTitle(false);
 	}
 
 	@Override
@@ -479,7 +479,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (Player.followCurrentSong && list != null && !list.changingCurrentWouldScareUser())
 				bringCurrentIntoView();
 			if (lblTitle != null) {
-				lblTitle.setText(Player.getCurrentTitle(getApplication(), barSeek == null && Player.isPreparing()));
+				lblTitle.setText(Player.getCurrentTitle(barSeek == null && Player.isPreparing()));
 				lblTitle.setSelected(true);
 				//if (ignoreAnnouncement)
 				//	ignoreAnnouncement = false;
@@ -501,7 +501,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 					barSeek.setValue(0);
 				}
 			} else if (lblTitle != null) {
-				lblTitle.setText(Player.getCurrentTitle(getApplication(), Player.isPreparing()));
+				lblTitle.setText(Player.getCurrentTitle(Player.isPreparing()));
 				lblTitle.setSelected(true);
 			}
 		}
@@ -578,7 +578,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
 		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
 			localeHasBeenChanged = true;
-			UI.reapplyForcedLocale(getApplication(), getHostActivity());
+			UI.reapplyForcedLocale(getHostActivity());
 		}
 		UI.prepare(menu);
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
@@ -723,32 +723,32 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 		switch (id) {
 		case MNU_VISUALIZER:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, SimpleVisualizerJni.class.getName()));
 			break;
 		case MNU_VISUALIZER_SPECTRUM:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
 			break;
 		case MNU_VISUALIZER_LIQUID:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_LIQUID));
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_LIQUID));
 			break;
 		case MNU_VISUALIZER_SPIN:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_SPIN));
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_SPIN));
 			break;
 		case MNU_VISUALIZER_PARTICLE:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_PARTICLE));
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_PARTICLE));
 			break;
 		case MNU_VISUALIZER_IMMERSIVE_PARTICLE:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
 			break;
 		case MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR:
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-				getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE_VR));
+				getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE_VR));
 			break;
 		case MNU_VISUALIZER_BLUETOOTH:
 			startActivity(new ActivitySettings(false, true), 0, null, false);
 			break;
 		case MNU_VISUALIZER_ALBUMART:
-			getHostActivity().startActivity((new Intent(getApplication(), ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, AlbumArtVisualizer.class.getName()));
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, AlbumArtVisualizer.class.getName()));
 			break;
 		}
 	}
@@ -756,9 +756,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private void selectPlaylist(int how) {
 		if (how == 1) {
 			Player.alreadySelected = false;
-			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.load_list), MNU_LOADLIST, false, true, this), 0, null, false);
+			startActivity(ActivityFileSelection.createPlaylistSelector(getText(R.string.load_list), MNU_LOADLIST, false, true, this), 0, null, false);
 		} else {
-			startActivity(ActivityFileSelection.createPlaylistSelector(getHostActivity(), getText(R.string.save_list), MNU_SAVELIST, true, false, this), 0, null, false);
+			startActivity(ActivityFileSelection.createPlaylistSelector(getText(R.string.save_list), MNU_SAVELIST, true, false, this), 0, null, false);
 		}
 	}
 
@@ -1409,7 +1409,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.lastCurrent = Player.songs.getCurrentPosition();
 		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
 			localeHasBeenChanged = true;
-			UI.reapplyForcedLocale(getApplication(), getHostActivity());
+			UI.reapplyForcedLocale(getHostActivity());
 		}
 	}
 	
@@ -1603,10 +1603,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onFileSelected(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
-			Player.songs.startDeserializingOrImportingFrom(getApplication(), file, true, false, false);
+			Player.songs.startDeserializingOrImportingFrom(file, true, false, false);
 			BackgroundActivityMonitor.start(getHostActivity());
 		} else {
-			Player.songs.startExportingTo(getApplication(), file);
+			Player.songs.startExportingTo(file);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
@@ -1614,7 +1614,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public void onAddClicked(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
-			Player.songs.startDeserializingOrImportingFrom(getApplication(), file, false, true, false);
+			Player.songs.startDeserializingOrImportingFrom(file, false, true, false);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
@@ -1622,14 +1622,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	public void onPlayClicked(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
-			Player.songs.startDeserializingOrImportingFrom(getApplication(), file, false, !Player.clearListWhenPlayingFolders, true);
+			Player.songs.startDeserializingOrImportingFrom(file, false, !Player.clearListWhenPlayingFolders, true);
 			BackgroundActivityMonitor.start(getHostActivity());
 		}
 	}
 
 	@Override
 	public boolean onDeleteClicked(int id, FileSt file) {
-		SongList.delete(getApplication(), file);
+		SongList.delete(file);
 		return true;
 	}
 

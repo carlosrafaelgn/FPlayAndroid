@@ -35,7 +35,6 @@ package br.com.carlosrafaelgn.fplay.activity;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
@@ -218,7 +217,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		if (Player.localSong == null) {
 			lblTitle.setText(getText(R.string.nothing_playing));
 		} else {
-			String txt = Player.getCurrentTitle(getApplication(), Player.isPreparing());
+			String txt = Player.getCurrentTitle(Player.isPreparing());
 			if (Player.localSong.extraInfo != null && Player.localSong.extraInfo.length() > 0 && (Player.localSong.extraInfo.length() > 1 || Player.localSong.extraInfo.charAt(0) != '-'))
 				txt += "\n" + Player.localSong.extraInfo;
 			lblTitle.setText(txt);
@@ -230,7 +229,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			return;
 		
 		if (updateInfo)
-			info.getInfo(this);
+			info.getInfo();
 		
 		panelTopHiding = 0;
 		panelTopAlpha = 1.0f;
@@ -343,7 +342,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		super.onCreate(null);
 
 		if (UI.forcedLocale != UI.LOCALE_NONE)
-			UI.reapplyForcedLocale(getApplication(), this);
+			UI.reapplyForcedLocale(this);
 
 		buttonColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.color_text_selected);
 		lblColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.colorState_text_visualizer_reactive.getDefaultColor());
@@ -369,8 +368,8 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 				final Class<?> clazz = Class.forName(name);
 				if (clazz != null) {
 					try {
-						info.getInfo(this);
-						visualizer = (Visualizer)clazz.getConstructor(Context.class, Activity.class, boolean.class, Intent.class).newInstance(getApplication(), this, info.isLandscape, si);
+						info.getInfo();
+						visualizer = (Visualizer)clazz.getConstructor(Activity.class, boolean.class, Intent.class).newInstance(this, info.isLandscape, si);
 					} catch (Throwable ex) {
 						ex.printStackTrace();
 					}
@@ -473,9 +472,9 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			visualizerPaused = false;
 			visualizer.onActivityResume();
 			if (!visualizerRequiresThread)
-				visualizer.load(getApplication());
+				visualizer.load();
 			else
-				fxVisualizer = new FxVisualizer(getApplication(), visualizer, this);
+				fxVisualizer = new FxVisualizer(visualizer, this);
 		}
 
 		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer(this, "UI Anim Timer", false, true, false) : null);
@@ -496,7 +495,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			return;
 		final boolean i = info.isLandscape;
 		final int w = info.usableScreenWidth, h = info.usableScreenHeight;
-		info.getInfo(this);
+		info.getInfo();
 		if (i != info.isLandscape || w != info.usableScreenWidth || h != info.usableScreenHeight) {
 			final Visualizer v = visualizer;
 			if (v != null)
@@ -584,7 +583,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 
 	@Override
 	public void onFailure() {
-		UI.toast(getApplication(), R.string.visualizer_not_supported);
+		UI.toast(R.string.visualizer_not_supported);
 	}
 
 	@Override
@@ -657,7 +656,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		if (info == null)
 			return;
 		if (UI.forcedLocale != UI.LOCALE_NONE)
-			UI.reapplyForcedLocale(getApplication(), this);
+			UI.reapplyForcedLocale(this);
 		UI.prepare(menu);
 		if (requiredOrientation == Visualizer.ORIENTATION_NONE)
 			menu.add(0, MNU_ORIENTATION, 0, UI.visualizerPortrait ? R.string.landscape : R.string.portrait)

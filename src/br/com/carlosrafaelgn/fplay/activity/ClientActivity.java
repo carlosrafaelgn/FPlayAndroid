@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.activity;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Application;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Build;
@@ -70,11 +69,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	public final void clearWindowFlags(int flags) {
 		activity.getWindow().clearFlags(flags);
 	}
-	
-	public final Application getApplication() {
-		return activity.getApplication();
-	}
-	
+
 	public final ActivityHost getHostActivity() {
 		return activity;
 	}

@@ -37,7 +37,6 @@ import android.view.ViewGroup;
 
 import java.io.File;
 
-import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
@@ -112,7 +111,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 			return;
 		try {
 			if (e != null)
-				UI.toast(Player.getService(), e);
+				UI.toast(e);
 			items = fetcher.files;
 			count = fetcher.count;
 			path = fetcher.path;

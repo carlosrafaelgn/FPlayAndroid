@@ -85,12 +85,12 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private FastAnimator animator;
 	private CharSequence msgEmptyList, msgLoading;
 
-	public static ActivityFileSelection createPlaylistSelector(Context context, CharSequence title, int id, boolean save, boolean hasButtons, OnFileSelectionListener listener) {
-		return new ActivityFileSelection(title, id, save, hasButtons, context.getText(R.string.item_list).toString(), FileSt.FILETYPE_PLAYLIST, listener);
+	public static ActivityFileSelection createPlaylistSelector(CharSequence title, int id, boolean save, boolean hasButtons, OnFileSelectionListener listener) {
+		return new ActivityFileSelection(title, id, save, hasButtons, Player.theApplication.getText(R.string.item_list).toString(), FileSt.FILETYPE_PLAYLIST, listener);
 	}
 
-	public static ActivityFileSelection createPresetSelector(Context context, CharSequence title, int id, boolean save, boolean hasButtons, OnFileSelectionListener listener) {
-		return new ActivityFileSelection(title, id, save, hasButtons, context.getText(R.string.item_preset).toString(), FileSt.FILETYPE_PRESET, listener);
+	public static ActivityFileSelection createPresetSelector(CharSequence title, int id, boolean save, boolean hasButtons, OnFileSelectionListener listener) {
+		return new ActivityFileSelection(title, id, save, hasButtons, Player.theApplication.getText(R.string.item_preset).toString(), FileSt.FILETYPE_PRESET, listener);
 	}
 
 	private ActivityFileSelection(CharSequence title, int id, boolean save, boolean hasButtons, String itemType, String fileType, OnFileSelectionListener listener) {
@@ -258,7 +258,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	public View createView() {
-		return new FileView(Player.getService(), null, true);
+		return new FileView(Player.theApplication, null, true);
 	}
 	
 	@Override
@@ -280,7 +280,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	private void confirm(final FileSt file, final int deleteIndex) {
 		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-			.setTitle(getText(R.string.oops))
+			.setTitle(R.string.oops)
 			.setView(UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)))
 			.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int which) {
@@ -288,7 +288,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					if (deleteIndex >= 0) {
 						try {
 							if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, file))
-								getApplication().deleteFile(file.path);
+								Player.theApplication.deleteFile(file.path);
 							final int p;
 							if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
 								checkedFile.isChecked = false;

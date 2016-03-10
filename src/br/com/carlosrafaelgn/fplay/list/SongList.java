@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.list;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Message;
@@ -101,26 +100,26 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	//--------------------------------------------------------------------------------------------
 	//These fifteen methods are the only ones that can be called from any thread (all the others must be called from the main thread)
 
-	public static void delete(Context context, String path) {
-		context.deleteFile(path);
+	public static void delete(String path) {
+		Player.theApplication.deleteFile(path);
 	}
 
-	public static void delete(Context context, long publicPlaylistId) {
-		context.getContentResolver().delete(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId), null, null);
+	public static void delete(long publicPlaylistId) {
+		Player.theApplication.getContentResolver().delete(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId), null, null);
 	}
 
-	public static void delete(Context context, FileSt file) {
+	public static void delete(FileSt file) {
 		if (file.isPrivatePlaylist())
-			delete(context, file.path);
+			delete(file.path);
 		else
-			delete(context, file.artistIdForAlbumArt);
+			delete(file.artistIdForAlbumArt);
 	}
 
-	public static long getPlaylistId(Context context, String publicPlaylistName) {
+	public static long getPlaylistId(String publicPlaylistName) {
 		Cursor c = null;
 		try {
 			final String[] proj = { "_id", "name" };
-			c = context.getContentResolver().query(Uri.parse("content://media/external/audio/playlists"), proj, null, null, null);
+			c = Player.theApplication.getContentResolver().query(Uri.parse("content://media/external/audio/playlists"), proj, null, null, null);
 			if (c != null) {
 				while (c.moveToNext()) {
 					if (c.getString(1).equalsIgnoreCase(publicPlaylistName))
@@ -134,11 +133,11 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public static void serialize(Context context, int current, Song[] songs, int count, String path) throws IOException {
+	public static void serialize(int current, Song[] songs, int count, String path) throws IOException {
 		FileOutputStream fs = null;
 		BufferedOutputStream bs = null;
 		try {
-			fs = context.openFileOutput(path, 0);
+			fs = Player.theApplication.openFileOutput(path, 0);
 			bs = new BufferedOutputStream(fs, 4096);
 			Serializer.serializeInt(bs, current);
 			Serializer.serializeInt(bs, 0x0100);
@@ -162,11 +161,11 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public static Song[] deserialize(Context context, String path, int[] current) throws IOException {
+	public static Song[] deserialize(String path, int[] current) throws IOException {
 		FileInputStream fs = null;
 		BufferedInputStream bs = null;
 		try {
-			fs = context.openFileInput(path);
+			fs = Player.theApplication.openFileInput(path);
 			bs = new BufferedInputStream(fs, 4096);
 			if (current != null)
 				current[0] = Serializer.deserializeInt(bs);
@@ -197,20 +196,20 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public static void exportTo(Context context, Song[] songs, int count, long publicPlaylistId, String newPublicPlaylistName, String fallbackPrivatePlaylistPath) throws Throwable {
+	public static void exportTo(Song[] songs, int count, long publicPlaylistId, String newPublicPlaylistName, String fallbackPrivatePlaylistPath) throws Throwable {
 		if (publicPlaylistId == 0 && (newPublicPlaylistName == null || newPublicPlaylistName.length() == 0))
 			throw new IllegalArgumentException();
 
 		Cursor c = null;
 		final ContentValues values = new ContentValues();
 		boolean deleteAllSongsFirst = false;
-		final ContentResolver resolver = context.getContentResolver();
+		final ContentResolver resolver = Player.theApplication.getContentResolver();
 
 		if (publicPlaylistId != 0) {
 			deleteAllSongsFirst = true;
 		} else {
 			//try to find a playlist with that same name, if not found create a new one
-			publicPlaylistId = getPlaylistId(context, newPublicPlaylistName);
+			publicPlaylistId = getPlaylistId(newPublicPlaylistName);
 			if (publicPlaylistId == 0) {
 				//create a new empty playlist
 				values.put("name", newPublicPlaylistName);
@@ -218,7 +217,10 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 				values.put("date_modified", System.currentTimeMillis());
 				try {
 					final String[] proj = { "_id" };
-					c = resolver.query(resolver.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, values), proj, null, null, null);
+					final Uri uri = resolver.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, values);
+					if (uri == null)
+						throw new IOException();
+					c = resolver.query(uri, proj, null, null, null);
 					if (c == null)
 						throw new IOException();
 					c.moveToNext();
@@ -267,8 +269,8 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					//and serialize all the songs as a private playlist
 					c.close();
 					c = null;
-					delete(context, publicPlaylistId);
-					serialize(context, -1, songs, count, fallbackPrivatePlaylistPath);
+					delete(publicPlaylistId);
+					serialize(-1, songs, count, fallbackPrivatePlaylistPath);
 					return;
 				}
 				audio_id = c.getLong(0);
@@ -285,9 +287,9 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public static Song[] importFrom(Context context, long publicPlaylistId) throws Throwable {
+	public static Song[] importFrom(long publicPlaylistId) throws Throwable {
 		final String[] proj = { "_data", "title", "artist", "album", "track", "duration", "year" };
-		final Cursor c = context.getContentResolver().query(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId + "/members"), proj, null, null, "play_order ASC");
+		final Cursor c = Player.theApplication.getContentResolver().query(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId + "/members"), proj, null, null, "play_order ASC");
 		final TypedRawArrayList<Song> songs = new TypedRawArrayList<>(Song.class, 64);
 		try {
 			if (c == null)
@@ -310,7 +312,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public void startDeserializingOrImportingFrom(final Context context, final FileSt file, final boolean entireListBeingLoaded, final boolean append, final boolean play) {
+	public void startDeserializingOrImportingFrom(final FileSt file, final boolean entireListBeingLoaded, final boolean append, final boolean play) {
 		try {
 			addingStarted();
 			(new Thread("List Deserializer Thread") {
@@ -329,7 +331,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 						ex = null;
 					} else {
 						try {
-							songs = ((file == null) ? deserialize(context, "_List", current) : (file.isPrivatePlaylist() ? deserialize(context, file.path, current) : importFrom(context, file.artistIdForAlbumArt)));
+							songs = ((file == null) ? deserialize("_List", current) : (file.isPrivatePlaylist() ? deserialize(file.path, current) : importFrom(file.artistIdForAlbumArt)));
 							done = true;
 							MainHandler.postToMainThread(this);
 						} catch (Throwable ex) {
@@ -349,7 +351,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public void startExportingTo(final Context context, final FileSt file) {
+	public void startExportingTo(final FileSt file) {
 		try {
 			addingStarted();
 			//we need to create a copy here, so the list can change while the other thread is running
@@ -369,14 +371,14 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 						}
 						final String path = (file.isPrivatePlaylist() ? file.path : (file.name + FileSt.FILETYPE_PLAYLIST));
 						if (!forcePrivatePlaylist) {
-							delete(context, path);
-							exportTo(context, songs, count, file.artistIdForAlbumArt, file.name, path);
+							delete(path);
+							exportTo(songs, count, file.artistIdForAlbumArt, file.name, path);
 						} else {
 							if (file.artistIdForAlbumArt == 0)
-								file.artistIdForAlbumArt = getPlaylistId(context, file.name);
+								file.artistIdForAlbumArt = getPlaylistId(file.name);
 							if (file.artistIdForAlbumArt != 0)
-								delete(context, file.artistIdForAlbumArt);
-							serialize(context, current, songs, count, path);
+								delete(file.artistIdForAlbumArt);
+							serialize(current, songs, count, path);
 						}
 					} catch (Throwable ex) {
 						MainHandler.toast((ex instanceof FileNotFoundException) ? R.string.error_file_not_found : R.string.error_gen);
@@ -555,12 +557,12 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		modificationVersion++;
 	}
 
-	public boolean serialize(Context context) {
+	public boolean serialize() {
 		try {
 			if (modificationVersion <= 1) {
 				RandomAccessFile rf = null;
 				try {
-					final File f = context.getFileStreamPath("_List");
+					final File f = Player.theApplication.getFileStreamPath("_List");
 					rf = new RandomAccessFile(f, "rw");
 					rf.seek(0);
 					final byte[] buf = new byte[4];
@@ -579,7 +581,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					}
 				}
 			}
-			serialize(context, current, items, count, "_List");
+			serialize(current, items, count, "_List");
 			modificationVersion = 1;
 			return true;
 		} catch (Throwable ex) {
@@ -952,7 +954,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		final SongView view = ((convertView != null) ? (SongView)convertView : new SongView(Player.getService()));
+		final SongView view = ((convertView != null) ? (SongView)convertView : new SongView(Player.theApplication));
 		view.setItemState(items[position], position, getItemState(position));
 		return view;
 	}

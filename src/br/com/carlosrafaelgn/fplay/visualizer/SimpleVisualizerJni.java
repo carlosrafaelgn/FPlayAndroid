@@ -90,8 +90,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private boolean lerp, voice;
 	private Surface surface;
 	
-	public SimpleVisualizerJni(Context context, Activity activity, boolean landscape, Intent extras) {
-		super(context);
+	public SimpleVisualizerJni(Activity activity, boolean landscape, Intent extras) {
+		super(activity);
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		init(UI.color_visualizer565);
 		lock = new SlimLock();
@@ -248,7 +248,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	//Runs on a SECONDARY thread
 	@Override
-	public void load(Context context) {
+	public void load() {
 		commonCheckNeonMode();
 	}
 	

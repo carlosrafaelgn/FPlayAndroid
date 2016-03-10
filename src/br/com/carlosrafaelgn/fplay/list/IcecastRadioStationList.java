@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
-import android.content.Context;
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
@@ -284,7 +282,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 	}
 
 	@Override
-	protected void fetchStationsInternal(Context context, int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages) {
+	protected void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages) {
 		int err = 0;
 		InputStream inputStream = null;
 		HttpURLConnection urlConnection = null;

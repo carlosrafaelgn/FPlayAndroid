@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 import android.view.ContextMenu;
@@ -98,7 +97,7 @@ public interface Visualizer {
 	int requiredOrientation();
 
 	//Runs on a SECONDARY thread
-	void load(Context context);
+	void load();
 	
 	//Runs on ANY thread
 	boolean isLoading();

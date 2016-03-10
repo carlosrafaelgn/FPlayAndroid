@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 import android.os.Message;
@@ -275,7 +274,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	//Runs on a SECONDARY thread
 	@Override
-	public void load(Context context) {
+	public void load() {
 		SimpleVisualizerJni.commonCheckNeonMode();
 	}
 
@@ -390,7 +389,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTED;
 			generateAndSendState();
 			(new Thread(this, "Bluetooth RX Thread")).start();
-			fxVisualizer = new FxVisualizer(null, this, this);
+			fxVisualizer = new FxVisualizer(this, this);
 			if (startTransmissionOnConnection)
 				startTransmission();
 		}

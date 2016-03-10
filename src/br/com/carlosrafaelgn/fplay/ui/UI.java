@@ -370,8 +370,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			screenHeight = outDisplayMetrics.heightPixels;
 		}
 		
-		public void getInfo(Context context) {
-			final Display display = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		public void getInfo() {
+			final Display display = ((WindowManager)Player.theApplication.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 			displayMetrics = new DisplayMetrics();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
 				initializeScreenDimensions17(display, displayMetrics);
@@ -522,13 +522,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 	}
 
-	public static void setUsingAlternateTypeface(Context context, boolean useAlternateTypeface) {
+	public static void setUsingAlternateTypeface(boolean useAlternateTypeface) {
 		UI.isUsingAlternateTypeface = useAlternateTypeface;
 		if (useAlternateTypeface && !isCurrentLocaleCyrillic()) {
 			if (defaultTypeface == null || !alternateTypefaceActive) {
 				alternateTypefaceActive = true;
 				try {
-					defaultTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/OpenDyslexicRegular.otf");
+					defaultTypeface = Typeface.createFromAsset(Player.theApplication.getAssets(), "fonts/OpenDyslexicRegular.otf");
 				} catch (Throwable ex) {
 					UI.isUsingAlternateTypeface = false;
 					alternateTypefaceActive = false;
@@ -612,7 +612,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		return l;
 	}
 	
-	public static String getLocaleDescriptionFromCode(Context context, int localeCode) {
+	public static String getLocaleDescriptionFromCode(int localeCode) {
 		switch (localeCode) {
 		case LOCALE_US:
 			return "English";
@@ -629,12 +629,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		case LOCALE_FR:
 			return "Français";
 		}
-		return context.getText(R.string.standard_language).toString();
+		return Player.theApplication.getText(R.string.standard_language).toString();
 	}
 	
-	public static int getCurrentLocale(Context context) {
+	public static int getCurrentLocale() {
 		try {
-			final String l = context.getResources().getConfiguration().locale.getLanguage().toLowerCase(Locale.US);
+			final String l = Player.theApplication.getResources().getConfiguration().locale.getLanguage().toLowerCase(Locale.US);
 			if ("pt".equals(l))
 				return LOCALE_PTBR;
 			if ("ru".equals(l))
@@ -666,28 +666,28 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 	}
 
-	public static void reapplyForcedLocale(Context context, Activity activityContext) {
-		setForcedLocale(context, activityContext, forcedLocale, false);
+	public static void reapplyForcedLocale(Activity activityContext) {
+		setForcedLocale(activityContext, forcedLocale, false);
 	}
 
-	public static boolean setForcedLocale(Context context, Activity activityContext, int localeCode, boolean reloadEmptyListString) {
+	public static boolean setForcedLocale(Activity activityContext, int localeCode, boolean reloadEmptyListString) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
 		if (forcedLocale == 0 && localeCode == 0) {
-			currentLocale = getCurrentLocale(context);
+			currentLocale = getCurrentLocale();
 			updateDecimalSeparator();
 			return false;
 		}
 		final boolean wasCyrillic = isCurrentLocaleCyrillic();
 		try {
 			final Locale l = getLocaleFromCode(localeCode);
-			final Resources res = context.getResources();
+			final Resources res = Player.theApplication.getResources();
 			Configuration cfg = new Configuration();
 			cfg.locale = l;
 			res.getConfiguration().updateFrom(cfg);
 			res.updateConfiguration(res.getConfiguration(), res.getDisplayMetrics());
 			forcedLocale = localeCode;
-			currentLocale = ((localeCode == 0) ? getCurrentLocale(context) : localeCode);
+			currentLocale = ((localeCode == 0) ? getCurrentLocale() : localeCode);
 			if (activityContext != null) {
 				final Resources res2 = activityContext.getResources();
 				if (res != res2) {
@@ -696,46 +696,48 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				}
 			}
 		} catch (Throwable ex) {
-			currentLocale = getCurrentLocale(context);
+			currentLocale = getCurrentLocale();
 		}
 		updateDecimalSeparator();
 		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
-			setUsingAlternateTypeface(context, true);
+			setUsingAlternateTypeface(true);
 			return true;
 		}
 		return false;
 	}
 	
-	public static void setUsingAlternateTypefaceAndForcedLocale(Context context, boolean useAlternateTypeface, int localeCode) {
+	public static void setUsingAlternateTypefaceAndForcedLocale(boolean useAlternateTypeface, int localeCode) {
 		UI.isUsingAlternateTypeface = useAlternateTypeface;
-		if (!setForcedLocale(context, null, localeCode, false))
-			setUsingAlternateTypeface(context, useAlternateTypeface);
+		if (!setForcedLocale(null, localeCode, false))
+			setUsingAlternateTypeface(useAlternateTypeface);
 	}
 	
 	public static void loadWidgetRelatedSettings(Context context) {
 		if (fullyInitialized)
 			return;
-		final SerializableMap opts = Player.loadConfigFromFile(context);
+		//sometimes the first thing called is this method
+		Player.theApplication = context.getApplicationContext();
+		final SerializableMap opts = Player.loadConfigFromFile();
 		//I know, this is ugly... I'll fix it one day...
-		setForcedLocale(context, null, opts.getInt(0x001E, LOCALE_NONE), false);
+		setForcedLocale(null, opts.getInt(0x001E, LOCALE_NONE), false);
 		//widgetTransparentBg = opts.getBoolean(0x0022, false);
 		widgetTransparentBg = opts.getBit(18);
 		widgetTextColor = opts.getInt(0x0023, 0xff000000);
 		widgetIconColor = opts.getInt(0x0024, 0xff000000);
 	}
 	
-	public static void initialize(Context context, Activity activityContext) {
-		accessibilityManager = (AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+	public static void initialize(Activity activityContext) {
+		accessibilityManager = (AccessibilityManager)Player.theApplication.getSystemService(Context.ACCESSIBILITY_SERVICE);
 		if (iconsTypeface == null)
-			iconsTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/icons.ttf");
+			iconsTypeface = Typeface.createFromAsset(Player.theApplication.getAssets(), "fonts/icons.ttf");
 		if (!fullyInitialized) {
 			try {
-				isTV = ((((UiModeManager)context.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
+				isTV = ((((UiModeManager)Player.theApplication.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
 			try {
-				hasTouch = context.getPackageManager().hasSystemFeature("android.hardware.touchscreen");
+				hasTouch = Player.theApplication.getPackageManager().hasSystemFeature("android.hardware.touchscreen");
 			} catch (Throwable ex) {
 				hasTouch = true;
 				ex.printStackTrace();
@@ -743,7 +745,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			fullyInitialized = true;
 		}
 		final DisplayInfo info = new DisplayInfo();
-		info.getInfo(context);
+		info.getInfo();
 		density = info.displayMetrics.density;
 		densityDpi = info.displayMetrics.densityDpi;
 		scaledDensity = info.displayMetrics.scaledDensity;
@@ -760,7 +762,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()
-		final float sd = context.getResources().getDisplayMetrics().scaledDensity;
+		final float sd = Player.theApplication.getResources().getDisplayMetrics().scaledDensity;
 		if (sd > 0)
 			scaledDensity = sd;
 		else if (scaledDensity <= 0)
@@ -792,12 +794,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (controlMargin << 1);
 		defaultCheckIconSize = dpToPxI(24); //both descent and ascent of iconsTypeface are 0!
-		if (!setForcedLocale(context, activityContext, forcedLocale, false))
-			setUsingAlternateTypeface(context, isUsingAlternateTypeface);
+		if (!setForcedLocale(activityContext, forcedLocale, false))
+			setUsingAlternateTypeface(isUsingAlternateTypeface);
 		setVerticalMarginLarge(isVerticalMarginLarge);
 	}
 	
-	public static void prepareWidgetPlaybackIcons(Context context) {
+	public static void prepareWidgetPlaybackIcons() {
 		if (widgetIconColor != createdWidgetIconColor) {
 			if (icPrev != null) {
 				icPrev.recycle();
@@ -819,7 +821,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		if (icPrev != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(context, null);
+			initialize(null);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		textPaint.setColor(widgetIconColor);
@@ -843,17 +845,17 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		textPaint.measureText("FPlay");
 	}
 	
-	public static void prepareNotificationPlaybackIcons(Context context) {
+	public static void prepareNotificationPlaybackIcons() {
 		if (icPrevNotif != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(context, null);
+			initialize(null);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		//instead of guessing the color, try to fetch the actual one first
 		int color = 0;
 		try {
-			color = getAndroidThemeColor(context, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? android.R.style.TextAppearance_Material_Notification_Title : android.R.style.TextAppearance_StatusBar_EventContent_Title, android.R.attr.textColor);
+			color = getAndroidThemeColor((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? android.R.style.TextAppearance_Material_Notification_Title : android.R.style.TextAppearance_StatusBar_EventContent_Title, android.R.attr.textColor);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -918,50 +920,50 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		return (int)((pt * xdpi_1_72) + 0.5f);
 	}
 	
-	public static CharSequence getThemeColorDescription(Context context, int idx) {
+	public static CharSequence getThemeColorDescription(int idx) {
 		switch (idx) {
 		case 0:
-			return context.getText(R.string.window_background);
+			return Player.theApplication.getText(R.string.window_background);
 		case 1:
-			return context.getText(R.string.control_mode_background);
+			return Player.theApplication.getText(R.string.control_mode_background);
 		case 2:
-			return context.getText(R.string.visualizer_background);
+			return Player.theApplication.getText(R.string.visualizer_background);
 		case 3:
 		case 4:
-			return context.getText(R.string.background);
+			return Player.theApplication.getText(R.string.background);
 		case 5:
-			return context.getText(R.string.icon);
+			return Player.theApplication.getText(R.string.icon);
 		case 6:
 		case 18:
 		case 22:
-			return context.getText(R.string.border);
+			return Player.theApplication.getText(R.string.border);
 		case 7:
-			return context.getText(R.string.divider);
+			return Player.theApplication.getText(R.string.divider);
 		case 8:
-			return context.getText(R.string.highlight_background);
+			return Player.theApplication.getText(R.string.highlight_background);
 		case 9:
-			return context.getText(R.string.highlight_text);
+			return Player.theApplication.getText(R.string.highlight_text);
 		case 10:
-			return context.getText(R.string.window_text);
+			return Player.theApplication.getText(R.string.window_text);
 		case 11:
-			return context.getText(R.string.window_text_disabled);
+			return Player.theApplication.getText(R.string.window_text_disabled);
 		case 12:
 		case 14:
 		case 15:
-			return context.getText(R.string.text);
+			return Player.theApplication.getText(R.string.text);
 		case 13:
-			return context.getText(R.string.text_secondary);
+			return Player.theApplication.getText(R.string.text_secondary);
 		case 16:
 		case 20:
-			return context.getText(R.string.top_background);
+			return Player.theApplication.getText(R.string.top_background);
 		case 17:
 		case 21:
-			return context.getText(R.string.bottom_background);
+			return Player.theApplication.getText(R.string.bottom_background);
 		case 19:
 		case 23:
-			return context.getText(R.string.pressed_background);
+			return Player.theApplication.getText(R.string.pressed_background);
 		}
-		return context.getText(R.string.no_info);
+		return Player.theApplication.getText(R.string.no_info);
 	}
 	
 	public static void serializeThemeColor(byte[] colors, int idx, int color) {
@@ -1285,22 +1287,22 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		colorState_text_title_static = colorState_text_static;
 	}
 
-	public static String getThemeString(Context context, int theme) {
+	public static String getThemeString(int theme) {
 		switch (theme) {
 		case THEME_CUSTOM:
-			return context.getText(R.string.custom).toString();
+			return Player.theApplication.getText(R.string.custom).toString();
 		case THEME_BLUE_ORANGE:
-			return context.getText(R.string.blue_orange).toString();
+			return Player.theApplication.getText(R.string.blue_orange).toString();
 		case THEME_BLUE:
-			return context.getText(R.string.blue).toString();
+			return Player.theApplication.getText(R.string.blue).toString();
 		case THEME_ORANGE:
-			return context.getText(R.string.orange).toString();
+			return Player.theApplication.getText(R.string.orange).toString();
 		case THEME_LIGHT:
-			return context.getText(R.string.light).toString();
+			return Player.theApplication.getText(R.string.light).toString();
 		case THEME_DARK_LIGHT:
-			return context.getText(R.string.dark_light).toString();
+			return Player.theApplication.getText(R.string.dark_light).toString();
 		case THEME_CREAMY:
-			return context.getText(R.string.creamy).toString();
+			return Player.theApplication.getText(R.string.creamy).toString();
 		default:
 			return "FPlay";
 		}
@@ -1347,6 +1349,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	public static void setAndroidThemeAccordingly(ActivityHost activityHost) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+			Player.theApplication.setTheme(isAndroidThemeLight() ? R.style.AppTheme : R.style.AppThemeDark);
 			activityHost.setTheme(isAndroidThemeLight() ? R.style.AppTheme : R.style.AppThemeDark);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 				activityHost.updateSystemColors(true);
@@ -1355,8 +1358,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			activityHost.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 	}
 
-	public static int getAndroidThemeColor(Context context, int style, int attribute) {
-		final TypedArray array = context.getTheme().obtainStyledAttributes(style, new int[]{attribute});
+	public static int getAndroidThemeColor(int style, int attribute) {
+		final TypedArray array = Player.theApplication.getTheme().obtainStyledAttributes(style, new int[]{attribute});
 		final int color = array.getColor(array.getIndex(0), 0);
 		array.recycle();
 		return color;
@@ -1412,40 +1415,40 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 	}
 
-	public static String getTransitionString(Context context, int transition) {
+	public static String getTransitionString(int transition) {
 		switch (transition) {
 		case TRANSITION_SLIDE_SMOOTH:
-			return context.getText(R.string.slide).toString() + " (" + context.getText(R.string.smooth).toString() + ")";
+			return Player.theApplication.getText(R.string.slide).toString() + " (" + Player.theApplication.getText(R.string.smooth).toString() + ")";
 		case TRANSITION_SLIDE:
-			return context.getText(R.string.slide).toString();
+			return Player.theApplication.getText(R.string.slide).toString();
 		case TRANSITION_FADE:
-			return context.getText(R.string.fade).toString();
+			return Player.theApplication.getText(R.string.fade).toString();
 		case TRANSITION_DISSOLVE:
-			return context.getText(R.string.dissolve).toString();
+			return Player.theApplication.getText(R.string.dissolve).toString();
 		case TRANSITION_ZOOM:
-			return context.getText(R.string.zoom).toString();
+			return Player.theApplication.getText(R.string.zoom).toString();
 		default:
-			return context.getText(R.string.none).toString();
+			return Player.theApplication.getText(R.string.none).toString();
 		}
 	}
 
-	public static void showNextStartupMsg(Activity activity) {
+	public static void showNextStartupMsg(Context context) {
 		if (msgStartup >= 29) {
 			msgStartup = 29;
 			return;
 		}
 		final int title = R.string.new_setting;
 		msgStartup = 29;
-		//final String content = activity.getText(R.string.startup_message).toString() + "!\n\n" + activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.expand_seek_bar).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.fullscreen).toString() + "\n- " + activity.getText(R.string.transition).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": " + activity.getText(R.string.creamy).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-		//final String content = activity.getText(R.string.startup_message).toString();
-		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.color_theme).toString() + ": FPlay\n\n" + activity.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + activity.getText(R.string.check_it_out).toString();
-		//final String content = "- " + activity.getText(R.string.visualizer).toString() + ":\n" +  activity.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + activity.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + activity.getText(R.string.check_it_out).toString();
-		//final String content = activity.getText(R.string.there_are_new_features).toString() + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + ":\n- Into the Particles (VR)\n\n" : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-		final String content = activity.getText(R.string.there_are_new_features).toString() + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + activity.getText(R.string.radio) : "") + "\n- " + activity.getText(R.string.play_with_long_press) + "\n- " + activity.getText(R.string.accessibility) + "\n- 3D\n\n" + activity.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") + activity.getText(R.string.transition) + "\n- " + getTransitionString(activity, TRANSITION_SLIDE_SMOOTH) + "\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? activity.getText(R.string.visualizer) + punctuationSpace(":\n- Into the Particles (VR)\n\n") : "") + activity.getText(R.string.startup_message).toString() + "\n- " + activity.getText(R.string.loudspeaker).toString() + "\n- " + activity.getText(R.string.earphones).toString() + "\n- " + activity.getText(R.string.bluetooth).toString() + "\n\n" + activity.getText(R.string.check_it_out).toString();
-		prepareDialogAndShow((new AlertDialog.Builder(activity))
-			.setTitle(activity.getText(title))
-			.setView(createDialogView(activity, content))
+		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
+		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
+		//final String content = context.getText(R.string.startup_message).toString();
+		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": FPlay\n\n" + context.getText(R.string.visualizer).toString() + "! :D\n- Liquid Spectrum\n- Spinning Rainbow\n\n" + context.getText(R.string.check_it_out).toString();
+		//final String content = "- " + context.getText(R.string.visualizer).toString() + ":\n" +  context.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + context.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + context.getText(R.string.check_it_out).toString();
+		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.accessibility) + "\n- 3D\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? context.getText(R.string.visualizer) + ":\n- Into the Particles (VR)\n\n" : "") + context.getText(R.string.startup_message).toString() + "\n- " + context.getText(R.string.loudspeaker).toString() + "\n- " + context.getText(R.string.earphones).toString() + "\n- " + context.getText(R.string.bluetooth).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
+		final String content = context.getText(R.string.there_are_new_features).toString() + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + context.getText(R.string.radio) : "") + "\n- " + context.getText(R.string.play_with_long_press) + "\n- " + context.getText(R.string.accessibility) + "\n- 3D\n\n" + context.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") + context.getText(R.string.transition) + "\n- " + getTransitionString(TRANSITION_SLIDE_SMOOTH) + "\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? context.getText(R.string.visualizer) + punctuationSpace(":\n- Into the Particles (VR)\n\n") : "") + context.getText(R.string.startup_message).toString() + "\n- " + context.getText(R.string.loudspeaker).toString() + "\n- " + context.getText(R.string.earphones).toString() + "\n- " + context.getText(R.string.bluetooth).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
+		prepareDialogAndShow((new AlertDialog.Builder(context))
+			.setTitle(context.getText(title))
+			.setView(createDialogView(context, content))
 			.setPositiveButton(R.string.got_it, null)
 			.create());
 	}
@@ -1455,7 +1458,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		UI.verticalMargin = (isVerticalMarginLarge ? controlLargeMargin : controlMargin);
 	}
 
-	public static boolean showMsg(Activity activity, int msg) {
+	public static boolean showMsg(Context context, int msg) {
 		if ((msgs & msg) != 0)
 			return false;
 		int title, content;
@@ -1471,9 +1474,9 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		default:
 			return false;
 		}
-		prepareDialogAndShow((new AlertDialog.Builder(activity))
-			.setTitle(activity.getText(title))
-			.setView(createDialogView(activity, activity.getText(content)))
+		prepareDialogAndShow((new AlertDialog.Builder(context))
+			.setTitle(context.getText(title))
+			.setView(createDialogView(context, context.getText(content)))
 			.setPositiveButton(R.string.got_it, null)
 			.create());
 		msgs |= msg;
@@ -1705,17 +1708,17 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		view.setPadding(p, topPadding, p, bottomPadding);
 	}
 
-	public static void toast(Context context, Throwable ex) {
+	public static void toast(Throwable ex) {
 		String s = ex.getMessage();
 		if (s != null && s.length() > 0)
-			s = context.getText(R.string.error).toString() + " " + s;
+			s = Player.theApplication.getText(R.string.error).toString() + " " + s;
 		else
-			s = context.getText(R.string.error).toString() + " " + ex.getClass().getName();
-		toast(context, s);
+			s = Player.theApplication.getText(R.string.error).toString() + " " + ex.getClass().getName();
+		toast(s);
 	}
 	
-	public static void toast(Context context, int resId) {
-		toast(context, context.getText(resId));
+	public static void toast(int resId) {
+		toast(Player.theApplication.getText(resId));
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -1724,10 +1727,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		view.setBackgroundDrawable(hasBorders ? new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_highlight));
 	}
 	
-	public static void toast(Context context, CharSequence text) {
+	public static void toast(CharSequence text) {
 		if (internalToast == null) {
-			final Toast t = new Toast(context);
-			final TextView v = new TextView(context);
+			final Toast t = new Toast(Player.theApplication);
+			final TextView v = new TextView(Player.theApplication);
 			mediumText(v);
 			prepareNotificationViewColors(v);
 			v.setGravity(Gravity.CENTER);
@@ -1742,9 +1745,9 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void customToast(Context context, CharSequence text, boolean longDuration, int textSize, int textColor, Drawable background) {
-		final Toast t = new Toast(context);
-		final TextView v = new TextView(context);
+	public static void customToast(CharSequence text, boolean longDuration, int textSize, int textColor, Drawable background) {
+		final Toast t = new Toast(Player.theApplication);
+		final TextView v = new TextView(Player.theApplication);
 		v.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 		v.setTypeface(defaultTypeface);
 		v.setTextColor(textColor);
@@ -1960,7 +1963,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffect(View view, int placement) {
-		final Context context = view.getContext();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 			try {
 				if (glowFilter == null) {
@@ -1981,7 +1983,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 							}
 							edgeEffect.setColor(color);
 						} else*/ {
-							mEdgeGlow.set(view, new BgEdgeEffect(context, color));
+							mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
 						}
 					}
 					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
@@ -1996,7 +1998,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 							}
 							edgeEffect.setColor(color);
 						} else*/ {
-							mEdgeGlow.set(view, new BgEdgeEffect(context, color));
+							mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
 						}
 					}
 					if (ok || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
@@ -2017,11 +2019,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			//:D amazing hack/workaround, as explained here:
 			//
 			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
-			Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			Drawable drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
 			if (drawable != null)
 				//the color is treated as SRC, and the bitmap is treated as DST
 				drawable.setColorFilter(glowFilter);
-			drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
 			if (drawable != null)
 				//hide the edge!!! ;)
 				drawable.setColorFilter(glowFilter);//edgeFilter);
@@ -2050,15 +2052,15 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void disableEdgeEffect(Context context) {
+	public static void disableEdgeEffect() {
 		if (glowFilter == null)
 			return;
 		try {
 			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
-			Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			Drawable drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
 			if (drawable != null)
 				drawable.setColorFilter(null);
-			drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
 			if (drawable != null)
 				drawable.setColorFilter(null);
 		} catch (Throwable ex) {

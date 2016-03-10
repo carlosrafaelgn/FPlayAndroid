@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay.list;
 
 import android.annotation.TargetApi;
-import android.app.Service;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -165,7 +164,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		this.path = path;
 		String unk;
 		try {
-			unk = Player.getService().getText(R.string.unknownArtist).toString();
+			unk = Player.theApplication.getText(R.string.unknownArtist).toString();
 		} catch (Throwable ex) {
 			unk = "(???)";
 		}
@@ -201,7 +200,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		files = Arrays.copyOf(files, capacity);
 	}
 	
-	private void addStorage(Service s, File path, boolean isExternal, int[] internalCount, int[] externalCount, int[] usbCount, int[] addedCount, String[] addedPaths) throws Throwable {
+	private void addStorage(File path, boolean isExternal, int[] internalCount, int[] externalCount, int[] usbCount, int[] addedCount, String[] addedPaths) throws Throwable {
 		if (!path.exists() || !path.isDirectory())
 			return;
 		
@@ -238,7 +237,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		if (isExternal) {
 			if (canonicalPathLC.contains("usb")) {
 				c = usbCount[0] + 1;
-				files[count] = new FileSt(canonicalPath, s.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE_USB);
+				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE_USB);
 				usbCount[0] = c;
 			} else {
 				//try to avoid duplication of internal sdcard on a few phones... 
@@ -249,26 +248,22 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 					return;
 				}
 				c = externalCount[0] + 1;
-				files[count] = new FileSt(canonicalPath, s.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE);
+				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE);
 				externalCount[0] = c;
 			}
 		} else {
-			files[count] = new FileSt(canonicalPath, s.getText(R.string.internal_storage).toString(), null, FileSt.TYPE_INTERNAL_STORAGE);
+			files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.internal_storage).toString(), null, FileSt.TYPE_INTERNAL_STORAGE);
 			internalCount[0]++;
 		}
 		count++;
 	}
 	
 	private void fetchRoot() {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-		
-		String desc = s.getText(R.string.artists).toString();
+		String desc = Player.theApplication.getText(R.string.artists).toString();
 		files[count] = new FileSt(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ARTIST_ROOT);
 		count++;
 		
-		desc = s.getText(R.string.albums).toString();
+		desc = Player.theApplication.getText(R.string.albums).toString();
 		files[count] = new FileSt(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ALBUM_ROOT);
 		count++;
 
@@ -282,7 +277,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
 			if (f.exists() && f.isDirectory()) {
-				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.music).toString(), null, FileSt.TYPE_MUSIC);
+				files[count] = new FileSt(f.getAbsolutePath(), Player.theApplication.getText(R.string.music).toString(), null, FileSt.TYPE_MUSIC);
 				count++;
 			}
 		} catch (Throwable ex) {
@@ -291,7 +286,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 			if (f.exists() && f.isDirectory()) {
-				files[count] = new FileSt(f.getAbsolutePath(), s.getText(R.string.downloads).toString(), null, FileSt.TYPE_DOWNLOADS);
+				files[count] = new FileSt(f.getAbsolutePath(), Player.theApplication.getText(R.string.downloads).toString(), null, FileSt.TYPE_DOWNLOADS);
 				count++;
 			}
 		} catch (Throwable ex) {
@@ -307,7 +302,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		String path;
 		
 		try {
-			addStorage(s, Environment.getExternalStorageDirectory(), Environment.isExternalStorageRemovable(), internalCount, externalCount, usbCount, addedCount, addedPaths);
+			addStorage(Environment.getExternalStorageDirectory(), Environment.isExternalStorageRemovable(), internalCount, externalCount, usbCount, addedCount, addedPaths);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -397,7 +392,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 					try {
 						//a few old phones erroneously return these 3 as mounted devices
 						if (!it.pathLC.equals("/system") && !it.pathLC.equals("/data") && !it.pathLC.equals("/cache"))
-							addStorage(s, new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
+							addStorage(new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 					} catch (Throwable ex) {
 						ex.printStackTrace();
 					}
@@ -430,27 +425,27 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		}
 		
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			fetchRoot19(s, internalCount, externalCount, usbCount, addedCount, addedPaths);
+			fetchRoot19(internalCount, externalCount, usbCount, addedCount, addedPaths);
 
 		if (count < files.length) {
-			files[count] = new FileSt(File.separator, s.getText(R.string.all_files).toString(), null, FileSt.TYPE_ALL_FILES);
+			files[count] = new FileSt(File.separator, Player.theApplication.getText(R.string.all_files).toString(), null, FileSt.TYPE_ALL_FILES);
 			count++;
 		}
 	}
 
 	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private void fetchRoot19(Service s, int[] internalCount, int[] externalCount, int[] usbCount, int[] addedCount, String[] addedPaths) {
+	private void fetchRoot19(int[] internalCount, int[] externalCount, int[] usbCount, int[] addedCount, String[] addedPaths) {
 		//Massive workaround! This is a desperate attempt to fetch all possible directories
 		//in newer CM and others...
 		try {
-			final File[] fs = s.getExternalFilesDirs(null);
+			final File[] fs = Player.theApplication.getExternalFilesDirs(null);
 			if (fs != null) {
-				for (int i = 0; i < fs.length; i++) {
-					final String p = fs[i].getAbsolutePath();
+				for (File f : fs) {
+					final String p = f.getAbsolutePath();
 					final int a = p.indexOf("Android");
 					if (a <= 0)
 						continue;
-					addStorage(s, new File(p.substring(0, a - 1)), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
+					addStorage(new File(p.substring(0, a - 1)), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 				}
 			}
 		} catch (Throwable ex) {
@@ -459,15 +454,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 
 	private void fetchArtists() {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-		
-		final String fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.artists).toString() + FileSt.FAKE_PATH_SEPARATOR;
+		final String fakeRoot = FileSt.FAKE_PATH_ROOT + Player.theApplication.getText(R.string.artists).toString() + FileSt.FAKE_PATH_SEPARATOR;
 		final String root = FileSt.ARTIST_ROOT + File.separator;
 		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
 		final String[] proj = { "_id", "artist", "number_of_albums", "number_of_tracks" };
-		final Cursor c = s.getContentResolver().query(Uri.parse("content://media/external/audio/artists"), proj, null, null, null);
+		final Cursor c = Player.theApplication.getContentResolver().query(Uri.parse("content://media/external/audio/artists"), proj, null, null, null);
 		//
 		//Despite its name, EXTERNAL_CONTENT_URI also comprises the internal storage
 		//(at least it does so in all devices I have tested!)
@@ -514,16 +505,12 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 	
 	private void fetchAlbums(String path) {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-		
 		final String artist;
 		final String fakeRoot;
 		final String root;
 		if (path == null) {
 			artist = null;
-			fakeRoot = FileSt.FAKE_PATH_ROOT + s.getText(R.string.albums).toString() + FileSt.FAKE_PATH_SEPARATOR;
+			fakeRoot = FileSt.FAKE_PATH_ROOT + Player.theApplication.getText(R.string.albums).toString() + FileSt.FAKE_PATH_SEPARATOR;
 			root = FileSt.ALBUM_ROOT + File.separator;
 		} else {
 			final int fakePathIdx = path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR);
@@ -535,7 +522,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		}
 		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
 		final String[] proj = { "_id", "album", "album_art", "numsongs" };
-		final Cursor c = s.getContentResolver().query(Uri.parse((artist == null) ?
+		final Cursor c = Player.theApplication.getContentResolver().query(Uri.parse((artist == null) ?
 				"content://media/external/audio/albums" :
 				"content://media/external/audio/artists/" + artist + "/albums"), proj, null, null, null);
 		//final String[] proj = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ALBUM_ART, MediaStore.Audio.Albums.NUMBER_OF_SONGS };
@@ -567,10 +554,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 	
 	private void fetchTracks(String path) {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-		
 		final int fakePathIdx = path.indexOf(FileSt.FAKE_PATH_ROOT_CHAR);
 		final String realPath = path.substring(0, fakePathIdx);
 		final int albumIdIdx = realPath.lastIndexOf(File.separatorChar) + 1;
@@ -578,7 +561,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		final String album = realPath.substring(albumIdIdx);
 		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
 		final String[] proj = { "_data", "title", "track" };
-		final Cursor c = s.getContentResolver().query(
+		final Cursor c = Player.theApplication.getContentResolver().query(
 			Uri.parse("content://media/external/audio/media"), proj,
 			(artist == null) ?
 				"album_id=?" :
@@ -674,12 +657,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 
 	private TypedRawArrayList<FileSt> fetchPublicPlaylists() {
-		final Service s = Player.getService();
-		if (s == null)
-			return null;
-
 		final String[] proj = { "_id", "name" };
-		final Cursor c = s.getContentResolver().query(Uri.parse("content://media/external/audio/playlists"), proj, null, null, null);
+		final Cursor c = Player.theApplication.getContentResolver().query(Uri.parse("content://media/external/audio/playlists"), proj, null, null, null);
 		if (c == null)
 			return null;
 		final TypedRawArrayList<FileSt> tmp = new TypedRawArrayList<>(FileSt.class, 64);
@@ -698,17 +677,13 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 
 	private void fetchPrivateFiles(String fileType) {
-		final Service s = Player.getService();
-		if (s == null)
-			return;
-
 		if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 			count = 0;
 			return;
 		}
 
 		final TypedRawArrayList<FileSt> playlists = (FileSt.FILETYPE_PLAYLIST.equals(fileType) ? fetchPublicPlaylists() : null);
-		final String[] files = s.fileList();
+		final String[] files = Player.theApplication.fileList();
 		if (files == null || files.length == 0) {
 			if (playlists != null) {
 				count = playlists.size();
