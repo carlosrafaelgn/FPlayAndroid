@@ -39,8 +39,7 @@ import android.media.audiofx.AudioEffect;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class ExternalFx {
-	private static int sessionId = Integer.MIN_VALUE;
-	private static boolean enabled, supported;
+	private static boolean enabled, applied, supported;
 
 	static void loadConfig(SerializableMap opts) {
 		enabled = opts.getBit(Player.OPTBIT_EXTERNALFX_ENABLED);
@@ -54,7 +53,7 @@ public final class ExternalFx {
 		final Intent intent = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
-		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId);
+		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
 		return intent;
 	}
 
@@ -62,7 +61,7 @@ public final class ExternalFx {
 		final Intent intent = new Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
-		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId);
+		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
 		return intent;
 	}
 
@@ -70,13 +69,11 @@ public final class ExternalFx {
 		final Intent intent = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
-		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId);
+		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
 		return intent;
 	}
 
-	static void _checkSupport(int newSessionId) {
-		if (newSessionId != Integer.MIN_VALUE)
-			sessionId = newSessionId;
+	static void _checkSupport() {
 		try {
 			PackageManager packageManager = Player.theApplication.getPackageManager();
 			supported = (
@@ -89,19 +86,18 @@ public final class ExternalFx {
 		}
 	}
 
-	static void _initialize(int newSessionId) {
-		if (newSessionId != Integer.MIN_VALUE)
-			sessionId = newSessionId;
+	static void _initialize() {
+		//just a placeholder to keep this effect similar to the others
 	}
 
 	static void _release() {
-		if (enabled) {
+		if (applied) {
 			try {
 				Player.theApplication.startActivity(createCloseIntent());
 			} catch (Throwable ex) {
 				supported = false;
 			}
-			enabled = false;
+			applied = false;
 		}
 	}
 
@@ -110,14 +106,31 @@ public final class ExternalFx {
 	}
 
 	public static boolean isEnabled() {
-		return (enabled && supported);
+		return enabled;
+	}
+
+	public static boolean showUI() {
+		if (supported && enabled) {
+			try {
+				Player.theApplication.startActivity(createDisplayIntent());
+				return true;
+			} catch (Throwable ex) {
+				supported = false;
+			}
+		}
+		return false;
 	}
 
 	static void _setEnabled(boolean enabled) {
 		ExternalFx.enabled = enabled;
 		try {
-			if (supported && enabled)
+			if (!enabled) {
+				Player.theApplication.startActivity(createCloseIntent());
+				applied = false;
+			} else if (supported) {
+				applied = true;
 				Player.theApplication.startActivity(createOpenIntent());
+			}
 		} catch (Throwable ex) {
 			supported = false;
 		}

@@ -37,7 +37,7 @@ import java.util.Arrays;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Equalizer {
-	private static int sessionId = Integer.MIN_VALUE, minBandLevel, maxBandLevel;
+	private static int minBandLevel, maxBandLevel;
 	private static boolean enabled, enabled_wire, enabled_bt;
 	private static int[] bandLevels, bandLevels_wire, bandLevels_bt, bandFrequencies;
 	private static android.media.audiofx.Equalizer theEqualizer;
@@ -149,11 +149,14 @@ public final class Equalizer {
 		}
 	}
 
-	static void _initialize(int newSessionId) {
-		if (newSessionId != Integer.MIN_VALUE)
-			sessionId = newSessionId;
+	static void _checkSupport() {
+		_initialize();
+		_release();
+	}
+
+	static void _initialize() {
 		try {
-			theEqualizer = new android.media.audiofx.Equalizer(0, sessionId);
+			theEqualizer = new android.media.audiofx.Equalizer(0, Player.audioSessionId);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 			return;
@@ -261,7 +264,7 @@ public final class Equalizer {
 		try {
 			if (!enabled) {
 				theEqualizer.setEnabled(false);
-			} else if (sessionId != Integer.MIN_VALUE) {
+			} else {
 				_applyAllBandSettings();
 				theEqualizer.setEnabled(true);
 			}

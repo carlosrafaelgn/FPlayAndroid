@@ -151,7 +151,7 @@ public final class FxVisualizer implements Runnable, Timer.TimerHandler {
 
 	private boolean initialize() {
 		try {
-			final int g = Player.getAudioSessionId();
+			final int g = Player.audioSessionId;
 			if (g < 0)
 				return true;
 			if (fxVisualizer != null) {

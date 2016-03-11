@@ -200,6 +200,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_HTTP_STREAM_RECEIVER_PREPARED = 0x011C;
 	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x011D;
 	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x011E;
+	private static final int MSG_ENABLE_EXTERNAL_FX = 0x011F;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -276,6 +277,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayer player, nextPlayer;
+	public static int audioSessionId;
 
 	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
 	//so they will survive their respective activity's destruction
@@ -343,6 +345,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_nextMayHaveChanged((Song)msg.obj);
 				break;
 			case MSG_ENABLE_EFFECTS:
+				ExternalFx._release();
 				_enableEffects(msg.arg1, msg.arg2, (Runnable)msg.obj);
 				break;
 			case MSG_COMMIT_EQUALIZER:
@@ -355,9 +358,26 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				Virtualizer._commit(msg.arg2);
 				break;
 			case MSG_COMMIT_ALL_EFFECTS:
+				ExternalFx._release();
 				Equalizer._commit(-1, msg.arg2);
 				BassBoost._commit(msg.arg2);
 				Virtualizer._commit(msg.arg2);
+				break;
+			case MSG_ENABLE_EXTERNAL_FX:
+				if (msg.arg1 != 0) {
+					if (ExternalFx.isSupported()) {
+						Equalizer._release();
+						BassBoost._release();
+						Virtualizer._release();
+						ExternalFx._initialize();
+						ExternalFx._setEnabled(true);
+					}
+				} else {
+					ExternalFx._setEnabled(false);
+					_reinitializeEffects();
+				}
+				if (msg.obj != null)
+					MainHandler.postToMainThread((Runnable)msg.obj);
 				break;
 			case MSG_SONG_LIST_DESERIALIZED:
 				_songListDeserialized(msg.obj);
@@ -550,32 +570,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					looper = Looper.myLooper();
 					handler = new CoreHandler();
 					_initializePlayers();
-					Equalizer._initialize(player.getAudioSessionId());
-					Equalizer._release();
-					BassBoost._initialize(player.getAudioSessionId());
-					BassBoost._release();
-					Virtualizer._initialize(player.getAudioSessionId());
-					Virtualizer._release();
-					ExternalFx._checkSupport(player.getAudioSessionId());
+					Equalizer._checkSupport();
+					BassBoost._checkSupport();
+					Virtualizer._checkSupport();
+					ExternalFx._checkSupport();
 					_checkAudioSink(false, false, false);
 					audioSinkUsedInEffects = audioSink;
-					if (ExternalFx.isEnabled()) {
-						ExternalFx._initialize(player.getAudioSessionId());
-						ExternalFx._setEnabled(true);
-					} else {
-						if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
-							Equalizer._initialize(player.getAudioSessionId());
-							Equalizer._setEnabled(true, audioSinkUsedInEffects);
-						}
-						if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
-							BassBoost._initialize(player.getAudioSessionId());
-							BassBoost._setEnabled(true, audioSinkUsedInEffects);
-						}
-						if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
-							Virtualizer._initialize(player.getAudioSessionId());
-							Virtualizer._setEnabled(true, audioSinkUsedInEffects);
-						}
-					}
+					_reinitializeEffects();
 					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
 					Looper.loop();
 					if (song != null) {
@@ -892,6 +893,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_COMMIT_ALL_EFFECTS, 0, audioSink), SystemClock.uptimeMillis());
 	}
 
+	public static void enableExternalFx(boolean enabled, Runnable callback) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_EXTERNAL_FX, (enabled ? 8 : 0), 0, callback), SystemClock.uptimeMillis());
+	}
+
 	public static boolean isPreparing() {
 		return (localPlayerState == PLAYER_STATE_PREPARING || playerBuffering);
 	}
@@ -917,10 +924,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
 		final HttpStreamReceiver receiver = httpStreamReceiver;
 		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
-	}
-
-	public static int getAudioSessionId() {
-		return ((localPlayer == null) ? -1 : localPlayer.getAudioSessionId());
 	}
 
 	private static MediaPlayer _createPlayer() {
@@ -1043,6 +1046,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			nextPlayer = _createPlayer();
 			nextPlayer.setAudioSessionId(player.getAudioSessionId());
 		}
+		//store the latest audio session id
+		audioSessionId = player.getAudioSessionId();
 	}
 
 	private static boolean _requestFocus() {
@@ -1405,22 +1410,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		BassBoost._release();
 		Virtualizer._release();
 		if ((enabledFlags & 1) != 0) {
-			if (player != null)
-				Equalizer._initialize(player.getAudioSessionId());
+			Equalizer._initialize();
 			Equalizer._setEnabled(true, audioSink);
 		} else {
 			Equalizer._setEnabled(false, audioSink);
 		}
 		if ((enabledFlags & 2) != 0) {
-			if (player != null)
-				BassBoost._initialize(player.getAudioSessionId());
+			BassBoost._initialize();
 			BassBoost._setEnabled(true, audioSink);
 		} else {
 			BassBoost._setEnabled(false, audioSink);
 		}
 		if ((enabledFlags & 4) != 0) {
-			if (player != null)
-				Virtualizer._initialize(player.getAudioSessionId());
+			Virtualizer._initialize();
 			Virtualizer._setEnabled(true, audioSink);
 		} else {
 			Virtualizer._setEnabled(false, audioSink);
@@ -1435,19 +1437,24 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer._release();
 		BassBoost._release();
 		Virtualizer._release();
-		final int sessionId = player.getAudioSessionId();
+		ExternalFx._release();
 		audioSinkUsedInEffects = audioSink;
-		if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
-			Equalizer._initialize(sessionId);
-			Equalizer._setEnabled(true, audioSinkUsedInEffects);
-		}
-		if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
-			BassBoost._initialize(sessionId);
-			BassBoost._setEnabled(true, audioSinkUsedInEffects);
-		}
-		if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
-			Virtualizer._initialize(sessionId);
-			Virtualizer._setEnabled(true, audioSinkUsedInEffects);
+		if (ExternalFx.isEnabled()) {
+			ExternalFx._initialize();
+			ExternalFx._setEnabled(true);
+		} else {
+			if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
+				Equalizer._initialize();
+				Equalizer._setEnabled(true, audioSinkUsedInEffects);
+			}
+			if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
+				BassBoost._initialize();
+				BassBoost._setEnabled(true, audioSinkUsedInEffects);
+			}
+			if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
+				Virtualizer._initialize();
+				Virtualizer._setEnabled(true, audioSinkUsedInEffects);
+			}
 		}
 	}
 
@@ -1783,7 +1790,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//force the player to always start playing as if coming from a pause
 		silenceMode = SILENCE_NORMAL;
 		playerBuffering = true;
-		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), player.getAudioSessionId(), song.path);
+		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), audioSessionId, song.path);
 		if (httpStreamReceiver.start()) {
 			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 				return;

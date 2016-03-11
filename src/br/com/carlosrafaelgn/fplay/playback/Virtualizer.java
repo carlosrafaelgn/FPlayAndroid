@@ -35,7 +35,7 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Virtualizer {
-	private static int sessionId = Integer.MIN_VALUE, strength, strength_wire, strength_bt;
+	private static int strength, strength_wire, strength_bt;
 	private static boolean enabled, enabled_wire, enabled_bt, strengthSupported, supported;
 	private static android.media.audiofx.Virtualizer theVirtualizer;
 
@@ -95,11 +95,14 @@ public final class Virtualizer {
 		opts.put(Player.OPT_VIRTUALIZER_STRENGTH_BT, strength_bt);
 	}
 
-	static void _initialize(int newSessionId) {
-		if (newSessionId != Integer.MIN_VALUE)
-			sessionId = newSessionId;
+	static void _checkSupport() {
+		_initialize();
+		_release();
+	}
+
+	static void _initialize() {
 		try {
-			theVirtualizer = new android.media.audiofx.Virtualizer(0, sessionId);
+			theVirtualizer = new android.media.audiofx.Virtualizer(0, Player.audioSessionId);
 			strengthSupported = theVirtualizer.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {
@@ -169,7 +172,7 @@ public final class Virtualizer {
 		try {
 			if (!enabled) {
 				theVirtualizer.setEnabled(false);
-			} else if (sessionId != Integer.MIN_VALUE) {
+			} else {
 				if (!strengthSupported) {
 					switch (audioSink) {
 					case Player.AUDIO_SINK_WIRE:
