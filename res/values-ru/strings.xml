@@ -178,7 +178,7 @@
     <string name="green">Зеленый</string>
     <string name="orange">Оранжевая</string>
     <string name="light">Светлая</string>
-    <string name="dark_light">Темный-Светлая</string>
+    <string name="dark_light">Темный/Светлая</string>
     <string name="new_setting">Новая настройка!</string>
     <string name="there_is_a_new_setting">Существует новый параметр в меню \"Настройки\":</string>
     <string name="check_it_out">Перевірте це :)</string>
@@ -333,5 +333,6 @@
     <string name="play_with_long_press">Длительное нажатие начинает воспроизведение при добавлении песни</string>
     <string name="smooth">Гладкий</string>
     <string name="transition_popup">Переход (Меню):</string>
+    <string name="dark">Темный</string>
 
 </resources>

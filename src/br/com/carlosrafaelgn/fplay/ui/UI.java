@@ -132,8 +132,9 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static final int THEME_LIGHT = 4;
 	public static final int THEME_DARK_LIGHT = 5;
 	public static final int THEME_CREAMY = 6;
-	//present the new FPlay theme to all those using the creamy theme ;)
-	public static final int THEME_FPLAY = 3;
+	public static final int THEME_FPLAY = 7;
+	//present the new FPlay Dark theme to all those using FPlay theme ;)
+	public static final int THEME_FPLAY_DARK = 3;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -1041,21 +1042,20 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		return true;
 	}
 
+	public static void updateColorDividerPressed() {
+		color_divider_pressed = ColorUtils.blend(color_divider, color_text_listitem, 0.7f);
+	}
+
 	public static void updateColorListBg() {
-		if (is3D) {
-			if (ColorUtils.relativeLuminance(color_list_original) >= 0.5) {
-				color_list = color_list_original;
-				color_list_bg = ColorUtils.blend(color_list_original, 0xff000000, 0.9286f);
-				color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.77777777f);
-			} else {
-				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
-				color_list_bg = color_list_original;
-				color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.77777777f);
-			}
-		} else {
+		if (ColorUtils.relativeLuminance(color_list_original) >= 0.5) {
 			color_list = color_list_original;
+			color_list_bg = (is3D ? ColorUtils.blend(color_list_original, 0xff000000, 0.9286f) : color_list_original);
+			color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.77777777f);
+		} else {
+			if (is3D)
+				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
 			color_list_bg = color_list_original;
-			color_list_shadow = color_divider;
+			color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.77777777f);
 		}
 	}
 
@@ -1088,7 +1088,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		colorState_highlight_static = new BgColorStateList(color_highlight);
 		colorState_text_highlight_static = new BgColorStateList(color_text_highlight);
 		colorState_text_highlight_reactive = new BgColorStateList(color_text_highlight, color_text_selected);
-		color_divider_pressed = ColorUtils.blend(color_divider, color_text_listitem, 0.7f);
 		if (!custom) {
 			color_text_title = color_highlight;
 			colorState_text_title_static = colorState_highlight_static;
@@ -1096,10 +1095,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			colorState_text_control_mode_reactive = colorState_text_reactive;
 			colorState_text_visualizer_static = colorState_text_static;
 			colorState_text_visualizer_reactive = colorState_text_reactive;
+		} else {
+			updateColorDividerPressed();
 		}
 		color_list_original = color_list;
 		updateColorListBg();
-		color_glow = ((theme == THEME_FPLAY) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
+		color_glow = ((theme == THEME_FPLAY || theme == THEME_FPLAY_DARK) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
 		glowFilter = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) ? new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN) : null);
@@ -1108,7 +1109,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static boolean loadCustomTheme() {
 		if (!deserializeThemeFromArray(customColors)) {
 			customColors = null;
-			loadLightTheme();
+			loadFPlayDarkTheme();
 			return false;
 		}
 		finishLoadingTheme(true);
@@ -1204,6 +1205,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static void loadBlueOrangeTheme() {
 		loadCommonColors(false);
 		finishLoadingTheme(false);
+		updateColorDividerPressed();
 	}
 	
 	public static void loadBlueTheme() {
@@ -1211,11 +1213,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_highlight = 0xff94c0ff;
 		color_text_listitem_secondary = 0xff94c0ff;
 		finishLoadingTheme(false);
+		updateColorDividerPressed();
 	}
 	
 	public static void loadOrangeTheme() {
 		loadCommonColors(true);
 		finishLoadingTheme(false);
+		updateColorDividerPressed();
 	}
 	
 	public static void loadLightTheme() {
@@ -1232,29 +1236,32 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
 		color_menu_border = 0xffc4c4c4;
+		updateColorDividerPressed();
 	}
 	
 	public static void loadDarkLightTheme() {
 		loadCommonColors(false);
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffc4c4c4;
 		color_text_listitem_secondary = 0xff0000f1;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
-		color_menu_border = 0xffc4c4c4;
+		color_divider = color_list_shadow; //0xffc4c4c4;
+		color_menu_border = color_list_shadow; //0xffc4c4c4;
+		updateColorDividerPressed();
 	}
 	
 	public static void loadCreamyTheme() {
 		loadCommonColors(false);
 		color_window = 0xff275a96;
 		color_list = 0xfff9f6ea;
-		color_divider = 0xffaabbcc;
 		color_text_listitem_secondary = 0xff0052a8;
 		color_text_listitem = 0xff000000;
 		finishLoadingTheme(false);
+		color_divider = 0xffaabbcc;
 		color_menu_border = 0xffaabbcc;
 		color_text_title = color_text;
 		colorState_text_title_static = colorState_text_static;
+		updateColorDividerPressed();
 	}
 
 	public static void loadFPlayTheme() {
@@ -1264,11 +1271,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_list = 0xfffcfcfc;
 		color_menu = 0xfffcfcfc;
 		color_menu_icon = 0xff555555;
-		color_divider = 0xffc4c4c4;
 		color_highlight = 0xffffcc66;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
-		color_text_disabled = 0xff8c8c8c;
+		color_text_disabled = 0xff555555;
 		color_text_listitem = 0xff000000;
 		color_text_listitem_secondary = 0xff353be0;
 		color_text_selected = 0xff000000;
@@ -1282,9 +1288,40 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_focused_border = 0xff696dbf;
 		color_focused_pressed = 0xffe5e6ff;
 		finishLoadingTheme(false);
-		color_menu_border = 0xffc4c4c4;
+		color_divider = color_list_shadow; //0xffc4c4c4
+		color_menu_border = color_list_shadow; //0xffc4c4c4;
 		color_text_title = color_text;
 		colorState_text_title_static = colorState_text_static;
+		updateColorDividerPressed();
+	}
+
+	public static void loadFPlayDarkTheme() {
+		color_window = 0xff3d3d5b;
+		color_control_mode = 0xff000000;
+		color_visualizer = 0xff000000;
+		color_list = 0xffcccccc;
+		color_menu = 0xff3d3d5b;
+		color_menu_icon = 0xffffcc66;
+		color_highlight = 0xffffcc66;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_disabled = 0xff555555;
+		color_text_listitem = 0xff000000;
+		color_text_listitem_secondary = 0xff3a40a8;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xffd6d8ff;
+		color_selected_grad_lt = 0xffffdd99;
+		color_selected_grad_dk = 0xffffbb33;
+		color_selected_border = 0xffce9731;
+		color_selected_pressed = 0xffffe5b5;
+		color_focused_grad_lt = 0xffd6d8ff;
+		color_focused_grad_dk = 0xffaaafff;
+		color_focused_border = 0xff696dbf;
+		color_focused_pressed = 0xffe5e6ff;
+		finishLoadingTheme(false);
+		color_divider = color_list_shadow; //0xff9f9f9f
+		color_menu_border = 0xff808299;
+		updateColorDividerPressed();
 	}
 
 	public static String getThemeString(int theme) {
@@ -1303,8 +1340,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			return Player.theApplication.getText(R.string.dark_light).toString();
 		case THEME_CREAMY:
 			return Player.theApplication.getText(R.string.creamy).toString();
-		default:
+		case THEME_FPLAY:
 			return "FPlay";
+		default:
+			return "FPlay " + Player.theApplication.getText(R.string.dark).toString();
 		}
 	}
 
@@ -1334,9 +1373,12 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		case THEME_CREAMY:
 			loadCreamyTheme();
 			break;
-		default:
-			UI.theme = THEME_FPLAY;
+		case THEME_FPLAY:
 			loadFPlayTheme();
+			break;
+		default:
+			UI.theme = THEME_FPLAY_DARK;
+			loadFPlayDarkTheme();
 			break;
 		}
 		if (activityHost != null)
@@ -1596,9 +1638,9 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 		fillPaint.setColor(color_list_shadow);
 		//right shadow
-		canvas.drawRect(rect.right - rightMargin, controlSmallMargin + strokeSize, rect.right - rightMargin + strokeSize, rect.bottom, fillPaint);
+		canvas.drawRect(rect.right - rightMargin, rect.top + controlSmallMargin + strokeSize, rect.right - rightMargin + strokeSize, rect.bottom, fillPaint);
 		//bottom shadow
-		canvas.drawRect(leftMargin + strokeSize, rect.bottom - strokeSize, rect.right - rightMargin, rect.bottom, fillPaint);
+		canvas.drawRect(rect.left + leftMargin + strokeSize, rect.bottom - strokeSize, rect.right - rightMargin, rect.bottom, fillPaint);
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
@@ -1607,7 +1649,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
 				} else {
 					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - controlSmallMargin - strokeSize));
-					canvas.drawRect(leftMargin, controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
+					canvas.drawRect(rect.left + leftMargin, rect.top + controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
 					fillPaint.setShader(null);
 					return;
 				}
@@ -1617,7 +1659,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		} else {
 			fillPaint.setColor(color_list);
 		}
-		canvas.drawRect(leftMargin, controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
+		canvas.drawRect(rect.left + leftMargin, rect.top + controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
 	}
 
 	public static void drawBg(Canvas canvas, int state) {

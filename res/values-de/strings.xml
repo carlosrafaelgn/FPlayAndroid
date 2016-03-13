@@ -333,5 +333,6 @@
     <string name="play_with_long_press">Ein langer Druck beginnt mit der Wiedergabe, wenn Lieder hinzufügen</string>
     <string name="smooth">Glatt</string>
     <string name="transition_popup">Übergang (Menü):</string>
+    <string name="dark">Dunkel</string>
 
 </resources>

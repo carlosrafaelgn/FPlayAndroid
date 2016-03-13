@@ -53,6 +53,7 @@ import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BgListItem3DDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
@@ -267,7 +268,15 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			bars = null;
 		}
 	}
-	
+
+	private int barToActual(int barValue) {
+		return barValue * 5;
+	}
+
+	private int actualToBar(int actualValue) {
+		return actualValue / 5;
+	}
+
 	@Override
 	protected void onCreate() {
 		txtBuilder = new StringBuilder(32);
@@ -282,13 +291,27 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		audioSink = (storedAudioSink <= 0 ? Player.localAudioSinkUsedInEffects : storedAudioSink);
 		storedAudioSink = audioSink;
 		panelControls = (LinearLayout)findViewById(R.id.panelControls);
-		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list_original));
+		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
 		panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 		if (panelSecondary instanceof ScrollView) {
 			panelSecondary.setHorizontalFadingEdgeEnabled(false);
 			panelSecondary.setVerticalFadingEdgeEnabled(false);
 			panelSecondary.setFadingEdgeLength(0);
+		}
+		if (UI.is3D) {
+			if (UI.isLargeScreen) {
+				panelEqualizer.setPadding(UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin);
+				panelSecondary.setPadding(UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin);
+			} else if (UI.isLowDpiScreen) {
+				panelEqualizer.setPadding(UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin);
+				panelSecondary.setPadding(UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin);
+			} else {
+				panelEqualizer.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
+				panelSecondary.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
+			}
+			panelEqualizer.setBackgroundDrawable(new BgListItem3DDrawable());
+			panelSecondary.setBackgroundDrawable(new BgListItem3DDrawable());
 		}
 		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
@@ -323,16 +346,16 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			Player.bassBoostMode = false;
 		}
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
-		barBass.setMax(BassBoost.getMaxStrength());
-		barBass.setValue(BassBoost.getStrength(audioSink));
-		barBass.setKeyIncrement(BassBoost.getMaxStrength() / 50);
+		barBass.setMax(actualToBar(BassBoost.getMaxStrength()));
+		barBass.setValue(actualToBar(BassBoost.getStrength(audioSink)));
+		barBass.setKeyIncrement(actualToBar(BassBoost.getMaxStrength() / 50));
 		barBass.setOnBgSeekBarChangeListener(this);
 		barBass.setInsideList(true);
 		barBass.setAdditionalContentDescription(getText(R.string.bass_boost).toString());
 		barVirtualizer = (BgSeekBar)findViewById(R.id.barVirtualizer);
-		barVirtualizer.setMax(Virtualizer.getMaxStrength());
-		barVirtualizer.setValue(Virtualizer.getStrength(audioSink));
-		barVirtualizer.setKeyIncrement(Virtualizer.getMaxStrength() / 50);
+		barVirtualizer.setMax(actualToBar(Virtualizer.getMaxStrength()));
+		barVirtualizer.setValue(actualToBar(Virtualizer.getStrength(audioSink)));
+		barVirtualizer.setKeyIncrement(actualToBar(Virtualizer.getMaxStrength() / 50));
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
 		barVirtualizer.setAdditionalContentDescription(getText(R.string.virtualization).toString());
@@ -367,7 +390,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				final int margin = (screenNotSoLarge ? UI.controlMargin : (UI.controlLargeMargin << 1));
 				lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 				lp.leftMargin = margin;
-				lp.topMargin = margin;
+				lp.topMargin = margin >> 1;
 				lp.rightMargin = margin;
 				lp.bottomMargin = margin;
 				panelSecondary.setLayoutParams(lp);
@@ -376,7 +399,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				lp.leftMargin = margin;
 				lp.topMargin = (screenNotSoLarge ? UI.controlLargeMargin : margin);
 				lp.rightMargin = margin;
-				lp.bottomMargin = margin;
+				lp.bottomMargin = margin >> 1;
 				panelEqualizer.setLayoutParams(lp);
 				if (screenNotSoLarge) {
 					lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
@@ -388,7 +411,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				}
 			}
 		} else {
-			panelControls.setPadding(UI.controlMargin, UI.thickDividerSize, UI.controlMargin, 0);
+			panelControls.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, 0);
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
 		prepareViewForMode(true);
@@ -438,18 +461,18 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		if (!fromUser)
 			return;
 		if (seekBar == barBass) {
-			BassBoost.setStrength(value, audioSink);
+			BassBoost.setStrength(barToActual(value), audioSink);
 			seekBar.setText(format(BassBoost.getStrength(audioSink)));
 		} else if (seekBar == barVirtualizer) {
-			Virtualizer.setStrength(value, audioSink);
+			Virtualizer.setStrength(barToActual(value), audioSink);
 			seekBar.setText(format(Virtualizer.getStrength(audioSink)));
 		} else if (bars != null && frequencies != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
-					int level = (10 * value) + min;
+					int level = (50 * value) + min;
 					if (!usingKeys && (level <= LevelThreshold) && (level >= -LevelThreshold)) {
 						level = 0;
-						seekBar.setValue(-min / 10);
+						seekBar.setValue(-min / 50);
 					}
 					Equalizer.setBandLevel(i, level, audioSink);
 					seekBar.setText(format(frequencies[i], Equalizer.getBandLevel(i, audioSink)));
@@ -489,20 +512,20 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				if (bar != null) {
 					final int level = Equalizer.getBandLevel(i, audioSink);
 					bars[i].setText(format(frequencies[i], level));
-					bars[i].setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 10) : ((level - min) / 10));
+					bars[i].setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 				}
 			}
 		}
 		if (chkBass != null)
 			chkBass.setChecked(BassBoost.isEnabled(audioSink));
 		if (barBass != null) {
-			barBass.setValue(BassBoost.getStrength(audioSink));
+			barBass.setValue(actualToBar(BassBoost.getStrength(audioSink)));
 			barBass.setText(format(BassBoost.getStrength(audioSink)));
 		}
 		if (chkVirtualizer != null)
 			chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
 		if (barVirtualizer != null) {
-			barVirtualizer.setValue(Virtualizer.getStrength(audioSink));
+			barVirtualizer.setValue(actualToBar(Virtualizer.getStrength(audioSink)));
 			barVirtualizer.setText(format(Virtualizer.getStrength(audioSink)));
 		}
 		if (btnAudioSink != null)
@@ -551,6 +574,15 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			} else {
 				availableScreenW -= (UI.controlMargin << 1);
 			}
+			if (UI.is3D) {
+				if (UI.isLargeScreen) {
+					availableScreenW -= (UI.controlLargeMargin << 1);
+				} else if (UI.isLowDpiScreen) {
+					availableScreenW -= (UI.controlSmallMargin << 1);
+				} else {
+					availableScreenW -= (UI.controlMargin << 1);
+				}
+			}
 			while (hMargin > UI._1dp && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
 				hMargin--;
 			int size = 0, textSize = 0, bgY = 0, y = 0;
@@ -585,10 +617,10 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 					if (i > 0)
 						p.leftMargin = hMargin;
 					bar.setLayoutParams(p);
-					bar.setMax((max - min) / 10);
+					bar.setMax((max - min) / 50);
 					bar.setText(format(frequencies[i], level));
-					bar.setKeyIncrement(10);
-					bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 10) : ((level - min) / 10));
+					bar.setKeyIncrement(2);
+					bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 					bar.setOnBgSeekBarChangeListener(this);
 					bar.setInsideList(true);
 					if (size != 0)

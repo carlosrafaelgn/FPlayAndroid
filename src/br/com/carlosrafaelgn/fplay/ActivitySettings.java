@@ -168,22 +168,25 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.THEME_FPLAY, 0, UI.getThemeString(UI.THEME_FPLAY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_CREAMY, 1, UI.getThemeString(UI.THEME_CREAMY))
+			menu.add(1, UI.THEME_FPLAY_DARK, 1, UI.getThemeString(UI.THEME_FPLAY_DARK))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY_DARK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.THEME_CREAMY, 2, UI.getThemeString(UI.THEME_CREAMY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_CREAMY) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_DARK_LIGHT, 2, UI.getThemeString(UI.THEME_DARK_LIGHT))
+			menu.add(1, UI.THEME_DARK_LIGHT, 3, UI.getThemeString(UI.THEME_DARK_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_DARK_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_BLUE_ORANGE, 3, UI.getThemeString(UI.THEME_BLUE_ORANGE))
+			menu.add(1, UI.THEME_BLUE_ORANGE, 4, UI.getThemeString(UI.THEME_BLUE_ORANGE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_BLUE, 4, UI.getThemeString(UI.THEME_BLUE))
+			menu.add(1, UI.THEME_BLUE, 5, UI.getThemeString(UI.THEME_BLUE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_ORANGE, 5, UI.getThemeString(UI.THEME_ORANGE))
+			menu.add(1, UI.THEME_ORANGE, 6, UI.getThemeString(UI.THEME_ORANGE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.THEME_LIGHT, 6, UI.getThemeString(UI.THEME_LIGHT))
+			menu.add(1, UI.THEME_LIGHT, 7, UI.getThemeString(UI.THEME_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optVolumeControlType) {

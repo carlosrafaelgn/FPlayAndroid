@@ -333,5 +333,6 @@
     <string name="play_with_long_press">Utilisez une longue touche pour démarrer la lecture lors de l\'ajout de morceaux</string>
     <string name="smooth">Lisse</string>
     <string name="transition_popup">Transition (Menu) :</string>
+    <string name="dark">Sombre</string>
 
 </resources>

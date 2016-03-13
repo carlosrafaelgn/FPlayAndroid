@@ -333,5 +333,6 @@
     <string name="play_with_long_press">Тривале натискання починає відтворення при додаванні пісні</string>
     <string name="smooth">Плавний</string>
     <string name="transition_popup">Перехід (Меню):</string>
+    <string name="dark">Темний</string>
 
 </resources>
