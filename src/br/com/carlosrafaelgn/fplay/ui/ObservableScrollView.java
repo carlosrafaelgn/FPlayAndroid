@@ -45,7 +45,8 @@ public final class ObservableScrollView extends ScrollView {
 	}
 
 	private OnScrollListener listener;
-	
+	private int placement;
+
 	public ObservableScrollView(Context context) {
 		super(context);
 		init(UI.PLACEMENT_WINDOW);
@@ -68,6 +69,7 @@ public final class ObservableScrollView extends ScrollView {
 
 	@SuppressWarnings("deprecation")
 	private void init(int placement) {
+		this.placement = placement;
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);
 		super.setAnimationCacheEnabled(false);
@@ -77,9 +79,14 @@ public final class ObservableScrollView extends ScrollView {
 	}
 
 	public void updateVerticalScrollbar() {
-		setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? View.SCROLLBAR_POSITION_LEFT : View.SCROLLBAR_POSITION_RIGHT);
+		if (UI.browserScrollBarType != BgListView.SCROLLBAR_NONE) {
+			setVerticalScrollBarEnabled(true);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? View.SCROLLBAR_POSITION_LEFT : View.SCROLLBAR_POSITION_RIGHT);
+			UI.tryToChangeScrollBarThumb(this, placement == UI.PLACEMENT_WINDOW ? UI.color_divider : UI.color_menu_icon);
+		} else {
+			setVerticalScrollBarEnabled(false);
+		}
 	}
 	
 	public void setOnScrollListener(OnScrollListener listener) {

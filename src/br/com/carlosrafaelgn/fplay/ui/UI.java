@@ -96,6 +96,7 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ScrollBarThumbDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
@@ -1042,24 +1043,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		return true;
 	}
 
-	public static void updateColorDividerPressed() {
-		color_divider_pressed = ColorUtils.blend(color_divider, color_text_listitem, 0.7f);
-	}
-
-	public static void updateColorListBg() {
-		if (ColorUtils.relativeLuminance(color_list_original) >= 0.5) {
-			color_list = color_list_original;
-			color_list_bg = (is3D ? ColorUtils.blend(color_list_original, 0xff000000, 0.9286f) : color_list_original);
-			color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.77777777f);
-		} else {
-			if (is3D)
-				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
-			color_list_bg = color_list_original;
-			color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.77777777f);
-		}
-	}
-
-	private static void finishLoadingTheme(boolean custom) {
+	private static void finishLoadingTheme(boolean custom, boolean generateDivider) {
 		//create a "safe 565" version for the visualizer background
 		//http://stackoverflow.com/questions/2442576/how-does-one-convert-16-bit-rgb565-to-24-bit-rgb888
 		//first convert to 565
@@ -1088,6 +1072,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		colorState_highlight_static = new BgColorStateList(color_highlight);
 		colorState_text_highlight_static = new BgColorStateList(color_text_highlight);
 		colorState_text_highlight_reactive = new BgColorStateList(color_text_highlight, color_text_selected);
+
 		if (!custom) {
 			color_text_title = color_highlight;
 			colorState_text_title_static = colorState_highlight_static;
@@ -1095,12 +1080,31 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			colorState_text_control_mode_reactive = colorState_text_reactive;
 			colorState_text_visualizer_static = colorState_text_static;
 			colorState_text_visualizer_reactive = colorState_text_reactive;
-		} else {
-			updateColorDividerPressed();
 		}
+
 		color_list_original = color_list;
-		updateColorListBg();
-		color_glow = ((theme == THEME_FPLAY || theme == THEME_FPLAY_DARK) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
+		if (ColorUtils.relativeLuminance(color_list_original) >= 0.6) {
+			color_list = color_list_original;
+			color_list_bg = (is3D ? ColorUtils.blend(color_list_original, 0xff000000, 0.9286f) : color_list_original);
+			color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.77777777f);
+			if (generateDivider)
+				color_divider = ColorUtils.blend(color_list_bg, 0xff000000, 0.7f);
+		} else {
+			if (is3D)
+				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
+			color_list_bg = color_list_original;
+			color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.77777777f);
+			if (generateDivider)
+				color_divider = ColorUtils.blend(color_list_bg, 0xffffffff, 0.7f);
+		}
+
+		color_divider_pressed = ColorUtils.blend(color_divider, color_text_listitem, 0.7f);
+
+		//color_glow = ((theme == THEME_FPLAY || theme == THEME_FPLAY_DARK) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
+		color_glow = ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary :
+			((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window :
+				color_text_listitem));
+
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
 		glowFilter = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) ? new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN) : null);
@@ -1112,7 +1116,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			loadFPlayDarkTheme();
 			return false;
 		}
-		finishLoadingTheme(true);
+		finishLoadingTheme(true, false);
 
 		//check which color to use for the buttons in the main screen (when in control mode) and in the visualizer screen
 		double maxRatio, ratio;
@@ -1172,7 +1176,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_list = 0xff080808;
 		color_menu = 0xffffffff;
 		color_menu_icon = 0xff555555;
-		color_divider = 0xff3f3f3f;
+		//color_divider = 0xff3f3f3f;
 		color_highlight = 0xfffad35a;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
@@ -1204,22 +1208,19 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	
 	public static void loadBlueOrangeTheme() {
 		loadCommonColors(false);
-		finishLoadingTheme(false);
-		updateColorDividerPressed();
+		finishLoadingTheme(false, true);
 	}
 	
 	public static void loadBlueTheme() {
 		loadCommonColors(false);
 		color_highlight = 0xff94c0ff;
 		color_text_listitem_secondary = 0xff94c0ff;
-		finishLoadingTheme(false);
-		updateColorDividerPressed();
+		finishLoadingTheme(false, true);
 	}
 	
 	public static void loadOrangeTheme() {
 		loadCommonColors(true);
-		finishLoadingTheme(false);
-		updateColorDividerPressed();
+		finishLoadingTheme(false, true);
 	}
 	
 	public static void loadLightTheme() {
@@ -1228,15 +1229,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_control_mode = 0xffe0e0e0;
 		color_visualizer = 0xffe0e0e0;
 		color_list = 0xfff2f2f2;
-		color_divider = 0xffc4c4c4;
 		color_highlight = 0xff0000f1;
 		color_text_highlight = 0xffffffff;
 		color_text = 0xff000000;
 		color_text_listitem_secondary = 0xff0000f1;
 		color_text_listitem = 0xff000000;
-		finishLoadingTheme(false);
-		color_menu_border = 0xffc4c4c4;
-		updateColorDividerPressed();
+		finishLoadingTheme(false, true);
+		color_menu_border = color_divider; //0xffc4c4c4;
 	}
 	
 	public static void loadDarkLightTheme() {
@@ -1244,24 +1243,21 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_list = 0xfff2f2f2;
 		color_text_listitem_secondary = 0xff0000f1;
 		color_text_listitem = 0xff000000;
-		finishLoadingTheme(false);
-		color_divider = color_list_shadow; //0xffc4c4c4;
-		color_menu_border = color_list_shadow; //0xffc4c4c4;
-		updateColorDividerPressed();
+		finishLoadingTheme(false, true);
+		color_menu_border = color_divider; //0xffc4c4c4;
 	}
 	
 	public static void loadCreamyTheme() {
 		loadCommonColors(false);
 		color_window = 0xff275a96;
 		color_list = 0xfff9f6ea;
+		color_divider = 0xffaabbcc;
 		color_text_listitem_secondary = 0xff0052a8;
 		color_text_listitem = 0xff000000;
-		finishLoadingTheme(false);
-		color_divider = 0xffaabbcc;
-		color_menu_border = 0xffaabbcc;
+		finishLoadingTheme(false, false);
+		color_menu_border = color_divider;
 		color_text_title = color_text;
 		colorState_text_title_static = colorState_text_static;
-		updateColorDividerPressed();
 	}
 
 	public static void loadFPlayTheme() {
@@ -1287,12 +1283,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_focused_grad_dk = 0xffaaafff;
 		color_focused_border = 0xff696dbf;
 		color_focused_pressed = 0xffe5e6ff;
-		finishLoadingTheme(false);
-		color_divider = color_list_shadow; //0xffc4c4c4
-		color_menu_border = color_list_shadow; //0xffc4c4c4;
+		finishLoadingTheme(false, true);
+		color_menu_border = color_divider; //0xffc4c4c4;
 		color_text_title = color_text;
 		colorState_text_title_static = colorState_text_static;
-		updateColorDividerPressed();
 	}
 
 	public static void loadFPlayDarkTheme() {
@@ -1318,10 +1312,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_focused_grad_dk = 0xffaaafff;
 		color_focused_border = 0xff696dbf;
 		color_focused_pressed = 0xffe5e6ff;
-		finishLoadingTheme(false);
-		color_divider = color_list_shadow; //0xff9f9f9f
+		finishLoadingTheme(false, true);
 		color_menu_border = 0xff808299;
-		updateColorDividerPressed();
 	}
 
 	public static String getThemeString(int theme) {
@@ -2147,6 +2139,28 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			view.setPadding(controlMargin, controlMargin + t, 0, controlMargin + b);
 		else
 			view.setPadding(0, t, 0, b);
+	}
+
+	public static void tryToChangeScrollBarThumb(View view, int color) {
+		//this is not a simple workaround... it could be the mother of all workarounds out there! :)
+		//http://stackoverflow.com/questions/21806852/change-the-color-of-scrollview-programmatically
+		try {
+			final Field mScrollCacheField = View.class.getDeclaredField("mScrollCache");
+			mScrollCacheField.setAccessible(true);
+			final Object mScrollCache = mScrollCacheField.get(view);
+
+			final Field scrollBarField = mScrollCache.getClass().getDeclaredField("scrollBar");
+			scrollBarField.setAccessible(true);
+			final Object scrollBar = scrollBarField.get(mScrollCache);
+
+			final Method method = scrollBar.getClass().getDeclaredMethod("setVerticalThumbDrawable", Drawable.class);
+			method.setAccessible(true);
+
+			//finally!!!
+			method.invoke(scrollBar, new ScrollBarThumbDrawable(color));
+		} catch (Throwable ex) {
+			//well... apparently it did not work out as expected
+		}
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)

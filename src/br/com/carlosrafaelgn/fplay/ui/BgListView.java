@@ -69,6 +69,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		boolean onBgListViewKeyDown(BgListView list, int keyCode);
 	}
 
+	private static final int SCROLLBAR_INVALID = -1;
 	public static final int SCROLLBAR_SYSTEM = 0;
 	public static final int SCROLLBAR_LARGE = 1;
 	public static final int SCROLLBAR_INDEXED = 2;
@@ -87,7 +88,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private int[] sectionPositions;
 	public boolean skipUpDownTranslation;
 	public static int extraState;
-	
+
 	public BgListView(Context context) {
 		super(context);
 		init();
@@ -105,6 +106,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	
 	@SuppressWarnings("deprecation")
 	private void init() {
+		//to make the first execution of setScrollBarType() always run
+		scrollBarType = SCROLLBAR_INVALID;
 		extraState = 0;
 		super.setSelector(new NullDrawable());
 		super.setDivider(null);
@@ -700,6 +703,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			ignorePadding = false;
 			this.scrollBarType = SCROLLBAR_SYSTEM;
 			scrollBarWidth = 0;
+			UI.tryToChangeScrollBarThumb(this, UI.color_divider);
 			break;
 		}
 		ignorePadding = true;
@@ -931,7 +935,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					}
 					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
 					UI.textPaint.setColor(UI.color_text_listitem);
-					UI.fillRect(canvas, UI.color_list);
+					UI.fillRect(canvas, UI.color_list_bg);
 					canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
 					UI.textPaint.setColor(UI.color_text_highlight);
 					UI.rect.top = UI.rect.bottom;

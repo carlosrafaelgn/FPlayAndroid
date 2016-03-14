@@ -1313,7 +1313,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addWindowFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		} else if (view == opt3D) {
 			UI.is3D = opt3D.isChecked();
-			UI.updateColorListBg();
+			UI.setTheme(getHostActivity(), UI.theme);
 			onCleanupLayout();
 			onCreateLayout(false);
 			System.gc();

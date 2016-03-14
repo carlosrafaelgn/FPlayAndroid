@@ -2098,8 +2098,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS);
-		UI.is3D = opts.getBit(OPTBIT_3D, true);
-		UI.setTheme(null, (UI.lastVersionCode < 74) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
+		UI.is3D = ((UI.lastVersionCode < 87) || opts.getBit(OPTBIT_3D, true));
+		UI.setTheme(null, (UI.lastVersionCode < 87) ? UI.THEME_FPLAY_DARK : opts.getInt(OPT_THEME, UI.THEME_FPLAY_DARK));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
@@ -2126,80 +2126,50 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			setVolumeControlType(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE0, defVolumeControlType & 1) |
 					(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE1, defVolumeControlType >> 1) << 1));
 		}
-		//the concept of bit was added on version 38 (the old way was removed on version 74)
-		//if (opts.hasBits() || UI.lastVersionCode == 0) {
-			//load the bit flags the new way
-			controlMode = opts.getBit(OPTBIT_CONTROLMODE);
-			bassBoostMode = opts.getBit(OPTBIT_BASSBOOSTMODE);
-			nextPreparationEnabled = opts.getBit(OPTBIT_NEXTPREPARATION, true);
-			clearListWhenPlayingFolders = opts.getBit(OPTBIT_PLAYFOLDERCLEARSLIST);
-			UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON, true);
-			UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
-			UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
-			UI.setFlat((UI.lastVersionCode < 74) || opts.getBit(OPTBIT_FLAT, true));
-			UI.hasBorders = ((UI.lastVersionCode >= 74) && opts.getBit(OPTBIT_BORDERS, false));
-			UI.animationEnabled = ((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) || opts.getBit(OPTBIT_ANIMATIONS, UI.deviceSupportsAnimations));
-			UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
-			UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
-			UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
-			UI.setVerticalMarginLarge(opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
-			handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
-			playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
-			UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
-			goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS);
-			UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
-			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
-			UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
-			UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, UI.isTV || (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			//new settings (cannot be loaded the old way)
-			//headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
-			doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
-			UI.scrollBarToTheLeft = opts.getBit(OPTBIT_SCROLLBAR_TO_THE_LEFT);
-			UI.songListScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST1, 0) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST0, UI.isTV ? 0 : 1);
-			if (UI.songListScrollBarType == BgListView.SCROLLBAR_INDEXED)
-				UI.songListScrollBarType = BgListView.SCROLLBAR_LARGE;
-			UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, UI.isTV ? 0 : 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
-			lastRadioSearchWasByGenre = opts.getBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, true);
-			UI.expandSeekBar = opts.getBit(OPTBIT_EXPANDSEEKBAR);
-			songs.setRepeatMode(opts.getBit(OPTBIT_REPEATONE) ? SongList.REPEAT_ONE : (opts.getBit(OPTBIT_REPEATNONE) ? SongList.REPEAT_NONE : SongList.REPEAT_ALL));
-			songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE));
-			UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
-			UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
-			UI.visualizerPortrait = opts.getBit(OPTBIT_VISUALIZER_PORTRAIT);
-			turnOffWhenPlaylistEnds = opts.getBit(OPTBIT_TURNOFFPLAYLIST);
-			followCurrentSong = opts.getBit(OPTBIT_FOLLOW_CURRENT_SONG, true);
-			announceCurrentSong = opts.getBit(OPTBIT_ANNOUNCE_CURRENT_SONG);
-			UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
-			UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
-		/*} else {
-			//load bit flags the old way
-			controlMode = opts.getBoolean(OPT_CONTROLMODE);
-			bassBoostMode = opts.getBoolean(OPT_BASSBOOSTMODE);
-			nextPreparationEnabled = opts.getBoolean(OPT_NEXTPREPARATION, true);
-			clearListWhenPlayingFolders = opts.getBoolean(OPT_PLAYFOLDERCLEARSLIST);
-			UI.keepScreenOn = opts.getBoolean(OPT_KEEPSCREENON, true);
-			UI.doubleClickMode = opts.getBoolean(OPT_DOUBLECLICKMODE);
-			UI.marqueeTitle = opts.getBoolean(OPT_MARQUEETITLE, true);
-			UI.setFlat(opts.getBoolean(OPT_FLAT, true));
-			UI.albumArt = opts.getBoolean(OPT_ALBUMART, true);
-			UI.blockBackKey = opts.getBoolean(OPT_BLOCKBACKKEY);
-			UI.isDividerVisible = opts.getBoolean(OPT_ISDIVIDERVISIBLE, true);
-			UI.setVerticalMarginLarge(opts.getBoolean(OPT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
-			handleCallKey = opts.getBoolean(OPT_HANDLECALLKEY, true);
-			playWhenHeadsetPlugged = opts.getBoolean(OPT_PLAYWHENHEADSETPLUGGED, true);
-			UI.setUsingAlternateTypefaceAndForcedLocale(context, opts.getBoolean(OPT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
-			goBackWhenPlayingFolders = opts.getBoolean(OPT_GOBACKWHENPLAYINGFOLDERS);
-			songs.setRandomMode(opts.getBoolean(OPT_RANDOMMODE));
-			UI.widgetTransparentBg = opts.getBoolean(OPT_WIDGETTRANSPARENTBG);
-			UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBoolean(OPT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
-			UI.wrapAroundList = opts.getBoolean(OPT_WRAPAROUNDLIST);
-			UI.extraSpacing = opts.getBoolean(OPT_EXTRASPACING, (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
-			//Load default values for new settings
-			UI.songListScrollBarType = (UI.isTV ? BgListView.SCROLLBAR_SYSTEM : BgListView.SCROLLBAR_LARGE);
-			UI.browserScrollBarType = (UI.isTV ? BgListView.SCROLLBAR_SYSTEM : BgListView.SCROLLBAR_INDEXED);
-			lastRadioSearchWasByGenre = true;
-			UI.expandSeekBar = true;
-		}*/
+
+		//the concept of bit was added on version 38 (the old way was completely removed on version 87)
+		controlMode = opts.getBit(OPTBIT_CONTROLMODE);
+		bassBoostMode = opts.getBit(OPTBIT_BASSBOOSTMODE);
+		nextPreparationEnabled = opts.getBit(OPTBIT_NEXTPREPARATION, true);
+		clearListWhenPlayingFolders = opts.getBit(OPTBIT_PLAYFOLDERCLEARSLIST);
+		UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON, true);
+		UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
+		UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
+		UI.setFlat((UI.lastVersionCode < 87) || opts.getBit(OPTBIT_FLAT, true));
+		UI.hasBorders = ((UI.lastVersionCode >= 87) && opts.getBit(OPTBIT_BORDERS, false));
+		UI.animationEnabled = ((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) || opts.getBit(OPTBIT_ANIMATIONS, UI.deviceSupportsAnimations));
+		UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
+		UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
+		UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
+		UI.setVerticalMarginLarge(opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
+		handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
+		playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
+		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
+		goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS);
+		UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
+		UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
+		UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
+		UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, UI.isTV || (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
+		//headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
+		doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
+		UI.scrollBarToTheLeft = opts.getBit(OPTBIT_SCROLLBAR_TO_THE_LEFT);
+		UI.songListScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST1, 0) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_SONGLIST0, UI.isTV ? 0 : 1);
+		if (UI.songListScrollBarType == BgListView.SCROLLBAR_INDEXED)
+			UI.songListScrollBarType = BgListView.SCROLLBAR_LARGE;
+		UI.browserScrollBarType = (opts.getBitI(OPTBIT_SCROLLBAR_BROWSER1, UI.isTV ? 0 : 1) << 1) | opts.getBitI(OPTBIT_SCROLLBAR_BROWSER0, 0);
+		lastRadioSearchWasByGenre = opts.getBit(OPTBIT_LASTRADIOSEARCHWASBYGENRE, true);
+		UI.expandSeekBar = ((UI.lastVersionCode >= 87) && opts.getBit(OPTBIT_EXPANDSEEKBAR));
+		songs.setRepeatMode(opts.getBit(OPTBIT_REPEATONE) ? SongList.REPEAT_ONE : (opts.getBit(OPTBIT_REPEATNONE) ? SongList.REPEAT_NONE : SongList.REPEAT_ALL));
+		songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE));
+		UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
+		UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
+		UI.visualizerPortrait = opts.getBit(OPTBIT_VISUALIZER_PORTRAIT);
+		turnOffWhenPlaylistEnds = opts.getBit(OPTBIT_TURNOFFPLAYLIST);
+		followCurrentSong = opts.getBit(OPTBIT_FOLLOW_CURRENT_SONG, true);
+		announceCurrentSong = opts.getBit(OPTBIT_ANNOUNCE_CURRENT_SONG);
+		UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
+		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
+
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
 			if (count > 128)
