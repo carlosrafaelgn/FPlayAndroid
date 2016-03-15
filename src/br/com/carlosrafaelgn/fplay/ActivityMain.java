@@ -62,6 +62,7 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
+import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -825,7 +826,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.songs.setRepeatMode(SongList.REPEAT_NONE);
 			break;
 		case MNU_EFFECTS:
-			startActivity(new ActivityEffects(), 0, null, false);
+			startActivity(ExternalFx.isSupported() && ExternalFx.isEnabled() ? new ActivityExternalFx() : new ActivityEffects(), 0, null, false);
 			break;
 		case MNU_VISUALIZER:
 		case MNU_VISUALIZER_SPECTRUM:

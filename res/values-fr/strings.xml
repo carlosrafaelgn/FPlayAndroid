@@ -334,5 +334,9 @@
     <string name="smooth">Lisse</string>
     <string name="transition_popup">Transition (Menu) :</string>
     <string name="dark">Sombre</string>
+    <string name="disable_external_fx">Désactiver les effets externes</string>
+    <string name="enable_external_fx">Activer les effets externes</string>
+    <string name="display_external_fx">Afficher les effets externes&#8230;</string>
+    <string name="external_fx_warning">Attention : si rien ne se passe lorsque vous cliquez sur le bouton ci-dessus, probablement votre appareil ne supporte pas les effets externes</string>
 
 </resources>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:baselineAligned="false"
+              android:orientation="vertical"
+              android:splitMotionEvents="false"
+              tools:context=".ActivityHost">
+
+    <RelativeLayout
+        android:id="@+id/panelTop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:splitMotionEvents="false">
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnGoBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:contentDescription="@string/go_back"
+            android:nextFocusForward="@+id/btnOpenExternalFx"
+            android:nextFocusDown="@+id/btnOpenExternalFx"
+            android:nextFocusLeft="@+id/btnDisableExternalFx"
+            android:nextFocusRight="@+id/btnOpenExternalFx"
+            android:nextFocusUp="@+id/btnDisableExternalFx">
+
+            <requestFocus/>
+        </br.com.carlosrafaelgn.fplay.ui.BgButton>
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/panelControls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:splitMotionEvents="false">
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnDisplayExternalFx"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:nextFocusForward="@+id/btnDisableExternalFx"
+            android:nextFocusDown="@+id/btnDisableExternalFx"
+            android:nextFocusLeft="@+id/btnGoBack"
+            android:nextFocusRight="@+id/btnDisableExternalFx"
+            android:nextFocusUp="@+id/btnGoBack"
+            android:text="@string/display_external_fx"/>
+
+        <TextView
+            android:id="@+id/lblInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="32dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginRight="32dp"
+            android:layout_marginBottom="32dp"
+            android:text="@string/external_fx_warning"/>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnDisableExternalFx"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:nextFocusForward="@+id/btnGoBack"
+            android:nextFocusDown="@+id/btnGoBack"
+            android:nextFocusLeft="@+id/btnOpenExternalFx"
+            android:nextFocusRight="@+id/btnGoBack"
+            android:nextFocusUp="@+id/btnOpenExternalFx"
+            android:text="@string/disable_external_fx"/>
+    </LinearLayout>
+
+</LinearLayout>

@@ -334,5 +334,9 @@
     <string name="smooth">Плавний</string>
     <string name="transition_popup">Перехід (Меню):</string>
     <string name="dark">Темний</string>
+    <string name="disable_external_fx">Вимкніть зовнішні ефекти</string>
+    <string name="enable_external_fx">Увімкніть зовнішні ефекти</string>
+    <string name="display_external_fx">Відображення зовнішніх ефектів&#8230;</string>
+    <string name="external_fx_warning">Увага: якщо нічого не відбувається при натисканні на кнопку вище, то пристрій, можливо, не підтримує зовнішні ефекти</string>
 
 </resources>

@@ -335,5 +335,9 @@
     <string name="smooth">Smooth</string>
     <string name="transition_popup">Transition (Menu):</string>
     <string name="dark">Dark</string>
+    <string name="disable_external_fx">Disable external effects</string>
+    <string name="enable_external_fx">Enable external effects</string>
+    <string name="display_external_fx">Display external effects&#8230;</string>
+    <string name="external_fx_warning">Warning: if nothing happens when you click the button above, probably your device does not support external effects</string>
 
 </resources>

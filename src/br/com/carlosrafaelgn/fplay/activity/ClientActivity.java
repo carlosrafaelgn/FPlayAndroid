@@ -121,11 +121,17 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		activity.requestCode = requestCode;
 		this.activity.startActivity(activity, announce);
 	}
-	
+
 	public final void finish(int code, View sourceView, boolean announce) {
 		if (sourceView != null)
 			UI.storeViewCenterLocationForFade(sourceView);
 		activity.finishActivity(this, null, code, announce);
+	}
+
+	public final void finishAndStartActivity(ClientActivity newActivity, int code, View sourceView, boolean announce) {
+		if (sourceView != null)
+			UI.storeViewCenterLocationForFade(sourceView);
+		activity.finishActivity(this, newActivity, code, announce);
 	}
 
 	public final CharSequence getText(int resId) {

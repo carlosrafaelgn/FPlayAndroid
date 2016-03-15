@@ -51,6 +51,7 @@ public final class ExternalFx {
 
 	private static Intent createOpenIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
@@ -59,6 +60,7 @@ public final class ExternalFx {
 
 	private static Intent createDisplayIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
@@ -67,6 +69,7 @@ public final class ExternalFx {
 
 	private static Intent createCloseIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
@@ -109,7 +112,7 @@ public final class ExternalFx {
 		return enabled;
 	}
 
-	public static boolean showUI() {
+	public static boolean displayUI() {
 		if (supported && enabled) {
 			try {
 				Player.theApplication.startActivity(createDisplayIntent());

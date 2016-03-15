@@ -414,6 +414,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (oldTop != null && !oldTop.finished)
 			oldTop.activityFinished(activity, activity.requestCode, code);
 		if (newActivity != null) {
+			useFadeOutNextTime = false;
 			startActivityInternal(newActivity, announce);
 		} else {
 			if (top == null) {
