@@ -1308,8 +1308,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		color_selected_grad_dk = 0xffffbb33;
 		color_selected_border = 0xffce9731;
 		color_selected_pressed = 0xffffe5b5;
-		color_focused_grad_lt = 0xffd6d8ff;
-		color_focused_grad_dk = 0xffaaafff;
+		color_focused_grad_lt = 0xffaaafff;
+		color_focused_grad_dk = 0xff878dff;
 		color_focused_border = 0xff696dbf;
 		color_focused_pressed = 0xffe5e6ff;
 		finishLoadingTheme(false, true);
