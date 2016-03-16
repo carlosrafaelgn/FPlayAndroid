@@ -41,6 +41,8 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Message;
+import android.os.SystemClock;
 import android.text.InputType;
 import android.text.TextUtils.TruncateAt;
 import android.util.TypedValue;
@@ -60,6 +62,7 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -75,17 +78,19 @@ import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
-public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable {
+public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable, MainHandler.Callback {
+	private static final int MSG_REFRESH_BLUETOOTH = 0x0900;
+	private static final int MSG_SAVE_CONFIG = 0x0901;
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
 	private final boolean colorMode, bluetoothMode;
-	private boolean changed, checkingReturn, configsChanged, lblTitleOk, startTransmissionOnConnection;
+	private boolean changed, checkingReturn, configsChanged, lblTitleOk, startTransmissionOnConnection, tryingToEnableExternalFx;
 	private BgButton btnGoBack, btnBluetooth, btnAbout;
 	private EditText txtCustomMinutes;
 	private ObservableScrollView list;
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optSecondsBeforePlayback, lastMenuView;
+	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optExternalFx, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optSecondsBeforePlayback, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -829,7 +834,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		}
 		if (postAgain)
-			MainHandler.postToMainThreadDelayed(this, 1000);
+			MainHandler.sendMessageAtTime(this, MSG_REFRESH_BLUETOOTH, 0, 0, SystemClock.uptimeMillis() + 1000);
 	}
 
 	@Override
@@ -981,6 +986,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optHeadsetHook1 = new SettingView(ctx, UI.ICON_HEADSETHOOK1, getText(R.string.headset_hook_1).toString(), getHeadsetHookString(1), false, false, false);
 			optHeadsetHook2 = new SettingView(ctx, UI.ICON_HEADSETHOOK2, getText(R.string.headset_hook_2).toString(), getHeadsetHookString(2), false, false, false);
 			optHeadsetHook3 = new SettingView(ctx, UI.ICON_HEADSETHOOK3, getText(R.string.headset_hook_3).toString(), getHeadsetHookString(3), false, false, false);
+			optExternalFx = new SettingView(ctx, UI.ICON_EQUALIZER, getText(R.string.enable_external_fx) + " " + getText(R.string.external_fx_warning), null, true, ExternalFx.isEnabled(), false);
 			optPlayWhenHeadsetPlugged = new SettingView(ctx, UI.ICON_HEADSET, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
 			optBlockBackKey = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
 			optBackKeyAlwaysReturnsToPlayerWhenBrowsing = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_back_key_always_returns_to_player_when_browsing).toString(), null, true, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing, false);
@@ -1050,6 +1056,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addOption(optSecondsBeforePlayback);
 			}
 			addHeader(ctx, R.string.hdr_playback, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? optSecondsBeforePlayback : optWidgetIconColor, hIdx++);
+			if (ExternalFx.isSupported())
+				addOption(optExternalFx);
 			addOption(optPlayWhenHeadsetPlugged);
 			addOption(optHandleCallKey);
 			addOption(optHeadsetHook1);
@@ -1154,6 +1162,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optHeadsetHook1 = null;
 		optHeadsetHook2 = null;
 		optHeadsetHook3 = null;
+		optExternalFx = null;
 		optPlayWhenHeadsetPlugged = null;
 		optBlockBackKey = null;
 		optBackKeyAlwaysReturnsToPlayerWhenBrowsing = null;
@@ -1193,8 +1202,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	protected void onDestroy() {
+		//give some time for the transition to happen before saving the configs
 		if (!colorMode && !bluetoothMode && configsChanged)
-			MainHandler.postToMainThread(this);
+			MainHandler.sendMessageAtTime(this, MSG_SAVE_CONFIG, 0, 0, SystemClock.uptimeMillis() + (UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW << 1));
 	}
 	
 	@Override
@@ -1350,6 +1360,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.hasBorders = optBorders.isChecked();
 		} else if (view == optHandleCallKey) {
 			Player.handleCallKey = optHandleCallKey.isChecked();
+		} else if (view == optExternalFx) {
+			if (tryingToEnableExternalFx)
+				return;
+			tryingToEnableExternalFx = true;
+			Player.enableExternalFx(optExternalFx.isChecked(), this);
 		} else if (view == optPlayWhenHeadsetPlugged) {
 			Player.playWhenHeadsetPlugged = optPlayWhenHeadsetPlugged.isChecked();
 		} else if (view == optPlacePlaylistToTheRight) {
@@ -1532,9 +1547,24 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void run() {
-		if (bluetoothMode)
+		if (tryingToEnableExternalFx) {
+			tryingToEnableExternalFx = false;
+			if (optExternalFx != null)
+				optExternalFx.setChecked(ExternalFx.isEnabled() && ExternalFx.isSupported());
+		}
+	}
+
+	@Override
+	public boolean handleMessage(Message msg) {
+		switch (msg.what) {
+		case MSG_REFRESH_BLUETOOTH:
 			refreshBluetoothStatus(true);
-		else if (Player.state < Player.STATE_TERMINATING)
-			Player.saveConfig(false);
+			break;
+		case MSG_SAVE_CONFIG:
+			if (Player.state < Player.STATE_TERMINATING)
+				Player.saveConfig(false);
+			break;
+		}
+		return true;
 	}
 }

@@ -826,7 +826,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.songs.setRepeatMode(SongList.REPEAT_NONE);
 			break;
 		case MNU_EFFECTS:
-			startActivity(ExternalFx.isSupported() && ExternalFx.isEnabled() ? new ActivityExternalFx() : new ActivityEffects(), 0, null, false);
+			if (ExternalFx.isEnabled() && ExternalFx.isSupported())
+				ExternalFx.displayUI(getHostActivity());
+			else
+				startActivity(new ActivityEffects(), 0, null, false);
 			break;
 		case MNU_VISUALIZER:
 		case MNU_VISUALIZER_SPECTRUM:

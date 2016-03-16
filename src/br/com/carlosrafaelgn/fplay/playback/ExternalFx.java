@@ -32,8 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.media.audiofx.AudioEffect;
 
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
@@ -49,41 +49,33 @@ public final class ExternalFx {
 		opts.putBit(Player.OPTBIT_EXTERNALFX_ENABLED, enabled);
 	}
 
-	private static Intent createOpenIntent() {
+	private static void broadcastOpenIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
-		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
-		return intent;
+		Player.theApplication.sendBroadcast(intent);
 	}
 
 	private static Intent createDisplayIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL);
-		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
 		return intent;
 	}
 
-	private static Intent createCloseIntent() {
+	private static void broadcastCloseIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
-		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
-		return intent;
+		Player.theApplication.sendBroadcast(intent);
 	}
 
 	static void _checkSupport() {
 		try {
-			PackageManager packageManager = Player.theApplication.getPackageManager();
-			supported = (
-				(createOpenIntent().resolveActivity(packageManager) != null) &&
-				(createDisplayIntent().resolveActivity(packageManager) != null) &&
-				(createCloseIntent().resolveActivity(packageManager) != null)
-			);
+			supported = (createDisplayIntent().resolveActivity(Player.theApplication.getPackageManager()) != null);
 		} catch (Throwable ex) {
 			supported = false;
 		}
@@ -96,7 +88,7 @@ public final class ExternalFx {
 	static void _release() {
 		if (applied) {
 			try {
-				Player.theApplication.startActivity(createCloseIntent());
+				broadcastCloseIntent();
 			} catch (Throwable ex) {
 				supported = false;
 			}
@@ -112,10 +104,10 @@ public final class ExternalFx {
 		return enabled;
 	}
 
-	public static boolean displayUI() {
+	public static boolean displayUI(Activity activity) {
 		if (supported && enabled) {
 			try {
-				Player.theApplication.startActivity(createDisplayIntent());
+				activity.startActivity(createDisplayIntent());
 				return true;
 			} catch (Throwable ex) {
 				supported = false;
@@ -128,11 +120,11 @@ public final class ExternalFx {
 		ExternalFx.enabled = enabled;
 		try {
 			if (!enabled) {
-				Player.theApplication.startActivity(createCloseIntent());
+				broadcastCloseIntent();
 				applied = false;
 			} else if (supported) {
 				applied = true;
-				Player.theApplication.startActivity(createOpenIntent());
+				broadcastOpenIntent();
 			}
 		} catch (Throwable ex) {
 			supported = false;

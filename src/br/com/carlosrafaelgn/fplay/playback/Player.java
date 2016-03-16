@@ -345,7 +345,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_nextMayHaveChanged((Song)msg.obj);
 				break;
 			case MSG_ENABLE_EFFECTS:
-				ExternalFx._release();
+				if (ExternalFx.isEnabled())
+					ExternalFx._setEnabled(false);
+				else
+					ExternalFx._release();
+				ExternalFx._setEnabled(false);
 				_enableEffects(msg.arg1, msg.arg2, (Runnable)msg.obj);
 				break;
 			case MSG_COMMIT_EQUALIZER:
@@ -365,12 +369,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_ENABLE_EXTERNAL_FX:
 				if (msg.arg1 != 0) {
-					if (ExternalFx.isSupported()) {
-						Equalizer._release();
-						BassBoost._release();
-						Virtualizer._release();
-						ExternalFx._initialize();
-						ExternalFx._setEnabled(true);
+					Equalizer._release();
+					BassBoost._release();
+					Virtualizer._release();
+					ExternalFx._initialize();
+					ExternalFx._setEnabled(true);
+					//if anything goes wrong while enabling ExternalFx, go back to the previous state
+					if (!ExternalFx.isEnabled() || !ExternalFx.isSupported()) {
+						ExternalFx._setEnabled(false);
+						_reinitializeEffects();
 					}
 				} else {
 					ExternalFx._setEnabled(false);
@@ -1439,7 +1446,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Virtualizer._release();
 		ExternalFx._release();
 		audioSinkUsedInEffects = audioSink;
-		if (ExternalFx.isEnabled()) {
+		if (ExternalFx.isEnabled() && ExternalFx.isSupported()) {
 			ExternalFx._initialize();
 			ExternalFx._setEnabled(true);
 		} else {

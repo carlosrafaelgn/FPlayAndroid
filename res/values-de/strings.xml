@@ -334,9 +334,7 @@
     <string name="smooth">Glatt</string>
     <string name="transition_popup">Übergang (Menü):</string>
     <string name="dark">Dunkel</string>
-    <string name="disable_external_fx">Deaktivieren Sie externe Effekte</string>
     <string name="enable_external_fx">Aktivieren Sie externe Effekte</string>
-    <string name="display_external_fx">Zeigen Sie externe Effekte&#8230;</string>
-    <string name="external_fx_warning">Achtung: Wenn nichts passiert, wenn Sie auf den Button oben klicken, dann wahrscheinlich, Ihr Gerät unterstützt keine externe Effekte</string>
+    <string name="external_fx_warning">(Die Deaktivierung kann einige Zeit dauern)</string>
 
 </resources>

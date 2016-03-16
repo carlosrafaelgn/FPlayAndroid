@@ -165,6 +165,8 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	public boolean onMenuItemClick(MenuItem item) {
 		switch (item.getItemId()) {
 		case MNU_ZEROPRESET:
+			if (enablingEffect)
+				break;
 			for (int i = Equalizer.getBandCount() - 1; i >= 0; i--)
 				Equalizer.setBandLevel(i, 0, audioSink);
 			BassBoost.setStrength(0, audioSink);
@@ -173,22 +175,32 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			updateEffects();
 			break;
 		case MNU_LOADPRESET:
+			if (enablingEffect)
+				break;
 			startActivity(ActivityFileSelection.createPresetSelector(getText(R.string.load_preset), MNU_LOADPRESET, false, false, this), 0, null, false);
 			break;
 		case MNU_SAVEPRESET:
+			if (enablingEffect)
+				break;
 			startActivity(ActivityFileSelection.createPresetSelector(getText(R.string.save_preset), MNU_SAVEPRESET, true, false, this), 0, null, false);
 			break;
 		case MNU_AUDIOSINK_DEVICE:
+			if (enablingEffect)
+				break;
 			audioSink = Player.AUDIO_SINK_DEVICE;
 			storedAudioSink = audioSink;
 			updateEffects();
 			break;
 		case MNU_AUDIOSINK_WIRE:
+			if (enablingEffect)
+				break;
 			audioSink = Player.AUDIO_SINK_WIRE;
 			storedAudioSink = audioSink;
 			updateEffects();
 			break;
 		case MNU_AUDIOSINK_BT:
+			if (enablingEffect)
+				break;
 			audioSink = Player.AUDIO_SINK_BT;
 			storedAudioSink = audioSink;
 			updateEffects();

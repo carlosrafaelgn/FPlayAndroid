@@ -334,9 +334,7 @@
     <string name="smooth">Гладкий</string>
     <string name="transition_popup">Переход (Меню):</string>
     <string name="dark">Темный</string>
-    <string name="disable_external_fx">Выключите внешние эффекты</string>
     <string name="enable_external_fx">Включите внешние эффекты</string>
-    <string name="display_external_fx">Отображение внешних эффектов&#8230;</string>
-    <string name="external_fx_warning">Внимание: если ничего не происходит при нажатии на кнопку выше, а затем, возможно, ваше устройство не поддерживает внешние эффекты</string>
+    <string name="external_fx_warning">(Дезактивация может занять некоторое время)</string>
 
 </resources>

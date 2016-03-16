@@ -334,9 +334,7 @@
     <string name="smooth">Suave</string>
     <string name="transition_popup">Transición (Menú):</string>
     <string name="dark">Oscuro</string>
-    <string name="disable_external_fx">Desactivar efectos externos</string>
     <string name="enable_external_fx">Activar efectos externos</string>
-    <string name="display_external_fx">Mostrar efectos externos&#8230;</string>
-    <string name="external_fx_warning">Advertencia: si no pasa nada cuando hace clic en el botón de arriba, probablemente, el dispositivo no es compatible con los efectos externos</string>
+    <string name="external_fx_warning">(La desactivación puede tomar algún tiempo)</string>
 
 </resources>
