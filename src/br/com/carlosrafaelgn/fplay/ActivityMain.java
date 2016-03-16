@@ -113,7 +113,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand;
-	private boolean selectCurrentWhenAttached, skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
+	private boolean skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
 
@@ -127,43 +127,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		return (Player.controlMode ? UI.color_control_mode : UI.color_window);
 	}
 
-	private void saveListViewPosition() {
-		if (list != null && list.getAdapter() != null) {
-			final int i = list.getFirstVisiblePosition();
-			if (i < 0)
-				return;
-			final View v = list.getChildAt(0);
-			Player.listFirst = i;
-			Player.listTop = ((v == null) ? 0 : v.getTop());
-		}
-	}
-	
-	private void restoreListViewPosition(boolean selectCurrent) {
-		if (list != null) {
-			if (Player.positionToSelect >= 0) {
-				list.centerItem(Player.positionToSelect);
-				Player.positionToSelect = -1;
-				return;
-			}
-			final int c = Player.songs.getCurrentPosition();
-			if (Player.listFirst >= 0 && (!selectCurrent || Player.songs.selecting || Player.songs.moving)) {
-				list.setSelectionFromTop(Player.listFirst, Player.listTop);
-			} else {
-				if (selectCurrent && Player.lastCurrent != c && c >= 0) {
-					if (Player.songs.getSelection() != c)
-						Player.songs.setSelection(c, true);
-					list.centerItem(c);
-				} else {
-					if (Player.listFirst >= 0)
-						list.setSelectionFromTop(Player.listFirst, Player.listTop);
-					else
-						list.centerItem(Player.songs.getSelection());
-				}
-			}
-			Player.lastCurrent = -1;
-		}
-	}
-	
 	private String volumeToString(int volume) {
 		switch (Player.volumeControlType) {
 		case Player.VOLUME_CONTROL_STREAM:
@@ -476,7 +439,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (lblTitleIcon != null)
 			lblTitleIcon.setIcon(icon);
 		if (songHasChanged) {
-			Player.lastCurrent = -1; //force current song into view next time the UI changes
 			if (Player.followCurrentSong && list != null && !list.changingCurrentWouldScareUser())
 				bringCurrentIntoView();
 			if (lblTitle != null) {
@@ -532,13 +494,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onPlayerControlModeChanged(boolean controlMode) {
 		if (Player.songs.selecting || Player.songs.moving)
 			cancelSelection(false);
-		if (controlMode)
-			Player.lastCurrent = Player.songs.getCurrentPosition();
 		onCleanupLayout();
 		forceFadeOut = !controlMode;
 		onCreateLayout(false);
 		forceFadeOut = false;
-		resume(true);
+		resume();
 		System.gc();
 	}
 	
@@ -1272,8 +1232,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	
 	@Override
 	public void onBgListViewAttached(BgListView list) {
-		restoreListViewPosition(selectCurrentWhenAttached);
-		selectCurrentWhenAttached = false;
+		//after a long time, I decided the best solution is to simply center the desired song
+		//instead of trying to memorize the list position
+		if (Player.positionToCenter >= 0) {
+			list.centerItem(Player.positionToCenter);
+			Player.positionToCenter = -1;
+		} else {
+			list.centerItem(Player.songs.getSelection());
+		}
 	}
 	
 	@Override
@@ -1361,14 +1327,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		return false;
 	}
 	
-	private void resume(boolean selectCurrent) {
+	private void resume() {
 		UI.songActivity = this;
 		Player.songs.setObserver(list);
 		updateVolumeDisplay(Integer.MIN_VALUE);
-		if (list != null) {
-			selectCurrentWhenAttached = selectCurrent;
+		if (list != null)
 			list.notifyMeWhenFirstAttached(this);
-		}
 		//ignoreAnnouncement = true;
 		onPlayerChanged(Player.localSong, true, true, null);
 	}
@@ -1378,7 +1342,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		Player.isMainActiveOnTop = true;
 		Player.observer = this;
 		Player.registerMediaButtonEventReceiver();
-		resume(true);
+		resume();
 		UI.showNextStartupMsg(getHostActivity());
 	}
 	
@@ -1386,7 +1350,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	protected void onOrientationChanged() {
 		onCleanupLayout();
 		onCreateLayout(false);
-		resume(false);
+		resume();
 	}
 	
 	@Override
@@ -1394,7 +1358,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		if (skipToDestruction)
 			return;
 		Player.isMainActiveOnTop = false;
-		saveListViewPosition();
 		if (tmrSong != null)
 			tmrSong.stop();
 		if (tmrUpdateVolumeDisplay != null)
@@ -1409,8 +1372,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		Player.observer = null;
 		lastTime = -2;
 		pendingListCommand = 0;
-		if (!Player.controlMode)
-			Player.lastCurrent = Player.songs.getCurrentPosition();
 		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
 			localeHasBeenChanged = true;
 			UI.reapplyForcedLocale(getHostActivity());
@@ -1420,7 +1381,6 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
-		saveListViewPosition();
 		lblTitle = null;
 		lblArtist = null;
 		lblTrack = null;

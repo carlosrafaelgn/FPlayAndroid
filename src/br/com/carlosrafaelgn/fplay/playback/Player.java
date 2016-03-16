@@ -279,10 +279,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static MediaPlayer player, nextPlayer;
 	public static int audioSessionId;
 
-	//keep these three fields here, instead of in ActivityMain/ActivityBrowser,
-	//so they will survive their respective activity's destruction
-	//(and even the class garbage collection)
-	public static int lastCurrent = -1, listFirst = -1, listTop = 0, positionToSelect = -1;
+	//keep these fields here, instead of in their respective activities, to allow them to survive
+	//their activity's destruction (and even the class garbage collection)
+	public static int positionToCenter = -1;
 	public static boolean isMainActiveOnTop, alreadySelected;
 
 	//These are only set in the main thread
@@ -525,7 +524,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		final boolean stateNew = (state == STATE_NEW);
 		if (stateNew) {
 			MainHandler.initialize();
-			alreadySelected = true; //fix the initial selection when the app is started from the widget
+			positionToCenter = -1;
 			state = STATE_INITIALIZING;
 			theApplication.startService(new Intent(theApplication, Player.class));
 			theMainHandler = MainHandler.initialize();
@@ -605,9 +604,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 			songs.startDeserializingOrImportingFrom(null, true, false, false);
 		}
-		//fix the initial selection when the app is started from the widget
-		alreadySelected = false;
-		positionToSelect = songs.getCurrentPosition();
 		return stateNew;
 	}
 
@@ -2439,7 +2435,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (!songs.selecting && !songs.moving)
 				songs.setSelection(positionToSelect, false);
 			if (!isMainActiveOnTop)
-				Player.positionToSelect = positionToSelect;
+				Player.positionToCenter = positionToSelect;
 		}
 	}
 
