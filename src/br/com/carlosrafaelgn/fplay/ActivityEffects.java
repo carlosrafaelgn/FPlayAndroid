@@ -482,7 +482,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			for (int i = bars.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
 					int level = (50 * value) + min;
-					if (!usingKeys && (level <= LevelThreshold) && (level >= -LevelThreshold)) {
+					if (!usingKeys && (level < LevelThreshold) && (level > -LevelThreshold)) {
 						level = 0;
 						seekBar.setValue(-min / 50);
 					}
@@ -524,7 +524,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				if (bar != null) {
 					final int level = Equalizer.getBandLevel(i, audioSink);
 					bars[i].setText(format(frequencies[i], level));
-					bars[i].setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
+					bars[i].setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 				}
 			}
 		}
@@ -632,7 +632,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 					bar.setMax((max - min) / 50);
 					bar.setText(format(frequencies[i], level));
 					bar.setKeyIncrement(2);
-					bar.setValue(((level <= LevelThreshold) && (level >= -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
+					bar.setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 					bar.setOnBgSeekBarChangeListener(this);
 					bar.setInsideList(true);
 					if (size != 0)
