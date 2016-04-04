@@ -457,6 +457,11 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				lblAlbum.setText((currentSong == null) ? "-" : currentSong.album);
 			if (lblLength != null)
 				lblLength.setText((currentSong == null || currentSong.length == null || currentSong.length.length() == 0) ? "-" : currentSong.length);
+			//if the user adds a song while in control mode, but quickly leaves control mode, they
+			//will be able to see the song that has just been added
+			//but if the current song changes, let's stick to it and ignore the recently added song
+			if (Player.controlMode)
+				Player.positionToCenter = -1;
 		} else if (preparingHasChanged) {
 			if (barSeek != null) {
 				if (Player.isPreparing() && !barSeek.isTracking()) {
