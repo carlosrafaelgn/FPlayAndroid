@@ -426,17 +426,7 @@ extern "C" {
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	voice = 0;
 	recreateVoice = 0;
-	glProgram = 0;
-	glProgram2 = 0;
-	glBuf[0] = 0;
-	glBuf[1] = 0;
-	glBuf[2] = 0;
-	glBuf[3] = 0;
-	glTime = 0;
-	glAmplitude = 0;
-	glVerticesPerRow = 0;
-	glRows = 0;
-	glSoundParticle = 0;
+	glResetState();
 	commonTime = 0;
 	commonTimeLimit = 0xffffffff;
 	commonColorIndex = 0;
