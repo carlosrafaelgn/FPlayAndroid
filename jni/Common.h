@@ -53,7 +53,7 @@ int intBuffer[8] __attribute__((aligned(16)));
 #endif
 
 float commonCoefNew;
-unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
+unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime, commonIncreaseContrast;
 
 //Beat detection
 #define BEAT_STATE_VALLEY 0
@@ -267,7 +267,7 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 	unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
 
 #ifdef _MAY_HAVE_NEON_
-if (!neonMode) {
+if (!neonMode || commonIncreaseContrast) {
 #endif
 	float* fft = floatBuffer;
 	const float* multiplier = floatBuffer + 256;
@@ -285,6 +285,76 @@ if (!neonMode) {
 			//v goes from 0 to 32768+ (inclusive)
 			const unsigned int v = ((unsigned int)m) >> 7;
 			processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
+		}
+	} else if (commonIncreaseContrast) {
+		for (i = 0; i < 256; i++) {
+			//bfft[i] stores values from 0 to -128/127 (inclusive)
+			const int re = (int)bfft[i << 1];
+			const int im = (int)bfft[(i << 1) + 1];
+			const int amplSq = (re * re) + (im * im);
+			previousM[i] = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+		}
+		// the first 4 bins will not have their contrast increased
+		for (i = 0; i < 4; i++) {
+			float m = previousM[i];
+			const float old = fft[i];
+			if (m < old)
+				m = (coefNew * m) + (coefOld * old);
+			fft[i] = m;
+			//v goes from 0 to 32768+ (inclusive)
+			const unsigned int v = ((unsigned int)m) >> 7;
+			processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
+		}
+		//increase bin "contrast" after separating them into 6 different groups
+		int end = 4;
+		while (end < 255) {
+			const int start = end;
+			switch (start) {
+			case 4:
+				end = 8;
+				break;
+			case 8:
+				end = 16;
+				break;
+			case 16:
+				end = 32;
+				break;
+			case 32:
+				end = 64;
+				break;
+			case 64:
+				end = 128;
+				break;
+			default:
+				end = 256;
+				break;
+			}
+			i = start;
+			float maxInGroup = previousM[i++];
+			for (; i < end; i++) {
+				if (maxInGroup < previousM[i])
+					maxInGroup = previousM[i];
+			}
+			//the threshold is 65%
+			maxInGroup *= 0.65f;
+			for (i = start; i < end; i++) {
+				float m = previousM[i];
+
+				if (m >= maxInGroup)
+					//increase by 12.5% the value of all bins above the threshold
+					m *= 1.125f;
+				else
+					//decrease by 50% the value of all bins below the threshold
+					m *= 0.50f;
+
+				const float old = fft[i];
+				if (m < old)
+					m = (coefNew * m) + (coefOld * old);
+				fft[i] = m;
+				//v goes from 0 to 32768+ (inclusive)
+				const unsigned int v = ((unsigned int)m) >> 7;
+				processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
+			}
 		}
 	} else {
 		for (i = 0; i < 256; i++) {
@@ -381,7 +451,6 @@ if (!neonMode) {
 
 
 #define PACK_BIN(BIN) if ((BIN) == 0x01 || (BIN) == 0x1B) { *packet = 0x1B; packet[1] = ((unsigned char)(BIN) ^ 1); packet += 2; len += 2; } else { *packet = (unsigned char)(BIN); packet++; len++; }
-#define MAX(A,B) (((A) > (B)) ? (A) : (B))
 	unsigned char* packet = (unsigned char*)bfft;
 	int len = 0, last;
 	unsigned char avg;

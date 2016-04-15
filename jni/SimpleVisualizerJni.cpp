@@ -45,10 +45,10 @@
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
 
+#define MAX(A,B) (((A) > (B)) ? (A) : (B))
 
 #include "Common.h"
 #include "OpenGLVisualizerJni.h"
-
 
 static float invBarW;
 static int barW, barH, barBins, barWidthInPixels, recreateVoice, lerp;
@@ -64,6 +64,7 @@ void JNICALL init(JNIEnv* env, jclass clazz, int jbgColor) {
 	recreateVoice = 0;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
+	commonIncreaseContrast = 0;
 	const unsigned int r = ((jbgColor >> 16) & 0xff) >> 3;
 	const unsigned int g = ((jbgColor >> 8) & 0xff) >> 2;
 	const unsigned int b = (jbgColor & 0xff) >> 3;
@@ -431,6 +432,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	commonTimeLimit = 0xffffffff;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
+	commonIncreaseContrast = 0;
 	commonCoefNew = 0.0f;
 	rootMeanSquare = 0.0f;
 	vuMeter = 0.0f;

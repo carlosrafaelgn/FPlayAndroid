@@ -146,7 +146,7 @@ static const char* const particleFShader = "precision mediump float; varying vec
 
 static DRAWPROC glDrawProc;
 static unsigned int glProgram, glProgram2, glType, glBuf[5];
-static int glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix, glPos, glColor, glBaseX, glTheta, glOESTexture;
+static int glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix, glPos, glColor, glBaseX, glTheta, glOESTexture, glUpDown;
 
 #define glResetState() glDrawProc = glDrawNothing; \
 glProgram = 0; \
@@ -165,6 +165,7 @@ glPos = 0; \
 glColor = 0; \
 glBaseX = 0; \
 glTheta = 0; \
+glUpDown = 0; \
 glOESTexture = 0
 
 float glSmoothStep(float edge0, float edge1, float x) {
@@ -245,7 +246,6 @@ void glSumData() {
 	int i, idx, last;
 	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
 
-#define MAX(A,B) (((A) > (B)) ? (A) : (B))
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
 	idx = glAmplitude;
@@ -271,7 +271,6 @@ void glSumData() {
 			avg = MAX(avg, processedData[i]);
 		glUniform1f(idx++, (float)avg * 0.00390625f);
 	}
-#undef MAX
 }
 
 void glUpdateSpectrumColorTexture() {
@@ -462,6 +461,9 @@ void glDrawSpectrum2() {
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)(floatBuffer + 512));
+	glUniform1f(glUpDown, 1.0f);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2); //twice as many vertices as the regular spectrum
+	glUniform1f(glUpDown, -1.0f);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2); //twice as many vertices as the regular spectrum
 }
 
@@ -470,7 +472,6 @@ void glDrawSpectrum2WithoutAmplitudeTexture() {
 		glUpdateSpectrumColorTexture();
 
 	glClear(GL_COLOR_BUFFER_BIT);
-#define MAX(A,B) (((A) > (B)) ? (A) : (B))
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
 	int i, idx = glAmplitude, last;
@@ -485,8 +486,10 @@ void glDrawSpectrum2WithoutAmplitudeTexture() {
 		avg = MAX(avg, processedData[i + 3]);
 		glUniform1f(idx++, (float)avg * 0.00390625f);
 	}
+	glUniform1f(glUpDown, 1.0f);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2); //twice as many vertices as the regular spectrum
-#undef MAX
+	glUniform1f(glUpDown, -1.0f);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2); //twice as many vertices as the regular spectrum
 }
 
 void glDrawSpectrum() {
@@ -503,7 +506,6 @@ void glDrawSpectrumWithoutAmplitudeTexture() {
 		glUpdateSpectrumColorTexture();
 
 	glClear(GL_COLOR_BUFFER_BIT);
-#define MAX(A,B) (((A) > (B)) ? (A) : (B))
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
 	int i, idx = glAmplitude, last;
@@ -519,7 +521,6 @@ void glDrawSpectrumWithoutAmplitudeTexture() {
 		glUniform1f(idx++, (float)avg * 0.00390625f);
 	}
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 128 * 2);
-#undef MAX
 }
 
 int glCreateLiquid() {
@@ -985,31 +986,61 @@ int glCreateSpectrum2() {
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
-		spectrumUsesTexture ? "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
-		"float absx = abs(inPosition);" \
-		/* since absx goes from 1 to 3, and mirroring takes place when the integer part is odd, we just let the x coordinate */ \
-		/* to follow absx, and as a result, the first half will be mirrored, placing lower frequencies at the center of the screen */ \
-		"vec4 c = texture2D(texAmplitude, vec2(absx, 0.0));" \
-		"gl_Position = vec4(absx - 2.0, sign(inPosition) * c.a, 0.0, 1.0);" \
-		"vColor = texture2D(texColor, c.ar); }"
+		spectrumUsesTexture ? "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; uniform float upDown; void main() {" \
+			"float absx = abs(inPosition);" \
+			"if (inPosition > 0.0) {" \
+				/*top/bottom points*/ \
+				"gl_Position = vec4(absx - 2.0, upDown, 0.0, 1.0);" \
+				"vColor = vec4(1.0, 1.0, 1.0, 1.0);" \
+			"} else {" \
+				/*middle points*/ \
+				/* since absx goes from 1 to 3, and mirroring takes place when the integer part is odd, we just let the x coordinate */ \
+				/* to follow absx, and as a result, the first half will be mirrored, placing lower frequencies at the center of the screen */ \
+				"vec4 ampl = texture2D(texAmplitude, vec2(absx, 0.0));" \
+				"gl_Position = vec4(absx - 2.0, upDown * (1.0 - ampl.a), 0.0, 1.0);" \
+				"vColor = texture2D(texColor, ampl.ar);" \
+			"}" \
+		"}"
 		:
 		//Tegra GPUs CANNOT use textures in vertex shaders AND does not support more than 256 registers! :(
 		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
 		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
 		//https://www.khronos.org/registry/gles/specs/2.0/GLSL_ES_Specification_1.0.17.pdf page 111-113
-		"attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
-		"float absx = abs(inPosition);" \
-		"float c = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
-		"gl_Position = vec4(absx - 2.0, sign(inPosition) * c, 0.0, 1.0);" \
-		"vAmpl = c; }",
+		"attribute float inPosition; varying float vAmpl; varying float vColorAdd; uniform float amplitude[128]; uniform float upDown; void main() {" \
+			"float absx = abs(inPosition);" \
+			"float ampl;" \
+			/*mirror effect has to be simulated by hand*/ \
+			"if (absx < 2.0) {" \
+				"ampl = amplitude[int(floor(127.0 * (2.0 - absx)))];" \
+				"absx -= 2.0;"
+			"} else {" \
+				"absx -= 2.0;"
+				"ampl = amplitude[int(floor(127.0 * absx))];" \
+			"}" \
+			"if (inPosition > 0.0) {" \
+				/*top/bottom points*/ \
+				"gl_Position = vec4(absx, upDown, 0.0, 1.0);" \
+				"vColorAdd = 1.0;" \
+			"} else {" \
+				/*middle points*/ \
+				"gl_Position = vec4(absx, upDown * (1.0 - ampl), 0.0, 1.0);" \
+				"vColorAdd = 0.0;" \
+			"}" \
+			"vAmpl = ampl;" \
+		"}",
 
 		//fragment shader
-		spectrumUsesTexture ? "precision mediump float; varying vec4 vColor; void main() { gl_FragColor = vColor; }"
+		spectrumUsesTexture ? "precision mediump float; varying vec4 vColor; void main() {" \
+			"gl_FragColor = vColor;" \
+		"}"
 		:
 		//Tegra GPUs CANNOT use textures in vertex shaders! :(
 		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
 		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
-		"precision mediump float; varying float vAmpl; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vec2(vAmpl, 0.0)); }",
+		"precision mediump float; varying float vAmpl; varying float vColorAdd; uniform sampler2D texColor; void main() {" \
+			"vec4 c = texture2D(texColor, vec2(vAmpl, 0.0));"
+			"gl_FragColor = vec4(vColorAdd + c.r, vColorAdd + c.g, vColorAdd + c.b, 1.0);" \
+		"}",
 
 		&glProgram)))
 		return l;
@@ -1070,8 +1101,8 @@ int glCreateSpectrum2() {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, glTex[0]);
 	if (glGetError()) return -105;
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT); //mirror the x coordinate (mirror takes place when the integer part is odd)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	memset(floatBuffer, 0, 256);
@@ -1099,6 +1130,7 @@ int glCreateSpectrum2() {
 	else
 		glAmplitude = glGetUniformLocation(glProgram, "amplitude");
 	glUniform1i(glGetUniformLocation(glProgram, "texColor"), 1);
+	glUpDown = glGetUniformLocation(glProgram, "upDown");
 	if (glGetError()) return -110;
 
 	glEnableVertexAttribArray(0);
@@ -1124,28 +1156,34 @@ int glCreateSpectrum() {
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
 		spectrumUsesTexture ? "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
-		"float absx = abs(inPosition);" \
-		"vec4 c = texture2D(texAmplitude, vec2(0.5 * (absx - 1.0), 0.0));" \
-		"gl_Position = vec4(absx - 2.0, sign(inPosition) * c.a, 0.0, 1.0);" \
-		"vColor = texture2D(texColor, c.ar); }"
+			"float absx = abs(inPosition);" \
+			"vec4 ampl = texture2D(texAmplitude, vec2(0.5 * (absx - 1.0), 0.0));" \
+			"gl_Position = vec4(absx - 2.0, sign(inPosition) * ampl.a, 0.0, 1.0);" \
+			"vColor = texture2D(texColor, ampl.ar);" \
+		"}"
 		:
 		//Tegra GPUs CANNOT use textures in vertex shaders AND does not support more than 256 registers! :(
 		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
 		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
 		//https://www.khronos.org/registry/gles/specs/2.0/GLSL_ES_Specification_1.0.17.pdf page 111-113
 		"attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
-		"float absx = abs(inPosition);" \
-		"float c = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
-		"gl_Position = vec4(absx - 2.0, sign(inPosition) * c, 0.0, 1.0);" \
-		"vAmpl = c; }",
+			"float absx = abs(inPosition);" \
+			"float ampl = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
+			"gl_Position = vec4(absx - 2.0, sign(inPosition) * ampl, 0.0, 1.0);" \
+			"vAmpl = ampl;" \
+		"}",
 
 		//fragment shader
-		spectrumUsesTexture ? "precision mediump float; varying vec4 vColor; void main() { gl_FragColor = vColor; }"
+		spectrumUsesTexture ? "precision mediump float; varying vec4 vColor; void main() {" \
+			"gl_FragColor = vColor;" \
+		"}"
 		:
 		//Tegra GPUs CANNOT use textures in vertex shaders! :(
 		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
 		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
-		"precision mediump float; varying float vAmpl; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vec2(vAmpl, 0.0)); }",
+		"precision mediump float; varying float vAmpl; uniform sampler2D texColor; void main() {" \
+			"gl_FragColor = texture2D(texColor, vec2(vAmpl, 0.0));" \
+		"}",
 
 		&glProgram)))
 		return l;
@@ -1256,6 +1294,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	commonTime = 0;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
+	commonIncreaseContrast = 0;
 
 	glClearColor((float)((bgColor >> 16) & 0xff) / 255.0f, (float)((bgColor >> 8) & 0xff) / 255.0f, (float)(bgColor & 0xff) / 255.0f, 1.0f);
 
@@ -1289,10 +1328,12 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		ret = glCreateImmersiveParticle(hasGyro);
 		break;
 	case TYPE_SPECTRUM2:
+		commonIncreaseContrast = 1;
 		commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside drawSpectrumXXX()
 		ret = glCreateSpectrum2();
 		break;
 	default:
+		commonIncreaseContrast = 1;
 		commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside drawSpectrumXXX()
 		ret = glCreateSpectrum();
 		break;
@@ -1389,7 +1430,7 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 				if (ratioError <= 0.01f) {
 					glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsRect, GL_STATIC_DRAW);
 				} else {
-					//is the camera ratio is too different from the view ratio, compensate for that
+					//if the camera ratio is too different from the view ratio, compensate for that
 					//difference using the texture coords
 					//(THIS ALGORITHM WAS A BIT SIMPLIFIED BECAUSE WE KNOW THAT
 					//cameraPreviewW < width AND cameraPreviewH < height)

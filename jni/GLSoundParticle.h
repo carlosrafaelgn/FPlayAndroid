@@ -481,7 +481,6 @@ public:
 		}
 
 		for (c = 0; c < BG_COLUMNS; c++) {
-#define MAX(A,B) (((A) > (B)) ? (A) : (B))
 			//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 			//since the difference is visually unnoticeable
 
@@ -511,7 +510,7 @@ public:
 				a = (float)avg * (2.5f * 0.00390625f);
 				last2 += 16;
 			}
-#undef MAX
+
 			glUniform1f(glAmplitude, (a >= 1.0f) ? 1.0f : a);
 			//the 31 columns spread from -0.9 to 0.9, and they are evenly spaced
 			glUniform1f(glBaseX, -0.9f + (0.06206897f * (float)c));

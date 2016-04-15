@@ -99,6 +99,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public static final int TYPE_PARTICLE = 3;
 	public static final int TYPE_IMMERSIVE_PARTICLE = 4;
 	public static final int TYPE_IMMERSIVE_PARTICLE_VR = 5;
+	public static final int TYPE_SPECTRUM2 = 6;
 
 	private final int type;
 	private byte[] waveform;
@@ -120,7 +121,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public OpenGLVisualizerJni(Activity activity, boolean landscape, Intent extras) {
 		super(activity);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
-		type = ((t < TYPE_LIQUID || t > TYPE_IMMERSIVE_PARTICLE_VR) ? TYPE_SPECTRUM : t);
+		type = ((t < TYPE_LIQUID || t > TYPE_SPECTRUM2) ? TYPE_SPECTRUM : t);
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		setClickable(true);
 		setFocusableInTouchMode(false);
