@@ -61,7 +61,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	static native void commonSetSpeed(int speed);
 	static native void commonSetColorIndex(int colorIndex);
 	static native int commonCheckNeonMode();
-	static native void commonUpdateMultiplier(boolean isVoice);
+	static native void commonUpdateMultiplier(boolean isVoice, boolean hq);
 	static native int commonProcess(byte[] waveform, int opt);
 
 	private static native void setLerp(boolean lerp);
@@ -105,7 +105,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		ignoreInput = 0;
 		lerp = false;
 		voice = false;
-		commonUpdateMultiplier(false);
+		commonUpdateMultiplier(false, false);
 		setLerp(false);
 		commonSetColorIndex(0);
 	}
@@ -139,7 +139,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			break;
 		}
 		if (item.getItemId() != MNU_COLOR)
-			commonUpdateMultiplier(voice);
+			commonUpdateMultiplier(voice, false);
 		setLerp(lerp);
 		commonSetColorIndex(colorIndex);
 		return true;
@@ -198,7 +198,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			state = 0;
 			break;
 		}
-		commonUpdateMultiplier(voice);
+		commonUpdateMultiplier(voice, false);
 		setLerp(lerp);
 		commonSetColorIndex(colorIndex);
 	}
@@ -276,7 +276,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			return;
 		try {
 			if (surface != null) {
-				//We use ignoreInput, because sampling 1024, 60 times a seconds,
+				//We use ignoreInput, because taking 1024 samples, 60 times a seconds
 				//is useless, as there are only 44100 or 48000 samples in one second
 				if (ignoreInput == 0) {
 					//WE MUST NEVER call any method from visualizer

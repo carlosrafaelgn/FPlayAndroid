@@ -147,7 +147,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 		if (connected && !transmitting) {
 			if (!jniCalled) {
 				jniCalled = true;
-				SimpleVisualizerJni.commonUpdateMultiplier(false);
+				SimpleVisualizerJni.commonUpdateMultiplier(false, false);
 				syncSize();
 				syncSpeed();
 				syncFramesToSkip();
@@ -301,7 +301,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 			return;
 		try {
 			if (transmitting) {
-				//We use ignoreInput, because sampling 1024, 60 times a seconds,
+				//We use ignoreInput, because taking 1024 samples, 60 times a seconds
 				//is useless, as there are only 44100 or 48000 samples in one second
 				if (ignoreInput == 0) {
 					//WE MUST NEVER call any method from visualizer

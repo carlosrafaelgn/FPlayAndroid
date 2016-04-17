@@ -31,9 +31,13 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
+#define FFT_SIZE 1024 //FFT_SIZE must be a power of 2 <= 65536
+#define QUARTER_FFT_SIZE (FFT_SIZE / 4)
+
 #include "SimpleMutex.h"
 #include "CommonNeon.h"
 #include "FixedFFT.h"
+#include "FFTNR.h"
 #include <time.h>
 
 //for the alignment:
@@ -42,8 +46,10 @@
 //to make the math easier COLORS has 257 int's (from 0 to 256) for each different color
 const unsigned short COLORS[] __attribute__((aligned(16))) = { 	/*Blue */ 0x0000, 0x0816, 0x0816, 0x0815, 0x0815, 0x0815, 0x1015, 0x1015, 0x1015, 0x1015, 0x1015, 0x1015, 0x1815, 0x1814, 0x1814, 0x1814, 0x1814, 0x2014, 0x2014, 0x2014, 0x2013, 0x2013, 0x2813, 0x2813, 0x2813, 0x2813, 0x3012, 0x3012, 0x3012, 0x3012, 0x3812, 0x3811, 0x3811, 0x3811, 0x4011, 0x4011, 0x4011, 0x4010, 0x4810, 0x4810, 0x4810, 0x4810, 0x500f, 0x500f, 0x500f, 0x500f, 0x580f, 0x580e, 0x580e, 0x600e, 0x600e, 0x600d, 0x680d, 0x680d, 0x680d, 0x680d, 0x700c, 0x700c, 0x700c, 0x780c, 0x780c, 0x780b, 0x800b, 0x800b, 0x800b, 0x800a, 0x880a, 0x880a, 0x880a, 0x900a, 0x9009, 0x9009, 0x9009, 0x9809, 0x9809, 0x9808, 0xa008, 0xa008, 0xa008, 0xa807, 0xa807, 0xa807, 0xa807, 0xb007, 0xb006, 0xb006, 0xb806, 0xb806, 0xb806, 0xb805, 0xc005, 0xc005, 0xc005, 0xc005, 0xc804, 0xc804, 0xc804, 0xc804, 0xd004, 0xd004, 0xd003, 0xd003, 0xd803, 0xd803, 0xd803, 0xd802, 0xe002, 0xe002, 0xe002, 0xe002, 0xe002, 0xe802, 0xe801, 0xe801, 0xe801, 0xe801, 0xf001, 0xf001, 0xf001, 0xf000, 0xf000, 0xf000, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf820, 0xf820, 0xf820, 0xf840, 0xf840, 0xf840, 0xf860, 0xf860, 0xf860, 0xf880, 0xf880, 0xf8a0, 0xf8a0, 0xf8a0, 0xf8c0, 0xf8c0, 0xf8e0, 0xf8e0, 0xf900, 0xf900, 0xf900, 0xf920, 0xf920, 0xf940, 0xf940, 0xf960, 0xf960, 0xf980, 0xf9a0, 0xf9a0, 0xf9a0, 0xf9c0, 0xf9e0, 0xf9e0, 0xfa00, 0xfa00, 0xfa20, 0xfa20, 0xfa40, 0xfa40, 0xfa60, 0xfa80, 0xfa80, 0xfaa0, 0xfaa0, 0xfac0, 0xfae0, 0xfae0, 0xfb00, 0xfb00, 0xfb20, 0xfb40, 0xfb40, 0xfb60, 0xfb60, 0xfb80, 0xfba0, 0xfba0, 0xfbc0, 0xfbe0, 0xfbe0, 0xfc00, 0xfc00, 0xfc20, 0xfc20, 0xfc40, 0xfc60, 0xfc60, 0xfc80, 0xfca0, 0xfca0, 0xfcc0, 0xfcc0, 0xfce0, 0xfd00, 0xfd00, 0xfd20, 0xfd20, 0xfd40, 0xfd60, 0xfd60, 0xfd80, 0xfd80, 0xfda0, 0xfda0, 0xfdc0, 0xfde0, 0xfde0, 0xfe00, 0xfe00, 0xfe20, 0xfe20, 0xfe40, 0xfe40, 0xfe60, 0xfe60, 0xfe80, 0xfe80, 0xfea0, 0xfea0, 0xfec0, 0xfec0, 0xfee0, 0xfee0, 0xff00, 0xff00, 0xff20, 0xff20, 0xff20, 0xff40, 0xff40, 0xff40, 0xff60, 0xff60, 0xff80, 0xff80, 0xff80, 0xffa0, 0xffa0, 0xffa0, 0xffc0, 0xffc0, 0xffc0, 0xffc0, 0xffc0,
 																/*Green*/ 0x0000, 0x0000, 0x0000, 0x0020, 0x0020, 0x0040, 0x0040, 0x0060, 0x0060, 0x0080, 0x00a0, 0x00a0, 0x00c0, 0x00e0, 0x00e0, 0x0100, 0x0120, 0x0140, 0x0160, 0x0160, 0x0180, 0x01a0, 0x01c0, 0x01e0, 0x01e0, 0x0200, 0x0220, 0x0240, 0x0260, 0x0280, 0x0280, 0x02a0, 0x02c0, 0x02e0, 0x0300, 0x0320, 0x0340, 0x0360, 0x0360, 0x0380, 0x03a0, 0x03c0, 0x03e0, 0x0400, 0x0400, 0x0420, 0x0440, 0x0440, 0x0460, 0x0480, 0x0480, 0x04a0, 0x04c0, 0x04c0, 0x04c0, 0x04e0, 0x04e0, 0x0ce0, 0x0d00, 0x0d00, 0x0d00, 0x1520, 0x1520, 0x1540, 0x1540, 0x1d40, 0x1d60, 0x1d60, 0x2580, 0x2580, 0x25a0, 0x2da0, 0x2da0, 0x2dc0, 0x35c0, 0x35e0, 0x35e0, 0x3e00, 0x3e00, 0x3e00, 0x4620, 0x4620, 0x4e40, 0x4e40, 0x4e60, 0x5660, 0x5660, 0x5e80, 0x5e80, 0x5ea0, 0x66a0, 0x66c0, 0x66c0, 0x6ec0, 0x6ee0, 0x76e0, 0x7700, 0x7f00, 0x7f00, 0x7f20, 0x8720, 0x8720, 0x8f40, 0x8f40, 0x8f40, 0x9760, 0x9760, 0x9f80, 0x9f80, 0x9f80, 0xa780, 0xa7a0, 0xafa0, 0xafa0, 0xafc0, 0xb7c0, 0xb7c0, 0xbfc0, 0xbfc0, 0xbfe0, 0xc7e0, 0xc7e0, 0xc7e0, 0xcfe0, 0xcfe0, 0xcfe0, 0xd7e0, 0xd7e0, 0xdfe0, 0xdfe0, 0xdfe0, 0xdfe0, 0xe7e0, 0xe7e0, 0xe7e0, 0xefe0, 0xefe0, 0xefe0, 0xefe0, 0xf7e0, 0xf7e0, 0xf7e0, 0xf7e0, 0xf7e0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffc0, 0xffc0, 0xffc0, 0xffa0, 0xffa0, 0xffa0, 0xff80, 0xff80, 0xff80, 0xff60, 0xff60, 0xff40, 0xff40, 0xff40, 0xff20, 0xff00, 0xff00, 0xfee0, 0xfee0, 0xfec0, 0xfec0, 0xfea0, 0xfea0, 0xfe80, 0xfe60, 0xfe60, 0xfe40, 0xfe20, 0xfe20, 0xfe00, 0xfe00, 0xfde0, 0xfdc0, 0xfda0, 0xfda0, 0xfd80, 0xfd60, 0xfd60, 0xfd40, 0xfd20, 0xfd00, 0xfd00, 0xfce0, 0xfcc0, 0xfca0, 0xfca0, 0xfc80, 0xfc60, 0xfc40, 0xfc40, 0xfc20, 0xfc00, 0xfbe0, 0xfbe0, 0xfbc0, 0xfba0, 0xfb80, 0xfb60, 0xfb60, 0xfb40, 0xfb20, 0xfb00, 0xfb00, 0xfae0, 0xfac0, 0xfaa0, 0xfaa0, 0xfa80, 0xfa60, 0xfa60, 0xfa40, 0xfa20, 0xfa00, 0xfa00, 0xf9e0, 0xf9c0, 0xf9c0, 0xf9a0, 0xf980, 0xf980, 0xf960, 0xf960, 0xf940, 0xf920, 0xf920, 0xf900, 0xf8e0, 0xf8e0, 0xf8c0, 0xf8c0, 0xf8a0, 0xf8a0, 0xf880, 0xf880, 0xf860, 0xf860, 0xf860, 0xf840, 0xf840, 0xf820, 0xf820, 0xf820, 0xf800, 0xf800, 0xf800, 0xf800 };
-float floatBuffer[(256 * 2) + (256 / 4)] __attribute__((aligned(16)));
-float previousM[256] __attribute__((aligned(16)));
+float fftData[FFT_SIZE] __attribute__((aligned(16)));
+float fftWindow[FFT_SIZE] __attribute__((aligned(16)));
+float floatBuffer[(QUARTER_FFT_SIZE * 2) + (QUARTER_FFT_SIZE / 4)] __attribute__((aligned(16)));
+float previousM[QUARTER_FFT_SIZE] __attribute__((aligned(16)));
 //vuMeter ranges from 0 to 1, and should be mapped to (-40dB to 6.5dB)
 //vuMeterUnfiltered ranges from 0 to over 1, and should be mapped to (-40dB to over 6.5dB)
 float rootMeanSquare, vuMeter, vuMeterUnfiltered, vuMeterFilterState[4];
@@ -53,7 +59,7 @@ int intBuffer[8] __attribute__((aligned(16)));
 #endif
 
 float commonCoefNew;
-unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime, commonIncreaseContrast;
+unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
 
 //Beat detection
 #define BEAT_STATE_VALLEY 0
@@ -162,10 +168,10 @@ int JNICALL commonCheckNeonMode(JNIEnv* env, jclass clazz) {
 #endif
 }
 
-void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
+void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice, jboolean hq) {
 	float* const fft = floatBuffer;
-	float* const multiplier = fft + 256;
-	unsigned char* const processedData = (unsigned char*)(fft + 512);
+	float* const multiplier = fft + QUARTER_FFT_SIZE;
+	unsigned char* const processedData = (unsigned char*)(fft + (QUARTER_FFT_SIZE * 2));
 	rootMeanSquare = 0.0f;
 	vuMeter = 0.0f;
 	vuMeterUnfiltered = 0.0f;
@@ -182,7 +188,7 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 	beatSpeedBPM = 0;
 	beatFilteredInput = 0;
 	if (isVoice) {
-		for (int i = 0; i < 256; i++) {
+		for (int i = 0; i < QUARTER_FFT_SIZE; i++) {
 			fft[i] = 0;
 			processedData[i] = 0;
 			previousM[i] = 0;
@@ -193,7 +199,7 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 			//multiplier[i] = 2.0f * expf((float)i / 128.0f);
 		}
 	} else {
-		for (int i = 0; i < 256; i++) {
+		for (int i = 0; i < QUARTER_FFT_SIZE; i++) {
 			fft[i] = 0;
 			processedData[i] = 0;
 			previousM[i] = 0;
@@ -202,6 +208,17 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice)
 			const double d = 5.0 * (400.0 - exp(1.0 / (((double)i / 3700.0) + 0.165)));
 			multiplier[i] = ((d <= 256.0) ? 256.0f : (float)d);
 			//multiplier[i] = 256.0f * expf((float)i / 128.0f);
+			
+			if (hq)
+				multiplier[i] *= (1.0f / (float)(FFT_SIZE / 2));
+		}
+		if (hq) {
+			multiplier[0] *= 0.5f;
+
+			FFTNR::Initialize();
+			//Hamming window
+			for (int i = 0; i < FFT_SIZE; i++)
+				fftWindow[i] = (float)(0.54 - (0.46 * cos(2.0 * 3.1415926535897932384626433832795 * (double)i / (double)(FFT_SIZE - 1))));
 		}
 	}
 }
@@ -215,7 +232,7 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 	while (((unsigned int)i) >= commonTimeLimit)
 		i -= commonTimeLimit;
 	commonTime = i;
-
+	
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
@@ -226,13 +243,24 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 			return 0;
 
 		if (!(opt & IGNORE_INPUT)) {
-			if ((opt & DATA_VUMETER))
+			if ((opt & DATA_VUMETER)) {
 				rootMeanSquare = sqrtf((float)doFft((unsigned char*)bfft, opt) * (1.0f / (float)(CAPTURE_SIZE)));
-			else if ((opt & DATA_FFT))
-				doFft((unsigned char*)bfft, DATA_FFT);
+				//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
+				bfft[1] = 0;
+			} else if ((opt & DATA_FFT)) {
+				if ((opt & DATA_FFT_HQ)) {
+					for (int i = 0; i < FFT_SIZE; i++)
+						fftData[i] = (float)((int)(((unsigned char*)bfft)[i]) - 128);// * fftWindow[i];
+					FFTNR::Forward(fftData);
 
-			//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-			bfft[1] = 0;
+					//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
+					fftData[1] = 0.0f;
+				} else {
+					doFft((unsigned char*)bfft, DATA_FFT);
+					//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
+					bfft[1] = 0;
+				}
+			}
 		}
 	} else {
 		bfft = 0;
@@ -267,16 +295,16 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 	unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
 
 #ifdef _MAY_HAVE_NEON_
-if (!neonMode || commonIncreaseContrast) {
+if (!neonMode || (opt & DATA_FFT_HQ)) {
 #endif
 	float* fft = floatBuffer;
-	const float* multiplier = floatBuffer + 256;
+	const float* multiplier = floatBuffer + QUARTER_FFT_SIZE;
 
 	const float coefNew = commonCoefNew * (float)deltaMillis;
 	const float coefOld = 1.0f - coefNew;
 
 	if ((opt & IGNORE_INPUT)) {
-		for (i = 0; i < 256; i++) {
+		for (i = 0; i < QUARTER_FFT_SIZE; i++) {
 			float m = previousM[i];
 			const float old = fft[i];
 			if (m < old)
@@ -286,17 +314,14 @@ if (!neonMode || commonIncreaseContrast) {
 			const unsigned int v = ((unsigned int)m) >> 7;
 			processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
 		}
-	} else if (commonIncreaseContrast) {
-		for (i = 0; i < 256; i++) {
-			//bfft[i] stores values from 0 to -128/127 (inclusive)
-			const int re = (int)bfft[i << 1];
-			const int im = (int)bfft[(i << 1) + 1];
-			const int amplSq = (re * re) + (im * im);
-			previousM[i] = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
-		}
-		// the first 4 bins will not have their contrast increased
-		for (i = 0; i < 4; i++) {
-			float m = previousM[i];
+	} else if ((opt & DATA_FFT_HQ)) {
+		for (i = 0; i < QUARTER_FFT_SIZE; i++) {
+			//fftData[i] stores values from 0 to -128/127 (inclusive)
+			const float re = fftData[i << 1];
+			const float im = fftData[(i << 1) + 1];
+			const float amplSq = (re * re) + (im * im);
+			float m = ((amplSq <= 8.0f) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+			previousM[i] = m;
 			const float old = fft[i];
 			if (m < old)
 				m = (coefNew * m) + (coefOld * old);
@@ -304,65 +329,14 @@ if (!neonMode || commonIncreaseContrast) {
 			//v goes from 0 to 32768+ (inclusive)
 			const unsigned int v = ((unsigned int)m) >> 7;
 			processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
-		}
-		//increase bin "contrast" after separating them into 6 different groups
-		int end = 4;
-		while (end < 255) {
-			const int start = end;
-			switch (start) {
-			case 4:
-				end = 8;
-				break;
-			case 8:
-				end = 16;
-				break;
-			case 16:
-				end = 32;
-				break;
-			case 32:
-				end = 64;
-				break;
-			case 64:
-				end = 128;
-				break;
-			default:
-				end = 256;
-				break;
-			}
-			i = start;
-			float maxInGroup = previousM[i++];
-			for (; i < end; i++) {
-				if (maxInGroup < previousM[i])
-					maxInGroup = previousM[i];
-			}
-			//the threshold is 65%
-			maxInGroup *= 0.65f;
-			for (i = start; i < end; i++) {
-				float m = previousM[i];
-
-				if (m >= maxInGroup)
-					//increase by 12.5% the value of all bins above the threshold
-					m *= 1.125f;
-				else
-					//decrease by 50% the value of all bins below the threshold
-					m *= 0.50f;
-
-				const float old = fft[i];
-				if (m < old)
-					m = (coefNew * m) + (coefOld * old);
-				fft[i] = m;
-				//v goes from 0 to 32768+ (inclusive)
-				const unsigned int v = ((unsigned int)m) >> 7;
-				processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
-			}
 		}
 	} else {
-		for (i = 0; i < 256; i++) {
+		for (i = 0; i < QUARTER_FFT_SIZE; i++) {
 			//bfft[i] stores values from 0 to -128/127 (inclusive)
 			const int re = (int)bfft[i << 1];
 			const int im = (int)bfft[(i << 1) + 1];
 			const int amplSq = (re * re) + (im * im);
-			float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+			float m = ((amplSq <= 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 			previousM[i] = m;
 			const float old = fft[i];
 			if (m < old)

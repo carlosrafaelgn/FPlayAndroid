@@ -107,7 +107,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private volatile int error;
 	private volatile Uri selectedUri;
 	private boolean browsing;
-	private int colorIndex, speed, viewWidth, viewHeight, diffusion, riseSpeed, ignoreInput;
+	private int colorIndex, speed, viewWidth, viewHeight, diffusion, riseSpeed, ignoreInput, opt;
 	private EGLConfig config;
 	private Activity activity;
 	private WindowManager windowManager;
@@ -131,6 +131,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 2);
 		ignoreInput = 0;
+		opt = (((type == TYPE_SPECTRUM || type == TYPE_SPECTRUM2)) ? (DATA_FFT | DATA_FFT_HQ) : DATA_FFT);
 		this.activity = activity;
 
 		//initialize these with default values to be used in
@@ -710,6 +711,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		Bitmap bitmap = null;
 		try {
 			input = Player.theApplication.getContentResolver().openInputStream(selectedUri);
+			if (input == null)
+				return;
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inJustDecodeBounds = true;
 			bitmap = BitmapFactory.decodeStream(input, null, opts);
@@ -1003,7 +1006,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void processFrame(android.media.audiofx.Visualizer visualizer) {
 		if (okToRender) {
-			//We use ignoreInput, because sampling 1024, 60 times a seconds,
+			//We use ignoreInput, because taking 1024 samples, 60 times a seconds
 			//is useless, as there are only 44100 or 48000 samples in one second
 			if (ignoreInput == 0) {
 				//WE MUST NEVER call any method from visualizer
@@ -1013,7 +1016,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				else
 					visualizer.getWaveForm(waveform);
 			}
-			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | DATA_FFT);
+			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | opt);
 			ignoreInput ^= IGNORE_INPUT;
 			//requestRender();
 		}

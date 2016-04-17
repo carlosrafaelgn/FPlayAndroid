@@ -54,6 +54,8 @@
 #define DATA_FFT             0x0100
 #define DATA_VUMETER         0x0200
 #define IGNORE_INPUT         0x0400
+//DATA_FFT_HQ MUST be used with DATA_FFT
+#define DATA_FFT_HQ          0x0800
 
 #define BEAT_DETECTION_1     0x1000
 #define BEAT_DETECTION_2     0x2000

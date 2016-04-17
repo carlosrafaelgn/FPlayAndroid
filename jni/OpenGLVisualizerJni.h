@@ -1294,7 +1294,6 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	commonTime = 0;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
-	commonIncreaseContrast = 0;
 
 	glClearColor((float)((bgColor >> 16) & 0xff) / 255.0f, (float)((bgColor >> 8) & 0xff) / 255.0f, (float)(bgColor & 0xff) / 255.0f, 1.0f);
 
@@ -1311,7 +1310,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	glDisable(GL_BLEND);
 	glGetError(); //clear any eventual error flags
 
-	int ret;
+	int ret, hq = 0;
 
 	switch (type) {
 	case TYPE_LIQUID:
@@ -1328,18 +1327,18 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 		ret = glCreateImmersiveParticle(hasGyro);
 		break;
 	case TYPE_SPECTRUM2:
-		commonIncreaseContrast = 1;
+		hq = 1;
 		commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside drawSpectrumXXX()
 		ret = glCreateSpectrum2();
 		break;
 	default:
-		commonIncreaseContrast = 1;
+		hq = 1;
 		commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside drawSpectrumXXX()
 		ret = glCreateSpectrum();
 		break;
 	}
 
-	commonUpdateMultiplier(env, clazz, 0);
+	commonUpdateMultiplier(env, clazz, 0, hq);
 
 	glReleaseShaderCompiler();
 

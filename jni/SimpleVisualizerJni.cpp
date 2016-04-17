@@ -64,12 +64,11 @@ void JNICALL init(JNIEnv* env, jclass clazz, int jbgColor) {
 	recreateVoice = 0;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
-	commonIncreaseContrast = 0;
 	const unsigned int r = ((jbgColor >> 16) & 0xff) >> 3;
 	const unsigned int g = ((jbgColor >> 8) & 0xff) >> 2;
 	const unsigned int b = (jbgColor & 0xff) >> 3;
 	bgColor = (unsigned short)((r << 11) | (g << 5) | b);
-	commonUpdateMultiplier(env, clazz, 0);
+	commonUpdateMultiplier(env, clazz, 0, 0);
 }
 
 void JNICALL terminate(JNIEnv* env, jclass clazz) {
@@ -432,7 +431,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	commonTimeLimit = 0xffffffff;
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
-	commonIncreaseContrast = 0;
 	commonCoefNew = 0.0f;
 	rootMeanSquare = 0.0f;
 	vuMeter = 0.0f;
@@ -457,7 +455,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"commonSetSpeed", "(I)V", (void*)commonSetSpeed},
 		{"commonSetColorIndex", "(I)V", (void*)commonSetColorIndex},
 		{"commonCheckNeonMode", "()I", (void*)commonCheckNeonMode},
-		{"commonUpdateMultiplier", "(Z)V", (void*)commonUpdateMultiplier},
+		{"commonUpdateMultiplier", "(ZZ)V", (void*)commonUpdateMultiplier},
 		{"commonProcess", "([BI)I", (void*)commonProcess},
 
 		{"setLerp", "(Z)V", (void*)setLerp},
