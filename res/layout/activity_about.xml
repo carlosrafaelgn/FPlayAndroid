@@ -44,8 +44,9 @@
             android:layout_height="wrap_content"
             android:layout_alignBottom="@+id/imgIcon"
             android:layout_toLeftOf="@+id/imgIcon"
+            android:layout_marginRight="4dp"
             android:baselineAligned="true"
-            android:gravity="right|bottom"
+            android:gravity="bottom"
             android:orientation="horizontal">
 
             <TextView
