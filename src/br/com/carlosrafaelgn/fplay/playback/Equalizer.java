@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import com.h6ah4i.android.media.audiofx.IEqualizer;
+
 import java.util.Arrays;
 
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
@@ -40,7 +42,7 @@ public final class Equalizer {
 	private static int minBandLevel, maxBandLevel;
 	private static boolean enabled, enabled_wire, enabled_bt;
 	private static int[] bandLevels, bandLevels_wire, bandLevels_bt, bandFrequencies;
-	private static android.media.audiofx.Equalizer theEqualizer;
+	private static IEqualizer theEqualizer;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
 		//use OPTBIT_EQUALIZER_ENABLED, OPT_EQUALIZER_LEVELCOUNT and OPT_EQUALIZER_LEVEL0 for all audio sinks!!!
@@ -156,7 +158,7 @@ public final class Equalizer {
 
 	static void _initialize() {
 		try {
-			theEqualizer = new android.media.audiofx.Equalizer(0, Player.audioSessionId);
+			theEqualizer = MediaFactory.createEqualizer();
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 			return;
@@ -304,7 +306,7 @@ public final class Equalizer {
 		final int[] levels = ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels));
 		if (levels != null && levels.length > 0) {
 			try {
-				final android.media.audiofx.Equalizer.Settings s = new android.media.audiofx.Equalizer.Settings();
+				final IEqualizer.Settings s = new IEqualizer.Settings();
 				int i = ((levels.length > (int)theEqualizer.getNumberOfBands()) ? (int)theEqualizer.getNumberOfBands() : levels.length);
 				s.bandLevels = new short[i];
 				s.curPreset = -1;

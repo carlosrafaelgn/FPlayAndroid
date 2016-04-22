@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="fplay">FPlay</string>
     <string name="app_by">от Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Простой и понятный музыкальный плеер с эквалайзером для Android</string>
     <string name="app_more_info">Нужна более подробная информация?&lt;br/&gt;Возможно интересует исходный код?&lt;br/&gt;Есть предложение по развитию проекта?&lt;br/&gt;Нашли ошибку в программе?!?&lt;br/&gt;Просто хотите пообщаться со мной? :)&lt;br/&gt;&lt;br/&gt;Пишите на e-mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;или посетите сайт программыn\на GitHub:&lt;br/&gt; &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Очень особую благодарность людям, которые помогли перевод FPlay:&lt;br/&gt;&lt;br/&gt;Sviat Hurskyi (&lt;a href=\"mailto:sviat.hurskyi@gmail.com\"&gt;sviat.hurskyi@gmail.com&lt;/a&gt;)&lt;br/&gt;Stefan Fitzenreiter (&lt;a href=\"mailto:sfitzenreiter@gmail.com\"&gt;sfitzenreiter@gmail.com&lt;/a&gt;)&lt;br/&gt;David Gonzalez (&lt;a href=\"mailto:redandy16@gmail.com\"&gt;redandy16@gmail.com&lt;/a&gt;)&lt;br/&gt;Soudain (&lt;a href=\"mailto:grorigan@gmail.com\"&gt;grorigan@gmail.com&lt;/a&gt;)&lt;br/&gt;&lt;br/&gt;Большое спасибо!! :D</string>

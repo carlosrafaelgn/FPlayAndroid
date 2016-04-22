@@ -46,7 +46,6 @@ import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaPlayer;
 import android.media.MediaRouter;
 import android.media.RemoteControlClient;
 import android.media.session.MediaSession;
@@ -65,6 +64,8 @@ import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
+import com.h6ah4i.android.media.IBasicMediaPlayer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -72,6 +73,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashSet;
 
+import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.ExternalReceiver;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.WidgetMain;
@@ -129,7 +131,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 //when adding breakpoints to Player Core Thread
 //************************************************************************************
 
-public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
+public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, IBasicMediaPlayer.OnErrorListener, IBasicMediaPlayer.OnSeekCompleteListener, IBasicMediaPlayer.OnPreparedListener, IBasicMediaPlayer.OnCompletionListener, IBasicMediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
 	public interface PlayerObserver {
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		void onPlayerMetadataChanged(Song currentSong);
@@ -276,7 +278,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
-	private static MediaPlayer player, nextPlayer;
+	private static IBasicMediaPlayer player, nextPlayer;
 	public static int audioSessionId;
 
 	//keep these fields here, instead of in their respective activities, to allow them to survive
@@ -289,7 +291,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int localVolumeDB;
 	public static boolean localPlaying;
 	public static Song localSong;
-	public static MediaPlayer localPlayer;
+	public static IBasicMediaPlayer localPlayer;
 
 	private static class CoreHandler extends Handler {
 		@Override
@@ -575,6 +577,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Looper.prepare();
 					looper = Looper.myLooper();
 					handler = new CoreHandler();
+					MediaFactory._initialize(theApplication);
 					_initializePlayers();
 					Equalizer._checkSupport();
 					BassBoost._checkSupport();
@@ -595,6 +598,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					hasFocus = false;
 					if (audioManager != null && thePlayer != null)
 						audioManager.abandonAudioFocus(thePlayer);
+					MediaFactory._release();
 				}
 			};
 			thread.start();
@@ -929,11 +933,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
 	}
 
-	private static MediaPlayer _createPlayer() {
-		MediaPlayer mp = new MediaPlayer();
+	private static IBasicMediaPlayer _createPlayer() {
+		IBasicMediaPlayer mp = MediaFactory.createMediaPlayer();
 		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		mp.setOnErrorListener(thePlayer);
-		mp.setOnPreparedListener(thePlayer);
+		mp.setOnPreparedListener(null);
 		mp.setOnSeekCompleteListener(thePlayer);
 		mp.setOnCompletionListener(thePlayer);
 		mp.setOnInfoListener(thePlayer);
@@ -966,7 +970,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		reviveAlreadyTried = false;
 	}
 
-	private static void _releasePlayer(MediaPlayer mediaPlayer) {
+	private static void _releasePlayer(IBasicMediaPlayer mediaPlayer) {
 		mediaPlayer.setOnErrorListener(null);
 		mediaPlayer.setOnPreparedListener(null);
 		mediaPlayer.setOnSeekCompleteListener(null);
@@ -1081,8 +1085,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				nextPlayer.setDataSource(nextSongScheduledForPreparation.path);
-				nextPlayer.prepareAsync();
+				//I decided to stop calling prepareAsync for files
 				nextPlayerState = PLAYER_STATE_PREPARING;
+				nextPlayer.prepare();
+				thePlayer.onPrepared(nextPlayer);
 			}
 		} catch (Throwable ex) {
 			nextPlayerState = PLAYER_STATE_NEW;
@@ -1157,7 +1163,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			postPlayPending = false;
 			if (nextSong == song && how != SongList.HOW_CURRENT) {
 				storedSongTime = -1;
-				final MediaPlayer p = player;
+				final IBasicMediaPlayer p = player;
 				switch (nextPlayerState) {
 				case PLAYER_STATE_LOADED:
 					playerState = PLAYER_STATE_LOADED;
@@ -1203,15 +1209,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				throw new IOException();
 			songScheduledForPreparation = song;
 
-			if (!song.isHttp) {
-				//Even though it happens very rarely, a few devices will freeze and produce an ANR
-				//when calling setDataSource from the main thread :(
-				player.setDataSource(song.path);
-				player.prepareAsync();
-			} else {
-				_createInternetObjects();
-			}
-
 			nextPlayerState = PLAYER_STATE_NEW;
 			nextPlayer.reset();
 			nextSong = songArray[1];
@@ -1219,7 +1216,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (nextPreparationEnabled)
 				handler.removeMessages(MSG_PREPARE_NEXT_SONG);
 
+			//this is to make the player show the "Loading..." message properly, now that we are no
+			//longer using prepareAsync
 			_updateState(false, null);
+
+			if (!song.isHttp) {
+				//Even though it happens very rarely, a few devices will freeze and produce an ANR
+				//when calling setDataSource from the main thread :(
+				player.setDataSource(song.path);
+				//I decided to stop calling prepareAsync for files
+				player.prepare();
+				//onPrepared() will call _updateState when necessary
+				thePlayer.onPrepared(player);
+			} else {
+				_createInternetObjects();
+				_updateState(false, null);
+			}
 		} catch (Throwable ex) {
 			_fullCleanup();
 			//clear the flag here to allow _handleFailure to move to the next song
@@ -1396,11 +1408,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _enableEffects(int enabledFlags, int audioSink, Runnable callback) {
 		//don't even ask.......
 		//(a few devices won't disable one effect while the other effect is enabled)
 		audioSinkUsedInEffects = Player.audioSink;
-		if (audioSinkUsedInEffects != audioSink) {
+		if (BuildConfig.X || audioSinkUsedInEffects != audioSink) {
 			//just change the state, as these settings will not be actually applied
 			Equalizer._setEnabled((enabledFlags & 1) != 0, audioSink);
 			BassBoost._setEnabled((enabledFlags & 2) != 0, audioSink);
@@ -1535,7 +1548,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onCompletion(MediaPlayer mediaPlayer) {
+	public void onCompletion(IBasicMediaPlayer mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		if (playing && player == mediaPlayer)
@@ -1543,11 +1556,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+	public boolean onError(IBasicMediaPlayer mediaPlayer, int what, int extra) {
 		if (state != STATE_ALIVE)
 			return true;
 		if (mediaPlayer == nextPlayer || mediaPlayer == player) {
-			if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+			if (what == IBasicMediaPlayer.MEDIA_ERROR_SERVER_DIED) {
 				_storeSongTime();
 				_fullCleanup();
 				if (reviveAlreadyTried) {
@@ -1581,16 +1594,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public boolean onInfo(MediaPlayer mediaPlayer, int what, int extra) {
+	public boolean onInfo(IBasicMediaPlayer mediaPlayer, int what, int extra) {
 		if (mediaPlayer == player) {
 			switch (what) {
-			case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+			case IBasicMediaPlayer.MEDIA_INFO_BUFFERING_START:
 				if (!playerBuffering) {
 					playerBuffering = true;
 					_updateState(true, null);
 				}
 				break;
-			case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+			case IBasicMediaPlayer.MEDIA_INFO_BUFFERING_END:
 				if (playerBuffering) {
 					playerBuffering = false;
 					_updateState(true, null);
@@ -1602,9 +1615,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onPrepared(MediaPlayer mediaPlayer) {
+	public void onPrepared(IBasicMediaPlayer mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
+		mediaPlayer.setOnPreparedListener(thePlayer);
 		if (mediaPlayer == nextPlayer) {
 			if (nextSongScheduledForPreparation == nextSong && nextSong != null) {
 				nextSongScheduledForPreparation = null;
@@ -1652,7 +1666,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onSeekComplete(MediaPlayer mediaPlayer) {
+	public void onSeekComplete(IBasicMediaPlayer mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		if (mediaPlayer == player) {
@@ -1729,7 +1743,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
-		thePlayer.onError(player, MediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? ERROR_NOT_FOUND : errorCode);
+		thePlayer.onError(player, IBasicMediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? ERROR_NOT_FOUND : errorCode);
 	}
 
 	private static void httpStreamReceiverMetadataUpdate(int version, String metadata) {
@@ -1797,11 +1811,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (httpStreamReceiver.start()) {
 			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 				return;
-			playerBuffering = false;
-			//Even though it happens very rarely, a few devices will freeze and produce an ANR
-			//when calling setDataSource from the main thread :(
-			player.setDataSource(httpStreamReceiver.getLocalURL());
-			player.prepareAsync();
+			if (BuildConfig.X) {
+				//in this case there is nothing else to be done :(
+				_releaseInternetObjects();
+				throw new PermissionDeniedException();
+			} else {
+				playerBuffering = false;
+				//Even though it happens very rarely, a few devices will freeze and produce an ANR
+				//when calling setDataSource from the main thread :(
+				player.setDataSource(httpStreamReceiver.getLocalURL());
+				player.setOnPreparedListener(thePlayer);
+				player.prepareAsync();
+			}
 		} else {
 			//when start() returns false, this means we were unable to create the local server
 			_releaseInternetObjects();
@@ -2135,7 +2156,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		bassBoostMode = opts.getBit(OPTBIT_BASSBOOSTMODE);
 		nextPreparationEnabled = opts.getBit(OPTBIT_NEXTPREPARATION, true);
 		clearListWhenPlayingFolders = opts.getBit(OPTBIT_PLAYFOLDERCLEARSLIST);
-		UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON, true);
+		UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON);
 		UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 		UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
 		UI.setFlat((UI.lastVersionCode < 87) || opts.getBit(OPTBIT_FLAT, true));
@@ -3229,7 +3250,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		localPlayerState = (arg1 & 0x03);
 		localSong = (Song)objs[0];
 		objs[0] = null;
-		localPlayer = (MediaPlayer)objs[1];
+		localPlayer = (IBasicMediaPlayer)objs[1];
 		objs[1] = null;
 		if (songs.okToTurnOffAfterReachingTheEnd) {
 			songs.okToTurnOffAfterReachingTheEnd = false;

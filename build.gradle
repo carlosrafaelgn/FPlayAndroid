@@ -22,21 +22,44 @@ android {
     compileSdkVersion 23
     buildToolsVersion "20.0.0"
 
-	defaultConfig {
-		applicationId "br.com.carlosrafaelgn.fplay"
-		minSdkVersion 10
-		targetSdkVersion 23
+	productFlavors {
+		traditional {
+			applicationId "br.com.carlosrafaelgn.fplay"
+			minSdkVersion 10
+			targetSdkVersion 23
+			buildConfigField 'boolean', 'X', 'false'
+		}
+
+		x {
+			applicationId "br.com.carlosrafaelgn.fplay.x"
+			minSdkVersion 16
+			targetSdkVersion 23
+			buildConfigField 'boolean', 'X', 'true'
+		}
 	}
 
 	sourceSets {
 		main {
 			manifest.srcFile 'AndroidManifest.xml'
-			java.srcDirs = ['src']
-			resources.srcDirs = ['src']
-			aidl.srcDirs = ['src']
-			renderscript.srcDirs = ['src']
-			res.srcDirs = ['res']
 			assets.srcDirs = ['assets']
+		}
+
+		traditional {
+			java.srcDirs = ['src', 'src-traditional']
+			resources.srcDirs = ['src', 'src-traditional']
+			aidl.srcDirs = ['src', 'src-traditional']
+			renderscript.srcDirs = ['src', 'src-traditional']
+			res.srcDirs = ['res', 'res-traditional']
+			jniLibs.srcDirs = ['libs']
+		}
+
+		x {
+			java.srcDirs = ['src', 'src-x']
+			resources.srcDirs = ['src', 'src-x']
+			aidl.srcDirs = ['src', 'src-x']
+			renderscript.srcDirs = ['src', 'src-x']
+			res.srcDirs = ['res', 'res-x']
+			jniLibs.srcDirs = ['libs', 'libs-x']
 		}
 
 		// Move the tests to tests/java, tests/res, etc...
@@ -62,18 +85,4 @@ android {
 
 dependencies {
 	compile fileTree(dir: 'libs', include: '*.jar')
-}
-
-task copyNativeLibs(type: Copy) {
-	from(new File(getProjectDir(), 'libs')) { include '**/*.so' }
-	into new File(buildDir, 'libs')
-}
-
-tasks.withType(JavaCompile) { compileTask -> compileTask.dependsOn copyNativeLibs }
-
-clean.dependsOn 'cleanCopyNativeLibs'
-
-tasks.withType(com.android.build.gradle.tasks.PackageApplication) { pkgTask ->
-	pkgTask.jniFolders = new HashSet<File>()
-	pkgTask.jniFolders.add(new File(buildDir, 'libs'))
 }

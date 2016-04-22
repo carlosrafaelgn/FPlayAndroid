@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="fplay">FPlay</string>
     <string name="app_by">by Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Music player with clean interface, equalizer, bass boost and customizable colors</string>
     <string name="app_more_info">Looking for more info?&lt;br/&gt;Maybe the source code?&lt;br/&gt;Have a request?&lt;br/&gt;Found a bug?!?&lt;br/&gt;Just want to contact me? :)&lt;br/&gt;&lt;br/&gt;Drop me an e-mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;or visit the application\'s project site on GitHub: &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Very special thanks to the people who helped translating FPlay:&lt;br/&gt;&lt;br/&gt;Sviat Hurskyi (&lt;a href=\"mailto:sviat.hurskyi@gmail.com\"&gt;sviat.hurskyi@gmail.com&lt;/a&gt;)&lt;br/&gt;Stefan Fitzenreiter (&lt;a href=\"mailto:sfitzenreiter@gmail.com\"&gt;sfitzenreiter@gmail.com&lt;/a&gt;)&lt;br/&gt;David Gonzalez (&lt;a href=\"mailto:redandy16@gmail.com\"&gt;redandy16@gmail.com&lt;/a&gt;)&lt;br/&gt;Soudain (&lt;a href=\"mailto:grorigan@gmail.com\"&gt;grorigan@gmail.com&lt;/a&gt;)&lt;br/&gt;&lt;br/&gt;Thanks a lot!! :D</string>

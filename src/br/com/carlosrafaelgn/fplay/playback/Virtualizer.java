@@ -32,12 +32,14 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import com.h6ah4i.android.media.audiofx.IVirtualizer;
+
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Virtualizer {
 	private static int strength, strength_wire, strength_bt;
 	private static boolean enabled, enabled_wire, enabled_bt, strengthSupported, supported;
-	private static android.media.audiofx.Virtualizer theVirtualizer;
+	private static IVirtualizer theVirtualizer;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
 		//use OPTBIT_VIRTUALIZER_ENABLED and OPT_VIRTUALIZER_STRENGTH for all audio sinks!!!
@@ -102,7 +104,7 @@ public final class Virtualizer {
 
 	static void _initialize() {
 		try {
-			theVirtualizer = new android.media.audiofx.Virtualizer(0, Player.audioSessionId);
+			theVirtualizer = MediaFactory.createVirtualizer();
 			strengthSupported = theVirtualizer.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {

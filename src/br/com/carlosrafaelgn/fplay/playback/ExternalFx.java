@@ -36,13 +36,15 @@ import android.app.Activity;
 import android.content.Intent;
 import android.media.audiofx.AudioEffect;
 
+import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class ExternalFx {
 	private static boolean enabled, applied, supported;
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	static void loadConfig(SerializableMap opts) {
-		enabled = opts.getBit(Player.OPTBIT_EXTERNALFX_ENABLED);
+		enabled = (!BuildConfig.X && opts.getBit(Player.OPTBIT_EXTERNALFX_ENABLED));
 	}
 
 	static void saveConfig(SerializableMap opts) {
@@ -73,9 +75,10 @@ public final class ExternalFx {
 		Player.theApplication.sendBroadcast(intent);
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	static void _checkSupport() {
 		try {
-			supported = (createDisplayIntent().resolveActivity(Player.theApplication.getPackageManager()) != null);
+			supported = (!BuildConfig.X && createDisplayIntent().resolveActivity(Player.theApplication.getPackageManager()) != null);
 		} catch (Throwable ex) {
 			supported = false;
 		}
