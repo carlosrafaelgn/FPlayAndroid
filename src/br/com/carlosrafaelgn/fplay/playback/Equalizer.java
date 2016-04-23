@@ -159,42 +159,45 @@ public final class Equalizer {
 	static void _initialize() {
 		try {
 			theEqualizer = MediaFactory.createEqualizer();
+			final int bandCount = theEqualizer.getNumberOfBands();
+			if (bandLevels == null)
+				bandLevels = new int[bandCount];
+			else if (bandLevels.length != bandCount)
+				bandLevels = Arrays.copyOf(bandLevels, bandCount);
+			if (bandLevels_wire == null)
+				bandLevels_wire = new int[bandCount];
+			else if (bandLevels_wire.length != bandCount)
+				bandLevels_wire = Arrays.copyOf(bandLevels_wire, bandCount);
+			if (bandLevels_bt == null)
+				bandLevels_bt = new int[bandCount];
+			else if (bandLevels_bt.length != bandCount)
+				bandLevels_bt = Arrays.copyOf(bandLevels_bt, bandCount);
+			boolean copyFrequencies = false;
+			if (bandFrequencies == null) {
+				bandFrequencies = new int[bandCount];
+				copyFrequencies = true;
+			} else if (bandFrequencies.length != bandCount) {
+				bandFrequencies = Arrays.copyOf(bandFrequencies, bandCount);
+				copyFrequencies = true;
+			}
+			if (copyFrequencies) {
+				for (int i = bandCount - 1; i >= 0; i--)
+					bandFrequencies[i] = theEqualizer.getCenterFreq((short)i) / 1000;
+			}
+			short[] l = theEqualizer.getBandLevelRange();
+			if (l == null || l.length != 2) {
+				minBandLevel = -1500;
+				maxBandLevel = 1500;
+			} else {
+				minBandLevel = (int)l[0];
+				maxBandLevel = (int)l[1];
+			}
 		} catch (Throwable ex) {
-			ex.printStackTrace();
-			return;
-		}
-		final int bandCount = theEqualizer.getNumberOfBands();
-		if (bandLevels == null)
-			bandLevels = new int[bandCount];
-		else if (bandLevels.length != bandCount)
-			bandLevels = Arrays.copyOf(bandLevels, bandCount);
-		if (bandLevels_wire == null)
-			bandLevels_wire = new int[bandCount];
-		else if (bandLevels_wire.length != bandCount)
-			bandLevels_wire = Arrays.copyOf(bandLevels_wire, bandCount);
-		if (bandLevels_bt == null)
-			bandLevels_bt = new int[bandCount];
-		else if (bandLevels_bt.length != bandCount)
-			bandLevels_bt = Arrays.copyOf(bandLevels_bt, bandCount);
-		boolean copyFrequencies = false;
-		if (bandFrequencies == null) {
-			bandFrequencies = new int[bandCount];
-			copyFrequencies = true;
-		} else if (bandFrequencies.length != bandCount) {
-			bandFrequencies = Arrays.copyOf(bandFrequencies, bandCount);
-			copyFrequencies = true;
-		}
-		if (copyFrequencies) {
-			for (int i = bandCount - 1; i >= 0; i--)
-				bandFrequencies[i] = theEqualizer.getCenterFreq((short)i) / 1000;
-		}
-		short[] l = theEqualizer.getBandLevelRange();
-		if (l == null || l.length != 2) {
-			minBandLevel = -1500;
-			maxBandLevel = 1500;
-		} else {
-			minBandLevel = (int)l[0];
-			maxBandLevel = (int)l[1];
+			_release();
+			bandLevels = null;
+			bandLevels_wire = null;
+			bandLevels_bt = null;
+			bandFrequencies = null;
 		}
 	}
 

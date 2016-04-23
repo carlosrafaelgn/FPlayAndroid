@@ -108,6 +108,7 @@ public final class Virtualizer {
 			strengthSupported = theVirtualizer.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {
+			_release();
 			supported = false;
 		}
 	}

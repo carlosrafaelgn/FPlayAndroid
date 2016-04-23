@@ -108,7 +108,7 @@ public final class BassBoost {
 			strengthSupported = theBooster.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {
-			ex.printStackTrace();
+			_release();
 			supported = false;
 		}
 	}

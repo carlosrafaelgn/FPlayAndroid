@@ -294,6 +294,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static IBasicMediaPlayer localPlayer;
 
 	private static class CoreHandler extends Handler {
+		@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
 			switch (msg.what) {
@@ -346,11 +347,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_nextMayHaveChanged((Song)msg.obj);
 				break;
 			case MSG_ENABLE_EFFECTS:
-				if (ExternalFx.isEnabled())
+				if (!BuildConfig.X) {
+					if (ExternalFx.isEnabled())
+						ExternalFx._setEnabled(false);
+					else
+						ExternalFx._release();
 					ExternalFx._setEnabled(false);
-				else
-					ExternalFx._release();
-				ExternalFx._setEnabled(false);
+				}
 				_enableEffects(msg.arg1, msg.arg2, (Runnable)msg.obj);
 				break;
 			case MSG_COMMIT_EQUALIZER:
@@ -363,26 +366,29 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				Virtualizer._commit(msg.arg2);
 				break;
 			case MSG_COMMIT_ALL_EFFECTS:
-				ExternalFx._release();
+				if (!BuildConfig.X)
+					ExternalFx._release();
 				Equalizer._commit(-1, msg.arg2);
 				BassBoost._commit(msg.arg2);
 				Virtualizer._commit(msg.arg2);
 				break;
 			case MSG_ENABLE_EXTERNAL_FX:
-				if (msg.arg1 != 0) {
-					Equalizer._release();
-					BassBoost._release();
-					Virtualizer._release();
-					ExternalFx._initialize();
-					ExternalFx._setEnabled(true);
-					//if anything goes wrong while enabling ExternalFx, go back to the previous state
-					if (!ExternalFx.isEnabled() || !ExternalFx.isSupported()) {
+				if (!BuildConfig.X) {
+					if (msg.arg1 != 0) {
+						Equalizer._release();
+						BassBoost._release();
+						Virtualizer._release();
+						ExternalFx._initialize();
+						ExternalFx._setEnabled(true);
+						//if anything goes wrong while enabling ExternalFx, go back to the previous state
+						if (!ExternalFx.isEnabled() || !ExternalFx.isSupported()) {
+							ExternalFx._setEnabled(false);
+							_reinitializeEffects();
+						}
+					} else {
 						ExternalFx._setEnabled(false);
 						_reinitializeEffects();
 					}
-				} else {
-					ExternalFx._setEnabled(false);
-					_reinitializeEffects();
 				}
 				if (msg.obj != null)
 					MainHandler.postToMainThread((Runnable)msg.obj);
@@ -579,10 +585,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					handler = new CoreHandler();
 					MediaFactory._initialize(theApplication);
 					_initializePlayers();
-					Equalizer._checkSupport();
-					BassBoost._checkSupport();
-					Virtualizer._checkSupport();
-					ExternalFx._checkSupport();
+					if (BuildConfig.X) {
+						Equalizer._initialize();
+						//BassBoost._initialize();
+						//Virtualizer._initialize();
+					} else {
+						Equalizer._checkSupport();
+						BassBoost._checkSupport();
+						Virtualizer._checkSupport();
+						ExternalFx._checkSupport();
+					}
 					_checkAudioSink(false, false, false);
 					audioSinkUsedInEffects = audioSink;
 					_reinitializeEffects();
@@ -595,6 +607,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						storedSongTime = -1;
 					}
 					_fullCleanup();
+					if (BuildConfig.X) {
+						Equalizer._release();
+						BassBoost._release();
+						Virtualizer._release();
+					}
 					hasFocus = false;
 					if (audioManager != null && thePlayer != null)
 						audioManager.abandonAudioFocus(thePlayer);
@@ -1029,15 +1046,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		resetHeadsetHook();
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _fullCleanup() {
 		_partialCleanup();
 		silenceMode = SILENCE_NORMAL;
 		nextSong = null;
 		postPlayPending = false;
-		Equalizer._release();
-		BassBoost._release();
-		Virtualizer._release();
-		ExternalFx._release();
+		if (!BuildConfig.X) {
+			Equalizer._release();
+			BassBoost._release();
+			Virtualizer._release();
+			ExternalFx._release();
+		}
 	}
 
 	private static void _initializePlayers() {
@@ -1410,10 +1430,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _enableEffects(int enabledFlags, int audioSink, Runnable callback) {
-		//don't even ask.......
-		//(a few devices won't disable one effect while the other effect is enabled)
 		audioSinkUsedInEffects = Player.audioSink;
-		if (BuildConfig.X || audioSinkUsedInEffects != audioSink) {
+		if (audioSinkUsedInEffects != audioSink) {
 			//just change the state, as these settings will not be actually applied
 			Equalizer._setEnabled((enabledFlags & 1) != 0, audioSink);
 			BassBoost._setEnabled((enabledFlags & 2) != 0, audioSink);
@@ -1422,6 +1440,26 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				MainHandler.postToMainThread(callback);
 			return;
 		}
+		if (BuildConfig.X) {
+			boolean enabled = ((enabledFlags & 1) != 0);
+			if (enabled != Equalizer.isEnabled(audioSink))
+				Equalizer._setEnabled(enabled, audioSink);
+
+			enabled = ((enabledFlags & 2) != 0);
+			if (enabled != BassBoost.isEnabled(audioSink))
+				BassBoost._setEnabled(enabled, audioSink);
+
+			enabled = ((enabledFlags & 4) != 0);
+			if (enabled != Virtualizer.isEnabled(audioSink))
+				Virtualizer._setEnabled(enabled, audioSink);
+
+			if (callback != null)
+				MainHandler.postToMainThread(callback);
+			return;
+		}
+
+		//don't even ask.......
+		//(a few devices won't disable one effect while the other effect is enabled)
 		Equalizer._release();
 		BassBoost._release();
 		Virtualizer._release();
@@ -1448,13 +1486,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void _reinitializeEffects() {
+		audioSinkUsedInEffects = audioSink;
+		if (BuildConfig.X) {
+			Equalizer._setEnabled(Equalizer.isEnabled(audioSinkUsedInEffects), audioSinkUsedInEffects);
+			BassBoost._setEnabled(BassBoost.isEnabled(audioSinkUsedInEffects), audioSinkUsedInEffects);
+			Virtualizer._setEnabled(Virtualizer.isEnabled(audioSinkUsedInEffects), audioSinkUsedInEffects);
+			return;
+		}
 		//don't even ask.......
 		//(a few devices won't disable one effect while the other effect is enabled)
 		Equalizer._release();
 		BassBoost._release();
 		Virtualizer._release();
 		ExternalFx._release();
-		audioSinkUsedInEffects = audioSink;
 		if (ExternalFx.isEnabled() && ExternalFx.isSupported()) {
 			ExternalFx._initialize();
 			ExternalFx._setEnabled(true);
