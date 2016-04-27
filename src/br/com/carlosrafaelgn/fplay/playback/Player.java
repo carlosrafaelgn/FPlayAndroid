@@ -151,26 +151,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		void onPlayerDestroyed();
 	}
 
-	private static final class TimeoutException extends Exception {
-		private static final long serialVersionUID = 4571328670214281144L;
-	}
-
-	private static final class MediaServerDiedException extends Exception {
-		private static final long serialVersionUID = -902099312236606175L;
-	}
-
-	private static final class FocusException extends Exception {
-		private static final long serialVersionUID = 6158088015763157546L;
-	}
-
-	private static final class PermissionDeniedException extends SecurityException {
-		private static final long serialVersionUID = 8743650824658438278L;
-	}
-
-	private static final class UnsupportedFormatException extends IOException {
-		private static final long serialVersionUID = 7845932937323727492L;
-	}
-
 	private static final int MSG_UPDATE_STATE = 0x0100;
 	private static final int MSG_PAUSE = 0x0101;
 	private static final int MSG_PLAYPAUSE = 0x0102;
@@ -1131,7 +1111,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		if (songWhenFirstErrorHappened == song || howThePlayerStarted == SongList.HOW_CURRENT || howThePlayerStarted >= 0 || checkForPermission) {
 			songWhenFirstErrorHappened = null;
-			_updateState(false, checkForPermission ? new PermissionDeniedException() : ex);
+			_updateState(false, checkForPermission ? new IMediaPlayer.PermissionDeniedException() : ex);
 		} else {
 			//this used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 			if (songWhenFirstErrorHappened == null)
@@ -1149,7 +1129,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (how != SongList.HOW_CURRENT)
 				storedSongTime = -1;
 			_fullCleanup();
-			_updateState(false, new FocusException());
+			_updateState(false, new IMediaPlayer.FocusException());
 			return;
 		}
 		//we must set this to false here, as the user could have manually
@@ -1611,7 +1591,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_fullCleanup();
 				if (reviveAlreadyTried) {
 					reviveAlreadyTried = false;
-					_updateState(false, new MediaServerDiedException());
+					_updateState(false, new IMediaPlayer.MediaServerDiedException());
 				} else {
 					reviveAlreadyTried = true;
 					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_CURRENT, 0), SystemClock.uptimeMillis());
@@ -1622,8 +1602,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			} else {
 				_fullCleanup();
 				final Throwable result = ((extra == IMediaPlayer.ERROR_NOT_FOUND) ? new FileNotFoundException() :
-					((extra == IMediaPlayer.ERROR_TIMED_OUT) ? new TimeoutException() :
-						((extra == IMediaPlayer.ERROR_UNSUPPORTED_FORMAT) ? new UnsupportedFormatException() :
+					((extra == IMediaPlayer.ERROR_TIMED_OUT) ? new IMediaPlayer.TimeoutException() :
+						((extra == IMediaPlayer.ERROR_UNSUPPORTED_FORMAT) ? new IMediaPlayer.UnsupportedFormatException() :
 							new IOException())));
 				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 				//and the song was being prepared
@@ -1860,7 +1840,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (BuildConfig.X) {
 				//in this case there is nothing else to be done :(
 				_releaseInternetObjects();
-				throw new PermissionDeniedException();
+				throw new IMediaPlayer.PermissionDeniedException();
 			} else {
 				playerBuffering = false;
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
@@ -1872,7 +1852,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		} else {
 			//when start() returns false, this means we were unable to create the local server
 			_releaseInternetObjects();
-			throw new PermissionDeniedException();
+			throw new IMediaPlayer.PermissionDeniedException();
 		}
 	}
 
@@ -3320,20 +3300,20 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];
 			objs[2] = null;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof IMediaPlayer.PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
 				((ClientActivity)observer).getHostActivity().requestReadStoragePermission();
 			final String msg = ex.getMessage();
 			if (ex instanceof IllegalStateException) {
 				UI.toast(R.string.error_state);
-			} else if (ex instanceof UnsupportedFormatException) {
+			} else if (ex instanceof IMediaPlayer.UnsupportedFormatException) {
 				UI.toast(R.string.error_unsupported_format);
 			} else if (ex instanceof FileNotFoundException) {
 				UI.toast((localSong != null && localSong.isHttp) ?
 					(!isConnectedToTheInternet() ? R.string.error_connection : R.string.error_server_not_found) :
 						R.string.error_file_not_found);
-			} else if (ex instanceof TimeoutException) {
+			} else if (ex instanceof IMediaPlayer.TimeoutException) {
 				UI.toast(R.string.error_timeout);
-			} else if (ex instanceof MediaServerDiedException) {
+			} else if (ex instanceof IMediaPlayer.MediaServerDiedException) {
 				UI.toast(R.string.error_server_died);
 			} else if (ex instanceof SecurityException) {
 				UI.toast(R.string.error_security);

@@ -53,6 +53,26 @@ public interface IMediaPlayer {
 	int INFO_BUFFERING_END = 702; //MediaPlayer.MEDIA_INFO_BUFFERING_END
 	int INFO_METADATA_UPDATE = 802; //MediaPlayer.MEDIA_INFO_METADATA_UPDATE
 
+	final class TimeoutException extends Exception {
+		private static final long serialVersionUID = 4571328670214281144L;
+	}
+
+	final class MediaServerDiedException extends Exception {
+		private static final long serialVersionUID = -902099312236606175L;
+	}
+
+	final class FocusException extends Exception {
+		private static final long serialVersionUID = 6158088015763157546L;
+	}
+
+	final class PermissionDeniedException extends SecurityException {
+		private static final long serialVersionUID = 8743650824658438278L;
+	}
+
+	final class UnsupportedFormatException extends IOException {
+		private static final long serialVersionUID = 7845932937323727492L;
+	}
+
 	interface OnCompletionListener {
 		void onCompletion(IMediaPlayer mp);
 	}

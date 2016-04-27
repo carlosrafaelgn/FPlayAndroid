@@ -61,9 +61,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static final int PLAYER_TIMEOUT = 600000;
 
-	//16 bits per sample, stereo
-	private static final int FRAME_SIZE_IN_BYTES = 4;
-
 	private static final class ErrorStructure {
 		public MediaCodecPlayer player;
 		public Throwable exception;
@@ -76,8 +73,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static final Object threadNotification = new Object();
 	private static final Object notification = new Object();
+	private static final Object audioTrackSync = new Object();
 	private static volatile boolean alive, requestSucceeded;
 	private static volatile int requestedAction, requestedSeekMS;
+	private static float leftVolume = 1.0f, rightVolume = 1.0f;
 	private static Handler handler;
 	private static Thread thread;
 	private static AudioTrack audioTrack;
@@ -87,17 +86,32 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private MediaContext() {
 	}
 
-	private static void createAudioTrack(int outputSampleRate) {
-		//use our maximum supported sample rate (48000 Hz)
-		int bufferSizeInBytes = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-		int bufferSizeInFrames = bufferSizeInBytes / FRAME_SIZE_IN_BYTES; //16 bits per sample, stereo
+	@SuppressWarnings("deprecation")
+	private static void createAudioTrack(int sampleRate, int frameSizeShift) {
+		int bufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, (frameSizeShift == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+		int bufferSizeInFrames = bufferSizeInBytes >> frameSizeShift;
 
-		final int twoSecondsInFrames = outputSampleRate << 1;
+		final int twoSecondsInFrames = sampleRate << 1;
 		//at least 2 seconds, but a multiple of bufferSizeInFrames
 		bufferSizeInFrames = ((twoSecondsInFrames + bufferSizeInFrames - 1) / bufferSizeInFrames) * bufferSizeInFrames;
-		bufferSizeInBytes = bufferSizeInFrames * FRAME_SIZE_IN_BYTES;
+		bufferSizeInBytes = bufferSizeInFrames << frameSizeShift;
 
-		audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, outputSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+		synchronized (audioTrackSync) {
+			if (audioTrack != null) {
+				try {
+					audioTrack.stop();
+				} catch (Throwable ex) {
+					//just ignore
+				}
+				try {
+					audioTrack.release();
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			}
+			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, (frameSizeShift == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+			audioTrack.setStereoVolume(leftVolume, rightVolume);
+		}
 	}
 
 	private static void pauseAndAbortAudioTrackWrite() {
@@ -119,7 +133,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	public void run() {
 		thread.setPriority(Thread.MAX_PRIORITY);
 
-		final int outputSampleRate = 44100; //AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
+		int sampleRate = 44100; //AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
+		//thanks to an amazing coincidence, to convert from frames to bytes (and vice-versa)
+		//in 16 bits per sample, mono (1 channel), we must divide by 2 (or shift by 1)
+		//and in 16 bits per sample, stereo (2 channels), we must divide by 4 (or shift by 2)
+		//therefore, frameSizeShift is also the channel count for these two cases :)
+		int frameSizeShift = 2;
 		PowerManager.WakeLock wakeLock;
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
@@ -128,7 +147,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		int lastHeadPositionInFrames = 0;
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
 
-		createAudioTrack(outputSampleRate);
+		createAudioTrack(sampleRate, frameSizeShift);
 
 		wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);
@@ -174,6 +193,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						framesWritten = currentPlayer.getCurrentPositionInFrames();
 						framesPlayed = currentPlayer.getCurrentPositionInFrames();
 						nextFramesWritten = 0;
+						currentPlayer.nextOutputBuffer(outputBuffer);
+						if (sampleRate != currentPlayer.getSampleRate() || frameSizeShift != currentPlayer.getChannelCount()) {
+							sampleRate = currentPlayer.getSampleRate();
+							frameSizeShift = currentPlayer.getChannelCount();
+							createAudioTrack(sampleRate, frameSizeShift);
+						}
 						audioTrack.play();
 						paused = false;
 						requestSucceeded = true;
@@ -231,8 +256,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								System.out.println("ACTION_SETNEXT C");
 								nextPlayer = nextPlayerRequested;
 								try {
-									if (nextPlayer != null)
-										nextPlayer.resetDecoderIfOutputAlreadyUsed();
+									if (nextPlayer != null) {
+										if (sampleRate != nextPlayer.getSampleRate() || frameSizeShift != nextPlayer.getChannelCount())
+											nextPlayer = null;
+										if (nextPlayer != null)
+											nextPlayer.resetDecoderIfOutputAlreadyUsed();
+									}
 								} catch (Throwable ex) {
 									nextPlayer = null;
 									handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(nextPlayer, ex)), SystemClock.uptimeMillis());
@@ -374,7 +403,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						} else {
 							outputBuffer.size -= bytesWrittenThisTime;
 							outputBuffer.offset += bytesWrittenThisTime;
-							bytesWrittenThisTime <<= 1; // << 1 to convert shorts to bytes
+							bytesWrittenThisTime <<= 1; // << 1 to convert from shorts to bytes
 						}
 					} else {
 						bytesWrittenThisTime = 0;
@@ -382,11 +411,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					zeroed = (outputBuffer.size <= 0);
 				}
 
-				// >> 2 to convert from bytes to frames (we are always writting 16 bits per sample, stereo)
 				if (sourcePlayer == currentPlayer)
-					framesWritten += bytesWrittenThisTime >> 2;
+					framesWritten += bytesWrittenThisTime >> frameSizeShift;
 				else
-					nextFramesWritten += bytesWrittenThisTime >> 2;
+					nextFramesWritten += bytesWrittenThisTime >> frameSizeShift;
 
 				if (zeroed) {
 					outputBuffer.release();
@@ -424,7 +452,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					nextFramesWritten = 0;
 					sourcePlayer = currentPlayer;
 				} else {
-					currentPlayer.setCurrentPosition((int)((framesPlayed * 1000L) / (long)outputSampleRate));
+					currentPlayer.setCurrentPosition((int)((framesPlayed * 1000L) / (long)sampleRate));
 				}
 
 			} catch (Throwable ex) {
@@ -646,8 +674,24 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
+	static void setStereoVolume(float leftVolume, float rightVolume) {
+		MediaContext.leftVolume = leftVolume;
+		MediaContext.rightVolume = rightVolume;
+		synchronized (audioTrackSync) {
+			if (audioTrack != null)
+				audioTrack.setStereoVolume(leftVolume, rightVolume);
+		}
+	}
+
+	static int getAudioSessionId() {
+		synchronized (audioTrackSync) {
+			return (audioTrack == null ? -1 : audioTrack.getAudioSessionId());
+		}
+	}
+
 	public static IMediaPlayer createMediaPlayer() {
-		return new MediaCodecPlayer(audioTrack);
+		return new MediaCodecPlayer();
 	}
 
 	public static IEqualizer createEqualizer() {

@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay.playback.context;
 
 import android.content.Context;
-import android.media.AudioTrack;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
@@ -80,10 +79,8 @@ final class MediaCodecPlayer implements IMediaPlayer {
 
 	private volatile int state, currentPositionInMS;
 	private int sampleRate, channelCount, durationInMS, stateBeforeSeek;
-	private final int audioSessionId;
 	private MediaExtractor mediaExtractor;
 	private MediaCodec mediaCodec;
-	private AudioTrack audioTrackUsedForVolumeChanges;
 	private String path;
 	private ByteBuffer[] inputBuffers, outputBuffers;
 	private ShortBuffer[] outputBuffersAsShort;
@@ -96,12 +93,18 @@ final class MediaCodecPlayer implements IMediaPlayer {
 	//private OnPreparedListener preparedListener;
 	private OnSeekCompleteListener seekCompleteListener;
 
-	public MediaCodecPlayer(AudioTrack audioTrackUsedForVolumeChanges) {
-		this.audioTrackUsedForVolumeChanges = audioTrackUsedForVolumeChanges;
-		audioSessionId = audioTrackUsedForVolumeChanges.getAudioSessionId();
+	public MediaCodecPlayer() {
 		state = STATE_IDLE;
 		durationInMS = -1;
 		bufferInfo = new MediaCodec.BufferInfo();
+	}
+
+	int getSampleRate() {
+		return sampleRate;
+	}
+
+	int getChannelCount() {
+		return channelCount;
 	}
 
 	boolean isOutputOver() {
@@ -247,7 +250,9 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		outputOver = true;
 		state = STATE_ERROR;
 		if (errorListener != null)
-			errorListener.onError(this, ERROR_UNKNOWN, (exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN);
+			errorListener.onError(this, ERROR_UNKNOWN,
+				(exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :
+					((exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN));
 	}
 
 	void seekComplete() {
@@ -345,14 +350,22 @@ final class MediaCodecPlayer implements IMediaPlayer {
 					mediaExtractor.selectTrack(i);
 					sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
 					channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+					if (channelCount != 1 && channelCount != 2)
+						throw new UnsupportedFormatException();
 					durationInMS = (int)(format.getLong(MediaFormat.KEY_DURATION) / 1000L);
 					break;
 				}
 			}
 			if (i >= numTracks)
-				throw new IOException("No tracks found: " + path);
-			mediaCodec = MediaCodec.createDecoderByType(mime);
-			mediaCodec.configure(format, null, null, 0);
+				throw new UnsupportedFormatException();
+			try {
+				mediaCodec = MediaCodec.createDecoderByType(mime);
+				mediaCodec.configure(format, null, null, 0);
+			} catch (Throwable ex) {
+				mediaCodec = null;
+			}
+			if (mediaCodec == null)
+				throw new UnsupportedFormatException();
 			mediaCodec.start();
 			currentPositionInMS = 0;
 			inputOver = false;
@@ -398,7 +411,6 @@ final class MediaCodecPlayer implements IMediaPlayer {
 	public void release() {
 		reset();
 		bufferInfo = null;
-		audioTrackUsedForVolumeChanges = null;
 		//bufferingUpdateListener = null;
 		completionListener = null;
 		errorListener = null;
@@ -455,7 +467,7 @@ final class MediaCodecPlayer implements IMediaPlayer {
 
 	@Override
 	public int getAudioSessionId() {
-		return audioSessionId;
+		return MediaContext.getAudioSessionId();
 	}
 
 	@Override
@@ -488,11 +500,8 @@ final class MediaCodecPlayer implements IMediaPlayer {
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
 	public void setVolume(float leftVolume, float rightVolume) {
-		if (audioTrackUsedForVolumeChanges == null)
-			return;
-		audioTrackUsedForVolumeChanges.setStereoVolume(leftVolume, rightVolume);
+		MediaContext.setStereoVolume(leftVolume, rightVolume);
 	}
 
 	@Override
