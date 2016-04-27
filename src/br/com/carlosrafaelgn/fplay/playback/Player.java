@@ -64,8 +64,6 @@ import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
-import com.h6ah4i.android.media.IBasicMediaPlayer;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -83,6 +81,8 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
+import br.com.carlosrafaelgn.fplay.playback.context.IMediaPlayer;
+import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
@@ -131,7 +131,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 //when adding breakpoints to Player Core Thread
 //************************************************************************************
 
-public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, IBasicMediaPlayer.OnErrorListener, IBasicMediaPlayer.OnSeekCompleteListener, IBasicMediaPlayer.OnPreparedListener, IBasicMediaPlayer.OnCompletionListener, IBasicMediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
+public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, IMediaPlayer.OnErrorListener, IMediaPlayer.OnSeekCompleteListener, IMediaPlayer.OnPreparedListener, IMediaPlayer.OnCompletionListener, IMediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
 	public interface PlayerObserver {
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		void onPlayerMetadataChanged(Song currentSong);
@@ -229,11 +229,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
 
-	public static final int ERROR_NOT_FOUND = 1001; //1001 = internal constant (not used by original MediaPlayer class) used to indicate that the file has not been found
-	public static final int ERROR_UNSUPPORTED_FORMAT = -1010; //MediaPlayer.MEDIA_ERROR_UNSUPPORTED
-	public static final int ERROR_IO = -1004; //MediaPlayer.MEDIA_ERROR_IO
-	public static final int ERROR_TIMED_OUT = -110; //MediaPlayer.MEDIA_ERROR_TIMED_OUT
-
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
@@ -276,9 +271,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int localAudioSinkUsedInEffects;
 
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
-	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, nextAlreadySetForPlaying, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
+	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
-	private static IBasicMediaPlayer player, nextPlayer;
+	private static IMediaPlayer player, nextPlayer;
 	public static int audioSessionId;
 
 	//keep these fields here, instead of in their respective activities, to allow them to survive
@@ -291,7 +286,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int localVolumeDB;
 	public static boolean localPlaying;
 	public static Song localSong;
-	public static IBasicMediaPlayer localPlayer;
+	public static IMediaPlayer localPlayer;
 
 	private static class CoreHandler extends Handler {
 		@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
@@ -583,18 +578,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Looper.prepare();
 					looper = Looper.myLooper();
 					handler = new CoreHandler();
-					MediaFactory._initialize(theApplication);
+					MediaContext._initialize();
 					_initializePlayers();
-					if (BuildConfig.X) {
+					/*if (BuildConfig.X) {
 						Equalizer._initialize();
-						//BassBoost._initialize();
-						//Virtualizer._initialize();
-					} else {
+						BassBoost._initialize();
+						Virtualizer._initialize();
+					} else {*/
 						Equalizer._checkSupport();
 						BassBoost._checkSupport();
 						Virtualizer._checkSupport();
 						ExternalFx._checkSupport();
-					}
+					//}
 					_checkAudioSink(false, false, false);
 					audioSinkUsedInEffects = audioSink;
 					_reinitializeEffects();
@@ -607,15 +602,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						storedSongTime = -1;
 					}
 					_fullCleanup();
-					if (BuildConfig.X) {
+					/*if (BuildConfig.X) {
 						Equalizer._release();
 						BassBoost._release();
 						Virtualizer._release();
-					}
+					}*/
 					hasFocus = false;
 					if (audioManager != null && thePlayer != null)
 						audioManager.abandonAudioFocus(thePlayer);
-					MediaFactory._release();
+					MediaContext._release();
 				}
 			};
 			thread.start();
@@ -950,8 +945,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
 	}
 
-	private static IBasicMediaPlayer _createPlayer() {
-		IBasicMediaPlayer mp = MediaFactory.createMediaPlayer();
+	private static IMediaPlayer _createPlayer() {
+		IMediaPlayer mp = MediaContext.createMediaPlayer();
 		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		mp.setOnErrorListener(thePlayer);
 		mp.setOnPreparedListener(null);
@@ -987,7 +982,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		reviveAlreadyTried = false;
 	}
 
-	private static void _releasePlayer(IBasicMediaPlayer mediaPlayer) {
+	private static void _releasePlayer(IMediaPlayer mediaPlayer) {
 		mediaPlayer.setOnErrorListener(null);
 		mediaPlayer.setOnPreparedListener(null);
 		mediaPlayer.setOnSeekCompleteListener(null);
@@ -1010,12 +1005,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private static void _setNextPlayer() {
 		try {
-			if (player != null) {
-				player.setNextMediaPlayer(nextPlayer);
-				nextAlreadySetForPlaying = true;
-			}
+			player.setNextMediaPlayer(nextPlayer);
 		} catch (Throwable ex) {
-			ex.printStackTrace();
+			//just ignore
 		}
 	}
 
@@ -1026,7 +1018,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			_releasePlayer(player);
 			player = null;
 		}
-		nextAlreadySetForPlaying = false;
+		//nextAlreadySetForPlaying = false;
 		nextPlayerState = PLAYER_STATE_NEW;
 		if (nextPlayer != null) {
 			_releasePlayer(nextPlayer);
@@ -1052,12 +1044,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		silenceMode = SILENCE_NORMAL;
 		nextSong = null;
 		postPlayPending = false;
-		if (!BuildConfig.X) {
+		//if (!BuildConfig.X) {
 			Equalizer._release();
 			BassBoost._release();
 			Virtualizer._release();
 			ExternalFx._release();
-		}
+		//}
 	}
 
 	private static void _initializePlayers() {
@@ -1117,7 +1109,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void _scheduleNextPlayerForPreparation() {
-		nextAlreadySetForPlaying = false;
+		//nextAlreadySetForPlaying = false;
 		prepareNextAfterSeeking = false;
 		nextPlayerState = PLAYER_STATE_NEW;
 		if (handler != null && song != null && nextSong != null && !nextSong.isHttp && nextPreparationEnabled && song.lengthMS > 10000 && nextSong.lengthMS > 10000) {
@@ -1183,22 +1175,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			postPlayPending = false;
 			if (nextSong == song && how != SongList.HOW_CURRENT) {
 				storedSongTime = -1;
-				final IBasicMediaPlayer p = player;
+				final IMediaPlayer p = player;
 				switch (nextPlayerState) {
 				case PLAYER_STATE_LOADED:
 					playerState = PLAYER_STATE_LOADED;
 					player = nextPlayer;
 					nextPlayer = p;
 					nextSong = songArray[1];
-					if (!nextAlreadySetForPlaying || how != SongList.HOW_NEXT_AUTO) {
+					//if (!nextAlreadySetForPlaying || how != SongList.HOW_NEXT_AUTO) {
 						_startPlayer();
-					} else {
-						playing = true;
-						//when dimmed, decreased the volume by 20dB
-						final float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
-						//do not call httpStreamReceiver.setVolume() here
-						player.setVolume(multiplier, multiplier);
-					}
+					//} else {
+					//	playing = true;
+					//	//when dimmed, decreased the volume by 20dB
+					//	final float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
+					//	//do not call httpStreamReceiver.setVolume() here
+					//	player.setVolume(multiplier, multiplier);
+					//}
 					songWhenFirstErrorHappened = null;
 					_releaseInternetObjects();
 					_scheduleNextPlayerForPreparation();
@@ -1208,10 +1200,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					//just wait for the next song to finish preparing
 					playing = false;
 					playerState = PLAYER_STATE_PREPARING;
-					nextPlayerState = PLAYER_STATE_NEW;
 					player = nextPlayer;
 					nextPlayer = p;
+
+					songScheduledForPreparation = song;
+
+					nextPlayerState = PLAYER_STATE_NEW;
+					nextPlayer.reset();
 					nextSong = songArray[1];
+					nextSongScheduledForPreparation = null;
+					if (nextPreparationEnabled)
+						handler.removeMessages(MSG_PREPARE_NEXT_SONG);
+
 					_releaseInternetObjects();
 					_updateState(false, null);
 					return;
@@ -1309,7 +1309,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					playing = false;
 					player.pause();
 				}
-				player.seekTo(timeMS);
+				player.seekToAsync(timeMS);
 				_updateState(false, null);
 			} catch (Throwable ex) {
 				_fullCleanup();
@@ -1440,7 +1440,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				MainHandler.postToMainThread(callback);
 			return;
 		}
-		if (BuildConfig.X) {
+		/*if (BuildConfig.X) {
 			boolean enabled = ((enabledFlags & 1) != 0);
 			if (enabled != Equalizer.isEnabled(audioSink))
 				Equalizer._setEnabled(enabled, audioSink);
@@ -1456,7 +1456,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (callback != null)
 				MainHandler.postToMainThread(callback);
 			return;
-		}
+		}*/
 
 		//don't even ask.......
 		//(a few devices won't disable one effect while the other effect is enabled)
@@ -1487,12 +1487,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static void _reinitializeEffects() {
 		audioSinkUsedInEffects = audioSink;
-		if (BuildConfig.X) {
+		/*if (BuildConfig.X) {
 			Equalizer._setEnabled(Equalizer.isEnabled(audioSinkUsedInEffects), audioSinkUsedInEffects);
 			BassBoost._setEnabled(BassBoost.isEnabled(audioSinkUsedInEffects), audioSinkUsedInEffects);
 			Virtualizer._setEnabled(Virtualizer.isEnabled(audioSinkUsedInEffects), audioSinkUsedInEffects);
 			return;
-		}
+		}*/
 		//don't even ask.......
 		//(a few devices won't disable one effect while the other effect is enabled)
 		Equalizer._release();
@@ -1592,7 +1592,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onCompletion(IBasicMediaPlayer mediaPlayer) {
+	public void onCompletion(IMediaPlayer mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		if (playing && player == mediaPlayer)
@@ -1600,11 +1600,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public boolean onError(IBasicMediaPlayer mediaPlayer, int what, int extra) {
+	public boolean onError(IMediaPlayer mediaPlayer, int what, int extra) {
 		if (state != STATE_ALIVE)
 			return true;
 		if (mediaPlayer == nextPlayer || mediaPlayer == player) {
-			if (what == IBasicMediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+			if (what == IMediaPlayer.ERROR_SERVER_DIED) {
 				_storeSongTime();
 				_fullCleanup();
 				if (reviveAlreadyTried) {
@@ -1619,9 +1619,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
 				_fullCleanup();
-				final Throwable result = ((extra == ERROR_NOT_FOUND) ? new FileNotFoundException() :
-					((extra == ERROR_TIMED_OUT) ? new TimeoutException() :
-						((extra == ERROR_UNSUPPORTED_FORMAT) ? new UnsupportedFormatException() :
+				final Throwable result = ((extra == IMediaPlayer.ERROR_NOT_FOUND) ? new FileNotFoundException() :
+					((extra == IMediaPlayer.ERROR_TIMED_OUT) ? new TimeoutException() :
+						((extra == IMediaPlayer.ERROR_UNSUPPORTED_FORMAT) ? new UnsupportedFormatException() :
 							new IOException())));
 				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 				//and the song was being prepared
@@ -1638,16 +1638,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public boolean onInfo(IBasicMediaPlayer mediaPlayer, int what, int extra) {
+	public boolean onInfo(IMediaPlayer mediaPlayer, int what, int extra) {
 		if (mediaPlayer == player) {
 			switch (what) {
-			case IBasicMediaPlayer.MEDIA_INFO_BUFFERING_START:
+			case IMediaPlayer.INFO_BUFFERING_START:
 				if (!playerBuffering) {
 					playerBuffering = true;
 					_updateState(true, null);
 				}
 				break;
-			case IBasicMediaPlayer.MEDIA_INFO_BUFFERING_END:
+			case IMediaPlayer.INFO_BUFFERING_END:
 				if (playerBuffering) {
 					playerBuffering = false;
 					_updateState(true, null);
@@ -1659,7 +1659,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onPrepared(IBasicMediaPlayer mediaPlayer) {
+	public void onPrepared(IMediaPlayer mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		mediaPlayer.setOnPreparedListener(thePlayer);
@@ -1694,7 +1694,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						playAfterSeeking = true;
 						prepareNextAfterSeeking = true;
 						playerState = PLAYER_STATE_PREPARING;
-						player.seekTo(storedSongTime);
+						player.seekToAsync(storedSongTime);
 					}
 					songWhenFirstErrorHappened = null;
 					_updateState(false, null);
@@ -1710,7 +1710,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onSeekComplete(IBasicMediaPlayer mediaPlayer) {
+	public void onSeekComplete(IMediaPlayer mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		if (mediaPlayer == player) {
@@ -1787,7 +1787,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
-		thePlayer.onError(player, IBasicMediaPlayer.MEDIA_ERROR_UNKNOWN, !isConnectedToTheInternet() ? ERROR_NOT_FOUND : errorCode);
+		thePlayer.onError(player, IMediaPlayer.ERROR_UNKNOWN, !isConnectedToTheInternet() ? IMediaPlayer.ERROR_NOT_FOUND : errorCode);
 	}
 
 	private static void httpStreamReceiverMetadataUpdate(int version, String metadata) {
@@ -3294,7 +3294,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		localPlayerState = (arg1 & 0x03);
 		localSong = (Song)objs[0];
 		objs[0] = null;
-		localPlayer = (IBasicMediaPlayer)objs[1];
+		localPlayer = (IMediaPlayer)objs[1];
 		objs[1] = null;
 		if (songs.okToTurnOffAfterReachingTheEnd) {
 			songs.okToTurnOffAfterReachingTheEnd = false;

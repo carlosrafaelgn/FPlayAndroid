@@ -30,20 +30,18 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.playback;
+package br.com.carlosrafaelgn.fplay.playback.context;
 
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Build;
 
-import com.h6ah4i.android.media.IBasicMediaPlayer;
-
-import java.io.FileDescriptor;
 import java.io.IOException;
 
-final class MediaPlayerWrapper implements IBasicMediaPlayer, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
+import br.com.carlosrafaelgn.fplay.playback.context.IMediaPlayer;
+
+final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
 	private final MediaPlayer player;
 	private OnBufferingUpdateListener bufferingUpdateListener;
 	private OnCompletionListener completionListener;
@@ -72,21 +70,6 @@ final class MediaPlayerWrapper implements IBasicMediaPlayer, MediaPlayer.OnBuffe
 	}
 
 	@Override
-	public void setDataSource(Context context, Uri uri) throws IOException {
-		player.setDataSource(context, uri);
-	}
-
-	@Override
-	public void setDataSource(FileDescriptor fd) throws IOException {
-		player.setDataSource(fd);
-	}
-
-	@Override
-	public void setDataSource(FileDescriptor fd, long offset, long length) throws IOException {
-		player.setDataSource(fd, offset, length);
-	}
-
-	@Override
 	public void setDataSource(String path) throws IOException {
 		player.setDataSource(path);
 	}
@@ -102,7 +85,7 @@ final class MediaPlayerWrapper implements IBasicMediaPlayer, MediaPlayer.OnBuffe
 	}
 
 	@Override
-	public void seekTo(int msec) {
+	public void seekToAsync(int msec) {
 		player.seekTo(msec);
 	}
 
@@ -142,11 +125,6 @@ final class MediaPlayerWrapper implements IBasicMediaPlayer, MediaPlayer.OnBuffe
 	}
 
 	@Override
-	public void attachAuxEffect(int effectId) {
-		player.attachAuxEffect(effectId);
-	}
-
-	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
 		player.setVolume(leftVolume, rightVolume);
 	}
@@ -154,11 +132,6 @@ final class MediaPlayerWrapper implements IBasicMediaPlayer, MediaPlayer.OnBuffe
 	@Override
 	public void setAudioStreamType(int streamtype) {
 		player.setAudioStreamType(streamtype);
-	}
-
-	@Override
-	public void setAuxEffectSendLevel(float level) {
-		player.setAuxEffectSendLevel(level);
 	}
 
 	@Override
@@ -204,7 +177,7 @@ final class MediaPlayerWrapper implements IBasicMediaPlayer, MediaPlayer.OnBuffe
 
 	@Override
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	public void setNextMediaPlayer(IBasicMediaPlayer next) {
+	public void setNextMediaPlayer(IMediaPlayer next) {
 		player.setNextMediaPlayer(((MediaPlayerWrapper)next).player);
 	}
 

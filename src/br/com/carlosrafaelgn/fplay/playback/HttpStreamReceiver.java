@@ -58,6 +58,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
+import br.com.carlosrafaelgn.fplay.playback.context.IMediaPlayer;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class HttpStreamReceiver implements Runnable {
@@ -350,7 +351,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, Player.ERROR_IO), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, IMediaPlayer.ERROR_IO), SystemClock.uptimeMillis());
 				}
 			} finally {
 				releaseMediaCodec();
@@ -512,7 +513,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? Player.ERROR_TIMED_OUT : ((ex instanceof FileNotFoundException) ? Player.ERROR_NOT_FOUND : Player.ERROR_IO)), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? IMediaPlayer.ERROR_TIMED_OUT : ((ex instanceof FileNotFoundException) ? IMediaPlayer.ERROR_NOT_FOUND : IMediaPlayer.ERROR_IO)), SystemClock.uptimeMillis());
 				}
 			} finally {
 				synchronized (sync) {
@@ -978,7 +979,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, Player.ERROR_UNSUPPORTED_FORMAT), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, IMediaPlayer.ERROR_UNSUPPORTED_FORMAT), SystemClock.uptimeMillis());
 				}
 				return;
 			} else {

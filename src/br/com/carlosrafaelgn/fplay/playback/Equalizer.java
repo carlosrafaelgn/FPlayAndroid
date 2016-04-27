@@ -32,10 +32,10 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
-import com.h6ah4i.android.media.audiofx.IEqualizer;
-
 import java.util.Arrays;
 
+import br.com.carlosrafaelgn.fplay.playback.context.IEqualizer;
+import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Equalizer {
@@ -158,7 +158,7 @@ public final class Equalizer {
 
 	static void _initialize() {
 		try {
-			theEqualizer = MediaFactory.createEqualizer();
+			theEqualizer = MediaContext.createEqualizer();
 			final int bandCount = theEqualizer.getNumberOfBands();
 			if (bandLevels == null)
 				bandLevels = new int[bandCount];
@@ -309,11 +309,9 @@ public final class Equalizer {
 		final int[] levels = ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels));
 		if (levels != null && levels.length > 0) {
 			try {
-				final IEqualizer.Settings s = new IEqualizer.Settings();
 				int i = ((levels.length > (int)theEqualizer.getNumberOfBands()) ? (int)theEqualizer.getNumberOfBands() : levels.length);
-				s.bandLevels = new short[i];
-				s.curPreset = -1;
-				s.numBands = (short)(i);
+				final short[] bandLevels = new short[i];
+				final short numBands = (short)(i);
 				for (i = i - 1; i >= 0; i--) {
 					int level = levels[i];
 					if (level > maxBandLevel) {
@@ -323,9 +321,9 @@ public final class Equalizer {
 						level = minBandLevel;
 						levels[i] = level;
 					}
-					s.bandLevels[i] = (short)level;
+					bandLevels[i] = (short)level;
 				}
-				theEqualizer.setProperties(s);
+				theEqualizer.setProperties(numBands, bandLevels);
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 				for (int i = levels.length - 1; i >= 0; i--) {

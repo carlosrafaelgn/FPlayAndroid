@@ -37,13 +37,7 @@ You can find FPlay on Google Play at https://play.google.com/store/apps/details?
 FPlay X
 =======
 
-FPlay X is a new flavor for FPlay. It supports a 10-band equalizer and better/more precise visualizations!
-
-FPlay X was made possible by Haruki Hasegawa and his OpenSLMediaPlayer library.
-
-The OpenSLMediaPlayer library is released under the Apache Software License, Version 2.0, and it is available at these links:
-- http://android-openslmediaplayer.h6ah4i.com
-- https://github.com/h6ah4i/android-openslmediaplayer
+FPlay X is a new flavor for FPlay, aiming at better audio quality and more precise visualizations!
 
 ----
 

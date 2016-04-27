@@ -50,10 +50,9 @@
 package android.widget;
 
 import android.annotation.TargetApi;
-import android.graphics.Rect;
-
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.SystemClock;
 
