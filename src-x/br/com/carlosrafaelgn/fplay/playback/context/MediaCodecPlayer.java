@@ -251,18 +251,13 @@ final class MediaCodecPlayer implements IMediaPlayer {
 	}
 
 	void seekComplete() {
-		switch (stateBeforeSeek) {
-		case STATE_STARTED:
+		if (stateBeforeSeek == STATE_STARTED) {
 			state = STATE_PAUSED;
 			start();
-			break;
-		case STATE_PAUSED:
-		case STATE_PREPARED:
+			if (state != STATE_STARTED)
+				return;
+		} else {
 			state = stateBeforeSeek;
-			break;
-		default:
-			stateBeforeSeek = STATE_IDLE;
-			return;
 		}
 		stateBeforeSeek = STATE_IDLE;
 		if (seekCompleteListener != null)
@@ -390,13 +385,9 @@ final class MediaCodecPlayer implements IMediaPlayer {
 			pause();
 		case STATE_PAUSED:
 		case STATE_PREPARED:
-			if (MediaContext.seekToAsync(this, msec)) {
-				state = STATE_SEEKING;
-			} else {
-				if (stateBeforeSeek == STATE_STARTED)
-					start();
-				stateBeforeSeek = STATE_IDLE;
-			}
+			state = STATE_SEEKING;
+			if (!MediaContext.seekToAsync(this, msec))
+				seekComplete();
 			break;
 		default:
 			throw new IllegalStateException("seekTo() - player was in an invalid state: " + state);

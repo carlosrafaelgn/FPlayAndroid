@@ -80,14 +80,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static volatile int requestedAction, requestedSeekMS;
 	private static Handler handler;
 	private static Thread thread;
-	private static volatile AudioTrack audioTrackUsedForVolumeChanges;
+	private static AudioTrack audioTrack;
 	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
 	private static MediaContext theMediaContext;
 
 	private MediaContext() {
 	}
 
-	private static AudioTrack createAudioTrack(int outputSampleRate) {
+	private static void createAudioTrack(int outputSampleRate) {
 		//use our maximum supported sample rate (48000 Hz)
 		int bufferSizeInBytes = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
 		int bufferSizeInFrames = bufferSizeInBytes / FRAME_SIZE_IN_BYTES; //16 bits per sample, stereo
@@ -97,7 +97,22 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		bufferSizeInFrames = ((twoSecondsInFrames + bufferSizeInFrames - 1) / bufferSizeInFrames) * bufferSizeInFrames;
 		bufferSizeInBytes = bufferSizeInFrames * FRAME_SIZE_IN_BYTES;
 
-		return new AudioTrack(AudioManager.STREAM_MUSIC, outputSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+		audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, outputSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+	}
+
+	private static void pauseAndAbortAudioTrackWrite() {
+		//http://developer.android.com/reference/android/media/AudioTrack.html#write(short[], int, int)
+		//In streaming mode, the write will normally block until all the data has been enqueued for
+		//playback, and will return a full transfer count. However, if the track is stopped or
+		//paused on entry, or another thread interrupts the write by calling stop or pause, or an
+		//I/O error occurs during the write, then the write may return a short transfer count.
+		if (audioTrack != null) {
+			try {
+				audioTrack.pause();
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		}
 	}
 
 	@Override
@@ -105,7 +120,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		thread.setPriority(Thread.MAX_PRIORITY);
 
 		final int outputSampleRate = 44100; //AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
-		AudioTrack audioTrack;
 		PowerManager.WakeLock wakeLock;
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
@@ -114,12 +128,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		int lastHeadPositionInFrames = 0;
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
 
-		audioTrack = createAudioTrack(outputSampleRate);
+		createAudioTrack(outputSampleRate);
 
 		wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);
-
-		audioTrackUsedForVolumeChanges = audioTrack;
 
 		synchronized (notification) {
 			notification.notify();
@@ -175,6 +187,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							paused = true;
 							requestSucceeded = true;
 							wakeLock.release();
+						} else {
+							throw new IllegalStateException("impossible to pause a player other than currentPlayer");
 						}
 						break;
 					case ACTION_RESUME:
@@ -185,12 +199,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							paused = false;
 							requestSucceeded = true;
 							wakeLock.acquire();
+						} else {
+							throw new IllegalStateException("impossible to resume a player other than currentPlayer");
 						}
 						break;
 					case ACTION_SEEK:
 						System.out.println("ACTION_SEEK " + playerRequestingAction);
-						if (playerRequestingAction == nextPlayer)
-							throw new IllegalStateException("trying to seek nextPlayer");
+						if (currentPlayer != null && currentPlayer != playerRequestingAction)
+							throw new IllegalStateException("impossible to seek a player other than currentPlayer");
 						if (!paused)
 							throw new IllegalStateException("trying to seek while not paused");
 						pendingSeekPlayer = playerRequestingAction;
@@ -329,6 +345,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						}
 					}
 					if (outputBuffer.size > 0) {
+						//using AudioTrack.WRITE_NON_BLOCKING apparently produces clicks when unpausing
 						bytesWrittenThisTime = audioTrack.write(outputBuffer.byteBuffer, outputBuffer.size, AudioTrack.WRITE_BLOCKING);
 						if (bytesWrittenThisTime < 0) {
 							throw new IOException("audioTrack.write() returned " + bytesWrittenThisTime);
@@ -426,8 +443,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 		}
 
-		if (audioTrack != null)
-			audioTrack.release();
 		if (wakeLock != null)
 			wakeLock.release();
 		synchronized (notification) {
@@ -459,6 +474,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	public static void _initialize() {
+		if (theMediaContext != null)
+			return;
+
 		theMediaContext = new MediaContext();
 
 		alive = true;
@@ -470,7 +488,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		thread.start();
 
 		synchronized (notification) {
-			if (audioTrackUsedForVolumeChanges == null) {
+			if (audioTrack == null) {
 				try {
 					notification.wait();
 				} catch (Throwable ex) {
@@ -482,6 +500,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static void _release() {
 		alive = false;
+		pauseAndAbortAudioTrackWrite();
 		synchronized (threadNotification) {
 			threadNotification.notify();
 		}
@@ -493,9 +512,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			thread = null;
 		}
+		if (audioTrack != null) {
+			audioTrack.release();
+			audioTrack = null;
+		}
 		requestedAction = ACTION_NONE;
 		handler = null;
-		audioTrackUsedForVolumeChanges = null;
 		playerRequestingAction = null;
 		theMediaContext = null;
 	}
@@ -503,6 +525,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static boolean play(MediaCodecPlayer player) {
 		if (!alive)
 			return false;
+		pauseAndAbortAudioTrackWrite();
 		playerRequestingAction = player;
 		requestedAction = ACTION_PLAY;
 		synchronized (threadNotification) {
@@ -523,6 +546,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static boolean pause(MediaCodecPlayer player) {
 		if (!alive)
 			return false;
+		pauseAndAbortAudioTrackWrite();
 		playerRequestingAction = player;
 		requestedAction = ACTION_PAUSE;
 		synchronized (threadNotification) {
@@ -563,6 +587,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static boolean seekToAsync(MediaCodecPlayer player, int msec) {
 		if (!alive)
 			return false;
+		pauseAndAbortAudioTrackWrite();
 		playerRequestingAction = player;
 		requestedSeekMS = msec;
 		requestedAction = ACTION_SEEK;
@@ -622,7 +647,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	public static IMediaPlayer createMediaPlayer() {
-		return new MediaCodecPlayer(audioTrackUsedForVolumeChanges);
+		return new MediaCodecPlayer(audioTrack);
 	}
 
 	public static IEqualizer createEqualizer() {

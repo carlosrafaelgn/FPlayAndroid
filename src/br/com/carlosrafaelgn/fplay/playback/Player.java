@@ -1012,6 +1012,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void _partialCleanup() {
+		MediaContext._release();
 		playerState = PLAYER_STATE_NEW;
 		playerBuffering = false;
 		if (player != null) {
@@ -1053,6 +1054,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void _initializePlayers() {
+		MediaContext._initialize();
 		if (player == null) {
 			player = _createPlayer();
 			if (nextPlayer != null) {
