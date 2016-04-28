@@ -105,6 +105,14 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		bufferInfo = new MediaCodec.BufferInfo();
 	}
 
+	@Override
+	public String toString() {
+		if (path == null)
+			return super.toString();
+		final int i = path.lastIndexOf('/');
+		return ((i < 0) ? path : path.substring(i + 1));
+	}
+
 	int getSampleRate() {
 		return sampleRate;
 	}
