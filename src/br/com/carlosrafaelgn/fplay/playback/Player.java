@@ -2894,7 +2894,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			registerMediaSession();
 		} else {
 			if (mediaButtonEventReceiver == null)
-				mediaButtonEventReceiver = new ComponentName("br.com.carlosrafaelgn.fplay", "br.com.carlosrafaelgn.fplay.ExternalReceiver");
+				mediaButtonEventReceiver = new ComponentName(BuildConfig.APPLICATION_ID, "br.com.carlosrafaelgn.fplay.ExternalReceiver");
 			if (audioManager != null) {
 				audioManager.registerMediaButtonEventReceiver(mediaButtonEventReceiver);
 				if (thePlayer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)

@@ -91,6 +91,7 @@ import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
 import br.com.carlosrafaelgn.fplay.ActivityItemView;
+import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -2183,7 +2184,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			//I couldn't make AccessibilityEvent.TYPE_ANNOUNCEMENT work... even on Android 16+
 			e.setEventType(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
 			e.setClassName("br.com.carlosrafaelgn.fplay.activity.ActivityHost");
-			e.setPackageName("br.com.carlosrafaelgn.fplay");
+			e.setPackageName(BuildConfig.APPLICATION_ID);
 			e.getText().add(text);
 			accessibilityManager.sendAccessibilityEvent(e);
 		}

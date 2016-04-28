@@ -87,14 +87,16 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	@SuppressWarnings("deprecation")
-	private static void createAudioTrack(int sampleRate, int frameSizeShift) {
-		int bufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, (frameSizeShift == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-		int bufferSizeInFrames = bufferSizeInBytes >> frameSizeShift;
+	private static void createAudioTrack() {
+		//we will create an audio track with a 1-second length, supposing 48000 Hz (MediaCodecPlayer
+		//always outputs stereo frames with 16 bits per sample)
+		int bufferSizeInBytes = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+		int bufferSizeInFrames = bufferSizeInBytes >> 2;
 
-		final int twoSecondsInFrames = sampleRate << 1;
-		//at least 2 seconds, but a multiple of bufferSizeInFrames
-		bufferSizeInFrames = ((twoSecondsInFrames + bufferSizeInFrames - 1) / bufferSizeInFrames) * bufferSizeInFrames;
-		bufferSizeInBytes = bufferSizeInFrames << frameSizeShift;
+		final int oneSecondInFrames = 48000;
+		//make sure it is a multiple of bufferSizeInFrames
+		bufferSizeInFrames = ((oneSecondInFrames + bufferSizeInFrames - 1) / bufferSizeInFrames) * bufferSizeInFrames;
+		bufferSizeInBytes = bufferSizeInFrames << 2;
 
 		synchronized (audioTrackSync) {
 			if (audioTrack != null) {
@@ -109,7 +111,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
-			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, (frameSizeShift == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
 			audioTrack.setStereoVolume(leftVolume, rightVolume);
 		}
 	}
@@ -134,11 +136,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		thread.setPriority(Thread.MAX_PRIORITY);
 
 		int sampleRate = 44100; //AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
-		//thanks to an amazing coincidence, to convert from frames to bytes (and vice-versa)
-		//in 16 bits per sample, mono (1 channel), we must divide by 2 (or shift by 1)
-		//and in 16 bits per sample, stereo (2 channels), we must divide by 4 (or shift by 2)
-		//therefore, frameSizeShift is also the channel count for these two cases :)
-		int frameSizeShift = 2;
 		PowerManager.WakeLock wakeLock;
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
@@ -147,7 +144,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		int lastHeadPositionInFrames = 0;
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
 
-		createAudioTrack(sampleRate, frameSizeShift);
+		createAudioTrack();
+		MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 
 		wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);
@@ -193,11 +191,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						framesWritten = currentPlayer.getCurrentPositionInFrames();
 						framesPlayed = currentPlayer.getCurrentPositionInFrames();
 						nextFramesWritten = 0;
-						currentPlayer.nextOutputBuffer(outputBuffer);
-						if (sampleRate != currentPlayer.getSampleRate() || frameSizeShift != currentPlayer.getChannelCount()) {
+						if (sampleRate != currentPlayer.getSampleRate()) {
+							System.out.println("CHANGING SR FROM " + sampleRate + " TO " + currentPlayer.getSampleRate());
 							sampleRate = currentPlayer.getSampleRate();
-							frameSizeShift = currentPlayer.getChannelCount();
-							createAudioTrack(sampleRate, frameSizeShift);
+							if (audioTrack.setPlaybackRate(sampleRate) != AudioTrack.SUCCESS)
+								throw new IOException();
+							MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 						}
 						audioTrack.play();
 						paused = false;
@@ -257,8 +256,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								nextPlayer = nextPlayerRequested;
 								try {
 									if (nextPlayer != null) {
-										if (sampleRate != nextPlayer.getSampleRate() || frameSizeShift != nextPlayer.getChannelCount())
+										if (sampleRate != nextPlayer.getSampleRate()) {
+											System.out.println("***NEXT DIFF SAMPLERATE***");
 											nextPlayer = null;
+										}
 										if (nextPlayer != null)
 											nextPlayer.resetDecoderIfOutputAlreadyUsed();
 									}
@@ -275,8 +276,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							System.out.println("ACTION_RESET OK!");
 							audioTrack.pause();
 							audioTrack.flush();
-							paused = true;
 							outputBuffer.release();
+							paused = true;
 							currentPlayer = null;
 							nextPlayer = null;
 							sourcePlayer = null;
@@ -300,10 +301,22 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					}
 				} catch (Throwable ex) {
 					pendingSeekPlayer = null;
-					audioTrack.pause();
-					audioTrack.flush();
+					try {
+						audioTrack.pause();
+					} catch (Throwable ex2) {
+						//just ignore
+					}
+					try {
+						audioTrack.flush();
+					} catch (Throwable ex2) {
+						//just ignore
+					}
+					try {
+						outputBuffer.release();
+					} catch (Throwable ex2) {
+						//just ignore
+					}
 					paused = true;
-					outputBuffer.release();
 					currentPlayer = null;
 					nextPlayer = null;
 					sourcePlayer = null;
@@ -338,6 +351,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							}
 						}
 						pendingSeekPlayer.doSeek(requestedSeekMS);
+						//give the decoder some time to decode something
+						try {
+							Thread.sleep(10);
+						} catch (Throwable ex) {
+							//just ignore
+						}
 						handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, pendingSeekPlayer), SystemClock.uptimeMillis());
 						System.out.println("ACTION_SEEK COMPLETE!");
 						if (pendingSeekPlayer == currentPlayer) {
@@ -346,7 +365,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						}
 					} catch (Throwable ex) {
 						if (pendingSeekPlayer == currentPlayer) {
-							outputBuffer.release();
+							try {
+								outputBuffer.release();
+							} catch (Throwable ex2) {
+								//just ignore
+							}
 							currentPlayer = null;
 							nextPlayer = null;
 							sourcePlayer = null;
@@ -366,55 +389,49 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				int bytesWrittenThisTime;
 
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-					if (outputBuffer.index < 0) {
-						if (sourcePlayer.nextOutputBuffer(outputBuffer)) {
-							//process equalizer/visualizer here using all information from outputBuffer.byteBuffer (position and remaining)
-						} else {
-							System.out.println("*** NO OUTPUT BUFFER A");
-						}
-					}
-					if (outputBuffer.size > 0) {
+					if (outputBuffer.index < 0)
+						sourcePlayer.nextOutputBuffer(outputBuffer);
+					if (outputBuffer.remaining > 0) {
 						//using AudioTrack.WRITE_NON_BLOCKING apparently produces clicks when unpausing
-						bytesWrittenThisTime = audioTrack.write(outputBuffer.byteBuffer, outputBuffer.size, AudioTrack.WRITE_BLOCKING);
+						bytesWrittenThisTime = audioTrack.write(outputBuffer.byteBuffer, outputBuffer.remaining, AudioTrack.WRITE_BLOCKING);
 						if (bytesWrittenThisTime < 0) {
 							throw new IOException("audioTrack.write() returned " + bytesWrittenThisTime);
 						} else {
-							outputBuffer.size -= bytesWrittenThisTime;
+							outputBuffer.remaining -= bytesWrittenThisTime;
+							outputBuffer.offset += bytesWrittenThisTime;
 						}
 					} else {
 						bytesWrittenThisTime = 0;
 					}
-					zeroed = (outputBuffer.size <= 0);
+					zeroed = (outputBuffer.remaining <= 0);
 				} else {
 					if (outputBuffer.index < 0) {
 						if (sourcePlayer.nextOutputBuffer(outputBuffer)) {
-							//process equalizer/visualizer here using all information from outputBuffer.byteBuffer (position and remaining)
-						} else {
-							System.out.println("*** NO OUTPUT BUFFER B");
+							if ((outputBuffer.remaining + outputBuffer.offset) > outputShortBuffer.length)
+								outputShortBuffer = new short[outputBuffer.remaining + outputBuffer.offset];
+							outputBuffer.shortBuffer.get(outputShortBuffer, outputBuffer.offset, outputBuffer.remaining);
 						}
-						if (outputBuffer.size > outputShortBuffer.length)
-							outputShortBuffer = new short[outputBuffer.size];
-						outputBuffer.shortBuffer.get(outputShortBuffer, 0, outputBuffer.size);
 					}
-					if (outputBuffer.size > 0) {
-						bytesWrittenThisTime = audioTrack.write(outputShortBuffer, outputBuffer.offset, outputBuffer.size);
+					if (outputBuffer.remaining > 0) {
+						bytesWrittenThisTime = audioTrack.write(outputShortBuffer, outputBuffer.offset, outputBuffer.remaining);
 						if (bytesWrittenThisTime < 0) {
 							throw new IOException("audioTrack.write() returned " + bytesWrittenThisTime);
 						} else {
-							outputBuffer.size -= bytesWrittenThisTime;
+							outputBuffer.remaining -= bytesWrittenThisTime;
 							outputBuffer.offset += bytesWrittenThisTime;
 							bytesWrittenThisTime <<= 1; // << 1 to convert from shorts to bytes
 						}
 					} else {
 						bytesWrittenThisTime = 0;
 					}
-					zeroed = (outputBuffer.size <= 0);
+					zeroed = (outputBuffer.remaining <= 0);
 				}
 
+				//MediaCodecPlayer always outputs stereo frames with 16 bits per sample
 				if (sourcePlayer == currentPlayer)
-					framesWritten += bytesWrittenThisTime >> frameSizeShift;
+					framesWritten += bytesWrittenThisTime >> 2;
 				else
-					nextFramesWritten += bytesWrittenThisTime >> frameSizeShift;
+					nextFramesWritten += bytesWrittenThisTime >> 2;
 
 				if (zeroed) {
 					outputBuffer.release();
@@ -436,8 +453,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//there is nothing else to do!
 						audioTrack.pause();
 						audioTrack.flush();
-						paused = true;
 						outputBuffer.release();
+						paused = true;
 						wakeLock.release();
 					} else {
 						//keep playing!!!
@@ -456,10 +473,22 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				}
 
 			} catch (Throwable ex) {
-				outputBuffer.release();
+				try {
+					outputBuffer.release();
+				} catch (Throwable ex2) {
+					//just ignore
+				}
 				if (sourcePlayer == currentPlayer) {
-					audioTrack.pause();
-					audioTrack.flush();
+					try {
+						audioTrack.pause();
+					} catch (Throwable ex2) {
+						//just ignore
+					}
+					try {
+						audioTrack.flush();
+					} catch (Throwable ex2) {
+						//just ignore
+					}
 					paused = true;
 					currentPlayer = null;
 					wakeLock.release();

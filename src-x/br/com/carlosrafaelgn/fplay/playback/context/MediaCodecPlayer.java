@@ -41,7 +41,9 @@ import android.os.Build;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 
 final class MediaCodecPlayer implements IMediaPlayer {
@@ -63,7 +65,7 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		public MediaCodecPlayer player;
 		public ByteBuffer byteBuffer;
 		public ShortBuffer shortBuffer;
-		public int index, offset, size; //offset and size are either in shorts or bytes
+		public int index, offset, remaining; //offset and remaining are either in shorts or bytes
 		public boolean streamOver;
 
 		public void release() {
@@ -76,6 +78,10 @@ final class MediaCodecPlayer implements IMediaPlayer {
 			}
 		}
 	}
+
+	private static Field fieldBackingArray, fieldArrayOffset;
+	private static boolean isDirect, needsSwap;
+	public static boolean tryToProcessNonDirectBuffers;
 
 	private volatile int state, currentPositionInMS;
 	private int sampleRate, channelCount, durationInMS, stateBeforeSeek;
@@ -103,10 +109,6 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		return sampleRate;
 	}
 
-	int getChannelCount() {
-		return channelCount;
-	}
-
 	boolean isOutputOver() {
 		return outputOver;
 	}
@@ -132,6 +134,47 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		return i;
 	}
 
+	@SuppressWarnings("deprecation")
+	private void prepareOutputBuffers() {
+		outputBuffers = mediaCodec.getOutputBuffers();
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+			outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
+			for (int i = outputBuffers.length - 1; i >= 0; i--)
+				outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
+		}
+		//we will assume that all buffers are alike
+		isDirect = outputBuffers[0].isDirect();
+		needsSwap = (outputBuffers[0].order() != ByteOrder.nativeOrder());
+		if (!isDirect && (fieldBackingArray == null || fieldArrayOffset == null)) {
+			//final byte[] backingArray;
+			//final int arrayOffset;
+			if (fieldBackingArray == null) {
+				try {
+					fieldBackingArray = outputBuffers[0].getClass().getField("backingArray");
+					fieldBackingArray.setAccessible(true);
+				} catch (Throwable ex) {
+					fieldBackingArray = null;
+				}
+			}
+			if (fieldArrayOffset == null) {
+				try {
+					fieldArrayOffset = outputBuffers[0].getClass().getField("arrayOffset");
+					fieldArrayOffset.setAccessible(true);
+				} catch (Throwable ex) {
+					fieldArrayOffset = null;
+				}
+			}
+		}
+	}
+
+	private static void processDirectData(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, boolean needsSwap) {
+
+	}
+
+	private static void processData(byte[] buffer, int offsetInBytes, int sizeInBytes, boolean needsSwap) {
+
+	}
+
 	//**************************************************************
 	//Methods nextOutputBuffer(), releaseOutputBuffer(), doSeek(),
 	//resetDecoderIfOutputAlreadyUsed() and startedAsNext()
@@ -143,7 +186,7 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		if (outputOver) {
 			outputBuffer.index = -1;
 			outputBuffer.player = this;
-			outputBuffer.size = 0;
+			outputBuffer.remaining = 0;
 			outputBuffer.streamOver = true;
 			return false;
 		}
@@ -159,12 +202,7 @@ final class MediaCodecPlayer implements IMediaPlayer {
 				index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 				break;
 			case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-				outputBuffers = mediaCodec.getOutputBuffers();
-				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-					outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
-					for (int i = outputBuffers.length - 1; i >= 0; i--)
-						outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
-				}
+				prepareOutputBuffers();
 				index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 				break;
 			default:
@@ -176,22 +214,48 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		outputOver = ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0);
 		outputBuffer.streamOver = outputOver;
 		if (index < 0) {
-			outputBuffer.size = 0;
+			outputBuffer.remaining = 0;
 			return false;
 		}
 		outputBuffersHaveBeenUsed = true;
+		final ByteBuffer buffer = outputBuffers[index];
+		final int remainingBytes;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			outputBuffer.byteBuffer = outputBuffers[index];
+			outputBuffer.byteBuffer = buffer;
 			outputBuffer.offset = bufferInfo.offset;
-			outputBuffer.size = bufferInfo.size;
-			outputBuffer.byteBuffer.position(0);
-			outputBuffer.byteBuffer.limit(outputBuffer.size);
+			remainingBytes = bufferInfo.size - outputBuffer.offset;
+			outputBuffer.remaining = remainingBytes;
+			buffer.limit(bufferInfo.size);
+			buffer.position(outputBuffer.offset);
 		} else {
 			outputBuffer.shortBuffer = outputBuffersAsShort[index];
 			outputBuffer.offset = bufferInfo.offset >> 1; //bytes to shorts
-			outputBuffer.size = bufferInfo.size >> 1; //bytes to shorts
-			outputBuffer.shortBuffer.position(0);
-			outputBuffer.shortBuffer.limit(outputBuffer.size);
+			outputBuffer.remaining = bufferInfo.size >> 1; //bytes to shorts
+			outputBuffer.shortBuffer.limit(outputBuffer.remaining);
+			outputBuffer.remaining -= outputBuffer.offset;
+			remainingBytes = outputBuffer.remaining << 1;
+			outputBuffer.shortBuffer.position(outputBuffer.offset);
+		}
+		//* one day, when we support mono files, processXXXData will have to convert from mono to
+		//stereo, and not being able to call it when the input file is mono will be considered an
+		//exception
+		if (isDirect) {
+			processDirectData(buffer,
+				bufferInfo.offset,
+				remainingBytes,
+				needsSwap);
+		} else if (tryToProcessNonDirectBuffers) {
+			System.out.println("NONDIRECT!");
+			try {
+				processData((byte[])fieldBackingArray.get(buffer),
+					bufferInfo.offset + (int)fieldArrayOffset.get(buffer),
+					remainingBytes,
+					needsSwap);
+			} catch (Throwable ex) {
+				//well... no processing for you! (we use this flag to avoid generating
+				//several exceptions in sequence, which would slow down the playback)
+				tryToProcessNonDirectBuffers = false;
+			}
 		}
 		return true;
 	}
@@ -251,8 +315,9 @@ final class MediaCodecPlayer implements IMediaPlayer {
 		state = STATE_ERROR;
 		if (errorListener != null)
 			errorListener.onError(this, ERROR_UNKNOWN,
-				(exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :
-					((exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN));
+				((exception instanceof FileNotFoundException) ? ERROR_NOT_FOUND :
+					(exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :
+						((exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN)));
 	}
 
 	void seekComplete() {
@@ -350,7 +415,8 @@ final class MediaCodecPlayer implements IMediaPlayer {
 					mediaExtractor.selectTrack(i);
 					sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
 					channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
-					if (channelCount != 1 && channelCount != 2)
+					//only stereo files for now...
+					if (channelCount != 2)
 						throw new UnsupportedFormatException();
 					durationInMS = (int)(format.getLong(MediaFormat.KEY_DURATION) / 1000L);
 					break;
@@ -371,12 +437,7 @@ final class MediaCodecPlayer implements IMediaPlayer {
 			inputOver = false;
 			outputOver = false;
 			inputBuffers = mediaCodec.getInputBuffers();
-			outputBuffers = mediaCodec.getOutputBuffers();
-			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-				outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
-				for (i = outputBuffers.length - 1; i >= 0; i--)
-					outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
-			}
+			prepareOutputBuffers();
 			fillInputBuffers();
 			state = STATE_PREPARED;
 			break;

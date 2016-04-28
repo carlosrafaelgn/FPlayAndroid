@@ -53,7 +53,7 @@ public final class ExternalFx {
 
 	private static void broadcastOpenIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
-		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
+		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, BuildConfig.APPLICATION_ID);
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
 		Player.theApplication.sendBroadcast(intent);
@@ -61,7 +61,7 @@ public final class ExternalFx {
 
 	private static Intent createDisplayIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL);
-		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
+		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, BuildConfig.APPLICATION_ID);
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
 		return intent;
@@ -69,7 +69,7 @@ public final class ExternalFx {
 
 	private static void broadcastCloseIntent() {
 		final Intent intent = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
-		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, "br.com.carlosrafaelgn.fplay");
+		intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, BuildConfig.APPLICATION_ID);
 		intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC);
 		intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, Player.audioSessionId);
 		Player.theApplication.sendBroadcast(intent);
