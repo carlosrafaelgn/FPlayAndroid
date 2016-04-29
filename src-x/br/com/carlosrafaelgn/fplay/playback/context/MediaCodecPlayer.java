@@ -223,10 +223,12 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			onError(null, !Player.isConnectedToTheInternet() ? IMediaPlayer.ERROR_NOT_FOUND : msg.arg2);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
-			onInfo(INFO_METADATA_UPDATE, 0, msg.obj);
+			if (msg.obj != null)
+				onInfo(INFO_METADATA_UPDATE, 0, msg.obj);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
-			onInfo(INFO_URL_UPDATE, 0, msg.obj);
+			if (msg.obj != null)
+				onInfo(INFO_URL_UPDATE, 0, msg.obj);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_INFO:
 			if (state != STATE_PREPARING && state != STATE_PAUSED) {
@@ -718,11 +720,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
 		final HttpStreamReceiver receiver = httpStreamReceiver;
 		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
-	}
-
-	@Override
-	public boolean isPlaying() {
-		return (state == STATE_STARTED);
 	}
 
 	@Override

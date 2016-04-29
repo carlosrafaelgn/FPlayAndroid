@@ -43,7 +43,7 @@ public interface IMediaPlayer {
 
 	//extra
 	int ERROR_NOT_FOUND = 1001; //internal constant (not used by the original MediaPlayer class) used to indicate that the file has not been found
-	int ERROR_MALFORMED = -1007; //MediaPlayer.MEDIA_ERROR_MALFORMED
+	//int ERROR_MALFORMED = -1007; //MediaPlayer.MEDIA_ERROR_MALFORMED
 	int ERROR_UNSUPPORTED_FORMAT = -1010; //MediaPlayer.MEDIA_ERROR_UNSUPPORTED
 	int ERROR_IO = -1004; //MediaPlayer.MEDIA_ERROR_IO
 	int ERROR_TIMED_OUT = -110; //MediaPlayer.MEDIA_ERROR_TIMED_OUT
@@ -119,8 +119,6 @@ public interface IMediaPlayer {
 	int getCurrentPosition();
 
 	int getHttpPosition();
-
-	boolean isPlaying();
 
 	void setVolume(float leftVolume, float rightVolume);
 

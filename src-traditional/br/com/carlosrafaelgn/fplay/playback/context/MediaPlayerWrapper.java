@@ -122,11 +122,6 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnCompletion
 	}
 
 	@Override
-	public boolean isPlaying() {
-		return player.isPlaying();
-	}
-
-	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
 		player.setVolume(leftVolume, rightVolume);
 	}

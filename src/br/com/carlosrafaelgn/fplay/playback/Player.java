@@ -382,8 +382,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, msg.arg1, 0, msg.obj), SystemClock.uptimeMillis());
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
-				if (msg.obj != null)
-					_httpStreamReceiverUrlUpdated(msg.arg1, msg.obj.toString());
+				if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion)
+					thePlayer.onInfo(player, IMediaPlayer.INFO_URL_UPDATE, 0, msg.obj);
 				break;
 			}
 		}
@@ -437,8 +437,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				stopService();
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
-				if (msg.obj != null)
-					httpStreamReceiverMetadataUpdate(msg.arg1, msg.obj.toString());
+				if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion)
+					thePlayer.onInfo(localPlayer, IMediaPlayer.INFO_METADATA_UPDATE, 0, msg.obj);
 				break;
 			}
 		}
@@ -1646,6 +1646,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_updateState(true, null);
 				}
 				break;
+			case IMediaPlayer.INFO_METADATA_UPDATE:
+				//this message must be handled from the main thread
+				if (MainHandler.isOnMainThread()) {
+					if (extraObject instanceof HttpStreamReceiver.Metadata)
+						httpStreamReceiverMetadataUpdate((HttpStreamReceiver.Metadata)extraObject);
+				} else if (localHandler != null) {
+					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, httpStreamReceiverVersion, 0, extraObject), SystemClock.uptimeMillis());
+				}
+				break;
+			case IMediaPlayer.INFO_URL_UPDATE:
+				if (state == STATE_ALIVE && song != null)
+					song.path = extraObject.toString();
+				break;
 			}
 		}
 		return false;
@@ -1782,42 +1795,36 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		thePlayer.onError(player, IMediaPlayer.ERROR_UNKNOWN, !isConnectedToTheInternet() ? IMediaPlayer.ERROR_NOT_FOUND : errorCode);
 	}
 
-	private static void httpStreamReceiverMetadataUpdate(int version, String metadata) {
-		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || localSong == null || localPlayer == null || thePlayer == null)
+	private static void httpStreamReceiverMetadataUpdate(HttpStreamReceiver.Metadata metadata) {
+		if (state != STATE_ALIVE || localSong == null || localPlayer == null || thePlayer == null)
 			return;
+		String title = metadata.streamTitle;
 		int i;
-		if ((i = metadata.indexOf("StreamTitle")) < 0)
+		if ((i = title.indexOf("StreamTitle")) < 0)
 			return;
-		if ((i = metadata.indexOf('=', i + 11)) < 0)
+		if ((i = title.indexOf('=', i + 11)) < 0)
 			return;
-		if ((i = metadata.indexOf('\'', i + 1)) < 0)
+		if ((i = title.indexOf('\'', i + 1)) < 0)
 			return;
 		final int firstChar = i + 1;
 		int loopCount = 0;
 		do {
 			loopCount++;
-			if ((i = metadata.indexOf('\'', i + 1)) < 0)
+			if ((i = title.indexOf('\'', i + 1)) < 0)
 				return;
-		} while (metadata.charAt(i - 1) == '\\');
-		metadata = metadata.substring(firstChar, i).trim();
+		} while (title.charAt(i - 1) == '\\');
+		title = title.substring(firstChar, i).trim();
 		if (loopCount > 1)
-			metadata = metadata.replace("\\'", "\'");
-		if (metadata.length() > 0) {
-			String name = null, url = null;
-			//by doing like this, we do not need to synchronize the access to httpStreamReceiver
-			final HttpStreamReceiver receiver = httpStreamReceiver;
-			if (receiver != null) {
-				name = receiver.getIcyName();
-				url = receiver.getIcyUrl();
-			}
+			title = title.replace("\\'", "\'");
+		if (title.length() > 0) {
 			//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
-			if (name != null && name.length() > 0) {
-				localSong.artist = name;
-				localSong.extraInfo = name;
+			if (metadata.icyName != null && metadata.icyName.length() > 0) {
+				localSong.artist = metadata.icyName;
+				localSong.extraInfo = metadata.icyName;
 			}
-			if (url != null && url.length() > 0)
-				localSong.album = url;
-			localSong.title = metadata;
+			if (metadata.icyUrl != null && metadata.icyUrl.length() > 0)
+				localSong.album = metadata.icyUrl;
+			localSong.title = title;
 			broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
 			//this will force a serialization when closing the app (saving this update)
 			songs.markAsChanged();
@@ -1831,12 +1838,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			return;
 		playerBuffering = false;
 		thePlayer.onPrepared(player);
-	}
-
-	private static void _httpStreamReceiverUrlUpdated(int version, String newPath) {
-		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
-			return;
-		song.path = newPath;
 	}
 
 	private static void _createInternetObjects() throws IOException {

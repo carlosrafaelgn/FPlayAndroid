@@ -71,6 +71,16 @@ public final class HttpStreamReceiver implements Runnable {
 	private static final int MIN_BUFFER_LENGTH = 4 * MAX_PACKET_LENGTH;
 	private static final int EXTERNAL_BUFFER_LENGTH = (128 * 1024); //5.3s worth of data @ 192kbps
 
+	public static final class Metadata {
+		public final String streamTitle, icyName, icyUrl;
+
+		public Metadata(String streamTitle, String icyName, String icyUrl) {
+			this.streamTitle = streamTitle;
+			this.icyName = icyName;
+			this.icyUrl = icyUrl;
+		}
+	}
+
 	//God save the Internet :) (this was all the documentation I found!!!)
 	//http://www.smackfu.com/stuff/programming/shoutcast.html
 	//http://stackoverflow.com/questions/6061057/developing-the-client-for-the-icecast-server
@@ -967,7 +977,7 @@ public final class HttpStreamReceiver implements Runnable {
 					final String metadata = detectCharsetAndDecode(array, 0, i + 1);
 					synchronized (sync) {
 						if (handler != null)
-							handler.sendMessageAtTime(Message.obtain(handler, metadataMsg, arg1, 0, metadata), SystemClock.uptimeMillis());
+							handler.sendMessageAtTime(Message.obtain(handler, metadataMsg, arg1, 0, new Metadata(metadata, icyName, icyUrl)), SystemClock.uptimeMillis());
 					}
 				}
 			}
@@ -1187,14 +1197,6 @@ public final class HttpStreamReceiver implements Runnable {
 
 	public String getLocalURL() {
 		return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
-	}
-
-	public String getIcyName() {
-		return icyName;
-	}
-
-	public String getIcyUrl() {
-		return icyUrl;
 	}
 
 	private static final int[][][] MPEG_BIT_RATE = {
