@@ -39,11 +39,8 @@ import android.os.Build;
 
 import java.io.IOException;
 
-import br.com.carlosrafaelgn.fplay.playback.context.IMediaPlayer;
-
-final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
+final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
 	private final MediaPlayer player;
-	private OnBufferingUpdateListener bufferingUpdateListener;
 	private OnCompletionListener completionListener;
 	private OnErrorListener errorListener;
 	private OnInfoListener infoListener;
@@ -57,11 +54,6 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnBufferingU
 	@Override
 	public void start() {
 		player.start();
-	}
-
-	@Override
-	public void stop() {
-		player.stop();
 	}
 
 	@Override
@@ -92,6 +84,11 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnBufferingU
 	@Override
 	public void release() {
 		player.release();
+		completionListener = null;
+		errorListener = null;
+		infoListener = null;
+		preparedListener = null;
+		seekCompleteListener = null;
 	}
 
 	@Override
@@ -140,12 +137,6 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnBufferingU
 	}
 
 	@Override
-	public void setOnBufferingUpdateListener(OnBufferingUpdateListener listener) {
-		bufferingUpdateListener = listener;
-		player.setOnBufferingUpdateListener((listener == null) ? null : this);
-	}
-
-	@Override
 	public void setOnCompletionListener(OnCompletionListener listener) {
 		completionListener = listener;
 		player.setOnCompletionListener((listener == null) ? null : this);
@@ -182,12 +173,6 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnBufferingU
 	}
 
 	@Override
-	public void onBufferingUpdate(MediaPlayer mp, int percent) {
-		if (bufferingUpdateListener != null)
-			bufferingUpdateListener.onBufferingUpdate(this, percent);
-	}
-
-	@Override
 	public void onCompletion(MediaPlayer mp) {
 		if (completionListener != null)
 			completionListener.onCompletion(this);
@@ -200,7 +185,7 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnBufferingU
 
 	@Override
 	public boolean onInfo(MediaPlayer mp, int what, int extra) {
-		return ((infoListener != null) && infoListener.onInfo(this, what, extra));
+		return ((infoListener != null) && infoListener.onInfo(this, what, extra, null));
 	}
 
 	@Override

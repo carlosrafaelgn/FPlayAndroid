@@ -1094,7 +1094,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//nextAlreadySetForPlaying = false;
 		prepareNextAfterSeeking = false;
 		nextPlayerState = PLAYER_STATE_NEW;
-		if (handler != null && song != null && nextSong != null && !nextSong.isHttp && nextPreparationEnabled && song.lengthMS > 10000 && nextSong.lengthMS > 10000) {
+		if (handler != null && song != null && nextSong != null && !song.isHttp && !nextSong.isHttp && nextPreparationEnabled && song.lengthMS > 10000 && nextSong.lengthMS > 10000) {
 			handler.removeMessages(MSG_PREPARE_NEXT_SONG);
 			nextSongScheduledForPreparation = nextSong;
 			handler.sendMessageAtTime(Message.obtain(handler, MSG_PREPARE_NEXT_SONG, nextSong), SystemClock.uptimeMillis() + 5000);
@@ -1121,6 +1121,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _postPlay(int how, Song[] songArray) {
 		if (state != STATE_ALIVE)
 			return;
@@ -1222,14 +1223,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//longer using prepareAsync
 			_updateState(false, null);
 
-			if (!song.isHttp) {
+			if (BuildConfig.X || !song.isHttp) {
 				//Even though it happens very rarely, a few devices will freeze and produce an ANR
 				//when calling setDataSource from the main thread :(
 				player.setDataSource(song.path);
-				//I decided to stop calling prepareAsync for files
-				player.prepare();
-				//onPrepared() will call _updateState when necessary
-				thePlayer.onPrepared(player);
+				if (song.isHttp) {
+					//http songs are handled by the player in X mode
+					player.prepareAsync();
+				} else {
+					//I decided to stop calling prepareAsync for files
+					player.prepare();
+					//onPrepared() will call _updateState when necessary
+					thePlayer.onPrepared(player);
+				}
 			} else {
 				_createInternetObjects();
 				_updateState(false, null);
@@ -1620,7 +1626,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public boolean onInfo(IMediaPlayer mediaPlayer, int what, int extra) {
+	public boolean onInfo(IMediaPlayer mediaPlayer, int what, int extra, Object extraObject) {
 		if (mediaPlayer == player) {
 			switch (what) {
 			case IMediaPlayer.INFO_BUFFERING_START:
@@ -1837,18 +1843,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (httpStreamReceiver.start()) {
 			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 				return;
-			if (BuildConfig.X) {
-				//in this case there is nothing else to be done :(
-				_releaseInternetObjects();
-				throw new IMediaPlayer.PermissionDeniedException();
-			} else {
-				playerBuffering = false;
-				//Even though it happens very rarely, a few devices will freeze and produce an ANR
-				//when calling setDataSource from the main thread :(
-				player.setDataSource(httpStreamReceiver.getLocalURL());
-				player.setOnPreparedListener(thePlayer);
-				player.prepareAsync();
-			}
+			playerBuffering = false;
+			//Even though it happens very rarely, a few devices will freeze and produce an ANR
+			//when calling setDataSource from the main thread :(
+			player.setDataSource(httpStreamReceiver.getLocalURL());
+			player.setOnPreparedListener(thePlayer);
+			player.prepareAsync();
 		} else {
 			//when start() returns false, this means we were unable to create the local server
 			_releaseInternetObjects();

@@ -42,7 +42,7 @@ public interface IMediaPlayer {
 	int ERROR_SERVER_DIED = 100; //MediaPlayer.MEDIA_ERROR_SERVER_DIED
 
 	//extra
-	int ERROR_NOT_FOUND = 1001; //1001 = internal constant (not used by original MediaPlayer class) used to indicate that the file has not been found
+	int ERROR_NOT_FOUND = 1001; //internal constant (not used by the original MediaPlayer class) used to indicate that the file has not been found
 	int ERROR_MALFORMED = -1007; //MediaPlayer.MEDIA_ERROR_MALFORMED
 	int ERROR_UNSUPPORTED_FORMAT = -1010; //MediaPlayer.MEDIA_ERROR_UNSUPPORTED
 	int ERROR_IO = -1004; //MediaPlayer.MEDIA_ERROR_IO
@@ -52,6 +52,7 @@ public interface IMediaPlayer {
 	int INFO_BUFFERING_START = 701; //MediaPlayer.MEDIA_INFO_BUFFERING_START
 	int INFO_BUFFERING_END = 702; //MediaPlayer.MEDIA_INFO_BUFFERING_END
 	int INFO_METADATA_UPDATE = 802; //MediaPlayer.MEDIA_INFO_METADATA_UPDATE
+	int INFO_URL_UPDATE = -802; //internal constant (not used by the original MediaPlayer class)
 
 	final class TimeoutException extends Exception {
 		private static final long serialVersionUID = 4571328670214281144L;
@@ -85,12 +86,8 @@ public interface IMediaPlayer {
 		void onSeekComplete(IMediaPlayer mp);
 	}
 
-	interface OnBufferingUpdateListener {
-		void onBufferingUpdate(IMediaPlayer mp, int percent);
-	}
-
 	interface OnInfoListener {
-		boolean onInfo(IMediaPlayer mp, int what, int extra);
+		boolean onInfo(IMediaPlayer mp, int what, int extra, Object extraObject);
 	}
 
 	interface OnErrorListener {
@@ -98,8 +95,6 @@ public interface IMediaPlayer {
 	}
 
 	void start();
-
-	void stop();
 
 	void pause();
 
@@ -132,8 +127,6 @@ public interface IMediaPlayer {
 	void setWakeMode(Context context, int mode);
 
 	void setNextMediaPlayer(IMediaPlayer next);
-
-	void setOnBufferingUpdateListener(OnBufferingUpdateListener listener);
 
 	void setOnCompletionListener(OnCompletionListener listener);
 

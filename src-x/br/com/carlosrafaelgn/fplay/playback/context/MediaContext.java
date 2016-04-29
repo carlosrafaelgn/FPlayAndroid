@@ -47,7 +47,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import java.io.IOException;
 
 public final class MediaContext implements Runnable, Handler.Callback {
-	private static final int MSG_PLAYBACKCOMPLETE = 0x0100;
+	private static final int MSG_COMPLETION = 0x0100;
 	private static final int MSG_ERROR = 0x0101;
 	private static final int MSG_SEEKCOMPLETE = 0x0102;
 
@@ -262,15 +262,19 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										nextPlayer = nextPlayerRequested;
 										try {
 											if (nextPlayer != null) {
-												if (sampleRate != nextPlayer.getSampleRate()) {
-													System.out.println("***NEXT DIFF SAMPLERATE***");
+												if (currentPlayer.isInternetStream() ||
+													nextPlayer.isInternetStream() ||
+													sampleRate != nextPlayer.getSampleRate()) {
+													System.out.println("***NEXT CANCELLED***");
 													nextPlayer = null;
+													nextFramesWritten = 0;
 												}
 												if (nextPlayer != null)
 													nextPlayer.resetDecoderIfOutputAlreadyUsed();
 											}
 										} catch (Throwable ex) {
 											nextPlayer = null;
+											nextFramesWritten = 0;
 											handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(nextPlayer, ex)), SystemClock.uptimeMillis());
 										}
 									}
@@ -507,7 +511,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						framesPlayed -= framesWritten;
 						framesWritten = nextFramesWritten;
 					}
-					handler.sendMessageAtTime(Message.obtain(handler, MSG_PLAYBACKCOMPLETE, currentPlayer), SystemClock.uptimeMillis());
+					handler.sendMessageAtTime(Message.obtain(handler, MSG_COMPLETION, currentPlayer), SystemClock.uptimeMillis());
 					currentPlayer = nextPlayer;
 					if (currentPlayer != null)
 						currentPlayer.startedAsNext();
@@ -556,19 +560,19 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (!alive)
 			return true;
 		switch (msg.what) {
-		case MSG_PLAYBACKCOMPLETE:
+		case MSG_COMPLETION:
 			if (msg.obj instanceof MediaCodecPlayer)
-				((MediaCodecPlayer)msg.obj).playbackComplete();
+				((MediaCodecPlayer)msg.obj).onCompletion();
 			break;
 		case MSG_ERROR:
 			if (msg.obj instanceof ErrorStructure) {
-				((ErrorStructure)msg.obj).player.error(((ErrorStructure)msg.obj).exception);
+				((ErrorStructure)msg.obj).player.onError(((ErrorStructure)msg.obj).exception, 0);
 				((ErrorStructure)msg.obj).exception.printStackTrace();
 			}
 			break;
 		case MSG_SEEKCOMPLETE:
 			if (msg.obj instanceof MediaCodecPlayer)
-				((MediaCodecPlayer)msg.obj).seekComplete();
+				((MediaCodecPlayer)msg.obj).onSeekComplete();
 			break;
 		}
 		return true;
