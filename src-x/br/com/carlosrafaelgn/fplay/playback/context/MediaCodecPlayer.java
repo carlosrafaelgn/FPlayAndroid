@@ -33,12 +33,14 @@
 package br.com.carlosrafaelgn.fplay.playback.context;
 
 import android.content.Context;
+import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -52,10 +54,12 @@ import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
-	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x011B;
-	private static final int MSG_HTTP_STREAM_RECEIVER_PREPARED = 0x011C;
-	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x011D;
-	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x011E;
+	private static final int MSG_HTTP_STREAM_RECEIVER_FILL_INITIAL_BUFFERS = 0x0100;
+	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x0101;
+	private static final int MSG_HTTP_STREAM_RECEIVER_PREPARED = 0x0102;
+	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x0103;
+	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0104;
+	private static final int MSG_HTTP_STREAM_RECEIVER_INFO = 0x0105;
 
 	private static final int STATE_IDLE = 0;
 	private static final int STATE_INITIALIZED = 1;
@@ -144,32 +148,72 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		return internetStream;
 	}
 
-	private int fillInputBuffers() throws IOException {
+	private void fillInternetInputBuffers() throws IOException {
+		int inputFrameSize, index;
+		if (state == STATE_PREPARING) {
+			//initial buffers
+			final int[] properties = new int[4]; //channel count, sample rate, bit rate, samples per frame
+			while ((inputFrameSize = httpStreamReceiver.canReadMpegHeader(properties)) > 0 &&
+				(index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) >= 0) {
+				httpStreamReceiver.buffer.readArray(inputBuffers[index], 0, inputFrameSize);
+				httpStreamReceiver.buffer.commitRead(inputFrameSize);
+				mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
+				//currentPositionInMS is used as the counter of initially filled buffers
+				currentPositionInMS++;
+				//if we have filled up all input buffers, or if we have filled enough buffers
+				//(according to the user setting), then we are good to go!
+				if (currentPositionInMS >= inputBuffers.length ||
+					(currentPositionInMS * properties[3]) >= ((sampleRate * Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex())) / 1000)) {
+					currentPositionInMS = 0;
+					onPrepared();
+					return;
+				}
+			}
+			//do it again
+			handler.sendMessageAtTime(Message.obtain(handler, MSG_HTTP_STREAM_RECEIVER_FILL_INITIAL_BUFFERS, httpStreamReceiverVersion, 0), SystemClock.uptimeMillis() + 5);
+		} else {
+			//regular buffers
+			while ((inputFrameSize = httpStreamReceiver.canReadMpegHeader(null)) > 0 &&
+				(index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) >= 0) {
+				httpStreamReceiver.buffer.readArray(inputBuffers[index], 0, inputFrameSize);
+				httpStreamReceiver.buffer.commitRead(inputFrameSize);
+				mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
+			}
+		}
+	}
+
+	private void fillInputBuffers() throws IOException {
 		if (inputOver)
-			return 0;
-		int i;
-		for (i = 0; i < inputBuffers.length && !inputOver; i++) {
+			return;
+		for (int i = 0; i < inputBuffers.length && !inputOver; i++) {
 			final int index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
 				break;
 			int size = mediaExtractor.readSampleData(inputBuffers[index], 0);
 			if (size < 0) {
 				inputOver = true;
-				mediaCodec.queueInputBuffer(index, 0, 0, mediaExtractor.getSampleTime(), MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+				mediaCodec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
 				break;
 			} else {
-				mediaCodec.queueInputBuffer(index, 0, size, mediaExtractor.getSampleTime(), 0);
+				mediaCodec.queueInputBuffer(index, 0, size, 0, 0);
 				mediaExtractor.advance();
 			}
 		}
-		return i;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public boolean handleMessage(Message msg) {
 		if (msg.arg1 != httpStreamReceiverVersion || handler == null || httpStreamReceiver == null)
 			return true;
 		switch (msg.what) {
+		case MSG_HTTP_STREAM_RECEIVER_FILL_INITIAL_BUFFERS:
+			try {
+				fillInternetInputBuffers();
+			} catch (Throwable ex) {
+				onError(ex, 0);
+			}
+			break;
 		case MSG_HTTP_STREAM_RECEIVER_ERROR:
 			onError(null, !Player.isConnectedToTheInternet() ? IMediaPlayer.ERROR_NOT_FOUND : msg.arg2);
 			break;
@@ -181,6 +225,41 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
 			onInfo(INFO_URL_UPDATE, 0, msg.obj);
+			break;
+		case MSG_HTTP_STREAM_RECEIVER_INFO:
+			if (state != STATE_PREPARING) {
+				onError(new IllegalStateException(), 0);
+				break;
+			}
+			try {
+				final int[] properties = (int[])msg.obj; //channel count, sample rate, bit rate, samples per frame
+				channelCount = properties[0];
+				sampleRate = properties[1];
+				//only stereo files for now...
+				if (channelCount != 2) {
+					onError(new UnsupportedFormatException(), 0);
+					break;
+				}
+				//we only support mpeg streams
+				final String contentType = "audio/mpeg";
+				mediaCodec = MediaCodec.createDecoderByType(contentType);
+				final MediaFormat format = new MediaFormat();
+				format.setString(MediaFormat.KEY_MIME, contentType);
+				format.setInteger(MediaFormat.KEY_SAMPLE_RATE, sampleRate);
+				format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, channelCount);
+				format.setInteger(MediaFormat.KEY_CHANNEL_MASK, (channelCount == 1) ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
+				format.setInteger(MediaFormat.KEY_BIT_RATE, properties[2]);
+				mediaCodec.configure(format, null, null, 0);
+				mediaCodec.start();
+				currentPositionInMS = 0;
+				inputOver = false;
+				outputOver = false;
+				inputBuffers = mediaCodec.getInputBuffers();
+				prepareOutputBuffers();
+				fillInternetInputBuffers();
+			} catch (Throwable ex) {
+				onError(ex, 0);
+			}
 			break;
 		}
 		return true;
@@ -234,7 +313,10 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			outputBuffer.streamOver = true;
 			return false;
 		}
-		fillInputBuffers();
+		if (internetStream)
+			fillInternetInputBuffers();
+		else
+			fillInputBuffers();
 		int index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 		INDEX_CHECKER:
 		for (; ; ) {
@@ -391,17 +473,17 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	public void setDataSource(String path) throws IOException {
 		if (state != STATE_IDLE)
 			throw new IllegalStateException("setDataSource() - player was in an invalid state: " + state);
-		File file = new File(path);
-		if (!file.isFile() || !file.exists() || file.length() <= 0)
-			throw new FileNotFoundException(path);
-		if (!file.canRead())
-			throw new SecurityException(path);
 		this.path = path;
 		if ((internetStream = (path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:")))) {
+			durationInMS = -1;
 			handler = new Handler(this);
-			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex()), MediaContext.getAudioSessionId(), path);
+			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex()), MediaContext.getAudioSessionId(), path);
 		} else {
-			httpStreamReceiver = null;
+			final File file = new File(path);
+			if (!file.isFile() || !file.exists() || file.length() <= 0)
+				throw new FileNotFoundException(path);
+			if (!file.canRead())
+				throw new SecurityException(path);
 		}
 		state = STATE_INITIALIZED;
 	}
@@ -475,6 +557,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			//enforce our policy
 			if (!internetStream)
 				throw new UnsupportedOperationException("streams other than internet streams must used prepare()");
+			if (!httpStreamReceiver.start())
+				throw new IMediaPlayer.PermissionDeniedException();
 			state = STATE_PREPARING;
 			break;
 		default:
@@ -594,6 +678,13 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	@Override
 	public int getCurrentPosition() {
 		return currentPositionInMS;
+	}
+
+	@Override
+	public int getHttpPosition() {
+		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
+		final HttpStreamReceiver receiver = httpStreamReceiver;
+		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
 	}
 
 	@Override

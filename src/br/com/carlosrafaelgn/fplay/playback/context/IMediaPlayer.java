@@ -118,6 +118,8 @@ public interface IMediaPlayer {
 
 	int getCurrentPosition();
 
+	int getHttpPosition();
+
 	boolean isPlaying();
 
 	void setVolume(float leftVolume, float rightVolume);

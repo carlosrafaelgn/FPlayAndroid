@@ -80,10 +80,14 @@ public final class CircularIOBuffer {
 				}
 			}
 		}
+		return canRead(length);
+	}
+
+	public int canRead(int length) {
+		if (!alive || filledSize < length)
+			return -1;
 		if (readBuffer.position() >= capacity)
 			readBuffer.position(0);
-		if (!alive)
-			return -1;
 		final int bytesAvailableBeforeEndOfBuffer = capacity - readBuffer.position();
 		if (length > bytesAvailableBeforeEndOfBuffer)
 			length = bytesAvailableBeforeEndOfBuffer;

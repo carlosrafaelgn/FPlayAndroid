@@ -922,7 +922,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int getHttpPosition() {
 		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
 		final HttpStreamReceiver receiver = httpStreamReceiver;
-		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
+		return ((receiver != null) ? receiver.bytesReceivedSoFar : localPlayer.getHttpPosition());
 	}
 
 	private static IMediaPlayer _createPlayer() {
@@ -1839,7 +1839,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//force the player to always start playing as if coming from a pause
 		silenceMode = SILENCE_NORMAL;
 		playerBuffering = true;
-		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), audioSessionId, song.path);
+		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), audioSessionId, song.path);
 		if (httpStreamReceiver.start()) {
 			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 				return;

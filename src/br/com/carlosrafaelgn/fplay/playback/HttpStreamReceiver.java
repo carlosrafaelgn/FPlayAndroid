@@ -57,6 +57,7 @@ import java.nio.ShortBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.playback.context.IMediaPlayer;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -76,8 +77,8 @@ public final class HttpStreamReceiver implements Runnable {
 	private URL url;
 	private final String path;
 	private final Object sync;
-	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, arg1, audioSessionId, initialNetworkBufferLengthInBytes, initialAudioBufferInMS;
-	private final CircularIOBuffer buffer;
+	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, arg1, audioSessionId, initialNetworkBufferLengthInBytes, initialAudioBufferInMS;
+	public final CircularIOBuffer buffer;
 	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady;
 	private RadioStationResolver resolver;
@@ -159,17 +160,26 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 		}
 
-		@SuppressWarnings("deprecation")
+		@SuppressWarnings({ "deprecation", "PointlessBooleanExpression", "ConstantConditions" })
 		@Override
 		public void run() {
 			try {
 				if (!waitForHeaders())
 					return;
 
-				int[] properties = new int[4]; //channel count, sample rate, bit rate, samples per frame
+				final int[] properties = new int[4]; //channel count, sample rate, bit rate, samples per frame
 				int inputFrameSize = waitToReadMpegHeader(properties);
 				if (inputFrameSize < 0)
 					return;
+
+				if (BuildConfig.X) {
+					if (handler != null) {
+						if (buffer.waitUntilCanRead(inputFrameSize) < 0)
+							return;
+						handler.sendMessageAtTime(Message.obtain(handler, infoMsg, arg1, 0, properties), SystemClock.uptimeMillis());
+					}
+					return;
+				}
 
 				final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 				final long usPerFrame = (long)properties[3] * 1000000L / (long)properties[1];
@@ -630,7 +640,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
+	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int infoMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
 		this.url = (RadioStation.isRadioUrl(path) ? normalizeIcyUrl(RadioStation.extractUrl(path)) : new URL(path));
 		this.path = path;
 		sync = new Object();
@@ -643,6 +653,7 @@ public final class HttpStreamReceiver implements Runnable {
 		this.preparedMsg = preparedMsg;
 		this.metadataMsg = metadataMsg;
 		this.urlMsg = urlMsg;
+		this.infoMsg = infoMsg;
 		this.arg1 = arg1;
 		this.audioSessionId = audioSessionId;
 		bytesReceivedSoFar = -1;
@@ -1357,6 +1368,36 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 
 			buffer.waitUntilCanRead(frameSize + 4);
+
+			//if the byte at offset 0 was actually a header, then THERE MUST be another header
+			//right after it (extra validation)
+			if (isByteAtOffsetAValidMpegHeader(frameSize, properties) <= 0) {
+				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+				continue;
+			}
+
+			return frameSize;
+		}
+
+		return -1;
+	}
+
+	public int canReadMpegHeader(int[] properties) {
+		//we will look for the MPEG header
+		//http://www.mp3-tech.org/programmer/frame_header.html
+		//https://en.wikipedia.org/wiki/MP3
+		while (alive) {
+			if (buffer.canRead(4) < 0)
+				break;
+
+			final int frameSize = isByteAtOffsetAValidMpegHeader(0, properties);
+			if (frameSize <= 0) {
+				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+				continue;
+			}
+
+			if (buffer.canRead(frameSize + 4) < 0)
+				break;
 
 			//if the byte at offset 0 was actually a header, then THERE MUST be another header
 			//right after it (extra validation)

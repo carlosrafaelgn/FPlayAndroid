@@ -117,6 +117,11 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnCompletion
 	}
 
 	@Override
+	public int getHttpPosition() {
+		return -1;
+	}
+
+	@Override
 	public boolean isPlaying() {
 		return player.isPlaying();
 	}
