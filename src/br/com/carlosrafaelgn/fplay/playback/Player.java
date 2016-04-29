@@ -912,7 +912,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		try {
 			return ((httpStreamReceiver != null) ? -1 :
 				((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() :
-					((localSong == null) ? -1 : storedSongTime)));
+					((localSong == null) ? -1 :
+						storedSongTime)));
 		} catch (Throwable ex) {
 			//localPlayer could throw a InvalidStateException (*very, very* rarely)
 			return -1;
@@ -922,14 +923,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int getHttpPosition() {
 		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
 		final HttpStreamReceiver receiver = httpStreamReceiver;
-		return ((receiver != null) ? receiver.bytesReceivedSoFar : localPlayer.getHttpPosition());
+		return ((receiver != null) ? receiver.bytesReceivedSoFar :
+			((localPlayer != null) ? localPlayer.getHttpPosition() :
+				-1));
 	}
 
 	private static IMediaPlayer _createPlayer() {
 		IMediaPlayer mp = MediaContext.createMediaPlayer();
 		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		mp.setOnErrorListener(thePlayer);
-		mp.setOnPreparedListener(null);
 		mp.setOnSeekCompleteListener(thePlayer);
 		mp.setOnCompletionListener(thePlayer);
 		mp.setOnInfoListener(thePlayer);
@@ -1081,6 +1083,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextPlayer.setDataSource(nextSongScheduledForPreparation.path);
 				//I decided to stop calling prepareAsync for files
 				nextPlayerState = PLAYER_STATE_PREPARING;
+				nextPlayer.setOnPreparedListener(null);
 				nextPlayer.prepare();
 				thePlayer.onPrepared(nextPlayer);
 			}
@@ -1229,9 +1232,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				player.setDataSource(song.path);
 				if (song.isHttp) {
 					//http songs are handled by the player in X mode
+					player.setOnPreparedListener(thePlayer);
 					player.prepareAsync();
 				} else {
 					//I decided to stop calling prepareAsync for files
+					player.setOnPreparedListener(null);
 					player.prepare();
 					//onPrepared() will call _updateState when necessary
 					thePlayer.onPrepared(player);
@@ -1650,7 +1655,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public void onPrepared(IMediaPlayer mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
-		mediaPlayer.setOnPreparedListener(thePlayer);
 		if (mediaPlayer == nextPlayer) {
 			if (nextSongScheduledForPreparation == nextSong && nextSong != null) {
 				nextSongScheduledForPreparation = null;

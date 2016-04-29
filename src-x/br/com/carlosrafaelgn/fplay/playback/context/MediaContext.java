@@ -50,6 +50,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int MSG_COMPLETION = 0x0100;
 	private static final int MSG_ERROR = 0x0101;
 	private static final int MSG_SEEKCOMPLETE = 0x0102;
+	private static final int MSG_BUFFERUNDERRUN = 0x0103;
+	private static final int MSG_BUFFERSNORMALIZED = 0x0104;
 
 	private static final int ACTION_NONE = 0x0000;
 	private static final int ACTION_PLAY = 0x0001;
@@ -124,17 +126,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		//playback, and will return a full transfer count. However, if the track is stopped or
 		//paused on entry, or another thread interrupts the write by calling stop or pause, or an
 		//I/O error occurs during the write, then the write may return a short transfer count.
-		System.out.println("pauseAbort A");
 		if (audioTrack != null) {
 			try {
-				System.out.println("pauseAbort B");
 				audioTrack.pause();
-				System.out.println("pauseAbort C");
 			} catch (Throwable ex) {
 				//just ignore
 			}
 		}
-		System.out.println("pauseAbort D");
 	}
 
 	@Override
@@ -185,7 +183,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							//being used during this period
 							switch (requestedAction) {
 							case ACTION_PLAY:
-								System.out.println("ACTION_PLAY " + playerRequestingAction);
 								//audioTrack.pause();
 								audioTrack.flush();
 								outputBuffer.release();
@@ -197,7 +194,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								framesPlayed = currentPlayer.getCurrentPositionInFrames();
 								nextFramesWritten = 0;
 								if (sampleRate != currentPlayer.getSampleRate()) {
-									System.out.println("CHANGING SR FROM " + sampleRate + " TO " + currentPlayer.getSampleRate());
 									sampleRate = currentPlayer.getSampleRate();
 									if (audioTrack.setPlaybackRate(sampleRate) != AudioTrack.SUCCESS)
 										throw new IOException();
@@ -210,9 +206,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								wakeLock.acquire();
 								break;
 							case ACTION_PAUSE:
-								System.out.println("ACTION_PAUSE " + playerRequestingAction);
 								if (playerRequestingAction == currentPlayer) {
-									System.out.println("ACTION_PAUSE OK!");
 									//audioTrack.pause();
 									paused = true;
 									requestSucceeded = true;
@@ -222,9 +216,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								break;
 							case ACTION_RESUME:
-								System.out.println("ACTION_RESUME " + playerRequestingAction);
 								if (playerRequestingAction == currentPlayer) {
-									System.out.println("ACTION_RESUME OK!");
 									audioTrack.play();
 									paused = false;
 									requestSucceeded = true;
@@ -234,7 +226,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								break;
 							case ACTION_SEEK:
-								System.out.println("ACTION_SEEK " + playerRequestingAction);
 								if (currentPlayer != null && currentPlayer != playerRequestingAction)
 									throw new IllegalStateException("impossible to seek a player other than currentPlayer");
 								if (!paused)
@@ -243,13 +234,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								requestSucceeded = true;
 								break;
 							case ACTION_SETNEXT:
-								System.out.println("ACTION_SETNEXT " + playerRequestingAction + " -> " + nextPlayerRequested);
 								if (currentPlayer == playerRequestingAction && nextPlayer != nextPlayerRequested) {
-									System.out.println("ACTION_SETNEXT A");
 									//if we had already started outputting nextPlayer's audio then it is too
 									//late... just remove the nextPlayer
 									if (currentPlayer.isOutputOver()) {
-										System.out.println("ACTION_SETNEXT B");
 										//go back to currentPlayer
 										if (sourcePlayer == nextPlayer) {
 											outputBuffer.release();
@@ -258,14 +246,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										nextPlayer = null;
 										nextFramesWritten = 0;
 									} else {
-										System.out.println("ACTION_SETNEXT C");
 										nextPlayer = nextPlayerRequested;
 										try {
 											if (nextPlayer != null) {
 												if (currentPlayer.isInternetStream() ||
 													nextPlayer.isInternetStream() ||
 													sampleRate != nextPlayer.getSampleRate()) {
-													System.out.println("***NEXT CANCELLED***");
 													nextPlayer = null;
 													nextFramesWritten = 0;
 												}
@@ -281,9 +267,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								break;
 							case ACTION_RESET:
-								System.out.println("ACTION_RESET " + playerRequestingAction);
 								if (playerRequestingAction == currentPlayer) {
-									System.out.println("ACTION_RESET OK!");
 									audioTrack.pause();
 									if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 										try {
@@ -306,7 +290,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									nextFramesWritten = 0;
 									wakeLock.release();
 								} else if (playerRequestingAction == nextPlayer) {
-									System.out.println("ACTION_RESET NEXT OK!");
 									//go back to currentPlayer
 									if (sourcePlayer == nextPlayer) {
 										outputBuffer.release();
@@ -386,7 +369,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									//just ignore
 								}
 								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, pendingSeekPlayer), SystemClock.uptimeMillis());
-								System.out.println("ACTION_SEEK COMPLETE!");
 								if (pendingSeekPlayer == currentPlayer) {
 									framesWritten = currentPlayer.getCurrentPositionInFrames();
 									framesPlayed = currentPlayer.getCurrentPositionInFrames();
@@ -428,7 +410,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//???
 					freeBytesInBuffer = (256 * 4);
 				} else if (freeBytesInBuffer < (256 * 4)) {
-					//System.out.println("@@@@ BUFFER TOO FULL!");
+					//the buffer was already too full!
 					try {
 						synchronized (threadNotification) {
 							threadNotification.wait(5);
@@ -496,30 +478,40 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					}
 				}
 
-				if (currentPlayer.isOutputOver() && framesPlayed >= framesWritten) {
-					//we are done with this player!
-					currentPlayer.setCurrentPosition(currentPlayer.getDuration());
-					if (nextPlayer == null) {
-						//there is nothing else to do!
-						audioTrack.pause();
-						audioTrack.flush();
-						outputBuffer.release();
-						paused = true;
-						wakeLock.release();
-					} else {
-						//keep playing!!!
-						framesPlayed -= framesWritten;
-						framesWritten = nextFramesWritten;
+				if (framesPlayed >= framesWritten) {
+					if (currentPlayer.isOutputOver()) {
+						//we are done with this player!
+						currentPlayer.setCurrentPosition(currentPlayer.getDuration());
+						if (nextPlayer == null) {
+							//there is nothing else to do!
+							audioTrack.pause();
+							audioTrack.flush();
+							outputBuffer.release();
+							paused = true;
+							wakeLock.release();
+						} else {
+							//keep playing!!!
+							framesPlayed -= framesWritten;
+							framesWritten = nextFramesWritten;
+						}
+						handler.sendMessageAtTime(Message.obtain(handler, MSG_COMPLETION, currentPlayer), SystemClock.uptimeMillis());
+						currentPlayer = nextPlayer;
+						if (currentPlayer != null)
+							currentPlayer.startedAsNext();
+						nextPlayer = null;
+						nextFramesWritten = 0;
+						sourcePlayer = currentPlayer;
+					} else if (framesWritten != 0) {
+						//underrun!!!
+						currentPlayer.notifyUnderrun();
+						//give the decoder some time to decode something
+						try {
+							Thread.sleep(10);
+						} catch (Throwable ex) {
+							//just ignore
+						}
 					}
-					handler.sendMessageAtTime(Message.obtain(handler, MSG_COMPLETION, currentPlayer), SystemClock.uptimeMillis());
-					currentPlayer = nextPlayer;
-					if (currentPlayer != null)
-						currentPlayer.startedAsNext();
-					nextPlayer = null;
-					nextFramesWritten = 0;
-					sourcePlayer = currentPlayer;
 				}
-
 			} catch (Throwable ex) {
 				try {
 					outputBuffer.release();
@@ -573,6 +565,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		case MSG_SEEKCOMPLETE:
 			if (msg.obj instanceof MediaCodecPlayer)
 				((MediaCodecPlayer)msg.obj).onSeekComplete();
+			break;
+		case MSG_BUFFERUNDERRUN:
+			if (msg.obj instanceof MediaCodecPlayer)
+				((MediaCodecPlayer)msg.obj).onInfo(IMediaPlayer.INFO_BUFFERING_START, 0, null);
+			break;
+		case MSG_BUFFERSNORMALIZED:
+			if (msg.obj instanceof MediaCodecPlayer)
+				((MediaCodecPlayer)msg.obj).onInfo(IMediaPlayer.INFO_BUFFERING_END, 0, null);
 			break;
 		}
 		return true;
@@ -630,7 +630,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static boolean play(MediaCodecPlayer player) {
 		if (!alive)
 			return false;
-		System.out.println("play()");
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			pauseAndAbortAudioTrackWrite();
@@ -647,14 +646,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				}
 			}
 		}
-		System.out.println("play() end");
 		return requestSucceeded;
 	}
 
 	static boolean pause(MediaCodecPlayer player) {
 		if (!alive)
 			return false;
-		System.out.println("pause()");
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			pauseAndAbortAudioTrackWrite();
@@ -671,7 +668,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				}
 			}
 		}
-		System.out.println("pause() end");
 		return requestSucceeded;
 	}
 
@@ -759,6 +755,18 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				}
 			}
 		}
+	}
+
+	static void bufferUnderrun(MediaCodecPlayer player) {
+		if (!alive || handler == null)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_BUFFERUNDERRUN, player), SystemClock.uptimeMillis());
+	}
+
+	static void buffersNormalized(MediaCodecPlayer player) {
+		if (!alive || handler == null)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_BUFFERSNORMALIZED, player), SystemClock.uptimeMillis());
 	}
 
 	@SuppressWarnings("deprecation")
