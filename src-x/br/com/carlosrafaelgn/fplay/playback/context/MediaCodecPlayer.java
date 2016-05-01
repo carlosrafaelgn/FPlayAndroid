@@ -93,7 +93,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	private static Field fieldBackingArray, fieldArrayOffset;
-	private static boolean isDirect, needsSwap;
+	private static boolean isDirect;
+	private static int needsSwap;
 	public static boolean tryToProcessNonDirectBuffers;
 
 	private volatile int state, currentPositionInMS, httpStreamReceiverVersion;
@@ -112,14 +113,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	private OnInfoListener infoListener;
 	private OnPreparedListener preparedListener;
 	private OnSeekCompleteListener seekCompleteListener;
-
-	private static void processDirectData(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, boolean needsSwap) {
-
-	}
-
-	private static void processData(byte[] buffer, int offsetInBytes, int sizeInBytes, boolean needsSwap) {
-
-	}
 
 	public MediaCodecPlayer() {
 		state = STATE_IDLE;
@@ -279,7 +272,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		}
 		//we will assume that all buffers are alike
 		isDirect = outputBuffers[0].isDirect();
-		needsSwap = (outputBuffers[0].order() != ByteOrder.nativeOrder());
+		needsSwap = ((outputBuffers[0].order() != ByteOrder.nativeOrder()) ? 1 : 0);
 		if (!isDirect && (fieldBackingArray == null || fieldArrayOffset == null)) {
 			//final byte[] backingArray;
 			//final int arrayOffset;
@@ -377,13 +370,13 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		//stereo, and not being able to call it when the input file is mono will be considered an
 		//exception
 		if (isDirect) {
-			processDirectData(buffer,
+			MediaContext.processDirectData(buffer,
 				bufferInfo.offset,
 				remainingBytes,
 				needsSwap);
 		} else if (tryToProcessNonDirectBuffers) {
 			try {
-				processData((byte[])fieldBackingArray.get(buffer),
+				MediaContext.processData((byte[])fieldBackingArray.get(buffer),
 					bufferInfo.offset + (int)fieldArrayOffset.get(buffer),
 					remainingBytes,
 					needsSwap);
@@ -772,6 +765,10 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		MediaContext.setNextPlayer(this, nextPlayer);
 	}
 
+	void mediaServerDied() {
+		onError(new MediaServerDiedException(), 0);
+	}
+
 	void onCompletion() {
 		state = STATE_PLAYBACKCOMPLETED;
 		if (completionListener != null)
@@ -788,7 +785,9 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			httpStreamReceiver = null;
 		}
 		if (errorListener != null)
-			errorListener.onError(this, ERROR_UNKNOWN,
+			errorListener.onError(this,
+				((exception != null) && (exception instanceof MediaServerDiedException)) ? ERROR_SERVER_DIED :
+					ERROR_UNKNOWN,
 				((exception == null) ? errorCode :
 					((exception instanceof FileNotFoundException) ? ERROR_NOT_FOUND :
 						((exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :

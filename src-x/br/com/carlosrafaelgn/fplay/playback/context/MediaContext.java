@@ -45,6 +45,7 @@ import android.os.SystemClock;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int MSG_COMPLETION = 0x0100;
@@ -60,6 +61,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_SEEK = 0x0004;
 	private static final int ACTION_SETNEXT = 0x0005;
 	private static final int ACTION_RESET = 0x0006;
+	private static final int ACTION_INITIALIZE = 0xFFFF;
 
 	private static final int PLAYER_TIMEOUT = 600000;
 
@@ -78,12 +80,28 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final Object audioTrackSync = new Object();
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded;
 	private static volatile int requestedAction, requestedSeekMS;
+	private static boolean initializationError;
 	private static float leftVolume = 1.0f, rightVolume = 1.0f;
 	private static Handler handler;
 	private static Thread thread;
 	private static AudioTrack audioTrack;
 	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
 	private static MediaContext theMediaContext;
+
+	static {
+		System.loadLibrary("MediaContextJni");
+	}
+
+	private static native void setBufferSizeInFrames(int bufferSizeInFrames);
+	private static native void configChanged(int channelCount, int sampleRate);
+	private static native void resetFiltersAndWritePosition(int writePositionInFrames);
+	static native void enableEqualizer(int enabled);
+	static native void enableBassBoost(int enabled);
+	static native long startVisualization();
+	static native long getVisualizationPtr();
+	static native void stopVisualization();
+	static native int processDirectData(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+	static native int processData(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 
 	private MediaContext() {
 	}
@@ -103,7 +121,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		synchronized (audioTrackSync) {
 			if (audioTrack != null) {
 				try {
-					audioTrack.stop();
+					audioTrack.pause();
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -113,9 +131,15 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
-			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
-			audioTrack.setStereoVolume(leftVolume, rightVolume);
+			try {
+				audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+				audioTrack.setStereoVolume(leftVolume, rightVolume);
+			} catch (Throwable ex) {
+				audioTrack = null;
+			}
 		}
+
+		setBufferSizeInFrames(bufferSizeInFrames);
 
 		return bufferSizeInFrames;
 	}
@@ -151,8 +175,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		final int bufferSizeInFrames = createAudioTrack();
 		MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 
+		configChanged(2, sampleRate);
+
 		wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);
+
+		requestedAction = ACTION_NONE;
 
 		synchronized (notification) {
 			notification.notify();
@@ -197,10 +225,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									sampleRate = currentPlayer.getSampleRate();
 									if (audioTrack.setPlaybackRate(sampleRate) != AudioTrack.SUCCESS)
 										throw new IOException();
+									configChanged(2, sampleRate);
 									MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 								}
 								audioTrack.play();
 								lastHeadPositionInFrames = audioTrack.getPlaybackHeadPosition();
+								resetFiltersAndWritePosition(lastHeadPositionInFrames);
 								paused = false;
 								requestSucceeded = true;
 								wakeLock.acquire();
@@ -351,6 +381,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									audioTrack.flush();
 									outputBuffer.release();
 									lastHeadPositionInFrames = audioTrack.getPlaybackHeadPosition();
+									resetFiltersAndWritePosition(lastHeadPositionInFrames);
 									if (nextPlayer != null) {
 										try {
 											nextPlayer.resetDecoderIfOutputAlreadyUsed();
@@ -540,6 +571,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 		}
 
+		stopVisualization();
+
 		if (wakeLock != null)
 			wakeLock.release();
 		synchronized (notification) {
@@ -585,7 +618,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		theMediaContext = new MediaContext();
 
 		alive = true;
-		requestedAction = ACTION_NONE;
+		requestedAction = ACTION_INITIALIZE;
 		playerRequestingAction = null;
 		handler = new Handler(theMediaContext);
 
@@ -593,13 +626,21 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		thread.start();
 
 		synchronized (notification) {
-			if (audioTrack == null) {
+			if (requestedAction == ACTION_INITIALIZE) {
 				try {
 					notification.wait();
 				} catch (Throwable ex) {
 					//just ignore
 				}
 			}
+		}
+
+		if (audioTrack == null) {
+			//Oops! something went wrong!
+			_release();
+			initializationError = true;
+		} else {
+			initializationError = false;
 		}
 	}
 
@@ -625,11 +666,15 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		handler = null;
 		playerRequestingAction = null;
 		theMediaContext = null;
+		initializationError = false;
 	}
 
 	static boolean play(MediaCodecPlayer player) {
-		if (!alive)
+		if (!alive) {
+			if (initializationError)
+				player.mediaServerDied();
 			return false;
+		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			pauseAndAbortAudioTrackWrite();
@@ -650,8 +695,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static boolean pause(MediaCodecPlayer player) {
-		if (!alive)
+		if (!alive) {
+			if (initializationError)
+				player.mediaServerDied();
 			return false;
+		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			pauseAndAbortAudioTrackWrite();
@@ -672,8 +720,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static boolean resume(MediaCodecPlayer player) {
-		if (!alive)
+		if (!alive) {
+			if (initializationError)
+				player.mediaServerDied();
 			return false;
+		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			playerRequestingAction = player;
@@ -693,8 +744,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static boolean seekToAsync(MediaCodecPlayer player, int msec) {
-		if (!alive)
+		if (!alive) {
+			if (initializationError)
+				player.mediaServerDied();
 			return false;
+		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			pauseAndAbortAudioTrackWrite();

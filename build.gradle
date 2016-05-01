@@ -59,7 +59,7 @@ android {
 			aidl.srcDirs = ['src', 'src-x']
 			renderscript.srcDirs = ['src', 'src-x']
 			res.srcDirs = ['res', 'res-x']
-			jniLibs.srcDirs = ['libs']
+			jniLibs.srcDirs = ['libs-x']
 		}
 
 		// Move the tests to tests/java, tests/res, etc...

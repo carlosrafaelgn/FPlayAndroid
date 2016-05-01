@@ -348,7 +348,7 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 			free(voice);
 		voice = (unsigned short*)malloc(((inf.stride * inf.height) << 1) + 16);
 		unsigned char* al = (unsigned char*)voice;
-		while (((unsigned int)al) & 15)
+		while ((((size_t)al) & 15))
 			al++;
 		alignedVoice = (unsigned short*)al;
 		recreateVoice = 0;

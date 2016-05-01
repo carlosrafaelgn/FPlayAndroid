@@ -8,9 +8,10 @@
     <!-- versionCode must be kept in sync with UI.VERSION_CODE -->
     <!-- versionName must be kept in sync with UI.VERSION_NAME -->
 
-    <uses-sdk
+    <!-- In favor of gradle -->
+	<!-- <uses-sdk
         android:minSdkVersion="10"
-        android:targetSdkVersion="23" />
+        android:targetSdkVersion="23" /> -->
 
     <!-- http://developer.android.com/guide/topics/manifest/supports-screens-element.html -->
     <supports-screens
