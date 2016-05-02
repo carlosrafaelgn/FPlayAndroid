@@ -69,10 +69,10 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.visualizer.FxVisualizer;
+import br.com.carlosrafaelgn.fplay.playback.context.MediaVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
-public final class ActivityVisualizer extends Activity implements FxVisualizer.FxVisualizerHandler, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
+public final class ActivityVisualizer extends Activity implements MediaVisualizer.Handler, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
 	@SuppressLint("InlinedApi")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static final class SystemUIObserver implements View.OnSystemUiVisibilityChangeListener {
@@ -152,7 +152,7 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	private static final int MSG_SYSTEM_UI_CHANGED = 0x0401;
 	private static final int MNU_ORIENTATION = 100;
 	private Visualizer visualizer;
-	private FxVisualizer fxVisualizer;
+	private MediaVisualizer mediaVisualizer;
 	private UI.DisplayInfo info;
 	private InterceptableLayout panelControls;
 	private RelativeLayout panelTop;
@@ -467,14 +467,14 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 		if (!btnGoBack.isInTouchMode())
 			btnGoBack.requestFocus();
 
-		fxVisualizer = null;
+		mediaVisualizer = null;
 		if (visualizer != null) {
 			visualizerPaused = false;
 			visualizer.onActivityResume();
 			if (!visualizerRequiresThread)
 				visualizer.load();
 			else
-				fxVisualizer = new FxVisualizer(visualizer, this);
+				mediaVisualizer = new MediaVisualizer(visualizer, this);
 		}
 
 		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer(this, "UI Anim Timer", false, true, false) : null);
@@ -515,8 +515,8 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			visualizer.onActivityPause();
 		}
 		Player.observer = null;
-		if (fxVisualizer != null)
-			fxVisualizer.pause();
+		if (mediaVisualizer != null)
+			mediaVisualizer.pause();
 		Player.setAppNotInForeground(true);
 		super.onPause();
 	}
@@ -525,8 +525,8 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	protected void onResume() {
 		Player.setAppNotInForeground(false);
 		Player.observer = this;
-		if (fxVisualizer != null)
-			fxVisualizer.resetAndResume();
+		if (mediaVisualizer != null)
+			mediaVisualizer.resetAndResume();
 		onPlayerChanged(Player.localSong, true, true, null);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
@@ -539,9 +539,9 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	
 	private void finalCleanup() {
 		Player.removeDestroyedObserver(this);
-		if (fxVisualizer != null) {
-			fxVisualizer.destroy();
-			fxVisualizer = null;
+		if (mediaVisualizer != null) {
+			mediaVisualizer.destroy();
+			mediaVisualizer = null;
 		} else if (visualizer != null) {
 			visualizer.cancelLoading();
 			visualizer.release();
@@ -600,12 +600,12 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
-		if (fxVisualizer != null) {
+		if (mediaVisualizer != null) {
 			if (!songHasChanged && Player.localPlaying)
-				fxVisualizer.resetAndResume();
+				mediaVisualizer.resetAndResume();
 			else
-				fxVisualizer.resume();
-			fxVisualizer.playingChanged();
+				mediaVisualizer.resume();
+			mediaVisualizer.playingChanged();
 		}
 		if (btnPlay != null) {
 			btnPlay.setText(Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
@@ -633,8 +633,8 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 	
 	@Override
 	public void onPlayerAudioSinkChanged() {
-		if (fxVisualizer != null)
-			fxVisualizer.resetAndResume();
+		if (mediaVisualizer != null)
+			mediaVisualizer.resetAndResume();
 	}
 	
 	@Override
@@ -686,14 +686,14 @@ public final class ActivityVisualizer extends Activity implements FxVisualizer.F
 			finish();
 		} else if (view == btnPrev) {
 			Player.previous();
-			if (fxVisualizer != null)
-				fxVisualizer.resetAndResume();
+			if (mediaVisualizer != null)
+				mediaVisualizer.resetAndResume();
 		} else if (view == btnPlay) {
 			Player.playPause();
 		} else if (view == btnNext) {
 			Player.next();
-			if (fxVisualizer != null)
-				fxVisualizer.resetAndResume();
+			if (mediaVisualizer != null)
+				mediaVisualizer.resetAndResume();
 		} else if (view == btnMenu) {
 			onPrepareOptionsMenu(null);
 		} else if (view == visualizer || view == panelControls) {

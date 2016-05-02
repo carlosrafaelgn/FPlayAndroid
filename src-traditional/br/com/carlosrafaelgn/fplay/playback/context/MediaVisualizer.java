@@ -30,7 +30,7 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.visualizer;
+package br.com.carlosrafaelgn.fplay.playback.context;
 
 import android.annotation.TargetApi;
 import android.os.Build;
@@ -38,21 +38,22 @@ import android.os.Build;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
-public final class FxVisualizer implements Runnable, Timer.TimerHandler {
-	public interface FxVisualizerHandler {
+public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
+	public interface Handler {
 		void onFailure();
 		void onFinalCleanup();
 	}
 	private Visualizer visualizer;
-	private FxVisualizerHandler handler;
+	private Handler handler;
 	private android.media.audiofx.Visualizer fxVisualizer;
 	private boolean hasEverBeenAlive;
 	private volatile boolean alive, paused, reset, playing, failed, visualizerReady;
 	private int audioSessionId;
 	private Timer timer;
 
-	public FxVisualizer(Visualizer visualizer, FxVisualizerHandler handler) {
+	public MediaVisualizer(Visualizer visualizer, Handler handler) {
 		this.visualizer = visualizer;
 		this.handler = handler;
 		audioSessionId = -1;

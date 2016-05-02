@@ -43,15 +43,16 @@
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
 
-#define MAX(A,B) (((A) > (B)) ? (A) : (B))
-
 //when channelCount is 1, the frame size is 2 (16 bits per sample, mono)
 //when channelCount is 2, the frame size is 4 (16 bits per sample, stereo)
 //therefore:
 //frames = bytes >> channelCount
 //bytes = frames << channelCount;
-static unsigned int equalizerEnabled, bassBoostEnabled, channelCount, sampleRate, bufferSizeInFrames, writePositionInFrames;
-static unsigned short* visualizerBuffer;
+static unsigned int channelCount, sampleRate, bufferSizeInFrames, writePositionInFrames;
+static short* visualizerBuffer;
+
+#include "Equalizer.h"
+#include "BassBoost.h"
 
 void JNICALL setBufferSizeInFrames(JNIEnv* env, jclass clazz, unsigned int bufferSizeInFrames) {
 	::bufferSizeInFrames = bufferSizeInFrames;
@@ -60,26 +61,20 @@ void JNICALL setBufferSizeInFrames(JNIEnv* env, jclass clazz, unsigned int buffe
 void JNICALL configChanged(JNIEnv* env, jclass clazz, int channelCount, int sampleRate) {
 	::channelCount = channelCount;
 	::sampleRate = sampleRate;
+
+	equalizerConfigChanged();
 }
 
-void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, unsigned int bufferSizeInFrames, unsigned int writePositionInFrames) {
-	::bufferSizeInFrames = bufferSizeInFrames;
+void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, unsigned int writePositionInFrames) {
 	::writePositionInFrames = writePositionInFrames % bufferSizeInFrames;
-	//zero out all filter-related structures
-}
 
-void JNICALL enableEqualizer(JNIEnv* env, jclass clazz, int enabled) {
-	equalizerEnabled = enabled;
-}
-
-void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, int enabled) {
-	bassBoostEnabled = enabled;
+	resetEqualizer();
 }
 
 uint64_t JNICALL startVisualization(JNIEnv* env, jclass clazz) {
 	if (visualizerBuffer)
 		delete visualizerBuffer;
-	visualizerBuffer = new unsigned short[bufferSizeInFrames];
+	visualizerBuffer = new short[bufferSizeInFrames];
 	writePositionInFrames = 0;
 	return (uint64_t)visualizerBuffer;
 }
@@ -95,7 +90,7 @@ void JNICALL stopVisualization(JNIEnv* env, jclass clazz) {
 	}
 }
 
-void swapShorts(unsigned short* buffer, unsigned int sizeInShorts) {
+void swapShorts(short* buffer, unsigned int sizeInShorts) {
 	while (sizeInShorts) {
 		*buffer = bswap_16(*buffer);
 		buffer++;
@@ -103,7 +98,9 @@ void swapShorts(unsigned short* buffer, unsigned int sizeInShorts) {
 	}
 }
 
-void doProcess(unsigned short* buffer, unsigned int sizeInFrames) {
+void doProcess(short* buffer, unsigned int sizeInFrames) {
+	if (equalizerEnabled)
+		processEqualizer(buffer, sizeInFrames);
 }
 
 int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
@@ -115,16 +112,16 @@ int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int of
 		return 0;
 	}
 
-	unsigned short* buffer = (unsigned short*)env->GetDirectBufferAddress(jbuffer);
+	short* buffer = (short*)env->GetDirectBufferAddress(jbuffer);
 	if (!buffer)
 		return -1;
 
 	//swap all shorts!!!
 	if (needsSwap)
-		swapShorts((unsigned short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
+		swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
 
 	//doProcess updates writePositionInFrames internally
-	doProcess((unsigned short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
+	doProcess((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
 
 	return 0;
 }
@@ -138,16 +135,16 @@ int JNICALL processData(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 		return 0;
 	}
 
-	unsigned short* buffer = (unsigned short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
+	short* buffer = (short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
 	if (!buffer)
 		return -1;
 
 	//swap all shorts!!!
 	if (needsSwap)
-		swapShorts((unsigned short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
+		swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
 
 	//doProcess updates writePositionInFrames internally
-	doProcess((unsigned short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
+	doProcess((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
 
 	//if neither the equalizer nor the bass boost are enabled, we do not copy data back
 	env->ReleasePrimitiveArrayCritical(jbuffer, buffer, (equalizerEnabled || bassBoostEnabled) ? 0 : JNI_ABORT);
@@ -158,20 +155,24 @@ int JNICALL processData(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 extern "C" {
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
-	equalizerEnabled = 0;
-	bassBoostEnabled = 0;
-	channelCount = 0;
-	sampleRate = 0;
+	channelCount = 2;
+	sampleRate = 44100;
 	bufferSizeInFrames = 0;
 	writePositionInFrames = 0;
 	visualizerBuffer = 0;
+	bassBoostEnabled = 0;
+	initializeEqualizer();
 
 	JNINativeMethod methodTable[] = {
 		{"setBufferSizeInFrames", "(I)V", (void*)setBufferSizeInFrames},
 		{"configChanged", "(II)V", (void*)configChanged},
 		{"resetFiltersAndWritePosition", "(I)V", (void*)resetFiltersAndWritePosition},
 		{"enableEqualizer", "(I)V", (void*)enableEqualizer},
+		{"isEqualizerEnabled", "()I", (void*)isEqualizerEnabled},
+		{"setEqualizerBandLevel", "(II)V", (void*)setEqualizerBandLevel},
+		{"setEqualizerBandLevels", "([S)V", (void*)setEqualizerBandLevels},
 		{"enableBassBoost", "(I)V", (void*)enableBassBoost},
+		{"isBassBoostEnabled", "()I", (void*)isBassBoostEnabled},
 		{"startVisualization", "()J", (void*)startVisualization},
 		{"getVisualizationPtr", "()J", (void*)getVisualizationPtr},
 		{"stopVisualization", "()V", (void*)stopVisualization},

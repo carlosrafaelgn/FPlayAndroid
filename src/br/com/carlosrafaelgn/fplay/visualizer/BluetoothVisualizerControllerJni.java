@@ -48,11 +48,12 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.playback.context.MediaVisualizer;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
-public final class BluetoothVisualizerControllerJni implements Visualizer, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, Runnable, FxVisualizer.FxVisualizerHandler {
+public final class BluetoothVisualizerControllerJni implements Visualizer, BluetoothConnectionManager.BluetoothObserver, MainHandler.Callback, Runnable, MediaVisualizer.Handler {
 	private static final int MSG_PLAYER_COMMAND = 0x0600;
 	private static final int MSG_BLUETOOTH_RXTX_ERROR = 0x0601;
 
@@ -93,7 +94,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 	private static final int PayloadPlayerStateFlagPlaying = 0x01;
 	private static final int PayloadPlayerStateFlagLoading = 0x02;
 
-	private FxVisualizer fxVisualizer;
+	private MediaVisualizer mediaVisualizer;
 	private byte[] waveform;
 	private final SlimLock lock;
 	private final AtomicInteger state;
@@ -139,8 +140,8 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	public void syncDataType() {
 		dataType = (Player.isBluetoothUsingVUMeter() ? (DATA_FFT | DATA_VUMETER | BEAT_DETECTION_2) : DATA_FFT);
-		if (fxVisualizer != null)
-			fxVisualizer.updateVisualizerDataType();
+		if (mediaVisualizer != null)
+			mediaVisualizer.updateVisualizerDataType();
 	}
 
 	public void startTransmission() {
@@ -168,25 +169,25 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 	}
 
 	public void playingChanged() {
-		if (fxVisualizer != null)
-			fxVisualizer.playingChanged();
+		if (mediaVisualizer != null)
+			mediaVisualizer.playingChanged();
 		if (connected)
 			generateAndSendState();
 	}
 
 	public void pause() {
-		if (fxVisualizer != null)
-			fxVisualizer.pause();
+		if (mediaVisualizer != null)
+			mediaVisualizer.pause();
 	}
 
 	public void resume() {
-		if (fxVisualizer != null)
-			fxVisualizer.resume();
+		if (mediaVisualizer != null)
+			mediaVisualizer.resume();
 	}
 
 	public void resetAndResume() {
-		if (fxVisualizer != null)
-			fxVisualizer.resetAndResume();
+		if (mediaVisualizer != null)
+			mediaVisualizer.resetAndResume();
 	}
 
 	public void destroy() {
@@ -205,9 +206,9 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 			} finally {
 				lock.releaseHighPriority();
 			}
-			if (fxVisualizer != null) {
-				fxVisualizer.destroy();
-				fxVisualizer = null;
+			if (mediaVisualizer != null) {
+				mediaVisualizer.destroy();
+				mediaVisualizer = null;
 			}
 			Player.stopBluetoothVisualizer();
 			BackgroundActivityMonitor.bluetoothEnded();
@@ -381,7 +382,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	@Override
 	public void onBluetoothConnected(BluetoothConnectionManager manager) {
-		if (fxVisualizer == null && bt != null && Player.state == Player.STATE_ALIVE) {
+		if (mediaVisualizer == null && bt != null && Player.state == Player.STATE_ALIVE) {
 			packetsSent = 0;
 			version++;
 			connected = true;
@@ -389,7 +390,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTED;
 			generateAndSendState();
 			(new Thread(this, "Bluetooth RX Thread")).start();
-			fxVisualizer = new FxVisualizer(this, this);
+			mediaVisualizer = new MediaVisualizer(this, this);
 			if (startTransmissionOnConnection)
 				startTransmission();
 		}

@@ -13,5 +13,5 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := MediaContextJni
 LOCAL_LDLIBS    := -llog
-LOCAL_SRC_FILES := MediaContextJni.cpp
+LOCAL_SRC_FILES := $(LOCAL_PATH)/x/MediaContextJni.cpp
 include $(BUILD_SHARED_LIBRARY)

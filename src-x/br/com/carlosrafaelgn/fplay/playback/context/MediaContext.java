@@ -95,11 +95,19 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void setBufferSizeInFrames(int bufferSizeInFrames);
 	private static native void configChanged(int channelCount, int sampleRate);
 	private static native void resetFiltersAndWritePosition(int writePositionInFrames);
+
 	static native void enableEqualizer(int enabled);
+	static native int isEqualizerEnabled();
+	static native void setEqualizerBandLevel(int band, int level);
+	static native void setEqualizerBandLevels(short[] levels);
+
 	static native void enableBassBoost(int enabled);
+	static native int isBassBoostEnabled();
+
 	static native long startVisualization();
 	static native long getVisualizationPtr();
 	static native void stopVisualization();
+
 	static native int processDirectData(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 	static native int processData(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 
@@ -844,6 +852,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	public static IEqualizer createEqualizer() {
-		return new Equalizer(Player.audioSessionId);
+		return new Equalizer();
 	}
 }
