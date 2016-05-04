@@ -52,10 +52,14 @@ void computeFilter(int band) {
 	//
 	if (band >= equalizerActualBandCount) {
 		//nothing to be done in this band...
-		equalizerB0[band] = 1.0f;
-		equalizerB1_A1[band] = 0.0f;
-		equalizerB2[band] = 0.0f;
-		equalizerA2[band] = 0.0f;
+		equalizerCoefs[(band << 3)    ] = 1.0f; //b0 L
+		equalizerCoefs[(band << 3) + 1] = 1.0f; //b0 R
+		equalizerCoefs[(band << 3) + 2] = 0.0f; //b1 (a1) L
+		equalizerCoefs[(band << 3) + 3] = 0.0f; //b1 (a1) R
+		equalizerCoefs[(band << 3) + 4] = 0.0f; //b2 L
+		equalizerCoefs[(band << 3) + 5] = 0.0f; //b2 R
+		equalizerCoefs[(band << 3) + 6] = 0.0f; //-a2 L
+		equalizerCoefs[(band << 3) + 7] = 0.0f; //-a2 R
 		return;
 	}
 
@@ -82,12 +86,18 @@ void computeFilter(int band) {
 	const double a0 = 1.0 + alpha_div_A;
 
 	//a1 and b1 are equal!
-	equalizerB0[band] = (float)((1.0 + alpha_mul_A) / a0);
-	equalizerB1_A1[band] = (float)((-2.0 * cosw0) / a0);
-	equalizerB2[band] = (float)((1.0 - alpha_mul_A) / a0);
-	equalizerA2[band] = (float)((1.0 - alpha_div_A) / a0);
-
-	//__android_log_print(ANDROID_LOG_INFO, "JNI", "%d f0 %lf b0 %lf b1 %lf b2 %lf a1 %lf a2 %lf", band, f0, equalizerB0[band], equalizerB1_A1[band], equalizerB2[band], equalizerB1_A1[band], equalizerA2[band]);
+	const float b0 = (float)((1.0 + alpha_mul_A) / a0);
+	equalizerCoefs[(band << 3)    ] = b0; //L
+	equalizerCoefs[(band << 3) + 1] = b0; //R
+	const float b1 = (float)((-2.0 * cosw0) / a0);
+	equalizerCoefs[(band << 3) + 2] = b1; //L
+	equalizerCoefs[(band << 3) + 3] = b1; //R
+	const float b2 = (float)((1.0 - alpha_mul_A) / a0);
+	equalizerCoefs[(band << 3) + 4] = b2; //L
+	equalizerCoefs[(band << 3) + 5] = b2; //R
+	const float _a2 = -(float)((1.0 - alpha_div_A) / a0); //invert a2 to make processEqualizer()'s life easier
+	equalizerCoefs[(band << 3) + 6] = _a2; //L
+	equalizerCoefs[(band << 3) + 7] = _a2; //R
 
 #undef BW_S
 #undef neighborBandCorrelationCoef
