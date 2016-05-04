@@ -36,13 +36,12 @@
 
 static unsigned int equalizerEnabled, equalizerCoefSet, equalizerActualBandCount;
 static float equalizerGainInDB[BAND_COUNT], equalizerB0[BAND_COUNT], equalizerB1_A1[BAND_COUNT], equalizerB2[BAND_COUNT], equalizerA2[BAND_COUNT],
-equalizerSamplesL[3 * (BAND_COUNT + 1)], equalizerSamplesR[3 * (BAND_COUNT + 1)];
+equalizerSamples[2 * 4 * BAND_COUNT];
 
 #include "Filter.h"
 
 void resetEqualizer() {
-	memset(equalizerSamplesL, 0, (3 * (BAND_COUNT + 1)) * sizeof(float));
-	memset(equalizerSamplesR, 0, (3 * (BAND_COUNT + 1)) * sizeof(float));
+	memset(equalizerSamples, 0, 2 * 4 * BAND_COUNT * sizeof(float));
 }
 
 void equalizerConfigChanged() {
@@ -69,12 +68,70 @@ void initializeEqualizer() {
 }
 
 void processEqualizer(short* buffer, unsigned int sizeInFrames) {
+#define x_n1_L samples[0]
+#define x_n1_R samples[1]
+#define x_n2_L samples[2]
+#define x_n2_R samples[3]
+#define y_n1_L samples[4]
+#define y_n1_R samples[5]
+#define y_n2_L samples[6]
+#define y_n2_R samples[7]
 	if (channelCount == 2) {
 		while ((sizeInFrames--)) {
+			float *samples = equalizerSamples;
+
+			//since this is a cascade filter, band0's output is band1's input and so on....
+			float inL = (float)buffer[0], inR = (float)buffer[1];
+			for (int i = 0; i < equalizerActualBandCount; i++, samples += 8) {
+				//y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2)
+				const float b0 = equalizerB0[i];
+				const float b1_a1 = equalizerB1_A1[i];
+				const float b2 = equalizerB2[i];
+				const float a2 = equalizerA2[i];
+
+				const float local_x_n1_L = x_n1_L;
+				const float local_x_n1_R = x_n1_R;
+
+				const float local_y_n1_L = y_n1_L;
+				const float local_y_n1_R = y_n1_R;
+
+				const float outL = (b0 * inL) + (b1_a1 * local_x_n1_L) + (b2 * x_n2_L) - (b1_a1 * local_y_n1_L) - (a2 * y_n2_L);
+				const float outR = (b0 * inR) + (b1_a1 * local_x_n1_R) + (b2 * x_n2_R) - (b1_a1 * local_y_n1_R) - (a2 * y_n2_R);
+
+				x_n2_L = local_x_n1_L;
+				x_n2_R = local_x_n1_R;
+
+				x_n1_L = inL;
+				x_n1_R = inR;
+
+				y_n2_L = local_y_n1_L;
+				y_n2_R = local_y_n1_R;
+
+				y_n1_L = outL;
+				y_n1_R = outR;
+
+				inL = outL;
+				inR = outR;
+			}
+
+			//the final output is the last band's output (or its next band's input)
+			const int iL = (int)inL;
+			const int iR = (int)inR;
+			buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (short)iL));
+			buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (short)iR));
+			buffer += 2;
 		}
 	} else {
-		
+
 	}
+#undef x_n1_L
+#undef x_n2_L
+#undef y_n1_L
+#undef y_n2_L
+#undef x_n1_R
+#undef x_n2_R
+#undef y_n1_R
+#undef y_n2_R
 }
 
 void JNICALL enableEqualizer(JNIEnv* env, jclass clazz, int enabled) {

@@ -50,7 +50,7 @@ void computeFilter(int band) {
 	//See the License for the specific language governing permissions and
 	//limitations under the License.
 	//
-	if (band >= equalizerActualBandCount || equalizerGainInDB[band] == 0.0f) {
+	if (band >= equalizerActualBandCount) {
 		//nothing to be done in this band...
 		equalizerB0[band] = 1.0f;
 		equalizerB1_A1[band] = 0.0f;
@@ -58,7 +58,7 @@ void computeFilter(int band) {
 		equalizerA2[band] = 0.0f;
 		return;
 	}
-	
+
 #define BW_S 1.0
 #define neighborBandCorrelationCoef -0.15
 #define PI 3.1415926535897932384626433832795
@@ -87,7 +87,7 @@ void computeFilter(int band) {
 	equalizerB2[band] = (float)((1.0 - alpha_mul_A) / a0);
 	equalizerA2[band] = (float)((1.0 - alpha_div_A) / a0);
 
-	__android_log_print(ANDROID_LOG_INFO, "JNI", "%d f0 %lf b0 %lf b1 %lf b2 %lf a1 %lf a2 %lf", band, f0, equalizerB0[band], equalizerB1_A1[band], equalizerB2[band], equalizerB1_A1[band], equalizerA2[band]);
+	//__android_log_print(ANDROID_LOG_INFO, "JNI", "%d f0 %lf b0 %lf b1 %lf b2 %lf a1 %lf a2 %lf", band, f0, equalizerB0[band], equalizerB1_A1[band], equalizerB2[band], equalizerB1_A1[band], equalizerA2[band]);
 
 #undef BW_S
 #undef neighborBandCorrelationCoef
