@@ -34,10 +34,10 @@
 #define BAND_COUNT 10
 #define COEF_SET_COUNT 8
 
-static unsigned int equalizerEnabled, equalizerActualBandCount;
-static int equalizerTemp[4] __attribute__((aligned(16)));
-static float equalizerGainInDB[BAND_COUNT],
-equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
+unsigned int equalizerEnabled, equalizerActualBandCount;
+float equalizerGainInDB[BAND_COUNT];
+int equalizerTemp[4] __attribute__((aligned(16)));
+float equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
 //order for equalizerCoefs:
 //0 band0 b0 L
 //1 band0 b0 R
@@ -51,14 +51,14 @@ equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
 //...
 equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 
-#include "Filter.h"
-
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	//x86 or x86_64
+#ifdef FPLAY_X86
 	#include <pmmintrin.h>
-#else //#elif defined(__arm__) || defined(__aarch64__)
-	//arm
+	//https://software.intel.com/sites/landingpage/IntrinsicsGuide/
+#else
+	extern void processEqualizerNeon(short* buffer, unsigned int sizeInFrames);
 #endif
+
+#include "Filter.h"
 
 void resetEqualizer() {
 	memset(equalizerTemp, 0, 4 * sizeof(int));
@@ -97,13 +97,9 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 #define x_n2_R samples[5]
 #define y_n2_L samples[6]
 #define y_n2_R samples[7]
-
 	if (channelCount == 2) {
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-
-		//x86 or x86_64
-		__m128 inLR, tmp2;
-		_mm_xor_ps(inLR, inLR);
+#ifdef FPLAY_X86
+		__m128 tmp2;
 		_mm_xor_ps(tmp2, tmp2);
 		while ((sizeInFrames--)) {
 			float *samples = equalizerSamples;
@@ -111,7 +107,7 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 			equalizerTemp[0] = (int)buffer[0];
 			equalizerTemp[1] = (int)buffer[1];
 			//inLR = { L, R, xxx, xxx }
-			_mm_cvtpi32_ps(inLR, *((__m64*)equalizerTemp));
+			__m128 inLR = _mm_cvtpi32_ps(inLR, *((__m64*)equalizerTemp));
 
 			//since this is a cascade filter, band0's output is band1's input and so on....
 			for (int i = 0; i < equalizerActualBandCount; i++, samples += 8) {
@@ -131,46 +127,46 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 				__m128 tmp = local;
 
 				//tmp2 = { y_n1_L, y_n1_R, xxx, xxx }
-				_mm_movehl_ps(tmp2, local);
+				tmp2 = _mm_movehl_ps(tmp2, local);
 
 				//tmp = { x_n1_L - y_n1_L, x_n1_R - y_n1_R, xxx, xxx }
-				_mm_sub_ps(tmp, tmp2);
+				tmp = _mm_sub_ps(tmp, tmp2);
 
 				//inLR = { L, R, x_n1_L - y_n1_L, x_n1_R - y_n1_R }
-				_mm_movelh_ps(inLR, tmp);
+				inLR = _mm_movelh_ps(inLR, tmp);
 
 				//tmp2 = { x_n2_L, x_n2_R, y_n2_L, y_n2_R }
 				tmp2 = _mm_load_ps(samples + 4);
-				
+
 				//b0_b1 = { b0 * L, b0 * R, b1 * (x_n1_L - y_n1_L), b1 * (x_n1_R - y_n1_R) }
-				_mm_mul_ps(b0_b1, inLR);
-				
+				b0_b1 = _mm_mul_ps(b0_b1, inLR);
+
 				//b2_a2 = { b2 * x_n2_L, b2 * x_n2_R, -a2 * y_n2_L, -a2 * y_n2_R }
-				_mm_mul_ps(b2_a2, tmp2);
-				
+				b2_a2 = _mm_mul_ps(b2_a2, tmp2);
+
 				//b0_b1 = { (b0 * L) + (b2 * x_n2_L), (b0 * R) + (b2 * x_n2_R), (b1 * (x_n1_L - y_n1_L)) + (-a2 * y_n2_L), (b1 * (x_n1_R - y_n1_R)) + (-a2 * y_n2_R) }
-				_mm_add_ps(b0_b1, b2_a2);
+				b0_b1 = _mm_add_ps(b0_b1, b2_a2);
 				//tmp = { (b1 * (x_n1_L - y_n1_L)) + (-a2 * y_n2_L), (b1 * (x_n1_R - y_n1_R)) + (-a2 * y_n2_R), xxx, xxx }
-				_mm_movehl_ps(tmp, b0_b1);
-				
+				tmp = _mm_movehl_ps(tmp, b0_b1);
+
 				//x_n2_L = local_x_n1_L;
 				//x_n2_R = local_x_n1_R;
 				//y_n2_L = local_y_n1_L;
 				//y_n2_R = local_y_n1_R;
 				_mm_store_ps(samples + 4, local);
-				
+
 				//tmp = { outL, outR, xxx, xxx }
-				_mm_add_ps(tmp, b0_b1);
+				tmp = _mm_add_ps(tmp, b0_b1);
 
 				//inLR = { L, R, outL, outR }
-				_mm_movelh_ps(inLR, tmp);
-				
+				inLR = _mm_movelh_ps(inLR, tmp);
+
 				//x_n1_L = inL;
 				//x_n1_R = inR;
 				//y_n1_L = outL;
 				//y_n1_R = outR;
 				_mm_store_ps(samples, inLR);
-				
+
 				//inL = outL;
 				//inR = outR;
 				inLR = tmp;
@@ -183,15 +179,18 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 
 			//buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (short)iL));
 			//buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (short)iR));
-			_mm_packs_epi32(iLR, iLR);
+			iLR = _mm_packs_epi32(iLR, iLR);
 			*((int*)buffer) = _mm_cvtsi128_si32(iLR);
 
 			buffer += 2;
 		}
-
 #else
+		if (neonMode) {
+			processEqualizerNeon(buffer, sizeInFrames);
+			return;
+		}
 
-		//arm
+		//no neon support... :(
 		while ((sizeInFrames--)) {
 			float *samples = equalizerSamples;
 
@@ -236,7 +235,6 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 			buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (short)iR));
 			buffer += 2;
 		}
-
 #endif
 	} else {
 		//no optimizations for mono!

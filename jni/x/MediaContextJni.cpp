@@ -40,6 +40,19 @@
 #define FFT_SIZE 1024 //FFT_SIZE must be a power of 2 <= 65536
 #define QUARTER_FFT_SIZE (FFT_SIZE / 4)
 
+#define PROCESSOR_FEATURE_NEON 1
+#define PROCESSOR_FEATURE_SSE 2
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+	//x86 or x86_64
+	#define FPLAY_X86
+#elif defined(__arm__) || defined(__aarch64__)
+	//arm or arm64
+	#define FPLAY_ARM
+#else
+	#error ("Unknown platform!")
+#endif
+
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
 
@@ -51,8 +64,24 @@
 static unsigned int channelCount, sampleRate, bufferSizeInFrames, writePositionInFrames;
 static short* visualizerBuffer;
 
+#ifdef FPLAY_ARM
+	#include <errno.h>
+	#include <fcntl.h>
+	static unsigned int neonMode;
+#endif
+
 #include "Equalizer.h"
 #include "BassBoost.h"
+
+unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
+#ifdef FPLAY_X86
+	//http://developer.android.com/intl/pt-br/ndk/guides/abis.html#x86
+	//All x86 Android devices use at least Atom processors (that have SSE, SSE2, SSE3 support)
+	return PROCESSOR_FEATURE_SSE;
+#else
+	return neonMode;
+#endif
+}
 
 void JNICALL setBufferSizeInFrames(JNIEnv* env, jclass clazz, unsigned int bufferSizeInFrames) {
 	::bufferSizeInFrames = bufferSizeInFrames;
@@ -152,10 +181,53 @@ int JNICALL processData(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 	return 0;
 }
 
+#ifdef FPLAY_ARM
+void checkNeonMode() {
+	//based on
+	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.c?r=2195
+	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.h?r=2195
+	neonMode = 0;
+	char cpuinfo[4096];
+	int cpuinfo_len = -1;
+	int fd = open("/proc/cpuinfo", O_RDONLY);
+	if (fd >= 0) {
+		do {
+			cpuinfo_len = read(fd, cpuinfo, 4096);
+		} while (cpuinfo_len < 0 && errno == EINTR);
+		close(fd);
+		if (cpuinfo_len > 0) {
+			cpuinfo[cpuinfo_len] = 0;
+			//look for the "\nFeatures: " line
+			for (int i = cpuinfo_len - 9; i >= 0; i--) {
+				if (memcmp(cpuinfo + i, "\nFeatures", 9) == 0) {
+					i += 9;
+					while (i < cpuinfo_len && (cpuinfo[i] == ' ' || cpuinfo[i] == '\t' || cpuinfo[i] == ':'))
+						i++;
+					cpuinfo_len -= 5;
+					//now look for the " neon" feature
+					while (i <= cpuinfo_len && cpuinfo[i] != '\n') {
+						if (memcmp(cpuinfo + i, " neon", 5) == 0 ||
+							memcmp(cpuinfo + i, "\tneon", 5) == 0) {
+							neonMode = 1;
+							break;
+						}
+						i++;
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+#endif
+
 extern "C" {
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
-	channelCount = 2;
+#ifdef FPLAY_ARM
+	checkNeonMode();
+	//__android_log_print(ANDROID_LOG_INFO, "JNI", "Neon mode: %d", neonMode);
+#endif
 	sampleRate = 44100;
 	bufferSizeInFrames = 0;
 	writePositionInFrames = 0;
