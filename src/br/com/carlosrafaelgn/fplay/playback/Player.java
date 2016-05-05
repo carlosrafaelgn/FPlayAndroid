@@ -341,29 +341,24 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				Virtualizer._commit(msg.arg2);
 				break;
 			case MSG_COMMIT_ALL_EFFECTS:
-				if (!BuildConfig.X)
-					ExternalFx._release();
-				Equalizer._commit(-1, msg.arg2);
-				BassBoost._commit(msg.arg2);
-				Virtualizer._commit(msg.arg2);
+				if (msg.arg2 == audioSinkUsedInEffects)
+					_reinitializeEffects();
 				break;
 			case MSG_ENABLE_EXTERNAL_FX:
-				if (!BuildConfig.X) {
-					if (msg.arg1 != 0) {
-						Equalizer._release();
-						BassBoost._release();
-						Virtualizer._release();
-						ExternalFx._initialize();
-						ExternalFx._setEnabled(true);
-						//if anything goes wrong while enabling ExternalFx, go back to the previous state
-						if (!ExternalFx.isEnabled() || !ExternalFx.isSupported()) {
-							ExternalFx._setEnabled(false);
-							_reinitializeEffects();
-						}
-					} else {
+				if (msg.arg1 != 0) {
+					Equalizer._release();
+					BassBoost._release();
+					Virtualizer._release();
+					ExternalFx._initialize();
+					ExternalFx._setEnabled(true);
+					//if anything goes wrong while enabling ExternalFx, go back to the previous state
+					if (!ExternalFx.isEnabled() || !ExternalFx.isSupported()) {
 						ExternalFx._setEnabled(false);
 						_reinitializeEffects();
 					}
+				} else {
+					ExternalFx._setEnabled(false);
+					_reinitializeEffects();
 				}
 				if (msg.obj != null)
 					MainHandler.postToMainThread((Runnable)msg.obj);

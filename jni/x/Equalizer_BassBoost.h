@@ -30,11 +30,16 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-#define DB_RANGE 2000 //+- 20dB (in millibels)
+#define DB_RANGE 2000 //+-20dB (in millibels)
 #define BAND_COUNT 10
 #define COEF_SET_COUNT 8
 
-unsigned int equalizerEnabled, equalizerActualBandCount;
+#define ENABLE_EQUALIZER 1
+#define ENABLE_BASSBOOST 2
+#define BASSBOOST_BAND_COUNT 3 //(31.25 Hz, 62.5 Hz and 125 Hz)
+
+static unsigned int equalizerEnabled, bassBoostStrength;
+unsigned int equalizerMaxBandCount;
 float equalizerGainInDB[BAND_COUNT];
 int equalizerTemp[4] __attribute__((aligned(16)));
 float equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
@@ -67,15 +72,15 @@ void resetEqualizer() {
 
 void equalizerConfigChanged() {
 	if (sampleRate > (2 * 16000))
-		equalizerActualBandCount = 10;
+		equalizerMaxBandCount = 10;
 	else if (sampleRate > (2 * 8000))
-		equalizerActualBandCount = 9;
+		equalizerMaxBandCount = 9;
 	else if (sampleRate > (2 * 4000))
-		equalizerActualBandCount = 8;
+		equalizerMaxBandCount = 8;
 	else if (sampleRate > (2 * 2000))
-		equalizerActualBandCount = 7;
+		equalizerMaxBandCount = 7;
 	else
-		equalizerActualBandCount = 6; //Android's minimum allowed sample rate is 4000 Hz
+		equalizerMaxBandCount = 6; //Android's minimum allowed sample rate is 4000 Hz
 
 	for (int i = 0; i < BAND_COUNT; i++)
 		computeFilter(i);
@@ -85,6 +90,8 @@ void equalizerConfigChanged() {
 
 void initializeEqualizer() {
 	equalizerEnabled = 0;
+	bassBoostStrength = 0;
+	equalizerMaxBandCount = 0;
 	memset(equalizerGainInDB, 0, BAND_COUNT * sizeof(float));
 }
 
@@ -110,7 +117,7 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 			__m128 inLR = _mm_cvtpi32_ps(inLR, *((__m64*)equalizerTemp));
 
 			//since this is a cascade filter, band0's output is band1's input and so on....
-			for (int i = 0; i < equalizerActualBandCount; i++, samples += 8) {
+			for (int i = 0; i < equalizerMaxBandCount; i++, samples += 8) {
 				//y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2)
 				//but, since our a2 was negated and b1 = a1, the formula becomes:
 				//y(n) = b0.x(n) + b1.(x(n-1) - y(n-1)) + b2.x(n-2) + a2.y(n-2)
@@ -196,7 +203,7 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 
 			//since this is a cascade filter, band0's output is band1's input and so on....
 			float inL = (float)buffer[0], inR = (float)buffer[1];
-			for (int i = 0; i < equalizerActualBandCount; i++, samples += 8) {
+			for (int i = 0; i < equalizerMaxBandCount; i++, samples += 8) {
 				//y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2)
 				//but, since our a2 was negated and b1 = a1, the formula becomes:
 				//y(n) = b0.x(n) + b1.(x(n-1) - y(n-1)) + b2.x(n-2) + a2.y(n-2)
@@ -250,11 +257,20 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 }
 
 void JNICALL enableEqualizer(JNIEnv* env, jclass clazz, int enabled) {
-	equalizerEnabled = enabled;
+	if (enabled)
+		equalizerEnabled |= ENABLE_EQUALIZER;
+	else
+		equalizerEnabled &= ~ENABLE_EQUALIZER;
+
+	//recompute the filter if the bass boost is enabled
+	if ((equalizerEnabled & ENABLE_BASSBOOST)) {
+		for (int i = 0; i < BAND_COUNT; i++)
+			computeFilter(i);
+	}
 }
 
 int JNICALL isEqualizerEnabled(JNIEnv* env, jclass clazz) {
-	return equalizerEnabled;
+	return (equalizerEnabled & ENABLE_EQUALIZER);
 }
 
 void JNICALL setEqualizerBandLevel(JNIEnv* env, jclass clazz, unsigned int band, int level) {
@@ -267,12 +283,12 @@ void JNICALL setEqualizerBandLevel(JNIEnv* env, jclass clazz, unsigned int band,
 	if (band > 0)
 		computeFilter(band - 1);
 	computeFilter(band);
-	if (band < (equalizerActualBandCount - 1))
+	if (band < (equalizerMaxBandCount - 1))
 		computeFilter(band + 1);
 }
 
 void JNICALL setEqualizerBandLevels(JNIEnv* env, jclass clazz, jshortArray jlevels) {
-	short* levels = (short*)env->GetPrimitiveArrayCritical(jlevels, 0);
+	short* const levels = (short*)env->GetPrimitiveArrayCritical(jlevels, 0);
 	if (!levels)
 		return;
 
@@ -283,4 +299,33 @@ void JNICALL setEqualizerBandLevels(JNIEnv* env, jclass clazz, jshortArray jleve
 
 	for (int i = 0; i < BAND_COUNT; i++)
 		computeFilter(i);
+}
+
+void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, int enabled) {
+	if (enabled)
+		equalizerEnabled |= ENABLE_BASSBOOST;
+	else
+		equalizerEnabled &= ~ENABLE_BASSBOOST;
+
+	//recompute the entire filter (whether the bass boost is enabled or not)
+	for (int i = 0; i < BAND_COUNT; i++)
+		computeFilter(i);
+}
+
+int JNICALL isBassBoostEnabled(JNIEnv* env, jclass clazz) {
+	return ((equalizerEnabled & ENABLE_BASSBOOST) >> 1);
+}
+
+void JNICALL setBassBoostStrength(JNIEnv* env, jclass clazz, int strength) {
+	bassBoostStrength = ((strength <= 0) ? 0 : ((strength >= 1000) ? 1000 : strength));
+
+	//recompute the filter if the bass boost is enabled
+	if ((equalizerEnabled & ENABLE_BASSBOOST)) {
+		for (int i = 0; i < BAND_COUNT; i++)
+			computeFilter(i);
+	}
+}
+
+int JNICALL getBassBoostRoundedStrength(JNIEnv* env, jclass clazz) {
+	return bassBoostStrength;
 }

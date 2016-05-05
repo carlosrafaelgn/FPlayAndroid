@@ -32,20 +32,36 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
-public interface IEqualizer {
-	short[] getBandLevelRange();
+import br.com.carlosrafaelgn.fplay.playback.Player;
 
-	int getCenterFreq(short band);
+public final class BassBoost {
+	private final android.media.audiofx.BassBoost bassBoost;
 
-	short getNumberOfBands();
+	public BassBoost() {
+		bassBoost = new android.media.audiofx.BassBoost(0, Player.audioSessionId);
+	}
 
-	void setBandLevel(short band, short level);
+	public boolean getStrengthSupported() {
+		return bassBoost.getStrengthSupported();
+	}
 
-	void setProperties(short numBands, short[] bandLevels);
+	public void setStrength(short strength) {
+		bassBoost.setStrength(strength);
+	}
 
-	int setEnabled(boolean enabled);
+	public short getRoundedStrength() {
+		return bassBoost.getRoundedStrength();
+	}
 
-	boolean getEnabled();
+	public int setEnabled(boolean enabled) {
+		return bassBoost.setEnabled(enabled);
+	}
 
-	void release();
+	public boolean getEnabled() {
+		return bassBoost.getEnabled();
+	}
+
+	public void release() {
+		bassBoost.release();
+	}
 }

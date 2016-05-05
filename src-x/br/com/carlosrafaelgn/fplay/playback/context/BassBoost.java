@@ -30,12 +30,31 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-static unsigned int bassBoostEnabled;
+package br.com.carlosrafaelgn.fplay.playback.context;
 
-void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, int enabled) {
-	bassBoostEnabled = enabled;
-}
+public final class BassBoost {
+	public boolean getStrengthSupported() {
+		return true;
+	}
 
-int JNICALL isBassBoostEnabled(JNIEnv* env, jclass clazz) {
-	return bassBoostEnabled;
+	public void setStrength(short strength) {
+		MediaContext.setBassBoostStrength((int)strength);
+	}
+
+	public short getRoundedStrength() {
+		return (short)MediaContext.getBassBoostRoundedStrength();
+	}
+
+	public int setEnabled(boolean enabled) {
+		MediaContext.enableBassBoost(enabled ? 1 : 0);
+		return 0;
+	}
+
+	public boolean getEnabled() {
+		return (MediaContext.isBassBoostEnabled() != 0);
+	}
+
+	public void release() {
+		MediaContext.enableBassBoost(0);
+	}
 }

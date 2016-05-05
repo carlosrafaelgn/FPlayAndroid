@@ -33,7 +33,7 @@
 #include <android/log.h>
 #include <arm_neon.h>
 
-extern unsigned int equalizerEnabled, equalizerActualBandCount;
+extern unsigned int equalizerMaxBandCount;
 extern int equalizerTemp[] __attribute__((aligned(16)));
 extern float equalizerCoefs[] __attribute__((aligned(16))),
 equalizerSamples[] __attribute__((aligned(16)));
@@ -50,7 +50,7 @@ void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
 		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)equalizerTemp));
 
 		//since this is a cascade filter, band0's output is band1's input and so on....
-		for (int i = 0; i < equalizerActualBandCount; i++, samples += 8) {
+		for (int i = 0; i < equalizerMaxBandCount; i++, samples += 8) {
 			//y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2)
 			//but, since our a2 was negated and b1 = a1, the formula becomes:
 			//y(n) = b0.x(n) + b1.(x(n-1) - y(n-1)) + b2.x(n-2) + a2.y(n-2)

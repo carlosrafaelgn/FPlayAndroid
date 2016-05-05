@@ -32,15 +32,13 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
-final class Equalizer implements IEqualizer {
+public final class Equalizer {
 	private static final short DB_RANGE = 2000; //+- 20dB (in millibels)
 
-	@Override
 	public short[] getBandLevelRange() {
 		return new short[] { -DB_RANGE, DB_RANGE };
 	}
 
-	@Override
 	public int getCenterFreq(short band) {
 		switch (band) {
 		case 0:
@@ -66,35 +64,29 @@ final class Equalizer implements IEqualizer {
 		}
 	}
 
-	@Override
 	public short getNumberOfBands() {
 		return 10;
 	}
 
-	@Override
 	public void setBandLevel(short band, short level) {
 		MediaContext.setEqualizerBandLevel(band, level);
 	}
 
-	@Override
 	public void setProperties(short numBands, short[] bandLevels) {
 		if (numBands != 10 || bandLevels == null || bandLevels.length < 10)
 			return;
 		MediaContext.setEqualizerBandLevels(bandLevels);
 	}
 
-	@Override
 	public int setEnabled(boolean enabled) {
 		MediaContext.enableEqualizer(enabled ? 1 : 0);
 		return 0;
 	}
 
-	@Override
 	public boolean getEnabled() {
 		return (MediaContext.isEqualizerEnabled() != 0);
 	}
 
-	@Override
 	public void release() {
 		MediaContext.enableEqualizer(0);
 	}

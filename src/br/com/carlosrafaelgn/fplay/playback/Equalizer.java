@@ -34,15 +34,13 @@ package br.com.carlosrafaelgn.fplay.playback;
 
 import java.util.Arrays;
 
-import br.com.carlosrafaelgn.fplay.playback.context.IEqualizer;
-import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Equalizer {
 	private static int minBandLevel, maxBandLevel;
 	private static boolean enabled, enabled_wire, enabled_bt;
 	private static int[] bandLevels, bandLevels_wire, bandLevels_bt, bandFrequencies;
-	private static IEqualizer theEqualizer;
+	private static br.com.carlosrafaelgn.fplay.playback.context.Equalizer theEqualizer;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
 		//use OPTBIT_EQUALIZER_ENABLED, OPT_EQUALIZER_LEVELCOUNT and OPT_EQUALIZER_LEVEL0 for all audio sinks!!!
@@ -156,9 +154,10 @@ public final class Equalizer {
 		_release();
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	static void _initialize() {
 		try {
-			theEqualizer = MediaContext.createEqualizer();
+			theEqualizer = new br.com.carlosrafaelgn.fplay.playback.context.Equalizer();
 			final int bandCount = theEqualizer.getNumberOfBands();
 			if (bandLevels == null)
 				bandLevels = new int[bandCount];

@@ -31,7 +31,25 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-void computeFilter(int band) {
+float getBandGainInDB(unsigned int band) {
+	if ((equalizerEnabled & ENABLE_BASSBOOST)) {
+		if (band < BASSBOOST_BAND_COUNT)
+			return ((equalizerEnabled & ENABLE_EQUALIZER) ?
+					//bassBoostStrength 0    -> +0dB
+					//bassBoostStrength 1000 -> +6dB
+					(equalizerGainInDB[band] + ((float)bassBoostStrength / 167.0f)) :
+						((float)bassBoostStrength / 167.0f));
+		else
+			return ((equalizerEnabled & ENABLE_EQUALIZER) ?
+					//bassBoostStrength 0    -> -0dB
+					//bassBoostStrength 1000 -> -6dB
+					(equalizerGainInDB[band] - ((float)bassBoostStrength / 167.0f)) :
+						-((float)bassBoostStrength / 167.0f));
+	}
+	return equalizerGainInDB[band];
+}
+
+void computeFilter(unsigned int band) {
 	//the method used to compute b0, b1, b2, a1 and a2 was created by Haruki Hasegawa,
 	//for his OpenSLMediaPlayer: https://github.com/h6ah4i/android-openslmediaplayer
 	//the original formula was in his spreadsheet: https://docs.google.com/spreadsheets/d/1hj2aoW83rGraANzHxKaCpECFQ0WawVbap4tgxZ9FSmo/pubhtml?gid=1587344290&single=true
@@ -50,7 +68,7 @@ void computeFilter(int band) {
 	//See the License for the specific language governing permissions and
 	//limitations under the License.
 	//
-	if (band >= equalizerActualBandCount) {
+	if (band >= equalizerMaxBandCount) {
 		//nothing to be done in this band...
 		equalizerCoefs[(band << 3)    ] = 1.0f; //b0 L
 		equalizerCoefs[(band << 3) + 1] = 1.0f; //b0 R
@@ -75,10 +93,10 @@ void computeFilter(int band) {
 	const double cosw0 = cos(w0);
 	const double Q = 1.0 / (2.0 * sinh(LN2_2 * BW_S * (w0 / sinw0)));
 	const double gainCorrelationInDB = (neighborBandCorrelationCoef *
-										((band == 0) ? equalizerGainInDB[band + 1] :
-											((band == (equalizerActualBandCount - 1)) ? equalizerGainInDB[band - 1] :
-												(equalizerGainInDB[band - 1] + equalizerGainInDB[band + 1]))));
-	const double modGainInDB = equalizerGainInDB[band] + gainCorrelationInDB;
+										((band == 0) ? getBandGainInDB(band + 1) :
+											((band == (equalizerMaxBandCount - 1)) ? getBandGainInDB(band - 1) :
+												(getBandGainInDB(band - 1) + getBandGainInDB(band + 1)))));
+	const double modGainInDB = getBandGainInDB(band) + gainCorrelationInDB;
 	const double alpha = sinw0 / (2.0 * Q);
 	const double A = pow(10.0, modGainInDB / 40.0);
 	const double alpha_mul_A = alpha * A;
@@ -95,7 +113,7 @@ void computeFilter(int band) {
 	const float b2 = (float)((1.0 - alpha_mul_A) / a0);
 	equalizerCoefs[(band << 3) + 4] = b2; //L
 	equalizerCoefs[(band << 3) + 5] = b2; //R
-	const float _a2 = -(float)((1.0 - alpha_div_A) / a0); //invert a2 to make processEqualizer()'s life easier
+	const float _a2 = -(float)((1.0 - alpha_div_A) / a0); //invert a2's signal to make processEqualizer()'s life easier
 	equalizerCoefs[(band << 3) + 6] = _a2; //L
 	equalizerCoefs[(band << 3) + 7] = _a2; //R
 

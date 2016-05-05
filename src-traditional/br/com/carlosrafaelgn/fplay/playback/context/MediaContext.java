@@ -46,8 +46,4 @@ public final class MediaContext {
 	public static IMediaPlayer createMediaPlayer() {
 		return new MediaPlayerWrapper();
 	}
-
-	public static IEqualizer createEqualizer() {
-		return new Equalizer(Player.audioSessionId);
-	}
 }

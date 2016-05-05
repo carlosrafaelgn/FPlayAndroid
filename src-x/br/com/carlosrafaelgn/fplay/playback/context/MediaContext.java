@@ -103,6 +103,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	static native void enableBassBoost(int enabled);
 	static native int isBassBoostEnabled();
+	static native void setBassBoostStrength(int strength);
+	static native int getBassBoostRoundedStrength();
 
 	static native long startVisualization();
 	static native long getVisualizationPtr();
@@ -849,9 +851,5 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static IMediaPlayer createMediaPlayer() {
 		return new MediaCodecPlayer();
-	}
-
-	public static IEqualizer createEqualizer() {
-		return new Equalizer();
 	}
 }

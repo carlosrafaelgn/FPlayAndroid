@@ -32,36 +32,33 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
-final class Equalizer implements IEqualizer {
+import br.com.carlosrafaelgn.fplay.playback.Player;
+
+public final class Equalizer {
 	private final android.media.audiofx.Equalizer equalizer;
 
-	public Equalizer(int audioSession) {
-		equalizer = new android.media.audiofx.Equalizer(0, audioSession);
+	public Equalizer() {
+		equalizer = new android.media.audiofx.Equalizer(0, Player.audioSessionId);
 	}
 
-	@Override
 	public short[] getBandLevelRange() {
 		return equalizer.getBandLevelRange();
 	}
 
-	@Override
 	public int getCenterFreq(short band) {
 		return equalizer.getCenterFreq(band);
 	}
 
-	@Override
 	public short getNumberOfBands() {
 		return equalizer.getNumberOfBands();
 	}
 
-	@Override
 	public void setBandLevel(short band, short level) {
 		equalizer.setBandLevel(band, level);
 	}
 
-	@Override
 	public void setProperties(short numBands, short[] bandLevels) {
-		android.media.audiofx.Equalizer.Settings settings = new android.media.audiofx.Equalizer.Settings();
+		final android.media.audiofx.Equalizer.Settings settings = new android.media.audiofx.Equalizer.Settings();
 
 		settings.curPreset = -1;
 		settings.numBands = numBands;
@@ -70,17 +67,14 @@ final class Equalizer implements IEqualizer {
 		equalizer.setProperties(settings);
 	}
 
-	@Override
 	public int setEnabled(boolean enabled) {
 		return equalizer.setEnabled(enabled);
 	}
 
-	@Override
 	public boolean getEnabled() {
 		return equalizer.getEnabled();
 	}
 
-	@Override
 	public void release() {
 		equalizer.release();
 	}

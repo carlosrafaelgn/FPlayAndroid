@@ -70,13 +70,12 @@ static short* visualizerBuffer;
 	static unsigned int neonMode;
 #endif
 
-#include "Equalizer.h"
-#include "BassBoost.h"
+#include "Equalizer_BassBoost.h"
 
 unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #ifdef FPLAY_X86
 	//http://developer.android.com/intl/pt-br/ndk/guides/abis.html#x86
-	//All x86 Android devices use at least Atom processors (that have SSE, SSE2, SSE3 support)
+	//All x86 Android devices use at least Atom processors (and all Atom processor have SSE, SSE2, SSE3 support)
 	return PROCESSOR_FEATURE_SSE;
 #else
 	return neonMode;
@@ -127,30 +126,27 @@ void swapShorts(short* buffer, unsigned int sizeInShorts) {
 	}
 }
 
-void doProcess(short* buffer, unsigned int sizeInFrames) {
-	if (equalizerEnabled)
-		processEqualizer(buffer, sizeInFrames);
-}
-
 int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
 	const unsigned int sizeInFrames = (sizeInBytes >> channelCount);
 
-	if (!equalizerEnabled && !bassBoostEnabled && !visualizerBuffer) {
-		//we must keep track of the write position, no matter what!
-		writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-		return 0;
+	if (equalizerEnabled || visualizerBuffer) {
+		short* const buffer = (short*)env->GetDirectBufferAddress(jbuffer);
+		if (!buffer) {
+			//we must keep track of the write position, no matter what!
+			writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
+			return -1;
+		}
+
+		//swap all shorts!!!
+		if (needsSwap)
+			swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
+
+		if (equalizerEnabled)
+			processEqualizer((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
 	}
 
-	short* buffer = (short*)env->GetDirectBufferAddress(jbuffer);
-	if (!buffer)
-		return -1;
-
-	//swap all shorts!!!
-	if (needsSwap)
-		swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
-
-	//doProcess updates writePositionInFrames internally
-	doProcess((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
+	//we must keep track of the write position, no matter what!
+	writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
 
 	return 0;
 }
@@ -158,25 +154,27 @@ int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int of
 int JNICALL processData(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, int needsSwap) {
 	const unsigned int sizeInFrames = (sizeInBytes >> channelCount);
 
-	if (!equalizerEnabled && !bassBoostEnabled && !visualizerBuffer) {
-		//we must keep track of the write position, no matter what!
-		writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-		return 0;
+	if (equalizerEnabled || visualizerBuffer) {
+		short* const buffer = (short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
+		if (!buffer) {
+			//we must keep track of the write position, no matter what!
+			writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
+			return -1;
+		}
+
+		//swap all shorts!!!
+		if (needsSwap)
+			swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
+
+		if (equalizerEnabled)
+			processEqualizer((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
+
+		//if neither the equalizer nor the bass boost are enabled, we do not copy data back (JNI_ABORT)
+		env->ReleasePrimitiveArrayCritical(jbuffer, buffer, equalizerEnabled ? 0 : JNI_ABORT);
 	}
 
-	short* buffer = (short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
-	if (!buffer)
-		return -1;
-
-	//swap all shorts!!!
-	if (needsSwap)
-		swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
-
-	//doProcess updates writePositionInFrames internally
-	doProcess((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
-
-	//if neither the equalizer nor the bass boost are enabled, we do not copy data back
-	env->ReleasePrimitiveArrayCritical(jbuffer, buffer, (equalizerEnabled || bassBoostEnabled) ? 0 : JNI_ABORT);
+	//we must keep track of the write position, no matter what!
+	writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
 
 	return 0;
 }
@@ -228,11 +226,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	checkNeonMode();
 	//__android_log_print(ANDROID_LOG_INFO, "JNI", "Neon mode: %d", neonMode);
 #endif
+	channelCount = 2;
 	sampleRate = 44100;
 	bufferSizeInFrames = 0;
 	writePositionInFrames = 0;
 	visualizerBuffer = 0;
-	bassBoostEnabled = 0;
 	initializeEqualizer();
 
 	JNINativeMethod methodTable[] = {
@@ -245,6 +243,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"setEqualizerBandLevels", "([S)V", (void*)setEqualizerBandLevels},
 		{"enableBassBoost", "(I)V", (void*)enableBassBoost},
 		{"isBassBoostEnabled", "()I", (void*)isBassBoostEnabled},
+		{"setBassBoostStrength", "(I)V", (void*)setBassBoostStrength},
+		{"getBassBoostRoundedStrength", "()I", (void*)getBassBoostRoundedStrength},
 		{"startVisualization", "()J", (void*)startVisualization},
 		{"getVisualizationPtr", "()J", (void*)getVisualizationPtr},
 		{"stopVisualization", "()V", (void*)stopVisualization},

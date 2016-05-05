@@ -37,7 +37,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 public final class BassBoost {
 	private static int strength, strength_wire, strength_bt;
 	private static boolean enabled, enabled_wire, enabled_bt, strengthSupported, supported;
-	private static android.media.audiofx.BassBoost theBooster;
+	private static br.com.carlosrafaelgn.fplay.playback.context.BassBoost theBooster;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
 		//use OPTBIT_BASSBOOST_ENABLED and OPT_BASSBOOST_STRENGTH for all audio sinks!!!
@@ -102,7 +102,7 @@ public final class BassBoost {
 
 	static void _initialize() {
 		try {
-			theBooster = new android.media.audiofx.BassBoost(0, Player.audioSessionId);
+			theBooster = new br.com.carlosrafaelgn.fplay.playback.context.BassBoost();
 			strengthSupported = theBooster.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {
