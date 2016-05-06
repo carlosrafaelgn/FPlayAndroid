@@ -30,7 +30,7 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-#define DB_RANGE 2000 //+-20dB (in millibels)
+#define DB_RANGE 1500 //+-15dB (in millibels)
 #define BAND_COUNT 10
 #define COEF_SET_COUNT 8
 
@@ -39,10 +39,14 @@
 #define BASSBOOST_BAND_COUNT 3 //(31.25 Hz, 62.5 Hz and 125 Hz)
 
 static unsigned int equalizerEnabled, bassBoostStrength;
+static float equalizerGainRecoveryPerSecondInDB, equalizerGainInDB[BAND_COUNT];
+
 unsigned int equalizerMaxBandCount;
-float equalizerGainInDB[BAND_COUNT];
-int equalizerTemp[4] __attribute__((aligned(16)));
-float equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
+int equalizerFramesBeforeRecoveringGain, equalizerTemp[4] __attribute__((aligned(16)));
+float equalizerGainRecoveryOne[4] __attribute__((aligned(16))) = { 1.0f, 1.0f, 0.0f, 0.0f },
+equalizerGainRecoveryPerFrame[4] __attribute__((aligned(16))),
+equalizerGainClip[4] __attribute__((aligned(16))),
+equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
 //order for equalizerCoefs:
 //0 band0 b0 L
 //1 band0 b0 R
@@ -66,6 +70,11 @@ equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 #include "Filter.h"
 
 void resetEqualizer() {
+	equalizerGainClip[0] = 1.0f;
+	equalizerGainClip[1] = 1.0f;
+	equalizerGainClip[2] = 0.0f;
+	equalizerGainClip[3] = 0.0f;
+	equalizerFramesBeforeRecoveringGain = 0x7FFFFFFF;
 	memset(equalizerTemp, 0, 4 * sizeof(int));
 	memset(equalizerSamples, 0, 2 * 4 * BAND_COUNT * sizeof(float));
 }
@@ -82,6 +91,9 @@ void equalizerConfigChanged() {
 	else
 		equalizerMaxBandCount = 6; //Android's minimum allowed sample rate is 4000 Hz
 
+	equalizerGainRecoveryPerFrame[0] = (float)pow(10.0, (double)equalizerGainRecoveryPerSecondInDB / (double)(sampleRate * 20));
+	equalizerGainRecoveryPerFrame[1] = equalizerGainRecoveryPerFrame[0];
+
 	for (int i = 0; i < BAND_COUNT; i++)
 		computeFilter(i);
 
@@ -92,10 +104,20 @@ void initializeEqualizer() {
 	equalizerEnabled = 0;
 	bassBoostStrength = 0;
 	equalizerMaxBandCount = 0;
+	equalizerGainRecoveryPerSecondInDB = 0.5f;
+	equalizerGainRecoveryPerFrame[0] = 1.0f;
+	equalizerGainRecoveryPerFrame[1] = 1.0f;
+	equalizerGainRecoveryPerFrame[2] = 0.0f;
+	equalizerGainRecoveryPerFrame[3] = 0.0f;
+
 	memset(equalizerGainInDB, 0, BAND_COUNT * sizeof(float));
+
+	resetEqualizer();
 }
 
 void processEqualizer(short* buffer, unsigned int sizeInFrames) {
+	equalizerFramesBeforeRecoveringGain -= sizeInFrames;
+
 #define x_n1_L samples[0]
 #define x_n1_R samples[1]
 #define y_n1_L samples[2]
@@ -106,15 +128,19 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 #define y_n2_R samples[7]
 	if (channelCount == 2) {
 #ifdef FPLAY_X86
-		__m128 tmp2;
-		_mm_xor_ps(tmp2, tmp2);
+		__m128 gainClip = _mm_load_ps(equalizerGainClip);
+		__m128 maxAbsSample, tmp2;
+		maxAbsSample = _mm_xor_ps(maxAbsSample, maxAbsSample);
+		tmp2 = _mm_xor_ps(tmp2, tmp2);
+
 		while ((sizeInFrames--)) {
 			float *samples = equalizerSamples;
 
 			equalizerTemp[0] = (int)buffer[0];
 			equalizerTemp[1] = (int)buffer[1];
 			//inLR = { L, R, xxx, xxx }
-			__m128 inLR = _mm_cvtpi32_ps(inLR, *((__m64*)equalizerTemp));
+			__m128 inLR;
+			inLR = _mm_cvtpi32_ps(inLR, *((__m64*)equalizerTemp));
 
 			//since this is a cascade filter, band0's output is band1's input and so on....
 			for (int i = 0; i < equalizerMaxBandCount; i++, samples += 8) {
@@ -179,6 +205,25 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 				inLR = tmp;
 			}
 
+			//inL *= gainClip;
+			//inR *= gainClip;
+			inLR = _mm_mul_ps(inLR, gainClip);
+
+			if (equalizerFramesBeforeRecoveringGain <= 0) {
+				//gainClip *= equalizerGainRecoveryPerFrame[0];
+				//if (gainClip > 1.0f)
+				//	gainClip = 1.0f;
+				gainClip = _mm_mul_ps(gainClip, *((__m128*)equalizerGainRecoveryPerFrame));
+				gainClip = _mm_min_ps(gainClip, *((__m128*)equalizerGainRecoveryOne));
+			}
+
+			//instead of doing the classic a & 0x7FFFFFFF in order to achieve the abs value,
+			//I decided to do this (which does not require external memory loads)
+			//maxAbsSample = max(maxAbsSample, max(0 - inLR, inLR))
+			__m128 zero;
+			zero = _mm_xor_ps(zero, zero);
+			maxAbsSample = _mm_max_ps(maxAbsSample, _mm_max_ps(_mm_sub_ps(zero, inLR), inLR));
+
 			//the final output is the last band's output (or its next band's input)
 			//const int iL = (int)inL;
 			//const int iR = (int)inR;
@@ -191,11 +236,36 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 
 			buffer += 2;
 		}
+
+		_mm_store_ps((float*)equalizerTemp, maxAbsSample);
+		equalizerTemp[2] = 0;
+		equalizerTemp[3] = 0;
+		const float maxAbsSampleMono = ((((float*)equalizerTemp)[0] > ((float*)equalizerTemp)[1]) ? ((float*)equalizerTemp)[0] : ((float*)equalizerTemp)[1]);
+		float gainClipMono;
+		_mm_store_ss(&gainClipMono, gainClip);
+		if (maxAbsSampleMono > 32768.0f) {
+			const float newGainClip = 33000.0f / maxAbsSampleMono;
+			if (newGainClip < gainClipMono) {
+				equalizerGainClip[0] = newGainClip;
+				equalizerGainClip[1] = newGainClip;
+			} else {
+				equalizerGainClip[0] = gainClipMono;
+				equalizerGainClip[1] = gainClipMono;
+			}
+			equalizerFramesBeforeRecoveringGain = sampleRate << 2; //wait some time before starting to recover the gain
+		} else if (equalizerFramesBeforeRecoveringGain <= 0) {
+			equalizerGainClip[0] = gainClipMono;
+			equalizerGainClip[1] = gainClipMono;
+			equalizerFramesBeforeRecoveringGain = ((gainClipMono >= 1.0f) ? 0x7FFFFFFF : 0);
+		}
 #else
 		if (neonMode) {
 			processEqualizerNeon(buffer, sizeInFrames);
 			return;
 		}
+
+		float gainClip = equalizerGainClip[0];
+		float maxAbsSample = 0.0f;
 
 		//no neon support... :(
 		while ((sizeInFrames--)) {
@@ -235,12 +305,44 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 				inR = outR;
 			}
 
+			inL *= gainClip;
+			inR *= gainClip;
+
+			if (equalizerFramesBeforeRecoveringGain <= 0) {
+				gainClip *= equalizerGainRecoveryPerFrame[0];
+				if (gainClip > 1.0f)
+					gainClip = 1.0f;
+			}
+
+			const float tmpAbsL = abs(inL);
+			if (maxAbsSample < tmpAbsL)
+				maxAbsSample = tmpAbsL;
+			const float tmpAbsR = abs(inR);
+			if (maxAbsSample < tmpAbsR)
+				maxAbsSample = tmpAbsR;
+
 			//the final output is the last band's output (or its next band's input)
 			const int iL = (int)inL;
 			const int iR = (int)inR;
 			buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (short)iL));
 			buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (short)iR));
 			buffer += 2;
+		}
+
+		if (maxAbsSample > 32768.0f) {
+			const float newGainClip = 33000.0f / maxAbsSample;
+			if (newGainClip < gainClip) {
+				equalizerGainClip[0] = newGainClip;
+				equalizerGainClip[1] = newGainClip;
+			} else {
+				equalizerGainClip[0] = gainClip;
+				equalizerGainClip[1] = gainClip;
+			}
+			equalizerFramesBeforeRecoveringGain = sampleRate << 2; //wait some time before starting to recover the gain
+		} else if (equalizerFramesBeforeRecoveringGain <= 0) {
+			equalizerGainClip[0] = gainClip;
+			equalizerGainClip[1] = gainClip;
+			equalizerFramesBeforeRecoveringGain = ((gainClip >= 1.0f) ? 0x7FFFFFFF : 0);
 		}
 #endif
 	} else {

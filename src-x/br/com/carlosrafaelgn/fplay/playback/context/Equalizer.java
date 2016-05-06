@@ -33,7 +33,7 @@
 package br.com.carlosrafaelgn.fplay.playback.context;
 
 public final class Equalizer {
-	private static final short DB_RANGE = 2000; //+- 20dB (in millibels)
+	private static final short DB_RANGE = 1500; //+-15dB (in millibels)
 
 	public short[] getBandLevelRange() {
 		return new short[] { -DB_RANGE, DB_RANGE };

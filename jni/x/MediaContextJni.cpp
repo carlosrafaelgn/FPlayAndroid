@@ -61,8 +61,9 @@
 //therefore:
 //frames = bytes >> channelCount
 //bytes = frames << channelCount;
-static unsigned int channelCount, sampleRate, bufferSizeInFrames, writePositionInFrames;
+static unsigned int channelCount, bufferSizeInFrames, writePositionInFrames;
 static short* visualizerBuffer;
+unsigned int sampleRate;
 
 #ifdef FPLAY_ARM
 	#include <errno.h>

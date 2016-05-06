@@ -33,14 +33,20 @@
 #include <android/log.h>
 #include <arm_neon.h>
 
-extern unsigned int equalizerMaxBandCount;
-extern int equalizerTemp[] __attribute__((aligned(16)));
-extern float equalizerCoefs[] __attribute__((aligned(16))),
+extern unsigned int equalizerMaxBandCount, sampleRate;
+extern int equalizerFramesBeforeRecoveringGain, equalizerTemp[] __attribute__((aligned(16)));
+extern float equalizerGainRecoveryOne[] __attribute__((aligned(16))),
+equalizerGainRecoveryPerFrame[] __attribute__((aligned(16))),
+equalizerGainClip[] __attribute__((aligned(16))),
+equalizerCoefs[] __attribute__((aligned(16))),
 equalizerSamples[] __attribute__((aligned(16)));
 
 //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0491h/CIHJBEFE.html
 
 void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
+	float32x2_t gainClip = vld1_f32(equalizerGainClip);
+	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
+
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
@@ -98,6 +104,20 @@ void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
 			inLR = outLR;
 		}
 
+		//inL *= gainClip;
+		//inR *= gainClip;
+		inLR = vmul_f32(inLR, gainClip);
+
+		if (equalizerFramesBeforeRecoveringGain <= 0) {
+			//gainClip *= equalizerGainRecoveryPerFrame[0];
+			//if (gainClip > 1.0f)
+			//	gainClip = 1.0f;
+			gainClip = vmul_f32(gainClip, *((float32x2_t*)equalizerGainRecoveryPerFrame));
+			gainClip = vmin_f32(gainClip, *((float32x2_t*)equalizerGainRecoveryOne));
+		}
+
+		maxAbsSample = vmax_f32(maxAbsSample, vabs_f32(inLR));
+
 		//the final output is the last band's output (or its next band's input)
 		//const int iL = (int)inL;
 		//const int iR = (int)inR;
@@ -110,5 +130,25 @@ void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
 		buffer[1] = vget_lane_s16(iLRshort, 1);
 
 		buffer += 2;
+	}
+
+	vst1_f32((float*)equalizerTemp, maxAbsSample);
+	const float maxAbsSampleMono = ((((float*)equalizerTemp)[0] > ((float*)equalizerTemp)[1]) ? ((float*)equalizerTemp)[0] : ((float*)equalizerTemp)[1]);
+	float gainClipMono;
+	vst1_lane_f32(&gainClipMono, gainClip, 0);
+	if (maxAbsSampleMono > 32768.0f) {
+		const float newGainClip = 33000.0f / maxAbsSampleMono;
+		if (newGainClip < gainClipMono) {
+			equalizerGainClip[0] = newGainClip;
+			equalizerGainClip[1] = newGainClip;
+		} else {
+			equalizerGainClip[0] = gainClipMono;
+			equalizerGainClip[1] = gainClipMono;
+		}
+		equalizerFramesBeforeRecoveringGain = sampleRate << 2; //wait some time before starting to recover the gain
+	} else if (equalizerFramesBeforeRecoveringGain <= 0) {
+		equalizerGainClip[0] = gainClipMono;
+		equalizerGainClip[1] = gainClipMono;
+		equalizerFramesBeforeRecoveringGain = ((gainClipMono >= 1.0f) ? 0x7FFFFFFF : 0);
 	}
 }
