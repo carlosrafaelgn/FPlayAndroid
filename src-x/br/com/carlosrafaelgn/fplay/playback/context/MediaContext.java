@@ -106,6 +106,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native void setBassBoostStrength(int strength);
 	static native int getBassBoostRoundedStrength();
 
+	static native void enableVirtualizer(int enabled);
+	static native int isVirtualizerEnabled();
+	static native void setVirtualizerStrength(int strength);
+	static native int getVirtualizerRoundedStrength();
+
 	static native long startVisualization();
 	static native long getVisualizationPtr();
 	static native void stopVisualization();
@@ -221,8 +226,26 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							//being used during this period
 							switch (requestedAction) {
 							case ACTION_PLAY:
-								//audioTrack.pause();
+								//audioTrack has already been paused by pauseAndAbortAudioTrackWrite()
+								//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+									try {
+										//why?!?!?!
+										//WWWHHHHYYYYY?!?!?!?
+										//https://groups.google.com/forum/#!msg/android-developers/zdgJ0QdvCAQ/o-0q8Bb5qRsJ
+										Thread.sleep(100);
+									} catch (Throwable ex) {
+										//just ignore
+									}
+								//}
 								audioTrack.flush();
+								try {
+									//why?!?!?!
+									//WWWHHHHYYYYY?!?!?!?
+									//https://groups.google.com/forum/#!msg/android-developers/zdgJ0QdvCAQ/o-0q8Bb5qRsJ
+									Thread.sleep(100);
+								} catch (Throwable ex) {
+									//just ignore
+								}
 								outputBuffer.release();
 								currentPlayer = playerRequestingAction;
 								nextPlayer = null;
@@ -246,8 +269,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								wakeLock.acquire();
 								break;
 							case ACTION_PAUSE:
+								//audioTrack has already been paused by pauseAndAbortAudioTrackWrite()
 								if (playerRequestingAction == currentPlayer) {
-									//audioTrack.pause();
 									paused = true;
 									requestSucceeded = true;
 									wakeLock.release();
@@ -266,6 +289,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								break;
 							case ACTION_SEEK:
+								//audioTrack has already been paused by pauseAndAbortAudioTrackWrite()
 								if (currentPlayer != null && currentPlayer != playerRequestingAction)
 									throw new IllegalStateException("impossible to seek a player other than currentPlayer");
 								if (!paused)
@@ -309,7 +333,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							case ACTION_RESET:
 								if (playerRequestingAction == currentPlayer) {
 									audioTrack.pause();
-									if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+									//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 										try {
 											//why?!?!?!
 											//WWWHHHHYYYYY?!?!?!?
@@ -318,8 +342,16 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										} catch (Throwable ex) {
 											//just ignore
 										}
-									}
+									//}
 									audioTrack.flush();
+									try {
+										//why?!?!?!
+										//WWWHHHHYYYYY?!?!?!?
+										//https://groups.google.com/forum/#!msg/android-developers/zdgJ0QdvCAQ/o-0q8Bb5qRsJ
+										Thread.sleep(100);
+									} catch (Throwable ex) {
+										//just ignore
+									}
 									outputBuffer.release();
 									paused = true;
 									currentPlayer = null;
@@ -378,7 +410,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						if (pendingSeekPlayer != null) {
 							try {
 								if (pendingSeekPlayer == currentPlayer) {
-									if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+									//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 										try {
 											//why?!?!?!
 											//WWWHHHHYYYYY?!?!?!?
@@ -387,8 +419,16 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										} catch (Throwable ex) {
 											//just ignore
 										}
-									}
+									//}
 									audioTrack.flush();
+									try {
+										//why?!?!?!
+										//WWWHHHHYYYYY?!?!?!?
+										//https://groups.google.com/forum/#!msg/android-developers/zdgJ0QdvCAQ/o-0q8Bb5qRsJ
+										Thread.sleep(100);
+									} catch (Throwable ex) {
+										//just ignore
+									}
 									outputBuffer.release();
 									lastHeadPositionInFrames = audioTrack.getPlaybackHeadPosition();
 									resetFiltersAndWritePosition(lastHeadPositionInFrames);

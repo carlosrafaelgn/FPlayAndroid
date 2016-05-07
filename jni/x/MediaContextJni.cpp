@@ -71,7 +71,7 @@ unsigned int sampleRate;
 	static unsigned int neonMode;
 #endif
 
-#include "Equalizer_BassBoost.h"
+#include "Effects.h"
 
 unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #ifdef FPLAY_X86
@@ -92,12 +92,14 @@ void JNICALL configChanged(JNIEnv* env, jclass clazz, int channelCount, int samp
 	::sampleRate = sampleRate;
 
 	equalizerConfigChanged();
+	virtualizerConfigChanged();
 }
 
 void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, unsigned int writePositionInFrames) {
 	::writePositionInFrames = writePositionInFrames % bufferSizeInFrames;
 
 	resetEqualizer();
+	resetVirtualizer();
 }
 
 uint64_t JNICALL startVisualization(JNIEnv* env, jclass clazz) {
@@ -130,7 +132,7 @@ void swapShorts(short* buffer, unsigned int sizeInShorts) {
 int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
 	const unsigned int sizeInFrames = (sizeInBytes >> channelCount);
 
-	if (equalizerEnabled || visualizerBuffer) {
+	if (effectsEnabled || visualizerBuffer) {
 		short* const buffer = (short*)env->GetDirectBufferAddress(jbuffer);
 		if (!buffer) {
 			//we must keep track of the write position, no matter what!
@@ -142,7 +144,9 @@ int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int of
 		if (needsSwap)
 			swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
 
-		if (equalizerEnabled)
+		if ((effectsEnabled & VIRTUALIZER_ENABLED))
+			processEffects((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
+		else if (effectsEnabled)
 			processEqualizer((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
 	}
 
@@ -155,7 +159,7 @@ int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int of
 int JNICALL processData(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, int needsSwap) {
 	const unsigned int sizeInFrames = (sizeInBytes >> channelCount);
 
-	if (equalizerEnabled || visualizerBuffer) {
+	if (effectsEnabled || visualizerBuffer) {
 		short* const buffer = (short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
 		if (!buffer) {
 			//we must keep track of the write position, no matter what!
@@ -167,11 +171,13 @@ int JNICALL processData(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 		if (needsSwap)
 			swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
 
-		if (equalizerEnabled)
+		if ((effectsEnabled & VIRTUALIZER_ENABLED))
+			processEffects((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
+		else if (effectsEnabled)
 			processEqualizer((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
 
-		//if neither the equalizer nor the bass boost are enabled, we do not copy data back (JNI_ABORT)
-		env->ReleasePrimitiveArrayCritical(jbuffer, buffer, equalizerEnabled ? 0 : JNI_ABORT);
+		//if neither effects are enabled, we do not copy data back (JNI_ABORT)
+		env->ReleasePrimitiveArrayCritical(jbuffer, buffer, effectsEnabled ? 0 : JNI_ABORT);
 	}
 
 	//we must keep track of the write position, no matter what!
@@ -232,7 +238,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	bufferSizeInFrames = 0;
 	writePositionInFrames = 0;
 	visualizerBuffer = 0;
-	initializeEqualizer();
+	initializeEffects();
 
 	JNINativeMethod methodTable[] = {
 		{"setBufferSizeInFrames", "(I)V", (void*)setBufferSizeInFrames},
@@ -246,6 +252,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"isBassBoostEnabled", "()I", (void*)isBassBoostEnabled},
 		{"setBassBoostStrength", "(I)V", (void*)setBassBoostStrength},
 		{"getBassBoostRoundedStrength", "()I", (void*)getBassBoostRoundedStrength},
+		{"enableVirtualizer", "(I)V", (void*)enableVirtualizer},
+		{"isVirtualizerEnabled", "()I", (void*)isVirtualizerEnabled},
+		{"setVirtualizerStrength", "(I)V", (void*)setVirtualizerStrength},
+		{"getVirtualizerRoundedStrength", "()I", (void*)getVirtualizerRoundedStrength},
 		{"startVisualization", "()J", (void*)startVisualization},
 		{"getVisualizationPtr", "()J", (void*)getVisualizationPtr},
 		{"stopVisualization", "()V", (void*)stopVisualization},

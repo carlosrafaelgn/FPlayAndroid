@@ -32,15 +32,15 @@
 //
 
 float getBandGainInDB(unsigned int band) {
-	if ((equalizerEnabled & ENABLE_BASSBOOST)) {
+	if ((effectsEnabled & BASSBOOST_ENABLED)) {
 		if (band < BASSBOOST_BAND_COUNT)
-			return ((equalizerEnabled & ENABLE_EQUALIZER) ?
+			return ((effectsEnabled & EQUALIZER_ENABLED) ?
 					//bassBoostStrength 0    -> +0dB
 					//bassBoostStrength 1000 -> +6dB
 					(equalizerGainInDB[band] + ((float)bassBoostStrength / 167.0f)) :
 						((float)bassBoostStrength / 167.0f));
 		else
-			return ((equalizerEnabled & ENABLE_EQUALIZER) ?
+			return ((effectsEnabled & EQUALIZER_ENABLED) ?
 					//bassBoostStrength 0    -> -0dB
 					//bassBoostStrength 1000 -> -6dB
 					(equalizerGainInDB[band] - ((float)bassBoostStrength / 167.0f)) :

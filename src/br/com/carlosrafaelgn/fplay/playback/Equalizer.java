@@ -154,8 +154,14 @@ public final class Equalizer {
 		_release();
 	}
 
+	static boolean _isCreated() {
+		return (theEqualizer != null);
+	}
+
 	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	static void _initialize() {
+		if (theEqualizer != null)
+			return;
 		try {
 			theEqualizer = new br.com.carlosrafaelgn.fplay.playback.context.Equalizer();
 			final int bandCount = theEqualizer.getNumberOfBands();

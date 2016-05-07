@@ -100,7 +100,13 @@ public final class BassBoost {
 		_release();
 	}
 
+	static boolean _isCreated() {
+		return (theBooster != null);
+	}
+
 	static void _initialize() {
+		if (theBooster != null)
+			return;
 		try {
 			theBooster = new br.com.carlosrafaelgn.fplay.playback.context.BassBoost();
 			strengthSupported = theBooster.getStrengthSupported();
