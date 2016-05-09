@@ -61,7 +61,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_RESET = 0x0006;
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
-	private static final int PLAYER_TIMEOUT = 600000;
+	private static final int PLAYER_TIMEOUT = 30000;
+
+	static final int SL_MILLIBEL_MIN = -32768;
 
 	private static final class ErrorStructure {
 		public MediaCodecPlayer player;
@@ -78,7 +80,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final Object openSLSync = new Object();
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
 	private static volatile int requestedAction, requestedSeekMS;
-	private static float leftVolume = 1.0f, rightVolume = 1.0f;
+	private static int volumeInMillibels = 0;
 	private static Handler handler;
 	private static Thread thread;
 	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
@@ -116,6 +118,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native void openSLStopAndFlush();
 	static native void openSLRelease();
 	static native void openSLTerminate();
+	static native void openSLSetVolumeInMillibels(int volumeInMillibels);
 	static native int openSLGetHeadPositionInFrames();
 	static native int openSLWriteDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 	static native int openSLWrite(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
@@ -136,6 +139,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			final int res = openSLCreate(sampleRate, bufferSizeInFrames);
 			if (res != 0)
 				throw new IllegalStateException("openSLCreate() returned " + res);
+			openSLSetVolumeInMillibels(volumeInMillibels);
 			MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 		}
 
@@ -156,9 +160,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		initializationError = false;
 
-		int ret = openSLInitialize();
+		int ret;
+		synchronized (openSLSync) {
+			ret = openSLInitialize();
+		}
 		if (ret != 0) {
-			//System.out.println("openSLInitialize() returned " + ret);
 			initializationError = true;
 			requestedAction = ACTION_NONE;
 			synchronized (notification) {
@@ -183,20 +189,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			if (paused || waitToReceiveAction) {
 				synchronized (threadNotification) {
 					if (requestedAction == ACTION_NONE) {
-						//System.out.println("A");
 						try {
 							threadNotification.wait();
 						} catch (Throwable ex) {
 							//just ignore
 						}
-						//System.out.println("B");
 					}
 
 					if (!alive)
 						break;
 
 					if (requestedAction != ACTION_NONE) {
-						//System.out.println("C " + requestedAction + " | " + playerRequestingAction + " | " + currentPlayer);
 						waitToReceiveAction = false;
 						boolean seekPending = false;
 						requestSucceeded = false;
@@ -206,19 +209,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							//being used during this period
 							switch (requestedAction) {
 							case ACTION_PLAY:
-								//System.out.println("D");
 								openSLStopAndFlush();
-								//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-									try {
-										//why?!?!?!
-										//WWWHHHHYYYYY?!?!?!?
-										//https://groups.google.com/forum/#!msg/android-developers/zdgJ0QdvCAQ/o-0q8Bb5qRsJ
-										Thread.sleep(100);
-									} catch (Throwable ex) {
-										//just ignore
-									}
-								//}
-								//System.out.println("E");
 								outputBuffer.release();
 								currentPlayer = playerRequestingAction;
 								nextPlayer = null;
@@ -227,53 +218,40 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								framesWritten = currentPlayer.getCurrentPositionInFrames();
 								framesPlayed = currentPlayer.getCurrentPositionInFrames();
 								nextFramesWritten = 0;
-								//System.out.println("H");
 								synchronized (openSLSync) {
 									if (sampleRate != currentPlayer.getSampleRate()) {
-										//System.out.println("I");
 										sampleRate = currentPlayer.getSampleRate();
 										bufferSizeInFrames = create(sampleRate);
 									}
 								}
-								//System.out.println("J");
 								playPending = true;
 								resetFiltersAndWritePosition(currentPlayer.getChannelCount());
 								lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
 								paused = false;
 								requestSucceeded = true;
 								wakeLock.acquire();
-								//System.out.println("K");
 								break;
 							case ACTION_PAUSE:
-								//System.out.println("L");
 								if (playerRequestingAction == currentPlayer) {
-									//System.out.println("M");
 									openSLPause();
 									paused = true;
 									requestSucceeded = true;
 									wakeLock.release();
-									//System.out.println("N");
 								} else {
-									//System.out.println("O");
 									throw new IllegalStateException("impossible to pause a player other than currentPlayer");
 								}
 								break;
 							case ACTION_RESUME:
-								//System.out.println("P");
 								if (playerRequestingAction == currentPlayer) {
-									//System.out.println("Q");
 									playPending = true;
 									paused = false;
 									requestSucceeded = true;
 									wakeLock.acquire();
-									//System.out.println("R");
 								} else {
-									//System.out.println("S");
 									throw new IllegalStateException("impossible to resume a player other than currentPlayer");
 								}
 								break;
 							case ACTION_SEEK:
-								//System.out.println("T");
 								if (currentPlayer != null && currentPlayer != playerRequestingAction)
 									throw new IllegalStateException("impossible to seek a player other than currentPlayer");
 								if (!paused)
@@ -281,16 +259,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								openSLStopAndFlush();
 								seekPending = true;
 								requestSucceeded = true;
-								//System.out.println("U");
 								break;
 							case ACTION_SETNEXT:
-								//System.out.println("V");
 								if (currentPlayer == playerRequestingAction && nextPlayer != nextPlayerRequested) {
-									//System.out.println("W");
 									//if we had already started outputting nextPlayer's audio then it is too
 									//late... just remove the nextPlayer
 									if (currentPlayer.isOutputOver()) {
-										//System.out.println("X");
 										//go back to currentPlayer
 										if (sourcePlayer == nextPlayer) {
 											outputBuffer.release();
@@ -298,29 +272,20 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										}
 										nextPlayer = null;
 										nextFramesWritten = 0;
-										//System.out.println("Y");
 									} else {
-										//System.out.println("Z");
 										nextPlayer = nextPlayerRequested;
 										try {
-											//System.out.println("AA");
 											if (nextPlayer != null) {
 												if (currentPlayer.isInternetStream() ||
 													nextPlayer.isInternetStream() ||
 													sampleRate != nextPlayer.getSampleRate()) {
-													//System.out.println("AB");
 													nextPlayer = null;
 													nextFramesWritten = 0;
 												}
-												//System.out.println("AC");
-												if (nextPlayer != null) {
-													//System.out.println("AD");
+												if (nextPlayer != null)
 													nextPlayer.resetDecoderIfOutputAlreadyUsed();
-												}
-												//System.out.println("AE");
 											}
 										} catch (Throwable ex) {
-											//System.out.println("AF " + ex.getMessage());
 											nextPlayer = null;
 											nextFramesWritten = 0;
 											handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(nextPlayer, ex)), SystemClock.uptimeMillis());
@@ -329,14 +294,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								break;
 							case ACTION_RESET:
-								//System.out.println("AG");
 								if (playerRequestingAction == currentPlayer) {
-									//System.out.println("AH");
 									synchronized (openSLSync) {
 										openSLRelease();
 										sampleRate = 0;
 									}
-									//System.out.println("AI");
 									outputBuffer.release();
 									paused = true;
 									currentPlayer = null;
@@ -346,37 +308,28 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									framesPlayed = 0;
 									nextFramesWritten = 0;
 									wakeLock.release();
-									//System.out.println("AL");
 								} else if (playerRequestingAction == nextPlayer) {
-									//System.out.println("AM");
 									//go back to currentPlayer
 									if (sourcePlayer == nextPlayer) {
-										//System.out.println("AN");
 										outputBuffer.release();
 										sourcePlayer = currentPlayer;
 									}
-									//System.out.println("AO");
 									nextPlayer = null;
 									nextFramesWritten = 0;
-									//System.out.println("AP");
 								}
 								requestSucceeded = true;
 								break;
 							}
 						} catch (Throwable ex) {
-							//System.out.println("AQ " + ex.getMessage());
 							synchronized (openSLSync) {
-								//System.out.println("AQQ");
 								openSLRelease();
 								sampleRate = 0;
 							}
-							//System.out.println("AS");
 							try {
 								outputBuffer.release();
 							} catch (Throwable ex2) {
 								//just ignore
 							}
-							//System.out.println("AT");
 							paused = true;
 							currentPlayer = null;
 							nextPlayer = null;
@@ -388,72 +341,46 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(playerRequestingAction, ex)), SystemClock.uptimeMillis());
 							continue;
 						} finally {
-							//System.out.println("AU");
 							requestedAction = ACTION_NONE;
 							playerRequestingAction = null;
 							synchronized (notification) {
 								notification.notify();
 							}
-							//System.out.println("AV");
 						}
 						if (seekPending) {
-							//System.out.println("AW");
-							//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-								try {
-									//why?!?!?!
-									//WWWHHHHYYYYY?!?!?!?
-									//https://groups.google.com/forum/#!msg/android-developers/zdgJ0QdvCAQ/o-0q8Bb5qRsJ
-									Thread.sleep(100);
-								} catch (Throwable ex) {
-									//just ignore
-								}
-							//}
 							try {
-								//System.out.println("AX");
 								outputBuffer.release();
-								lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
 								resetFiltersAndWritePosition(lastHeadPositionInFrames);
-								//System.out.println("BA");
+								lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
 								if (nextPlayer != null) {
-									//System.out.println("BB");
 									try {
-										//System.out.println("BC");
 										nextPlayer.resetDecoderIfOutputAlreadyUsed();
 									} catch (Throwable ex) {
-										//System.out.println("BD " + ex.getMessage());
 										nextPlayer = null;
 										handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(nextPlayer, ex)), SystemClock.uptimeMillis());
 									}
 									nextFramesWritten = 0;
 								}
-								//System.out.println("BE");
 								currentPlayer.doSeek(requestedSeekMS);
-								//System.out.println("BF");
 								//give the decoder some time to decode something
 								try {
-									Thread.sleep(50);
+									Thread.sleep(30);
 								} catch (Throwable ex) {
 									//just ignore
 								}
-								//System.out.println("BG");
 								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, currentPlayer), SystemClock.uptimeMillis());
 								framesWritten = currentPlayer.getCurrentPositionInFrames();
 								framesPlayed = framesWritten;
-								//System.out.println("BH");
 							} catch (Throwable ex) {
-								//System.out.println("BI " + ex.getMessage());
 								synchronized (openSLSync) {
-									//System.out.println("AQQ");
 									openSLRelease();
 									sampleRate = 0;
 								}
-								//System.out.println("AS");
 								try {
 									outputBuffer.release();
 								} catch (Throwable ex2) {
 									//just ignore
 								}
-								//System.out.println("AT");
 								paused = true;
 								currentPlayer = null;
 								nextPlayer = null;
@@ -476,48 +403,36 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 				int bytesWrittenThisTime;
 				final int currentHeadPositionInFrames = openSLGetHeadPositionInFrames();
-				//System.out.println("BJ " + currentHeadPositionInFrames);
 				framesPlayed += (currentHeadPositionInFrames - lastHeadPositionInFrames);
 				lastHeadPositionInFrames = currentHeadPositionInFrames;
 
 				//try not to block for too long (<< 2 = stereo, 16 bits per sample)
 				final int freeBytesInBuffer = (bufferSizeInFrames - (int)(framesWritten - framesPlayed)) << 2;
-				if (freeBytesInBuffer < 0) {
-					//System.out.println("********* BK " + freeBytesInBuffer);
-					//???
-				} else if (freeBytesInBuffer < (256 * 4)) {
-					//System.out.println("BL " + freeBytesInBuffer);
+				if (freeBytesInBuffer < (256 * 4)) {
 					if (playPending) {
-						//System.out.println("XA");
 						playPending = false;
 						ret = openSLPlay();
 						if (ret != 0)
 							throw new IllegalStateException("openSLPlay() returned " + ret);
-						//System.out.println("XB");
 					}
 					//the buffer was already too full!
 					try {
 						synchronized (threadNotification) {
-							threadNotification.wait(20);
+							threadNotification.wait(30);
 						}
-						//System.out.println("BM");
 						continue;
 					} catch (Throwable ex) {
 						//just ignore
 					}
 				} else if (playPending) {
-					//System.out.println("YA " + (bufferSizeInFrames - (freeBytesInBuffer >> 2)) + " | " + bufferSizeInFrames);
 					if ((bufferSizeInFrames - (freeBytesInBuffer >> 2)) >= (bufferSizeInFrames >> 3)) {
-						//System.out.println("YB");
 						playPending = false;
 						ret = openSLPlay();
 						if (ret != 0)
 							throw new IllegalStateException("openSLPlay() returned " + ret);
-						//System.out.println("YC");
 					}
 				}
 
-				//System.out.println("BN " + framesWritten + " | " + framesPlayed);
 				currentPlayer.setCurrentPosition((int)((framesPlayed * 1000L) / (long)sampleRate));
 
 				if (outputBuffer.index < 0)
@@ -544,7 +459,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					nextFramesWritten += bytesWrittenThisTime >> 2;
 
 				if (outputBuffer.remainingBytes <= 0) {
-					//System.out.println("BO");
 					outputBuffer.release();
 					if (outputBuffer.streamOver && sourcePlayer == currentPlayer) {
 						//from now on, we will start outputting audio from the next player (if any)
@@ -554,7 +468,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				}
 
 				if (framesPlayed >= framesWritten) {
-					//System.out.println("BP");
 					if (currentPlayer.isOutputOver()) {
 						//we are done with this player!
 						currentPlayer.setCurrentPosition(currentPlayer.getDuration());
@@ -580,20 +493,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						nextFramesWritten = 0;
 						sourcePlayer = currentPlayer;
 					} else if (framesWritten != 0) {
-						//System.out.println("BQ");
 						//underrun!!!
 						currentPlayer.notifyUnderrun();
 						//give the decoder some time to decode something
 						try {
-							Thread.sleep(50);
+							Thread.sleep(30);
 						} catch (Throwable ex) {
 							//just ignore
 						}
 					}
 				}
-				//System.out.println("BR");
 			} catch (Throwable ex) {
-				//System.out.println("BS " + ex.getMessage());
 				try {
 					outputBuffer.release();
 				} catch (Throwable ex2) {
@@ -626,10 +536,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	@Override
 	public boolean handleMessage(Message msg) {
-		//System.out.println("handleMessage A " + msg.what);
 		if (!alive)
 			return true;
-		//System.out.println("handleMessage B " + msg.what);
 		switch (msg.what) {
 		case MSG_COMPLETION:
 			if (msg.obj instanceof MediaCodecPlayer)
@@ -700,7 +608,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			thread = null;
 		}
-		openSLRelease();
+		synchronized (openSLSync) {
+			openSLRelease();
+		}
 		requestedAction = ACTION_NONE;
 		handler = null;
 		playerRequestingAction = null;
@@ -709,24 +619,18 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static boolean play(MediaCodecPlayer player) {
-		//System.out.println("play A " + player);
 		if (!alive) {
-			//System.out.println("play B");
 			if (initializationError)
 				player.mediaServerDied();
 			return false;
 		}
-		//System.out.println("play C");
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
-			//System.out.println("play D");
 			playerRequestingAction = player;
 			requestedAction = ACTION_PLAY;
 			threadNotification.notify();
 		}
-		//System.out.println("play E");
 		synchronized (notification) {
-			//System.out.println("play F");
 			if (playerRequestingAction != null) {
 				try {
 					notification.wait(PLAYER_TIMEOUT);
@@ -734,30 +638,23 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
-			//System.out.println("play G");
 		}
 		return requestSucceeded;
 	}
 
 	static boolean pause(MediaCodecPlayer player) {
-		//System.out.println("pause A");
 		if (!alive) {
-			//System.out.println("pause B");
 			if (initializationError)
 				player.mediaServerDied();
 			return false;
 		}
-		//System.out.println("pause C");
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
-			//System.out.println("pause D");
 			playerRequestingAction = player;
 			requestedAction = ACTION_PAUSE;
 			threadNotification.notify();
 		}
-		//System.out.println("pause E");
 		synchronized (notification) {
-			//System.out.println("pause F");
 			if (playerRequestingAction != null) {
 				try {
 					notification.wait(PLAYER_TIMEOUT);
@@ -765,30 +662,23 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
-			//System.out.println("pause G");
 		}
 		return requestSucceeded;
 	}
 
 	static boolean resume(MediaCodecPlayer player) {
-		//System.out.println("resume A");
 		if (!alive) {
-			//System.out.println("resume B");
 			if (initializationError)
 				player.mediaServerDied();
 			return false;
 		}
-		//System.out.println("resume C");
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
-			//System.out.println("resume D");
 			playerRequestingAction = player;
 			requestedAction = ACTION_RESUME;
 			threadNotification.notify();
 		}
-		//System.out.println("resume E");
 		synchronized (notification) {
-			//System.out.println("resume F");
 			if (playerRequestingAction != null) {
 				try {
 					notification.wait(PLAYER_TIMEOUT);
@@ -796,7 +686,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
-			//System.out.println("resume G");
 		}
 		return requestSucceeded;
 	}
@@ -849,20 +738,15 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static void reset(MediaCodecPlayer player) {
-		//System.out.println("reset A " + player);
 		if (!alive)
 			return;
-		//System.out.println("reset B");
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
-			//System.out.println("reset C");
 			playerRequestingAction = player;
 			requestedAction = ACTION_RESET;
 			threadNotification.notify();
-			//System.out.println("reset D");
 		}
 		synchronized (notification) {
-			//System.out.println("reset E");
 			if (playerRequestingAction != null) {
 				try {
 					notification.wait(PLAYER_TIMEOUT);
@@ -870,7 +754,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
-			//System.out.println("reset F");
 		}
 	}
 
@@ -886,12 +769,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_BUFFERSNORMALIZED, player), SystemClock.uptimeMillis());
 	}
 
-	@SuppressWarnings("deprecation")
-	static void setStereoVolume(float leftVolume, float rightVolume) {
-		MediaContext.leftVolume = leftVolume;
-		MediaContext.rightVolume = rightVolume;
+	static void setVolumeInMillibels(int volumeInMillibels) {
 		synchronized (openSLSync) {
-			//openSLSetVolume(leftVolume, rightVolume);
+			MediaContext.volumeInMillibels = volumeInMillibels;
+			openSLSetVolumeInMillibels(volumeInMillibels);
 		}
 	}
 

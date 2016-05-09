@@ -87,11 +87,9 @@ void initializeOpenSL() {
 
 //this callback handler is called every time a buffer finishes playing
 void openSLBufferCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
-	//__android_log_print(ANDROID_LOG_INFO, "JNI", "openSLBufferCallback A: %d %d", contextVersion, (unsigned int)context);
 	if (bq == bqPlayerBufferQueue && bufferSizes && (void*)contextVersion == context) {
 		const unsigned int thisBufferSizeInFrames = bufferSizes[bufferReadIndex];
 
-		//__android_log_print(ANDROID_LOG_INFO, "JNI", "openSLBufferCallback B: %d %d %d %d", thisBufferSizeInFrames, emptyFrames, emptyBuffers, headPositionInFrames);
 		//this is an always incrementing counter
 		headPositionInFrames += thisBufferSizeInFrames;
 		__sync_add_and_fetch(&emptyFrames, thisBufferSizeInFrames);
@@ -297,6 +295,11 @@ void JNICALL openSLStopAndFlush(JNIEnv* env, jclass clazz) {
 		(*bqPlayerBufferQueue)->Clear(bqPlayerBufferQueue);
 }
 
+void JNICALL openSLSetVolumeInMillibels(JNIEnv* env, jclass clazz, int volumeInMillibels) {
+	if (bqPlayerVolume)
+		(*bqPlayerVolume)->SetVolumeLevel(bqPlayerVolume, (SLmillibel)volumeInMillibels);
+}
+
 unsigned int JNICALL openSLGetHeadPositionInFrames(JNIEnv* env, jclass clazz) {
 	return headPositionInFrames;
 }
@@ -312,9 +315,6 @@ void swapShorts(short* buffer, unsigned int sizeInShorts) {
 int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, unsigned int needsSwap) {
 	const unsigned int localEmptyFrames = emptyFrames;
 
-	//__android_log_print(ANDROID_LOG_INFO, "JNI", "openSLWriteDirect Alpha: %d %d %d", offsetInBytes, sizeInBytes, needsSwap);
-
-	//__android_log_print(ANDROID_LOG_INFO, "JNI", "openSLWriteDirect A: %d %d %d %d", sizeInBytes >> 2, localEmptyFrames, emptyBuffers, writePositionInFrames);
 	if (localEmptyFrames < 256 || !emptyBuffers || !sizeInBytes)
 		return 0;
 
@@ -332,7 +332,6 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 		sizeInFrames = framesAvailableWithoutWrappingAround;
 		sizeInBytes = sizeInFrames << srcChannelCount;
 	}
-	//__android_log_print(ANDROID_LOG_INFO, "JNI", "openSLWriteDirect B: %d %d", sizeInFrames, framesAvailableWithoutWrappingAround);
 
 	short* srcBuffer = (short*)env->GetDirectBufferAddress(jbuffer);
 	if (!srcBuffer)
@@ -349,13 +348,10 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 	if (needsSwap)
 		swapShorts(dstBuffer, sizeInBytes >> 1);
 
-	if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
-		//__android_log_print(ANDROID_LOG_INFO, "JNI", "################ %d", sizeInFrames);
+	if ((effectsEnabled & VIRTUALIZER_ENABLED))
 		processEffects(dstBuffer, sizeInFrames);
-	} else if (effectsEnabled) {
-		//__android_log_print(ANDROID_LOG_INFO, "JNI", "@@@@@@@@@@@@@@@@ %d", sizeInFrames);
+	else if (effectsEnabled)
 		processEqualizer(dstBuffer, sizeInFrames);
-	}
 
 	bufferSizes[bufferWriteIndex] = sizeInFrames;
 
@@ -367,7 +363,6 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 
 	SLresult result;
 
-	//__android_log_print(ANDROID_LOG_INFO, "JNI", "openSLWriteDirect C: %d %d %d %d %d", writePositionInFrames, emptyFrames, sizeInFrames, bufferWriteIndex, emptyBuffers);
 	result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, dstBuffer, sizeInBytes);
 	if (result != SL_RESULT_SUCCESS)
 		return -(abs((int)result));

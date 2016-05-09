@@ -176,6 +176,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLStopAndFlush", "()V", (void*)openSLStopAndFlush},
 		{"openSLRelease", "()V", (void*)openSLRelease},
 		{"openSLTerminate", "()V", (void*)openSLTerminate},
+		{"openSLSetVolumeInMillibels", "(I)V", (void*)openSLSetVolumeInMillibels},
 		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
 		{"openSLWriteDirect", "(Ljava/nio/ByteBuffer;III)I", (void*)openSLWriteDirect},
 		{"openSLWrite", "([BIII)I", (void*)openSLWrite}

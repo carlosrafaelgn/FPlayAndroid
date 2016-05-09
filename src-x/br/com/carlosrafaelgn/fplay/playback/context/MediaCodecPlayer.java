@@ -679,7 +679,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
-		MediaContext.setStereoVolume(leftVolume, rightVolume);
+		MediaContext.setVolumeInMillibels((leftVolume <= 0.0001f) ? MediaContext.SL_MILLIBEL_MIN : ((leftVolume >= 1.0f) ? 0 : (int)(2000.0 * Math.log(leftVolume))));
 	}
 
 	@Override
