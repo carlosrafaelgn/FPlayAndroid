@@ -37,7 +37,6 @@ import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
@@ -48,7 +47,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
 
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -77,8 +75,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	static final class OutputBuffer {
 		public MediaCodecPlayer player;
 		public ByteBuffer byteBuffer;
-		public ShortBuffer shortBuffer;
-		public int index, offset, remaining; //offset and remaining are either in shorts or bytes
+		public int index, offsetInBytes, remainingBytes;
 		public boolean streamOver;
 
 		public void release() {
@@ -93,8 +90,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	private static Field fieldBackingArray, fieldArrayOffset;
-	private static boolean isDirect;
-	private static int needsSwap;
+	public static boolean isDirect;
+	public static int needsSwap;
 	public static boolean tryToProcessNonDirectBuffers;
 
 	private volatile int state, currentPositionInMS, httpStreamReceiverVersion;
@@ -105,7 +102,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	private HttpStreamReceiver httpStreamReceiver;
 	private String path;
 	private ByteBuffer[] inputBuffers, outputBuffers;
-	private ShortBuffer[] outputBuffersAsShort;
 	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, internetStream, buffering, httpStreamBufferingAfterPause;
 	private MediaCodec.BufferInfo bufferInfo;
 	private OnCompletionListener completionListener;
@@ -125,11 +121,15 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		if (path == null)
 			return super.toString();
 		final int i = path.lastIndexOf('/');
-		return ((i < 0) ? path : path.substring(i + 1));
+		return ((i < 0) ? path : path.substring(i + 1)) + " - " + super.toString();
 	}
 
 	int getSampleRate() {
 		return sampleRate;
+	}
+
+	int getChannelCount() {
+		return channelCount;
 	}
 
 	boolean isOutputOver() {
@@ -265,11 +265,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	@SuppressWarnings("deprecation")
 	private void prepareOutputBuffers() {
 		outputBuffers = mediaCodec.getOutputBuffers();
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-			outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
-			for (int i = outputBuffers.length - 1; i >= 0; i--)
-				outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
-		}
 		//we will assume that all buffers are alike
 		isDirect = outputBuffers[0].isDirect();
 		needsSwap = ((outputBuffers[0].order() != ByteOrder.nativeOrder()) ? 1 : 0);
@@ -313,7 +308,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		if (outputOver) {
 			outputBuffer.index = -1;
 			outputBuffer.player = this;
-			outputBuffer.remaining = 0;
+			outputBuffer.remainingBytes = 0;
 			outputBuffer.streamOver = true;
 			return false;
 		}
@@ -344,48 +339,15 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		outputOver = ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0);
 		outputBuffer.streamOver = outputOver;
 		if (index < 0) {
-			outputBuffer.remaining = 0;
+			outputBuffer.remainingBytes = 0;
 			return false;
 		}
 		outputBuffersHaveBeenUsed = true;
-		final ByteBuffer buffer = outputBuffers[index];
-		final int remainingBytes;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			outputBuffer.byteBuffer = buffer;
-			outputBuffer.offset = bufferInfo.offset;
-			remainingBytes = bufferInfo.size - outputBuffer.offset;
-			outputBuffer.remaining = remainingBytes;
-			buffer.limit(bufferInfo.size);
-			buffer.position(outputBuffer.offset);
-		} else {
-			outputBuffer.shortBuffer = outputBuffersAsShort[index];
-			outputBuffer.offset = bufferInfo.offset >> 1; //bytes to shorts
-			outputBuffer.remaining = bufferInfo.size >> 1; //bytes to shorts
-			outputBuffer.shortBuffer.limit(outputBuffer.remaining);
-			outputBuffer.remaining -= outputBuffer.offset;
-			remainingBytes = outputBuffer.remaining << 1;
-			outputBuffer.shortBuffer.position(outputBuffer.offset);
-		}
-		//* one day, when we support mono files, processXXXData will have to convert from mono to
-		//stereo, and not being able to call it when the input file is mono will be considered an
-		//exception
-		if (isDirect) {
-			MediaContext.processDirectData(buffer,
-				bufferInfo.offset,
-				remainingBytes,
-				needsSwap);
-		} else if (tryToProcessNonDirectBuffers) {
-			try {
-				MediaContext.processData((byte[])fieldBackingArray.get(buffer),
-					bufferInfo.offset + (int)fieldArrayOffset.get(buffer),
-					remainingBytes,
-					needsSwap);
-			} catch (Throwable ex) {
-				//well... no processing for you! (we use this flag to avoid generating
-				//several exceptions in sequence, which would slow down the playback)
-				tryToProcessNonDirectBuffers = false;
-			}
-		}
+
+		outputBuffer.byteBuffer = outputBuffers[index];
+		outputBuffer.offsetInBytes = bufferInfo.offset;
+		outputBuffer.remainingBytes = bufferInfo.size - outputBuffer.offsetInBytes;
+
 		if (buffering) {
 			buffering = false;
 			MediaContext.buffersNormalized(this);
@@ -497,7 +459,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		if ((internetStream = (path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:")))) {
 			durationInMS = -1;
 			handler = new Handler(this);
-			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex()), MediaContext.getAudioSessionId(), path);
+			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex()), 1, path);
 		} else {
 			final File file = new File(path);
 			if (!file.isFile() || !file.exists() || file.length() <= 0)
@@ -681,7 +643,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 	@Override
 	public int getAudioSessionId() {
-		return MediaContext.getAudioSessionId();
+		return 1;
 	}
 
 	@Override

@@ -33,6 +33,8 @@
 #include <android/log.h>
 #include <arm_neon.h>
 
+#include "EffectsImplMacros.h"
+
 #define EQUALIZER_ENABLED 1
 #define BASSBOOST_ENABLED 2
 #define VIRTUALIZER_ENABLED 4

@@ -12,7 +12,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := MediaContextJni
-LOCAL_LDLIBS    := -llog
+LOCAL_LDLIBS    := -llog -lOpenSLES
 LOCAL_SRC_FILES := $(LOCAL_PATH)/x/MediaContextJni.cpp
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
 	LOCAL_SRC_FILES += $(LOCAL_PATH)/x/MediaContextJniNeon.cpp.neon

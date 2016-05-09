@@ -56,22 +56,22 @@
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
 
-//when channelCount is 1, the frame size is 2 (16 bits per sample, mono)
-//when channelCount is 2, the frame size is 4 (16 bits per sample, stereo)
-//therefore:
-//frames = bytes >> channelCount
-//bytes = frames << channelCount;
-static unsigned int channelCount, bufferSizeInFrames, writePositionInFrames;
-static short* visualizerBuffer;
-unsigned int sampleRate;
-
 #ifdef FPLAY_ARM
 	#include <errno.h>
 	#include <fcntl.h>
 	static unsigned int neonMode;
 #endif
 
+//when channelCount is 1, the frame size is 2 (16 bits per sample, mono)
+//when channelCount is 2, the frame size is 4 (16 bits per sample, stereo)
+//therefore:
+//frames = bytes >> channelCount
+//bytes = frames << channelCount;
+static unsigned int srcChannelCount, bufferSizeInFrames, writePositionInFrames;
+unsigned int sampleRate;
+
 #include "Effects.h"
+#include "OpenSL.h"
 
 unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #ifdef FPLAY_X86
@@ -83,107 +83,24 @@ unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #endif
 }
 
-void JNICALL setBufferSizeInFrames(JNIEnv* env, jclass clazz, unsigned int bufferSizeInFrames) {
-	::bufferSizeInFrames = bufferSizeInFrames;
-}
+void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, unsigned int srcChannelCount) {
+	::srcChannelCount = srcChannelCount;
 
-void JNICALL configChanged(JNIEnv* env, jclass clazz, int channelCount, int sampleRate) {
-	::channelCount = channelCount;
-	::sampleRate = sampleRate;
-
-	equalizerConfigChanged();
-	virtualizerConfigChanged();
-}
-
-void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, unsigned int writePositionInFrames) {
-	::writePositionInFrames = writePositionInFrames % bufferSizeInFrames;
-
+	resetOpenSL();
 	resetEqualizer();
 	resetVirtualizer();
 }
 
 uint64_t JNICALL startVisualization(JNIEnv* env, jclass clazz) {
-	if (visualizerBuffer)
-		delete visualizerBuffer;
-	visualizerBuffer = new short[bufferSizeInFrames];
-	writePositionInFrames = 0;
-	return (uint64_t)visualizerBuffer;
+	return 0;
 }
 
 uint64_t JNICALL getVisualizationPtr(JNIEnv* env, jclass clazz) {
-	return (uint64_t)visualizerBuffer;
+	return 0;
 }
 
 void JNICALL stopVisualization(JNIEnv* env, jclass clazz) {
-	if (visualizerBuffer) {
-		delete visualizerBuffer;
-		visualizerBuffer = 0;
-	}
-}
 
-void swapShorts(short* buffer, unsigned int sizeInShorts) {
-	while (sizeInShorts) {
-		*buffer = bswap_16(*buffer);
-		buffer++;
-		sizeInShorts++;
-	}
-}
-
-int JNICALL processDirectData(JNIEnv* env, jclass clazz, jobject jbuffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
-	const unsigned int sizeInFrames = (sizeInBytes >> channelCount);
-
-	if (effectsEnabled || visualizerBuffer) {
-		short* const buffer = (short*)env->GetDirectBufferAddress(jbuffer);
-		if (!buffer) {
-			//we must keep track of the write position, no matter what!
-			writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-			return -1;
-		}
-
-		//swap all shorts!!!
-		if (needsSwap)
-			swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
-
-		if ((effectsEnabled & VIRTUALIZER_ENABLED))
-			processEffects((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
-		else if (effectsEnabled)
-			processEqualizer((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
-	}
-
-	//we must keep track of the write position, no matter what!
-	writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-
-	return 0;
-}
-
-int JNICALL processData(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, int needsSwap) {
-	const unsigned int sizeInFrames = (sizeInBytes >> channelCount);
-
-	if (effectsEnabled || visualizerBuffer) {
-		short* const buffer = (short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
-		if (!buffer) {
-			//we must keep track of the write position, no matter what!
-			writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-			return -1;
-		}
-
-		//swap all shorts!!!
-		if (needsSwap)
-			swapShorts((short*)((unsigned char*)buffer + offsetInBytes), sizeInBytes >> 1);
-
-		if ((effectsEnabled & VIRTUALIZER_ENABLED))
-			processEffects((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
-		else if (effectsEnabled)
-			processEqualizer((short*)((unsigned char*)buffer + offsetInBytes), sizeInFrames);
-
-		//if neither effects are enabled, we do not copy data back (JNI_ABORT)
-		env->ReleasePrimitiveArrayCritical(jbuffer, buffer, effectsEnabled ? 0 : JNI_ABORT);
-	}
-
-	//we must keep track of the write position, no matter what!
-	writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-
-	return 0;
 }
 
 #ifdef FPLAY_ARM
@@ -231,18 +148,11 @@ extern "C" {
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 #ifdef FPLAY_ARM
 	checkNeonMode();
-	//__android_log_print(ANDROID_LOG_INFO, "JNI", "Neon mode: %d", neonMode);
 #endif
-	channelCount = 2;
-	sampleRate = 44100;
-	bufferSizeInFrames = 0;
-	writePositionInFrames = 0;
-	visualizerBuffer = 0;
+	initializeOpenSL();
 	initializeEffects();
 
 	JNINativeMethod methodTable[] = {
-		{"setBufferSizeInFrames", "(I)V", (void*)setBufferSizeInFrames},
-		{"configChanged", "(II)V", (void*)configChanged},
 		{"resetFiltersAndWritePosition", "(I)V", (void*)resetFiltersAndWritePosition},
 		{"enableEqualizer", "(I)V", (void*)enableEqualizer},
 		{"isEqualizerEnabled", "()I", (void*)isEqualizerEnabled},
@@ -259,8 +169,16 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"startVisualization", "()J", (void*)startVisualization},
 		{"getVisualizationPtr", "()J", (void*)getVisualizationPtr},
 		{"stopVisualization", "()V", (void*)stopVisualization},
-		{"processDirectData", "(Ljava/nio/ByteBuffer;III)I", (void*)processDirectData},
-		{"processData", "([BIII)I", (void*)processData}
+		{"openSLInitialize", "()I", (void*)openSLInitialize},
+		{"openSLCreate", "(II)I", (void*)openSLCreate},
+		{"openSLPlay", "()I", (void*)openSLPlay},
+		{"openSLPause", "()V", (void*)openSLPause},
+		{"openSLStopAndFlush", "()V", (void*)openSLStopAndFlush},
+		{"openSLRelease", "()V", (void*)openSLRelease},
+		{"openSLTerminate", "()V", (void*)openSLTerminate},
+		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
+		{"openSLWriteDirect", "(Ljava/nio/ByteBuffer;III)I", (void*)openSLWriteDirect},
+		{"openSLWrite", "([BIII)I", (void*)openSLWrite}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)
@@ -274,6 +192,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 	stopVisualization(0, 0);
+	openSLTerminate(0, 0);
 }
 
 }
