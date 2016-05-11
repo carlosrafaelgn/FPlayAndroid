@@ -45,6 +45,7 @@
 
 static unsigned int bassBoostStrength, virtualizerStrength;
 static float equalizerGainRecoveryPerSecondInDB, equalizerGainInDB[BAND_COUNT];
+static EFFECTPROC effectProc;
 
 unsigned int effectsEnabled, equalizerMaxBandCount, effectsGainEnabled;
 int effectsFramesBeforeRecoveringGain, effectsTemp[4] __attribute__((aligned(16)));
@@ -74,6 +75,8 @@ equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 #endif
 
 #include "Filter.h"
+
+void updateEffectProc();
 
 void resetEqualizer() {
 	memset(effectsTemp, 0, 4 * sizeof(int));
@@ -152,6 +155,11 @@ void initializeEffects() {
 
 	resetEqualizer();
 	resetVirtualizer();
+
+	updateEffectProc();
+}
+
+void processNull(short* buffer, unsigned int sizeInFrames) {
 }
 
 void processEqualizer(short* buffer, unsigned int sizeInFrames) {
@@ -175,17 +183,10 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 		equalizerX86();
 
 		floatToShortX86();
-
-		buffer += 2;
 	}
 
 	footerX86();
 #else
-	if (neonMode) {
-		processEqualizerNeon(buffer, sizeInFrames);
-		return;
-	}
-
 	float gainClip = effectsGainClip[0];
 	float maxAbsSample = 0.0f;
 
@@ -198,8 +199,6 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 		equalizerPlain();
 
 		floatToShortPlain();
-
-		buffer += 2;
 	}
 
 	footerPlain();
@@ -231,17 +230,10 @@ void processEffects(short* buffer, unsigned int sizeInFrames) {
 		//*** process virtualizer (inLR)
 
 		floatToShortX86();
-
-		buffer += 2;
 	}
 
 	footerX86();
 #else
-	if (neonMode) {
-		processEffectsNeon(buffer, sizeInFrames);
-		return;
-	}
-
 	float gainClip = effectsGainClip[0];
 	float maxAbsSample = 0.0f;
 
@@ -258,8 +250,6 @@ void processEffects(short* buffer, unsigned int sizeInFrames) {
 		//*** process virtualizer (inLR)
 
 		floatToShortPlain();
-
-		buffer += 2;
 	}
 
 	footerPlain();
@@ -277,6 +267,8 @@ void JNICALL enableEqualizer(JNIEnv* env, jclass clazz, int enabled) {
 		for (int i = 0; i < BAND_COUNT; i++)
 			computeFilter(i);
 	}
+
+	updateEffectProc();
 }
 
 int JNICALL isEqualizerEnabled(JNIEnv* env, jclass clazz) {
@@ -320,6 +312,8 @@ void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, int enabled) {
 	//recompute the entire filter (whether the bass boost is enabled or not)
 	for (int i = 0; i < BAND_COUNT; i++)
 		computeFilter(i);
+
+	updateEffectProc();
 }
 
 int JNICALL isBassBoostEnabled(JNIEnv* env, jclass clazz) {
@@ -351,6 +345,8 @@ void JNICALL enableVirtualizer(JNIEnv* env, jclass clazz, int enabled) {
 		virtualizerConfigChanged();
 	else
 		destroyVirtualizer();
+
+	updateEffectProc();
 }
 
 int JNICALL isVirtualizerEnabled(JNIEnv* env, jclass clazz) {
@@ -367,4 +363,34 @@ void JNICALL setVirtualizerStrength(JNIEnv* env, jclass clazz, int strength) {
 
 int JNICALL getVirtualizerRoundedStrength(JNIEnv* env, jclass clazz) {
 	return virtualizerStrength;
+}
+
+void updateEffectProc() {
+#ifdef FPLAY_X86
+	if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
+		effectProc = processEffects;
+	} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
+		effectProc = processEqualizer;
+	} else {
+		effectProc = processNull;
+	}
+#else
+	if (neonMode) {
+		if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
+			effectProc = processEffectsNeon;
+		} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
+			effectProc = processEqualizerNeon;
+		} else {
+			effectProc = processNull;
+		}
+	} else {
+		if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
+			effectProc = processEffects;
+		} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
+			effectProc = processEqualizer;
+		} else {
+			effectProc = processNull;
+		}
+	}
+#endif
 }

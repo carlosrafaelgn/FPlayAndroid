@@ -331,7 +331,7 @@ void swapShorts(short* buffer, unsigned int sizeInShorts) {
 }
 
 int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, unsigned int needsSwap) {
-	if (!fullBuffer || !bqPlayerBufferQueue)
+	if (!fullBuffer || !bqPlayerBufferQueue || !jbuffer)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
 	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
@@ -387,10 +387,7 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 	if (needsSwap)
 		swapShorts(dstBuffer, sizeInBytes >> 1);
 
-	if ((effectsEnabled & VIRTUALIZER_ENABLED))
-		processEffects(dstBuffer, sizeInFrames);
-	else if (effectsEnabled)
-		processEqualizer(dstBuffer, sizeInFrames);
+	effectProc(dstBuffer, sizeInFrames);
 
 	writePositionInFrames = bufferDescriptor->startOffsetInFrames + sizeInFrames;
 	if (writePositionInFrames >= bufferSizeInFrames)
@@ -412,29 +409,46 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 }
 
 int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, int needsSwap) {
-	/*const unsigned int localEmptyFrames = emptyFrames;
+	if (!fullBuffer || !bqPlayerBufferQueue || !jbuffer)
+		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
 	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
 
-	if (localEmptyFrames < sizeInFrames || !emptyBuffers || !sizeInBytes)
+	//keep each buffer within a reasonable size limit (we divide by 2 instead of performing a
+	//simple subtraction, in order to try to keep the next buffers' sizes reasonably large as well)
+	while (sizeInFrames > 1536) {
+		sizeInFrames >>= 1;
+		sizeInBytes = sizeInFrames << srcChannelCount;
+	}
+
+	const unsigned int localEmptyFrames = emptyFrames;
+
+	if (sizeInFrames > localEmptyFrames || !sizeInFrames || !emptyBuffers)
 		return 0;
 
-	if (!fullBuffer || !bqPlayerBufferQueue)
-		return -SL_RESULT_PRECONDITIONS_VIOLATED;
+	BufferDescription* const bufferDescriptor = bufferDescriptors + bufferWriteIndex;
 
-	//keep each buffer within a reasonable size limit (we divide by 2 instead of simple subtraction,
-	//in order to try to keep the next buffers' sizes reasonable as well)
-	while (sizeInFrames > 512)
-		sizeInFrames >>= 1;
+	//let's try to prevent very small buffers close to the end of fullBuffer
+	//for example: localEmptyFrames = 500, framesAvailableAtTheEndWithoutWrappingAround = 10, sizeInFrames = 200
+	//if we didn't care, this buffer would be 10 frames long, and the next, 190 frames long...
+	const unsigned int framesAvailableAtTheEndWithoutWrappingAround = bufferSizeInFrames - writePositionInFrames;
+	if (sizeInFrames > framesAvailableAtTheEndWithoutWrappingAround) {
+		//for sure there is not enough room at the beginning
+		if (framesAvailableAtTheEndWithoutWrappingAround >= localEmptyFrames)
+			return 0;
 
-	//unfortunately, we can't do anything about very small buffers close to the end of fullBuffer
-	//for example: localEmptyFrames = 500, framesAvailableWithoutWrappingAround = 10, sizeInFrames = 200
-	//this buffer will be 10 frames long, and the next, 190 frames long...
-	const unsigned int framesAvailableWithoutWrappingAround = bufferSizeInFrames - writePositionInFrames;
-	if (sizeInFrames > framesAvailableWithoutWrappingAround)
-		sizeInFrames = framesAvailableWithoutWrappingAround;
+		//let's check if there is enough room at the beginning
+		const unsigned int framesAvailableAtTheBeginning = localEmptyFrames - framesAvailableAtTheEndWithoutWrappingAround;
+		if (sizeInFrames > framesAvailableAtTheBeginning)
+			return 0;
 
-	sizeInBytes = sizeInFrames << srcChannelCount;
+		bufferDescriptor->startOffsetInFrames = 0;
+		bufferDescriptor->commitedFrames = sizeInFrames + framesAvailableAtTheEndWithoutWrappingAround;
+	} else {
+		bufferDescriptor->startOffsetInFrames = writePositionInFrames;
+		bufferDescriptor->commitedFrames = sizeInFrames;
+	}
+	bufferDescriptor->sizeInFrames = sizeInFrames;
 
 	short* const buffer = (short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
 	if (!buffer)
@@ -443,7 +457,7 @@ int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 	short* const srcBuffer = (short*)((unsigned char*)buffer + offsetInBytes);
 
 	//we always output stereo audio, regardless of the input config
-	short* const dstBuffer = (short*)(fullBuffer + (writePositionInFrames << 2));
+	short* const dstBuffer = (short*)(fullBuffer + (bufferDescriptor->startOffsetInFrames << 2));
 
 	//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames
 	memcpy(dstBuffer, srcBuffer, sizeInBytes);
@@ -453,17 +467,16 @@ int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 	if (needsSwap)
 		swapShorts(dstBuffer, sizeInBytes >> 1);
 
-	if ((effectsEnabled & VIRTUALIZER_ENABLED))
-		processEffects(dstBuffer, sizeInFrames);
-	else if (effectsEnabled)
-		processEqualizer(dstBuffer, sizeInFrames);
+	effectProc(dstBuffer, sizeInFrames);
 
-	bufferSizes[bufferWriteIndex] = sizeInFrames;
+	writePositionInFrames = bufferDescriptor->startOffsetInFrames + sizeInFrames;
+	if (writePositionInFrames >= bufferSizeInFrames)
+		writePositionInFrames -= bufferSizeInFrames;
+	__sync_add_and_fetch(&emptyFrames, (unsigned int)(-bufferDescriptor->commitedFrames));
 
-	writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-	__sync_add_and_fetch(&emptyFrames, (unsigned int)(-sizeInFrames));
-
-	bufferWriteIndex = (bufferWriteIndex + 1) & (bufferCount - 1);
+	bufferWriteIndex = bufferWriteIndex + 1;
+	if (bufferWriteIndex >= bufferCount)
+		bufferWriteIndex = 0;
 	__sync_add_and_fetch(&emptyBuffers, (unsigned int)(-1));
 
 	SLresult result;
@@ -472,5 +485,5 @@ int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 	if (result != SL_RESULT_SUCCESS)
 		return -(abs((int)result));
 
-	return sizeInBytes;*/return 0;
+	return sizeInBytes;
 }
