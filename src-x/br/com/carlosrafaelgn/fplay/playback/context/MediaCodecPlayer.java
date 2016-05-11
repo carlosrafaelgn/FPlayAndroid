@@ -79,6 +79,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		public boolean streamOver;
 
 		public void release() {
+			remainingBytes = 0;
 			if (player != null) {
 				if (index >= 0) {
 					player.releaseOutputBuffer(index);
@@ -299,7 +300,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	void notifyUnderrun() {
 		if (!buffering) {
 			buffering = true;
-			MediaContext.bufferUnderrun(this);
+			MediaContext.bufferingStart(this);
 		}
 	}
 
@@ -350,7 +351,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 		if (buffering) {
 			buffering = false;
-			MediaContext.buffersNormalized(this);
+			MediaContext.bufferingEnd(this);
 		}
 		return true;
 	}

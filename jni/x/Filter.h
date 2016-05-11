@@ -41,10 +41,13 @@ float getBandGainInDB(unsigned int band) {
 						((float)bassBoostStrength / 167.0f));
 		else
 			return ((effectsEnabled & EQUALIZER_ENABLED) ?
-					//bassBoostStrength 0    -> -0dB
-					//bassBoostStrength 1000 -> -6dB
-					(equalizerGainInDB[band] - ((float)bassBoostStrength / 167.0f)) :
-						-((float)bassBoostStrength / 167.0f));
+					equalizerGainInDB[band] :
+						0.0f);
+			//return ((effectsEnabled & EQUALIZER_ENABLED) ?
+			//		//bassBoostStrength 0    -> -0dB
+			//		//bassBoostStrength 1000 -> -6dB
+			//		(equalizerGainInDB[band] - ((float)bassBoostStrength / 167.0f)) :
+			//			-((float)bassBoostStrength / 167.0f));
 	}
 	return equalizerGainInDB[band];
 }

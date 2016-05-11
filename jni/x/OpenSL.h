@@ -51,8 +51,14 @@ static SLPlayItf bqPlayerPlay;
 static SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue;
 static SLVolumeItf bqPlayerVolume;
 
+struct BufferDescription {
+	unsigned int sizeInFrames;
+	unsigned int startOffsetInFrames;
+	unsigned int commitedFrames;
+};
+
 static unsigned char* fullBuffer;
-static unsigned int* bufferSizes;
+static BufferDescription* bufferDescriptors;
 static unsigned int headPositionInFrames, emptyFrames, bufferCount, bufferWriteIndex, bufferReadIndex, emptyBuffers;
 static size_t contextVersion;
 
@@ -75,7 +81,7 @@ void initializeOpenSL() {
 	bqPlayerVolume = 0;
 
 	fullBuffer = 0;
-	bufferSizes = 0;
+	bufferDescriptors = 0;
 	contextVersion = 0;
 	srcChannelCount = 2;
 	sampleRate = 44100;
@@ -87,14 +93,16 @@ void initializeOpenSL() {
 
 //this callback handler is called every time a buffer finishes playing
 void openSLBufferCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
-	if (bq == bqPlayerBufferQueue && bufferSizes && (void*)contextVersion == context) {
-		const unsigned int thisBufferSizeInFrames = bufferSizes[bufferReadIndex];
+	if (bq == bqPlayerBufferQueue && bufferDescriptors && (void*)contextVersion == context) {
+		const BufferDescription thisBuffer = bufferDescriptors[bufferReadIndex];
 
 		//this is an always incrementing counter
-		headPositionInFrames += thisBufferSizeInFrames;
-		__sync_add_and_fetch(&emptyFrames, thisBufferSizeInFrames);
+		headPositionInFrames += thisBuffer.sizeInFrames;
+		__sync_add_and_fetch(&emptyFrames, thisBuffer.commitedFrames);
 
-		bufferReadIndex = (bufferReadIndex + 1) % bufferCount;
+		bufferReadIndex = bufferReadIndex + 1;
+		if (bufferReadIndex >= bufferCount)
+			bufferReadIndex = 0;
 		__sync_add_and_fetch(&emptyBuffers, 1);
 	}
 }
@@ -103,6 +111,12 @@ void JNICALL openSLRelease(JNIEnv* env, jclass clazz) {
 	contextVersion++;
 
 	//destroy buffer queue audio player object, and invalidate all associated interfaces
+	if (bqPlayerPlay)
+		(*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_STOPPED);
+
+	if (bqPlayerBufferQueue)
+		(*bqPlayerBufferQueue)->Clear(bqPlayerBufferQueue);
+
 	if (bqPlayerObject) {
 		(*bqPlayerObject)->Destroy(bqPlayerObject);
 		bqPlayerObject = 0;
@@ -110,18 +124,6 @@ void JNICALL openSLRelease(JNIEnv* env, jclass clazz) {
 		bqPlayerBufferQueue = 0;
 		bqPlayerVolume = 0;
 	}
-
-	if (fullBuffer) {
-		delete fullBuffer;
-		fullBuffer = 0;
-	}
-
-	if (bufferSizes) {
-		delete bufferSizes;
-		bufferSizes = 0;
-	}
-
-	bufferCount = 0;
 }
 
 void JNICALL openSLTerminate(JNIEnv* env, jclass clazz) {
@@ -139,9 +141,21 @@ void JNICALL openSLTerminate(JNIEnv* env, jclass clazz) {
 		engineObject = 0;
 		engineEngine = 0;
 	}
+
+	if (fullBuffer) {
+		delete fullBuffer;
+		fullBuffer = 0;
+	}
+
+	if (bufferDescriptors) {
+		delete bufferDescriptors;
+		bufferDescriptors = 0;
+	}
+
+	bufferCount = 0;
 }
 
-int JNICALL openSLInitialize(JNIEnv* env, jclass clazz) {
+int JNICALL openSLInitialize(JNIEnv* env, jclass clazz, unsigned int bufferSizeInFrames) {
 	openSLTerminate(env, clazz);
 
 	equalizerConfigChanged();
@@ -173,16 +187,6 @@ int JNICALL openSLInitialize(JNIEnv* env, jclass clazz) {
 	result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
 	if (result != SL_RESULT_SUCCESS)
 		return result;
-}
-
-int JNICALL openSLCreate(JNIEnv* env, jclass clazz, unsigned int sampleRate, unsigned int bufferSizeInFrames) {
-	openSLRelease(env, clazz);
-
-	if (::sampleRate != sampleRate) {
-		::sampleRate = sampleRate;
-		equalizerConfigChanged();
-		virtualizerConfigChanged();
-	}
 
 	::bufferSizeInFrames = bufferSizeInFrames;
 
@@ -191,13 +195,27 @@ int JNICALL openSLCreate(JNIEnv* env, jclass clazz, unsigned int sampleRate, uns
 	if (!fullBuffer)
 		return SL_RESULT_MEMORY_FAILURE;
 
-	bufferCount = (bufferSizeInFrames + 255) >> 8;
+	bufferCount = (bufferSizeInFrames + 511) >> 9;
 	if (bufferCount > 256)
 		bufferCount = 256;
 
-	bufferSizes = new unsigned int[bufferCount];
-	if (!bufferSizes)
+	bufferDescriptors = new BufferDescription[bufferCount];
+	if (!bufferDescriptors)
 		return SL_RESULT_MEMORY_FAILURE;
+
+	resetOpenSL();
+
+	return 0;
+}
+
+int JNICALL openSLCreate(JNIEnv* env, jclass clazz, unsigned int sampleRate) {
+	openSLRelease(env, clazz);
+
+	if (::sampleRate != sampleRate) {
+		::sampleRate = sampleRate;
+		equalizerConfigChanged();
+		virtualizerConfigChanged();
+	}
 
 	resetOpenSL();
 
@@ -267,32 +285,32 @@ int JNICALL openSLCreate(JNIEnv* env, jclass clazz, unsigned int sampleRate, uns
 }
 
 int JNICALL openSLPlay(JNIEnv* env, jclass clazz) {
-	if (!bqPlayerPlay)
-		return SL_RESULT_PRECONDITIONS_VIOLATED;
-
-	SLresult result;
-
 	//set the player's state to playing
-	result = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
-	if (result != SL_RESULT_SUCCESS)
-		return result;
+	return (bqPlayerPlay ? (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING) : SL_RESULT_PRECONDITIONS_VIOLATED);
+}
+
+int JNICALL openSLPause(JNIEnv* env, jclass clazz) {
+	//set the player's state to paused
+	return (bqPlayerPlay ? (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PAUSED) : 0);
+}
+
+int JNICALL openSLStopAndFlush(JNIEnv* env, jclass clazz) {
+	//set the player's state to stopped
+	if (bqPlayerPlay) {
+		const SLresult result = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_STOPPED);
+		if (result)
+			return result;
+	}
+
+	if (bqPlayerBufferQueue) {
+		(*bqPlayerBufferQueue)->Clear(bqPlayerBufferQueue);
+
+		//register callback on the buffer queue
+		contextVersion++;
+		return (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, openSLBufferCallback, (void*)contextVersion);
+	}
 
 	return 0;
-}
-
-void JNICALL openSLPause(JNIEnv* env, jclass clazz) {
-	//set the player's state to paused
-	if (bqPlayerPlay)
-		(*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PAUSED);
-}
-
-void JNICALL openSLStopAndFlush(JNIEnv* env, jclass clazz) {
-	//set the player's state to paused
-	if (bqPlayerPlay)
-		(*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PAUSED);
-
-	if (bqPlayerBufferQueue)
-		(*bqPlayerBufferQueue)->Clear(bqPlayerBufferQueue);
 }
 
 void JNICALL openSLSetVolumeInMillibels(JNIEnv* env, jclass clazz, int volumeInMillibels) {
@@ -313,25 +331,46 @@ void swapShorts(short* buffer, unsigned int sizeInShorts) {
 }
 
 int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, unsigned int needsSwap) {
-	const unsigned int localEmptyFrames = emptyFrames;
-
-	if (localEmptyFrames < 256 || !emptyBuffers || !sizeInBytes)
-		return 0;
-
 	if (!fullBuffer || !bqPlayerBufferQueue)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
 	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
-	if (sizeInFrames > localEmptyFrames) {
-		sizeInFrames = localEmptyFrames;
+
+	//keep each buffer within a reasonable size limit (we divide by 2 instead of performing a
+	//simple subtraction, in order to try to keep the next buffers' sizes reasonably large as well)
+	while (sizeInFrames > 1536) {
+		sizeInFrames >>= 1;
 		sizeInBytes = sizeInFrames << srcChannelCount;
 	}
 
-	const unsigned int framesAvailableWithoutWrappingAround = bufferSizeInFrames - writePositionInFrames;
-	if (sizeInFrames > framesAvailableWithoutWrappingAround) {
-		sizeInFrames = framesAvailableWithoutWrappingAround;
-		sizeInBytes = sizeInFrames << srcChannelCount;
+	const unsigned int localEmptyFrames = emptyFrames;
+
+	if (sizeInFrames > localEmptyFrames || !sizeInFrames || !emptyBuffers)
+		return 0;
+
+	BufferDescription* const bufferDescriptor = bufferDescriptors + bufferWriteIndex;
+
+	//let's try to prevent very small buffers close to the end of fullBuffer
+	//for example: localEmptyFrames = 500, framesAvailableAtTheEndWithoutWrappingAround = 10, sizeInFrames = 200
+	//if we didn't care, this buffer would be 10 frames long, and the next, 190 frames long...
+	const unsigned int framesAvailableAtTheEndWithoutWrappingAround = bufferSizeInFrames - writePositionInFrames;
+	if (sizeInFrames > framesAvailableAtTheEndWithoutWrappingAround) {
+		//for sure there is not enough room at the beginning
+		if (framesAvailableAtTheEndWithoutWrappingAround >= localEmptyFrames)
+			return 0;
+
+		//let's check if there is enough room at the beginning
+		const unsigned int framesAvailableAtTheBeginning = localEmptyFrames - framesAvailableAtTheEndWithoutWrappingAround;
+		if (sizeInFrames > framesAvailableAtTheBeginning)
+			return 0;
+
+		bufferDescriptor->startOffsetInFrames = 0;
+		bufferDescriptor->commitedFrames = sizeInFrames + framesAvailableAtTheEndWithoutWrappingAround;
+	} else {
+		bufferDescriptor->startOffsetInFrames = writePositionInFrames;
+		bufferDescriptor->commitedFrames = sizeInFrames;
 	}
+	bufferDescriptor->sizeInFrames = sizeInFrames;
 
 	short* srcBuffer = (short*)env->GetDirectBufferAddress(jbuffer);
 	if (!srcBuffer)
@@ -340,7 +379,7 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 	srcBuffer = (short*)((unsigned char*)srcBuffer + offsetInBytes);
 
 	//we always output stereo audio, regardless of the input config
-	short* const dstBuffer = (short*)(fullBuffer + (writePositionInFrames << 2));
+	short* const dstBuffer = (short*)(fullBuffer + (bufferDescriptor->startOffsetInFrames << 2));
 
 	//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames
 	memcpy(dstBuffer, srcBuffer, sizeInBytes);
@@ -353,12 +392,14 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 	else if (effectsEnabled)
 		processEqualizer(dstBuffer, sizeInFrames);
 
-	bufferSizes[bufferWriteIndex] = sizeInFrames;
+	writePositionInFrames = bufferDescriptor->startOffsetInFrames + sizeInFrames;
+	if (writePositionInFrames >= bufferSizeInFrames)
+		writePositionInFrames -= bufferSizeInFrames;
+	__sync_add_and_fetch(&emptyFrames, (unsigned int)(-bufferDescriptor->commitedFrames));
 
-	writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
-	__sync_add_and_fetch(&emptyFrames, (unsigned int)(-sizeInFrames));
-
-	bufferWriteIndex = (bufferWriteIndex + 1) % bufferCount;
+	bufferWriteIndex = bufferWriteIndex + 1;
+	if (bufferWriteIndex >= bufferCount)
+		bufferWriteIndex = 0;
 	__sync_add_and_fetch(&emptyBuffers, (unsigned int)(-1));
 
 	SLresult result;
@@ -371,25 +412,29 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 }
 
 int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, int needsSwap) {
-	const unsigned int localEmptyFrames = emptyFrames;
+	/*const unsigned int localEmptyFrames = emptyFrames;
 
-	if (localEmptyFrames < 256 || !emptyBuffers || !sizeInBytes)
+	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
+
+	if (localEmptyFrames < sizeInFrames || !emptyBuffers || !sizeInBytes)
 		return 0;
 
 	if (!fullBuffer || !bqPlayerBufferQueue)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
-	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
-	if (sizeInFrames > localEmptyFrames) {
-		sizeInFrames = localEmptyFrames;
-		sizeInBytes = sizeInFrames << srcChannelCount;
-	}
+	//keep each buffer within a reasonable size limit (we divide by 2 instead of simple subtraction,
+	//in order to try to keep the next buffers' sizes reasonable as well)
+	while (sizeInFrames > 512)
+		sizeInFrames >>= 1;
 
+	//unfortunately, we can't do anything about very small buffers close to the end of fullBuffer
+	//for example: localEmptyFrames = 500, framesAvailableWithoutWrappingAround = 10, sizeInFrames = 200
+	//this buffer will be 10 frames long, and the next, 190 frames long...
 	const unsigned int framesAvailableWithoutWrappingAround = bufferSizeInFrames - writePositionInFrames;
-	if (sizeInFrames > framesAvailableWithoutWrappingAround) {
+	if (sizeInFrames > framesAvailableWithoutWrappingAround)
 		sizeInFrames = framesAvailableWithoutWrappingAround;
-		sizeInBytes = sizeInFrames << srcChannelCount;
-	}
+
+	sizeInBytes = sizeInFrames << srcChannelCount;
 
 	short* const buffer = (short*)env->GetPrimitiveArrayCritical(jbuffer, 0);
 	if (!buffer)
@@ -418,7 +463,7 @@ int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 	writePositionInFrames = (writePositionInFrames + sizeInFrames) % bufferSizeInFrames;
 	__sync_add_and_fetch(&emptyFrames, (unsigned int)(-sizeInFrames));
 
-	bufferWriteIndex = (bufferWriteIndex + 1) % bufferCount;
+	bufferWriteIndex = (bufferWriteIndex + 1) & (bufferCount - 1);
 	__sync_add_and_fetch(&emptyBuffers, (unsigned int)(-1));
 
 	SLresult result;
@@ -427,5 +472,5 @@ int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 	if (result != SL_RESULT_SUCCESS)
 		return -(abs((int)result));
 
-	return sizeInBytes;
+	return sizeInBytes;*/return 0;
 }
