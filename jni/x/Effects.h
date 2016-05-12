@@ -71,6 +71,7 @@ equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 	//https://software.intel.com/sites/landingpage/IntrinsicsGuide/
 #else
 	extern void processEqualizerNeon(short* buffer, unsigned int sizeInFrames);
+	extern void processVirtualizerNeon(short* buffer, unsigned int sizeInFrames);
 	extern void processEffectsNeon(short* buffer, unsigned int sizeInFrames);
 #endif
 
@@ -90,6 +91,8 @@ void resetVirtualizer() {
 }
 
 void equalizerConfigChanged() {
+	//this only happens in two moments: upon initialization and when the sample rate changes
+
 	if (sampleRate > (2 * 16000))
 		equalizerMaxBandCount = 10;
 	else if (sampleRate > (2 * 8000))
@@ -121,6 +124,8 @@ void recomputeVirtualizer() {
 }
 
 void virtualizerConfigChanged() {
+	//this only happens in two moments: upon initialization and when the sample rate changes
+
 	if (!(effectsEnabled & VIRTUALIZER_ENABLED))
 		return;
 
@@ -205,6 +210,49 @@ void processEqualizer(short* buffer, unsigned int sizeInFrames) {
 #endif
 }
 
+void processVirtualizer(short* buffer, unsigned int sizeInFrames) {
+	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+
+#ifdef FPLAY_X86
+	__m128 gainClip = _mm_load_ps(effectsGainClip);
+	__m128 maxAbsSample, tmp2;
+	maxAbsSample = _mm_xor_ps(maxAbsSample, maxAbsSample);
+	tmp2 = _mm_xor_ps(tmp2, tmp2);
+
+	while ((sizeInFrames--)) {
+		float *samples = equalizerSamples;
+
+		effectsTemp[0] = (int)buffer[0];
+		effectsTemp[1] = (int)buffer[1];
+		//inLR = { L, R, xxx, xxx }
+		__m128 inLR;
+		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
+
+		virtualizerX86();
+
+		floatToShortX86();
+	}
+
+	footerX86();
+#else
+	float gainClip = effectsGainClip[0];
+	float maxAbsSample = 0.0f;
+
+	//no neon support... :(
+	while ((sizeInFrames--)) {
+		float *samples = equalizerSamples;
+
+		float inL = (float)buffer[0], inR = (float)buffer[1];
+
+		virtualizerPlain();
+
+		floatToShortPlain();
+	}
+
+	footerPlain();
+#endif
+}
+
 void processEffects(short* buffer, unsigned int sizeInFrames) {
 	effectsFramesBeforeRecoveringGain -= sizeInFrames;
 
@@ -223,11 +271,9 @@ void processEffects(short* buffer, unsigned int sizeInFrames) {
 		__m128 inLR;
 		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
 
-		if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
-			equalizerX86();
-		}
+		equalizerX86();
 
-		//*** process virtualizer (inLR)
+		virtualizerX86();
 
 		floatToShortX86();
 	}
@@ -243,11 +289,9 @@ void processEffects(short* buffer, unsigned int sizeInFrames) {
 
 		float inL = (float)buffer[0], inR = (float)buffer[1];
 
-		if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
-			equalizerPlain();
-		}
+		equalizerPlain();
 
-		//*** process virtualizer (inLR)
+		virtualizerPlain();
 
 		floatToShortPlain();
 	}
@@ -368,7 +412,10 @@ int JNICALL getVirtualizerRoundedStrength(JNIEnv* env, jclass clazz) {
 void updateEffectProc() {
 #ifdef FPLAY_X86
 	if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
-		effectProc = processEffects;
+		if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
+			effectProc = processEffects;
+		else
+			effectProc = processVirtualizer;
 	} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
 		effectProc = processEqualizer;
 	} else {
@@ -377,7 +424,10 @@ void updateEffectProc() {
 #else
 	if (neonMode) {
 		if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
-			effectProc = processEffectsNeon;
+			if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
+				effectProc = processEffectsNeon;
+			else
+				effectProc = processVirtualizerNeon;
 		} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
 			effectProc = processEqualizerNeon;
 		} else {
@@ -385,7 +435,10 @@ void updateEffectProc() {
 		}
 	} else {
 		if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
-			effectProc = processEffects;
+			if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
+				effectProc = processEffects;
+			else
+				effectProc = processVirtualizer;
 		} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
 			effectProc = processEqualizer;
 		} else {

@@ -269,6 +269,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static IMediaPlayer localPlayer;
 
 	private static class CoreHandler extends Handler {
+		@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
 			switch (msg.what) {
@@ -321,11 +322,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_nextMayHaveChanged((Song)msg.obj);
 				break;
 			case MSG_ENABLE_EFFECTS:
-				if (ExternalFx.isEnabled())
+				if (!BuildConfig.X) {
+					if (ExternalFx.isEnabled())
+						ExternalFx._setEnabled(false);
+					else
+						ExternalFx._release();
 					ExternalFx._setEnabled(false);
-				else
-					ExternalFx._release();
-				ExternalFx._setEnabled(false);
+				}
 				_enableEffects(msg.arg1, msg.arg2, (Runnable)msg.obj);
 				break;
 			case MSG_COMMIT_EQUALIZER:
@@ -342,6 +345,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_reinitializeEffects();
 				break;
 			case MSG_ENABLE_EXTERNAL_FX:
+				if (BuildConfig.X)
+					break;
+
 				if (msg.arg1 != 0) {
 					Equalizer._release();
 					BassBoost._release();
@@ -545,6 +551,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				registerMediaRouter();
 
 			thread = new Thread("Player Core Thread") {
+				@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 				@Override
 				public void run() {
 					Looper.prepare();
@@ -554,7 +561,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Equalizer._checkSupport();
 					BassBoost._checkSupport();
 					Virtualizer._checkSupport();
-					ExternalFx._checkSupport();
+					if (!BuildConfig.X)
+						ExternalFx._checkSupport();
 					_checkAudioSink(false, false, false);
 					audioSinkUsedInEffects = audioSink;
 					_reinitializeEffects();
@@ -1001,6 +1009,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		resetHeadsetHook();
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _fullCleanup() {
 		_partialCleanup();
 		silenceMode = SILENCE_NORMAL;
@@ -1009,7 +1018,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer._release();
 		BassBoost._release();
 		Virtualizer._release();
-		ExternalFx._release();
+		if (!BuildConfig.X)
+			ExternalFx._release();
 	}
 
 	private static void _initializePlayers() {
@@ -1483,6 +1493,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			MainHandler.postToMainThread(callback);
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _reinitializeEffects() {
 		audioSinkUsedInEffects = audioSink;
 		//don't even ask.......
@@ -1490,12 +1501,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer._release();
 		BassBoost._release();
 		Virtualizer._release();
-		ExternalFx._release();
-		if (ExternalFx.isEnabled() && ExternalFx.isSupported()) {
-			ExternalFx._initialize();
-			ExternalFx._setEnabled(true);
-			if (ExternalFx.isEnabled() && ExternalFx.isSupported())
-				return;
+		if (!BuildConfig.X) {
+			ExternalFx._release();
+			if (ExternalFx.isEnabled() && ExternalFx.isSupported()) {
+				ExternalFx._initialize();
+				ExternalFx._setEnabled(true);
+				if (ExternalFx.isEnabled() && ExternalFx.isSupported())
+					return;
+			}
 		}
 		if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
 			Equalizer._initialize();
@@ -2123,6 +2136,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return ((opts == null) ? new SerializableMap() : opts);
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void loadConfig() {
 		final SerializableMap opts = loadConfigFromFile();
 		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
@@ -2243,9 +2257,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer.loadConfig(opts);
 		BassBoost.loadConfig(opts);
 		Virtualizer.loadConfig(opts);
-		ExternalFx.loadConfig(opts);
+		if (!BuildConfig.X)
+			ExternalFx.loadConfig(opts);
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	public static void saveConfig(boolean saveSongs) {
 		final SerializableMap opts = new SerializableMap(96);
 		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
@@ -2334,7 +2350,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		Equalizer.saveConfig(opts);
 		BassBoost.saveConfig(opts);
 		Virtualizer.saveConfig(opts);
-		ExternalFx.saveConfig(opts);
+		if (!BuildConfig.X)
+			ExternalFx.saveConfig(opts);
 		opts.serialize("_Player");
 		if (saveSongs)
 			songs.serialize();

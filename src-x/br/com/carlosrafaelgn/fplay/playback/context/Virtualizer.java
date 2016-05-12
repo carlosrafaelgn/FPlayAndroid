@@ -38,7 +38,7 @@ public final class Virtualizer {
 	}
 
 	public void setStrength(short strength) {
-		MediaContext.setVirtualizerStrength((int)strength);
+		MediaContext.setVirtualizerStrength_((int)strength);
 	}
 
 	public short getRoundedStrength() {
@@ -46,7 +46,7 @@ public final class Virtualizer {
 	}
 
 	public int setEnabled(boolean enabled) {
-		MediaContext.enableVirtualizer(enabled ? 1 : 0);
+		MediaContext.enableVirtualizer_(enabled ? 1 : 0);
 		return 0;
 	}
 
@@ -55,6 +55,6 @@ public final class Virtualizer {
 	}
 
 	public void release() {
-		MediaContext.enableVirtualizer(0);
+		MediaContext.enableVirtualizer_(0);
 	}
 }

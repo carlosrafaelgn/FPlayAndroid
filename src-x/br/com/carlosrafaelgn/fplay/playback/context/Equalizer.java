@@ -69,17 +69,17 @@ public final class Equalizer {
 	}
 
 	public void setBandLevel(short band, short level) {
-		MediaContext.setEqualizerBandLevel(band, level);
+		MediaContext.setEqualizerBandLevel_(band, level);
 	}
 
 	public void setProperties(short numBands, short[] bandLevels) {
 		if (numBands != 10 || bandLevels == null || bandLevels.length < 10)
 			return;
-		MediaContext.setEqualizerBandLevels(bandLevels);
+		MediaContext.setEqualizerBandLevels_(bandLevels);
 	}
 
 	public int setEnabled(boolean enabled) {
-		MediaContext.enableEqualizer(enabled ? 1 : 0);
+		MediaContext.enableEqualizer_(enabled ? 1 : 0);
 		return 0;
 	}
 
@@ -88,6 +88,6 @@ public final class Equalizer {
 	}
 
 	public void release() {
-		MediaContext.enableEqualizer(0);
+		MediaContext.enableEqualizer_(0);
 	}
 }

@@ -69,6 +69,26 @@ void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
 	footerNeon();
 }
 
+void processVirtualizerNeon(short* buffer, unsigned int sizeInFrames) {
+	float32x2_t gainClip = vld1_f32(effectsGainClip);
+	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
+
+	while ((sizeInFrames--)) {
+		float *samples = equalizerSamples;
+
+		effectsTemp[0] = (int)buffer[0];
+		effectsTemp[1] = (int)buffer[1];
+		//inLR = { L, R }
+		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
+
+		virtualizerNeon();
+
+		floatToShortNeon();
+	}
+
+	footerNeon();
+}
+
 void processEffectsNeon(short* buffer, unsigned int sizeInFrames) {
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
@@ -81,11 +101,9 @@ void processEffectsNeon(short* buffer, unsigned int sizeInFrames) {
 		//inLR = { L, R }
 		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
 
-		if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
-			equalizerNeon();
-		}
+		equalizerNeon();
 
-		//*** process virtualizer (inLR)
+		virtualizerNeon();
 
 		floatToShortNeon();
 	}

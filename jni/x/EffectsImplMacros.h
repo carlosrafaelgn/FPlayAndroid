@@ -33,6 +33,9 @@
 
 typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
+#define MAX_ALLOWED_SAMPLE_VALUE 32768.0f
+#define CLIPPED_SAMPLE_VALUE 30000.0f //30000 / 32768 = 0.915 = -0.77dB
+
 #define x_n1_L samples[0]
 #define x_n1_R samples[1]
 #define y_n1_L samples[2]
@@ -109,6 +112,8 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 		inLR = tmp; \
 	}
 
+#define virtualizerX86()
+
 #define floatToShortX86() \
 	/*
 	inL *= gainClip;
@@ -158,8 +163,8 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	const float maxAbsSampleMono = ((((float*)effectsTemp)[0] > ((float*)effectsTemp)[1]) ? ((float*)effectsTemp)[0] : ((float*)effectsTemp)[1]); \
 	float gainClipMono; \
 	_mm_store_ss(&gainClipMono, gainClip); \
-	if (maxAbsSampleMono > 32768.0f) { \
-		const float newGainClip = 33000.0f / maxAbsSampleMono; \
+	if (maxAbsSampleMono > MAX_ALLOWED_SAMPLE_VALUE) { \
+		const float newGainClip = CLIPPED_SAMPLE_VALUE / maxAbsSampleMono; \
 		if (newGainClip < gainClipMono) { \
 			effectsGainClip[0] = newGainClip; \
 			effectsGainClip[1] = newGainClip; \
@@ -209,6 +214,8 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 		inR = outR; \
 	}
 
+#define virtualizerPlain()
+
 #define floatToShortPlain() \
 	inL *= gainClip; \
 	inR *= gainClip; \
@@ -240,8 +247,8 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 		return; \
 	} \
 	\
-	if (maxAbsSample > 32768.0f) { \
-		const float newGainClip = 33000.0f / maxAbsSample; \
+	if (maxAbsSample > MAX_ALLOWED_SAMPLE_VALUE) { \
+		const float newGainClip = CLIPPED_SAMPLE_VALUE / maxAbsSample; \
 		if (newGainClip < gainClip) { \
 			effectsGainClip[0] = newGainClip; \
 			effectsGainClip[1] = newGainClip; \
@@ -342,6 +349,8 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	\
 	buffer += 2;
 
+#define virtualizerNeon()
+
 #define footerNeon() \
 	if (!effectsGainEnabled) { \
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
@@ -352,8 +361,8 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	const float maxAbsSampleMono = ((((float*)effectsTemp)[0] > ((float*)effectsTemp)[1]) ? ((float*)effectsTemp)[0] : ((float*)effectsTemp)[1]); \
 	float gainClipMono; \
 	vst1_lane_f32(&gainClipMono, gainClip, 0); \
-	if (maxAbsSampleMono > 32768.0f) { \
-		const float newGainClip = 33000.0f / maxAbsSampleMono; \
+	if (maxAbsSampleMono > MAX_ALLOWED_SAMPLE_VALUE) { \
+		const float newGainClip = CLIPPED_SAMPLE_VALUE / maxAbsSampleMono; \
 		if (newGainClip < gainClipMono) { \
 			effectsGainClip[0] = newGainClip; \
 			effectsGainClip[1] = newGainClip; \

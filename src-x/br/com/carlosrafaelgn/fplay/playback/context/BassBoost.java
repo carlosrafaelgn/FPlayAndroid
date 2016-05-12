@@ -38,7 +38,7 @@ public final class BassBoost {
 	}
 
 	public void setStrength(short strength) {
-		MediaContext.setBassBoostStrength((int)strength);
+		MediaContext.setBassBoostStrength_((int)strength);
 	}
 
 	public short getRoundedStrength() {
@@ -46,7 +46,7 @@ public final class BassBoost {
 	}
 
 	public int setEnabled(boolean enabled) {
-		MediaContext.enableBassBoost(enabled ? 1 : 0);
+		MediaContext.enableBassBoost_(enabled ? 1 : 0);
 		return 0;
 	}
 
@@ -55,6 +55,6 @@ public final class BassBoost {
 	}
 
 	public void release() {
-		MediaContext.enableBassBoost(0);
+		MediaContext.enableBassBoost_(0);
 	}
 }

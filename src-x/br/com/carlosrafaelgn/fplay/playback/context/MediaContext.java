@@ -53,6 +53,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int MSG_SEEKCOMPLETE = 0x0102;
 	private static final int MSG_BUFFERINGSTART = 0x0103;
 	private static final int MSG_BUFFERINGEND = 0x0104;
+	private static final int MSG_EQUALIZER_ENABLE = 0x0105;
+	private static final int MSG_EQUALIZER_BAND_LEVEL = 0x0106;
+	private static final int MSG_EQUALIZER_BAND_LEVELS = 0x0107;
+	private static final int MSG_BASSBOOST_ENABLE = 0x0108;
+	private static final int MSG_BASSBOOST_STRENGTH = 0x0109;
+	private static final int MSG_VIRTUALIZER_ENABLE = 0x010A;
+	private static final int MSG_VIRTUALIZER_STRENGTH = 0x010B;
 
 	private static final int ACTION_NONE = 0x0000;
 	private static final int ACTION_PLAY = 0x0001;
@@ -61,6 +68,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_SEEK = 0x0004;
 	private static final int ACTION_SETNEXT = 0x0005;
 	private static final int ACTION_RESET = 0x0006;
+	private static final int ACTION_EFFECTS = 0x0007;
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
 	private static final int PLAYER_TIMEOUT = 30000;
@@ -82,6 +90,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final Object openSLSync = new Object();
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
 	private static volatile int requestedAction, requestedSeekMS;
+	private static Message effectsMessage;
 	private static int volumeInMillibels = 0;
 	private static Handler handler;
 	private static Thread thread;
@@ -94,36 +103,36 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static native void resetFiltersAndWritePosition(int srcChannelCount);
 
-	static native void enableEqualizer(int enabled);
+	private static native void enableEqualizer(int enabled);
 	static native int isEqualizerEnabled();
-	static native void setEqualizerBandLevel(int band, int level);
-	static native void setEqualizerBandLevels(short[] levels);
+	private static native void setEqualizerBandLevel(int band, int level);
+	private static native void setEqualizerBandLevels(short[] levels);
 
-	static native void enableBassBoost(int enabled);
+	private static native void enableBassBoost(int enabled);
 	static native int isBassBoostEnabled();
-	static native void setBassBoostStrength(int strength);
+	private static native void setBassBoostStrength(int strength);
 	static native int getBassBoostRoundedStrength();
 
-	static native void enableVirtualizer(int enabled);
+	private static native void enableVirtualizer(int enabled);
 	static native int isVirtualizerEnabled();
-	static native void setVirtualizerStrength(int strength);
+	private static native void setVirtualizerStrength(int strength);
 	static native int getVirtualizerRoundedStrength();
 
 	static native long startVisualization();
 	static native long getVisualizationPtr();
 	static native void stopVisualization();
 
-	static native int openSLInitialize(int bufferSizeInFrames);
-	static native int openSLCreate(int sampleRate);
-	static native int openSLPlay();
-	static native int openSLPause();
-	static native int openSLStopAndFlush();
-	static native void openSLRelease();
-	static native void openSLTerminate();
-	static native void openSLSetVolumeInMillibels(int volumeInMillibels);
-	static native int openSLGetHeadPositionInFrames();
-	static native int openSLWriteDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
-	static native int openSLWrite(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+	private static native int openSLInitialize(int bufferSizeInFrames);
+	private static native int openSLCreate(int sampleRate);
+	private static native int openSLPlay();
+	private static native int openSLPause();
+	private static native int openSLStopAndFlush();
+	private static native void openSLRelease();
+	private static native void openSLTerminate();
+	private static native void openSLSetVolumeInMillibels(int volumeInMillibels);
+	private static native int openSLGetHeadPositionInFrames();
+	private static native int openSLWriteDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+	private static native int openSLWrite(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 
 	private MediaContext() {
 	}
@@ -155,6 +164,38 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (result < 0)
 			result = -result;
 		throw new IllegalStateException("openSL returned " + result);
+	}
+
+	private static void processEffectsAction() {
+		if (effectsMessage == null)
+			return;
+
+		switch (effectsMessage.what) {
+		case MSG_EQUALIZER_ENABLE:
+			enableEqualizer(effectsMessage.arg1);
+			break;
+		case MSG_EQUALIZER_BAND_LEVEL:
+			setEqualizerBandLevel(effectsMessage.arg1, effectsMessage.arg2);
+			break;
+		case MSG_EQUALIZER_BAND_LEVELS:
+			setEqualizerBandLevels((short[])effectsMessage.obj);
+			break;
+		case MSG_BASSBOOST_ENABLE:
+			enableBassBoost(effectsMessage.arg1);
+			break;
+		case MSG_BASSBOOST_STRENGTH:
+			setBassBoostStrength(effectsMessage.arg1);
+			break;
+		case MSG_VIRTUALIZER_ENABLE:
+			enableVirtualizer(effectsMessage.arg1);
+			break;
+		case MSG_VIRTUALIZER_STRENGTH:
+			setVirtualizerStrength(effectsMessage.arg1);
+			break;
+		}
+
+		effectsMessage.obj = null;
+		effectsMessage = null;
 	}
 
 	@Override
@@ -216,6 +257,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							//is halted while these actions take place, therefore the player objects are not
 							//being used during this period
 							switch (requestedAction) {
+							case ACTION_EFFECTS:
+								processEffectsAction();
+								break;
 							case ACTION_PLAY:
 								checkOpenSLResult(openSLStopAndFlush());
 								outputBuffer.release();
@@ -788,6 +832,73 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			MediaContext.volumeInMillibels = volumeInMillibels;
 			openSLSetVolumeInMillibels(volumeInMillibels);
 		}
+	}
+
+	private static void sendEffectsMessage(Message message) {
+		waitToReceiveAction = true;
+		synchronized (threadNotification) {
+			effectsMessage = message;
+			requestedAction = ACTION_EFFECTS;
+			threadNotification.notify();
+		}
+		synchronized (notification) {
+			if (requestedAction == ACTION_EFFECTS) {
+				try {
+					notification.wait(PLAYER_TIMEOUT);
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			}
+		}
+	}
+
+	static void enableEqualizer_(int enabled) {
+		if (!alive)
+			enableEqualizer(enabled);
+		else
+			sendEffectsMessage(Message.obtain(handler, MSG_EQUALIZER_ENABLE, enabled, 0));
+	}
+
+	static void setEqualizerBandLevel_(int band, int level) {
+		if (!alive)
+			setEqualizerBandLevel(band, level);
+		else
+			sendEffectsMessage(Message.obtain(handler, MSG_EQUALIZER_BAND_LEVEL, band, level));
+	}
+
+	static void setEqualizerBandLevels_(short[] levels) {
+		if (!alive)
+			setEqualizerBandLevels(levels);
+		else
+			sendEffectsMessage(Message.obtain(handler, MSG_EQUALIZER_BAND_LEVELS, levels));
+	}
+
+	static void enableBassBoost_(int enabled) {
+		if (!alive)
+			enableBassBoost(enabled);
+		else
+			sendEffectsMessage(Message.obtain(handler, MSG_BASSBOOST_ENABLE, enabled, 0));
+	}
+
+	static void setBassBoostStrength_(int strength) {
+		if (!alive)
+			setBassBoostStrength(strength);
+		else
+			sendEffectsMessage(Message.obtain(handler, MSG_BASSBOOST_STRENGTH, strength, 0));
+	}
+
+	static void enableVirtualizer_(int enabled) {
+		if (!alive)
+			enableVirtualizer(enabled);
+		else
+			sendEffectsMessage(Message.obtain(handler, MSG_VIRTUALIZER_ENABLE, enabled, 0));
+	}
+
+	static void setVirtualizerStrength_(int strength) {
+		if (!alive)
+			setVirtualizerStrength(strength);
+		else
+			sendEffectsMessage(Message.obtain(handler, MSG_VIRTUALIZER_STRENGTH, strength, 0));
 	}
 
 	public static IMediaPlayer createMediaPlayer() {
