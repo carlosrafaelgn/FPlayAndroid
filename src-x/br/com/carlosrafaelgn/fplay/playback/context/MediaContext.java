@@ -118,10 +118,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void setVirtualizerStrength(int strength);
 	static native int getVirtualizerRoundedStrength();
 
-	static native long startVisualization();
-	static native long getVisualizationPtr();
-	static native void stopVisualization();
-
 	private static native int openSLInitialize(int bufferSizeInFrames);
 	private static native int openSLCreate(int sampleRate);
 	private static native int openSLPlay();
@@ -131,6 +127,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void openSLTerminate();
 	private static native void openSLSetVolumeInMillibels(int volumeInMillibels);
 	private static native int openSLGetHeadPositionInFrames();
+	private static native void openSLCopyVisualizerData(long bufferPtr);
 	private static native int openSLWriteDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 	private static native int openSLWrite(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 
@@ -270,14 +267,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								framesWritten = currentPlayer.getCurrentPositionInFrames();
 								framesPlayed = currentPlayer.getCurrentPositionInFrames();
 								nextFramesWritten = 0;
-								synchronized (openSLSync) {
-									if (sampleRate != currentPlayer.getSampleRate()) {
-										sampleRate = currentPlayer.getSampleRate();
-										synchronized (openSLSync) {
-											checkOpenSLResult(openSLCreate(sampleRate));
-											openSLSetVolumeInMillibels(volumeInMillibels);
-											MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
-										}
+								if (sampleRate != currentPlayer.getSampleRate()) {
+									sampleRate = currentPlayer.getSampleRate();
+									synchronized (openSLSync) {
+										checkOpenSLResult(openSLCreate(sampleRate));
+										openSLSetVolumeInMillibels(volumeInMillibels);
+										MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 									}
 								}
 								playPending = true;
@@ -480,7 +475,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					if (MediaCodecPlayer.isDirect)
 						bytesWrittenThisTime = openSLWriteDirect(outputBuffer.byteBuffer, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
 					else
-						throw new UnsupportedOperationException("NOT DIRECT!!!");
+						bytesWrittenThisTime = openSLWrite(outputBuffer.byteArray, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
 					if (bytesWrittenThisTime < 0) {
 						throw new IOException("audioTrackWriteDirect() returned " + bytesWrittenThisTime);
 					} else if (bytesWrittenThisTime == 0) {
@@ -582,8 +577,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				sourcePlayer = currentPlayer;
 			}
 		}
-
-		stopVisualization();
 
 		if (wakeLock != null)
 			wakeLock.release();
@@ -899,6 +892,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			setVirtualizerStrength(strength);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_VIRTUALIZER_STRENGTH, strength, 0));
+	}
+
+	static void copyVisualizerData(long bufferPtr) {
+		synchronized (openSLSync) {
+			openSLCopyVisualizerData(bufferPtr);
+		}
 	}
 
 	public static IMediaPlayer createMediaPlayer() {

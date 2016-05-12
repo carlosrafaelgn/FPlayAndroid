@@ -330,6 +330,16 @@ void swapShorts(short* buffer, unsigned int sizeInShorts) {
 	}
 }
 
+void JNICALL openSLCopyVisualizerData(JNIEnv* env, jclass clazz, int64_t bufferPtr) {
+	if (!fullBuffer || !bqPlayerBufferQueue || !bufferPtr)
+		return;
+
+	const unsigned int localBufferReadIndex = bufferReadIndex;
+
+	//copy 1024 samples from fullBuffer to bufferPtr, starting at the
+	//offset pointed to by bufferDescriptors[localBufferReadIndex]
+}
+
 int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, unsigned int needsSwap) {
 	if (!fullBuffer || !bqPlayerBufferQueue || !jbuffer)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;

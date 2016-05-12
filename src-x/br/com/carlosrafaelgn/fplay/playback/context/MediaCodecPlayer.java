@@ -76,6 +76,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		public MediaCodecPlayer player;
 		public ByteBuffer byteBuffer;
 		public int index, offsetInBytes, remainingBytes;
+		public byte[] byteArray;
 		public boolean streamOver;
 
 		public void release() {
@@ -91,9 +92,9 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	private static Field fieldBackingArray, fieldArrayOffset;
-	public static boolean isDirect;
+	private static byte[] nonDirectTempArray;
 	public static int needsSwap;
-	public static boolean tryToProcessNonDirectBuffers;
+	public static boolean isDirect, tryToProcessNonDirectBuffers;
 
 	private volatile int state, currentPositionInMS, httpStreamReceiverVersion;
 	private int sampleRate, channelCount, durationInMS, stateBeforeSeek;
@@ -278,6 +279,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 					fieldBackingArray.setAccessible(true);
 				} catch (Throwable ex) {
 					fieldBackingArray = null;
+					fieldArrayOffset = null;
 				}
 			}
 			if (fieldArrayOffset == null) {
@@ -285,6 +287,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 					fieldArrayOffset = outputBuffers[0].getClass().getField("arrayOffset");
 					fieldArrayOffset.setAccessible(true);
 				} catch (Throwable ex) {
+					fieldBackingArray = null;
 					fieldArrayOffset = null;
 				}
 			}
@@ -347,12 +350,33 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 		outputBuffer.byteBuffer = outputBuffers[index];
 		outputBuffer.offsetInBytes = bufferInfo.offset;
-		outputBuffer.remainingBytes = bufferInfo.size - outputBuffer.offsetInBytes;
+		outputBuffer.remainingBytes = bufferInfo.size;
 
 		if (buffering) {
 			buffering = false;
 			MediaContext.bufferingEnd(this);
 		}
+
+		if (!isDirect) {
+			if (tryToProcessNonDirectBuffers) {
+				try {
+					outputBuffer.byteArray = (byte[])fieldBackingArray.get(outputBuffer.byteBuffer);
+					outputBuffer.offsetInBytes += fieldArrayOffset.getInt(outputBuffer.byteBuffer);
+					return true;
+				} catch (Throwable ex) {
+					tryToProcessNonDirectBuffers = false;
+				}
+			}
+			//worst case! manual copy...
+			if (nonDirectTempArray == null || nonDirectTempArray.length < outputBuffer.remainingBytes)
+				nonDirectTempArray = new byte[outputBuffer.remainingBytes + 1024];
+			outputBuffer.byteArray = nonDirectTempArray;
+			outputBuffer.offsetInBytes = 0;
+			outputBuffer.byteBuffer.limit(outputBuffer.offsetInBytes + outputBuffer.remainingBytes);
+			outputBuffer.byteBuffer.position(outputBuffer.offsetInBytes);
+			outputBuffer.byteBuffer.get(outputBuffer.byteArray, 0, outputBuffer.remainingBytes);
+		}
+
 		return true;
 	}
 

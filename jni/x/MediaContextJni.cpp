@@ -91,18 +91,6 @@ void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, unsigned in
 	resetVirtualizer();
 }
 
-uint64_t JNICALL startVisualization(JNIEnv* env, jclass clazz) {
-	return 0;
-}
-
-uint64_t JNICALL getVisualizationPtr(JNIEnv* env, jclass clazz) {
-	return 0;
-}
-
-void JNICALL stopVisualization(JNIEnv* env, jclass clazz) {
-
-}
-
 #ifdef FPLAY_ARM
 void checkNeonMode() {
 	//based on
@@ -166,9 +154,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"isVirtualizerEnabled", "()I", (void*)isVirtualizerEnabled},
 		{"setVirtualizerStrength", "(I)V", (void*)setVirtualizerStrength},
 		{"getVirtualizerRoundedStrength", "()I", (void*)getVirtualizerRoundedStrength},
-		{"startVisualization", "()J", (void*)startVisualization},
-		{"getVisualizationPtr", "()J", (void*)getVisualizationPtr},
-		{"stopVisualization", "()V", (void*)stopVisualization},
 		{"openSLInitialize", "(I)I", (void*)openSLInitialize},
 		{"openSLCreate", "(I)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},
@@ -178,6 +163,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLTerminate", "()V", (void*)openSLTerminate},
 		{"openSLSetVolumeInMillibels", "(I)V", (void*)openSLSetVolumeInMillibels},
 		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
+		{"openSLCopyVisualizerData", "(J)V", (void*)openSLCopyVisualizerData},
 		{"openSLWriteDirect", "(Ljava/nio/ByteBuffer;III)I", (void*)openSLWriteDirect},
 		{"openSLWrite", "([BIII)I", (void*)openSLWrite}
 	};
@@ -192,7 +178,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 }
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
-	stopVisualization(0, 0);
 	openSLTerminate(0, 0);
 }
 
