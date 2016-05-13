@@ -34,7 +34,6 @@
 typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
 #define MAX_ALLOWED_SAMPLE_VALUE 32768.0f
-#define CLIPPED_SAMPLE_VALUE 30000.0f //30000 / 32768 = 0.915 = -0.77dB
 
 #define x_n1_L samples[0]
 #define x_n1_R samples[1]
@@ -120,7 +119,10 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	inR *= gainClip; */ \
 	inLR = _mm_mul_ps(inLR, gainClip); \
 	\
-	if (effectsFramesBeforeRecoveringGain <= 0) { \
+	if (effectsMustReduceGain) { \
+		/* gainClip *= effectsGainReductionPerFrame[0]; */ \
+		gainClip = _mm_mul_ps(gainClip, *((__m128*)effectsGainReductionPerFrame)); \
+	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
 		/*
 		gainClip *= effectsGainRecoveryPerFrame[0];
 		if (gainClip > 1.0f)
@@ -153,30 +155,20 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
 #define footerX86() \
 	if (!effectsGainEnabled) { \
+		effectsMustReduceGain = 0; \
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 		return; \
 	} \
 	\
+	_mm_store_ps(effectsGainClip, gainClip); \
 	_mm_store_ps((float*)effectsTemp, maxAbsSample); \
-	effectsTemp[2] = 0; \
-	effectsTemp[3] = 0; \
-	const float maxAbsSampleMono = ((((float*)effectsTemp)[0] > ((float*)effectsTemp)[1]) ? ((float*)effectsTemp)[0] : ((float*)effectsTemp)[1]); \
-	float gainClipMono; \
-	_mm_store_ss(&gainClipMono, gainClip); \
-	if (maxAbsSampleMono > MAX_ALLOWED_SAMPLE_VALUE) { \
-		const float newGainClip = CLIPPED_SAMPLE_VALUE / maxAbsSampleMono; \
-		if (newGainClip < gainClipMono) { \
-			effectsGainClip[0] = newGainClip; \
-			effectsGainClip[1] = newGainClip; \
-		} else { \
-			effectsGainClip[0] = gainClipMono; \
-			effectsGainClip[1] = gainClipMono; \
-		} \
+	if (((float*)effectsTemp)[0] > MAX_ALLOWED_SAMPLE_VALUE || ((float*)effectsTemp)[1] > MAX_ALLOWED_SAMPLE_VALUE) { \
+		effectsMustReduceGain = 1; \
 		effectsFramesBeforeRecoveringGain = sampleRate << 2; /* wait some time before starting to recover the gain */ \
-	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
-		effectsGainClip[0] = gainClipMono; \
-		effectsGainClip[1] = gainClipMono; \
-		effectsFramesBeforeRecoveringGain = ((gainClipMono >= 1.0f) ? 0x7FFFFFFF : 0); \
+	} else { \
+		effectsMustReduceGain = 0; \
+		if (effectsGainClip[0] >= 1.0f) \
+			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 	}
 	
 #define equalizerPlain() \
@@ -220,7 +212,9 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	inL *= gainClip; \
 	inR *= gainClip; \
 	\
-	if (effectsFramesBeforeRecoveringGain <= 0) { \
+	if (effectsMustReduceGain) { \
+		gainClip *= effectsGainReductionPerFrame[0]; \
+	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
 		gainClip *= effectsGainRecoveryPerFrame[0]; \
 		if (gainClip > 1.0f) \
 			gainClip = 1.0f; \
@@ -243,24 +237,19 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
 #define footerPlain() \
 	if (!effectsGainEnabled) { \
+		effectsMustReduceGain = 0; \
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 		return; \
 	} \
 	\
+	effectsGainClip[0] = gainClip; \
 	if (maxAbsSample > MAX_ALLOWED_SAMPLE_VALUE) { \
-		const float newGainClip = CLIPPED_SAMPLE_VALUE / maxAbsSample; \
-		if (newGainClip < gainClip) { \
-			effectsGainClip[0] = newGainClip; \
-			effectsGainClip[1] = newGainClip; \
-		} else { \
-			effectsGainClip[0] = gainClip; \
-			effectsGainClip[1] = gainClip; \
-		} \
+		effectsMustReduceGain = 1; \
 		effectsFramesBeforeRecoveringGain = sampleRate << 2; /* wait some time before starting to recover the gain */ \
-	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
-		effectsGainClip[0] = gainClip; \
-		effectsGainClip[1] = gainClip; \
-		effectsFramesBeforeRecoveringGain = ((gainClip >= 1.0f) ? 0x7FFFFFFF : 0); \
+	} else { \
+		effectsMustReduceGain = 0; \
+		if (effectsGainClip[0] >= 1.0f) \
+			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 	}
 
 #define equalizerNeon() \
@@ -323,7 +312,10 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	inR *= gainClip; */ \
 	inLR = vmul_f32(inLR, gainClip); \
 	\
-	if (effectsFramesBeforeRecoveringGain <= 0) { \
+	if (effectsMustReduceGain) { \
+		/* gainClip *= effectsGainReductionPerFrame[0]; */ \
+		gainClip = vmul_f32(gainClip, *((float32x2_t*)effectsGainReductionPerFrame)); \
+	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
 		/*
 		gainClip *= effectsGainRecoveryPerFrame[0];
 		if (gainClip > 1.0f)
@@ -353,26 +345,18 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
 #define footerNeon() \
 	if (!effectsGainEnabled) { \
+		effectsMustReduceGain = 0; \
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 		return; \
 	} \
 	\
+	vst1_f32(effectsGainClip, gainClip); \
 	vst1_f32((float*)effectsTemp, maxAbsSample); \
-	const float maxAbsSampleMono = ((((float*)effectsTemp)[0] > ((float*)effectsTemp)[1]) ? ((float*)effectsTemp)[0] : ((float*)effectsTemp)[1]); \
-	float gainClipMono; \
-	vst1_lane_f32(&gainClipMono, gainClip, 0); \
-	if (maxAbsSampleMono > MAX_ALLOWED_SAMPLE_VALUE) { \
-		const float newGainClip = CLIPPED_SAMPLE_VALUE / maxAbsSampleMono; \
-		if (newGainClip < gainClipMono) { \
-			effectsGainClip[0] = newGainClip; \
-			effectsGainClip[1] = newGainClip; \
-		} else { \
-			effectsGainClip[0] = gainClipMono; \
-			effectsGainClip[1] = gainClipMono; \
-		} \
+	if (((float*)effectsTemp)[0] > MAX_ALLOWED_SAMPLE_VALUE || ((float*)effectsTemp)[1] > MAX_ALLOWED_SAMPLE_VALUE) { \
+		effectsMustReduceGain = 1; \
 		effectsFramesBeforeRecoveringGain = sampleRate << 2; /* wait some time before starting to recover the gain */ \
-	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
-		effectsGainClip[0] = gainClipMono; \
-		effectsGainClip[1] = gainClipMono; \
-		effectsFramesBeforeRecoveringGain = ((gainClipMono >= 1.0f) ? 0x7FFFFFFF : 0); \
+	} else { \
+		effectsMustReduceGain = 0; \
+		if (effectsGainClip[0] >= 1.0f) \
+			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 	}

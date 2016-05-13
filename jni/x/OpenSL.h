@@ -348,7 +348,7 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 
 	//keep each buffer within a reasonable size limit (we divide by 2 instead of performing a
 	//simple subtraction, in order to try to keep the next buffers' sizes reasonably large as well)
-	while (sizeInFrames > 1536) {
+	while (sizeInFrames > 1152) {
 		sizeInFrames >>= 1;
 		sizeInBytes = sizeInFrames << srcChannelCount;
 	}
@@ -426,7 +426,7 @@ int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned 
 
 	//keep each buffer within a reasonable size limit (we divide by 2 instead of performing a
 	//simple subtraction, in order to try to keep the next buffers' sizes reasonably large as well)
-	while (sizeInFrames > 1536) {
+	while (sizeInFrames > 1152) {
 		sizeInFrames >>= 1;
 		sizeInBytes = sizeInFrames << srcChannelCount;
 	}

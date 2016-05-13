@@ -43,13 +43,20 @@
 
 #define BASSBOOST_BAND_COUNT 3 //(31.25 Hz, 62.5 Hz and 125 Hz)
 
+//https://en.wikipedia.org/wiki/Dynamic_range_compression
+//https://en.wikipedia.org/wiki/Dynamic_range_compression#Limiting
+//as the article states, brick-wall limiting are harsh and unpleasant.. also... reducing the gain abruptly causes audible clicks!
+#define GAIN_REDUCTION_PER_SECOND_DB -40.0 //-40.0dB/s
+#define GAIN_RECOVERY_PER_SECOND_DB 0.5 //+0.5dB/s
+
 static unsigned int bassBoostStrength, virtualizerStrength;
-static float equalizerGainRecoveryPerSecondInDB, equalizerGainInDB[BAND_COUNT];
+static float equalizerGainInDB[BAND_COUNT];
 static EFFECTPROC effectProc;
 
 unsigned int effectsEnabled, equalizerMaxBandCount, effectsGainEnabled;
-int effectsFramesBeforeRecoveringGain, effectsTemp[4] __attribute__((aligned(16)));
+int effectsMustReduceGain, effectsFramesBeforeRecoveringGain, effectsTemp[4] __attribute__((aligned(16)));
 float effectsGainRecoveryOne[4] __attribute__((aligned(16))) = { 1.0f, 1.0f, 0.0f, 0.0f },
+effectsGainReductionPerFrame[4] __attribute__((aligned(16))),
 effectsGainRecoveryPerFrame[4] __attribute__((aligned(16))),
 effectsGainClip[4] __attribute__((aligned(16))),
 equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
@@ -80,6 +87,13 @@ equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 void updateEffectProc();
 
 void resetEqualizer() {
+	effectsGainClip[0] = 1.0f;
+	effectsGainClip[1] = 1.0f;
+	effectsGainClip[2] = 0.0f;
+	effectsGainClip[3] = 0.0f;
+	effectsMustReduceGain = 0;
+	effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+
 	memset(effectsTemp, 0, 4 * sizeof(int));
 	memset(equalizerSamples, 0, 2 * 4 * BAND_COUNT * sizeof(float));
 }
@@ -104,14 +118,10 @@ void equalizerConfigChanged() {
 	else
 		equalizerMaxBandCount = 6; //Android's minimum allowed sample rate is 4000 Hz
 
-	effectsGainRecoveryPerFrame[0] = (float)pow(10.0, (double)equalizerGainRecoveryPerSecondInDB / (double)(sampleRate * 20));
+	effectsGainReductionPerFrame[0] = (float)pow(10.0, GAIN_REDUCTION_PER_SECOND_DB / (double)(sampleRate * 20));
+	effectsGainReductionPerFrame[1] = effectsGainReductionPerFrame[0];
+	effectsGainRecoveryPerFrame[0] = (float)pow(10.0, GAIN_RECOVERY_PER_SECOND_DB / (double)(sampleRate * 20));
 	effectsGainRecoveryPerFrame[1] = effectsGainRecoveryPerFrame[0];
-	//do not reset the gain between tracks in resetEqualizer() (reset it only if the config actually changes)
-	effectsGainClip[0] = 1.0f;
-	effectsGainClip[1] = 1.0f;
-	effectsGainClip[2] = 0.0f;
-	effectsGainClip[3] = 0.0f;
-	effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
 
 	for (int i = 0; i < BAND_COUNT; i++)
 		computeFilter(i);
@@ -145,16 +155,14 @@ void initializeEffects() {
 	virtualizerStrength = 0;
 	equalizerMaxBandCount = 0;
 	effectsGainEnabled = 1;
-	equalizerGainRecoveryPerSecondInDB = 0.5f;
+	effectsGainReductionPerFrame[0] = 1.0f;
+	effectsGainReductionPerFrame[1] = 1.0f;
+	effectsGainReductionPerFrame[2] = 0.0f;
+	effectsGainReductionPerFrame[3] = 0.0f;
 	effectsGainRecoveryPerFrame[0] = 1.0f;
 	effectsGainRecoveryPerFrame[1] = 1.0f;
 	effectsGainRecoveryPerFrame[2] = 0.0f;
 	effectsGainRecoveryPerFrame[3] = 0.0f;
-	effectsGainClip[0] = 1.0f;
-	effectsGainClip[1] = 1.0f;
-	effectsGainClip[2] = 0.0f;
-	effectsGainClip[3] = 0.0f;
-	effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
 
 	memset(equalizerGainInDB, 0, BAND_COUNT * sizeof(float));
 

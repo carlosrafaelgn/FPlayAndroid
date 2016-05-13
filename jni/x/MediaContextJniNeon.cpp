@@ -40,8 +40,9 @@
 #define VIRTUALIZER_ENABLED 4
 
 extern unsigned int effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, sampleRate;
-extern int effectsFramesBeforeRecoveringGain, effectsTemp[] __attribute__((aligned(16)));
+extern int effectsMustReduceGain, effectsFramesBeforeRecoveringGain, effectsTemp[] __attribute__((aligned(16)));
 extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
+effectsGainReductionPerFrame[] __attribute__((aligned(16))),
 effectsGainRecoveryPerFrame[] __attribute__((aligned(16))),
 effectsGainClip[] __attribute__((aligned(16))),
 equalizerCoefs[] __attribute__((aligned(16))),
@@ -50,6 +51,8 @@ equalizerSamples[] __attribute__((aligned(16)));
 //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0491h/CIHJBEFE.html
 
 void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
+	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
 
@@ -70,6 +73,8 @@ void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
 }
 
 void processVirtualizerNeon(short* buffer, unsigned int sizeInFrames) {
+	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
 
@@ -90,6 +95,8 @@ void processVirtualizerNeon(short* buffer, unsigned int sizeInFrames) {
 }
 
 void processEffectsNeon(short* buffer, unsigned int sizeInFrames) {
+	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
 
