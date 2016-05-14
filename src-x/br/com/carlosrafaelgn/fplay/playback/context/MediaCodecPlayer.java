@@ -37,8 +37,10 @@ import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 
 import java.io.File;
@@ -98,13 +100,15 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 	private volatile int state, currentPositionInMS, httpStreamReceiverVersion;
 	private int sampleRate, channelCount, durationInMS, stateBeforeSeek;
+	private long nativeObj;
+	private ParcelFileDescriptor fileDescriptor;
 	private MediaExtractor mediaExtractor;
 	private MediaCodec mediaCodec;
 	private Handler handler;
 	private HttpStreamReceiver httpStreamReceiver;
 	private String path;
 	private ByteBuffer[] inputBuffers, outputBuffers;
-	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, internetStream, buffering, httpStreamBufferingAfterPause;
+	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, internetStream, buffering, httpStreamBufferingAfterPause, nativeMediaCodec;
 	private MediaCodec.BufferInfo bufferInfo;
 	private OnCompletionListener completionListener;
 	private OnErrorListener errorListener;
@@ -140,6 +144,14 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 	boolean isInternetStream() {
 		return internetStream;
+	}
+
+	boolean isNativeMediaCodec() {
+		return nativeMediaCodec;
+	}
+
+	long getNativeObj() {
+		return nativeObj;
 	}
 
 	private void fillInternetInputBuffers() throws IOException {
@@ -196,6 +208,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				break;
 			} else {
 				mediaCodec.queueInputBuffer(index, 0, size, 0, 0);
+				//although the doc says "Returns false if no more sample data is available
+				//(end of stream)", sometimes, advance() returns false in other cases....
 				mediaExtractor.advance();
 			}
 		}
@@ -308,92 +322,131 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	@SuppressWarnings("deprecation")
-	boolean nextOutputBuffer(OutputBuffer outputBuffer) throws IOException {
+	void nextOutputBuffer(OutputBuffer outputBuffer) throws IOException {
 		if (outputOver) {
 			outputBuffer.index = -1;
 			outputBuffer.player = this;
 			outputBuffer.remainingBytes = 0;
 			outputBuffer.streamOver = true;
-			return false;
+			return;
 		}
-		if (internetStream)
-			fillInternetInputBuffers();
-		else
-			fillInputBuffers();
-		int index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
-		IndexChecker:
-		for (; ; ) {
-			switch (index) {
-			case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-				MediaFormat format = mediaCodec.getOutputFormat();
-				sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
-				channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
-				index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
-				break;
-			case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-				prepareOutputBuffers();
-				index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
-				break;
-			default:
-				break IndexChecker;
+		if (nativeMediaCodec) {
+			final int ret = MediaContext.mediaCodecNextOutputBuffer(nativeObj);
+
+			if (ret >= 0x7FFFFFFE) {
+				outputBuffer.index = -1;
+				outputBuffer.remainingBytes = 0;
+			} else {
+				if (ret < 0)
+					throw new IOException("mediaCodecNextOutputBuffer() returned " + ret);
+
+				outputBuffersHaveBeenUsed = true;
+
+				outputBuffer.index = 1;
+				outputBuffer.remainingBytes = ret >> 1;
 			}
-		}
-		outputBuffer.index = index;
-		outputBuffer.player = this;
-		outputOver = ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0);
-		outputBuffer.streamOver = outputOver;
-		if (index < 0) {
-			outputBuffer.remainingBytes = 0;
-			return false;
-		}
-		outputBuffersHaveBeenUsed = true;
 
-		outputBuffer.byteBuffer = outputBuffers[index];
-		outputBuffer.offsetInBytes = bufferInfo.offset;
-		outputBuffer.remainingBytes = bufferInfo.size;
+			outputBuffer.player = this;
+			outputOver = ((ret & 1) != 0);
+			outputBuffer.streamOver = outputOver;
+			outputBuffer.offsetInBytes = 0;
 
-		if (buffering) {
-			buffering = false;
-			MediaContext.bufferingEnd(this);
-		}
-
-		if (!isDirect) {
-			if (tryToProcessNonDirectBuffers) {
-				try {
-					outputBuffer.byteArray = (byte[])fieldBackingArray.get(outputBuffer.byteBuffer);
-					outputBuffer.offsetInBytes += fieldArrayOffset.getInt(outputBuffer.byteBuffer);
-					return true;
-				} catch (Throwable ex) {
-					tryToProcessNonDirectBuffers = false;
+			if (buffering) {
+				buffering = false;
+				MediaContext.bufferingEnd(this);
+			}
+		} else {
+			if (internetStream)
+				fillInternetInputBuffers();
+			else
+				fillInputBuffers();
+			int index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
+			IndexChecker:
+			for (; ; ) {
+				switch (index) {
+				case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+					//MediaFormat format = mediaCodec.getOutputFormat();
+					//sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+					//channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+					index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
+					break;
+				case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+					prepareOutputBuffers();
+					index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
+					break;
+				default:
+					break IndexChecker;
 				}
 			}
-			//worst case! manual copy...
-			if (nonDirectTempArray == null || nonDirectTempArray.length < outputBuffer.remainingBytes)
-				nonDirectTempArray = new byte[outputBuffer.remainingBytes + 1024];
-			outputBuffer.byteArray = nonDirectTempArray;
-			outputBuffer.offsetInBytes = 0;
-			outputBuffer.byteBuffer.limit(outputBuffer.offsetInBytes + outputBuffer.remainingBytes);
-			outputBuffer.byteBuffer.position(outputBuffer.offsetInBytes);
-			outputBuffer.byteBuffer.get(outputBuffer.byteArray, 0, outputBuffer.remainingBytes);
-		}
+			outputBuffer.index = index;
+			outputBuffer.player = this;
+			outputOver = ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0);
+			outputBuffer.streamOver = outputOver;
+			if (index < 0) {
+				outputBuffer.remainingBytes = 0;
+				return;
+			}
 
-		return true;
+			outputBuffersHaveBeenUsed = true;
+
+			outputBuffer.byteBuffer = outputBuffers[index];
+			outputBuffer.offsetInBytes = bufferInfo.offset;
+			outputBuffer.remainingBytes = bufferInfo.size;
+
+			if (buffering) {
+				buffering = false;
+				MediaContext.bufferingEnd(this);
+			}
+
+			if (!isDirect) {
+				if (tryToProcessNonDirectBuffers) {
+					try {
+						outputBuffer.byteArray = (byte[])fieldBackingArray.get(outputBuffer.byteBuffer);
+						outputBuffer.offsetInBytes += fieldArrayOffset.getInt(outputBuffer.byteBuffer);
+						return;
+					} catch (Throwable ex) {
+						tryToProcessNonDirectBuffers = false;
+					}
+				}
+				//worst case! manual copy...
+				if (nonDirectTempArray == null || nonDirectTempArray.length < outputBuffer.remainingBytes)
+					nonDirectTempArray = new byte[outputBuffer.remainingBytes + 1024];
+				outputBuffer.byteArray = nonDirectTempArray;
+				outputBuffer.offsetInBytes = 0;
+				outputBuffer.byteBuffer.limit(outputBuffer.offsetInBytes + outputBuffer.remainingBytes);
+				outputBuffer.byteBuffer.position(outputBuffer.offsetInBytes);
+				outputBuffer.byteBuffer.get(outputBuffer.byteArray, 0, outputBuffer.remainingBytes);
+			}
+		}
 	}
 
 	private void releaseOutputBuffer(int bufferIndex) {
-		mediaCodec.releaseOutputBuffer(bufferIndex, false);
+		if (nativeMediaCodec)
+			MediaContext.mediaCodecReleaseOutputBuffer(nativeObj);
+		else
+			mediaCodec.releaseOutputBuffer(bufferIndex, false);
 	}
 
 	void doSeek(int msec) throws IOException {
 		if (state != STATE_SEEKING)
 			return;
 
+		if (nativeMediaCodec) {
+			long ret = MediaContext.mediaCodecSeek(nativeObj, msec);
+			if (ret < 0)
+				throw new IOException();
+			outputOver = (ret == 0x7FFFFFFFFFFFFFFFL);
+			currentPositionInMS = (outputOver ? durationInMS : (int)(ret / 1000L));
+			return;
+		}
+
 		mediaCodec.flush();
 		mediaExtractor.seekTo((long)msec * 1000L, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
 		inputOver = false;
-		outputOver = false;
 		bufferInfo.flags = 0;
-		currentPositionInMS = (int)(mediaExtractor.getSampleTime() / 1000L);
+		final long duration = mediaExtractor.getSampleTime();
+		outputOver = (duration < 0);
+		currentPositionInMS = (outputOver ? durationInMS : (int)(duration / 1000L));
 		fillInputBuffers();
 	}
 
@@ -485,12 +538,14 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			durationInMS = -1;
 			handler = new Handler(this);
 			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex()), 1, path);
+			nativeMediaCodec = false;
 		} else {
 			final File file = new File(path);
 			if (!file.isFile() || !file.exists() || file.length() <= 0)
 				throw new FileNotFoundException(path);
 			if (!file.canRead())
 				throw new SecurityException(path);
+			nativeMediaCodec = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
 		}
 		state = STATE_INITIALIZED;
 	}
@@ -508,13 +563,32 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			//enforce our policy
 			if (internetStream)
 				throw new UnsupportedOperationException("internet streams must used prepareAsync()");
+			if (nativeMediaCodec) {
+				fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
+				final long[] params = new long[4];
+				int hhh = fileDescriptor.getFd();
+				long sss = fileDescriptor.getStatSize();
+				final int ret = MediaContext.mediaCodecPrepare(hhh, sss, params);
+				if (ret == -1)
+					throw new UnsupportedFormatException();
+				else if (ret < 0)
+					throw new IOException();
+				nativeObj = params[0];
+				sampleRate = (int)params[1];
+				channelCount = (int)params[2];
+				durationInMS = (int)(params[3] / 1000L);
+				currentPositionInMS = 0;
+				outputOver = false;
+				state = STATE_PREPARED;
+				break;
+			}
 			mediaExtractor = new MediaExtractor();
 			mediaExtractor.setDataSource(path);
 			final int numTracks = mediaExtractor.getTrackCount();
 			int i;
 			MediaFormat format = null;
 			String mime = "";
-			for (i = 0; i < numTracks; ++i) {
+			for (i = 0; i < numTracks; i++) {
 				format = mediaExtractor.getTrackFormat(i);
 				mime = format.getString(MediaFormat.KEY_MIME);
 				if (mime.startsWith("audio/")) {
@@ -609,6 +683,18 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	private void resetMedia() {
+		if (nativeObj != 0) {
+			MediaContext.mediaCodecRelease(nativeObj);
+			nativeObj = 0;
+		}
+		if (fileDescriptor != null) {
+			try {
+				fileDescriptor.close();
+			} catch (Throwable ex) {
+				//just ignore
+			}
+			fileDescriptor = null;
+		}
 		if (mediaExtractor != null) {
 			try {
 				mediaExtractor.release();
@@ -634,6 +720,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		httpStreamBufferingAfterPause = false;
 		inputOver = false;
 		outputOver = false;
+		nativeMediaCodec = false;
 		bufferInfo.flags = 0;
 		outputBuffersHaveBeenUsed = false;
 		sampleRate = 0;

@@ -118,6 +118,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void setVirtualizerStrength(int strength);
 	static native int getVirtualizerRoundedStrength();
 
+	static native int mediaCodecPrepare(int fd, long length, long[] outParams);
+	static native int mediaCodecNextOutputBuffer(long nativeObj);
+	static native long mediaCodecSeek(long nativeObj, int msec);
+	static native void mediaCodecReleaseOutputBuffer(long nativeObj);
+	static native void mediaCodecRelease(long nativeObj);
+
 	private static native int openSLInitialize(int bufferSizeInFrames);
 	private static native int openSLCreate(int sampleRate);
 	private static native int openSLPlay();
@@ -128,8 +134,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void openSLSetVolumeInMillibels(int volumeInMillibels);
 	private static native int openSLGetHeadPositionInFrames();
 	private static native void openSLCopyVisualizerData(long bufferPtr);
+	private static native int openSLWriteNative(long nativeObj, int offsetInBytes, int sizeInBytes);
 	private static native int openSLWriteDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
-	private static native int openSLWrite(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+	private static native int openSLWriteArray(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 
 	private MediaContext() {
 	}
@@ -472,10 +479,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					sourcePlayer.nextOutputBuffer(outputBuffer);
 				if (outputBuffer.remainingBytes > 0) {
 					final int bytesWrittenThisTime;
-					if (MediaCodecPlayer.isDirect)
+					if (sourcePlayer.isNativeMediaCodec())
+						bytesWrittenThisTime = openSLWriteNative(sourcePlayer.getNativeObj(), outputBuffer.offsetInBytes, outputBuffer.remainingBytes);
+					else if (MediaCodecPlayer.isDirect)
 						bytesWrittenThisTime = openSLWriteDirect(outputBuffer.byteBuffer, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
 					else
-						bytesWrittenThisTime = openSLWrite(outputBuffer.byteArray, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
+						bytesWrittenThisTime = openSLWriteArray(outputBuffer.byteArray, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
 					if (bytesWrittenThisTime < 0) {
 						throw new IOException("audioTrackWriteDirect() returned " + bytesWrittenThisTime);
 					} else if (bytesWrittenThisTime == 0) {

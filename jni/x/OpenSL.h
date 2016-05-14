@@ -340,6 +340,75 @@ void JNICALL openSLCopyVisualizerData(JNIEnv* env, jclass clazz, int64_t bufferP
 	//offset pointed to by bufferDescriptors[localBufferReadIndex]
 }
 
+int JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj, unsigned int offsetInBytes, unsigned int sizeInBytes) {
+	if (!fullBuffer || !bqPlayerBufferQueue || !nativeObj || !((MediaCodec*)nativeObj)->buffer)
+		return -SL_RESULT_PRECONDITIONS_VIOLATED;
+
+	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
+
+	//keep each buffer within a reasonable size limit (we divide by 2 instead of performing a
+	//simple subtraction, in order to try to keep the next buffers' sizes reasonably large as well)
+	while (sizeInFrames > 1152) {
+		sizeInFrames >>= 1;
+		sizeInBytes = sizeInFrames << srcChannelCount;
+	}
+
+	const unsigned int localEmptyFrames = emptyFrames;
+
+	if (sizeInFrames > localEmptyFrames || !sizeInFrames || !emptyBuffers)
+		return 0;
+
+	BufferDescription* const bufferDescriptor = bufferDescriptors + bufferWriteIndex;
+
+	//let's try to prevent very small buffers close to the end of fullBuffer
+	//for example: localEmptyFrames = 500, framesAvailableAtTheEndWithoutWrappingAround = 10, sizeInFrames = 200
+	//if we didn't care, this buffer would be 10 frames long, and the next, 190 frames long...
+	const unsigned int framesAvailableAtTheEndWithoutWrappingAround = bufferSizeInFrames - writePositionInFrames;
+	if (sizeInFrames > framesAvailableAtTheEndWithoutWrappingAround) {
+		//for sure there is not enough room at the beginning
+		if (framesAvailableAtTheEndWithoutWrappingAround >= localEmptyFrames)
+			return 0;
+
+		//let's check if there is enough room at the beginning
+		const unsigned int framesAvailableAtTheBeginning = localEmptyFrames - framesAvailableAtTheEndWithoutWrappingAround;
+		if (sizeInFrames > framesAvailableAtTheBeginning)
+			return 0;
+
+		bufferDescriptor->startOffsetInFrames = 0;
+		bufferDescriptor->commitedFrames = sizeInFrames + framesAvailableAtTheEndWithoutWrappingAround;
+	} else {
+		bufferDescriptor->startOffsetInFrames = writePositionInFrames;
+		bufferDescriptor->commitedFrames = sizeInFrames;
+	}
+	bufferDescriptor->sizeInFrames = sizeInFrames;
+
+	//we always output stereo audio, regardless of the input config
+	short* const dstBuffer = (short*)(fullBuffer + (bufferDescriptor->startOffsetInFrames << 2));
+
+	//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames
+	memcpy(dstBuffer, ((MediaCodec*)nativeObj)->buffer + offsetInBytes, sizeInBytes);
+
+	effectProc(dstBuffer, sizeInFrames);
+
+	writePositionInFrames = bufferDescriptor->startOffsetInFrames + sizeInFrames;
+	if (writePositionInFrames >= bufferSizeInFrames)
+		writePositionInFrames -= bufferSizeInFrames;
+	__sync_add_and_fetch(&emptyFrames, (unsigned int)(-bufferDescriptor->commitedFrames));
+
+	bufferWriteIndex = bufferWriteIndex + 1;
+	if (bufferWriteIndex >= bufferCount)
+		bufferWriteIndex = 0;
+	__sync_add_and_fetch(&emptyBuffers, (unsigned int)(-1));
+
+	SLresult result;
+
+	result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, dstBuffer, sizeInBytes);
+	if (result != SL_RESULT_SUCCESS)
+		return -(abs((int)result));
+
+	return sizeInBytes;
+}
+
 int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, unsigned int needsSwap) {
 	if (!fullBuffer || !bqPlayerBufferQueue || !jbuffer)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
@@ -418,7 +487,7 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 	return sizeInBytes;
 }
 
-int JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, int needsSwap) {
+int JNICALL openSLWriteArray(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsigned int offsetInBytes, unsigned int sizeInBytes, int needsSwap) {
 	if (!fullBuffer || !bqPlayerBufferQueue || !jbuffer)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 

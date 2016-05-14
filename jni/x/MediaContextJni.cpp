@@ -71,6 +71,7 @@ static unsigned int srcChannelCount, bufferSizeInFrames, writePositionInFrames;
 unsigned int sampleRate;
 
 #include "Effects.h"
+#include "MediaCodec.h"
 #include "OpenSL.h"
 
 unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
@@ -154,6 +155,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"isVirtualizerEnabled", "()I", (void*)isVirtualizerEnabled},
 		{"setVirtualizerStrength", "(I)V", (void*)setVirtualizerStrength},
 		{"getVirtualizerRoundedStrength", "()I", (void*)getVirtualizerRoundedStrength},
+		{"mediaCodecPrepare", "(IJ[J)I", (void*)mediaCodecPrepare},
+		{"mediaCodecNextOutputBuffer", "(J)I", (void*)mediaCodecNextOutputBuffer},
+		{"mediaCodecSeek", "(JI)J", (void*)mediaCodecSeek},
+		{"mediaCodecReleaseOutputBuffer", "(J)V", (void*)mediaCodecReleaseOutputBuffer},
+		{"mediaCodecRelease", "(J)V", (void*)mediaCodecRelease},
 		{"openSLInitialize", "(I)I", (void*)openSLInitialize},
 		{"openSLCreate", "(I)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},
@@ -164,8 +170,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLSetVolumeInMillibels", "(I)V", (void*)openSLSetVolumeInMillibels},
 		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
 		{"openSLCopyVisualizerData", "(J)V", (void*)openSLCopyVisualizerData},
+		{"openSLWriteNative", "(JII)I", (void*)openSLWriteNative},
 		{"openSLWriteDirect", "(Ljava/nio/ByteBuffer;III)I", (void*)openSLWriteDirect},
-		{"openSLWrite", "([BIII)I", (void*)openSLWrite}
+		{"openSLWriteArray", "([BIII)I", (void*)openSLWriteArray}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)
