@@ -37,7 +37,6 @@ import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
@@ -545,7 +544,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				throw new FileNotFoundException(path);
 			if (!file.canRead())
 				throw new SecurityException(path);
-			nativeMediaCodec = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
+			nativeMediaCodec = MediaContext.hasExternalNativeLibrary;
 		}
 		state = STATE_INITIALIZED;
 	}

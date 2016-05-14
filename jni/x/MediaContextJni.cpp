@@ -140,6 +140,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 #endif
 	initializeOpenSL();
 	initializeEffects();
+	initializeMediaCodec();
 
 	JNINativeMethod methodTable[] = {
 		{"resetFiltersAndWritePosition", "(I)V", (void*)resetFiltersAndWritePosition},
@@ -160,6 +161,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecSeek", "(JI)J", (void*)mediaCodecSeek},
 		{"mediaCodecReleaseOutputBuffer", "(J)V", (void*)mediaCodecReleaseOutputBuffer},
 		{"mediaCodecRelease", "(J)V", (void*)mediaCodecRelease},
+		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
 		{"openSLInitialize", "(I)I", (void*)openSLInitialize},
 		{"openSLCreate", "(I)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},
@@ -186,6 +188,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 	openSLTerminate(0, 0);
+	terminateMediaCodec();
 }
 
 }

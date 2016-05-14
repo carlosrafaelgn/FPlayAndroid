@@ -96,9 +96,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static Thread thread;
 	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
 	private static MediaContext theMediaContext;
+	static boolean hasExternalNativeLibrary;
 
 	static {
 		System.loadLibrary("MediaContextJni");
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			hasExternalNativeLibrary = (mediaCodecLoadExternalLibrary() == 0);
 	}
 
 	private static native void resetFiltersAndWritePosition(int srcChannelCount);
@@ -123,6 +126,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native long mediaCodecSeek(long nativeObj, int msec);
 	static native void mediaCodecReleaseOutputBuffer(long nativeObj);
 	static native void mediaCodecRelease(long nativeObj);
+	static native int mediaCodecLoadExternalLibrary();
 
 	private static native int openSLInitialize(int bufferSizeInFrames);
 	private static native int openSLCreate(int sampleRate);

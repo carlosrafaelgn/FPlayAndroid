@@ -31,15 +31,65 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-#include <media/NdkMediaCodec.h>
-#include <media/NdkMediaExtractor.h>
-
 //http://developer.android.com/intl/pt-br/ndk/guides/audio/opensl-for-android.html#da
 //... deprecated Android-specific extension to OpenSL ES 1.0.1 for decoding an encoded stream to PCM without immediate playback
 //DECODING AUDIO WITH OPENSL ES IS DEPRECATED IN ANDROID!!!
 //To decode an encoded stream to PCM but not play back immediately, for apps running on Android 4.x (API levels 16–20), we
 //recommend using the MediaCodec class. For new applications running on Android 5.0 (API level 21) or higher, we recommend
 //using the NDK equivalent, <NdkMedia*.h>. These header files reside in the media/ directory under your installation root.
+
+#include <dlfcn.h>
+
+static void* libmediandk;
+
+#define AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM 4
+#define AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED -3
+#define AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED -2
+#define media_status_t int
+#define AMediaCodec void
+#define AMediaExtractor void
+#define AMediaFormat void
+
+typedef enum {
+	AMEDIAEXTRACTOR_SEEK_PREVIOUS_SYNC,
+	AMEDIAEXTRACTOR_SEEK_NEXT_SYNC,
+	AMEDIAEXTRACTOR_SEEK_CLOSEST_SYNC
+} SeekMode;
+
+struct AMediaCodecBufferInfo {
+    int32_t offset;
+    int32_t size;
+    int64_t presentationTimeUs;
+    uint32_t flags;
+};
+
+static media_status_t (*AMediaCodec_configure)(AMediaCodec*, const AMediaFormat* format, void* surface, void* crypto, uint32_t flags);
+static AMediaCodec* (*AMediaCodec_createDecoderByType)(const char *mime_type);
+static media_status_t (*AMediaCodec_delete)(AMediaCodec*);
+static ssize_t (*AMediaCodec_dequeueInputBuffer)(AMediaCodec*, int64_t timeoutUs);
+static ssize_t (*AMediaCodec_dequeueOutputBuffer)(AMediaCodec*, AMediaCodecBufferInfo *info, int64_t timeoutUs);
+static media_status_t (*AMediaCodec_flush)(AMediaCodec*);
+static uint8_t* (*AMediaCodec_getInputBuffer)(AMediaCodec*, size_t idx, size_t *out_size);
+static uint8_t* (*AMediaCodec_getOutputBuffer)(AMediaCodec*, size_t idx, size_t *out_size);
+static media_status_t (*AMediaCodec_queueInputBuffer)(AMediaCodec*, size_t idx, off_t offset, size_t size, uint64_t time, uint32_t flags);
+static media_status_t (*AMediaCodec_releaseOutputBuffer)(AMediaCodec*, size_t idx, bool render);
+static media_status_t (*AMediaCodec_start)(AMediaCodec*);
+static media_status_t (*AMediaCodec_stop)(AMediaCodec*);
+
+static bool (*AMediaExtractor_advance)(AMediaExtractor*);
+static media_status_t (*AMediaExtractor_delete)(AMediaExtractor*);
+static int64_t (*AMediaExtractor_getSampleTime)(AMediaExtractor*);
+static size_t (*AMediaExtractor_getTrackCount)(AMediaExtractor*);
+static AMediaFormat* (*AMediaExtractor_getTrackFormat)(AMediaExtractor*, size_t idx);
+static AMediaExtractor* (*AMediaExtractor_new)();
+static ssize_t (*AMediaExtractor_readSampleData)(AMediaExtractor*, uint8_t *buffer, size_t capacity);
+static media_status_t (*AMediaExtractor_seekTo)(AMediaExtractor*, int64_t seekPosUs, SeekMode mode);
+static media_status_t (*AMediaExtractor_selectTrack)(AMediaExtractor*, size_t idx);
+static media_status_t (*AMediaExtractor_setDataSourceFd)(AMediaExtractor*, int fd, off64_t offset, off64_t length);
+
+static bool (*AMediaFormat_getInt32)(AMediaFormat*, const char *name, int32_t *out);
+static bool (*AMediaFormat_getInt64)(AMediaFormat*, const char *name, int64_t *out);
+static bool (*AMediaFormat_getString)(AMediaFormat*, const char *name, const char **out);
 
 #define INPUT_BUFFER_TIMEOUT_IN_US 2500
 #define OUTPUT_BUFFER_TIMEOUT_IN_US 35000
@@ -136,16 +186,16 @@ public:
 			format = AMediaExtractor_getTrackFormat(mediaExtractor, i);
 			if (!format)
 				continue;
-			if (!AMediaFormat_getString(format, AMEDIAFORMAT_KEY_MIME, &mime))
+			if (!AMediaFormat_getString(format, "mime", &mime))
 				continue;
 			if (isAudio(mime)) {
 				if ((ret = AMediaExtractor_selectTrack(mediaExtractor, i)))
 					return ret;
 				int sampleRate, channelCount;
 				int64_t duration;
-				if (!AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_SAMPLE_RATE, &sampleRate) ||
-					!AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_CHANNEL_COUNT, &channelCount) ||
-					!AMediaFormat_getInt64(format, AMEDIAFORMAT_KEY_DURATION, &duration))
+				if (!AMediaFormat_getInt32(format, "sample-rate", &sampleRate) ||
+					!AMediaFormat_getInt32(format, "channel-count", &channelCount) ||
+					!AMediaFormat_getInt64(format, "durationUs", &duration))
 					continue;
 				//only stereo files for now...
 				if (channelCount != 2)
@@ -221,7 +271,6 @@ public:
 
 		buffer += bufferInfo.offset;
 
-		//AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM = 4
 		return ((bufferInfo.size << 1) | ((bufferInfo.flags >> 2) & 1));
 	}
 
@@ -276,4 +325,73 @@ void JNICALL mediaCodecReleaseOutputBuffer(JNIEnv* env, jclass clazz, uint64_t n
 void JNICALL mediaCodecRelease(JNIEnv* env, jclass clazz, uint64_t nativeObj) {
 	if (nativeObj)
 		delete ((MediaCodec*)nativeObj);
+}
+
+int JNICALL mediaCodecLoadExternalLibrary(JNIEnv* env, jclass clazz) {
+	libmediandk = dlopen("libmediandk.so", RTLD_NOW | RTLD_LOCAL);
+	if (!libmediandk)
+		return -1;
+    if (!(*((void**)&AMediaCodec_configure) = dlsym(libmediandk, "AMediaCodec_configure")))
+        return -2;
+    if (!(*((void**)&AMediaCodec_createDecoderByType) = dlsym(libmediandk, "AMediaCodec_createDecoderByType")))
+        return -3;
+    if (!(*((void**)&AMediaCodec_delete) = dlsym(libmediandk, "AMediaCodec_delete")))
+        return -4;
+    if (!(*((void**)&AMediaCodec_dequeueInputBuffer) = dlsym(libmediandk, "AMediaCodec_dequeueInputBuffer")))
+        return -5;
+    if (!(*((void**)&AMediaCodec_dequeueOutputBuffer) = dlsym(libmediandk, "AMediaCodec_dequeueOutputBuffer")))
+        return -6;
+    if (!(*((void**)&AMediaCodec_flush) = dlsym(libmediandk, "AMediaCodec_flush")))
+        return -7;
+    if (!(*((void**)&AMediaCodec_getInputBuffer) = dlsym(libmediandk, "AMediaCodec_getInputBuffer")))
+        return -8;
+    if (!(*((void**)&AMediaCodec_getOutputBuffer) = dlsym(libmediandk, "AMediaCodec_getOutputBuffer")))
+        return -9;
+    if (!(*((void**)&AMediaCodec_queueInputBuffer) = dlsym(libmediandk, "AMediaCodec_queueInputBuffer")))
+        return -10;
+    if (!(*((void**)&AMediaCodec_releaseOutputBuffer) = dlsym(libmediandk, "AMediaCodec_releaseOutputBuffer")))
+        return -11;
+    if (!(*((void**)&AMediaCodec_start) = dlsym(libmediandk, "AMediaCodec_start")))
+        return -12;
+    if (!(*((void**)&AMediaCodec_stop) = dlsym(libmediandk, "AMediaCodec_stop")))
+        return -13;
+    if (!(*((void**)&AMediaExtractor_advance) = dlsym(libmediandk, "AMediaExtractor_advance")))
+        return -14;
+    if (!(*((void**)&AMediaExtractor_delete) = dlsym(libmediandk, "AMediaExtractor_delete")))
+        return -15;
+    if (!(*((void**)&AMediaExtractor_getSampleTime) = dlsym(libmediandk, "AMediaExtractor_getSampleTime")))
+        return -16;
+    if (!(*((void**)&AMediaExtractor_getTrackCount) = dlsym(libmediandk, "AMediaExtractor_getTrackCount")))
+        return -17;
+    if (!(*((void**)&AMediaExtractor_getTrackFormat) = dlsym(libmediandk, "AMediaExtractor_getTrackFormat")))
+        return -18;
+    if (!(*((void**)&AMediaExtractor_new) = dlsym(libmediandk, "AMediaExtractor_new")))
+        return -19;
+    if (!(*((void**)&AMediaExtractor_readSampleData) = dlsym(libmediandk, "AMediaExtractor_readSampleData")))
+        return -20;
+    if (!(*((void**)&AMediaExtractor_seekTo) = dlsym(libmediandk, "AMediaExtractor_seekTo")))
+        return -21;
+    if (!(*((void**)&AMediaExtractor_selectTrack) = dlsym(libmediandk, "AMediaExtractor_selectTrack")))
+        return -22;
+    if (!(*((void**)&AMediaExtractor_setDataSourceFd) = dlsym(libmediandk, "AMediaExtractor_setDataSourceFd")))
+        return -23;
+    if (!(*((void**)&AMediaFormat_getInt32) = dlsym(libmediandk, "AMediaFormat_getInt32")))
+        return -24;
+    if (!(*((void**)&AMediaFormat_getInt64) = dlsym(libmediandk, "AMediaFormat_getInt64")))
+        return -25;
+    if (!(*((void**)&AMediaFormat_getString) = dlsym(libmediandk, "AMediaFormat_getString")))
+        return -26;
+
+	return 0;
+}
+
+void initializeMediaCodec() {
+	libmediandk = 0;
+}
+
+void terminateMediaCodec() {
+	if (libmediandk) {
+		dlclose(libmediandk);
+		libmediandk = 0;
+	}
 }

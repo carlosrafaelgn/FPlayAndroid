@@ -6,6 +6,6 @@
 APP_ABI          := armeabi-v7a arm64-v8a x86 x86_64
 APP_OPTIM        := release
 APP_STL          := system
-APP_PLATFORM     := android-21
-TARGET_PLATFORM  := android-21
+APP_PLATFORM     := android-16
+TARGET_PLATFORM  := android-16
 APP_BUILD_SCRIPT := Android-x.mk
