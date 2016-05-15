@@ -40,17 +40,29 @@
 #define FFT_SIZE 1024 //FFT_SIZE must be a power of 2 <= 65536
 #define QUARTER_FFT_SIZE (FFT_SIZE / 4)
 
-#define PROCESSOR_FEATURE_NEON 1
-#define PROCESSOR_FEATURE_SSE 2
+#define FEATURE_PROCESSOR_ARM 0x0001
+#define FEATURE_PROCESSOR_NEON 0x0002
+#define FEATURE_PROCESSOR_X86 0x0004
+#define FEATURE_PROCESSOR_SSE 0x0008
+#define FEATURE_PROCESSOR_64_BITS 0x0010
+#define FEATURE_DECODING_NATIVE 0x0020
+#define FEATURE_DECODING_DIRECT 0x0040
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	//x86 or x86_64
-	#define FPLAY_X86
-#elif defined(__arm__) || defined(__aarch64__)
+#if defined(__arm__) || defined(__aarch64__)
 	//arm or arm64
 	#define FPLAY_ARM
+#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+	//x86 or x86_64
+	#define FPLAY_X86
 #else
 	#error ("Unknown platform!")
+#endif
+
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+	//arm64 or x86_64
+	#define FPLAY_64_BITS
+#else
+	#define FPLAY_32_BITS
 #endif
 
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
@@ -75,12 +87,20 @@ unsigned int sampleRate;
 #include "OpenSL.h"
 
 unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
-#ifdef FPLAY_X86
+#ifdef FPLAY_ARM
+	#ifdef FPLAY_64_BITS
+		return FEATURE_PROCESSOR_ARM | neonMode | FEATURE_PROCESSOR_64_BITS;
+	#else
+		return FEATURE_PROCESSOR_ARM | neonMode;
+	#endif
+#else
 	//http://developer.android.com/intl/pt-br/ndk/guides/abis.html#x86
 	//All x86 Android devices use at least Atom processors (and all Atom processor have SSE, SSE2, SSE3 support)
-	return PROCESSOR_FEATURE_SSE;
-#else
-	return neonMode;
+	#ifdef FPLAY_64_BITS
+		return FEATURE_PROCESSOR_X86 | FEATURE_PROCESSOR_SSE | FEATURE_PROCESSOR_64_BITS;
+	#else
+		return FEATURE_PROCESSOR_X86 | FEATURE_PROCESSOR_SSE;
+	#endif
 #endif
 }
 
@@ -119,7 +139,7 @@ void checkNeonMode() {
 					while (i <= cpuinfo_len && cpuinfo[i] != '\n') {
 						if (memcmp(cpuinfo + i, " neon", 5) == 0 ||
 							memcmp(cpuinfo + i, "\tneon", 5) == 0) {
-							neonMode = 1;
+							neonMode = FEATURE_PROCESSOR_NEON;
 							break;
 						}
 						i++;
@@ -143,6 +163,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	initializeMediaCodec();
 
 	JNINativeMethod methodTable[] = {
+		{"getProcessorFeatures", "()I", (void*)getProcessorFeatures},
 		{"resetFiltersAndWritePosition", "(I)V", (void*)resetFiltersAndWritePosition},
 		{"enableEqualizer", "(I)V", (void*)enableEqualizer},
 		{"isEqualizerEnabled", "()I", (void*)isEqualizerEnabled},
@@ -162,8 +183,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecReleaseOutputBuffer", "(J)V", (void*)mediaCodecReleaseOutputBuffer},
 		{"mediaCodecRelease", "(J)V", (void*)mediaCodecRelease},
 		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
-		{"openSLInitialize", "(I)I", (void*)openSLInitialize},
-		{"openSLCreate", "(I)I", (void*)openSLCreate},
+		{"openSLInitialize", "()I", (void*)openSLInitialize},
+		{"openSLCreate", "(II)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},
 		{"openSLPause", "()I", (void*)openSLPause},
 		{"openSLStopAndFlush", "()I", (void*)openSLStopAndFlush},

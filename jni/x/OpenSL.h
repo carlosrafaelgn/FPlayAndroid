@@ -155,7 +155,7 @@ void JNICALL openSLTerminate(JNIEnv* env, jclass clazz) {
 	bufferCount = 0;
 }
 
-int JNICALL openSLInitialize(JNIEnv* env, jclass clazz, unsigned int bufferSizeInFrames) {
+int JNICALL openSLInitialize(JNIEnv* env, jclass clazz) {
 	openSLTerminate(env, clazz);
 
 	equalizerConfigChanged();
@@ -188,33 +188,45 @@ int JNICALL openSLInitialize(JNIEnv* env, jclass clazz, unsigned int bufferSizeI
 	if (result != SL_RESULT_SUCCESS)
 		return result;
 
-	::bufferSizeInFrames = bufferSizeInFrames;
-
-	//we always output stereo audio, regardless of the input config
-	fullBuffer = new unsigned char[bufferSizeInFrames << 2];
-	if (!fullBuffer)
-		return SL_RESULT_MEMORY_FAILURE;
-
-	bufferCount = (bufferSizeInFrames + 511) >> 9;
-	if (bufferCount > 256)
-		bufferCount = 256;
-
-	bufferDescriptors = new BufferDescription[bufferCount];
-	if (!bufferDescriptors)
-		return SL_RESULT_MEMORY_FAILURE;
-
 	resetOpenSL();
 
 	return 0;
 }
 
-int JNICALL openSLCreate(JNIEnv* env, jclass clazz, unsigned int sampleRate) {
+int JNICALL openSLCreate(JNIEnv* env, jclass clazz, unsigned int sampleRate, unsigned int bufferSizeInFrames) {
 	openSLRelease(env, clazz);
 
 	if (::sampleRate != sampleRate) {
 		::sampleRate = sampleRate;
 		equalizerConfigChanged();
 		virtualizerConfigChanged();
+	}
+
+	if (::bufferSizeInFrames != bufferSizeInFrames) {
+		::bufferSizeInFrames = bufferSizeInFrames;
+
+		//we always output stereo audio, regardless of the input config
+		if (fullBuffer) {
+			delete fullBuffer;
+			fullBuffer = 0;
+		}
+
+		fullBuffer = new unsigned char[bufferSizeInFrames << 2];
+		if (!fullBuffer)
+			return SL_RESULT_MEMORY_FAILURE;
+
+		bufferCount = (bufferSizeInFrames + 511) >> 9;
+		if (bufferCount > 256)
+			bufferCount = 256;
+
+		if (bufferDescriptors) {
+			delete bufferDescriptors;
+			bufferDescriptors = 0;
+		}
+
+		bufferDescriptors = new BufferDescription[bufferCount];
+		if (!bufferDescriptors)
+			return SL_RESULT_MEMORY_FAILURE;
 	}
 
 	resetOpenSL();

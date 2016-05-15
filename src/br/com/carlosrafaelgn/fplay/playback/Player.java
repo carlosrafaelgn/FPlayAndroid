@@ -2038,6 +2038,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_HEADSETHOOKACTIONS = 0x0036;
 	private static final int OPT_RADIOLASTGENRESHOUTCAST = 0x0037;
 	private static final int OPT_HTTPOPTIONS = 0x0038;
+	private static final int OPT_MEDIACONTEXTBUFFERCONFIG = 0x0039;
 
 	//values 0x01xx are shared among all effects
 	//static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -2179,6 +2180,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000021);
+		MediaContext.setBufferConfig(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
 		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : 0);
 		UI.setTransitions((UI.lastVersionCode < 85 && UI.transitions != 0) ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : UI.transitions);
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
@@ -2290,6 +2292,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
 		opts.put(OPT_RADIOLASTGENRESHOUTCAST, radioLastGenreShoutcast);
 		opts.put(OPT_HTTPOPTIONS, httpOptions);
+		opts.put(OPT_MEDIACONTEXTBUFFERCONFIG, MediaContext.getBufferConfig());
 		opts.put(OPT_TRANSITION, UI.transitions);
 		opts.put(OPT_HEADSETHOOKACTIONS, headsetHookActions);
 		opts.putBit(OPTBIT_CONTROLMODE, controlMode);

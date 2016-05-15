@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.playback;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -41,6 +42,7 @@ import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.os.SystemClock;
 
 import java.io.FileNotFoundException;
@@ -173,7 +175,15 @@ public final class HttpStreamReceiver implements Runnable {
 		@SuppressWarnings({ "deprecation", "PointlessBooleanExpression", "ConstantConditions" })
 		@Override
 		public void run() {
+			PowerManager.WakeLock wakeLock = null;
+
 			try {
+				if (!BuildConfig.X) {
+					wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
+					wakeLock.setReferenceCounted(false);
+					wakeLock.acquire();
+				}
+
 				if (!waitForHeaders())
 					return;
 
@@ -374,6 +384,8 @@ public final class HttpStreamReceiver implements Runnable {
 						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, IMediaPlayer.ERROR_IO), SystemClock.uptimeMillis());
 				}
 			} finally {
+				if (wakeLock != null)
+					wakeLock.release();
 				releaseMediaCodec();
 				synchronized (sync) {
 					releaseAudioTrack();

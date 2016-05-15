@@ -48,6 +48,25 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public final class MediaContext implements Runnable, Handler.Callback {
+	public static final int BUFFER_SIZE_500MS = 0x01;
+	public static final int BUFFER_SIZE_1000MS = 0x00;
+	public static final int BUFFER_SIZE_1500MS = 0x02;
+	public static final int BUFFER_SIZE_2000MS = 0x03;
+	public static final int BUFFER_SIZE_2500MS = 0x04;
+
+	public static final int FILL_THRESHOLD_25 = 0x10;
+	public static final int FILL_THRESHOLD_50 = 0x20;
+	public static final int FILL_THRESHOLD_75 = 0x30;
+	public static final int FILL_THRESHOLD_100 = 0x00;
+
+	public static final int FEATURE_PROCESSOR_ARM = 0x0001;
+	public static final int FEATURE_PROCESSOR_NEON = 0x0002;
+	public static final int FEATURE_PROCESSOR_X86 = 0x0004;
+	public static final int FEATURE_PROCESSOR_SSE = 0x0008;
+	public static final int FEATURE_PROCESSOR_64_BITS = 0x0010;
+	public static final int FEATURE_DECODING_NATIVE = 0x0020;
+	public static final int FEATURE_DECODING_DIRECT = 0x0040;
+
 	private static final int MSG_COMPLETION = 0x0100;
 	private static final int MSG_ERROR = 0x0101;
 	private static final int MSG_SEEKCOMPLETE = 0x0102;
@@ -69,6 +88,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_SETNEXT = 0x0005;
 	private static final int ACTION_RESET = 0x0006;
 	private static final int ACTION_EFFECTS = 0x0007;
+	private static final int ACTION_UPDATE_BUFFER_CONFIG = 0x0008;
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
 	private static final int PLAYER_TIMEOUT = 30000;
@@ -91,7 +111,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
 	private static volatile int requestedAction, requestedSeekMS;
 	private static Message effectsMessage;
-	private static int volumeInMillibels = 0;
+	private static int volumeInMillibels = 0, bufferConfig;
 	private static Handler handler;
 	private static Thread thread;
 	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
@@ -103,6 +123,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			hasExternalNativeLibrary = (mediaCodecLoadExternalLibrary() == 0);
 	}
+
+	private static native int getProcessorFeatures();
 
 	private static native void resetFiltersAndWritePosition(int srcChannelCount);
 
@@ -128,8 +150,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native void mediaCodecRelease(long nativeObj);
 	static native int mediaCodecLoadExternalLibrary();
 
-	private static native int openSLInitialize(int bufferSizeInFrames);
-	private static native int openSLCreate(int sampleRate);
+	private static native int openSLInitialize();
+	private static native int openSLCreate(int sampleRate, int bufferSizeInFrames);
 	private static native int openSLPlay();
 	private static native int openSLPause();
 	private static native int openSLStopAndFlush();
@@ -147,23 +169,53 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	@SuppressWarnings("deprecation")
 	private static int getBufferSizeInFrames() {
-		int bufferSizeInFrames = 0;
+		int minBufferSizeInFrames = 0;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
 			try {
 				final AudioManager am = (AudioManager)Player.theApplication.getSystemService(Context.AUDIO_SERVICE);
-				bufferSizeInFrames = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
+				minBufferSizeInFrames = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
 			} catch (Throwable ex) {
 				//just ignore
 			}
 		}
-		if (bufferSizeInFrames <= 0) {
+		if (minBufferSizeInFrames <= 0) {
 			final int bufferSizeInBytes = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-			bufferSizeInFrames = bufferSizeInBytes >> 2;
+			minBufferSizeInFrames = bufferSizeInBytes >> 2;
 		}
 
-		final int oneSecondInFrames = 48000;
-		//make sure it is a multiple of bufferSizeInFrames
-		return ((oneSecondInFrames + bufferSizeInFrames - 1) / bufferSizeInFrames) * bufferSizeInFrames;
+		final int bufferSizeInFrames;
+		switch (bufferConfig & 0x0F) {
+		case BUFFER_SIZE_500MS:
+			bufferSizeInFrames = 48000 / 2;
+			break;
+		case BUFFER_SIZE_1500MS:
+			bufferSizeInFrames = (48000 * 3) / 2;
+			break;
+		case BUFFER_SIZE_2000MS:
+			bufferSizeInFrames = 48000 * 2;
+			break;
+		case BUFFER_SIZE_2500MS:
+			bufferSizeInFrames = (48000 * 5) / 2;
+			break;
+		default:
+			bufferSizeInFrames = 48000;
+			break;
+		}
+
+		//make sure it is a multiple of minBufferSizeInFrames
+		return ((bufferSizeInFrames + minBufferSizeInFrames - 1) / minBufferSizeInFrames) * minBufferSizeInFrames;
+	}
+
+	private static int getFillThresholdInFrames(int bufferSizeInFrames) {
+		switch (bufferConfig & 0xF0) {
+		case FILL_THRESHOLD_25:
+			return (bufferSizeInFrames >> 2);
+		case FILL_THRESHOLD_50:
+			return (bufferSizeInFrames >> 1);
+		case FILL_THRESHOLD_75:
+			return ((bufferSizeInFrames * 3) >> 2);
+		}
+		return bufferSizeInFrames;
 	}
 
 	private static void checkOpenSLResult(int result) {
@@ -215,11 +267,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		outputBuffer.index = -1;
-		int lastHeadPositionInFrames = 0;
+		int lastHeadPositionInFrames = 0, bufferSizeInFrames = getBufferSizeInFrames(), fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
 
 		synchronized (openSLSync) {
-			initializationError = (openSLInitialize(getBufferSizeInFrames()) != 0);
+			initializationError = (openSLInitialize() != 0);
 		}
 
 		if (initializationError) {
@@ -242,6 +294,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		boolean paused = true, playPending = false;
+		int framesWrittenWhilePending = 0;
 		while (alive) {
 			if (paused || waitToReceiveAction) {
 				synchronized (threadNotification) {
@@ -281,12 +334,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (sampleRate != currentPlayer.getSampleRate()) {
 									sampleRate = currentPlayer.getSampleRate();
 									synchronized (openSLSync) {
-										checkOpenSLResult(openSLCreate(sampleRate));
+										checkOpenSLResult(openSLCreate(sampleRate, bufferSizeInFrames));
 										openSLSetVolumeInMillibels(volumeInMillibels);
 										MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 									}
 								}
 								playPending = true;
+								framesWrittenWhilePending = 0;
 								bufferingStart(currentPlayer);
 								resetFiltersAndWritePosition(currentPlayer.getChannelCount());
 								lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
@@ -308,6 +362,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (playerRequestingAction == currentPlayer) {
 									if ((framesWritten - framesPlayed) < 512) {
 										playPending = true;
+										framesWrittenWhilePending = 0;
 										bufferingStart(currentPlayer);
 									} else {
 										checkOpenSLResult(openSLPlay());
@@ -371,6 +426,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									outputBuffer.release();
 									paused = true;
 									playPending = false;
+									framesWrittenWhilePending = 0;
 									currentPlayer = null;
 									nextPlayer = null;
 									sourcePlayer = null;
@@ -389,6 +445,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								requestSucceeded = true;
 								break;
+							case ACTION_UPDATE_BUFFER_CONFIG:
+								bufferSizeInFrames = getBufferSizeInFrames();
+								fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
+								break;
 							}
 						} catch (Throwable ex) {
 							synchronized (openSLSync) {
@@ -402,6 +462,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							}
 							paused = true;
 							playPending = false;
+							framesWrittenWhilePending = 0;
 							currentPlayer = null;
 							nextPlayer = null;
 							sourcePlayer = null;
@@ -442,6 +503,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, seekPendingPlayer), SystemClock.uptimeMillis());
 								framesWritten = seekPendingPlayer.getCurrentPositionInFrames();
 								framesPlayed = framesWritten;
+								framesWrittenWhilePending = 0;
 							} catch (Throwable ex) {
 								synchronized (openSLSync) {
 									openSLRelease();
@@ -454,6 +516,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								paused = true;
 								playPending = false;
+								framesWrittenWhilePending = 0;
 								currentPlayer = null;
 								nextPlayer = null;
 								sourcePlayer = null;
@@ -508,10 +571,20 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							//just ignore
 						}
 					} else {
-						if (sourcePlayer == currentPlayer)
+						if (sourcePlayer == currentPlayer) {
 							framesWritten += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
-						else
+							if (playPending) {
+								framesWrittenWhilePending += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
+								if (framesWrittenWhilePending >= fillThresholdInFrames) {
+									//we have just filled the buffer, time to start playing
+									playPending = false;
+									checkOpenSLResult(openSLPlay());
+									bufferingEnd(sourcePlayer);
+								}
+							}
+						} else {
 							nextFramesWritten += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
+						}
 
 						outputBuffer.remainingBytes -= bytesWrittenThisTime;
 						outputBuffer.offsetInBytes += bytesWrittenThisTime;
@@ -915,5 +988,37 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static IMediaPlayer createMediaPlayer() {
 		return new MediaCodecPlayer();
+	}
+
+	public static int getFeatures() {
+		return (getProcessorFeatures() |
+			(hasExternalNativeLibrary ? FEATURE_DECODING_NATIVE : 0) |
+			(MediaCodecPlayer.isDirect ? FEATURE_DECODING_DIRECT : 0));
+	}
+
+	public static int getBufferConfig() {
+		return bufferConfig;
+	}
+
+	public static void setBufferConfig(int bufferConfig) {
+		MediaContext.bufferConfig = bufferConfig;
+
+		if (!alive)
+			return;
+
+		waitToReceiveAction = true;
+		synchronized (threadNotification) {
+			requestedAction = ACTION_UPDATE_BUFFER_CONFIG;
+			threadNotification.notify();
+		}
+		synchronized (notification) {
+			if (requestedAction == ACTION_UPDATE_BUFFER_CONFIG) {
+				try {
+					notification.wait(PLAYER_TIMEOUT);
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			}
+		}
 	}
 }
