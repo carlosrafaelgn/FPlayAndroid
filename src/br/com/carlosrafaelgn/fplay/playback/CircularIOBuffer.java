@@ -99,7 +99,9 @@ public final class CircularIOBuffer {
 		if (length < 0)
 			length = 0;
 		synchronized (sync) {
-			filledSize = ((filledSize <= length) ? 0 : (filledSize - length));
+			if (filledSize < length)
+				throw new IllegalArgumentException("filledSize < length");
+			filledSize -= length;
 			sync.notifyAll();
 		}
 	}
@@ -107,7 +109,9 @@ public final class CircularIOBuffer {
 	public void advanceBufferAndCommitReadOneByteWithoutNotification() {
 		readBuffer.position(readBuffer.position() + 1);
 		synchronized (sync) {
-			filledSize = ((filledSize <= 1) ? 0 : (filledSize - 1));
+			if (filledSize < 1)
+				throw new ArrayIndexOutOfBoundsException("filledSize < 1");
+			filledSize--;
 		}
 	}
 
@@ -158,9 +162,11 @@ public final class CircularIOBuffer {
 
 	public void commitWritten(int length) {
 		if (length < 0)
-			length = 0;
+			throw new IllegalArgumentException("length < 0");
 		synchronized (sync) {
-			filledSize = (((capacity - filledSize) <= length) ? capacity : (filledSize + length));
+			if (capacity < (filledSize + length))
+				throw new IllegalArgumentException("capacity < (filledSize + length)");
+			filledSize += length;
 			sync.notifyAll();
 		}
 	}

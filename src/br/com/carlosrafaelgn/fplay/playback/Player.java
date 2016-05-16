@@ -1753,8 +1753,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		switch (index) {
 		case 0:
 			return (4 << 10);
-		case 2:
-			return (16 << 10);
+		case 1:
+			return (8 << 10);
 		case 3:
 			return (32 << 10);
 		case 4:
@@ -1766,7 +1766,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		case 7:
 			return (256 << 10);
 		default:
-			return (8 << 10);
+			return (16 << 10);
 		}
 	}
 
@@ -1778,27 +1778,27 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		httpOptions = (httpOptions & ~0x0F) | (bytesBeforeDecodingIndex & 0x0F);
 	}
 
-	public static int getSecondsBeforePlayback(int index) {
+	public static int getMSBeforePlayback(int index) {
 		switch (index) {
 		case 0:
 			return 500;
-		case 1:
-			return 1000;
+		case 2:
+			return 1500;
 		case 3:
 			return 2000;
 		case 4:
 			return 2500;
 		default:
-			return 1500;
+			return 1000;
 		}
 	}
 
-	public static int getSecondsBeforePlaybackIndex() {
+	public static int getMSBeforePlaybackIndex() {
 		return ((httpOptions >>> 4) & 0x0F);
 	}
 
-	public static void setSecondsBeforePlayingIndex(int secondsBeforePlayingIndex) {
-		httpOptions = (httpOptions & ~0xF0) | ((secondsBeforePlayingIndex & 0x0F) << 4);
+	public static void setMSBeforePlayingIndex(int msBeforePlayingIndex) {
+		httpOptions = (httpOptions & ~0xF0) | ((msBeforePlayingIndex & 0x0F) << 4);
 	}
 
 	private static void _httpStreamReceiverError(int version, int errorCode) {
@@ -1857,7 +1857,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//force the player to always start playing as if coming from a pause
 		silenceMode = SILENCE_NORMAL;
 		playerBuffering = true;
-		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getSecondsBeforePlayback(getSecondsBeforePlaybackIndex()), audioSessionId, song.path);
+		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getMSBeforePlayback(getMSBeforePlaybackIndex()), audioSessionId, song.path);
 		if (httpStreamReceiver.start()) {
 			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 				return;
@@ -2179,7 +2179,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
-		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000021);
+		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000012);
 		MediaContext.setBufferConfig(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
 		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : 0);
 		UI.setTransitions((UI.lastVersionCode < 85 && UI.transitions != 0) ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : UI.transitions);

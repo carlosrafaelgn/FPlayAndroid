@@ -294,7 +294,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		boolean paused = true, playPending = false;
-		int framesWrittenWhilePending = 0;
+		int framesWrittenBeforePlaying = 0;
 		while (alive) {
 			if (paused || waitToReceiveAction) {
 				synchronized (threadNotification) {
@@ -340,7 +340,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									}
 								}
 								playPending = true;
-								framesWrittenWhilePending = 0;
+								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
 								resetFiltersAndWritePosition(currentPlayer.getChannelCount());
 								lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
@@ -351,6 +351,15 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							case ACTION_PAUSE:
 								if (playerRequestingAction == currentPlayer) {
 									checkOpenSLResult(openSLPause());
+									if (currentPlayer.isInternetStream()) {
+										//"mini-reset" here
+										checkOpenSLResult(openSLStopAndFlush());
+										outputBuffer.release();
+										framesWritten = 0;
+										framesPlayed = 0;
+										resetFiltersAndWritePosition(currentPlayer.getChannelCount());
+										lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
+									}
 									paused = true;
 									requestSucceeded = true;
 									wakeLock.release();
@@ -362,7 +371,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (playerRequestingAction == currentPlayer) {
 									if ((framesWritten - framesPlayed) < 512) {
 										playPending = true;
-										framesWrittenWhilePending = 0;
+										framesWrittenBeforePlaying = 0;
 										bufferingStart(currentPlayer);
 									} else {
 										checkOpenSLResult(openSLPlay());
@@ -426,7 +435,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									outputBuffer.release();
 									paused = true;
 									playPending = false;
-									framesWrittenWhilePending = 0;
+									framesWrittenBeforePlaying = 0;
 									currentPlayer = null;
 									nextPlayer = null;
 									sourcePlayer = null;
@@ -462,7 +471,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							}
 							paused = true;
 							playPending = false;
-							framesWrittenWhilePending = 0;
+							framesWrittenBeforePlaying = 0;
 							currentPlayer = null;
 							nextPlayer = null;
 							sourcePlayer = null;
@@ -503,7 +512,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, seekPendingPlayer), SystemClock.uptimeMillis());
 								framesWritten = seekPendingPlayer.getCurrentPositionInFrames();
 								framesPlayed = framesWritten;
-								framesWrittenWhilePending = 0;
+								framesWrittenBeforePlaying = 0;
 							} catch (Throwable ex) {
 								synchronized (openSLSync) {
 									openSLRelease();
@@ -516,7 +525,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								paused = true;
 								playPending = false;
-								framesWrittenWhilePending = 0;
+								framesWrittenBeforePlaying = 0;
 								currentPlayer = null;
 								nextPlayer = null;
 								sourcePlayer = null;
@@ -574,8 +583,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						if (sourcePlayer == currentPlayer) {
 							framesWritten += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
 							if (playPending) {
-								framesWrittenWhilePending += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
-								if (framesWrittenWhilePending >= fillThresholdInFrames) {
+								framesWrittenBeforePlaying += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
+								if (framesWrittenBeforePlaying >= fillThresholdInFrames) {
 									//we have just filled the buffer, time to start playing
 									playPending = false;
 									checkOpenSLResult(openSLPlay());
@@ -632,7 +641,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						sourcePlayer = currentPlayer;
 					} else if (framesWritten != 0) {
 						//underrun!!!
-						currentPlayer.notifyUnderrun();
+						checkOpenSLResult(openSLPause());
+						playPending = true;
+						framesWrittenBeforePlaying = 0;
+						bufferingStart(currentPlayer);
 						//give the decoder some time to decode something
 						try {
 							Thread.sleep(30);

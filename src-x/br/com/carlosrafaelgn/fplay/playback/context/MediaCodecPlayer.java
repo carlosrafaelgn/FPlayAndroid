@@ -40,7 +40,6 @@ import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
-import android.os.SystemClock;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,11 +52,10 @@ import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
-	private static final int MSG_HTTP_STREAM_RECEIVER_FILL_INITIAL_BUFFERS = 0x0100;
-	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x0101;
-	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x0102;
-	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0103;
-	private static final int MSG_HTTP_STREAM_RECEIVER_INFO = 0x0104;
+	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x0100;
+	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x0101;
+	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0102;
+	private static final int MSG_HTTP_STREAM_RECEIVER_INFO = 0x0103;
 
 	private static final int STATE_IDLE = 0;
 	private static final int STATE_INITIALIZED = 1;
@@ -107,7 +105,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	private HttpStreamReceiver httpStreamReceiver;
 	private String path;
 	private ByteBuffer[] inputBuffers, outputBuffers;
-	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, internetStream, buffering, httpStreamBufferingAfterPause, nativeMediaCodec;
+	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, nativeMediaCodec, httpStreamBufferingAfterPause;
 	private MediaCodec.BufferInfo bufferInfo;
 	private OnCompletionListener completionListener;
 	private OnErrorListener errorListener;
@@ -142,7 +140,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	boolean isInternetStream() {
-		return internetStream;
+		return (httpStreamReceiver != null);
 	}
 
 	boolean isNativeMediaCodec() {
@@ -153,49 +151,31 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		return nativeObj;
 	}
 
-	private void fillInternetInputBuffers() throws IOException {
-		int inputFrameSize, index;
-		if (state == STATE_PREPARING || httpStreamBufferingAfterPause) {
-			//initial buffers
-			final int[] properties = new int[4]; //channel count, sample rate, bit rate, samples per frame
-			while ((inputFrameSize = httpStreamReceiver.canReadMpegHeader(properties)) > 0 &&
-				(index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) >= 0) {
-				httpStreamReceiver.buffer.readArray(inputBuffers[index], 0, inputFrameSize);
-				httpStreamReceiver.buffer.commitRead(inputFrameSize);
-				mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
-				//currentPositionInMS is used as the counter of initially filled buffers
-				currentPositionInMS++;
-				//if we have filled up all input buffers, or if we have filled enough buffers
-				//(according to the user setting), then we are good to go!
-				if (currentPositionInMS >= inputBuffers.length ||
-					(currentPositionInMS * properties[3]) >= ((sampleRate * Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex())) / 1000)) {
-					currentPositionInMS = 0;
-					if (httpStreamBufferingAfterPause) {
-						httpStreamBufferingAfterPause = false;
-						if (MediaContext.play(this))
-							state = STATE_STARTED;
-					} else {
-						onPrepared();
-					}
-					return;
-				}
+	private boolean fillInternetInputBuffers() throws IOException {
+		if (mediaCodec == null || inputBuffers == null || outputBuffers == null) {
+			//we are not ready yet (probably we have just unpaused, but have not received
+			//the MSG_HTTP_STREAM_RECEIVER_INFO message yet)
+			try {
+				Thread.sleep(10);
+			} catch (Throwable ex) {
+				//just ignore
 			}
-			//do it again
-			handler.sendMessageAtTime(Message.obtain(handler, MSG_HTTP_STREAM_RECEIVER_FILL_INITIAL_BUFFERS, httpStreamReceiverVersion, 0), SystemClock.uptimeMillis() + 5);
-		} else {
-			//regular buffers
-			while ((inputFrameSize = httpStreamReceiver.canReadMpegHeader(null)) > 0 &&
-				(index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) >= 0) {
-				httpStreamReceiver.buffer.readArray(inputBuffers[index], 0, inputFrameSize);
-				httpStreamReceiver.buffer.commitRead(inputFrameSize);
-				mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
-			}
+			return false;
 		}
+		for (int i = 0; i < inputBuffers.length && !inputOver; i++) {
+			final int inputFrameSize, index;
+			if ((inputFrameSize = httpStreamReceiver.canReadMpegHeader(null)) <= 0)
+				break;
+			if ((index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) < 0)
+				break;
+			httpStreamReceiver.buffer.readArray(inputBuffers[index], 0, inputFrameSize);
+			httpStreamReceiver.buffer.commitRead(inputFrameSize);
+			mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
+		}
+		return true;
 	}
 
 	private void fillInputBuffers() throws IOException {
-		if (inputOver)
-			return;
 		for (int i = 0; i < inputBuffers.length && !inputOver; i++) {
 			final int index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
@@ -220,13 +200,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		if (msg.arg1 != httpStreamReceiverVersion || handler == null || httpStreamReceiver == null)
 			return true;
 		switch (msg.what) {
-		case MSG_HTTP_STREAM_RECEIVER_FILL_INITIAL_BUFFERS:
-			try {
-				fillInternetInputBuffers();
-			} catch (Throwable ex) {
-				onError(ex, 0);
-			}
-			break;
 		case MSG_HTTP_STREAM_RECEIVER_ERROR:
 			onError(null, !Player.isConnectedToTheInternet() ? IMediaPlayer.ERROR_NOT_FOUND : msg.arg2);
 			break;
@@ -239,9 +212,12 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				onInfo(INFO_URL_UPDATE, 0, msg.obj);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_INFO:
-			if (state != STATE_PREPARING && state != STATE_PAUSED) {
-				onError(new IllegalStateException(), 0);
-				break;
+			if (state != STATE_PREPARING) {
+				if (state != STATE_STARTED || !httpStreamBufferingAfterPause) {
+					onError(new IllegalStateException(), 0);
+					break;
+				}
+				httpStreamBufferingAfterPause = false;
 			}
 			try {
 				final int[] properties = (int[])msg.obj; //channel count, sample rate, bit rate, samples per frame
@@ -269,6 +245,20 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				inputBuffers = mediaCodec.getInputBuffers();
 				prepareOutputBuffers();
 				fillInternetInputBuffers();
+				switch (state) {
+				case STATE_PREPARING:
+					state = STATE_PREPARED;
+					if (preparedListener != null)
+						preparedListener.onPrepared(this);
+					break;
+				case STATE_STARTED:
+					//resume MediaContext ONLY HERE!!!!
+					//otherwise, that thread could call (directly or indirectly) prepareOutputBuffers()
+					//or fillInternetInputBuffers(), concurrently with this thread!!!
+					if (!MediaContext.resume(this))
+						throw new IllegalStateException();
+					break;
+				}
 			} catch (Throwable ex) {
 				onError(ex, 0);
 			}
@@ -313,13 +303,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	//MUST be called from the playback thread: MediaContext.run()
 	//**************************************************************
 
-	void notifyUnderrun() {
-		if (!buffering) {
-			buffering = true;
-			MediaContext.bufferingStart(this);
-		}
-	}
-
 	@SuppressWarnings("deprecation")
 	void nextOutputBuffer(OutputBuffer outputBuffer) throws IOException {
 		if (outputOver) {
@@ -349,16 +332,18 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			outputOver = ((ret & 1) != 0);
 			outputBuffer.streamOver = outputOver;
 			outputBuffer.offsetInBytes = 0;
-
-			if (buffering) {
-				buffering = false;
-				MediaContext.bufferingEnd(this);
-			}
 		} else {
-			if (internetStream)
-				fillInternetInputBuffers();
-			else
+			if (httpStreamReceiver != null) {
+				if (!fillInternetInputBuffers()) {
+					outputBuffer.index = -1;
+					outputBuffer.player = this;
+					outputBuffer.remainingBytes = 0;
+					outputBuffer.streamOver = false;
+					return;
+				}
+			} else {
 				fillInputBuffers();
+			}
 			int index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 			IndexChecker:
 			for (; ; ) {
@@ -392,11 +377,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			outputBuffer.offsetInBytes = bufferInfo.offset;
 			outputBuffer.remainingBytes = bufferInfo.size;
 
-			if (buffering) {
-				buffering = false;
-				MediaContext.bufferingEnd(this);
-			}
-
 			if (!isDirect) {
 				if (tryToProcessNonDirectBuffers) {
 					try {
@@ -422,7 +402,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	private void releaseOutputBuffer(int bufferIndex) {
 		if (nativeMediaCodec)
 			MediaContext.mediaCodecReleaseOutputBuffer(nativeObj);
-		else
+		else if (mediaCodec != null)
 			mediaCodec.releaseOutputBuffer(bufferIndex, false);
 	}
 
@@ -493,13 +473,11 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			break;
 		case STATE_PAUSED:
 			if (httpStreamReceiver != null) {
-				if (!httpStreamBufferingAfterPause) {
-					httpStreamBufferingAfterPause = true;
-					buffering = true;
-					onInfo(INFO_BUFFERING_START, 0, null);
-					if (!httpStreamReceiver.start())
-						throw new IMediaPlayer.PermissionDeniedException();
-				}
+				httpStreamBufferingAfterPause = true;
+				state = STATE_STARTED;
+				onInfo(IMediaPlayer.INFO_BUFFERING_START, 0, null);
+				if (!httpStreamReceiver.start())
+					throw new IMediaPlayer.PermissionDeniedException();
 			} else if (MediaContext.resume(this)) {
 				state = STATE_STARTED;
 			}
@@ -519,7 +497,11 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				state = STATE_PAUSED;
 				if (httpStreamReceiver != null) {
 					httpStreamReceiver.pause();
+					final int tmpSampleRate = sampleRate;
+					final int tmpChannelCount = channelCount;
 					resetMedia();
+					sampleRate = tmpSampleRate;
+					channelCount = tmpChannelCount;
 				}
 			}
 			break;
@@ -533,10 +515,10 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		if (state != STATE_IDLE)
 			throw new IllegalStateException("setDataSource() - player was in an invalid state: " + state);
 		this.path = path;
-		if ((internetStream = (path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:")))) {
+		if ((path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:"))) {
 			durationInMS = -1;
 			handler = new Handler(this);
-			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getSecondsBeforePlayback(Player.getSecondsBeforePlaybackIndex()), 1, path);
+			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), 0, 1, path);
 			nativeMediaCodec = false;
 		} else {
 			final File file = new File(path);
@@ -560,7 +542,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			break;
 		case STATE_INITIALIZED:
 			//enforce our policy
-			if (internetStream)
+			if (httpStreamReceiver != null)
 				throw new UnsupportedOperationException("internet streams must used prepareAsync()");
 			if (nativeMediaCodec) {
 				fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
@@ -635,11 +617,9 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			break;
 		case STATE_INITIALIZED:
 			//enforce our policy
-			if (!internetStream)
+			if (httpStreamReceiver == null)
 				throw new UnsupportedOperationException("streams other than internet streams must used prepare()");
-			buffering = true;
 			state = STATE_PREPARING;
-			onInfo(INFO_BUFFERING_START, 0, null);
 			if (!httpStreamReceiver.start())
 				throw new IMediaPlayer.PermissionDeniedException();
 			break;
@@ -650,7 +630,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 	@Override
 	public void seekToAsync(int msec) {
-		if (internetStream) {
+		if (httpStreamReceiver != null) {
 			onSeekComplete();
 			return;
 		}
@@ -715,7 +695,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			}
 			mediaCodec = null;
 		}
-		buffering = false;
 		httpStreamBufferingAfterPause = false;
 		inputOver = false;
 		outputOver = false;
@@ -739,7 +718,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		resetMedia();
 		path = null;
 		handler = null;
-		internetStream = false;
 		stateBeforeSeek = STATE_IDLE;
 		state = STATE_IDLE;
 	}
@@ -849,6 +827,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	void onError(Throwable exception, int errorCode) {
+		if (state == STATE_ERROR)
+			return;
 		inputOver = true;
 		outputOver = true;
 		state = STATE_ERROR;
@@ -870,12 +850,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	void onInfo(int what, int extra, Object extraObject) {
 		if (infoListener != null)
 			infoListener.onInfo(this, what, extra, extraObject);
-	}
-
-	void onPrepared() {
-		state = STATE_PREPARED;
-		if (preparedListener != null)
-			preparedListener.onPrepared(this);
 	}
 
 	void onSeekComplete() {

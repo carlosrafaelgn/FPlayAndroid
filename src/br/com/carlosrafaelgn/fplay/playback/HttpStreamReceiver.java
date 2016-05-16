@@ -662,7 +662,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int infoMsg, int arg1, int bytesBeforeDecoding, int secondsBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
+	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int infoMsg, int arg1, int bytesBeforeDecoding, int msBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
 		this.url = (RadioStation.isRadioUrl(path) ? normalizeIcyUrl(RadioStation.extractUrl(path)) : new URL(path));
 		this.path = path;
 		sync = new Object();
@@ -680,7 +680,7 @@ public final class HttpStreamReceiver implements Runnable {
 		this.audioSessionId = audioSessionId;
 		bytesReceivedSoFar = -1;
 		initialNetworkBufferLengthInBytes = ((!isPerformingFullPlayback || bytesBeforeDecoding <= 0) ? 0 : bytesBeforeDecoding);
-		initialAudioBufferInMS = secondsBeforePlaying;
+		initialAudioBufferInMS = msBeforePlaying;
 	}
 
 	private boolean waitForHeaders() {

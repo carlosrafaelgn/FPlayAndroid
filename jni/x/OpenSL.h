@@ -152,6 +152,7 @@ void JNICALL openSLTerminate(JNIEnv* env, jclass clazz) {
 		bufferDescriptors = 0;
 	}
 
+	bufferSizeInFrames = 0;
 	bufferCount = 0;
 }
 
