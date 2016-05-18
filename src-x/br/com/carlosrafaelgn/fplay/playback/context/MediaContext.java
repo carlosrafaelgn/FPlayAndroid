@@ -89,6 +89,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_RESET = 0x0006;
 	private static final int ACTION_EFFECTS = 0x0007;
 	private static final int ACTION_UPDATE_BUFFER_CONFIG = 0x0008;
+	private static final int ACTION_ENABLE_EFFECTS_GAIN = 0x0009;
+	private static final int ACTION_DISABLE_EFFECTS_GAIN = 0x000A;
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
 	private static final int PLAYER_TIMEOUT = 30000;
@@ -127,6 +129,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native int getProcessorFeatures();
 
 	private static native void resetFiltersAndWritePosition(int srcChannelCount);
+
+	private static native void enableAutomaticEffectsGain(int enabled);
+	public static native int isAutomaticEffectsGainEnabled();
 
 	private static native void enableEqualizer(int enabled);
 	static native int isEqualizerEnabled();
@@ -458,6 +463,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								bufferSizeInFrames = getBufferSizeInFrames();
 								fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
 								break;
+							case ACTION_ENABLE_EFFECTS_GAIN:
+								enableAutomaticEffectsGain(1);
+								break;
+							case ACTION_DISABLE_EFFECTS_GAIN:
+								enableAutomaticEffectsGain(0);
+								break;
 							}
 						} catch (Throwable ex) {
 							synchronized (openSLSync) {
@@ -573,7 +584,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//the buffer was too full, just wait some time
 						try {
 							synchronized (threadNotification) {
-								threadNotification.wait(30);
+								if (requestedAction != ACTION_NONE)
+									threadNotification.wait(50);
 							}
 							continue;
 						} catch (Throwable ex) {
@@ -1012,7 +1024,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		return bufferConfig;
 	}
 
-	public static void setBufferConfig(int bufferConfig) {
+	public static void setBufferConfig_(int bufferConfig) {
 		MediaContext.bufferConfig = bufferConfig;
 
 		if (!alive)
@@ -1025,6 +1037,28 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 		synchronized (notification) {
 			if (requestedAction == ACTION_UPDATE_BUFFER_CONFIG) {
+				try {
+					notification.wait(PLAYER_TIMEOUT);
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			}
+		}
+	}
+
+	public static void enableAutomaticEffectsGain_(int enabled) {
+		if (!alive) {
+			enableAutomaticEffectsGain(enabled);
+			return;
+		}
+
+		waitToReceiveAction = true;
+		synchronized (threadNotification) {
+			requestedAction = ((enabled == 0) ? ACTION_DISABLE_EFFECTS_GAIN : ACTION_ENABLE_EFFECTS_GAIN);
+			threadNotification.notify();
+		}
+		synchronized (notification) {
+			if (requestedAction == ACTION_DISABLE_EFFECTS_GAIN || requestedAction == ACTION_ENABLE_EFFECTS_GAIN) {
 				try {
 					notification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {

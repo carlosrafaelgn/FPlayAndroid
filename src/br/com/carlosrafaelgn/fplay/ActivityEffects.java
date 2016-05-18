@@ -76,7 +76,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		return getText(R.string.audio_effects);
 	}
 
-	private String format(int frequency, int level) {
+	private String formatEqualizer(int frequency, int level) {
 		if (txtBuilder == null)
 			return "";
 		txtBuilder.delete(0, txtBuilder.length());
@@ -86,20 +86,28 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			UI.formatIntAsFloat(txtBuilder, frequency / 100, false, true);
 			txtBuilder.append('k');
 		}
-		txtBuilder.append("Hz ");
-		if (level > 0)
+		txtBuilder.append(" Hz / ");
+		if (level >= 0)
 			txtBuilder.append('+');
 		UI.formatIntAsFloat(txtBuilder, level / 10, false, false);
-		txtBuilder.append("dB");
+		txtBuilder.append(" dB");
 		return txtBuilder.toString();
 	}
-	
-	private String format(int strength) {
+
+	private String formatBassBoost(int strength) {
 		if (txtBuilder == null)
 			return "";
 		txtBuilder.delete(0, txtBuilder.length());
-		UI.formatIntAsFloat(txtBuilder, strength, false, false);
-		txtBuilder.append("%");
+		BassBoost.getStrengthString(txtBuilder, strength);
+		return txtBuilder.toString();
+	}
+
+	private String formatVirtualizer(int strength) {
+		if (txtBuilder == null)
+			return "";
+		txtBuilder.delete(0, txtBuilder.length());
+		txtBuilder.append(strength / 10);
+		txtBuilder.append('%');
 		return txtBuilder.toString();
 	}
 
@@ -281,12 +289,22 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		}
 	}
 
-	private int barToActual(int barValue) {
-		return barValue * 5;
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
+	private int barToActualBassBoost(int barValue) {
+		return (BuildConfig.X ? (barValue * 50) : (barValue * 10));
 	}
 
-	private int actualToBar(int actualValue) {
-		return actualValue / 5;
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
+	private int actualToBarBassBoost(int actualValue) {
+		return (BuildConfig.X ? (actualValue / 50) : (actualValue / 10));
+	}
+
+	private int barToActualVirtualizer(int barValue) {
+		return barValue * 10;
+	}
+
+	private int actualToBarVirtualizer(int actualValue) {
+		return actualValue / 10;
 	}
 
 	@Override
@@ -358,16 +376,16 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			Player.bassBoostMode = false;
 		}
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
-		barBass.setMax(actualToBar(BassBoost.getMaxStrength()));
-		barBass.setValue(actualToBar(BassBoost.getStrength(audioSink)));
-		barBass.setKeyIncrement(actualToBar(BassBoost.getMaxStrength() / 50));
+		barBass.setMax(actualToBarBassBoost(BassBoost.getMaxStrength()));
+		barBass.setValue(actualToBarBassBoost(BassBoost.getStrength(audioSink)));
+		barBass.setKeyIncrement(1);
 		barBass.setOnBgSeekBarChangeListener(this);
 		barBass.setInsideList(true);
 		barBass.setAdditionalContentDescription(getText(R.string.bass_boost).toString());
 		barVirtualizer = (BgSeekBar)findViewById(R.id.barVirtualizer);
-		barVirtualizer.setMax(actualToBar(Virtualizer.getMaxStrength()));
-		barVirtualizer.setValue(actualToBar(Virtualizer.getStrength(audioSink)));
-		barVirtualizer.setKeyIncrement(actualToBar(Virtualizer.getMaxStrength() / 50));
+		barVirtualizer.setMax(actualToBarVirtualizer(Virtualizer.getMaxStrength()));
+		barVirtualizer.setValue(actualToBarVirtualizer(Virtualizer.getStrength(audioSink)));
+		barVirtualizer.setKeyIncrement(1);
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
 		barVirtualizer.setAdditionalContentDescription(getText(R.string.virtualization).toString());
@@ -473,11 +491,11 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		if (!fromUser)
 			return;
 		if (seekBar == barBass) {
-			BassBoost.setStrength(barToActual(value), audioSink);
-			seekBar.setText(format(BassBoost.getStrength(audioSink)));
+			BassBoost.setStrength(barToActualBassBoost(value), audioSink);
+			seekBar.setText(formatBassBoost(BassBoost.getStrength(audioSink)));
 		} else if (seekBar == barVirtualizer) {
-			Virtualizer.setStrength(barToActual(value), audioSink);
-			seekBar.setText(format(Virtualizer.getStrength(audioSink)));
+			Virtualizer.setStrength(barToActualVirtualizer(value), audioSink);
+			seekBar.setText(formatVirtualizer(Virtualizer.getStrength(audioSink)));
 		} else if (bars != null && frequencies != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
@@ -487,7 +505,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 						seekBar.setValue(-min / 50);
 					}
 					Equalizer.setBandLevel(i, level, audioSink);
-					seekBar.setText(format(frequencies[i], Equalizer.getBandLevel(i, audioSink)));
+					seekBar.setText(formatEqualizer(frequencies[i], Equalizer.getBandLevel(i, audioSink)));
 					return;
 				}
 			}
@@ -523,7 +541,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				final BgSeekBar bar = bars[i];
 				if (bar != null) {
 					final int level = Equalizer.getBandLevel(i, audioSink);
-					bars[i].setText(format(frequencies[i], level));
+					bars[i].setText(formatEqualizer(frequencies[i], level));
 					bars[i].setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 				}
 			}
@@ -531,14 +549,16 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		if (chkBass != null)
 			chkBass.setChecked(BassBoost.isEnabled(audioSink));
 		if (barBass != null) {
-			barBass.setValue(actualToBar(BassBoost.getStrength(audioSink)));
-			barBass.setText(format(BassBoost.getStrength(audioSink)));
+			final int strength = BassBoost.getStrength(audioSink);
+			barBass.setValue(actualToBarBassBoost(strength));
+			barBass.setText(formatBassBoost(strength));
 		}
 		if (chkVirtualizer != null)
 			chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
 		if (barVirtualizer != null) {
-			barVirtualizer.setValue(actualToBar(Virtualizer.getStrength(audioSink)));
-			barVirtualizer.setText(format(Virtualizer.getStrength(audioSink)));
+			final int strength = Virtualizer.getStrength(audioSink);
+			barVirtualizer.setValue(actualToBarVirtualizer(strength));
+			barVirtualizer.setText(formatVirtualizer(strength));
 		}
 		if (btnAudioSink != null)
 			btnAudioSink.setText(getAudioSinkDescription(audioSink, true));
@@ -630,7 +650,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 						p.leftMargin = hMargin;
 					bar.setLayoutParams(p);
 					bar.setMax((max - min) / 50);
-					bar.setText(format(frequencies[i], level));
+					bar.setText(formatEqualizer(frequencies[i], level));
 					bar.setKeyIncrement(2);
 					bar.setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 					bar.setOnBgSeekBarChangeListener(this);

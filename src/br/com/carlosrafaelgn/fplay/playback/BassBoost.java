@@ -140,6 +140,10 @@ public final class BassBoost {
 		return 1000;
 	}
 
+	public static void getStrengthString(StringBuilder stringBuilder, int strength) {
+		br.com.carlosrafaelgn.fplay.playback.context.BassBoost.getStrengthString(stringBuilder, strength);
+	}
+
 	public static int getStrength(int audioSink) {
 		return ((audioSink == Player.AUDIO_SINK_WIRE) ? strength_wire : ((audioSink == Player.AUDIO_SINK_BT) ? strength_bt : strength));
 	}

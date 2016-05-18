@@ -41,6 +41,11 @@ public final class BassBoost {
 		bassBoost = new android.media.audiofx.BassBoost(0, Player.audioSessionId);
 	}
 
+	public static void getStrengthString(StringBuilder stringBuilder, int strength) {
+		stringBuilder.append(strength / 10);
+		stringBuilder.append('%');
+	}
+
 	public boolean getStrengthSupported() {
 		return bassBoost.getStrengthSupported();
 	}

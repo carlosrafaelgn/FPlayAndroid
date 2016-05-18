@@ -32,7 +32,15 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
+import br.com.carlosrafaelgn.fplay.ui.UI;
+
 public final class BassBoost {
+	public static void getStrengthString(StringBuilder stringBuilder, int strength) {
+		stringBuilder.append('+');
+		UI.formatIntAsFloat(stringBuilder, strength / 10, false, false);
+		stringBuilder.append(" dB");
+	}
+
 	public boolean getStrengthSupported() {
 		return true;
 	}

@@ -86,6 +86,23 @@ equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 
 void updateEffectProc();
 
+void JNICALL enableAutomaticEffectsGain(JNIEnv* env, jclass clazz, unsigned int enabled) {
+	::effectsGainEnabled = enabled;
+
+	if (!enabled) {
+		effectsGainClip[0] = 1.0f;
+		effectsGainClip[1] = 1.0f;
+		effectsGainClip[2] = 0.0f;
+		effectsGainClip[3] = 0.0f;
+		effectsMustReduceGain = 0;
+		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+	}
+}	
+
+int JNICALL isAutomaticEffectsGainEnabled(JNIEnv* env, jclass clazz) {
+	return effectsGainEnabled;
+}
+
 void resetEqualizer() {
 	effectsGainClip[0] = 1.0f;
 	effectsGainClip[1] = 1.0f;

@@ -32,10 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
-import android.content.Context;
-
-import br.com.carlosrafaelgn.fplay.playback.Player;
-
 public final class MediaContext {
 	public static final int BUFFER_SIZE_500MS = 0x01;
 	public static final int BUFFER_SIZE_1000MS = 0x00;
@@ -74,6 +70,13 @@ public final class MediaContext {
 		return 0;
 	}
 
-	public static void setBufferConfig(int bufferConfig) {
+	public static void setBufferConfig_(int bufferConfig) {
+	}
+
+	public static int isAutomaticEffectsGainEnabled() {
+		return 1;
+	}
+
+	public static void enableAutomaticEffectsGain_(int enabled) {
 	}
 }

@@ -2117,6 +2117,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_ANNOUNCE_CURRENT_SONG = 51;
 	private static final int OPTBIT_PLACE_TITLE_AT_THE_BOTTOM = 52;
 	private static final int OPTBIT_PLAY_WITH_LONG_PRESS = 53;
+	private static final int OPTBIT_AUTOMATIC_EFFECTS_GAIN = 54;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2180,7 +2181,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000012);
-		MediaContext.setBufferConfig(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
+		MediaContext.setBufferConfig_(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
 		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : 0);
 		UI.setTransitions((UI.lastVersionCode < 85 && UI.transitions != 0) ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : UI.transitions);
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
@@ -2240,6 +2241,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		announceCurrentSong = opts.getBit(OPTBIT_ANNOUNCE_CURRENT_SONG);
 		UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
+		MediaContext.enableAutomaticEffectsGain_(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -2340,6 +2342,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_ANNOUNCE_CURRENT_SONG, announceCurrentSong);
 		opts.putBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM, UI.placeTitleAtTheBottom);
 		opts.putBit(OPTBIT_PLAY_WITH_LONG_PRESS, UI.playWithLongPress);
+		opts.putBit(OPTBIT_AUTOMATIC_EFFECTS_GAIN, MediaContext.isAutomaticEffectsGainEnabled() != 0);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

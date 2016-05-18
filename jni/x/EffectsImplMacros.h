@@ -33,7 +33,7 @@
 
 typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
-#define MAX_ALLOWED_SAMPLE_VALUE 32768.0f
+#define MAX_ALLOWED_SAMPLE_VALUE 31000.0f //31000/32768 = 0.946 = -0.48dB
 
 #define x_n1_L samples[0]
 #define x_n1_R samples[1]
