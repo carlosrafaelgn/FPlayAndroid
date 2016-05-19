@@ -617,7 +617,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			}
 			while (hMargin > UI._1dp && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
 				hMargin--;
-			int size = 0, textSize = 0, bgY = 0, y = 0;
+			int size = 0, textSize = 0, y = 0;
 			if (hMargin <= UI._1dp) {
 				//oops... the bars didn't fit inside the screen... we must adjust everything!
 				hMargin = ((bandCount >= 10) ? UI._1dp : UI.controlSmallMargin);
@@ -631,8 +631,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				final FontMetrics fm = UI.textPaint.getFontMetrics();
 				final int box = (int)(fm.descent - fm.ascent + 0.5f);
 				final int yInBox = box - (int)(fm.descent);
-				bgY = (size - box) >> 1;
-				y = bgY + yInBox;
+				y = ((size - box) >> 1) + yInBox;
 			}
 			if (panelBars == null) {
 				final Context ctx = getHostActivity();
@@ -656,7 +655,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 					bar.setOnBgSeekBarChangeListener(this);
 					bar.setInsideList(true);
 					if (size != 0)
-						bar.setSize(size, textSize, bgY, y);
+						bar.setSize(size, textSize, y);
 					bars[i] = bar;
 					bar.setId(i + 1);
 					bar.setNextFocusLeftId(i);

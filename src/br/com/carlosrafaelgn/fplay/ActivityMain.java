@@ -137,16 +137,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			if (volume <= Player.VOLUME_MIN_DB)
 				return "-\u221E dB";
 			if (volume >= 0)
-				return "-0.00 dB";
-			volume = -volume;
+				return "-0 dB";
 			volumeBuilder.delete(0, volumeBuilder.length());
 			volumeBuilder.append('-');
-			volumeBuilder.append(volume / 100);
-			volumeBuilder.append('.');
-			volume %= 100;
-			if (volume < 10)
-				volumeBuilder.append('0');
-			volumeBuilder.append(volume);
+			volumeBuilder.append(-volume / 100);
 			volumeBuilder.append(" dB");
 			return volumeBuilder.toString();
 		default:
@@ -197,7 +191,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		} else {
 			if (volume == Integer.MIN_VALUE)
 				volume = Player.localVolumeDB;
-			value = (volume - Player.VOLUME_MIN_DB) / 5;
+			value = ((Player.volumeControlType == Player.VOLUME_CONTROL_DB) ?
+				((volume - Player.VOLUME_MIN_DB) / 100) :
+					((volume - Player.VOLUME_MIN_DB) / (-Player.VOLUME_MIN_DB / 100)));
 		}
 		if (barVolume != null) {
 			barVolume.setValue(value);
@@ -1189,9 +1185,15 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				btnVolume = null;
 				barVolume.setAdditionalContentDescription(getText(R.string.volume).toString());
 				barVolume.setOnBgSeekBarChangeListener(this);
-				barVolume.setMax((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? Player.volumeStreamMax : (-Player.VOLUME_MIN_DB / 5));
+				barVolume.setMax(
+					((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ?
+						Player.volumeStreamMax :
+							((Player.volumeControlType == Player.VOLUME_CONTROL_DB) ?
+								(-Player.VOLUME_MIN_DB / 100) :
+									100)));
 				barVolume.setVertical(UI.isLandscape && !UI.isLargeScreen);
-				barVolume.setKeyIncrement((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? 1 : 20);
+				barVolume.setKeyIncrement(1);
+				barVolume.setIcon(UI.ICON_VOLUME4);
 				vwVolume = barVolume;
 				vwVolumeId = R.id.barVolume;
 			}
@@ -1527,7 +1529,12 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
 		if (fromUser) {
 			if (seekBar == barVolume) {
-				seekBar.setText(volumeToString(Player.setVolume((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? value : ((value * 5) + Player.VOLUME_MIN_DB))));
+				seekBar.setText(volumeToString(Player.setVolume(
+					((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ?
+						value :
+							((Player.volumeControlType == Player.VOLUME_CONTROL_DB) ?
+								Player.VOLUME_MIN_DB + (value * 100) :
+									Player.VOLUME_MIN_DB - ((value * Player.VOLUME_MIN_DB) / 100))))));
 			} else if (seekBar == barSeek) {
 				value = getMSFromBarValue(value);
 				if (value < 0) {

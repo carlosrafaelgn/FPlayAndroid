@@ -61,10 +61,10 @@ public final class BgSeekBar extends View {
 		void onDraw(Canvas canvas, BgSeekBar seekBar, Rect rect, int filledSize);
 	}
 	
-	private String additionalContentDescription, text;
-	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textBgY, textSize, textSizeIdx, keyIncrement;
-	private boolean insideList, vertical, tracking, drawTextFirst, sliderMode;
-	private int state, thumbWidth, size;
+	private String additionalContentDescription, text, icon;
+	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textSize, textSizeIdx, keyIncrement;
+	private boolean insideList, vertical, drawTextFirst, sliderMode;
+	private int state, thumbWidth, size, trackingOffset;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
 	
@@ -89,6 +89,7 @@ public final class BgSeekBar extends View {
 		max = 100;
 		sliderMode = false;
 		thumbWidth = (UI.defaultControlContentsSize * 3) >> 2;
+		trackingOffset = Integer.MIN_VALUE;
 		setTextSizeIndex(1);
 		super.setDrawingCacheEnabled(false);
 		super.setClickable(true);
@@ -128,31 +129,27 @@ public final class BgSeekBar extends View {
 		case 2:
 			textSizeIdx = 2;
 			textSize = UI._22sp;
-			textBgY = (UI.defaultControlSize - UI._22spBox) >> 1;
-			textY = textBgY + UI._22spYinBox;
+			textY = ((UI.defaultControlSize - UI._22spBox) >> 1) + UI._22spYinBox;
 			break;
 		case 1:
 			textSizeIdx = 1;
 			textSize = UI._18sp;
-			textBgY = (UI.defaultControlSize - UI._18spBox) >> 1;
-			textY = textBgY + UI._18spYinBox;
+			textY = ((UI.defaultControlSize - UI._18spBox) >> 1) + UI._18spYinBox;
 			break;
 		default:
 			textSizeIdx = 0;
 			textSize = UI._14sp;
-			textBgY = (UI.defaultControlSize - UI._14spBox) >> 1;
-			textY = textBgY + UI._14spYinBox;
+			textY = ((UI.defaultControlSize - UI._14spBox) >> 1) + UI._14spYinBox;
 			break;
 		}
 		updateTextWidth();
 	}
 	
-	public void setSize(int size, int textSize, int bgY, int y) {
+	public void setSize(int size, int textSize, int textY) {
 		this.size = size;
 		this.textSizeIdx = -1;
 		this.textSize = textSize;
-		this.textBgY = bgY;
-		this.textY = y;
+		this.textY = textY;
 		updateTextWidth();
 	}
 
@@ -172,7 +169,16 @@ public final class BgSeekBar extends View {
 	public void setAdditionalContentDescription(String additionalContentDescription) {
 		this.additionalContentDescription = additionalContentDescription;
 	}
-	
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = ((icon != null && icon.length() == 0) ? null : icon);
+		updateTextWidth();
+	}
+
 	public String getText() {
 		return text;
 	}
@@ -190,7 +196,7 @@ public final class BgSeekBar extends View {
 	
 	private void updateTextX() {
 		final int s = (vertical ? height : width);
-		if (filledSize < textWidth && filledSize < ((s - thumbWidth) >> 1)) {
+		if (filledSize < textWidth) {// && filledSize < ((s - thumbWidth) >> 1)) {
 			drawTextFirst = false;
 			textColor = (insideList ? UI.color_text_listitem : UI.color_text);
 			textX = s - textWidth;
@@ -204,13 +210,15 @@ public final class BgSeekBar extends View {
 	}
 	
 	private void updateTextWidth() {
-		textWidth = UI.controlSmallMargin + ((text == null || text.length() == 0) ? 0 : UI.measureText(text, textSize));
+		textWidth = UI.controlSmallMargin +
+			((icon != null) ? (textSize + UI.controlSmallMargin) : 0) +
+				((text == null || text.length() == 0) ? 0 : UI.measureText(text, textSize));
 		updateTextX();
 		invalidate();
 	}
 	
 	public boolean isTracking() {
-		return tracking;
+		return (trackingOffset != Integer.MIN_VALUE);
 	}
 	
 	public boolean isVertical() {
@@ -377,15 +385,15 @@ public final class BgSeekBar extends View {
 			drawListener.onSizeChanged(this, w, h);
 	}
 	
-	private void trackTouchEvent(float position) {
-		final float total = (vertical ? height : width) - thumbWidth;
+	private void trackTouchEvent(int position) {
+		final int total = (vertical ? height : width) - 1 - thumbWidth;
 		if (total <= 0)
 			return;
 		if (vertical)
-			position = (float)(height - (thumbWidth >> 1)) - position;
+			position = (height - 1 - (thumbWidth >> 1)) - position;
 		else
-			position -= (float)(thumbWidth >> 1);
-		setValue((int)(((float)max * position) / total), true, false);
+			position -= (thumbWidth >> 1);
+		setValue((int)((((float)max * (float)position) / (float)total) + 0.5f), true, false);
 	}
 
 	@Override
@@ -396,39 +404,54 @@ public final class BgSeekBar extends View {
 		//Based on: http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/widget/AbsSeekBar.java#AbsSeekBar.onTouchEvent%28android.view.MotionEvent%29
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN:
-			tracking = false;
+			trackingOffset = Integer.MIN_VALUE;
 			if (listener != null) {
 				if (!listener.onStartTrackingTouch(this))
 					return true;
 			}
-			tracking = true;
+			//compute an offset (delta between the pointer and the center of the thumb),
+			//because trackTouchEvent() always uses position as the center of the thumb
+			int pos;
+			if (vertical) {
+				pos = height - 1 - (int)event.getY();
+				//if the user clicks/touches outside the thumb, let trackTouchEvent() center it
+				trackingOffset = ((sliderMode || pos < filledSize || pos >= (filledSize + thumbWidth - UI.strokeSize)) ?
+					0 :
+						(pos - (filledSize + (thumbWidth >> 1))));
+				pos = height - 1 - pos;
+			} else {
+				pos = (int)event.getX();
+				//if the user clicks/touches outside the thumb, let trackTouchEvent() center it
+				trackingOffset = ((sliderMode || pos < filledSize || pos >= (filledSize + thumbWidth - UI.strokeSize)) ?
+					0 :
+						((filledSize + (thumbWidth >> 1)) - pos));
+			}
 			setPressed(true);
-			trackTouchEvent(vertical ? event.getY() : event.getX());
+			trackTouchEvent(pos + trackingOffset);
 			if (getParent() != null)
 				getParent().requestDisallowInterceptTouchEvent(true);
 			playSoundEffect(SoundEffectConstants.CLICK);
 			break;
 		case MotionEvent.ACTION_MOVE:
-			if (!tracking)
-				return true;
-			trackTouchEvent(vertical ? event.getY() : event.getX());
+			if (trackingOffset != Integer.MIN_VALUE)
+				trackTouchEvent((int)(vertical ? event.getY() : event.getX()) + trackingOffset);
 			break;
 		case MotionEvent.ACTION_UP:
 			setPressed(false);
-			if (tracking) {
-				trackTouchEvent(vertical ? event.getY() : event.getX());
+			if (trackingOffset != Integer.MIN_VALUE) {
+				trackTouchEvent((int)(vertical ? event.getY() : event.getX()) + trackingOffset);
 				if (listener != null)
 					listener.onStopTrackingTouch(this, false);
-				tracking = false;
+				trackingOffset = Integer.MIN_VALUE;
 			}
 			break;
 		case MotionEvent.ACTION_CANCEL:
 			setPressed(false);
 			invalidate();
-			if (tracking) {
+			if (trackingOffset != Integer.MIN_VALUE) {
 				if (listener != null)
 					listener.onStopTrackingTouch(this, true);
-				tracking = false;
+				trackingOffset = Integer.MIN_VALUE;
 			}
 			break;
 		}
@@ -522,12 +545,24 @@ public final class BgSeekBar extends View {
 				UI.rect.right = filledSize;
 			}
 			UI.drawBgBorderless(canvas, state);
-			if (drawTextFirst)
-				UI.drawText(canvas, text, textColor, textSize, textX, textY);
+			if (drawTextFirst) {
+				if (icon == null) {
+					UI.drawText(canvas, text, textColor, textSize, textX, textY);
+				} else {
+					TextIconDrawable.drawIcon(canvas, icon, textX, (UI.rect.bottom + UI.rect.top - textSize) >> 1, textSize, textColor);
+					UI.drawText(canvas, text, textColor, textSize, textX + textSize + UI.controlSmallMargin, textY);
+				}
+			}
 			UI.rect.left = UI.rect.right;
 			UI.rect.right = right - UI.strokeSize;
-			if (!drawTextFirst)
-				UI.drawText(canvas, text, textColor, textSize, textX, textY);
+			if (!drawTextFirst) {
+				if (icon == null) {
+					UI.drawText(canvas, text, textColor, textSize, textX, textY);
+				} else {
+					TextIconDrawable.drawIcon(canvas, icon, textX, (UI.rect.bottom + UI.rect.top - textSize) >> 1, textSize, textColor);
+					UI.drawText(canvas, text, textColor, textSize, textX + textSize + UI.controlSmallMargin, textY);
+				}
+			}
 			if (sliderMode) {
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + (thumbWidth >> 1) - UI.controlMargin, 0, UI.controlLargeMargin, color);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI.controlMargin, bottom - UI.controlMargin, UI.controlLargeMargin, color);
