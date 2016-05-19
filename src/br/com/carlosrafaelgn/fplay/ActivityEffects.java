@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay;
 
 import android.content.Context;
-import android.graphics.Paint.FontMetrics;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
@@ -80,13 +79,11 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		if (txtBuilder == null)
 			return "";
 		txtBuilder.delete(0, txtBuilder.length());
-		if (frequency < 1000) {
+		if (frequency < 1000)
 			txtBuilder.append(frequency);
-		} else {
+		else
 			UI.formatIntAsFloat(txtBuilder, frequency / 100, false, true);
-			txtBuilder.append('k');
-		}
-		txtBuilder.append(" Hz / ");
+		txtBuilder.append((frequency < 1000) ? " Hz  " : " kHz  ");
 		if (level >= 0)
 			txtBuilder.append('+');
 		UI.formatIntAsFloat(txtBuilder, level / 10, false, false);
@@ -591,6 +588,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			final int bandCount = Equalizer.getBandCount();
 			if (bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
 				initBarsAndFrequencies(bandCount);
+
 			int availableScreenW = getDecorViewWidth();
 			int hMargin = getDecorViewHeight();
 			//some times, when rotating the device, the decorview takes a little longer to be updated
@@ -606,32 +604,22 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			} else {
 				availableScreenW -= (UI.controlMargin << 1);
 			}
-			if (UI.is3D) {
-				if (UI.isLargeScreen) {
-					availableScreenW -= (UI.controlLargeMargin << 1);
-				} else if (UI.isLowDpiScreen) {
-					availableScreenW -= (UI.controlSmallMargin << 1);
-				} else {
-					availableScreenW -= (UI.controlMargin << 1);
-				}
-			}
-			while (hMargin > UI._1dp && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
+
+			if (UI.is3D)
+				availableScreenW -= (UI.isLargeScreen ? (UI.controlLargeMargin << 1) :
+						(UI.isLowDpiScreen ? (UI.controlSmallMargin << 1) :
+							(UI.controlMargin << 1)));
+
+			while (hMargin > UI.controlXtraSmallMargin && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
 				hMargin--;
-			int size = 0, textSize = 0, y = 0;
-			if (hMargin <= UI._1dp) {
+
+			int size = 0;
+			if (hMargin <= UI.controlXtraSmallMargin) {
 				//oops... the bars didn't fit inside the screen... we must adjust everything!
-				hMargin = ((bandCount >= 10) ? UI._1dp : UI.controlSmallMargin);
+				hMargin = ((bandCount >= 10) ? UI.controlXtraSmallMargin : UI.controlSmallMargin);
 				size = UI.defaultControlSize - 1;
 				while (size > UI._4dp && ((bandCount * size) + ((bandCount - 1) * hMargin)) > availableScreenW)
 					size--;
-				textSize = size - (UI.controlMargin << 1) - (UI.strokeSize << 1) - (UI._1dp << 1);
-				if (textSize < UI._4dp)
-					textSize = UI._4dp;
-				UI.textPaint.setTextSize(textSize);
-				final FontMetrics fm = UI.textPaint.getFontMetrics();
-				final int box = (int)(fm.descent - fm.ascent + 0.5f);
-				final int yInBox = box - (int)(fm.descent);
-				y = ((size - box) >> 1) + yInBox;
 			}
 			if (panelBars == null) {
 				final Context ctx = getHostActivity();
@@ -655,7 +643,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 					bar.setOnBgSeekBarChangeListener(this);
 					bar.setInsideList(true);
 					if (size != 0)
-						bar.setSize(size, textSize, y);
+						bar.setSize(size);
 					bars[i] = bar;
 					bar.setId(i + 1);
 					bar.setNextFocusLeftId(i);

@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -63,8 +64,8 @@ public final class BgSeekBar extends View {
 	
 	private String additionalContentDescription, text, icon;
 	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textSize, textSizeIdx, keyIncrement;
-	private boolean insideList, vertical, drawTextFirst, sliderMode;
-	private int state, thumbWidth, size, trackingOffset;
+	private boolean insideList, vertical, sliderMode;
+	private int state, thumbWidth, size, thumbMargin, trackingOffset;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
 	
@@ -125,6 +126,7 @@ public final class BgSeekBar extends View {
 
 	public void setTextSizeIndex(int index) {
 		size = UI.defaultControlSize;
+		thumbMargin = UI.controlSmallMargin;
 		switch (index) {
 		case 2:
 			textSizeIdx = 2;
@@ -145,11 +147,31 @@ public final class BgSeekBar extends View {
 		updateTextWidth();
 	}
 	
-	public void setSize(int size, int textSize, int textY) {
+	public void setSize(int size) {
 		this.size = size;
-		this.textSizeIdx = -1;
-		this.textSize = textSize;
-		this.textY = textY;
+		textSizeIdx = -1;
+		thumbMargin = //((size > (UI.defaultControlSize - UI._4dp)) ? UI.controlMargin :
+						((size >= (UI.defaultControlSize >> 1)) ? UI.controlSmallMargin :
+							0);//);
+		textSize = size - (thumbMargin << 1) - (UI.strokeSize << 1) - (UI._1dp << 1);
+		if (textSize >= UI._22sp && size > (UI.defaultControlSize - UI._4dp)) {
+			textSize = UI._22sp;
+			textY = ((size - UI._22spBox) >> 1) + UI._22spYinBox;
+		} else if (textSize >= UI._18sp) {
+			textSize = UI._18sp;
+			textY = ((size - UI._18spBox) >> 1) + UI._18spYinBox;
+		} else if (textSize >= UI._14sp) {
+			textSize = UI._14sp;
+			textY = ((size - UI._14spBox) >> 1) + UI._14spYinBox;
+		} else {
+			if (textSize < UI._4dp)
+				textSize = UI._4dp;
+			UI.textPaint.setTextSize(textSize);
+			final Paint.FontMetrics fm = UI.textPaint.getFontMetrics();
+			final int box = (int)(fm.descent - fm.ascent + 0.5f);
+			final int yInBox = box - (int)(fm.descent);
+			textY = ((size - box) >> 1) + yInBox;
+		}
 		updateTextWidth();
 	}
 
@@ -197,13 +219,11 @@ public final class BgSeekBar extends View {
 	private void updateTextX() {
 		final int s = (vertical ? height : width);
 		if (filledSize < textWidth) {// && filledSize < ((s - thumbWidth) >> 1)) {
-			drawTextFirst = false;
 			textColor = (insideList ? UI.color_text_listitem : UI.color_text);
 			textX = s - textWidth;
 			if (textX < filledSize + thumbWidth)
-				textX = filledSize + thumbWidth;
+				textX = filledSize + thumbWidth + UI.controlSmallMargin;
 		} else {
-			drawTextFirst = true;
 			textColor = UI.color_text_selected;
 			textX = UI.controlSmallMargin;
 		}
@@ -533,8 +553,8 @@ public final class BgSeekBar extends View {
 			final int right = UI.rect.right;
 			final int bottom = UI.rect.bottom;
 			final int color = UI.getBorderColor(state);
-			UI.rect.top = UI.controlMargin;
-			UI.rect.bottom -= UI.controlMargin;
+			UI.rect.top = thumbMargin;
+			UI.rect.bottom -= thumbMargin;
 			UI.strokeRect(canvas, color, UI.strokeSize);
 			if (UI.hasBorders) {
 				UI.rect.left = UI.strokeSize;
@@ -545,24 +565,14 @@ public final class BgSeekBar extends View {
 				UI.rect.right = filledSize;
 			}
 			UI.drawBgBorderless(canvas, state);
-			if (drawTextFirst) {
-				if (icon == null) {
-					UI.drawText(canvas, text, textColor, textSize, textX, textY);
-				} else {
-					TextIconDrawable.drawIcon(canvas, icon, textX, (UI.rect.bottom + UI.rect.top - textSize) >> 1, textSize, textColor);
-					UI.drawText(canvas, text, textColor, textSize, textX + textSize + UI.controlSmallMargin, textY);
-				}
+			if (icon == null) {
+				UI.drawText(canvas, text, textColor, textSize, textX, textY);
+			} else {
+				TextIconDrawable.drawIcon(canvas, icon, textX, (UI.rect.bottom + UI.rect.top - textSize) >> 1, textSize, textColor);
+				UI.drawText(canvas, text, textColor, textSize, textX + textSize + UI.controlSmallMargin, textY);
 			}
 			UI.rect.left = UI.rect.right;
 			UI.rect.right = right - UI.strokeSize;
-			if (!drawTextFirst) {
-				if (icon == null) {
-					UI.drawText(canvas, text, textColor, textSize, textX, textY);
-				} else {
-					TextIconDrawable.drawIcon(canvas, icon, textX, (UI.rect.bottom + UI.rect.top - textSize) >> 1, textSize, textColor);
-					UI.drawText(canvas, text, textColor, textSize, textX + textSize + UI.controlSmallMargin, textY);
-				}
-			}
 			if (sliderMode) {
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + (thumbWidth >> 1) - UI.controlMargin, 0, UI.controlLargeMargin, color);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI.controlMargin, bottom - UI.controlMargin, UI.controlLargeMargin, color);

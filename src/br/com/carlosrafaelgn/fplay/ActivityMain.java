@@ -152,34 +152,33 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	}
 	
 	private void setVolumeIcon(int volume) {
-		if (btnVolume != null) {
-			final int max;
-			switch (Player.volumeControlType) {
-			case Player.VOLUME_CONTROL_STREAM:
-				//The parameter volume is only used to help properly synchronize when
-				//Player.volumeControlType == Player.VOLUME_CONTROL_STREAM
-				max = Player.volumeStreamMax;
-				break;
-			case Player.VOLUME_CONTROL_DB:
-			case Player.VOLUME_CONTROL_PERCENT:
-				max = -Player.VOLUME_MIN_DB;
-				volume += max;
-				break;
-			default:
+		final String icon;
+		final int max;
+		switch (Player.volumeControlType) {
+		case Player.VOLUME_CONTROL_STREAM:
+			//The parameter volume is only used to help properly synchronize when
+			//Player.volumeControlType == Player.VOLUME_CONTROL_STREAM
+			max = Player.volumeStreamMax;
+			break;
+		case Player.VOLUME_CONTROL_DB:
+		case Player.VOLUME_CONTROL_PERCENT:
+			max = -Player.VOLUME_MIN_DB;
+			volume += max;
+			break;
+		default:
+			if (btnVolume != null)
 				btnVolume.setText(UI.ICON_VOLUME4);
-				return;
-			}
-			if (volume == max)
-				btnVolume.setText(UI.ICON_VOLUME4);
-			else if (volume == 0)
-				btnVolume.setText(UI.ICON_VOLUME0);
-			else if (volume > ((max + 1) >> 1))
-				btnVolume.setText(UI.ICON_VOLUME3);
-			else if (volume > (max >> 2))
-				btnVolume.setText(UI.ICON_VOLUME2);
-			else
-				btnVolume.setText(UI.ICON_VOLUME1);
+			return;
 		}
+		icon = ((volume == max) ? UI.ICON_VOLUME4 :
+					((volume == 0) ? UI.ICON_VOLUME0 :
+						((volume > ((max + 1) >> 1)) ? UI.ICON_VOLUME3 :
+							((volume > (max >> 2)) ? UI.ICON_VOLUME2 :
+								UI.ICON_VOLUME1))));
+		if (btnVolume != null)
+			btnVolume.setText(icon);
+		else if (barVolume != null)
+			barVolume.setIcon(icon);
 	}
 	
 	private void updateVolumeDisplay(int volume) {
@@ -195,11 +194,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				((volume - Player.VOLUME_MIN_DB) / 100) :
 					((volume - Player.VOLUME_MIN_DB) / (-Player.VOLUME_MIN_DB / 100)));
 		}
+		setVolumeIcon(volume);
 		if (barVolume != null) {
 			barVolume.setValue(value);
 			barVolume.setText(volumeToString(volume));
-		} else {
-			setVolumeIcon(volume);
 		}
 	}
 
@@ -1529,12 +1527,14 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
 		if (fromUser) {
 			if (seekBar == barVolume) {
-				seekBar.setText(volumeToString(Player.setVolume(
+				final int volume = Player.setVolume(
 					((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ?
 						value :
 							((Player.volumeControlType == Player.VOLUME_CONTROL_DB) ?
 								Player.VOLUME_MIN_DB + (value * 100) :
-									Player.VOLUME_MIN_DB - ((value * Player.VOLUME_MIN_DB) / 100))))));
+									Player.VOLUME_MIN_DB - ((value * Player.VOLUME_MIN_DB) / 100))));
+				setVolumeIcon(volume);
+				seekBar.setText(volumeToString(volume));
 			} else if (seekBar == barSeek) {
 				value = getMSFromBarValue(value);
 				if (value < 0) {
