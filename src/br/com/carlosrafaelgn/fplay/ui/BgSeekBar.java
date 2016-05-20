@@ -49,6 +49,7 @@ import android.view.ViewDebug.ExportedProperty;
 import android.view.accessibility.AccessibilityEvent;
 
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 public final class BgSeekBar extends View {
 	public interface OnBgSeekBarChangeListener {
@@ -63,9 +64,9 @@ public final class BgSeekBar extends View {
 	}
 	
 	private String additionalContentDescription, text, icon;
-	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textSize, textSizeIdx, keyIncrement;
+	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textSize, keyIncrement;
 	private boolean insideList, vertical, sliderMode;
-	private int state, thumbWidth, size, thumbMargin, trackingOffset;
+	private int state, thumbWidth, size, thumbMargin, trackingOffset, secondaryBgColor, secondaryBgColorBlended;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
 	
@@ -92,22 +93,32 @@ public final class BgSeekBar extends View {
 		thumbWidth = (UI.defaultControlContentsSize * 3) >> 2;
 		trackingOffset = Integer.MIN_VALUE;
 		setTextSizeIndex(1);
+		setInsideList(false);
 		super.setDrawingCacheEnabled(false);
 		super.setClickable(true);
 		super.setFocusableInTouchMode(!UI.hasTouch);
 		super.setFocusable(true);
 	}
-	
+
+	private void updateSecondaryBgColorBlended() {
+		final int state = (insideList ? (this.state ^ UI.STATE_FOCUSED) : this.state);
+		secondaryBgColorBlended = ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
+			(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed : UI.color_selected_pressed) :
+				(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused : UI.color_selected),
+					secondaryBgColor, 0.35f);
+	}
+
 	public void setSliderMode(boolean sliderMode) {
 		this.sliderMode = sliderMode;
 		this.thumbWidth = (sliderMode ? (UI.strokeSize << 1) : ((UI.defaultControlContentsSize * 3) >> 2));
-		setTextSizeIndex(textSizeIdx);
 		updateBar();
 		invalidate();
 	}
 	
 	public void setInsideList(boolean insideList) {
 		this.insideList = insideList;
+		secondaryBgColor = (insideList ? UI.color_list_bg : UI.color_window);
+		updateSecondaryBgColorBlended();
 		updateTextX();
 		invalidate();
 	}
@@ -129,17 +140,14 @@ public final class BgSeekBar extends View {
 		thumbMargin = UI.controlSmallMargin;
 		switch (index) {
 		case 2:
-			textSizeIdx = 2;
 			textSize = UI._22sp;
 			textY = ((UI.defaultControlSize - UI._22spBox) >> 1) + UI._22spYinBox;
 			break;
 		case 1:
-			textSizeIdx = 1;
 			textSize = UI._18sp;
 			textY = ((UI.defaultControlSize - UI._18spBox) >> 1) + UI._18spYinBox;
 			break;
 		default:
-			textSizeIdx = 0;
 			textSize = UI._14sp;
 			textY = ((UI.defaultControlSize - UI._14spBox) >> 1) + UI._14spYinBox;
 			break;
@@ -149,7 +157,6 @@ public final class BgSeekBar extends View {
 	
 	public void setSize(int size) {
 		this.size = size;
-		textSizeIdx = -1;
 		thumbMargin = //((size > (UI.defaultControlSize - UI._4dp)) ? UI.controlMargin :
 						((size >= (UI.defaultControlSize >> 1)) ? UI.controlSmallMargin :
 							0);//);
@@ -344,6 +351,7 @@ public final class BgSeekBar extends View {
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		updateSecondaryBgColorBlended();
 	}
 	
 	@Override
@@ -550,20 +558,27 @@ public final class BgSeekBar extends View {
 		if (drawListener != null) {
 			drawListener.onDraw(canvas, this, UI.rect, filledSize);
 		} else {
+			final int state = (insideList ? (this.state ^ UI.STATE_FOCUSED) : this.state);
 			final int right = UI.rect.right;
 			final int bottom = UI.rect.bottom;
 			final int color = UI.getBorderColor(state);
 			UI.rect.top = thumbMargin;
 			UI.rect.bottom -= thumbMargin;
-			UI.strokeRect(canvas, color, UI.strokeSize);
 			if (UI.hasBorders) {
-				UI.rect.left = UI.strokeSize;
+				UI.strokeRect(canvas, color, UI.strokeSize);
 				UI.rect.top += UI.strokeSize;
 				UI.rect.bottom -= UI.strokeSize;
-				UI.rect.right = UI.strokeSize + filledSize;
+				UI.rect.left = filledSize + thumbWidth;
+				UI.rect.right = right - UI.strokeSize;
+				UI.fillRect(canvas, secondaryBgColorBlended);
+				UI.rect.left = UI.strokeSize;
 			} else {
-				UI.rect.right = filledSize;
+				UI.rect.left = filledSize + thumbWidth;
+				UI.rect.right = right;
+				UI.fillRect(canvas, secondaryBgColorBlended);
+				UI.rect.left = 0;
 			}
+			UI.rect.right = filledSize;
 			UI.drawBgBorderless(canvas, state);
 			if (icon == null) {
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
@@ -571,8 +586,6 @@ public final class BgSeekBar extends View {
 				TextIconDrawable.drawIcon(canvas, icon, textX, (UI.rect.bottom + UI.rect.top - textSize) >> 1, textSize, textColor);
 				UI.drawText(canvas, text, textColor, textSize, textX + textSize + UI.controlSmallMargin, textY);
 			}
-			UI.rect.left = UI.rect.right;
-			UI.rect.right = right - UI.strokeSize;
 			if (sliderMode) {
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + (thumbWidth >> 1) - UI.controlMargin, 0, UI.controlLargeMargin, color);
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI.controlMargin, bottom - UI.controlMargin, UI.controlLargeMargin, color);
@@ -582,7 +595,7 @@ public final class BgSeekBar extends View {
 					UI.rect.bottom = bottom;
 					UI.rect.left = filledSize;
 					UI.rect.right = filledSize + thumbWidth;
-					UI.fillRect(canvas, color);
+					UI.strokeRect(canvas, color, UI.strokeSize);
 					UI.rect.left += UI.strokeSize;
 					UI.rect.top += UI.strokeSize;
 					UI.rect.right -= UI.strokeSize;

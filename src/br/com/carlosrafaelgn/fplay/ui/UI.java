@@ -1593,7 +1593,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 				if (isFlat) {
 					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - rect.top));
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 					fillPaint.setShader(null);
 					return;
@@ -1675,7 +1675,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - rect.top));
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 					fillPaint.setShader(null);
 				}
