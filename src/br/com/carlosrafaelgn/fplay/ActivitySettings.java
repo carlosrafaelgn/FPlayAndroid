@@ -998,9 +998,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		final Context ctx = getHostActivity();
 
 		list = (ObservableScrollView)findViewById(R.id.list);
-		list.setHorizontalFadingEdgeEnabled(false);
-		list.setVerticalFadingEdgeEnabled(false);
-		list.setFadingEdgeLength(0);
 		if (!UI.isLargeScreen)
 			UI.offsetTopEdgeEffect(list);
 		//for lblTitle to look nice, we must have no paddings

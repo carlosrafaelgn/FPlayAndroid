@@ -165,6 +165,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNINativeMethod methodTable[] = {
 		{"getProcessorFeatures", "()I", (void*)getProcessorFeatures},
 		{"resetFiltersAndWritePosition", "(I)V", (void*)resetFiltersAndWritePosition},
+		{"getCurrentAutomaticEffectsGainInMB", "()I", (void*)getCurrentAutomaticEffectsGainInMB},
 		{"enableAutomaticEffectsGain", "(I)V", (void*)enableAutomaticEffectsGain},
 		{"isAutomaticEffectsGainEnabled", "()I", (void*)isAutomaticEffectsGainEnabled},
 		{"enableEqualizer", "(I)V", (void*)enableEqualizer},

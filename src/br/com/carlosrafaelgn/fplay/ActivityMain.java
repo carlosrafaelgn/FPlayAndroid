@@ -1065,7 +1065,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			} else {
 				lblTitle.setHorizontalFadingEdgeEnabled(false);
 				lblTitle.setVerticalFadingEdgeEnabled(false);
-				lblTitle.setFadingEdgeLength(0);
+				//lblTitle.setFadingEdgeLength(0);
 			}
 			lblTitle.setTextColor(UI.colorState_text_title_static);
 			
@@ -1078,7 +1078,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			lblMsgSelMove.setTextColor(UI.colorState_text_title_static);
 			lblMsgSelMove.setHorizontalFadingEdgeEnabled(false);
 			lblMsgSelMove.setVerticalFadingEdgeEnabled(false);
-			lblMsgSelMove.setFadingEdgeLength(0);
+			//lblMsgSelMove.setFadingEdgeLength(0);
 			barSeek = (BgSeekBar)findViewById(R.id.barSeek);
 			barSeek.setAdditionalContentDescription(getText(R.string.go_to).toString());
 			barSeek.setOnBgSeekBarChangeListener(this);
@@ -1200,11 +1200,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0));
 			} else {
 				if (UI.isLandscape) {
-					lblTitle.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					lblMsgSelMove.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					panelSecondary.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
-					panelSelection.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
+					//we need these two panels (panelAnimationBg and panelAnimationBg2)
+					//because ugly artifacts appear when an animation is going on
+					findViewById(R.id.panelAnimationBg).setBackgroundDrawable(new ColorDrawable(UI.color_window));
+					findViewById(R.id.panelAnimationBg2).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
 					list.setTopBorder();
 					panelSecondary.setPadding(0, 0, UI.controlMargin + UI.thickDividerSize, UI.controlLargeMargin);
 				} else {

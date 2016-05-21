@@ -328,6 +328,8 @@
     <string name="seconds_before_playback">Начать воспроизведение после декодирования сколько секунд:</string>
     <string name="playback_buffer_length">Размер буфера воспроизведения (большое значение приносит стабильность, но вызывает задержку при смене эффектов):</string>
     <string name="percentage_to_decode_before_playback">Процент для декодирования перед началом воспроизведения:</string>
+    <string name="agc">Автоматическая регулировка усиления</string>
+    <string name="current_gain">Текущая прибыль:</string>
     <string name="second">секунда</string>
     <string name="seconds">секунды</string>
     <string name="slide">Скользить</string>

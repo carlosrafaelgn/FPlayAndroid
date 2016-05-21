@@ -111,6 +111,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static native void resetFiltersAndWritePosition(int srcChannelCount);
 
+	public static native int getCurrentAutomaticEffectsGainInMB();
 	private static native void enableAutomaticEffectsGain(int enabled);
 	public static native int isAutomaticEffectsGainEnabled();
 

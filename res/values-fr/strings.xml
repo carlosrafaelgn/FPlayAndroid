@@ -328,6 +328,8 @@
     <string name="seconds_before_playback">Secondes pour décoder avant de commencer la lecture :</string>
     <string name="playback_buffer_length">Taille du tampon de reproduction (une grande valeur apporte une plus grande stabilité, mais provoque un retard lors du changement des effets) :</string>
     <string name="percentage_to_decode_before_playback">Pourcentage de décoder avant de commencer la lecture :</string>
+    <string name="agc">Contrôle automatique de gain</string>
+    <string name="current_gain">Gain actuel :</string>
     <string name="second">seconde</string>
     <string name="seconds">secondes</string>
     <string name="slide">Glisser</string>

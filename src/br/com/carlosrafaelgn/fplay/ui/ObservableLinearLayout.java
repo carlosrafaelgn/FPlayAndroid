@@ -30,38 +30,45 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.playback.context;
+package br.com.carlosrafaelgn.fplay.ui;
 
-public final class MediaContext {
-	public static void _initialize() {
+import android.content.Context;
+import android.util.AttributeSet;
+import android.widget.LinearLayout;
+
+public final class ObservableLinearLayout extends LinearLayout {
+	public interface OnSizeChangeListener {
+		void onSizeChange(ObservableLinearLayout view, int w, int h, int oldw, int oldh);
 	}
 
-	public static void _release() {
+	private OnSizeChangeListener sizeChangeListener;
+
+	public ObservableLinearLayout(Context context) {
+		super(context);
 	}
 
-	public static IMediaPlayer createMediaPlayer() {
-		return new MediaPlayerWrapper();
+	public ObservableLinearLayout(Context context, AttributeSet attrs) {
+		super(context, attrs);
 	}
 
-	public static int getFeatures() {
-		return 0;
+	public ObservableLinearLayout(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
 	}
 
-	public static int getBufferConfig() {
-		return 0;
+	public void setOnSizeChangeListener(OnSizeChangeListener sizeChangeListener) {
+		this.sizeChangeListener = sizeChangeListener;
 	}
 
-	public static void _setBufferConfig(int bufferConfig) {
+	@Override
+	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+		super.onSizeChanged(w, h, oldw, oldh);
+		if (sizeChangeListener != null)
+			sizeChangeListener.onSizeChange(this, w, h, oldw, oldh);
 	}
 
-	public static int getCurrentAutomaticEffectsGainInMB() {
-		return 0;
-	}
-
-	public static int isAutomaticEffectsGainEnabled() {
-		return 1;
-	}
-
-	public static void _enableAutomaticEffectsGain(int enabled) {
+	@Override
+	protected void onDetachedFromWindow() {
+		sizeChangeListener = null;
+		super.onDetachedFromWindow();
 	}
 }

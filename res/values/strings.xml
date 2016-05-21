@@ -329,6 +329,8 @@
     <string name="seconds_before_playback">Seconds to decode before starting the playback:</string>
     <string name="playback_buffer_length">Size of the playback buffer (a large value brings more stability but causes a delay when changing the effects):</string>
     <string name="percentage_to_decode_before_playback">Percentage to decode before starting the playback:</string>
+    <string name="agc">Automatic gain control</string>
+    <string name="current_gain">Current gain:</string>
     <string name="second">second</string>
     <string name="seconds">seconds</string>
     <string name="slide">Slide</string>

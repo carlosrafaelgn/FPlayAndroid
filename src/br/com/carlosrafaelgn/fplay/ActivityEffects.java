@@ -35,13 +35,15 @@ package br.com.carlosrafaelgn.fplay;
 import android.content.Context;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
+import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.BassBoost;
@@ -51,21 +53,27 @@ import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.ObservableLinearLayout;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BgListItem3DDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
+import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public final class ActivityEffects extends ClientActivity implements Runnable, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener, Player.PlayerObserver {
+public final class ActivityEffects extends ClientActivity implements Timer.TimerHandler, Runnable, View.OnClickListener, ObservableLinearLayout.OnSizeChangeListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener, Player.PlayerObserver {
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102, MNU_AUDIOSINK_DEVICE = 103, MNU_AUDIOSINK_WIRE = 104, MNU_AUDIOSINK_BT = 105;
-	private LinearLayout panelControls, panelEqualizer, panelBars;
+	private static final int ACG_UPDATE_INTERVAL = 500;
+	private LinearLayout panelControls, panelEqualizer;
+	private ObservableLinearLayout panelBars;
 	private ViewGroup panelSecondary;
-	private BgButton chkEqualizer, chkBass, chkVirtualizer;
+	private BgButton chkEqualizer, chkBass, chkVirtualizer, chkAGC;
+	private TextView txtAGC;
+	private Timer tmrAGC;
 	private BgButton btnGoBack, btnAudioSink, btnMenu, btnChangeEffect;
 	private int min, max, audioSink, storedAudioSink;
 	private int[] frequencies;
-	private boolean enablingEffect, screenNotSoLarge;
+	private boolean enablingEffect, screenNotSoLarge, resizingEq;
 	private BgSeekBar[] bars;
 	private BgSeekBar barBass, barVirtualizer;
 	private StringBuilder txtBuilder;
@@ -255,18 +263,65 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			}
 			enablingEffect = true;
 			Player.enableEffects(chkEqualizer.isChecked(), chkBass.isChecked(), chkVirtualizer.isChecked(), audioSink, this);
+		} else if (view == chkAGC) {
+			if (enablingEffect)
+				return;
+			enablingEffect = true;
+			Player.enableAutomaticEffectsGain(chkAGC.isChecked(), this);
 		}
 	}
 	
 	@Override
 	public void run() {
-		//the effects have just been reset!
-		enablingEffect = false;
-		chkEqualizer.setChecked(Equalizer.isEnabled(audioSink));
-		chkBass.setChecked(BassBoost.isEnabled(audioSink));
-		chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
+		if (resizingEq) {
+			resizingEq = false;
+
+			final int bandCount = Equalizer.getBandCount();
+
+			if (panelBars == null || bars == null || bars.length < bandCount)
+				return;
+
+			final int availableWidth = panelBars.getWidth();
+
+			int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? (UI.controlLargeMargin << 1) : UI.controlLargeMargin);
+
+			while (hMargin > UI.controlXtraSmallMargin && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableWidth)
+				hMargin--;
+
+			int size = UI.defaultControlSize;
+			if (hMargin <= UI.controlXtraSmallMargin) {
+				//oops... the bars didn't fit inside the panel... we must adjust their width!
+				hMargin = UI.controlXtraSmallMargin;
+				while (size > UI._4dp && ((bandCount * size) + ((bandCount - 1) * hMargin)) > availableWidth)
+					size--;
+			}
+
+			for (int i = 0; i < bandCount; i++) {
+				final BgSeekBar bar = bars[i];
+				final LinearLayout.LayoutParams p = (LinearLayout.LayoutParams)bar.getLayoutParams();
+				if (i > 0)
+					p.leftMargin = hMargin;
+				bar.setSize(size, UI.isLandscape && !UI.isLargeScreen);
+				bar.setLayoutParams(p);
+			}
+		}
+
+		if (enablingEffect) {
+			//the effects have just been reset!
+			enablingEffect = false;
+			chkEqualizer.setChecked(Equalizer.isEnabled(audioSink));
+			chkBass.setChecked(BassBoost.isEnabled(audioSink));
+			chkVirtualizer.setChecked(Virtualizer.isEnabled(audioSink));
+			if (chkAGC != null)
+				chkAGC.setChecked(Player.isAutomaticEffectsGainEnabled());
+		}
 	}
-	
+
+	@Override
+	public void handleTimer(Timer timer, Object param) {
+		updateAGCText();
+	}
+
 	private void initBarsAndFrequencies(int bandCount) {
 		clearBarsAndFrequencies();
 		min = Equalizer.getMinBandLevel();
@@ -304,6 +359,20 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		return actualValue / 10;
 	}
 
+	private void updateAGCText() {
+		if (txtAGC == null || txtBuilder == null)
+			return;
+		final int currentGain = Player.getCurrentAutomaticEffectsGainInMB();
+		txtBuilder.delete(0, txtBuilder.length());
+		txtBuilder.append(getText(R.string.current_gain));
+		txtBuilder.append(' ');
+		if (currentGain > -100)
+			txtBuilder.append('-');
+		UI.formatIntAsFloat(txtBuilder, currentGain, true, false);
+		txtBuilder.append(" dB");
+		txtAGC.setText(txtBuilder.toString());
+	}
+
 	@Override
 	protected void onCreate() {
 		txtBuilder = new StringBuilder(32);
@@ -311,7 +380,7 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		screenNotSoLarge = ((UI.screenWidth < _600dp) || (UI.screenHeight < _600dp));
 	}
 	
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions", "deprecation" })
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_effects);
@@ -321,21 +390,18 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
 		panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
-		if (panelSecondary instanceof ScrollView) {
-			panelSecondary.setHorizontalFadingEdgeEnabled(false);
-			panelSecondary.setVerticalFadingEdgeEnabled(false);
-			panelSecondary.setFadingEdgeLength(0);
-		}
+		final ViewGroup panelScroll = (ViewGroup)findViewById(R.id.panelScroll);
+		final ViewGroup panelScrollContents = (ViewGroup)findViewById(R.id.panelScrollContents);
 		if (UI.is3D) {
-			if (UI.isLargeScreen) {
-				panelEqualizer.setPadding(UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin);
-				panelSecondary.setPadding(UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin);
-			} else if (UI.isLowDpiScreen) {
-				panelEqualizer.setPadding(UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin);
-				panelSecondary.setPadding(UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin);
+			final int padding = (UI.isLargeScreen ? UI.controlLargeMargin :
+				(UI.isLowDpiScreen ? UI.controlSmallMargin :
+					UI.controlMargin));
+			panelEqualizer.setPadding(padding, padding, padding, padding);
+			if (panelScroll != null && panelScrollContents != null) {
+				panelScroll.setPadding(0, padding, 0, padding);
+				panelScrollContents.setPadding(padding, 0, padding, 0);
 			} else {
-				panelEqualizer.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
-				panelSecondary.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
+				panelSecondary.setPadding(padding, padding, padding, padding);
 			}
 			panelEqualizer.setBackgroundDrawable(new BgListItem3DDrawable());
 			panelSecondary.setBackgroundDrawable(new BgListItem3DDrawable());
@@ -359,6 +425,22 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		chkVirtualizer.setOnClickListener(this);
 		chkVirtualizer.setTextColor(UI.colorState_text_listitem_reactive);
 		chkVirtualizer.formatAsLabelledCheckBox();
+		if (BuildConfig.X) {
+			chkAGC = (BgButton)findViewById(R.id.chkAGC);
+			chkAGC.setOnClickListener(this);
+			chkAGC.setTextColor(UI.colorState_text_listitem_reactive);
+			chkAGC.formatAsLabelledCheckBox();
+			chkAGC.setVisibility(View.VISIBLE);
+			chkAGC.setChecked(Player.isAutomaticEffectsGainEnabled());
+			txtAGC = (TextView)findViewById(R.id.txtAGC);
+			UI.mediumText(txtAGC);
+			txtAGC.setTextColor(UI.colorState_text_listitem_static);
+			txtAGC.setCompoundDrawables(new TextIconDrawable(UI.ICON_CLIP, UI.color_text_listitem_secondary, UI.defaultControlContentsSize), null, null, null);
+			txtAGC.setVisibility(View.VISIBLE);
+			updateAGCText();
+			tmrAGC = new Timer(this, "AGC Update Timer", false, true, false);
+			tmrAGC.start(ACG_UPDATE_INTERVAL);
+		}
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU);
@@ -386,32 +468,19 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		barVirtualizer.setOnBgSeekBarChangeListener(this);
 		barVirtualizer.setInsideList(true);
 		barVirtualizer.setAdditionalContentDescription(getText(R.string.virtualization).toString());
-		LinearLayout.LayoutParams lp;
-		if (!UI.isLargeScreen && UI.isLandscape) {
-			if (btnChangeEffect != null) {
-				lp = (LinearLayout.LayoutParams)btnChangeEffect.getLayoutParams();
-				lp.topMargin = 0;
-				btnChangeEffect.setLayoutParams(lp);
+		if (chkAGC != null) {
+			barVirtualizer.setNextFocusRightId(R.id.chkAGC);
+			barVirtualizer.setNextFocusDownId(R.id.chkAGC);
+			UI.setNextFocusForwardId(barVirtualizer, R.id.chkAGC);
+			if (UI.isLargeScreen) {
+				btnGoBack.setNextFocusLeftId(R.id.chkAGC);
+				btnMenu.setNextFocusUpId(R.id.chkAGC);
 			}
-			lp = (LinearLayout.LayoutParams)chkEqualizer.getLayoutParams();
-			lp.bottomMargin = 0;
-			chkEqualizer.setLayoutParams(lp);
-			lp = (LinearLayout.LayoutParams)chkBass.getLayoutParams();
-			lp.bottomMargin = 0;
-			chkBass.setLayoutParams(lp);
-			lp = (LinearLayout.LayoutParams)chkVirtualizer.getLayoutParams();
-			lp.bottomMargin = 0;
-			chkVirtualizer.setLayoutParams(lp);
-			lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
-			lp.bottomMargin = UI.controlMargin;
-			barBass.setLayoutParams(lp);
-			lp = (LinearLayout.LayoutParams)barVirtualizer.getLayoutParams();
-			lp.bottomMargin = UI.controlMargin;
-			barVirtualizer.setLayoutParams(lp);
-			panelControls.setPadding(UI.controlLargeMargin, UI.thickDividerSize, UI.controlLargeMargin, 0);
-		} else if (UI.isLargeScreen) {
+		}
+		LinearLayout.LayoutParams lp;
+		if (UI.isLargeScreen) {
 			UI.prepareViewPaddingForLargeScreen(panelControls, 0, (screenNotSoLarge && !UI.isLandscape) ? UI.controlMargin : UI.controlLargeMargin);
-			if (!UI.isLandscape && (panelControls instanceof LinearLayout)) {
+			if (!UI.isLandscape) {
 				panelControls.setOrientation(LinearLayout.VERTICAL);
 				panelControls.setWeightSum(0);
 				final int margin = (screenNotSoLarge ? UI.controlMargin : (UI.controlLargeMargin << 1));
@@ -428,17 +497,40 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 				lp.rightMargin = margin;
 				lp.bottomMargin = margin >> 1;
 				panelEqualizer.setLayoutParams(lp);
-				if (screenNotSoLarge) {
-					lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
-					lp.bottomMargin = UI.controlLargeMargin;
-					barBass.setLayoutParams(lp);
-					lp = (LinearLayout.LayoutParams)barVirtualizer.getLayoutParams();
-					lp.bottomMargin = UI.controlLargeMargin;
-					barVirtualizer.setLayoutParams(lp);
-				}
+			}
+			if (screenNotSoLarge || BuildConfig.X) {
+				lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
+				lp.bottomMargin = UI.controlLargeMargin;
+				barBass.setLayoutParams(lp);
 			}
 		} else {
-			panelControls.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, 0);
+			if (UI.isLandscape) {
+				if (btnChangeEffect != null) {
+					lp = (LinearLayout.LayoutParams)btnChangeEffect.getLayoutParams();
+					lp.topMargin = 0;
+					btnChangeEffect.setLayoutParams(lp);
+				}
+				lp = (LinearLayout.LayoutParams)chkEqualizer.getLayoutParams();
+				lp.bottomMargin = 0;
+				chkEqualizer.setLayoutParams(lp);
+				lp = (LinearLayout.LayoutParams)chkBass.getLayoutParams();
+				lp.bottomMargin = 0;
+				chkBass.setLayoutParams(lp);
+				lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
+				lp.bottomMargin = UI.controlMargin;
+				barBass.setLayoutParams(lp);
+				lp = (LinearLayout.LayoutParams)chkVirtualizer.getLayoutParams();
+				lp.bottomMargin = 0;
+				chkVirtualizer.setLayoutParams(lp);
+				if (chkAGC != null) {
+					lp = (LinearLayout.LayoutParams)chkAGC.getLayoutParams();
+					lp.topMargin = UI.controlMargin;
+					chkAGC.setLayoutParams(lp);
+				}
+				panelControls.setPadding(UI.controlLargeMargin, UI.thickDividerSize, UI.controlLargeMargin, 0);
+			} else {
+				panelControls.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, 0);
+			}
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
 		prepareViewForMode(true);
@@ -447,11 +539,15 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 	@Override
 	protected void onResume() {
 		Player.observer = this;
+		if (tmrAGC != null)
+			tmrAGC.start(ACG_UPDATE_INTERVAL);
 	}
 
 	@Override
 	protected void onPause() {
 		Player.observer = null;
+		if (tmrAGC != null)
+			tmrAGC.stop();
 	}
 
 	@Override
@@ -470,6 +566,12 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		chkEqualizer = null;
 		chkBass = null;
 		chkVirtualizer = null;
+		chkAGC = null;
+		txtAGC = null;
+		if (tmrAGC != null) {
+			tmrAGC.release();
+			tmrAGC = null;
+		}
 		btnGoBack = null;
 		btnMenu = null;
 		btnChangeEffect = null;
@@ -560,9 +662,16 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 		if (btnAudioSink != null)
 			btnAudioSink.setText(getAudioSinkDescription(audioSink, true));
 	}
-	
+
+	@Override
+	public void onSizeChange(ObservableLinearLayout view, final int w, int h, int oldw, int oldh) {
+		//we cannot change the layout inside onSizeChange(), that's why we need to postpone it
+		//to a time in the future (as soon as possible, though)
+		resizingEq = true;
+		MainHandler.postToMainThread(this);
+	}
+
 	private void prepareViewForMode(boolean isCreatingLayout) {
-		LinearLayout.LayoutParams lp;
 		updateEffects();
 		if (Player.bassBoostMode) {
 			UI.animationReset();
@@ -574,8 +683,13 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			btnMenu.setNextFocusRightId(R.id.chkBass);
 			btnMenu.setNextFocusDownId(R.id.chkBass);
 			UI.setNextFocusForwardId(btnMenu, R.id.chkBass);
-			btnChangeEffect.setNextFocusUpId(R.id.barVirtualizer);
-			btnChangeEffect.setNextFocusLeftId(R.id.barVirtualizer);
+			if (chkAGC != null) {
+				btnChangeEffect.setNextFocusUpId(R.id.chkAGC);
+				btnChangeEffect.setNextFocusLeftId(R.id.chkAGC);
+			} else {
+				btnChangeEffect.setNextFocusUpId(R.id.barVirtualizer);
+				btnChangeEffect.setNextFocusLeftId(R.id.barVirtualizer);
+			}
 		} else {
 			if (btnChangeEffect != null) {
 				UI.animationReset();
@@ -589,69 +703,34 @@ public final class ActivityEffects extends ClientActivity implements Runnable, V
 			if (bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
 				initBarsAndFrequencies(bandCount);
 
-			int availableScreenW = getDecorViewWidth();
-			int hMargin = getDecorViewHeight();
-			//some times, when rotating the device, the decorview takes a little longer to be updated
-			if (UI.isLandscape != (availableScreenW >= hMargin))
-				availableScreenW = hMargin;
-			hMargin = ((UI.isLandscape || UI.isLargeScreen) ? UI.spToPxI(32) : UI.spToPxI(16));
-			if (UI.usableScreenWidth > 0 && availableScreenW > UI.usableScreenWidth)
-				availableScreenW = UI.usableScreenWidth;
-			if (UI.isLargeScreen) {
-				availableScreenW -= ((UI.getViewPaddingForLargeScreen() << 1) + (UI.controlLargeMargin << 1));
-				if (UI.isLandscape)
-					availableScreenW >>= 1;
-			} else {
-				availableScreenW -= (UI.controlMargin << 1);
-			}
-
-			if (UI.is3D)
-				availableScreenW -= (UI.isLargeScreen ? (UI.controlLargeMargin << 1) :
-						(UI.isLowDpiScreen ? (UI.controlSmallMargin << 1) :
-							(UI.controlMargin << 1)));
-
-			while (hMargin > UI.controlXtraSmallMargin && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableScreenW)
-				hMargin--;
-
-			int size = 0;
-			if (hMargin <= UI.controlXtraSmallMargin) {
-				//oops... the bars didn't fit inside the screen... we must adjust everything!
-				hMargin = ((bandCount >= 10) ? UI.controlXtraSmallMargin : UI.controlSmallMargin);
-				size = UI.defaultControlSize - 1;
-				while (size > UI._4dp && ((bandCount * size) + ((bandCount - 1) * hMargin)) > availableScreenW)
-					size--;
-			}
 			if (panelBars == null) {
 				final Context ctx = getHostActivity();
-				panelBars = new LinearLayout(ctx);
-				lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-				panelBars.setLayoutParams(lp);
+				panelBars = new ObservableLinearLayout(ctx);
+				panelBars.setOnSizeChangeListener(this);
+				panelBars.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+				panelBars.setGravity(Gravity.CENTER_HORIZONTAL);
 				panelBars.setOrientation(LinearLayout.HORIZONTAL);
-				
+
 				for (int i = 0; i < bandCount; i++) {
 					final int level = Equalizer.getBandLevel(i, audioSink);
 					final BgSeekBar bar = new BgSeekBar(ctx);
+					bars[i] = bar;
 					bar.setVertical(true);
 					final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
-					if (i > 0)
-						p.leftMargin = hMargin;
 					bar.setLayoutParams(p);
 					bar.setMax((max - min) / 50);
 					bar.setText(formatEqualizer(frequencies[i], level));
-					bar.setKeyIncrement(2);
+					bar.setKeyIncrement(1);
 					bar.setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 					bar.setOnBgSeekBarChangeListener(this);
 					bar.setInsideList(true);
-					if (size != 0)
-						bar.setSize(size);
-					bars[i] = bar;
 					bar.setId(i + 1);
 					bar.setNextFocusLeftId(i);
 					bar.setNextFocusRightId(i + 2);
 					UI.setNextFocusForwardId(bar, i + 2);
 					bar.setNextFocusDownId(R.id.btnChangeEffect);
 					bar.setNextFocusUpId(R.id.chkEqualizer);
-					
+
 					panelBars.addView(bar);
 				}
 				if (bars != null && bars.length > 0)

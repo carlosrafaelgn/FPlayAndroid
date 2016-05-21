@@ -328,6 +328,8 @@
     <string name="seconds_before_playback">Segundos para decodificar antes de iniciar la reproducción:</string>
     <string name="playback_buffer_length">Tamaño del buffer de reproducción (un valor grande trae más estabilidad, pero provoca un retraso al cambiar los efectos):</string>
     <string name="percentage_to_decode_before_playback">Porcentaje de decodificar antes de iniciar la reproducción:</string>
+    <string name="agc">Control automático de ganancia</string>
+    <string name="current_gain">Ganancia de corriente:</string>
     <string name="second">segundo</string>
     <string name="seconds">segundos</string>
     <string name="slide">Deslizar</string>

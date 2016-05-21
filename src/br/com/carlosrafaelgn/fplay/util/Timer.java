@@ -230,6 +230,7 @@ public final class Timer implements MainHandler.Callback {
 	}
 
 	public void release() {
+		stop();
 		timerHandler = null;
 		param = null;
 	}

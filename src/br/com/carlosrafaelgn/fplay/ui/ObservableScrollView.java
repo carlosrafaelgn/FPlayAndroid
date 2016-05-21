@@ -70,6 +70,9 @@ public final class ObservableScrollView extends ScrollView {
 	@SuppressWarnings("deprecation")
 	private void init(int placement) {
 		this.placement = placement;
+		super.setHorizontalFadingEdgeEnabled(false);
+		super.setVerticalFadingEdgeEnabled(false);
+		//super.setFadingEdgeLength(0);
 		super.setDrawingCacheEnabled(false);
 		super.setChildrenDrawingCacheEnabled(false);
 		super.setAnimationCacheEnabled(false);

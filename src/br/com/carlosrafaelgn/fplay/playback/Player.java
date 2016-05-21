@@ -390,6 +390,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN:
 				MediaContext._enableAutomaticEffectsGain(msg.arg1);
+				if (msg.obj != null)
+					MainHandler.postToMainThread((Runnable)msg.obj);
 				break;
 			}
 		}
@@ -1779,6 +1781,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return MediaContext.getFeatures();
 	}
 
+	public static int getCurrentAutomaticEffectsGainInMB() {
+		return MediaContext.getCurrentAutomaticEffectsGainInMB();
+	}
+
 	public static int getBufferConfig() {
 		return MediaContext.getBufferConfig();
 	}
@@ -1793,10 +1799,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return (MediaContext.isAutomaticEffectsGainEnabled() != 0);
 	}
 
-	public static void enableAutomaticEffectsGain(boolean enabled) {
+	public static void enableAutomaticEffectsGain(boolean enabled, Runnable callback) {
 		if (state != STATE_ALIVE)
 			return;
-		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN, enabled ? 1 : 0, 0), SystemClock.uptimeMillis());
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN, enabled ? 1 : 0, 0, callback), SystemClock.uptimeMillis());
 	}
 
 	private static int httpStreamReceiverVersion, httpOptions;

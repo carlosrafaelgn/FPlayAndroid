@@ -80,16 +80,6 @@
                 android:text="@string/equalizer"/>
         </LinearLayout>
 
-        <!-- <ScrollView
-            android:id="@+id/panelSecondary"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:baselineAligned="false"
-            android:gravity="center_horizontal"
-            android:orientation="vertical"
-            android:visibility="gone" > -->
-
         <LinearLayout
             android:id="@+id/panelSecondary"
             android:layout_width="match_parent"
@@ -98,74 +88,94 @@
             android:baselineAligned="false"
             android:gravity="center"
             android:orientation="vertical"
-            android:splitMotionEvents="false"
             android:visibility="gone">
 
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/chkBass"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:nextFocusDown="@+id/barBass"
-                android:nextFocusForward="@+id/barBass"
-                android:nextFocusLeft="@+id/btnMenu"
-                android:nextFocusRight="@+id/barBass"
-                android:nextFocusUp="@+id/btnAudioSink"
-                android:text="@string/bass_boost"/>
-
-            <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
-                android:id="@+id/barBass"
+            <br.com.carlosrafaelgn.fplay.ui.ObservableScrollView
+                android:id="@+id/panelScroll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:nextFocusDown="@+id/chkVirtualizer"
-                android:nextFocusForward="@+id/chkVirtualizer"
-                android:nextFocusLeft="@+id/chkBass"
-                android:nextFocusRight="@+id/chkVirtualizer"
-                android:nextFocusUp="@+id/chkBass"/>
+                android:baselineAligned="false"
+                android:gravity="center"
+                android:orientation="vertical">
 
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/chkVirtualizer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:nextFocusDown="@+id/barVirtualizer"
-                android:nextFocusForward="@+id/barVirtualizer"
-                android:nextFocusLeft="@+id/barBass"
-                android:nextFocusRight="@+id/barVirtualizer"
-                android:nextFocusUp="@+id/barBass"
-                android:text="@string/virtualization"/>
+                <LinearLayout
+                    android:id="@+id/panelScrollContents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:baselineAligned="false"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:splitMotionEvents="false">
 
-            <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
-                android:id="@+id/barVirtualizer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nextFocusDown="@+id/btnChangeEffect"
-                android:nextFocusForward="@+id/btnChangeEffect"
-                android:nextFocusLeft="@+id/chkVirtualizer"
-                android:nextFocusRight="@+id/btnChangeEffect"
-                android:nextFocusUp="@+id/chkVirtualizer"/>
+                    <br.com.carlosrafaelgn.fplay.ui.BgButton
+                        android:id="@+id/chkBass"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:nextFocusDown="@+id/barBass"
+                        android:nextFocusForward="@+id/barBass"
+                        android:nextFocusLeft="@+id/btnMenu"
+                        android:nextFocusRight="@+id/barBass"
+                        android:nextFocusUp="@+id/btnAudioSink"
+                        android:text="@string/bass_boost"/>
 
-            <!-- <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/chkReverb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:nextFocusDown="@+id/btnChangeEffect"
-                android:nextFocusForward="@+id/btnChangeEffect"
-                android:nextFocusLeft="@+id/barVirtualizer"
-                android:nextFocusRight="@+id/btnChangeEffect"
-                android:nextFocusUp="@+id/barVirtualizer"
-                android:text="@string/reverb" />
+                    <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
+                        android:id="@+id/barBass"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:nextFocusDown="@+id/chkVirtualizer"
+                        android:nextFocusForward="@+id/chkVirtualizer"
+                        android:nextFocusLeft="@+id/chkBass"
+                        android:nextFocusRight="@+id/chkVirtualizer"
+                        android:nextFocusUp="@+id/chkBass"/>
 
-            <TextView
-                android:id="@+id/txtReverb"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:text="@string/coming_soon" /> -->
+                    <br.com.carlosrafaelgn.fplay.ui.BgButton
+                        android:id="@+id/chkVirtualizer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:nextFocusDown="@+id/barVirtualizer"
+                        android:nextFocusForward="@+id/barVirtualizer"
+                        android:nextFocusLeft="@+id/barBass"
+                        android:nextFocusRight="@+id/barVirtualizer"
+                        android:nextFocusUp="@+id/barBass"
+                        android:text="@string/virtualization"/>
+
+                    <br.com.carlosrafaelgn.fplay.ui.BgSeekBar
+                        android:id="@+id/barVirtualizer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nextFocusDown="@+id/btnChangeEffect"
+                        android:nextFocusForward="@+id/btnChangeEffect"
+                        android:nextFocusLeft="@+id/chkVirtualizer"
+                        android:nextFocusRight="@+id/btnChangeEffect"
+                        android:nextFocusUp="@+id/chkVirtualizer"/>
+
+                    <br.com.carlosrafaelgn.fplay.ui.BgButton
+                        android:id="@+id/chkAGC"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:nextFocusDown="@+id/btnChangeEffect"
+                        android:nextFocusForward="@+id/btnChangeEffect"
+                        android:nextFocusLeft="@+id/barVirtualizer"
+                        android:nextFocusRight="@+id/btnChangeEffect"
+                        android:nextFocusUp="@+id/barVirtualizer"
+                        android:text="@string/agc"
+                        android:visibility="gone"/>
+
+                    <TextView
+                        android:id="@+id/txtAGC"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:text="@string/coming_soon"
+                        android:visibility="gone"/>
+                </LinearLayout>
+            </br.com.carlosrafaelgn.fplay.ui.ObservableScrollView>
         </LinearLayout>
-        <!-- </ScrollView> -->
 
         <br.com.carlosrafaelgn.fplay.ui.BgButton
             android:id="@+id/btnChangeEffect"

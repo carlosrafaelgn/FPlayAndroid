@@ -245,7 +245,6 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 				visualizer.processFrame(playing ? fxVisualizer : null);
 		}
 		if (!alive) {
-			timer.stop();
 			timer.release();
 			if (visualizer != null)
 				visualizer.release();

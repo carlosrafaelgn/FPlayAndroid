@@ -155,12 +155,14 @@ public final class BgSeekBar extends View {
 		updateTextWidth();
 	}
 	
-	public void setSize(int size) {
+	public void setSize(int size, boolean furtherDecreaseTextSize) {
 		this.size = size;
 		thumbMargin = //((size > (UI.defaultControlSize - UI._4dp)) ? UI.controlMargin :
 						((size >= (UI.defaultControlSize >> 1)) ? UI.controlSmallMargin :
 							0);//);
-		textSize = size - (thumbMargin << 1) - (UI.strokeSize << 1) - (UI._1dp << 1);
+		textSize = size - (thumbMargin << 1) - (UI.strokeSize << 1) - (UI.controlXtraSmallMargin << 1); //(UI.controlSmallMargin << 1) is just to a decent margin
+		if (furtherDecreaseTextSize)
+			textSize >>= 1;
 		if (textSize >= UI._22sp && size > (UI.defaultControlSize - UI._4dp)) {
 			textSize = UI._22sp;
 			textY = ((size - UI._22spBox) >> 1) + UI._22spYinBox;

@@ -86,6 +86,10 @@ equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 
 void updateEffectProc();
 
+int JNICALL getCurrentAutomaticEffectsGainInMB(JNIEnv* env, jclass clazz) {
+	return ((effectsGainEnabled && effectsEnabled) ? (int)(2000.0 * log10(effectsGainClip[0])) : 0);
+}
+
 void JNICALL enableAutomaticEffectsGain(JNIEnv* env, jclass clazz, unsigned int enabled) {
 	::effectsGainEnabled = enabled;
 
