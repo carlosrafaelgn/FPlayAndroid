@@ -90,7 +90,20 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
-	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface, optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume, opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList, optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor, optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optExternalFx, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing, optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext, optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation, optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause, optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter, optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback, lastMenuView;
+	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface,
+		optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat,
+		optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume,
+		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom,
+		optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList,
+		optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor,
+		optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optExternalFx,
+		optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing,
+		optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext,
+		optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation,
+		optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause,
+		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
+		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
+		optBufferSize, optFillThreshold, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -373,6 +386,41 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((secondsBeforePlaybackIndex == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			}
+		} else if (view == optBufferSize) {
+			lastMenuView = optBufferSize;
+			UI.prepare(menu);
+			final int bufferSizeIndex = (Player.getBufferConfig() & Player.BUFFER_SIZE_MASK);
+			menu.add(0, Player.BUFFER_SIZE_500MS, 0, getBufferSizeString(Player.BUFFER_SIZE_500MS))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_500MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, Player.BUFFER_SIZE_1000MS, 1, getBufferSizeString(Player.BUFFER_SIZE_1000MS))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_1000MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, Player.BUFFER_SIZE_1500MS, 2, getBufferSizeString(Player.BUFFER_SIZE_1500MS))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_1500MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, Player.BUFFER_SIZE_2000MS, 3, getBufferSizeString(Player.BUFFER_SIZE_2000MS))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_2000MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, Player.BUFFER_SIZE_2500MS, 4, getBufferSizeString(Player.BUFFER_SIZE_2500MS))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_2500MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optFillThreshold) {
+			lastMenuView = optFillThreshold;
+			UI.prepare(menu);
+			final int fillThresholdIndex = (Player.getBufferConfig() & Player.FILL_THRESHOLD_MASK);
+			menu.add(0, Player.FILL_THRESHOLD_25, 0, getFillThresholdString(Player.FILL_THRESHOLD_25))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_25) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, Player.FILL_THRESHOLD_50, 1, getFillThresholdString(Player.FILL_THRESHOLD_50))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_50) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, Player.FILL_THRESHOLD_75, 2, getFillThresholdString(Player.FILL_THRESHOLD_75))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_75) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, Player.FILL_THRESHOLD_100, 3, getFillThresholdString(Player.FILL_THRESHOLD_100))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_100) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		}
 	}
 	
@@ -484,6 +532,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optMSBeforePlayback) {
 			Player.setMSBeforePlayingIndex(item.getItemId());
 			optMSBeforePlayback.setSecondaryText(getSecondsBeforePlaybackString(item.getItemId()));
+		} else if (lastMenuView == optBufferSize) {
+			Player.setBufferConfig((Player.getBufferConfig() & ~Player.BUFFER_SIZE_MASK) | item.getItemId());
+			optBufferSize.setSecondaryText(getBufferSizeString(item.getItemId()));
+		} else if (lastMenuView == optFillThreshold) {
+			Player.setBufferConfig((Player.getBufferConfig() & ~Player.FILL_THRESHOLD_MASK) | item.getItemId());
+			optFillThreshold.setSecondaryText(getFillThresholdString(item.getItemId()));
 		}
 		configsChanged = true;
 		return true;
@@ -494,8 +548,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 
 	private String getSecondsBeforePlaybackString(int index) {
-		final int sec = Player.getMSBeforePlayback(index);
-		return UI.formatIntAsFloat(sec / 100, false, true) + " " + ((sec == 1000) ? getText(R.string.second) : getText(R.string.seconds));
+		final int ms = Player.getMSBeforePlayback(index);
+		return UI.formatIntAsFloat(ms / 100, false, true) + " " + ((ms == 1000) ? getText(R.string.second) : getText(R.string.seconds));
 	}
 
 	private String getMinuteString(int minutes) {
@@ -579,6 +633,40 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			return getText(R.string.previous).toString();
 		}
 		return getText(R.string.nothing).toString();
+	}
+
+	private String getBufferSizeString(int bufferConfig) {
+		final int ms;
+		switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
+		case Player.BUFFER_SIZE_500MS:
+			ms = 500;
+			break;
+		case Player.BUFFER_SIZE_1500MS:
+			ms = 1500;
+			break;
+		case Player.BUFFER_SIZE_2000MS:
+			ms = 2000;
+			break;
+		case Player.BUFFER_SIZE_2500MS:
+			ms = 2500;
+			break;
+		default:
+			ms = 1000;
+			break;
+		}
+		return UI.formatIntAsFloat(ms / 100, false, true) + " " + ((ms == 1000) ? getText(R.string.second) : getText(R.string.seconds));
+	}
+
+	private String getFillThresholdString(int bufferConfig) {
+		switch ((bufferConfig & Player.FILL_THRESHOLD_MASK)) {
+		case Player.FILL_THRESHOLD_25:
+			return "25%";
+		case Player.FILL_THRESHOLD_50:
+			return "50%";
+		case Player.FILL_THRESHOLD_75:
+			return "75%";
+		}
+		return "100%";
 	}
 
 	@SuppressWarnings("deprecation")
@@ -1009,8 +1097,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAnnounceCurrentSong = new SettingView(ctx, UI.ICON_MIC, getText(R.string.announce_current_song).toString(), null, true, Player.announceCurrentSong, false);
 			optFollowCurrentSong = new SettingView(ctx, UI.ICON_SCROLLBAR, getText(R.string.follow_current_song).toString(), null, true, Player.followCurrentSong, false);
 			optBytesBeforeDecoding = new SettingView(ctx, UI.ICON_RADIO, getText(R.string.bytes_before_decoding).toString(), getBytesBeforeDecodingString(Player.getBytesBeforeDecodingIndex()), false, false, false);
-			if (!BuildConfig.X)
+			if (!BuildConfig.X) {
 				optMSBeforePlayback = new SettingView(ctx, UI.ICON_RADIO, getText(R.string.seconds_before_playback).toString(), getSecondsBeforePlaybackString(Player.getMSBeforePlaybackIndex()), false, false, false);
+			} else {
+				optBufferSize = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_buffer_length).toString(), getBufferSizeString(Player.getBufferConfig()), false, false, false);
+				optFillThreshold = new SettingView(ctx, UI.ICON_PERCENTAGE, getText(R.string.percentage_to_decode_before_playback).toString(), getFillThresholdString(Player.getBufferConfig()), false, false, false);
+			}
 
 			int hIdx = 0;
 			headers = new TextView[(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? 8 : 7];
@@ -1066,6 +1158,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optHeadsetHook1);
 			addOption(optHeadsetHook2);
 			addOption(optHeadsetHook3);
+			if (BuildConfig.X) {
+				addOption(optBufferSize);
+				addOption(optFillThreshold);
+			}
 			addOption(optPlayWithLongPress);
 			addOption(optExpandSeekBar);
 			addOption(optVolumeControlType);
@@ -1195,6 +1291,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFollowCurrentSong = null;
 		optBytesBeforeDecoding = null;
 		optMSBeforePlayback = null;
+		optBufferSize = null;
+		optFillThreshold = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -1412,7 +1510,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.announceCurrentSong = optAnnounceCurrentSong.isChecked();
 		} else if (view == optFollowCurrentSong) {
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
-		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme || view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode || view == optForceOrientation || view == optTransition || view == optPopupTransition || view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther || view == optScrollBarSongList || view == optScrollBarBrowser || view == optHeadsetHook1 || view == optHeadsetHook2 || view == optHeadsetHook3 || view == optBytesBeforeDecoding || view == optMSBeforePlayback) {
+		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
+			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
+			view == optForceOrientation || view == optTransition || view == optPopupTransition ||
+			view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther ||
+			view == optScrollBarSongList || view == optScrollBarBrowser || view == optHeadsetHook1 ||
+			view == optHeadsetHook2 || view == optHeadsetHook3 || view == optBytesBeforeDecoding ||
+			view == optMSBeforePlayback || view == optBufferSize || view == optFillThreshold) {
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;

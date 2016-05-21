@@ -326,6 +326,8 @@
     <string name="connecting">Connecting…</string>
     <string name="bytes_before_decoding">Starten Sie die Decodierung nach dem Download wie viele Bytes:</string>
     <string name="seconds_before_playback">Starten Sie die Wiedergabe nach der Decodierung wie viele Sekunden:</string>
+    <string name="playback_buffer_length">Größe des Wiedergabepuffer (ein großer Wert bringt mehr Stabilität, sondern führt zu einer Verzögerung, wenn die Auswirkungen zu verändern):</string>
+    <string name="percentage_to_decode_before_playback">Prozentsatz zu dekodieren vor dem Start der Wiedergabe:</string>
     <string name="second">Sekunde</string>
     <string name="seconds">Sekunden</string>
     <string name="slide">Gleiten</string>

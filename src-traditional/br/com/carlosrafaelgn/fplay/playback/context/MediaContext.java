@@ -33,25 +33,6 @@
 package br.com.carlosrafaelgn.fplay.playback.context;
 
 public final class MediaContext {
-	public static final int BUFFER_SIZE_500MS = 0x01;
-	public static final int BUFFER_SIZE_1000MS = 0x00;
-	public static final int BUFFER_SIZE_1500MS = 0x02;
-	public static final int BUFFER_SIZE_2000MS = 0x03;
-	public static final int BUFFER_SIZE_2500MS = 0x04;
-
-	public static final int FILL_THRESHOLD_25 = 0x10;
-	public static final int FILL_THRESHOLD_50 = 0x20;
-	public static final int FILL_THRESHOLD_75 = 0x30;
-	public static final int FILL_THRESHOLD_100 = 0x00;
-
-	public static final int FEATURE_PROCESSOR_ARM = 0x0001;
-	public static final int FEATURE_PROCESSOR_NEON = 0x0002;
-	public static final int FEATURE_PROCESSOR_X86 = 0x0004;
-	public static final int FEATURE_PROCESSOR_SSE = 0x0008;
-	public static final int FEATURE_PROCESSOR_64_BITS = 0x0010;
-	public static final int FEATURE_DECODING_NATIVE = 0x0020;
-	public static final int FEATURE_DECODING_DIRECT = 0x0040;
-
 	public static void _initialize() {
 	}
 
@@ -70,13 +51,13 @@ public final class MediaContext {
 		return 0;
 	}
 
-	public static void setBufferConfig_(int bufferConfig) {
+	public static void _setBufferConfig(int bufferConfig) {
 	}
 
 	public static int isAutomaticEffectsGainEnabled() {
 		return 1;
 	}
 
-	public static void enableAutomaticEffectsGain_(int enabled) {
+	public static void _enableAutomaticEffectsGain(int enabled) {
 	}
 }

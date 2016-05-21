@@ -48,25 +48,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public final class MediaContext implements Runnable, Handler.Callback {
-	public static final int BUFFER_SIZE_500MS = 0x01;
-	public static final int BUFFER_SIZE_1000MS = 0x00;
-	public static final int BUFFER_SIZE_1500MS = 0x02;
-	public static final int BUFFER_SIZE_2000MS = 0x03;
-	public static final int BUFFER_SIZE_2500MS = 0x04;
-
-	public static final int FILL_THRESHOLD_25 = 0x10;
-	public static final int FILL_THRESHOLD_50 = 0x20;
-	public static final int FILL_THRESHOLD_75 = 0x30;
-	public static final int FILL_THRESHOLD_100 = 0x00;
-
-	public static final int FEATURE_PROCESSOR_ARM = 0x0001;
-	public static final int FEATURE_PROCESSOR_NEON = 0x0002;
-	public static final int FEATURE_PROCESSOR_X86 = 0x0004;
-	public static final int FEATURE_PROCESSOR_SSE = 0x0008;
-	public static final int FEATURE_PROCESSOR_64_BITS = 0x0010;
-	public static final int FEATURE_DECODING_NATIVE = 0x0020;
-	public static final int FEATURE_DECODING_DIRECT = 0x0040;
-
 	private static final int MSG_COMPLETION = 0x0100;
 	private static final int MSG_ERROR = 0x0101;
 	private static final int MSG_SEEKCOMPLETE = 0x0102;
@@ -189,17 +170,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		final int bufferSizeInFrames;
-		switch (bufferConfig & 0x0F) {
-		case BUFFER_SIZE_500MS:
+		switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
+		case Player.BUFFER_SIZE_500MS:
 			bufferSizeInFrames = 48000 / 2;
 			break;
-		case BUFFER_SIZE_1500MS:
+		case Player.BUFFER_SIZE_1500MS:
 			bufferSizeInFrames = (48000 * 3) / 2;
 			break;
-		case BUFFER_SIZE_2000MS:
+		case Player.BUFFER_SIZE_2000MS:
 			bufferSizeInFrames = 48000 * 2;
 			break;
-		case BUFFER_SIZE_2500MS:
+		case Player.BUFFER_SIZE_2500MS:
 			bufferSizeInFrames = (48000 * 5) / 2;
 			break;
 		default:
@@ -212,12 +193,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	private static int getFillThresholdInFrames(int bufferSizeInFrames) {
-		switch (bufferConfig & 0xF0) {
-		case FILL_THRESHOLD_25:
+		switch ((bufferConfig & Player.FILL_THRESHOLD_MASK)) {
+		case Player.FILL_THRESHOLD_25:
 			return (bufferSizeInFrames >> 2);
-		case FILL_THRESHOLD_50:
+		case Player.FILL_THRESHOLD_50:
 			return (bufferSizeInFrames >> 1);
-		case FILL_THRESHOLD_75:
+		case Player.FILL_THRESHOLD_75:
 			return ((bufferSizeInFrames * 3) >> 2);
 		}
 		return bufferSizeInFrames;
@@ -955,49 +936,49 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 	}
 
-	static void enableEqualizer_(int enabled) {
+	static void _enableEqualizer(int enabled) {
 		if (!alive)
 			enableEqualizer(enabled);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_EQUALIZER_ENABLE, enabled, 0));
 	}
 
-	static void setEqualizerBandLevel_(int band, int level) {
+	static void _setEqualizerBandLevel(int band, int level) {
 		if (!alive)
 			setEqualizerBandLevel(band, level);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_EQUALIZER_BAND_LEVEL, band, level));
 	}
 
-	static void setEqualizerBandLevels_(short[] levels) {
+	static void _setEqualizerBandLevels(short[] levels) {
 		if (!alive)
 			setEqualizerBandLevels(levels);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_EQUALIZER_BAND_LEVELS, levels));
 	}
 
-	static void enableBassBoost_(int enabled) {
+	static void _enableBassBoost(int enabled) {
 		if (!alive)
 			enableBassBoost(enabled);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_BASSBOOST_ENABLE, enabled, 0));
 	}
 
-	static void setBassBoostStrength_(int strength) {
+	static void _setBassBoostStrength(int strength) {
 		if (!alive)
 			setBassBoostStrength(strength);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_BASSBOOST_STRENGTH, strength, 0));
 	}
 
-	static void enableVirtualizer_(int enabled) {
+	static void _enableVirtualizer(int enabled) {
 		if (!alive)
 			enableVirtualizer(enabled);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_VIRTUALIZER_ENABLE, enabled, 0));
 	}
 
-	static void setVirtualizerStrength_(int strength) {
+	static void _setVirtualizerStrength(int strength) {
 		if (!alive)
 			setVirtualizerStrength(strength);
 		else
@@ -1016,15 +997,15 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static int getFeatures() {
 		return (getProcessorFeatures() |
-			(hasExternalNativeLibrary ? FEATURE_DECODING_NATIVE : 0) |
-			(MediaCodecPlayer.isDirect ? FEATURE_DECODING_DIRECT : 0));
+			(hasExternalNativeLibrary ? Player.FEATURE_DECODING_NATIVE : 0) |
+			(MediaCodecPlayer.isDirect ? Player.FEATURE_DECODING_DIRECT : 0));
 	}
 
 	public static int getBufferConfig() {
 		return bufferConfig;
 	}
 
-	public static void setBufferConfig_(int bufferConfig) {
+	public static void _setBufferConfig(int bufferConfig) {
 		MediaContext.bufferConfig = bufferConfig;
 
 		if (!alive)
@@ -1046,7 +1027,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 	}
 
-	public static void enableAutomaticEffectsGain_(int enabled) {
+	public static void _enableAutomaticEffectsGain(int enabled) {
 		if (!alive) {
 			enableAutomaticEffectsGain(enabled);
 			return;

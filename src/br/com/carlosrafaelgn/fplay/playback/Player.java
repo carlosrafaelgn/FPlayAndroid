@@ -183,6 +183,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x011D;
 	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x011E;
 	private static final int MSG_ENABLE_EXTERNAL_FX = 0x011F;
+	private static final int MSG_SET_BUFFER_CONFIG = 0x0120;
+	private static final int MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN = 0x0121;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -382,6 +384,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
 				if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion)
 					thePlayer.onInfo(player, IMediaPlayer.INFO_URL_UPDATE, 0, msg.obj);
+				break;
+			case MSG_SET_BUFFER_CONFIG:
+				MediaContext._setBufferConfig(msg.arg1);
+				break;
+			case MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN:
+				MediaContext._enableAutomaticEffectsGain(msg.arg1);
 				break;
 			}
 		}
@@ -1746,6 +1754,51 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	public static final int BUFFER_SIZE_500MS = 0x01;
+	public static final int BUFFER_SIZE_1000MS = 0x00;
+	public static final int BUFFER_SIZE_1500MS = 0x02;
+	public static final int BUFFER_SIZE_2000MS = 0x03;
+	public static final int BUFFER_SIZE_2500MS = 0x04;
+	public static final int BUFFER_SIZE_MASK = 0x0F;
+
+	public static final int FILL_THRESHOLD_25 = 0x10;
+	public static final int FILL_THRESHOLD_50 = 0x20;
+	public static final int FILL_THRESHOLD_75 = 0x30;
+	public static final int FILL_THRESHOLD_100 = 0x00;
+	public static final int FILL_THRESHOLD_MASK = 0xF0;
+
+	public static final int FEATURE_PROCESSOR_ARM = 0x0001;
+	public static final int FEATURE_PROCESSOR_NEON = 0x0002;
+	public static final int FEATURE_PROCESSOR_X86 = 0x0004;
+	public static final int FEATURE_PROCESSOR_SSE = 0x0008;
+	public static final int FEATURE_PROCESSOR_64_BITS = 0x0010;
+	public static final int FEATURE_DECODING_NATIVE = 0x0020;
+	public static final int FEATURE_DECODING_DIRECT = 0x0040;
+
+	public static int getFeatures() {
+		return MediaContext.getFeatures();
+	}
+
+	public static int getBufferConfig() {
+		return MediaContext.getBufferConfig();
+	}
+
+	public static void setBufferConfig(int bufferConfig) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_SET_BUFFER_CONFIG, bufferConfig, 0), SystemClock.uptimeMillis());
+	}
+
+	public static boolean isAutomaticEffectsGainEnabled() {
+		return (MediaContext.isAutomaticEffectsGainEnabled() != 0);
+	}
+
+	public static void enableAutomaticEffectsGain(boolean enabled) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN, enabled ? 1 : 0, 0), SystemClock.uptimeMillis());
+	}
+
 	private static int httpStreamReceiverVersion, httpOptions;
 	private static HttpStreamReceiver httpStreamReceiver;
 
@@ -2181,7 +2234,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000012);
-		MediaContext.setBufferConfig_(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
+		MediaContext._setBufferConfig(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
 		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : 0);
 		UI.setTransitions((UI.lastVersionCode < 85 && UI.transitions != 0) ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : UI.transitions);
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
@@ -2241,7 +2294,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		announceCurrentSong = opts.getBit(OPTBIT_ANNOUNCE_CURRENT_SONG);
 		UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
-		MediaContext.enableAutomaticEffectsGain_(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
+		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {

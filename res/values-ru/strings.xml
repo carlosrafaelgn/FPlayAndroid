@@ -326,6 +326,8 @@
     <string name="connecting">Подключение…</string>
     <string name="bytes_before_decoding">Начать, декодирование после загрузки сколько байт:</string>
     <string name="seconds_before_playback">Начать воспроизведение после декодирования сколько секунд:</string>
+    <string name="playback_buffer_length">Размер буфера воспроизведения (большое значение приносит стабильность, но вызывает задержку при смене эффектов):</string>
+    <string name="percentage_to_decode_before_playback">Процент для декодирования перед началом воспроизведения:</string>
     <string name="second">секунда</string>
     <string name="seconds">секунды</string>
     <string name="slide">Скользить</string>

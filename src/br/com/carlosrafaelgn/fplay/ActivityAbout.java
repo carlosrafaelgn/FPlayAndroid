@@ -40,7 +40,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
-import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
+import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.ObservableScrollView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -95,22 +95,22 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblMsg.setText(SafeURLSpan.parseSafeHtml(sb));
 		lblMsg.setMovementMethod(LinkMovementMethod.getInstance());
 		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
-		final int features = MediaContext.getFeatures();
+		final int features = Player.getFeatures();
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));
 		sb.append("\nABI");
 		sb.append(UI.collon());
 		sb.append(Build.CPU_ABI);
-		if ((features & MediaContext.FEATURE_PROCESSOR_ARM) != 0)
+		if ((features & Player.FEATURE_PROCESSOR_ARM) != 0)
 			sb.append(
-				((features & MediaContext.FEATURE_PROCESSOR_NEON) != 0) ?
-					(((features & MediaContext.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits + NEON)" : " (32 bits + NEON)") :
-						(((features & MediaContext.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits)" : " (32 bits)"));
-		else if ((features & MediaContext.FEATURE_PROCESSOR_X86) != 0)
+				((features & Player.FEATURE_PROCESSOR_NEON) != 0) ?
+					(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits + NEON)" : " (32 bits + NEON)") :
+						(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits)" : " (32 bits)"));
+		else if ((features & Player.FEATURE_PROCESSOR_X86) != 0)
 			sb.append(
-				((features & MediaContext.FEATURE_PROCESSOR_SSE) != 0) ?
-					(((features & MediaContext.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits + SSE)" : " (32 bits + SSE)") :
-						(((features & MediaContext.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits)" : " (32 bits)"));
+				((features & Player.FEATURE_PROCESSOR_SSE) != 0) ?
+					(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits + SSE)" : " (32 bits + SSE)") :
+						(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits)" : " (32 bits)"));
 		sb.append("\nAPI");
 		sb.append(UI.collon());
 		sb.append(Build.VERSION.SDK_INT);
@@ -141,9 +141,9 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 			sb.append("\nLDPI");
 		if (UI.isLargeScreen)
 			sb.append("\nLarge Screen");
-		if ((features & MediaContext.FEATURE_DECODING_NATIVE) != 0)
+		if ((features & Player.FEATURE_DECODING_NATIVE) != 0)
 			sb.append("\nNative Decoding");
-		else if ((features & MediaContext.FEATURE_DECODING_DIRECT) != 0)
+		else if ((features & Player.FEATURE_DECODING_DIRECT) != 0)
 			sb.append("\nDirect Decoding");
 		lblDbg.setTypeface(UI.defaultTypeface);
 		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);
