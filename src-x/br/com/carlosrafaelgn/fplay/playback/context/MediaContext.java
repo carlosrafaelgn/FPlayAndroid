@@ -542,6 +542,16 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				framesPlayed += (currentHeadPositionInFrames - lastHeadPositionInFrames);
 				lastHeadPositionInFrames = currentHeadPositionInFrames;
 
+				//workaround... what MUST really be done is to improve bytesWrittenThisTime handling below!
+				if (!playPending && (int)(framesWritten - framesPlayed) >= 5000) {
+					try {
+						Thread.sleep(50);
+					} catch (Throwable ex) {
+						//just ignore
+					}
+					continue;
+				}
+
 				currentPlayer.setCurrentPosition((int)((framesPlayed * 1000L) / (long)sampleRate));
 
 				if (outputBuffer.index < 0)
