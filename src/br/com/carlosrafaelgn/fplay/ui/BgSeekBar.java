@@ -163,10 +163,10 @@ public final class BgSeekBar extends View {
 		textSize = size - (thumbMargin << 1) - (UI.strokeSize << 1) - (UI.controlXtraSmallMargin << 1); //(UI.controlSmallMargin << 1) is just to a decent margin
 		if (furtherDecreaseTextSize)
 			textSize >>= 1;
-		if (textSize >= UI._22sp && size > (UI.defaultControlSize - UI._4dp)) {
+		/*if (textSize >= UI._22sp && size > (UI.defaultControlSize - UI._4dp)) {
 			textSize = UI._22sp;
 			textY = ((size - UI._22spBox) >> 1) + UI._22spYinBox;
-		} else if (textSize >= UI._18sp) {
+		} else*/ if (textSize >= UI._18sp) {
 			textSize = UI._18sp;
 			textY = ((size - UI._18spBox) >> 1) + UI._18spYinBox;
 		} else if (textSize >= UI._14sp) {
