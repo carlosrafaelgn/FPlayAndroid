@@ -542,20 +542,22 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				framesPlayed += (currentHeadPositionInFrames - lastHeadPositionInFrames);
 				lastHeadPositionInFrames = currentHeadPositionInFrames;
 
-				//workaround... what MUST really be done is to improve bytesWrittenThisTime handling below!
-				if (!playPending && (int)(framesWritten - framesPlayed) >= 5000) {
-					try {
-						Thread.sleep(50);
-					} catch (Throwable ex) {
-						//just ignore
-					}
-					continue;
-				}
-
 				currentPlayer.setCurrentPosition((int)((framesPlayed * 1000L) / (long)sampleRate));
 
-				if (outputBuffer.index < 0)
+				if (outputBuffer.index < 0) {
 					sourcePlayer.nextOutputBuffer(outputBuffer);
+					if (outputBuffer.index < 0 && (!outputBuffer.streamOver || nextPlayer == null)) {
+						try {
+							synchronized (threadNotification) {
+								if (requestedAction == ACTION_NONE)
+									threadNotification.wait(20);
+							}
+						} catch (Throwable ex) {
+							//just ignore
+						}
+					}
+				}
+
 				if (outputBuffer.remainingBytes > 0) {
 					final int bytesWrittenThisTime;
 					if (sourcePlayer.isNativeMediaCodec())
@@ -576,13 +578,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//the buffer was too full, just wait some time
 						try {
 							synchronized (threadNotification) {
-								if (requestedAction != ACTION_NONE)
+								if (requestedAction == ACTION_NONE)
 									threadNotification.wait(50);
 							}
-							continue;
 						} catch (Throwable ex) {
 							//just ignore
 						}
+						continue;
 					} else {
 						if (sourcePlayer == currentPlayer) {
 							framesWritten += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
