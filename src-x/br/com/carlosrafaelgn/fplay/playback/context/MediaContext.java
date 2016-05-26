@@ -76,6 +76,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static final int PLAYER_TIMEOUT = 30000;
 
+	private static final int STANDARD_BUFFER_SIZE_IN_FRAMES = 1152;
+
 	static final int SL_MILLIBEL_MIN = -32768;
 
 	private static final class ErrorStructure {
@@ -170,7 +172,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			minBufferSizeInFrames = bufferSizeInBytes >> 2;
 		}
 
-		final int bufferSizeInFrames;
+		int bufferSizeInFrames;
 		switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
 		case Player.BUFFER_SIZE_500MS:
 			bufferSizeInFrames = 48000 / 2;
@@ -189,8 +191,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			break;
 		}
 
-		//make sure it is a multiple of minBufferSizeInFrames
-		return ((bufferSizeInFrames + minBufferSizeInFrames - 1) / minBufferSizeInFrames) * minBufferSizeInFrames;
+		//make sure it is at least minBufferSizeInFrames
+		if (bufferSizeInFrames < minBufferSizeInFrames)
+			bufferSizeInFrames = minBufferSizeInFrames;
+
+		//make sure it is a multiple of our standard buffer size
+		return ((bufferSizeInFrames + STANDARD_BUFFER_SIZE_IN_FRAMES - 1) / STANDARD_BUFFER_SIZE_IN_FRAMES) * STANDARD_BUFFER_SIZE_IN_FRAMES;
 	}
 
 	private static int getFillThresholdInFrames(int bufferSizeInFrames) {
@@ -249,14 +255,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	public void run() {
 		thread.setPriority(Thread.MAX_PRIORITY);
 
-		int sampleRate = 0;
+		int sampleRate = 0, sleepTime = 30;
 		PowerManager.WakeLock wakeLock;
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		outputBuffer.index = -1;
 		int lastHeadPositionInFrames = 0, bufferSizeInFrames = getBufferSizeInFrames(), fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
-
 		synchronized (openSLSync) {
 			initializationError = (openSLInitialize() != 0);
 		}
@@ -320,6 +325,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								nextFramesWritten = 0;
 								if (sampleRate != currentPlayer.getSampleRate()) {
 									sampleRate = currentPlayer.getSampleRate();
+									sleepTime = ((STANDARD_BUFFER_SIZE_IN_FRAMES * 1000) / sampleRate) + 5;
 									synchronized (openSLSync) {
 										checkOpenSLResult(openSLCreate(sampleRate, bufferSizeInFrames));
 										openSLSetVolumeInMillibels(volumeInMillibels);
@@ -496,12 +502,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									nextFramesWritten = 0;
 								}
 								seekPendingPlayer.doSeek(requestedSeekMS);
-								//give the decoder some time to decode something
-								try {
-									Thread.sleep(30);
-								} catch (Throwable ex) {
-									//just ignore
-								}
 								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, seekPendingPlayer), SystemClock.uptimeMillis());
 								framesWritten = seekPendingPlayer.getCurrentPositionInFrames();
 								framesPlayed = framesWritten;
@@ -550,7 +550,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						try {
 							synchronized (threadNotification) {
 								if (requestedAction == ACTION_NONE)
-									threadNotification.wait(20);
+									threadNotification.wait(sleepTime);
 							}
 						} catch (Throwable ex) {
 							//just ignore
@@ -579,7 +579,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						try {
 							synchronized (threadNotification) {
 								if (requestedAction == ACTION_NONE)
-									threadNotification.wait(50);
+									threadNotification.wait(sleepTime);
 							}
 						} catch (Throwable ex) {
 							//just ignore
@@ -653,7 +653,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						bufferingStart(currentPlayer);
 						//give the decoder some time to decode something
 						try {
-							Thread.sleep(30);
+							synchronized (threadNotification) {
+								if (requestedAction == ACTION_NONE)
+									threadNotification.wait(sleepTime);
+							}
 						} catch (Throwable ex) {
 							//just ignore
 						}
