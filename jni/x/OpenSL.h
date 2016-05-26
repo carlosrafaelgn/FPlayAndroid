@@ -352,7 +352,8 @@ int JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj, uns
 	if (!fullBuffer || !bqPlayerBufferQueue || !nativeObj || !((MediaCodec*)nativeObj)->buffer)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
-	if (!emptyBuffers)
+	//leave at least two spare buffers because sometimes openSLBufferCallback() is called a little bit ahead of time
+	if (emptyBuffers < 3)
 		return 0;
 
 	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
@@ -390,7 +391,8 @@ int JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, unsign
 	if (!fullBuffer || !bqPlayerBufferQueue || !jbuffer)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
-	if (!emptyBuffers)
+	//leave at least two spare buffers because sometimes openSLBufferCallback() is called a little bit ahead of time
+	if (emptyBuffers < 3)
 		return 0;
 
 	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);
@@ -437,7 +439,8 @@ int JNICALL openSLWriteArray(JNIEnv* env, jclass clazz, jbyteArray jbuffer, unsi
 	if (!fullBuffer || !bqPlayerBufferQueue || !jbuffer)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
-	if (!emptyBuffers)
+	//leave at least two spare buffers because sometimes openSLBufferCallback() is called a little bit ahead of time
+	if (emptyBuffers < 3)
 		return 0;
 
 	unsigned int sizeInFrames = (sizeInBytes >> srcChannelCount);

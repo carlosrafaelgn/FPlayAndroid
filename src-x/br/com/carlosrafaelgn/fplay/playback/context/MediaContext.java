@@ -195,8 +195,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (bufferSizeInFrames < minBufferSizeInFrames)
 			bufferSizeInFrames = minBufferSizeInFrames;
 
-		//make sure it is a multiple of our standard buffer size
-		return ((bufferSizeInFrames + STANDARD_BUFFER_SIZE_IN_FRAMES - 1) / STANDARD_BUFFER_SIZE_IN_FRAMES) * STANDARD_BUFFER_SIZE_IN_FRAMES;
+		//make sure it is a multiple of our standard buffer size and add 2 extra buffers (refer to OpenSL.h)
+		return (2 + ((bufferSizeInFrames + STANDARD_BUFFER_SIZE_IN_FRAMES - 1) / STANDARD_BUFFER_SIZE_IN_FRAMES)) * STANDARD_BUFFER_SIZE_IN_FRAMES;
 	}
 
 	private static int getFillThresholdInFrames(int bufferSizeInFrames) {
