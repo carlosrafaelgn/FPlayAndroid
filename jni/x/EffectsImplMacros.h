@@ -31,7 +31,7 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
+typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 
 #define MAX_ALLOWED_SAMPLE_VALUE 31000.0f //31000/32768 = 0.946 = -0.48dB
 
@@ -46,7 +46,7 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
 #define equalizerX86() \
 	/* since this is a cascade filter, band0's output is band1's input and so on.... */ \
-	for (int i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
+	for (int32_t i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
 		/* y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2) */ \
 		/* but, since our a2 was negated and b1 = a1, the formula becomes: */ \
 		/* y(n) = b0.x(n) + b1.(x(n-1) - y(n-1)) + b2.x(n-2) + a2.y(n-2) */ \
@@ -141,15 +141,15 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	\
 	/*
 	the final output is the last band's output (or its next band's input)
-	const int iL = (int)inL;
-	const int iR = (int)inR; */ \
+	const int32_t iL = (int32_t)inL;
+	const int32_t iR = (int32_t)inR; */ \
 	__m128i iLR = _mm_cvtps_epi32(inLR); \
 	\
 	/*
-	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (short)iL)); \
-	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (short)iR)); */ \
+	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
+	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
 	iLR = _mm_packs_epi32(iLR, iLR); \
-	*((int*)buffer) = _mm_cvtsi128_si32(iLR); \
+	*((int32_t*)buffer) = _mm_cvtsi128_si32(iLR); \
 	\
 	buffer += 2;
 
@@ -173,7 +173,7 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	
 #define equalizerPlain() \
 	/* since this is a cascade filter, band0's output is band1's input and so on.... */ \
-	for (int i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
+	for (int32_t i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
 		/*
 		y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2)
 		but, since our a2 was negated and b1 = a1, the formula becomes:
@@ -228,10 +228,10 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 		maxAbsSample = tmpAbsR; \
 	\
 	/* the final output is the last band's output (or its next band's input) */ \
-	const int iL = (int)inL; \
-	const int iR = (int)inR; \
-	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (short)iL)); \
-	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (short)iR)); \
+	const int32_t iL = (int32_t)inL; \
+	const int32_t iR = (int32_t)inR; \
+	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
+	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); \
 	\
 	buffer += 2;
 
@@ -254,7 +254,7 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 
 #define equalizerNeon() \
 	/* since this is a cascade filter, band0's output is band1's input and so on.... */ \
-	for (int i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
+	for (int32_t i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
 		/*
 		y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2)
 		but, since our a2 was negated and b1 = a1, the formula becomes:
@@ -328,13 +328,13 @@ typedef void (*EFFECTPROC)(short* buffer, unsigned int sizeInFrames);
 	\
 	/*
 	the final output is the last band's output (or its next band's input)
-	const int iL = (int)inL;
-	const int iR = (int)inR; */ \
+	const int32_t iL = (int32_t)inL;
+	const int32_t iR = (int32_t)inR; */ \
 	int32x2_t iLR = vcvt_s32_f32(inLR); \
 	\
 	/*
-	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (short)iL));
-	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (short)iR)); */ \
+	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL));
+	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
 	int16x4_t iLRshort = vqmovn_s32(vcombine_s32(iLR, iLR)); \
 	buffer[0] = vget_lane_s16(iLRshort, 0); \
 	buffer[1] = vget_lane_s16(iLRshort, 1); \

@@ -71,7 +71,7 @@
 #ifdef FPLAY_ARM
 	#include <errno.h>
 	#include <fcntl.h>
-	static unsigned int neonMode;
+	static uint32_t neonMode;
 #endif
 
 //when channelCount is 1, the frame size is 2 (16 bits per sample, mono)
@@ -79,14 +79,14 @@
 //therefore:
 //frames = bytes >> channelCount
 //bytes = frames << channelCount;
-static unsigned int srcChannelCount, bufferSizeInFrames, writePositionInFrames;
-unsigned int sampleRate;
+static uint32_t srcChannelCount, bufferSizeInFrames, writePositionInFrames;
+uint32_t sampleRate;
 
 #include "Effects.h"
 #include "MediaCodec.h"
 #include "OpenSL.h"
 
-unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
+uint32_t JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #ifdef FPLAY_ARM
 	#ifdef FPLAY_64_BITS
 		return FEATURE_PROCESSOR_ARM | neonMode | FEATURE_PROCESSOR_64_BITS;
@@ -104,7 +104,7 @@ unsigned int JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #endif
 }
 
-void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, unsigned int srcChannelCount) {
+void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, uint32_t srcChannelCount) {
 	::srcChannelCount = srcChannelCount;
 
 	resetOpenSL();
@@ -119,8 +119,8 @@ void checkNeonMode() {
 	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.h?r=2195
 	neonMode = 0;
 	char cpuinfo[4096];
-	int cpuinfo_len = -1;
-	int fd = open("/proc/cpuinfo", O_RDONLY);
+	int32_t cpuinfo_len = -1;
+	int32_t fd = open("/proc/cpuinfo", O_RDONLY);
 	if (fd >= 0) {
 		do {
 			cpuinfo_len = read(fd, cpuinfo, 4096);
@@ -129,7 +129,7 @@ void checkNeonMode() {
 		if (cpuinfo_len > 0) {
 			cpuinfo[cpuinfo_len] = 0;
 			//look for the "\nFeatures: " line
-			for (int i = cpuinfo_len - 9; i >= 0; i--) {
+			for (int32_t i = cpuinfo_len - 9; i >= 0; i--) {
 				if (memcmp(cpuinfo + i, "\nFeatures", 9) == 0) {
 					i += 9;
 					while (i < cpuinfo_len && (cpuinfo[i] == ' ' || cpuinfo[i] == '\t' || cpuinfo[i] == ':'))

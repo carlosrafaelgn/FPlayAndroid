@@ -39,8 +39,8 @@
 #define BASSBOOST_ENABLED 2
 #define VIRTUALIZER_ENABLED 4
 
-extern unsigned int effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, sampleRate;
-extern int effectsMustReduceGain, effectsFramesBeforeRecoveringGain, effectsTemp[] __attribute__((aligned(16)));
+extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, sampleRate;
+extern int32_t effectsMustReduceGain, effectsFramesBeforeRecoveringGain, effectsTemp[] __attribute__((aligned(16)));
 extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
 effectsGainReductionPerFrame[] __attribute__((aligned(16))),
 effectsGainRecoveryPerFrame[] __attribute__((aligned(16))),
@@ -50,7 +50,7 @@ equalizerSamples[] __attribute__((aligned(16)));
 
 //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0491h/CIHJBEFE.html
 
-void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
+void processEqualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
 	effectsFramesBeforeRecoveringGain -= sizeInFrames;
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
@@ -59,8 +59,8 @@ void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		effectsTemp[0] = (int)buffer[0];
-		effectsTemp[1] = (int)buffer[1];
+		effectsTemp[0] = (int32_t)buffer[0];
+		effectsTemp[1] = (int32_t)buffer[1];
 		//inLR = { L, R }
 		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
 
@@ -72,7 +72,7 @@ void processEqualizerNeon(short* buffer, unsigned int sizeInFrames) {
 	footerNeon();
 }
 
-void processVirtualizerNeon(short* buffer, unsigned int sizeInFrames) {
+void processVirtualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
 	effectsFramesBeforeRecoveringGain -= sizeInFrames;
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
@@ -81,8 +81,8 @@ void processVirtualizerNeon(short* buffer, unsigned int sizeInFrames) {
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		effectsTemp[0] = (int)buffer[0];
-		effectsTemp[1] = (int)buffer[1];
+		effectsTemp[0] = (int32_t)buffer[0];
+		effectsTemp[1] = (int32_t)buffer[1];
 		//inLR = { L, R }
 		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
 
@@ -94,7 +94,7 @@ void processVirtualizerNeon(short* buffer, unsigned int sizeInFrames) {
 	footerNeon();
 }
 
-void processEffectsNeon(short* buffer, unsigned int sizeInFrames) {
+void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 	effectsFramesBeforeRecoveringGain -= sizeInFrames;
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
@@ -103,8 +103,8 @@ void processEffectsNeon(short* buffer, unsigned int sizeInFrames) {
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		effectsTemp[0] = (int)buffer[0];
-		effectsTemp[1] = (int)buffer[1];
+		effectsTemp[0] = (int32_t)buffer[0];
+		effectsTemp[1] = (int32_t)buffer[1];
 		//inLR = { L, R }
 		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
 

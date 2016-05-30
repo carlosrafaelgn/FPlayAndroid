@@ -45,7 +45,7 @@ static void* libmediandk;
 #define AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM 4
 #define AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED -3
 #define AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED -2
-#define media_status_t int
+#define media_status_t int32_t
 #define AMediaCodec void
 #define AMediaExtractor void
 #define AMediaFormat void
@@ -85,7 +85,7 @@ static AMediaExtractor* (*AMediaExtractor_new)();
 static ssize_t (*AMediaExtractor_readSampleData)(AMediaExtractor*, uint8_t *buffer, size_t capacity);
 static media_status_t (*AMediaExtractor_seekTo)(AMediaExtractor*, int64_t seekPosUs, SeekMode mode);
 static media_status_t (*AMediaExtractor_selectTrack)(AMediaExtractor*, size_t idx);
-static media_status_t (*AMediaExtractor_setDataSourceFd)(AMediaExtractor*, int fd, off64_t offset, off64_t length);
+static media_status_t (*AMediaExtractor_setDataSourceFd)(AMediaExtractor*, int32_t fd, off64_t offset, off64_t length);
 
 static bool (*AMediaFormat_getInt32)(AMediaFormat*, const char *name, int32_t *out);
 static bool (*AMediaFormat_getInt64)(AMediaFormat*, const char *name, int64_t *out);
@@ -99,7 +99,7 @@ public:
 	unsigned char* buffer;
 
 private:
-	int inputOver;
+	int32_t inputOver;
 	ssize_t bufferIndex;
 	AMediaExtractor* mediaExtractor;
 	AMediaCodec* mediaCodec;
@@ -114,10 +114,10 @@ private:
 			(mime[5] == '/'));
 	}
 
-	int fillInputBuffers() {
+	int32_t fillInputBuffers() {
 		if (inputOver)
 			return 0;
-		for (int i = 0; i < 16 && !inputOver; i++) {
+		for (int32_t i = 0; i < 16 && !inputOver; i++) {
 			const ssize_t index = AMediaCodec_dequeueInputBuffer(mediaCodec, INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
 				break;
@@ -128,12 +128,12 @@ private:
 			ssize_t size = AMediaExtractor_readSampleData(mediaExtractor, inputBuffer, inputBufferCapacity);
 			if (size < 0) {
 				inputOver = true;
-				int ret;
+				int32_t ret;
 				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, 0, 0, AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM)))
 					return ret;
 				break;
 			} else {
-				int ret;
+				int32_t ret;
 				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, size, 0, 0)))
 					return ret;
 				//although the doc says "Returns false if no more sample data is available
@@ -168,8 +168,8 @@ public:
 		}
 	}
 
-	int prepare(int fd, uint64_t length, uint64_t* outParams) {
-		int ret;
+	int32_t prepare(int32_t fd, uint64_t length, uint64_t* outParams) {
+		int32_t ret;
 
 		mediaExtractor = AMediaExtractor_new();
 		if (!mediaExtractor)
@@ -191,7 +191,7 @@ public:
 			if (isAudio(mime)) {
 				if ((ret = AMediaExtractor_selectTrack(mediaExtractor, i)))
 					return ret;
-				int sampleRate, channelCount;
+				int32_t sampleRate, channelCount;
 				int64_t duration;
 				if (!AMediaFormat_getInt32(format, "sample-rate", &sampleRate) ||
 					!AMediaFormat_getInt32(format, "channel-count", &channelCount) ||
@@ -229,8 +229,8 @@ public:
 		return 0;
 	}
 
-	int64_t doSeek(int msec) {
-		int ret;
+	int64_t doSeek(int32_t msec) {
+		int32_t ret;
 		if ((ret = AMediaCodec_flush(mediaCodec)))
 			return (int64_t)ret;
 		if ((ret = AMediaExtractor_seekTo(mediaExtractor, (int64_t)msec * 1000LL, AMEDIAEXTRACTOR_SEEK_CLOSEST_SYNC)))
@@ -244,10 +244,10 @@ public:
 		return ((sampleTime < 0) ? 0x7FFFFFFFFFFFFFFFLL : sampleTime);
 	}
 
-	int nextOutputBuffer() {
+	int32_t nextOutputBuffer() {
 		//positive: ok (odd means input over)
 		//negative: error
-		int ret;
+		int32_t ret;
 
 		if ((ret = fillInputBuffers()))
 			return ret;
@@ -283,14 +283,14 @@ public:
 	}
 };
 
-int JNICALL mediaCodecPrepare(JNIEnv* env, jclass clazz, int fd, uint64_t length, jlongArray joutParams) {
+int32_t JNICALL mediaCodecPrepare(JNIEnv* env, jclass clazz, int32_t fd, uint64_t length, jlongArray joutParams) {
 	if (!fd || !joutParams || env->GetArrayLength(joutParams) < 4)
 		return -1;
 
 	uint64_t outParams[4];
 
 	MediaCodec* nativeObj = new MediaCodec();
-	const int ret = nativeObj->prepare(fd, length, outParams);
+	const int32_t ret = nativeObj->prepare(fd, length, outParams);
 
 	if (ret < 0) {
 		delete nativeObj;
@@ -303,14 +303,14 @@ int JNICALL mediaCodecPrepare(JNIEnv* env, jclass clazz, int fd, uint64_t length
 	return 0;
 }
 
-int JNICALL mediaCodecNextOutputBuffer(JNIEnv* env, jclass clazz, uint64_t nativeObj) {
+int32_t JNICALL mediaCodecNextOutputBuffer(JNIEnv* env, jclass clazz, uint64_t nativeObj) {
 	if (!nativeObj)
 		return -1;
 
 	return ((MediaCodec*)nativeObj)->nextOutputBuffer();
 }
 
-int64_t JNICALL mediaCodecSeek(JNIEnv* env, jclass clazz, uint64_t nativeObj, int msec) {
+int64_t JNICALL mediaCodecSeek(JNIEnv* env, jclass clazz, uint64_t nativeObj, int32_t msec) {
 	if (!nativeObj || msec < 0)
 		return -1;
 
@@ -327,7 +327,7 @@ void JNICALL mediaCodecRelease(JNIEnv* env, jclass clazz, uint64_t nativeObj) {
 		delete ((MediaCodec*)nativeObj);
 }
 
-int JNICALL mediaCodecLoadExternalLibrary(JNIEnv* env, jclass clazz) {
+int32_t JNICALL mediaCodecLoadExternalLibrary(JNIEnv* env, jclass clazz) {
 	libmediandk = dlopen("libmediandk.so", RTLD_NOW | RTLD_LOCAL);
 	if (!libmediandk)
 		return -1;

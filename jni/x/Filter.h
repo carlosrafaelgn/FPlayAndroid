@@ -31,7 +31,7 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-float getBandGainInDB(unsigned int band) {
+float getBandGainInDB(uint32_t band) {
 	if ((effectsEnabled & BASSBOOST_ENABLED)) {
 		if (band < BASSBOOST_BAND_COUNT)
 			return ((effectsEnabled & EQUALIZER_ENABLED) ?
@@ -47,7 +47,7 @@ float getBandGainInDB(unsigned int band) {
 	return equalizerGainInDB[band];
 }
 
-void computeFilter(unsigned int band) {
+void computeFilter(uint32_t band) {
 	//the method used to compute b0, b1, b2, a1 and a2 was created by Haruki Hasegawa,
 	//for his OpenSLMediaPlayer: https://github.com/h6ah4i/android-openslmediaplayer
 	//the original formula was in his spreadsheet: https://docs.google.com/spreadsheets/d/1hj2aoW83rGraANzHxKaCpECFQ0WawVbap4tgxZ9FSmo/pubhtml?gid=1587344290&single=true
