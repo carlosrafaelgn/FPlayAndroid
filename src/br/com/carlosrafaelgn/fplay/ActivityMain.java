@@ -959,7 +959,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		if (Player.controlMode) {
-			findViewById(R.id.panelControls).setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
+			final ViewGroup panelControls = (ViewGroup)findViewById(R.id.panelControls);
+			panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
+			final int panelControlsPadding = (UI.isLowDpiScreen ? UI.controlMargin : UI.controlLargeMargin);
+			panelControls.setPadding(panelControlsPadding, panelControlsPadding, panelControlsPadding, panelControlsPadding);
 			UI.largeText(lblTitle);
 			btnPrev.setIconNoChanges(UI.ICON_PREV);
 			btnNext.setIconNoChanges(UI.ICON_NEXT);
@@ -988,7 +991,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			Player.songs.moving = false;
 			
 			lblTitle.setOnClickListener(this);
-			final int w = getDecorViewWidth(), h = getDecorViewHeight();
+			final int w = getDecorViewWidth() - (panelControlsPadding << 1), h = getDecorViewHeight() - (panelControlsPadding << 1);
 			final int min, max;
 			if (w < h) {
 				min = w;
@@ -1017,10 +1020,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			rp = new RelativeLayout.LayoutParams(panelH, panelH);
 			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			btnMenu.setLayoutParams(rp);
-			
+
 			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.colorState_text_control_mode_reactive.getDefaultColor(), panelH >> 1);
 			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
-			
+
 			final int lds = ((UI.isLowDpiScreen && !UI.isLargeScreen) ? (UI.isLandscape ? ((UI.controlMargin * 3) >> 1) : UI.controlMargin) : UI.controlLargeMargin);
 			btnDecreaseVolume.setPadding(lds, lds, lds, lds);
 			btnIncreaseVolume.setPadding(lds, lds, lds, lds);
@@ -1037,7 +1040,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 				p2.topMargin = UI.controlLargeMargin;
 				p2.bottomMargin = UI.controlLargeMargin;
 				lblTitle.setLayoutParams(p2);
-				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (max * 5) / 100);
+				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (min * 9) / 100);
 				final int ph = (min * 12) / 100, pv = (max * 12) / 100;
 				btnPrev.setPadding(ph, pv, ph, pv);
 				btnNext.setPadding(ph, pv, ph, pv);
