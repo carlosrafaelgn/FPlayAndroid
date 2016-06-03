@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.playback.context;
 
 import android.content.Context;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.os.Handler;
@@ -75,8 +74,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
 	private static final int PLAYER_TIMEOUT = 30000;
-
-	private static final int STANDARD_BUFFER_SIZE_IN_FRAMES = 1152;
 
 	static final int SL_MILLIBEL_MIN = -32768;
 
@@ -140,7 +137,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native int mediaCodecLoadExternalLibrary();
 
 	private static native int openSLInitialize();
-	private static native int openSLCreate(int sampleRate, int bufferSizeInFrames);
+	private static native int openSLCreate(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames);
 	private static native int openSLPlay();
 	private static native int openSLPause();
 	private static native int openSLStopAndFlush();
@@ -157,20 +154,23 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	@SuppressWarnings("deprecation")
-	private static int getBufferSizeInFrames() {
-		int minBufferSizeInFrames = 0;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+	private static long getBufferSizeInFrames(int sampleRate) {
+		if (sampleRate < 8000)
+			sampleRate = 44100;
+
+		/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
 			try {
 				final AudioManager am = (AudioManager)Player.theApplication.getSystemService(Context.AUDIO_SERVICE);
-				minBufferSizeInFrames = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
+				singleBufferSizeInFrames = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
 			} catch (Throwable ex) {
 				//just ignore
 			}
-		}
-		if (minBufferSizeInFrames <= 0) {
-			final int bufferSizeInBytes = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-			minBufferSizeInFrames = bufferSizeInBytes >> 2;
-		}
+		}*/
+
+		final int singleBufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+		int singleBufferSizeInFrames = singleBufferSizeInBytes >> 2;
+		if (singleBufferSizeInFrames <= 0)
+			singleBufferSizeInFrames = 1024;
 
 		int bufferSizeInFrames;
 		switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
@@ -191,12 +191,21 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			break;
 		}
 
-		//make sure it is at least minBufferSizeInFrames
-		if (bufferSizeInFrames < minBufferSizeInFrames)
-			bufferSizeInFrames = minBufferSizeInFrames;
+		int minBufferSizeInFrames = singleBufferSizeInFrames;
+		while (minBufferSizeInFrames < 4096)
+			minBufferSizeInFrames += singleBufferSizeInFrames;
+		while (minBufferSizeInFrames > 16384)
+			minBufferSizeInFrames >>>= 1;
 
-		//make sure it is a multiple of our standard buffer size and add 2 extra buffers (refer to OpenSL.h)
-		return (2 + ((bufferSizeInFrames + STANDARD_BUFFER_SIZE_IN_FRAMES - 1) / STANDARD_BUFFER_SIZE_IN_FRAMES)) * STANDARD_BUFFER_SIZE_IN_FRAMES;
+		if (bufferSizeInFrames <= (minBufferSizeInFrames << 1)) {
+			//we need at least 2 buffers + 1 extra buffer (refer to OpenSL.h)
+			bufferSizeInFrames = minBufferSizeInFrames * 3;
+		} else {
+			//otherwise, make sure it is a multiple of our minimal buffer size and add 1 extra buffer (refer to OpenSL.h)
+			bufferSizeInFrames = (1 + ((bufferSizeInFrames + minBufferSizeInFrames - 1) / minBufferSizeInFrames)) * minBufferSizeInFrames;
+		}
+
+		return ((((long)minBufferSizeInFrames) << 32) | (long)bufferSizeInFrames);
 	}
 
 	private static int getFillThresholdInFrames(int bufferSizeInFrames) {
@@ -260,8 +269,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		outputBuffer.index = -1;
-		int lastHeadPositionInFrames = 0, bufferSizeInFrames = getBufferSizeInFrames(), fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
+		int lastHeadPositionInFrames = 0, bufferSizeInFrames = (int)getBufferSizeInFrames(44100), fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
+		boolean bufferConfigChanged = false;
 		synchronized (openSLSync) {
 			initializationError = (openSLInitialize() != 0);
 		}
@@ -323,11 +333,16 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								framesWritten = currentPlayer.getCurrentPositionInFrames();
 								framesPlayed = currentPlayer.getCurrentPositionInFrames();
 								nextFramesWritten = 0;
-								if (sampleRate != currentPlayer.getSampleRate()) {
+								if (sampleRate != currentPlayer.getSampleRate() || bufferConfigChanged) {
+									bufferConfigChanged = false;
 									sampleRate = currentPlayer.getSampleRate();
-									sleepTime = ((STANDARD_BUFFER_SIZE_IN_FRAMES * 1000) / sampleRate) + 5;
+									final long temp = getBufferSizeInFrames(sampleRate);
+									bufferSizeInFrames = (int)temp;
+									final int minBufferSizeInFrames = (int)(temp >>> 32);
+									fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
+									sleepTime = ((minBufferSizeInFrames * 1000) / sampleRate) + 5;
 									synchronized (openSLSync) {
-										checkOpenSLResult(openSLCreate(sampleRate, bufferSizeInFrames));
+										checkOpenSLResult(openSLCreate(sampleRate, bufferSizeInFrames, minBufferSizeInFrames));
 										openSLSetVolumeInMillibels(volumeInMillibels);
 										MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 									}
@@ -448,8 +463,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								requestSucceeded = true;
 								break;
 							case ACTION_UPDATE_BUFFER_CONFIG:
-								bufferSizeInFrames = getBufferSizeInFrames();
-								fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
+								bufferConfigChanged = true;
 								break;
 							case ACTION_ENABLE_EFFECTS_GAIN:
 								enableAutomaticEffectsGain(1);
@@ -546,14 +560,34 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 				if (outputBuffer.index < 0) {
 					sourcePlayer.nextOutputBuffer(outputBuffer);
-					if (outputBuffer.index < 0 && (!outputBuffer.streamOver || nextPlayer == null)) {
-						try {
-							synchronized (threadNotification) {
-								if (requestedAction == ACTION_NONE)
-									threadNotification.wait(sleepTime);
+					if (outputBuffer.index < 0) {
+						boolean sleepNow = true;
+						if (outputBuffer.streamOver && nextPlayer == null) {
+							final int bytesWrittenThisTime;
+							//when the input stream is over and we do not have a nextPlayer to produce
+							//new samples, we need to tell OpenSL to flush any pending data it had stored
+							if (sourcePlayer.isNativeMediaCodec())
+								bytesWrittenThisTime = openSLWriteNative(0, 0, 0);
+							else if (MediaCodecPlayer.isDirect)
+								bytesWrittenThisTime = openSLWriteDirect(null, 0, 0, 0);
+							else
+								bytesWrittenThisTime = openSLWriteArray(null, 0, 0, 0);
+							if (bytesWrittenThisTime < 0) {
+								throw new IOException("audioTrackWriteDirect() returned " + bytesWrittenThisTime);
+							} else if (bytesWrittenThisTime > 0) {
+								sleepNow = false;
 							}
-						} catch (Throwable ex) {
-							//just ignore
+						}
+
+						if (sleepNow) {
+							try {
+								synchronized (threadNotification) {
+									if (requestedAction == ACTION_NONE)
+										threadNotification.wait(sleepTime);
+								}
+							} catch (Throwable ex) {
+								//just ignore
+							}
 						}
 					}
 				}

@@ -79,7 +79,7 @@
 //therefore:
 //frames = bytes >> channelCount
 //bytes = frames << channelCount;
-static uint32_t srcChannelCount, bufferSizeInFrames, writePositionInFrames;
+static uint32_t srcChannelCount;
 uint32_t sampleRate;
 
 #include "Effects.h"
@@ -187,7 +187,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecRelease", "(J)V", (void*)mediaCodecRelease},
 		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
 		{"openSLInitialize", "()I", (void*)openSLInitialize},
-		{"openSLCreate", "(II)I", (void*)openSLCreate},
+		{"openSLCreate", "(III)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},
 		{"openSLPause", "()I", (void*)openSLPause},
 		{"openSLStopAndFlush", "()I", (void*)openSLStopAndFlush},

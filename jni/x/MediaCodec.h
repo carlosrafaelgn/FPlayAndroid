@@ -122,7 +122,7 @@ private:
 			if (index < 0)
 				break;
 			size_t inputBufferCapacity;
-			unsigned char* inputBuffer = AMediaCodec_getInputBuffer(mediaCodec, index, &inputBufferCapacity);
+			uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mediaCodec, index, &inputBufferCapacity);
 			if (!inputBuffer)
 				break;
 			ssize_t size = AMediaExtractor_readSampleData(mediaExtractor, inputBuffer, inputBufferCapacity);
