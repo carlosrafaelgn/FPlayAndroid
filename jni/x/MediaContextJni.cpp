@@ -112,6 +112,47 @@ void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, uint32_t sr
 	resetVirtualizer();
 }
 
+void JNICALL audioTrackInitialize(JNIEnv* env, jclass clazz) {
+	equalizerConfigChanged();
+	virtualizerConfigChanged();
+}
+
+void JNICALL audioTrackCreate(JNIEnv* env, jclass clazz, uint32_t sampleRate) {
+	if (::sampleRate != sampleRate) {
+		::sampleRate = sampleRate;
+		equalizerConfigChanged();
+		virtualizerConfigChanged();
+	}
+}
+
+void JNICALL audioTrackProcessEffectsDirect(JNIEnv* env, jclass clazz, jobject jbuffer, uint32_t offsetInBytes, uint32_t sizeInBytes, uint32_t needsSwap) {
+	int16_t* const srcBuffer = (int16_t*)env->GetDirectBufferAddress(jbuffer);
+	if (!srcBuffer)
+		return;
+
+	//one day we will convert from mono to stereo here, in such a way, srcBuffer will always contain stereo frames upon exit
+
+	if (needsSwap)
+		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1);
+
+	effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2);
+}
+
+void JNICALL audioTrackProcessEffectsArray(JNIEnv* env, jclass clazz, jbyteArray jbuffer, uint32_t offsetInBytes, uint32_t sizeInBytes, uint32_t needsSwap) {
+	int16_t* const srcBuffer = (int16_t*)env->GetPrimitiveArrayCritical(jbuffer, 0);
+	if (!srcBuffer)
+		return;
+
+	//one day we will convert from mono to stereo here, in such a way, srcBuffer will always contain stereo frames upon exit
+
+	if (needsSwap)
+		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1);
+
+	effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2);
+
+	env->ReleasePrimitiveArrayCritical(jbuffer, srcBuffer, 0);
+}
+
 #ifdef FPLAY_ARM
 void checkNeonMode() {
 	//based on
@@ -186,6 +227,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecReleaseOutputBuffer", "(J)V", (void*)mediaCodecReleaseOutputBuffer},
 		{"mediaCodecRelease", "(J)V", (void*)mediaCodecRelease},
 		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
+		{"audioTrackInitialize", "()V", (void*)audioTrackInitialize},
+		{"audioTrackCreate", "(I)V", (void*)audioTrackCreate},
+		{"audioTrackProcessEffectsDirect", "(Ljava/nio/ByteBuffer;III)V", (void*)audioTrackProcessEffectsDirect},
+		{"audioTrackProcessEffectsArray", "([BIII)V", (void*)audioTrackProcessEffectsArray},
 		{"openSLInitialize", "()I", (void*)openSLInitialize},
 		{"openSLCreate", "(III)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},

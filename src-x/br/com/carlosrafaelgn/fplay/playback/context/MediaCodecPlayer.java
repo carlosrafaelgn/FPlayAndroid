@@ -93,7 +93,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	private static Field fieldBackingArray, fieldArrayOffset;
 	private static byte[] nonDirectTempArray;
 	public static int needsSwap;
-	public static boolean isDirect, tryToProcessNonDirectBuffers;
+	public static boolean isDirect;
 
 	private volatile int state, currentPositionInMS, httpStreamReceiverVersion;
 	private int sampleRate, channelCount, durationInMS, stateBeforeSeek;
@@ -274,26 +274,20 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		isDirect = outputBuffers[0].isDirect();
 		needsSwap = ((outputBuffers[0].order() != ByteOrder.nativeOrder()) ? 1 : 0);
 		if (!isDirect && (fieldBackingArray == null || fieldArrayOffset == null)) {
-			//final byte[] backingArray;
-			//final int arrayOffset;
-			if (fieldBackingArray == null) {
-				try {
-					fieldBackingArray = outputBuffers[0].getClass().getField("backingArray");
-					fieldBackingArray.setAccessible(true);
-				} catch (Throwable ex) {
-					fieldBackingArray = null;
-					fieldArrayOffset = null;
-				}
+			try {
+				fieldBackingArray = outputBuffers[0].getClass().getField("backingArray");
+				fieldBackingArray.setAccessible(true);
+				fieldArrayOffset = outputBuffers[0].getClass().getField("arrayOffset");
+				fieldArrayOffset.setAccessible(true);
+			} catch (Throwable ex) {
+				fieldBackingArray = null;
+				fieldArrayOffset = null;
 			}
-			if (fieldArrayOffset == null) {
-				try {
-					fieldArrayOffset = outputBuffers[0].getClass().getField("arrayOffset");
-					fieldArrayOffset.setAccessible(true);
-				} catch (Throwable ex) {
-					fieldBackingArray = null;
-					fieldArrayOffset = null;
-				}
-			}
+		} else if (isDirect && !MediaContext.engineAcceptsDirectBuffers) {
+			//we will have to do a manual copy every time
+			isDirect = false;
+			fieldBackingArray = null;
+			fieldArrayOffset = null;
 		}
 	}
 
@@ -378,13 +372,14 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			outputBuffer.remainingBytes = bufferInfo.size;
 
 			if (!isDirect) {
-				if (tryToProcessNonDirectBuffers) {
+				if (fieldBackingArray != null) {
 					try {
 						outputBuffer.byteArray = (byte[])fieldBackingArray.get(outputBuffer.byteBuffer);
 						outputBuffer.offsetInBytes += fieldArrayOffset.getInt(outputBuffer.byteBuffer);
 						return;
 					} catch (Throwable ex) {
-						tryToProcessNonDirectBuffers = false;
+						fieldBackingArray = null;
+						fieldArrayOffset = null;
 					}
 				}
 				//worst case! manual copy...
@@ -394,7 +389,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				outputBuffer.offsetInBytes = 0;
 				outputBuffer.byteBuffer.limit(outputBuffer.offsetInBytes + outputBuffer.remainingBytes);
 				outputBuffer.byteBuffer.position(outputBuffer.offsetInBytes);
-				outputBuffer.byteBuffer.get(outputBuffer.byteArray, 0, outputBuffer.remainingBytes);
+				outputBuffer.byteBuffer.get(nonDirectTempArray, 0, outputBuffer.remainingBytes);
 			}
 		}
 	}
@@ -526,7 +521,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				throw new FileNotFoundException(path);
 			if (!file.canRead())
 				throw new SecurityException(path);
-			nativeMediaCodec = MediaContext.hasExternalNativeLibrary;
+			nativeMediaCodec = MediaContext.engineAcceptsNativeBuffers;
 		}
 		state = STATE_INITIALIZED;
 	}
@@ -768,7 +763,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 
 	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
-		MediaContext.setVolumeInMillibels((leftVolume <= 0.0001f) ? MediaContext.SL_MILLIBEL_MIN : ((leftVolume >= 1.0f) ? 0 : (int)(2000.0 * Math.log(leftVolume))));
+		MediaContext.setVolume(leftVolume);
 	}
 
 	@Override

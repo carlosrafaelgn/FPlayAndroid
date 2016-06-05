@@ -339,5 +339,6 @@
     <string name="dark">Sombre</string>
     <string name="enable_external_fx">Activer les effets externes</string>
     <string name="external_fx_warning">(La désactivation peut prendre un certain temps)</string>
+    <string name="use_audiotrack_engine">Utilisez le moteur AudioTrack (nécessite le redémarrage du lecteur et ne doit être sélectionné si vous rencontrez des problèmes de lecture)</string>
 
 </resources>

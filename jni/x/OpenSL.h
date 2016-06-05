@@ -38,6 +38,8 @@
 //https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html
 //https://android.googlesource.com/platform/system/media/+/gingerbread/opensles/libopensles/IBufferQueue.c
 
+#define MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING 1152
+
 //engine interfaces
 static SLObjectItf engineObject;
 static SLEngineItf engineEngine;
@@ -212,7 +214,7 @@ int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t sampleRate, uin
 		::minBufferSizeInFrames = minBufferSizeInFrames;
 
 		processingBufferSizeInFrames = minBufferSizeInFrames;
-		while (processingBufferSizeInFrames > 1024)
+		while (processingBufferSizeInFrames > MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING)
 			processingBufferSizeInFrames >>= 1;
 		processingBufferCount = (minBufferSizeInFrames / processingBufferSizeInFrames);
 		finalProcessingBufferSizeInFrames = minBufferSizeInFrames - (processingBufferCount * processingBufferSizeInFrames);
@@ -412,7 +414,7 @@ int32_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 		memset((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), 0, (minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << 2);
 	}
 
-	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples 
+	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
 	int16_t* procBuffer = dstBuffer;
 	for (uint32_t i = 0; i < processingBufferCount; i++, procBuffer += (processingBufferSizeInFrames << 1))
 		effectProc(procBuffer, processingBufferSizeInFrames);
@@ -486,7 +488,7 @@ int32_t JNICALL openSLWriteDirect(JNIEnv* env, jclass clazz, jobject jbuffer, ui
 		memset((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), 0, (minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << 2);
 	}
 
-	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples 
+	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
 	int16_t* procBuffer = dstBuffer;
 	for (uint32_t i = 0; i < processingBufferCount; i++, procBuffer += (processingBufferSizeInFrames << 1))
 		effectProc(procBuffer, processingBufferSizeInFrames);
@@ -562,7 +564,7 @@ int32_t JNICALL openSLWriteArray(JNIEnv* env, jclass clazz, jbyteArray jbuffer, 
 		memset((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), 0, (minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << 2);
 	}
 
-	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples 
+	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
 	int16_t* procBuffer = dstBuffer;
 	for (uint32_t i = 0; i < processingBufferCount; i++, procBuffer += (processingBufferSizeInFrames << 1))
 		effectProc(procBuffer, processingBufferSizeInFrames);

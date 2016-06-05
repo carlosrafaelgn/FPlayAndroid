@@ -339,5 +339,6 @@
     <string name="dark">Dunkel</string>
     <string name="enable_external_fx">Aktivieren Sie externe Effekte</string>
     <string name="external_fx_warning">(Die Deaktivierung kann einige Zeit dauern)</string>
+    <string name="use_audiotrack_engine">Verwenden Sie den AudioTrack Motor (erfordert den Player neu zu starten und nur zu wählen, wenn Sie die Wiedergabe Probleme auftreten werden)</string>
 
 </resources>

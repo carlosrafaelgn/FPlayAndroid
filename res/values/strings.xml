@@ -340,5 +340,6 @@
     <string name="dark">Dark</string>
     <string name="enable_external_fx">Enable external effects</string>
     <string name="external_fx_warning">(The deactivation may take some time)</string>
+    <string name="use_audiotrack_engine">Use the AudioTrack engine (requires restarting the player and should only be selected if you are experiencing playback issues)</string>
 
 </resources>

@@ -32,8 +32,10 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.os.Handler;
@@ -73,9 +75,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_DISABLE_EFFECTS_GAIN = 0x000A;
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
+	private static final int MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING = 1152;
+
 	private static final int PLAYER_TIMEOUT = 30000;
 
-	static final int SL_MILLIBEL_MIN = -32768;
+	private static final int SL_MILLIBEL_MIN = -32768;
 
 	private static final class ErrorStructure {
 		public MediaCodecPlayer player;
@@ -89,16 +93,20 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static final Object threadNotification = new Object();
 	private static final Object notification = new Object();
-	private static final Object openSLSync = new Object();
+	private static final Object engineSync = new Object();
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
 	private static volatile int requestedAction, requestedSeekMS;
 	private static Message effectsMessage;
-	private static int volumeInMillibels = 0, bufferConfig;
+	private static int bufferConfig;
+	private static float gain = 1.0f;
 	private static Handler handler;
 	private static Thread thread;
 	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
 	private static MediaContext theMediaContext;
-	static boolean hasExternalNativeLibrary;
+	private static Engine engine;
+	public static boolean useAudioTrackEngine;
+	private static boolean hasExternalNativeLibrary, engineNeedsToPauseBeforeActions;
+	static boolean engineAcceptsNativeBuffers, engineAcceptsDirectBuffers;
 
 	static {
 		System.loadLibrary("MediaContextJni");
@@ -136,6 +144,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native void mediaCodecRelease(long nativeObj);
 	static native int mediaCodecLoadExternalLibrary();
 
+	private static native void audioTrackInitialize();
+	private static native void audioTrackCreate(int sampleRate);
+	private static native void audioTrackProcessEffectsDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+	private static native void audioTrackProcessEffectsArray(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+
 	private static native int openSLInitialize();
 	private static native int openSLCreate(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames);
 	private static native int openSLPlay();
@@ -149,6 +162,246 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native int openSLWriteNative(long nativeObj, int offsetInBytes, int sizeInBytes);
 	private static native int openSLWriteDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
 	private static native int openSLWriteArray(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+
+	private static abstract class Engine {
+		public abstract int initialize();
+		public abstract int create(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames);
+		public abstract int play();
+		public abstract int pause();
+		public abstract int stopAndFlush();
+		public abstract void release();
+		public abstract void terminate();
+		public abstract void setVolume();
+		public abstract int getHeadPositionInFrames();
+		public abstract void copyVisualizerData(long bufferPtr);
+		public abstract int writeNative(long nativeObj, int offsetInBytes, int sizeInBytes);
+		public abstract int writeDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+		public abstract int writeArray(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap);
+	}
+
+	private static final class AudioTrackEngine extends Engine {
+		private AudioTrack audioTrack;
+		private final int srcChannelCount = 2;
+
+		@Override
+		public int initialize() {
+			engineNeedsToPauseBeforeActions = true;
+			engineAcceptsNativeBuffers = false;
+			engineAcceptsDirectBuffers = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
+			audioTrackInitialize();
+			return 0;
+		}
+
+		@Override
+		public int create(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames) {
+			release();
+			audioTrackCreate(sampleRate);
+			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << 2, AudioTrack.MODE_STREAM);
+			return 0;
+		}
+
+		@Override
+		public int play() {
+			if (audioTrack != null)
+				audioTrack.play();
+			return 0;
+		}
+
+		@Override
+		public int pause() {
+			if (audioTrack != null)
+				audioTrack.pause();
+			return 0;
+		}
+
+		@Override
+		public int stopAndFlush() {
+			if (audioTrack != null) {
+				audioTrack.pause();
+				try {
+					Thread.sleep(100);
+				} catch (Throwable ex) {
+					// just ignore
+				}
+				audioTrack.flush();
+			}
+			return 0;
+		}
+
+		@Override
+		public void release() {
+			if (audioTrack != null) {
+				audioTrack.release();
+				audioTrack = null;
+			}
+		}
+
+		@Override
+		public void terminate() {
+			release();
+		}
+
+		@SuppressWarnings("deprecation")
+		@Override
+		public void setVolume() {
+			if (audioTrack != null)
+				audioTrack.setStereoVolume(gain, gain);
+		}
+
+		@Override
+		public int getHeadPositionInFrames() {
+			return (audioTrack != null ? audioTrack.getPlaybackHeadPosition() : 0);
+		}
+
+		@Override
+		public void copyVisualizerData(long bufferPtr) {
+
+		}
+
+		@Override
+		public int writeNative(long nativeObj, int offsetInBytes, int sizeInBytes) {
+			throw new UnsupportedOperationException("AudioTrackEngine does not support native writes");
+		}
+
+		@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+		@Override
+		public int writeDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
+			if (sizeInBytes == 0)
+				return 0;
+
+			//we cannot let audioTrack block for too long
+			int remainingFrames = sizeInBytes >> srcChannelCount;
+			while (remainingFrames > 8192) {
+				remainingFrames >>= 1;
+				sizeInBytes = remainingFrames << srcChannelCount;
+			}
+
+			//*** NEVER TRY TO RETURN 0 HERE, MANUALLY CONTROLLING IF THE AUDIOTRACK IS FULL!!!
+			//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
+			//UP TO/PAST THE END OF IT!
+
+			int offsetInFrames = offsetInBytes >> srcChannelCount;
+			int proc = remainingFrames;
+
+			//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
+			while (proc > MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING)
+				proc >>= 1;
+
+			while (remainingFrames > 0) {
+				final int processedFrames = (remainingFrames > proc ? proc : remainingFrames);
+				audioTrackProcessEffectsDirect(buffer, offsetInFrames << srcChannelCount, processedFrames << srcChannelCount, needsSwap);
+				remainingFrames -= processedFrames;
+				offsetInFrames += processedFrames;
+			}
+
+			buffer.limit(offsetInBytes + sizeInBytes);
+			buffer.position(offsetInBytes);
+			return audioTrack.write(buffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
+		}
+
+		@Override
+		public int writeArray(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
+			if (sizeInBytes == 0)
+				return 0;
+
+			//we cannot let audioTrack block for too long
+			int remainingFrames = sizeInBytes >> srcChannelCount;
+			while (remainingFrames > 8192) {
+				remainingFrames >>= 1;
+				sizeInBytes = remainingFrames << srcChannelCount;
+			}
+
+			//*** NEVER TRY TO RETURN 0 HERE, MANUALLY CONTROLLING IF THE AUDIOTRACK IS FULL!!!
+			//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
+			//UP TO/PAST THE END OF IT!
+
+			int offsetInFrames = offsetInBytes >> srcChannelCount;
+			int proc = remainingFrames;
+
+			//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
+			while (proc > MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING)
+				proc >>= 1;
+
+			while (remainingFrames > 0) {
+				final int processedFrames = (remainingFrames > proc ? proc : remainingFrames);
+				audioTrackProcessEffectsArray(buffer, offsetInFrames << srcChannelCount, processedFrames << srcChannelCount, needsSwap);
+				remainingFrames -= processedFrames;
+				offsetInFrames += processedFrames;
+			}
+
+			return audioTrack.write(buffer, offsetInBytes, sizeInBytes);
+		}
+	}
+
+	private static final class OpenSLEngine extends Engine {
+		@Override
+		public int initialize() {
+			engineNeedsToPauseBeforeActions = false;
+			engineAcceptsNativeBuffers = hasExternalNativeLibrary;
+			engineAcceptsDirectBuffers = true;
+			return openSLInitialize();
+		}
+
+		@Override
+		public int create(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames) {
+			return openSLCreate(sampleRate, bufferSizeInFrames, minBufferSizeInFrames);
+		}
+
+		@Override
+		public int play() {
+			return openSLPlay();
+		}
+
+		@Override
+		public int pause() {
+			return openSLPause();
+		}
+
+		@Override
+		public int stopAndFlush() {
+			return openSLStopAndFlush();
+		}
+
+		@Override
+		public void release() {
+			openSLRelease();
+		}
+
+		@Override
+		public void terminate() {
+			openSLTerminate();
+		}
+
+		@Override
+		public void setVolume() {
+			openSLSetVolumeInMillibels((gain <= 0.0001f) ? MediaContext.SL_MILLIBEL_MIN : ((gain >= 1.0f) ? 0 : (int)(2000.0 * Math.log(gain))));
+		}
+
+		@Override
+		public int getHeadPositionInFrames() {
+			return openSLGetHeadPositionInFrames();
+		}
+
+		@Override
+		public void copyVisualizerData(long bufferPtr) {
+			openSLCopyVisualizerData(bufferPtr);
+		}
+
+		@Override
+		public int writeNative(long nativeObj, int offsetInBytes, int sizeInBytes) {
+			return openSLWriteNative(nativeObj, offsetInBytes, sizeInBytes);
+		}
+
+		@Override
+		public int writeDirect(ByteBuffer buffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
+			return openSLWriteDirect(buffer, offsetInBytes, sizeInBytes, needsSwap);
+		}
+
+		@Override
+		public int writeArray(byte[] buffer, int offsetInBytes, int sizeInBytes, int needsSwap) {
+			return openSLWriteArray(buffer, offsetInBytes, sizeInBytes, needsSwap);
+		}
+	}
 
 	private MediaContext() {
 	}
@@ -220,12 +473,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		return bufferSizeInFrames;
 	}
 
-	private static void checkOpenSLResult(int result) {
+	private static void checkEngineResult(int result) {
 		if (result == 0)
 			return;
 		if (result < 0)
 			result = -result;
-		throw new IllegalStateException("openSL returned " + result);
+		throw new IllegalStateException("The engine returned " + result);
 	}
 
 	private static void processEffectsAction() {
@@ -272,8 +525,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		int lastHeadPositionInFrames = 0, bufferSizeInFrames = (int)getBufferSizeInFrames(44100), fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
 		boolean bufferConfigChanged = false;
-		synchronized (openSLSync) {
-			initializationError = (openSLInitialize() != 0);
+		synchronized (engineSync) {
+			initializationError = (engine.initialize() != 0);
 		}
 
 		if (initializationError) {
@@ -283,8 +536,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			return;
 		}
-
-		MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
 
 		wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);
@@ -324,7 +575,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								processEffectsAction();
 								break;
 							case ACTION_PLAY:
-								checkOpenSLResult(openSLStopAndFlush());
+								checkEngineResult(engine.stopAndFlush());
 								outputBuffer.release();
 								currentPlayer = playerRequestingAction;
 								nextPlayer = null;
@@ -341,32 +592,31 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									final int minBufferSizeInFrames = (int)(temp >>> 32);
 									fillThresholdInFrames = getFillThresholdInFrames(bufferSizeInFrames);
 									sleepTime = ((minBufferSizeInFrames * 1000) / sampleRate) + 5;
-									synchronized (openSLSync) {
-										checkOpenSLResult(openSLCreate(sampleRate, bufferSizeInFrames, minBufferSizeInFrames));
-										openSLSetVolumeInMillibels(volumeInMillibels);
-										MediaCodecPlayer.tryToProcessNonDirectBuffers = true;
+									synchronized (engineSync) {
+										checkEngineResult(engine.create(sampleRate, bufferSizeInFrames, minBufferSizeInFrames));
+										engine.setVolume();
 									}
 								}
 								playPending = true;
 								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
 								resetFiltersAndWritePosition(currentPlayer.getChannelCount());
-								lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
+								lastHeadPositionInFrames = engine.getHeadPositionInFrames();
 								paused = false;
 								requestSucceeded = true;
 								wakeLock.acquire();
 								break;
 							case ACTION_PAUSE:
 								if (playerRequestingAction == currentPlayer) {
-									checkOpenSLResult(openSLPause());
+									checkEngineResult(engine.pause());
 									if (currentPlayer.isInternetStream()) {
 										//"mini-reset" here
-										checkOpenSLResult(openSLStopAndFlush());
+										checkEngineResult(engine.stopAndFlush());
 										outputBuffer.release();
 										framesWritten = 0;
 										framesPlayed = 0;
 										resetFiltersAndWritePosition(currentPlayer.getChannelCount());
-										lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
+										lastHeadPositionInFrames = engine.getHeadPositionInFrames();
 									}
 									paused = true;
 									requestSucceeded = true;
@@ -382,7 +632,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										framesWrittenBeforePlaying = 0;
 										bufferingStart(currentPlayer);
 									} else {
-										checkOpenSLResult(openSLPlay());
+										checkEngineResult(engine.play());
 									}
 									paused = false;
 									requestSucceeded = true;
@@ -396,7 +646,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									throw new IllegalStateException("impossible to seek a player other than currentPlayer");
 								if (!paused)
 									throw new IllegalStateException("trying to seek while not paused");
-								checkOpenSLResult(openSLStopAndFlush());
+								checkEngineResult(engine.stopAndFlush());
 								seekPendingPlayer = playerRequestingAction;
 								requestSucceeded = true;
 								break;
@@ -436,8 +686,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							case ACTION_RESET:
 								if (playerRequestingAction == currentPlayer) {
 									//releasing prevents clicks when changing tracks
-									synchronized (openSLSync) {
-										openSLRelease();
+									synchronized (engineSync) {
+										engine.release();
 										sampleRate = 0;
 									}
 									outputBuffer.release();
@@ -473,8 +723,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								break;
 							}
 						} catch (Throwable ex) {
-							synchronized (openSLSync) {
-								openSLRelease();
+							synchronized (engineSync) {
+								engine.release();
 								sampleRate = 0;
 							}
 							try {
@@ -505,7 +755,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							try {
 								outputBuffer.release();
 								resetFiltersAndWritePosition(seekPendingPlayer.getChannelCount());
-								lastHeadPositionInFrames = openSLGetHeadPositionInFrames();
+								lastHeadPositionInFrames = engine.getHeadPositionInFrames();
 								if (nextPlayer != null) {
 									try {
 										nextPlayer.resetDecoderIfOutputAlreadyUsed();
@@ -521,8 +771,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								framesPlayed = framesWritten;
 								framesWrittenBeforePlaying = 0;
 							} catch (Throwable ex) {
-								synchronized (openSLSync) {
-									openSLRelease();
+								synchronized (engineSync) {
+									engine.release();
 									sampleRate = 0;
 								}
 								try {
@@ -552,7 +802,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				if (paused)
 					continue;
 
-				final int currentHeadPositionInFrames = openSLGetHeadPositionInFrames();
+				final int currentHeadPositionInFrames = engine.getHeadPositionInFrames();
 				framesPlayed += (currentHeadPositionInFrames - lastHeadPositionInFrames);
 				lastHeadPositionInFrames = currentHeadPositionInFrames;
 
@@ -567,13 +817,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							//when the input stream is over and we do not have a nextPlayer to produce
 							//new samples, we need to tell OpenSL to flush any pending data it had stored
 							if (sourcePlayer.isNativeMediaCodec())
-								bytesWrittenThisTime = openSLWriteNative(0, 0, 0);
+								bytesWrittenThisTime = engine.writeNative(0, 0, 0);
 							else if (MediaCodecPlayer.isDirect)
-								bytesWrittenThisTime = openSLWriteDirect(null, 0, 0, 0);
+								bytesWrittenThisTime = engine.writeDirect(null, 0, 0, 0);
 							else
-								bytesWrittenThisTime = openSLWriteArray(null, 0, 0, 0);
+								bytesWrittenThisTime = engine.writeArray(null, 0, 0, 0);
 							if (bytesWrittenThisTime < 0) {
-								throw new IOException("audioTrackWriteDirect() returned " + bytesWrittenThisTime);
+								throw new IOException("engine.write() returned " + bytesWrittenThisTime);
 							} else if (bytesWrittenThisTime > 0) {
 								sleepNow = false;
 							}
@@ -595,18 +845,18 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				if (outputBuffer.remainingBytes > 0) {
 					final int bytesWrittenThisTime;
 					if (sourcePlayer.isNativeMediaCodec())
-						bytesWrittenThisTime = openSLWriteNative(sourcePlayer.getNativeObj(), outputBuffer.offsetInBytes, outputBuffer.remainingBytes);
+						bytesWrittenThisTime = engine.writeNative(sourcePlayer.getNativeObj(), outputBuffer.offsetInBytes, outputBuffer.remainingBytes);
 					else if (MediaCodecPlayer.isDirect)
-						bytesWrittenThisTime = openSLWriteDirect(outputBuffer.byteBuffer, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
+						bytesWrittenThisTime = engine.writeDirect(outputBuffer.byteBuffer, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
 					else
-						bytesWrittenThisTime = openSLWriteArray(outputBuffer.byteArray, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
+						bytesWrittenThisTime = engine.writeArray(outputBuffer.byteArray, outputBuffer.offsetInBytes, outputBuffer.remainingBytes, MediaCodecPlayer.needsSwap);
 					if (bytesWrittenThisTime < 0) {
-						throw new IOException("audioTrackWriteDirect() returned " + bytesWrittenThisTime);
+						throw new IOException("engine.write() returned " + bytesWrittenThisTime);
 					} else if (bytesWrittenThisTime == 0) {
 						if (playPending) {
 							//we have just filled the buffer, time to start playing
 							playPending = false;
-							checkOpenSLResult(openSLPlay());
+							checkEngineResult(engine.play());
 							bufferingEnd(sourcePlayer);
 						}
 						//the buffer was too full, just wait some time
@@ -627,7 +877,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (framesWrittenBeforePlaying >= fillThresholdInFrames) {
 									//we have just filled the buffer, time to start playing
 									playPending = false;
-									checkOpenSLResult(openSLPlay());
+									checkEngineResult(engine.play());
 									bufferingEnd(sourcePlayer);
 								}
 							}
@@ -641,7 +891,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				} else if (playPending && currentPlayer.isOutputOver()) {
 					//the song ended before we had a chance to start playing before, so do it now!
 					playPending = false;
-					checkOpenSLResult(openSLPlay());
+					checkEngineResult(engine.play());
 					bufferingEnd(sourcePlayer);
 				}
 
@@ -660,8 +910,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						currentPlayer.setCurrentPosition(currentPlayer.getDuration());
 						if (nextPlayer == null) {
 							//there is nothing else to do!
-							synchronized (openSLSync) {
-								openSLRelease();
+							synchronized (engineSync) {
+								engine.release();
 								sampleRate = 0;
 							}
 							outputBuffer.release();
@@ -681,7 +931,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						sourcePlayer = currentPlayer;
 					} else if (framesWritten != 0) {
 						//underrun!!!
-						checkOpenSLResult(openSLPause());
+						checkEngineResult(engine.pause());
 						playPending = true;
 						framesWrittenBeforePlaying = 0;
 						bufferingStart(currentPlayer);
@@ -703,8 +953,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 				if (sourcePlayer == currentPlayer) {
-					synchronized (openSLSync) {
-						openSLRelease();
+					synchronized (engineSync) {
+						engine.release();
 						sampleRate = 0;
 					}
 					paused = true;
@@ -762,6 +1012,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			return;
 
 		theMediaContext = new MediaContext();
+		engine = (useAudioTrackEngine ? new AudioTrackEngine() : new OpenSLEngine());
 
 		alive = true;
 		requestedAction = ACTION_INITIALIZE;
@@ -800,8 +1051,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			thread = null;
 		}
-		synchronized (openSLSync) {
-			openSLTerminate();
+		synchronized (engineSync) {
+			if (engine != null) {
+				engine.terminate();
+				engine = null;
+			}
 		}
 		requestedAction = ACTION_NONE;
 		handler = null;
@@ -839,6 +1093,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			if (initializationError)
 				player.mediaServerDied();
 			return false;
+		}
+		if (engineNeedsToPauseBeforeActions) {
+			synchronized (engineSync) {
+				engine.pause();
+			}
 		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
@@ -961,10 +1220,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_BUFFERINGEND, player), SystemClock.uptimeMillis());
 	}
 
-	static void setVolumeInMillibels(int volumeInMillibels) {
-		synchronized (openSLSync) {
-			MediaContext.volumeInMillibels = volumeInMillibels;
-			openSLSetVolumeInMillibels(volumeInMillibels);
+	static void setVolume(float gain) {
+		synchronized (engineSync) {
+			MediaContext.gain = gain;
+			if (engine != null)
+				engine.setVolume();
 		}
 	}
 
@@ -1036,8 +1296,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static void copyVisualizerData(long bufferPtr) {
-		synchronized (openSLSync) {
-			openSLCopyVisualizerData(bufferPtr);
+		synchronized (engineSync) {
+			if (engine != null)
+				engine.copyVisualizerData(bufferPtr);
 		}
 	}
 
@@ -1047,8 +1308,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static int getFeatures() {
 		return (getProcessorFeatures() |
-			(hasExternalNativeLibrary ? Player.FEATURE_DECODING_NATIVE : 0) |
-			(MediaCodecPlayer.isDirect ? Player.FEATURE_DECODING_DIRECT : 0));
+			(engineAcceptsNativeBuffers ? Player.FEATURE_DECODING_NATIVE : 0) |
+			((engineAcceptsDirectBuffers && MediaCodecPlayer.isDirect) ? Player.FEATURE_DECODING_DIRECT : 0));
 	}
 
 	public static int getBufferConfig() {

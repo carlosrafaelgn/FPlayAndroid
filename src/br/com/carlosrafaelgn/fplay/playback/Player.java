@@ -2177,6 +2177,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_PLACE_TITLE_AT_THE_BOTTOM = 52;
 	private static final int OPTBIT_PLAY_WITH_LONG_PRESS = 53;
 	private static final int OPTBIT_AUTOMATIC_EFFECTS_GAIN = 54;
+	private static final int OPTBIT_USE_AUDIOTRACK_ENGINE = 55;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2301,6 +2302,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
 		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
+		MediaContext.useAudioTrackEngine = opts.getBit(OPTBIT_USE_AUDIOTRACK_ENGINE);
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -2402,6 +2404,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM, UI.placeTitleAtTheBottom);
 		opts.putBit(OPTBIT_PLAY_WITH_LONG_PRESS, UI.playWithLongPress);
 		opts.putBit(OPTBIT_AUTOMATIC_EFFECTS_GAIN, MediaContext.isAutomaticEffectsGainEnabled() != 0);
+		opts.putBit(OPTBIT_USE_AUDIOTRACK_ENGINE, MediaContext.useAudioTrackEngine);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

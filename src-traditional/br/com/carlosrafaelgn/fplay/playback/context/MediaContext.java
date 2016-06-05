@@ -33,6 +33,8 @@
 package br.com.carlosrafaelgn.fplay.playback.context;
 
 public final class MediaContext {
+	public static boolean useAudioTrackEngine;
+
 	public static void _initialize() {
 	}
 

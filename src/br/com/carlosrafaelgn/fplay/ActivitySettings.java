@@ -64,6 +64,7 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
@@ -103,7 +104,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause,
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
-		optBufferSize, optFillThreshold, lastMenuView;
+		optBufferSize, optFillThreshold, optUseAudioTrackEngine, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -1099,6 +1100,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else {
 				optBufferSize = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_buffer_length).toString(), getBufferSizeString(Player.getBufferConfig()), false, false, false);
 				optFillThreshold = new SettingView(ctx, UI.ICON_PERCENTAGE, getText(R.string.percentage_to_decode_before_playback).toString(), getFillThresholdString(Player.getBufferConfig()), false, false, false);
+				optUseAudioTrackEngine = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.use_audiotrack_engine).toString(), null, true, MediaContext.useAudioTrackEngine, false);
 			}
 
 			int hIdx = 0;
@@ -1158,6 +1160,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (BuildConfig.X) {
 				addOption(optBufferSize);
 				addOption(optFillThreshold);
+				addOption(optUseAudioTrackEngine);
 			}
 			addOption(optPlayWithLongPress);
 			addOption(optExpandSeekBar);
@@ -1290,6 +1293,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optMSBeforePlayback = null;
 		optBufferSize = null;
 		optFillThreshold = null;
+		optUseAudioTrackEngine = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -1507,6 +1511,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.announceCurrentSong = optAnnounceCurrentSong.isChecked();
 		} else if (view == optFollowCurrentSong) {
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
+		} else if (view == optUseAudioTrackEngine) {
+			MediaContext.useAudioTrackEngine = optUseAudioTrackEngine.isChecked();
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
 			view == optForceOrientation || view == optTransition || view == optPopupTransition ||

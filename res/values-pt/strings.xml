@@ -339,5 +339,6 @@
     <string name="dark">Escuro</string>
     <string name="enable_external_fx">Habilitar efeitos externos</string>
     <string name="external_fx_warning">(A desativação pode levar algum tempo)</string>
+    <string name="use_audiotrack_engine">Usar engine AudioTrack (necessita reiniciar o player e deve ser selecionado apenas se você experimentar problemas na reprodução)</string>
 
 </resources>
