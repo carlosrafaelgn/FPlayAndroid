@@ -125,32 +125,31 @@ void JNICALL audioTrackCreate(JNIEnv* env, jclass clazz, uint32_t sampleRate) {
 	}
 }
 
-void JNICALL audioTrackProcessEffectsDirect(JNIEnv* env, jclass clazz, jobject jbuffer, uint32_t offsetInBytes, uint32_t sizeInBytes, uint32_t needsSwap) {
-	int16_t* const srcBuffer = (int16_t*)env->GetDirectBufferAddress(jbuffer);
+int JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray jsrcArray, jobject jsrcBuffer, uint32_t offsetInBytes, uint32_t sizeInBytes, uint32_t needsSwap, jbyteArray jdstArray, jobject jdstBuffer) {
+	int16_t* const srcBuffer = (int16_t*)(jsrcBuffer ? env->GetDirectBufferAddress(jsrcBuffer) : env->GetPrimitiveArrayCritical(jsrcArray, 0));
 	if (!srcBuffer)
-		return;
+		return -SL_RESULT_MEMORY_FAILURE;
 
-	//one day we will convert from mono to stereo here, in such a way, srcBuffer will always contain stereo frames upon exit
+	int16_t* const dstBuffer = (int16_t*)(jdstBuffer ? env->GetDirectBufferAddress(jdstBuffer) : env->GetPrimitiveArrayCritical(jdstArray, 0));
+	if (!dstBuffer) {
+		if (!jsrcBuffer)
+			env->ReleasePrimitiveArrayCritical(jsrcArray, srcBuffer, JNI_ABORT);
+		return -SL_RESULT_MEMORY_FAILURE;
+	}
 
 	if (needsSwap)
 		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1);
 
-	effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2);
-}
+	//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames upon exit
+	effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2, dstBuffer);
 
-void JNICALL audioTrackProcessEffectsArray(JNIEnv* env, jclass clazz, jbyteArray jbuffer, uint32_t offsetInBytes, uint32_t sizeInBytes, uint32_t needsSwap) {
-	int16_t* const srcBuffer = (int16_t*)env->GetPrimitiveArrayCritical(jbuffer, 0);
-	if (!srcBuffer)
-		return;
+	if (!jsrcBuffer)
+		env->ReleasePrimitiveArrayCritical(jsrcArray, srcBuffer, JNI_ABORT);
 
-	//one day we will convert from mono to stereo here, in such a way, srcBuffer will always contain stereo frames upon exit
+	if (!jdstBuffer)
+		env->ReleasePrimitiveArrayCritical(jdstArray, dstBuffer, 0);
 
-	if (needsSwap)
-		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1);
-
-	effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2);
-
-	env->ReleasePrimitiveArrayCritical(jbuffer, srcBuffer, 0);
+	return 0;
 }
 
 #ifdef FPLAY_ARM
@@ -229,8 +228,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
 		{"audioTrackInitialize", "()V", (void*)audioTrackInitialize},
 		{"audioTrackCreate", "(I)V", (void*)audioTrackCreate},
-		{"audioTrackProcessEffectsDirect", "(Ljava/nio/ByteBuffer;III)V", (void*)audioTrackProcessEffectsDirect},
-		{"audioTrackProcessEffectsArray", "([BIII)V", (void*)audioTrackProcessEffectsArray},
+		{"audioTrackProcessEffects", "([BLjava/nio/ByteBuffer;III[BLjava/nio/ByteBuffer;)I", (void*)audioTrackProcessEffects},
 		{"openSLInitialize", "()I", (void*)openSLInitialize},
 		{"openSLCreate", "(III)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},
@@ -242,8 +240,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
 		{"openSLCopyVisualizerData", "(J)V", (void*)openSLCopyVisualizerData},
 		{"openSLWriteNative", "(JII)I", (void*)openSLWriteNative},
-		{"openSLWriteDirect", "(Ljava/nio/ByteBuffer;III)I", (void*)openSLWriteDirect},
-		{"openSLWriteArray", "([BIII)I", (void*)openSLWriteArray}
+		{"openSLWrite", "([BLjava/nio/ByteBuffer;III)I", (void*)openSLWrite}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)

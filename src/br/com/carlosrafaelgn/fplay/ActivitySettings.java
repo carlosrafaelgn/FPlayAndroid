@@ -1152,16 +1152,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.hdr_playback, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? (BuildConfig.X ? optBytesBeforeDecoding : optMSBeforePlayback) : optWidgetIconColor, hIdx++);
 			if (ExternalFx.isSupported())
 				addOption(optExternalFx);
+			if (BuildConfig.X) {
+				addOption(optUseAudioTrackEngine);
+				addOption(optBufferSize);
+				if (MediaContext.useAudioTrackEngine)
+					optFillThreshold.setVisibility(View.GONE);
+				addOption(optFillThreshold);
+			}
 			addOption(optPlayWhenHeadsetPlugged);
 			addOption(optHandleCallKey);
 			addOption(optHeadsetHook1);
 			addOption(optHeadsetHook2);
 			addOption(optHeadsetHook3);
-			if (BuildConfig.X) {
-				addOption(optBufferSize);
-				addOption(optFillThreshold);
-				addOption(optUseAudioTrackEngine);
-			}
 			addOption(optPlayWithLongPress);
 			addOption(optExpandSeekBar);
 			addOption(optVolumeControlType);
@@ -1513,6 +1515,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
 		} else if (view == optUseAudioTrackEngine) {
 			MediaContext.useAudioTrackEngine = optUseAudioTrackEngine.isChecked();
+			optFillThreshold.setVisibility(MediaContext.useAudioTrackEngine ? View.GONE : View.VISIBLE);
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
 			view == optForceOrientation || view == optTransition || view == optPopupTransition ||

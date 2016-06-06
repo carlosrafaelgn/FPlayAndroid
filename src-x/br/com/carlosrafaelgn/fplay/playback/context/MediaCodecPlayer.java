@@ -283,11 +283,6 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				fieldBackingArray = null;
 				fieldArrayOffset = null;
 			}
-		} else if (isDirect && !MediaContext.engineAcceptsDirectBuffers) {
-			//we will have to do a manual copy every time
-			isDirect = false;
-			fieldBackingArray = null;
-			fieldArrayOffset = null;
 		}
 	}
 
@@ -376,6 +371,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 					try {
 						outputBuffer.byteArray = (byte[])fieldBackingArray.get(outputBuffer.byteBuffer);
 						outputBuffer.offsetInBytes += fieldArrayOffset.getInt(outputBuffer.byteBuffer);
+						outputBuffer.byteBuffer = null;
 						return;
 					} catch (Throwable ex) {
 						fieldBackingArray = null;
@@ -390,6 +386,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				outputBuffer.byteBuffer.limit(outputBuffer.offsetInBytes + outputBuffer.remainingBytes);
 				outputBuffer.byteBuffer.position(outputBuffer.offsetInBytes);
 				outputBuffer.byteBuffer.get(nonDirectTempArray, 0, outputBuffer.remainingBytes);
+				outputBuffer.byteBuffer = null;
 			}
 		}
 	}
@@ -571,6 +568,11 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 					mediaExtractor.selectTrack(i);
 					sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
 					channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+
+					//well, well, well... we are assuming 16 bit PCM...
+					//http://stackoverflow.com/a/23574899/3569421
+					//http://stackoverflow.com/a/30246720/3569421
+
 					//only stereo files for now...
 					if (channelCount != 2)
 						throw new UnsupportedFormatException();
