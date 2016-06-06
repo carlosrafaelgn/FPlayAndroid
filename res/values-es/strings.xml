@@ -339,6 +339,6 @@
     <string name="dark">Oscuro</string>
     <string name="enable_external_fx">Activar efectos externos</string>
     <string name="external_fx_warning">(La desactivación puede tomar algún tiempo)</string>
-    <string name="use_audiotrack_engine">Usar el motor AudioTrack (requiere reiniciar el jugador y sólo se debe seleccionar si usted está experimentando problemas de reproducción)</string>
+    <string name="playback_engine">Motor de reproducción (debe reiniciar el reproductor para que los cambios surtan efecto):</string>
 
 </resources>

@@ -132,11 +132,23 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 
 		@SuppressWarnings("deprecation")
-		private void createAudioTrack(int channelCount, int sampleRate) {
-			int bufferSize = AudioTrack.getMinBufferSize(sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-			if (bufferSize < (sampleRate << 3)) //2 seconds @ stereo, 16 bits per sample (* 8)
-				bufferSize = (sampleRate << 3);
-			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM, audioSessionId);
+		private void createAudioTrack(int channelCount, int sampleRate, int bufferSizeInMS) {
+			final int minBufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+			int minBufferSizeInFrames = minBufferSizeInBytes >> 2;
+			if (minBufferSizeInFrames <= 0)
+				minBufferSizeInFrames = 1024;
+
+			int bufferSizeInFrames = (bufferSizeInMS * sampleRate) / 1000;
+
+			if (bufferSizeInFrames <= (minBufferSizeInFrames << 1)) {
+				//we need at least 2 buffers
+				bufferSizeInFrames = minBufferSizeInFrames << 1;
+			} else {
+				//otherwise, make sure it is a multiple of our minimal buffer size
+				bufferSizeInFrames = ((bufferSizeInFrames + minBufferSizeInFrames - 1) / minBufferSizeInFrames) * minBufferSizeInFrames;
+			}
+
+			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << channelCount, AudioTrack.MODE_STREAM, audioSessionId);
 			audioTrack.setStereoVolume(0.0f, 0.0f);
 		}
 
@@ -204,13 +216,12 @@ public final class HttpStreamReceiver implements Runnable {
 				final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 				final long usPerFrame = (long)properties[3] * 1000000L / (long)properties[1];
 				long currentUs = 0;
-				int initialShortCounter = (properties[0] * ((initialAudioBufferInMS * properties[1]) / 1000)); //x seconds @ mono/stereo (in shorts, not in samples)
 
 				createMediaCodec(properties[0], properties[1], properties[2]);
-				createAudioTrack(properties[0], properties[1]);
+				createAudioTrack(properties[0], properties[1], initialAudioBufferInMS);
 
 				short[] tmpShortOutput = new short[properties[0] * properties[3]]; //1 frame @ mono/stereo, 16 bits per sample
-				boolean okToProcessMoreInput = true;
+				boolean okToProcessMoreInput = true, playbackStarted = false;
 				int timedoutFrameCount = 0;
 
 				while (alive) {
@@ -295,68 +306,42 @@ public final class HttpStreamReceiver implements Runnable {
 
 					//output data to audioTrack
 					if (info.size > 0 && info.size < Integer.MAX_VALUE) {
-						info.size >>= 1; //from bytes to short
+						info.size >>= 1; //from bytes to shorts
 
 						if (info.size > tmpShortOutput.length)
 							tmpShortOutput = new short[info.size];
 
-						outputBuffersAsShort[outputBufferIndex].position(info.offset >> 1); //from bytes to short
+						outputBuffersAsShort[outputBufferIndex].position(info.offset >> 1); //from bytes to shorts
 						outputBuffersAsShort[outputBufferIndex].get(tmpShortOutput, 0, info.size);
 
 						//release the output buffer
 						mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
 
-						while (alive) {
-							int actuallyWrittenShorts;
-
-							//send the decoded audio to audioTrack
-							synchronized (sync) {
-								if (!alive)
-									break;
-								actuallyWrittenShorts = audioTrack.write(tmpShortOutput, 0, info.size);
-							}
-							if (actuallyWrittenShorts < 0)
+						//send the decoded audio to audioTrack
+						synchronized (sync) {
+							if (!alive)
 								break;
-
-							if (initialShortCounter > 0) {
-								initialShortCounter -= actuallyWrittenShorts;
-								if (initialShortCounter <= 0) {
-									synchronized (sync) {
-										if (!alive)
-											break;
+							while (alive) {
+								final int actuallyWrittenShorts = audioTrack.write(tmpShortOutput, 0, info.size);
+								if (actuallyWrittenShorts == 0) {
+									if (!playbackStarted) {
+										playbackStarted = true;
+										//start the playback as soon as the buffer is full
 										audioTrack.setStereoVolume(0.0f, 0.0f);
 										audioTrack.play();
 										audioTrack.setStereoVolume(0.0f, 0.0f);
 										if (handler != null)
 											handler.sendMessageAtTime(Message.obtain(handler, preparedMsg, arg1, 0), SystemClock.uptimeMillis());
 									}
-								}
-							}
-
-							info.size -= actuallyWrittenShorts;
-							if (info.size == 0) {
-								break;
-							} else {
-								if (actuallyWrittenShorts == 0) {
-									synchronized (sync) {
-										if (!alive)
-											break;
-										try {
-											audioTrack.play(); //???
-										} catch (Throwable ex) {
-											//ignore any errors in this rather weird state!
-										}
-									}
-								}
-								//wait and retry the operation later
-								synchronized (sync) {
-									if (!alive)
-										break;
 									try {
-										sync.wait(5);
+										Thread.sleep(10);
 									} catch (Throwable ex) {
-										//ignore the interruptions
+										//just ignore
 									}
+								} else if (actuallyWrittenShorts < 0) {
+									throw new IOException();
+								} else {
+									break;
 								}
 							}
 						}

@@ -104,7 +104,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause,
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
-		optBufferSize, optFillThreshold, optUseAudioTrackEngine, lastMenuView;
+		optBufferSize, optFillThreshold, optPlaybackEngine, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -422,6 +422,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(0, Player.FILL_THRESHOLD_100, 3, getFillThresholdString(Player.FILL_THRESHOLD_100))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_100) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+		} else if (view == optPlaybackEngine) {
+			lastMenuView = optPlaybackEngine;
+			UI.prepare(menu);
+			menu.add(0, 0, 0, getPlaybackEngineString(false))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(!MediaContext.useOpenSLEngine ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(0, 1, 1, getPlaybackEngineString(true))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(MediaContext.useOpenSLEngine ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		}
 	}
 	
@@ -539,6 +548,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optFillThreshold) {
 			Player.setBufferConfig((Player.getBufferConfig() & ~Player.FILL_THRESHOLD_MASK) | item.getItemId());
 			optFillThreshold.setSecondaryText(getFillThresholdString(item.getItemId()));
+		} else if (lastMenuView == optPlaybackEngine) {
+			MediaContext.useOpenSLEngine = (item.getItemId() == 1);
+			optPlaybackEngine.setSecondaryText(getPlaybackEngineString(MediaContext.useOpenSLEngine));
+			optFillThreshold.setVisibility(MediaContext.useOpenSLEngine ? View.VISIBLE : View.GONE);
 		}
 		configsChanged = true;
 		return true;
@@ -668,6 +681,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			return "75%";
 		}
 		return "100%";
+	}
+
+	private String getPlaybackEngineString(boolean useOpenSLEngine) {
+		return (useOpenSLEngine ? "OpenSL ES" : "AudioTrack");
 	}
 
 	@SuppressWarnings("deprecation")
@@ -1100,7 +1117,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else {
 				optBufferSize = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_buffer_length).toString(), getBufferSizeString(Player.getBufferConfig()), false, false, false);
 				optFillThreshold = new SettingView(ctx, UI.ICON_PERCENTAGE, getText(R.string.percentage_to_decode_before_playback).toString(), getFillThresholdString(Player.getBufferConfig()), false, false, false);
-				optUseAudioTrackEngine = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.use_audiotrack_engine).toString(), null, true, MediaContext.useAudioTrackEngine, false);
+				optPlaybackEngine = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_engine).toString(), getPlaybackEngineString(MediaContext.useOpenSLEngine), false, false, false);
 			}
 
 			int hIdx = 0;
@@ -1153,9 +1170,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (ExternalFx.isSupported())
 				addOption(optExternalFx);
 			if (BuildConfig.X) {
-				addOption(optUseAudioTrackEngine);
+				addOption(optPlaybackEngine);
 				addOption(optBufferSize);
-				if (MediaContext.useAudioTrackEngine)
+				if (!MediaContext.useOpenSLEngine)
 					optFillThreshold.setVisibility(View.GONE);
 				addOption(optFillThreshold);
 			}
@@ -1295,7 +1312,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optMSBeforePlayback = null;
 		optBufferSize = null;
 		optFillThreshold = null;
-		optUseAudioTrackEngine = null;
+		optPlaybackEngine = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -1513,16 +1530,14 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.announceCurrentSong = optAnnounceCurrentSong.isChecked();
 		} else if (view == optFollowCurrentSong) {
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
-		} else if (view == optUseAudioTrackEngine) {
-			MediaContext.useAudioTrackEngine = optUseAudioTrackEngine.isChecked();
-			optFillThreshold.setVisibility(MediaContext.useAudioTrackEngine ? View.GONE : View.VISIBLE);
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
 			view == optForceOrientation || view == optTransition || view == optPopupTransition ||
 			view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther ||
 			view == optScrollBarSongList || view == optScrollBarBrowser || view == optHeadsetHook1 ||
 			view == optHeadsetHook2 || view == optHeadsetHook3 || view == optBytesBeforeDecoding ||
-			view == optMSBeforePlayback || view == optBufferSize || view == optFillThreshold) {
+			view == optMSBeforePlayback || view == optBufferSize || view == optFillThreshold ||
+			view == optPlaybackEngine) {
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;

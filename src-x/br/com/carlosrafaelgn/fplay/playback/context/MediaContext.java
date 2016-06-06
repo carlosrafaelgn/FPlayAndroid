@@ -105,7 +105,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
 	private static MediaContext theMediaContext;
 	private static Engine engine;
-	public static boolean useAudioTrackEngine;
+	public static boolean useOpenSLEngine;
 	private static boolean hasExternalNativeLibrary;
 	static boolean engineAcceptsNativeBuffers;
 
@@ -1066,7 +1066,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			return;
 
 		theMediaContext = new MediaContext();
-		engine = (useAudioTrackEngine ? new AudioTrackEngine() : new OpenSLEngine());
+		engine = (useOpenSLEngine ? new OpenSLEngine() : new AudioTrackEngine());
 
 		alive = true;
 		requestedAction = ACTION_INITIALIZE;
