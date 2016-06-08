@@ -443,7 +443,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress;
-	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
+	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogTextSize, dialogTextSizeBox, dialogTextSizeYInBox, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
@@ -547,6 +547,8 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		textPaint.setTypeface(defaultTypeface);
 		//Font Metrics in Java OR How, the hell, Should I Position This Font?!
 		//http://blog.evendanan.net/2011/12/Font-Metrics-in-Java-OR-How-the-hell-Should-I-Position-This-Font
+		//* although the proper way would be using bottom and top, regular characters are visually better
+		//centered (vertically, within the line), when using descent and ascent!!!
 		textPaint.setTextSize(_22sp);
 		final Paint.FontMetrics fm = textPaint.getFontMetrics();
 		_22spBox = (int)(fm.descent - fm.ascent + 0.5f);
@@ -567,6 +569,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			_LargeItemsp = _18sp;
 			_LargeItemspBox = _18spBox;
 			_LargeItemspYinBox = _18spYinBox;
+		}
+		if (isLargeScreen || !isLowDpiScreen) {
+			dialogTextSizeBox = _18spBox;
+			dialogTextSizeYInBox = _18spYinBox;
+		} else {
+			dialogTextSizeBox = _14spBox;
+			dialogTextSizeYInBox = _14spYinBox;
 		}
 	}
 
@@ -978,7 +987,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 	}
 	
 	public static int deserializeThemeColor(byte[] colors, int idx) {
-		return 0xff000000 | (int)(colors[idx] & 0xff) | (int)((colors[idx + 1] & 0xff) << 8) | (int)((colors[idx + 2] & 0xff) << 16);
+		return 0xff000000 | ((int)colors[idx] & 0xff) | (((int)colors[idx + 1] & 0xff) << 8) | (((int)colors[idx + 2] & 0xff) << 16);
 	}
 	
 	public static byte[] serializeThemeToArray() {
