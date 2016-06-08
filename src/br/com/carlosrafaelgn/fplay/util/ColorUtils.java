@@ -72,8 +72,8 @@ public final class ColorUtils {
 			double h = 6.0 * this.h;
 			final double v = this.v * 255.0;
 			int hi, r, g, b, vi;
-			if (h > 5.99) h = 0;
-			hi = (int)h % 6;
+			if (h > 5.999) h = 0;
+			hi = (int)h;
 			h -= (double)hi;
 			r = (int)(v * (1.0 - s));
 			g = (int)(v * (1.0 - (h * s)));
