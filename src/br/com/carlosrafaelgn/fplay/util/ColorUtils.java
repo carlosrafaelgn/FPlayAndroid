@@ -67,7 +67,55 @@ public final class ColorUtils {
 				}
 			}
 		}
-		
+
+		public int toRGBWeb(boolean invert) {
+			double h = 6.0 * this.h;
+			final double v = this.v * 255.0;
+			int hi, r, g, b, vi;
+			if (h > 5.999) h = 0;
+			hi = (int)h;
+			h -= (double)hi;
+			r = (int)((v * (1.0 - s)) + 0.5);
+			g = (int)((v * (1.0 - (h * s))) + 0.5);
+			b = (int)((v * (1.0 - ((1.0 - h) * s))) + 0.5);
+			vi = (int)(v + 0.5);
+			switch (hi) {
+			case 1:
+				b = r;
+				r = g;
+				g = vi;
+				break;
+			case 2:
+				g = vi;
+				break;
+			case 3:
+				b = vi;
+				break;
+			case 4:
+				g = r;
+				r = b;
+				b = vi;
+				break;
+			case 5:
+				b = g;
+				g = r;
+				r = vi;
+				break;
+			default:
+				g = b;
+				b = r;
+				r = vi;
+				break;
+			}
+			if (r >= 255) r = 255;
+			else r = (r & 0xf0) | (r >>> 4);
+			if (g >= 255) g = 255;
+			else g = (g & 0xf0) | (g >>> 4);
+			if (b >= 255) b = 255;
+			else b = (b & 0xf0) | (b >>> 4);
+			return 0xff000000 | (invert ? ((b << 16) | (g << 8) | r) : ((r << 16) | (g << 8) | b));
+		}
+
 		public int toRGB(boolean invert) {
 			double h = 6.0 * this.h;
 			final double v = this.v * 255.0;
@@ -75,43 +123,45 @@ public final class ColorUtils {
 			if (h > 5.999) h = 0;
 			hi = (int)h;
 			h -= (double)hi;
-			r = (int)(v * (1.0 - s));
-			g = (int)(v * (1.0 - (h * s)));
-			b = (int)(v * (1.0 - ((1.0 - h) * s)));
-			vi = (int)v;
+			r = (int)((v * (1.0 - s)) + 0.5);
+			g = (int)((v * (1.0 - (h * s))) + 0.5);
+			b = (int)((v * (1.0 - ((1.0 - h) * s))) + 0.5);
+			vi = (int)(v + 0.5);
 			switch (hi) {
-				case 1:
-					b = r;
-					r = g;
-					g = vi;
-					break;
-				case 2:
-					g = vi;
-					break;
-				case 3:
-					b = vi;
-					break;
-				case 4:
-					g = r;
-					r = b;
-					b = vi;
-					break;
-				case 5:
-					b = g;
-					g = r;
-					r = vi;
-					break;
-				default:
-					g = b;
-					b = r;
-					r = vi;
-					break;
+			case 1:
+				b = r;
+				r = g;
+				g = vi;
+				break;
+			case 2:
+				g = vi;
+				break;
+			case 3:
+				b = vi;
+				break;
+			case 4:
+				g = r;
+				r = b;
+				b = vi;
+				break;
+			case 5:
+				b = g;
+				g = r;
+				r = vi;
+				break;
+			default:
+				g = b;
+				b = r;
+				r = vi;
+				break;
 			}
-			return 0xff000000 | (invert ? (((b >= 255) ? 255 : b) << 16) | (((g >= 255) ? 255 : g) << 8) | ((r >= 255) ? 255 : r) :
-					(((r >= 255) ? 255 : r) << 16) | (((g >= 255) ? 255 : g) << 8) | ((b >= 255) ? 255 : b));
+			if (r > 255) r = 255;
+			if (g > 255) g = 255;
+			if (b > 255) b = 255;
+			return 0xff000000 | (invert ? ((b << 16) | (g << 8) | r) : ((r << 16) | (g << 8) | b));
 		}
 	}
-	
+
 	public static int blend(int rgb1, int rgb2, float perc1) {
 		int r1 = (rgb1 >>> 16) & 0xff;
 		final int r2 = (rgb2 >>> 16) & 0xff;
