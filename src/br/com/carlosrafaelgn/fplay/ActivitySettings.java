@@ -67,6 +67,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.ColorPickerView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
@@ -459,12 +460,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				txtCustomMinutes = UI.createDialogEditText(ctx, 0, p, Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes), ctx.getText(R.string.msg_turn_off), InputType.TYPE_CLASS_NUMBER);
 				l.addView(txtCustomMinutes);
 				
-				UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
-				.setTitle(R.string.msg_turn_off_title)
-				.setView(l)
-				.setPositiveButton(R.string.ok, this)
-				.setNegativeButton(R.string.cancel, this)
-				.create());
+				final BgDialog dialog = new BgDialog(ctx, l, this);
+				dialog.setTitle(R.string.msg_turn_off_title);
+				dialog.setPositiveButton(R.string.ok);
+				dialog.setNegativeButton(R.string.cancel);
+				dialog.show();
 			}
 		} else if (lastMenuView == optForcedLocale) {
 			if (item.getItemId() != UI.forcedLocale) {
@@ -735,12 +735,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private boolean cancelGoBack() {
 		if (colorMode && changed) {
 			checkingReturn = true;
-			UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-			.setTitle(R.string.oops)
-			.setView(UI.createDialogView(getHostActivity(), getText(R.string.discard_theme)))
-			.setPositiveButton(R.string.ok, this)
-			.setNegativeButton(R.string.cancel, null)
-			.create());
+			final BgDialog dialog = new BgDialog(getHostActivity(), UI.createDialogView(getHostActivity(), getText(R.string.discard_theme)), this);
+			dialog.setTitle(R.string.oops);
+			dialog.setPositiveButton(R.string.ok);
+			dialog.setNegativeButton(R.string.cancel);
+			dialog.show();
 			return true;
 		}
 		return false;
@@ -1399,21 +1398,20 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == btnAbout) {
 			if (colorMode) {
 				checkingReturn = false;
+				final BgDialog dialog;
 				switch (validate()) {
 				case -1:
-					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-					.setTitle(R.string.oops)
-					.setView(UI.createDialogView(getHostActivity(), getText(R.string.hard_theme)))
-					.setPositiveButton(R.string.ok, this)
-					.setNegativeButton(R.string.cancel, null)
-					.create());
+					dialog = new BgDialog(getHostActivity(), UI.createDialogView(getHostActivity(), getText(R.string.hard_theme)), this);
+					dialog.setTitle(R.string.oops);
+					dialog.setPositiveButton(R.string.ok);
+					dialog.setNegativeButton(R.string.cancel);
+					dialog.show();
 					return;
 				case -2:
-					UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-					.setTitle(R.string.oops)
-					.setView(UI.createDialogView(getHostActivity(), getText(R.string.unreadable_theme)))
-					.setPositiveButton(R.string.got_it, null)
-					.create());
+					dialog = new BgDialog(getHostActivity(), UI.createDialogView(getHostActivity(), getText(R.string.unreadable_theme)), null);
+					dialog.setTitle(R.string.oops);
+					dialog.setPositiveButton(R.string.got_it);
+					dialog.show();
 					return;
 				}
 				applyTheme(view);
@@ -1572,6 +1570,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				txtCustomMinutes = null;
 			}
 		}
+		dialog.dismiss();
 	}
 	
 	@Override

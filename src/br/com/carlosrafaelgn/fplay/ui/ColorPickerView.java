@@ -83,13 +83,11 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		final ColorPickerView picker = new ColorPickerView(context, initialColor);
 		picker.parentView = parentView;
 		picker.listener = listener;
-		final AlertDialog dlg = (new AlertDialog.Builder(context))
-				.setView(picker)
-				.setPositiveButton(R.string.ok, picker)
-				.setNegativeButton(R.string.cancel, null)
-				.create();
-		dlg.setOnDismissListener(picker);
-		UI.prepareDialogAndShow(dlg);
+		final BgDialog dialog = new BgDialog(context, picker, picker);
+		dialog.setOnDismissListener(picker);
+		dialog.setPositiveButton(R.string.ok);
+		dialog.setNegativeButton(R.string.cancel);
+		dialog.show();
 	}
 	
 	private ColorPickerView(Context context, int initialColor) {
@@ -534,5 +532,6 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		if (which == AlertDialog.BUTTON_POSITIVE && listener != null)
 			listener.onColorPicked(this, parentView, currentColor);
 		cleanup();
+		dialog.dismiss();
 	}
 }

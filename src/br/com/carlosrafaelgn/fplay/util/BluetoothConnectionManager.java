@@ -35,7 +35,6 @@ package br.com.carlosrafaelgn.fplay.util;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -50,7 +49,6 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -67,10 +65,11 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseItem;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
-public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, View.OnClickListener, AlertDialog.OnClickListener, AlertDialog.OnCancelListener, AlertDialog.OnDismissListener, AdapterView.OnItemClickListener {
+public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, AlertDialog.OnClickListener, AlertDialog.OnCancelListener, AlertDialog.OnDismissListener, AdapterView.OnItemClickListener {
 	public static final int REQUEST_ENABLE = 0x1000;
 
 	public static final int OK = 0;
@@ -163,12 +162,11 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	private InputStream inputStream;
 	private OutputStream outputStream;
 	private DeviceList deviceList;
-	private Button btnOK;
 	private TextView lblTitle;
 	private ProgressBar barWait;
 	private ListView listView;
 	private AlertDialog dialog;
-	private boolean closed, connecting, finished;
+	private boolean closed, connecting, finished, okToStartDiscovery;
 	private int lastError;
 	private volatile DeviceItem deviceItem;
 	private volatile boolean cancelled;
@@ -209,7 +207,6 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			activity = null;
 		}
 		deviceList = null;
-		btnOK = null;
 		lblTitle = null;
 		barWait = null;
 		dialog = null;
@@ -370,20 +367,14 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			return ERROR_DISCOVERY;
 		}
 
-		dialog = (new AlertDialog.Builder(activity))
-			.setTitle(activity.getText(R.string.bt_devices))
-			.setView(l)
-			.setPositiveButton(R.string.refresh_list, this)
-			.setNegativeButton(R.string.cancel, this)
-			.create();
+		final BgDialog dialog = new BgDialog(activity, l, this);
+		dialog.setTitle(R.string.bt_devices);
+		dialog.setPositiveButton(R.string.refresh_list);
+		dialog.setNegativeButton(R.string.cancel);
 		dialog.setOnCancelListener(this);
 		dialog.setOnDismissListener(this);
-		btnOK = UI.prepareDialogAndShow(dialog)
-			.getButton(Dialog.BUTTON_POSITIVE);
-		if (btnOK != null) {
-			btnOK.setEnabled(false);
-			btnOK.setOnClickListener(this);
-		}
+		dialog.show();
+		okToStartDiscovery = false;
 
 		return OK;
 	}
@@ -399,8 +390,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			lblTitle.setVisibility(View.GONE);
 		if (barWait != null)
 			barWait.setVisibility(View.GONE);
-		if (btnOK != null)
-			btnOK.setEnabled(true);
+		okToStartDiscovery = true;
 	}
 
 	@Override
@@ -454,8 +444,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 					barWait.setVisibility(View.VISIBLE);
 				if (listView != null)
 					listView.setVisibility(View.GONE);
-				if (btnOK != null)
-					btnOK.setEnabled(false);
+				okToStartDiscovery = false;
 				if (observer != null)
 					observer.onBluetoothPairingStarted(this, item.description, item.address);
 				lastError = OK;
@@ -468,25 +457,27 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	}
 
 	@Override
-	public void onClick(View view) {
-		if (view == btnOK && btAdapter != null && !connecting) {
-			if (lblTitle != null)
-				lblTitle.setVisibility(View.VISIBLE);
-			if (barWait != null)
-				barWait.setVisibility(View.VISIBLE);
-			try {
-				btAdapter.startDiscovery();
-			} catch (Throwable ex) {
-				return;
-			}
-			btnOK.setEnabled(false);
-		}
-	}
-
-	@Override
 	public void onClick(DialogInterface dialog, int which) {
-		if (which == AlertDialog.BUTTON_NEGATIVE)
+		switch (which) {
+		case DialogInterface.BUTTON_POSITIVE:
+			if (okToStartDiscovery && btAdapter != null && !connecting) {
+				if (lblTitle != null)
+					lblTitle.setVisibility(View.VISIBLE);
+				if (barWait != null)
+					barWait.setVisibility(View.VISIBLE);
+				try {
+					btAdapter.startDiscovery();
+				} catch (Throwable ex) {
+					return;
+				}
+				okToStartDiscovery = false;
+			}
+			break;
+		case DialogInterface.BUTTON_NEGATIVE:
 			cancelled = true;
+			dialog.dismiss();
+			break;
+		}
 	}
 
 	@Override

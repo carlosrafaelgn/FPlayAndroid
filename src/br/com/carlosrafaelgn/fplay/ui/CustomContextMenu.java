@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.ui;
 
 import android.app.Activity;
 import android.app.Application;
-import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -53,7 +52,6 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.accessibility.AccessibilityEvent;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -311,28 +309,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			return this;
 		}
 	}
-	
-	static final class MenuDialog extends Dialog {
-		public MenuDialog(Context context, CustomContextMenu menu, View contents) {
-			super(context, R.style.MenuDialog);
-			setContentView(contents);
-			setCancelable(true);
-			setCanceledOnTouchOutside(true);
-			setOnCancelListener(menu);
-			setOnDismissListener(menu);
-			setTitle(context.getText(R.string.menu));
-			UI.preparePopupTransition(this);
-		}
-
-		@Override
-		public boolean dispatchPopulateAccessibilityEvent(@NonNull AccessibilityEvent event) {
-			if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-				event.getText().add(getContext().getText(R.string.menu));
-				return true;
-			}
-			return super.dispatchPopulateAccessibilityEvent(event);
-		}
-	}
 
 	//used to prevent the caller from opening maore than one menu
 	private static int menuPreventionBits;
@@ -347,7 +323,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 	private Constructor<? extends TextView> itemClassConstructor;
 	private ColorStateList itemTextColors;
 	private boolean closed, closingByItemClick, hasItemPadding, hasBackground, hasItemBackground;
-	private MenuDialog menu;
+	private BgDialog menu;
 	private Item clickedItem, parentItem;
 	private CustomContextMenu parentMenu;
 	private ObservableScrollView scroll;
@@ -496,7 +472,11 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			}
 			scroll.setPadding(paddingL, paddingT, paddingR, paddingB);
 			scroll.addView(list);
-			menu = new MenuDialog(context, this, scroll);
+			menu = new BgDialog(context, scroll, null);
+			menu.setEmptyBackground();
+			menu.setTitle(R.string.menu, false);
+			menu.setOnCancelListener(this);
+			menu.setOnDismissListener(this);
 		} else {
 			//we must manually reset the drawbles here, because they are always removed
 			//from the views in their onDetachedFromWindow()
@@ -508,35 +488,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			}
 		}
 		menu.show();
-		/*final Window w = menu.getWindow();
-		final View decor = w.getDecorView();
-		if (decor != null) {
-			ViewGroup.LayoutParams p;
-			ViewParent pa = scroll.getParent();
-			while (pa != null && (pa instanceof View)) {
-				final View v = (View)pa;
-				p = v.getLayoutParams();
-				if (pa == decor) {
-					p.width = LayoutParams.MATCH_PARENT;
-					p.height = LayoutParams.MATCH_PARENT;
-				} else {
-					p.width = LayoutParams.WRAP_CONTENT;
-					p.height = LayoutParams.WRAP_CONTENT;
-				}
-				if (p instanceof MarginLayoutParams) {
-					final MarginLayoutParams m = (MarginLayoutParams)p;
-					m.leftMargin = 0;
-					m.topMargin = 0;
-					m.rightMargin = 0;
-					m.bottomMargin = 0;
-				}
-				v.setLayoutParams(p);
-				v.setPadding(0, 0, 0, 0);
-				v.setBackgroundResource(0);
-				pa = pa.getParent();
-			}
-			decor.setOnTouchListener(menu);
-		}*/
 	}
 	
 	@Override

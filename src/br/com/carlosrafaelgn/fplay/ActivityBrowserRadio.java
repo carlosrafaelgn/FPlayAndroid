@@ -70,6 +70,7 @@ import br.com.carlosrafaelgn.fplay.playback.RadioStationResolver;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
+import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.RadioStationView;
@@ -577,15 +578,13 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			}
 
 			UI.disableEdgeEffect();
-			AlertDialog dialog = (new AlertDialog.Builder(ctx))
-				.setTitle(R.string.search)
-				.setView(l)
-				.setPositiveButton(R.string.search, this)
-				.setNegativeButton(R.string.cancel, this)
-				.create();
+			final BgDialog dialog = new BgDialog(ctx, l, this);
+			dialog.setTitle(R.string.search);
+			dialog.setPositiveButton(R.string.search);
+			dialog.setNegativeButton(R.string.cancel);
 			dialog.setOnCancelListener(this);
 			dialog.setOnDismissListener(this);
-			UI.prepareDialogAndShow(dialog);
+			dialog.show();
 		} else if (view == btnGoBackToPlayer) {
 			finish(-1, view, false);
 		} else if (view == btnAdd) {
@@ -632,6 +631,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			adapterSecondary = null;
 		}
 		txtTerm = null;
+		dialog.dismiss();
 	}
 	
 	@Override

@@ -34,11 +34,9 @@ package br.com.carlosrafaelgn.fplay.ui;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.UiModeManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -67,7 +65,6 @@ import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
-import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
@@ -77,7 +74,6 @@ import android.view.animation.Animation;
 import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.BgEdgeEffect;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -105,7 +101,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //Unit conversions are based on:
 //http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/util/TypedValue.java
 //
-public final class UI implements DialogInterface.OnShowListener, Animation.AnimationListener, Interpolator {
+public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
 	public static final int VERSION_CODE = 88;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
@@ -1501,11 +1497,10 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			"\n- 3D\n\n" +
 			context.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") +
 			context.getText(R.string.check_it_out).toString();
-		prepareDialogAndShow((new AlertDialog.Builder(context))
-			.setTitle(context.getText(title))
-			.setView(createDialogView(context, content))
-			.setPositiveButton(R.string.got_it, null)
-			.create());
+		final BgDialog dialog = new BgDialog(context, createDialogView(context, content), null);
+		dialog.setTitle(title);
+		dialog.setPositiveButton(R.string.got_it);
+		dialog.show();
 	}
 
 	public static void setVerticalMarginLarge(boolean isVerticalMarginLarge) {
@@ -1529,15 +1524,14 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		default:
 			return false;
 		}
-		prepareDialogAndShow((new AlertDialog.Builder(context))
-			.setTitle(context.getText(title))
-			.setView(createDialogView(context, context.getText(content)))
-			.setPositiveButton(R.string.got_it, null)
-			.create());
 		msgs |= msg;
+		final BgDialog dialog = new BgDialog(context, createDialogView(context, context.getText(content)), null);
+		dialog.setTitle(title);
+		dialog.setPositiveButton(R.string.got_it);
+		dialog.show();
 		return true;
 	}
-	
+
 	public static String ellipsizeText(String text, int size, int width, boolean truncateAtMiddle) {
 		if (text == null)
 			return "";
@@ -1845,13 +1839,13 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		final TextView textView = new TextView(context);
 		if (id != 0)
 			textView.setId(id);
+		textView.setTypeface(defaultTypeface);
 		textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
 		if (layoutParams != null)
 			textView.setLayoutParams(layoutParams);
 		if (text != null)
 			textView.setText(text);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			textView.setTextColor(isAndroidThemeLight() ? color_dialog_text_dk : color_dialog_text_lt);
+		textView.setTextColor(colorState_text_listitem_static);
 		return textView;
 	}
 
@@ -1860,6 +1854,7 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		if (id != 0)
 			editText.setId(id);
 		editText.setSingleLine((inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) == 0);
+		editText.setTypeface(defaultTypeface);
 		editText.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
 		editText.setInputType(inputType);
 		if (layoutParams != null)
@@ -1929,81 +1924,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 	}
 
-	public static AlertDialog prepareDialogAndShow(AlertDialog dialog) {
-		//if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			//https://code.google.com/p/android/issues/detail?id=6360
-			dialog.setOnShowListener(Player.theUI);
-		//}
-		preparePopupTransition(dialog);
-		dialog.show();
-		return dialog;
-	}
-
-	private static void prepareDialogAndShowScanChildren(ViewGroup parent, int buttonColor) {
-		for (int i = parent.getChildCount(); i >= 0; i--) {
-			final View v = parent.getChildAt(i);
-			if (v instanceof ViewGroup) {
-				prepareDialogAndShowScanChildren((ViewGroup)v, buttonColor);
-			} else if (v instanceof TextView) {
-				if (alternateTypefaceActive)
-					((TextView)v).setTypeface(defaultTypeface);
-				if (buttonColor != 0 && (v instanceof Button))
-					((Button)v).setTextColor(buttonColor);
-			}
-		}
-	}
-
-	@Override
-	public void onShow(DialogInterface dlg) {
-		final AlertDialog dialog = ((dlg instanceof AlertDialog) ? (AlertDialog)dlg : null);
-		if (dialog == null)
-			return;
-		if (dialog.getWindow() != null)
-			dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-		if (!alternateTypefaceActive && Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
-			//https://code.google.com/p/android/issues/detail?id=6360
-			return;
-		Button btn;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			ViewParent parent = null;
-			if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null)
-				parent = btn.getParent();
-			else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null)
-				parent = btn.getParent();
-			else if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null)
-				parent = btn.getParent();
-			if (parent != null && (parent instanceof ViewGroup))
-				removeSplitTouch((ViewGroup)parent);
-		}
-		if (alternateTypefaceActive || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			final View v = dialog.findViewById(android.R.id.content);
-			final int buttonColor = (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ? 0 : (isAndroidThemeLight() ? color_dialog_fplay_dk : color_dialog_fplay_lt));
-			if (v != null && (v instanceof ViewGroup)) {
-				prepareDialogAndShowScanChildren((ViewGroup)v, buttonColor);
-			} else {
-				//at least try to change the buttons...
-				if ((btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)) != null) {
-					if (alternateTypefaceActive)
-						btn.setTypeface(defaultTypeface);
-					if (buttonColor != 0)
-						btn.setTextColor(buttonColor);
-				}
-				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)) != null) {
-					if (alternateTypefaceActive)
-						btn.setTypeface(defaultTypeface);
-					if (buttonColor != 0)
-						btn.setTextColor(buttonColor);
-				}
-				if ((btn = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)) != null) {
-					if (alternateTypefaceActive)
-						btn.setTypeface(defaultTypeface);
-					if (buttonColor != 0)
-						btn.setTextColor(buttonColor);
-				}
-			}
-		}
-	}
-
 	public static void removeInternalPaddingForEdgeEffect(AbsListView view) {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			return;
@@ -2018,10 +1938,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 
 	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffect(View view, int placement) {
+		final int color = (placement == PLACEMENT_MENU ? color_menu_icon : color_glow);
+		final Resources resources = Player.theApplication.getResources();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 			try {
 				if (glowFilter == null) {
-					final int color = (placement == PLACEMENT_ALERT ? (isAndroidThemeLight() ? 0xff000000 : 0xffffffff) : (placement == PLACEMENT_MENU ? color_menu_icon : color_glow));
 					final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 					Field mEdgeGlow;
 					//EdgeEffect edgeEffect;
@@ -2065,7 +1986,6 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		}
 		try {
 			//if everything else fails, fall back to the old method!
-			final int color = (placement == PLACEMENT_ALERT ? (isAndroidThemeLight() ? 0xff000000 : 0xffffffff) : (placement == PLACEMENT_MENU ? color_menu_icon : color_glow));
 			if (glowFilter == null || glowFilterColor != color) {
 				glowFilterColor = color;
 				glowFilter = new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN);
@@ -2074,11 +1994,11 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 			//:D amazing hack/workaround, as explained here:
 			//
 			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
-			Drawable drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			Drawable drawable = resources.getDrawable(resources.getIdentifier("overscroll_glow", "drawable", "android"));
 			if (drawable != null)
 				//the color is treated as SRC, and the bitmap is treated as DST
 				drawable.setColorFilter(glowFilter);
-			drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			drawable = resources.getDrawable(resources.getIdentifier("overscroll_edge", "drawable", "android"));
 			if (drawable != null)
 				//hide the edge!!! ;)
 				drawable.setColorFilter(glowFilter);//edgeFilter);
@@ -2138,6 +2058,14 @@ public final class UI implements DialogInterface.OnShowListener, Animation.Anima
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	@SuppressWarnings("deprecation")
+	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder, int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
+		final int t = (topBorder ? thickDividerSize : 0);
+		final int b = (bottomBorder ? thickDividerSize : 0);
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b));
+		view.setPadding(leftPadding, topPadding + t, rightPadding, bottomPadding + b);
 	}
 
 	@SuppressWarnings("deprecation")

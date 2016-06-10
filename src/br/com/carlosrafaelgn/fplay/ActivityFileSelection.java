@@ -51,6 +51,7 @@ import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
@@ -81,6 +82,8 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private BgButton btnGoBack, btnMenu, btnAdd, btnPlay;
 	private RelativeLayout panelSecondary;
 	private boolean loading, isCreatingLayout;
+	private FileSt confirmFile;
+	private int confirmDeleteIndex;
 	private TextIconDrawable btnMenuIcon;
 	private FastAnimator animator;
 	private CharSequence msgEmptyList, msgLoading;
@@ -278,40 +281,14 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		fileList.notifyCheckedChanged();
 	}
 	
-	private void confirm(final FileSt file, final int deleteIndex) {
-		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-			.setTitle(R.string.oops)
-			.setView(UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)))
-			.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite, new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int which) {
-					final OnFileSelectionListener listener = ActivityFileSelection.this.listener;
-					if (deleteIndex >= 0) {
-						try {
-							if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, file))
-								Player.theApplication.deleteFile(file.path);
-							final int p;
-							if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
-								checkedFile.isChecked = false;
-								checkedFile = null;
-								if (fileList.getSelection() != p)
-									fileList.setSelection(p, true);
-								fileList.removeSelection();
-								if (list != null && list.isInTouchMode() && fileList.getSelection() >= 0)
-									fileList.setSelection(-1, true);
-								updateOverallLayout();
-							}
-						} catch (Throwable ex) {
-							ex.printStackTrace();
-						}
-					} else {
-						finish(0, null, false);
-						if (listener != null)
-							listener.onFileSelected(ActivityFileSelection.this.id, file);
-					}
-				}
-			})
-			.setNegativeButton(R.string.cancel, this)
-			.create());
+	private void confirm(FileSt file, int deleteIndex) {
+		final Context ctx = getHostActivity();
+		confirmFile = file;
+		confirmDeleteIndex = deleteIndex;
+		final BgDialog dialog = new BgDialog(ctx, UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)), this);
+		dialog.setTitle(R.string.oops);
+		dialog.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite);
+		dialog.setNegativeButton(R.string.cancel);
 	}
 	
 	@Override
@@ -413,12 +390,11 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				txtSaveAsName.setFilters(new InputFilter[]{this, new InputFilter.LengthFilter(64)});
 				l.addView(txtSaveAsName);
 
-				UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
-					.setTitle(format(R.string.msg_create_new_title, itemType))
-					.setView(l)
-					.setPositiveButton(R.string.create, this)
-					.setNegativeButton(R.string.cancel, this)
-					.create());
+				final BgDialog dialog = new BgDialog(ctx, l, this);
+				dialog.setTitle(format(R.string.msg_create_new_title, itemType), true);
+				dialog.setPositiveButton(R.string.create);
+				dialog.setNegativeButton(R.string.cancel);
+				dialog.show();
 			} else {
 				if (fileList != null && checkedFile != null) {
 					final int s = fileList.indexOf(checkedFile);
@@ -456,25 +432,50 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
 		if (which == AlertDialog.BUTTON_POSITIVE) {
-			String n = txtSaveAsName.getText().toString().trim();
-			if (!FileSt.isValidPrivateFileName(n))
-				return;
-			if (n.length() > 64)
-				n = n.substring(0, 64);
-			for (int i = fileList.getCount() - 1; i >= 0; i--) {
-				final FileSt f = fileList.getItemT(i);
-				if (f.name.equals(n)) {
-					confirm(f, -1);
-					txtSaveAsName = null;
-					return;
-				}
-			}
 			final OnFileSelectionListener listener = this.listener;
-			finish(0, null, false);
-			if (listener != null)
-				listener.onFileSelected(ActivityFileSelection.this.id, new FileSt(n + fileType, n, 0));
+			if (confirmDeleteIndex == Integer.MIN_VALUE) {
+				String n = txtSaveAsName.getText().toString().trim();
+				if (!FileSt.isValidPrivateFileName(n))
+					return;
+				if (n.length() > 64)
+					n = n.substring(0, 64);
+				for (int i = fileList.getCount() - 1; i >= 0; i--) {
+					final FileSt f = fileList.getItemT(i);
+					if (f.name.equals(n)) {
+						confirm(f, -1);
+						txtSaveAsName = null;
+						return;
+					}
+				}
+				finish(0, null, false);
+				if (listener != null)
+					listener.onFileSelected(ActivityFileSelection.this.id, new FileSt(n + fileType, n, 0));
+			} else if (confirmDeleteIndex >= 0) {
+				try {
+					if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, confirmFile))
+						Player.theApplication.deleteFile(confirmFile.path);
+					final int p;
+					if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
+						checkedFile.isChecked = false;
+						checkedFile = null;
+						if (fileList.getSelection() != p)
+							fileList.setSelection(p, true);
+						fileList.removeSelection();
+						if (list != null && list.isInTouchMode() && fileList.getSelection() >= 0)
+							fileList.setSelection(-1, true);
+						updateOverallLayout();
+					}
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			} else {
+				finish(0, null, false);
+				if (listener != null)
+					listener.onFileSelected(ActivityFileSelection.this.id, confirmFile);
+			}
 		}
 		txtSaveAsName = null;
+		dialog.dismiss();
 	}
 	
 	@Override

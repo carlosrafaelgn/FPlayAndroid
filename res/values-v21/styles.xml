@@ -20,7 +20,7 @@
         <item name="android:colorControlNormal">#ffc7c7c7</item>
     </style>
 
-    <style name="MenuDialog" parent="@android:style/Theme.Material.Dialog">
+    <style name="BgDialog" parent="@android:style/Theme.Material.Dialog">
         <item name="android:backgroundDimEnabled">true</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowNoTitle">true</item>

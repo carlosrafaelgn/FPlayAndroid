@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -66,6 +65,7 @@ import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
@@ -256,11 +256,10 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 
 		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
 		l.addView(UI.createDialogEditText(getHostActivity(), 0, null, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS));
-		UI.prepareDialogAndShow((new AlertDialog.Builder(getHostActivity()))
-			.setTitle(R.string.information)
-			.setView(l)
-			.setPositiveButton(R.string.ok, null)
-			.create());
+		final BgDialog dialog = new BgDialog(getHostActivity(), l, null);
+		dialog.setTitle(R.string.information);
+		dialog.setPositiveButton(R.string.ok);
+		dialog.show();
 	}
 
 	@SuppressWarnings("deprecation")

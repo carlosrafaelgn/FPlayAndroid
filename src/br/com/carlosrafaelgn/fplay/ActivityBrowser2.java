@@ -61,6 +61,7 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
+import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
@@ -677,13 +678,12 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			p.topMargin = UI.dialogMargin;
 			txtTitle = UI.createDialogEditText(ctx, 0, p, null, ctx.getText(R.string.description), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			l.addView(txtTitle);
-			
-			UI.prepareDialogAndShow((new AlertDialog.Builder(ctx))
-			.setTitle(R.string.add_url_title)
-			.setView(l)
-			.setPositiveButton(R.string.add, this)
-			.setNegativeButton(R.string.cancel, this)
-			.create());
+
+			final BgDialog dialog = new BgDialog(ctx, l, this);
+			dialog.setTitle(R.string.add_url_title);
+			dialog.setPositiveButton(R.string.add);
+			dialog.setNegativeButton(R.string.cancel);
+			dialog.show();
 		} else if (view == chkFavorite) {
 			if (Player.path.length() <= 1)
 				return;
@@ -745,6 +745,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 		txtURL = null;
 		txtTitle = null;
+		dialog.dismiss();
 	}
 	
 	@Override
