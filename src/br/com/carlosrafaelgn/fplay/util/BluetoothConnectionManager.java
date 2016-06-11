@@ -44,13 +44,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.ColorStateList;
-import android.os.Build;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -164,7 +162,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	private DeviceList deviceList;
 	private TextView lblTitle;
 	private ProgressBar barWait;
-	private ListView listView;
+	private BgListView listView;
 	private AlertDialog dialog;
 	private boolean closed, connecting, finished, okToStartDiscovery;
 	private int lastError;
@@ -318,30 +316,25 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		activity.registerReceiver(this, new IntentFilter(BluetoothDevice.ACTION_FOUND));
 		activity.registerReceiver(this, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 
-		LinearLayout l = (LinearLayout)UI.createDialogView(activity, null);
+		final LinearLayout l = (LinearLayout)UI.createDialogView(activity, null);
 
-		LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		lblTitle = UI.createDialogTextView(activity, 0, p, activity.getText(R.string.bt_scanning));
+		LinearLayout.LayoutParams p;
 
-		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin >> 1;
+		lblTitle = UI.createDialogTextView(activity, 0, activity.getText(R.string.bt_scanning));
+		l.addView(lblTitle, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
 		barWait = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
 		barWait.setIndeterminate(true);
-		barWait.setLayoutParams(p);
+		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		p.topMargin = UI.dialogMargin >> 1;
+		l.addView(barWait, p);
 
+		UI.disableEdgeEffect();
+		listView = new BgListView(activity);
+		listView.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM);
 		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
-		UI.disableEdgeEffect();
-		listView = new ListView(activity);
-		listView.setLayoutParams(p);
-		listView.setOverScrollMode(ListView.OVER_SCROLL_IF_CONTENT_SCROLLS);
-		listView.setVerticalScrollBarEnabled(UI.browserScrollBarType != BgListView.SCROLLBAR_NONE);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			listView.setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? ListView.SCROLLBAR_POSITION_LEFT : ListView.SCROLLBAR_POSITION_RIGHT);
-
-		l.addView(lblTitle);
-		l.addView(barWait);
-		l.addView(listView);
+		l.addView(listView, p);
 
 		deviceList = new DeviceList();
 		defaultTextColors = lblTitle.getTextColors();

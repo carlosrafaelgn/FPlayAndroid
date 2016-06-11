@@ -483,38 +483,37 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 			
-			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			btnType = new Spinner(ctx);
-			btnType.setLayoutParams(p);
+			LinearLayout.LayoutParams p;
 
-			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin;
+			btnType = new Spinner(ctx);
+			l.addView(btnType, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
 			btnGenre = new Spinner(ctx);
 			btnGenre.setContentDescription(ctx.getText(R.string.genre));
-			btnGenre.setLayoutParams(p);
 			btnGenre.setVisibility(Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
+			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+			p.topMargin = UI.dialogMargin;
+			l.addView(btnGenre, p);
 
 			if (useShoutcast) {
-				p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-				p.topMargin = UI.dialogMargin;
 				btnGenreSecondary = new Spinner(ctx);
 				btnGenreSecondary.setContentDescription(ctx.getText(R.string.genre));
-				btnGenreSecondary.setLayoutParams(p);
 				btnGenreSecondary.setVisibility(Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
+				p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				p.topMargin = UI.dialogMargin;
+				l.addView(btnGenreSecondary, p);
 			} else {
 				btnGenreSecondary = null;
 			}
 
-			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin;
-			txtTerm = UI.createDialogEditText(ctx, 0, p, Player.radioSearchTerm == null ? "" : Player.radioSearchTerm, ctx.getText(R.string.search_term), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+			txtTerm = UI.createDialogEditText(ctx, 0, Player.radioSearchTerm == null ? "" : Player.radioSearchTerm, ctx.getText(R.string.search_term), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTerm.setOnClickListener(this);
 			txtTerm.setVisibility(!Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
-
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI.dialogMargin;
-			p.bottomMargin = UI.dialogMargin;
-			final TextView lbl = UI.createDialogTextView(ctx, 0, p, null);
+			l.addView(txtTerm, p);
+
+			final TextView lbl = UI.createDialogTextView(ctx, 0, null);
 			lbl.setSingleLine(false);
 			lbl.setMaxLines(4);
 			lbl.setAutoLinkMask(0);
@@ -522,7 +521,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			//http://developer.android.com/design/style/color.html
 			lbl.setLinkTextColor((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ?
 				new BgColorStateList(UI.isAndroidThemeLight() ? UI.color_dialog_fplay_dk : UI.color_dialog_fplay_lt) :
-					new BgColorStateList(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5));
+				new BgColorStateList(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5));
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 			lbl.setGravity(Gravity.CENTER_HORIZONTAL);
 			if (externalUri == null) {
@@ -547,13 +546,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			}
 			lbl.setText(message);
 			lbl.setMovementMethod(LinkMovementMethod.getInstance());
-
-			l.addView(btnType);
-			l.addView(btnGenre);
-			if (btnGenreSecondary != null)
-				l.addView(btnGenreSecondary);
-			l.addView(txtTerm);
-			l.addView(lbl);
+			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+			p.topMargin = UI.dialogMargin;
+			p.bottomMargin = UI.dialogMargin;
+			l.addView(lbl, p);
 
 			final ColorStateList defaultTextColors = txtTerm.getTextColors();
 

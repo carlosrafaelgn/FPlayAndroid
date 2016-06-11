@@ -255,7 +255,7 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 
 		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
-		l.addView(UI.createDialogEditText(getHostActivity(), 0, null, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS));
+		l.addView(UI.createDialogEditText(getHostActivity(), 0, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS));
 		final BgDialog dialog = new BgDialog(getHostActivity(), l, null);
 		dialog.setTitle(R.string.information);
 		dialog.setPositiveButton(R.string.ok);

@@ -38,7 +38,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 public class BgFlexLayout extends ViewGroup {
-	public static class LayoutParams extends ViewGroup.MarginLayoutParams {
+	public static class LayoutParams extends ViewGroup.LayoutParams {
 		public LayoutParams(Context c, AttributeSet attrs) {
 			super(c, attrs);
 		}
@@ -49,10 +49,6 @@ public class BgFlexLayout extends ViewGroup {
 
 		public LayoutParams(ViewGroup.LayoutParams p) {
 			super(p);
-		}
-
-		public LayoutParams(ViewGroup.MarginLayoutParams source) {
-			super(source);
 		}
 
 		public LayoutParams(LayoutParams source) {
@@ -81,22 +77,22 @@ public class BgFlexLayout extends ViewGroup {
 
 	@Override
 	public LayoutParams generateLayoutParams(AttributeSet attrs) {
-		return new BgFlexLayout.LayoutParams(getContext(), attrs);
+		return new LayoutParams(getContext(), attrs);
 	}
 
 	@Override
 	protected LayoutParams generateDefaultLayoutParams() {
-		return new BgFlexLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+		return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 	}
 
 	@Override
 	protected LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
-		return new BgFlexLayout.LayoutParams(p);
+		return new LayoutParams(p);
 	}
 
 	@Override
 	protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
-		return p instanceof BgFlexLayout.LayoutParams;
+		return p instanceof LayoutParams;
 	}
 
 	@Override
@@ -114,59 +110,101 @@ public class BgFlexLayout extends ViewGroup {
 			Integer.MAX_VALUE :
 			MeasureSpec.getSize(heightMeasureSpec)) - getPaddingTop() - getPaddingBottom();
 
-		int childState = 0, contentsWidth = 0, contentsSizeWithoutFlex = 0;
+		int pass = 0;
+		int childState, contentsWidth = 0, contentsHeight;
 
-		flexSize = 0;
+		int widthMeasureSpecForChildren = widthMeasureSpec;
 
-		for (int i = 0; i < count; i++) {
-			final View child = getChildAt(i);
+		do {
+			if (pass == 1) {
+				pass = 2;
+				widthMeasureSpecForChildren = MeasureSpec.makeMeasureSpec(contentsWidth, MeasureSpec.EXACTLY);
+			}
 
-			if (child == null || child.getVisibility() == GONE)
-				continue;
+			flexSize = 0;
 
-			final BgFlexLayout.LayoutParams lp = (BgFlexLayout.LayoutParams)child.getLayoutParams();
+			childState = 0;
+			contentsHeight = 0;
 
-			measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, contentsSizeWithoutFlex);
+			int flexIndex = -1;
 
-			int width = child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin;
-			if (width < 0) width = 0;
-			int height = child.getMeasuredHeight() + lp.topMargin + lp.bottomMargin;
-			if (height < 0) height = 0;
+			for (int i = 0; i < count; i++) {
+				final View child = getChildAt(i);
 
-			if (contentsWidth < width)
-				contentsWidth = width;
+				if (child == null || child.getVisibility() == GONE)
+					continue;
 
-			childState = combineMeasuredStates(childState, child.getMeasuredState());
+				if (child == flexChild) {
+					flexIndex = i;
+					continue;
+				}
 
-			if (child == flexChild)
-				flexSize = height;
-			else
-				contentsSizeWithoutFlex += height;
-		}
+				final LayoutParams p = (LayoutParams)child.getLayoutParams();
+				final int oldWidth = p.width;
+				if (pass == 2)
+					p.width = LayoutParams.MATCH_PARENT;
+				measureChild(child, widthMeasureSpecForChildren, heightMeasureSpec);
+				p.width = oldWidth;
 
-		contentsSizeWithoutFlex = Math.max(contentsSizeWithoutFlex, getSuggestedMinimumHeight());
-		if ((contentsSizeWithoutFlex + flexSize) > availableHeight) {
-			flexSize = availableHeight - contentsSizeWithoutFlex;
-			if (flexSize < 0) flexSize = 0;
-		}
+				final int width = child.getMeasuredWidth();
+				final int height = child.getMeasuredHeight();
 
-		int height = contentsSizeWithoutFlex + flexSize;
-		if (height > availableHeight) height = availableHeight;
+				if (pass != 2) {
+					pass = 1;
+					if (contentsWidth < width)
+						contentsWidth = width;
+				}
 
-		setMeasuredDimension(resolveSizeAndState(Math.max(contentsWidth + getPaddingLeft() + getPaddingRight(), getSuggestedMinimumWidth()), widthMeasureSpec, childState),
-			resolveSizeAndState(height, heightMeasureSpec, 0));
+				childState = combineMeasuredStates(childState, child.getMeasuredState());
+
+				contentsHeight += height;
+			}
+
+			if (flexIndex >= 0) {
+				final View child = getChildAt(flexIndex);
+
+				int heightAvailableForFlex = availableHeight - contentsHeight;
+				if (heightAvailableForFlex < 0) heightAvailableForFlex = 0;
+
+				final LayoutParams p = (LayoutParams)child.getLayoutParams();
+				final int oldWidth = p.width;
+				if (pass == 2)
+					p.width = LayoutParams.MATCH_PARENT;
+				measureChild(child, widthMeasureSpecForChildren, MeasureSpec.makeMeasureSpec(heightAvailableForFlex, MeasureSpec.AT_MOST));
+				p.width = oldWidth;
+
+				final int width = child.getMeasuredWidth();
+				flexSize = child.getMeasuredHeight();
+
+				if (pass != 2) {
+					pass = 1;
+					if (contentsWidth < width)
+						contentsWidth = width;
+				}
+
+				childState = combineMeasuredStates(childState, child.getMeasuredState());
+
+				contentsHeight += flexSize;
+			}
+
+			setMeasuredDimension(resolveSizeAndState(Math.max(contentsWidth + getPaddingLeft() + getPaddingRight(), getSuggestedMinimumWidth()), widthMeasureSpec, childState),
+				resolveSizeAndState(Math.max(contentsHeight + getPaddingTop() + getPaddingBottom(), getSuggestedMinimumHeight()), heightMeasureSpec, 0));
+
+			if (pass == 1) {
+				contentsWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
+				if (contentsWidth < 0) contentsWidth = 0;
+			}
+		} while (pass != 2);
 	}
 
 	@Override
 	protected void onLayout(boolean changed, int l, int t, int r, int b) {
 		final int childLeft = getPaddingLeft();
-		final int childRight = r - l - getPaddingRight();
-		final int availableWidth = childRight - childLeft;
+		//LinearLayout
 
 		final int count = getChildCount();
 
 		int childTop = getPaddingTop();
-		int availableHeight = b - t - childTop - getPaddingBottom();
 
 		for (int i = 0; i < count; i++) {
 			final View child = getChildAt(i);
@@ -174,28 +212,15 @@ public class BgFlexLayout extends ViewGroup {
 			if (child == null || child.getVisibility() == GONE)
 				continue;
 
-			final BgFlexLayout.LayoutParams lp = (BgFlexLayout.LayoutParams)child.getLayoutParams();
-
-			final int widthAvailableForThisChild = availableWidth - lp.leftMargin - lp.rightMargin;
-
-			int childHeight = ((child == flexChild) ? flexSize : child.getMeasuredHeight());
-			int usedChildHeight = childHeight + lp.topMargin + lp.bottomMargin;
-			if (usedChildHeight > availableHeight) {
-				usedChildHeight = availableHeight;
-				childHeight = usedChildHeight - lp.topMargin - lp.bottomMargin;
-				if (childHeight < 0) childHeight = 0;
-			}
+			final int childWidth = child.getMeasuredWidth();
+			final int childHeight = ((child == flexChild) ? flexSize : child.getMeasuredHeight());
 
 			//int gravity = lp.gravity;
 			//if (gravity <= 0) gravity = this.gravity;
 
-			child.layout(childLeft + lp.leftMargin,
-				childTop + lp.topMargin,
-				childLeft + lp.leftMargin + widthAvailableForThisChild,
-				childTop + lp.topMargin + childHeight);
+			child.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight);
 
-			childTop += usedChildHeight;
-			availableHeight -= usedChildHeight;
+			childTop += childHeight;
 		}
 	}
 }

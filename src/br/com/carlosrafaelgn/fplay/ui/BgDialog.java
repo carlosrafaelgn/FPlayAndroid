@@ -186,8 +186,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 		final Context context = getContext();
 
 		final BgFlexLayout panel = new BgFlexLayout(getContext());
-
-		BgFlexLayout.LayoutParams fp;
+		//panel.setOrientation(LinearLayout.VERTICAL);
 
 		if (titleVisible) {
 			final TextView txtTitle = new TextView(context);
@@ -198,7 +197,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			txtTitle.setTextColor(UI.colorState_highlight_static);
 			final int padding = ((UI.isLargeScreen || !UI.isLowDpiScreen) ? UI.controlLargeMargin : UI.controlMargin);
 			UI.prepareControlContainer(txtTitle, false, true, padding, padding, padding, padding);
-			panel.addView(txtTitle, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
+			panel.addView(txtTitle, new BgFlexLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
 		}
 
 		final RelativeLayout panelBottom;
@@ -227,9 +226,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 				rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
 				panelBottom.addView(btnPositive, rp);
 			}
-			rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-			rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-			panel.addView(panelBottom, rp);
+			panel.addView(panelBottom, new BgFlexLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
 		} else {
 			panelBottom = null;
 		}
@@ -238,7 +235,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			if (backgroundId != 0)
 				contentView.setBackgroundResource(backgroundId);
 			else
-				contentView.setBackgroundDrawable(backgroundDrawable != null ? backgroundDrawable : new ColorDrawable(UI.color_list_bg));
+				contentView.setBackgroundDrawable(backgroundDrawable != null ? backgroundDrawable : new ColorDrawable(UI.color_list_original));
 		}
 
 		if (scanChildren && UI.isUsingAlternateTypeface) {
@@ -249,12 +246,12 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 		}
 
 		if (titleVisible || panelBottom != null) {
-			panel.addView(contentView, titleVisible ? 1 : 0, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
+			panel.addView(contentView, titleVisible ? 1 : 0, new BgFlexLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
 			panel.setFlexChild(contentView);
 
-			setContentView(panel, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+			setContentView(panel, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 		} else {
-			contentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+			contentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 			setContentView(contentView);
 		}
 	}

@@ -145,21 +145,21 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		lp.leftMargin = UI.controlSmallMargin;
 		l.addView(lblCurrent, lp);
 
-		TextView lblTit = UI.createDialogTextView(context, 2, null, "H");
+		TextView lblTit = UI.createDialogTextView(context, 2, "H");
 		lblTit.setGravity(Gravity.CENTER);
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
-		lblTit = UI.createDialogTextView(context, 3, null, "S");
+		lblTit = UI.createDialogTextView(context, 3, "S");
 		lblTit.setGravity(Gravity.CENTER);
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.BELOW, 1);
 		addView(lblTit, p);
-		lblTit = UI.createDialogTextView(context, 4, null, "V");
+		lblTit = UI.createDialogTextView(context, 4, "V");
 		lblTit.setGravity(Gravity.CENTER);
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
@@ -205,21 +205,21 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		p.addRule(RelativeLayout.ABOVE, 6);
 		addView(barV, p);
 
-		txtH = UI.createDialogEditText(context, 6, null, Integer.toString((int)(hsv.h * 360.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		txtH = UI.createDialogEditText(context, 6, Integer.toString((int)(hsv.h * 360.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txtH.setGravity(Gravity.CENTER);
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtH, p);
-		txtS = UI.createDialogEditText(context, 0, null, Integer.toString((int)(hsv.s * 100.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		txtS = UI.createDialogEditText(context, 0, Integer.toString((int)(hsv.s * 100.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txtS.setGravity(Gravity.CENTER);
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
 		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtS, p);
-		txtV = UI.createDialogEditText(context, 0, null, Integer.toString((int)(hsv.v * 100.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		txtV = UI.createDialogEditText(context, 0, Integer.toString((int)(hsv.v * 100.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txtV.setGravity(Gravity.CENTER);
 		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;
@@ -227,7 +227,7 @@ public final class ColorPickerView extends RelativeLayout implements View.OnClic
 		p.addRule(RelativeLayout.ABOVE, 7);
 		addView(txtV, p);
 
-		txt = UI.createDialogEditText(context, 7, null, ColorUtils.toHexColor(initialColor), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		txt = UI.createDialogEditText(context, 7, ColorUtils.toHexColor(initialColor), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		txt.setGravity(Gravity.CENTER);
 		p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 		p.topMargin = UI.dialogMargin;

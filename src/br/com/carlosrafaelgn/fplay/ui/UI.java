@@ -74,7 +74,6 @@ import android.view.animation.Animation;
 import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.BgEdgeEffect;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -1835,42 +1834,32 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			view.setNextFocusForwardId(nextFocusForwardId);
 	}
 
-	public static TextView createDialogTextView(Context context, int id, LayoutParams layoutParams, CharSequence text) {
+	public static TextView createDialogTextView(Context context, int id, CharSequence text) {
 		final TextView textView = new TextView(context);
 		if (id != 0)
 			textView.setId(id);
 		textView.setTypeface(defaultTypeface);
 		textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
-		if (layoutParams != null)
-			textView.setLayoutParams(layoutParams);
+		textView.setTextColor(colorState_text_listitem_static);
 		if (text != null)
 			textView.setText(text);
-		textView.setTextColor(colorState_text_listitem_static);
 		return textView;
 	}
 
-	public static EditText createDialogEditText(Context context, int id, LayoutParams layoutParams, CharSequence text, CharSequence contentDescription, int inputType) {
-		final EditText editText = new EditText(context);
+	public static BgEditText createDialogEditText(Context context, int id, CharSequence text, CharSequence contentDescription, int inputType) {
+		final BgEditText editText = new BgEditText(context);
 		if (id != 0)
 			editText.setId(id);
 		editText.setSingleLine((inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) == 0);
 		editText.setTypeface(defaultTypeface);
 		editText.setTextSize(TypedValue.COMPLEX_UNIT_PX, dialogTextSize);
+		editText.setTextColor(colorState_text_listitem_static);
+		editText.setCursorColor(color_text_listitem_secondary);
+		editText.setColors(color_divider, color_text_listitem_secondary);
+		editText.setContentDescription(contentDescription);
 		editText.setInputType(inputType);
-		if (layoutParams != null)
-			editText.setLayoutParams(layoutParams);
 		if (text != null)
 			editText.setText(text);
-		if (contentDescription != null)
-			editText.setContentDescription(contentDescription);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			//lollipop bug!!!!!
-			//http://stackoverflow.com/questions/28112829/edittext-android-l-stylin
-			//http://stackoverflow.com/questions/27123278/lollipop-editbox-styling/27132324#27132324
-			//https://code.google.com/p/android/issues/detail?id=80180
-			editText.setBackgroundTintList(isAndroidThemeLight() ? new BgColorStateList(color_dialog_normal_dk, color_dialog_fplay_dk) : new BgColorStateList(color_dialog_normal_lt, color_dialog_fplay_lt));
-			editText.setBackgroundTintMode(PorterDuff.Mode.SRC_ATOP);
-		}
 		return editText;
 	}
 
@@ -1880,14 +1869,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 				removeSplitTouch(l);
 			l.setOrientation(LinearLayout.VERTICAL);
-			final int hMargin = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? (dialogMargin + controlMargin) : dialogMargin);
-			final int topMargin = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? (dialogMargin + controlLargeMargin) : dialogMargin);
-			l.setPadding(hMargin, topMargin, hMargin, dialogMargin);
+			l.setPadding(dialogMargin, dialogMargin, dialogMargin, dialogMargin);
 			l.setBaselineAligned(false);
 			return l;
 		}
 		final ObservableScrollView scrollView = new ObservableScrollView(context, PLACEMENT_ALERT);
-		final TextView txt = createDialogTextView(context, 0, null, messageOnly);
+		final TextView txt = createDialogTextView(context, 0, messageOnly);
 		txt.setPadding(dialogMargin << 1, dialogMargin << 1, dialogMargin << 1, dialogMargin << 1);
 		scrollView.addView(txt);
 		return scrollView;

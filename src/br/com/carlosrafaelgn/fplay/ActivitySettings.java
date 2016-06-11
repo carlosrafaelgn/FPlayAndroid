@@ -452,14 +452,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				}
 			} else {
 				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
-				
-				l.addView(UI.createDialogTextView(ctx, 0, null, getText(R.string.msg_turn_off)));
 
-				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-				p.topMargin = UI.dialogMargin;
-				txtCustomMinutes = UI.createDialogEditText(ctx, 0, p, Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes), ctx.getText(R.string.msg_turn_off), InputType.TYPE_CLASS_NUMBER);
-				l.addView(txtCustomMinutes);
-				
+				txtCustomMinutes = UI.createDialogEditText(ctx, 0, Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes), getText(R.string.msg_turn_off), InputType.TYPE_CLASS_NUMBER);
+				l.addView(txtCustomMinutes, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+
 				final BgDialog dialog = new BgDialog(ctx, l, this);
 				dialog.setTitle(R.string.msg_turn_off_title);
 				dialog.setPositiveButton(R.string.ok);

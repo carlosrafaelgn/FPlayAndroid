@@ -664,20 +664,16 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 
-			l.addView(UI.createDialogTextView(ctx, 0, null, ctx.getText(R.string.url)));
+			LinearLayout.LayoutParams p;
 
-			LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin;
-			p.bottomMargin = UI.dialogMargin << 1;
-			txtURL = UI.createDialogEditText(ctx, 1, p, null, ctx.getText(R.string.url), InputType.TYPE_TEXT_VARIATION_URI);
-			l.addView(txtURL);
-
-			l.addView(UI.createDialogTextView(ctx, 0, null, ctx.getText(R.string.description)));
-
+			txtURL = UI.createDialogEditText(ctx, 1, null, ctx.getText(R.string.url), InputType.TYPE_TEXT_VARIATION_URI);
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin;
-			txtTitle = UI.createDialogEditText(ctx, 0, p, null, ctx.getText(R.string.description), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-			l.addView(txtTitle);
+			l.addView(txtURL, p);
+
+			txtTitle = UI.createDialogEditText(ctx, 0, null, ctx.getText(R.string.description), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+			p.topMargin = UI.dialogMargin << 1;
+			l.addView(txtTitle, p);
 
 			final BgDialog dialog = new BgDialog(ctx, l, this);
 			dialog.setTitle(R.string.add_url_title);

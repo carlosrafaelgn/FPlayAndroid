@@ -381,14 +381,9 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				final Context ctx = getHostActivity();
 				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 
-				final TextView lbl = UI.createDialogTextView(ctx, 0, null, format(R.string.msg_enter_name, itemType));
-				l.addView(lbl);
-
-				final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-				p.topMargin = UI.dialogMargin;
-				txtSaveAsName = UI.createDialogEditText(ctx, 0, p, (fileList != null && fileList.getSelection() >= 0) ? fileList.getItemT(fileList.getSelection()).name : null, lbl.getText(), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+				txtSaveAsName = UI.createDialogEditText(ctx, 0, (fileList != null && fileList.getSelection() >= 0) ? fileList.getItemT(fileList.getSelection()).name : null, format(R.string.msg_enter_name, itemType), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 				txtSaveAsName.setFilters(new InputFilter[]{this, new InputFilter.LengthFilter(64)});
-				l.addView(txtSaveAsName);
+				l.addView(txtSaveAsName, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
 				final BgDialog dialog = new BgDialog(ctx, l, this);
 				dialog.setTitle(format(R.string.msg_create_new_title, itemType), true);
