@@ -10,8 +10,4 @@
         <!-- API 13 theme customizations can go here. -->
     </style>
 
-    <style name="AppBaseThemeDark" parent="@android:style/Theme.Holo.NoActionBar.Fullscreen">
-        <!-- API 13 theme customizations can go here. -->
-    </style>
-
 </resources>

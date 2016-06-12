@@ -108,6 +108,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		this.listener = listener;
 		this.formatterSB = new StringBuilder();
 		this.formatter = new Formatter(formatterSB);
+		this.confirmDeleteIndex = Integer.MIN_VALUE;
 	}
 
 	@Override
@@ -289,6 +290,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		dialog.setTitle(R.string.oops);
 		dialog.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite);
 		dialog.setNegativeButton(R.string.cancel);
+		dialog.show();
 	}
 	
 	@Override
@@ -437,6 +439,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				for (int i = fileList.getCount() - 1; i >= 0; i--) {
 					final FileSt f = fileList.getItemT(i);
 					if (f.name.equals(n)) {
+						dialog.dismiss();
 						confirm(f, -1);
 						txtSaveAsName = null;
 						return;
@@ -445,28 +448,32 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 				finish(0, null, false);
 				if (listener != null)
 					listener.onFileSelected(ActivityFileSelection.this.id, new FileSt(n + fileType, n, 0));
-			} else if (confirmDeleteIndex >= 0) {
-				try {
-					if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, confirmFile))
-						Player.theApplication.deleteFile(confirmFile.path);
-					final int p;
-					if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
-						checkedFile.isChecked = false;
-						checkedFile = null;
-						if (fileList.getSelection() != p)
-							fileList.setSelection(p, true);
-						fileList.removeSelection();
-						if (list != null && list.isInTouchMode() && fileList.getSelection() >= 0)
-							fileList.setSelection(-1, true);
-						updateOverallLayout();
-					}
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
 			} else {
-				finish(0, null, false);
-				if (listener != null)
-					listener.onFileSelected(ActivityFileSelection.this.id, confirmFile);
+				if (confirmDeleteIndex >= 0) {
+					try {
+						if (listener == null || !listener.onDeleteClicked(ActivityFileSelection.this.id, confirmFile))
+							Player.theApplication.deleteFile(confirmFile.path);
+						final int p;
+						if (checkedFile != null && fileList != null && (p = fileList.indexOf(checkedFile)) >= 0) {
+							checkedFile.isChecked = false;
+							checkedFile = null;
+							if (fileList.getSelection() != p)
+								fileList.setSelection(p, true);
+							fileList.removeSelection();
+							if (list != null && list.isInTouchMode() && fileList.getSelection() >= 0)
+								fileList.setSelection(-1, true);
+							updateOverallLayout();
+						}
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				} else {
+					finish(0, null, false);
+					if (listener != null)
+						listener.onFileSelected(ActivityFileSelection.this.id, confirmFile);
+				}
+				confirmDeleteIndex = Integer.MIN_VALUE;
+				confirmFile = null;
 			}
 		}
 		txtSaveAsName = null;

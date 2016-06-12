@@ -29,7 +29,7 @@
     <string name="msg_select_favorite_remove">Wähle einen Favoriten zum entfernen</string>
     <string name="msg_turn_off_title">Automatisch beenden</string>
     <string name="msg_turn_off">Anzahl Minuten bis der Player beendet wird?</string>
-    <string name="msg_enter_name">Neuen Namen eingeben für %s:</string>
+    <string name="msg_enter_name">Neuen Namen eingeben für %s</string>
     <string name="msg_confirm_overwrite">Wirklich überschreiben %1$s \"%2$s\"?</string>
     <string name="msg_confirm_delete">Wirklich löschen %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Überschreiben %1$s \"%2$s\"</string>

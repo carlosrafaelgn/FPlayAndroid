@@ -672,7 +672,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 
 			txtTitle = UI.createDialogEditText(ctx, 0, null, ctx.getText(R.string.description), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin << 1;
+			p.topMargin = UI.dialogMargin;
 			l.addView(txtTitle, p);
 
 			final BgDialog dialog = new BgDialog(ctx, l, this);

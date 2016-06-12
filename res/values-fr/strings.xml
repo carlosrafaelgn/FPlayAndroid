@@ -29,7 +29,7 @@
     <string name="msg_select_favorite_remove">Sélectionnez un favori à supprimer</string>
     <string name="msg_turn_off_title">Arrêt automatique</string>
     <string name="msg_turn_off">Éteindre FPlay après combien de minutes ?</string>
-    <string name="msg_enter_name">Entrez un nom pour le nouveau %s :</string>
+    <string name="msg_enter_name">Entrez un nom pour le nouveau %s </string>
     <string name="msg_confirm_overwrite">Voulez-vous vraiment écraser le %1$s \"%2$s\" ?</string>
     <string name="msg_confirm_delete">Voulez-vous vraiment supprimer le %1$s \"%2$s\" ?</string>
     <string name="msg_overwrite">Écraser %1$s \"%2$s\"</string>

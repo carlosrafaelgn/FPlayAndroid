@@ -103,17 +103,23 @@ public class BgFlexLayout extends ViewGroup {
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		final int count = getChildCount();
-		final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+		int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+		if (heightMode == MeasureSpec.UNSPECIFIED)
+			heightMeasureSpec = MeasureSpec.makeMeasureSpec(0x3fffffff, (heightMode = MeasureSpec.AT_MOST));
 
 		//how much space we have in our hands
-		final int availableHeight = ((heightMode == MeasureSpec.UNSPECIFIED) ?
-			Integer.MAX_VALUE :
-			MeasureSpec.getSize(heightMeasureSpec)) - getPaddingTop() - getPaddingBottom();
+		final int availableHeight = MeasureSpec.getSize(heightMeasureSpec) - getPaddingTop() - getPaddingBottom();
 
 		int pass = 0;
-		int childState, contentsWidth = 0, contentsHeight;
+		int contentsWidth = 0, contentsHeight;
 
 		int widthMeasureSpecForChildren = widthMeasureSpec;
+
+		//if our parent has already requested a fixed size, we won't need to scan the children twice!
+		if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY) {
+			pass = 2;
+			contentsWidth = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() - getPaddingRight();
+		}
 
 		do {
 			if (pass == 1) {
@@ -123,7 +129,6 @@ public class BgFlexLayout extends ViewGroup {
 
 			flexSize = 0;
 
-			childState = 0;
 			contentsHeight = 0;
 
 			int flexIndex = -1;
@@ -139,11 +144,14 @@ public class BgFlexLayout extends ViewGroup {
 					continue;
 				}
 
+				int heightAvailableForChild = availableHeight - contentsHeight;
+				if (heightAvailableForChild < 0) heightAvailableForChild = 0;
+
 				final LayoutParams p = (LayoutParams)child.getLayoutParams();
 				final int oldWidth = p.width;
 				if (pass == 2)
 					p.width = LayoutParams.MATCH_PARENT;
-				measureChild(child, widthMeasureSpecForChildren, heightMeasureSpec);
+				measureChild(child, widthMeasureSpecForChildren, MeasureSpec.makeMeasureSpec(heightAvailableForChild, MeasureSpec.AT_MOST));
 				p.width = oldWidth;
 
 				final int width = child.getMeasuredWidth();
@@ -154,8 +162,6 @@ public class BgFlexLayout extends ViewGroup {
 					if (contentsWidth < width)
 						contentsWidth = width;
 				}
-
-				childState = combineMeasuredStates(childState, child.getMeasuredState());
 
 				contentsHeight += height;
 			}
@@ -170,7 +176,10 @@ public class BgFlexLayout extends ViewGroup {
 				final int oldWidth = p.width;
 				if (pass == 2)
 					p.width = LayoutParams.MATCH_PARENT;
-				measureChild(child, widthMeasureSpecForChildren, MeasureSpec.makeMeasureSpec(heightAvailableForFlex, MeasureSpec.AT_MOST));
+				//we use heightMode with the flex child, because if our parent has imposed a fixed
+				//height upon us, then we must impose a fixed height upon the flex child, forcing it
+				//to use up all the remaining space
+				measureChild(child, widthMeasureSpecForChildren, MeasureSpec.makeMeasureSpec(heightAvailableForFlex, heightMode));
 				p.width = oldWidth;
 
 				final int width = child.getMeasuredWidth();
@@ -182,16 +191,15 @@ public class BgFlexLayout extends ViewGroup {
 						contentsWidth = width;
 				}
 
-				childState = combineMeasuredStates(childState, child.getMeasuredState());
-
 				contentsHeight += flexSize;
 			}
 
-			setMeasuredDimension(resolveSizeAndState(Math.max(contentsWidth + getPaddingLeft() + getPaddingRight(), getSuggestedMinimumWidth()), widthMeasureSpec, childState),
-				resolveSizeAndState(Math.max(contentsHeight + getPaddingTop() + getPaddingBottom(), getSuggestedMinimumHeight()), heightMeasureSpec, 0));
+			setMeasuredDimension(contentsWidth + getPaddingLeft() + getPaddingRight(),
+				(pass == 2) ? contentsHeight + getPaddingTop() + getPaddingBottom() :
+				Math.max(contentsHeight + getPaddingTop() + getPaddingBottom(), getSuggestedMinimumHeight()));
 
 			if (pass == 1) {
-				contentsWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
+				contentsWidth = Math.max(getMeasuredWidth(), getSuggestedMinimumWidth()) - getPaddingLeft() - getPaddingRight();
 				if (contentsWidth < 0) contentsWidth = 0;
 			}
 		} while (pass != 2);

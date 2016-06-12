@@ -205,7 +205,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			RelativeLayout.LayoutParams rp;
 			panelBottom = new RelativeLayout(context);
 			panelBottom.setId(2);
-			final int padding = (UI.isLargeScreen ? UI.controlLargeMargin : (UI.isLowDpiScreen ? UI.controlSmallMargin : UI.controlMargin));
+			final int padding = ((UI.isLargeScreen || !UI.isLowDpiScreen) ? UI.controlMargin : UI.controlSmallMargin);
 			UI.prepareControlContainer(panelBottom, true, false, padding, padding, padding, padding);
 			if (btnNeutral != null) {
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -223,6 +223,8 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			if (btnPositive != null) {
 				btnPositive.setId(3);
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+				if (UI.isLargeScreen)
+					rp.leftMargin = UI.controlMargin;
 				rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
 				panelBottom.addView(btnPositive, rp);
 			}

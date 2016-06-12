@@ -676,8 +676,9 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 		}
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private void openVisualizer(int id) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+		if (!BuildConfig.X && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			if (getHostActivity().checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
 				getHostActivity().requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, id);
 				return;

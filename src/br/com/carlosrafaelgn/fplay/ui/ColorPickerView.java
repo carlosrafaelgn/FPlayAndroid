@@ -32,506 +32,897 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import android.annotation.TargetApi;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
+import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
-import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
-import android.widget.EditText;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
-
-import java.nio.IntBuffer;
 
 import br.com.carlosrafaelgn.fplay.R;
-import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
-import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
-import br.com.carlosrafaelgn.fplay.util.ColorUtils.HSV;
 
-public final class ColorPickerView extends RelativeLayout implements View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, BgSeekBar.OnBgSeekBarDrawListener, TextWatcher, DialogInterface.OnDismissListener, DialogInterface.OnClickListener {
+public final class ColorPickerView extends RelativeLayout implements DialogInterface.OnClickListener, TextWatcher {
 	public interface OnColorPickerViewListener {
 		void onColorPicked(ColorPickerView picker, View parentView, int color);
 	}
-	
-	private BgSeekBar barH, barS, barV;
-	private EditText txt, txtH, txtS, txtV;
-	private TextView lblCurrent;
-	private HSV hsv, hsvTmp;
-	private int initialColor, currentColor, sliderColor;
-	private boolean ignoreChanges;
-	private Bitmap bmpH, bmpS, bmpV;
-	private Rect bmpRect;
-	private IntBuffer bmpBuf;
-	private ColorDrawable bgCurrent;
-	private View parentView;
+
+	private final class ColorSwatchView extends View implements OnClickListener {
+		private final int[] colors;
+		private final int margin, contentsTop, contentsWidth, contentsHeight;
+		private int contentsLeft, currentColor, lastX, lastY;
+		private boolean attached;
+
+		public ColorSwatchView(Context context) {
+			super(context);
+
+			super.setBackgroundResource(0);
+			super.setDrawingCacheEnabled(false);
+
+			currentColor = -1;
+			lastX = Integer.MIN_VALUE;
+			lastY = Integer.MIN_VALUE;
+			final ColorUtils.HSV hsv = new ColorUtils.HSV();
+			colors = new int[31 * 5];
+			hsv.h = 0.0;
+			hsv.s = 0.0;
+			hsv.v = 4.0 / 4.0;
+			colors[0    ] = hsv.toRGB(false);
+			hsv.v = 3.0 / 4.0;
+			colors[1] = hsv.toRGB(false);
+			hsv.v = 2.0 / 4.0;
+			colors[2] = hsv.toRGB(false);
+			hsv.v = 1.0 / 4.0;
+			colors[3] = hsv.toRGB(false);
+			hsv.v = 0.0 / 4.0;
+			colors[4] = hsv.toRGB(false);
+			for (int i = 0; i < (30 * 5); i += 5) {
+				hsv.h = (double)(i * 12) / (5.0 * 360.0);
+				hsv.v = 1.0;
+				hsv.s = 1.0 / 3.0;
+				colors[i + 5] = hsv.toRGBWeb(false);
+				hsv.s = 2.0 / 3.0;
+				colors[i + 6] = hsv.toRGBWeb(false);
+				hsv.s = 1.0;
+				colors[i + 7] = hsv.toRGBWeb(false);
+				hsv.v = 2.0 / 3.0;
+				colors[i + 8] = hsv.toRGBWeb(false);
+				hsv.v = 1.0 / 3.0;
+				colors[i + 9] = hsv.toRGBWeb(false);
+			}
+
+			margin = (UI.dialogMargin >> 1);
+			contentsTop = margin;
+
+			setMinimumWidth((contentsWidth = ((UI.defaultControlSize * 5) + (UI.controlMargin * 4))) + (margin << 1));
+			setMinimumHeight((contentsHeight = ((UI.defaultControlSize * 31) + (UI.controlMargin * 30))) + (margin << 1));
+			setOnClickListener(this);
+		}
+
+		public boolean currentColorExists() {
+			return (currentColor >= 0);
+		}
+
+		public void bringCurrentIntoView() {
+			if (currentColor < 0)
+				return;
+
+			int x = (currentColor % 5);
+			int y = (currentColor / 5);
+
+			if (x != 0) x = (contentsLeft + (UI.defaultControlSize * x) + (UI.controlMargin * (x - 1)));
+			if (y != 0) y = (contentsTop + (UI.defaultControlSize * y) + (UI.controlMargin * (y - 1)));
+
+			if (attached && colorSwatchMode && scrollView != null)
+				scrollView.scrollTo(x, y);
+		}
+
+		public void setColor(int color) {
+			color |= 0xff000000;
+			int currentColor = -1;
+			for (int i = colors.length - 1; i >= 0; i--) {
+				if (color == colors[i]) {
+					currentColor = i;
+					break;
+				}
+			}
+			if (this.currentColor != currentColor) {
+				this.currentColor = currentColor;
+				invalidate();
+			}
+		}
+
+		@Override
+		@ExportedProperty(category = "drawing")
+		public boolean isOpaque() {
+			return false;
+		}
+
+		@Override
+		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+			final int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
+			setMeasuredDimension(width >= (contentsWidth + (margin << 1)) ? width : (contentsWidth + (margin << 1)), contentsHeight + (margin << 1));
+		}
+
+		@Override
+		protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+			contentsLeft = ((w - contentsWidth) >> 1);
+			bringCurrentIntoView();
+		}
+
+		@Override
+		public boolean onTouchEvent(@NonNull MotionEvent event) {
+			if (isEnabled() && event.getAction() == MotionEvent.ACTION_DOWN) {
+				lastX = (int)event.getX();
+				lastY = (int)event.getY();
+			}
+			return super.onTouchEvent(event);
+		}
+
+		@Override
+		public void onClick(View v) {
+			//we need to handle clicks in here, rather than inside performClick()
+			//because if the listener is null, no sound effects are played (if they are configured)
+			if (lastX != Integer.MIN_VALUE) {
+				int x = lastX;
+				int y = lastY;
+				lastX = Integer.MIN_VALUE;
+				lastY = Integer.MIN_VALUE;
+				if (x < contentsLeft) return;
+				if (x >= (contentsLeft + contentsWidth)) return;
+				if (y < contentsTop) y = contentsTop;
+				else if (y >= (contentsTop + contentsHeight)) y = contentsTop + contentsHeight - 1;
+				x -= contentsLeft;
+				y -= contentsTop;
+				x /= (UI.defaultControlSize + UI.controlMargin);
+				y /= (UI.defaultControlSize + UI.controlMargin);
+				final int currentColor = ((y * 5) + x);
+				if (this.currentColor != currentColor) {
+					this.currentColor = currentColor;
+					invalidate();
+					ColorPickerView.this.setColor(colors[currentColor], true);
+				}
+			}
+		}
+
+		@Override
+		public void draw(Canvas canvas) {
+			super.draw(canvas);
+			UI.rect.top = contentsTop;
+			UI.rect.bottom = contentsTop + UI.defaultControlSize;
+			int i = 0;
+			for (int y = 0; y < 31; y++) {
+				UI.rect.left = contentsLeft;
+				UI.rect.right = contentsLeft + UI.defaultControlSize;
+				for (int x = 0; x < 5; x++, i++) {
+					UI.fillRect(canvas, colors[i]);
+					if (i == currentColor) {
+						UI.strokeRect(canvas, 0xff000000, UI.strokeSize);
+						UI.rect.inset(UI.strokeSize, UI.strokeSize);
+						UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
+						UI.rect.inset(-UI.strokeSize, -UI.strokeSize);
+					}
+					UI.rect.left += (UI.defaultControlSize + UI.controlMargin);
+					UI.rect.right += (UI.defaultControlSize + UI.controlMargin);
+				}
+				UI.rect.top += (UI.defaultControlSize + UI.controlMargin);
+				UI.rect.bottom += (UI.defaultControlSize + UI.controlMargin);
+			}
+		}
+
+		@Override
+		protected void onAttachedToWindow() {
+			attached = true;
+			super.onAttachedToWindow();
+		}
+
+		@Override
+		protected void onDetachedFromWindow() {
+			super.onDetachedFromWindow();
+			attached = false;
+		}
+	}
+
+	private final class ColorView extends View {
+		private Bitmap bitmap;
+		private final ColorUtils.HSV hsv;
+		private int saturation, saturationPosition, value, valuePosition, viewWidth, viewHeight, backgroundColor;
+		private boolean tracking;
+
+		public ColorView(Context context) {
+			super(context);
+
+			super.setBackgroundResource(0);
+			super.setDrawingCacheEnabled(false);
+
+			hsv = new ColorUtils.HSV(0.0, 1.0, 1.0);
+			backgroundColor = 0xffff0000;
+			final int _100dp = UI.dpToPxI(100.0f);
+			setMinimumWidth(_100dp);
+			setMinimumHeight(_100dp);
+		}
+
+		public void setHue(int hue) {
+			hsv.h = (double)hue / 360.0;
+			backgroundColor = hsv.toRGB(false);
+			invalidate();
+		}
+
+		public void setSaturation(int saturation, boolean notifyChanges) {
+			if (this.saturation != saturation) {
+				this.saturation = (saturation <= 0 ? 0 : (saturation >= 100 ? 100 : saturation));
+				saturationPosition = (((100 - this.saturation) * (viewHeight - UI.strokeSize)) / 100);
+				invalidate();
+				if (notifyChanges)
+					onSaturationChanged(this.saturation);
+			}
+		}
+
+		public void setValue(int value, boolean notifyChanges) {
+			if (this.value != value) {
+				this.value = (value <= 0 ? 0 : (value >= 100 ? 100 : value));
+				valuePosition = ((this.value * (viewWidth - UI.strokeSize)) / 100);
+				invalidate();
+				if (notifyChanges)
+					onValueChanged(this.value);
+			}
+		}
+
+		@Override
+		@ExportedProperty(category = "drawing")
+		public boolean isOpaque() {
+			return true;
+		}
+
+		@Override
+		protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+			if (h < 2 || w < 2)
+				return;
+
+			viewWidth = w;
+			viewHeight = h;
+			if (bitmap == null || bitmap.getHeight() != h) {
+				if (bitmap != null)
+					bitmap.recycle();
+				final int[] colors = new int[w * h];
+				final ColorUtils.HSV hsv = new ColorUtils.HSV(0.0, 1.0, 0.0);
+				for (int y = 0; y < h; y++) {
+					hsv.s = (double)((h - 1) - y) / (double)(h - 1);
+					for (int x = 0; x < w; x++) {
+						hsv.v = (double)x / (double)(w - 1);
+						final int color = hsv.toRGB(false);
+						final int r = (color >>> 16) & 0xff;
+						final int other = color & 0xff;
+						final int alpha = 255 - r + other;
+						colors[(y * w) + x] = (alpha << 24) | (r << 16) | (r << 8) | r;
+					}
+				}
+				bitmap = Bitmap.createBitmap(colors, w, h, Bitmap.Config.ARGB_8888);
+			}
+			saturationPosition = (((100 - saturation) * (viewHeight - UI.strokeSize)) / 100);
+			valuePosition = ((value * (viewWidth - UI.strokeSize)) / 100);
+		}
+
+		private void trackTouchEvent(int x, int y) {
+			setSaturation((100 * (viewHeight - y)) / (viewHeight - UI.strokeSize), true);
+			setValue((100 * x) / (viewWidth - UI.strokeSize), true);
+		}
+
+		@Override
+		public boolean onTouchEvent(@NonNull MotionEvent event) {
+			if (!isEnabled())
+				return false;
+
+			switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				tracking = true;
+				setPressed(true);
+				trackTouchEvent((int)event.getX(), (int)event.getY());
+				if (getParent() != null)
+					getParent().requestDisallowInterceptTouchEvent(true);
+				playSoundEffect(SoundEffectConstants.CLICK);
+				break;
+			case MotionEvent.ACTION_MOVE:
+				if (tracking)
+					trackTouchEvent((int)event.getX(), (int)event.getY());
+				break;
+			case MotionEvent.ACTION_UP:
+				setPressed(false);
+				if (tracking) {
+					trackTouchEvent((int)event.getX(), (int)event.getY());
+					tracking = false;
+				}
+				break;
+			case MotionEvent.ACTION_CANCEL:
+				setPressed(false);
+				invalidate();
+				tracking = false;
+				break;
+			}
+			return true;
+		}
+
+		@Override
+		public void draw(Canvas canvas) {
+			super.draw(canvas);
+			if (bitmap == null)
+				return;
+			getDrawingRect(UI.rect);
+			canvas.drawColor(backgroundColor);
+			canvas.drawBitmap(bitmap, 0.0f, 0.0f, null);
+			UI.rect.left = valuePosition - UI.strokeSize;
+			UI.rect.right = valuePosition;
+			UI.fillRect(canvas, 0xffffffff);
+			UI.rect.left += UI.strokeSize;
+			UI.rect.right += UI.strokeSize;
+			UI.fillRect(canvas, 0xff000000);
+			UI.rect.left += UI.strokeSize;
+			UI.rect.right += UI.strokeSize;
+			UI.fillRect(canvas, 0xffffffff);
+
+			UI.rect.left = 0;
+			UI.rect.right = viewWidth;
+
+			UI.rect.top = saturationPosition - UI.strokeSize;
+			UI.rect.bottom = saturationPosition;
+			UI.fillRect(canvas, 0xffffffff);
+			UI.rect.top += UI.strokeSize;
+			UI.rect.bottom += UI.strokeSize;
+			UI.fillRect(canvas, 0xff000000);
+			UI.rect.top += UI.strokeSize;
+			UI.rect.bottom += UI.strokeSize;
+			UI.fillRect(canvas, 0xffffffff);
+
+			// ;)
+			UI.rect.left = valuePosition;
+			UI.rect.top = saturationPosition - UI.strokeSize;
+			UI.rect.right = valuePosition + UI.strokeSize;
+			UI.rect.bottom = saturationPosition + (UI.strokeSize << 1);
+			UI.fillRect(canvas, 0xff000000);
+		}
+
+		@Override
+		protected void onDetachedFromWindow() {
+			if (bitmap != null) {
+				bitmap.recycle();
+				bitmap = null;
+			}
+			super.onDetachedFromWindow();
+		}
+	}
+
+	private final class HueView extends View {
+		private Bitmap bitmap;
+		private int hue, huePosition, viewSize;
+		private boolean tracking;
+		private final boolean vertical;
+
+		public HueView(Context context, boolean vertical) {
+			super(context);
+
+			super.setBackgroundResource(0);
+			super.setDrawingCacheEnabled(false);
+
+			this.vertical = vertical;
+			setMinimumWidth((UI.defaultControlSize * 3) >> 2);
+			setMinimumHeight((UI.defaultControlSize * 3) >> 2);
+		}
+
+		public void setHue(int hue, boolean notifyChanges) {
+			if (this.hue != hue) {
+				this.hue = (hue <= 0 ? 0 : (hue >= 360 ? 360 : hue));
+				huePosition = ((this.hue * (viewSize - UI.strokeSize)) / 360);
+				invalidate();
+				if (colorView != null)
+					colorView.setHue(this.hue);
+				if (notifyChanges)
+					onHueChanged(this.hue);
+			}
+		}
+
+		@Override
+		@ExportedProperty(category = "drawing")
+		public boolean isOpaque() {
+			return true;
+		}
+
+		@Override
+		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+			if (vertical)
+				setMeasuredDimension((UI.defaultControlSize * 3) >> 2, getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
+			else
+				setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec), (UI.defaultControlSize * 3) >> 2);
+		}
+
+		private int[] computeColors(int size) {
+			final int[] colors = new int[size];
+			final ColorUtils.HSV hsv = new ColorUtils.HSV(0.0, 1.0, 1.0);
+			for (int i = 0; i < size; i++) {
+				hsv.h = (double)i / (double)(size - 1);
+				colors[i] = hsv.toRGB(false);
+			}
+			return colors;
+		}
+
+		@Override
+		protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+			super.onSizeChanged(w, h, oldw, oldh);
+			if (h < 2 || w < 2)
+				return;
+
+			if (vertical) {
+				viewSize = h;
+				if (bitmap == null || bitmap.getHeight() != h) {
+					if (bitmap != null)
+						bitmap.recycle();
+					bitmap = Bitmap.createBitmap(computeColors(h), 1, h, Bitmap.Config.ARGB_8888);
+				}
+			} else {
+				viewSize = w;
+				if (bitmap == null || bitmap.getWidth() != w) {
+					if (bitmap != null)
+						bitmap.recycle();
+					bitmap = Bitmap.createBitmap(computeColors(w), w, 1, Bitmap.Config.ARGB_8888);
+				}
+			}
+			huePosition = ((hue * (viewSize - UI.strokeSize)) / 360);
+		}
+
+		private void trackTouchEvent(int position) {
+			setHue((360 * position) / (viewSize - UI.strokeSize), true);
+		}
+
+		@Override
+		public boolean onTouchEvent(@NonNull MotionEvent event) {
+			if (!isEnabled())
+				return false;
+
+			switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				tracking = true;
+				setPressed(true);
+				trackTouchEvent((int)(vertical ? event.getY() : event.getX()));
+				if (getParent() != null)
+					getParent().requestDisallowInterceptTouchEvent(true);
+				playSoundEffect(SoundEffectConstants.CLICK);
+				break;
+			case MotionEvent.ACTION_MOVE:
+				if (tracking)
+					trackTouchEvent((int)(vertical ? event.getY() : event.getX()));
+				break;
+			case MotionEvent.ACTION_UP:
+				setPressed(false);
+				if (tracking) {
+					trackTouchEvent((int)(vertical ? event.getY() : event.getX()));
+					tracking = false;
+				}
+				break;
+			case MotionEvent.ACTION_CANCEL:
+				setPressed(false);
+				invalidate();
+				tracking = false;
+				break;
+			}
+			return true;
+		}
+
+		@Override
+		public void draw(Canvas canvas) {
+			super.draw(canvas);
+			if (bitmap == null)
+				return;
+			getDrawingRect(UI.rect);
+			if (vertical) {
+				for (int i = UI.rect.left; i < UI.rect.right; i++)
+					canvas.drawBitmap(bitmap, (float)i, 0.0f, null);
+				UI.rect.top += huePosition - UI.strokeSize;
+				UI.rect.bottom = huePosition;
+				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
+				UI.rect.top += UI.strokeSize;
+				UI.rect.bottom += UI.strokeSize;
+				UI.strokeRect(canvas, 0xff000000, UI.strokeSize);
+				UI.rect.top += UI.strokeSize;
+				UI.rect.bottom += UI.strokeSize;
+				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
+			} else {
+				for (int i = UI.rect.top; i < UI.rect.bottom; i++)
+					canvas.drawBitmap(bitmap, 0.0f, (float)i, null);
+				UI.rect.left = huePosition - UI.strokeSize;
+				UI.rect.right = huePosition;
+				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
+				UI.rect.left += UI.strokeSize;
+				UI.rect.right += UI.strokeSize;
+				UI.strokeRect(canvas, 0xff000000, UI.strokeSize);
+				UI.rect.left += UI.strokeSize;
+				UI.rect.right += UI.strokeSize;
+				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
+			}
+		}
+
+		@Override
+		protected void onDetachedFromWindow() {
+			if (bitmap != null) {
+				bitmap.recycle();
+				bitmap = null;
+			}
+			super.onDetachedFromWindow();
+		}
+	}
+
+	private ObservableScrollView scrollView;
+	private ColorSwatchView colorSwatchView;
+	private ColorView colorView;
+	private HueView hueView;
+	private LinearLayout controlPanel;
+	private BgEditText txtH, txtS, txtV, txtHTML;
+	private final ColorUtils.HSV hsv = new ColorUtils.HSV();
+	private int h, s, v, rgb;
+	private boolean ignoreChanges, oneShot, colorSwatchMode;
 	private OnColorPickerViewListener listener;
-	
-	public static void showDialog(Context context, int initialColor, View parentView, OnColorPickerViewListener listener) {
-		final ColorPickerView picker = new ColorPickerView(context, initialColor);
-		picker.parentView = parentView;
-		picker.listener = listener;
-		final BgDialog dialog = new BgDialog(context, picker, picker);
-		dialog.setOnDismissListener(picker);
+	private View parentView;
+
+	public static void showDialog(Context context, int initialColor, View parentView, boolean oneShot, OnColorPickerViewListener listener) {
+		ColorPickerView view = new ColorPickerView(context, parentView, oneShot);
+		view.setColor(initialColor, true);
+		//call setOnColorPickerViewListener() after setColor(), so the listener is not notified if oneShot is false
+		view.setOnColorPickerViewListener(listener);
+		view.setColorSwatchMode(view.colorSwatchView.currentColorExists());
+		final BgDialog dialog = new BgDialog(context, view, view);
+		dialog.setTitle(null);
+		dialog.setNeutralButton(R.string.more);
 		dialog.setPositiveButton(R.string.ok);
-		dialog.setNegativeButton(R.string.cancel);
+		if (oneShot)
+			dialog.setNegativeButton(R.string.cancel);
 		dialog.show();
 	}
-	
-	private ColorPickerView(Context context, int initialColor) {
+
+	public ColorPickerView(Context context, View parentView, boolean oneShot) {
 		super(context);
-		init(context, initialColor);
-	}
-	
-	public ColorPickerView(Context context) {
-		super(context);
-		init(context, 0);
-	}
-	
-	public ColorPickerView(Context context, AttributeSet attrs) {
-		super(context, attrs);
-		init(context, 0);
-	}
-	
-	public ColorPickerView(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
-		init(context, 0);
-	}
-	
-	@SuppressWarnings("deprecation")
-	private void init(Context context, int initialColor) {
-		setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
-		final int eachW = (UI._18sp * 7) >> 1;
-		final boolean smallScreen = (UI.isLowDpiScreen && !UI.isLargeScreen);
-		initialColor = 0xff000000 | (initialColor & 0x00ffffff);
-		hsv = new HSV();
-		hsv.fromRGB(initialColor);
-		hsvTmp = new HSV();
-		bmpRect = new Rect(0, 0, 1, 1);
-		this.initialColor = initialColor;
-		currentColor = initialColor;
-		sliderColor = (UI.isAndroidThemeLight() ? 0xff000000 : 0xffffffff);
-		final LinearLayout l = new LinearLayout(context);
-		l.setId(1);
-		l.setWeightSum(2);
-		LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-		addView(l, p);
-		final TextView lbl = new TextView(context);
-		lbl.setBackgroundDrawable(new ColorDrawable(initialColor));
-		LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, smallScreen ? (UI.defaultControlSize) >> 1 : UI.defaultControlSize);
-		lp.weight = 1;
-		lp.rightMargin = UI.controlSmallMargin;
-		l.addView(lbl, lp);
-		bgCurrent = new ColorDrawable(initialColor);
-		lblCurrent = new TextView(context);
-		lblCurrent.setBackgroundDrawable(bgCurrent);
-		lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, smallScreen ? (UI.defaultControlSize) >> 1 : UI.defaultControlSize);
-		lp.weight = 1;
-		lp.leftMargin = UI.controlSmallMargin;
-		l.addView(lblCurrent, lp);
 
-		TextView lblTit = UI.createDialogTextView(context, 2, "H");
-		lblTit.setGravity(Gravity.CENTER);
-		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.BELOW, 1);
-		addView(lblTit, p);
-		lblTit = UI.createDialogTextView(context, 3, "S");
-		lblTit.setGravity(Gravity.CENTER);
-		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.BELOW, 1);
-		addView(lblTit, p);
-		lblTit = UI.createDialogTextView(context, 4, "V");
-		lblTit.setGravity(Gravity.CENTER);
-		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.BELOW, 1);
-		addView(lblTit, p);
-		
-		barH = new BgSeekBar(context);
-		barH.setId(5);
-		barH.setMax(360);
-		barH.setValue((int)(hsv.h * 360.0));
-		barH.setSliderMode(true);
-		barH.setVertical(true);
-		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
-		p.addRule(RelativeLayout.ALIGN_LEFT, 2);
-		p.addRule(RelativeLayout.BELOW, 2);
-		p.addRule(RelativeLayout.ABOVE, 6);
-		addView(barH, p);
-		barS = new BgSeekBar(context);
-		barS.setMax(100);
-		barS.setValue((int)(hsv.s * 100.0));
-		barS.setSliderMode(true);
-		barS.setVertical(true);
-		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
-		p.addRule(RelativeLayout.ALIGN_LEFT, 3);
-		p.addRule(RelativeLayout.BELOW, 3);
-		p.addRule(RelativeLayout.ABOVE, 6);
-		addView(barS, p);
-		barV = new BgSeekBar(context);
-		barV.setMax(100);
-		barV.setValue((int)(hsv.v * 100.0));
-		barV.setSliderMode(true);
-		barV.setVertical(true);
-		p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.leftMargin = ((eachW - UI.defaultControlSize) >> 1);
-		p.addRule(RelativeLayout.ALIGN_LEFT, 4);
-		p.addRule(RelativeLayout.BELOW, 4);
-		p.addRule(RelativeLayout.ABOVE, 6);
-		addView(barV, p);
+		RelativeLayout.LayoutParams rp;
+		LinearLayout.LayoutParams lp;
 
-		txtH = UI.createDialogEditText(context, 6, Integer.toString((int)(hsv.h * 360.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		txtH.setGravity(Gravity.CENTER);
-		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ABOVE, 7);
-		addView(txtH, p);
-		txtS = UI.createDialogEditText(context, 0, Integer.toString((int)(hsv.s * 100.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		txtS.setGravity(Gravity.CENTER);
-		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ABOVE, 7);
-		addView(txtS, p);
-		txtV = UI.createDialogEditText(context, 0, Integer.toString((int)(hsv.v * 100.0)), null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		txtV.setGravity(Gravity.CENTER);
-		p = new LayoutParams(eachW, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ABOVE, 7);
-		addView(txtV, p);
+		this.parentView = parentView;
+		this.oneShot = oneShot;
 
-		txt = UI.createDialogEditText(context, 7, ColorUtils.toHexColor(initialColor), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		txt.setGravity(Gravity.CENTER);
-		p = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		p.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
-		p.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-		addView(txt, p);
-		
-		lbl.setOnClickListener(this);
-		barH.setOnBgSeekBarChangeListener(this);
-		barH.setOnBgSeekBarDrawListener(this);
-		barS.setOnBgSeekBarChangeListener(this);
-		barS.setOnBgSeekBarDrawListener(this);
-		barV.setOnBgSeekBarChangeListener(this);
-		barV.setOnBgSeekBarDrawListener(this);
-		txtH.addTextChangedListener(this);
-		txtS.addTextChangedListener(this);
-		txtV.addTextChangedListener(this);
-		txt.addTextChangedListener(this);
-	}
-	
-	private void cleanup() {
-		barH = null;
-		barS = null;
-		barV = null;
-		txt = null;
-		txtH = null;
-		txtS = null;
-		txtV = null;
-		lblCurrent = null;
-		hsv = null;
-		hsvTmp = null;
-		if (bmpH != null) {
-			bmpH.recycle();
-			bmpH = null;
+		scrollView = new ObservableScrollView(context);
+		scrollView.setForegroundGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+		colorSwatchView = new ColorSwatchView(context);
+		scrollView.addView(colorSwatchView, new ViewGroup.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+		addView(scrollView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+
+		//unfortunately, we cannot afford to waste a single pixel... :/
+		final int margin = (UI.isLargeScreen ? (UI.dialogMargin << 1) : UI.dialogMargin >> 1);
+		final int textSize = (UI.isLargeScreen ? UI.dialogTextSize : UI._14sp);
+		final int editViewWidthSmall = UI.measureText("_000_", textSize);
+		final int editViewWidth = UI.measureText("_#000000_", textSize);
+
+		setPadding(margin, margin, margin, margin);
+
+		if (UI.isLandscape || UI.isLargeScreen) {
+			controlPanel = new LinearLayout(context);
+			controlPanel.setOrientation(LinearLayout.VERTICAL);
+			controlPanel.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+			controlPanel.setId(1);
+
+			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), UI.isLargeScreen ? "H" : "HSV", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtH.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtH.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+			controlPanel.addView(txtH, lp);
+
+			txtS = UI.createDialogEditText(context, 0, Integer.toString(s), UI.isLargeScreen ? "S" : null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtS.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtS.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+			lp.topMargin = margin;
+			controlPanel.addView(txtS, lp);
+
+			txtV = UI.createDialogEditText(context, 0, Integer.toString(v), UI.isLargeScreen ? "V" : null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtV.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtV.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+			lp.topMargin = margin;
+			controlPanel.addView(txtV, lp);
+
+			txtHTML = UI.createDialogEditText(context, 0, ColorUtils.toHexColor(rgb), "HTML", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtHTML.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtHTML.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+			lp.topMargin = margin;
+			controlPanel.addView(txtHTML, lp);
+
+			rp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+			rp.addRule(ALIGN_PARENT_RIGHT);
+			controlPanel.setVisibility(GONE);
+			addView(controlPanel, rp);
+
+			hueView = new HueView(context, true);
+			hueView.setId(2);
+			rp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+			rp.rightMargin = UI.dialogMargin;
+			rp.addRule(LEFT_OF, 1);
+			hueView.setVisibility(GONE);
+			addView(hueView, rp);
+
+			colorView = new ColorView(context);
+			colorView.setId(3);
+			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+			rp.rightMargin = UI.dialogMargin;
+			rp.addRule(ALIGN_PARENT_LEFT);
+			rp.addRule(ALIGN_PARENT_TOP);
+			rp.addRule(ALIGN_PARENT_BOTTOM);
+			rp.addRule(LEFT_OF, 2);
+			colorView.setVisibility(GONE);
+			addView(colorView, rp);
+		} else {
+			controlPanel = new LinearLayout(context);
+			controlPanel.setOrientation(LinearLayout.HORIZONTAL);
+			controlPanel.setGravity(Gravity.CENTER_HORIZONTAL);
+			controlPanel.setId(1);
+
+			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), "H", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtH.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtH.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidthSmall, ViewGroup.LayoutParams.WRAP_CONTENT);
+			controlPanel.addView(txtH, lp);
+
+			txtS = UI.createDialogEditText(context, 0, Integer.toString(s), "S", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtS.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtS.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidthSmall, ViewGroup.LayoutParams.WRAP_CONTENT);
+			lp.leftMargin = margin;
+			controlPanel.addView(txtS, lp);
+
+			txtV = UI.createDialogEditText(context, 0, Integer.toString(v), "V", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtV.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtV.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidthSmall, ViewGroup.LayoutParams.WRAP_CONTENT);
+			lp.leftMargin = margin;
+			controlPanel.addView(txtV, lp);
+
+			txtHTML = UI.createDialogEditText(context, 0, ColorUtils.toHexColor(rgb), "HTML", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtHTML.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+			txtHTML.addTextChangedListener(this);
+			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+			lp.leftMargin = margin;
+			controlPanel.addView(txtHTML, lp);
+
+			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+			rp.topMargin = UI.dialogMargin;
+			rp.addRule(ALIGN_PARENT_BOTTOM);
+			controlPanel.setVisibility(GONE);
+			addView(controlPanel, rp);
+
+			hueView = new HueView(context, false);
+			hueView.setId(2);
+			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+			rp.topMargin = UI.dialogMargin;
+			rp.addRule(ABOVE, 1);
+			hueView.setVisibility(GONE);
+			addView(hueView, rp);
+
+			colorView = new ColorView(context);
+			colorView.setId(3);
+			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+			rp.addRule(ALIGN_PARENT_TOP);
+			rp.addRule(ALIGN_PARENT_LEFT);
+			rp.addRule(ALIGN_PARENT_RIGHT);
+			rp.addRule(ABOVE, 2);
+			colorView.setVisibility(GONE);
+			addView(colorView, rp);
 		}
-		if (bmpS != null) {
-			bmpS.recycle();
-			bmpS = null;
-		}
-		if (bmpV != null) {
-			bmpV.recycle();
-			bmpV = null;
-		}
-		bmpBuf = null;
-		bgCurrent = null;
-		parentView = null;
-		listener = null;
-		System.gc();
-	}
-	
-	private static Bitmap updateBitmap(Bitmap bmp, int width) {
-		if (bmp == null) {
-			return Bitmap.createBitmap(width, 1, Bitmap.Config.ARGB_8888);
-		} else if (bmp.getWidth() != width) {
-			bmp.recycle();
-			return Bitmap.createBitmap(width, 1, Bitmap.Config.ARGB_8888);
-		}
-		return bmp;
-	}
-	
-	private static IntBuffer updateBuffer(IntBuffer buffer, int width) {
-		buffer = ((buffer == null || buffer.capacity() < width) ? IntBuffer.allocate(width) : buffer);
-		buffer.clear();
-		buffer.limit(width);
-		return buffer;
-	}
-	
-	private void updateGH() {
-		final int h = barH.getHeight();
-		bmpH = updateBitmap(bmpH, h);
-		bmpBuf = updateBuffer(bmpBuf, h);
-		hsvTmp.s = hsv.s;
-		hsvTmp.v = hsv.v;
-		final double d = (double)(h - 1);
-		for (int i = 0; i < h; i++) {
-			hsvTmp.h = (double)i / d;
-			bmpBuf.put(i, hsvTmp.toRGB(true));
-		}
-		bmpH.copyPixelsFromBuffer(bmpBuf);
-	}
-	
-	private void updateGS() {
-		final int h = barS.getHeight();
-		bmpS = updateBitmap(bmpS, h);
-		bmpBuf = updateBuffer(bmpBuf, h);
-		hsvTmp.h = hsv.h;
-		hsvTmp.v = hsv.v;
-		final double d = (double)(h - 1);
-		for (int i = 0; i < h; i++) {
-			hsvTmp.s = (double)i / d;
-			bmpBuf.put(i, hsvTmp.toRGB(true));
-		}
-		bmpS.copyPixelsFromBuffer(bmpBuf);
-	}
-	
-	private void updateGV() {
-		final int h = barV.getHeight();
-		bmpV = updateBitmap(bmpV, h);
-		bmpBuf = updateBuffer(bmpBuf, h);
-		hsvTmp.h = hsv.h;
-		hsvTmp.s = hsv.s;
-		final double d = (double)(h - 1);
-		for (int i = 0; i < h; i++) {
-			hsvTmp.v = (double)i / d;
-			bmpBuf.put(i, hsvTmp.toRGB(true));
-		}
-		bmpV.copyPixelsFromBuffer(bmpBuf);
-	}
-	
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	@Override
-	public void setBackground(Drawable background) {
-		super.setBackground(null);
-	}
-	
-	@SuppressWarnings("deprecation")
-	@Override
-	@Deprecated
-	public void setBackgroundDrawable(Drawable background) {
-		super.setBackgroundDrawable(null);
-	}
-	
-	@Override
-	public void setBackgroundResource(int resid) {
-		super.setBackgroundResource(0);
-	}
-	
-	@Override
-	public void setBackgroundColor(int color) {
-		super.setBackgroundResource(0);
-	}
-	
-	@Override
-	public Drawable getBackground() {
-		return null;
 	}
 
-	@Override
-	@ExportedProperty(category = "drawing")
-	public boolean isOpaque() {
-		return false;
+	public void setColorSwatchMode(boolean colorSwatchMode) {
+		this.colorSwatchMode = colorSwatchMode;
+		if (scrollView != null) {
+			scrollView.setVisibility(colorSwatchMode ? VISIBLE : GONE);
+			if (colorSwatchMode)
+				colorSwatchView.bringCurrentIntoView();
+			colorView.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+			hueView.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+			controlPanel.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+		}
 	}
-	
-	@Override
-	protected void onDetachedFromWindow() {
-		super.onDetachedFromWindow();
-		cleanup();
+
+	public void setColor(int color) {
+		setColor(color, true);
 	}
-	
-	@Override
-	public void onClick(View view) {
-		if (txt.requestFocus())
-			txt.setText(ColorUtils.toHexColor(initialColor));
-	}
-	
-	@Override
-	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
-		if (ignoreChanges)
-			return;
-		hsv.h = barH.getValue() / 360.0;
-		hsv.s = barS.getValue() / 100.0;
-		hsv.v = barV.getValue() / 100.0;
-		currentColor = hsv.toRGB(false);
-		if (seekBar == barH) {
-			updateGS();
-			updateGV();
-		} else if (seekBar == barS) {
-			updateGH();
-			updateGV();
-		} else if (seekBar == barV) {
-			updateGH();
-			updateGS();
+
+	private void setColor(int color, boolean updateHTML) {
+		ignoreChanges = !updateHTML;
+		setRGB(color);
+		hsv.fromRGB(rgb);
+		h = (int)((hsv.h * 360.0) + 0.5);
+		s = (int)((hsv.s * 100.0) + 0.5);
+		v = (int)((hsv.v * 100.0) + 0.5);
+		hsv.h = (double)h / 360.0;
+		hsv.s = (double)s / 100.0;
+		hsv.v = (double)v / 100.0;
+		if (hueView != null)
+			hueView.setHue(h, false);
+		if (colorView != null) {
+			colorView.setSaturation(s, false);
+			colorView.setValue(v, false);
 		}
 		ignoreChanges = true;
-		txtH.setText(Integer.toString((int)(hsv.h * 360.0)));
-		txtS.setText(Integer.toString((int)(hsv.s * 100.0)));
-		txtV.setText(Integer.toString((int)(hsv.v * 100.0)));
-		txt.setText(ColorUtils.toHexColor(currentColor));
+		if (txtH != null)
+			txtH.setText(Integer.toString(h));
+		if (txtS != null)
+			txtS.setText(Integer.toString(s));
+		if (txtV != null)
+			txtV.setText(Integer.toString(v));
 		ignoreChanges = false;
-		barH.invalidate();
-		barS.invalidate();
-		barV.invalidate();
-		bgCurrent.setColor(currentColor);
-		lblCurrent.invalidate();
-	}
-	
-	@Override
-	public boolean onStartTrackingTouch(BgSeekBar seekBar) {
-		return true;
-	}
-	
-	@Override
-	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
-		System.gc();
 	}
 
-	@SuppressWarnings("SuspiciousNameCombination")
-	@Override
-	public void onSizeChanged(BgSeekBar seekBar, int width, int height) {
-		bmpRect.right = height;
-		if (seekBar == barH)
-			updateGH();
-		else if (seekBar == barS)
-			updateGS();
-		else if (seekBar == barV)
-			updateGV();
-	}
-	
-	@Override
-	public void onDraw(Canvas canvas, BgSeekBar seekBar, Rect rect, int filledSize) {
-		final Bitmap bmp = ((seekBar == barH) ? bmpH : ((seekBar == barS) ? bmpS : bmpV));
-		rect.bottom -= UI.controlMargin;
-		if (bmp != null) {
-			for (int i = rect.bottom - 1; i >= UI.controlMargin; i--)
-				canvas.drawBitmap(bmp, 0, i, null);
+	private void setRGB(int rgb) {
+		rgb |= 0xff000000;
+		if (!oneShot && listener != null && this.rgb != rgb)
+			listener.onColorPicked(this, parentView, rgb);
+		this.rgb = rgb;
+		if (colorSwatchView != null)
+			colorSwatchView.setColor(rgb);
+		if (!ignoreChanges) {
+			ignoreChanges = true;
+			if (txtHTML != null)
+				txtHTML.setText(ColorUtils.toHexColor(rgb));
+			ignoreChanges = false;
 		}
-		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERTOP, filledSize + UI.strokeSize - UI.controlMargin, 0, UI.controlLargeMargin, sliderColor);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + UI.strokeSize - UI.controlMargin, rect.bottom, UI.controlLargeMargin, sliderColor);
 	}
-	
+
+	public void setOnColorPickerViewListener(OnColorPickerViewListener listener) {
+		this.listener = listener;
+	}
+
 	@Override
-	public void afterTextChanged(Editable s) {
-		if (ignoreChanges)
+	public void onClick(DialogInterface dialog, int which) {
+		switch (which) {
+		case DialogInterface.BUTTON_NEUTRAL:
+			setColorSwatchMode(!colorSwatchMode);
 			return;
-		final View f = getFocusedChild();
-		if (f == txtH || f == txtS || f == txtV) {
-			int nh, ns, nv;
-			try {
-				nh = Integer.parseInt(txtH.getText().toString());
-				if (nh > 360 || nh < 0)
-					return;
-				ns = Integer.parseInt(txtS.getText().toString());
-				if (ns > 100 || ns < 0)
-					return;
-				nv = Integer.parseInt(txtV.getText().toString());
-				if (nv > 100 || nv < 0)
-					return;
-				hsv.h = (double)nh / 360.0;
-				hsv.s = (double)ns / 100.0;
-				hsv.v = (double)nv / 100.0;
-			} catch (Throwable ex) {
-				return;
-			}
-			ignoreChanges = true;
-			currentColor = hsv.toRGB(false);
-			barH.setValue(nh);
-			barS.setValue(ns);
-			barV.setValue(nv);
-			txt.setText(ColorUtils.toHexColor(currentColor));
-			ignoreChanges = false;
-		} else {
-			String cs = s.toString().trim();
-			if (cs.length() < 6)
-				return;
-			if (cs.charAt(0) == '#')
-				cs = cs.substring(1).trim();
-			if (cs.length() != 6)
-				return;
-			int c = ColorUtils.parseHexColor(cs);
-			if (c == 0)
-				return;
-			currentColor = c;
-			hsv.fromRGB(c);
-			ignoreChanges = true;
-			c = (int)(hsv.h * 360.0);
-			barH.setValue(c);
-			txtH.setText(Integer.toString(c));
-			c = (int)(hsv.s * 100.0);
-			barS.setValue(c);
-			txtS.setText(Integer.toString(c));
-			c = (int)(hsv.v * 100.0);
-			barV.setValue(c);
-			txtV.setText(Integer.toString(c));
-			ignoreChanges = false;
+		case DialogInterface.BUTTON_POSITIVE:
+			if (listener != null)
+				listener.onColorPicked(this, parentView, rgb);
+			break;
 		}
-		updateGH();
-		updateGS();
-		updateGV();
-		barH.invalidate();
-		barS.invalidate();
-		barV.invalidate();
-		bgCurrent.setColor(currentColor);
-		lblCurrent.invalidate();
+		dialog.dismiss();
 	}
-	
+
 	@Override
 	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 	}
-	
+
 	@Override
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
 	}
 
 	@Override
-	public void onDismiss(DialogInterface dialog) {
-		cleanup();
+	public void afterTextChanged(Editable editable) {
+		View focusedView = getFocusedChild();
+		while (focusedView != null && !(focusedView instanceof BgEditText))
+			focusedView = ((focusedView instanceof ViewGroup) ? ((ViewGroup)focusedView).getFocusedChild() : null);
+		if (focusedView == null || ignoreChanges)
+			return;
+		if (focusedView == txtH) {
+			try {
+				h = Integer.parseInt(txtH.getText().toString());
+				if (h < 0)
+					h = 0;
+				else if (h > 360)
+					h = 360;
+				hsv.h = (double)h / 360.0;
+				setRGB(hsv.toRGB(false));
+				hueView.setHue(h, false);
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		} else if (focusedView == txtS) {
+			try {
+				s = Integer.parseInt(txtS.getText().toString());
+				if (s < 0)
+					s = 0;
+				else if (s > 100)
+					s = 100;
+				hsv.s = (double)s / 100.0;
+				setRGB(hsv.toRGB(false));
+				colorView.setSaturation(s, false);
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		} else if (focusedView == txtV) {
+			try {
+				v = Integer.parseInt(txtV.getText().toString());
+				if (v < 0)
+					v = 0;
+				else if (v > 100)
+					v = 100;
+				hsv.v = (double)v / 100.0;
+				setRGB(hsv.toRGB(false));
+				colorView.setValue(v, false);
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		} else if (focusedView == txtHTML) {
+			String hex = txtHTML.getText().toString();
+			if (hex.length() < 6)
+				return;
+			if (hex.charAt(0) == '#')
+				hex = hex.substring(1);
+			if (hex.length() != 6)
+				return;
+			try {
+				setColor(0xff000000 | Integer.parseInt(hex, 16), false);
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		}
+	}
+
+	private void onHueChanged(int h) {
+		if (txtH != null) {
+			this.h = h;
+			hsv.h = (double)h / 360.0;
+			setRGB(hsv.toRGB(false));
+			ignoreChanges = true;
+			txtH.setText(Integer.toString(h));
+			ignoreChanges = false;
+		}
+	}
+
+	private void onSaturationChanged(int s) {
+		if (txtS != null) {
+			this.s = s;
+			hsv.s = (double)s / 100.0;
+			setRGB(hsv.toRGB(false));
+			ignoreChanges = true;
+			txtS.setText(Integer.toString(s));
+			ignoreChanges = false;
+		}
+	}
+
+	private void onValueChanged(int v) {
+		if (txtV != null) {
+			this.v = v;
+			hsv.v = (double)v / 100.0;
+			setRGB(hsv.toRGB(false));
+			ignoreChanges = true;
+			txtV.setText(Integer.toString(v));
+			ignoreChanges = false;
+		}
 	}
 
 	@Override
-	public void onClick(DialogInterface dialog, int which) {
-		if (which == AlertDialog.BUTTON_POSITIVE && listener != null)
-			listener.onColorPicked(this, parentView, currentColor);
-		cleanup();
-		dialog.dismiss();
+	protected void onDetachedFromWindow() {
+		scrollView = null;
+		colorSwatchView = null;
+		colorView = null;
+		hueView = null;
+		controlPanel = null;
+		txtH = null;
+		txtS = null;
+		txtV = null;
+		txtHTML = null;
+		listener = null;
+		super.onDetachedFromWindow();
 	}
 }

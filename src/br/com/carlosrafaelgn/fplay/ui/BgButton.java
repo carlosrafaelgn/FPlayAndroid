@@ -89,6 +89,8 @@ public final class BgButton extends Button {
 		super.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
 		super.setFocusableInTouchMode(!UI.hasTouch);
 		super.setFocusable(true);
+		super.setMinimumWidth(UI.defaultControlSize);
+		super.setMinimumHeight(UI.defaultControlSize);
 		//Seriously?! Feature?!?!? :P
 		//http://stackoverflow.com/questions/26958909/why-is-my-button-text-coerced-to-all-caps-on-lollipop
 		super.setTransformationMethod(null);

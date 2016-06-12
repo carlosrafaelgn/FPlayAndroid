@@ -46,7 +46,7 @@ import android.widget.TextView;
 import java.lang.reflect.Field;
 
 public final class BgEditText extends EditText {
-	private int state, paddingLeft, paddingRight, colorNormal, colorFocused;
+	private int state, paddingLeft, paddingRight, colorNormal, colorFocused, textSize, textBox, textY, textMargin;
 	private String contentDescription;
 
 	public BgEditText(Context context) {
@@ -67,6 +67,17 @@ public final class BgEditText extends EditText {
 	private void init() {
 		super.setBackgroundResource(0);
 		super.setDrawingCacheEnabled(false);
+		if (UI.isLargeScreen) {
+			textSize = UI._18sp;
+			textBox = UI._18spBox;
+			textY = UI._18spYinBox;
+			textMargin = UI.controlMargin;
+		} else {
+			textSize = UI._14sp;
+			textBox = UI._14spBox;
+			textY = UI._14spYinBox;
+			textMargin = UI.controlSmallMargin;
+		}
 	}
 
 	@SuppressWarnings("deprecation")
@@ -100,14 +111,14 @@ public final class BgEditText extends EditText {
 
 	@Override
 	public void setPadding(int left, int top, int right, int bottom) {
-		super.setPadding((paddingLeft = left), (contentDescription == null) ? 0 : UI.dialogTextSizeBox, (paddingRight = right), UI.thickDividerSize + UI.strokeSize);
+		super.setPadding((paddingLeft = left), (contentDescription == null) ? 0 : (textBox + textMargin), (paddingRight = right), UI.thickDividerSize << 1);
 	}
 
 	@Override
 	public void setContentDescription(CharSequence contentDescription) {
 		this.contentDescription = ((contentDescription == null || contentDescription.length() == 0)? null : contentDescription.toString());
 		super.setContentDescription(this.contentDescription);
-		super.setPadding(paddingLeft, (contentDescription == null) ? 0 : UI.dialogTextSizeBox, paddingRight, UI.thickDividerSize + UI.strokeSize);
+		super.setPadding(paddingLeft, (this.contentDescription == null) ? 0 : (textBox + textMargin), paddingRight, UI.thickDividerSize << 1);
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -154,7 +165,7 @@ public final class BgEditText extends EditText {
 	protected void onDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
 		if (contentDescription != null)
-			UI.drawText(canvas, contentDescription, colorFocused, UI._14sp, UI.rect.left, UI._14spYinBox);
+			UI.drawText(canvas, contentDescription, colorFocused, textSize, UI.rect.left, textY);
 		UI.rect.top = UI.rect.bottom - (state == 0 ? UI.strokeSize : UI.thickDividerSize);
 		UI.fillRect(canvas, state == 0 ? colorNormal : colorFocused);
 		super.onDraw(canvas);

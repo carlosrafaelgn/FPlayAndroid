@@ -29,7 +29,7 @@
     <string name="msg_select_favorite_remove">Por favor, selecione um favorito para remover</string>
     <string name="msg_turn_off_title">Desligamento automático</string>
     <string name="msg_turn_off">Desligar o player depois de quantos minutos?</string>
-    <string name="msg_enter_name">Digite um nome para a nova %s:</string>
+    <string name="msg_enter_name">Digite um nome para a nova %s</string>
     <string name="msg_confirm_overwrite">Quer mesmo sobrescrever a %1$s \"%2$s\"?</string>
     <string name="msg_confirm_delete">Quer mesmo excluir a %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Sobrescrever %1$s \"%2$s\"</string>

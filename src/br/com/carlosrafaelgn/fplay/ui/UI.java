@@ -438,7 +438,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress;
-	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogTextSize, dialogTextSizeBox, dialogTextSizeYInBox, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
+	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogTextSize, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
 		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
@@ -564,13 +564,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			_LargeItemsp = _18sp;
 			_LargeItemspBox = _18spBox;
 			_LargeItemspYinBox = _18spYinBox;
-		}
-		if (isLargeScreen || !isLowDpiScreen) {
-			dialogTextSizeBox = _18spBox;
-			dialogTextSizeYInBox = _18spYinBox;
-		} else {
-			dialogTextSizeBox = _14spBox;
-			dialogTextSizeYInBox = _14spYinBox;
 		}
 	}
 
@@ -793,11 +786,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		menuMargin = controlMargin;
 		if (isLargeScreen || !isLowDpiScreen) {
 			dialogTextSize = _18sp;
-			dialogMargin = controlMargin;
+			dialogMargin = controlLargeMargin;
 			menuMargin += controlSmallMargin;
 		} else {
 			dialogTextSize = _14sp;
-			dialogMargin = controlMargin >> 1;
+			dialogMargin = controlMargin;
 		}
 		dialogDropDownVerticalMargin = (dialogMargin * 3) >> 1;
 		defaultControlContentsSize = dpToPxI(32);
@@ -1384,17 +1377,17 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			setAndroidThemeAccordingly(activityHost);
 	}
 
-	public static boolean isAndroidThemeLight() {
-		return ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) && (ColorUtils.relativeLuminance(color_menu) >= 0.5));
-	}
+	//public static boolean isAndroidThemeLight() {
+	//	return ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) && (ColorUtils.relativeLuminance(color_menu) >= 0.5));
+	//}
 
 	public static void setAndroidThemeAccordingly(ActivityHost activityHost) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-			Player.theApplication.setTheme(isAndroidThemeLight() ? R.style.AppTheme : R.style.AppThemeDark);
-			activityHost.setTheme(isAndroidThemeLight() ? R.style.AppTheme : R.style.AppThemeDark);
+		//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+		//	Player.theApplication.setTheme(isAndroidThemeLight() ? R.style.AppTheme : R.style.AppThemeDark);
+		//	activityHost.setTheme(isAndroidThemeLight() ? R.style.AppTheme : R.style.AppThemeDark);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 				activityHost.updateSystemColors(true);
-		}
+		//}
 		if (UI.notFullscreen)
 			activityHost.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 	}
@@ -1875,7 +1868,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 		final ObservableScrollView scrollView = new ObservableScrollView(context, PLACEMENT_ALERT);
 		final TextView txt = createDialogTextView(context, 0, messageOnly);
-		txt.setPadding(dialogMargin << 1, dialogMargin << 1, dialogMargin << 1, dialogMargin << 1);
+		txt.setPadding(dialogMargin, dialogMargin, dialogMargin, dialogMargin);
 		scrollView.addView(txt);
 		return scrollView;
 	}

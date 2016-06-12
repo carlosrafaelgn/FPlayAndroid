@@ -29,7 +29,7 @@
     <string name="msg_select_favorite_remove">Будь ласка, виберіть обране для видалення</string>
     <string name="msg_turn_off_title">Автоматичне вимкнення</string>
     <string name="msg_turn_off">Вимкнути програвач через скільки хвилин?</string>
-    <string name="msg_enter_name">Введіть ім\'я для нового %s:</string>
+    <string name="msg_enter_name">Введіть ім\'я для нового %s</string>
     <string name="msg_confirm_overwrite">Ви дійсно бажаєте перезаписати %1$s \"%2$s\"?</string>
     <string name="msg_confirm_delete">Ви дійсно бажаєте видалити %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Перезаписати %1$s \"%2$s\"</string>

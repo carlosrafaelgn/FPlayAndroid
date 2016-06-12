@@ -43,8 +43,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.ColorStateList;
-import android.util.TypedValue;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -62,9 +61,11 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseItem;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
+import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
+import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, AlertDialog.OnClickListener, AlertDialog.OnCancelListener, AlertDialog.OnDismissListener, AdapterView.OnItemClickListener {
@@ -80,8 +81,6 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	public static final int ERROR_CONNECTION = -6;
 	public static final int ERROR_COMMUNICATION = -7;
 
-	private static ColorStateList defaultTextColors, highlightTextColors;
-
 	public interface BluetoothObserver {
 		void onBluetoothPairingStarted(BluetoothConnectionManager manager, String description, String address);
 		void onBluetoothPairingFinished(BluetoothConnectionManager manager, String description, String address, boolean success);
@@ -91,20 +90,21 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	}
 
 	private static final class DeviceItem extends BaseItem {
-		public final String name, description, address;
+		public final String name, address;
 		public final boolean paired, recentlyUsed;
+		public final FileSt fileSt;
 
 		public DeviceItem(String name, String address, boolean paired, boolean recentlyUsed) {
 			this.name = name;
-			this.description = name + " - " + address;
 			this.address = address;
 			this.paired = paired;
 			this.recentlyUsed = recentlyUsed;
+			this.fileSt = new FileSt(address, name + " - " + address, 0);
 		}
 
 		@Override
 		public String toString() {
-			return description;
+			return fileSt.name;
 		}
 	}
 
@@ -115,28 +115,23 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-			TextView txt = (TextView)convertView;
-			if (txt == null) {
-				txt = new TextView(Player.theApplication);
-				txt.setPadding(UI.dialogMargin, UI.dialogDropDownVerticalMargin, UI.dialogMargin, UI.dialogDropDownVerticalMargin);
-				txt.setTypeface(UI.defaultTypeface);
-				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
-			}
-			txt.setTextColor(items[position].recentlyUsed ? highlightTextColors : defaultTextColors);
-			txt.setText(items[position].description);
-			return txt;
+			FileView view = (FileView)convertView;
+			if (view == null)
+				view = new FileView(Player.theApplication, null, false);
+			view.setItemState(items[position].fileSt, position, getItemState(position) | (items[position].recentlyUsed ? UI.STATE_CURRENT : 0));
+			return view;
 		}
 
 		@Override
 		public int getViewHeight() {
-			return 0;
+			return FileView.getViewHeight();
 		}
 
 		@Override
 		public int compare(DeviceItem a, DeviceItem b) {
 			//if (a.recentlyUsed != b.recentlyUsed)
 			//	return (a.recentlyUsed ? -1 : 1);
-			return a.description.compareToIgnoreCase(b.description);
+			return a.fileSt.name.compareToIgnoreCase(b.fileSt.name);
 		}
 
 		public void sort() {
@@ -254,7 +249,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			destroyUI();
 			connecting = false;
 			if (observer != null && callObserver) {
-				observer.onBluetoothPairingFinished(this, deviceItem.description, deviceItem.address, success);
+				observer.onBluetoothPairingFinished(this, deviceItem.fileSt.name, deviceItem.address, success);
 				if (cancelled)
 					observer.onBluetoothCancelled(this);
 				else if (lastError == OK)
@@ -316,29 +311,28 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		activity.registerReceiver(this, new IntentFilter(BluetoothDevice.ACTION_FOUND));
 		activity.registerReceiver(this, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 
-		final LinearLayout l = (LinearLayout)UI.createDialogView(activity, null);
-
-		LinearLayout.LayoutParams p;
+		final LinearLayout l = new LinearLayout(activity);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			UI.removeSplitTouch(l);
+		l.setOrientation(LinearLayout.VERTICAL);
+		l.setBaselineAligned(false);
 
 		lblTitle = UI.createDialogTextView(activity, 0, activity.getText(R.string.bt_scanning));
+		lblTitle.setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
 		l.addView(lblTitle, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
 		barWait = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
 		barWait.setIndeterminate(true);
-		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin >> 1;
+		final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		p.bottomMargin = UI.dialogMargin;
 		l.addView(barWait, p);
 
 		UI.disableEdgeEffect();
 		listView = new BgListView(activity);
 		listView.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM);
-		p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		p.topMargin = UI.dialogMargin;
-		l.addView(listView, p);
+		l.addView(listView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
 		deviceList = new DeviceList();
-		defaultTextColors = lblTitle.getTextColors();
-		highlightTextColors = ColorStateList.valueOf(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5);
 
 		final Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
 		if (pairedDevices.size() > 0) {
@@ -366,6 +360,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		dialog.setNegativeButton(R.string.cancel);
 		dialog.setOnCancelListener(this);
 		dialog.setOnDismissListener(this);
+		dialog.setEmptyBackground();
 		dialog.show();
 		okToStartDiscovery = false;
 
@@ -439,7 +434,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 					listView.setVisibility(View.GONE);
 				okToStartDiscovery = false;
 				if (observer != null)
-					observer.onBluetoothPairingStarted(this, item.description, item.address);
+					observer.onBluetoothPairingStarted(this, item.fileSt.name, item.address);
 				lastError = OK;
 				cancelled = false;
 				finished = false;
@@ -485,7 +480,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 				finished = true;
 				if (observer != null) {
 					if (deviceItem != null)
-						observer.onBluetoothPairingFinished(this, deviceItem.description, deviceItem.address, false);
+						observer.onBluetoothPairingFinished(this, deviceItem.fileSt.name, deviceItem.address, false);
 					observer.onBluetoothCancelled(this);
 				}
 			}

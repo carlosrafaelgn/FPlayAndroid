@@ -1342,7 +1342,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = colorViews.length - 1; i >= 0; i--) {
 				if (view == colorViews[i]) {
 					lastColorView = i;
-					ColorPickerView.showDialog(getHostActivity(), colorViews[i].getColor(), null, this);
+					ColorPickerView.showDialog(getHostActivity(), colorViews[i].getColor(), null, true, this);
 					return;
 				}
 			}
@@ -1491,9 +1491,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.widgetTransparentBg = optWidgetTransparentBg.isChecked();
 			WidgetMain.updateWidgets();
 		} else if (view == optWidgetTextColor) {
-			ColorPickerView.showDialog(getHostActivity(), UI.widgetTextColor, view, this);
+			ColorPickerView.showDialog(getHostActivity(), UI.widgetTextColor, view, true, this);
 		} else if (view == optWidgetIconColor) {
-			ColorPickerView.showDialog(getHostActivity(), UI.widgetIconColor, view, this);
+			ColorPickerView.showDialog(getHostActivity(), UI.widgetIconColor, view, true, this);
 		} else if (view == optBlockBackKey) {
 			UI.blockBackKey = optBlockBackKey.isChecked();
 		} else if (view == optBackKeyAlwaysReturnsToPlayerWhenBrowsing) {

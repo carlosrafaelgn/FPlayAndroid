@@ -29,7 +29,7 @@
     <string name="msg_select_favorite_remove">Por favor, seleccione un favorito para remover</string>
     <string name="msg_turn_off_title">Apagado automático</string>
     <string name="msg_turn_off">Apagar el reproductor después de cuantos minutos?</string>
-    <string name="msg_enter_name">Introduzca el nombre para nueva %s:</string>
+    <string name="msg_enter_name">Introduzca el nombre para nueva %s</string>
     <string name="msg_confirm_overwrite">Quiere sobrescribir la información de %1$s \"%2$s\"?</string>
     <string name="msg_confirm_delete">Confirma que desea borrar %1$s \"%2$s\"?</string>
     <string name="msg_overwrite">Sobrescribir %1$s \"%2$s\"</string>

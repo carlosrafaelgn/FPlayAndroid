@@ -38,7 +38,6 @@ import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.database.DataSetObserver;
 import android.net.Uri;
-import android.os.Build;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -69,7 +68,6 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.RadioStationResolver;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
-import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
@@ -119,6 +117,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			TextView txt = (TextView)convertView;
 			if (txt == null) {
 				txt = new TextView(Player.theApplication);
+				txt.setSingleLine(true);
 				txt.setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
 				txt.setTypeface(UI.defaultTypeface);
 				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
@@ -519,9 +518,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			lbl.setAutoLinkMask(0);
 			lbl.setLinksClickable(true);
 			//http://developer.android.com/design/style/color.html
-			lbl.setLinkTextColor((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ?
-				new BgColorStateList(UI.isAndroidThemeLight() ? UI.color_dialog_fplay_dk : UI.color_dialog_fplay_lt) :
-				new BgColorStateList(UI.isAndroidThemeLight() ? 0xff0099cc : 0xff33b5e5));
+			lbl.setLinkTextColor(UI.colorState_text_listitem_secondary_static);
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 			lbl.setGravity(Gravity.CENTER_HORIZONTAL);
 			if (externalUri == null) {
@@ -548,7 +545,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			lbl.setMovementMethod(LinkMovementMethod.getInstance());
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI.dialogMargin;
-			p.bottomMargin = UI.dialogMargin;
 			l.addView(lbl, p);
 
 			final ColorStateList defaultTextColors = txtTerm.getTextColors();
