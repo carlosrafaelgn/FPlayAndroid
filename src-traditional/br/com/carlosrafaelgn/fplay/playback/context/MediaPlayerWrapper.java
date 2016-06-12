@@ -108,12 +108,22 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnCompletion
 
 	@Override
 	public int getDuration() {
-		return player.getDuration();
+		try {
+			return player.getDuration();
+		} catch (Throwable ex) {
+			return -1;
+		}
 	}
 
 	@Override
 	public int getCurrentPosition() {
-		return player.getCurrentPosition();
+		try {
+			final int position = player.getCurrentPosition();
+			//sometimes, when the player is still loading, player.getCurrentPosition() returns weird values!
+			return ((position <= 10800000 || position <= player.getDuration()) ? position : -1);
+		} catch (Throwable ex) {
+			return -1;
+		}
 	}
 
 	@Override

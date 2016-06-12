@@ -907,15 +907,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static int getPosition() {
-		try {
-			return ((httpStreamReceiver != null) ? -1 :
-				((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() :
-					((localSong == null) ? -1 :
-						storedSongTime)));
-		} catch (Throwable ex) {
-			//localPlayer could throw a InvalidStateException (*very, very* rarely)
-			return -1;
-		}
+		return ((httpStreamReceiver != null) ? -1 :
+			((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() :
+				((localSong == null) ? -1 :
+					storedSongTime)));
 	}
 
 	public static int getHttpPosition() {
@@ -1062,14 +1057,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void _storeSongTime() {
-		try {
-			if (song == null || song.isHttp)
-				storedSongTime = -1;
-			else if (player != null && playerState == PLAYER_STATE_LOADED)
-				storedSongTime = player.getCurrentPosition();
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
+		if (song == null || song.isHttp)
+			storedSongTime = -1;
+		else if (player != null && playerState == PLAYER_STATE_LOADED)
+			storedSongTime = player.getCurrentPosition();
 	}
 
 	private static void _prepareNextPlayer(Song song) {
