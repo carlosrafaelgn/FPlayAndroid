@@ -34,7 +34,6 @@
 package br.com.carlosrafaelgn.fplay.util;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -46,9 +45,7 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.io.InputStream;
@@ -57,6 +54,7 @@ import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.UUID;
 
+import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseItem;
@@ -65,10 +63,11 @@ import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
+import br.com.carlosrafaelgn.fplay.ui.BgProgressBar;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
-public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, AlertDialog.OnClickListener, AlertDialog.OnCancelListener, AlertDialog.OnDismissListener, AdapterView.OnItemClickListener {
+public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener {
 	public static final int REQUEST_ENABLE = 0x1000;
 
 	public static final int OK = 0;
@@ -156,9 +155,9 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	private OutputStream outputStream;
 	private DeviceList deviceList;
 	private TextView lblTitle;
-	private ProgressBar barWait;
+	private BgProgressBar barWait;
 	private BgListView listView;
-	private AlertDialog dialog;
+	private BgDialog dialog;
 	private boolean closed, connecting, finished, okToStartDiscovery;
 	private int lastError;
 	private volatile DeviceItem deviceItem;
@@ -204,6 +203,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		barWait = null;
 		dialog = null;
 		deviceItem = null;
+		UI.browserActivity = null;
 	}
 
 	public void destroy() {
@@ -312,22 +312,78 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		activity.registerReceiver(this, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 
 		final LinearLayout l = new LinearLayout(activity);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+		final LinearLayout panelControls = new LinearLayout(activity);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			UI.removeSplitTouch(l);
+			UI.removeSplitTouch(panelControls);
+		}
 		l.setOrientation(LinearLayout.VERTICAL);
 		l.setBaselineAligned(false);
+		panelControls.setOrientation(LinearLayout.VERTICAL);
+		panelControls.setBaselineAligned(false);
+		UI.prepareControlContainer(panelControls, false, true, 0, 0, 0, 0);
 
 		lblTitle = UI.createDialogTextView(activity, 0, activity.getText(R.string.bt_scanning));
-		lblTitle.setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
-		l.addView(lblTitle, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		lblTitle.setPadding(UI.dialogMargin, 0, UI.dialogMargin, UI.dialogMargin);
+		lblTitle.setTextColor(UI.colorState_text_static);
+		panelControls.addView(lblTitle, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-		barWait = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
-		barWait.setIndeterminate(true);
+		barWait = new BgProgressBar(activity);
 		final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		p.leftMargin = UI.dialogMargin;
+		p.rightMargin = UI.dialogMargin;
 		p.bottomMargin = UI.dialogMargin;
-		l.addView(barWait, p);
+		panelControls.addView(barWait, p);
 
-		UI.disableEdgeEffect();
+		l.addView(panelControls, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+		UI.browserActivity = new ActivityBrowserView() {
+			@Override
+			public void loadingProcessChanged(boolean started) {
+			}
+
+			@Override
+			public void processItemCheckboxClick(int position) {
+			}
+
+			@Override
+			public void processItemClick(int position) {
+				if (dialog != null && deviceList != null && position >= 0 && position < deviceList.getCount()) {
+					final DeviceItem item = deviceList.getItemT(position);
+					if (item != null && item.address != null) {
+						stopDialogDiscovery();
+						deviceItem = item;
+						if (lblTitle != null) {
+							lblTitle.setText(R.string.bt_connecting);
+							lblTitle.setVisibility(View.VISIBLE);
+						}
+						if (barWait != null)
+							barWait.setVisibility(View.VISIBLE);
+						if (listView != null)
+							listView.setVisibility(View.GONE);
+						okToStartDiscovery = false;
+						if (observer != null)
+							observer.onBluetoothPairingStarted(BluetoothConnectionManager.this, item.fileSt.name, item.address);
+						lastError = OK;
+						cancelled = false;
+						finished = false;
+						connecting = true;
+						(new Thread(BluetoothConnectionManager.this, "Bluetooth Manager Thread")).start();
+					}
+				}
+			}
+
+			@Override
+			public void processItemLongClick(int position) {
+			}
+
+			@Override
+			public CharSequence getTitle() {
+				return null;
+			}
+		};
+		FileView.updateExtraMargins(true);
+
 		listView = new BgListView(activity);
 		listView.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM);
 		l.addView(listView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -340,8 +396,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 				deviceList.add(new DeviceItem(device.getName(), device.getAddress(), true, false), -1);
 			deviceList.sort();
 		}
-		listView.setAdapter(deviceList);
-		listView.setOnItemClickListener(this);
+		deviceList.setObserver(listView);
 		try {
 			if (btAdapter.isDiscovering())
 				btAdapter.cancelDiscovery();
@@ -354,13 +409,14 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			return ERROR_DISCOVERY;
 		}
 
-		final BgDialog dialog = new BgDialog(activity, l, this);
+		dialog = new BgDialog(activity, l, this);
 		dialog.setTitle(R.string.bt_devices);
 		dialog.setPositiveButton(R.string.refresh_list);
 		dialog.setNegativeButton(R.string.cancel);
 		dialog.setOnCancelListener(this);
 		dialog.setOnDismissListener(this);
 		dialog.setEmptyBackground();
+		dialog.removeTitleBorder();
 		dialog.show();
 		okToStartDiscovery = false;
 
@@ -413,33 +469,6 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 				stopDialogDiscovery();
 				if (deviceList.getCount() == 0)
 					deviceList.add(new DeviceItem(activity.getText(R.string.bt_not_found).toString(), null, false, false), -1);
-			}
-		}
-	}
-
-	@Override
-	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-		if (dialog != null && deviceList != null && position >= 0 && position < deviceList.getCount()) {
-			final DeviceItem item = deviceList.getItemT(position);
-			if (item != null && item.address != null) {
-				stopDialogDiscovery();
-				deviceItem = item;
-				if (lblTitle != null) {
-					lblTitle.setText(R.string.bt_connecting);
-					lblTitle.setVisibility(View.VISIBLE);
-				}
-				if (barWait != null)
-					barWait.setVisibility(View.VISIBLE);
-				if (listView != null)
-					listView.setVisibility(View.GONE);
-				okToStartDiscovery = false;
-				if (observer != null)
-					observer.onBluetoothPairingStarted(this, item.fileSt.name, item.address);
-				lastError = OK;
-				cancelled = false;
-				finished = false;
-				connecting = true;
-				(new Thread(this, "Bluetooth Manager Thread")).start();
 			}
 		}
 	}

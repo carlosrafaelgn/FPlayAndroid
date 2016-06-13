@@ -64,9 +64,9 @@ public final class BgSeekBar extends View {
 	}
 	
 	private String additionalContentDescription, text, icon;
-	private int width, height, filledSize, value, max, textWidth, textX, textY, textColor, textSize, keyIncrement;
 	private boolean insideList, vertical, sliderMode;
-	private int state, thumbWidth, size, thumbMargin, trackingOffset, secondaryBgColor, secondaryBgColorBlended;
+	private int state, thumbWidth, width, height, filledSize, value, max, textWidth, textX, textY, textColor,
+		textSize, keyIncrement, size, thumbMargin, trackingOffset, secondaryBgColor, secondaryBgColorBlended;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
 	

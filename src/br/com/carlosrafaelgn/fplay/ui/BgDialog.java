@@ -52,7 +52,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 	private BgButton btnNeutral, btnNegative, btnPositive;
 	private View contentView;
 	private CharSequence title;
-	private boolean titleVisible, emptyBackground, scanChildren;
+	private boolean titleVisible, emptyBackground, scanChildren, titleBorder;
 	private Drawable backgroundDrawable;
 	private int backgroundId;
 	private DialogInterface.OnClickListener clickListener;
@@ -62,7 +62,8 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 		setCancelable(true);
 		setCanceledOnTouchOutside(true);
 		title = "";
-		this.scanChildren = true;
+		scanChildren = true;
+		titleBorder = true;
 		this.contentView = contentView;
 		this.clickListener = clickListener;
 		UI.preparePopupTransition(this);
@@ -125,6 +126,10 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 
 	public void setScanChildren() {
 		scanChildren = true;
+	}
+
+	public void removeTitleBorder() {
+		titleBorder = false;
 	}
 
 	public void setEmptyBackground() {
@@ -196,7 +201,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			txtTitle.setTextColor(UI.colorState_highlight_static);
 			final int padding = ((UI.isLargeScreen || !UI.isLowDpiScreen) ? UI.controlLargeMargin : UI.controlMargin);
-			UI.prepareControlContainer(txtTitle, false, true, padding, padding, padding, padding);
+			UI.prepareControlContainer(txtTitle, false, titleBorder, padding, padding, padding, padding);
 			panel.addView(txtTitle, new BgFlexLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
 		}
 

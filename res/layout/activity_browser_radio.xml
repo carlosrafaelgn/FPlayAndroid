@@ -33,14 +33,12 @@
             android:layout_toRightOf="@+id/btnGoBack"
             android:visibility="gone">
 
-            <ProgressBar
+            <br.com.carlosrafaelgn.fplay.ui.BgProgressBar
                 android:id="@+id/barLoading"
-                style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignLeft="@+id/lblLoadingSmall"
-                android:layout_alignRight="@+id/lblLoadingSmall"
-                android:indeterminate="true"/>
+                android:layout_alignRight="@+id/lblLoadingSmall" />
 
             <TextView
                 android:id="@+id/lblLoadingSmall"
