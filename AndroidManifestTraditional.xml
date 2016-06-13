@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="br.com.carlosrafaelgn.fplay" >
+
+    <!-- This permission is not classified as PROTECTION_NORMAL in Android M API 23
+     http://developer.android.com/preview/features/runtime-permissions.html -->
+    <!-- For android.media.audiofx.Visualizer -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+</manifest>

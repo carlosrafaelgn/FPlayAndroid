@@ -36,10 +36,8 @@
     <!-- Apparently, a few devices require this.... (not only to make android.media.audiofx.PresetReverb work, but to control volume and other settings)  -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
-    <!-- These four permissions are not classified as PROTECTION_NORMAL in Android M API 23
+    <!-- These three permissions are not classified as PROTECTION_NORMAL in Android M API 23
      http://developer.android.com/preview/features/runtime-permissions.html -->
-    <!-- For android.media.audiofx.Visualizer -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- For the immersive visualizer -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->

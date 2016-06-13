@@ -45,6 +45,7 @@ android {
 		}
 
 		traditional {
+			manifest.srcFile 'AndroidManifestTraditional.xml'
 			java.srcDirs = ['src', 'src-traditional']
 			resources.srcDirs = ['src', 'src-traditional']
 			aidl.srcDirs = ['src', 'src-traditional']
