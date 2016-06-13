@@ -707,8 +707,15 @@ public final class ActivityMain extends ActivityItemView implements Timer.TimerH
 			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE));
 			break;
 		case MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR:
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+					if (getHostActivity().checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+						getHostActivity().requestPermissions(new String[]{Manifest.permission.CAMERA}, id);
+						return;
+					}
+				}
 				getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_IMMERSIVE_PARTICLE_VR));
+			}
 			break;
 		case MNU_VISUALIZER_BLUETOOTH:
 			startActivity(new ActivitySettings(false, true), 0, null, false);
