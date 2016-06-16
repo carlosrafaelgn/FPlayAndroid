@@ -127,7 +127,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		UI.textPaint.setTextSize(UI._14sp);
 		
 		//push the tags to the bottom!
-		StaticLayout layout = new StaticLayout(station.tags, UI.textPaint, width - hMargin - UI.defaultControlSize, Alignment.ALIGN_NORMAL, 1, 0, false);
+		StaticLayout layout = new StaticLayout(station.tags, UI.textPaint, width - hMargin - UI.defaultControlSize, Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
 		int i, visibleLines = Math.min(2, layout.getLineCount());
 		for (i = 0; i < visibleLines; i++)
 			tagsLines[i] = station.tags.substring(layout.getLineStart(i), layout.getLineEnd(i));
@@ -144,7 +144,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		//center the description vertically, considering all available space
 		final int top = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spBox, bottom = bottomMargin + Math.max(UI.defaultControlSize + UI.controlXtraSmallMargin, UI.verticalMargin + (visibleLines * UI._14spBox));
 		
-		layout = new StaticLayout(station.description, UI.textPaint, width - hMargin, Alignment.ALIGN_NORMAL, 1, 0, false);
+		layout = new StaticLayout(station.description, UI.textPaint, width - hMargin, Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
 		visibleLines = Math.min(3, layout.getLineCount());
 		for (i = 0; i < visibleLines; i++)
 			descriptionLines[i] = station.description.substring(layout.getLineStart(i), layout.getLineEnd(i)).trim();

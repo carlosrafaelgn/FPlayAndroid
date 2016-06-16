@@ -38,7 +38,10 @@ import android.graphics.Canvas;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.text.Layout;
+import android.text.StaticLayout;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -46,8 +49,9 @@ import android.widget.TextView;
 import java.lang.reflect.Field;
 
 public final class BgEditText extends EditText {
-	private int state, paddingLeft, paddingRight, colorNormal, colorFocused, textSize, textBox, textY, textMargin;
+	private int state, colorNormal, colorFocused, extraTopPaddingForLastWidth, lastMeasuredWidth, textSize, textBox, textY, textMargin;
 	private String contentDescription;
+	private int[] contentDescriptionLineEndings;
 
 	public BgEditText(Context context) {
 		super(context);
@@ -67,6 +71,8 @@ public final class BgEditText extends EditText {
 	private void init() {
 		super.setBackgroundResource(0);
 		super.setDrawingCacheEnabled(false);
+		super.setGravity(Gravity.BOTTOM);
+		super.setPadding(0, 0, 0, UI.thickDividerSize << 1);
 		if (UI.isLargeScreen) {
 			textSize = UI._18sp;
 			textBox = UI._18spBox;
@@ -110,15 +116,37 @@ public final class BgEditText extends EditText {
 	}
 
 	@Override
+	public int getPaddingLeft() {
+		return 0;
+	}
+
+	@Override
+	public int getPaddingTop() {
+		return 0;
+	}
+
+	@Override
+	public int getPaddingRight() {
+		return 0;
+	}
+
+	@Override
+	public int getPaddingBottom() {
+		return 0;
+	}
+
+	@Override
 	public void setPadding(int left, int top, int right, int bottom) {
-		super.setPadding((paddingLeft = left), (contentDescription == null) ? 0 : (textBox + textMargin), (paddingRight = right), UI.thickDividerSize << 1);
 	}
 
 	@Override
 	public void setContentDescription(CharSequence contentDescription) {
 		this.contentDescription = ((contentDescription == null || contentDescription.length() == 0)? null : contentDescription.toString());
+		extraTopPaddingForLastWidth = 0;
+		lastMeasuredWidth = 0;
+		contentDescriptionLineEndings = null;
 		super.setContentDescription(this.contentDescription);
-		super.setPadding(paddingLeft, (this.contentDescription == null) ? 0 : (textBox + textMargin), paddingRight, UI.thickDividerSize << 1);
+		requestLayout();
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -161,13 +189,65 @@ public final class BgEditText extends EditText {
 		state = (UI.STATE_FOCUSED & UI.handleStateChanges(state, isPressed(), isFocused(), this));
 	}
 
+	private int countLines(int width) {
+		final StaticLayout layout = new StaticLayout(contentDescription, UI.textPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+		final int lines = layout.getLineCount();
+		contentDescriptionLineEndings = new int[lines];
+		for (int i = 0; i < lines; i++)
+			contentDescriptionLineEndings[i] = layout.getLineEnd(i);
+		return lines;
+	}
+
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+		final int width = getMeasuredWidth();
+		int extraTopPadding;
+
+		if (lastMeasuredWidth != width) {
+			//add our bottom border + enough room for the description at the top
+
+			extraTopPadding = 0;
+
+			if (contentDescription != null) {
+				UI.textPaint.setTextSize(textSize);
+				if ((int)UI.textPaint.measureText(contentDescription) <= width) {
+					contentDescriptionLineEndings = null;
+					extraTopPadding += textBox + textMargin;
+				} else {
+					extraTopPadding += (textBox * countLines(width)) + textMargin;
+				}
+			}
+
+			extraTopPaddingForLastWidth = extraTopPadding;
+		} else {
+			extraTopPadding = extraTopPaddingForLastWidth;
+		}
+
+		setMeasuredDimension(width, getMeasuredHeight() + extraTopPadding);
+	}
+
 	@Override
 	protected void onDraw(Canvas canvas) {
 		getDrawingRect(UI.rect);
-		if (contentDescription != null)
-			UI.drawText(canvas, contentDescription, colorFocused, textSize, UI.rect.left, textY);
+
+		if (extraTopPaddingForLastWidth > 0) {
+			UI.rect.top += textY;
+			if (contentDescriptionLineEndings != null) {
+				UI.drawText(canvas, contentDescription, 0, contentDescriptionLineEndings[0], colorFocused, textSize, UI.rect.left, UI.rect.top);
+				for (int i = 1; i < contentDescriptionLineEndings.length; i++) {
+					UI.rect.top += textBox;
+					UI.drawText(canvas, contentDescription, contentDescriptionLineEndings[i - 1], contentDescriptionLineEndings[i], colorFocused, textSize, UI.rect.left, UI.rect.top);
+				}
+			} else if (contentDescription != null) {
+				UI.drawText(canvas, contentDescription, colorFocused, textSize, UI.rect.left, UI.rect.top);
+			}
+		}
+
 		UI.rect.top = UI.rect.bottom - (state == 0 ? UI.strokeSize : UI.thickDividerSize);
 		UI.fillRect(canvas, state == 0 ? colorNormal : colorFocused);
+
 		super.onDraw(canvas);
 	}
 

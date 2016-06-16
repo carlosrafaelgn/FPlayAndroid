@@ -597,7 +597,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		view.setColorSwatchMode(view.colorSwatchView.currentColorExists());
 		final BgDialog dialog = new BgDialog(context, view, view);
 		dialog.setTitle(null);
-		dialog.setNeutralButton(R.string.more);
+		dialog.setNeutralButton(UI.ICON_PALETTE, context.getText(R.string.more));
 		dialog.setPositiveButton(R.string.ok);
 		if (oneShot)
 			dialog.setNegativeButton(R.string.cancel);
@@ -634,14 +634,14 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.setId(1);
 
 			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), UI.isLargeScreen ? "H" : "HSV", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtH.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtH.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtH.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
 			controlPanel.addView(txtH, lp);
 
 			txtS = UI.createDialogEditText(context, 0, Integer.toString(s), UI.isLargeScreen ? "S" : null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtS.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtS.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtS.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -649,7 +649,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtS, lp);
 
 			txtV = UI.createDialogEditText(context, 0, Integer.toString(v), UI.isLargeScreen ? "V" : null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtV.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtV.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtV.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -657,7 +657,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtV, lp);
 
 			txtHTML = UI.createDialogEditText(context, 0, ColorUtils.toHexColor(rgb), "HTML", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtHTML.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtHTML.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -694,14 +694,14 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.setId(1);
 
 			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), "H", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtH.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtH.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtH.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidthSmall, ViewGroup.LayoutParams.WRAP_CONTENT);
 			controlPanel.addView(txtH, lp);
 
 			txtS = UI.createDialogEditText(context, 0, Integer.toString(s), "S", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtS.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtS.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtS.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidthSmall, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -709,7 +709,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtS, lp);
 
 			txtV = UI.createDialogEditText(context, 0, Integer.toString(v), "V", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtV.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtV.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtV.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidthSmall, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -717,7 +717,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtV, lp);
 
 			txtHTML = UI.createDialogEditText(context, 0, ColorUtils.toHexColor(rgb), "HTML", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL);
+			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtHTML.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtHTML.addTextChangedListener(this);
 			lp = new LinearLayout.LayoutParams(editViewWidth, ViewGroup.LayoutParams.WRAP_CONTENT);

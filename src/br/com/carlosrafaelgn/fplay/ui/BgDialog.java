@@ -55,7 +55,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 	private BgButton btnNeutral, btnNegative, btnPositive;
 	private View contentView;
 	private CharSequence title;
-	private boolean titleVisible, emptyBackground, scanChildren, titleBorder;
+	private boolean titleVisible, emptyBackground, scanChildren, titleBorder, neutralIcon;
 	private Drawable backgroundDrawable;
 	private int backgroundId;
 	private DialogInterface.OnClickListener clickListener;
@@ -95,6 +95,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 	}
 
 	public void setNeutralButton(int resId) {
+		neutralIcon = false;
 		if (resId == 0) {
 			btnNeutral = null;
 		} else {
@@ -103,6 +104,15 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			btnNeutral.setText(resId);
 			btnNeutral.setOnClickListener(this);
 		}
+	}
+
+	public void setNeutralButton(String icon, CharSequence contentDescription) {
+		neutralIcon = true;
+		if (btnNeutral == null)
+			btnNeutral = new BgButton(getContext());
+		btnNeutral.setIcon(icon);
+		btnNeutral.setContentDescription(contentDescription);
+		btnNeutral.setOnClickListener(this);
 	}
 
 	public void setNegativeButton(int resId) {
@@ -174,6 +184,8 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			clickListener.onClick(this, DialogInterface.BUTTON_NEGATIVE);
 		else if (v == btnPositive)
 			clickListener.onClick(this, DialogInterface.BUTTON_POSITIVE);
+		else if ((v instanceof ViewGroup))
+			dismiss(); //dismiss the dialog if the user clicks the shadow
 	}
 
 	private void scanChildrenRecursive(ViewGroup parent) {
@@ -215,7 +227,8 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			final int padding = ((UI.isLargeScreen || !UI.isLowDpiScreen) ? UI.controlMargin : UI.controlSmallMargin);
 			UI.prepareControlContainer(panelBottom, true, false, padding, padding, padding, padding);
 			if (btnNeutral != null) {
-				btnNeutral.setDefaultHeightAndLargeHorizontalPadding();
+				if (!neutralIcon)
+					btnNeutral.setDefaultHeightAndLargeHorizontalPadding();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				rp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
 				panelBottom.addView(btnNeutral, rp);
@@ -268,7 +281,10 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 
 		setContentView(contentView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 		final ViewParent viewParent = contentView.getParent();
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && !UI.isLowDpiScreen && (viewParent instanceof ViewGroup))
-			((ViewGroup)viewParent).setBackgroundDrawable(new BgShadowDrawable());
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && !UI.isLowDpiScreen && (viewParent instanceof ViewGroup)) {
+			final ViewGroup parent = (ViewGroup)viewParent;
+			parent.setOnClickListener(this);
+			parent.setBackgroundDrawable(new BgShadowDrawable());
+		}
 	}
 }

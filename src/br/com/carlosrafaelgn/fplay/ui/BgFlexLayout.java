@@ -40,7 +40,7 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class BgFlexLayout extends ViewGroup {
+public final class BgFlexLayout extends ViewGroup {
 	//this layout does not support both padding and margins!
 	private int flexSize;
 	private View flexChild;
@@ -63,10 +63,27 @@ public class BgFlexLayout extends ViewGroup {
 	}
 
 	@Override
+	public int getPaddingLeft() {
+		return 0;
+	}
+
+	@Override
+	public int getPaddingTop() {
+		return 0;
+	}
+
+	@Override
+	public int getPaddingRight() {
+		return 0;
+	}
+
+	@Override
+	public int getPaddingBottom() {
+		return 0;
+	}
+
+	@Override
 	public void setPadding(int left, int top, int right, int bottom) {
-		if (left != 0 || top != 0 || right != 0 || bottom != 0)
-			throw new UnsupportedOperationException("Padding not supported!");
-		super.setPadding(0, 0, 0, 0);
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)

@@ -105,7 +105,7 @@ public final class SettingView extends View {
 			lineCount = 1;
 		} else {
 			UI.textPaint.setTextSize(UI._LargeItemsp);
-			final StaticLayout layout = new StaticLayout(text, UI.textPaint, usableWidth, Layout.Alignment.ALIGN_NORMAL, 1, 0, false);
+			final StaticLayout layout = new StaticLayout(text, UI.textPaint, usableWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
 			lineCount = layout.getLineCount();
 			if (lineCount <= 1) {
 				if (textLines == null || textLines.length < 3)

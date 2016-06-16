@@ -38,7 +38,6 @@ import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
-import android.graphics.Region;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 
@@ -52,9 +51,9 @@ public final class BgShadowDrawable extends Drawable {
 	public BgShadowDrawable() {
 		bitmap = Bitmap.createBitmap(new int[] {
 			0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-			0x00000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x00000000,
-			0x00000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x00000000,
-			0x00000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x00000000,
+			0x00000000, 0x30000000, 0x30000000, 0x30000000, 0x00000000,
+			0x00000000, 0x30000000, 0x30000000, 0x30000000, 0x00000000,
+			0x00000000, 0x30000000, 0x30000000, 0x30000000, 0x00000000,
 			0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000
 		}, 5, 5, Bitmap.Config.ARGB_8888);
 		paint = new Paint();
@@ -70,14 +69,10 @@ public final class BgShadowDrawable extends Drawable {
 		final Rect bounds = getBounds();
 		final int l = bounds.left, t = bounds.top, r = bounds.right, b = bounds.bottom;
 		final int hiddenMargin = UI.defaultControlContentsSize - size;
-		final int bitmapSize = (UI.defaultControlContentsSize * 3) >> 1;
+		final int bitmapSize = (UI.defaultControlContentsSize * 5) >> 2;
 
-		canvas.save();
-		UI.rect.left = l + size;
-		UI.rect.top = t + size;
-		UI.rect.right = r - size;
-		UI.rect.bottom = b - size;
-		canvas.clipRect(UI.rect, Region.Op.DIFFERENCE);
+		//don't even bother trying to clip using difference or reverse_difference
+		//http://stackoverflow.com/a/9213065/3569421
 
 		UI.rect.left = 0;
 		UI.rect.top = 0;
@@ -135,8 +130,6 @@ public final class BgShadowDrawable extends Drawable {
 		bounds.top = t;
 		bounds.right = r;
 		bounds.bottom = b;
-
-		canvas.restore();
 	}
 
 	@Override
