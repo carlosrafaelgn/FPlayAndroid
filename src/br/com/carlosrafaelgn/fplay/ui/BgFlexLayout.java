@@ -32,32 +32,19 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 
 public class BgFlexLayout extends ViewGroup {
-	public static class LayoutParams extends ViewGroup.LayoutParams {
-		public LayoutParams(Context c, AttributeSet attrs) {
-			super(c, attrs);
-		}
-
-		public LayoutParams(int width, int height) {
-			super(width, height);
-		}
-
-		public LayoutParams(ViewGroup.LayoutParams p) {
-			super(p);
-		}
-
-		public LayoutParams(LayoutParams source) {
-			super(source);
-		}
-	}
-
+	//this layout does not support both padding and margins!
 	private int flexSize;
 	private View flexChild;
+	private boolean opaque;
 
 	public BgFlexLayout(Context context) {
 		this(context, null);
@@ -73,6 +60,51 @@ public class BgFlexLayout extends ViewGroup {
 
 	public void setFlexChild(View flexChild) {
 		this.flexChild = flexChild;
+	}
+
+	@Override
+	public void setPadding(int left, int top, int right, int bottom) {
+		if (left != 0 || top != 0 || right != 0 || bottom != 0)
+			throw new UnsupportedOperationException("Padding not supported!");
+		super.setPadding(0, 0, 0, 0);
+	}
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	@Override
+	public void setBackground(Drawable background) {
+		super.setBackground(null);
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	@Deprecated
+	public void setBackgroundDrawable(Drawable background) {
+		super.setBackgroundDrawable(null);
+	}
+
+	@Override
+	public void setBackgroundResource(int resid) {
+		super.setBackgroundResource(0);
+	}
+
+	@Override
+	public void setBackgroundColor(int color) {
+		super.setBackgroundResource(0);
+	}
+
+	@Override
+	public Drawable getBackground() {
+		return null;
+	}
+
+	@Override
+	public boolean isOpaque() {
+		//calling getChildAt().isOpaque() causes an ANR!!!
+		return opaque;
+	}
+
+	public void setOpaque(boolean opaque) {
+		this.opaque = opaque;
 	}
 
 	@Override
@@ -92,7 +124,7 @@ public class BgFlexLayout extends ViewGroup {
 
 	@Override
 	protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
-		return p instanceof LayoutParams;
+		return true;
 	}
 
 	@Override
@@ -108,7 +140,7 @@ public class BgFlexLayout extends ViewGroup {
 			heightMeasureSpec = MeasureSpec.makeMeasureSpec(0x3fffffff, (heightMode = MeasureSpec.AT_MOST));
 
 		//how much space we have in our hands
-		final int availableHeight = MeasureSpec.getSize(heightMeasureSpec) - getPaddingTop() - getPaddingBottom();
+		final int availableHeight = MeasureSpec.getSize(heightMeasureSpec);
 
 		int pass = 0;
 		int contentsWidth = 0, contentsHeight;
@@ -118,7 +150,7 @@ public class BgFlexLayout extends ViewGroup {
 		//if our parent has already requested a fixed size, we won't need to scan the children twice!
 		if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY) {
 			pass = 2;
-			contentsWidth = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() - getPaddingRight();
+			contentsWidth = MeasureSpec.getSize(widthMeasureSpec);
 		}
 
 		do {
@@ -147,7 +179,7 @@ public class BgFlexLayout extends ViewGroup {
 				int heightAvailableForChild = availableHeight - contentsHeight;
 				if (heightAvailableForChild < 0) heightAvailableForChild = 0;
 
-				final LayoutParams p = (LayoutParams)child.getLayoutParams();
+				final LayoutParams p = child.getLayoutParams();
 				final int oldWidth = p.width;
 				if (pass == 2)
 					p.width = LayoutParams.MATCH_PARENT;
@@ -172,7 +204,7 @@ public class BgFlexLayout extends ViewGroup {
 				int heightAvailableForFlex = availableHeight - contentsHeight;
 				if (heightAvailableForFlex < 0) heightAvailableForFlex = 0;
 
-				final LayoutParams p = (LayoutParams)child.getLayoutParams();
+				final LayoutParams p = child.getLayoutParams();
 				final int oldWidth = p.width;
 				if (pass == 2)
 					p.width = LayoutParams.MATCH_PARENT;
@@ -194,12 +226,12 @@ public class BgFlexLayout extends ViewGroup {
 				contentsHeight += flexSize;
 			}
 
-			setMeasuredDimension(contentsWidth + getPaddingLeft() + getPaddingRight(),
-				(pass == 2) ? contentsHeight + getPaddingTop() + getPaddingBottom() :
-				Math.max(contentsHeight + getPaddingTop() + getPaddingBottom(), getSuggestedMinimumHeight()));
+			setMeasuredDimension(contentsWidth,
+				(pass == 2) ? contentsHeight :
+				Math.max(contentsHeight, getSuggestedMinimumHeight()));
 
 			if (pass == 1) {
-				contentsWidth = Math.max(getMeasuredWidth(), getSuggestedMinimumWidth()) - getPaddingLeft() - getPaddingRight();
+				contentsWidth = Math.max(getMeasuredWidth(), getSuggestedMinimumWidth());
 				if (contentsWidth < 0) contentsWidth = 0;
 			}
 		} while (pass != 2);
@@ -207,12 +239,11 @@ public class BgFlexLayout extends ViewGroup {
 
 	@Override
 	protected void onLayout(boolean changed, int l, int t, int r, int b) {
-		final int childLeft = getPaddingLeft();
-		//LinearLayout
+		final int childLeft = 0;
 
 		final int count = getChildCount();
 
-		int childTop = getPaddingTop();
+		int childTop = 0;
 
 		for (int i = 0; i < count; i++) {
 			final View child = getChildAt(i);

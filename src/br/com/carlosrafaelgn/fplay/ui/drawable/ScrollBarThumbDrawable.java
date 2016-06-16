@@ -41,7 +41,7 @@ import android.graphics.drawable.Drawable;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class ScrollBarThumbDrawable extends Drawable {
-	private int color, opacity, alpha;
+	private int color, opacity;
 	private boolean hasBounds;
 
 	public ScrollBarThumbDrawable(int color) {
@@ -54,8 +54,7 @@ public final class ScrollBarThumbDrawable extends Drawable {
 
 	public void setColor(int color) {
 		this.color = color;
-		this.alpha = ((color >>> 24) & 0xff);
-		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		this.opacity = (((color >>> 24) == 0xff) ? PixelFormat.OPAQUE : (((color >>> 24) == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 		invalidateSelf();
 	}
 
@@ -114,17 +113,17 @@ public final class ScrollBarThumbDrawable extends Drawable {
 	}
 
 	@Override
+	public int getAlpha() {
+		return (color >>> 24);
+	}
+
+	@Override
 	public void setColorFilter(ColorFilter cf) {
 	}
 
 	@Override
 	public boolean isStateful() {
 		return false;
-	}
-
-	@Override
-	public int getAlpha() {
-		return alpha;
 	}
 
 	@Override

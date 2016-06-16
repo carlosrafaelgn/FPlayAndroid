@@ -41,7 +41,7 @@ import android.graphics.drawable.Drawable;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class BorderDrawable extends Drawable {
-	private int strokeColor, fillColor, opacity, alpha;
+	private int strokeColor, fillColor, opacity;
 	private final int leftSize, topSize, rightSize, bottomSize;
 
 	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
@@ -55,11 +55,10 @@ public final class BorderDrawable extends Drawable {
 	public void changeColors(int strokeColor, int fillColor) {
 		this.strokeColor = strokeColor;
 		this.fillColor = fillColor;
-		this.alpha = ((fillColor >>> 24) & 0xff);
-		this.opacity = ((this.alpha == 0xff) ? PixelFormat.OPAQUE : ((this.alpha == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
+		this.opacity = (((fillColor >>> 24) == 0xff) ? PixelFormat.OPAQUE : (((fillColor >>> 24) == 0) ? PixelFormat.TRANSPARENT : PixelFormat.TRANSLUCENT));
 		invalidateSelf();
 	}
-	
+
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
@@ -81,36 +80,36 @@ public final class BorderDrawable extends Drawable {
 	public int getOpacity() {
 		return opacity;
 	}
-	
+
 	@Override
 	public void setAlpha(int alpha) {
 		changeColors((alpha << 24) | (strokeColor & 0x00ffffff), (alpha << 24) | (fillColor & 0x00ffffff));
 	}
-	
+
+	@Override
+	public int getAlpha() {
+		return (fillColor >>> 24);
+	}
+
 	@Override
 	public void setColorFilter(ColorFilter cf) {
 	}
-	
+
 	@Override
 	public boolean isStateful() {
 		return false;
 	}
-	
-	@Override
-	public int getAlpha() {
-		return alpha;
-	}
-	
+
 	@Override
 	public boolean isAutoMirrored() {
 		return (leftSize == rightSize);
 	}
-	
+
 	@Override
 	public int getMinimumWidth() {
 		return (leftSize + rightSize);
 	}
-	
+
 	@Override
 	public int getMinimumHeight() {
 		return (topSize + bottomSize);

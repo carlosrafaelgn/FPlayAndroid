@@ -84,17 +84,17 @@ public final class BgListItem3DDrawable extends Drawable {
 	}
 
 	@Override
+	public int getAlpha() {
+		return 255;
+	}
+
+	@Override
 	public void setColorFilter(ColorFilter cf) {
 	}
 
 	@Override
 	public boolean isStateful() {
 		return false;
-	}
-
-	@Override
-	public int getAlpha() {
-		return 255;
 	}
 
 	@Override

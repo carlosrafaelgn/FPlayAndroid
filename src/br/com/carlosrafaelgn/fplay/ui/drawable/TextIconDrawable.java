@@ -45,11 +45,11 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 public final class TextIconDrawable extends Drawable {
 	private static final TextPaint paint;
 	private int[] stateSet;
-	private int state, alpha, currentColor;
+	private int state, currentColor;
 	private final int width, height, textSize, color;
 	//private final boolean outsideMenu;
 	private String icon;
-	
+
 	static {
 		paint = new TextPaint();
 		paint.setDither(false);
@@ -59,46 +59,40 @@ public final class TextIconDrawable extends Drawable {
 		paint.setTextAlign(Paint.Align.LEFT);
 		paint.setColor(UI.color_menu_icon);
 	}
-	
+
 	public static void drawIcon(Canvas canvas, String icon, int x, int y, int size, int color) {
 		paint.setColor(color);
 		paint.setTextSize(size);
 		canvas.drawText(icon, x, y + size, paint);
 	}
-	
+
 	public TextIconDrawable(String icon) {
 		this.icon = icon;
 		this.width = UI.defaultCheckIconSize + UI.menuMargin;// UI._8sp + UI._8sp + 1;
 		this.height = UI.defaultCheckIconSize;
 		this.textSize = UI.defaultCheckIconSize;
-		//this.outsideMenu = false;
-		this.alpha = 255;
 		this.color = UI.color_menu_icon;
 		this.currentColor = this.color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
 	}
-	
+
 	public TextIconDrawable(String icon, int color) {
 		this.icon = icon;
 		this.width = UI.defaultCheckIconSize + UI.controlMargin;
 		this.height = UI.defaultCheckIconSize;
 		this.textSize = UI.defaultCheckIconSize;
-		//this.outsideMenu = true;
-		this.alpha = 255;
 		this.color = color;
 		this.currentColor = color;
 		this.stateSet = super.getState();
 		super.setBounds(0, 0, width, height);
 	}
-	
+
 	public TextIconDrawable(String icon, int color, int size) {
 		this.icon = icon;
 		this.width = size + UI.controlMargin;
 		this.height = size;
 		this.textSize = size;
-		//this.outsideMenu = true;
-		this.alpha = 255;
 		this.color = color;
 		this.currentColor = color;
 		this.stateSet = super.getState();
@@ -110,8 +104,6 @@ public final class TextIconDrawable extends Drawable {
 		this.width = size + padding;
 		this.height = size;
 		this.textSize = size;
-		//this.outsideMenu = true;
-		this.alpha = 255;
 		this.color = color;
 		this.currentColor = color;
 		this.stateSet = super.getState();
@@ -123,8 +115,6 @@ public final class TextIconDrawable extends Drawable {
 		this.width = width;
 		this.height = height;
 		this.textSize = textSize;
-		//this.outsideMenu = true;
-		this.alpha = 255;
 		this.color = color;
 		this.currentColor = color;
 		this.stateSet = super.getState();
@@ -134,33 +124,25 @@ public final class TextIconDrawable extends Drawable {
 	public String getIcon() {
 		return icon;
 	}
-	
+
 	public void setIcon(String icon) {
 		this.icon = icon;
 		invalidateSelf();
 	}
-	
+
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
 		paint.setColor(currentColor);
 		paint.setTextSize(textSize);
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top + height) >> 1), paint);
-		/*if (!outsideMenu) {
-			UI.rect.left = rect.right - UI._8sp - 1;
-			UI.rect.right = UI.rect.left + UI.strokeSize;
-			UI.rect.top = rect.top + UI._2dp;
-			UI.rect.bottom = rect.bottom - UI._2dp;
-			paint.setColor((state == 0) ? UI.color_menu_border : UI.color_text_selected);
-			canvas.drawRect(UI.rect, paint);
-		}*/
 	}
-	
+
 	@Override
 	public int[] getState() {
 		return stateSet;
 	}
-	
+
 	@Override
 	public boolean setState(int[] stateSet) {
 		this.stateSet = stateSet;
@@ -180,57 +162,57 @@ public final class TextIconDrawable extends Drawable {
 		if (state == newState)
 			return false;
 		state = newState;
-		currentColor = (alpha << 24) | (((state == 0) ? color : UI.color_text_selected) & 0x00ffffff);
+		currentColor &= 0xff000000;
+		currentColor |= (((state == 0) ? color : UI.color_text_selected) & 0x00ffffff);
 		invalidateSelf();
 		return true;
 	}
-	
+
 	@Override
 	public int getOpacity() {
 		return PixelFormat.TRANSLUCENT;
 	}
-	
+
 	@Override
 	public void setAlpha(int alpha) {
-		this.alpha = alpha;
 		currentColor = (alpha << 24) | (((state == 0) ? color : UI.color_text_selected) & 0x00ffffff);
 		invalidateSelf();
 	}
-	
+
+	@Override
+	public int getAlpha() {
+		return (currentColor >>> 24);
+	}
+
 	@Override
 	public void setColorFilter(ColorFilter cf) {
 	}
-	
+
 	@Override
 	public boolean isStateful() {
 		return true;
 	}
-	
-	@Override
-	public int getAlpha() {
-		return alpha;
-	}
-	
+
 	@Override
 	public boolean isAutoMirrored() {
 		return true;
 	}
-	
+
 	@Override
 	public int getIntrinsicWidth() {
 		return width;
 	}
-	
+
 	@Override
 	public int getIntrinsicHeight() {
 		return height;
 	}
-	
+
 	@Override
 	public int getMinimumWidth() {
 		return width;
 	}
-	
+
 	@Override
 	public int getMinimumHeight() {
 		return height;

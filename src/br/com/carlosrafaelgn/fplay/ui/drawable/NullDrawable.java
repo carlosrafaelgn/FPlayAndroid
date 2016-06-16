@@ -40,44 +40,44 @@ import android.graphics.drawable.Drawable;
 public final class NullDrawable extends Drawable {
 	public NullDrawable() {
 	}
-	
+
 	@Override
 	public void draw(Canvas canvas) {
 	}
-	
+
 	@Override
 	public int getOpacity() {
 		return PixelFormat.OPAQUE;
 	}
-	
+
 	@Override
 	public void setAlpha(int alpha) {
 	}
-	
-	@Override
-	public void setColorFilter(ColorFilter cf) {
-	}
-	
-	@Override
-	public boolean isStateful() {
-		return false;
-	}
-	
+
 	@Override
 	public int getAlpha() {
 		return 255;
 	}
-	
+
+	@Override
+	public void setColorFilter(ColorFilter cf) {
+	}
+
+	@Override
+	public boolean isStateful() {
+		return false;
+	}
+
 	@Override
 	public boolean isAutoMirrored() {
 		return true;
 	}
-	
+
 	@Override
 	public int getMinimumWidth() {
 		return 0;
 	}
-	
+
 	@Override
 	public int getMinimumHeight() {
 		return 0;

@@ -36,16 +36,19 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BgShadowDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 
 public final class BgDialog extends Dialog implements View.OnClickListener {
@@ -191,7 +194,6 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 		final Context context = getContext();
 
 		final BgFlexLayout panel = new BgFlexLayout(getContext());
-		//panel.setOrientation(LinearLayout.VERTICAL);
 
 		if (titleVisible) {
 			final TextView txtTitle = new TextView(context);
@@ -213,11 +215,13 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			final int padding = ((UI.isLargeScreen || !UI.isLowDpiScreen) ? UI.controlMargin : UI.controlSmallMargin);
 			UI.prepareControlContainer(panelBottom, true, false, padding, padding, padding, padding);
 			if (btnNeutral != null) {
+				btnNeutral.setDefaultHeightAndLargeHorizontalPadding();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				rp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
 				panelBottom.addView(btnNeutral, rp);
 			}
 			if (btnNegative != null) {
+				btnNegative.setDefaultHeightAndLargeHorizontalPadding();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				if (btnPositive != null)
 					rp.addRule(RelativeLayout.LEFT_OF, 3);
@@ -227,6 +231,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			}
 			if (btnPositive != null) {
 				btnPositive.setId(3);
+				btnPositive.setDefaultHeightAndLargeHorizontalPadding();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				if (UI.isLargeScreen)
 					rp.leftMargin = UI.controlMargin;
@@ -238,7 +243,9 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			panelBottom = null;
 		}
 
-		if (!emptyBackground) {
+		final boolean flexPanelUsed = (titleVisible || panelBottom != null);
+
+		if (!emptyBackground || flexPanelUsed) {
 			if (backgroundId != 0)
 				contentView.setBackgroundResource(backgroundId);
 			else
@@ -252,14 +259,16 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 				scanChildrenRecursive((ViewGroup)contentView);
 		}
 
-		if (titleVisible || panelBottom != null) {
+		if (flexPanelUsed) {
 			panel.addView(contentView, titleVisible ? 1 : 0, new BgFlexLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
 			panel.setFlexChild(contentView);
-
-			setContentView(panel, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-		} else {
-			contentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-			setContentView(contentView);
+			panel.setOpaque(true);
+			contentView = panel;
 		}
+
+		setContentView(contentView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+		final ViewParent viewParent = contentView.getParent();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && !UI.isLowDpiScreen && (viewParent instanceof ViewGroup))
+			((ViewGroup)viewParent).setBackgroundDrawable(new BgShadowDrawable());
 	}
 }

@@ -60,7 +60,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 
 	private final class ColorSwatchView extends View implements OnClickListener {
 		private final int[] colors;
-		private final int margin, contentsTop, contentsWidth, contentsHeight;
+		private int squareSize, margin, contentsWidth, contentsHeight;
 		private int contentsLeft, currentColor, lastX, lastY;
 		private boolean attached;
 
@@ -102,11 +102,11 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 				colors[i + 9] = hsv.toRGBWeb(false);
 			}
 
-			margin = (UI.dialogMargin >> 1);
-			contentsTop = margin;
+			squareSize = UI.defaultControlSize;
+			margin = UI.controlMargin;
+			contentsWidth = ((squareSize * 5) + (margin * 6));
+			contentsHeight = ((squareSize * 31) + (margin * 32));
 
-			setMinimumWidth((contentsWidth = ((UI.defaultControlSize * 5) + (UI.controlMargin * 4))) + (margin << 1));
-			setMinimumHeight((contentsHeight = ((UI.defaultControlSize * 31) + (UI.controlMargin * 30))) + (margin << 1));
 			setOnClickListener(this);
 		}
 
@@ -121,8 +121,8 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			int x = (currentColor % 5);
 			int y = (currentColor / 5);
 
-			if (x != 0) x = (contentsLeft + (UI.defaultControlSize * x) + (UI.controlMargin * (x - 1)));
-			if (y != 0) y = (contentsTop + (UI.defaultControlSize * y) + (UI.controlMargin * (y - 1)));
+			if (x != 0) x = (contentsLeft + (squareSize * x) + (margin * (x - 1)));
+			if (y != 0) y = (margin + (squareSize * y) + (margin * (y - 1)));
 
 			if (attached && colorSwatchMode && scrollView != null)
 				scrollView.scrollTo(x, y);
@@ -151,8 +151,24 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 
 		@Override
 		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-			final int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
-			setMeasuredDimension(width >= (contentsWidth + (margin << 1)) ? width : (contentsWidth + (margin << 1)), contentsHeight + (margin << 1));
+			squareSize = UI.defaultControlSize;
+			margin = UI.controlMargin;
+			contentsWidth = ((squareSize * 5) + (margin * 6));
+			contentsHeight = ((squareSize * 31) + (margin * 32));
+
+			int w;
+			while ((w = resolveSize(contentsWidth, widthMeasureSpec)) < contentsWidth && squareSize > UI.controlMargin) {
+				if (margin > UI.controlXtraSmallMargin)
+					margin--;
+				else
+					squareSize--;
+				contentsWidth = ((squareSize * 5) + (margin * 6));
+				contentsHeight = ((squareSize * 31) + (margin * 32));
+			}
+
+			contentsLeft = ((w - contentsWidth) >> 1);
+
+			setMeasuredDimension(w, contentsHeight);
 		}
 
 		@Override
@@ -179,14 +195,14 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 				int y = lastY;
 				lastX = Integer.MIN_VALUE;
 				lastY = Integer.MIN_VALUE;
-				if (x < contentsLeft) return;
-				if (x >= (contentsLeft + contentsWidth)) return;
-				if (y < contentsTop) y = contentsTop;
-				else if (y >= (contentsTop + contentsHeight)) y = contentsTop + contentsHeight - 1;
-				x -= contentsLeft;
-				y -= contentsTop;
-				x /= (UI.defaultControlSize + UI.controlMargin);
-				y /= (UI.defaultControlSize + UI.controlMargin);
+				if (x < (contentsLeft + margin)) return;
+				if (x >= (contentsLeft + contentsWidth - margin)) return;
+				if (y < margin) y = margin;
+				else if (y >= (margin + contentsHeight)) y = margin + contentsHeight - 1;
+				x -= (contentsLeft + margin);
+				y -= margin;
+				x /= (squareSize + margin);
+				y /= (squareSize + margin);
 				final int currentColor = ((y * 5) + x);
 				if (this.currentColor != currentColor) {
 					this.currentColor = currentColor;
@@ -199,12 +215,13 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		@Override
 		public void draw(Canvas canvas) {
 			super.draw(canvas);
-			UI.rect.top = contentsTop;
-			UI.rect.bottom = contentsTop + UI.defaultControlSize;
+			final int size = margin + squareSize;
+			UI.rect.top = margin;
+			UI.rect.bottom = size;
 			int i = 0;
 			for (int y = 0; y < 31; y++) {
-				UI.rect.left = contentsLeft;
-				UI.rect.right = contentsLeft + UI.defaultControlSize;
+				UI.rect.left = contentsLeft + margin;
+				UI.rect.right = UI.rect.left + squareSize;
 				for (int x = 0; x < 5; x++, i++) {
 					UI.fillRect(canvas, colors[i]);
 					if (i == currentColor) {
@@ -213,11 +230,11 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 						UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
 						UI.rect.inset(-UI.strokeSize, -UI.strokeSize);
 					}
-					UI.rect.left += (UI.defaultControlSize + UI.controlMargin);
-					UI.rect.right += (UI.defaultControlSize + UI.controlMargin);
+					UI.rect.left += size;
+					UI.rect.right += size;
 				}
-				UI.rect.top += (UI.defaultControlSize + UI.controlMargin);
-				UI.rect.bottom += (UI.defaultControlSize + UI.controlMargin);
+				UI.rect.top += size;
+				UI.rect.bottom += size;
 			}
 		}
 
