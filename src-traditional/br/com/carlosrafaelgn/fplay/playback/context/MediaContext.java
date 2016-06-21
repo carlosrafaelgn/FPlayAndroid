@@ -41,7 +41,7 @@ public final class MediaContext {
 	public static void _release() {
 	}
 
-	public static IMediaPlayer createMediaPlayer() {
+	public static MediaPlayerBase createMediaPlayer() {
 		return new MediaPlayerWrapper();
 	}
 

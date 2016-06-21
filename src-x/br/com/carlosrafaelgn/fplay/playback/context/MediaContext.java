@@ -42,12 +42,12 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
 
-import br.com.carlosrafaelgn.fplay.playback.Player;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+
+import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int MSG_COMPLETION = 0x0100;
@@ -81,6 +81,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int PLAYER_TIMEOUT = 30000;
 
 	private static final int SL_MILLIBEL_MIN = -32768;
+	private static final int AUDIO_TRACK_OUT_OF_MEMORY = 1000; //this error code is not used by OpenSL ES
 
 	private static final class ErrorStructure {
 		public MediaCodecPlayer player;
@@ -228,6 +229,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			release();
 			audioTrackCreate(sampleRate);
 			audioTrack = new QueryableAudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << 2, AudioTrack.MODE_STREAM);
+			try {
+				//apparently, there are times when audioTrack creation fails, but the constructor
+				//above does not throw any exceptions (only getNativeFrameCount() throws exceptions
+				//in such cases)
+				getActualBufferSizeInFrames();
+			} catch (Throwable ex) {
+				return AUDIO_TRACK_OUT_OF_MEMORY;
+			}
 			setVolume();
 			return 0;
 		}
@@ -467,19 +476,27 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (sampleRate < 8000)
 			sampleRate = 44100;
 
-		/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+		int framesPerBuffer = 0;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
 			try {
 				final AudioManager am = (AudioManager)Player.theApplication.getSystemService(Context.AUDIO_SERVICE);
-				singleBufferSizeInFrames = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
+				framesPerBuffer = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
+				framesPerBuffer = (int)Math.ceil((double)framesPerBuffer * (double)sampleRate / Double.parseDouble(am.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE)));
 			} catch (Throwable ex) {
 				//just ignore
+				framesPerBuffer = 0;
 			}
-		}*/
+		}
 
-		final int singleBufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-		int singleBufferSizeInFrames = singleBufferSizeInBytes >> 2;
-		if (singleBufferSizeInFrames <= 0)
-			singleBufferSizeInFrames = 1024;
+		if (framesPerBuffer <= 0) {
+			framesPerBuffer = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT) >> 2;
+			if (framesPerBuffer <= 0)
+				framesPerBuffer = 1024;
+		}
+
+		int singleBufferSizeInFrames = framesPerBuffer;
+		while (singleBufferSizeInFrames < ((2 * MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING) / 3))
+			singleBufferSizeInFrames += framesPerBuffer;
 
 		int bufferSizeInFrames;
 		switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
@@ -501,8 +518,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		int minBufferSizeInFrames = singleBufferSizeInFrames;
-		while (minBufferSizeInFrames < 4096)
-			minBufferSizeInFrames += singleBufferSizeInFrames;
+		//while (minBufferSizeInFrames < 4096)
+		//	minBufferSizeInFrames += singleBufferSizeInFrames;
 		while (minBufferSizeInFrames > 20000)
 			minBufferSizeInFrames >>>= 1;
 
@@ -522,6 +539,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			return;
 		if (result < 0)
 			result = -result;
+		if (result == AUDIO_TRACK_OUT_OF_MEMORY)
+			throw new OutOfMemoryError();
 		throw new IllegalStateException("The engine returned " + result);
 	}
 
@@ -561,7 +580,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	public void run() {
 		thread.setPriority(Thread.MAX_PRIORITY);
 
-		int sampleRate = 0, sleepTime = 30;
+		int sampleRate = 0, sleepTime = 20;
 		PowerManager.WakeLock wakeLock;
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
@@ -639,7 +658,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									bufferSizeInFrames = (int)temp;
 									final int minBufferSizeInFrames = (int)(temp >>> 32);
 									fillThresholdInFrames = engine.getFillThresholdInFrames(bufferSizeInFrames);
-									sleepTime = ((minBufferSizeInFrames * 1000) / sampleRate) + 5;
+									sleepTime = (minBufferSizeInFrames * 1000) / sampleRate;
+									if (sleepTime > 30) sleepTime = 30;
+									else if (sleepTime < 15) sleepTime = 15;
 									synchronized (engineSync) {
 										checkEngineResult(engine.create(sampleRate, bufferSizeInFrames, minBufferSizeInFrames));
 									}
@@ -825,11 +846,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									}
 									nextFramesWritten = 0;
 								}
-								seekPendingPlayer.doSeek(requestedSeekMS);
-								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, seekPendingPlayer), SystemClock.uptimeMillis());
-								framesWritten = seekPendingPlayer.getCurrentPositionInFrames();
+								framesWritten = seekPendingPlayer.doSeek(requestedSeekMS);
 								framesPlayed = framesWritten;
 								framesWrittenBeforePlaying = 0;
+								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, seekPendingPlayer), SystemClock.uptimeMillis());
 							} catch (Throwable ex) {
 								synchronized (engineSync) {
 									engine.release();
@@ -1051,11 +1071,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			break;
 		case MSG_BUFFERINGSTART:
 			if (msg.obj instanceof MediaCodecPlayer)
-				((MediaCodecPlayer)msg.obj).onInfo(IMediaPlayer.INFO_BUFFERING_START, 0, null);
+				((MediaCodecPlayer)msg.obj).onInfo(MediaPlayerBase.INFO_BUFFERING_START, 0, null);
 			break;
 		case MSG_BUFFERINGEND:
 			if (msg.obj instanceof MediaCodecPlayer)
-				((MediaCodecPlayer)msg.obj).onInfo(IMediaPlayer.INFO_BUFFERING_END, 0, null);
+				((MediaCodecPlayer)msg.obj).onInfo(MediaPlayerBase.INFO_BUFFERING_END, 0, null);
 			break;
 		}
 		return true;
@@ -1351,7 +1371,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 	}
 
-	public static IMediaPlayer createMediaPlayer() {
+	public static MediaPlayerBase createMediaPlayer() {
 		return new MediaCodecPlayer();
 	}
 

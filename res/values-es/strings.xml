@@ -171,6 +171,7 @@
     <string name="error_server_died">Lo sentimos! El servidor de medio ha muerto :(</string>
     <string name="error_security">Lo sentimos! Ha ocurrido un problema de seguridad :(</string>
     <string name="error_unsupported_format">Lo sentimos! Este códec de audio no es compatible :(</string>
+    <string name="error_try_smaller_buffer">Lo sentimos! Sin memoria! Intente reducir el tamaño del buffer de reproducción :(</string>
     <string name="coming_soon">Próximamente&#8230; ;)</string>
     <string name="blue_orange">Azul/Naranja</string>
     <string name="blue">Azul</string>

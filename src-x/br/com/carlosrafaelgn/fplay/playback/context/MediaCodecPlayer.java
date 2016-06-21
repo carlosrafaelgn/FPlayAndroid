@@ -51,7 +51,7 @@ import java.nio.ByteOrder;
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
-final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
+final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback {
 	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x0100;
 	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x0101;
 	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0102;
@@ -68,8 +68,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	private static final int STATE_ERROR = 8;
 	private static final int STATE_END = 9;
 
-	private static final int INPUT_BUFFER_TIMEOUT_IN_US = 2500;
-	private static final int OUTPUT_BUFFER_TIMEOUT_IN_US = 35000;
+	private static final int INPUT_BUFFER_TIMEOUT_IN_US = 0;
+	private static final int OUTPUT_BUFFER_TIMEOUT_IN_US = 4000;
 
 	static final class OutputBuffer {
 		public MediaCodecPlayer player;
@@ -201,7 +201,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			return true;
 		switch (msg.what) {
 		case MSG_HTTP_STREAM_RECEIVER_ERROR:
-			onError(null, !Player.isConnectedToTheInternet() ? IMediaPlayer.ERROR_NOT_FOUND : msg.arg2);
+			onError(null, !Player.isConnectedToTheInternet() ? MediaPlayerBase.ERROR_NOT_FOUND : msg.arg2);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
 			if (msg.obj != null)
@@ -398,9 +398,9 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			mediaCodec.releaseOutputBuffer(bufferIndex, false);
 	}
 
-	void doSeek(int msec) throws IOException {
+	long doSeek(int msec) throws IOException {
 		if (state != STATE_SEEKING)
-			return;
+			return 0;
 
 		if (nativeMediaCodec) {
 			long ret = MediaContext.mediaCodecSeek(nativeObj, msec);
@@ -408,7 +408,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				throw new IOException();
 			outputOver = (ret == 0x7FFFFFFFFFFFFFFFL);
 			currentPositionInMS = (outputOver ? durationInMS : (int)(ret / 1000L));
-			return;
+			return (ret * (long)sampleRate) //us * frames per second
+				/ 1000000L; //us to second;
 		}
 
 		mediaCodec.flush();
@@ -419,6 +420,8 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 		outputOver = (duration < 0);
 		currentPositionInMS = (outputOver ? durationInMS : (int)(duration / 1000L));
 		fillInputBuffers();
+		return (duration * (long)sampleRate) //us * frames per second
+			/ 1000000L; //us to second;
 	}
 
 	void resetDecoderIfOutputAlreadyUsed() throws IOException {
@@ -467,9 +470,9 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 			if (httpStreamReceiver != null) {
 				httpStreamBufferingAfterPause = true;
 				state = STATE_STARTED;
-				onInfo(IMediaPlayer.INFO_BUFFERING_START, 0, null);
+				onInfo(MediaPlayerBase.INFO_BUFFERING_START, 0, null);
 				if (!httpStreamReceiver.start())
-					throw new IMediaPlayer.PermissionDeniedException();
+					throw new MediaPlayerBase.PermissionDeniedException();
 			} else if (MediaContext.resume(this)) {
 				state = STATE_STARTED;
 			}
@@ -618,7 +621,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				throw new UnsupportedOperationException("streams other than internet streams must used prepare()");
 			state = STATE_PREPARING;
 			if (!httpStreamReceiver.start())
-				throw new IMediaPlayer.PermissionDeniedException();
+				throw new MediaPlayerBase.PermissionDeniedException();
 			break;
 		default:
 			throw new IllegalStateException("prepareAsync() - player was in an invalid state: " + state);
@@ -804,7 +807,7 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 	}
 
 	@Override
-	public void setNextMediaPlayer(IMediaPlayer next) {
+	public void setNextMediaPlayer(MediaPlayerBase next) {
 		if (next == this)
 			throw new IllegalArgumentException("this == next");
 		final MediaCodecPlayer nextPlayer = (MediaCodecPlayer)next;
@@ -839,9 +842,10 @@ final class MediaCodecPlayer implements IMediaPlayer, Handler.Callback {
 				((exception != null) && (exception instanceof MediaServerDiedException)) ? ERROR_SERVER_DIED :
 					ERROR_UNKNOWN,
 				((exception == null) ? errorCode :
-					((exception instanceof FileNotFoundException) ? ERROR_NOT_FOUND :
-						((exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :
-							((exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN)))));
+					((exception instanceof OutOfMemoryError) ? ERROR_OUT_OF_MEMORY :
+						((exception instanceof FileNotFoundException) ? ERROR_NOT_FOUND :
+							((exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :
+								((exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN))))));
 	}
 
 	void onInfo(int what, int extra, Object extraObject) {

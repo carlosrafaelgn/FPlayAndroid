@@ -61,7 +61,7 @@ import java.nio.channels.SocketChannel;
 
 import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
-import br.com.carlosrafaelgn.fplay.playback.context.IMediaPlayer;
+import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class HttpStreamReceiver implements Runnable {
@@ -366,7 +366,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, IMediaPlayer.ERROR_IO), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, MediaPlayerBase.ERROR_IO), SystemClock.uptimeMillis());
 				}
 			} finally {
 				if (wakeLock != null)
@@ -530,7 +530,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? IMediaPlayer.ERROR_TIMED_OUT : ((ex instanceof FileNotFoundException) ? IMediaPlayer.ERROR_NOT_FOUND : IMediaPlayer.ERROR_IO)), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? MediaPlayerBase.ERROR_TIMED_OUT : ((ex instanceof FileNotFoundException) ? MediaPlayerBase.ERROR_NOT_FOUND : MediaPlayerBase.ERROR_IO)), SystemClock.uptimeMillis());
 				}
 			} finally {
 				synchronized (sync) {
@@ -997,7 +997,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, IMediaPlayer.ERROR_UNSUPPORTED_FORMAT), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT), SystemClock.uptimeMillis());
 				}
 				return;
 			} else {

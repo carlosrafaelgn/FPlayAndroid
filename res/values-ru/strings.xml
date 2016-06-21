@@ -171,6 +171,7 @@
     <string name="error_server_died">Извините! Медиа сервер внезапно умер :(</string>
     <string name="error_security">Извините! Проблема безопасности случилось :(</string>
     <string name="error_unsupported_format">Извините! Этот аудио кодек не поддерживается :(</string>
+    <string name="error_try_smaller_buffer">Извините! Недостаточно памяти! Попробуйте уменьшить размер буфера воспроизведения :(</string>
     <string name="coming_soon">Скоро&#8230; ;)</string>
     <string name="blue_orange">Сине-оранжевая</string>
     <string name="blue">Синяя</string>

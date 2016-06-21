@@ -171,6 +171,7 @@
     <string name="error_server_died">Desculpe! O servidor de mídia morreu de repente :(</string>
     <string name="error_security">Desculpe! Houve um problema de segurança :(</string>
     <string name="error_unsupported_format">Desculpe! Este codec de áudio não é suportado :(</string>
+    <string name="error_try_smaller_buffer">Desculpe! Sem memória! Tente diminuir o tamanho do buffer de reprodução :(</string>
     <string name="coming_soon">Em breve&#8230; ;)</string>
     <string name="blue_orange">Azul/Laranja</string>
     <string name="blue">Azul</string>

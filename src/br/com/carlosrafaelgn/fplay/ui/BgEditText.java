@@ -93,15 +93,20 @@ public final class BgEditText extends EditText {
 			final Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
 			fCursorDrawableRes.setAccessible(true);
 			final int mCursorDrawableRes = fCursorDrawableRes.getInt(this);
-			Field fEditor = TextView.class.getDeclaredField("mEditor");
+			final Field fEditor = TextView.class.getDeclaredField("mEditor");
 			fEditor.setAccessible(true);
 			final Object editor = fEditor.get(this);
 			final Class<?> clazz = editor.getClass();
 			final Field fCursorDrawable = clazz.getDeclaredField("mCursorDrawable");
 			fCursorDrawable.setAccessible(true);
 			final Drawable[] drawables = new Drawable[2];
-			drawables[0] = getContext().getResources().getDrawable(mCursorDrawableRes);
-			drawables[1] = getContext().getResources().getDrawable(mCursorDrawableRes);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				drawables[0] = getContext().getDrawable(mCursorDrawableRes);
+				drawables[1] = getContext().getDrawable(mCursorDrawableRes);
+			} else {
+				drawables[0] = getContext().getResources().getDrawable(mCursorDrawableRes);
+				drawables[1] = getContext().getResources().getDrawable(mCursorDrawableRes);
+			}
 			drawables[0].setColorFilter(color, PorterDuff.Mode.SRC_IN);
 			drawables[1].setColorFilter(color, PorterDuff.Mode.SRC_IN);
 			fCursorDrawable.set(editor, drawables);

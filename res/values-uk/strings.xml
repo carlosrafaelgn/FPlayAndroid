@@ -171,6 +171,7 @@
     <string name="error_server_died">Вибачте! Медіа-сервер раптово помер :(</string>
     <string name="error_security">Вибачте! Проблема безпеки сталося :(</string>
     <string name="error_unsupported_format">Извините! Цей аудіо кодек не дозволені :(</string>
+    <string name="error_try_smaller_buffer">Вибачте! Недостатньо помяті! Спробуйте зменшити розмір буфера відтворення :(</string>
     <string name="coming_soon">Скоро&#8230; ;)</string>
     <string name="blue_orange">Синя/Помаранчева</string>
     <string name="blue">Синя</string>

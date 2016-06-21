@@ -35,11 +35,14 @@ package br.com.carlosrafaelgn.fplay.playback.context;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 
-final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
+final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
 	private final MediaPlayer player;
 	private OnCompletionListener completionListener;
 	private OnErrorListener errorListener;
@@ -63,7 +66,27 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnCompletion
 
 	@Override
 	public void setDataSource(String path) throws IOException {
-		player.setDataSource(path);
+		if (path.startsWith("file:")) {
+			final Uri uri = Uri.parse(path);
+			path = uri.getPath();
+		}
+		if (path.charAt(0) == File.separatorChar) {
+			FileInputStream inputStream = null;
+			try {
+				inputStream = new FileInputStream(path);
+				player.setDataSource(inputStream.getFD());
+			} finally {
+				if (inputStream != null) {
+					try {
+						inputStream.close();
+					} catch (Throwable ex) {
+						//just ignore
+					}
+				}
+			}
+		} else {
+			player.setDataSource(path);
+		}
 	}
 
 	@Override
@@ -178,7 +201,7 @@ final class MediaPlayerWrapper implements IMediaPlayer, MediaPlayer.OnCompletion
 
 	@Override
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	public void setNextMediaPlayer(IMediaPlayer next) {
+	public void setNextMediaPlayer(MediaPlayerBase next) {
 		player.setNextMediaPlayer(((MediaPlayerWrapper)next).player);
 	}
 

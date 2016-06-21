@@ -171,6 +171,7 @@
     <string name="error_server_died">Tut mir leid! Der Medienserver hat während der Wiedergabe plötzlich nicht mehr reagiert :(</string>
     <string name="error_security">Tut mir leid! Ein Sicherheitsproblem ist aufgetreten :(</string>
     <string name="error_unsupported_format">Tut mir leid! Diese Audiocodec wird nicht unterstützt! :(</string>
+    <string name="error_try_smaller_buffer">Tut mir leid! Out of memory! Versuchen Sie, die Größe des Wiedergabepuffer zu reduzieren :(</string>
     <string name="coming_soon">Kommt bald&#8230; ;)</string>
     <string name="blue_orange">Blau/Orange</string>
     <string name="blue">Blau</string>

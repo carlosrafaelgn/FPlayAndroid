@@ -81,8 +81,8 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
-import br.com.carlosrafaelgn.fplay.playback.context.IMediaPlayer;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
+import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
@@ -131,7 +131,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 //when adding breakpoints to Player Core Thread
 //************************************************************************************
 
-public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, IMediaPlayer.OnErrorListener, IMediaPlayer.OnSeekCompleteListener, IMediaPlayer.OnPreparedListener, IMediaPlayer.OnCompletionListener, IMediaPlayer.OnInfoListener, ArraySorter.Comparer<FileSt> {
+public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayerBase.OnErrorListener, MediaPlayerBase.OnSeekCompleteListener, MediaPlayerBase.OnPreparedListener, MediaPlayerBase.OnCompletionListener, MediaPlayerBase.OnInfoListener, ArraySorter.Comparer<FileSt> {
 	public interface PlayerObserver {
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		void onPlayerMetadataChanged(Song currentSong);
@@ -255,7 +255,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
-	private static IMediaPlayer player, nextPlayer;
+	private static MediaPlayerBase player, nextPlayer;
 	public static int audioSessionId;
 
 	//keep these fields here, instead of in their respective activities, to allow them to survive
@@ -268,7 +268,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int localVolumeDB;
 	public static boolean localPlaying;
 	public static Song localSong;
-	public static IMediaPlayer localPlayer;
+	public static MediaPlayerBase localPlayer;
 
 	private static class CoreHandler extends Handler {
 		@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
@@ -383,7 +383,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
 				if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion)
-					thePlayer.onInfo(player, IMediaPlayer.INFO_URL_UPDATE, 0, msg.obj);
+					thePlayer.onInfo(player, MediaPlayerBase.INFO_URL_UPDATE, 0, msg.obj);
 				break;
 			case MSG_SET_BUFFER_CONFIG:
 				MediaContext._setBufferConfig(msg.arg1);
@@ -446,7 +446,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
 				if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion)
-					thePlayer.onInfo(localPlayer, IMediaPlayer.INFO_METADATA_UPDATE, 0, msg.obj);
+					thePlayer.onInfo(localPlayer, MediaPlayerBase.INFO_METADATA_UPDATE, 0, msg.obj);
 				break;
 			}
 		}
@@ -921,8 +921,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				-1));
 	}
 
-	private static IMediaPlayer _createPlayer() {
-		IMediaPlayer mp = MediaContext.createMediaPlayer();
+	private static MediaPlayerBase _createPlayer() {
+		MediaPlayerBase mp = MediaContext.createMediaPlayer();
 		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		mp.setOnErrorListener(thePlayer);
 		mp.setOnSeekCompleteListener(thePlayer);
@@ -957,7 +957,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		reviveAlreadyTried = false;
 	}
 
-	private static void _releasePlayer(IMediaPlayer mediaPlayer) {
+	private static void _releasePlayer(MediaPlayerBase mediaPlayer) {
 		mediaPlayer.setOnErrorListener(null);
 		mediaPlayer.setOnPreparedListener(null);
 		mediaPlayer.setOnSeekCompleteListener(null);
@@ -1102,7 +1102,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		if (songWhenFirstErrorHappened == song || howThePlayerStarted == SongList.HOW_CURRENT || howThePlayerStarted >= 0 || checkForPermission) {
 			songWhenFirstErrorHappened = null;
-			_updateState(false, checkForPermission ? new IMediaPlayer.PermissionDeniedException() : ex);
+			_updateState(false, checkForPermission ? new MediaPlayerBase.PermissionDeniedException() : ex);
 		} else {
 			//this used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 			if (songWhenFirstErrorHappened == null)
@@ -1121,7 +1121,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (how != SongList.HOW_CURRENT)
 				storedSongTime = -1;
 			_fullCleanup();
-			_updateState(false, new IMediaPlayer.FocusException());
+			_updateState(false, new MediaPlayerBase.FocusException());
 			return;
 		}
 		//we must set this to false here, as the user could have manually
@@ -1149,7 +1149,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			postPlayPending = false;
 			if (nextSong == song && how != SongList.HOW_CURRENT) {
 				storedSongTime = -1;
-				final IMediaPlayer p = player;
+				final MediaPlayerBase p = player;
 				switch (nextPlayerState) {
 				case PLAYER_STATE_LOADED:
 					playerState = PLAYER_STATE_LOADED;
@@ -1599,7 +1599,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onCompletion(IMediaPlayer mediaPlayer) {
+	public void onCompletion(MediaPlayerBase mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		if (playing && player == mediaPlayer)
@@ -1607,16 +1607,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public boolean onError(IMediaPlayer mediaPlayer, int what, int extra) {
+	public boolean onError(MediaPlayerBase mediaPlayer, int what, int extra) {
 		if (state != STATE_ALIVE)
 			return true;
 		if (mediaPlayer == nextPlayer || mediaPlayer == player) {
-			if (what == IMediaPlayer.ERROR_SERVER_DIED) {
+			if (what == MediaPlayerBase.ERROR_SERVER_DIED) {
 				_storeSongTime();
 				_fullCleanup();
 				if (reviveAlreadyTried) {
 					reviveAlreadyTried = false;
-					_updateState(false, new IMediaPlayer.MediaServerDiedException());
+					_updateState(false, new MediaPlayerBase.MediaServerDiedException());
 				} else {
 					reviveAlreadyTried = true;
 					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_CURRENT, 0), SystemClock.uptimeMillis());
@@ -1626,10 +1626,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
 				_fullCleanup();
-				final Throwable result = ((extra == IMediaPlayer.ERROR_NOT_FOUND) ? new FileNotFoundException() :
-					((extra == IMediaPlayer.ERROR_TIMED_OUT) ? new IMediaPlayer.TimeoutException() :
-						((extra == IMediaPlayer.ERROR_UNSUPPORTED_FORMAT) ? new IMediaPlayer.UnsupportedFormatException() :
-							new IOException())));
+				final Throwable result = ((extra == MediaPlayerBase.ERROR_OUT_OF_MEMORY) ? new OutOfMemoryError() :
+					((extra == MediaPlayerBase.ERROR_NOT_FOUND) ? new FileNotFoundException() :
+						((extra == MediaPlayerBase.ERROR_TIMED_OUT) ? new MediaPlayerBase.TimeoutException() :
+							((extra == MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT) ? new MediaPlayerBase.UnsupportedFormatException() :
+								new IOException()))));
 				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 				//and the song was being prepared
 				if (howThePlayerStarted != SongList.HOW_CURRENT && howThePlayerStarted < 0)
@@ -1645,22 +1646,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public boolean onInfo(IMediaPlayer mediaPlayer, int what, int extra, Object extraObject) {
+	public boolean onInfo(MediaPlayerBase mediaPlayer, int what, int extra, Object extraObject) {
 		if (mediaPlayer == player) {
 			switch (what) {
-			case IMediaPlayer.INFO_BUFFERING_START:
+			case MediaPlayerBase.INFO_BUFFERING_START:
 				if (!playerBuffering) {
 					playerBuffering = true;
 					_updateState(true, null);
 				}
 				break;
-			case IMediaPlayer.INFO_BUFFERING_END:
+			case MediaPlayerBase.INFO_BUFFERING_END:
 				if (playerBuffering) {
 					playerBuffering = false;
 					_updateState(true, null);
 				}
 				break;
-			case IMediaPlayer.INFO_METADATA_UPDATE:
+			case MediaPlayerBase.INFO_METADATA_UPDATE:
 				//this message must be handled from the main thread
 				if (MainHandler.isOnMainThread()) {
 					if (extraObject instanceof HttpStreamReceiver.Metadata)
@@ -1669,7 +1670,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, httpStreamReceiverVersion, 0, extraObject), SystemClock.uptimeMillis());
 				}
 				break;
-			case IMediaPlayer.INFO_URL_UPDATE:
+			case MediaPlayerBase.INFO_URL_UPDATE:
 				if (state == STATE_ALIVE && song != null)
 					song.path = extraObject.toString();
 				break;
@@ -1679,7 +1680,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onPrepared(IMediaPlayer mediaPlayer) {
+	public void onPrepared(MediaPlayerBase mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		if (mediaPlayer == nextPlayer) {
@@ -1729,7 +1730,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
-	public void onSeekComplete(IMediaPlayer mediaPlayer) {
+	public void onSeekComplete(MediaPlayerBase mediaPlayer) {
 		if (state != STATE_ALIVE)
 			return;
 		if (mediaPlayer == player) {
@@ -1855,7 +1856,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
-		thePlayer.onError(player, IMediaPlayer.ERROR_UNKNOWN, !isConnectedToTheInternet() ? IMediaPlayer.ERROR_NOT_FOUND : errorCode);
+		thePlayer.onError(player, MediaPlayerBase.ERROR_UNKNOWN, !isConnectedToTheInternet() ? MediaPlayerBase.ERROR_NOT_FOUND : errorCode);
 	}
 
 	private static void httpStreamReceiverMetadataUpdate(HttpStreamReceiver.Metadata metadata) {
@@ -1920,7 +1921,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		} else {
 			//when start() returns false, this means we were unable to create the local server
 			_releaseInternetObjects();
-			throw new IMediaPlayer.PermissionDeniedException();
+			throw new MediaPlayerBase.PermissionDeniedException();
 		}
 	}
 
@@ -2293,7 +2294,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
 		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
-		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
+		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE, true);
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -3355,7 +3356,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		localPlayerState = (arg1 & 0x03);
 		localSong = (Song)objs[0];
 		objs[0] = null;
-		localPlayer = (IMediaPlayer)objs[1];
+		localPlayer = (MediaPlayerBase)objs[1];
 		objs[1] = null;
 		if (songs.okToTurnOffAfterReachingTheEnd) {
 			songs.okToTurnOffAfterReachingTheEnd = false;
@@ -3379,20 +3380,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];
 			objs[2] = null;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof IMediaPlayer.PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof MediaPlayerBase.PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
 				((ClientActivity)observer).getHostActivity().requestReadStoragePermission();
 			final String msg = ex.getMessage();
 			if (ex instanceof IllegalStateException) {
 				UI.toast(R.string.error_state);
-			} else if (ex instanceof IMediaPlayer.UnsupportedFormatException) {
+			} else if (ex instanceof MediaPlayerBase.UnsupportedFormatException) {
 				UI.toast(R.string.error_unsupported_format);
+			} else if (ex instanceof OutOfMemoryError) {
+				UI.toast(R.string.error_try_smaller_buffer);
 			} else if (ex instanceof FileNotFoundException) {
 				UI.toast((localSong != null && localSong.isHttp) ?
 					(!isConnectedToTheInternet() ? R.string.error_connection : R.string.error_server_not_found) :
 						R.string.error_file_not_found);
-			} else if (ex instanceof IMediaPlayer.TimeoutException) {
+			} else if (ex instanceof MediaPlayerBase.TimeoutException) {
 				UI.toast(R.string.error_timeout);
-			} else if (ex instanceof IMediaPlayer.MediaServerDiedException) {
+			} else if (ex instanceof MediaPlayerBase.MediaServerDiedException) {
 				UI.toast(R.string.error_server_died);
 			} else if (ex instanceof SecurityException) {
 				UI.toast(R.string.error_security);

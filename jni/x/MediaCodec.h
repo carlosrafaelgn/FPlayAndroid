@@ -91,8 +91,8 @@ static bool (*AMediaFormat_getInt32)(AMediaFormat*, const char *name, int32_t *o
 static bool (*AMediaFormat_getInt64)(AMediaFormat*, const char *name, int64_t *out);
 static bool (*AMediaFormat_getString)(AMediaFormat*, const char *name, const char **out);
 
-#define INPUT_BUFFER_TIMEOUT_IN_US 2500
-#define OUTPUT_BUFFER_TIMEOUT_IN_US 35000
+#define INPUT_BUFFER_TIMEOUT_IN_US 0
+#define OUTPUT_BUFFER_TIMEOUT_IN_US 4000
 
 class MediaCodec {
 public:
