@@ -120,7 +120,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				txt.setSingleLine(true);
 				txt.setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
 				txt.setTypeface(UI.defaultTypeface);
-				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
+				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 				txt.setTextColor(defaultTextColors);
 			}
 			txt.setText(genres == null ? "" : genres[position].name);
@@ -157,7 +157,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				txt = new TextView(Player.theApplication);
 				txt.setPadding(UI.dialogMargin, UI.dialogDropDownVerticalMargin, UI.dialogMargin, UI.dialogDropDownVerticalMargin);
 				txt.setTypeface(UI.defaultTypeface);
-				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.dialogTextSize);
+				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 				txt.setTextColor(defaultTextColors);
 			}
 			txt.setText(genres == null ? "" : genres[position].name);

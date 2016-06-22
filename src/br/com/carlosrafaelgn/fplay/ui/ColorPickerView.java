@@ -620,8 +620,9 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		addView(scrollView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
 		//unfortunately, we cannot afford to waste a single pixel... :/
-		final int margin = (UI.isLargeScreen ? (UI.dialogMargin << 1) : UI.dialogMargin >> 1);
-		final int textSize = (UI.isLargeScreen ? UI.dialogTextSize : UI._14sp);
+		final int margin = (UI.isLargeScreen ? (UI.dialogMargin << 1) : (UI.dialogMargin >> 1));
+		final int internalMargin = (UI.isLargeScreen ? UI.dialogMargin : (UI.dialogMargin >> 1));
+		final int textSize = (UI.isLargeScreen ? UI._18sp : UI._14sp);
 		final int editViewWidthSmall = UI.measureText("_000_", textSize);
 		final int editViewWidth = UI.measureText("_#000000_", textSize);
 
@@ -634,6 +635,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.setId(1);
 
 			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), UI.isLargeScreen ? "H" : "HSV", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtH.setSmallContentDescription(!UI.isLargeScreen);
 			txtH.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtH.addTextChangedListener(this);
@@ -641,6 +643,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtH, lp);
 
 			txtS = UI.createDialogEditText(context, 0, Integer.toString(s), UI.isLargeScreen ? "S" : null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtS.setSmallContentDescription(!UI.isLargeScreen);
 			txtS.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtS.addTextChangedListener(this);
@@ -649,6 +652,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtS, lp);
 
 			txtV = UI.createDialogEditText(context, 0, Integer.toString(v), UI.isLargeScreen ? "V" : null, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtV.setSmallContentDescription(!UI.isLargeScreen);
 			txtV.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtV.addTextChangedListener(this);
@@ -657,6 +661,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtV, lp);
 
 			txtHTML = UI.createDialogEditText(context, 0, ColorUtils.toHexColor(rgb), "HTML", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtHTML.setSmallContentDescription(!UI.isLargeScreen);
 			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtHTML.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtHTML.addTextChangedListener(this);
@@ -672,7 +677,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			hueView = new HueView(context, true);
 			hueView.setId(2);
 			rp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
-			rp.rightMargin = UI.dialogMargin;
+			rp.rightMargin = internalMargin;
 			rp.addRule(LEFT_OF, 1);
 			hueView.setVisibility(GONE);
 			addView(hueView, rp);
@@ -680,7 +685,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			colorView = new ColorView(context);
 			colorView.setId(3);
 			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-			rp.rightMargin = UI.dialogMargin;
+			rp.rightMargin = internalMargin;
 			rp.addRule(ALIGN_PARENT_LEFT);
 			rp.addRule(ALIGN_PARENT_TOP);
 			rp.addRule(ALIGN_PARENT_BOTTOM);
@@ -694,6 +699,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.setId(1);
 
 			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), "H", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtH.setSmallContentDescription(!UI.isLargeScreen);
 			txtH.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtH.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtH.addTextChangedListener(this);
@@ -701,6 +707,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtH, lp);
 
 			txtS = UI.createDialogEditText(context, 0, Integer.toString(s), "S", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtS.setSmallContentDescription(!UI.isLargeScreen);
 			txtS.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtS.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtS.addTextChangedListener(this);
@@ -709,6 +716,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtS, lp);
 
 			txtV = UI.createDialogEditText(context, 0, Integer.toString(v), "V", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtV.setSmallContentDescription(!UI.isLargeScreen);
 			txtV.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtV.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtV.addTextChangedListener(this);
@@ -717,6 +725,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtV, lp);
 
 			txtHTML = UI.createDialogEditText(context, 0, ColorUtils.toHexColor(rgb), "HTML", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+			txtHTML.setSmallContentDescription(!UI.isLargeScreen);
 			txtHTML.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
 			txtHTML.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
 			txtHTML.addTextChangedListener(this);
@@ -725,7 +734,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel.addView(txtHTML, lp);
 
 			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-			rp.topMargin = UI.dialogMargin;
+			rp.topMargin = internalMargin;
 			rp.addRule(ALIGN_PARENT_BOTTOM);
 			controlPanel.setVisibility(GONE);
 			addView(controlPanel, rp);
@@ -733,7 +742,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			hueView = new HueView(context, false);
 			hueView.setId(2);
 			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-			rp.topMargin = UI.dialogMargin;
+			rp.topMargin = internalMargin;
 			rp.addRule(ABOVE, 1);
 			hueView.setVisibility(GONE);
 			addView(hueView, rp);

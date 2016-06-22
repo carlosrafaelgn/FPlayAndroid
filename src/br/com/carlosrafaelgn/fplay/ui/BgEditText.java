@@ -73,16 +73,19 @@ public final class BgEditText extends EditText {
 		super.setDrawingCacheEnabled(false);
 		super.setGravity(Gravity.BOTTOM);
 		super.setPadding(0, 0, 0, UI.thickDividerSize << 1);
-		if (UI.isLargeScreen) {
-			textSize = UI._18sp;
-			textBox = UI._18spBox;
-			textY = UI._18spYinBox;
-			textMargin = UI.controlMargin;
-		} else {
+		setSmallContentDescription(false);
+		textMargin = (UI.isLargeScreen ? UI.controlMargin : UI.controlSmallMargin);
+	}
+
+	public void setSmallContentDescription(boolean small) {
+		if (small) {
 			textSize = UI._14sp;
 			textBox = UI._14spBox;
 			textY = UI._14spYinBox;
-			textMargin = UI.controlSmallMargin;
+		} else {
+			textSize = UI._18sp;
+			textBox = UI._18spBox;
+			textY = UI._18spYinBox;
 		}
 	}
 
