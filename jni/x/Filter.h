@@ -66,6 +66,20 @@ void computeFilter(uint32_t band) {
 	//See the License for the specific language governing permissions and
 	//limitations under the License.
 	//
+
+	//
+	//Additional reference (excellent quality :D):
+	//
+	//Cookbook formulae for audio EQ biquad filter coefficients
+	//by Robert Bristow-Johnson  <rbj@audioimagination.com>
+	//
+	//Links:
+	//http://www.musicdsp.org/archive.php?classid=3#197
+	//http://www.musicdsp.org/archive.php?classid=3#198
+	//http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
+	//http://www.musicdsp.org/files/EQ-Coefficients.pdf
+	//
+
 	if (band >= equalizerMaxBandCount) {
 		//nothing to be done in this band...
 		equalizerCoefs[(band << 3)    ] = 1.0f; //b0 L
