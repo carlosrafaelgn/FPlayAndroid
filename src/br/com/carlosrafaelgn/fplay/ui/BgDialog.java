@@ -279,6 +279,11 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			contentView = panel;
 		}
 
+		//we must make this view clickable or else the click will fall
+		//through to the parent, dismissing the dialog
+		contentView.setClickable(true);
+		contentView.setLongClickable(true);
+
 		setContentView(contentView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 		final ViewParent viewParent = contentView.getParent();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && !UI.isLowDpiScreen && (viewParent instanceof ViewGroup)) {
