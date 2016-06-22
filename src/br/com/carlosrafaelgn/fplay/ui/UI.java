@@ -2237,8 +2237,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			animationFocusView = null;
 		}
 		if (animationFinishedObserver != null) {
-			animationFinishedObserver.run();
+			final Runnable observer = animationFinishedObserver;
 			animationFinishedObserver = null;
+			observer.run();
 		}
 	}
 
@@ -2296,6 +2297,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			animationHideCount = 0;
 			animationShowCount = 0;
 			animationViewToShowFirst = null;
+			if (animationFinishedObserver != null) {
+				final Runnable observer = animationFinishedObserver;
+				animationFinishedObserver = null;
+				observer.run();
+			}
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			animationCommit11(focusView);
 		} else {

@@ -81,7 +81,7 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	private FileSt checkedFile;
 	private BgButton btnGoBack, btnMenu, btnAdd, btnPlay;
 	private RelativeLayout panelSecondary;
-	private boolean loading, isCreatingLayout;
+	private boolean loading, isCreatingLayout, btnMenuIconAnimation;
 	private FileSt confirmFile;
 	private int confirmDeleteIndex;
 	private TextIconDrawable btnMenuIcon;
@@ -116,11 +116,26 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		return title;
 	}
 
+	private void updateBtnMenuIcon() {
+		if (btnMenuIcon == null || btnMenu == null)
+			return;
+		final CharSequence txt;
+		if (checkedFile == null) {
+			txt = getText(R.string.msg_create_new);
+			btnMenuIcon.setIcon(UI.ICON_SAVE);
+		} else {
+			txt = getText(R.string.msg_delete_button);
+			btnMenuIcon.setIcon(UI.ICON_DELETE);
+		}
+		btnMenu.setText(txt);
+		btnMenu.setContentDescription(txt);
+	}
+
 	@SuppressWarnings("StringEquality")
 	private void updateOverallLayout() {
-		boolean setObserver = false;
 		UI.animationReset();
 		if (!save) {
+			boolean setObserver = false;
 			RelativeLayout.LayoutParams rp;
 			final int count = ((fileList != null) ? fileList.getCount() : 0);
 			if (count != 0 && checkedFile != null) {
@@ -184,29 +199,36 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 					}
 				}
 			}
+			btnMenuIconAnimation = false;
+			if (setObserver)
+				UI.animationFinishedObserver = this;
+			UI.animationCommit(isCreatingLayout, null);
 		} else {
 			if (btnMenuIcon != null && btnMenu != null && btnMenuIcon.getIcon() != ((checkedFile != null) ? UI.ICON_DELETE : UI.ICON_SAVE)) {
-				final CharSequence txt;
-				if (checkedFile == null) {
-					txt = getText(R.string.msg_create_new);
-					btnMenuIcon.setIcon(UI.ICON_SAVE);
+				if (UI.animationEnabled && !isCreatingLayout) {
+					btnMenuIconAnimation = true;
+					UI.animationFinishedObserver = this;
+					UI.animationAddViewToHide(btnMenu);
+					UI.animationCommit(false, null);
 				} else {
-					txt = getText(R.string.msg_delete_button);
-					btnMenuIcon.setIcon(UI.ICON_DELETE);
+					updateBtnMenuIcon();
 				}
-				btnMenu.setText(txt);
-				btnMenu.setContentDescription(txt);
 			}
 		}
-		UI.animationCommit(isCreatingLayout, null);
-		if (setObserver)
-			UI.animationFinishedObserver = this;
 	}
 
 	@Override
 	public void run() {
-		//the animation has just finished, time to hide lblLoading
-		if (lblLoading != null) {
+		if (btnMenuIconAnimation) {
+			if (btnMenu == null)
+				return;
+			//btnMenu has just been hidden, time to update it
+			updateBtnMenuIcon();
+			UI.animationReset();
+			UI.animationAddViewToShow(btnMenu);
+			UI.animationCommit(false, null);
+		} else if (lblLoading != null) {
+			//the animation has just finished, time to hide lblLoading
 			lblLoading.setVisibility(View.GONE);
 		}
 	}
