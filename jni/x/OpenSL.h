@@ -349,14 +349,6 @@ uint32_t JNICALL openSLGetHeadPositionInFrames(JNIEnv* env, jclass clazz) {
 	return headPositionInFrames;
 }
 
-void swapShorts(int16_t* buffer, uint32_t sizeInShorts) {
-	while (sizeInShorts) {
-		*buffer = bswap_16(*buffer);
-		buffer++;
-		sizeInShorts++;
-	}
-}
-
 void JNICALL openSLCopyVisualizerData(JNIEnv* env, jclass clazz, int64_t bufferPtr) {
 	if (!fullBuffer || !bqPlayerBufferQueue || !bufferPtr)
 		return;
@@ -392,8 +384,11 @@ int32_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 			sizeInBytes = (sizeInFrames << srcChannelCount);
 		}
 
-		//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames
-		memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), ((MediaCodec*)nativeObj)->buffer + offsetInBytes, sizeInBytes);
+		//dstBuffer must always be filled with stereo frames
+		if (srcChannelCount == 2)
+			memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), ((MediaCodec*)nativeObj)->buffer + offsetInBytes, sizeInBytes);
+		else
+			monoToStereo((int16_t*)(((MediaCodec*)nativeObj)->buffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)));
 
 		commitedFramesPerBuffer[bufferWriteIndex] += sizeInFrames;
 
@@ -457,26 +452,34 @@ int32_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 		sizeInBytes = (sizeInFrames << srcChannelCount);
 	}
 
+	//*we do not need to worry about the case when jbuffer and jarray are both null (meaning we had to flush current buffer)
+	//because flushing is only performed in openSLWriteNative()
 	if (jbuffer) {
 		int16_t* const srcBuffer = (int16_t*)env->GetDirectBufferAddress(jbuffer);
 		if (!srcBuffer)
 			return -SL_RESULT_MEMORY_FAILURE;
 
-		//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames
-		memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), (uint8_t*)srcBuffer + offsetInBytes, sizeInBytes);
+		//dstBuffer must always be filled with stereo frames
+		if (srcChannelCount == 2)
+			memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), (uint8_t*)srcBuffer + offsetInBytes, sizeInBytes);
+		else
+			monoToStereo((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)));
 	} else {
 		int16_t* const srcBuffer = (int16_t*)env->GetPrimitiveArrayCritical(jarray, 0);
 		if (!srcBuffer)
 			return -SL_RESULT_MEMORY_FAILURE;
 
-		//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames
-		memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), (uint8_t*)srcBuffer + offsetInBytes, sizeInBytes);
+		//dstBuffer must always be filled with stereo frames
+		if (srcChannelCount == 2)
+			memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), (uint8_t*)srcBuffer + offsetInBytes, sizeInBytes);
+		else
+			monoToStereo((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)));
 
 		env->ReleasePrimitiveArrayCritical(jarray, srcBuffer, JNI_ABORT);
 	}
 
 	if (needsSwap)
-		swapShorts((int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), sizeInBytes >> 1);
+		swapShorts((int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), sizeInFrames << 1);
 
 	commitedFramesPerBuffer[bufferWriteIndex] += sizeInFrames;
 

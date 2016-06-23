@@ -82,6 +82,23 @@
 static uint32_t srcChannelCount;
 uint32_t sampleRate;
 
+void monoToStereo(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer) {
+	//unlike in effectProc(), monoToStereo() will not work if both srcBuffer and dstBuffer point to the same address
+	while (sizeInFrames--) {
+		const int16_t i = *srcBuffer++;
+		*dstBuffer++ = i;
+		*dstBuffer++ = i;
+	}
+}
+
+void swapShorts(int16_t* buffer, uint32_t sizeInShorts) {
+	while (sizeInShorts) {
+		*buffer = bswap_16(*buffer);
+		buffer++;
+		sizeInShorts++;
+	}
+}
+
 #include "Effects.h"
 #include "MediaCodec.h"
 #include "OpenSL.h"
@@ -112,6 +129,10 @@ void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, uint32_t sr
 	resetVirtualizer();
 }
 
+void JNICALL updateChannelCount(JNIEnv* env, jclass clazz, uint32_t srcChannelCount) {
+	::srcChannelCount = srcChannelCount;
+}
+
 void JNICALL audioTrackInitialize(JNIEnv* env, jclass clazz) {
 	equalizerConfigChanged();
 	virtualizerConfigChanged();
@@ -140,8 +161,12 @@ int JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray jsrcA
 	if (needsSwap)
 		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1);
 
-	//one day we will convert from mono to stereo here, in such a way, dstBuffer will always contain stereo frames upon exit
-	effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2, dstBuffer);
+	if (srcChannelCount == 2) {
+		effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2, dstBuffer);
+	} else {
+		monoToStereo((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1, dstBuffer);
+		effectProc(dstBuffer, sizeInBytes >> 1, dstBuffer);
+	}
 
 	if (!jsrcBuffer)
 		env->ReleasePrimitiveArrayCritical(jsrcArray, srcBuffer, JNI_ABORT);
@@ -205,6 +230,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNINativeMethod methodTable[] = {
 		{"getProcessorFeatures", "()I", (void*)getProcessorFeatures},
 		{"resetFiltersAndWritePosition", "(I)V", (void*)resetFiltersAndWritePosition},
+		{"updateChannelCount", "(I)V", (void*)updateChannelCount},
 		{"getCurrentAutomaticEffectsGainInMB", "()I", (void*)getCurrentAutomaticEffectsGainInMB},
 		{"enableAutomaticEffectsGain", "(I)V", (void*)enableAutomaticEffectsGain},
 		{"isAutomaticEffectsGainEnabled", "()I", (void*)isAutomaticEffectsGainEnabled},

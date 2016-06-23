@@ -197,8 +197,8 @@ public:
 					!AMediaFormat_getInt32(format, "channel-count", &channelCount) ||
 					!AMediaFormat_getInt64(format, "durationUs", &duration))
 					continue;
-				//only stereo files for now...
-				if (channelCount != 2)
+				//only mono and stereo files for now...
+				if (channelCount != 1 && channelCount != 2)
 					return -1;
 				outParams[1] = (uint64_t)sampleRate;
 				outParams[2] = (uint64_t)channelCount;

@@ -223,8 +223,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				final int[] properties = (int[])msg.obj; //channel count, sample rate, bit rate, samples per frame
 				channelCount = properties[0];
 				sampleRate = properties[1];
-				//only stereo files for now...
-				if (channelCount != 2) {
+				//only mono and stereo files for now...
+				if (channelCount != 1 && channelCount != 2) {
 					onError(new UnsupportedFormatException(), 0);
 					break;
 				}
@@ -576,8 +576,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 					//http://stackoverflow.com/a/23574899/3569421
 					//http://stackoverflow.com/a/30246720/3569421
 
-					//only stereo files for now...
-					if (channelCount != 2)
+					//only mono and stereo files for now...
+					if (channelCount != 1 && channelCount != 2)
 						throw new UnsupportedFormatException();
 					durationInMS = (int)(format.getLong(MediaFormat.KEY_DURATION) / 1000L);
 					break;

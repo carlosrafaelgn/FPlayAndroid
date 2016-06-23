@@ -99,7 +99,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
 	private static volatile int requestedAction, requestedSeekMS;
 	private static Message effectsMessage;
-	private static int bufferConfig;
+	private static int bufferConfig, srcChannelCount;
 	private static float gain = 1.0f;
 	private static Handler handler;
 	private static Thread thread;
@@ -119,6 +119,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native int getProcessorFeatures();
 
 	private static native void resetFiltersAndWritePosition(int srcChannelCount);
+	private static native void updateChannelCount(int srcChannelCount);
 
 	public static native int getCurrentAutomaticEffectsGainInMB();
 	private static native void enableAutomaticEffectsGain(int enabled);
@@ -201,7 +202,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		private QueryableAudioTrack audioTrack;
-		private final int srcChannelCount = 2;
 		private byte[] tempDstArray;
 		private ByteBuffer tempDstBuffer;
 		private boolean okToQuitIfFull;
@@ -355,16 +355,19 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			if ((ret = audioTrackProcessEffects(buffer.byteArray, buffer.byteBuffer, buffer.offsetInBytes, sizeInBytes, MediaCodecPlayer.needsSwap, tempDstArray, tempDstBuffer)) < 0)
 				return ret;
 
+			//from here on, tempDstBuffer/Array will always contain stereo frames, but we still
+			//need to return the byte count considering the original channel count
+			sizeInBytes = sizeInFrames << 2;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 				tempDstBuffer.position(0);
 				tempDstBuffer.limit(sizeInBytes);
-				ret = audioTrack.write(tempDstBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
+				ret = audioTrack.write(tempDstBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING) >> 2;
 			} else {
-				ret = audioTrack.write(tempDstArray, 0, sizeInBytes);
+				ret = audioTrack.write(tempDstArray, 0, sizeInBytes) >> 2;
 			}
 			if (ret == 0)
 				okToQuitIfFull = true;
-			return ret;
+			return ret << srcChannelCount;
 		}
 	}
 
@@ -673,7 +676,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								playPending = true;
 								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
-								resetFiltersAndWritePosition(currentPlayer.getChannelCount());
+								resetFiltersAndWritePosition(srcChannelCount = currentPlayer.getChannelCount());
 								lastHeadPositionInFrames = engine.getHeadPositionInFrames();
 								paused = false;
 								requestSucceeded = true;
@@ -692,7 +695,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										outputBuffer.release();
 										framesWritten = 0;
 										framesPlayed = 0;
-										resetFiltersAndWritePosition(currentPlayer.getChannelCount());
+										resetFiltersAndWritePosition(srcChannelCount = currentPlayer.getChannelCount());
 										lastHeadPositionInFrames = engine.getHeadPositionInFrames();
 									}
 									paused = true;
@@ -734,6 +737,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										if (sourcePlayer == nextPlayer) {
 											outputBuffer.release();
 											sourcePlayer = currentPlayer;
+											updateChannelCount(srcChannelCount = sourcePlayer.getChannelCount());
 										}
 										nextPlayer = null;
 										nextFramesWritten = 0;
@@ -781,6 +785,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									if (sourcePlayer == nextPlayer) {
 										outputBuffer.release();
 										sourcePlayer = currentPlayer;
+										updateChannelCount(srcChannelCount = sourcePlayer.getChannelCount());
 									}
 									nextPlayer = null;
 									nextFramesWritten = 0;
@@ -829,7 +834,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						if (seekPendingPlayer != null) {
 							try {
 								outputBuffer.release();
-								resetFiltersAndWritePosition(seekPendingPlayer.getChannelCount());
+								resetFiltersAndWritePosition(srcChannelCount = seekPendingPlayer.getChannelCount());
 								if (sourcePlayer == seekPendingPlayer) {
 									synchronized (engineSync) {
 										checkEngineResult(engine.recreateIfNeeded(sampleRate, bufferSizeInFrames));
@@ -945,9 +950,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						continue;
 					} else {
 						if (sourcePlayer == currentPlayer) {
-							framesWritten += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
+							framesWritten += bytesWrittenThisTime >> srcChannelCount;
 							if (playPending) {
-								framesWrittenBeforePlaying += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
+								framesWrittenBeforePlaying += bytesWrittenThisTime >> srcChannelCount;
 								if (framesWrittenBeforePlaying >= fillThresholdInFrames) {
 									//we have just filled the buffer, time to start playing
 									playPending = false;
@@ -956,7 +961,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 							}
 						} else {
-							nextFramesWritten += bytesWrittenThisTime >> sourcePlayer.getChannelCount();
+							nextFramesWritten += bytesWrittenThisTime >> srcChannelCount;
 						}
 
 						outputBuffer.remainingBytes -= bytesWrittenThisTime;
@@ -973,8 +978,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					outputBuffer.release();
 					if (outputBuffer.streamOver && sourcePlayer == currentPlayer) {
 						//from now on, we will start outputting audio from the next player (if any)
-						if (nextPlayer != null)
+						if (nextPlayer != null) {
 							sourcePlayer = nextPlayer;
+							updateChannelCount(srcChannelCount = sourcePlayer.getChannelCount());
+						}
 					}
 				}
 
@@ -1003,6 +1010,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						nextPlayer = null;
 						nextFramesWritten = 0;
 						sourcePlayer = currentPlayer;
+						updateChannelCount(srcChannelCount = sourcePlayer.getChannelCount());
 					} else if (framesWritten != 0) {
 						//underrun!!!
 						checkEngineResult(engine.pause());
@@ -1040,6 +1048,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				nextPlayer = null;
 				nextFramesWritten = 0;
 				sourcePlayer = currentPlayer;
+				if (sourcePlayer != null)
+					updateChannelCount(srcChannelCount = sourcePlayer.getChannelCount());
 			}
 		}
 

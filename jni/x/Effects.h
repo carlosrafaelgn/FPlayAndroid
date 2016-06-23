@@ -194,6 +194,7 @@ void initializeEffects() {
 }
 
 void processNull(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer) {
+	//nothing to be done but copying from source to destination (if they are different buffers)
 	if (srcBuffer != dstBuffer)
 		memcpy(dstBuffer, srcBuffer, sizeInFrames << 2);
 }
