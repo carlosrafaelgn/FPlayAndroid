@@ -96,7 +96,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	public static boolean isDirect;
 
 	private volatile int state, currentPositionInMS, httpStreamReceiverVersion;
-	private int sampleRate, channelCount, durationInMS, stateBeforeSeek;
+	private int srcSampleRate, dstSampleRate, channelCount, durationInMS, stateBeforeSeek;
 	private long nativeObj;
 	private ParcelFileDescriptor fileDescriptor;
 	private MediaExtractor mediaExtractor;
@@ -127,8 +127,16 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		return ((i < 0) ? path : path.substring(i + 1)) + " - " + super.toString();
 	}
 
-	int getSampleRate() {
-		return sampleRate;
+	int getSrcSampleRate() {
+		return srcSampleRate;
+	}
+
+	int getDstSampleRate() {
+		return dstSampleRate;
+	}
+
+	void updateDstSampleRate() {
+		dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
 	}
 
 	int getChannelCount() {
@@ -222,7 +230,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			try {
 				final int[] properties = (int[])msg.obj; //channel count, sample rate, bit rate, samples per frame
 				channelCount = properties[0];
-				sampleRate = properties[1];
+				srcSampleRate = properties[1];
+				dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
 				//only mono and stereo files for now...
 				if (channelCount != 1 && channelCount != 2) {
 					onError(new UnsupportedFormatException(), 0);
@@ -233,7 +242,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				mediaCodec = MediaCodec.createDecoderByType(contentType);
 				final MediaFormat format = new MediaFormat();
 				format.setString(MediaFormat.KEY_MIME, contentType);
-				format.setInteger(MediaFormat.KEY_SAMPLE_RATE, sampleRate);
+				format.setInteger(MediaFormat.KEY_SAMPLE_RATE, srcSampleRate);
 				format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, channelCount);
 				format.setInteger(MediaFormat.KEY_CHANNEL_MASK, (channelCount == 1) ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
 				format.setInteger(MediaFormat.KEY_BIT_RATE, properties[2]);
@@ -402,13 +411,21 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		if (state != STATE_SEEKING)
 			return 0;
 
+		//As bizarre as it might look, a few devices simply stall forever *NEVER* returning
+		//from mediaCodec.flush(), unless we wait for some time before calling it :(
+		try {
+			Thread.sleep(100);
+		} catch (Throwable ex) {
+			//just ignore
+		}
+
 		if (nativeMediaCodec) {
 			long ret = MediaContext.mediaCodecSeek(nativeObj, msec);
 			if (ret < 0)
 				throw new IOException();
 			outputOver = (ret == 0x7FFFFFFFFFFFFFFFL);
 			currentPositionInMS = (outputOver ? durationInMS : (int)(ret / 1000L));
-			return (ret * (long)sampleRate) //us * frames per second
+			return (ret * (long)dstSampleRate) //us * frames per second
 				/ 1000000L; //us to second;
 		}
 
@@ -420,7 +437,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		outputOver = (duration < 0);
 		currentPositionInMS = (outputOver ? durationInMS : (int)(duration / 1000L));
 		fillInputBuffers();
-		return (duration * (long)sampleRate) //us * frames per second
+		return (duration * (long)dstSampleRate) //us * frames per second
 			/ 1000000L; //us to second;
 	}
 
@@ -492,10 +509,12 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				state = STATE_PAUSED;
 				if (httpStreamReceiver != null) {
 					httpStreamReceiver.pause();
-					final int tmpSampleRate = sampleRate;
+					final int tmpInputSampleRate = srcSampleRate;
+					final int tmpOutputSampleRate = dstSampleRate;
 					final int tmpChannelCount = channelCount;
 					resetMedia();
-					sampleRate = tmpSampleRate;
+					srcSampleRate = tmpInputSampleRate;
+					dstSampleRate = tmpOutputSampleRate;
 					channelCount = tmpChannelCount;
 				}
 			}
@@ -550,7 +569,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				else if (ret < 0)
 					throw new IOException();
 				nativeObj = params[0];
-				sampleRate = (int)params[1];
+				srcSampleRate = (int)params[1];
+				dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
 				channelCount = (int)params[2];
 				durationInMS = (int)(params[3] / 1000L);
 				currentPositionInMS = 0;
@@ -569,7 +589,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				mime = format.getString(MediaFormat.KEY_MIME);
 				if (mime.startsWith("audio/")) {
 					mediaExtractor.selectTrack(i);
-					sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+					srcSampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+					dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
 					channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
 
 					//well, well, well... we are assuming 16 bit PCM...
@@ -701,7 +722,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		nativeMediaCodec = false;
 		bufferInfo.flags = 0;
 		outputBuffersHaveBeenUsed = false;
-		sampleRate = 0;
+		srcSampleRate = 0;
+		dstSampleRate = 0;
 		channelCount = 0;
 		currentPositionInMS = 0;
 		durationInMS = -1;
@@ -746,7 +768,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	}
 
 	long getCurrentPositionInFrames() {
-		return ((long)currentPositionInMS * (long)sampleRate) //ms * frames per second
+		return ((long)currentPositionInMS * (long)dstSampleRate) //ms * frames per second
 			/ 1000L; //ms to second
 	}
 

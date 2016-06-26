@@ -74,22 +74,23 @@
 	static uint32_t neonMode;
 #endif
 
+#define MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING 1152
+
 //when channelCount is 1, the frame size is 2 (16 bits per sample, mono)
 //when channelCount is 2, the frame size is 4 (16 bits per sample, stereo)
 //therefore:
 //frames = bytes >> channelCount
 //bytes = frames << channelCount;
-static uint32_t srcChannelCount;
-uint32_t sampleRate;
+static uint32_t srcSampleRate, srcChannelCount;
+uint32_t dstSampleRate;
 
-void monoToStereo(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer) {
-	//unlike in effectProc(), monoToStereo() will not work if both srcBuffer and dstBuffer point to the same address
-	while (sizeInFrames--) {
-		const int16_t i = *srcBuffer++;
-		*dstBuffer++ = i;
-		*dstBuffer++ = i;
-	}
-}
+union WriteRet {
+    uint64_t val;
+    struct {
+        uint32_t dstFramesUsed; //low
+        uint32_t srcFramesUsed; //high
+    };
+};
 
 void swapShorts(int16_t* buffer, uint32_t sizeInShorts) {
 	while (sizeInShorts) {
@@ -99,6 +100,7 @@ void swapShorts(int16_t* buffer, uint32_t sizeInShorts) {
 	}
 }
 
+#include "Resampler.h"
 #include "Effects.h"
 #include "MediaCodec.h"
 #include "OpenSL.h"
@@ -121,16 +123,18 @@ uint32_t JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #endif
 }
 
-void JNICALL resetFiltersAndWritePosition(JNIEnv* env, jclass clazz, uint32_t srcChannelCount) {
-	::srcChannelCount = srcChannelCount;
+void JNICALL updateSrcParams(JNIEnv* env, jclass clazz, uint32_t srcSampleRate, uint32_t srcChannelCount, uint32_t resetFiltersAndWritePosition) {
+	if (::srcSampleRate != srcSampleRate || ::srcChannelCount != srcChannelCount) {
+		::srcSampleRate = srcSampleRate;
+		::srcChannelCount = srcChannelCount;
+		resetResampler();
+	}
 
-	resetOpenSL();
-	resetEqualizer();
-	resetVirtualizer();
-}
-
-void JNICALL updateChannelCount(JNIEnv* env, jclass clazz, uint32_t srcChannelCount) {
-	::srcChannelCount = srcChannelCount;
+	if (resetFiltersAndWritePosition) {
+		resetOpenSL();
+		resetEqualizer();
+		resetVirtualizer();
+	}
 }
 
 void JNICALL audioTrackInitialize(JNIEnv* env, jclass clazz) {
@@ -138,15 +142,16 @@ void JNICALL audioTrackInitialize(JNIEnv* env, jclass clazz) {
 	virtualizerConfigChanged();
 }
 
-void JNICALL audioTrackCreate(JNIEnv* env, jclass clazz, uint32_t sampleRate) {
-	if (::sampleRate != sampleRate) {
-		::sampleRate = sampleRate;
+void JNICALL audioTrackCreate(JNIEnv* env, jclass clazz, uint32_t dstSampleRate) {
+	if (::dstSampleRate != dstSampleRate) {
+		::dstSampleRate = dstSampleRate;
+		resetResampler();
 		equalizerConfigChanged();
 		virtualizerConfigChanged();
 	}
 }
 
-int JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray jsrcArray, jobject jsrcBuffer, uint32_t offsetInBytes, uint32_t sizeInBytes, uint32_t needsSwap, jbyteArray jdstArray, jobject jdstBuffer) {
+int64_t JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray jsrcArray, jobject jsrcBuffer, uint32_t offsetInBytes, uint32_t sizeInFrames, uint32_t needsSwap, jbyteArray jdstArray, jobject jdstBuffer) {
 	int16_t* const srcBuffer = (int16_t*)(jsrcBuffer ? env->GetDirectBufferAddress(jsrcBuffer) : env->GetPrimitiveArrayCritical(jsrcArray, 0));
 	if (!srcBuffer)
 		return -SL_RESULT_MEMORY_FAILURE;
@@ -158,15 +163,15 @@ int JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray jsrcA
 		return -SL_RESULT_MEMORY_FAILURE;
 	}
 
+	//this is not ok... (should be using a temporary buffer)
 	if (needsSwap)
-		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1);
+		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames << (srcChannelCount - 1));
 
-	if (srcChannelCount == 2) {
-		effectProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 2, dstBuffer);
-	} else {
-		monoToStereo((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInBytes >> 1, dstBuffer);
-		effectProc(dstBuffer, sizeInBytes >> 1, dstBuffer);
-	}
+	WriteRet ret;
+	ret.srcFramesUsed = 0;
+	ret.dstFramesUsed = resampleProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, dstBuffer, MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING, ret.srcFramesUsed);
+
+	effectProc(dstBuffer, ret.dstFramesUsed, dstBuffer);
 
 	if (!jsrcBuffer)
 		env->ReleasePrimitiveArrayCritical(jsrcArray, srcBuffer, JNI_ABORT);
@@ -174,7 +179,7 @@ int JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray jsrcA
 	if (!jdstBuffer)
 		env->ReleasePrimitiveArrayCritical(jdstArray, dstBuffer, 0);
 
-	return 0;
+	return ret.val;
 }
 
 #ifdef FPLAY_ARM
@@ -226,11 +231,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	initializeOpenSL();
 	initializeEffects();
 	initializeMediaCodec();
+	initializeResampler();
 
 	JNINativeMethod methodTable[] = {
 		{"getProcessorFeatures", "()I", (void*)getProcessorFeatures},
-		{"resetFiltersAndWritePosition", "(I)V", (void*)resetFiltersAndWritePosition},
-		{"updateChannelCount", "(I)V", (void*)updateChannelCount},
+		{"updateSrcParams", "(III)V", (void*)updateSrcParams},
 		{"getCurrentAutomaticEffectsGainInMB", "()I", (void*)getCurrentAutomaticEffectsGainInMB},
 		{"enableAutomaticEffectsGain", "(I)V", (void*)enableAutomaticEffectsGain},
 		{"isAutomaticEffectsGainEnabled", "()I", (void*)isAutomaticEffectsGainEnabled},
@@ -254,7 +259,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
 		{"audioTrackInitialize", "()V", (void*)audioTrackInitialize},
 		{"audioTrackCreate", "(I)V", (void*)audioTrackCreate},
-		{"audioTrackProcessEffects", "([BLjava/nio/ByteBuffer;III[BLjava/nio/ByteBuffer;)I", (void*)audioTrackProcessEffects},
+		{"audioTrackProcessEffects", "([BLjava/nio/ByteBuffer;III[BLjava/nio/ByteBuffer;)J", (void*)audioTrackProcessEffects},
 		{"openSLInitialize", "()I", (void*)openSLInitialize},
 		{"openSLCreate", "(III)I", (void*)openSLCreate},
 		{"openSLPlay", "()I", (void*)openSLPlay},
@@ -265,8 +270,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLSetVolumeInMillibels", "(I)V", (void*)openSLSetVolumeInMillibels},
 		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
 		{"openSLCopyVisualizerData", "(J)V", (void*)openSLCopyVisualizerData},
-		{"openSLWriteNative", "(JII)I", (void*)openSLWriteNative},
-		{"openSLWrite", "([BLjava/nio/ByteBuffer;III)I", (void*)openSLWrite}
+		{"openSLWriteNative", "(JII)J", (void*)openSLWriteNative},
+		{"openSLWrite", "([BLjava/nio/ByteBuffer;III)J", (void*)openSLWrite}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)

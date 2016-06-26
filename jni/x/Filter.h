@@ -98,7 +98,7 @@ void computeFilter(uint32_t band) {
 #define PI 3.1415926535897932384626433832795
 #define LN2_2 0.34657359027997265470861606072909
 	static const double bands[BAND_COUNT] = { 31.25, 62.5, 125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0, 16000.0 };
-	const double fs = (double)sampleRate;
+	const double fs = (double)dstSampleRate;
 	const double f0 = bands[band];
 	const double w0 = ((2.0 * PI) * f0) / fs;
 	const double sinw0 = sin(w0);

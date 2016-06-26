@@ -128,20 +128,20 @@ void resetVirtualizer() {
 void equalizerConfigChanged() {
 	//this only happens in two moments: upon initialization and when the sample rate changes
 
-	if (sampleRate > (2 * 16000))
+	if (dstSampleRate > (2 * 16000))
 		equalizerMaxBandCount = 10;
-	else if (sampleRate > (2 * 8000))
+	else if (dstSampleRate > (2 * 8000))
 		equalizerMaxBandCount = 9;
-	else if (sampleRate > (2 * 4000))
+	else if (dstSampleRate > (2 * 4000))
 		equalizerMaxBandCount = 8;
-	else if (sampleRate > (2 * 2000))
+	else if (dstSampleRate > (2 * 2000))
 		equalizerMaxBandCount = 7;
 	else
 		equalizerMaxBandCount = 6; //Android's minimum allowed sample rate is 4000 Hz
 
-	effectsGainReductionPerFrame[0] = (float)pow(10.0, GAIN_REDUCTION_PER_SECOND_DB / (double)(sampleRate * 20));
+	effectsGainReductionPerFrame[0] = (float)pow(10.0, GAIN_REDUCTION_PER_SECOND_DB / (double)(dstSampleRate * 20));
 	effectsGainReductionPerFrame[1] = effectsGainReductionPerFrame[0];
-	effectsGainRecoveryPerFrame[0] = (float)pow(10.0, GAIN_RECOVERY_PER_SECOND_DB / (double)(sampleRate * 20));
+	effectsGainRecoveryPerFrame[0] = (float)pow(10.0, GAIN_RECOVERY_PER_SECOND_DB / (double)(dstSampleRate * 20));
 	effectsGainRecoveryPerFrame[1] = effectsGainRecoveryPerFrame[0];
 
 	for (int32_t i = 0; i < BAND_COUNT; i++)

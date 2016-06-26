@@ -165,7 +165,7 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	_mm_store_ps((float*)effectsTemp, maxAbsSample); \
 	if (((float*)effectsTemp)[0] > MAX_ALLOWED_SAMPLE_VALUE || ((float*)effectsTemp)[1] > MAX_ALLOWED_SAMPLE_VALUE) { \
 		effectsMustReduceGain = 1; \
-		effectsFramesBeforeRecoveringGain = sampleRate << 2; /* wait some time before starting to recover the gain */ \
+		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; /* wait some time before starting to recover the gain */ \
 	} else { \
 		effectsMustReduceGain = 0; \
 		if (effectsGainClip[0] >= 1.0f) \
@@ -247,7 +247,7 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	effectsGainClip[0] = gainClip; \
 	if (maxAbsSample > MAX_ALLOWED_SAMPLE_VALUE) { \
 		effectsMustReduceGain = 1; \
-		effectsFramesBeforeRecoveringGain = sampleRate << 2; /* wait some time before starting to recover the gain */ \
+		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; /* wait some time before starting to recover the gain */ \
 	} else { \
 		effectsMustReduceGain = 0; \
 		if (effectsGainClip[0] >= 1.0f) \
@@ -357,7 +357,7 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	vst1_f32((float*)effectsTemp, maxAbsSample); \
 	if (((float*)effectsTemp)[0] > MAX_ALLOWED_SAMPLE_VALUE || ((float*)effectsTemp)[1] > MAX_ALLOWED_SAMPLE_VALUE) { \
 		effectsMustReduceGain = 1; \
-		effectsFramesBeforeRecoveringGain = sampleRate << 2; /* wait some time before starting to recover the gain */ \
+		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; /* wait some time before starting to recover the gain */ \
 	} else { \
 		effectsMustReduceGain = 0; \
 		if (effectsGainClip[0] >= 1.0f) \

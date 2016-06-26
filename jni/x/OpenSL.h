@@ -38,8 +38,6 @@
 //https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html
 //https://android.googlesource.com/platform/system/media/+/gingerbread/opensles/libopensles/IBufferQueue.c
 
-#define MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING 1152
-
 //engine interfaces
 static SLObjectItf engineObject;
 static SLEngineItf engineEngine;
@@ -80,8 +78,9 @@ void initializeOpenSL() {
 	fullBuffer = 0;
 	commitedFramesPerBuffer = 0;
 	contextVersion = 0;
+	srcSampleRate = 44100;
+	dstSampleRate = 44100;
 	srcChannelCount = 2;
-	sampleRate = 44100;
 	bufferSizeInFrames = 0;
 	minBufferSizeInFrames = 0;
 	processingBufferCount = 0;
@@ -200,11 +199,12 @@ int32_t JNICALL openSLInitialize(JNIEnv* env, jclass clazz) {
 	return 0;
 }
 
-int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t sampleRate, uint32_t bufferSizeInFrames, uint32_t minBufferSizeInFrames) {
+int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t dstSampleRate, uint32_t bufferSizeInFrames, uint32_t minBufferSizeInFrames) {
 	openSLRelease(env, clazz);
 
-	if (::sampleRate != sampleRate) {
-		::sampleRate = sampleRate;
+	if (::dstSampleRate != dstSampleRate) {
+		::dstSampleRate = dstSampleRate;
+		resetResampler();
 		equalizerConfigChanged();
 		virtualizerConfigChanged();
 	}
@@ -253,7 +253,7 @@ int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t sampleRate, uin
 	SLDataFormat_PCM fmt;
 	fmt.formatType = SL_DATAFORMAT_PCM;
 	fmt.numChannels = 2;
-	fmt.samplesPerSec = sampleRate * 1000;
+	fmt.samplesPerSec = dstSampleRate * 1000;
 	fmt.bitsPerSample = SL_PCMSAMPLEFORMAT_FIXED_16;
 	fmt.containerSize = SL_PCMSAMPLEFORMAT_FIXED_16;
 	fmt.channelMask = SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT;
@@ -359,7 +359,7 @@ void JNICALL openSLCopyVisualizerData(JNIEnv* env, jclass clazz, int64_t bufferP
 	//offset pointed to by bufferDescriptors[localBufferReadIndex]
 }
 
-int32_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj, uint32_t offsetInBytes, uint32_t sizeInBytes) {
+int64_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj, uint32_t offsetInBytes, uint32_t sizeInFrames) {
 	if (!fullBuffer || !bqPlayerBufferQueue || (nativeObj && !((MediaCodec*)nativeObj)->buffer))
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
@@ -370,31 +370,23 @@ int32_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 	if (emptyBuffers > bufferCount)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
-	uint32_t sizeInFrames = (sizeInBytes >> srcChannelCount);
-
 	//we always output stereo audio, regardless of the input config
 	int16_t* const dstBuffer = (int16_t*)(fullBuffer + (bufferWriteIndex * (minBufferSizeInFrames << 2)));
+
+	WriteRet ret;
+	ret.srcFramesUsed = 0;
 
 	//fill current buffer with minBufferSizeInFrames samples, only then commit the buffer
 	//we will also commit the buffer if nativeObj is 0, and we already had a few samples in the buffer
 	if (nativeObj) {
-		if ((sizeInFrames + commitedFramesPerBuffer[bufferWriteIndex]) >= minBufferSizeInFrames) {
-			//copy a few samples and commit the buffer
-			sizeInFrames = minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex];
-			sizeInBytes = (sizeInFrames << srcChannelCount);
-		}
-
 		//dstBuffer must always be filled with stereo frames
-		if (srcChannelCount == 2)
-			memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), ((MediaCodec*)nativeObj)->buffer + offsetInBytes, sizeInBytes);
-		else
-			monoToStereo((int16_t*)(((MediaCodec*)nativeObj)->buffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)));
+		ret.dstFramesUsed = resampleProc((int16_t*)(((MediaCodec*)nativeObj)->buffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex], ret.srcFramesUsed);
 
-		commitedFramesPerBuffer[bufferWriteIndex] += sizeInFrames;
+		commitedFramesPerBuffer[bufferWriteIndex] += ret.dstFramesUsed;
 
 		//if the buffer is not full enough, do not commit the buffer
 		if (commitedFramesPerBuffer[bufferWriteIndex] < minBufferSizeInFrames)
-			return sizeInBytes;
+			return ret.val;
 
 		//assertion
 		if (commitedFramesPerBuffer[bufferWriteIndex] > minBufferSizeInFrames)
@@ -402,8 +394,7 @@ int32_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 	} else {
 		if (!commitedFramesPerBuffer[bufferWriteIndex])
 			return 0;
-		sizeInFrames = commitedFramesPerBuffer[bufferWriteIndex];
-		sizeInBytes = (commitedFramesPerBuffer[bufferWriteIndex] << srcChannelCount);
+		ret.dstFramesUsed = commitedFramesPerBuffer[bufferWriteIndex];
 
 		//fill the rest of the buffer with 0's because we will commit this entire buffer
 		memset((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), 0, (minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << 2);
@@ -426,10 +417,10 @@ int32_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 	if (result != SL_RESULT_SUCCESS)
 		return -(abs((int32_t)result));
 
-	return sizeInBytes;
+	return ret.val;
 }
 
-int32_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobject jbuffer, uint32_t offsetInBytes, uint32_t sizeInBytes, uint32_t needsSwap) {
+int64_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobject jbuffer, uint32_t offsetInBytes, uint32_t sizeInFrames, uint32_t needsSwap) {
 	if (!fullBuffer || !bqPlayerBufferQueue || (!jarray && !jbuffer))
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
@@ -440,17 +431,13 @@ int32_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 	if (emptyBuffers > bufferCount)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
 
-	uint32_t sizeInFrames = (sizeInBytes >> srcChannelCount);
-
 	//we always output stereo audio, regardless of the input config
 	int16_t* const dstBuffer = (int16_t*)(fullBuffer + (bufferWriteIndex * (minBufferSizeInFrames << 2)));
 
+	WriteRet ret;
+	ret.srcFramesUsed = 0;
+
 	//fill current buffer with minBufferSizeInFrames samples, only then commit the buffer
-	if ((sizeInFrames + commitedFramesPerBuffer[bufferWriteIndex]) >= minBufferSizeInFrames) {
-		//copy a few samples and commit the buffer
-		sizeInFrames = minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex];
-		sizeInBytes = (sizeInFrames << srcChannelCount);
-	}
 
 	//*we do not need to worry about the case when jbuffer and jarray are both null (meaning we had to flush current buffer)
 	//because flushing is only performed in openSLWriteNative()
@@ -459,33 +446,32 @@ int32_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 		if (!srcBuffer)
 			return -SL_RESULT_MEMORY_FAILURE;
 
+		//this is not ok... (should be using a temporary buffer)
+		if (needsSwap)
+			swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), (((minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << (srcChannelCount - 1)) * srcSampleRate) / dstSampleRate);
+
 		//dstBuffer must always be filled with stereo frames
-		if (srcChannelCount == 2)
-			memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), (uint8_t*)srcBuffer + offsetInBytes, sizeInBytes);
-		else
-			monoToStereo((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)));
+		ret.dstFramesUsed = resampleProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex], ret.srcFramesUsed);
 	} else {
 		int16_t* const srcBuffer = (int16_t*)env->GetPrimitiveArrayCritical(jarray, 0);
 		if (!srcBuffer)
 			return -SL_RESULT_MEMORY_FAILURE;
 
+		//this is not ok... (should be using a temporary buffer)
+		if (needsSwap)
+			swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), (((minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << (srcChannelCount - 1)) * srcSampleRate) / dstSampleRate);
+
 		//dstBuffer must always be filled with stereo frames
-		if (srcChannelCount == 2)
-			memcpy((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), (uint8_t*)srcBuffer + offsetInBytes, sizeInBytes);
-		else
-			monoToStereo((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)));
+		ret.dstFramesUsed = resampleProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex], ret.srcFramesUsed);
 
 		env->ReleasePrimitiveArrayCritical(jarray, srcBuffer, JNI_ABORT);
 	}
 
-	if (needsSwap)
-		swapShorts((int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), sizeInFrames << 1);
-
-	commitedFramesPerBuffer[bufferWriteIndex] += sizeInFrames;
+	commitedFramesPerBuffer[bufferWriteIndex] += ret.dstFramesUsed;
 
 	//if the buffer is not full enough, do not commit the buffer
 	if (commitedFramesPerBuffer[bufferWriteIndex] < minBufferSizeInFrames)
-		return sizeInBytes;
+		return ret.val;
 
 	//assertion
 	if (commitedFramesPerBuffer[bufferWriteIndex] > minBufferSizeInFrames)
@@ -508,5 +494,5 @@ int32_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 	if (result != SL_RESULT_SUCCESS)
 		return -(abs((int32_t)result));
 
-	return sizeInBytes;
+	return ret.val;
 }

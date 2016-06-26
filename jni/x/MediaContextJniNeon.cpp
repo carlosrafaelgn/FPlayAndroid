@@ -39,7 +39,7 @@
 #define BASSBOOST_ENABLED 2
 #define VIRTUALIZER_ENABLED 4
 
-extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, sampleRate;
+extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, dstSampleRate;
 extern int32_t effectsMustReduceGain, effectsFramesBeforeRecoveringGain, effectsTemp[] __attribute__((aligned(16)));
 extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
 effectsGainReductionPerFrame[] __attribute__((aligned(16))),
