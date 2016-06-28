@@ -527,16 +527,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static int getDstSampleRate(int srcSampleRate) {
 		if (nativeSampleRate <= 0 || srcSampleRate == nativeSampleRate)
 			return srcSampleRate; //no conversion (simply use srcSampleRate as dstSampleRate)
-		switch (nativeSampleRate) {
-		case 48000:
-			if (srcSampleRate == 44100)
-				return 48000;
-			break;
-		//case 44100:
-		//	if (srcSampleRate == 48000)
-		//		return 44100;
-		//	break;
-		}
+
+		//downsampling is only performed from 48000 Hz to 44100 Hz because we are not
+		//applying any filters
+		if ((srcSampleRate == 48000 && nativeSampleRate == 44100) ||
+			(srcSampleRate >= 8000 && nativeSampleRate > srcSampleRate))
+			return nativeSampleRate;
+
 		return srcSampleRate; //no conversion (simply use srcSampleRate as dstSampleRate)
 	}
 
@@ -743,14 +740,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								currentPlayer.updateDstSampleRate();
 								if (nextPlayer != null)
 									nextPlayer.updateDstSampleRate();
-								int XXXXX = 0;
 								if (dstSampleRate != currentPlayer.getDstSampleRate() || bufferConfigChanged) {
 									bufferConfigChanged = false;
 									dstSampleRate = currentPlayer.getDstSampleRate();
 									final long temp = getBufferSizeInFrames(dstSampleRate);
 									bufferSizeInFrames = (int)temp;
 									final int minBufferSizeInFrames = (int)(temp >>> 32);
-									XXXXX = minBufferSizeInFrames;
 									fillThresholdInFrames = engine.getFillThresholdInFrames(bufferSizeInFrames);
 									sleepTime = (minBufferSizeInFrames * 1000) / dstSampleRate;
 									if (sleepTime > 30) sleepTime = 30;

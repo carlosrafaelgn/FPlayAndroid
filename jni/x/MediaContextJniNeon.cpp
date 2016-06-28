@@ -117,3 +117,68 @@ void processEffectsNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstB
 
 	footerNeon();
 }
+
+extern float resampleHermitePhase, resampleHermitePhaseIncrement;
+extern float resampleHermiteY[] __attribute__((aligned(16)));
+static int32_t resampleHermiteTemp[2] __attribute__((aligned(16)));
+
+uint32_t resampleHermiteNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
+	//both ARM (32/64) and x86 (64) have lots of registers!
+	register uint32_t usedSrc = 0, usedDst = 0;
+
+	float32x2_t y0 = vld1_f32(resampleHermiteY);
+	float32x2_t y1 = vld1_f32(resampleHermiteY + 2);
+	float32x2_t y2 = vld1_f32(resampleHermiteY + 4);
+	float32x2_t y3 = vld1_f32(resampleHermiteY + 6);
+	
+	while (usedDst < dstSizeInFrames) {
+		//4-point hermite interpolation, with its polynom slightly optimized (reduced)
+		//(both tension and bias were considered to be 0)
+		const float x2 = resampleHermitePhase * resampleHermitePhase;
+		const float x_1 = resampleHermitePhase - 1.0f;
+		const float _2x = 2.0f * resampleHermitePhase;
+		const float32x2_t a = vdup_n_f32((3.0f - _2x) * x2);
+		const float32x2_t b = vdup_n_f32((_2x + 1.0f) * x_1 * x_1);
+		const float32x2_t c = vdup_n_f32(0.5f * resampleHermitePhase * (resampleHermitePhase + 1.0f) * ((x2 * resampleHermitePhase) - 2.0f));
+		const float32x2_t d = vdup_n_f32(0.5f * x_1 * x2);
+		int32x2_t outI32 = vcvt_s32_f32(vmla_f32(vmla_f32(vmla_f32(vmul_f32(a, y2), b, y1), c, vsub_f32(y2, y0)), d, vsub_f32(y3, y1)));
+		int16x4_t outI16 = vqmovn_s32(vcombine_s32(outI32, outI32));
+		*dstBuffer++ = vget_lane_s16(outI16, 0);
+		*dstBuffer++ = vget_lane_s16(outI16, 1);
+		usedDst++;
+
+		resampleHermitePhase += resampleHermitePhaseIncrement;
+
+		while (resampleHermitePhase >= 1.0f) {
+			resampleHermitePhase -= 1.0f;
+
+			usedSrc++;
+			srcBuffer += 2;
+
+			if (usedSrc >= srcSizeInFrames) {
+				vst1_f32(resampleHermiteY, y0);
+				vst1_f32(resampleHermiteY + 2, y1);
+				vst1_f32(resampleHermiteY + 4, y2);
+				vst1_f32(resampleHermiteY + 6, y3);
+
+				srcFramesUsed = usedSrc;
+				return usedDst;
+			}
+
+			resampleHermiteTemp[0] = (int32_t)srcBuffer[0];
+			resampleHermiteTemp[1] = (int32_t)srcBuffer[1];
+			y3 = y2;
+			y2 = y1;
+			y1 = y0;
+			y0 = vcvt_f32_s32(*((int32x2_t*)resampleHermiteTemp));
+		}
+	}
+
+	vst1_f32(resampleHermiteY, y0);
+	vst1_f32(resampleHermiteY + 2, y1);
+	vst1_f32(resampleHermiteY + 4, y2);
+	vst1_f32(resampleHermiteY + 6, y3);
+
+	srcFramesUsed = usedSrc;
+	return usedDst;
+}

@@ -31,28 +31,14 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-//the integer interpolation algorithm is based on AudioResampler from The Android Open Source Project, available at:
-//https://android.googlesource.com/platform/frameworks/av/+/master/services/audioflinger/AudioResampler.cpp
-/*
- * Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 typedef uint32_t (*RESAMPLEPROC)(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed);
 
-static int32_t resampleLast[2] __attribute__((aligned(16)));
-static uint32_t resamplePhaseFraction;
+#ifdef FPLAY_ARM
+extern uint32_t resampleHermiteNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed);
+#endif
+
+float resampleHermitePhase, resampleHermitePhaseIncrement;
+float resampleHermiteY[8] __attribute__((aligned(16)));
 static RESAMPLEPROC resampleProc;
 
 uint32_t resampleNull(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
@@ -81,139 +67,113 @@ uint32_t resampleNullMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t*
 	return srcSizeInFrames;
 }
 
-#define kNumPhaseBits 30
-#define kPhaseMultiplier (double)(1 << kNumPhaseBits)
-#define kPhaseMask ((1 << kNumPhaseBits) - 1)
-#define kNumInterpBits 15
-#define kPreInterpShift (kNumPhaseBits - kNumInterpBits)
-
-#define kPhaseIncrement (uint32_t)((kPhaseMultiplier * 44100.0) / 48000.0)
-
-uint32_t resample44100to48000(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
+uint32_t resampleHermite(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
 	register uint32_t usedSrc = 0, usedDst = 0;
 
-	register int32_t lastL = resampleLast[0];
-	register int32_t lastR = resampleLast[1];
-
-	//when resampling from 44100 to 48000, usedSrc changes 11 times and remains the same 1 time
-	//when resampling from 48000 to 44100, usedSrc changes everytime
-	//therefore, there is no need to try to optimize the buffer fetches and the computation ((current - last) * shiftedPhaseFraction)
-	while (usedSrc == 0 && usedDst < dstSizeInFrames) {
-		const int32_t shiftedPhaseFraction = (int32_t)(resamplePhaseFraction >> kPreInterpShift);
-		*dstBuffer++ = (int16_t)(lastL + ((((int32_t)srcBuffer[0] - lastL) * shiftedPhaseFraction) >> kNumInterpBits));
-		*dstBuffer++ = (int16_t)(lastR + ((((int32_t)srcBuffer[1] - lastR) * shiftedPhaseFraction) >> kNumInterpBits));
-
-		resamplePhaseFraction += kPhaseIncrement;
-		const uint32_t increment = (resamplePhaseFraction >> kNumPhaseBits);
-		srcBuffer += (increment << 1);
-		usedSrc += increment;
-		resamplePhaseFraction &= kPhaseMask;
-
+	while (usedDst < dstSizeInFrames) {
+		//4-point hermite interpolation, with its polynom slightly optimized (reduced)
+		//(both tension and bias were considered to be 0)
+		const float x2 = resampleHermitePhase * resampleHermitePhase;
+		const float x_1 = resampleHermitePhase - 1.0f;
+		const float _2x = 2.0f * resampleHermitePhase;
+		const float a = (3.0f - _2x) * x2;
+		const float b = (_2x + 1.0f) * x_1 * x_1;
+		const float c = 0.5f * resampleHermitePhase * (resampleHermitePhase + 1.0f) * ((x2 * resampleHermitePhase) - 2.0f);
+		const float d = 0.5f * x_1 * x2;
+		const int32_t outL = (int32_t)((a * resampleHermiteY[4]) + (b * resampleHermiteY[2]) - (c * (resampleHermiteY[0] - resampleHermiteY[4])) - (d * (resampleHermiteY[2] - resampleHermiteY[6])));
+		*dstBuffer++ = ((outL >= 32767) ? 32767 : ((outL <= -32768) ? -32768 : (int16_t)outL));
+		const int32_t outR = (int32_t)((a * resampleHermiteY[5]) + (b * resampleHermiteY[3]) - (c * (resampleHermiteY[1] - resampleHermiteY[5])) - (d * (resampleHermiteY[3] - resampleHermiteY[7])));
+		*dstBuffer++ = ((outR >= 32767) ? 32767 : ((outR <= -32768) ? -32768 : (int16_t)outR));
 		usedDst++;
+
+		resampleHermitePhase += resampleHermitePhaseIncrement;
+
+		while (resampleHermitePhase >= 1.0f) {
+			resampleHermitePhase -= 1.0f;
+
+			usedSrc++;
+			srcBuffer += 2;
+
+			if (usedSrc >= srcSizeInFrames) {
+				srcFramesUsed = usedSrc;
+				return usedDst;
+			}
+
+			resampleHermiteY[6] = resampleHermiteY[4];
+			resampleHermiteY[4] = resampleHermiteY[2];
+			resampleHermiteY[2] = resampleHermiteY[0];
+			resampleHermiteY[0] = (float)srcBuffer[0];
+
+			resampleHermiteY[7] = resampleHermiteY[5];
+			resampleHermiteY[5] = resampleHermiteY[3];
+			resampleHermiteY[3] = resampleHermiteY[1];
+			resampleHermiteY[1] = (float)srcBuffer[1];
+		}
 	}
-
-	if (usedSrc) {
-		lastL = (int32_t)srcBuffer[-2];
-		lastR = (int32_t)srcBuffer[-1];
-	}
-
-	while (usedSrc < srcSizeInFrames && usedDst < dstSizeInFrames) {
-		const int32_t shiftedPhaseFraction = (int32_t)(resamplePhaseFraction >> kPreInterpShift);
-		*dstBuffer++ = (int16_t)(lastL + ((((int32_t)srcBuffer[0] - lastL) * shiftedPhaseFraction) >> kNumInterpBits));
-		*dstBuffer++ = (int16_t)(lastR + ((((int32_t)srcBuffer[1] - lastR) * shiftedPhaseFraction) >> kNumInterpBits));
-
-		resamplePhaseFraction += kPhaseIncrement;
-		const uint32_t increment = (resamplePhaseFraction >> kNumPhaseBits);
-		srcBuffer += (increment << 1);
-		usedSrc += increment;
-		resamplePhaseFraction &= kPhaseMask;
-
-		lastL = (int32_t)srcBuffer[-2];
-		lastR = (int32_t)srcBuffer[-1];
-
-		usedDst++;
-	}
-
-	resampleLast[0] = lastL;
-	resampleLast[1] = lastR;
 
 	srcFramesUsed = usedSrc;
 	return usedDst;
 }
 
-uint32_t resample44100to48000Mono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
+uint32_t resampleHermiteMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
 	register uint32_t usedSrc = 0, usedDst = 0;
 
-	register int32_t lastL = resampleLast[0];
-
-	//when resampling from 44100 to 48000, usedSrc changes 11 times and remains the same 1 time
-	//when resampling from 48000 to 44100, usedSrc changes everytime
-	//therefore, there is no need to try to optimize the buffer fetches and the computation ((current - last) * shiftedPhaseFraction)
-	while (usedSrc == 0 && usedDst < dstSizeInFrames) {
-		const int16_t outL = (int16_t)(lastL + ((((int32_t)srcBuffer[0] - lastL) * (int32_t)(resamplePhaseFraction >> kPreInterpShift)) >> kNumInterpBits));
-		//mono to stereo
-		*dstBuffer++ = outL;
-		*dstBuffer++ = outL;
-
-		resamplePhaseFraction += kPhaseIncrement;
-		const uint32_t increment = (resamplePhaseFraction >> kNumPhaseBits);
-		srcBuffer += increment;
-		usedSrc += increment;
-		resamplePhaseFraction &= kPhaseMask;
-
+	while (usedDst < dstSizeInFrames) {
+		const float x2 = resampleHermitePhase * resampleHermitePhase;
+		const float x_1 = resampleHermitePhase - 1.0f;
+		const float _2x = 2.0f * resampleHermitePhase;
+		const float a = (3.0f - _2x) * x2;
+		const float b = (_2x + 1.0f) * x_1 * x_1;
+		const float c = 0.5f * resampleHermitePhase * (resampleHermitePhase + 1.0f) * ((x2 * resampleHermitePhase) - 2.0f);
+		const float d = 0.5f * x_1 * x2;
+		const int32_t outL = (int32_t)((a * resampleHermiteY[4]) + (b * resampleHermiteY[2]) - (c * (resampleHermiteY[0] - resampleHermiteY[4])) - (d * (resampleHermiteY[2] - resampleHermiteY[6])));
+		const int16_t outL16 = ((outL >= 32767) ? 32767 : ((outL <= -32768) ? -32768 : (int16_t)outL));
+		*dstBuffer++ = outL16;
+		*dstBuffer++ = outL16;
 		usedDst++;
+
+		resampleHermitePhase += resampleHermitePhaseIncrement;
+
+		while (resampleHermitePhase >= 1.0f) {
+			resampleHermitePhase -= 1.0f;
+
+			usedSrc++;
+			srcBuffer++;
+
+			if (usedSrc >= srcSizeInFrames) {
+				srcFramesUsed = usedSrc;
+				return usedDst;
+			}
+
+			resampleHermiteY[6] = resampleHermiteY[4];
+			resampleHermiteY[4] = resampleHermiteY[2];
+			resampleHermiteY[2] = resampleHermiteY[0];
+			resampleHermiteY[0] = (float)srcBuffer[0];
+		}
 	}
-
-	if (usedSrc)
-		lastL = (int32_t)srcBuffer[-1];
-
-	while (usedSrc < srcSizeInFrames && usedDst < dstSizeInFrames) {
-		const int16_t outL = (int16_t)(lastL + ((((int32_t)srcBuffer[0] - lastL) * (int32_t)(resamplePhaseFraction >> kPreInterpShift)) >> kNumInterpBits));
-		//mono to stereo
-		*dstBuffer++ = outL;
-		*dstBuffer++ = outL;
-
-		resamplePhaseFraction += kPhaseIncrement;
-		const uint32_t increment = (resamplePhaseFraction >> kNumPhaseBits);
-		srcBuffer += increment;
-		usedSrc += increment;
-		resamplePhaseFraction &= kPhaseMask;
-
-		lastL = (int32_t)srcBuffer[-1];
-
-		usedDst++;
-	}
-
-	resampleLast[0] = lastL;
-	resampleLast[1] = lastL;
 
 	srcFramesUsed = usedSrc;
 	return usedDst;
 }
-
-#undef kPhaseIncrement
-#define kPhaseIncrement (uint32_t)((kPhaseMultiplier * 48000.0) / 44100.0)
-
-//48000 to 44100 code (cannot be linear interpolated because that produces a few small, yet audible, artifacts)
-
-#undef kPhaseIncrement
-
-#undef kNumPhaseBits
-#undef kPhaseMultiplier
-#undef kPhaseMask
-#undef kNumInterpBits
-#undef kPreInterpShift
 
 void resetResampler() {
-	resampleLast[0] = 0;
-	resampleLast[1] = 0;
-	resamplePhaseFraction = 0;
+	resampleHermitePhase = 0.0f;
+	resampleHermitePhaseIncrement = 0.0f;
+	memset(resampleHermiteY, 0, sizeof(float) * 8);
 
 	if (srcSampleRate != dstSampleRate) {
-		if (srcSampleRate == 44100 && dstSampleRate == 48000) {
-			resampleProc = ((srcChannelCount == 2) ? resample44100to48000 : resample44100to48000Mono);
+		//downsampling is only performed from 48000 Hz to 44100 Hz because we are not
+		//applying any filters
+		if ((srcSampleRate == 48000 && dstSampleRate == 44100) ||
+			(srcSampleRate >= 8000 && dstSampleRate > srcSampleRate)) {
+			resampleHermitePhaseIncrement = (float)srcSampleRate / (float)dstSampleRate;
+#ifdef FPLAY_ARM
+			resampleProc = ((srcChannelCount == 2) ? (neonMode ? resampleHermiteNeon : resampleHermite) : resampleHermiteMono);
+#else
+			resampleProc = ((srcChannelCount == 2) ? resampleHermite : resampleHermiteMono);
+#endif
 			return;
 		}
 	}
