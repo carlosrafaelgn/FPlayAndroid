@@ -660,12 +660,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	public void run() {
 		thread.setPriority(Thread.MAX_PRIORITY);
 
-		int dstSampleRate = 0, sleepTime = 20;
 		PowerManager.WakeLock wakeLock;
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		outputBuffer.index = -1;
-		int lastHeadPositionInFrames = 0, bufferSizeInFrames = (int)getBufferSizeInFrames(44100), fillThresholdInFrames;
+		int dstSampleRate = 0, sleepTime = 0, lastHeadPositionInFrames = 0, bufferSizeInFrames = 0, fillThresholdInFrames = 0;
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
 		boolean bufferConfigChanged = false;
 
@@ -682,8 +681,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			return;
 		}
-
-		fillThresholdInFrames = engine.getFillThresholdInFrames(bufferSizeInFrames);
 
 		wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);

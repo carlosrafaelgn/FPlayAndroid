@@ -474,7 +474,6 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 
 		@Override
 		protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-			super.onSizeChanged(w, h, oldw, oldh);
 			if (h < 2 || w < 2)
 				return;
 

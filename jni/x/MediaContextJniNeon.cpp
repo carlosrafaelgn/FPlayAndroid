@@ -31,6 +31,7 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 #include <android/log.h>
+#include <string.h>
 #include <arm_neon.h>
 
 #include "EffectsImplMacros.h"
@@ -118,66 +119,116 @@ void processEffectsNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstB
 	footerNeon();
 }
 
-extern float resampleHermitePhase, resampleHermitePhaseIncrement;
-extern float resampleHermiteY[] __attribute__((aligned(16)));
-static int32_t resampleHermiteTemp[2] __attribute__((aligned(16)));
+extern uint32_t resamplePendingAdvances, resampleCoeffLen, resampleCoeffIdx, resampleAdvanceIdx;
+extern float *resampleCoeff;
+extern uint32_t *resampleAdvance;
+extern float resampleY[] __attribute__((aligned(16)));
 
-uint32_t resampleHermiteNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
+uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
 	register uint32_t usedSrc = 0, usedDst = 0;
 
-	float32x2_t y0 = vld1_f32(resampleHermiteY);
-	float32x2_t y1 = vld1_f32(resampleHermiteY + 2);
-	float32x2_t y2 = vld1_f32(resampleHermiteY + 4);
-	float32x2_t y3 = vld1_f32(resampleHermiteY + 6);
+	while (resamplePendingAdvances) {
+		resamplePendingAdvances--;
+
+		memmove(resampleY, resampleY + 2, 18 * sizeof(float));
+		effectsTemp[0] = (int32_t)srcBuffer[0];
+		effectsTemp[1] = (int32_t)srcBuffer[1];
+		vst1_f32(resampleY + 18, vcvt_f32_s32(*((int32x2_t*)effectsTemp)));
+
+		usedSrc++;
+		srcBuffer += 2;
+		
+		if (usedSrc >= srcSizeInFrames) {
+			srcFramesUsed = usedSrc;
+			return usedDst;
+		}
+	}
+
+	float32x2_t y0 = vld1_f32(resampleY);
+	float32x2_t y1 = vld1_f32(resampleY + 2);
+	float32x2_t y2 = vld1_f32(resampleY + 4);
+	float32x2_t y3 = vld1_f32(resampleY + 6);
+	float32x2_t y4 = vld1_f32(resampleY + 8);
+	float32x2_t y5 = vld1_f32(resampleY + 10);
+	float32x2_t y6 = vld1_f32(resampleY + 12);
+	float32x2_t y7 = vld1_f32(resampleY + 14);
+	float32x2_t y8 = vld1_f32(resampleY + 16);
+	float32x2_t y9 = vld1_f32(resampleY + 18);
 	
 	while (usedDst < dstSizeInFrames) {
-		//4-point hermite interpolation, with its polynom slightly optimized (reduced)
-		//(both tension and bias were considered to be 0)
-		const float x2 = resampleHermitePhase * resampleHermitePhase;
-		const float x_1 = resampleHermitePhase - 1.0f;
-		const float _2x = 2.0f * resampleHermitePhase;
-		const float32x2_t a = vdup_n_f32((3.0f - _2x) * x2);
-		const float32x2_t b = vdup_n_f32((_2x + 1.0f) * x_1 * x_1);
-		const float32x2_t c = vdup_n_f32(0.5f * resampleHermitePhase * (resampleHermitePhase + 1.0f) * ((x2 * resampleHermitePhase) - 2.0f));
-		const float32x2_t d = vdup_n_f32(0.5f * x_1 * x2);
-		int32x2_t outI32 = vcvt_s32_f32(vmla_f32(vmla_f32(vmla_f32(vmul_f32(a, y2), b, y1), c, vsub_f32(y2, y0)), d, vsub_f32(y3, y1)));
-		int16x4_t outI16 = vqmovn_s32(vcombine_s32(outI32, outI32));
+		const float * const coeff = resampleCoeff + resampleCoeffIdx;
+		float32x2_t out = vmul_f32(y0, *((float32x2_t*)coeff));
+		out = vmla_f32(out, y1, *((float32x2_t*)(coeff + 2)));
+		out = vmla_f32(out, y2, *((float32x2_t*)(coeff + 4)));
+		out = vmla_f32(out, y3, *((float32x2_t*)(coeff + 6)));
+		out = vmla_f32(out, y4, *((float32x2_t*)(coeff + 8)));
+		out = vmla_f32(out, y5, *((float32x2_t*)(coeff + 10)));
+		out = vmla_f32(out, y6, *((float32x2_t*)(coeff + 12)));
+		out = vmla_f32(out, y7, *((float32x2_t*)(coeff + 14)));
+		out = vmla_f32(out, y8, *((float32x2_t*)(coeff + 16)));
+		out = vmla_f32(out, y9, *((float32x2_t*)(coeff + 18)));
+		const int32x2_t outI32 = vcvt_s32_f32(out);
+		const int16x4_t outI16 = vqmovn_s32(vcombine_s32(outI32, outI32));
 		*dstBuffer++ = vget_lane_s16(outI16, 0);
 		*dstBuffer++ = vget_lane_s16(outI16, 1);
 		usedDst++;
 
-		resampleHermitePhase += resampleHermitePhaseIncrement;
+		resampleCoeffIdx += 20;
+		resampleAdvanceIdx++;
+		if (resampleCoeffIdx >= resampleCoeffLen) {
+			resampleCoeffIdx = 0;
+			resampleAdvanceIdx = 0;
+		}
+		resamplePendingAdvances = resampleAdvance[resampleAdvanceIdx];
 
-		while (resampleHermitePhase >= 1.0f) {
-			resampleHermitePhase -= 1.0f;
+		while (resamplePendingAdvances) {
+			resamplePendingAdvances--;
+
+			y0 = y1;
+			y1 = y2;
+			y2 = y3;
+			y3 = y4;
+			y4 = y5;
+			y5 = y6;
+			y6 = y7;
+			y7 = y8;
+			y8 = y9;
+			effectsTemp[0] = (int32_t)srcBuffer[0];
+			effectsTemp[1] = (int32_t)srcBuffer[1];
+			y9 = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
 
 			usedSrc++;
 			srcBuffer += 2;
-
+			
 			if (usedSrc >= srcSizeInFrames) {
-				vst1_f32(resampleHermiteY, y0);
-				vst1_f32(resampleHermiteY + 2, y1);
-				vst1_f32(resampleHermiteY + 4, y2);
-				vst1_f32(resampleHermiteY + 6, y3);
+				vst1_f32(resampleY, y0);
+				vst1_f32(resampleY + 2, y1);
+				vst1_f32(resampleY + 4, y2);
+				vst1_f32(resampleY + 6, y3);
+				vst1_f32(resampleY + 8, y4);
+				vst1_f32(resampleY + 10, y5);
+				vst1_f32(resampleY + 12, y6);
+				vst1_f32(resampleY + 14, y7);
+				vst1_f32(resampleY + 16, y8);
+				vst1_f32(resampleY + 18, y9);
 
 				srcFramesUsed = usedSrc;
 				return usedDst;
 			}
-
-			resampleHermiteTemp[0] = (int32_t)srcBuffer[0];
-			resampleHermiteTemp[1] = (int32_t)srcBuffer[1];
-			y3 = y2;
-			y2 = y1;
-			y1 = y0;
-			y0 = vcvt_f32_s32(*((int32x2_t*)resampleHermiteTemp));
 		}
 	}
 
-	vst1_f32(resampleHermiteY, y0);
-	vst1_f32(resampleHermiteY + 2, y1);
-	vst1_f32(resampleHermiteY + 4, y2);
-	vst1_f32(resampleHermiteY + 6, y3);
+	vst1_f32(resampleY, y0);
+	vst1_f32(resampleY + 2, y1);
+	vst1_f32(resampleY + 4, y2);
+	vst1_f32(resampleY + 6, y3);
+	vst1_f32(resampleY + 8, y4);
+	vst1_f32(resampleY + 10, y5);
+	vst1_f32(resampleY + 12, y6);
+	vst1_f32(resampleY + 14, y7);
+	vst1_f32(resampleY + 16, y8);
+	vst1_f32(resampleY + 18, y9);
 
 	srcFramesUsed = usedSrc;
 	return usedDst;

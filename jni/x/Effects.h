@@ -443,39 +443,27 @@ int32_t JNICALL getVirtualizerRoundedStrength(JNIEnv* env, jclass clazz) {
 
 void updateEffectProc() {
 #ifdef FPLAY_X86
-	if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
-		if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
-			effectProc = processEffects;
-		else
-			effectProc = processVirtualizer;
-	} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
+	if ((effectsEnabled & VIRTUALIZER_ENABLED))
+		effectProc = ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) ? processEffects : processVirtualizer);
+	else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
 		effectProc = processEqualizer;
-	} else {
+	else
 		effectProc = processNull;
-	}
 #else
 	if (neonMode) {
-		if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
-			if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
-				effectProc = processEffectsNeon;
-			else
-				effectProc = processVirtualizerNeon;
-		} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
+		if ((effectsEnabled & VIRTUALIZER_ENABLED))
+			effectProc = ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) ? processEffectsNeon : processVirtualizerNeon);
+		else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
 			effectProc = processEqualizerNeon;
-		} else {
+		else
 			effectProc = processNull;
-		}
 	} else {
-		if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
-			if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
-				effectProc = processEffects;
-			else
-				effectProc = processVirtualizer;
-		} else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
+		if ((effectsEnabled & VIRTUALIZER_ENABLED))
+			effectProc = ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) ? processEffects : processVirtualizer);
+		else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
 			effectProc = processEqualizer;
-		} else {
+		else
 			effectProc = processNull;
-		}
 	}
 #endif
 }
