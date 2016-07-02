@@ -131,6 +131,7 @@ void JNICALL updateSrcParams(JNIEnv* env, jclass clazz, uint32_t srcSampleRate, 
 	}
 
 	if (resetFiltersAndWritePosition) {
+		resetResamplerState();
 		resetOpenSL();
 		resetEqualizer();
 		resetVirtualizer();

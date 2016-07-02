@@ -332,12 +332,17 @@ void resampleComputeCoeffs() {
 	}
 }
 
+void resetResamplerState() {
+	resamplePendingAdvances = 0;
+	resampleCoeffIdx = 0;
+	resampleAdvanceIdx = 0;
+	memset(resampleY, 0, sizeof(float) * 20);
+}
+
 void resetResampler() {
+	resetResamplerState();
+
 	if (srcSampleRate != dstSampleRate) {
-		resamplePendingAdvances = 0;
-		resampleCoeffIdx = 0;
-		resampleAdvanceIdx = 0;
-		memset(resampleY, 0, sizeof(float) * 20);
 		resampleComputeCoeffs();
 
 		//downsampling is only performed from 48000 Hz to 44100 Hz because we are not
