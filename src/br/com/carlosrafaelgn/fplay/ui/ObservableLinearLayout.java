@@ -32,7 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
 
@@ -51,8 +53,9 @@ public final class ObservableLinearLayout extends LinearLayout {
 		super(context, attrs);
 	}
 
-	public ObservableLinearLayout(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	public ObservableLinearLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 	}
 
 	public void setOnSizeChangeListener(OnSizeChangeListener sizeChangeListener) {

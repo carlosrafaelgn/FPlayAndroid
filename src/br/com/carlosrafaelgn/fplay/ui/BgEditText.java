@@ -41,6 +41,7 @@ import android.os.Build;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.EditText;
@@ -74,6 +75,11 @@ public final class BgEditText extends EditText {
 		super.setGravity(Gravity.BOTTOM);
 		super.setPadding(0, 0, 0, UI.thickDividerSize << 1);
 		setSmallContentDescription(false);
+		setTypeface(UI.defaultTypeface);
+		setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		setTextColor(UI.colorState_text_listitem_static);
+		setCursorColor(UI.color_dialog_detail_highlight);
+		setColors(UI.color_dialog_detail, UI.color_dialog_detail_highlight);
 		textMargin = (UI.isLargeScreen ? UI.controlMargin : UI.controlSmallMargin);
 	}
 
@@ -188,6 +194,11 @@ public final class BgEditText extends EditText {
 	@Override
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
+		return false;
+	}
+
+	@Override
+	public boolean hasOverlappingRendering() {
 		return false;
 	}
 

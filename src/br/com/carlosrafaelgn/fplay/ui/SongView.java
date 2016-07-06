@@ -48,7 +48,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private String ellipsizedTitle, ellipsizedExtraInfo;
 	private int state, width, lengthX, lengthWidth, position;
 
-	private static int height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin, rightMargin;
+	private static int height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin, rightMargin, rightMarginForDrawing;
 
 	public static int getViewHeight() {
 		final int bottomMargin;
@@ -57,23 +57,25 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			case BgListView.SCROLLBAR_LARGE:
 				if (UI.scrollBarToTheLeft) {
 					leftMargin = 0;
-					rightMargin = UI.controlSmallMargin;
+					rightMarginForDrawing = UI.controlSmallMargin;
 				} else {
 					leftMargin = UI.controlSmallMargin;
-					rightMargin = UI.strokeSize;
+					rightMarginForDrawing = 0;
 				}
 				break;
 			default:
 				leftMargin = UI.controlSmallMargin;
-				rightMargin = UI.controlSmallMargin;
+				rightMarginForDrawing = UI.controlSmallMargin;
 				break;
 			}
 			topMargin = UI.controlSmallMargin;
+			rightMargin = rightMarginForDrawing + UI.strokeSize;
 			bottomMargin = UI.strokeSize;
 		} else {
 			leftMargin = 0;
 			topMargin = 0;
 			rightMargin = 0;
+			rightMarginForDrawing = 0;
 			bottomMargin = 0;
 		}
 		height = (UI._1dp << 1) + (UI.verticalMargin << 1) + UI._22spBox + UI._14spBox + topMargin + bottomMargin;
@@ -159,6 +161,11 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	}
 
 	@Override
+	public boolean hasOverlappingRendering() {
+		return (UI.is3D || (state != 0));
+	}
+
+	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
@@ -176,7 +183,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
+		setMeasuredDimension(getDefaultSize(0, widthMeasureSpec), height);
 	}
 
 	@Override
@@ -196,7 +203,10 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			return;
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		getDrawingRect(UI.rect);
-		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2), true, leftMargin, rightMargin);
+		UI.rect.left += leftMargin;
+		UI.rect.top += topMargin;
+		UI.rect.right -= rightMarginForDrawing;
+		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, textX, titleY);

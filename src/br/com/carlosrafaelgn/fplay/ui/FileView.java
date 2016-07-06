@@ -65,7 +65,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth;
 
 	private static boolean scrollBarCurrentlyIndexed;
-	private static int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, extraLeftMargin, extraRightMargin, leftMargin, topMargin, rightMargin, bottomMargin;
+	private static int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, extraLeftMargin, extraRightMargin, leftMargin, topMargin, rightMargin, rightMarginForDrawing, bottomMargin;
 
 	public static void updateExtraMargins(boolean isScrollBarIndexed) {
 		if (isScrollBarIndexed) {
@@ -91,26 +91,28 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			case BgListView.SCROLLBAR_LARGE:
 				if (UI.scrollBarToTheLeft) {
 					leftMargin = 0;
-					rightMargin = UI.controlSmallMargin;
+					rightMarginForDrawing = UI.controlSmallMargin;
 				} else {
 					leftMargin = UI.controlSmallMargin;
-					rightMargin = UI.strokeSize;
+					rightMarginForDrawing = 0;
 				}
 				break;
 			default:
 				leftMargin = UI.controlSmallMargin;
-				rightMargin = UI.controlSmallMargin;
+				rightMarginForDrawing = UI.controlSmallMargin;
 				break;
 			}
 			leftMargin += extraLeftMargin;
-			rightMargin += extraRightMargin;
 			topMargin = UI.controlSmallMargin;
+			rightMarginForDrawing += extraRightMargin;
+			rightMargin = rightMarginForDrawing + UI.strokeSize;
 			bottomMargin = UI.strokeSize;
 		} else {
 			leftMargin = 0;
 			topMargin = 0;
 			rightMargin = 0;
-			bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
+			rightMarginForDrawing = 0;
+			bottomMargin = 0;
 		}
 		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemsp + UI._14sp) + topMargin + bottomMargin;
 		usableHeight = height - (topMargin + bottomMargin);
@@ -121,6 +123,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		nameY = topMargin + sec + UI._LargeItemspYinBox;
 		secondaryY = topMargin + sec + UI._LargeItemspBox + UI._14spYinBox + UI.controlMargin;
 		return height;
+	}
+
+	public FileView(Context context) {
+		this(context, null, false);
 	}
 
 	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasCheckbox) {
@@ -371,6 +377,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 
 	@Override
+	public boolean hasOverlappingRendering() {
+		return (UI.is3D || (state != 0));
+	}
+
+	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
@@ -394,7 +405,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
+		setMeasuredDimension(getDefaultSize(0, widthMeasureSpec), height);
 	}
 
 	@Override
@@ -413,11 +424,14 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (ellipsizedName == null)
 			return;
 		getDrawingRect(UI.rect);
+		UI.rect.left += leftMargin;
+		UI.rect.top += topMargin;
+		UI.rect.right -= rightMarginForDrawing;
 		final int specialType = ((file == null) ? 0 : file.specialType);
 		int st = state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2);
 		if (specialType == FileSt.TYPE_ALBUM_ITEM)
 			st |= UI.STATE_SELECTED;
-		UI.drawBgListItem(canvas, st, true, leftMargin, rightMargin);
+		UI.drawBgListItem(canvas, st);
 		if (albumArt != null && albumArt.bitmap != null)
 			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((usableHeight - albumArt.height) >> 1), null);
 		else if (icon != null)

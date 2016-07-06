@@ -83,7 +83,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private BaseList<? extends BaseItem> adapter;
 	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking, touching;
 	private int leftPadding, topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
-		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState;
+		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState, dividerHeight;
 	private String[] sections;
 	private int[] sectionPositions;
 	public boolean skipUpDownTranslation;
@@ -99,8 +99,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		init();
 	}
 	
-	public BgListView(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+	public BgListView(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 		init();
 	}
 	
@@ -110,8 +110,15 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		scrollBarType = SCROLLBAR_INVALID;
 		extraState = 0;
 		super.setSelector(new NullDrawable());
-		super.setDivider(null);
-		super.setDividerHeight(0);
+		if (UI.is3D || !UI.isDividerVisible) {
+			dividerHeight = 0;
+			super.setDivider(null);
+			super.setDividerHeight(0);
+		} else {
+			dividerHeight = UI.strokeSize;
+			super.setDivider(new ColorDrawable(UI.color_divider));
+			super.setDividerHeight(UI.strokeSize);
+		}
 		super.setCacheColorHint(UI.color_list_bg);
 		super.setHorizontalFadingEdgeEnabled(false);
 		super.setVerticalFadingEdgeEnabled(false);
@@ -203,7 +210,12 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	public boolean isOpaque() {
 		return true;
 	}
-	
+
+	@Override
+	public boolean hasOverlappingRendering() {
+		return true;
+	}
+
 	@Override
 	protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
 		//massive workaround!!!
@@ -456,7 +468,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		} else {
 			scrollBarThumbTop = y + scrollBarTop;
 			int t = (scrollBarThumbTop * (contentsHeight - vh)) / (sbh - scrollBarThumbHeight);
-			f = t / itemHeight;
+			f = t / (itemHeight + dividerHeight);
 			if (f >= count)
 				f = count - 1;
 		}
@@ -589,8 +601,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			}
 			final int vh = (viewHeight - bottomPadding - topPadding);
 			contentsHeight = (itemCount * itemHeight);
-			//if (itemCount > 1 && UI.isDividerVisible)
-			//	contentsHeight += (itemCount - 1) * UI.dividerHeight;
+			if (dividerHeight != 0 && itemCount > 1)
+				contentsHeight += (itemCount - 1) * dividerHeight;
 			if (contentsHeight <= vh) {
 				scrollBarThumbHeight = 0;
 				return;
@@ -598,8 +610,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			scrollBarThumbHeight = (sbh * vh) / contentsHeight;
 			if (scrollBarThumbHeight < UI.controlMargin)
 				scrollBarThumbHeight = UI.controlMargin;
-			scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * ((getFirstVisiblePosition() * itemHeight) - v.getTop())) / (contentsHeight - vh));
-			//scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * ((getFirstVisiblePosition() * (UI.isDividerVisible ? (itemHeight + UI.dividerHeight) : itemHeight)) - v.getTop())) / (contentsHeight - vh));
+			scrollBarThumbTop = scrollBarTop + (((sbh - scrollBarThumbHeight) * ((getFirstVisiblePosition() * (itemHeight + dividerHeight)) - v.getTop())) / (contentsHeight - vh));
 		}
 	}
 	

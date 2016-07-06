@@ -64,13 +64,8 @@ public final class BgListItem3DDrawable extends Drawable {
 		if (!hasBounds) {
 			canvas.drawColor(UI.color_list);
 		} else {
-			final Rect r = getBounds();
-			UI.rect.left = r.left;
-			//this drawable is specialized for 3d, that's why we make up for the top margin UI always leaves
-			UI.rect.top = r.top - UI.controlSmallMargin;
-			UI.rect.right = r.right;
-			UI.rect.bottom = r.bottom;
-			UI.drawBgListItem(canvas, 0, false, 0, UI.strokeSize);
+			copyBounds(UI.rect);
+			UI.drawBgListItem(canvas, 0);
 		}
 	}
 

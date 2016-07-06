@@ -60,8 +60,8 @@ public final class BgProgressBar extends View {
 		init();
 	}
 
-	public BgProgressBar(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+	public BgProgressBar(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 		init();
 	}
 
@@ -111,6 +111,11 @@ public final class BgProgressBar extends View {
 	@ViewDebug.ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
 		return true;
+	}
+
+	@Override
+	public boolean hasOverlappingRendering() {
+		return false;
 	}
 
 	@Override
@@ -199,7 +204,10 @@ public final class BgProgressBar extends View {
 			UI.fillRect(canvas, secondaryBgColorBlended);
 		}
 
-		postInvalidateDelayed(20);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			postInvalidateOnAnimation();
+		else
+			postInvalidateDelayed(20);
 	}
 
 	@Override
@@ -221,7 +229,11 @@ public final class BgProgressBar extends View {
 	protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
 		attached = true;
-		postInvalidateDelayed(20);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			postInvalidateOnAnimation();
+		else
+			postInvalidateDelayed(20);
 	}
 
 	@Override

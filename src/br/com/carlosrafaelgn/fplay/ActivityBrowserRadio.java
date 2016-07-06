@@ -35,8 +35,6 @@ package br.com.carlosrafaelgn.fplay;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.res.ColorStateList;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
@@ -46,14 +44,10 @@ import android.text.style.ImageSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AbsListView;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -70,6 +64,7 @@ import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
+import br.com.carlosrafaelgn.fplay.ui.BgSpinner;
 import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.RadioStationView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -77,107 +72,19 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, AdapterView.OnItemSelectedListener, BgListView.OnScrollListener {
-	private static final class RadioStationAdapter implements SpinnerAdapter {
-		private ColorStateList defaultTextColors;
-		public RadioStationGenre[] genres;
-
-		public RadioStationAdapter(ColorStateList defaultTextColors, RadioStationGenre[] genres) {
-			this.defaultTextColors = defaultTextColors;
-			this.genres = genres;
-		}
-
-		public void release() {
-			defaultTextColors = null;
-			genres = null;
-		}
-
-		@Override
-		public int getCount() {
-			return (genres == null ? 0 : genres.length);
-		}
-
-		@Override
-		public Object getItem(int position) {
-			return (genres == null ? null : genres[position]);
-		}
-
-		@Override
-		public long getItemId(int position) {
-			return position;
-		}
-
-		@Override
-		public int getItemViewType(int position) {
-			return 0;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			TextView txt = (TextView)convertView;
-			if (txt == null) {
-				txt = new TextView(Player.theApplication);
-				txt.setSingleLine(true);
-				txt.setPadding(UI.dialogMargin, UI.dialogMargin, UI.dialogMargin, UI.dialogMargin);
-				txt.setTypeface(UI.defaultTypeface);
-				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-				txt.setTextColor(defaultTextColors);
-			}
-			txt.setText(genres == null ? "" : genres[position].name);
-			return txt;
-		}
-
-		@Override
-		public int getViewTypeCount() {
-			return 1;
-		}
-
-		@Override
-		public boolean hasStableIds() {
-			return true;
-		}
-
-		@Override
-		public boolean isEmpty() {
-			return false;
-		}
-
-		@Override
-		public void registerDataSetObserver(DataSetObserver observer) {
-		}
-
-		@Override
-		public void unregisterDataSetObserver(DataSetObserver observer) {
-		}
-
-		@Override
-		public View getDropDownView(int position, View convertView, ViewGroup parent) {
-			TextView txt = (TextView)convertView;
-			if (txt == null) {
-				txt = new TextView(Player.theApplication);
-				txt.setPadding(UI.dialogMargin, UI.dialogDropDownVerticalMargin, UI.dialogMargin, UI.dialogDropDownVerticalMargin);
-				txt.setTypeface(UI.defaultTypeface);
-				txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-				txt.setTextColor(defaultTextColors);
-			}
-			txt.setText(genres == null ? "" : genres[position].name);
-			return txt;
-		}
-	}
-
+public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, BgListView.OnScrollListener, BgSpinner.OnItemSelectedListener<RadioStationGenre> {
 	private final boolean useShoutcast;
 	private Uri externalUri;
 	private SpannableStringBuilder message;
 	private TextView sep2, lblLoading;
 	private BgListView list;
 	private RadioStationGenre[] genres;
-	private RadioStationAdapter adapterType, adapter, adapterSecondary;
 	private RadioStationList radioStationList;
 	private RelativeLayout panelSecondary, panelLoading;
-	private Spinner btnType, btnGenre, btnGenreSecondary;
+	private BgSpinner<RadioStationGenre> btnType, btnGenre, btnGenreSecondary;
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
-	private boolean loading, isAtFavorites, isHidingLoadingPanel, ignoreFirstNotification, animateListBox;
+	private boolean loading, isAtFavorites, isHidingLoadingPanel, animateListBox;
 	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
@@ -484,10 +391,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			
 			LinearLayout.LayoutParams p;
 
-			btnType = new Spinner(ctx);
+			btnType = new BgSpinner<>(ctx);
 			l.addView(btnType, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-			btnGenre = new Spinner(ctx);
+			btnGenre = new BgSpinner<>(ctx);
 			btnGenre.setContentDescription(ctx.getText(R.string.genre));
 			btnGenre.setVisibility(Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -495,7 +402,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			l.addView(btnGenre, p);
 
 			if (useShoutcast) {
-				btnGenreSecondary = new Spinner(ctx);
+				btnGenreSecondary = new BgSpinner<>(ctx);
 				btnGenreSecondary.setContentDescription(ctx.getText(R.string.genre));
 				btnGenreSecondary.setVisibility(Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
 				p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -517,7 +424,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			lbl.setMaxLines(4);
 			lbl.setAutoLinkMask(0);
 			lbl.setLinksClickable(true);
-			//http://developer.android.com/design/style/color.html
 			lbl.setLinkTextColor(UI.colorState_text_listitem_secondary_static);
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 			lbl.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -547,26 +453,20 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			p.topMargin = UI.dialogMargin;
 			l.addView(lbl, p);
 
-			final ColorStateList defaultTextColors = txtTerm.getTextColors();
-
-			adapterType = new RadioStationAdapter(defaultTextColors, new RadioStationGenre[] {
+			btnType.setItems(new RadioStationGenre[]{
 				new RadioStationGenre(getText(R.string.genre).toString()),
 				new RadioStationGenre(getText(R.string.search_term).toString())
 			});
-			btnType.setAdapter(adapterType);
-			btnType.setSelection(Player.lastRadioSearchWasByGenre ? 0 : 1);
+			btnType.setSelectedItemPosition(Player.lastRadioSearchWasByGenre ? 0 : 1);
 			btnType.setOnItemSelectedListener(this);
 
 			final int primaryGenreIndex = getPrimaryGenreIndex();
-			adapter = new RadioStationAdapter(defaultTextColors, genres);
-			btnGenre.setAdapter(adapter);
-			btnGenre.setSelection(primaryGenreIndex);
+			btnGenre.setItems(genres);
+			btnGenre.setSelectedItemPosition(primaryGenreIndex);
 			if (btnGenreSecondary != null) {
-				ignoreFirstNotification = true;
 				btnGenre.setOnItemSelectedListener(this);
-				adapterSecondary = new RadioStationAdapter(defaultTextColors, genres[primaryGenreIndex].children);
-				btnGenreSecondary.setAdapter(adapterSecondary);
-				btnGenreSecondary.setSelection(getSecondaryGenreIndex());
+				btnGenreSecondary.setItems(genres[primaryGenreIndex].children);
+				btnGenreSecondary.setSelectedItemPosition(getSecondaryGenreIndex());
 			}
 
 			UI.disableEdgeEffect();
@@ -610,18 +510,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		btnType = null;
 		btnGenre = null;
 		btnGenreSecondary = null;
-		if (adapterType != null) {
-			adapterType.release();
-			adapterType = null;
-		}
-		if (adapter != null) {
-			adapter.release();
-			adapter = null;
-		}
-		if (adapterSecondary != null) {
-			adapterSecondary.release();
-			adapterSecondary = null;
-		}
 		txtTerm = null;
 		dialog.dismiss();
 	}
@@ -825,34 +713,27 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	}
 
 	@Override
-	public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-		if (parent == btnGenre && btnGenre != null && btnGenreSecondary != null && adapterSecondary != null && genres != null && position >= 0 && position < genres.length) {
-			if (ignoreFirstNotification) {
-				ignoreFirstNotification = false;
-				return;
+	public void onItemSelected(BgSpinner<RadioStationGenre> spinner, int position) {
+		if (spinner == btnGenre) {
+			if (btnGenre != null && btnGenreSecondary != null && genres != null && position >= 0 && position < genres.length) {
+				btnGenreSecondary.setSelectedItemPosition(0);
+				btnGenreSecondary.setItems(genres[position].children);
 			}
-			adapterSecondary.genres = genres[position].children;
-			btnGenreSecondary.setSelection(0);
-			//since RadioStationAdapter does not keep track of its DataSetObservers,
-			//we must reset the adapter here
-			btnGenreSecondary.setAdapter(adapterSecondary);
-		} else if (parent == btnType && btnGenre != null && txtTerm != null) {
-			if (position == 0) {
-				txtTerm.setVisibility(View.GONE);
-				btnGenre.setVisibility(View.VISIBLE);
-				if (btnGenreSecondary != null)
-					btnGenreSecondary.setVisibility(View.VISIBLE);
-			} else {
-				btnGenre.setVisibility(View.GONE);
-				if (btnGenreSecondary != null)
-					btnGenreSecondary.setVisibility(View.GONE);
-				txtTerm.setVisibility(View.VISIBLE);
-				txtTerm.requestFocus();
+		} else if (spinner == btnType) {
+			if (btnGenre != null && txtTerm != null) {
+				if (position == 0) {
+					txtTerm.setVisibility(View.GONE);
+					btnGenre.setVisibility(View.VISIBLE);
+					if (btnGenreSecondary != null)
+						btnGenreSecondary.setVisibility(View.VISIBLE);
+				} else {
+					btnGenre.setVisibility(View.GONE);
+					if (btnGenreSecondary != null)
+						btnGenreSecondary.setVisibility(View.GONE);
+					txtTerm.setVisibility(View.VISIBLE);
+					txtTerm.requestFocus();
+				}
 			}
 		}
-	}
-
-	@Override
-	public void onNothingSelected(AdapterView<?> parent) {
 	}
 }

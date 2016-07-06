@@ -61,9 +61,9 @@ public final class ObservableScrollView extends ScrollView {
 		super(context, attrs);
 		init(UI.PLACEMENT_WINDOW);
 	}
-	
-	public ObservableScrollView(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+
+	public ObservableScrollView(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 		init(UI.PLACEMENT_WINDOW);
 	}
 

@@ -100,6 +100,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //Unit conversions are based on:
 //http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.3_r1/android/util/TypedValue.java
 //
+@SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
 	public static final int VERSION_CODE = 88;
@@ -230,16 +231,17 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_SHOUTCASTTEXT = "T"; //height = 2.279 / 16
 	public static final String ICON_PERCENTAGE = "8";
 	public static final String ICON_CLIP = "C";
+	public static final String ICON_SPINNERARROW = "e";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
 	public static final int KEY_LEFT = KeyEvent.KEYCODE_DPAD_LEFT;
 	public static final int KEY_RIGHT = KeyEvent.KEYCODE_DPAD_RIGHT;
 	public static final int KEY_ENTER = KeyEvent.KEYCODE_DPAD_CENTER;
-	public static final int KEY_DEL = KeyEvent.KEYCODE_FORWARD_DEL;
+	public static final int KEY_DEL = 112; //KeyEvent.KEYCODE_FORWARD_DEL;
 	public static final int KEY_EXTRA = KeyEvent.KEYCODE_SPACE;
-	public static final int KEY_HOME = KeyEvent.KEYCODE_MOVE_HOME;
-	public static final int KEY_END = KeyEvent.KEYCODE_MOVE_END;
+	public static final int KEY_HOME = 122; //KeyEvent.KEYCODE_MOVE_HOME;
+	public static final int KEY_END = 123; //KeyEvent.KEYCODE_MOVE_END;
 	public static final int KEY_PAGE_UP = KeyEvent.KEYCODE_PAGE_UP;
 	public static final int KEY_PAGE_DOWN = KeyEvent.KEYCODE_PAGE_DOWN;
 
@@ -271,14 +273,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int PLACEMENT_WINDOW = 0;
 	public static final int PLACEMENT_MENU = 1;
 	public static final int PLACEMENT_ALERT = 2;
-
-	//keep in sync with v21/styles.xml
-	public static final int color_dialog_fplay_dk = 0xff444abf;
-	public static final int color_dialog_fplay_lt = 0xff9ea6ff;
-	public static final int color_dialog_text_dk = 0xff1f1f1f;
-	public static final int color_dialog_text_lt = 0xffffffff;
-	public static final int color_dialog_normal_dk = 0xff6d6d6d;
-	public static final int color_dialog_normal_lt = 0xffc7c7c7;
 
 	public static int color_window;
 	public static int color_control_mode;
@@ -315,6 +309,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static int color_focused_pressed;
 	public static int color_focused_pressed_border;
 	public static int color_glow;
+	public static int color_dialog_detail;
+	public static int color_dialog_detail_highlight;
 	public static BgColorStateList colorState_text_white_reactive;
 	public static BgColorStateList colorState_text_menu_reactive;
 	public static BgColorStateList colorState_text_reactive;
@@ -669,10 +665,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void reapplyForcedLocale(Activity activityContext) {
-		setForcedLocale(activityContext, forcedLocale, false);
+		setForcedLocale(activityContext, forcedLocale);
 	}
 
-	public static boolean setForcedLocale(Activity activityContext, int localeCode, boolean reloadEmptyListString) {
+	public static boolean setForcedLocale(Activity activityContext, int localeCode) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
 		if (forcedLocale == 0 && localeCode == 0) {
@@ -710,7 +706,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	
 	public static void setUsingAlternateTypefaceAndForcedLocale(boolean useAlternateTypeface, int localeCode) {
 		UI.isUsingAlternateTypeface = useAlternateTypeface;
-		if (!setForcedLocale(null, localeCode, false))
+		if (!setForcedLocale(null, localeCode))
 			setUsingAlternateTypeface(useAlternateTypeface);
 	}
 	
@@ -721,7 +717,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		Player.theApplication = context.getApplicationContext();
 		final SerializableMap opts = Player.loadConfigFromFile();
 		//I know, this is ugly... I'll fix it one day...
-		setForcedLocale(null, opts.getInt(0x001E, LOCALE_NONE), false);
+		setForcedLocale(null, opts.getInt(0x001E, LOCALE_NONE));
 		//widgetTransparentBg = opts.getBoolean(0x0022, false);
 		widgetTransparentBg = opts.getBit(18);
 		widgetTextColor = opts.getInt(0x0023, 0xff000000);
@@ -734,9 +730,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			iconsTypeface = Typeface.createFromAsset(Player.theApplication.getAssets(), "fonts/icons.ttf");
 		if (!fullyInitialized) {
 			try {
-				isTV = ((((UiModeManager)Player.theApplication.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)
+					isTV = ((((UiModeManager)Player.theApplication.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
 			} catch (Throwable ex) {
-				ex.printStackTrace();
+				//just ignore
 			}
 			try {
 				hasTouch = Player.theApplication.getPackageManager().hasSystemFeature("android.hardware.touchscreen");
@@ -791,7 +788,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		defaultControlContentsSize = dpToPxI(32);
 		defaultControlSize = defaultControlContentsSize + (controlMargin << 1);
 		defaultCheckIconSize = dpToPxI(24); //both descent and ascent of iconsTypeface are 0!
-		if (!setForcedLocale(activityContext, forcedLocale, false))
+		if (!setForcedLocale(activityContext, forcedLocale))
 			setUsingAlternateTypeface(isUsingAlternateTypeface);
 		setVerticalMarginLarge(isVerticalMarginLarge);
 	}
@@ -852,7 +849,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		//instead of guessing the color, try to fetch the actual one first
 		int color = 0;
 		try {
-			color = getAndroidThemeColor((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? android.R.style.TextAppearance_Material_Notification_Title : android.R.style.TextAppearance_StatusBar_EventContent_Title, android.R.attr.textColor);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+				color = getAndroidThemeColor(android.R.style.TextAppearance_Material_Notification_Title, android.R.attr.textColor);
+			else
+				color = getAndroidThemeColor(android.R.style.TextAppearance_StatusBar_EventContent_Title, android.R.attr.textColor);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -1099,6 +1099,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_glow = ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary :
 			((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window :
 				color_text_listitem));
+
+		color_dialog_detail = color_divider;
+		color_dialog_detail_highlight = color_text_listitem_secondary;
 
 		//choose the color with a nice contrast against the list background to be the glow color
 		//the color is treated as SRC, and the bitmap is treated as DST
@@ -1597,7 +1600,59 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	private static void drawBgListItem2D(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
+	private static void drawBgListItem2D(Canvas canvas, int state) {
+		if ((state & ~STATE_CURRENT) != 0) {
+			if ((state & STATE_PRESSED) != 0) {
+				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+				if (isFlat) {
+					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+				} else {
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+					fillPaint.setShader(null);
+				}
+			} else { //if ((state & STATE_MULTISELECTED) != 0) {
+				fillPaint.setColor(color_selected_multi);
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
+			}
+		}
+	}
+
+	public static void drawBgListItem(Canvas canvas, int state) {
+		if (!is3D) {
+			drawBgListItem2D(canvas, state);
+			return;
+		}
+		fillPaint.setColor(color_list_shadow);
+		//right shadow
+		canvas.drawRect(rect.right - strokeSize, rect.top + strokeSize, rect.right, rect.bottom, fillPaint);
+		//bottom shadow
+		canvas.drawRect(rect.left + strokeSize, rect.bottom - strokeSize, rect.right - strokeSize, rect.bottom, fillPaint);
+		if ((state & ~STATE_CURRENT) != 0) {
+			if ((state & STATE_PRESSED) != 0) {
+				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+				if (isFlat) {
+					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+				} else {
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - strokeSize - rect.top));
+					canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
+					fillPaint.setShader(null);
+					return;
+				}
+			} else { //if ((state & STATE_MULTISELECTED) != 0) {
+				fillPaint.setColor(color_selected_multi);
+			}
+		} else {
+			fillPaint.setColor(color_list);
+		}
+		canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
+	}
+
+	private static void drawBgListItem2DWithDivider(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
 		dividerAllowed &= isDividerVisible;
 		if (dividerAllowed)
 			rect.bottom -= strokeSize;
@@ -1625,16 +1680,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	public static void drawBgListItem(Canvas canvas, int state, boolean dividerAllowed, int leftMargin, int rightMargin) {
+	public static void drawBgListItemWithDivider(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
 		if (!is3D) {
-			drawBgListItem2D(canvas, state, dividerAllowed, leftMargin, rightMargin);
+			drawBgListItem2DWithDivider(canvas, state, dividerAllowed, dividerMarginLeft, dividerMarginRight);
 			return;
 		}
 		fillPaint.setColor(color_list_shadow);
 		//right shadow
-		canvas.drawRect(rect.right - rightMargin, rect.top + controlSmallMargin + strokeSize, rect.right - rightMargin + strokeSize, rect.bottom, fillPaint);
+		canvas.drawRect(rect.right - strokeSize, rect.top + strokeSize, rect.right, rect.bottom, fillPaint);
 		//bottom shadow
-		canvas.drawRect(rect.left + leftMargin + strokeSize, rect.bottom - strokeSize, rect.right - rightMargin, rect.bottom, fillPaint);
+		canvas.drawRect(rect.left + strokeSize, rect.bottom - strokeSize, rect.right - strokeSize, rect.bottom, fillPaint);
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
@@ -1642,8 +1697,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				if (isFlat) {
 					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - controlSmallMargin - strokeSize));
-					canvas.drawRect(rect.left + leftMargin, rect.top + controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - strokeSize - rect.top));
+					canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
 					fillPaint.setShader(null);
 					return;
 				}
@@ -1653,7 +1708,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		} else {
 			fillPaint.setColor(color_list);
 		}
-		canvas.drawRect(rect.left + leftMargin, rect.top + controlSmallMargin, rect.right - rightMargin, rect.bottom - strokeSize, fillPaint);
+		canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
 	}
 
 	public static void drawBg(Canvas canvas, int state) {
@@ -1809,7 +1864,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		mnu.setItemTextSizeInPixels(_LargeItemsp);
 		mnu.setItemTextColor(colorState_text_menu_reactive);
 		mnu.setItemPadding(menuMargin);
-		mnu.setItemGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+		mnu.setItemGravity(Gravity.START | Gravity.CENTER_VERTICAL);
 	}
 	
 	public static void separator(Menu menu, int groupId, int order) {
@@ -1839,11 +1894,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if (id != 0)
 			editText.setId(id);
 		editText.setSingleLine((inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) == 0);
-		editText.setTypeface(defaultTypeface);
-		editText.setTextSize(TypedValue.COMPLEX_UNIT_PX, _18sp);
-		editText.setTextColor(colorState_text_listitem_static);
-		editText.setCursorColor(color_text_listitem_secondary);
-		editText.setColors(color_divider, color_text_listitem_secondary);
 		editText.setContentDescription(contentDescription);
 		editText.setInputType(inputType);
 		if (text != null)
@@ -2353,6 +2403,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private static void animationCommit11(View focusView) {
 		if (animationAnimatorShowFirst == null) {
+			final View referenceView = (focusView != null ? focusView : (animationViewToShowFirst != null ? animationViewToShowFirst : (animationViewsToHideAndShow[0] != null ? animationViewsToHideAndShow[0] : animationViewsToHideAndShow[16])));
 			animationAnimatorShowFirst = new FastAnimator(new FastAnimator.Observer() {
 				@Override
 				public void onUpdate(FastAnimator animator, float value) {
@@ -2365,7 +2416,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					if (animationState == ANIMATION_STATE_HIDING)
 						animationFinished(false);
 				}
-			}, 0);
+			}, 0, referenceView);
 			animationAnimatorHide = new FastAnimator(new FastAnimator.Observer() {
 				@Override
 				public void onUpdate(FastAnimator animator, float value) {
@@ -2382,7 +2433,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					if (animationState == ANIMATION_STATE_HIDING)
 						animationFinished(false);
 				}
-			}, 0);
+			}, 0, referenceView);
 			animationAnimatorShow = new FastAnimator(new FastAnimator.Observer() {
 				@Override
 				public void onUpdate(FastAnimator animator, float value) {
@@ -2398,7 +2449,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					if (animationState == ANIMATION_STATE_SHOWING)
 						animationFinished(false);
 				}
-			}, 0);
+			}, 0, referenceView);
 		} else {
 			animationAnimatorShowFirst.end();
 			animationAnimatorHide.end();

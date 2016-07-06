@@ -33,27 +33,25 @@
 package br.com.carlosrafaelgn.fplay.ui;
 
 import android.os.Build;
-import android.os.Message;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.animation.Animation;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 
-public final class FastAnimator implements MainHandler.Callback, Animation.AnimationListener {
+public final class FastAnimator implements Animation.AnimationListener {
 	public interface Observer {
 		void onUpdate(FastAnimator animator, float value);
 		void onEnd(FastAnimator animator);
 	}
 
-	private static final int MSG_ANIMATOR = 0x0800;
-
-	private View viewToFade;
+	private View viewToFade, referenceView;
 	private Animation animation;
 	private Observer observer;
 	private float invDuration;
 	private boolean fadeOut, running;
 	private int version, ellapsedTime, duration, lastTime;
+	private Runnable runnable;
 
 	public FastAnimator(View viewToFade, boolean fadeOut, Observer endObserver, int duration) {
 		this.viewToFade = viewToFade;
@@ -66,17 +64,22 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 		this.observer = endObserver;
 		this.duration = (duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
 		this.invDuration = 1.0f / (float)this.duration;
+		this.referenceView = viewToFade;
 	}
 
-	public FastAnimator(Observer observer, int duration) {
+	public FastAnimator(Observer observer, int duration, View referenceView) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+			throw new RuntimeException("FastAnimator must be used with API 11+ for the observer to work properly");
 		this.observer = observer;
 		this.duration = (duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
 		this.invDuration = 1.0f / (float)this.duration;
+		this.referenceView = referenceView;
 	}
 
 	public void release() {
 		end();
 		viewToFade = null;
+		referenceView = null;
 		animation = null;
 		observer = null;
 	}
@@ -87,6 +90,37 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 		running = true;
 		version++;
 		ellapsedTime = 0;
+		runnable = new Runnable() {
+			private final int myVersion = version;
+			@Override
+			public void run() {
+				if (myVersion != version)
+					return;
+				final int now = (int)SystemClock.uptimeMillis();
+				lastTime = now - lastTime;
+				//limit the delta so the user can actually see something changing on the screen
+				ellapsedTime += ((lastTime >= 32) ? 32 : lastTime);
+				lastTime = now;
+				if (ellapsedTime >= duration) {
+					end();
+				} else {
+					float value = (float)ellapsedTime * invDuration;
+					//interpolate using the same algorithm as the one used in UI.animationInterpolator
+					//(see UI class for more details)
+					value = (value * value * (3.0f - (2.0f * value)));
+					if (viewToFade != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+						viewToFade.setAlpha(fadeOut ? (1.0f - value) : value);
+					else if (observer != null)
+						observer.onUpdate(FastAnimator.this, value);
+					if (running) {
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && referenceView != null)
+							referenceView.postOnAnimation(this);
+						else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+							MainHandler.postToMainThreadAtTime(this, lastTime + 16);
+					}
+				}
+			}
+		};
 		if (viewToFade != null) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 				viewToFade.setAlpha(fadeOut ? 1.0f : 0.0f);
@@ -98,7 +132,10 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 			observer.onUpdate(this, 0.0f);
 		}
 		lastTime = (int)SystemClock.uptimeMillis();
-		MainHandler.sendMessageAtTime(this, MSG_ANIMATOR, version, 0, lastTime + 16);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && referenceView != null)
+			referenceView.postOnAnimation(runnable);
+		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			MainHandler.postToMainThreadAtTime(runnable, lastTime + 16);
 	}
 
 	public void end() {
@@ -106,6 +143,7 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 			return;
 		running = false;
 		version++;
+		runnable = null;
 		if (viewToFade != null) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 				viewToFade.setAlpha(fadeOut ? 0.0f : 1.0f);
@@ -119,34 +157,6 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 			observer.onUpdate(this, 1.0f);
 			observer.onEnd(this);
 		}
-		//I think it is best just to leave those messages there (if there are any messages...)
-		//MainHandler.removeMessages(this, MSG_ANIMATOR);
-	}
-
-	@Override
-	public boolean handleMessage(Message msg) {
-		if (msg.arg1 == version) {
-			final int now = (int)SystemClock.uptimeMillis();
-			lastTime = now - lastTime;
-			//limit the delta so the user can actually see something changing on the screen
-			ellapsedTime += ((lastTime >= 32) ? 32 : lastTime);
-			lastTime = now;
-			if (ellapsedTime >= duration) {
-				end();
-			} else {
-				float value = (float)ellapsedTime * invDuration;
-				//interpolate using the same algorithm as the one used in UI.animationInterpolator
-				//(see UI class for more details)
-				value = (value * value * (3.0f - (2.0f * value)));
-				if (viewToFade != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-					viewToFade.setAlpha(fadeOut ? (1.0f - value) : value);
-				else if (observer != null)
-					observer.onUpdate(this, value);
-				if (running)
-					MainHandler.sendMessageAtTime(this, MSG_ANIMATOR, msg.arg1, 0, now + 16);
-			}
-		}
-		return true;
 	}
 
 	@Override
@@ -156,9 +166,15 @@ public final class FastAnimator implements MainHandler.Callback, Animation.Anima
 
 	@Override
 	public void onAnimationEnd(Animation animation) {
+		if (!running)
+			return;
 		running = false;
+		version++;
+		runnable = null;
 		if (viewToFade != null)
 			viewToFade.setAnimation(null);
+		else if (observer != null)
+			observer.onUpdate(this, 1.0f);
 		if (observer != null)
 			observer.onEnd(this);
 	}

@@ -150,6 +150,11 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		}
 
 		@Override
+		public boolean hasOverlappingRendering() {
+			return true;
+		}
+
+		@Override
 		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 			squareSize = UI.defaultControlSize;
 			margin = UI.controlMargin;
@@ -299,6 +304,11 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		@Override
 		@ExportedProperty(category = "drawing")
 		public boolean isOpaque() {
+			return true;
+		}
+
+		@Override
+		public boolean hasOverlappingRendering() {
 			return true;
 		}
 
@@ -455,6 +465,11 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		}
 
 		@Override
+		public boolean hasOverlappingRendering() {
+			return true;
+		}
+
+		@Override
 		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 			if (vertical)
 				setMeasuredDimension((UI.defaultControlSize * 3) >> 2, getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
@@ -601,6 +616,10 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		if (oneShot)
 			dialog.setNegativeButton(R.string.cancel);
 		dialog.show();
+	}
+
+	public ColorPickerView(Context context) {
+		this(context, null, false);
 	}
 
 	public ColorPickerView(Context context, View parentView, boolean oneShot) {
@@ -817,6 +836,17 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 
 	public void setOnColorPickerViewListener(OnColorPickerViewListener listener) {
 		this.listener = listener;
+	}
+
+	@Override
+	@ExportedProperty(category = "drawing")
+	public boolean isOpaque() {
+		return false;
+	}
+
+	@Override
+	public boolean hasOverlappingRendering() {
+		return true;
 	}
 
 	@Override

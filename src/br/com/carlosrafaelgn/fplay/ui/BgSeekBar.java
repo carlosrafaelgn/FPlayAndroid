@@ -80,8 +80,8 @@ public final class BgSeekBar extends View {
 		init();
 	}
 	
-	public BgSeekBar(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+	public BgSeekBar(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 		init();
 	}
 	
@@ -348,7 +348,12 @@ public final class BgSeekBar extends View {
 	public boolean isOpaque() {
 		return false;
 	}
-	
+
+	@Override
+	public boolean hasOverlappingRendering() {
+		return true;
+	}
+
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();

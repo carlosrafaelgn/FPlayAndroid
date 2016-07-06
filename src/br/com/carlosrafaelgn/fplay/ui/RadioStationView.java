@@ -56,7 +56,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	private String[] descriptionLines, tagsLines;
 	private int state, width, position, descriptionY, tagsY;
 
-	private static int height, textX, iconY, onAirY, leftMargin, topMargin, rightMargin, bottomMargin;
+	private static int height, textX, iconY, onAirY, leftMargin, topMargin, rightMargin, rightMarginForDrawing, bottomMargin;
 
 	public static int getViewHeight() {
 		if (UI.is3D) {
@@ -65,24 +65,26 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			case BgListView.SCROLLBAR_LARGE:
 				if (UI.scrollBarToTheLeft) {
 					leftMargin = 0;
-					rightMargin = UI.controlSmallMargin;
+					rightMarginForDrawing = UI.controlSmallMargin;
 				} else {
 					leftMargin = UI.controlSmallMargin;
-					rightMargin = UI.strokeSize;
+					rightMarginForDrawing = 0;
 				}
 				break;
 			default:
 				leftMargin = UI.controlSmallMargin;
-				rightMargin = UI.controlSmallMargin;
+				rightMarginForDrawing = UI.controlSmallMargin;
 				break;
 			}
 			topMargin = UI.controlSmallMargin;
+			rightMargin = rightMarginForDrawing + UI.strokeSize;
 			bottomMargin = UI.strokeSize;
 		} else {
 			leftMargin = 0;
 			topMargin = 0;
 			rightMargin = 0;
-			bottomMargin = (UI.isDividerVisible ? UI.strokeSize : 0);
+			rightMarginForDrawing = 0;
+			bottomMargin = 0;
 		}
 		textX = leftMargin + UI.controlMargin;
 		iconY = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + ((UI._18spBox - UI._18sp) >> 1);
@@ -220,6 +222,11 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	}
 
 	@Override
+	public boolean hasOverlappingRendering() {
+		return (UI.is3D || (state != 0));
+	}
+
+	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
@@ -241,7 +248,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-		setMeasuredDimension(resolveSize(0, widthMeasureSpec), height);
+		setMeasuredDimension(getDefaultSize(0, widthMeasureSpec), height);
 	}
 
 	@Override
@@ -262,7 +269,10 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		getDrawingRect(UI.rect);
-		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2), true, leftMargin, rightMargin);
+		UI.rect.left += leftMargin;
+		UI.rect.top += topMargin;
+		UI.rect.right -= rightMarginForDrawing;
+		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, textX, topMargin + UI.verticalMargin + UI._22spYinBox);
 		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, textX, iconY, UI._18sp, txtColor2);
 		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, textX + UI._18sp + UI.controlSmallMargin, onAirY);

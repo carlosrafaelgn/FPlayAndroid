@@ -79,8 +79,8 @@ public final class MainHandler extends Handler {
 		theHandler.post(runnable);
 	}
 	
-	public static void postToMainThreadDelayed(Runnable runnable, long delayMillis) {
-		theHandler.postAtTime(runnable, SystemClock.uptimeMillis() + delayMillis);
+	public static void postToMainThreadAtTime(Runnable runnable, long uptimeMillis) {
+		theHandler.postAtTime(runnable, uptimeMillis);
 	}
 	
 	public static void sendMessage(MainHandler.Callback callback, int what) {
@@ -91,8 +91,8 @@ public final class MainHandler extends Handler {
 		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), SystemClock.uptimeMillis());
 	}
 
-	public static void sendMessageAtTime(MainHandler.Callback callback, int what, int arg1, int arg2, long when) {
-		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), when);
+	public static void sendMessageAtTime(MainHandler.Callback callback, int what, int arg1, int arg2, long uptimeMillis) {
+		theHandler.sendMessageAtTime(Message.obtain(theHandler, what, arg1, arg2, callback), uptimeMillis);
 	}
 	
 	public static void removeMessages(MainHandler.Callback callback, int what) {

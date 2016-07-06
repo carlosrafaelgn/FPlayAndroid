@@ -74,8 +74,8 @@ public final class BgButton extends Button {
 		init();
 	}
 	
-	public BgButton(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+	public BgButton(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 		init();
 	}
 	
@@ -84,7 +84,7 @@ public final class BgButton extends Button {
 		super.setDrawingCacheEnabled(false);
 		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
-		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.isLargeScreen ? UI._22sp : UI._18sp);
+		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp); //UI.isLargeScreen ? UI._22sp : UI._18sp);
 		super.setGravity(Gravity.CENTER);
 		super.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
 		super.setFocusableInTouchMode(!UI.hasTouch);
@@ -276,6 +276,11 @@ public final class BgButton extends Button {
 	@ExportedProperty(category = "drawing")
 	public boolean isOpaque() {
 		return false;
+	}
+
+	@Override
+	public boolean hasOverlappingRendering() {
+		return (state != 0);
 	}
 
 	@Override

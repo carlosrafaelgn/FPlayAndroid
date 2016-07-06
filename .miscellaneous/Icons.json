@@ -1,8 +1,8 @@
 {
 	"metadata": {
 		"name": "Icons",
-		"lastOpened": 1463789536966,
-		"created": 1463789534489
+		"lastOpened": 1467639543357,
+		"created": 1467639540546
 	},
 	"iconSets": [
 		{
@@ -17,6 +17,21 @@
 			"height": 1024,
 			"prevSize": 32,
 			"icons": [
+				{
+					"id": 89,
+					"paths": [
+						"M1024 0v1024h-1024z"
+					],
+					"attrs": [
+						{}
+					],
+					"isMulticolor": false,
+					"isMulticolor2": false,
+					"grid": 16,
+					"tags": [
+						"SpinnerArrow"
+					]
+				},
 				{
 					"id": 88,
 					"paths": [
@@ -166,7 +181,9 @@
 					"grid": 32,
 					"colorPermutations": {
 						"6868681": [
-							0
+							{
+								"f": 0
+							}
 						]
 					}
 				},
@@ -1025,12 +1042,20 @@
 			],
 			"selection": [
 				{
+					"order": 92,
+					"id": 88,
+					"prevSize": 32,
+					"code": 101,
+					"name": "SpinnerArrow",
+					"tempChar": ""
+				},
+				{
 					"order": 90,
 					"id": 87,
 					"prevSize": 32,
 					"code": 67,
 					"name": "Clip",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 88,
@@ -1038,7 +1063,7 @@
 					"prevSize": 32,
 					"code": 56,
 					"name": "Perc",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 86,
@@ -1046,7 +1071,7 @@
 					"prevSize": 32,
 					"code": 84,
 					"name": "ShoutcastText",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 85,
@@ -1054,7 +1079,7 @@
 					"prevSize": 32,
 					"code": 79,
 					"name": "IcecastText",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 84,
@@ -1062,7 +1087,7 @@
 					"prevSize": 32,
 					"code": 74,
 					"name": "Shoutcast",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 83,
@@ -1070,7 +1095,7 @@
 					"prevSize": 32,
 					"code": 75,
 					"name": "Icecast",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 82,
@@ -1078,7 +1103,7 @@
 					"prevSize": 32,
 					"code": 107,
 					"name": "HeadsetHookClick3",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 81,
@@ -1086,7 +1111,7 @@
 					"prevSize": 32,
 					"code": 106,
 					"name": "HeadsetHookClick2",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 80,
@@ -1094,7 +1119,7 @@
 					"prevSize": 32,
 					"code": 105,
 					"name": "HeadsetHookClick1",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 79,
@@ -1102,7 +1127,7 @@
 					"prevSize": 32,
 					"code": 89,
 					"name": "RepeatNone",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 76,
@@ -1110,7 +1135,7 @@
 					"prevSize": 32,
 					"code": 47,
 					"name": "Flat",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 74,
@@ -1118,7 +1143,7 @@
 					"name": "3DPan",
 					"prevSize": 32,
 					"code": 41,
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 71,
@@ -1126,7 +1151,7 @@
 					"name": "Root",
 					"prevSize": 32,
 					"code": 40,
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 69,
@@ -1134,7 +1159,7 @@
 					"prevSize": 32,
 					"code": 37,
 					"name": "Transition",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 67,
@@ -1142,7 +1167,7 @@
 					"prevSize": 32,
 					"code": 121,
 					"name": "RepeatOne",
-					"tempChar": ""
+					"tempChar": ""
 				},
 				{
 					"order": 68,
@@ -1150,7 +1175,7 @@
 					"prevSize": 32,
 					"code": 53,
 					"name": "SeekBar",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1159,7 +1184,7 @@
 					"prevSize": 32,
 					"code": 117,
 					"name": "USB",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1168,7 +1193,7 @@
 					"prevSize": 32,
 					"code": 102,
 					"name": "Folder",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1177,7 +1202,7 @@
 					"prevSize": 32,
 					"code": 100,
 					"name": "SD",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1186,7 +1211,7 @@
 					"prevSize": 32,
 					"code": 99,
 					"name": "ScrollBar",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1195,7 +1220,7 @@
 					"prevSize": 32,
 					"code": 97,
 					"name": "Hand",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1204,7 +1229,7 @@
 					"prevSize": 32,
 					"code": 119,
 					"name": "Radio",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1213,7 +1238,7 @@
 					"prevSize": 32,
 					"code": 87,
 					"name": "Bluetooth",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1222,7 +1247,7 @@
 					"prevSize": 32,
 					"code": 98,
 					"name": "NoAlbumArt",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1231,7 +1256,7 @@
 					"prevSize": 32,
 					"code": 66,
 					"name": "AlbumArt",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1240,7 +1265,7 @@
 					"prevSize": 32,
 					"code": 109,
 					"name": "Mic",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1249,7 +1274,7 @@
 					"prevSize": 32,
 					"code": 59,
 					"name": "OptFade",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1258,7 +1283,7 @@
 					"prevSize": 32,
 					"code": 58,
 					"name": "OptDial",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1267,7 +1292,7 @@
 					"prevSize": 32,
 					"code": 123,
 					"name": "OptHeadsetPlay",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1276,7 +1301,7 @@
 					"prevSize": 32,
 					"code": 125,
 					"name": "OptTransparent",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1285,7 +1310,7 @@
 					"prevSize": 32,
 					"code": 91,
 					"name": "OptColor",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1294,7 +1319,7 @@
 					"prevSize": 32,
 					"code": 93,
 					"name": "OptLanguage",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1303,7 +1328,7 @@
 					"prevSize": 32,
 					"code": 92,
 					"name": "OptTheme",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1312,7 +1337,7 @@
 					"prevSize": 32,
 					"code": 61,
 					"name": "OptSpaceList",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1321,7 +1346,7 @@
 					"prevSize": 32,
 					"code": 126,
 					"name": "OptSpaceHeader",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1330,7 +1355,7 @@
 					"prevSize": 32,
 					"code": 64,
 					"name": "OptOrientation",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1339,7 +1364,7 @@
 					"prevSize": 32,
 					"code": 36,
 					"name": "OptDyslexia",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1348,7 +1373,7 @@
 					"prevSize": 32,
 					"code": 96,
 					"name": "OptScreenOn",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1357,7 +1382,7 @@
 					"prevSize": 32,
 					"code": 46,
 					"name": "OptTurnOff",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1366,7 +1391,7 @@
 					"prevSize": 32,
 					"code": 44,
 					"name": "OptDiv",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1375,7 +1400,7 @@
 					"prevSize": 32,
 					"code": 54,
 					"name": "Right",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1384,7 +1409,7 @@
 					"prevSize": 32,
 					"code": 34,
 					"name": "SliderTop",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1393,7 +1418,7 @@
 					"prevSize": 32,
 					"code": 39,
 					"name": "SliderBottom",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1402,7 +1427,7 @@
 					"prevSize": 32,
 					"code": 95,
 					"name": "Back",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1411,7 +1436,7 @@
 					"prevSize": 32,
 					"code": 55,
 					"name": "Icon",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1420,7 +1445,7 @@
 					"prevSize": 32,
 					"code": 81,
 					"name": "ChkOff",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1429,7 +1454,7 @@
 					"prevSize": 32,
 					"code": 113,
 					"name": "ChkOn",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1438,7 +1463,7 @@
 					"prevSize": 32,
 					"code": 80,
 					"name": "Play",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1447,7 +1472,7 @@
 					"prevSize": 32,
 					"code": 108,
 					"name": "List",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1456,7 +1481,7 @@
 					"prevSize": 32,
 					"code": 82,
 					"name": "Remove",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1465,7 +1490,7 @@
 					"prevSize": 32,
 					"code": 83,
 					"name": "Save",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1474,7 +1499,7 @@
 					"prevSize": 32,
 					"code": 76,
 					"name": "Load",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1483,7 +1508,7 @@
 					"prevSize": 32,
 					"code": 85,
 					"name": "Link",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1492,7 +1517,7 @@
 					"prevSize": 32,
 					"code": 42,
 					"name": "FavoriteOff",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1501,7 +1526,7 @@
 					"prevSize": 32,
 					"code": 35,
 					"name": "FavoriteOn",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1510,7 +1535,7 @@
 					"prevSize": 32,
 					"code": 65,
 					"name": "Add",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1519,7 +1544,7 @@
 					"prevSize": 32,
 					"code": 69,
 					"name": "Effects",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1528,7 +1553,7 @@
 					"prevSize": 32,
 					"code": 115,
 					"name": "Config",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1537,7 +1562,7 @@
 					"prevSize": 32,
 					"code": 86,
 					"name": "Bars",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1546,7 +1571,7 @@
 					"prevSize": 32,
 					"code": 73,
 					"name": "Info",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1555,7 +1580,7 @@
 					"prevSize": 32,
 					"code": 104,
 					"name": "Shuffle",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1564,7 +1589,7 @@
 					"prevSize": 32,
 					"code": 116,
 					"name": "Repeat",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1573,7 +1598,7 @@
 					"prevSize": 32,
 					"code": 88,
 					"name": "Exit",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1582,7 +1607,7 @@
 					"prevSize": 32,
 					"code": 60,
 					"name": "Previous",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1591,7 +1616,7 @@
 					"prevSize": 32,
 					"code": 62,
 					"name": "Next",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1600,7 +1625,7 @@
 					"prevSize": 32,
 					"code": 124,
 					"name": "Pause",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1609,7 +1634,7 @@
 					"prevSize": 32,
 					"code": 77,
 					"name": "Move",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1618,7 +1643,7 @@
 					"prevSize": 32,
 					"code": 72,
 					"name": "Home",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1627,7 +1652,7 @@
 					"prevSize": 32,
 					"code": 94,
 					"name": "Up",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1636,7 +1661,7 @@
 					"prevSize": 32,
 					"code": 68,
 					"name": "Delete",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1645,7 +1670,7 @@
 					"prevSize": 32,
 					"code": 78,
 					"name": "Menu",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1654,7 +1679,7 @@
 					"prevSize": 32,
 					"code": 70,
 					"name": "Search",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1663,7 +1688,7 @@
 					"prevSize": 32,
 					"code": 120,
 					"name": "OptOn",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1672,7 +1697,7 @@
 					"prevSize": 32,
 					"code": 111,
 					"name": "OptOff",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1681,7 +1706,7 @@
 					"prevSize": 32,
 					"code": 43,
 					"name": "VolPlus",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1690,7 +1715,7 @@
 					"prevSize": 32,
 					"code": 45,
 					"name": "VolMinus",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1699,7 +1724,7 @@
 					"prevSize": 32,
 					"code": 48,
 					"name": "Mute",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1708,7 +1733,7 @@
 					"prevSize": 32,
 					"code": 49,
 					"name": "Vol1",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1717,7 +1742,7 @@
 					"prevSize": 32,
 					"code": 50,
 					"name": "Vol2",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1726,7 +1751,7 @@
 					"prevSize": 32,
 					"code": 51,
 					"name": "Vol3",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1735,7 +1760,7 @@
 					"prevSize": 32,
 					"code": 52,
 					"name": "Vol4",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1744,7 +1769,7 @@
 					"prevSize": 32,
 					"code": 33,
 					"name": "Error",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1753,7 +1778,7 @@
 					"prevSize": 32,
 					"code": 63,
 					"name": "Question",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				},
 				{
@@ -1762,7 +1787,7 @@
 					"prevSize": 32,
 					"code": 71,
 					"name": "Grip",
-					"tempChar": "",
+					"tempChar": "",
 					"ligatures": ""
 				}
 			],

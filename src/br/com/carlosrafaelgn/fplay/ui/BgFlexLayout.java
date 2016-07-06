@@ -125,6 +125,11 @@ public final class BgFlexLayout extends ViewGroup {
 	}
 
 	@Override
+	public boolean hasOverlappingRendering() {
+		return true;
+	}
+
+	@Override
 	public LayoutParams generateLayoutParams(AttributeSet attrs) {
 		return new LayoutParams(getContext(), attrs);
 	}

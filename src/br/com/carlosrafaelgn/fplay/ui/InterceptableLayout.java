@@ -49,8 +49,8 @@ public final class InterceptableLayout extends RelativeLayout {
 		super(context, attrs);
 	}
 	
-	public InterceptableLayout(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+	public InterceptableLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 	}
 	
 	public void setInterceptedTouchEventListener(View.OnTouchListener interceptedTouchEventListener) {

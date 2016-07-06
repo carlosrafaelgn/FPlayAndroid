@@ -45,7 +45,6 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.text.InputType;
 import android.text.TextUtils.TruncateAt;
-import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -464,7 +463,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optForcedLocale) {
 			if (item.getItemId() != UI.forcedLocale) {
-				UI.setForcedLocale(ctx, item.getItemId(), true);
+				UI.setForcedLocale(ctx, item.getItemId());
 				WidgetMain.updateWidgets();
 				onCleanupLayout();
 				onCreateLayout(false);
@@ -1203,8 +1202,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		lastViewAdded = null;
 
 		UI.prepareControlContainer(panelControls, false, UI.isLargeScreen);
-		if (UI.isLargeScreen)
-			btnAbout.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		btnAbout.setDefaultHeight();
 	}
 

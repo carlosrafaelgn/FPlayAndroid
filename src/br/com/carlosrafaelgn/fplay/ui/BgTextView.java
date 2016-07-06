@@ -49,17 +49,17 @@ public final class BgTextView extends TextView {
 		super(context);
 		init();
 	}
-	
-	public BgTextView(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
-		init();
-	}
-	
+
 	public BgTextView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		init();
 	}
-	
+
+	public BgTextView(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
+		init();
+	}
+
 	private void init() {
 		super.setBackgroundResource(0);
 		super.setDrawingCacheEnabled(false);
@@ -100,7 +100,12 @@ public final class BgTextView extends TextView {
 	public boolean isOpaque() {
 		return false;
 	}
-	
+
+	@Override
+	public boolean hasOverlappingRendering() {
+		return (state != 0);
+	}
+
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
