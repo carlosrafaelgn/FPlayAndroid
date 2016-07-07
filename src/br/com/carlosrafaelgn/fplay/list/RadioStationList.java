@@ -98,8 +98,9 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	
 	private void loadingProcessChanged(boolean started) {
 		loading = started;
-		if (UI.browserActivity != null)
-			UI.browserActivity.loadingProcessChanged(started);
+		ActionListener actionListener;
+		if ((actionListener = getActionListener()) != null)
+			actionListener.onLoadingProcessChanged(started);
 	}
 	
 	public final void cancel() {
@@ -483,7 +484,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	@Override
 	public final View getView(int position, View convertView, ViewGroup parent) {
 		final RadioStationView view = ((convertView != null) ? (RadioStationView)convertView : new RadioStationView(Player.theApplication));
-		view.setItemState(items[position], position, getItemState(position));
+		view.setItemState(items[position], position, getItemState(position), this);
 		return view;
 	}
 

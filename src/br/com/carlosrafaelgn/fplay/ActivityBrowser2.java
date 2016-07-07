@@ -71,7 +71,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
-public final class ActivityBrowser2 extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, BgListView.OnBgListViewKeyDownObserver, FastAnimator.Observer {
+public final class ActivityBrowser2 extends ClientActivity implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, FileList.ItemClickListener, FileList.ActionListener, BgListView.OnBgListViewKeyDownObserver, FastAnimator.Observer {
 	private static final int MNU_REMOVEFAVORITE = 100;
 	private FileSt lastClickedFavorite;
 	private TextView lblPath, sep, sep2, lblLoading;
@@ -294,49 +294,6 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		}
 	}
 
-	@Override
-	public void loadingProcessChanged(boolean started) {
-		if (UI.browserActivity != this)
-			return;
-		loading = started;
-		if (fileList != null) {
-			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
-			if (list != null && !list.isInTouchMode())
-				list.centerItem(fileList.getSelection());
-		}
-		if (list != null) {
-			if (animator != null) {
-				animator.end();
-				//when the animation ends, lblLoading is made hidden...
-				//that's why we set the visibility after calling end()
-				lblLoading.setVisibility(View.VISIBLE);
-				if (started) {
-					list.setVisibility(View.INVISIBLE);
-				} else {
-					list.setVisibility(View.VISIBLE);
-					animator.start();
-				}
-			} else {
-				list.setCustomEmptyText(started ? msgLoading : msgEmptyList);
-			}
-			if (!started && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && fileList != null) {
-				if (fileList.getCount() == 0) {
-					UI.announceAccessibilityText(msgEmptyList);
-				} else {
-					final int i = fileList.getFirstSelectedPosition();
-					UI.announceAccessibilityText(FileView.makeContextDescription(!isAtHome, getHostActivity(), fileList.getItemT(i < 0 ? 0 : i)));
-				}
-			}
-		}
-		//if (!started)
-		//	updateButtons(true);
-	}
-	
-	@Override
-	public View createView() {
-		return new FileView(Player.theApplication, albumArtFetcher, true);
-	}
-
 	private void processItemCheckboxClickInternal(int position, boolean forceNotifyCheckedChanged) {
 		//somehow, Google Play indicates a NullPointerException, either here or
 		//in processItemClick, in a LG Optimus L3 (2.3.3) :/
@@ -418,12 +375,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	}
 
 	@Override
-	public void processItemCheckboxClick(int position) {
-		processItemCheckboxClickInternal(position, false);
-	}
-	
-	@Override
-	public void processItemClick(int position) {
+	public void onItemClicked(int position) {
 		//somehow, Google Play indicates a NullPointerException, either here or
 		//in processItemButtonClick, in a LG Optimus L3 (2.3.3) :/
 		if (list == null || fileList == null)
@@ -454,7 +406,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	}
 	
 	@Override
-	public void processItemLongClick(int position) {
+	public void onItemLongClicked(int position) {
 		if (loading || list == null || fileList == null || position < 0 || position >= fileList.getCount())
 			return;
 		if (!isAtHome) {
@@ -487,7 +439,53 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			lastClickedFavorite = null;
 		}
 	}
-	
+
+	@Override
+	public void onItemCheckboxClicked(int position) {
+		processItemCheckboxClickInternal(position, false);
+	}
+
+	@Override
+	public View onCreateView() {
+		return new FileView(Player.theApplication, albumArtFetcher, true, false);
+	}
+
+	@Override
+	public void onLoadingProcessChanged(boolean started) {
+		loading = started;
+		if (fileList != null) {
+			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
+			if (list != null && !list.isInTouchMode())
+				list.centerItem(fileList.getSelection());
+		}
+		if (list != null) {
+			if (animator != null) {
+				animator.end();
+				//when the animation ends, lblLoading is made hidden...
+				//that's why we set the visibility after calling end()
+				lblLoading.setVisibility(View.VISIBLE);
+				if (started) {
+					list.setVisibility(View.INVISIBLE);
+				} else {
+					list.setVisibility(View.VISIBLE);
+					animator.start();
+				}
+			} else {
+				list.setCustomEmptyText(started ? msgLoading : msgEmptyList);
+			}
+			if (!started && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && fileList != null) {
+				if (fileList.getCount() == 0) {
+					UI.announceAccessibilityText(msgEmptyList);
+				} else {
+					final int i = fileList.getFirstSelectedPosition();
+					UI.announceAccessibilityText(FileView.makeContextDescription(!isAtHome, getHostActivity(), fileList.getItemT(i < 0 ? 0 : i)));
+				}
+			}
+		}
+		//if (!started)
+		//	updateButtons(true);
+	}
+
 	private void processMenuItemClick(int id) {
 		switch (id) {
 		case MNU_REMOVEFAVORITE:
@@ -582,7 +580,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
 		final boolean sectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
 		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !sectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
-		FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED);
+		FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED, false);
 		if (!onlyUpdateButtons)
 			fileList.setPath(to, from, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && sectionsEnabled);
 	}
@@ -610,7 +608,7 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 			return true;
 		case UI.KEY_ENTER:
 			if (fileList != null && (p = fileList.getSelection()) >= 0)
-				processItemClick(p);
+				onItemClicked(p);
 			return true;
 		case UI.KEY_EXTRA:
 			if (!isAtHome && fileList != null && (p = fileList.getSelection()) >= 0) {
@@ -769,8 +767,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 		if (Player.originalPath == null)
 			Player.originalPath = "";
 		isAtHome = (Player.path.length() == 0);
-		UI.browserActivity = this;
 		fileList = new FileList();
+		fileList.setItemClickListener(this);
+		fileList.setActionListener(this);
 		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
 		//is internally cached, therefore, causing an exception when we try to use it
 		//after being recycled...
@@ -915,10 +914,9 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	protected void onResume() {
-		UI.browserActivity = this;
 		fileList.setObserver(list);
 		if (loading != fileList.isLoading())
-			loadingProcessChanged(fileList.isLoading());
+			onLoadingProcessChanged(fileList.isLoading());
 	}
 	
 	@Override
@@ -957,10 +955,13 @@ public final class ActivityBrowser2 extends ActivityBrowserView implements View.
 	
 	@Override
 	protected void onDestroy() {
-		FileView.updateExtraMargins(false);
-		UI.browserActivity = null;
-		fileList.cancel();
-		fileList = null;
+		FileView.updateExtraMargins(false, false);
+		if (fileList != null) {
+			fileList.setItemClickListener(null);
+			fileList.setActionListener(null);
+			fileList.cancel();
+			fileList = null;
+		}
 		if (albumArtFetcher != null) {
 			albumArtFetcher.stopAndCleanup();
 			albumArtFetcher = null;

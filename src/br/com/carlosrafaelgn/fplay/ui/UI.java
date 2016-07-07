@@ -84,8 +84,6 @@ import java.lang.reflect.Method;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
-import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
-import br.com.carlosrafaelgn.fplay.ActivityItemView;
 import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
@@ -439,11 +437,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
-	//I know this is not the "proper" way of doing this... But this is the best way
-	//to save memory and prevent a few memory leaks (considering this class is only
-	//going to be used in this kind of project)
-	public static ActivityItemView songActivity;
-	public static ActivityBrowserView browserActivity;
 	public static AccessibilityManager accessibilityManager;
 	
 	private static int currentLocale, createdWidgetIconColor;
@@ -1600,7 +1593,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	private static void drawBgListItem2D(Canvas canvas, int state) {
+	public static void drawBgListItem2D(Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
@@ -1652,7 +1645,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
 	}
 
-	private static void drawBgListItem2DWithDivider(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
+	public static void drawBgListItem2DWithDivider(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
 		dividerAllowed &= isDividerVisible;
 		if (dividerAllowed)
 			rect.bottom -= strokeSize;
@@ -2276,15 +2269,17 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				animationShowCount = 0;
 			}
 		}
-		if (animationFocusView != null && finished) {
-			if (animationFocusView.isInTouchMode())
-				animationFocusView.requestFocus();
-			animationFocusView = null;
-		}
-		if (animationFinishedObserver != null) {
-			final Runnable observer = animationFinishedObserver;
-			animationFinishedObserver = null;
-			observer.run();
+		if (finished) {
+			if (animationFocusView != null) {
+				if (animationFocusView.isInTouchMode())
+					animationFocusView.requestFocus();
+				animationFocusView = null;
+			}
+			if (animationFinishedObserver != null) {
+				final Runnable observer = animationFinishedObserver;
+				animationFinishedObserver = null;
+				observer.run();
+			}
 		}
 	}
 

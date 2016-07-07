@@ -47,6 +47,7 @@ import android.widget.TextView;
 
 import java.util.Formatter;
 
+import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -59,7 +60,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public final class ActivityFileSelection extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, BgListView.OnBgListViewKeyDownObserver, InputFilter, FastAnimator.Observer, Runnable {
+public final class ActivityFileSelection extends ClientActivity implements View.OnClickListener, DialogInterface.OnClickListener, FileList.ItemClickListener, FileList.ActionListener, BgListView.OnBgListViewKeyDownObserver, InputFilter, FastAnimator.Observer, Runnable {
 	public interface OnFileSelectionListener {
 		void onFileSelected(int id, FileSt file);
 		void onAddClicked(int id, FileSt file);
@@ -245,9 +246,66 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		return formatterSB.toString();
 	}
 
+	private void confirm(FileSt file, int deleteIndex) {
+		final Context ctx = getHostActivity();
+		confirmFile = file;
+		confirmDeleteIndex = deleteIndex;
+		final BgDialog dialog = new BgDialog(ctx, UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)), this);
+		dialog.setTitle(R.string.oops);
+		dialog.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite);
+		dialog.setNegativeButton(R.string.cancel);
+		dialog.show();
+	}
+	
 	@Override
-	public void loadingProcessChanged(boolean started) {
-		if (UI.browserActivity != this)
+	public void onItemClicked(int position) {
+		//see the comments at processItemClick(), in ActivityBrowser2
+		if (list == null || fileList == null)
+			return;
+		if (!UI.doubleClickMode || fileList.getSelection() == position) {
+			final FileSt file = fileList.getItemT(position);
+			if (save) {
+				confirm(file, -1);
+				return;
+			}
+			final OnFileSelectionListener listener = this.listener;
+			finish(0, list.getViewForPosition(position), true);
+			if (listener != null)
+				listener.onFileSelected(id, file);
+		} else {
+			fileList.setSelection(position, true);
+		}
+	}
+
+	@Override
+	public void onItemLongClicked(int position) {
+	}
+
+	@Override
+	public void onItemCheckboxClicked(int position) {
+		//see the comments at processItemButtonClick(), in ActivityBrowser2
+		if (list == null || fileList == null)
+			return;
+		if (!list.isInTouchMode() && fileList.getSelection() != position)
+			fileList.setSelection(position, true);
+		final FileSt file = fileList.getItemT(position);
+		if (file == null) //same as above
+			return;
+		if (checkedFile != file && checkedFile != null)
+			checkedFile.isChecked = false;
+		checkedFile = (file.isChecked ? file : null);
+		updateOverallLayout();
+		fileList.notifyCheckedChanged();
+	}
+
+	@Override
+	public View onCreateView() {
+		return new FileView(Player.theApplication, null, true, false);
+	}
+
+	@Override
+	public void onLoadingProcessChanged(boolean started) {
+		if (fileList == null)
 			return;
 		loading = started;
 		if (list != null) {
@@ -281,63 +339,6 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 		//if (!started)
 		//	updateOverallLayout();
 	}
-	
-	@Override
-	public View createView() {
-		return new FileView(Player.theApplication, null, true);
-	}
-	
-	@Override
-	public void processItemCheckboxClick(int position) {
-		//see the comments at processItemButtonClick(), in ActivityBrowser2
-		if (list == null || fileList == null)
-			return;
-		if (!list.isInTouchMode() && fileList.getSelection() != position)
-			fileList.setSelection(position, true);
-		final FileSt file = fileList.getItemT(position);
-		if (file == null) //same as above
-			return;
-		if (checkedFile != file && checkedFile != null)
-			checkedFile.isChecked = false;
-		checkedFile = (file.isChecked ? file : null);
-		updateOverallLayout();
-		fileList.notifyCheckedChanged();
-	}
-	
-	private void confirm(FileSt file, int deleteIndex) {
-		final Context ctx = getHostActivity();
-		confirmFile = file;
-		confirmDeleteIndex = deleteIndex;
-		final BgDialog dialog = new BgDialog(ctx, UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)), this);
-		dialog.setTitle(R.string.oops);
-		dialog.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite);
-		dialog.setNegativeButton(R.string.cancel);
-		dialog.show();
-	}
-	
-	@Override
-	public void processItemClick(int position) {
-		//see the comments at processItemClick(), in ActivityBrowser2
-		if (list == null || fileList == null)
-			return;
-		if (!UI.doubleClickMode || fileList.getSelection() == position) {
-			final FileSt file = fileList.getItemT(position);
-			if (save) {
-				confirm(file, -1);
-				return;
-			}
-			final OnFileSelectionListener listener = this.listener;
-			finish(0, list.getViewForPosition(position), true);
-			if (listener != null)
-				listener.onFileSelected(id, file);
-		} else {
-			fileList.setSelection(position, true);
-		}
-	}
-
-	@Override
-	public void processItemLongClick(int position) {
-	}
 
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
@@ -353,13 +354,13 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 			return true;
 		case UI.KEY_ENTER:
 			if (fileList != null && (p = fileList.getSelection()) >= 0)
-				processItemClick(p);
+				onItemClicked(p);
 			return true;
 		case UI.KEY_EXTRA:
 			if (fileList != null && (p = fileList.getSelection()) >= 0) {
 				final FileSt file = fileList.getItemT(p);
 				file.isChecked = !file.isChecked;
-				processItemCheckboxClick(p);
+				onItemCheckboxClicked(p);
 			}
 			return true;
 		}
@@ -504,8 +505,9 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onCreate() {
-		UI.browserActivity = this;
 		fileList = new FileList();
+		fileList.setItemClickListener(this);
+		fileList.setActionListener(this);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -591,8 +593,9 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onResume() {
-		UI.browserActivity = this;
 		fileList.setObserver(loading ? null : list);
+		if (loading != fileList.isLoading())
+			onLoadingProcessChanged(fileList.isLoading());
 	}
 	
 	@Override
@@ -623,9 +626,12 @@ public final class ActivityFileSelection extends ActivityBrowserView implements 
 	
 	@Override
 	protected void onDestroy() {
-		UI.browserActivity = null;
-		fileList.cancel();
-		fileList = null;
+		if (fileList != null) {
+			fileList.setItemClickListener(null);
+			fileList.setActionListener(null);
+			fileList.cancel();
+			fileList = null;
+		}
 		title = null;
 		listener = null;
 		formatterSB = null;

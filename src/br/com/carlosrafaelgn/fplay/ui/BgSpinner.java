@@ -49,44 +49,52 @@ import android.view.ViewDebug;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import br.com.carlosrafaelgn.fplay.ActivityBrowserView;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
-public class BgSpinner<E> extends TextView implements View.OnClickListener, DialogInterface.OnDismissListener {
+public class BgSpinner<E> extends TextView implements View.OnClickListener, BaseList.ItemClickListener, BgListView.OnBgListViewKeyDownObserver, DialogInterface.OnDismissListener {
 	public interface OnItemSelectedListener<E> {
 		void onItemSelected(BgSpinner<E> spinner, int position);
 	}
 
-	private static final class SpinnerList extends BaseList<FileSt> {
-		public SpinnerList(FileSt[] items, int selectedPosition) {
-			super(FileSt.class, 256);
-			this.items = items;
-			setSelection(selectedPosition, false);
+	private static final class SpinnerList<E> extends BaseList<FileSt> {
+		public SpinnerList() {
+			//we are reusing FileSt class just to avoid creating a new class with the sole purpose
+			//of carrying a string...
+			super(FileSt.class, 512);
+		}
+
+		public void importItems(E[] items) {
+			if (items != null && items.length != 0) {
+				clear();
+				setCapacity(items.length);
+				for (E i : items)
+					add(new FileSt("", i.toString(), 0), -1);
+			}
 		}
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			FileView view = (FileView)convertView;
 			if (view == null)
-				view = new FileView(Player.theApplication, null, false);
-			view.setItemState(items[position], position, getItemState(position));
+				view = new FileView(Player.theApplication, null, false, true);
+			view.setItemState(items[position], position, getItemState(position), this);
 			return view;
 		}
 
 		@Override
 		public int getViewHeight() {
-			return FileView.getViewHeight();
+			return FileView.getViewHeight(true);
 		}
 	}
 
 	private int state, selectedPosition;
-	private boolean dialogVisible;
 	private E[] items;
+	private SpinnerList<E> spinnerList;
 	private OnItemSelectedListener<E> listener;
-	private ActivityBrowserView oldActivityBrowserView;
+	private BgDialog dialog;
 
 	public BgSpinner(Context context) {
 		super(context);
@@ -104,6 +112,8 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Dial
 	}
 
 	private void init() {
+		spinnerList = new SpinnerList<>();
+		spinnerList.setItemClickListener(this);
 		selectedPosition = -1;
 		super.setBackgroundResource(0);
 		super.setDrawingCacheEnabled(false);
@@ -124,6 +134,7 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Dial
 	@SuppressWarnings("unchecked")
 	public void setItems(E[] items) {
 		this.items = items;
+		spinnerList.importItems(items);
 		if (selectedPosition < 0)
 			return;
 		if (items == null)
@@ -268,52 +279,62 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Dial
 	@Override
 	protected void onDetachedFromWindow() {
 		items = null;
+		if (spinnerList != null) {
+			spinnerList.setItemClickListener(null);
+			spinnerList = null;
+		}
 		listener = null;
+		if (dialog != null) {
+			dialog.dismiss();
+			dialog = null;
+		}
 		super.onDetachedFromWindow();
 	}
 
 	@Override
 	public void onClick(View view) {
-		if (items == null || items.length == 0 || dialogVisible)
+		if (spinnerList == null || spinnerList.getCount() == 0 || dialog != null)
 			return;
-		dialogVisible = true;
-		oldActivityBrowserView = UI.browserActivity;
-		UI.browserActivity = new ActivityBrowserView() {
-			@Override
-			public void loadingProcessChanged(boolean started) {
-			}
+		FileView.updateExtraMargins(true, true);
 
-			@Override
-			public void processItemCheckboxClick(int position) {
-			}
-
-			@Override
-			public void processItemClick(int position) {
-			}
-
-			@Override
-			public void processItemLongClick(int position) {
-			}
-
-			@Override
-			public CharSequence getTitle() {
-				return null;
-			}
-		};
-		FileView.updateExtraMargins(true);
-
-		BgListView listView = new BgListView(getContext());
+		BgListView listView = new BgListView(getContext(), true);
+		listView.setOnKeyDownObserver(this);
 		listView.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM);
+		spinnerList.setObserver(listView);
+		spinnerList.setSelection(selectedPosition, false);
 
-		BgDialog dialog = new BgDialog(getContext(), listView, null);
+		dialog = new BgDialog(getContext(), listView, null);
 		dialog.setOnDismissListener(this);
 		dialog.show();
 	}
 
 	@Override
+	public void onItemClicked(int position) {
+		if (dialog != null)
+			dialog.dismiss();
+		setSelectedItemPosition(position);
+	}
+
+	@Override
+	public void onItemLongClicked(int position) {
+	}
+
+	@Override
+	public void onItemCheckboxClicked(int position) {
+	}
+
+	@Override
+	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
+		if (keyCode == UI.KEY_ENTER) {
+			if (spinnerList != null)
+				onItemClicked(spinnerList.getSelection());
+			return true;
+		}
+		return false;
+	}
+
+	@Override
 	public void onDismiss(DialogInterface dialog) {
-		dialogVisible = false;
-		UI.browserActivity = oldActivityBrowserView;
-		oldActivityBrowserView = null;
+		this.dialog = null;
 	}
 }

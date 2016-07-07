@@ -50,6 +50,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
@@ -72,7 +73,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class ActivityBrowserRadio extends ActivityBrowserView implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BgListView.OnBgListViewKeyDownObserver, RadioStationList.OnBaseListSelectionChangedListener<RadioStation>, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, BgListView.OnScrollListener, BgSpinner.OnItemSelectedListener<RadioStationGenre> {
+public final class ActivityBrowserRadio extends ClientActivity implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, RadioStationList.ItemClickListener, RadioStationList.ActionListener, RadioStationList.SelectionChangedListener<RadioStation>, BgListView.OnBgListViewKeyDownObserver, RadioStationList.RadioStationAddedObserver, FastAnimator.Observer, BgListView.OnScrollListener, BgSpinner.OnItemSelectedListener<RadioStationGenre> {
 	private final boolean useShoutcast;
 	private Uri externalUri;
 	private SpannableStringBuilder message;
@@ -170,8 +171,39 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	}
 
 	@Override
-	public void loadingProcessChanged(boolean started) {
-		if (UI.browserActivity != this)
+	public void onItemClicked(int position) {
+		//UI.doubleClickMode is ignored for radio stations!
+		if (radioStationList.getSelection() == position)
+			addPlaySelectedItem(true);
+		else
+			radioStationList.setSelection(position, true);
+	}
+	
+	@Override
+	public void onItemLongClicked(int position) {
+		if (radioStationList.getSelection() != position)
+			radioStationList.setSelection(position, true);
+		if (UI.playWithLongPress)
+			addPlaySelectedItem(true);
+	}
+
+	@Override
+	public void onItemCheckboxClicked(int position) {
+		final RadioStation station = radioStationList.getItemT(position);
+		if (station.isFavorite)
+			radioStationList.addFavoriteStation(station);
+		else
+			radioStationList.removeFavoriteStation(station);
+	}
+
+	@Override
+	public View onCreateView() {
+		return new RadioStationView(Player.theApplication);
+	}
+
+	@Override
+	public void onLoadingProcessChanged(boolean started) {
+		if (radioStationList == null)
 			return;
 		loading = started;
 		if (panelLoading != null) {
@@ -203,36 +235,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 		//if (!started)
 		//	updateButtons();
 	}
-	
+
 	@Override
-	public View createView() {
-		return new RadioStationView(Player.theApplication);
-	}
-	
-	@Override
-	public void processItemCheckboxClick(int position) {
-		final RadioStation station = radioStationList.getItemT(position);
-		if (station.isFavorite)
-			radioStationList.addFavoriteStation(station);
-		else
-			radioStationList.removeFavoriteStation(station);
-	}
-	
-	@Override
-	public void processItemClick(int position) {
-		//UI.doubleClickMode is ignored for radio stations!
-		if (radioStationList.getSelection() == position)
-			addPlaySelectedItem(true);
-		else
-			radioStationList.setSelection(position, true);
-	}
-	
-	@Override
-	public void processItemLongClick(int position) {
-		if (radioStationList.getSelection() != position)
-			radioStationList.setSelection(position, true);
-		if (UI.playWithLongPress)
-			addPlaySelectedItem(true);
+	public void onSelectionChanged(BaseList<RadioStation> list) {
+		updateButtons();
 	}
 
 	private int validateGenreIndex(int index) {
@@ -287,9 +293,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	private void restoreCacheOrDoSearch() {
 		if (radioStationList.restoreCacheIfValid()) {
 			animateListBox = true;
-			loadingProcessChanged(true);
+			onLoadingProcessChanged(true);
 			updateButtons();
-			loadingProcessChanged(false);
+			onLoadingProcessChanged(false);
 		} else {
 			doSearch(true);
 		}
@@ -328,7 +334,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			if (radioStationList != null) {
 				p = radioStationList.getSelection();
 				if (p >= 0)
-					processItemClick(p);
+					onItemClicked(p);
 			}
 			return true;
 		case UI.KEY_EXTRA:
@@ -337,7 +343,7 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 				if (p >= 0) {
 					final RadioStation station = radioStationList.getItemT(p);
 					station.isFavorite = !station.isFavorite;
-					processItemCheckboxClick(p);
+					onItemCheckboxClicked(p);
 					if (list != null) {
 						final RadioStationView view = (RadioStationView)list.getViewForPosition(p);
 						if (view != null) {
@@ -351,11 +357,6 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 			return true;
 		}
 		return false;
-	}
-
-	@Override
-	public void onSelectionChanged(BaseList<RadioStation> list) {
-		updateButtons();
 	}
 
 	@Override
@@ -538,9 +539,10 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	protected void onCreate() {
-		UI.browserActivity = this;
 		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", getText(R.string.no_description).toString()) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString()));
-		radioStationList.setOnBaseListSelectionChangedListener(this);
+		radioStationList.setItemClickListener(this);
+		radioStationList.setActionListener(this);
+		radioStationList.setSelectionChangedListener(this);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -631,10 +633,9 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	protected void onResume() {
-		UI.browserActivity = this;
 		radioStationList.setObserver(list);
 		if (loading != radioStationList.isLoading())
-			loadingProcessChanged(radioStationList.isLoading());
+			onLoadingProcessChanged(radioStationList.isLoading());
 	}
 	
 	@Override
@@ -677,10 +678,11 @@ public final class ActivityBrowserRadio extends ActivityBrowserView implements V
 	
 	@Override
 	protected void onDestroy() {
-		UI.browserActivity = null;
 		if (radioStationList != null) {
+			radioStationList.setItemClickListener(null);
+			radioStationList.setActionListener(null);
+			radioStationList.setSelectionChangedListener(null);
 			radioStationList.cancel();
-			radioStationList.setOnBaseListSelectionChangedListener(null);
 			radioStationList.radioStationAddedObserver = null;
 			radioStationList = null;
 		}

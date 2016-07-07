@@ -46,6 +46,7 @@ import android.view.ViewDebug.ExportedProperty;
 import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
@@ -55,6 +56,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	private String ellipsizedTitle, ellipsizedOnAir;
 	private String[] descriptionLines, tagsLines;
 	private int state, width, position, descriptionY, tagsY;
+	private BaseList<RadioStation> baseList;
 
 	private static int height, textX, iconY, onAirY, leftMargin, topMargin, rightMargin, rightMarginForDrawing, bottomMargin;
 
@@ -173,11 +175,12 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		return super.getContentDescription();
 	}
 
-	public void setItemState(RadioStation station, int position, int state) {
+	public void setItemState(RadioStation station, int position, int state, BaseList<RadioStation> baseList) {
 		this.position = position;
 		if (btnFavorite != null && (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
 			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
+		this.baseList = baseList;
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.station == station)
 			return;
@@ -304,26 +307,29 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		ellipsizedOnAir = null;
 		descriptionLines = null;
 		tagsLines = null;
+		baseList = null;
 		super.onDetachedFromWindow();
 	}
 
 	@Override
 	public void onClick(View view) {
+		BaseList.ItemClickListener itemClickListener;
 		if (view == btnFavorite) {
 			if (station != null)
 				station.isFavorite = btnFavorite.isChecked();
-			if (UI.browserActivity != null)
-				UI.browserActivity.processItemCheckboxClick(position);
+			if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+				itemClickListener.onItemCheckboxClicked(position);
 		} else {
-			if (UI.browserActivity != null)
-				UI.browserActivity.processItemClick(position);
+			if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+				itemClickListener.onItemClicked(position);
 		}
 	}
 
 	@Override
 	public boolean onLongClick(View view) {
-		if (UI.browserActivity != null)
-			UI.browserActivity.processItemLongClick(position);
+		BaseList.ItemClickListener itemClickListener;
+		if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+			itemClickListener.onItemLongClicked(position);
 		return true;
 	}
 }

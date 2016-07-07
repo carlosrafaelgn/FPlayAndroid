@@ -49,6 +49,7 @@ import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
+import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
@@ -61,13 +62,14 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private BgButton btnCheckbox;
 	private String icon, ellipsizedName, secondaryText, albumStr, albumsStr, trackStr, tracksStr;
 	private boolean pendingAlbumArtRequest, checkBoxVisible, btnCheckBoxMarginsPreparedForIndexedScrollBars;
-	private final boolean hasCheckbox;
+	private final boolean hasCheckbox, force2D;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth;
+	private BaseList<?> baseList;
 
 	private static boolean scrollBarCurrentlyIndexed;
 	private static int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, extraLeftMargin, extraRightMargin, leftMargin, topMargin, rightMargin, rightMarginForDrawing, bottomMargin;
 
-	public static void updateExtraMargins(boolean isScrollBarIndexed) {
+	public static void updateExtraMargins(boolean isScrollBarIndexed, boolean force2D) {
 		if (isScrollBarIndexed) {
 			if (UI.scrollBarToTheLeft) {
 				extraLeftMargin = UI.controlSmallMargin;
@@ -81,11 +83,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			extraRightMargin = 0;
 		}
 		scrollBarCurrentlyIndexed = isScrollBarIndexed;
-		getViewHeight();
+		getViewHeight(force2D);
 	}
 
-	public static int getViewHeight() {
-		if (UI.is3D) {
+	public static int getViewHeight(boolean force2D) {
+		if (!force2D && UI.is3D) {
 			switch (UI.browserScrollBarType) {
 			case BgListView.SCROLLBAR_INDEXED:
 			case BgListView.SCROLLBAR_LARGE:
@@ -126,10 +128,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 
 	public FileView(Context context) {
-		this(context, null, false);
+		this(context, null, false, false);
 	}
 
-	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasCheckbox) {
+	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasCheckbox, boolean force2D) {
 		super(context);
 		this.albumArtFetcher = albumArtFetcher;
 		albumStr = context.getText(R.string.albumL).toString();
@@ -142,7 +144,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
 		setGravity(Gravity.END);
-		getViewHeight();
+		getViewHeight(force2D);
 		if (hasCheckbox) {
 			LayoutParams p;
 			btnCheckbox = new BgButton(context);
@@ -164,6 +166,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		}
 		this.hasCheckbox = hasCheckbox;
 		this.checkBoxVisible = hasCheckbox;
+		this.force2D = force2D;
 		super.setDrawingCacheEnabled(false);
 	}
 
@@ -174,7 +177,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public void refreshItem() {
 		//tiny workaround to force complete execution of setItemState()
 		checkBoxVisible = !checkBoxVisible;
-		setItemState(file, position, state);
+		setItemState(file, position, state, baseList);
 		invalidate();
 	}
 
@@ -206,13 +209,14 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		return super.getContentDescription();
 	}
 
-	public void setItemState(FileSt file, int position, int state) {
+	public void setItemState(FileSt file, int position, int state, BaseList<?> baseList) {
 		if (file == null)
 			return;
 		final int specialType = file.specialType;
 		final boolean showCheckbox = (hasCheckbox && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ALBUM_ITEM) || (specialType == FileSt.TYPE_ARTIST)));
 		final boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != specialType));
 		this.position = position;
+		this.baseList = baseList;
 		if (btnCheckbox != null) {
 			if (specialTypeChanged || this.file != file || (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
 				//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : ((specialType == FileSt.TYPE_ALBUM_ITEM) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
@@ -431,7 +435,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		int st = state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2);
 		if (specialType == FileSt.TYPE_ALBUM_ITEM)
 			st |= UI.STATE_SELECTED;
-		UI.drawBgListItem(canvas, st);
+		if (force2D)
+			UI.drawBgListItem2D(canvas, st);
+		else
+			UI.drawBgListItem(canvas, st);
 		if (albumArt != null && albumArt.bitmap != null)
 			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((usableHeight - albumArt.height) >> 1), null);
 		else if (icon != null)
@@ -466,25 +473,28 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		file = null;
 		btnCheckbox = null;
 		ellipsizedName = null;
+		baseList = null;
 		super.onDetachedFromWindow();
 	}
 
 	@Override
 	public void onClick(View view) {
+		BaseList.ItemClickListener itemClickListener;
 		if (checkBoxVisible && view == btnCheckbox) {
 			file.isChecked = btnCheckbox.isChecked();
-			if (UI.browserActivity != null)
-				UI.browserActivity.processItemCheckboxClick(position);
+			if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+				itemClickListener.onItemCheckboxClicked(position);
 		} else {
-			if (UI.browserActivity != null)
-				UI.browserActivity.processItemClick(position);
+			if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+				itemClickListener.onItemClicked(position);
 		}
 	}
 
 	@Override
 	public boolean onLongClick(View view) {
-		if (UI.browserActivity != null)
-			UI.browserActivity.processItemLongClick(position);
+		BaseList.ItemClickListener itemClickListener;
+		if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+			itemClickListener.onItemLongClicked(position);
 		return true;
 	}
 

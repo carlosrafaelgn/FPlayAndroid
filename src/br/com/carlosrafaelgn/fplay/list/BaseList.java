@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.list;
 
 import android.database.DataSetObserver;
+import android.view.View;
 import android.widget.BaseAdapter;
 
 import java.lang.reflect.Array;
@@ -48,26 +49,39 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		int[] getSectionPositions();
 	}
 
-	public interface OnBaseListSelectionChangedListener<E extends BaseItem> {
+	public interface ItemClickListener {
+		void onItemClicked(int position);
+		void onItemLongClicked(int position);
+		void onItemCheckboxClicked(int position);
+	}
+
+	public interface ActionListener {
+		View onCreateView();
+		void onLoadingProcessChanged(boolean started);
+	}
+
+	public interface SelectionChangedListener<E extends BaseItem> {
 		void onSelectionChanged(BaseList<E> list);
 	}
 
 	protected static final int LIST_DELTA = 32;
-	
+
 	protected static final int SELECTION_CHANGED = 0;
 	protected static final int LIST_CLEARED = 1;
 	protected static final int CONTENT_MOVED = 2;
 	protected static final int CONTENT_ADDED = 3;
 	protected static final int CONTENT_REMOVED = 4;
-	
+
 	protected BgListView listObserver;
 	protected DataSetObserver observer;
-	private OnBaseListSelectionChangedListener<E> listener;
+	private SelectionChangedListener<E> listener;
+	private ItemClickListener itemClickListener;
+	private ActionListener actionListener;
 	protected final Object currentAndCountMutex;
 	private final int maxCount;
 	protected E[] items;
 	protected int count, current, firstSel, lastSel, originalSel, indexOfPreviouslyDeletedCurrentItem, modificationVersion;
-	
+
 	@SuppressWarnings("unchecked")
 	public BaseList(Class<E> c, int maxCount) {
 		this.currentAndCountMutex = new Object();
@@ -79,18 +93,18 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		this.originalSel = -1;
 		this.indexOfPreviouslyDeletedCurrentItem = -1;
 	}
-	
+
 	protected void addingItems(int position, int count) { }
-	
+
 	protected void removingItems(int position, int count) { }
-	
+
 	protected void clearingItems() { }
-	
-	private void setCapacity(int capacity) {
+
+	protected void setCapacity(int capacity) {
 		if (capacity >= count && (capacity > items.length || capacity <= (items.length - (2 * LIST_DELTA))))
 			items = Arrays.copyOf(items, capacity + LIST_DELTA);
 	}
-	
+
 	public final void add(E item, int position) {
 		if (count >= maxCount)
 			return;
@@ -122,7 +136,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		
 		notifyDataSetChanged(-1, CONTENT_ADDED);
 	}
-	
+
 	public final void add(int position, E[] items, int firstIndex, int count) {
 		if ((this.count + count) >= maxCount)
 			count = maxCount - this.count;
@@ -156,7 +170,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		
 		notifyDataSetChanged(-1, CONTENT_ADDED);
 	}
-	
+
 	public final void clear() {
 		//synchronized (currentAndCountMutex) {
 			final int previousOriginalSel = originalSel;
@@ -176,7 +190,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		if (listener != null && previousOriginalSel != originalSel)
 			listener.onSelectionChanged(this);
 	}
-	
+
 	public final boolean removeSelection() {
 		int position = firstSel, count = lastSel - firstSel + 1;
 		if (position < 0 || position >= this.count || count <= 0)
@@ -288,35 +302,35 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		//}
 		notifyDataSetChanged(-1, CONTENT_MOVED);
 	}
-	
+
 	public final int getSelection() {
 		return originalSel;
 	}
-	
+
 	public final int getCurrentPosition() {
 		return current;
 	}
-	
+
 	public final int getFirstSelectedPosition() {
 		return firstSel;
 	}
-	
+
 	public final int getLastSelectedPosition() {
 		return lastSel;
 	}
-	
+
 	public final boolean isSelected(int position) {
 		return (position >= 0 && position >= firstSel && position <= lastSel);
 	}
-	
+
 	public final void setSelection(int position, boolean byUserInteraction) {
 		setSelection(position, position, position, true, byUserInteraction);
 	}
-	
+
 	public final void setSelection(int from, int to, boolean notifyChanged, boolean byUserInteraction) {
 		setSelection(from, to, -1, notifyChanged, byUserInteraction);
 	}
-	
+
 	public final void setSelection(int from, int to, int original, boolean notifyChanged, boolean byUserInteraction) {
 		final int previousOriginalSel = originalSel;
 		int gotoPosition = -1;
@@ -351,7 +365,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 				listener.onSelectionChanged(this);
 		}
 	}
-	
+
 	public final int indexOf(E item) {
 		for (int i = 0; i < count; i++) {
 			if (items[i] == item)
@@ -364,53 +378,49 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	public final int getCount() {
 		return count;
 	}
-	
+
 	@Override
 	public final Object getItem(int position) {
 		return items[position];
 	}
-	
+
 	public final E getItemT(int position) {
 		return items[position];
 	}
-	
+
 	@Override
 	public final long getItemId(int position) {
 		return items[position].id;
 	}
-	
+
 	@Override
 	public final boolean areAllItemsEnabled() {
 		return true;
 	}
-	
+
 	@Override
 	public final int getItemViewType(int position) {
 		return 0;
 	}
-	
+
 	@Override
 	public final int getViewTypeCount() {
 		return 1;
 	}
-	
+
 	@Override
 	public final boolean hasStableIds() {
 		return true;
 	}
-	
+
 	@Override
 	public final boolean isEnabled(int position) {
 		return true;
 	}
-	
+
 	@Override
 	public final boolean isEmpty() {
 		return (count == 0);
-	}
-
-	public final void setOnBaseListSelectionChangedListener(OnBaseListSelectionChangedListener<E> listener) {
-		this.listener = listener;
 	}
 
 	public final void setObserver(BgListView list) {
@@ -420,34 +430,54 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		if (list != null)
 			list.setAdapter(this);
 	}
-	
+
 	@Override
 	public final void registerDataSetObserver(DataSetObserver observer) {
 		//we only need to support one observer
 		this.observer = observer;
 	}
-	
+
 	@Override
 	public final void unregisterDataSetObserver(DataSetObserver observer) {
 		//we only need to support one observer
 		this.observer = null;
 	}
-	
+
+	public final ItemClickListener getItemClickListener() {
+		return itemClickListener;
+	}
+
+	public final void setItemClickListener(ItemClickListener itemClickListener) {
+		this.itemClickListener = itemClickListener;
+	}
+
+	public final ActionListener getActionListener() {
+		return actionListener;
+	}
+
+	public final void setActionListener(ActionListener actionListener) {
+		this.actionListener = actionListener;
+	}
+
+	public final void setSelectionChangedListener(SelectionChangedListener<E> listener) {
+		this.listener = listener;
+	}
+
 	protected void notifyDataSetChanged(int gotoPosition, int whatHappened) {
 		if (observer != null)
 			observer.onChanged();
 		if (listObserver != null && gotoPosition >= 0)
 			listObserver.centerItem(gotoPosition);
 	}
-	
+
 	public void notifyCheckedChanged() {
 		notifyDataSetChanged(-1, SELECTION_CHANGED);
 	}
-	
+
 	protected final int getItemState(int position) {
 		return ((position == current) ? UI.STATE_CURRENT : 0) | ((position == originalSel) ? UI.STATE_SELECTED :
 			((position >= firstSel && position <= lastSel) ? UI.STATE_MULTISELECTED : 0));
 	}
-	
+
 	public abstract int getViewHeight();
 }

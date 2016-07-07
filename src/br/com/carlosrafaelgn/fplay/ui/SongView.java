@@ -40,6 +40,7 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
+import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
@@ -47,6 +48,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private Song song;
 	private String ellipsizedTitle, ellipsizedExtraInfo;
 	private int state, width, lengthX, lengthWidth, position;
+	private BaseList<Song> baseList;
 
 	private static int height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin, rightMargin, rightMarginForDrawing;
 
@@ -114,9 +116,10 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		return super.getContentDescription();
 	}
 
-	public void setItemState(Song song, int position, int state) {
+	public void setItemState(Song song, int position, int state, BaseList<Song> baseList) {
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.position = position;
+		this.baseList = baseList;
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.song == song)
 			return;
@@ -226,19 +229,22 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		song = null;
 		ellipsizedTitle = null;
 		ellipsizedExtraInfo = null;
+		baseList = null;
 		super.onDetachedFromWindow();
 	}
 
 	@Override
 	public void onClick(View view) {
-		if (UI.songActivity != null)
-			UI.songActivity.processItemClick(position);
+		BaseList.ItemClickListener itemClickListener;
+		if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+			itemClickListener.onItemClicked(position);
 	}
 
 	@Override
 	public boolean onLongClick(View view) {
-		if (UI.songActivity != null)
-			UI.songActivity.processItemLongClick(position);
+		BaseList.ItemClickListener itemClickListener;
+		if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
+			itemClickListener.onItemLongClicked(position);
 		return true;
 	}
 }

@@ -82,7 +82,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private StaticLayout emptyLayout;
 	private BaseList<? extends BaseItem> adapter;
 	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking, touching;
-	private int leftPadding, topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
+	private int backgroundColor, leftPadding, topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
 		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState, dividerHeight;
 	private String[] sections;
 	private int[] sectionPositions;
@@ -91,35 +91,42 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 
 	public BgListView(Context context) {
 		super(context);
-		init();
+		init(false);
 	}
-	
+
 	public BgListView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		init();
+		init(false);
 	}
-	
+
 	public BgListView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
-		init();
+		init(false);
 	}
-	
+
+	public BgListView(Context context, boolean force2D) {
+		super(context);
+		init(force2D);
+	}
+
 	@SuppressWarnings("deprecation")
-	private void init() {
+	private void init(boolean force2D) {
 		//to make the first execution of setScrollBarType() always run
 		scrollBarType = SCROLLBAR_INVALID;
 		extraState = 0;
 		super.setSelector(new NullDrawable());
-		if (UI.is3D || !UI.isDividerVisible) {
+		if ((!force2D && UI.is3D) || !UI.isDividerVisible) {
+			backgroundColor = UI.color_list_bg;
 			dividerHeight = 0;
 			super.setDivider(null);
 			super.setDividerHeight(0);
 		} else {
+			backgroundColor = UI.color_list_original;
 			dividerHeight = UI.strokeSize;
 			super.setDivider(new ColorDrawable(UI.color_divider));
 			super.setDividerHeight(UI.strokeSize);
 		}
-		super.setCacheColorHint(UI.color_list_bg);
+		super.setCacheColorHint(backgroundColor);
 		super.setHorizontalFadingEdgeEnabled(false);
 		super.setVerticalFadingEdgeEnabled(false);
 		//super.setFadingEdgeLength(0);
@@ -137,7 +144,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			setVerticalScrollBarPosition();
 		ignorePadding = false;
-		super.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
+		super.setBackgroundDrawable(new ColorDrawable(backgroundColor));
 		super.setOverscrollHeader(null); //Motorola bug!!! :P
 		super.setOverscrollFooter(null); //Motorola bug!!! :P
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
@@ -181,7 +188,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 
 	@SuppressWarnings("deprecation")
 	public void setTopBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_list_bg, 0, UI.thickDividerSize, 0, 0));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, backgroundColor, 0, UI.thickDividerSize, 0, 0));
 		setPadding(0, UI.thickDividerSize, 0, 0);
 		UI.offsetTopEdgeEffect(this);
 	}
@@ -946,7 +953,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					}
 					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
 					UI.textPaint.setColor(UI.color_text_listitem);
-					UI.fillRect(canvas, UI.color_list_bg);
+					UI.fillRect(canvas, backgroundColor);
 					canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
 					UI.textPaint.setColor(UI.color_text_highlight);
 					UI.rect.top = UI.rect.bottom;

@@ -955,7 +955,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		final SongView view = ((convertView != null) ? (SongView)convertView : new SongView(Player.theApplication));
-		view.setItemState(items[position], position, getItemState(position));
+		view.setItemState(items[position], position, getItemState(position), this);
 		return view;
 	}
 	
