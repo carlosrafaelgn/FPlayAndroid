@@ -40,6 +40,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -52,7 +53,7 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BgShadowDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 
-public final class BgDialog extends Dialog implements View.OnClickListener {
+public final class BgDialog extends Dialog implements View.OnClickListener, View.OnTouchListener {
 	private BgButton btnNeutral, btnNegative, btnPositive;
 	private View contentView;
 	private CharSequence title;
@@ -185,8 +186,19 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			clickListener.onClick(this, DialogInterface.BUTTON_NEGATIVE);
 		else if (v == btnPositive)
 			clickListener.onClick(this, DialogInterface.BUTTON_POSITIVE);
-		else if ((v instanceof ViewGroup))
-			dismiss(); //dismiss the dialog if the user clicks the shadow
+	}
+
+	@Override
+	public boolean onTouch(View v, MotionEvent event) {
+		switch (event.getAction()) {
+		case MotionEvent.ACTION_DOWN:
+			dismiss(); //dismiss the dialog if the user touches the shadow
+		case MotionEvent.ACTION_MOVE:
+		case MotionEvent.ACTION_UP:
+		case MotionEvent.ACTION_CANCEL:
+			return true;
+		}
+		return false;
 	}
 
 	private void scanChildrenRecursive(ViewGroup parent) {
@@ -231,13 +243,13 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			UI.prepareControlContainer(panelBottom, true, false, padding, padding, padding, padding);
 			if (btnNeutral != null) {
 				if (!neutralIcon)
-					btnNeutral.setDefaultHeightAndLargeHorizontalPadding();
+					btnNeutral.setDefaultHeightAndLargeMinimumWidth();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				rp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
 				panelBottom.addView(btnNeutral, rp);
 			}
 			if (btnNegative != null) {
-				btnNegative.setDefaultHeightAndLargeHorizontalPadding();
+				btnNegative.setDefaultHeightAndLargeMinimumWidth();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				if (btnPositive != null)
 					rp.addRule(RelativeLayout.LEFT_OF, 3);
@@ -247,7 +259,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 			}
 			if (btnPositive != null) {
 				btnPositive.setId(3);
-				btnPositive.setDefaultHeightAndLargeHorizontalPadding();
+				btnPositive.setDefaultHeightAndLargeMinimumWidth();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				if (UI.isLargeScreen)
 					rp.leftMargin = UI.controlMargin;
@@ -291,7 +303,10 @@ public final class BgDialog extends Dialog implements View.OnClickListener {
 		final ViewParent viewParent = contentView.getParent();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB && !UI.isLowDpiScreen && (viewParent instanceof ViewGroup)) {
 			final ViewGroup parent = (ViewGroup)viewParent;
-			parent.setOnClickListener(this);
+			//we cannot use setOnClickListener() because the click produces audio/haptic feedback
+			//if the user configured the device in such way (whereas touching the original background
+			//does not produce any feedback)
+			parent.setOnTouchListener(this);
 			parent.setBackgroundDrawable(new BgShadowDrawable());
 		}
 	}

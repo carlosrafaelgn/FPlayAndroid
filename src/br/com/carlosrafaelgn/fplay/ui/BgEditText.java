@@ -43,16 +43,20 @@ import android.text.StaticLayout;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.ViewDebug.ExportedProperty;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import java.lang.reflect.Field;
 
+import br.com.carlosrafaelgn.fplay.util.ColorUtils;
+
 public final class BgEditText extends EditText {
 	private int state, colorNormal, colorFocused, extraTopPaddingForLastWidth, lastMeasuredWidth, textSize, textBox, textY, textMargin;
 	private String contentDescription;
 	private int[] contentDescriptionLineEndings;
+	private boolean handleColorChangedL, handleColorChangedR, handleColorChangedC;
 
 	public BgEditText(Context context) {
 		super(context);
@@ -74,10 +78,11 @@ public final class BgEditText extends EditText {
 		super.setDrawingCacheEnabled(false);
 		super.setGravity(Gravity.BOTTOM);
 		super.setPadding(0, 0, 0, UI.thickDividerSize << 1);
+		super.setTypeface(UI.defaultTypeface);
+		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		super.setTextColor(UI.colorState_text_listitem_static);
+		super.setHighlightColor(ColorUtils.blend(UI.color_dialog_detail_highlight, UI.color_list_original, 0.3f));
 		setSmallContentDescription(false);
-		setTypeface(UI.defaultTypeface);
-		setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
-		setTextColor(UI.colorState_text_listitem_static);
 		setCursorColor(UI.color_dialog_detail_highlight);
 		setColors(UI.color_dialog_detail, UI.color_dialog_detail_highlight);
 		textMargin = (UI.isLargeScreen ? UI.controlMargin : UI.controlSmallMargin);
@@ -95,8 +100,55 @@ public final class BgEditText extends EditText {
 		}
 	}
 
+	private void setHandleColor(int color) {
+		try {
+			final Object editor;
+			final Class<?> clazz;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+				final Field fEditor = TextView.class.getDeclaredField("mEditor");
+				fEditor.setAccessible(true);
+				editor = fEditor.get(this);
+				clazz = editor.getClass();
+			} else {
+				editor = this;
+				clazz = TextView.class;
+			}
+
+			//http://stackoverflow.com/a/27307004/3569421
+			if (!handleColorChangedL) {
+				final Field fSelectHandleLeft = clazz.getDeclaredField("mSelectHandleLeft");
+				fSelectHandleLeft.setAccessible(true);
+				final Object l = fSelectHandleLeft.get(editor);
+				if (l != null) {
+					handleColorChangedL = true;
+					((Drawable)l).setColorFilter(color, PorterDuff.Mode.SRC_IN);
+				}
+			}
+			if (!handleColorChangedR) {
+				final Field fSelectHandleRight = clazz.getDeclaredField("mSelectHandleRight");
+				fSelectHandleRight.setAccessible(true);
+				final Object r = fSelectHandleRight.get(editor);
+				if (r != null) {
+					handleColorChangedR = true;
+					((Drawable)r).setColorFilter(color, PorterDuff.Mode.SRC_IN);
+				}
+			}
+			if (!handleColorChangedC) {
+				final Field fSelectHandleCenter = clazz.getDeclaredField("mSelectHandleCenter");
+				fSelectHandleCenter.setAccessible(true);
+				final Object c = fSelectHandleCenter.get(editor);
+				if (c != null) {
+					handleColorChangedC = true;
+					((Drawable)c).setColorFilter(color, PorterDuff.Mode.SRC_IN);
+				}
+			}
+		} catch (Throwable ex) {
+			//just ignore
+		}
+	}
+
 	@SuppressWarnings("deprecation")
-	public void setCursorColor(int color) {
+	private void setCursorColor(int color) {
 		try {
 			//http://stackoverflow.com/a/26543290/3569421
 			final Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
@@ -119,6 +171,8 @@ public final class BgEditText extends EditText {
 			drawables[0].setColorFilter(color, PorterDuff.Mode.SRC_IN);
 			drawables[1].setColorFilter(color, PorterDuff.Mode.SRC_IN);
 			fCursorDrawable.set(editor, drawables);
+
+			setHandleColor(color);
 		} catch (Throwable ex) {
 			//just ignore
 		}
@@ -245,6 +299,20 @@ public final class BgEditText extends EditText {
 		}
 
 		setMeasuredDimension(width, getMeasuredHeight() + extraTopPadding);
+	}
+
+	@Override
+	public boolean performLongClick() {
+		final boolean ret = super.performLongClick();
+		setHandleColor(UI.color_dialog_detail_highlight);
+		return ret;
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		final boolean ret = super.onTouchEvent(event);
+		setHandleColor(UI.color_dialog_detail_highlight);
+		return ret;
 	}
 
 	@Override

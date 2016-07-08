@@ -113,13 +113,14 @@ public final class BgButton extends Button {
 		super.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
 	}
 
-	public void setDefaultHeightAndLargeHorizontalPadding() {
+	public void setDefaultHeightAndLargeMinimumWidth() {
 		LayoutParams p = getLayoutParams();
 		if (p == null)
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 		p.height = UI.defaultControlSize;
+		super.setMinimumWidth((UI.defaultControlSize * 3) >> 1);
 		super.setLayoutParams(p);
-		super.setPadding(UI.controlLargeMargin, 0, UI.controlLargeMargin, 0);
+		super.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
 	}
 
 	public void setIconNoChanges(String icon) {
