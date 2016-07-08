@@ -35,6 +35,7 @@ typedef uint32_t (*RESAMPLEPROC)(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 
 #ifdef FPLAY_ARM
 extern uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed);
+extern uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed);
 #endif
 
 uint32_t resamplePendingAdvances, resampleCoeffLen, resampleCoeffIdx, resampleAdvanceIdx;
@@ -118,7 +119,7 @@ uint32_t resampleLagrange(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t*
 
 		usedSrc++;
 		srcBuffer += 2;
-		
+
 		if (usedSrc >= srcSizeInFrames) {
 			srcFramesUsed = usedSrc;
 			return usedDst;
@@ -126,7 +127,7 @@ uint32_t resampleLagrange(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t*
 	}
 
 	while (usedDst < dstSizeInFrames) {
-		const float * const coeff = resampleCoeff + resampleCoeffIdx;
+		const float* const coeff = resampleCoeff + resampleCoeffIdx;
 		const int32_t outL = (int32_t)(
 			(resampleY[0] * coeff[0]) +
 			(resampleY[2] * coeff[2]) +
@@ -170,7 +171,86 @@ uint32_t resampleLagrange(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t*
 
 			usedSrc++;
 			srcBuffer += 2;
-			
+
+			if (usedSrc >= srcSizeInFrames) {
+				srcFramesUsed = usedSrc;
+				return usedDst;
+			}
+		}
+	}
+
+	srcFramesUsed = usedSrc;
+	return usedDst;
+}
+
+uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
+	//both ARM (32/64) and x86 (64) have lots of registers!
+	register uint32_t usedSrc = 0, usedDst = 0;
+
+	while (resamplePendingAdvances) {
+		resamplePendingAdvances--;
+
+		memmove(resampleY, resampleY + 2, 18 * sizeof(int32_t));
+		((int32_t*)resampleY)[18] = (int32_t)srcBuffer[0];
+		((int32_t*)resampleY)[19] = (int32_t)srcBuffer[1];
+
+		usedSrc++;
+		srcBuffer += 2;
+
+		if (usedSrc >= srcSizeInFrames) {
+			srcFramesUsed = usedSrc;
+			return usedDst;
+		}
+	}
+
+	while (usedDst < dstSizeInFrames) {
+		const int32_t* const coeff = (int32_t*)resampleCoeff + resampleCoeffIdx;
+		const int32_t outL = (int32_t)(
+			((int64_t)(((int32_t*)resampleY)[0] * coeff[0]) +
+			(int64_t)(((int32_t*)resampleY)[2] * coeff[2]) +
+			(int64_t)(((int32_t*)resampleY)[4] * coeff[4]) +
+			(int64_t)(((int32_t*)resampleY)[6] * coeff[6]) +
+			(int64_t)(((int32_t*)resampleY)[8] * coeff[8]) +
+			(int64_t)(((int32_t*)resampleY)[10] * coeff[10]) +
+			(int64_t)(((int32_t*)resampleY)[12] * coeff[12]) +
+			(int64_t)(((int32_t*)resampleY)[14] * coeff[14]) +
+			(int64_t)(((int32_t*)resampleY)[16] * coeff[16]) +
+			(int64_t)(((int32_t*)resampleY)[18] * coeff[18])) >> 15
+		);
+		*dstBuffer++ = ((outL >= 32767) ? 32767 : ((outL <= -32768) ? -32768 : (int16_t)outL));
+		const int32_t outR = (int32_t)(
+			((int64_t)(((int32_t*)resampleY)[1] * coeff[1]) +
+			(int64_t)(((int32_t*)resampleY)[3] * coeff[3]) +
+			(int64_t)(((int32_t*)resampleY)[5] * coeff[5]) +
+			(int64_t)(((int32_t*)resampleY)[7] * coeff[7]) +
+			(int64_t)(((int32_t*)resampleY)[9] * coeff[9]) +
+			(int64_t)(((int32_t*)resampleY)[11] * coeff[11]) +
+			(int64_t)(((int32_t*)resampleY)[13] * coeff[13]) +
+			(int64_t)(((int32_t*)resampleY)[15] * coeff[15]) +
+			(int64_t)(((int32_t*)resampleY)[17] * coeff[17]) +
+			(int64_t)(((int32_t*)resampleY)[19] * coeff[19])) >> 15
+		);
+		*dstBuffer++ = ((outR >= 32767) ? 32767 : ((outR <= -32768) ? -32768 : (int16_t)outR));
+		usedDst++;
+
+		resampleCoeffIdx += 20;
+		resampleAdvanceIdx++;
+		if (resampleCoeffIdx >= resampleCoeffLen) {
+			resampleCoeffIdx = 0;
+			resampleAdvanceIdx = 0;
+		}
+		resamplePendingAdvances = resampleAdvance[resampleAdvanceIdx];
+
+		while (resamplePendingAdvances) {
+			resamplePendingAdvances--;
+
+			memmove(resampleY, resampleY + 2, 18 * sizeof(int32_t));
+			((int32_t*)resampleY)[18] = (int32_t)srcBuffer[0];
+			((int32_t*)resampleY)[19] = (int32_t)srcBuffer[1];
+
+			usedSrc++;
+			srcBuffer += 2;
+
 			if (usedSrc >= srcSizeInFrames) {
 				srcFramesUsed = usedSrc;
 				return usedDst;
@@ -194,7 +274,7 @@ uint32_t resampleLagrangeMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 
 		usedSrc++;
 		srcBuffer++;
-		
+
 		if (usedSrc >= srcSizeInFrames) {
 			srcFramesUsed = usedSrc;
 			return usedDst;
@@ -202,7 +282,7 @@ uint32_t resampleLagrangeMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 	}
 
 	while (usedDst < dstSizeInFrames) {
-		const float * const coeff = resampleCoeff + resampleCoeffIdx;
+		const float* const coeff = resampleCoeff + resampleCoeffIdx;
 		const int32_t outL = (int32_t)(
 			(resampleY[0] * coeff[0]) +
 			(resampleY[1] * coeff[2]) +
@@ -235,7 +315,73 @@ uint32_t resampleLagrangeMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 
 			usedSrc++;
 			srcBuffer++;
-			
+
+			if (usedSrc >= srcSizeInFrames) {
+				srcFramesUsed = usedSrc;
+				return usedDst;
+			}
+		}
+	}
+
+	srcFramesUsed = usedSrc;
+	return usedDst;
+}
+
+uint32_t resampleLagrangeMonoINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
+	//both ARM (32/64) and x86 (64) have lots of registers!
+	register uint32_t usedSrc = 0, usedDst = 0;
+
+	while (resamplePendingAdvances) {
+		resamplePendingAdvances--;
+
+		memmove(resampleY, resampleY + 1, 9 * sizeof(int32_t));
+		((int32_t*)resampleY)[9] = (int32_t)srcBuffer[0];
+
+		usedSrc++;
+		srcBuffer++;
+
+		if (usedSrc >= srcSizeInFrames) {
+			srcFramesUsed = usedSrc;
+			return usedDst;
+		}
+	}
+
+	while (usedDst < dstSizeInFrames) {
+		const int32_t* const coeff = (int32_t*)resampleCoeff + resampleCoeffIdx;
+		const int32_t outL = (int32_t)(
+			((int64_t)(((int32_t*)resampleY)[0] * coeff[0]) +
+			(int64_t)(((int32_t*)resampleY)[1] * coeff[2]) +
+			(int64_t)(((int32_t*)resampleY)[2] * coeff[4]) +
+			(int64_t)(((int32_t*)resampleY)[3] * coeff[6]) +
+			(int64_t)(((int32_t*)resampleY)[4] * coeff[8]) +
+			(int64_t)(((int32_t*)resampleY)[5] * coeff[10]) +
+			(int64_t)(((int32_t*)resampleY)[6] * coeff[12]) +
+			(int64_t)(((int32_t*)resampleY)[7] * coeff[14]) +
+			(int64_t)(((int32_t*)resampleY)[8] * coeff[16]) +
+			(int64_t)(((int32_t*)resampleY)[9] * coeff[18])) >> 15
+		);
+		const int16_t o = (int16_t)((outL >= 32767) ? 32767 : ((outL <= -32768) ? -32768 : (int16_t)outL));
+		*dstBuffer++ = o;
+		*dstBuffer++ = o;
+		usedDst++;
+
+		resampleCoeffIdx += 20;
+		resampleAdvanceIdx++;
+		if (resampleCoeffIdx >= resampleCoeffLen) {
+			resampleCoeffIdx = 0;
+			resampleAdvanceIdx = 0;
+		}
+		resamplePendingAdvances = resampleAdvance[resampleAdvanceIdx];
+
+		while (resamplePendingAdvances) {
+			resamplePendingAdvances--;
+
+			memmove(resampleY, resampleY + 1, 9 * sizeof(int32_t));
+			((int32_t*)resampleY)[9] = (int32_t)srcBuffer[0];
+
+			usedSrc++;
+			srcBuffer++;
+
 			if (usedSrc >= srcSizeInFrames) {
 				srcFramesUsed = usedSrc;
 				return usedDst;
@@ -332,6 +478,91 @@ void resampleComputeCoeffs() {
 	}
 }
 
+void resampleComputeCoeffsINT() {
+	static const uint32_t resampleFirstPrimes[8] = { 2, 3, 5, 7, 11, 13, 17, 19 };
+	uint32_t factSrc = srcSampleRate, factDst = dstSampleRate;
+
+	for (uint32_t i = 0; i < 8; i++) {
+		const uint32_t prime = resampleFirstPrimes[i];
+		while (!(factSrc % prime) && !(factDst % prime)) {
+			factSrc /= prime;
+			factDst /= prime;
+		}
+	}
+
+	resampleCoeffLen = factDst * 20;
+	if (resampleCoeff)
+		delete resampleCoeff;
+	resampleCoeff = new float[resampleCoeffLen];
+	if (resampleAdvance)
+		delete resampleAdvance;
+	resampleAdvance = new uint32_t[factDst];
+
+	const double src = (double)factSrc;
+	const double dst = (double)factDst;
+	uint32_t lastPhaseI = 0;
+	int32_t* coeff = (int32_t*)resampleCoeff + 20;
+
+	for (uint32_t i = 1; i <= factDst; i++) {
+		const double phase = ((double)i * src) / dst;
+		const uint32_t phaseI = (uint32_t)phase;
+		if (i == factDst) {
+			coeff = (int32_t*)resampleCoeff;
+			resampleAdvance[0] = phaseI - lastPhaseI;
+		} else {
+			resampleAdvance[i] = phaseI - lastPhaseI;
+		}
+		lastPhaseI = phaseI;
+
+		//compute the 10 coefficients of a 10th order Lagrange polynomial,
+		//considering x to be something >= 4 and < 5
+		const double phaseFrac = (phase - (double)phaseI) + 4.0;
+		const double x_x0 = phaseFrac;
+		const double x_x1 = phaseFrac - 1.0;
+		const double x_x2 = phaseFrac - 2.0;
+		const double x_x3 = phaseFrac - 3.0;
+		const double x_x4 = phaseFrac - 4.0;
+		const double x_x5 = phaseFrac - 5.0;
+		const double x_x6 = phaseFrac - 6.0;
+		const double x_x7 = phaseFrac - 7.0;
+		const double x_x8 = phaseFrac - 8.0;
+		const double x_x9 = phaseFrac - 9.0;
+
+		//y0
+		coeff[0] = (int32_t)((x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (-362880.0 / 32768.0));
+		coeff[1] = coeff[0];
+		//y1
+		coeff[2] = (int32_t)((x_x0 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (40320.0 / 32768.0));
+		coeff[3] = coeff[2];
+		//y2
+		coeff[4] = (int32_t)((x_x0 * x_x1 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (-10080.0 / 32768.0));
+		coeff[5] = coeff[4];
+		//y3
+		coeff[6] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (4320.0 / 32768.0));
+		coeff[7] = coeff[6];
+		//y4
+		coeff[8] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (-2880.0 / 32768.0));
+		coeff[9] = coeff[8];
+		//y5
+		coeff[10] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x6 * x_x7 * x_x8 * x_x9) / (2880.0 / 32768.0));
+		coeff[11] = coeff[10];
+		//y6
+		coeff[12] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x7 * x_x8 * x_x9) / (-4320.0 / 32768.0));
+		coeff[13] = coeff[12];
+		//y7
+		coeff[14] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x8 * x_x9) / (10080.0 / 32768.0));
+		coeff[15] = coeff[14];
+		//y8
+		coeff[16] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x9) / (-40320.0 / 32768.0));
+		coeff[17] = coeff[16];
+		//y9
+		coeff[18] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8) / (362880.0 / 32768.0));
+		coeff[19] = coeff[18];
+
+		coeff += 20;
+	}
+}
+
 void resetResamplerState() {
 	resamplePendingAdvances = 0;
 	resampleCoeffIdx = 0;
@@ -343,17 +574,20 @@ void resetResampler() {
 	resetResamplerState();
 
 	if (srcSampleRate != dstSampleRate) {
-		resampleComputeCoeffs();
+		//resampleComputeCoeffs();
+		resampleComputeCoeffsINT();
 
 		//downsampling is only performed from 48000 Hz to 44100 Hz because we are not
 		//applying any filters
 		if ((srcSampleRate == 48000 && dstSampleRate == 44100) ||
 			(srcSampleRate >= 8000 && dstSampleRate > srcSampleRate)) {
-			
+
 #ifdef FPLAY_ARM
-			resampleProc = ((srcChannelCount == 2) ? (neonMode ? resampleLagrangeNeon : resampleLagrange) : resampleLagrangeMono);
+			//resampleProc = ((srcChannelCount == 2) ? (neonMode ? resampleLagrangeNeon : resampleLagrange) : resampleLagrangeMono);
+			resampleProc = ((srcChannelCount == 2) ? (neonMode ? resampleLagrangeNeonINT : resampleLagrangeINT) : resampleLagrangeMonoINT);
 #else
-			resampleProc = ((srcChannelCount == 2) ? resampleLagrange : resampleLagrangeMono);
+			//resampleProc = ((srcChannelCount == 2) ? resampleLagrange : resampleLagrangeMono);
+			resampleProc = ((srcChannelCount == 2) ? resampleLagrangeINT : resampleLagrangeMonoINT);
 #endif
 			return;
 		}

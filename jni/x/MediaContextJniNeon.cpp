@@ -138,7 +138,7 @@ uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 
 		usedSrc++;
 		srcBuffer += 2;
-		
+
 		if (usedSrc >= srcSizeInFrames) {
 			srcFramesUsed = usedSrc;
 			return usedDst;
@@ -155,9 +155,9 @@ uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 	float32x2_t y7 = vld1_f32(resampleY + 14);
 	float32x2_t y8 = vld1_f32(resampleY + 16);
 	float32x2_t y9 = vld1_f32(resampleY + 18);
-	
+
 	while (usedDst < dstSizeInFrames) {
-		const float * const coeff = resampleCoeff + resampleCoeffIdx;
+		const float* const coeff = resampleCoeff + resampleCoeffIdx;
 		float32x2_t out = vmul_f32(y0, *((float32x2_t*)coeff));
 		out = vmla_f32(out, y1, *((float32x2_t*)(coeff + 2)));
 		out = vmla_f32(out, y2, *((float32x2_t*)(coeff + 4)));
@@ -200,7 +200,7 @@ uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 
 			usedSrc++;
 			srcBuffer += 2;
-			
+
 			if (usedSrc >= srcSizeInFrames) {
 				vst1_f32(resampleY, y0);
 				vst1_f32(resampleY + 2, y1);
@@ -229,6 +229,115 @@ uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 	vst1_f32(resampleY + 14, y7);
 	vst1_f32(resampleY + 16, y8);
 	vst1_f32(resampleY + 18, y9);
+
+	srcFramesUsed = usedSrc;
+	return usedDst;
+}
+
+uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
+	//both ARM (32/64) and x86 (64) have lots of registers!
+	register uint32_t usedSrc = 0, usedDst = 0;
+
+	while (resamplePendingAdvances) {
+		resamplePendingAdvances--;
+
+		memmove(resampleY, resampleY + 2, 18 * sizeof(int32_t));
+		((int32_t*)resampleY)[18] = (int32_t)srcBuffer[0];
+		((int32_t*)resampleY)[19] = (int32_t)srcBuffer[1];
+
+		usedSrc++;
+		srcBuffer += 2;
+
+		if (usedSrc >= srcSizeInFrames) {
+			srcFramesUsed = usedSrc;
+			return usedDst;
+		}
+	}
+
+	int32x2_t y0 = vld1_s32((int32_t*)resampleY);
+	int32x2_t y1 = vld1_s32((int32_t*)resampleY + 2);
+	int32x2_t y2 = vld1_s32((int32_t*)resampleY + 4);
+	int32x2_t y3 = vld1_s32((int32_t*)resampleY + 6);
+	int32x2_t y4 = vld1_s32((int32_t*)resampleY + 8);
+	int32x2_t y5 = vld1_s32((int32_t*)resampleY + 10);
+	int32x2_t y6 = vld1_s32((int32_t*)resampleY + 12);
+	int32x2_t y7 = vld1_s32((int32_t*)resampleY + 14);
+	int32x2_t y8 = vld1_s32((int32_t*)resampleY + 16);
+	int32x2_t y9 = vld1_s32((int32_t*)resampleY + 18);
+
+	while (usedDst < dstSizeInFrames) {
+		const int32_t* const coeff = (int32_t*)resampleCoeff + resampleCoeffIdx;
+		int64x2_t out = vmovl_s32(vmul_s32(y0, *((int32x2_t*)coeff)));
+		out = vmlal_s32(out, y1, *((int32x2_t*)(coeff + 2)));
+		out = vmlal_s32(out, y2, *((int32x2_t*)(coeff + 4)));
+		out = vmlal_s32(out, y3, *((int32x2_t*)(coeff + 6)));
+		out = vmlal_s32(out, y4, *((int32x2_t*)(coeff + 8)));
+		out = vmlal_s32(out, y5, *((int32x2_t*)(coeff + 10)));
+		out = vmlal_s32(out, y6, *((int32x2_t*)(coeff + 12)));
+		out = vmlal_s32(out, y7, *((int32x2_t*)(coeff + 14)));
+		out = vmlal_s32(out, y8, *((int32x2_t*)(coeff + 16)));
+		out = vmlal_s32(out, y9, *((int32x2_t*)(coeff + 18)));
+		const int32x2_t outI32 = vqmovn_s64(vshrq_n_s64(out, 15));
+		const int16x4_t outI16 = vqmovn_s32(vcombine_s32(outI32, outI32));
+		*dstBuffer++ = vget_lane_s16(outI16, 0);
+		*dstBuffer++ = vget_lane_s16(outI16, 1);
+		usedDst++;
+
+		resampleCoeffIdx += 20;
+		resampleAdvanceIdx++;
+		if (resampleCoeffIdx >= resampleCoeffLen) {
+			resampleCoeffIdx = 0;
+			resampleAdvanceIdx = 0;
+		}
+		resamplePendingAdvances = resampleAdvance[resampleAdvanceIdx];
+
+		while (resamplePendingAdvances) {
+			resamplePendingAdvances--;
+
+			y0 = y1;
+			y1 = y2;
+			y2 = y3;
+			y3 = y4;
+			y4 = y5;
+			y5 = y6;
+			y6 = y7;
+			y7 = y8;
+			y8 = y9;
+			effectsTemp[0] = (int32_t)srcBuffer[0];
+			effectsTemp[1] = (int32_t)srcBuffer[1];
+			y9 = vld1_s32(effectsTemp);
+
+			usedSrc++;
+			srcBuffer += 2;
+
+			if (usedSrc >= srcSizeInFrames) {
+				vst1_s32((int32_t*)resampleY, y0);
+				vst1_s32((int32_t*)resampleY + 2, y1);
+				vst1_s32((int32_t*)resampleY + 4, y2);
+				vst1_s32((int32_t*)resampleY + 6, y3);
+				vst1_s32((int32_t*)resampleY + 8, y4);
+				vst1_s32((int32_t*)resampleY + 10, y5);
+				vst1_s32((int32_t*)resampleY + 12, y6);
+				vst1_s32((int32_t*)resampleY + 14, y7);
+				vst1_s32((int32_t*)resampleY + 16, y8);
+				vst1_s32((int32_t*)resampleY + 18, y9);
+
+				srcFramesUsed = usedSrc;
+				return usedDst;
+			}
+		}
+	}
+
+	vst1_s32((int32_t*)resampleY, y0);
+	vst1_s32((int32_t*)resampleY + 2, y1);
+	vst1_s32((int32_t*)resampleY + 4, y2);
+	vst1_s32((int32_t*)resampleY + 6, y3);
+	vst1_s32((int32_t*)resampleY + 8, y4);
+	vst1_s32((int32_t*)resampleY + 10, y5);
+	vst1_s32((int32_t*)resampleY + 12, y6);
+	vst1_s32((int32_t*)resampleY + 14, y7);
+	vst1_s32((int32_t*)resampleY + 16, y8);
+	vst1_s32((int32_t*)resampleY + 18, y9);
 
 	srcFramesUsed = usedSrc;
 	return usedDst;
