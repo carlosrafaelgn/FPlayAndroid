@@ -254,7 +254,7 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 	}
 
-#define equalizerNeon() \
+#define equalizerNeonOld() \
 	/* since this is a cascade filter, band0's output is band1's input and so on.... */ \
 	for (int32_t i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
 		/*
@@ -294,6 +294,53 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 		\
 		/* outLR = { outL, outR } */ \
 		float32x2_t outLR = vadd_f32(vget_low_f32(b0_b1), vget_high_f32(b0_b1)); \
+		\
+		/*
+		x_n1_L = inL;
+		x_n1_R = inR;
+		y_n1_L = outL;
+		y_n1_R = outR; */ \
+		vst1q_f32(samples, vcombine_f32(inLR, outLR)); \
+		\
+		/*
+		inL = outL;
+		inR = outR; */ \
+		inLR = outLR; \
+	}
+
+#define equalizerNeon() \
+	/* since this is a cascade filter, band0's output is band1's input and so on.... */ \
+	for (int32_t i = 0; i < equalizerMaxBandCount; i++, samples += 8) { \
+		/*
+		y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) - a1.y(n-1) - a2.y(n-2)
+		but, since our a2 was negated and b1 = a1, the formula becomes:
+		y(n) = b0.x(n) + b1.(x(n-1) - y(n-1)) + b2.x(n-2) + a2.y(n-2) */ \
+		\
+		/* local = { x_n1_L, x_n1_R, y_n1_L, y_n1_R } */ \
+		const float32x4_t local = vld1q_f32(samples); \
+		\
+		/* local2 = { x_n2_L, x_n2_R, y_n2_L, y_n2_R } */ \
+		const float32x4_t local2 = vld1q_f32(samples + 4); \
+		\
+		/* b0_b1 = { b0, b0, b1, b1 } */ \
+		const float32x4_t b0_b1 = vld1q_f32(equalizerCoefs + (i << 3)); \
+		/* b2_a2 = { b2, b2, -a2, -a2 } */ \
+		const float32x4_t b2_a2 = vld1q_f32(equalizerCoefs + (i << 3) + 4); \
+		\
+		/* tmp4 = { b0 * L, b0 * R, b1 * (x_n1_L - y_n1_L), b1 * (x_n1_R - y_n1_R) } */ \
+		float32x4_t tmp4 = vmulq_f32(b0_b1, vcombine_f32(inLR, vsub_f32(vget_low_f32(local), vget_high_f32(local)))); \
+		/* tmp4 += { b2 * x_n2_L, b2 * x_n2_R, -a2 * y_n2_L, -a2 * y_n2_R } */ \
+		tmp4 = vmlaq_f32(tmp4, b2_a2, local2); \
+		\
+		/*
+		x_n2_L = local_x_n1_L;
+		x_n2_R = local_x_n1_R;
+		y_n2_L = local_y_n1_L;
+		y_n2_R = local_y_n1_R; */ \
+		vst1q_f32(samples + 4, local); \
+		\
+		/* outLR = { outL, outR } */ \
+		const float32x2_t outLR = vadd_f32(vget_low_f32(tmp4), vget_high_f32(tmp4)); \
 		\
 		/*
 		x_n1_L = inL;
