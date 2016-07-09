@@ -45,6 +45,13 @@ uint32_t *resampleAdvance;
 //float resampleY[20] __attribute__((aligned(16)));
 int32_t resampleYINT[20] __attribute__((aligned(16)));
 static RESAMPLEPROC resampleProc;
+union int64_3232 {
+	int64_t v;
+	struct {
+		int32_t l;
+		int32_t h;
+	};
+};
 
 uint32_t resampleNull(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//nothing to be done but copying from source to destination
@@ -212,7 +219,8 @@ uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16
 		//that GCC does a really good job at optimizing all these multiplications,
 		//and that this type cast actually generates an assembly code corresponding to
 		//int64 = int32 * int32
-		const int32_t outL = (int32_t)(
+		int64_3232 outL;
+		outL.v = (
 			(((int64_t)resampleYINT[0] * (int64_t)coeff[0]) +
 			((int64_t)resampleYINT[2] * (int64_t)coeff[2]) +
 			((int64_t)resampleYINT[4] * (int64_t)coeff[4]) +
@@ -222,10 +230,11 @@ uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16
 			((int64_t)resampleYINT[12] * (int64_t)coeff[12]) +
 			((int64_t)resampleYINT[14] * (int64_t)coeff[14]) +
 			((int64_t)resampleYINT[16] * (int64_t)coeff[16]) +
-			((int64_t)resampleYINT[18] * (int64_t)coeff[18])) >> 24
+			((int64_t)resampleYINT[18] * (int64_t)coeff[18])) << 2
 		);
-		*dstBuffer++ = ((outL >= 32767) ? 32767 : ((outL <= -32768) ? -32768 : (int16_t)outL));
-		const int32_t outR = (int32_t)(
+		*dstBuffer++ = ((outL.h >= 32767) ? 32767 : ((outL.h <= -32768) ? -32768 : (int16_t)outL.h));
+		int64_3232 outR;
+		outR.v = (
 			(((int64_t)resampleYINT[1] * (int64_t)coeff[1]) +
 			((int64_t)resampleYINT[3] * (int64_t)coeff[3]) +
 			((int64_t)resampleYINT[5] * (int64_t)coeff[5]) +
@@ -235,9 +244,9 @@ uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16
 			((int64_t)resampleYINT[13] * (int64_t)coeff[13]) +
 			((int64_t)resampleYINT[15] * (int64_t)coeff[15]) +
 			((int64_t)resampleYINT[17] * (int64_t)coeff[17]) +
-			((int64_t)resampleYINT[19] * (int64_t)coeff[19])) >> 24
+			((int64_t)resampleYINT[19] * (int64_t)coeff[19])) << 2
 		);
-		*dstBuffer++ = ((outR >= 32767) ? 32767 : ((outR <= -32768) ? -32768 : (int16_t)outR));
+		*dstBuffer++ = ((outR.h >= 32767) ? 32767 : ((outR.h <= -32768) ? -32768 : (int16_t)outR.h));
 		usedDst++;
 
 		resampleCoeffIdx += 20;
@@ -355,7 +364,8 @@ uint32_t resampleLagrangeMonoINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 
 	while (usedDst < dstSizeInFrames) {
 		const int32_t* const coeff = resampleCoeffINT + resampleCoeffIdx;
-		const int32_t outL = (int32_t)(
+		int64_3232 outL;
+		outL.v = (
 			(((int64_t)resampleYINT[0] * (int64_t)coeff[0]) +
 			((int64_t)resampleYINT[1] * (int64_t)coeff[2]) +
 			((int64_t)resampleYINT[2] * (int64_t)coeff[4]) +
@@ -365,9 +375,9 @@ uint32_t resampleLagrangeMonoINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 			((int64_t)resampleYINT[6] * (int64_t)coeff[12]) +
 			((int64_t)resampleYINT[7] * (int64_t)coeff[14]) +
 			((int64_t)resampleYINT[8] * (int64_t)coeff[16]) +
-			((int64_t)resampleYINT[9] * (int64_t)coeff[18])) >> 24
+			((int64_t)resampleYINT[9] * (int64_t)coeff[18])) << 2
 		);
-		const int16_t o = (int16_t)((outL >= 32767) ? 32767 : ((outL <= -32768) ? -32768 : (int16_t)outL));
+		const int16_t o = (int16_t)((outL.h >= 32767) ? 32767 : ((outL.h <= -32768) ? -32768 : (int16_t)outL.h));
 		*dstBuffer++ = o;
 		*dstBuffer++ = o;
 		usedDst++;
@@ -536,34 +546,34 @@ void resampleComputeCoeffsINT() {
 		const double x_x9 = phaseFrac - 9.0;
 
 		//y0
-		coeff[0] = (int32_t)((x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (-362880.0 / 16777216.0));
+		coeff[0] = (int32_t)((x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) * (1073741824.0 / -362880.0));
 		coeff[1] = coeff[0];
 		//y1
-		coeff[2] = (int32_t)((x_x0 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (40320.0 / 16777216.0));
+		coeff[2] = (int32_t)((x_x0 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) * (1073741824.0 / 40320.0));
 		coeff[3] = coeff[2];
 		//y2
-		coeff[4] = (int32_t)((x_x0 * x_x1 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (-10080.0 / 16777216.0));
+		coeff[4] = (int32_t)((x_x0 * x_x1 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) * (1073741824.0 / -10080.0));
 		coeff[5] = coeff[4];
 		//y3
-		coeff[6] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (4320.0 / 16777216.0));
+		coeff[6] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) * (1073741824.0 / 4320.0));
 		coeff[7] = coeff[6];
 		//y4
-		coeff[8] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) / (-2880.0 / 16777216.0));
+		coeff[8] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x5 * x_x6 * x_x7 * x_x8 * x_x9) * (1073741824.0 / -2880.0));
 		coeff[9] = coeff[8];
 		//y5
-		coeff[10] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x6 * x_x7 * x_x8 * x_x9) / (2880.0 / 16777216.0));
+		coeff[10] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x6 * x_x7 * x_x8 * x_x9) * (1073741824.0 / 2880.0));
 		coeff[11] = coeff[10];
 		//y6
-		coeff[12] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x7 * x_x8 * x_x9) / (-4320.0 / 16777216.0));
+		coeff[12] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x7 * x_x8 * x_x9) * (1073741824.0 / -4320.0));
 		coeff[13] = coeff[12];
 		//y7
-		coeff[14] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x8 * x_x9) / (10080.0 / 16777216.0));
+		coeff[14] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x8 * x_x9) * (1073741824.0 / 10080.0));
 		coeff[15] = coeff[14];
 		//y8
-		coeff[16] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x9) / (-40320.0 / 16777216.0));
+		coeff[16] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x9) * (1073741824.0 / -40320.0));
 		coeff[17] = coeff[16];
 		//y9
-		coeff[18] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8) / (362880.0 / 16777216.0));
+		coeff[18] = (int32_t)((x_x0 * x_x1 * x_x2 * x_x3 * x_x4 * x_x5 * x_x6 * x_x7 * x_x8) * (1073741824.0 / 362880.0));
 		coeff[19] = coeff[18];
 
 		coeff += 20;
