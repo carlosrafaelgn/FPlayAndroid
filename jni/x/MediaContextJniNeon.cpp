@@ -269,7 +269,8 @@ uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 
 	while (usedDst < dstSizeInFrames) {
 		const int32_t* const coeff = resampleCoeffINT + resampleCoeffIdx;
-		int64x2_t out = vmovl_s32(vmul_s32(y0, *((int32x2_t*)coeff)));
+		int64x2_t out = vmovq_n_s64(0);
+		out = vmlal_s32(out, y0, *((int32x2_t*)coeff));
 		out = vmlal_s32(out, y1, *((int32x2_t*)(coeff + 2)));
 		out = vmlal_s32(out, y2, *((int32x2_t*)(coeff + 4)));
 		out = vmlal_s32(out, y3, *((int32x2_t*)(coeff + 6)));

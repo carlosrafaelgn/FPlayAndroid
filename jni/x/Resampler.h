@@ -45,13 +45,6 @@ uint32_t *resampleAdvance;
 //float resampleY[20] __attribute__((aligned(16)));
 int32_t resampleYINT[20] __attribute__((aligned(16)));
 static RESAMPLEPROC resampleProc;
-union int64_3232 {
-	int64_t v;
-	struct {
-		int32_t l;
-		int32_t h;
-	};
-};
 
 uint32_t resampleNull(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//nothing to be done but copying from source to destination

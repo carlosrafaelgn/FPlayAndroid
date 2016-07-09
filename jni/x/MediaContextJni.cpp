@@ -84,6 +84,14 @@
 static uint32_t srcSampleRate, srcChannelCount;
 uint32_t dstSampleRate;
 
+union int64_3232 {
+	int64_t v;
+	struct {
+		int32_t l;
+		int32_t h;
+	};
+};
+
 union WriteRet {
     uint64_t val;
     struct {
