@@ -95,7 +95,7 @@ static const char* const textureFShader = "precision mediump float; varying vec2
 static const char* const textureFShaderOES = "#extension GL_OES_EGL_image_external : require\nprecision mediump float; varying vec2 vTexCoord; uniform samplerExternalOES texColorOES; void main() { gl_FragColor = texture2D(texColorOES, vTexCoord); }";
 
 static const char* const immersiveParticleVShader = "attribute vec2 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; uniform mat4 mvpMat; void main() {" \
-"int idx = int(inIndex);" \
+"int32_t idx = int32_t(inIndex);" \
 "vec2 pos = posArr[idx];" \
 /*start with the original computation*/ \
 "float a = mix(0.0625, 0.484375, amplitude)," \
@@ -145,8 +145,8 @@ static const char* const particleFShader = "precision mediump float; varying vec
 "}";
 
 static DRAWPROC glDrawProc;
-static unsigned int glProgram, glProgram2, glType, glBuf[5];
-static int glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix, glPos, glColor, glBaseX, glTheta, glOESTexture, glUpDown;
+static uint32_t glProgram, glProgram2, glType, glBuf[5];
+static int32_t glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix, glPos, glColor, glBaseX, glTheta, glOESTexture, glUpDown;
 
 #define glResetState() glDrawProc = glDrawNothing; \
 glProgram = 0; \
@@ -179,9 +179,9 @@ float glSmoothStep(float edge0, float edge1, float x) {
 
 #include "GLSoundParticle.h"
 
-int glCreateProgramAndShaders(const char* vertexShaderSource, const char* fragmentShaderSource, unsigned int* program) {
-	int l;
-	unsigned int p, vertexShader, fragmentShader;
+int32_t glCreateProgramAndShaders(const char* vertexShaderSource, const char* fragmentShaderSource, uint32_t* program) {
+	int32_t l;
+	uint32_t p, vertexShader, fragmentShader;
 
 	p = glCreateProgram();
 	if (glGetError() || !p) return -1;
@@ -201,7 +201,7 @@ int glCreateProgramAndShaders(const char* vertexShaderSource, const char* fragme
 	glCompileShader(vertexShader);
 	l = 0;
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &l);
-	//int s = 0;
+	//int32_t s = 0;
 	//glGetShaderInfoLog(vertexShader, 1024, &s, (char*)floatBuffer);
 	//((char*)floatBuffer)[s] = 0;
 	//__android_log_print(ANDROID_LOG_INFO, "JNI", "Compilation result: %s", (char*)floatBuffer);
@@ -222,9 +222,9 @@ int glCreateProgramAndShaders(const char* vertexShaderSource, const char* fragme
 	return 0;
 }
 
-int glComputeSpinSize(int width, int height, int dp1OrLess) {
+int32_t glComputeSpinSize(int32_t width, int32_t height, int32_t dp1OrLess) {
 	dp1OrLess = (dp1OrLess ? 10 : 20);
-	int size = dp1OrLess;
+	int32_t size = dp1OrLess;
 	while (size < 33 && ((width % size) || (height % size)))
 		size++;
 	if (size > 32) {
@@ -243,8 +243,8 @@ int glComputeSpinSize(int width, int height, int dp1OrLess) {
 }
 
 void glSumData() {
-	int i, idx, last;
-	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
+	int32_t i, idx, last;
+	uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
 
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
@@ -276,16 +276,16 @@ void glSumData() {
 void glUpdateSpectrumColorTexture() {
 	commonColorIndexApplied = commonColorIndex;
 	glActiveTexture(GL_TEXTURE1);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)(COLORS + commonColorIndex));
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 1, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (uint8_t*)(COLORS + commonColorIndex));
 	glActiveTexture(GL_TEXTURE0);
 }
 
-int glParticleSetup(int hasGyro) {
+int32_t glParticleSetup(int32_t hasGyro) {
 	glBindAttribLocation(glProgram, 2, "inIndex");
 	if (glGetError()) return -201;
 
 	if (glType == TYPE_IMMERSIVE_PARTICLE_VR) {
-		int l;
+		int32_t l;
 
 		//create a second program to render the camera preview
 		if ((l = glCreateProgramAndShaders(
@@ -326,8 +326,8 @@ int glParticleSetup(int hasGyro) {
 #define right ((32.0f - 10.0f) / 32.0f)
 #define bottom (-(32.0f - 10.0f) / 32.0f)
 	//let's create BG_PARTICLES_BY_COLUMN copies of the same rectangle, divided into 2 triangles
-	for (int i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
-		const int idx = i * (3 * 2 * 2);
+	for (int32_t i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
+		const int32_t idx = i * (3 * 2 * 2);
 		//triangle 1 (CCW)
 		floatBuffer[idx + 0 ] = left;
 		floatBuffer[idx + 1 ] = bottom;
@@ -355,8 +355,8 @@ int glParticleSetup(int hasGyro) {
 #define right (54.0f / 64.0f)
 #define bottom (54.0f / 64.0f)
 	//let's create BG_PARTICLES_BY_COLUMN copies of the same rectangle, divided into 2 triangles
-	for (int i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
-		const int idx = i * (3 * 2 * 2);
+	for (int32_t i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
+		const int32_t idx = i * (3 * 2 * 2);
 		//triangle 1 (CCW)
 		floatBuffer[idx + 0 ] = left;
 		floatBuffer[idx + 1 ] = bottom;
@@ -380,9 +380,9 @@ int glParticleSetup(int hasGyro) {
 	glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 	glBufferData(GL_ARRAY_BUFFER, (BG_PARTICLES_BY_COLUMN * 3 * 2 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
 	//now let's fill in the buffer used to store the indices
-	for (int i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
+	for (int32_t i = 0; i < BG_PARTICLES_BY_COLUMN; i++) {
 		const float f = (float)i;
-		const int idx = i * (3 * 2);
+		const int32_t idx = i * (3 * 2);
 		//triangle 1 (CCW)
 		floatBuffer[idx + 0] = f;
 		floatBuffer[idx + 1] = f;
@@ -427,7 +427,7 @@ void glDrawSpin() {
 
 		glSumData();
 
-		int i, first = 0;
+		int32_t i, first = 0;
 		for (i = 0; i < glRows; i++) {
 			glDrawArrays(GL_TRIANGLE_STRIP, first, glVerticesPerRow);
 			first += glVerticesPerRow;
@@ -460,7 +460,7 @@ void glDrawSpectrum2() {
 		glUpdateSpectrumColorTexture();
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)(floatBuffer + 512));
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (uint8_t*)(floatBuffer + 512));
 	glUniform1f(glUpDown, 1.0f);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2); //twice as many vertices as the regular spectrum
 	glUniform1f(glUpDown, -1.0f);
@@ -474,8 +474,8 @@ void glDrawSpectrum2WithoutAmplitudeTexture() {
 	glClear(GL_COLOR_BUFFER_BIT);
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
-	int i, idx = glAmplitude, last;
-	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
+	int32_t i, idx = glAmplitude, last;
+	uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
 	for (i = 0; i < 36; i++)
 		glUniform1f(idx++, (float)processedData[i] * 0.00390625f);
 	for (; i < 184; i += 2)
@@ -497,7 +497,7 @@ void glDrawSpectrum() {
 		glUpdateSpectrumColorTexture();
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)(floatBuffer + 512));
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (uint8_t*)(floatBuffer + 512));
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2);
 }
 
@@ -508,8 +508,8 @@ void glDrawSpectrumWithoutAmplitudeTexture() {
 	glClear(GL_COLOR_BUFFER_BIT);
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
-	int i, idx = glAmplitude, last;
-	unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
+	int32_t i, idx = glAmplitude, last;
+	uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
 	for (i = 0; i < 36; i++)
 		glUniform1f(idx++, (float)processedData[i] * 0.00390625f);
 	for (; i < 184; i += 2)
@@ -523,10 +523,10 @@ void glDrawSpectrumWithoutAmplitudeTexture() {
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 128 * 2);
 }
 
-int glCreateLiquid() {
+int32_t glCreateLiquid() {
 	commonTimeLimit = 12566; //2 * 2 * pi * 1000
 
-	int l;
+	int32_t l;
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
@@ -537,7 +537,7 @@ int glCreateLiquid() {
 			"vAmpl = 0.0;" \
 			"gl_Position = vec4(inPosition, 1.0, 0.0, 1.0);" \
 		"} else {" \
-			"int i = int(inTexCoord);" \
+			"int32_t i = int32_t(inTexCoord);" \
 			"absy = amplitude[i];" \
 			"absy += (amplitude[i + 1] - absy) * smoothstep(0.0, 1.0, fract(inTexCoord));" \
 			"vAmpl = 1.0;" \
@@ -602,7 +602,7 @@ int glCreateLiquid() {
 	// 0  2  4  6
 	float *vertices = new float[1024];
 
-	for (int i = 0; i < 512; i++) {
+	for (int32_t i = 0; i < 512; i++) {
 		const float p = -1.0f + (2.0f * (float)i / 511.0f);
 		vertices[(i << 1)    ] = p;
 		vertices[(i << 1) + 1] = p;
@@ -612,10 +612,10 @@ int glCreateLiquid() {
 
 	//vertices at odd indices receive a -1, to indicate they are static, and must be placed
 	//at the top of the screen
-	for (int i = 1; i < 1024; i += 2)
+	for (int32_t i = 1; i < 1024; i += 2)
 		vertices[i] = -1.0f;
 	//vertices at even indices receive a value in range [0 .. 32[
-	for (int i = 0; i < 1024; i += 2)
+	for (int32_t i = 0; i < 1024; i += 2)
 		vertices[i] = (float)(i << 5) / 1024.0f;
 	glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
 	glBufferData(GL_ARRAY_BUFFER, (512 * 2) * sizeof(float), vertices, GL_STATIC_DRAW);
@@ -630,7 +630,7 @@ int glCreateLiquid() {
 
 	if (glGetError()) return -104;
 
-	unsigned int glTex = 0;
+	uint32_t glTex = 0;
 
 	glGenTextures(1, &glTex);
 	if (glGetError() || !glTex) return -105;
@@ -645,11 +645,11 @@ int glCreateLiquid() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	//create a default blue background
-	((unsigned short*)floatBuffer)[0] = 0x31fb;
-	((unsigned short*)floatBuffer)[1] = 0x5b3a;
-	((unsigned short*)floatBuffer)[2] = 0x041f;
-	((unsigned short*)floatBuffer)[3] = 0x34df;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned char*)floatBuffer);
+	((uint16_t*)floatBuffer)[0] = 0x31fb;
+	((uint16_t*)floatBuffer)[1] = 0x5b3a;
+	((uint16_t*)floatBuffer)[2] = 0x041f;
+	((uint16_t*)floatBuffer)[3] = 0x34df;
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (uint8_t*)floatBuffer);
 
 	if (glGetError()) return -107;
 
@@ -692,10 +692,10 @@ int glCreateLiquid() {
 	return 0;
 }
 
-int glCreateSpin(int estimatedWidth, int estimatedHeight, int dp1OrLess) {
+int32_t glCreateSpin(int32_t estimatedWidth, int32_t estimatedHeight, int32_t dp1OrLess) {
 	commonTimeLimit = 6283; //2 * pi * 1000
 
-	int l;
+	int32_t l;
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
@@ -706,7 +706,7 @@ int glCreateSpin(int estimatedWidth, int estimatedHeight, int dp1OrLess) {
 		"float d = inPosition.z;" \
 
 		"vTexCoord = inTexCoord.xy;" \
-		"float angle = inTexCoord.z - (0.25 * amplitude[int(d * 31.9375)]);" \
+		"float angle = inTexCoord.z - (0.25 * amplitude[int32_t(d * 31.9375)]);" \
 
 		"dist = d * d * (0.5 + (1.5 * amplitude[2]));" \
 
@@ -736,7 +736,7 @@ int glCreateSpin(int estimatedWidth, int estimatedHeight, int dp1OrLess) {
 	glGenBuffers(2, glBuf);
 	if (glGetError() || !glBuf[0] || !glBuf[1]) return -103;
 
-	unsigned int glTex = 0;
+	uint32_t glTex = 0;
 
 	glGenTextures(1, &glTex);
 	if (glGetError() || !glTex) return -104;
@@ -755,23 +755,23 @@ int glCreateSpin(int estimatedWidth, int estimatedHeight, int dp1OrLess) {
 	//https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xhtml
 	//non-power-of-2 textures cannot be used with GL_TEXTURE_WRAP_x other than GL_CLAMP_TO_EDGE
 	//(even though it works on many devices, the spec says it shouldn't...)
-	int TEXTURE_SIZE = glComputeSpinSize(estimatedWidth, estimatedHeight, dp1OrLess);
+	int32_t TEXTURE_SIZE = glComputeSpinSize(estimatedWidth, estimatedHeight, dp1OrLess);
 	TEXTURE_SIZE = ((TEXTURE_SIZE <= 16) ? 16 : 32);
 	const float TEXTURE_COEF = ((TEXTURE_SIZE == 16) ? (255.0f * 0.078125f) : (255.0f * 0.0390625f));
 	//generate the texture
-	for (int y = 0; y < TEXTURE_SIZE; y++) {
+	for (int32_t y = 0; y < TEXTURE_SIZE; y++) {
 		float yf = (float)(y - (TEXTURE_SIZE >> 1));
 		yf *= yf;
-		for (int x = 0; x < TEXTURE_SIZE; x++) {
+		for (int32_t x = 0; x < TEXTURE_SIZE; x++) {
 			//0.0390625 = 1/25.6 (used for 32x32)
 			//0.0625 = 1/16 (used for 20x20)
 			//0.078125 = 1/12.8 (used for 16x16)
 			float xf = (float)(x - (TEXTURE_SIZE >> 1));
-			int v = (int)(TEXTURE_COEF * sqrtf((xf * xf) + yf));
-			((unsigned char*)floatBuffer)[(y * TEXTURE_SIZE) + x] = ((v >= 255) ? 255 : (unsigned char)v);
+			int32_t v = (int32_t)(TEXTURE_COEF * sqrtf((xf * xf) + yf));
+			((uint8_t*)floatBuffer)[(y * TEXTURE_SIZE) + x] = ((v >= 255) ? 255 : (uint8_t)v);
 		}
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (uint8_t*)floatBuffer);
 	if (glGetError()) return -106;
 
 	glUseProgram(glProgram);
@@ -796,15 +796,15 @@ int glCreateSpin(int estimatedWidth, int estimatedHeight, int dp1OrLess) {
 	return 0;
 }
 
-int glCreateParticle(int hasGyro) {
+int32_t glCreateParticle(int32_t hasGyro) {
 	commonTimeLimit = 0xffffffff;
 
-	int l;
+	int32_t l;
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
 		"attribute vec4 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; void main() {" \
-		"int idx = int(inIndex);" \
+		"int32_t idx = int32_t(inIndex);" \
 		"vec2 pos = posArr[idx];" \
 		"float a = mix(0.0625, 0.34375, amplitude);" \
 		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
@@ -830,7 +830,7 @@ int glCreateParticle(int hasGyro) {
 
 	if ((l = glParticleSetup(hasGyro))) return l;
 
-	unsigned int glTex = 0;
+	uint32_t glTex = 0;
 
 	glGenTextures(1, &glTex);
 	if (glGetError() || !glTex) return -103;
@@ -877,10 +877,10 @@ int glCreateParticle(int hasGyro) {
 	return 0;
 }
 
-int glCreateImmersiveParticle(int hasGyro) {
+int32_t glCreateImmersiveParticle(int32_t hasGyro) {
 	commonTimeLimit = 0xffffffff;
 
-	int l;
+	int32_t l;
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
@@ -901,7 +901,7 @@ int glCreateImmersiveParticle(int hasGyro) {
 
 	if ((l = glParticleSetup(hasGyro))) return l;
 
-	unsigned int glTex[2] = { 0, 0 };
+	uint32_t glTex[2] = { 0, 0 };
 
 	if (glType == TYPE_IMMERSIVE_PARTICLE_VR) {
 		glGenTextures(2, glTex);
@@ -974,15 +974,15 @@ int glCreateImmersiveParticle(int hasGyro) {
 	return 0;
 }
 
-int glCreateSpectrum2() {
-	int spectrumUsesTexture = 0;
+int32_t glCreateSpectrum2() {
+	int32_t spectrumUsesTexture = 0;
 
 	commonTimeLimit = 0xffffffff;
 	glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &spectrumUsesTexture);
 	if (spectrumUsesTexture < 2)
 		spectrumUsesTexture = 0;
 
-	int l;
+	int32_t l;
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
@@ -1011,11 +1011,11 @@ int glCreateSpectrum2() {
 			"float ampl;" \
 			/*mirror effect has to be simulated by hand*/ \
 			"if (absx < 2.0) {" \
-				"ampl = amplitude[int(floor(127.0 * (2.0 - absx)))];" \
+				"ampl = amplitude[int32_t(floor(127.0 * (2.0 - absx)))];" \
 				"absx -= 2.0;"
 			"} else {" \
 				"absx -= 2.0;"
-				"ampl = amplitude[int(floor(127.0 * absx))];" \
+				"ampl = amplitude[int32_t(floor(127.0 * absx))];" \
 			"}" \
 			"if (inPosition > 0.0) {" \
 				/*top/bottom points*/ \
@@ -1070,7 +1070,7 @@ int glCreateSpectrum2() {
 		//floatBuffer contains only (256 * 2) + (256 / 4) floats :(
 		float *vertices = new float[512 * 2];
 
-		for (int i = 0; i < 512; i++) {
+		for (int32_t i = 0; i < 512; i++) {
 			//even is negative, odd is positive
 			const float p = 1.0f + (2.0f * (float)i / 511.0f);
 			vertices[(i << 1)    ] = -p;
@@ -1081,7 +1081,7 @@ int glCreateSpectrum2() {
 
 		delete vertices;
 	} else {
-		for (int i = 0; i < 256; i++) {
+		for (int32_t i = 0; i < 256; i++) {
 			//even is negative, odd is positive
 			const float p = 1.0f + (2.0f * (float)i / 255.0f);
 			floatBuffer[(i << 1)    ] = -p;
@@ -1092,7 +1092,7 @@ int glCreateSpectrum2() {
 	}
 	if (glGetError()) return -103;
 	
-	unsigned int glTex[2] = { 0, 0 };
+	uint32_t glTex[2] = { 0, 0 };
 
 	glGenTextures(2, glTex);
 	if (glGetError() || !glTex[0] || !glTex[1]) return -104;
@@ -1106,7 +1106,7 @@ int glCreateSpectrum2() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT); //mirror the x coordinate (mirror takes place when the integer part is odd)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	memset(floatBuffer, 0, 256);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (uint8_t*)floatBuffer);
 	if (glGetError()) return -106;
 
 	//color texture (blue or green)
@@ -1143,15 +1143,15 @@ int glCreateSpectrum2() {
 	return 0;
 }
 
-int glCreateSpectrum() {
-	int spectrumUsesTexture = 0;
+int32_t glCreateSpectrum() {
+	int32_t spectrumUsesTexture = 0;
 
 	commonTimeLimit = 0xffffffff;
 	glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &spectrumUsesTexture);
 	if (spectrumUsesTexture < 2)
 		spectrumUsesTexture = 0;
 
-	int l;
+	int32_t l;
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
@@ -1168,7 +1168,7 @@ int glCreateSpectrum() {
 		//https://www.khronos.org/registry/gles/specs/2.0/GLSL_ES_Specification_1.0.17.pdf page 111-113
 		"attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
 			"float absx = abs(inPosition);" \
-			"float ampl = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
+			"float ampl = amplitude[int32_t(floor(63.5 * (absx - 1.0)))];" \
 			"gl_Position = vec4(absx - 2.0, sign(inPosition) * ampl, 0.0, 1.0);" \
 			"vAmpl = ampl;" \
 		"}",
@@ -1210,7 +1210,7 @@ int glCreateSpectrum() {
 	//
 	//we cannot send x = 0, as sign(0) = 0, and this would render that point useless
 	if (spectrumUsesTexture) {
-		for (int i = 0; i < 256; i++) {
+		for (int32_t i = 0; i < 256; i++) {
 			//even is negative, odd is positive
 			const float p = 1.0f + (2.0f * (float)i / 255.0f);
 			floatBuffer[(i << 1)    ] = -p;
@@ -1219,7 +1219,7 @@ int glCreateSpectrum() {
 		glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
 		glBufferData(GL_ARRAY_BUFFER, (256 * 2) * sizeof(float), floatBuffer, GL_STATIC_DRAW);
 	} else {
-		for (int i = 0; i < 128; i++) {
+		for (int32_t i = 0; i < 128; i++) {
 			//even is negative, odd is positive
 			const float p = 1.0f + (2.0f * (float)i / 127.0f);
 			floatBuffer[(i << 1)    ] = -p;
@@ -1230,7 +1230,7 @@ int glCreateSpectrum() {
 	}
 	if (glGetError()) return -103;
 
-	unsigned int glTex[2] = { 0, 0 };
+	uint32_t glTex[2] = { 0, 0 };
 
 	glGenTextures(2, glTex);
 	if (glGetError() || !glTex[0] || !glTex[1]) return -104;
@@ -1244,7 +1244,7 @@ int glCreateSpectrum() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	memset(floatBuffer, 0, 256);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (unsigned char*)floatBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (uint8_t*)floatBuffer);
 	if (glGetError()) return -106;
 
 	//color texture (blue or green)
@@ -1280,11 +1280,11 @@ int glCreateSpectrum() {
 	return 0;
 }
 
-int JNICALL glGetOESTexture(JNIEnv* env, jclass clazz) {
+int32_t JNICALL glGetOESTexture(JNIEnv* env, jclass clazz) {
 	return glOESTexture;
 }
 
-int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess, int hasGyro) {
+int32_t JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int32_t bgColor, int32_t type, int32_t estimatedWidth, int32_t estimatedHeight, int32_t dp1OrLess, int32_t hasGyro) {
 	commonSRand();
 	glType = type;
 	glResetState();
@@ -1310,7 +1310,7 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	glDisable(GL_BLEND);
 	glGetError(); //clear any eventual error flags
 
-	int ret, hq = 0;
+	int32_t ret, hq = 0;
 
 	switch (type) {
 	case TYPE_LIQUID:
@@ -1345,11 +1345,11 @@ int JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int bgColor, int type,
 	return ret;
 }
 
-void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height, int rotation, int cameraPreviewW, int cameraPreviewH, int dp1OrLess) {
+void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int32_t width, int32_t height, int32_t rotation, int32_t cameraPreviewW, int32_t cameraPreviewH, int32_t dp1OrLess) {
 	glViewport(0, 0, width, height);
 	if (glProgram && glBuf[0] && glBuf[1] && width > 0 && height > 0) {
 		if (glType == TYPE_SPIN) {
-			int size = glComputeSpinSize(width, height, dp1OrLess);
+			int32_t size = glComputeSpinSize(width, height, dp1OrLess);
 			glVerticesPerRow = ((width + (size - 1)) / size) + 1;
 			glRows = ((height + (size - 1)) / size);
 			struct _coord {
@@ -1364,10 +1364,10 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 			//inPosition stores the distance of the vertex to the origin in the z component
 			_coord* v = vertices;
 			float y0 = 1.0f;
-			for (int j = 0; j < glRows; j++) {
+			for (int32_t j = 0; j < glRows; j++) {
 				//compute x and y every time to improve precision
 				float y1 = 1.0f - ((float)((size << 1) * (j + 1)) / (float)height);
-				for (int i = 0; i < glVerticesPerRow; i++) {
+				for (int32_t i = 0; i < glVerticesPerRow; i++) {
 					float x = -1.0f + ((float)((size << 1) * i) / (float)width);
 					v[(i << 1)    ].x = x;
 					v[(i << 1)    ].y = y1;
@@ -1393,9 +1393,9 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 
 			//inTexCoord stores the angle of the vertex in the z component
 			v = vertices;
-			for (int j = 0; j < glRows; j++) {
-				for (int i = 0; i < glVerticesPerRow; i++) {
-					int idx = (i << 1) + 1;
+			for (int32_t j = 0; j < glRows; j++) {
+				for (int32_t i = 0; i < glVerticesPerRow; i++) {
+					int32_t idx = (i << 1) + 1;
 					v[idx].z = atan2f((v[idx].y + 1.0f) * 0.5f, (-v[idx].x + 1.0f) * 0.5f);
 					v[idx].x = (float)i;
 					v[idx].y = (float)j;
@@ -1425,7 +1425,7 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 				const float viewRatio = (float)width / (float)height;
 				const float cameraRatio = (float)cameraPreviewW / (float)cameraPreviewH;
 				float ratioError = viewRatio - cameraRatio;
-				*((int*)&ratioError) &= 0x7fffffff; //abs ;)
+				*((int32_t*)&ratioError) &= 0x7fffffff; //abs ;)
 				if (ratioError <= 0.01f) {
 					glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsRect, GL_STATIC_DRAW);
 				} else {
@@ -1467,7 +1467,7 @@ void JNICALL glOnSurfaceChanged(JNIEnv* env, jclass clazz, int width, int height
 	}
 }
 
-int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
+int32_t JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
 	AndroidBitmapInfo inf;
 	if (AndroidBitmap_getInfo(env, bitmap, &inf))
 		return ERR_INFO;
@@ -1475,7 +1475,7 @@ int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
 	if (inf.format != ANDROID_BITMAP_FORMAT_RGB_565)
 		return ERR_FORMAT;
 
-	unsigned char *dst = 0;
+	uint8_t *dst = 0;
 	if (AndroidBitmap_lockPixels(env, bitmap, (void**)&dst))
 		return ERR_LOCK;
 
@@ -1486,7 +1486,7 @@ int JNICALL glLoadBitmapFromJava(JNIEnv* env, jclass clazz, jobject bitmap) {
 
 	glGetError(); //clear any eventual error flags
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, inf.width, inf.height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, dst);
-	int error = glGetError();
+	int32_t error = glGetError();
 
 	AndroidBitmap_unlockPixels(env, bitmap);
 
@@ -1502,7 +1502,7 @@ void JNICALL glOnSensorReset(JNIEnv* env, jclass clazz) {
 		glSoundParticle->onSensorReset();
 }
 
-void JNICALL glOnSensorData(JNIEnv* env, jclass clazz, uint64_t sensorTimestamp, int sensorType, jfloatArray jvalues) {
+void JNICALL glOnSensorData(JNIEnv* env, jclass clazz, uint64_t sensorTimestamp, int32_t sensorType, jfloatArray jvalues) {
 	if (!glSoundParticle || !jvalues)
 		return;
 	float* values = (float*)env->GetPrimitiveArrayCritical(jvalues, 0);
@@ -1511,7 +1511,7 @@ void JNICALL glOnSensorData(JNIEnv* env, jclass clazz, uint64_t sensorTimestamp,
 	glSoundParticle->onSensorData(sensorTimestamp, sensorType, v);
 }
 
-void JNICALL glSetImmersiveCfg(JNIEnv* env, jclass clazz, int diffusion, int riseSpeed) {
+void JNICALL glSetImmersiveCfg(JNIEnv* env, jclass clazz, int32_t diffusion, int32_t riseSpeed) {
 	if (!glSoundParticle || (glType != TYPE_IMMERSIVE_PARTICLE && glType != TYPE_IMMERSIVE_PARTICLE_VR))
 		return;
 	glSoundParticle->setImmersiveCfg(diffusion, riseSpeed);

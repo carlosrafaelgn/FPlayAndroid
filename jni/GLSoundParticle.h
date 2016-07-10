@@ -40,7 +40,7 @@
 
 class SimpleTracker {
 private:
-	unsigned int lastAccelTime, lastMagneticTime;
+	uint32_t lastAccelTime, lastMagneticTime;
 	float oldAccelData[3], oldMagneticData[3];
 
 public:
@@ -59,7 +59,7 @@ public:
 		memset(oldMagneticData, 0, sizeof(float) * 3);
 	}
 
-	void onSensorData(int sensorType, const float* values) {
+	void onSensorData(int32_t sensorType, const float* values) {
 		if (sensorType == 1) {
 			if (!lastAccelTime) {
 				lastAccelTime = commonUptimeMillis();
@@ -97,9 +97,9 @@ public:
 			//this technique produced better results than using other filters, such as
 			//higher order low-pass filters (empirically tested)
 			const float delta = (float)commonUptimeDeltaMillis(&lastMagneticTime);
-			for (int axis = 0; axis < 3; axis++) {
+			for (int32_t axis = 0; axis < 3; axis++) {
 				float absDeltaValue = values[axis] - oldMagneticData[axis];
-				*((int*)&absDeltaValue) &= 0x7fffffff; //abs ;)
+				*((int32_t*)&absDeltaValue) &= 0x7fffffff; //abs ;)
 				const float coefNew = (absDeltaValue >= 1.5f ? 0.15f :
 					((0.05f * absDeltaValue * absDeltaValue) + (0.025f * absDeltaValue))
 					//this parable also works fine, but is slower than the above...
@@ -115,15 +115,15 @@ public:
 
 class GLSoundParticle {
 private:
-	unsigned int lastTime;
+	uint32_t lastTime;
 	float timeCoef;
 
 	float COLORS[16 * 3];
 
 	float bgPos[BG_COUNT * 2], bgSpeedY[BG_COUNT], bgTheta[BG_COUNT];
-	unsigned char bgColor[BG_COUNT];
+	uint8_t bgColor[BG_COUNT];
 
-	unsigned int rotation, nextDiffusion;
+	uint32_t rotation, nextDiffusion;
 	float matrix[16], xScale, yScale;
 
 	HeadTracker* headTracker;
@@ -131,8 +131,8 @@ private:
 
 	SimpleMutex mutex;
 
-	void fillBgParticle(int index, float y) {
-		bgPos[(index << 1)] = 0.0078125f * (float)(((int)rand() & 7) - 4);
+	void fillBgParticle(int32_t index, float y) {
+		bgPos[(index << 1)] = 0.0078125f * (float)(((int32_t)rand() & 7) - 4);
 		bgPos[(index << 1) + 1] = y;
 		bgTheta[index] = 0.03125f * (float)(rand() & 63);
 		bgSpeedY[index] = 0.125f + (0.00390625f * (float)(rand() & 15));
@@ -140,7 +140,7 @@ private:
 	}
 
 public:
-	GLSoundParticle(int hasGyro) {
+	GLSoundParticle(int32_t hasGyro) {
 		lastTime = commonTime;
 		//timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : ((glType == TYPE_IMMERSIVE_PARTICLE) ? 0.0003f : 0.001f));
 		timeCoef = ((glType == TYPE_IMMERSIVE_PARTICLE_VR) ? 0.0017f : 0.001f);
@@ -191,7 +191,7 @@ public:
 #undef COLORS_G
 #undef COLORS_B
 
-		int i = 0, c, ic;
+		int32_t i = 0, c, ic;
 		for (c = 0; c < BG_COLUMNS; c++) {
 			for (ic = 0; ic < BG_PARTICLES_BY_COLUMN; ic++, i++)
 				fillBgParticle(i, -1.2f + (0.01953125f * (float)(rand() & 127)));
@@ -211,13 +211,13 @@ public:
 
 	static void fillTexture() {
 #define TEXTURE_SIZE 64
-		unsigned char *tex = new unsigned char[TEXTURE_SIZE * TEXTURE_SIZE];
+		uint8_t *tex = new uint8_t[TEXTURE_SIZE * TEXTURE_SIZE];
 
 		glActiveTexture(GL_TEXTURE0);
-		for (int y = 0; y < TEXTURE_SIZE; y++) {
+		for (int32_t y = 0; y < TEXTURE_SIZE; y++) {
 			float yf = (float)(y - (TEXTURE_SIZE >> 1));
 			yf *= yf;
-			for (int x = 0; x < TEXTURE_SIZE; x++) {
+			for (int32_t x = 0; x < TEXTURE_SIZE; x++) {
 				float xf = (float)(x - (TEXTURE_SIZE >> 1));
 
 				float d = sqrtf((xf * xf) + yf) / (float)((TEXTURE_SIZE / 2) - 2.0f);
@@ -241,8 +241,8 @@ public:
 				d2 = d2 + d2;
 				if (d2 > 1.0f) d2 = 1.0f;
 
-				const unsigned int v = (unsigned int)(255.0f * d2); //(255.0f * (d + 0.5f * d2));
-				tex[(y * TEXTURE_SIZE) + x] = ((v >= 255) ? 255 : (unsigned char)v);
+				const uint32_t v = (uint32_t)(255.0f * d2); //(255.0f * (d + 0.5f * d2));
+				tex[(y * TEXTURE_SIZE) + x] = ((v >= 255) ? 255 : (uint8_t)v);
 			}
 		}
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_ALPHA, GL_UNSIGNED_BYTE, tex);
@@ -251,7 +251,7 @@ public:
 #undef TEXTURE_SIZE
 	}
 
-	void setAspect(int width, int height, int rotation) {
+	void setAspect(int32_t width, int32_t height, int32_t rotation) {
 		if (glType != TYPE_PARTICLE) {
 			this->rotation = rotation;
 			if (width >= height) {
@@ -273,7 +273,7 @@ public:
 		}
 	}
 
-	void setImmersiveCfg(int diffusion, int riseSpeed) {
+	void setImmersiveCfg(int32_t diffusion, int32_t riseSpeed) {
 		if (diffusion >= 0)
 			nextDiffusion = diffusion + 1;
 		if (riseSpeed >= 0) {
@@ -299,8 +299,8 @@ public:
 		lastTime = commonTime;
 
 		float a;
-		int p = 0, c, ic, i = 2, last = 44, last2 = 116;
-		unsigned char avg, *processedData = (unsigned char*)(floatBuffer + 512);
+		int32_t p = 0, c, ic, i = 2, last = 44, last2 = 116;
+		uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
 
 		if (glType != TYPE_PARTICLE) {
 			if (nextDiffusion) {
@@ -524,7 +524,7 @@ public:
 					fillBgParticle(p, -1.2f);
 				else
 					bgPos[(p << 1) + 1] += bgSpeedY[p] * delta;
-				const int c = ic * 3, pc = bgColor[p] * 3;
+				const int32_t c = ic * 3, pc = bgColor[p] * 3;
 				colorArr[c    ] = COLORS[pc    ];
 				colorArr[c + 1] = COLORS[pc + 1];
 				colorArr[c + 2] = COLORS[pc + 2];
@@ -546,7 +546,7 @@ public:
 			simpleTracker->onSensorReset();
 	}
 
-	void onSensorData(uint64_t sensorTimestamp, int sensorType, const float* values) {
+	void onSensorData(uint64_t sensorTimestamp, int32_t sensorType, const float* values) {
 		//http://developer.download.nvidia.com/tegra/docs/tegra_android_accelerometer_v5f.pdf
 		if (headTracker) {
 			Vector3 v;

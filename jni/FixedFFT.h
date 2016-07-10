@@ -189,7 +189,7 @@ int32_t doFft(uint8_t *inWaveform_outFft, int opt) {
 
 	//we do not need to process the last half, as commonProcess() will not use it! ;)
 	for (i = 0; i < (CAPTURE_SIZE >> 1); i += 2) {
-		short tmp = workspace[i >> 1] >> 21;
+		int16_t tmp = workspace[i >> 1] >> 21;
 		while (tmp > 127 || tmp < -128) tmp >>= 1;
 		inWaveform_outFft[i] = tmp;
 		tmp = workspace[i >> 1];

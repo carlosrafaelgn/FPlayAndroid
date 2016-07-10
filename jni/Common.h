@@ -44,7 +44,7 @@
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
 
 //to make the math easier COLORS has 257 int's (from 0 to 256) for each different color
-const unsigned short COLORS[] __attribute__((aligned(16))) = { 	/*Blue */ 0x0000, 0x0816, 0x0816, 0x0815, 0x0815, 0x0815, 0x1015, 0x1015, 0x1015, 0x1015, 0x1015, 0x1015, 0x1815, 0x1814, 0x1814, 0x1814, 0x1814, 0x2014, 0x2014, 0x2014, 0x2013, 0x2013, 0x2813, 0x2813, 0x2813, 0x2813, 0x3012, 0x3012, 0x3012, 0x3012, 0x3812, 0x3811, 0x3811, 0x3811, 0x4011, 0x4011, 0x4011, 0x4010, 0x4810, 0x4810, 0x4810, 0x4810, 0x500f, 0x500f, 0x500f, 0x500f, 0x580f, 0x580e, 0x580e, 0x600e, 0x600e, 0x600d, 0x680d, 0x680d, 0x680d, 0x680d, 0x700c, 0x700c, 0x700c, 0x780c, 0x780c, 0x780b, 0x800b, 0x800b, 0x800b, 0x800a, 0x880a, 0x880a, 0x880a, 0x900a, 0x9009, 0x9009, 0x9009, 0x9809, 0x9809, 0x9808, 0xa008, 0xa008, 0xa008, 0xa807, 0xa807, 0xa807, 0xa807, 0xb007, 0xb006, 0xb006, 0xb806, 0xb806, 0xb806, 0xb805, 0xc005, 0xc005, 0xc005, 0xc005, 0xc804, 0xc804, 0xc804, 0xc804, 0xd004, 0xd004, 0xd003, 0xd003, 0xd803, 0xd803, 0xd803, 0xd802, 0xe002, 0xe002, 0xe002, 0xe002, 0xe002, 0xe802, 0xe801, 0xe801, 0xe801, 0xe801, 0xf001, 0xf001, 0xf001, 0xf000, 0xf000, 0xf000, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf820, 0xf820, 0xf820, 0xf840, 0xf840, 0xf840, 0xf860, 0xf860, 0xf860, 0xf880, 0xf880, 0xf8a0, 0xf8a0, 0xf8a0, 0xf8c0, 0xf8c0, 0xf8e0, 0xf8e0, 0xf900, 0xf900, 0xf900, 0xf920, 0xf920, 0xf940, 0xf940, 0xf960, 0xf960, 0xf980, 0xf9a0, 0xf9a0, 0xf9a0, 0xf9c0, 0xf9e0, 0xf9e0, 0xfa00, 0xfa00, 0xfa20, 0xfa20, 0xfa40, 0xfa40, 0xfa60, 0xfa80, 0xfa80, 0xfaa0, 0xfaa0, 0xfac0, 0xfae0, 0xfae0, 0xfb00, 0xfb00, 0xfb20, 0xfb40, 0xfb40, 0xfb60, 0xfb60, 0xfb80, 0xfba0, 0xfba0, 0xfbc0, 0xfbe0, 0xfbe0, 0xfc00, 0xfc00, 0xfc20, 0xfc20, 0xfc40, 0xfc60, 0xfc60, 0xfc80, 0xfca0, 0xfca0, 0xfcc0, 0xfcc0, 0xfce0, 0xfd00, 0xfd00, 0xfd20, 0xfd20, 0xfd40, 0xfd60, 0xfd60, 0xfd80, 0xfd80, 0xfda0, 0xfda0, 0xfdc0, 0xfde0, 0xfde0, 0xfe00, 0xfe00, 0xfe20, 0xfe20, 0xfe40, 0xfe40, 0xfe60, 0xfe60, 0xfe80, 0xfe80, 0xfea0, 0xfea0, 0xfec0, 0xfec0, 0xfee0, 0xfee0, 0xff00, 0xff00, 0xff20, 0xff20, 0xff20, 0xff40, 0xff40, 0xff40, 0xff60, 0xff60, 0xff80, 0xff80, 0xff80, 0xffa0, 0xffa0, 0xffa0, 0xffc0, 0xffc0, 0xffc0, 0xffc0, 0xffc0,
+const uint16_t COLORS[] __attribute__((aligned(16))) = { 	/*Blue */ 0x0000, 0x0816, 0x0816, 0x0815, 0x0815, 0x0815, 0x1015, 0x1015, 0x1015, 0x1015, 0x1015, 0x1015, 0x1815, 0x1814, 0x1814, 0x1814, 0x1814, 0x2014, 0x2014, 0x2014, 0x2013, 0x2013, 0x2813, 0x2813, 0x2813, 0x2813, 0x3012, 0x3012, 0x3012, 0x3012, 0x3812, 0x3811, 0x3811, 0x3811, 0x4011, 0x4011, 0x4011, 0x4010, 0x4810, 0x4810, 0x4810, 0x4810, 0x500f, 0x500f, 0x500f, 0x500f, 0x580f, 0x580e, 0x580e, 0x600e, 0x600e, 0x600d, 0x680d, 0x680d, 0x680d, 0x680d, 0x700c, 0x700c, 0x700c, 0x780c, 0x780c, 0x780b, 0x800b, 0x800b, 0x800b, 0x800a, 0x880a, 0x880a, 0x880a, 0x900a, 0x9009, 0x9009, 0x9009, 0x9809, 0x9809, 0x9808, 0xa008, 0xa008, 0xa008, 0xa807, 0xa807, 0xa807, 0xa807, 0xb007, 0xb006, 0xb006, 0xb806, 0xb806, 0xb806, 0xb805, 0xc005, 0xc005, 0xc005, 0xc005, 0xc804, 0xc804, 0xc804, 0xc804, 0xd004, 0xd004, 0xd003, 0xd003, 0xd803, 0xd803, 0xd803, 0xd802, 0xe002, 0xe002, 0xe002, 0xe002, 0xe002, 0xe802, 0xe801, 0xe801, 0xe801, 0xe801, 0xf001, 0xf001, 0xf001, 0xf000, 0xf000, 0xf000, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf800, 0xf820, 0xf820, 0xf820, 0xf840, 0xf840, 0xf840, 0xf860, 0xf860, 0xf860, 0xf880, 0xf880, 0xf8a0, 0xf8a0, 0xf8a0, 0xf8c0, 0xf8c0, 0xf8e0, 0xf8e0, 0xf900, 0xf900, 0xf900, 0xf920, 0xf920, 0xf940, 0xf940, 0xf960, 0xf960, 0xf980, 0xf9a0, 0xf9a0, 0xf9a0, 0xf9c0, 0xf9e0, 0xf9e0, 0xfa00, 0xfa00, 0xfa20, 0xfa20, 0xfa40, 0xfa40, 0xfa60, 0xfa80, 0xfa80, 0xfaa0, 0xfaa0, 0xfac0, 0xfae0, 0xfae0, 0xfb00, 0xfb00, 0xfb20, 0xfb40, 0xfb40, 0xfb60, 0xfb60, 0xfb80, 0xfba0, 0xfba0, 0xfbc0, 0xfbe0, 0xfbe0, 0xfc00, 0xfc00, 0xfc20, 0xfc20, 0xfc40, 0xfc60, 0xfc60, 0xfc80, 0xfca0, 0xfca0, 0xfcc0, 0xfcc0, 0xfce0, 0xfd00, 0xfd00, 0xfd20, 0xfd20, 0xfd40, 0xfd60, 0xfd60, 0xfd80, 0xfd80, 0xfda0, 0xfda0, 0xfdc0, 0xfde0, 0xfde0, 0xfe00, 0xfe00, 0xfe20, 0xfe20, 0xfe40, 0xfe40, 0xfe60, 0xfe60, 0xfe80, 0xfe80, 0xfea0, 0xfea0, 0xfec0, 0xfec0, 0xfee0, 0xfee0, 0xff00, 0xff00, 0xff20, 0xff20, 0xff20, 0xff40, 0xff40, 0xff40, 0xff60, 0xff60, 0xff80, 0xff80, 0xff80, 0xffa0, 0xffa0, 0xffa0, 0xffc0, 0xffc0, 0xffc0, 0xffc0, 0xffc0,
 																/*Green*/ 0x0000, 0x0000, 0x0000, 0x0020, 0x0020, 0x0040, 0x0040, 0x0060, 0x0060, 0x0080, 0x00a0, 0x00a0, 0x00c0, 0x00e0, 0x00e0, 0x0100, 0x0120, 0x0140, 0x0160, 0x0160, 0x0180, 0x01a0, 0x01c0, 0x01e0, 0x01e0, 0x0200, 0x0220, 0x0240, 0x0260, 0x0280, 0x0280, 0x02a0, 0x02c0, 0x02e0, 0x0300, 0x0320, 0x0340, 0x0360, 0x0360, 0x0380, 0x03a0, 0x03c0, 0x03e0, 0x0400, 0x0400, 0x0420, 0x0440, 0x0440, 0x0460, 0x0480, 0x0480, 0x04a0, 0x04c0, 0x04c0, 0x04c0, 0x04e0, 0x04e0, 0x0ce0, 0x0d00, 0x0d00, 0x0d00, 0x1520, 0x1520, 0x1540, 0x1540, 0x1d40, 0x1d60, 0x1d60, 0x2580, 0x2580, 0x25a0, 0x2da0, 0x2da0, 0x2dc0, 0x35c0, 0x35e0, 0x35e0, 0x3e00, 0x3e00, 0x3e00, 0x4620, 0x4620, 0x4e40, 0x4e40, 0x4e60, 0x5660, 0x5660, 0x5e80, 0x5e80, 0x5ea0, 0x66a0, 0x66c0, 0x66c0, 0x6ec0, 0x6ee0, 0x76e0, 0x7700, 0x7f00, 0x7f00, 0x7f20, 0x8720, 0x8720, 0x8f40, 0x8f40, 0x8f40, 0x9760, 0x9760, 0x9f80, 0x9f80, 0x9f80, 0xa780, 0xa7a0, 0xafa0, 0xafa0, 0xafc0, 0xb7c0, 0xb7c0, 0xbfc0, 0xbfc0, 0xbfe0, 0xc7e0, 0xc7e0, 0xc7e0, 0xcfe0, 0xcfe0, 0xcfe0, 0xd7e0, 0xd7e0, 0xdfe0, 0xdfe0, 0xdfe0, 0xdfe0, 0xe7e0, 0xe7e0, 0xe7e0, 0xefe0, 0xefe0, 0xefe0, 0xefe0, 0xf7e0, 0xf7e0, 0xf7e0, 0xf7e0, 0xf7e0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffc0, 0xffc0, 0xffc0, 0xffa0, 0xffa0, 0xffa0, 0xff80, 0xff80, 0xff80, 0xff60, 0xff60, 0xff40, 0xff40, 0xff40, 0xff20, 0xff00, 0xff00, 0xfee0, 0xfee0, 0xfec0, 0xfec0, 0xfea0, 0xfea0, 0xfe80, 0xfe60, 0xfe60, 0xfe40, 0xfe20, 0xfe20, 0xfe00, 0xfe00, 0xfde0, 0xfdc0, 0xfda0, 0xfda0, 0xfd80, 0xfd60, 0xfd60, 0xfd40, 0xfd20, 0xfd00, 0xfd00, 0xfce0, 0xfcc0, 0xfca0, 0xfca0, 0xfc80, 0xfc60, 0xfc40, 0xfc40, 0xfc20, 0xfc00, 0xfbe0, 0xfbe0, 0xfbc0, 0xfba0, 0xfb80, 0xfb60, 0xfb60, 0xfb40, 0xfb20, 0xfb00, 0xfb00, 0xfae0, 0xfac0, 0xfaa0, 0xfaa0, 0xfa80, 0xfa60, 0xfa60, 0xfa40, 0xfa20, 0xfa00, 0xfa00, 0xf9e0, 0xf9c0, 0xf9c0, 0xf9a0, 0xf980, 0xf980, 0xf960, 0xf960, 0xf940, 0xf920, 0xf920, 0xf900, 0xf8e0, 0xf8e0, 0xf8c0, 0xf8c0, 0xf8a0, 0xf8a0, 0xf880, 0xf880, 0xf860, 0xf860, 0xf860, 0xf840, 0xf840, 0xf820, 0xf820, 0xf820, 0xf800, 0xf800, 0xf800, 0xf800 };
 float fftData[FFT_SIZE] __attribute__((aligned(16)));
 float fftWindow[FFT_SIZE] __attribute__((aligned(16)));
@@ -53,38 +53,38 @@ float previousM[QUARTER_FFT_SIZE] __attribute__((aligned(16)));
 //vuMeter ranges from 0 to 1, and should be mapped to (-40dB to 6.5dB)
 //vuMeterUnfiltered ranges from 0 to over 1, and should be mapped to (-40dB to over 6.5dB)
 float rootMeanSquare, vuMeter, vuMeterUnfiltered, vuMeterFilterState[4];
-#ifdef _MAY_HAVE_NEON_
-unsigned int neonMode, neonDone;
-int intBuffer[8] __attribute__((aligned(16)));
+#ifdef FPLAY_ARM
+uint32_t neonMode, neonDone;
+int32_t intBuffer[8] __attribute__((aligned(16)));
 #endif
 
 float commonCoefNew;
-unsigned int commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
+uint32_t commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
 
 //Beat detection
 #define BEAT_STATE_VALLEY 0
 #define BEAT_STATE_PEAK 1
 #define BEAT_MIN_RISE_THRESHOLD 40
-unsigned int beatCounter, beatState, beatPeakOrValley, beatThreshold, beatDeltaMillis, beatSilenceDeltaMillis, beatSpeedBPM;
+uint32_t beatCounter, beatState, beatPeakOrValley, beatThreshold, beatDeltaMillis, beatSilenceDeltaMillis, beatSpeedBPM;
 float beatFilteredInput;
 
-unsigned int commonUptimeDeltaMillis(unsigned int* lastTime) {
+uint32_t commonUptimeDeltaMillis(uint32_t* lastTime) {
 	struct timespec t;
 	t.tv_sec = 0;
 	t.tv_nsec = 0;
 	clock_gettime(CLOCK_MONOTONIC, &t);
-	*((unsigned int*)&t) = (unsigned int)((t.tv_sec * 1000) + (t.tv_nsec / 1000000));
-	const unsigned int delta = *((unsigned int*)&t) - *lastTime;
-	*lastTime = *((unsigned int*)&t);
+	*((uint32_t*)&t) = (uint32_t)((t.tv_sec * 1000) + (t.tv_nsec / 1000000));
+	const uint32_t delta = *((uint32_t*)&t) - *lastTime;
+	*lastTime = *((uint32_t*)&t);
 	return ((delta >= 100) ? 100 : delta);
 }
 
-unsigned int commonUptimeMillis() {
+uint32_t commonUptimeMillis() {
 	struct timespec t;
 	t.tv_sec = 0;
 	t.tv_nsec = 0;
 	clock_gettime(CLOCK_MONOTONIC, &t);
-	return (unsigned int)((t.tv_sec * 1000) + (t.tv_nsec / 1000000));
+	return (uint32_t)((t.tv_sec * 1000) + (t.tv_nsec / 1000000));
 }
 
 uint64_t commonUptimeNs() {
@@ -100,10 +100,10 @@ void commonSRand() {
 	t.tv_sec = 0;
 	t.tv_nsec = 0;
 	clock_gettime(CLOCK_MONOTONIC, &t);
-	srand((unsigned int)t.tv_nsec);
+	srand((uint32_t)t.tv_nsec);
 }
 
-void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int speed) {
+void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int32_t speed) {
 	switch (speed) {
 	case 1:
 		commonCoefNew = COEF_SPEED_1;
@@ -117,12 +117,12 @@ void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int speed) {
 	}
 }
 
-void JNICALL commonSetColorIndex(JNIEnv* env, jclass clazz, int jcolorIndex) {
+void JNICALL commonSetColorIndex(JNIEnv* env, jclass clazz, int32_t jcolorIndex) {
 	commonColorIndex = jcolorIndex;
 }
 
-int JNICALL commonCheckNeonMode(JNIEnv* env, jclass clazz) {
-#ifdef _MAY_HAVE_NEON_
+int32_t JNICALL commonCheckNeonMode(JNIEnv* env, jclass clazz) {
+#ifdef FPLAY_ARM
 	if (neonDone == 1)
 		return neonMode;
 	//based on
@@ -130,8 +130,8 @@ int JNICALL commonCheckNeonMode(JNIEnv* env, jclass clazz) {
 	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.h?r=2195
 	neonMode = 0;
 	char cpuinfo[4096];
-	int cpuinfo_len = -1;
-	int fd = open("/proc/cpuinfo", O_RDONLY);
+	int32_t cpuinfo_len = -1;
+	int32_t fd = open("/proc/cpuinfo", O_RDONLY);
 	if (fd >= 0) {
 		do {
 			cpuinfo_len = read(fd, cpuinfo, 4096);
@@ -140,7 +140,7 @@ int JNICALL commonCheckNeonMode(JNIEnv* env, jclass clazz) {
 		if (cpuinfo_len > 0) {
 			cpuinfo[cpuinfo_len] = 0;
 			//look for the "\nFeatures: " line
-			for (int i = cpuinfo_len - 9; i >= 0; i--) {
+			for (int32_t i = cpuinfo_len - 9; i >= 0; i--) {
 				if (memcmp(cpuinfo + i, "\nFeatures", 9) == 0) {
 					i += 9;
 					while (i < cpuinfo_len && (cpuinfo[i] == ' ' || cpuinfo[i] == '\t' || cpuinfo[i] == ':'))
@@ -171,7 +171,7 @@ int JNICALL commonCheckNeonMode(JNIEnv* env, jclass clazz) {
 void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice, jboolean hq) {
 	float* const fft = floatBuffer;
 	float* const multiplier = fft + QUARTER_FFT_SIZE;
-	unsigned char* const processedData = (unsigned char*)(fft + (QUARTER_FFT_SIZE * 2));
+	uint8_t* const processedData = (uint8_t*)(fft + (QUARTER_FFT_SIZE * 2));
 	rootMeanSquare = 0.0f;
 	vuMeter = 0.0f;
 	vuMeterUnfiltered = 0.0f;
@@ -188,7 +188,7 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice,
 	beatSpeedBPM = 0;
 	beatFilteredInput = 0;
 	if (isVoice) {
-		for (int i = 0; i < QUARTER_FFT_SIZE; i++) {
+		for (int32_t i = 0; i < QUARTER_FFT_SIZE; i++) {
 			fft[i] = 0;
 			processedData[i] = 0;
 			previousM[i] = 0;
@@ -199,7 +199,7 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice,
 			//multiplier[i] = 2.0f * expf((float)i / 128.0f);
 		}
 	} else {
-		for (int i = 0; i < QUARTER_FFT_SIZE; i++) {
+		for (int32_t i = 0; i < QUARTER_FFT_SIZE; i++) {
 			fft[i] = 0;
 			processedData[i] = 0;
 			previousM[i] = 0;
@@ -217,46 +217,46 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice,
 
 			FFTNR::Initialize();
 			//Hamming window
-			for (int i = 0; i < FFT_SIZE; i++)
+			for (int32_t i = 0; i < FFT_SIZE; i++)
 				fftWindow[i] = (float)(0.54 - (0.46 * cos(2.0 * 3.1415926535897932384626433832795 * (double)i / (double)(FFT_SIZE - 1))));
 		}
 	}
 }
 
-int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int opt) {
-	const unsigned int deltaMillis = commonUptimeDeltaMillis(&commonLastTime);
+int32_t JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int32_t opt) {
+	const uint32_t deltaMillis = commonUptimeDeltaMillis(&commonLastTime);
 	beatDeltaMillis += deltaMillis;
 	beatSilenceDeltaMillis += deltaMillis;
-	int i;
+	int32_t i;
 	i = commonTime + deltaMillis;
-	while (((unsigned int)i) >= commonTimeLimit)
+	while (((uint32_t)i) >= commonTimeLimit)
 		i -= commonTimeLimit;
 	commonTime = i;
 	
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	signed char* bfft;
+	int8_t* bfft;
 	if (!(opt & IGNORE_INPUT) || (opt & BLUETOOTH_PROCESSING)) {
-		bfft = (signed char*)env->GetPrimitiveArrayCritical(jwaveform, 0);
+		bfft = (int8_t*)env->GetPrimitiveArrayCritical(jwaveform, 0);
 		if (!bfft)
 			return 0;
 
 		if (!(opt & IGNORE_INPUT)) {
 			if ((opt & DATA_VUMETER)) {
-				rootMeanSquare = sqrtf((float)doFft((unsigned char*)bfft, opt) * (1.0f / (float)(CAPTURE_SIZE)));
+				rootMeanSquare = sqrtf((float)doFft((uint8_t*)bfft, opt) * (1.0f / (float)(CAPTURE_SIZE)));
 				//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 				bfft[1] = 0;
 			} else if ((opt & DATA_FFT)) {
 				if ((opt & DATA_FFT_HQ)) {
-					for (int i = 0; i < FFT_SIZE; i++)
-						fftData[i] = (float)((int)(((unsigned char*)bfft)[i]) - 128);// * fftWindow[i];
+					for (int32_t i = 0; i < FFT_SIZE; i++)
+						fftData[i] = (float)((int32_t)(((uint8_t*)bfft)[i]) - 128);// * fftWindow[i];
 					FFTNR::Forward(fftData);
 
 					//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 					fftData[1] = 0.0f;
 				} else {
-					doFft((unsigned char*)bfft, DATA_FFT);
+					doFft((uint8_t*)bfft, DATA_FFT);
 					//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 					bfft[1] = 0;
 				}
@@ -266,7 +266,7 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		bfft = 0;
 	}
 
-	int vuMeterI = 0;
+	int32_t vuMeterI = 0;
 	if ((opt & DATA_VUMETER)) {
 		//vuMeterUnfiltered goes from 0 to over 1 (-40dB to over 6.5dB)
 		vuMeterUnfiltered = ((rootMeanSquare > 0.42f) ? (((20.0f * log10f(rootMeanSquare / 42.0f)) + 40.0f) / 46.5f) : 0.0f);
@@ -283,7 +283,7 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		vuMeterFilterState[2] = vuOut;
 
 		vuMeter = ((vuOut >= 1.0f) ? 1.0f : ((vuOut <= 0.0f) ? 0.0f : vuOut));
-		vuMeterI = (int)(vuMeter * 255.0f);
+		vuMeterI = (int32_t)(vuMeter * 255.0f);
 
 		if (!(opt & ~(IGNORE_INPUT | DATA_VUMETER))) {
 			if (bfft)
@@ -292,9 +292,9 @@ int JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, int o
 		}
 	}
 
-	unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
+	uint8_t* processedData = (uint8_t*)(floatBuffer + 512);
 
-#ifdef _MAY_HAVE_NEON_
+#ifdef FPLAY_ARM
 if (!neonMode || (opt & DATA_FFT_HQ)) {
 #endif
 	float* fft = floatBuffer;
@@ -311,8 +311,8 @@ if (!neonMode || (opt & DATA_FFT_HQ)) {
 				m = (coefNew * m) + (coefOld * old);
 			fft[i] = m;
 			//v goes from 0 to 32768+ (inclusive)
-			const unsigned int v = ((unsigned int)m) >> 7;
-			processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
+			const uint32_t v = ((uint32_t)m) >> 7;
+			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
 		}
 	} else if ((opt & DATA_FFT_HQ)) {
 		for (i = 0; i < QUARTER_FFT_SIZE; i++) {
@@ -327,15 +327,15 @@ if (!neonMode || (opt & DATA_FFT_HQ)) {
 				m = (coefNew * m) + (coefOld * old);
 			fft[i] = m;
 			//v goes from 0 to 32768+ (inclusive)
-			const unsigned int v = ((unsigned int)m) >> 7;
-			processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
+			const uint32_t v = ((uint32_t)m) >> 7;
+			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
 		}
 	} else {
 		for (i = 0; i < QUARTER_FFT_SIZE; i++) {
 			//bfft[i] stores values from 0 to -128/127 (inclusive)
-			const int re = (int)bfft[i << 1];
-			const int im = (int)bfft[(i << 1) + 1];
-			const int amplSq = (re * re) + (im * im);
+			const int32_t re = (int32_t)bfft[i << 1];
+			const int32_t im = (int32_t)bfft[(i << 1) + 1];
+			const int32_t amplSq = (re * re) + (im * im);
 			float m = ((amplSq <= 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 			previousM[i] = m;
 			const float old = fft[i];
@@ -343,11 +343,11 @@ if (!neonMode || (opt & DATA_FFT_HQ)) {
 				m = (coefNew * m) + (coefOld * old);
 			fft[i] = m;
 			//v goes from 0 to 32768+ (inclusive)
-			const unsigned int v = ((unsigned int)m) >> 7;
-			processedData[i] = ((v >= 255) ? 255 : (unsigned char)v);
+			const uint32_t v = ((uint32_t)m) >> 7;
+			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
 		}
 	}
-#ifdef _MAY_HAVE_NEON_
+#ifdef FPLAY_ARM
 } else {
 	commonProcessNeon(bfft, deltaMillis, opt);
 }
@@ -365,8 +365,8 @@ if (!neonMode || (opt & DATA_FFT_HQ)) {
 		//processedData[7] = 7 * 44100/1024 = 301Hz
 		//filter again
 		beatFilteredInput = ((1.0f - 0.140625f) * beatFilteredInput) + (0.140625f * (float)processedData[(opt & BEAT_DETECTION) >> 12]);
-		const unsigned int m = (unsigned int)beatFilteredInput;
-		//__android_log_print(ANDROID_LOG_INFO, "JNI", "\t%d\t%d", (unsigned int)processedData[2], (unsigned int)processedData[3]);
+		const uint32_t m = (uint32_t)beatFilteredInput;
+		//__android_log_print(ANDROID_LOG_INFO, "JNI", "\t%d\t%d", (uint32_t)processedData[2], (uint32_t)processedData[3]);
 		if (beatState == BEAT_STATE_VALLEY) {
 			if (m < beatPeakOrValley) {
 				//Just update the valley
@@ -424,13 +424,13 @@ if (!neonMode || (opt & DATA_FFT_HQ)) {
 	//Bluetooth processing from here on
 
 
-#define PACK_BIN(BIN) if ((BIN) == 0x01 || (BIN) == 0x1B) { *packet = 0x1B; packet[1] = ((unsigned char)(BIN) ^ 1); packet += 2; len += 2; } else { *packet = (unsigned char)(BIN); packet++; len++; }
-	unsigned char* packet = (unsigned char*)bfft;
-	int len = 0, last;
-	unsigned char avg;
-	unsigned char b;
+#define PACK_BIN(BIN) if ((BIN) == 0x01 || (BIN) == 0x1B) { *packet = 0x1B; packet[1] = ((uint8_t)(BIN) ^ 1); packet += 2; len += 2; } else { *packet = (uint8_t)(BIN); packet++; len++; }
+	uint8_t* packet = (uint8_t*)bfft;
+	int32_t len = 0, last;
+	uint8_t avg;
+	uint8_t b;
 	packet[0] = 1; //SOH - Start of Heading
-	packet[1] = (unsigned char)opt; //payload type
+	packet[1] = (uint8_t)opt; //payload type
 	//packet[2] and packet[3] are the payload length
 	packet += 4;
 	//PACK_BIN(beatCounter);
@@ -604,8 +604,8 @@ if (!neonMode || (opt & DATA_FFT_HQ)) {
 	}
 #undef PACK_BIN
 	//fill in the payload length
-	((unsigned char*)bfft)[2] = (len & 0x7F) << 1; //lower 7 bits, left shifted by 1
-	((unsigned char*)bfft)[3] = (len >> 6) & 0xFE; //upper 7 bits, left shifted by 1
+	((uint8_t*)bfft)[2] = (len & 0x7F) << 1; //lower 7 bits, left shifted by 1
+	((uint8_t*)bfft)[3] = (len >> 6) & 0xFE; //upper 7 bits, left shifted by 1
 	*packet = 4; //EOT - End of Transmission
 	env->ReleasePrimitiveArrayCritical(jwaveform, bfft, 0);
 	return len + 5;

@@ -39,7 +39,7 @@
 //http://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html
 class SimpleMutex {
 private:
-	unsigned int flag0, flag1, turn;
+	uint32_t flag0, flag1, turn;
 public:
 	SimpleMutex() {
 		flag0 = 0;

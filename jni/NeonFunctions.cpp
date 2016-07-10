@@ -33,84 +33,86 @@
 #include <jni.h>
 #include <arm_neon.h>
 
+#define FPLAY_ARM
+
 #include "CommonNeon.h"
 
-void commonProcessNeon(signed char* bfft, int deltaMillis, int opt) {
-	float* fft = floatBuffer;
-	const float* multiplier = floatBuffer + 256;
-	unsigned char* processedData = (unsigned char*)(floatBuffer + 512);
-	float* localPreviousM = previousM;
+void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt) {
+	float *fft = floatBuffer;
+	uint8_t *processedData = (uint8_t*)(floatBuffer + 512);
+	float *localPreviousM = previousM;
 
-	const float coefNew = commonCoefNew * (float)deltaMillis;
-	const float coefOld = 1.0f - coefNew;
+	const float tmpCoefNew = commonCoefNew * (float)deltaMillis;
+	const float32x4_t coefNew = vdupq_n_f32(tmpCoefNew);
+	const float32x4_t coefOld = vdupq_n_f32(1.0f - tmpCoefNew);
 
 	if ((opt & IGNORE_INPUT)) {
-		for (int i = 0; i < 256; i += 8) {
-			asm volatile (
-				"vld1.32 {d0, d1}, [%[localPreviousM]]!\n" //q0 = previousM
-				"vld1.32 {d2, d3}, [%[localPreviousM]]!\n" //q1 = previousM
+		for (int32_t i = 0; i < 256; i += 8) {
+			float32x4_t previousM0 = vld1q_f32(localPreviousM);
+			float32x4_t previousM1 = vld1q_f32(localPreviousM + 4);
+			localPreviousM += 8;
 
-				"ldr r6, %[coefNew]\n"
-				"vdupq.32 q4, r6\n" //q4 = coefNew
+			float32x4_t fftOld0 = vld1q_f32(fft);
+			float32x4_t fftOld1 = vld1q_f32(fft + 4);
 
-				"ldr r6, %[coefOld]\n"
-				"vdupq.32 q5, r6\n" //q5 = coefOld
+			uint32x4_t geq0 = vcgeq_f32(previousM0, fftOld0); //geq0 = (previousM0 >= fftOld0)
+			uint32x4_t geq1 = vcgeq_f32(previousM1, fftOld1); //geq1 = (previousM1 >= fftOld1)
+			
+			fftOld0 = vmulq_f32(fftOld0, coefOld); //fftOld = old * coefOld
+			fftOld1 = vmulq_f32(fftOld1, coefOld);
 
-				"vld1.32 {d12, d13}, [%[fft]]\n" //q6 = fft (old)
-				"adds %[fft], #16\n"
-				"vld1.32 {d14, d15}, [%[fft]]\n" //q7 = fft (old)
-				"subs %[fft], #16\n"
+			fftOld0 = vmlaq_f32(fftOld0, previousM0, coefNew); //fftOld += m * coefNew
+			fftOld1 = vmlaq_f32(fftOld1, previousM1, coefNew);
 
-				"vcgeq.f32 q2, q0, q6\n" //q2 = (m >= old) (q0 >= q6)
-				"vcgeq.f32 q3, q1, q7\n" //q3 = (m >= old) (q1 >= q7)
+			//if previousM >= fftOld, use previousM, otherwise, use fftOld
+			previousM0 = vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(previousM0), geq0));
+			previousM1 = vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(previousM1), geq1));
 
-				"vmulq.f32 q6, q5, q6\n" //q6 = (coefOld * old)
-				"vmulq.f32 q7, q5, q7\n" //q7 = (coefOld * old)
+			geq0 = vmvnq_u32(geq0); //geq0 = ~geq0
+			geq1 = vmvnq_u32(geq1); //geq0 = ~geq0
 
-				"vmla.f32 q6, q4, q0\n" //q6 = q6 + (coefNew * m)
-				"vmla.f32 q7, q4, q1\n" //q7 = q7 + (coefNew * m)
+			fftOld0 = vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(fftOld0), geq0));
+			fftOld1 = vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(fftOld1), geq1));
 
-				//if q2 = 1, use q0, otherwise, use q6
-				"vandq q0, q0, q2\n"
-				"vmvn q2, q2\n" //q2 = ~q2
-				"vandq q6, q6, q2\n"
-				"vorrq q0, q0, q6\n"
+			previousM0 = vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(previousM0), vreinterpretq_u32_f32(fftOld0)));
+			previousM1 = vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(previousM1), vreinterpretq_u32_f32(fftOld1)));
 
-				//if q3 = 1, use q1, otherwise, use q7
-				"vandq q1, q1, q3\n"
-				"vmvn q3, q3\n" //q3 = ~q3
-				"vandq q7, q7, q3\n"
-				"vorrq q1, q1, q7\n"
+			vst1q_f32(fft, previousM0);
+			vst1q_f32(fft + 4, previousM1);
+			fft += 8;
 
-				"vst1.32 {d0, d1}, [%[fft]]!\n" //fft = q0 (q0 is m)
-				"vst1.32 {d2, d3}, [%[fft]]!\n" //fft = q1 (q1 is m)
+			uint32x4_t previousMI0 = vcvtq_u32_f32(previousM0);
+			uint32x4_t previousMI1 = vcvtq_u32_f32(previousM1);
 
-				"vcvt.u32.f32 q0, q0\n" //q0 = (unsigned int)q0
-				"vcvt.u32.f32 q1, q1\n" //q1 = (unsigned int)q1
+			previousMI0 = vshrq_n_u32(previousMI0, 7);
+			previousMI1 = vshrq_n_u32(previousMI1, 7);
 
-				"vshrq.u32 q0, q0, #7\n" //q0 = q0 >> 7
-				"vshrq.u32 q1, q1, #7\n" //q1 = q1 >> 7
-
-				"vqmovn.u32 d4, q0\n" //d4 = (unsigned short)q0 [with saturation]
-				"vqmovn.u32 d5, q1\n" //d5 = (unsigned short)q1 [with saturation]
-
-				"vqmovn.u16 d0, q2\n" //d0 = (unsigned char)q2 [with saturation]
-
-				"vst1.8 {d0}, [%[processedData]]!\n"
-
-			: [processedData] "+r" (processedData), [fft] "+r" (fft), [localPreviousM] "+r" (localPreviousM)
-			: [coefNew] "m" (coefNew), [coefOld] "m" (coefOld)
-			: "cc", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+			vst1_u8(processedData, vqmovn_u16(vcombine_u16(vqmovn_u32(previousMI0), vqmovn_u32(previousMI1))));
+			processedData += 8;
 		}
 	} else {
-		int* tmpBuffer = intBuffer;
-		for (int i = 0; i < 256; i += 8) {
+		const float *multiplierPtr = floatBuffer + 256;
+		int32_t* tmpBuffer = intBuffer;
+		for (int32_t i = 0; i < 256; i += 8) {
 			//bfft[i] stores values from 0 to -128/127 (inclusive)
-			tmpBuffer[0] = ((int*)bfft)[0];
-			tmpBuffer[1] = ((int*)bfft)[1];
-			tmpBuffer[2] = ((int*)bfft)[2];
-			tmpBuffer[3] = ((int*)bfft)[3];
-			asm volatile (
+			tmpBuffer[0] = ((int32_t*)bfft)[0];
+			tmpBuffer[1] = ((int32_t*)bfft)[1];
+			tmpBuffer[2] = ((int32_t*)bfft)[2];
+			tmpBuffer[3] = ((int32_t*)bfft)[3];
+			
+			//[0] = re re re re re re re re
+			//[1] = im im im im im im im im
+			const int8x8x2_t re_im = vld2_s8((int8_t*)tmpBuffer);
+
+			const int16x8_t re16 = vmovl_s8(re_im.val[0]);
+			const int16x8_t im16 = vmovl_s8(re_im.val[1]);
+
+			int32x4_t re0 = vmovl_s16(vget_low_s16(re16));
+			int32x4_t re1 = vmovl_s16(vget_high_s16(re16));
+			int32x4_t im0 = vmovl_s16(vget_low_s16(im16));
+			int32x4_t im1 = vmovl_s16(vget_high_s16(im16));
+			
+			/*asm volatile (
 				//q6 = multiplier
 				"vld1.32 {d12, d13}, [%[multiplier]]!\n"
 
@@ -221,242 +223,23 @@ void commonProcessNeon(signed char* bfft, int deltaMillis, int opt) {
 				"vst1.32 {d0, d1}, [%[fft]]!\n" //fft = q0 (q0 is m)
 				"vst1.32 {d2, d3}, [%[fft]]!\n" //fft = q1 (q1 is m)
 
-				"vcvt.u32.f32 q0, q0\n" //q0 = (unsigned int)q0
-				"vcvt.u32.f32 q1, q1\n" //q1 = (unsigned int)q1
+				"vcvt.u32.f32 q0, q0\n" //q0 = (uint32_t)q0
+				"vcvt.u32.f32 q1, q1\n" //q1 = (uint32_t)q1
 
 				"vshrq.u32 q0, q0, #7\n" //q0 = q0 >> 7
 				"vshrq.u32 q1, q1, #7\n" //q1 = q1 >> 7
 
-				"vqmovn.u32 d4, q0\n" //d4 = (unsigned short)q0 [with saturation]
-				"vqmovn.u32 d5, q1\n" //d5 = (unsigned short)q1 [with saturation]
+				"vqmovn.u32 d4, q0\n" //d4 = (uint16_t)q0 [with saturation]
+				"vqmovn.u32 d5, q1\n" //d5 = (uint16_t)q1 [with saturation]
 
-				"vqmovn.u16 d0, q2\n" //d0 = (unsigned char)q2 [with saturation]
+				"vqmovn.u16 d0, q2\n" //d0 = (uint8_t)q2 [with saturation]
 
 				"vst1.8 {d0}, [%[processedData]]!\n"
 
 			: [multiplier] "+r" (multiplier), [processedData] "+r" (processedData), [fft] "+r" (fft), [localPreviousM] "+r" (localPreviousM)
 			: [tmpBuffer] "r" (tmpBuffer), [coefNew] "m" (coefNew), [coefOld] "m" (coefOld)
-			: "cc", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+			: "cc", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");*/
 			bfft += 16;
 		}
 	}
 }
-/*
-static const int __0[] __attribute__((aligned(16))) = { 0, 0, 0, 0 };
-static const int __32768[] __attribute__((aligned(16))) = { 32768, 32768, 32768, 32768 };
-static int __tmp[4] __attribute__((aligned(16)));
-static int __v[4] __attribute__((aligned(16)));
-static int __v2[4] __attribute__((aligned(16)));
-
-void processNeon(signed char* bfft, int deltaMillis) {
-	float* const fft = floatBuffer;
-	const float* const multiplier = floatBuffer + 256;
-
-	const float coefNew = COEF_SPEED_DEF * (float)deltaMillis;
-	const float coefOld = 1.0f - coefNew;
-
-	//step 1: compute all magnitudes
-	for (int i = barBins - 1; i >= 0; i--) {
-		//bfft[i] stores values from 0 to -128/127 (inclusive)
-		const int re = (int)bfft[i << 1];
-		const int im = (int)bfft[(i << 1) + 1];
-		const int amplSq = (re * re) + (im * im);
-		float m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
-		const float old = fft[i];
-		if (m < old)
-			m = (coefNew * m) + (coefOld * old);
-		fft[i] = m;
-	}
-
-	int32x4_t _0 = vld1q_s32(__0), _32768 = vld1q_s32(__32768), _barH = { barH, barH, barH, barH }, _barH2 = vshrq_n_s32(_barH, 1), _colorIndex = { commonColorIndex, commonColorIndex, commonColorIndex, commonColorIndex };
-	if (barW == 1 || !lerp) {
-		for (int i = 0; i < barBins; i += 4) {
-			//_v goes from 0 to 32768 (inclusive)
-			int32x4_t _v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(vld1q_f32(fft + i))));
-			vst1q_s32(__tmp, vaddq_s32(vshrq_n_s32(_v, 7), _colorIndex));
-			_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
-			int32x4_t _v2 = _v;
-			_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
-			vst1q_s32(__v, _v);
-			vst1q_s32(__v2, vaddq_s32(_v2, _v));
-			for (int j = 0; j < 4; j++) {
-				const unsigned short color = COLORS[__tmp[j]];
-				const int v = __v[j];
-				const int v2 = __v2[j];
-				unsigned short* currentBar = (unsigned short*)inf.bits;
-				inf.bits = (void*)((unsigned short*)inf.bits + barW);
-				int y = 0;
-				switch (barW) {
-				case 1:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				case 2:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar[1] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				case 3:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar[1] = color;
-						currentBar[2] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				case 4:
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar[3] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar[1] = color;
-						currentBar[2] = color;
-						currentBar[3] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar[1] = bgColor;
-						currentBar[2] = bgColor;
-						currentBar[3] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				default:
-					for (; y < v; y++) {
-						for (int b = barW - 1; b >= 0; b--)
-							currentBar[b] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						for (int b = barW - 1; b >= 0; b--)
-							currentBar[b] = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						for (int b = barW - 1; b >= 0; b--)
-							currentBar[b] = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					break;
-				}
-			}
-		}
-	} else {
-		float32x4_t _invBarW = { invBarW, invBarW, invBarW, invBarW }, _prev = { 0.0f, fft[0], fft[1], fft[2] };
-		int originalBarIndex = 0;
-		for (int i = 0; i < barBins; i += 4) {
-			//process the four actual bars
-			int barIndex = originalBarIndex;
-			//_v goes from 0 to 32768 (inclusive)
-			int32x4_t _v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev)));
-			vst1q_s32(__tmp, vaddq_s32(vshrq_n_s32(_v, 7), _colorIndex));
-			_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
-			int32x4_t _v2 = _v;
-			_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
-			vst1q_s32(__v, _v);
-			vst1q_s32(__v2, vaddq_s32(_v2, _v));
-			for (int j = 0; j < 4; j++) {
-				//v goes from 0 to 32768 (inclusive)
-				const unsigned short color = COLORS[__tmp[j]];
-				const int v = __v[j];
-				const int v2 = __v2[j];
-				unsigned short* currentBar = (unsigned short*)inf.bits + barIndex;
-				int y = 0;
-				for (; y < v; y++) {
-					*currentBar = bgColor;
-					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-				}
-				for (; y < v2; y++) {
-					*currentBar = color;
-					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-				}
-				for (; y < barH; y++) {
-					*currentBar = bgColor;
-					currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-				}
-				barIndex += barW;
-			}
-
-			//now, process all the interpolated bars (the ones between the actual bars)
-			float32x4_t _delta = vmulq_f32(vsubq_f32(vld1q_f32(fft + i), _prev), _invBarW);
-			for (int b = 1; b < barW; b++) {
-				//move to the next bar
-				barIndex = originalBarIndex + b;
-				_prev = vaddq_f32(_prev, _delta);
-				//_v goes from 0 to 32768 (inclusive)
-				_v = vminq_s32(_32768, vmaxq_s32(_0, vcvtq_s32_f32(_prev)));
-				vst1q_s32(__tmp, vaddq_s32(vshrq_n_s32(_v, 7), _colorIndex));
-				_v = vshrq_n_s32(vmulq_s32(_v, _barH), 15);
-				int32x4_t _v2 = _v;
-				_v = vsubq_s32(_barH2, vshrq_n_s32(_v, 1));
-				vst1q_s32(__v, _v);
-				vst1q_s32(__v2, vaddq_s32(_v2, _v));
-				for (int j = 0; j < 4; j++) {
-					const unsigned short color = COLORS[__tmp[j]];
-					const int v = __v[j];
-					const int v2 = __v2[j];
-					unsigned short* currentBar = (unsigned short*)inf.bits + barIndex;
-					int y = 0;
-					for (; y < v; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < v2; y++) {
-						*currentBar = color;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					for (; y < barH; y++) {
-						*currentBar = bgColor;
-						currentBar = (unsigned short*)((unsigned char*)currentBar + inf.stride);
-					}
-					barIndex += barW;
-				}
-			}
-			originalBarIndex += (barW << 2);
-			//it is ok to load data beyond index 255, as after the first fft's 256
-			//elements there are the 256 multipliers ;)
-			_prev = vld1q_f32(fft + (i + 3));
-		}
-	}
-}
-*/

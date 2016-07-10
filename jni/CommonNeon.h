@@ -37,17 +37,16 @@
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
 
 //to make the math easier COLORS has 257 int's (from 0 to 256) for each different color
-extern const unsigned short COLORS[] __attribute__((aligned(16)));
+extern const uint16_t COLORS[] __attribute__((aligned(16)));
 
 extern float floatBuffer[] __attribute__((aligned(16)));
 extern float previousM[] __attribute__((aligned(16)));
-#ifdef _MAY_HAVE_NEON_
-extern unsigned int neonMode, neonDone;
-extern int intBuffer[] __attribute__((aligned(16)));
+#ifdef FPLAY_ARM
+extern uint32_t neonMode, neonDone;
+extern int32_t intBuffer[] __attribute__((aligned(16)));
 #endif
 
 extern float commonCoefNew;
-extern unsigned int commonColorIndex, commonColorIndexApplied;
+extern uint32_t commonColorIndex, commonColorIndexApplied;
 
-extern void commonProcessNeon(signed char* bfft, int deltaMillis, int opt);
-//extern void processNeon(signed char* bfft, int deltaMillis);
+extern void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt);

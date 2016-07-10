@@ -51,8 +51,8 @@
 	#define facos acos
 #else
 	#define ftype float
-	#define fint int
-	#define fintabs(A) *((int*)&A) &= 0x7fffffff
+	#define fint int32_t
+	#define fintabs(A) *((int32_t*)&A) &= 0x7fffffff
 	#define fsqrt sqrtf
 	#define fsin sinf
 	#define fcos cosf
@@ -114,7 +114,7 @@ public:
 		result.z = z;
 	}
 
-	int largestAbsComponent() const {
+	int32_t largestAbsComponent() const {
 		ftype xAbs = x, yAbs = y, zAbs = z;
 		fintabs(xAbs);
 		fintabs(yAbs);
@@ -130,7 +130,7 @@ public:
 	}
 
 	static void ortho(const Vector3 &v, Vector3 &result) {
-		int k = v.largestAbsComponent() - 1;
+		int32_t k = v.largestAbsComponent() - 1;
 		if (k < 0)
 			k = 2;
 		result.x = (ftype)0.0;
@@ -179,24 +179,24 @@ public:
 		m[8] = f;
 	}
 
-	void setColumn(int col, const Vector3 &v) {
+	void setColumn(int32_t col, const Vector3 &v) {
 		m[col] = v.x;
 		m[col + 3] = v.y;
 		m[col + 6] = v.z;
 	}
 
 	void scale(ftype f) {
-		for (int i = 0; i < 9; i++)
+		for (int32_t i = 0; i < 9; i++)
 			m[i] *= f;
 	}
 
 	void plusEquals(const Matrix3x3 &b) {
-		for (int i = 0; i < 9; i++)
+		for (int32_t i = 0; i < 9; i++)
 			m[i] += b.m[i];
 	}
 
 	void minusEquals(const Matrix3x3 &b) {
-		for (int i = 0; i < 9; i++)
+		for (int32_t i = 0; i < 9; i++)
 			m[i] -= b.m[i];
 	}
 
@@ -432,7 +432,7 @@ private:
 	Vector3 mz, down, lastGyro;
 	uint64_t sensorTimestampGyro;
 	ftype previousAccelNorm, movingAverageAccelNormChange, filteredGyroTimestep;
-	int numGyroTimestepSamples;
+	int32_t numGyroTimestepSamples;
 	bool timestepFilterInit, gyroFilterValid, alignedToGravity;
 
 public:
@@ -473,7 +473,7 @@ public:
 				dT = (gyroFilterValid ? filteredGyroTimestep : kdTDefault);
 			} else {
 				const ftype kFilterCoeff = (ftype)0.95;
-				const int kMinSamples = 10;
+				const int32_t kMinSamples = 10;
 				if (!timestepFilterInit) {
 					filteredGyroTimestep = dT;
 					numGyroTimestepSamples = 1;
@@ -526,7 +526,7 @@ public:
 			mK.setZero();
 			accObservationFunctionForNumericalJacobian(so3SensorFromWorld, mNu);
 			const ftype eps = (ftype)1.0E-7;
-			for (int dof = 0; dof < 3; dof++) {
+			for (int32_t dof = 0; dof < 3; dof++) {
 				Vector3 delta;
 				delta.setZero();
 				delta.c[dof] = eps;

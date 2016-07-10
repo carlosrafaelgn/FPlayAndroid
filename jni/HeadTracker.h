@@ -66,7 +66,7 @@ public:
 		mTracker.reset();
 	}
 
-    void onSensorData(uint64_t sensorTimestamp, int sensorType, const Vector3& values) {
+    void onSensorData(uint64_t sensorTimestamp, int32_t sensorType, const Vector3& values) {
 		if (sensorType == 1) {
 			mTracker.processAcc(values);
 		} else {
@@ -81,8 +81,8 @@ public:
 
 		mTracker.computePredictedGLMatrix(secondsToPredictForward);
 
-		for (int r = 0; r < 3; ++r) {
-			for (int c = 0; c < 3; ++c)
+		for (int32_t r = 0; r < 3; ++r) {
+			for (int32_t c = 0; c < 3; ++c)
 				headView4x4[(c << 2) + r] = (float)mTracker.rotationMatrix.c[r][c];
 		}
 	}

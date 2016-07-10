@@ -44,9 +44,9 @@
 class FFTNR {
 private:
 	static float tblW[56];
-	static unsigned int tblBr[FFT_SIZE >> 1];
-	static void Complex(float* data, int isign);
-	static void Real(float* data, int isign);
+	static uint32_t tblBr[FFT_SIZE >> 1];
+	static void Complex(float* data, int32_t isign);
+	static void Real(float* data, int32_t isign);
 public:
 	static void Initialize();
 	inline static void Forward(float* data) { Real(data, 1); }
@@ -68,10 +68,10 @@ public:
 // In addition, the first and last bins (bin 0 and bin FFT_SIZE/2) must be divided again by 2
 
 float FFTNR::tblW[56];
-unsigned int FFTNR::tblBr[FFT_SIZE >> 1];
+uint32_t FFTNR::tblBr[FFT_SIZE >> 1];
 
 void FFTNR::Initialize() {
-	int i, j = 1, m, c = 0, mmax;
+	int32_t i, j = 1, m, c = 0, mmax;
 	double theta, wpr;
 	for (i = 1; i < FFT_SIZE; i += 2) {
 		if (j > i) {
@@ -113,10 +113,10 @@ void FFTNR::Initialize() {
 	tblW[52] = -tblW[51]; //wi, wpi (-1)
 }
 
-void FFTNR::Complex(float* data, int isign) {
+void FFTNR::Complex(float* data, int32_t isign) {
 	const float *tblr = tblW;
 	const float *tbli = ((isign == 1) ? (tblW + 16) : (tblW + 32));
-	int mmax, m, istep, i, j;
+	int32_t mmax, m, istep, i, j;
 	float wr, wi, tempr, tempi, dj1, dj;
 	m = 0;
 	//bit reversal swap
@@ -158,7 +158,7 @@ void FFTNR::Complex(float* data, int isign) {
 		wr = 1.0f + wpr;
 		wi = wpi;
 		//---------------------------------------------
-		const int halfmmax = ((mmax >> 1) + 1);
+		const int32_t halfmmax = ((mmax >> 1) + 1);
 		for (m = 3; m < halfmmax; m += 2) {
 			for (i = m; i <= FFT_SIZE; i += istep) {
 				j = i + mmax;
@@ -213,7 +213,7 @@ void FFTNR::Complex(float* data, int isign) {
 	}
 }
 
-void FFTNR::Real(float* data, int isign) {
+void FFTNR::Real(float* data, int32_t isign) {
 	float c2, wpi;
 	if (isign == 1) {
 		c2 = -0.5f;
@@ -226,11 +226,11 @@ void FFTNR::Real(float* data, int isign) {
 	const float wpr = tblW[49];
 	float wr = tblW[50];
 	float wi = wpi;
-	for (int i = 1; i < (FFT_SIZE >> 2); i++) {
-		const int i1 = (i << 1);
-		const int i2 = 1 + i1;
-		const int i3 = (FFT_SIZE - i1);
-		const int i4 = 1 + i3;
+	for (int32_t i = 1; i < (FFT_SIZE >> 2); i++) {
+		const int32_t i1 = (i << 1);
+		const int32_t i2 = 1 + i1;
+		const int32_t i3 = (FFT_SIZE - i1);
+		const int32_t i4 = 1 + i3;
 		float d1, d2, d3, d4;
 		const float h1r = 0.5f * ((d1 = data[i1]) + (d3 = data[i3]));
 		const float h1i = 0.5f * ((d2 = data[i2]) - (d4 = data[i4]));
@@ -254,7 +254,7 @@ void FFTNR::Real(float* data, int isign) {
 		data[1] = (0.5f * (tempr - data[1]));
 		Complex(data, -1);
 		const float n2rev = (float)tblW[48];
-		for (int i = FFT_SIZE - 1; i >= 0; i--)
+		for (int32_t i = FFT_SIZE - 1; i >= 0; i--)
 			data[i] *= n2rev;
 	}
 }
