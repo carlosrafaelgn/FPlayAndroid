@@ -44,6 +44,7 @@ int32_t *resampleCoeffINT;
 uint32_t *resampleAdvance;
 //float resampleY[20] __attribute__((aligned(16)));
 int32_t resampleYINT[20] __attribute__((aligned(16)));
+static int32_t *resampleCoeffOriginalINT;
 static RESAMPLEPROC resampleProc;
 
 uint32_t resampleNull(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
@@ -501,9 +502,11 @@ void resampleComputeCoeffsINT() {
 	}
 
 	resampleCoeffLen = factDst * 20;
-	if (resampleCoeffINT)
-		delete resampleCoeffINT;
-	resampleCoeffINT = new int32_t[resampleCoeffLen];
+	if (resampleCoeffOriginalINT)
+		delete resampleCoeffOriginalINT;
+	resampleCoeffOriginalINT = new int32_t[resampleCoeffLen + 4];
+	//align memory on a 16-byte boundary (luckly, 20 * sizeof(int32_t) is a multiple of 16)
+	resampleCoeffINT = (int32_t*)((size_t)resampleCoeffOriginalINT + 16 - ((size_t)resampleCoeffOriginalINT & 15));
 	if (resampleAdvance)
 		delete resampleAdvance;
 	resampleAdvance = new uint32_t[factDst];
@@ -511,7 +514,7 @@ void resampleComputeCoeffsINT() {
 	const double src = (double)factSrc;
 	const double dst = (double)factDst;
 	uint32_t lastPhaseI = 0;
-	int32_t* coeff = resampleCoeffINT + 20;
+	int32_t *coeff = resampleCoeffINT + 20;
 
 	for (uint32_t i = 1; i <= factDst; i++) {
 		const double phase = ((double)i * src) / dst;
@@ -610,6 +613,7 @@ void resetResampler() {
 void initializeResampler() {
 	//resampleCoeff = 0;
 	resampleCoeffINT = 0;
+	resampleCoeffOriginalINT = 0;
 	resampleAdvance = 0;
 	resetResampler();
 }
@@ -619,9 +623,10 @@ void terminateResampler() {
 	//	delete resampleCoeff;
 	//	resampleCoeff = 0;
 	//}
-	if (resampleCoeffINT) {
-		delete resampleCoeffINT;
-		resampleCoeffINT = 0;
+	resampleCoeffINT = 0;
+	if (resampleCoeffOriginalINT) {
+		delete resampleCoeffOriginalINT;
+		resampleCoeffOriginalINT = 0;
 	}
 	if (resampleAdvance) {
 		delete resampleAdvance;
