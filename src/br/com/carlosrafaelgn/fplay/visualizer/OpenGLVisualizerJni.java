@@ -107,7 +107,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private volatile int error;
 	private volatile Uri selectedUri;
 	private boolean browsing;
-	private int colorIndex, speed, viewWidth, viewHeight, diffusion, riseSpeed, ignoreInput, opt;
+	private int colorIndex, speed, viewWidth, viewHeight, diffusion, riseSpeed, ignoreInput;
 	private EGLConfig config;
 	private Activity activity;
 	private WindowManager windowManager;
@@ -117,6 +117,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	private SurfaceTexture cameraTexture;
 	private int cameraNativeOrientation;
 	private volatile boolean cameraOK;
+
+	public OpenGLVisualizerJni(Context context) {
+		super(context);
+		type = 0;
+	}
 
 	public OpenGLVisualizerJni(Activity activity, boolean landscape, Intent extras) {
 		super(activity);
@@ -131,7 +136,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 2);
 		ignoreInput = 0;
-		opt = (((type == TYPE_SPECTRUM || type == TYPE_SPECTRUM2)) ? (DATA_FFT | DATA_FFT_HQ) : DATA_FFT);
 		this.activity = activity;
 
 		//initialize these with default values to be used in
@@ -1016,7 +1020,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				else
 					visualizer.getWaveForm(waveform);
 			}
-			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | opt);
+			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | DATA_FFT);
 			ignoreInput ^= IGNORE_INPUT;
 			//requestRender();
 		}

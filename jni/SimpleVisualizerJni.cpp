@@ -37,28 +37,8 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
-
-#if defined(__arm__) || defined(__aarch64__)
-	//arm or arm64
-	#define FPLAY_ARM
-#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	//x86 or x86_64
-	#define FPLAY_X86
-#else
-	#error ("Unknown platform!")
-#endif
-
-#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
-	//arm64 or x86_64
-	#define FPLAY_64_BITS
-#else
-	#define FPLAY_32_BITS
-#endif
-
-#ifdef FPLAY_ARM
 #include <errno.h>
 #include <fcntl.h>
-#endif
 
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html

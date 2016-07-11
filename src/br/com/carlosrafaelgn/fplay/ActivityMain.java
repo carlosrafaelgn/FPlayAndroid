@@ -626,9 +626,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		s2.add(0, MNU_VISUALIZER_SPECTRUM, 0, "Spectrum")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
-		s2.add(0, MNU_VISUALIZER_SPECTRUM2, 1, "Spectrum 2")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+		if (BuildConfig.X)
+			s2.add(0, MNU_VISUALIZER_SPECTRUM2, 1, "Spectrum 2")
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
 		s2.add(0, MNU_VISUALIZER_SPIN, 2, "Spinning Rainbow")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
@@ -693,7 +694,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()));
 			break;
 		case MNU_VISUALIZER_SPECTRUM2:
-			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_SPECTRUM2));
+			if (BuildConfig.X)
+				getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_SPECTRUM2));
 			break;
 		case MNU_VISUALIZER_LIQUID:
 			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_LIQUID));

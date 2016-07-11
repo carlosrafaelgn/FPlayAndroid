@@ -31,22 +31,31 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
+#if defined(__arm__) || defined(__aarch64__)
+	//arm or arm64
+	#define FPLAY_ARM
+#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+	//x86 or x86_64
+	#define FPLAY_X86
+#else
+	#error ("Unknown platform!")
+#endif
+
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+	//arm64 or x86_64
+	#define FPLAY_64_BITS
+#else
+	#define FPLAY_32_BITS
+#endif
+
 #include "Constants.h"
 
 //for the alignment:
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
 
-//to make the math easier COLORS has 257 int's (from 0 to 256) for each different color
-extern const uint16_t COLORS[] __attribute__((aligned(16)));
-
 extern float floatBuffer[] __attribute__((aligned(16)));
 extern float previousM[] __attribute__((aligned(16)));
-#ifdef FPLAY_ARM
-extern uint32_t neonMode, neonDone;
-extern int32_t intBuffer[] __attribute__((aligned(16)));
-#endif
-
 extern float commonCoefNew;
-extern uint32_t commonColorIndex, commonColorIndexApplied;
+extern int32_t intBuffer[] __attribute__((aligned(16)));
 
-extern void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt);
+extern void commonProcessNeon(int8_t *bfft, float *fftData, int32_t deltaMillis, int32_t opt);

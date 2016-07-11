@@ -95,7 +95,7 @@ static const char* const textureFShader = "precision mediump float; varying vec2
 static const char* const textureFShaderOES = "#extension GL_OES_EGL_image_external : require\nprecision mediump float; varying vec2 vTexCoord; uniform samplerExternalOES texColorOES; void main() { gl_FragColor = texture2D(texColorOES, vTexCoord); }";
 
 static const char* const immersiveParticleVShader = "attribute vec2 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; uniform mat4 mvpMat; void main() {" \
-"int32_t idx = int32_t(inIndex);" \
+"int idx = int(inIndex);" \
 "vec2 pos = posArr[idx];" \
 /*start with the original computation*/ \
 "float a = mix(0.0625, 0.484375, amplitude)," \
@@ -537,7 +537,7 @@ int32_t glCreateLiquid() {
 			"vAmpl = 0.0;" \
 			"gl_Position = vec4(inPosition, 1.0, 0.0, 1.0);" \
 		"} else {" \
-			"int32_t i = int32_t(inTexCoord);" \
+			"int i = int(inTexCoord);" \
 			"absy = amplitude[i];" \
 			"absy += (amplitude[i + 1] - absy) * smoothstep(0.0, 1.0, fract(inTexCoord));" \
 			"vAmpl = 1.0;" \
@@ -706,7 +706,7 @@ int32_t glCreateSpin(int32_t estimatedWidth, int32_t estimatedHeight, int32_t dp
 		"float d = inPosition.z;" \
 
 		"vTexCoord = inTexCoord.xy;" \
-		"float angle = inTexCoord.z - (0.25 * amplitude[int32_t(d * 31.9375)]);" \
+		"float angle = inTexCoord.z - (0.25 * amplitude[int(d * 31.9375)]);" \
 
 		"dist = d * d * (0.5 + (1.5 * amplitude[2]));" \
 
@@ -804,7 +804,7 @@ int32_t glCreateParticle(int32_t hasGyro) {
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
 		"attribute vec4 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; void main() {" \
-		"int32_t idx = int32_t(inIndex);" \
+		"int idx = int(inIndex);" \
 		"vec2 pos = posArr[idx];" \
 		"float a = mix(0.0625, 0.34375, amplitude);" \
 		"float bottom = 1.0 - clamp(pos.y, -1.0, 1.0);" \
@@ -1011,11 +1011,11 @@ int32_t glCreateSpectrum2() {
 			"float ampl;" \
 			/*mirror effect has to be simulated by hand*/ \
 			"if (absx < 2.0) {" \
-				"ampl = amplitude[int32_t(floor(127.0 * (2.0 - absx)))];" \
+				"ampl = amplitude[int(floor(127.0 * (2.0 - absx)))];" \
 				"absx -= 2.0;"
 			"} else {" \
 				"absx -= 2.0;"
-				"ampl = amplitude[int32_t(floor(127.0 * absx))];" \
+				"ampl = amplitude[int(floor(127.0 * absx))];" \
 			"}" \
 			"if (inPosition > 0.0) {" \
 				/*top/bottom points*/ \
@@ -1168,7 +1168,7 @@ int32_t glCreateSpectrum() {
 		//https://www.khronos.org/registry/gles/specs/2.0/GLSL_ES_Specification_1.0.17.pdf page 111-113
 		"attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
 			"float absx = abs(inPosition);" \
-			"float ampl = amplitude[int32_t(floor(63.5 * (absx - 1.0)))];" \
+			"float ampl = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
 			"gl_Position = vec4(absx - 2.0, sign(inPosition) * ampl, 0.0, 1.0);" \
 			"vAmpl = ampl;" \
 		"}",
@@ -1310,7 +1310,7 @@ int32_t JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int32_t bgColor, i
 	glDisable(GL_BLEND);
 	glGetError(); //clear any eventual error flags
 
-	int32_t ret, hq = 0;
+	int32_t ret;
 
 	switch (type) {
 	case TYPE_LIQUID:
@@ -1327,18 +1327,16 @@ int32_t JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int32_t bgColor, i
 		ret = glCreateImmersiveParticle(hasGyro);
 		break;
 	case TYPE_SPECTRUM2:
-		hq = 1;
 		commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside drawSpectrumXXX()
 		ret = glCreateSpectrum2();
 		break;
 	default:
-		hq = 1;
 		commonColorIndexApplied = 4; //to control the result of (commonColorIndexApplied != commonColorIndex) inside drawSpectrumXXX()
 		ret = glCreateSpectrum();
 		break;
 	}
 
-	commonUpdateMultiplier(env, clazz, 0, hq);
+	commonUpdateMultiplier(env, clazz, 0, 0);
 
 	glReleaseShaderCompiler();
 

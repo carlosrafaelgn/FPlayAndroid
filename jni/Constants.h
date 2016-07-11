@@ -35,6 +35,9 @@
 #define LOG_FFT_SIZE 10
 #define MAX_FFT_SIZE 1024
 
+#define FFT_SIZE 1024 //FFT_SIZE must be a power of 2 <= 65536
+#define QUARTER_FFT_SIZE (FFT_SIZE / 4)
+
 #define COEF_SPEED_0 (0.0625f / 16.0f) //0.0625f @ 60fps (~16ms)
 #define COEF_SPEED_1 (0.09375f / 16.0f) //0.09375 @ 60fps (~16ms)
 #define COEF_SPEED_2 (0.140625f / 16.0f) //0.140625f @ 60fps (~16ms)
