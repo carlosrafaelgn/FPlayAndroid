@@ -1765,9 +1765,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final int FEATURE_PROCESSOR_NEON = 0x0002;
 	public static final int FEATURE_PROCESSOR_X86 = 0x0004;
 	public static final int FEATURE_PROCESSOR_SSE = 0x0008;
-	public static final int FEATURE_PROCESSOR_64_BITS = 0x0010;
-	public static final int FEATURE_DECODING_NATIVE = 0x0020;
-	public static final int FEATURE_DECODING_DIRECT = 0x0040;
+	public static final int FEATURE_PROCESSOR_SSE41 = 0x0010;
+	public static final int FEATURE_PROCESSOR_64_BITS = 0x0020;
+	public static final int FEATURE_DECODING_NATIVE = 0x0040;
+	public static final int FEATURE_DECODING_DIRECT = 0x0080;
 
 	public static int getFeatures() {
 		return MediaContext.getFeatures();

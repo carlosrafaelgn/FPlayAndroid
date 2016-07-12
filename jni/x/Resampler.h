@@ -36,6 +36,8 @@ typedef uint32_t (*RESAMPLEPROC)(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 #ifdef FPLAY_ARM
 //extern uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed);
 extern uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed);
+#elif defined(FPLAY_64_BITS)
+extern uint32_t resampleLagrangeSSE41INT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed);
 #endif
 
 uint32_t resamplePendingAdvances, resampleCoeffLen, resampleCoeffIdx, resampleAdvanceIdx;
@@ -109,6 +111,7 @@ uint32_t resampleNullMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t*
 //
 //I hope all this works well :)
 //------------------------------------------------------------------------
+#if (defined(FPLAY_ARM) || defined(FPLAY_32_BITS))
 /*uint32_t resampleLagrange(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
 	register uint32_t usedSrc = 0, usedDst = 0;
@@ -271,6 +274,7 @@ uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16
 	srcFramesUsed = usedSrc;
 	return usedDst;
 }
+#endif
 
 /*uint32_t resampleLagrangeMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
@@ -599,9 +603,12 @@ void resetResampler() {
 #ifdef FPLAY_ARM
 			//resampleProc = ((srcChannelCount == 2) ? (neonMode ? resampleLagrangeNeon : resampleLagrange) : resampleLagrangeMono);
 			resampleProc = ((srcChannelCount == 2) ? (neonMode ? resampleLagrangeNeonINT : resampleLagrangeINT) : resampleLagrangeMonoINT);
-#else
+#elif defined(FPLAY_32_BITS)
 			//resampleProc = ((srcChannelCount == 2) ? resampleLagrange : resampleLagrangeMono);
 			resampleProc = ((srcChannelCount == 2) ? resampleLagrangeINT : resampleLagrangeMonoINT);
+#else
+			//resampleProc = ((srcChannelCount == 2) ? resampleLagrange : resampleLagrangeMono);
+			resampleProc = ((srcChannelCount == 2) ? resampleLagrangeSSE41INT : resampleLagrangeMonoINT);
 #endif
 			return;
 		}

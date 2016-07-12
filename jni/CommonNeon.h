@@ -58,4 +58,4 @@ extern float previousM[] __attribute__((aligned(16)));
 extern float commonCoefNew;
 extern int32_t intBuffer[] __attribute__((aligned(16)));
 
-extern void commonProcessNeon(int8_t *bfft, float *fftData, int32_t deltaMillis, int32_t opt);
+extern void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt);

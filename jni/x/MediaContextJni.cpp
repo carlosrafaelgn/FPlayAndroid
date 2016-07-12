@@ -44,9 +44,10 @@
 #define FEATURE_PROCESSOR_NEON 0x0002
 #define FEATURE_PROCESSOR_X86 0x0004
 #define FEATURE_PROCESSOR_SSE 0x0008
-#define FEATURE_PROCESSOR_64_BITS 0x0010
-#define FEATURE_DECODING_NATIVE 0x0020
-#define FEATURE_DECODING_DIRECT 0x0040
+#define FEATURE_PROCESSOR_SSE41 0x0010
+#define FEATURE_PROCESSOR_64_BITS 0x0020
+#define FEATURE_DECODING_NATIVE 0x0040
+#define FEATURE_DECODING_DIRECT 0x0080
 
 #if defined(__arm__) || defined(__aarch64__)
 	//arm or arm64
@@ -121,10 +122,11 @@ uint32_t JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 		return FEATURE_PROCESSOR_ARM | neonMode;
 	#endif
 #else
-	//http://developer.android.com/intl/pt-br/ndk/guides/abis.html#x86
-	//All x86 Android devices use at least Atom processors (and all Atom processor have SSE, SSE2, SSE3 support)
+	//https://developer.android.com/ndk/guides/abis.html#x86
+	//https://developer.android.com/ndk/guides/abis.html#86-64
+	//All x86 Android devices use at least Atom processors (all Atom processor have SSE, SSE2, SSE3 support, and all 64-bits Atom have SSE4.1/4.2 support)
 	#ifdef FPLAY_64_BITS
-		return FEATURE_PROCESSOR_X86 | FEATURE_PROCESSOR_SSE | FEATURE_PROCESSOR_64_BITS;
+		return FEATURE_PROCESSOR_X86 | FEATURE_PROCESSOR_SSE | FEATURE_PROCESSOR_SSE41 | FEATURE_PROCESSOR_64_BITS;
 	#else
 		return FEATURE_PROCESSOR_X86 | FEATURE_PROCESSOR_SSE;
 	#endif

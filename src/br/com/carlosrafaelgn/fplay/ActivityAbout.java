@@ -103,9 +103,11 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 						(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits)" : " (32 bits)"));
 		else if ((features & Player.FEATURE_PROCESSOR_X86) != 0)
 			sb.append(
-				((features & Player.FEATURE_PROCESSOR_SSE) != 0) ?
-					(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits + SSE)" : " (32 bits + SSE)") :
-						(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits)" : " (32 bits)"));
+				((features & Player.FEATURE_PROCESSOR_SSE41) != 0) ?
+					(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits + SSE4.1)" : " (32 bits + SSE4.1)") :
+						(((features & Player.FEATURE_PROCESSOR_SSE) != 0) ?
+							(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits + SSE)" : " (32 bits + SSE)") :
+								(((features & Player.FEATURE_PROCESSOR_64_BITS) != 0) ? " (64 bits)" : " (32 bits)")));
 		sb.append("\nAPI");
 		sb.append(UI.collon());
 		sb.append(Build.VERSION.SDK_INT);

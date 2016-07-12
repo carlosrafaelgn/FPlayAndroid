@@ -31,7 +31,7 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-//http://developer.android.com/intl/pt-br/ndk/guides/audio/opensl-for-android.html#da
+//http://developer.android.com/ndk/guides/audio/opensl-for-android.html#da
 //... deprecated Android-specific extension to OpenSL ES 1.0.1 for decoding an encoded stream to PCM without immediate playback
 //DECODING AUDIO WITH OPENSL ES IS DEPRECATED IN ANDROID!!!
 //To decode an encoded stream to PCM but not play back immediately, for apps running on Android 4.x (API levels 16–20), we
