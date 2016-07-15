@@ -109,8 +109,8 @@ void swapShorts(int16_t* buffer, uint32_t sizeInShorts) {
 	}
 }
 
-#include "Resampler.h"
 #include "Effects.h"
+#include "Resampler.h"
 #include "MediaCodec.h"
 #include "OpenSL.h"
 
@@ -280,7 +280,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLTerminate", "()V", (void*)openSLTerminate},
 		{"openSLSetVolumeInMillibels", "(I)V", (void*)openSLSetVolumeInMillibels},
 		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
-		{"openSLCopyVisualizerData", "(J)V", (void*)openSLCopyVisualizerData},
 		{"openSLWriteNative", "(JII)J", (void*)openSLWriteNative},
 		{"openSLWrite", "([BLjava/nio/ByteBuffer;III)J", (void*)openSLWrite}
 	};

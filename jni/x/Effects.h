@@ -74,12 +74,15 @@ equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
 equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 
 #ifdef FPLAY_X86
-	#include <pmmintrin.h>
-	//https://software.intel.com/sites/landingpage/IntrinsicsGuide/
+static const uint32_t effectsAbsSample[4] __attribute__((aligned(16))) = { 0x7FFFFFFF, 0x7FFFFFFF, 0, 0 };
+#include <xmmintrin.h> //SSE
+#include <emmintrin.h> //SSE2
+#include <pmmintrin.h> //SSE3
+//https://software.intel.com/sites/landingpage/IntrinsicsGuide/
 #else
-	extern void processEqualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
-	extern void processVirtualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
-	extern void processEffectsNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
+extern void processEqualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
+extern void processVirtualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
+extern void processEffectsNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
 #endif
 
 #include "Filter.h"
@@ -204,9 +207,13 @@ void processEqualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuf
 
 #ifdef FPLAY_X86
 	__m128 gainClip = _mm_load_ps(effectsGainClip);
-	__m128 maxAbsSample, tmp2;
-	maxAbsSample = _mm_xor_ps(maxAbsSample, maxAbsSample);
-	tmp2 = _mm_xor_ps(tmp2, tmp2);
+	__m128 maxAbsSample = _mm_setzero_ps();
+#ifdef FPLAY_64_BITS
+	//x86 in 32 bits mode does not have enough registers :(
+	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
+	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
+	const __m128 gainClipMul = _mm_load_ps(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+#endif
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
@@ -247,9 +254,13 @@ void processVirtualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstB
 
 #ifdef FPLAY_X86
 	__m128 gainClip = _mm_load_ps(effectsGainClip);
-	__m128 maxAbsSample, tmp2;
-	maxAbsSample = _mm_xor_ps(maxAbsSample, maxAbsSample);
-	tmp2 = _mm_xor_ps(tmp2, tmp2);
+	__m128 maxAbsSample = _mm_setzero_ps();
+#ifdef FPLAY_64_BITS
+	//x86 in 32 bits mode does not have enough registers :(
+	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
+	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
+	const __m128 gainClipMul = _mm_load_ps(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+#endif
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
@@ -290,9 +301,13 @@ void processEffects(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffe
 
 #ifdef FPLAY_X86
 	__m128 gainClip = _mm_load_ps(effectsGainClip);
-	__m128 maxAbsSample, tmp2;
-	maxAbsSample = _mm_xor_ps(maxAbsSample, maxAbsSample);
-	tmp2 = _mm_xor_ps(tmp2, tmp2);
+	__m128 maxAbsSample = _mm_setzero_ps();
+#ifdef FPLAY_64_BITS
+	//x86 in 32 bits mode does not have enough registers :(
+	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
+	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
+	const __m128 gainClipMul = _mm_load_ps(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+#endif
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;

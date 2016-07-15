@@ -56,6 +56,8 @@ void processEqualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* ds
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
+	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
+	const float32x2_t gainClipMul = vld1_f32(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
@@ -78,6 +80,8 @@ void processVirtualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* 
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
+	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
+	const float32x2_t gainClipMul = vld1_f32(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
@@ -100,6 +104,8 @@ void processEffectsNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstB
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
+	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
+	const float32x2_t gainClipMul = vld1_f32(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
@@ -133,7 +139,15 @@ extern int32_t resampleYINT[] __attribute__((aligned(16)));
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
 
-		memmove(resampleY, resampleY + 2, 18 * sizeof(float));
+		vst1_f32(resampleYINT, vld1_f32(resampleYINT + 2));
+		vst1_f32(resampleYINT + 2, vld1_f32(resampleYINT + 4));
+		vst1_f32(resampleYINT + 4, vld1_f32(resampleYINT + 6));
+		vst1_f32(resampleYINT + 6, vld1_f32(resampleYINT + 8));
+		vst1_f32(resampleYINT + 8, vld1_f32(resampleYINT + 10));
+		vst1_f32(resampleYINT + 10, vld1_f32(resampleYINT + 12));
+		vst1_f32(resampleYINT + 12, vld1_f32(resampleYINT + 14));
+		vst1_f32(resampleYINT + 14, vld1_f32(resampleYINT + 16));
+		vst1_f32(resampleYINT + 16, vld1_f32(resampleYINT + 18));
 		effectsTemp[0] = (int32_t)srcBuffer[0];
 		effectsTemp[1] = (int32_t)srcBuffer[1];
 		vst1_f32(resampleY + 18, vcvt_f32_s32(*((int32x2_t*)effectsTemp)));
@@ -243,7 +257,15 @@ uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
 
-		memmove(resampleYINT, resampleYINT + 2, 18 * sizeof(int32_t));
+		vst1_s32(resampleYINT, vld1_s32(resampleYINT + 2));
+		vst1_s32(resampleYINT + 2, vld1_s32(resampleYINT + 4));
+		vst1_s32(resampleYINT + 4, vld1_s32(resampleYINT + 6));
+		vst1_s32(resampleYINT + 6, vld1_s32(resampleYINT + 8));
+		vst1_s32(resampleYINT + 8, vld1_s32(resampleYINT + 10));
+		vst1_s32(resampleYINT + 10, vld1_s32(resampleYINT + 12));
+		vst1_s32(resampleYINT + 12, vld1_s32(resampleYINT + 14));
+		vst1_s32(resampleYINT + 14, vld1_s32(resampleYINT + 16));
+		vst1_s32(resampleYINT + 16, vld1_s32(resampleYINT + 18));
 		resampleYINT[18] = (int32_t)srcBuffer[0];
 		resampleYINT[19] = (int32_t)srcBuffer[1];
 
@@ -289,7 +311,7 @@ uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 		out = vmlal_s32(out, vget_high_s32(y8_y9), vget_high_s32(coeff8_coeff9));
 		const int32x2_t outI32 = vqmovn_s64(vshrq_n_s64(out, 30));
 		const int16x4_t outI16 = vqmovn_s32(vcombine_s32(outI32, outI32));
-		*((int32_t*)dstBuffer) = vget_lane_s32(vreinterpret_s32_s16(outI16), 0); //store L and R with a single instruction
+		vst1_lane_s32((int32_t*)dstBuffer, vreinterpret_s32_s16(outI16), 0); //store L and R with a single instruction
 		dstBuffer += 2;
 		usedDst++;
 

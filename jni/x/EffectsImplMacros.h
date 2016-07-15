@@ -51,39 +51,16 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 		/* but, since our a2 was negated and b1 = a1, the formula becomes: */ \
 		/* y(n) = b0.x(n) + b1.(x(n-1) - y(n-1)) + b2.x(n-2) + a2.y(n-2) */ \
 		\
+		/* local = { x_n1_L, x_n1_R, y_n1_L, y_n1_R } */ \
+		__m128 local = _mm_load_ps(samples); \
+		\
+		/* local2 = { x_n2_L, x_n2_R, y_n2_L, y_n2_R } */ \
+		__m128 local2 = _mm_load_ps(samples + 4); \
+		\
 		/* b0_b1 = { b0, b0, b1, b1 } */ \
 		__m128 b0_b1 = _mm_load_ps(equalizerCoefs + (i << 3)); \
 		/* b2_a2 = { b2, b2, -a2, -a2 } */ \
 		__m128 b2_a2 = _mm_load_ps(equalizerCoefs + (i << 3) + 4); \
-		\
-		/* local = { x_n1_L, x_n1_R, y_n1_L, y_n1_R } */ \
-		__m128 local = _mm_load_ps(samples); \
-		\
-		/* tmp = { x_n1_L, x_n1_R, y_n1_L, y_n1_R } */ \
-		__m128 tmp = local; \
-		\
-		/* tmp2 = { y_n1_L, y_n1_R, xxx, xxx } */ \
-		tmp2 = _mm_movehl_ps(tmp2, local); \
-		\
-		/* tmp = { x_n1_L - y_n1_L, x_n1_R - y_n1_R, xxx, xxx } */ \
-		tmp = _mm_sub_ps(tmp, tmp2); \
-		\
-		/* inLR = { L, R, x_n1_L - y_n1_L, x_n1_R - y_n1_R } */ \
-		inLR = _mm_movelh_ps(inLR, tmp); \
-		\
-		/* tmp2 = { x_n2_L, x_n2_R, y_n2_L, y_n2_R } */ \
-		tmp2 = _mm_load_ps(samples + 4); \
-		\
-		/* b0_b1 = { b0 * L, b0 * R, b1 * (x_n1_L - y_n1_L), b1 * (x_n1_R - y_n1_R) } */ \
-		b0_b1 = _mm_mul_ps(b0_b1, inLR); \
-		\
-		/* b2_a2 = { b2 * x_n2_L, b2 * x_n2_R, -a2 * y_n2_L, -a2 * y_n2_R } */ \
-		b2_a2 = _mm_mul_ps(b2_a2, tmp2); \
-		\
-		/* b0_b1 = { (b0 * L) + (b2 * x_n2_L), (b0 * R) + (b2 * x_n2_R), (b1 * (x_n1_L - y_n1_L)) + (-a2 * y_n2_L), (b1 * (x_n1_R - y_n1_R)) + (-a2 * y_n2_R) } */ \
-		b0_b1 = _mm_add_ps(b0_b1, b2_a2); \
-		/* tmp = { (b1 * (x_n1_L - y_n1_L)) + (-a2 * y_n2_L), (b1 * (x_n1_R - y_n1_R)) + (-a2 * y_n2_R), xxx, xxx } */ \
-		tmp = _mm_movehl_ps(tmp, b0_b1); \
 		\
 		/*
 		x_n2_L = local_x_n1_L;
@@ -92,11 +69,28 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 		y_n2_R = local_y_n1_R; */ \
 		_mm_store_ps(samples + 4, local); \
 		\
-		/* tmp = { outL, outR, xxx, xxx } */ \
-		tmp = _mm_add_ps(tmp, b0_b1); \
+		/* inLR = { L, R, x_n1_L, x_n1_R } */ \
+		inLR = _mm_movelh_ps(inLR, local); \
+		/* localI = { 0, 0, y_n1_L, y_n1_R } */ \
+		__m128i localI = _mm_slli_si128(_mm_srli_si128(*((__m128i*)&local), 8), 8); \
+		/* inLR = { L, R, x_n1_L - y_n1_L, x_n1_R - y_n1_R } */ \
+		inLR = _mm_sub_ps(inLR, *((__m128*)&localI)); \
+		\
+		/* b0_b1 = { b0 * L, b0 * R, b1 * (x_n1_L - y_n1_L), b1 * (x_n1_R - y_n1_R) } */ \
+		b0_b1 = _mm_mul_ps(b0_b1, inLR); \
+		\
+		/* b2_a2 = { b2 * x_n2_L, b2 * x_n2_R, -a2 * y_n2_L, -a2 * y_n2_R } */ \
+		b2_a2 = _mm_mul_ps(b2_a2, local2); \
+		\
+		/* b0_b1 = { (b0 * L) + (b2 * x_n2_L), (b0 * R) + (b2 * x_n2_R), (b1 * (x_n1_L - y_n1_L)) + (-a2 * y_n2_L), (b1 * (x_n1_R - y_n1_R)) + (-a2 * y_n2_R) } */ \
+		b0_b1 = _mm_add_ps(b0_b1, b2_a2); \
+		/* inLR = { L, R, (b0 * L) + (b2 * x_n2_L), (b0 * R) + (b2 * x_n2_R) } */ \
+		inLR = _mm_movelh_ps(inLR, b0_b1); \
+		/* tmp = { 0, 0, (b1 * (x_n1_L - y_n1_L)) + (-a2 * y_n2_L), (b1 * (x_n1_R - y_n1_R)) + (-a2 * y_n2_R) } */ \
+		__m128i b0_b1I = _mm_slli_si128(_mm_srli_si128(*((__m128i*)&b0_b1), 8), 8); \
 		\
 		/* inLR = { L, R, outL, outR } */ \
-		inLR = _mm_movelh_ps(inLR, tmp); \
+		inLR = _mm_add_ps(inLR, *((__m128*)&b0_b1I)); \
 		\
 		/*
 		x_n1_L = inL;
@@ -108,11 +102,12 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 		/*
 		inL = outL;
 		inR = outR; */ \
-		inLR = tmp; \
+		inLR = _mm_movehl_ps(inLR, inLR); \
 	}
 
 #define virtualizerX86()
 
+#ifdef FPLAY_32_BITS
 #define floatToShortX86() \
 	/*
 	inL *= gainClip;
@@ -120,24 +115,22 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	inLR = _mm_mul_ps(inLR, gainClip); \
 	\
 	if (effectsMustReduceGain) { \
-		/* gainClip *= effectsGainReductionPerFrame[0]; */ \
-		gainClip = _mm_mul_ps(gainClip, *((__m128*)effectsGainReductionPerFrame)); \
+		effectsGainClip[0] *= effectsGainReductionPerFrame[0]; \
+		effectsGainClip[1] = effectsGainClip[0]; \
+		gainClip = _mm_load_ps(effectsGainClip); \
 	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
-		/*
-		gainClip *= effectsGainRecoveryPerFrame[0];
-		if (gainClip > 1.0f)
-			gainClip = 1.0f; */ \
-		gainClip = _mm_mul_ps(gainClip, *((__m128*)effectsGainRecoveryPerFrame)); \
-		gainClip = _mm_min_ps(gainClip, *((__m128*)effectsGainRecoveryOne)); \
+		effectsGainClip[0] *= effectsGainRecoveryPerFrame[0]; \
+		if (effectsGainClip[0] > 1.0f) \
+			effectsGainClip[0] = 1.0f; \
+		effectsGainClip[1] = effectsGainClip[0]; \
+		gainClip = _mm_load_ps(effectsGainClip); \
 	} \
 	\
 	/*
 	instead of doing the classic a & 0x7FFFFFFF in order to achieve the abs value,
 	I decided to do this (which does not require external memory loads)
 	maxAbsSample = max(maxAbsSample, max(0 - inLR, inLR)) */ \
-	__m128 zero; \
-	zero = _mm_xor_ps(zero, zero); \
-	maxAbsSample = _mm_max_ps(maxAbsSample, _mm_max_ps(_mm_sub_ps(zero, inLR), inLR)); \
+	maxAbsSample = _mm_max_ps(maxAbsSample, _mm_max_ps(_mm_sub_ps(_mm_setzero_ps(), inLR), inLR)); \
 	\
 	/*
 	the final output is the last band's output (or its next band's input)
@@ -149,11 +142,43 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	dstBuffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
 	dstBuffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
 	iLR = _mm_packs_epi32(iLR, iLR); \
-	*((int32_t*)dstBuffer) = _mm_cvtsi128_si32(iLR); \
+	_mm_store_ss((float*)dstBuffer, *((__m128*)&iLR)); \
 	\
 	srcBuffer += 2; \
 	dstBuffer += 2;
-
+#else
+#define floatToShortX86() \
+	/*
+	inL *= gainClip;
+	inR *= gainClip; */ \
+	inLR = _mm_mul_ps(inLR, gainClip); \
+	\
+	/* gainClip *= effectsGainReductionPerFrame or effectsGainRecoveryPerFrame or 1.0f;
+	if (gainClip > 1.0f)
+		gainClip = 1.0f; */ \
+	gainClip = _mm_mul_ps(gainClip, gainClipMul); \
+	gainClip = _mm_min_ps(gainClip, one); \
+	\
+	/*
+	maxAbsSample = max(maxAbsSample, abs(inLR)) */ \
+	maxAbsSample = _mm_max_ps(maxAbsSample, _mm_and_ps(andAbs, inLR)); \
+	\
+	/*
+	the final output is the last band's output (or its next band's input)
+	const int32_t iL = (int32_t)inL;
+	const int32_t iR = (int32_t)inR; */ \
+	__m128i iLR = _mm_cvtps_epi32(inLR); \
+	\
+	/*
+	dstBuffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
+	dstBuffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
+	iLR = _mm_packs_epi32(iLR, iLR); \
+	_mm_store_ss((float*)dstBuffer, *((__m128*)&iLR)); \
+	\
+	srcBuffer += 2; \
+	dstBuffer += 2;
+#endif
+	
 #define footerX86() \
 	if (!effectsGainEnabled) { \
 		effectsMustReduceGain = 0; \
@@ -361,17 +386,11 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	inR *= gainClip; */ \
 	inLR = vmul_f32(inLR, gainClip); \
 	\
-	if (effectsMustReduceGain) { \
-		/* gainClip *= effectsGainReductionPerFrame[0]; */ \
-		gainClip = vmul_f32(gainClip, *((float32x2_t*)effectsGainReductionPerFrame)); \
-	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
-		/*
-		gainClip *= effectsGainRecoveryPerFrame[0];
-		if (gainClip > 1.0f)
-			gainClip = 1.0f; */ \
-		gainClip = vmul_f32(gainClip, *((float32x2_t*)effectsGainRecoveryPerFrame)); \
-		gainClip = vmin_f32(gainClip, *((float32x2_t*)effectsGainRecoveryOne)); \
-	} \
+	/* gainClip *= effectsGainReductionPerFrame or effectsGainRecoveryPerFrame or 1.0f;
+	if (gainClip > 1.0f)
+		gainClip = 1.0f; */ \
+	gainClip = vmul_f32(gainClip, gainClipMul); \
+	gainClip = vmin_f32(gainClip, one); \
 	\
 	maxAbsSample = vmax_f32(maxAbsSample, vabs_f32(inLR)); \
 	\
@@ -385,8 +404,7 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	dstBuffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL));
 	dstBuffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
 	int16x4_t iLRshort = vqmovn_s32(vcombine_s32(iLR, iLR)); \
-	dstBuffer[0] = vget_lane_s16(iLRshort, 0); \
-	dstBuffer[1] = vget_lane_s16(iLRshort, 1); \
+	vst1_lane_s32((int32_t*)dstBuffer, vreinterpret_s32_s16(iLRshort), 0); \
 	\
 	srcBuffer += 2; \
 	dstBuffer += 2;

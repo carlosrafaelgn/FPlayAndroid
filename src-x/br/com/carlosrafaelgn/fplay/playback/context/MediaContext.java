@@ -159,7 +159,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void openSLTerminate();
 	private static native void openSLSetVolumeInMillibels(int volumeInMillibels);
 	private static native int openSLGetHeadPositionInFrames();
-	private static native void openSLCopyVisualizerData(long bufferPtr);
 	private static native long openSLWriteNative(long nativeObj, int offsetInBytes, int sizeInFrames);
 	private static native long openSLWrite(byte[] array, ByteBuffer buffer, int offsetInBytes, int sizeInFrames, int needsSwap);
 
@@ -182,7 +181,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public abstract int getActualBufferSizeInFrames();
 		public abstract int getHeadPositionInFrames();
 		public abstract int getFillThresholdInFrames(int bufferSizeInFrames);
-		public abstract void copyVisualizerData(long bufferPtr);
 		public abstract int commitFinalFrames(int emptyFrames);
 		public abstract int writeNative(long nativeObj, MediaCodecPlayer.OutputBuffer buffer);
 		public abstract int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames);
@@ -308,11 +306,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public int getFillThresholdInFrames(int bufferSizeInFrames) {
 			//the AudioTrack must only start playing when it returns 0
 			return 0x7fffffff;
-		}
-
-		@Override
-		public void copyVisualizerData(long bufferPtr) {
-
 		}
 
 		@Override
@@ -457,11 +450,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				return ((bufferSizeInFrames * 3) >> 2);
 			}
 			return bufferSizeInFrames;
-		}
-
-		@Override
-		public void copyVisualizerData(long bufferPtr) {
-			openSLCopyVisualizerData(bufferPtr);
 		}
 
 		@Override
@@ -1451,13 +1439,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			setVirtualizerStrength(strength);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_VIRTUALIZER_STRENGTH, strength, 0));
-	}
-
-	static void copyVisualizerData(long bufferPtr) {
-		synchronized (engineSync) {
-			if (engine != null)
-				engine.copyVisualizerData(bufferPtr);
-		}
 	}
 
 	public static MediaPlayerBase createMediaPlayer() {

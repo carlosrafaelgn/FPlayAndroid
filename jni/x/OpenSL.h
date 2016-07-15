@@ -349,16 +349,6 @@ uint32_t JNICALL openSLGetHeadPositionInFrames(JNIEnv* env, jclass clazz) {
 	return headPositionInFrames;
 }
 
-void JNICALL openSLCopyVisualizerData(JNIEnv* env, jclass clazz, int64_t bufferPtr) {
-	if (!fullBuffer || !bqPlayerBufferQueue || !bufferPtr)
-		return;
-
-	const uint32_t localBufferReadIndex = bufferReadIndex;
-
-	//copy 1024 samples from fullBuffer to bufferPtr, starting at the
-	//offset pointed to by bufferDescriptors[localBufferReadIndex]
-}
-
 int64_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj, uint32_t offsetInBytes, uint32_t sizeInFrames) {
 	if (!fullBuffer || !bqPlayerBufferQueue || (nativeObj && !((MediaCodec*)nativeObj)->buffer))
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
