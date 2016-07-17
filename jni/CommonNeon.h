@@ -48,6 +48,8 @@
 	#define FPLAY_32_BITS
 #endif
 
+#include <inttypes.h>
+
 #include "Constants.h"
 
 //for the alignment:

@@ -294,7 +294,9 @@ if (!neonMode) {
 	float* const fft = floatBuffer;
 	const float* const multiplier = floatBuffer + QUARTER_FFT_SIZE;
 
-	const float coefNew = commonCoefNew * (float)deltaMillis;
+	float coefNew = commonCoefNew * (float)deltaMillis;
+	if (coefNew > 1.0f)
+		coefNew = 1.0f;
 	const float coefOld = 1.0f - coefNew;
 
 	if ((opt & IGNORE_INPUT)) {
@@ -304,7 +306,7 @@ if (!neonMode) {
 			if (m < old)
 				m = (coefNew * m) + (coefOld * old);
 			fft[i] = m;
-			//v goes from 0 to 32768+ (inclusive)
+			//m goes from 0 to 32768+ (inclusive)
 			const uint32_t v = ((uint32_t)m) >> 7;
 			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
 		}
@@ -320,7 +322,7 @@ if (!neonMode) {
 			if (m < old)
 				m = (coefNew * m) + (coefOld * old);
 			fft[i] = m;
-			//v goes from 0 to 32768+ (inclusive)
+			//m goes from 0 to 32768+ (inclusive)
 			const uint32_t v = ((uint32_t)m) >> 7;
 			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
 		}*/
@@ -336,7 +338,7 @@ if (!neonMode) {
 			if (m < old)
 				m = (coefNew * m) + (coefOld * old);
 			fft[i] = m;
-			//v goes from 0 to 32768+ (inclusive)
+			//m goes from 0 to 32768+ (inclusive)
 			const uint32_t v = ((uint32_t)m) >> 7;
 			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
 		}

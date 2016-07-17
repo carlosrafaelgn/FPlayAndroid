@@ -124,7 +124,7 @@ uint32_t JNICALL getProcessorFeatures(JNIEnv* env, jclass clazz) {
 #else
 	//https://developer.android.com/ndk/guides/abis.html#x86
 	//https://developer.android.com/ndk/guides/abis.html#86-64
-	//All x86 Android devices use at least Atom processors (all Atom processor have SSE, SSE2, SSE3 support, and all 64-bits Atom have SSE4.1/4.2 support)
+	//All x86 Android devices use at least Atom processors (all Atom processor have SSE, SSE2, SSE3 and SSSE3 support, and all 64-bits Atom have SSE4.1/4.2 support)
 	#ifdef FPLAY_64_BITS
 		return FEATURE_PROCESSOR_X86 | FEATURE_PROCESSOR_SSE | FEATURE_PROCESSOR_SSE41 | FEATURE_PROCESSOR_64_BITS;
 	#else
