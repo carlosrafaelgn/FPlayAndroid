@@ -51,11 +51,45 @@
 static const int8_t evenOddIndices[16] __attribute__((aligned(16))) = { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
 #endif
 
-void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt) {
-	float *fft = floatBuffer;
-	const float *multiplier = floatBuffer + QUARTER_FFT_SIZE;
-	uint8_t *processedData = (uint8_t*)(floatBuffer + (QUARTER_FFT_SIZE << 1));
-	float *previousM = ::previousM;
+void doFftNeon(int32_t *workspace, uint8_t *outFft) {
+#ifdef FPLAY_ARM
+	for (int32_t i = 0; i < (CAPTURE_SIZE >> 1); i += 8) {
+		int16x8_t w = vld1q_s16((int16_t*)workspace);
+		workspace += 4;
+		w = vshrq_n_s16(w, 4);
+		//w = { im, re, im, re, im, re, im, re }
+		w = vabsq_s16(w);
+		//w = { re, im, re, im, re, im, re, im }
+		w = vrev32q_s16(w);
+		const uint8x8_t o = vqmovn_u16(vreinterpretq_u16_s16(w));
+		vst1_u8(outFft, o);
+		outFft += 8;
+	}
+#else
+	for (int32_t i = 0; i < (CAPTURE_SIZE >> 1); i += 8) {
+		__m128i w = _mm_load_si128((const __m128i*)workspace);
+		workspace += 4;
+		w = _mm_srai_epi16(w, 4);
+		//w = { im, re, im, re, im, re, im, re }
+		w = _mm_abs_epi16(w);
+		//w = { re, im, re, im, im, re, im, re }
+		w = _mm_shufflelo_epi16(w, 177); //177 = 1011 0001
+		//w = { re, im, re, im, re, im, re, im }
+		w = _mm_shufflehi_epi16(w, 177); //177 = 1011 0001
+		const __m128i o = _mm_packus_epi16(w, w);
+		//store 8 bytes at once
+		_mm_store_sd((double*)outFft, _mm_castsi128_pd(o));
+		outFft += 8;
+	}
+#endif
+}
+
+void commonProcessNeon(int32_t deltaMillis, int32_t opt) {
+	float *fft = _fft;
+	const float *multiplier = _multiplier;
+	float *previousM = _previousM;
+	uint8_t *processedData = _processedData;
+	uint8_t *fftI = _fftI;
 
 	float tmpCoefNew = commonCoefNew * (float)deltaMillis;
 	if (tmpCoefNew > 1.0f)
@@ -176,24 +210,19 @@ void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt) {
 		for (int32_t i = 0; i < QUARTER_FFT_SIZE; i += 8) {
 			//all this initial code is just to compute m
 
-			//bfft[i] stores values from 0 to -128/127 (inclusive)
-			intBuffer[0] = ((int32_t*)bfft)[0];
-			intBuffer[1] = ((int32_t*)bfft)[1];
-			intBuffer[2] = ((int32_t*)bfft)[2];
-			intBuffer[3] = ((int32_t*)bfft)[3];
-			bfft += 16;
-
+			//fftI[i] stores values from 0 to 255 (inclusive)
 			//[0] = re re re re re re re re
 			//[1] = im im im im im im im im
-			const int8x8x2_t re_im = vld2_s8((int8_t*)intBuffer);
+			const uint8x8x2_t re_im = vld2_u8(fftI);
+			fftI += 16;
 
-			const int16x8_t re16 = vmovl_s8(re_im.val[0]);
-			const int16x8_t im16 = vmovl_s8(re_im.val[1]);
+			const uint16x8_t re16 = vmovl_u8(re_im.val[0]);
+			const uint16x8_t im16 = vmovl_u8(re_im.val[1]);
 
-			const int32x4_t re0 = vmovl_s16(vget_low_s16(re16));
-			const int32x4_t re1 = vmovl_s16(vget_high_s16(re16));
-			const int32x4_t im0 = vmovl_s16(vget_low_s16(im16));
-			const int32x4_t im1 = vmovl_s16(vget_high_s16(im16));
+			const int32x4_t re0 = vreinterpretq_s32_u32(vmovl_u16(vget_low_u16(re16)));
+			const int32x4_t re1 = vreinterpretq_s32_u32(vmovl_u16(vget_high_u16(re16)));
+			const int32x4_t im0 = vreinterpretq_s32_u32(vmovl_u16(vget_low_u16(im16)));
+			const int32x4_t im1 = vreinterpretq_s32_u32(vmovl_u16(vget_high_u16(im16)));
 
 			//amplSq = (re * re) + (im * im)
 			const float32x4_t amplSq0 = vcvtq_f32_s32(vmlaq_s32(vmulq_s32(re0, re0), im0, im0));
@@ -283,6 +312,7 @@ void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt) {
 			vst1q_f32(fft + 4, m1);
 			fft += 8;
 
+			//m goes from 0 to 32768+ (inclusive)
 			uint32x4_t mI0 = vcvtq_u32_f32(m0);
 			uint32x4_t mI1 = vcvtq_u32_f32(m1);
 
@@ -304,39 +334,44 @@ void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt) {
 		for (int32_t i = 0; i < QUARTER_FFT_SIZE; i += 8) {
 			//all this initial code is just to compute m
 
-			//bfft[i] stores values from 0 to -128/127 (inclusive)
-			intBuffer[0] = ((int32_t*)bfft)[0];
-			intBuffer[1] = ((int32_t*)bfft)[1];
-			intBuffer[2] = ((int32_t*)bfft)[2];
-			intBuffer[3] = ((int32_t*)bfft)[3];
-			bfft += 16;
-
+			//fftI[i] stores values from 0 to 255 (inclusive)
 			//re_im_interleaved = { re, im, re, im, re, im, re, im, re, im, re, im, re, im, re, im }
-			const __m128i re_im_interleaved = _mm_load_si128((const __m128i*)intBuffer);
+			const __m128i re_im_interleaved = _mm_load_si128((const __m128i*)fftI);
+			fftI += 16;
 #ifdef FPLAY_64_BITS
 			//re_im = { re, re, re, re, re, re, re, re, im, im, im, im, im, im, im, im }
 			const __m128i re_im = _mm_shuffle_epi8(re_im_interleaved, indices);
-			const __m128i re16 = _mm_cvtepi8_epi16(re_im); //convert the lower 8 int8_t's into 8 int16_t's
-			const __m128i im16 = _mm_cvtepi8_epi16(_mm_srli_si128(re_im, 8)); //convert the upper 8 int8_t's into 8 int16_t's
-			const __m128 re0 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(re16)); //convert the lower 4 int16_t's into 4 int32_t's, and then into 4 float's
-			const __m128 re1 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(re16, 8))); //convert the upper 4 int16_t's into 4 int32_t's, and then into 4 float's
-			const __m128 im0 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(im16)); //convert the lower 4 int16_t's into 4 int32_t's, and then into 4 float's
-			const __m128 im1 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(im16, 8))); //convert the upper 4 int16_t's into 4 int32_t's, and then into 4 float's
+			//const __m128i re16 = _mm_cvtepu8_epi16(re_im); //convert the lower 8 uint8_t's into 8 int16_t's
+			//const __m128i im16 = _mm_cvtepu8_epi16(_mm_srli_si128(re_im, 8)); //convert the upper 8 uint8_t's into 8 int16_t's
+			//const __m128 re0 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(re16)); //convert the lower 4 int16_t's into 4 int32_t's, and then into 4 float's
+			//const __m128 re1 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(re16, 8))); //convert the upper 4 int16_t's into 4 int32_t's, and then into 4 float's
+			//const __m128 im0 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(im16)); //convert the lower 4 int16_t's into 4 int32_t's, and then into 4 float's
+			//const __m128 im1 = _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(im16, 8))); //convert the upper 4 int16_t's into 4 int32_t's, and then into 4 float's
 #else
 			//re_im = { re, re, re, re, re, re, re, re, im, im, im, im, im, im, im, im }
 			const __m128i re_im = _mm_shuffle_epi8(re_im_interleaved, _mm_load_si128((const __m128i*)evenOddIndices));
-			//without SSE4.1 we must do all sign extensions by hand
-			const __m128i tmpZero = _mm_setzero_si128();
-			const __m128i tmpSignExtension = _mm_cmpgt_epi8(tmpZero, re_im); //tmpSignExtension = (0 > re_im ? 0xFF : 0)
-			const __m128i re16 = _mm_unpacklo_epi8(re_im, tmpSignExtension); //convert the lower 8 int8_t's into 8 int16_t's
-			const __m128i im16 = _mm_unpackhi_epi8(re_im, tmpSignExtension); //convert the upper 8 int8_t's into 8 int16_t's
-			const __m128i tmpSignExtensionRe = _mm_cmpgt_epi16(tmpZero, re16); //tmpSignExtensionRe = (0 > re16 ? 0xFFFF : 0)
-			const __m128 re0 = _mm_cvtepi32_ps(_mm_unpacklo_epi16(re16, tmpSignExtensionRe)); //convert the lower 4 int16_t's into 4 int32_t's, and then into 4 float's
-			const __m128 re1 = _mm_cvtepi32_ps(_mm_unpackhi_epi16(re16, tmpSignExtensionRe)); //convert the upper 4 int16_t's into 4 int32_t's, and then into 4 float's
-			const __m128i tmpSignExtensionIm = _mm_cmpgt_epi16(tmpZero, im16); //tmpSignExtensionIm = (0 > im16 ? 0xFFFF : 0)
-			const __m128 im0 = _mm_cvtepi32_ps(_mm_unpacklo_epi16(im16, tmpSignExtensionIm)); //convert the lower 4 int16_t's into 4 int32_t's, and then into 4 float's
-			const __m128 im1 = _mm_cvtepi32_ps(_mm_unpackhi_epi16(im16, tmpSignExtensionIm)); //convert the upper 4 int16_t's into 4 int32_t's, and then into 4 float's
+			//without SSE4.1 we must do all sign/zero extensions by hand
+			//const __m128i tmpZero = _mm_setzero_si128();
+			////const __m128i tmpSignExtension = _mm_cmpgt_epi8(tmpZero, re_im); //tmpSignExtension = (0 > re_im ? 0xFF : 0)
+			//const __m128i re16 = _mm_unpacklo_epi8(re_im, tmpZero); //convert the lower 8 uint8_t's into 8 uint16_t's
+			//const __m128i im16 = _mm_unpackhi_epi8(re_im, tmpZero); //convert the upper 8 uint8_t's into 8 uint16_t's
+			////const __m128i tmpSignExtensionRe = _mm_cmpgt_epi16(tmpZero, re16); //tmpSignExtensionRe = (0 > re16 ? 0xFFFF : 0)
+			//const __m128 re0 = _mm_cvtepi32_ps(_mm_unpacklo_epi16(re16, tmpZero)); //convert the lower 4 uint16_t's into 4 uint32_t's, and then into 4 float's
+			//const __m128 re1 = _mm_cvtepi32_ps(_mm_unpackhi_epi16(re16, tmpZero)); //convert the upper 4 uint16_t's into 4 uint32_t's, and then into 4 float's
+			////const __m128i tmpSignExtensionIm = _mm_cmpgt_epi16(tmpZero, im16); //tmpSignExtensionIm = (0 > im16 ? 0xFFFF : 0)
+			//const __m128 im0 = _mm_cvtepi32_ps(_mm_unpacklo_epi16(im16, tmpZero)); //convert the lower 4 uint16_t's into 4 uint32_t's, and then into 4 float's
+			//const __m128 im1 = _mm_cvtepi32_ps(_mm_unpackhi_epi16(im16, tmpZero)); //convert the upper 4 uint16_t's into 4 uint32_t's, and then into 4 float's
 #endif
+			//I left this code up here just for historical reasons... now that fftI is uint8_t and not int8_t,
+			//the same code is valid for both x86 and x86-64 (and does not require those shifts in x86-64)
+			const __m128i tmpZero = _mm_setzero_si128();
+			const __m128i re16 = _mm_unpacklo_epi8(re_im, tmpZero); //convert the lower 8 uint8_t's into 8 uint16_t's
+			const __m128i im16 = _mm_unpackhi_epi8(re_im, tmpZero); //convert the upper 8 uint8_t's into 8 uint16_t's
+			const __m128 re0 = _mm_cvtepi32_ps(_mm_unpacklo_epi16(re16, tmpZero)); //convert the lower 4 uint16_t's into 4 uint32_t's, and then into 4 float's
+			const __m128 re1 = _mm_cvtepi32_ps(_mm_unpackhi_epi16(re16, tmpZero)); //convert the upper 4 uint16_t's into 4 uint32_t's, and then into 4 float's
+			const __m128 im0 = _mm_cvtepi32_ps(_mm_unpacklo_epi16(im16, tmpZero)); //convert the lower 4 uint16_t's into 4 uint32_t's, and then into 4 float's
+			const __m128 im1 = _mm_cvtepi32_ps(_mm_unpackhi_epi16(im16, tmpZero)); //convert the upper 4 uint16_t's into 4 uint32_t's, and then into 4 float's
+
 			//according to https://developer.android.com/ndk/guides/abis.html#86-64
 			//only x86-64 android devices have SSE4.1 (supporting integer multiplication)
 			//that's why we had to convert the int's into float's up here

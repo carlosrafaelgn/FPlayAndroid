@@ -276,7 +276,6 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 	//Runs on a SECONDARY thread
 	@Override
 	public void load() {
-		SimpleVisualizerJni.commonCheckNeonMode();
 	}
 
 	//Runs on ANY thread

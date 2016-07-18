@@ -987,7 +987,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread (B)
 	@Override
 	public void load() {
-		SimpleVisualizerJni.commonCheckNeonMode();
 	}
 	
 	//Runs on ANY thread

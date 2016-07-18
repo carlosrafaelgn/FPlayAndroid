@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.visualizer;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Point;
@@ -60,7 +61,6 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	static native void commonSetSpeed(int speed);
 	static native void commonSetColorIndex(int colorIndex);
-	static native int commonCheckNeonMode();
 	static native void commonUpdateMultiplier(boolean isVoice, boolean hq);
 	static native int commonProcess(byte[] waveform, int opt);
 
@@ -88,7 +88,12 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	private int state, colorIndex, ignoreInput;
 	private boolean lerp, voice;
 	private Surface surface;
-	
+
+	public SimpleVisualizerJni(Context context) {
+		super(context);
+		lock = null;
+	}
+
 	public SimpleVisualizerJni(Activity activity, boolean landscape, Intent extras) {
 		super(activity);
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
@@ -248,7 +253,6 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	//Runs on a SECONDARY thread
 	@Override
 	public void load() {
-		commonCheckNeonMode();
 	}
 	
 	//Runs on ANY thread

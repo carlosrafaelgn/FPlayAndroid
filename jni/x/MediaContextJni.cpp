@@ -263,6 +263,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"setVirtualizerStrength", "(I)V", (void*)setVirtualizerStrength},
 		{"getVirtualizerRoundedStrength", "()I", (void*)getVirtualizerRoundedStrength},
 		{"mediaCodecPrepare", "(IJ[J)I", (void*)mediaCodecPrepare},
+		{"mediaCodecFillInputBuffers", "(J)I", (void*)mediaCodecFillInputBuffers},
 		{"mediaCodecNextOutputBuffer", "(J)I", (void*)mediaCodecNextOutputBuffer},
 		{"mediaCodecSeek", "(JI)J", (void*)mediaCodecSeek},
 		{"mediaCodecReleaseOutputBuffer", "(J)V", (void*)mediaCodecReleaseOutputBuffer},

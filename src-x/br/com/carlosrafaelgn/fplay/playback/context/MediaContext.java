@@ -140,6 +140,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native int getVirtualizerRoundedStrength();
 
 	static native int mediaCodecPrepare(int fd, long length, long[] outParams);
+	static native int mediaCodecFillInputBuffers(long nativeObj);
 	static native int mediaCodecNextOutputBuffer(long nativeObj);
 	static native long mediaCodecSeek(long nativeObj, int msec);
 	static native void mediaCodecReleaseOutputBuffer(long nativeObj);
@@ -1009,11 +1010,20 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							checkEngineResult(engine.play());
 							bufferingEnd(sourcePlayer);
 						}
-						//the buffer was too full, just wait some time
+						//the buffer was too full, let's use this time to start filling up the
+						//next input buffers before waiting some time (discount the time spent
+						//inside fillInputBuffers())
+						int actualSleepTime = (int)SystemClock.uptimeMillis();
+						sourcePlayer.fillInputBuffers();
 						try {
-							synchronized (threadNotification) {
-								if (requestedAction == ACTION_NONE)
-									threadNotification.wait(sleepTime);
+							actualSleepTime = sleepTime - ((int)SystemClock.uptimeMillis() - actualSleepTime);
+							if (actualSleepTime > 0) {
+								//wait(0) will block the thread until someone
+								//calls notify() or notifyAll()
+								synchronized (threadNotification) {
+									if (requestedAction == ACTION_NONE)
+										threadNotification.wait(actualSleepTime);
+								}
 							}
 						} catch (Throwable ex) {
 							//just ignore

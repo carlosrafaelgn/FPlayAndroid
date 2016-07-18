@@ -83,7 +83,7 @@ static const uint32_t twiddle[MAX_FFT_SIZE / 4] = {
 	0x800afcdc, 0x8006fda5, 0x8002fe6e, 0x8001ff37,
 };
 
-/* Returns the multiplication of \conj{a} and {b}. */
+// Returns the multiplication of \conj{a} and {b}.
 static inline int32_t mult(int32_t a, int32_t b) {
 #if __ARM_ARCH__ >= 6
 	int32_t t = b;
@@ -106,22 +106,23 @@ static inline int32_t half(int32_t a) {
 #endif
 }
 
-int32_t doFft(uint8_t *inWaveform_outFft, int opt) {
-	int32_t i, squareAccum = 0, workspace[CAPTURE_SIZE >> 1];
+int32_t doFft(uint8_t *inWaveform, uint8_t *outFft, int32_t opt) {
+	int32_t i, squareAccum = 0;
+	int32_t workspace[CAPTURE_SIZE >> 1] __attribute__((aligned(16)));
 
 	if ((opt & DATA_VUMETER)) {
 		for (i = 0; i < CAPTURE_SIZE; i += 2) {
-			const int32_t x0 = (int32_t)((int8_t)(inWaveform_outFft[i] - 0x80));
+			const int32_t x0 = (int32_t)((int8_t)inWaveform[i] ^ 0x80);
 			squareAccum += (x0 * x0);
-			const int32_t x1 = (int32_t)((int8_t)(inWaveform_outFft[i + 1] - 0x80));
+			const int32_t x1 = (int32_t)((int8_t)inWaveform[i + 1] ^ 0x80);
 			squareAccum += (x1 * x1);
-			workspace[i >> 1] = (x0 << 24) | ((x1 << 8) & 0xFFFF);
+			workspace[i >> 1] = (x0 << 24) | (x1 << 8);
 		}
 		if (!(opt & DATA_FFT))
 			return squareAccum;
 	} else {
 		for (i = 0; i < CAPTURE_SIZE; i += 2) {
-			workspace[i >> 1] = ((int32_t)((int8_t)(inWaveform_outFft[i] - 0x80)) << 24) | (((int32_t)((int8_t)(inWaveform_outFft[i + 1] - 0x80)) << 8) & 0xFFFF);
+			workspace[i >> 1] = (((uint32_t)inWaveform[i] ^ 0x80) << 24) | (((uint32_t)inWaveform[i + 1] ^ 0x80) << 8);
 		}
 	}
 
@@ -188,15 +189,32 @@ int32_t doFft(uint8_t *inWaveform_outFft, int opt) {
 	//********************
 
 	//we do not need to process the last half, as commonProcess() will not use it! ;)
-	for (i = 0; i < (CAPTURE_SIZE >> 1); i += 2) {
+	//also, I changed the original algorithm a little bit... instead of outputting
+	//signed amplitudes, from -128 to 127, since we are only going to use it squared,
+	//I started returning unsigned values from 0 to 255
+	/*for (i = 0; i < (CAPTURE_SIZE >> 1); i += 2) {
 		int16_t tmp = workspace[i >> 1] >> 21;
 		while (tmp > 127 || tmp < -128) tmp >>= 1;
-		inWaveform_outFft[i] = tmp;
+		outFft[i] = tmp;
 		tmp = workspace[i >> 1];
 		tmp >>= 5;
 		while (tmp > 127 || tmp < -128) tmp >>= 1;
-		inWaveform_outFft[i + 1] = tmp;
+		outFft[i + 1] = tmp;
+	}*/
+#ifdef FPLAY_ARM
+if (!neonMode) {
+	for (i = 0; i < (CAPTURE_SIZE >> 1); i += 2) {
+		int16_t tmp = abs(workspace[i >> 1] >> 20);
+		outFft[i] = ((tmp >= 255) ? 255 : tmp);
+		tmp = abs(((int16_t)workspace[i >> 1]) >> 4);
+		outFft[i + 1] = ((tmp >= 255) ? 255 : tmp);
 	}
+} else {
+	doFftNeon(workspace, outFft);
+}
+#else
+	doFftNeon(workspace, outFft);
+#endif
 
 	return squareAccum;
 }

@@ -124,15 +124,15 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	int8_t* bfft;
+	uint8_t* bfft;
 	if (!(opt & IGNORE_INPUT)) {
-		bfft = (int8_t*)env->GetPrimitiveArrayCritical(jbfft, 0);
+		bfft = (uint8_t*)env->GetPrimitiveArrayCritical(jbfft, 0);
 		if (!bfft) {
 			ANativeWindow_unlockAndPost(wnd);
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft((uint8_t*)bfft, DATA_FFT);
+		doFft(bfft, bfft, DATA_FFT);
 
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		bfft[1] = 0;
@@ -140,19 +140,22 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 		bfft = 0;
 	}
 
-	float* const fft = floatBuffer;
-	const float* const multiplier = floatBuffer + 256;
+	float* const fft = _fft;
+	const float* const multiplier = _multiplier;
+	float* const previousM = _previousM;
 
-	const float coefNew = COEF_SPEED_DEF * (float)commonUptimeDeltaMillis(&commonLastTime);
+	float coefNew = COEF_SPEED_DEF * (float)commonUptimeDeltaMillis(&commonLastTime);
+	if (coefNew > 1.0f)
+		coefNew = 1.0f;
 	const float coefOld = 1.0f - coefNew;
 
 	float previous = 0;
 	for (int32_t i = 0; i < barBins; i++) {
 		float m;
 		if (bfft) {
-			//bfft[i] stores values from 0 to -128/127 (inclusive)
-			const int32_t re = (int32_t)bfft[i << 1];
-			const int32_t im = (int32_t)bfft[(i << 1) + 1];
+			//bfft[i] stores values from 0 to 255 (inclusive)
+			const int32_t re = (uint32_t)bfft[i << 1];
+			const int32_t im = (uint32_t)bfft[(i << 1) + 1];
 			const int32_t amplSq = (re * re) + (im * im);
 			m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 			previousM[i] = m;
@@ -165,7 +168,7 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 		fft[i] = m;
 		
 		if (barW == 1 || !lerp) {
-			//v goes from 0 to 32768+ (inclusive)
+			//m goes from 0 to 32768+ (inclusive)
 			int32_t v = (int32_t)m;
 			if (v > 32768)
 				v = 32768;
@@ -273,15 +276,11 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 				break;
 			}
 		} else {
+			//m goes from 0 to 32768+ (inclusive)
 			const float delta = (int32_t)(m - previous) * invBarW;
 			for (int32_t i = 0; i < barW; i++) {
 				previous += delta;
-				/*if (previous < 0.0f)
-					previous = 0.0f;
-				else if (previous > 32768.0f)
-					previous = 32768.0f;*/
 				
-				//v goes from 0 to 32768 (inclusive)
 				int32_t v = (int32_t)previous;
 				if (v < 0)
 					v = 0;
@@ -355,20 +354,21 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 	memcpy(alignedVoice, (uint8_t*)alignedVoice + inf.stride, v);
 	uint16_t* currentBar = (uint16_t*)((uint8_t*)alignedVoice + v);
 	
-	float* const fft = floatBuffer;
-	const float* const multiplier = fft + 256;
+	float* const fft = _fft;
+	const float* const multiplier = _multiplier;
+	float* const previousM = _previousM;
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	int8_t* bfft;
+	uint8_t* bfft;
 	if (!(opt & IGNORE_INPUT)) {
-		bfft = (int8_t*)env->GetPrimitiveArrayCritical(jbfft, 0);
+		bfft = (uint8_t*)env->GetPrimitiveArrayCritical(jbfft, 0);
 		if (!bfft) {
 			ANativeWindow_unlockAndPost(wnd);
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft((uint8_t*)bfft, DATA_FFT);
+		doFft(bfft, bfft, DATA_FFT);
 
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		bfft[1] = 0;
@@ -379,11 +379,11 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 	float previous = 0;
 	
 	for (int32_t i = 0; i < barBins; i++) {
-		//bfft[i] stores values from 0 to -128/127 (inclusive)
+		//bfft[i] stores values from 0 to 255 (inclusive)
 		float m;
 		if (bfft) {
-			const int32_t re = (int32_t)bfft[i << 1];
-			const int32_t im = (int32_t)bfft[(i << 1) + 1];
+			const int32_t re = (uint32_t)bfft[i << 1];
+			const int32_t im = (uint32_t)bfft[(i << 1) + 1];
 			const int32_t amplSq = (re * re) + (im * im);
 			m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 			previousM[i] = m;
@@ -391,7 +391,7 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 			m = previousM[i];
 		}
 		if (barW == 1) {
-			//v goes from 0 to 256+ (inclusive)
+			//m goes from 0 to 256+ (inclusive)
 			const int32_t v = (int32_t)m;
 			*currentBar = COLORS[commonColorIndex + ((v >= 256) ? 256 : v)];
 			currentBar++;
@@ -412,9 +412,52 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 	ANativeWindow_release(wnd);
 }
 
+#ifdef FPLAY_ARM
+void checkNeonMode() {
+	//based on
+	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.c?r=2195
+	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.h?r=2195
+	neonMode = 0;
+	char cpuinfo[4096];
+	int32_t cpuinfo_len = -1;
+	int32_t fd = open("/proc/cpuinfo", O_RDONLY);
+	if (fd >= 0) {
+		do {
+			cpuinfo_len = read(fd, cpuinfo, 4096);
+		} while (cpuinfo_len < 0 && errno == EINTR);
+		close(fd);
+		if (cpuinfo_len > 0) {
+			cpuinfo[cpuinfo_len] = 0;
+			//look for the "\nFeatures: " line
+			for (int32_t i = cpuinfo_len - 9; i >= 0; i--) {
+				if (memcmp(cpuinfo + i, "\nFeatures", 9) == 0) {
+					i += 9;
+					while (i < cpuinfo_len && (cpuinfo[i] == ' ' || cpuinfo[i] == '\t' || cpuinfo[i] == ':'))
+						i++;
+					cpuinfo_len -= 5;
+					//now look for the " neon" feature
+					while (i <= cpuinfo_len && cpuinfo[i] != '\n') {
+						if (memcmp(cpuinfo + i, " neon", 5) == 0 ||
+							memcmp(cpuinfo + i, "\tneon", 5) == 0) {
+							neonMode = 1;
+							break;
+						}
+						i++;
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+#endif
+
 extern "C" {
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+#ifdef FPLAY_ARM
+	checkNeonMode();
+#endif
 	voice = 0;
 	recreateVoice = 0;
 	glResetState();
@@ -438,14 +481,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	beatSilenceDeltaMillis = 0;
 	beatSpeedBPM = 0;
 	beatFilteredInput = 0;
-#ifdef FPLAY_ARM
-	neonMode = 0;
-	neonDone = 0;
-#endif
+
 	JNINativeMethod methodTable[] = {
 		{"commonSetSpeed", "(I)V", (void*)commonSetSpeed},
 		{"commonSetColorIndex", "(I)V", (void*)commonSetColorIndex},
-		{"commonCheckNeonMode", "()I", (void*)commonCheckNeonMode},
 		{"commonUpdateMultiplier", "(ZZ)V", (void*)commonUpdateMultiplier},
 		{"commonProcess", "([BI)I", (void*)commonProcess},
 

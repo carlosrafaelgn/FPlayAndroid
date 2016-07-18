@@ -244,7 +244,7 @@ int32_t glComputeSpinSize(int32_t width, int32_t height, int32_t dp1OrLess) {
 
 void glSumData() {
 	int32_t i, idx, last;
-	uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
+	uint8_t avg, *processedData = _processedData;
 
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
@@ -460,7 +460,7 @@ void glDrawSpectrum2() {
 		glUpdateSpectrumColorTexture();
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (uint8_t*)(floatBuffer + 512));
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, _processedData);
 	glUniform1f(glUpDown, 1.0f);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 512 * 2); //twice as many vertices as the regular spectrum
 	glUniform1f(glUpDown, -1.0f);
@@ -475,7 +475,7 @@ void glDrawSpectrum2WithoutAmplitudeTexture() {
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
 	int32_t i, idx = glAmplitude, last;
-	uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
+	uint8_t avg, *processedData = _processedData;
 	for (i = 0; i < 36; i++)
 		glUniform1f(idx++, (float)processedData[i] * 0.00390625f);
 	for (; i < 184; i += 2)
@@ -497,7 +497,7 @@ void glDrawSpectrum() {
 		glUpdateSpectrumColorTexture();
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, (uint8_t*)(floatBuffer + 512));
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 256, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, _processedData);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 256 * 2);
 }
 
@@ -509,7 +509,7 @@ void glDrawSpectrumWithoutAmplitudeTexture() {
 	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
 	//since the difference is visually unnoticeable
 	int32_t i, idx = glAmplitude, last;
-	uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
+	uint8_t avg, *processedData = _processedData;
 	for (i = 0; i < 36; i++)
 		glUniform1f(idx++, (float)processedData[i] * 0.00390625f);
 	for (; i < 184; i += 2)
@@ -1067,7 +1067,7 @@ int32_t glCreateSpectrum2() {
 	//
 	//we cannot send x = 0, as sign(0) = 0, and this would render that point useless
 	if (spectrumUsesTexture) {
-		//floatBuffer contains only (256 * 2) + (256 / 4) floats :(
+		//floatBuffer contains only (256 * 3) + (256 / 4) + ((256 / 4) * 2) floats :(
 		float *vertices = new float[512 * 2];
 
 		for (int32_t i = 0; i < 512; i++) {

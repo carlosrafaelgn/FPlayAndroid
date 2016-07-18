@@ -183,7 +183,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		return true;
 	}
 
-	private void fillInputBuffers() throws IOException {
+	private void fillInputBuffersInternal() throws IOException {
 		for (int i = 0; i < inputBuffers.length && !inputOver; i++) {
 			final int index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
@@ -295,11 +295,21 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		}
 	}
 
-	//**************************************************************
-	//Methods nextOutputBuffer(), releaseOutputBuffer(), doSeek(),
-	//resetDecoderIfOutputAlreadyUsed() and startedAsNext()
+	//************************************************************************
+	//Methods fillInputBuffers(), nextOutputBuffer(), releaseOutputBuffer(),
+	//doSeek(), resetDecoderIfOutputAlreadyUsed() and startedAsNext()
 	//MUST be called from the playback thread: MediaContext.run()
-	//**************************************************************
+	//************************************************************************
+
+	void fillInputBuffers() throws IOException {
+		if (nativeMediaCodec) {
+			final int ret = MediaContext.mediaCodecFillInputBuffers(nativeObj);
+			if (ret < 0)
+				throw new IOException("mediaCodecFillInputBuffers() returned " + ret);
+		} else {
+			fillInputBuffersInternal();
+		}
+	}
 
 	@SuppressWarnings("deprecation")
 	void nextOutputBuffer(OutputBuffer outputBuffer) throws IOException {
@@ -340,7 +350,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 					return;
 				}
 			} else {
-				fillInputBuffers();
+				fillInputBuffersInternal();
 			}
 			int index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 			IndexChecker:
@@ -436,7 +446,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		final long duration = mediaExtractor.getSampleTime();
 		outputOver = (duration < 0);
 		currentPositionInMS = (outputOver ? durationInMS : (int)(duration / 1000L));
-		fillInputBuffers();
+		fillInputBuffersInternal();
 		return (duration * (long)dstSampleRate) //us * frames per second
 			/ 1000000L; //us to second;
 	}
@@ -620,7 +630,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			outputOver = false;
 			inputBuffers = mediaCodec.getInputBuffers();
 			prepareOutputBuffers();
-			fillInputBuffers();
+			fillInputBuffersInternal();
 			state = STATE_PREPARED;
 			break;
 		default:

@@ -114,36 +114,6 @@ private:
 			(mime[5] == '/'));
 	}
 
-	int32_t fillInputBuffers() {
-		if (inputOver)
-			return 0;
-		for (int32_t i = 0; i < 16 && !inputOver; i++) {
-			const ssize_t index = AMediaCodec_dequeueInputBuffer(mediaCodec, INPUT_BUFFER_TIMEOUT_IN_US);
-			if (index < 0)
-				break;
-			size_t inputBufferCapacity;
-			uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mediaCodec, index, &inputBufferCapacity);
-			if (!inputBuffer)
-				break;
-			ssize_t size = AMediaExtractor_readSampleData(mediaExtractor, inputBuffer, inputBufferCapacity);
-			if (size < 0) {
-				inputOver = true;
-				int32_t ret;
-				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, 0, 0, AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM)))
-					return ret;
-				break;
-			} else {
-				int32_t ret;
-				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, size, 0, 0)))
-					return ret;
-				//although the doc says "Returns false if no more sample data is available
-				//(end of stream)", sometimes, AMediaExtractor_advance() returns false in other cases....
-				AMediaExtractor_advance(mediaExtractor);
-			}
-		}
-		return 0;
-	}
-
 public:
 	MediaCodec() {
 		inputOver = false;
@@ -244,6 +214,36 @@ public:
 		return ((sampleTime < 0) ? 0x7FFFFFFFFFFFFFFFLL : sampleTime);
 	}
 
+	int32_t fillInputBuffers() {
+		if (inputOver)
+			return 0;
+		for (int32_t i = 0; i < 16 && !inputOver; i++) {
+			const ssize_t index = AMediaCodec_dequeueInputBuffer(mediaCodec, INPUT_BUFFER_TIMEOUT_IN_US);
+			if (index < 0)
+				break;
+			size_t inputBufferCapacity;
+			uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mediaCodec, index, &inputBufferCapacity);
+			if (!inputBuffer)
+				break;
+			ssize_t size = AMediaExtractor_readSampleData(mediaExtractor, inputBuffer, inputBufferCapacity);
+			if (size < 0) {
+				inputOver = true;
+				int32_t ret;
+				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, 0, 0, AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM)))
+					return ret;
+				break;
+			} else {
+				int32_t ret;
+				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, size, 0, 0)))
+					return ret;
+				//although the doc says "Returns false if no more sample data is available
+				//(end of stream)", sometimes, AMediaExtractor_advance() returns false in other cases....
+				AMediaExtractor_advance(mediaExtractor);
+			}
+		}
+		return 0;
+	}
+
 	int32_t nextOutputBuffer() {
 		//positive: ok (odd means input over)
 		//negative: error
@@ -301,6 +301,13 @@ int32_t JNICALL mediaCodecPrepare(JNIEnv* env, jclass clazz, int32_t fd, uint64_
 	env->SetLongArrayRegion(joutParams, 0, 4, (jlong*)outParams);
 
 	return 0;
+}
+
+int32_t JNICALL mediaCodecFillInputBuffers(JNIEnv* env, jclass clazz, uint64_t nativeObj) {
+	if (!nativeObj)
+		return -1;
+
+	return ((MediaCodec*)nativeObj)->fillInputBuffers();
 }
 
 int32_t JNICALL mediaCodecNextOutputBuffer(JNIEnv* env, jclass clazz, uint64_t nativeObj) {

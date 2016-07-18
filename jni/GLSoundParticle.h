@@ -300,7 +300,7 @@ public:
 
 		float a;
 		int32_t p = 0, c, ic, i = 2, last = 44, last2 = 116;
-		uint8_t avg, *processedData = (uint8_t*)(floatBuffer + 512);
+		uint8_t avg, *processedData = _processedData;
 
 		if (glType != TYPE_PARTICLE) {
 			if (nextDiffusion) {

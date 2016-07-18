@@ -55,9 +55,14 @@
 //for the alignment:
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
 
-extern float floatBuffer[] __attribute__((aligned(16)));
-extern float previousM[] __attribute__((aligned(16)));
-extern float commonCoefNew;
-extern int32_t intBuffer[] __attribute__((aligned(16)));
+#define _fft floatBuffer
+#define _multiplier (floatBuffer + QUARTER_FFT_SIZE)
+#define _previousM (floatBuffer + (QUARTER_FFT_SIZE * 2))
+#define _processedData (uint8_t*)(floatBuffer + (QUARTER_FFT_SIZE * 3))
+#define _fftI (uint8_t*)(floatBuffer + (QUARTER_FFT_SIZE * 3) + (QUARTER_FFT_SIZE / 4))
 
-extern void commonProcessNeon(int8_t *bfft, int32_t deltaMillis, int32_t opt);
+extern float floatBuffer[] __attribute__((aligned(16)));
+extern float commonCoefNew;
+
+extern void commonProcessNeon(int32_t deltaMillis, int32_t opt);
+extern void doFftNeon(int32_t *workspace, uint8_t *outFft);
