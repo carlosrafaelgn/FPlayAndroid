@@ -31,7 +31,7 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
+typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 
 #define MAX_ALLOWED_SAMPLE_VALUE 31000.0f //31000/32768 = 0.946 = -0.48dB
 
@@ -139,13 +139,12 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	__m128i iLR = _mm_cvtps_epi32(inLR); \
 	\
 	/*
-	dstBuffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
-	dstBuffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
+	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
+	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
 	iLR = _mm_packs_epi32(iLR, iLR); \
-	_mm_store_ss((float*)dstBuffer, *((__m128*)&iLR)); \
+	_mm_store_ss((float*)buffer, *((__m128*)&iLR)); \
 	\
-	srcBuffer += 2; \
-	dstBuffer += 2;
+	buffer += 2;
 #else
 #define floatToShortX86() \
 	/*
@@ -170,13 +169,12 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	__m128i iLR = _mm_cvtps_epi32(inLR); \
 	\
 	/*
-	dstBuffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
-	dstBuffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
+	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
+	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
 	iLR = _mm_packs_epi32(iLR, iLR); \
-	_mm_store_ss((float*)dstBuffer, *((__m128*)&iLR)); \
+	_mm_store_ss((float*)buffer, *((__m128*)&iLR)); \
 	\
-	srcBuffer += 2; \
-	dstBuffer += 2;
+	buffer += 2;
 #endif
 	
 #define footerX86() \
@@ -256,11 +254,10 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	/* the final output is the last band's output (or its next band's input) */ \
 	const int32_t iL = (int32_t)inL; \
 	const int32_t iR = (int32_t)inR; \
-	dstBuffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
-	dstBuffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); \
+	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL)); \
+	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); \
 	\
-	srcBuffer += 2; \
-	dstBuffer += 2;
+	buffer += 2;
 
 #define footerPlain() \
 	if (!effectsGainEnabled) { \
@@ -401,13 +398,12 @@ typedef void (*EFFECTPROC)(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* d
 	int32x2_t iLR = vcvt_s32_f32(inLR); \
 	\
 	/*
-	dstBuffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL));
-	dstBuffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
+	buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL));
+	buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR)); */ \
 	int16x4_t iLRshort = vqmovn_s32(vcombine_s32(iLR, iLR)); \
-	vst1_lane_s32((int32_t*)dstBuffer, vreinterpret_s32_s16(iLRshort), 0); \
+	vst1_lane_s32((int32_t*)buffer, vreinterpret_s32_s16(iLRshort), 0); \
 	\
-	srcBuffer += 2; \
-	dstBuffer += 2;
+	buffer += 2;
 
 #define virtualizerNeon()
 

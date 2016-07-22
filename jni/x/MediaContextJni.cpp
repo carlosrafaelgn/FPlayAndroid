@@ -84,6 +84,7 @@
 //bytes = frames << channelCount;
 static uint32_t srcSampleRate, srcChannelCount;
 uint32_t dstSampleRate;
+static int16_t *tmpSwapBufferForAudioTrack;
 
 union int64_3232 {
 	int64_t v;
@@ -101,11 +102,20 @@ union WriteRet {
     };
 };
 
-void swapShorts(int16_t* buffer, uint32_t sizeInShorts) {
+void swapShortsInplace(int16_t* buffer, uint32_t sizeInShorts) {
 	while (sizeInShorts) {
 		*buffer = bswap_16(*buffer);
 		buffer++;
-		sizeInShorts++;
+		sizeInShorts--;
+	}
+}
+
+void swapShorts(int16_t* srcBuffer, uint32_t sizeInShorts, int16_t* dstBuffer) {
+	while (sizeInShorts) {
+		*dstBuffer = bswap_16(*srcBuffer);
+		srcBuffer++;
+		dstBuffer++;
+		sizeInShorts--;
 	}
 }
 
@@ -174,18 +184,25 @@ int64_t JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray j
 		return -SL_RESULT_MEMORY_FAILURE;
 	}
 
-	//this is not ok... (should be using a temporary buffer)
-	if (needsSwap)
-		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames << (srcChannelCount - 1));
+	//we must use a temporary buffer whenever swapping is necessary
+	int16_t* actualSrcBuffer;
+	if (needsSwap) {
+		if (!tmpSwapBufferForAudioTrack)
+			tmpSwapBufferForAudioTrack = new int16_t[MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 1];
+		swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames << (srcChannelCount - 1), tmpSwapBufferForAudioTrack);
+		actualSrcBuffer = tmpSwapBufferForAudioTrack;
+	} else {
+		actualSrcBuffer = (int16_t*)((uint8_t*)srcBuffer + offsetInBytes);
+	}
 
 	WriteRet ret;
 	ret.srcFramesUsed = 0;
-	ret.dstFramesUsed = resampleProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, dstBuffer, MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING, ret.srcFramesUsed);
-
-	effectProc(dstBuffer, ret.dstFramesUsed, dstBuffer);
+	ret.dstFramesUsed = resampleProc(actualSrcBuffer, sizeInFrames, dstBuffer, MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING, ret.srcFramesUsed);
 
 	if (!jsrcBuffer)
 		env->ReleasePrimitiveArrayCritical(jsrcArray, srcBuffer, JNI_ABORT);
+
+	effectProc(dstBuffer, ret.dstFramesUsed);
 
 	if (!jdstBuffer)
 		env->ReleasePrimitiveArrayCritical(jdstArray, dstBuffer, 0);
@@ -243,6 +260,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	initializeEffects();
 	initializeMediaCodec();
 	initializeResampler();
+	tmpSwapBufferForAudioTrack = 0;
 
 	JNINativeMethod methodTable[] = {
 		{"getProcessorFeatures", "()I", (void*)getProcessorFeatures},
@@ -298,6 +316,10 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 	openSLTerminate(0, 0);
 	terminateMediaCodec();
 	terminateResampler();
+	if (tmpSwapBufferForAudioTrack) {
+		delete tmpSwapBufferForAudioTrack;
+		tmpSwapBufferForAudioTrack = 0;
+	}
 }
 
 }

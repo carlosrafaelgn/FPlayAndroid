@@ -108,7 +108,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static Engine engine;
 	public static boolean useOpenSLEngine;
 	private static boolean hasExternalNativeLibrary;
-	static boolean engineAcceptsNativeBuffers;
+	static boolean engineAcceptsNativeBuffers, engineNeedsFullBufferBeforeResuming;
 
 	static {
 		System.loadLibrary("MediaContextJni");
@@ -164,12 +164,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native long openSLWrite(byte[] array, ByteBuffer buffer, int offsetInBytes, int sizeInFrames, int needsSwap);
 
 	private static abstract class Engine {
-		public final boolean needsFullBufferBeforeResuming;
-
-		public Engine(boolean needsFullBufferBeforeResuming) {
-			this.needsFullBufferBeforeResuming = needsFullBufferBeforeResuming;
-		}
-
 		public abstract int initialize();
 		public abstract int create(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames);
 		public abstract int recreateIfNeeded(int sampleRate, int bufferSizeInFrames);
@@ -205,13 +199,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		private boolean okToQuitIfFull;
 		private int pendingOffsetInBytes, pendingDstFrames;
 
-		public AudioTrackEngine() {
-			super(true);
-		}
-
 		@Override
 		public int initialize() {
 			engineAcceptsNativeBuffers = false;
+			engineNeedsFullBufferBeforeResuming = true;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 				tempDstBuffer = ByteBuffer.allocateDirect(MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 2);
 				tempDstBuffer.order(ByteOrder.nativeOrder());
@@ -377,13 +368,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final class OpenSLEngine extends Engine {
 		private int bufferSizeInFrames;
 
-		public OpenSLEngine() {
-			super(false);
-		}
-
 		@Override
 		public int initialize() {
 			engineAcceptsNativeBuffers = hasExternalNativeLibrary;
+			engineNeedsFullBufferBeforeResuming = false;
 			return openSLInitialize();
 		}
 
@@ -777,7 +765,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								break;
 							case ACTION_RESUME:
 								if (playerRequestingAction == currentPlayer) {
-									if ((framesWritten - framesPlayed) < 512 || engine.needsFullBufferBeforeResuming) {
+									if ((framesWritten - framesPlayed) < 512 || engineNeedsFullBufferBeforeResuming) {
 										playPending = true;
 										framesWrittenBeforePlaying = 0;
 										bufferingStart(currentPlayer);

@@ -80,9 +80,9 @@ static const uint32_t effectsAbsSample[4] __attribute__((aligned(16))) = { 0x7FF
 #include <pmmintrin.h> //SSE3
 //https://software.intel.com/sites/landingpage/IntrinsicsGuide/
 #else
-extern void processEqualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
-extern void processVirtualizerNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
-extern void processEffectsNeon(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer);
+extern void processEqualizerNeon(int16_t* buffer, uint32_t sizeInFrames);
+extern void processVirtualizerNeon(int16_t* buffer, uint32_t sizeInFrames);
+extern void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames);
 #endif
 
 #include "Filter.h"
@@ -196,13 +196,11 @@ void initializeEffects() {
 	updateEffectProc();
 }
 
-void processNull(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer) {
-	//nothing to be done but copying from source to destination (if they are different buffers)
-	if (srcBuffer != dstBuffer)
-		memcpy(dstBuffer, srcBuffer, sizeInFrames << 2);
+void processNull(int16_t* buffer, uint32_t sizeInFrames) {
+	//nothing to be done :)
 }
 
-void processEqualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer) {
+void processEqualizer(int16_t* buffer, uint32_t sizeInFrames) {
 	effectsFramesBeforeRecoveringGain -= sizeInFrames;
 
 #ifdef FPLAY_X86
@@ -218,8 +216,8 @@ void processEqualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuf
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		effectsTemp[0] = (int32_t)srcBuffer[0];
-		effectsTemp[1] = (int32_t)srcBuffer[1];
+		effectsTemp[0] = (int32_t)buffer[0];
+		effectsTemp[1] = (int32_t)buffer[1];
 		//inLR = { L, R, xxx, xxx }
 		__m128 inLR;
 		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
@@ -238,7 +236,7 @@ void processEqualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuf
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		float inL = (float)srcBuffer[0], inR = (float)srcBuffer[1];
+		float inL = (float)buffer[0], inR = (float)buffer[1];
 
 		equalizerPlain();
 
@@ -249,7 +247,7 @@ void processEqualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuf
 #endif
 }
 
-void processVirtualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer) {
+void processVirtualizer(int16_t* buffer, uint32_t sizeInFrames) {
 	effectsFramesBeforeRecoveringGain -= sizeInFrames;
 
 #ifdef FPLAY_X86
@@ -265,8 +263,8 @@ void processVirtualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstB
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		effectsTemp[0] = (int32_t)srcBuffer[0];
-		effectsTemp[1] = (int32_t)srcBuffer[1];
+		effectsTemp[0] = (int32_t)buffer[0];
+		effectsTemp[1] = (int32_t)buffer[1];
 		//inLR = { L, R, xxx, xxx }
 		__m128 inLR;
 		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
@@ -285,7 +283,7 @@ void processVirtualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstB
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		float inL = (float)srcBuffer[0], inR = (float)srcBuffer[1];
+		float inL = (float)buffer[0], inR = (float)buffer[1];
 
 		virtualizerPlain();
 
@@ -296,7 +294,7 @@ void processVirtualizer(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstB
 #endif
 }
 
-void processEffects(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffer) {
+void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 	effectsFramesBeforeRecoveringGain -= sizeInFrames;
 
 #ifdef FPLAY_X86
@@ -312,8 +310,8 @@ void processEffects(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffe
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		effectsTemp[0] = (int32_t)srcBuffer[0];
-		effectsTemp[1] = (int32_t)srcBuffer[1];
+		effectsTemp[0] = (int32_t)buffer[0];
+		effectsTemp[1] = (int32_t)buffer[1];
 		//inLR = { L, R, xxx, xxx }
 		__m128 inLR;
 		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
@@ -334,7 +332,7 @@ void processEffects(int16_t* srcBuffer, uint32_t sizeInFrames, int16_t* dstBuffe
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
 
-		float inL = (float)srcBuffer[0], inR = (float)srcBuffer[1];
+		float inL = (float)buffer[0], inR = (float)buffer[1];
 
 		equalizerPlain();
 

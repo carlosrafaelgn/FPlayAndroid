@@ -393,9 +393,9 @@ int64_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
 	int16_t* procBuffer = dstBuffer;
 	for (uint32_t i = 0; i < processingBufferCount; i++, procBuffer += (processingBufferSizeInFrames << 1))
-		effectProc(procBuffer, processingBufferSizeInFrames, procBuffer);
+		effectProc(procBuffer, processingBufferSizeInFrames);
 	if (finalProcessingBufferSizeInFrames)
-		effectProc(procBuffer, finalProcessingBufferSizeInFrames, procBuffer);
+		effectProc(procBuffer, finalProcessingBufferSizeInFrames);
 
 	if ((++bufferWriteIndex) >= bufferCount)
 		bufferWriteIndex = 0;
@@ -438,7 +438,7 @@ int64_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 
 		//this is not ok... (should be using a temporary buffer)
 		if (needsSwap)
-			swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), (((minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << (srcChannelCount - 1)) * srcSampleRate) / dstSampleRate);
+			swapShortsInplace((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), (((minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << (srcChannelCount - 1)) * srcSampleRate) / dstSampleRate);
 
 		//dstBuffer must always be filled with stereo frames
 		ret.dstFramesUsed = resampleProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex], ret.srcFramesUsed);
@@ -449,7 +449,7 @@ int64_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 
 		//this is not ok... (should be using a temporary buffer)
 		if (needsSwap)
-			swapShorts((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), (((minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << (srcChannelCount - 1)) * srcSampleRate) / dstSampleRate);
+			swapShortsInplace((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), (((minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << (srcChannelCount - 1)) * srcSampleRate) / dstSampleRate);
 
 		//dstBuffer must always be filled with stereo frames
 		ret.dstFramesUsed = resampleProc((int16_t*)((uint8_t*)srcBuffer + offsetInBytes), sizeInFrames, (int16_t*)((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2)), minBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex], ret.srcFramesUsed);
@@ -470,9 +470,9 @@ int64_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
 	int16_t* procBuffer = dstBuffer;
 	for (uint32_t i = 0; i < processingBufferCount; i++, procBuffer += (processingBufferSizeInFrames << 1))
-		effectProc(procBuffer, processingBufferSizeInFrames, procBuffer);
+		effectProc(procBuffer, processingBufferSizeInFrames);
 	if (finalProcessingBufferSizeInFrames)
-		effectProc(procBuffer, finalProcessingBufferSizeInFrames, procBuffer);
+		effectProc(procBuffer, finalProcessingBufferSizeInFrames);
 
 	if ((++bufferWriteIndex) >= bufferCount)
 		bufferWriteIndex = 0;
