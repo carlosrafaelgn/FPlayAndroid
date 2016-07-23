@@ -550,7 +550,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				throw new FileNotFoundException(path);
 			if (!file.canRead())
 				throw new SecurityException(path);
-			nativeMediaCodec = MediaContext.engineAcceptsNativeBuffers;
+			nativeMediaCodec = MediaContext.externalNativeLibraryAvailable;
 		}
 		state = STATE_INITIALIZED;
 	}

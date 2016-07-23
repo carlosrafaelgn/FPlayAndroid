@@ -197,7 +197,7 @@ int64_t JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray j
 
 	WriteRet ret;
 	ret.srcFramesUsed = 0;
-	ret.dstFramesUsed = resampleProc(actualSrcBuffer, sizeInFrames, dstBuffer, MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING, ret.srcFramesUsed);
+	ret.dstFramesUsed = resampleProc(actualSrcBuffer, sizeInFrames, dstBuffer, MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 1, ret.srcFramesUsed);
 
 	if (!jsrcBuffer)
 		env->ReleasePrimitiveArrayCritical(jsrcArray, srcBuffer, JNI_ABORT);
@@ -206,6 +206,23 @@ int64_t JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray j
 
 	if (!jdstBuffer)
 		env->ReleasePrimitiveArrayCritical(jdstArray, dstBuffer, 0);
+
+	return ret.val;
+}
+
+int64_t JNICALL audioTrackProcessNativeEffects(JNIEnv* env, jclass clazz, uint64_t nativeObj, uint32_t offsetInBytes, uint32_t sizeInFrames, jobject jdstBuffer) {
+	if (!nativeObj || !((MediaCodec*)nativeObj)->buffer || !jdstBuffer)
+		return -SL_RESULT_PRECONDITIONS_VIOLATED;
+
+	int16_t* const dstBuffer = (int16_t*)env->GetDirectBufferAddress(jdstBuffer);
+	if (!dstBuffer)
+		return -SL_RESULT_MEMORY_FAILURE;
+
+	WriteRet ret;
+	ret.srcFramesUsed = 0;
+	ret.dstFramesUsed = resampleProc((int16_t*)(((MediaCodec*)nativeObj)->buffer + offsetInBytes), sizeInFrames, dstBuffer, MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 1, ret.srcFramesUsed);
+
+	effectProc(dstBuffer, ret.dstFramesUsed);
 
 	return ret.val;
 }
@@ -289,6 +306,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
 		{"audioTrackInitialize", "()V", (void*)audioTrackInitialize},
 		{"audioTrackCreate", "(I)V", (void*)audioTrackCreate},
+		{"audioTrackProcessNativeEffects", "(JIILjava/nio/ByteBuffer;)J", (void*)audioTrackProcessNativeEffects},
 		{"audioTrackProcessEffects", "([BLjava/nio/ByteBuffer;III[BLjava/nio/ByteBuffer;)J", (void*)audioTrackProcessEffects},
 		{"openSLInitialize", "()I", (void*)openSLInitialize},
 		{"openSLCreate", "(III)I", (void*)openSLCreate},

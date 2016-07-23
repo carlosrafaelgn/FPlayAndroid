@@ -107,13 +107,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static MediaContext theMediaContext;
 	private static Engine engine;
 	public static boolean useOpenSLEngine;
-	private static boolean hasExternalNativeLibrary;
-	static boolean engineAcceptsNativeBuffers, engineNeedsFullBufferBeforeResuming;
+	final static boolean externalNativeLibraryAvailable;
+	static boolean engineNeedsFullBufferBeforeResuming;
 
 	static {
 		System.loadLibrary("MediaContextJni");
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			hasExternalNativeLibrary = (mediaCodecLoadExternalLibrary() == 0);
+		externalNativeLibraryAvailable = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) && (mediaCodecLoadExternalLibrary() == 0));
 	}
 
 	private static native int getProcessorFeatures();
@@ -149,6 +148,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static native void audioTrackInitialize();
 	private static native void audioTrackCreate(int dstSampleRate);
+	private static native long audioTrackProcessNativeEffects(long nativeObj, int offsetInBytes, int sizeInFrames, ByteBuffer dstBuffer);
 	private static native long audioTrackProcessEffects(byte[] srcArray, ByteBuffer srcBuffer, int offsetInBytes, int sizeInFrames, int needsSwap, byte[] dstArray, ByteBuffer dstBuffer);
 
 	private static native int openSLInitialize();
@@ -177,7 +177,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public abstract int getHeadPositionInFrames();
 		public abstract int getFillThresholdInFrames(int bufferSizeInFrames);
 		public abstract int commitFinalFrames(int emptyFrames);
-		public abstract int writeNative(long nativeObj, MediaCodecPlayer.OutputBuffer buffer);
 		public abstract int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames);
 	}
 
@@ -201,13 +200,16 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		@Override
 		public int initialize() {
-			engineAcceptsNativeBuffers = false;
 			engineNeedsFullBufferBeforeResuming = true;
+			//MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 3:
+			//* 2 = short
+			//* 2 = stereo
+			//* 2 = extra space for resampling
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				tempDstBuffer = ByteBuffer.allocateDirect(MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 2);
+				tempDstBuffer = ByteBuffer.allocateDirect(MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 3);
 				tempDstBuffer.order(ByteOrder.nativeOrder());
 			} else {
-				tempDstArray = new byte[MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 2];
+				tempDstArray = new byte[MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 3];
 			}
 
 			audioTrackInitialize();
@@ -311,11 +313,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public int writeNative(long nativeObj, MediaCodecPlayer.OutputBuffer buffer) {
-			throw new UnsupportedOperationException("AudioTrackEngine does not support native writes");
-		}
-
-		@Override
 		public int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames) {
 			if (pendingDstFrames <= 0) {
 				int sizeInFrames = buffer.remainingBytes >> srcChannelCount;
@@ -332,8 +329,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				if ((okToQuitIfFull && sizeInFrames >= emptyFrames) || sizeInFrames == 0)
 					return 0;
 
+				final MediaCodecPlayer player = buffer.player;
 				long dstSrcRet;
-				if ((dstSrcRet = audioTrackProcessEffects(buffer.byteArray, buffer.byteBuffer, buffer.offsetInBytes, sizeInFrames, MediaCodecPlayer.needsSwap, tempDstArray, tempDstBuffer)) < 0)
+				if ((dstSrcRet =
+						(player.isNativeMediaCodec() ?
+							audioTrackProcessNativeEffects(player.getNativeObj(), buffer.offsetInBytes, sizeInFrames, tempDstBuffer) :
+							audioTrackProcessEffects(buffer.byteArray, buffer.byteBuffer, buffer.offsetInBytes, sizeInFrames, MediaCodecPlayer.needsSwap, tempDstArray, tempDstBuffer)
+						)) < 0)
 					return (int)dstSrcRet;
 
 				//dstFramesUsed -> low
@@ -370,7 +372,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		@Override
 		public int initialize() {
-			engineAcceptsNativeBuffers = hasExternalNativeLibrary;
 			engineNeedsFullBufferBeforeResuming = false;
 			return openSLInitialize();
 		}
@@ -447,22 +448,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public int writeNative(long nativeObj, MediaCodecPlayer.OutputBuffer buffer) {
-			long dstSrcRet;
-			if ((dstSrcRet = openSLWriteNative(nativeObj, buffer.offsetInBytes, buffer.remainingBytes >> srcChannelCount)) > 0) {
-				//dstFramesUsed -> low
-				//srcFramesUsed -> high
-				final int srcBytesUsed = (int)(dstSrcRet >>> 32) << srcChannelCount;
-				buffer.remainingBytes -= srcBytesUsed;
-				buffer.offsetInBytes += srcBytesUsed;
-			}
-			return (int)dstSrcRet;
-		}
-
-		@Override
 		public int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames) {
+			final MediaCodecPlayer player = buffer.player;
 			long dstSrcRet;
-			if ((dstSrcRet = openSLWrite(buffer.byteArray, buffer.byteBuffer, buffer.offsetInBytes, buffer.remainingBytes >> srcChannelCount, MediaCodecPlayer.needsSwap)) > 0) {
+			if ((dstSrcRet =
+				(player.isNativeMediaCodec() ?
+					openSLWriteNative(player.getNativeObj(), buffer.offsetInBytes, buffer.remainingBytes >> srcChannelCount) :
+					openSLWrite(buffer.byteArray, buffer.byteBuffer, buffer.offsetInBytes, buffer.remainingBytes >> srcChannelCount, MediaCodecPlayer.needsSwap)
+				)) > 0) {
 				//dstFramesUsed -> low
 				//srcFramesUsed -> high
 				final int srcBytesUsed = (int)(dstSrcRet >>> 32) << srcChannelCount;
@@ -984,11 +977,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				}
 
 				if (outputBuffer.remainingBytes > 0) {
-					final int framesWrittenThisTime;
-					if (sourcePlayer.isNativeMediaCodec())
-						framesWrittenThisTime = engine.writeNative(sourcePlayer.getNativeObj(), outputBuffer);
-					else
-						framesWrittenThisTime = engine.write(outputBuffer, bufferSizeInFrames - (int)(framesWritten - framesPlayed));
+					final int framesWrittenThisTime = engine.write(outputBuffer, bufferSizeInFrames - (int)(framesWritten - framesPlayed));
 					if (framesWrittenThisTime < 0) {
 						throw new IOException("engine.write() returned " + framesWrittenThisTime);
 					} else if (framesWrittenThisTime == 0) {
@@ -1445,7 +1434,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static int getFeatures() {
 		return (getProcessorFeatures() |
-			(engineAcceptsNativeBuffers ? Player.FEATURE_DECODING_NATIVE : 0) |
+			(externalNativeLibraryAvailable ? Player.FEATURE_DECODING_NATIVE : 0) |
 			(MediaCodecPlayer.isDirect ? Player.FEATURE_DECODING_DIRECT : 0));
 	}
 
