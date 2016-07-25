@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay.playback.context;
 
 import android.content.Context;
-import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
@@ -48,6 +47,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import br.com.carlosrafaelgn.fplay.playback.HttpStreamExtractor;
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
@@ -95,7 +95,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	public static int needsSwap;
 	public static boolean isDirect;
 
-	private volatile int state, currentPositionInMS, httpStreamReceiverVersion;
+	private volatile int state, httpStreamReceiverVersion;
+	private volatile long currentPositionInFrames;
 	private int srcSampleRate, dstSampleRate, channelCount, durationInMS, stateBeforeSeek;
 	private long nativeObj;
 	private ParcelFileDescriptor fileDescriptor;
@@ -103,6 +104,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	private MediaCodec mediaCodec;
 	private Handler handler;
 	private HttpStreamReceiver httpStreamReceiver;
+	private HttpStreamExtractor httpStreamExtractor;
 	private String path;
 	private ByteBuffer[] inputBuffers, outputBuffers;
 	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, nativeMediaCodec, httpStreamBufferingAfterPause;
@@ -172,12 +174,11 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		}
 		for (int i = 0; i < inputBuffers.length && !inputOver; i++) {
 			final int inputFrameSize, index;
-			if ((inputFrameSize = httpStreamReceiver.canReadMpegHeader(null)) <= 0)
+			if ((inputFrameSize = httpStreamExtractor.canReadHeader()) <= 0)
 				break;
 			if ((index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) < 0)
 				break;
-			httpStreamReceiver.buffer.readArray(inputBuffers[index], 0, inputFrameSize);
-			httpStreamReceiver.buffer.commitRead(inputFrameSize);
+			httpStreamReceiver.readArray(inputBuffers[index], 0, inputFrameSize);
 			mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
 		}
 		return true;
@@ -228,27 +229,18 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				httpStreamBufferingAfterPause = false;
 			}
 			try {
-				final int[] properties = (int[])msg.obj; //channel count, sample rate, bit rate, samples per frame
-				channelCount = properties[0];
-				srcSampleRate = properties[1];
-				dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
+				httpStreamExtractor = (HttpStreamExtractor)msg.obj;
+				channelCount = httpStreamExtractor.getChannelCount();
+				srcSampleRate = httpStreamExtractor.getSampleRate();
 				//only mono and stereo files for now...
-				if (channelCount != 1 && channelCount != 2) {
+				if ((channelCount != 1 && channelCount != 2) ||
+					(srcSampleRate > 48000)) {
 					onError(new UnsupportedFormatException(), 0);
 					break;
 				}
-				//we only support mpeg streams
-				final String contentType = "audio/mpeg";
-				mediaCodec = MediaCodec.createDecoderByType(contentType);
-				final MediaFormat format = new MediaFormat();
-				format.setString(MediaFormat.KEY_MIME, contentType);
-				format.setInteger(MediaFormat.KEY_SAMPLE_RATE, srcSampleRate);
-				format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, channelCount);
-				format.setInteger(MediaFormat.KEY_CHANNEL_MASK, (channelCount == 1) ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
-				format.setInteger(MediaFormat.KEY_BIT_RATE, properties[2]);
-				mediaCodec.configure(format, null, null, 0);
-				mediaCodec.start();
-				currentPositionInMS = 0;
+				dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
+				mediaCodec = httpStreamExtractor.createMediaCodec();
+				currentPositionInFrames = 0;
 				inputOver = false;
 				outputOver = false;
 				inputBuffers = mediaCodec.getInputBuffers();
@@ -306,6 +298,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			final int ret = MediaContext.mediaCodecFillInputBuffers(nativeObj);
 			if (ret < 0)
 				throw new IOException("mediaCodecFillInputBuffers() returned " + ret);
+		} else if (httpStreamReceiver != null) {
+			fillInternetInputBuffers();
 		} else {
 			fillInputBuffersInternal();
 		}
@@ -434,21 +428,25 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			if (ret < 0)
 				throw new IOException();
 			outputOver = (ret == 0x7FFFFFFFFFFFFFFFL);
-			currentPositionInMS = (outputOver ? durationInMS : (int)(ret / 1000L));
-			return (ret * (long)dstSampleRate) //us * frames per second
-				/ 1000000L; //us to second;
+			currentPositionInFrames = (outputOver ?
+				getDurationInFrames() :
+				((ret * (long)dstSampleRate) //us * frames per second
+				/ 1000000L)); //us to second;
+			return currentPositionInFrames;
 		}
 
 		mediaCodec.flush();
 		mediaExtractor.seekTo((long)msec * 1000L, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
 		inputOver = false;
 		bufferInfo.flags = 0;
-		final long duration = mediaExtractor.getSampleTime();
-		outputOver = (duration < 0);
-		currentPositionInMS = (outputOver ? durationInMS : (int)(duration / 1000L));
+		final long sampleTimeInUS = mediaExtractor.getSampleTime();
+		outputOver = (sampleTimeInUS < 0);
+		currentPositionInFrames = (outputOver ?
+			getDurationInFrames() :
+			((sampleTimeInUS * (long)dstSampleRate) //us * frames per second
+				/ 1000000L)); //us to second;
 		fillInputBuffersInternal();
-		return (duration * (long)dstSampleRate) //us * frames per second
-			/ 1000000L; //us to second;
+		return currentPositionInFrames;
 	}
 
 	void resetDecoderIfOutputAlreadyUsed() throws IOException {
@@ -583,7 +581,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
 				channelCount = (int)params[2];
 				durationInMS = (int)(params[3] / 1000L);
-				currentPositionInMS = 0;
+				currentPositionInFrames = 0;
 				outputOver = false;
 				state = STATE_PREPARED;
 				break;
@@ -625,7 +623,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			if (mediaCodec == null)
 				throw new UnsupportedFormatException();
 			mediaCodec.start();
-			currentPositionInMS = 0;
+			currentPositionInFrames = 0;
 			inputOver = false;
 			outputOver = false;
 			inputBuffers = mediaCodec.getInputBuffers();
@@ -735,7 +733,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		srcSampleRate = 0;
 		dstSampleRate = 0;
 		channelCount = 0;
-		currentPositionInMS = 0;
+		currentPositionInFrames = 0;
 		durationInMS = -1;
 		inputBuffers = null;
 		outputBuffers = null;
@@ -777,18 +775,25 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		return durationInMS;
 	}
 
-	long getCurrentPositionInFrames() {
-		return ((long)currentPositionInMS * (long)dstSampleRate) //ms * frames per second
-			/ 1000L; //ms to second
+	long getDurationInFrames() {
+		return ((long)durationInMS * (long)dstSampleRate) / 1000L;
 	}
 
-	void setCurrentPosition(int msec) {
-		currentPositionInMS = msec;
+	long getCurrentPositionInFrames() {
+		return currentPositionInFrames;
+	}
+
+	void setCurrentPositionInFrames(long currentPositionInFrames) {
+		//this is not perfect, but the chances something goes wrong are small,
+		//since the upper 32 bits change aprox. at every 24 hours @ 48000 Hz
+		//so..... in an ideal world, we would have to synchronize the reads
+		//and the writes... but I don't think it's necessary
+		this.currentPositionInFrames = currentPositionInFrames;
 	}
 
 	@Override
 	public int getCurrentPosition() {
-		return currentPositionInMS;
+		return (int)((currentPositionInFrames * 1000L) / (long)dstSampleRate);
 	}
 
 	@Override

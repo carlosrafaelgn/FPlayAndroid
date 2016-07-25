@@ -58,6 +58,7 @@ import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
@@ -90,7 +91,7 @@ public final class HttpStreamReceiver implements Runnable {
 	private final String path;
 	private final Object sync;
 	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, arg1, audioSessionId, initialNetworkBufferLengthInBytes, initialAudioBufferInMS;
-	public final CircularIOBuffer buffer;
+	private final CircularIOBuffer buffer;
 	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady;
 	private RadioStationResolver resolver;
@@ -112,16 +113,8 @@ public final class HttpStreamReceiver implements Runnable {
 		private ShortBuffer[] outputBuffersAsShort;
 
 		@SuppressWarnings("deprecation")
-		private void createMediaCodec(int channelCount, int sampleRate, int bitRate) throws IOException {
-			mediaCodec = MediaCodec.createDecoderByType(contentType);
-			final MediaFormat format = new MediaFormat();
-			format.setString(MediaFormat.KEY_MIME, contentType);
-			format.setInteger(MediaFormat.KEY_SAMPLE_RATE, sampleRate);
-			format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, channelCount);
-			format.setInteger(MediaFormat.KEY_CHANNEL_MASK, (channelCount == 1) ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
-			format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-			mediaCodec.configure(format, null, null, 0);
-			mediaCodec.start();
+		private void prepareMediaCodec(MediaCodec mediaCodec) throws IOException {
+			this.mediaCodec = mediaCodec;
 			inputBuffers = mediaCodec.getInputBuffers();
 			outputBuffers = mediaCodec.getOutputBuffers();
 			outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
@@ -134,7 +127,7 @@ public final class HttpStreamReceiver implements Runnable {
 		@SuppressWarnings("deprecation")
 		private void createAudioTrack(int channelCount, int sampleRate, int bufferSizeInMS) {
 			final int minBufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-			int minBufferSizeInFrames = minBufferSizeInBytes >> 2;
+			int minBufferSizeInFrames = minBufferSizeInBytes >> channelCount;
 			if (minBufferSizeInFrames <= 0)
 				minBufferSizeInFrames = 1024;
 
@@ -199,8 +192,9 @@ public final class HttpStreamReceiver implements Runnable {
 				if (!waitForHeaders())
 					return;
 
-				final int[] properties = new int[4]; //channel count, sample rate, bit rate, samples per frame
-				int inputFrameSize = waitToReadMpegHeader(properties);
+				final HttpStreamExtractor extractor = (contentType.equals("audio/mpeg") ? new MpegExtractor() : new AacExtractor(contentType));
+
+				int inputFrameSize = extractor.waitToReadHeader(true);
 				if (inputFrameSize < 0)
 					return;
 
@@ -208,19 +202,25 @@ public final class HttpStreamReceiver implements Runnable {
 					if (handler != null) {
 						if (buffer.waitUntilCanRead(inputFrameSize) < 0)
 							return;
-						handler.sendMessageAtTime(Message.obtain(handler, infoMsg, arg1, 0, properties), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, infoMsg, arg1, 0, extractor), SystemClock.uptimeMillis());
 					}
 					return;
 				}
 
+				//only mono and stereo, with sample rates <= 48000 Hz
+				if ((extractor.getChannelCount() != 1 && extractor.getChannelCount() != 2) ||
+					(extractor.getSampleRate() > 48000)) {
+					if (handler != null)
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT), SystemClock.uptimeMillis());
+					return;
+				}
+
 				final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-				final long usPerFrame = (long)properties[3] * 1000000L / (long)properties[1];
-				long currentUs = 0;
 
-				createMediaCodec(properties[0], properties[1], properties[2]);
-				createAudioTrack(properties[0], properties[1], initialAudioBufferInMS);
+				prepareMediaCodec(extractor.createMediaCodec());
+				createAudioTrack(extractor.getChannelCount(), extractor.getSampleRate(), initialAudioBufferInMS);
 
-				short[] tmpShortOutput = new short[properties[0] * properties[3]]; //1 frame @ mono/stereo, 16 bits per sample
+				short[] tmpShortOutput = new short[extractor.getChannelCount() * extractor.getSamplesPerFrame()]; //1 frame @ mono/stereo, 16 bits per sample
 				boolean okToProcessMoreInput = true, playbackStarted = false;
 				int timedoutFrameCount = 0;
 
@@ -239,8 +239,7 @@ public final class HttpStreamReceiver implements Runnable {
 						buffer.commitRead(inputFrameSize);
 
 						//queue the input buffer for decoding
-						mediaCodec.queueInputBuffer(inputBufferIndex, 0, inputFrameSize, currentUs, 0);
-						currentUs += usPerFrame;
+						mediaCodec.queueInputBuffer(inputBufferIndex, 0, inputFrameSize, 0, 0);
 					}
 
 					//wait for the decoding process to complete
@@ -281,7 +280,7 @@ public final class HttpStreamReceiver implements Runnable {
 									}
 									inputBuffers[inputBufferIndex].limit(0);
 									inputBuffers[inputBufferIndex].position(0);
-									mediaCodec.queueInputBuffer(inputBufferIndex, 0, 0, currentUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+									mediaCodec.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
 								}
 								info.size = Integer.MAX_VALUE;
 								break OutputLoop;
@@ -295,9 +294,9 @@ public final class HttpStreamReceiver implements Runnable {
 						//had a chance to use it... this is very rare and happens only when we are
 						//not being able to process data as fast as the remote server sends)
 						releaseMediaCodec();
-						createMediaCodec(properties[0], properties[1], properties[2]);
+						prepareMediaCodec(extractor.createMediaCodec());
 
-						inputFrameSize = waitToReadMpegHeader(null);
+						inputFrameSize = extractor.waitToReadHeader(false);
 						if (inputFrameSize < 0)
 							return;
 
@@ -352,11 +351,10 @@ public final class HttpStreamReceiver implements Runnable {
 
 					if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
 						okToProcessMoreInput = true;
-						currentUs = 0;
 						mediaCodec.flush();
 					}
 
-					inputFrameSize = waitToReadMpegHeader(null);
+					inputFrameSize = extractor.waitToReadHeader(false);
 					if (inputFrameSize < 0)
 						return;
 				}
@@ -829,7 +827,7 @@ public final class HttpStreamReceiver implements Runnable {
 								contentType = line.substring(lineLen + 1).trim();
 						} else if (line.regionMatches(true, 0, "content-type", 0, 12)) {
 							if (!shouldRedirectOnCompletion)
-								contentType = line.substring(lineLen + 1).trim();
+								contentType = line.substring(lineLen + 1).trim().toLowerCase(Locale.US);
 						} else if (line.regionMatches(true, 0, "icy-url", 0, 7)) {
 							icyUrl = line.substring(lineLen + 1).trim();
 						} else if (line.regionMatches(true, 0, "icy-genre", 0, 9)) {
@@ -990,8 +988,11 @@ public final class HttpStreamReceiver implements Runnable {
 			if ((bufferingCounter = resolveUrlAndSendRequest()) < 0)
 				return;
 
-			//we only support mpeg streams
-			if (!contentType.equalsIgnoreCase("audio/mpeg")) {
+			//we only support mpeg and aac streams
+			if (!contentType.equals("audio/mpeg") &&
+				!contentType.equals("audio/aac") &&
+				!contentType.equals("audio/aacp") &&
+				!contentType.equals("audio/mp4a-latm")) {
 				//abort everything!
 				synchronized (sync) {
 					if (!alive)
@@ -1196,218 +1197,504 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
 	}
 
-	private static final int[][][] MPEG_BIT_RATE = {
-		//MPEG 2 & 2.5
-		{
-			{0,  8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000, 96000,112000,128000,144000,160000,0}, //Layer III
-			{0,  8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000, 96000,112000,128000,144000,160000,0}, //Layer II
-			{0, 32000, 48000, 56000, 64000, 80000, 96000,112000,128000,144000,160000,176000,192000,224000,256000,0}  //Layer I
-		},
-		//MPEG 1
-		{
-			{0, 32000, 40000, 48000, 56000, 64000, 80000, 96000,112000,128000,160000,192000,224000,256000,320000,0}, //Layer III
-			{0, 32000, 48000, 56000, 64000, 80000, 96000,112000,128000,160000,192000,224000,256000,320000,384000,0}, //Layer II
-			{0, 32000, 64000, 96000,128000,160000,192000,224000,256000,288000,320000,352000,384000,416000,448000,0}  //Layer I
-		}
-	};
-	private static final int[][] MPEG_SAMPLE_RATE = {
-		{11025, 12000,  8000, 0}, //MPEG 2.5
-		{    0,     0,     0, 0}, //reserved
-		{22050, 24000, 16000, 0}, //MPEG 2
-		{44100, 48000, 32000, 0}  //MPEG 1
-	};
-	private static final int[][] MPEG_SAMPLES_PER_FRAME = {
-		//MPEG 2 & 2.5
-		{
-			576,  //Layer III
-			1152, //Layer II
-			384   //Layer I
-		},
-		//MPEG 1
-		{   1152, //Layer III
-			1152, //Layer II
-			384   //Layer I
-		}
-	};
-	private static final int[][] MPEG_COEFF = {
-		//MPEG 2 & 2.5
-		{
-			72,  // Layer III
-			144, // Layer II
-			12   // Layer I (must be multiplied with 4, because of slot size)
-		},
-		//MPEG 1
-		{
-			144, // Layer III
-			144, // Layer II
-			12   // Layer I (must be multiplied with 4, because of slot size)
-		}
-	};
-
-	private int isByteAtOffsetAValidMpegHeader(int offset, int[] properties) {
-		//header byte 0
-		int b = buffer.peekReadArray(offset);
-
-		if (b == 0x49 && buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
-			//process the ID3 tag by skipping it comletely
-			buffer.waitUntilCanRead(10);
-
-			if (!alive)
-				return -1;
-
-			//refer to MetadataExtractor.java -> extractID3v2Andv1()
-			final int flags = buffer.peekReadArray(offset + 5);
-			final int sizeBytes0 = buffer.peekReadArray(offset + 6);
-			final int sizeBytes1 = buffer.peekReadArray(offset + 7);
-			final int sizeBytes2 = buffer.peekReadArray(offset + 8);
-			final int sizeBytes3 = buffer.peekReadArray(offset + 9);
-			int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
-				(
-					(sizeBytes3 & 0x7f) |
-						((sizeBytes2 & 0x7f) << 7) |
-						((sizeBytes1 & 0x7f) << 14) |
-						((sizeBytes0 & 0x7f) << 21)
-				) + 10; //the first 10 bytes
-			while (size > 0 && alive) {
-				final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
-				size -= len;
-				buffer.readBuffer.position(buffer.readBuffer.limit());
-				buffer.commitRead(len);
-			}
-
-			if (!alive)
-				return -1;
-
-			//proceed as if none of this had happened
-			buffer.waitUntilCanRead(4);
-			b = buffer.peekReadArray(offset);
-		}
-
-		if (b != 0xFF)
-			return -1;
-
-		//could be the first byte of our header, let's just check the next 3 bytes
-
-		//header byte 1
-		b = buffer.peekReadArray(offset + 1);
-
-		//11 bits: sync word
-		if ((b & 0xE0) != 0xE0)
-			return -1;
-
-		//2 bits: version must be != 1
-		final int version = ((b >>> 3) & 0x03);
-		if (version == 1)
-			return -1;
-
-		//2 bits: version must be != 1
-		final int layer = ((b >>> 1) & 0x03);
-		if (layer == 0)
-			return -1;
-
-		//1 bit: error protection bit (ignored)
-
-		//header byte 2
-		b = buffer.peekReadArray(offset + 2);
-
-		//4 bits: bit rate
-		final int bitRate = MPEG_BIT_RATE[version & 1][layer - 1][b >>> 4];
-		if (bitRate == 0)
-			return -1;
-
-		//2 bits: sample rate
-		final int sampleRate = MPEG_SAMPLE_RATE[version][(b >>> 2) & 0x03];
-		if (sampleRate == 0)
-			return -1;
-
-		//1 bit: padding (if == 1, add 1 slot to the frame size)
-		final int padding = ((b >>> 1) & 0x01);
-
-		//1 bit: private bit (ignored)
-
-		//header byte 3
-		b = buffer.peekReadArray(offset + 3);
-
-		//2 bits: channel mode
-		if (properties != null) {
-			properties[0] = (((b >>> 6) == 3) ? 1 : 2); //channel count
-			properties[1] = sampleRate;
-			properties[2] = bitRate;
-			properties[3] = MPEG_SAMPLES_PER_FRAME[version & 1][layer - 1];
-		}
-
-		//2 bits: mode extension (ignored)
-
-		//1 bit: copyright (ignored)
-
-		//1 bit: original (ignored)
-
-		//2 bits: emphasis (must be != 2)
-		if ((b & 0x03) == 2)
-			return -1;
-
-		int frameSize = (((MPEG_COEFF[version & 1][layer - 1] * bitRate) / sampleRate) + padding);
-		if (layer == 3) //Layer I
-			frameSize <<= 2; //slot size * 4
-
-		return frameSize;
+	public void readArray(ByteBuffer dst, int dstOffset, int length) {
+		buffer.readArray(dst, dstOffset, length);
+		buffer.commitRead(length);
 	}
 
-	private int waitToReadMpegHeader(int[] properties) {
-		//we will look for the MPEG header
-		//http://www.mp3-tech.org/programmer/frame_header.html
-		//https://en.wikipedia.org/wiki/MP3
-		while (alive) {
-			buffer.waitUntilCanRead(4);
+	private final class MpegExtractor extends HttpStreamExtractor {
+		private final int[][][] MPEG_BIT_RATE = {
+			//MPEG 2 & 2.5
+			{
+				{0,  8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000, 96000,112000,128000,144000,160000,0}, //Layer III
+				{0,  8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000, 96000,112000,128000,144000,160000,0}, //Layer II
+				{0, 32000, 48000, 56000, 64000, 80000, 96000,112000,128000,144000,160000,176000,192000,224000,256000,0}  //Layer I
+			},
+			//MPEG 1
+			{
+				{0, 32000, 40000, 48000, 56000, 64000, 80000, 96000,112000,128000,160000,192000,224000,256000,320000,0}, //Layer III
+				{0, 32000, 48000, 56000, 64000, 80000, 96000,112000,128000,160000,192000,224000,256000,320000,384000,0}, //Layer II
+				{0, 32000, 64000, 96000,128000,160000,192000,224000,256000,288000,320000,352000,384000,416000,448000,0}  //Layer I
+			}
+		};
 
-			final int frameSize = isByteAtOffsetAValidMpegHeader(0, properties);
-			if (frameSize <= 0) {
-				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
-				continue;
+		private final int[][] MPEG_SAMPLE_RATE = {
+			{11025, 12000,  8000, 0}, //MPEG 2.5
+			{    0,     0,     0, 0}, //reserved
+			{22050, 24000, 16000, 0}, //MPEG 2
+			{44100, 48000, 32000, 0}  //MPEG 1
+		};
+
+		private final int[][] MPEG_SAMPLES_PER_FRAME = {
+			//MPEG 2 & 2.5
+			{
+				576,  //Layer III
+				1152, //Layer II
+				384   //Layer I
+			},
+			//MPEG 1
+			{   1152, //Layer III
+				1152, //Layer II
+				384   //Layer I
+			}
+		};
+
+		private final int[][] MPEG_COEFF = {
+			//MPEG 2 & 2.5
+			{
+				72,  // Layer III
+				144, // Layer II
+				12   // Layer I (must be multiplied with 4, because of slot size)
+			},
+			//MPEG 1
+			{
+				144, // Layer III
+				144, // Layer II
+				12   // Layer I (must be multiplied with 4, because of slot size)
+			}
+		};
+
+		private int bitRate;
+
+		public MpegExtractor() {
+			super("audio/mpeg");
+			setDstType("audio/mpeg");
+		}
+
+		private int isByteAtOffsetAValidMpegHeader(int offset, boolean fillProperties) {
+			//http://www.mp3-tech.org/programmer/frame_header.html
+			//https://en.wikipedia.org/wiki/MP3
+
+			//header byte 0
+			int b = buffer.peekReadArray(offset);
+
+			if (b == 0x49 && buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
+				//process the ID3 tag by skipping it completely
+				buffer.waitUntilCanRead(10);
+
+				if (!alive)
+					return -1;
+
+				//refer to MetadataExtractor.java -> extractID3v2Andv1()
+				final int flags = buffer.peekReadArray(offset + 5);
+				final int sizeBytes0 = buffer.peekReadArray(offset + 6);
+				final int sizeBytes1 = buffer.peekReadArray(offset + 7);
+				final int sizeBytes2 = buffer.peekReadArray(offset + 8);
+				final int sizeBytes3 = buffer.peekReadArray(offset + 9);
+				int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
+					(
+						(sizeBytes3 & 0x7f) |
+							((sizeBytes2 & 0x7f) << 7) |
+							((sizeBytes1 & 0x7f) << 14) |
+							((sizeBytes0 & 0x7f) << 21)
+					) + 10; //the first 10 bytes
+				while (size > 0 && alive) {
+					final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+					size -= len;
+					buffer.readBuffer.position(buffer.readBuffer.limit());
+					buffer.commitRead(len);
+				}
+
+				if (!alive)
+					return -1;
+
+				//proceed as if none of this had happened
+				buffer.waitUntilCanRead(4);
+				b = buffer.peekReadArray(offset);
 			}
 
-			buffer.waitUntilCanRead(frameSize + 4);
+			//(the bits should be read in a sequence that must be treated as big endian and MSB)
 
-			//if the byte at offset 0 was actually a header, then THERE MUST be another header
-			//right after it (extra validation)
-			if (isByteAtOffsetAValidMpegHeader(frameSize, properties) <= 0) {
-				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
-				continue;
+			if (b != 0xFF)
+				return -1;
+
+			//could be the first byte of our header, let's just check the next 3 bytes
+
+			//header byte 1
+			b = buffer.peekReadArray(offset + 1);
+
+			//11 bits: sync word
+			if ((b & 0xE0) != 0xE0)
+				return -1;
+
+			//2 bits: version must be != 1
+			final int version = ((b >>> 3) & 0x03);
+			if (version == 1)
+				return -1;
+
+			//2 bits: version must be != 1
+			final int layer = ((b >>> 1) & 0x03);
+			if (layer == 0)
+				return -1;
+
+			//1 bit: error protection bit (ignored)
+
+			//header byte 2
+			b = buffer.peekReadArray(offset + 2);
+
+			//4 bits: bit rate
+			final int bitRate = MPEG_BIT_RATE[version & 1][layer - 1][b >>> 4];
+			if (bitRate == 0)
+				return -1;
+
+			//2 bits: sample rate
+			final int sampleRate = MPEG_SAMPLE_RATE[version][(b >>> 2) & 0x03];
+			if (sampleRate == 0)
+				return -1;
+
+			//1 bit: padding (if == 1, add 1 slot to the frame size)
+			final int padding = ((b >>> 1) & 0x01);
+
+			//1 bit: private bit (ignored)
+
+			//header byte 3
+			b = buffer.peekReadArray(offset + 3);
+
+			//2 bits: channel mode
+			if (fillProperties) {
+				setChannelCount(((b >>> 6) == 3) ? 1 : 2); //channel count
+				setSampleRate(sampleRate);
+				setSamplesPerFrame(MPEG_SAMPLES_PER_FRAME[version & 1][layer - 1]);
+				setSrcStreamChannelCount(((b >>> 6) == 3) ? 1 : 2);
+				setSrcStreamSampleRate(sampleRate);
+				this.bitRate = bitRate;
+			}
+
+			//2 bits: mode extension (ignored)
+
+			//1 bit: copyright (ignored)
+
+			//1 bit: original (ignored)
+
+			//2 bits: emphasis (must be != 2)
+			if ((b & 0x03) == 2)
+				return -1;
+
+			int frameSize = (((MPEG_COEFF[version & 1][layer - 1] * bitRate) / sampleRate) + padding);
+			if (layer == 3) //Layer I
+				frameSize <<= 2; //slot size * 4
+
+			return frameSize;
+		}
+
+		@Override
+		public int waitToReadHeader(boolean fillProperties) {
+			//we will look for the MPEG header
+			while (alive) {
+				buffer.waitUntilCanRead(4);
+
+				final int frameSize = isByteAtOffsetAValidMpegHeader(0, fillProperties);
+				if (frameSize <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
+
+				buffer.waitUntilCanRead(frameSize + 4);
+
+				//if the byte at offset 0 was actually a header, then THERE MUST be another header
+				//right after it (extra validation)
+				if (isByteAtOffsetAValidMpegHeader(frameSize, false) <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
+
+				return frameSize;
+			}
+
+			return -1;
+		}
+
+		@Override
+		public int canReadHeader() {
+			//we will look for the MPEG header
+			while (alive) {
+				if (buffer.canRead(4) < 0)
+					break;
+
+				final int frameSize = isByteAtOffsetAValidMpegHeader(0, false);
+				if (frameSize <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
+
+				if (buffer.canRead(frameSize + 4) < 0)
+					break;
+
+				//if the byte at offset 0 was actually a header, then THERE MUST be another header
+				//right after it (extra validation)
+				if (isByteAtOffsetAValidMpegHeader(frameSize, false) <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
+
+				return frameSize;
+			}
+
+			return -1;
+		}
+
+		@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+		@Override
+		protected void formatMediaCodec(MediaFormat format) {
+			format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
+		}
+	}
+
+	private final class AacExtractor extends HttpStreamExtractor {
+		private final int[] AAC_SAMPLE_RATE = {
+			96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350, 0, 0, 0
+		};
+
+		private int bitRate, profile, streamSampleRateIndex;
+
+		public AacExtractor(String srcType) {
+			super(srcType);
+			setDstType("audio/mp4a-latm");
+		}
+
+		private int isByteAtOffsetAValidAdtsHeader(int offset, boolean fillProperties) {
+			//https://wiki.multimedia.cx/index.php?title=ADTS
+
+			//header byte 0
+			int b = buffer.peekReadArray(offset);
+
+			if (b == 0x49 && buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
+				//process the ID3 tag by skipping it completely
+				buffer.waitUntilCanRead(10);
+
+				if (!alive)
+					return -1;
+
+				//refer to MetadataExtractor.java -> extractID3v2Andv1()
+				final int flags = buffer.peekReadArray(offset + 5);
+				final int sizeBytes0 = buffer.peekReadArray(offset + 6);
+				final int sizeBytes1 = buffer.peekReadArray(offset + 7);
+				final int sizeBytes2 = buffer.peekReadArray(offset + 8);
+				final int sizeBytes3 = buffer.peekReadArray(offset + 9);
+				int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
+					(
+						(sizeBytes3 & 0x7f) |
+							((sizeBytes2 & 0x7f) << 7) |
+							((sizeBytes1 & 0x7f) << 14) |
+							((sizeBytes0 & 0x7f) << 21)
+					) + 10; //the first 10 bytes
+				while (size > 0 && alive) {
+					final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+					size -= len;
+					buffer.readBuffer.position(buffer.readBuffer.limit());
+					buffer.commitRead(len);
+				}
+
+				if (!alive)
+					return -1;
+
+				//proceed as if none of this had happened
+				buffer.waitUntilCanRead(4);
+				b = buffer.peekReadArray(offset);
+			}
+
+			//(the bits should be read in a sequence that must be treated as big endian and MSB)
+
+			if (b != 0xFF)
+				return -1;
+
+			//could be the first byte of our header, let's just check the next 6 bytes
+
+			//https://wiki.multimedia.cx/index.php?title=ADTS
+
+			//header byte 1
+			b = buffer.peekReadArray(offset + 1);
+
+			//12 bits: sync word
+			if ((b & 0xF0) != 0xF0)
+				return -1;
+
+			//1 bit: id (0 for MPEG-4, 1 for MPEG-2) (ignored)
+
+			//2 bits: layer
+			final int layer = ((b >>> 1) & 0x03);
+			if (layer != 0)
+				return -1;
+
+			//1 bit: protection (CRC) absent (ignored)
+
+			//header byte 2
+			b = buffer.peekReadArray(offset + 2);
+
+			//2 bits: profile (in fact, the two bits store profile - 1)
+			int profile = ((b >>> 6) & 0x03) + 1;
+
+			//4 bits: sample frequency index
+			final int sampleRateIndex = ((b >>> 2) & 0x0F);
+			final int sampleRate = AAC_SAMPLE_RATE[sampleRateIndex];
+			if (sampleRate == 0)
+				return -1;
+
+			//1 bit: private bit (ignored)
+
+			//3 bits: channel config (1 bit from byte 2 and 2 bits from byte 3)
+			int channelCfg = (b & 0x01) << 2;
+
+			//header byte 3
+			b = buffer.peekReadArray(offset + 3);
+
+			channelCfg |= (b >>> 6) & 0x03;
+
+			//channel config is actually an index into the array
+			//{ 0, 1, 2, 3, 4, 5, 6, 8 }
+			//from where we extract the channel count (only 7 is replaced with 8,
+			//but we do not accept anything but 1 or 2 channels anyway...)
+
+			//1 bit: original copy (ignored)
+			//1 bit: home (ignored)
+
+			//adts variable header from now on
+
+			//1 bit: copyright identification
+			//1 bit: copyright identification start
+
+			//13 bits: frame length (2 bits from byte 3, 8 bits from byte 4 and 3 bits from byte 5)
+			int frameSize = (b & 0x03) << 11;
+
+			//header byte 4
+			frameSize |= buffer.peekReadArray(offset + 4) << 3;
+
+			//header byte 5
+			frameSize |= (buffer.peekReadArray(offset + 5) >>> 5) & 0x07;
+
+			if (frameSize < 7)
+				return -1;
+
+			//11 bits: adts buffer fullness (ignored) (5 bits from byte 5 and 6 bits from byte 6)
+
+			if (fillProperties) {
+				//header byte 6
+
+				//2 bits: number of raw data blocks in frame
+				//(each data block contains 1024 samples, and a typical aac frame contains
+				//1024 compressed samples)
+
+				//a few devices accept a profile of 5, but several don't!
+				//I had created a mechanism to retry the creation should the
+				//first creation fail... but... the creation of two MediaCodec's
+				//in a row (even after releasing the first one and switching the
+				//profile back to 2) causes the creation of the second MediaCodec
+				//to fail in a few devices... :(
+				//that's why I gave up on even trying to initially set profile = 5
+				if (getSrcType().equals("audio/aacp") && profile == 2) { //2: AAC LC (Low Complexity)
+					//seriously... it's a jungle out there!!! lots and lots of streams report
+					//mono, but they are actually stereo!
+					setChannelCount(2);
+					//http://stackoverflow.com/a/4678183/3569421
+					//AAC+ reports half of the sample rate for compatibility with
+					//old LC-only decoders
+					setSampleRate(sampleRate << 1);
+					//this.profile = 5; //5: SBR (Spectral Band Replication) = AAC-HEv2
+				} else if (getSrcType().equals("audio/aac") && profile == 2 && sampleRate < 32000) {
+					//let the guessing begin!!! (a few streams declare to be audio/aac,
+					//but they are actually audio/aacp.............)
+					setChannelCount(channelCfg);
+					setSampleRate(sampleRate << 1);
+					//this.profile = 5;
+				} else {
+					setChannelCount(channelCfg);
+					setSampleRate(sampleRate);
+					//this.profile = profile;
+				}
+				this.profile = profile;
+
+				setSamplesPerFrame(1024 + ((buffer.peekReadArray(offset + 6) & 0x03) << 10));
+				setSrcStreamChannelCount(channelCfg);
+				setSrcStreamSampleRate(sampleRate);
+				this.bitRate = ((frameSize << 3) * sampleRate) / getSamplesPerFrame(); //bit rate (must be figured out manually)
+				this.streamSampleRateIndex = sampleRateIndex;
 			}
 
 			return frameSize;
 		}
 
-		return -1;
-	}
+		@Override
+		public int waitToReadHeader(boolean fillProperties) {
+			//we will look for the AAC ADTS header
+			while (alive) {
+				buffer.waitUntilCanRead(7);
 
-	public int canReadMpegHeader(int[] properties) {
-		//we will look for the MPEG header
-		//http://www.mp3-tech.org/programmer/frame_header.html
-		//https://en.wikipedia.org/wiki/MP3
-		while (alive) {
-			if (buffer.canRead(4) < 0)
-				break;
+				final int frameSize = isByteAtOffsetAValidAdtsHeader(0, fillProperties);
+				if (frameSize <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
 
-			final int frameSize = isByteAtOffsetAValidMpegHeader(0, properties);
-			if (frameSize <= 0) {
-				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
-				continue;
+				buffer.waitUntilCanRead(frameSize + 7);
+
+				//if the byte at offset 0 was actually a header, then THERE MUST be another header
+				//right after it (extra validation)
+				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
+
+				return frameSize;
 			}
 
-			if (buffer.canRead(frameSize + 4) < 0)
-				break;
-
-			//if the byte at offset 0 was actually a header, then THERE MUST be another header
-			//right after it (extra validation)
-			if (isByteAtOffsetAValidMpegHeader(frameSize, properties) <= 0) {
-				buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
-				continue;
-			}
-
-			return frameSize;
+			return -1;
 		}
 
-		return -1;
+		@Override
+		public int canReadHeader() {
+			//we will look for the AAC ADTS header
+			while (alive) {
+				if (buffer.canRead(7) < 0)
+					break;
+
+				final int frameSize = isByteAtOffsetAValidAdtsHeader(0, false);
+				if (frameSize <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
+
+				if (buffer.canRead(frameSize + 7) < 0)
+					break;
+
+				//if the byte at offset 0 was actually a header, then THERE MUST be another header
+				//right after it (extra validation)
+				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) <= 0) {
+					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					continue;
+				}
+
+				return frameSize;
+			}
+
+			return -1;
+		}
+
+		@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+		@Override
+		protected boolean prepareToRetry() {
+			if (profile == 5) {
+				//a few devices support profile 5... others don't!!!
+				profile = 2;
+				return true;
+			}
+			return false;
+		}
+
+		@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+		@Override
+		protected void formatMediaCodec(MediaFormat format) {
+			format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
+			format.setInteger(MediaFormat.KEY_AAC_PROFILE, profile);
+			format.setInteger(MediaFormat.KEY_IS_ADTS, 1);
+			//https://developer.android.com/reference/android/media/MediaCodec.html
+			//http://stackoverflow.com/a/36278858/3569421
+			//http://stackoverflow.com/a/36278662/3569421
+			final ByteBuffer csd = ByteBuffer.allocate(2);
+			csd.put(0, (byte)((profile << 3) | (streamSampleRateIndex >>> 1)));
+			csd.put(1, (byte)(((streamSampleRateIndex & 0x01) << 7) | (getSrcStreamChannelCount() << 3)));
+			csd.limit(2);
+			csd.position(0);
+			format.setByteBuffer("csd-0", csd);
+		}
 	}
 }

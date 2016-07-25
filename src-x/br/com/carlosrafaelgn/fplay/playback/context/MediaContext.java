@@ -152,7 +152,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native long audioTrackProcessEffects(byte[] srcArray, ByteBuffer srcBuffer, int offsetInBytes, int sizeInFrames, int needsSwap, byte[] dstArray, ByteBuffer dstBuffer);
 
 	private static native int openSLInitialize();
-	private static native int openSLCreate(int dstSampleRate, int bufferSizeInFrames, int minBufferSizeInFrames);
+	private static native int openSLCreate(int dstSampleRate, int bufferSizeInFrames, int singleBufferSizeInFrames);
 	private static native int openSLPlay();
 	private static native int openSLPause();
 	private static native int openSLStopAndFlush();
@@ -164,9 +164,34 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native long openSLWrite(byte[] array, ByteBuffer buffer, int offsetInBytes, int sizeInFrames, int needsSwap);
 
 	private static abstract class Engine {
+		@SuppressWarnings("deprecation")
+		static int getFramesPerBuffer(int dstSampleRate) {
+			int framesPerBuffer = 0;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+				try {
+					if (nativeSampleRate > 0) {
+						final AudioManager am = (AudioManager)Player.theApplication.getSystemService(Context.AUDIO_SERVICE);
+						framesPerBuffer = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
+						framesPerBuffer = (int)Math.ceil((double)framesPerBuffer * (double)dstSampleRate / (double)nativeSampleRate);
+					}
+				} catch (Throwable ex) {
+					//just ignore
+					framesPerBuffer = 0;
+				}
+			}
+
+			if (framesPerBuffer <= 0) {
+				framesPerBuffer = AudioTrack.getMinBufferSize(dstSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT) >> 2;
+				if (framesPerBuffer <= 0)
+					framesPerBuffer = 1024;
+			}
+
+			return framesPerBuffer;
+		}
+
 		public abstract int initialize();
-		public abstract int create(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames);
-		public abstract int recreateIfNeeded(int sampleRate, int bufferSizeInFrames);
+		public abstract int create(int dstSampleRate);
+		public abstract int recreateIfNeeded(int dstSampleRate);
 		public abstract int play();
 		public abstract int pause();
 		public abstract int stopAndFlush();
@@ -174,8 +199,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public abstract void terminate();
 		public abstract void setVolume();
 		public abstract int getActualBufferSizeInFrames();
+		public abstract int getSingleBufferSizeInFrames();
 		public abstract int getHeadPositionInFrames();
-		public abstract int getFillThresholdInFrames(int bufferSizeInFrames);
+		public abstract int getFillThresholdInFrames();
 		public abstract int commitFinalFrames(int emptyFrames);
 		public abstract int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames);
 	}
@@ -196,7 +222,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		private byte[] tempDstArray;
 		private ByteBuffer tempDstBuffer;
 		private boolean okToQuitIfFull;
-		private int pendingOffsetInBytes, pendingDstFrames;
+		private int pendingOffsetInBytes, pendingDstFrames, singleBufferSizeInFrames;
 
 		@Override
 		public int initialize() {
@@ -217,12 +243,50 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public int create(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames) {
+		public int create(int dstSampleRate) {
 			release();
-			audioTrackCreate(sampleRate);
-			audioTrack = new QueryableAudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << 2, AudioTrack.MODE_STREAM);
-			pendingOffsetInBytes = 0;
-			pendingDstFrames = 0;
+
+			if (dstSampleRate < 4000)
+				dstSampleRate = 44100;
+
+			singleBufferSizeInFrames = getFramesPerBuffer(dstSampleRate);
+
+			//to be sure that singleBufferSizeInFrames still will be a valid multiple after
+			//dividing by 2, we need to make sure singleBufferSizeInFrames is an even number
+			while (((singleBufferSizeInFrames & 1) == 0) && singleBufferSizeInFrames >= (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 16))
+				singleBufferSizeInFrames >>= 1;
+
+			int bufferSizeInFrames;
+			switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
+			case Player.BUFFER_SIZE_500MS:
+				bufferSizeInFrames = dstSampleRate >> 1;
+				break;
+			case Player.BUFFER_SIZE_1500MS:
+				bufferSizeInFrames = (dstSampleRate * 3) >> 1;
+				break;
+			case Player.BUFFER_SIZE_2000MS:
+				bufferSizeInFrames = dstSampleRate << 1;
+				break;
+			case Player.BUFFER_SIZE_2500MS:
+				bufferSizeInFrames = (dstSampleRate * 5) >> 1;
+				break;
+			default:
+				bufferSizeInFrames = dstSampleRate;
+				break;
+			}
+
+			final int minBufferSizeInFrames = AudioTrack.getMinBufferSize(dstSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT) >> 2;
+			if (bufferSizeInFrames < minBufferSizeInFrames)
+				bufferSizeInFrames = minBufferSizeInFrames;
+
+			//round, but keep roundedBufferSizeInFrames not too above bufferSizeInFrames
+			final int roundedBufferSizeInFrames = (bufferSizeInFrames / singleBufferSizeInFrames) * singleBufferSizeInFrames;
+			bufferSizeInFrames = ((roundedBufferSizeInFrames >= bufferSizeInFrames) ?
+				roundedBufferSizeInFrames :
+				(((bufferSizeInFrames + (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 4)) / singleBufferSizeInFrames) * singleBufferSizeInFrames));
+
+			audioTrackCreate(dstSampleRate);
+			audioTrack = new QueryableAudioTrack(AudioManager.STREAM_MUSIC, dstSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << 2, AudioTrack.MODE_STREAM);
 			try {
 				//apparently, there are times when audioTrack creation fails, but the constructor
 				//above does not throw any exceptions (only getNativeFrameCount() throws exceptions
@@ -236,8 +300,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public int recreateIfNeeded(int sampleRate, int bufferSizeInFrames) {
-			return (audioTrack != null ? 0 : create(sampleRate, bufferSizeInFrames, 0));
+		public int recreateIfNeeded(int dstSampleRate) {
+			return (audioTrack != null ? 0 : create(dstSampleRate));
 		}
 
 		@Override
@@ -260,23 +324,26 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			//after discovering SEVERAL bugs and bizarre return values, I decided to simply
 			//destroy and recreate the AudioTrack every time, instead of pausing/flushing
 			release();
-			pendingOffsetInBytes = 0;
-			pendingDstFrames = 0;
 			return 0;
 		}
 
 		@Override
 		public void release() {
 			okToQuitIfFull = false;
+			pendingOffsetInBytes = 0;
+			pendingDstFrames = 0;
 			if (audioTrack != null) {
 				audioTrack.release();
 				audioTrack = null;
+				System.gc();
 			}
 		}
 
 		@Override
 		public void terminate() {
 			release();
+			tempDstArray = null;
+			tempDstBuffer = null;
 		}
 
 		@SuppressWarnings("deprecation")
@@ -292,12 +359,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
+		public int getSingleBufferSizeInFrames() {
+			return singleBufferSizeInFrames;
+		}
+
+		@Override
 		public int getHeadPositionInFrames() {
 			return (audioTrack != null ? audioTrack.getPlaybackHeadPosition() : 0);
 		}
 
 		@Override
-		public int getFillThresholdInFrames(int bufferSizeInFrames) {
+		public int getFillThresholdInFrames() {
 			//the AudioTrack must only start playing when it returns 0
 			return 0x7fffffff;
 		}
@@ -314,6 +386,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		@Override
 		public int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames) {
+			//https://android.googlesource.com/platform/frameworks/av/+/master/media/libmedia/AudioTrack.cpp
+			//after A LOT of testing, and after reading AudioTrack's native source
+			//(method write()), I realized AudioTrack controls its buffers internally,
+			//filling up several small buffers of size singleBufferSizeInFrames
+			//therefore, we do not need to have such kind of control here, on the Java side!!!
+			//
+			//side note: even audioTrack.getPlaybackHeadPosition() increments in multiples of
+			//singleBufferSizeInFrames!!!
 			if (pendingDstFrames <= 0) {
 				int sizeInFrames = buffer.remainingBytes >> srcChannelCount;
 
@@ -368,7 +448,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	private static final class OpenSLEngine extends Engine {
-		private int bufferSizeInFrames;
+		private int bufferSizeInFrames, singleBufferSizeInFrames;
 
 		@Override
 		public int initialize() {
@@ -377,15 +457,57 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public int create(int sampleRate, int bufferSizeInFrames, int minBufferSizeInFrames) {
-			this.bufferSizeInFrames = bufferSizeInFrames;
-			final int ret = openSLCreate(sampleRate, bufferSizeInFrames, minBufferSizeInFrames);
+		public int create(int dstSampleRate) {
+			if (dstSampleRate < 4000)
+				dstSampleRate = 44100;
+
+			int framesPerBuffer = getFramesPerBuffer(dstSampleRate);
+			//make sure framesPerBuffer is even, so singleBufferSizeInFrames will also be
+			if ((framesPerBuffer & 1) != 0)
+				framesPerBuffer <<= 1;
+
+			singleBufferSizeInFrames = framesPerBuffer;
+			while (singleBufferSizeInFrames < ((2 * MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING) / 3))
+				singleBufferSizeInFrames += framesPerBuffer;
+
+			//to be sure that singleBufferSizeInFrames still will be a valid multiple after
+			//dividing by 2, we need to make sure singleBufferSizeInFrames is an even number
+			while (((singleBufferSizeInFrames & 1) == 0) && singleBufferSizeInFrames >= (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 16))
+				singleBufferSizeInFrames >>= 1;
+
+			switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
+			case Player.BUFFER_SIZE_500MS:
+				bufferSizeInFrames = dstSampleRate >> 1;
+				break;
+			case Player.BUFFER_SIZE_1500MS:
+				bufferSizeInFrames = (dstSampleRate * 3) >> 1;
+				break;
+			case Player.BUFFER_SIZE_2000MS:
+				bufferSizeInFrames = dstSampleRate << 1;
+				break;
+			case Player.BUFFER_SIZE_2500MS:
+				bufferSizeInFrames = (dstSampleRate * 5) >> 1;
+				break;
+			default:
+				bufferSizeInFrames = dstSampleRate;
+				break;
+			}
+
+			if (bufferSizeInFrames <= (singleBufferSizeInFrames << 1)) {
+				//we need at least 2 buffers + 1 extra buffer (refer to OpenSL.h)
+				bufferSizeInFrames = singleBufferSizeInFrames * 3;
+			} else {
+				//otherwise, make sure it is a multiple of our minimal buffer size and add 1 extra buffer (refer to OpenSL.h)
+				bufferSizeInFrames = (1 + (bufferSizeInFrames / singleBufferSizeInFrames)) * singleBufferSizeInFrames;
+			}
+
+			final int ret = openSLCreate(dstSampleRate, bufferSizeInFrames, singleBufferSizeInFrames);
 			setVolume();
 			return ret;
 		}
 
 		@Override
-		public int recreateIfNeeded(int sampleRate, int bufferSizeInFrames) {
+		public int recreateIfNeeded(int dstSampleRate) {
 			return 0;
 		}
 
@@ -425,12 +547,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
+		public int getSingleBufferSizeInFrames() {
+			return singleBufferSizeInFrames;
+		}
+
+		@Override
 		public int getHeadPositionInFrames() {
 			return openSLGetHeadPositionInFrames();
 		}
 
 		@Override
-		public int getFillThresholdInFrames(int bufferSizeInFrames) {
+		public int getFillThresholdInFrames() {
 			switch ((bufferConfig & Player.FILL_THRESHOLD_MASK)) {
 			case Player.FILL_THRESHOLD_25:
 				return (bufferSizeInFrames >> 2);
@@ -517,71 +644,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (player == null)
 			return;
 		updateSrcParams(player.getSrcSampleRate(), srcChannelCount = player.getChannelCount(), 0);
-	}
-
-	@SuppressWarnings("deprecation")
-	private static long getBufferSizeInFrames(int dstSampleRate) {
-		if (dstSampleRate < 4000)
-			dstSampleRate = 44100;
-
-		int framesPerBuffer = 0;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-			try {
-				if (nativeSampleRate > 0) {
-					final AudioManager am = (AudioManager)Player.theApplication.getSystemService(Context.AUDIO_SERVICE);
-					framesPerBuffer = Integer.parseInt(am.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER));
-					framesPerBuffer = (int)Math.ceil((double)framesPerBuffer * (double)dstSampleRate / (double)nativeSampleRate);
-				}
-			} catch (Throwable ex) {
-				//just ignore
-				framesPerBuffer = 0;
-			}
-		}
-
-		if (framesPerBuffer <= 0) {
-			framesPerBuffer = AudioTrack.getMinBufferSize(dstSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT) >> 2;
-			if (framesPerBuffer <= 0)
-				framesPerBuffer = 1024;
-		}
-
-		int singleBufferSizeInFrames = framesPerBuffer;
-		while (singleBufferSizeInFrames < ((2 * MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING) / 3))
-			singleBufferSizeInFrames += framesPerBuffer;
-
-		int bufferSizeInFrames;
-		switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
-		case Player.BUFFER_SIZE_500MS:
-			bufferSizeInFrames = 48000 / 2;
-			break;
-		case Player.BUFFER_SIZE_1500MS:
-			bufferSizeInFrames = (48000 * 3) / 2;
-			break;
-		case Player.BUFFER_SIZE_2000MS:
-			bufferSizeInFrames = 48000 * 2;
-			break;
-		case Player.BUFFER_SIZE_2500MS:
-			bufferSizeInFrames = (48000 * 5) / 2;
-			break;
-		default:
-			bufferSizeInFrames = 48000;
-			break;
-		}
-
-		int minBufferSizeInFrames = singleBufferSizeInFrames;
-		//while (minBufferSizeInFrames < 4096)
-		//	minBufferSizeInFrames += singleBufferSizeInFrames;
-		while (minBufferSizeInFrames > 20000)
-			minBufferSizeInFrames >>>= 1;
-
-		if (bufferSizeInFrames <= (minBufferSizeInFrames << 1)) {
-			//we need at least 2 buffers + 1 extra buffer (refer to OpenSL.h)
-			bufferSizeInFrames = minBufferSizeInFrames * 3;
-		} else {
-			//otherwise, make sure it is a multiple of our minimal buffer size and add 1 extra buffer (refer to OpenSL.h)
-			bufferSizeInFrames = (1 + ((bufferSizeInFrames + minBufferSizeInFrames - 1) / minBufferSizeInFrames)) * minBufferSizeInFrames;
-		}
-
-		return ((((long)minBufferSizeInFrames) << 32) | (long)bufferSizeInFrames);
 	}
 
 	private static void checkEngineResult(int result) {
@@ -699,7 +761,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								sourcePlayer = currentPlayer;
 								currentPlayer.resetDecoderIfOutputAlreadyUsed();
 								framesWritten = currentPlayer.getCurrentPositionInFrames();
-								framesPlayed = currentPlayer.getCurrentPositionInFrames();
+								framesPlayed = framesWritten;
 								nextFramesWritten = 0;
 								//some times, the native sample rate changes when the output
 								//method changes (headset, speaker, HDMI, bluetooth...)
@@ -710,22 +772,19 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (dstSampleRate != currentPlayer.getDstSampleRate() || bufferConfigChanged) {
 									bufferConfigChanged = false;
 									dstSampleRate = currentPlayer.getDstSampleRate();
-									final long temp = getBufferSizeInFrames(dstSampleRate);
-									bufferSizeInFrames = (int)temp;
-									final int minBufferSizeInFrames = (int)(temp >>> 32);
-									fillThresholdInFrames = engine.getFillThresholdInFrames(bufferSizeInFrames);
-									sleepTime = (minBufferSizeInFrames * 1000) / dstSampleRate;
-									if (sleepTime > 30) sleepTime = 30;
-									else if (sleepTime < 15) sleepTime = 15;
 									synchronized (engineSync) {
-										checkEngineResult(engine.create(dstSampleRate, bufferSizeInFrames, minBufferSizeInFrames));
+										checkEngineResult(engine.create(dstSampleRate));
 									}
 								} else {
 									synchronized (engineSync) {
-										checkEngineResult(engine.recreateIfNeeded(dstSampleRate, bufferSizeInFrames));
+										checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
 									}
 								}
 								bufferSizeInFrames = engine.getActualBufferSizeInFrames();
+								fillThresholdInFrames = engine.getFillThresholdInFrames();
+								sleepTime = (engine.getSingleBufferSizeInFrames() * 1000) / dstSampleRate;
+								if (sleepTime > 30) sleepTime = 30;
+								else if (sleepTime < 15) sleepTime = 15;
 								playPending = true;
 								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
@@ -742,9 +801,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										//"mini-reset" here
 										synchronized (engineSync) {
 											checkEngineResult(engine.stopAndFlush());
-											checkEngineResult(engine.recreateIfNeeded(dstSampleRate, bufferSizeInFrames));
+											checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
 										}
 										bufferSizeInFrames = engine.getActualBufferSizeInFrames();
+										fillThresholdInFrames = engine.getFillThresholdInFrames();
 										outputBuffer.release();
 										framesWritten = 0;
 										framesPlayed = 0;
@@ -890,9 +950,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								updateNativeSrcAndReset(seekPendingPlayer);
 								if (sourcePlayer == seekPendingPlayer) {
 									synchronized (engineSync) {
-										checkEngineResult(engine.recreateIfNeeded(dstSampleRate, bufferSizeInFrames));
+										checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
 									}
 									bufferSizeInFrames = engine.getActualBufferSizeInFrames();
+									fillThresholdInFrames = engine.getFillThresholdInFrames();
 								}
 								lastHeadPositionInFrames = engine.getHeadPositionInFrames();
 								if (nextPlayer != null) {
@@ -944,7 +1005,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				framesPlayed += (currentHeadPositionInFrames - lastHeadPositionInFrames);
 				lastHeadPositionInFrames = currentHeadPositionInFrames;
 
-				currentPlayer.setCurrentPosition((int)((framesPlayed * 1000L) / (long)dstSampleRate));
+				currentPlayer.setCurrentPositionInFrames(framesPlayed);
 
 				if (outputBuffer.index < 0) {
 					sourcePlayer.nextOutputBuffer(outputBuffer);
@@ -1043,7 +1104,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				if (framesPlayed >= framesWritten) {
 					if (currentPlayer.isOutputOver()) {
 						//we are done with this player!
-						currentPlayer.setCurrentPosition(currentPlayer.getDuration());
+						currentPlayer.setCurrentPositionInFrames(currentPlayer.getDurationInFrames());
 						if (nextPlayer == null) {
 							//there is nothing else to do!
 							synchronized (engineSync) {

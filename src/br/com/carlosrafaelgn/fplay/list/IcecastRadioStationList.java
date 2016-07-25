@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.os.Build;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
@@ -78,7 +80,9 @@ public final class IcecastRadioStationList extends RadioStationList {
 							res = -1;
 						} else {
 							v = parser.getText().trim();
-							res = (v.equals("MP3") ? 1 : 0);// || v.equals("Ogg Vorbis")); HttpStreamReceiver cannot handle anything but MP3 yet...
+							//https://developer.android.com/guide/appendix/media-formats.html
+							//ADTS raw AAC (.aac, decode in Android 3.1+)
+							res = ((v.equals("MP3") || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) && v.startsWith("AAC"))) ? 1 : 0);
 							fields[2] = v;
 						}
 					} else {
