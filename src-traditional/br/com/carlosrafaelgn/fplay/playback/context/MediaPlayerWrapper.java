@@ -37,9 +37,9 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
+import android.os.ParcelFileDescriptor;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 
 final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
@@ -71,17 +71,14 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 			path = uri.getPath();
 		}
 		if (path.charAt(0) == File.separatorChar) {
-			FileInputStream inputStream = null;
+			final ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
 			try {
-				inputStream = new FileInputStream(path);
-				player.setDataSource(inputStream.getFD());
+				player.setDataSource(fileDescriptor.getFileDescriptor(), 0, fileDescriptor.getStatSize());
 			} finally {
-				if (inputStream != null) {
-					try {
-						inputStream.close();
-					} catch (Throwable ex) {
-						//just ignore
-					}
+				try {
+					fileDescriptor.close();
+				} catch (Throwable ex) {
+					//just ignore
 				}
 			}
 		} else {

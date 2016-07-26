@@ -99,7 +99,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	private volatile long currentPositionInFrames;
 	private int srcSampleRate, dstSampleRate, channelCount, durationInMS, stateBeforeSeek;
 	private long nativeObj;
-	private ParcelFileDescriptor fileDescriptor;
 	private MediaExtractor mediaExtractor;
 	private MediaCodec mediaCodec;
 	private Handler handler;
@@ -566,28 +565,35 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			//enforce our policy
 			if (httpStreamReceiver != null)
 				throw new UnsupportedOperationException("internet streams must used prepareAsync()");
-			fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
-			final int fd = fileDescriptor.getFd();
-			final long len = fileDescriptor.getStatSize();
-			if (nativeMediaCodec) {
-				final long[] params = new long[4];
-				final int ret = MediaContext.mediaCodecPrepare(fd, len, params);
-				if (ret == -1)
-					throw new UnsupportedFormatException();
-				else if (ret < 0)
-					throw new IOException();
-				nativeObj = params[0];
-				srcSampleRate = (int)params[1];
-				dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
-				channelCount = (int)params[2];
-				durationInMS = (int)(params[3] / 1000L);
-				currentPositionInFrames = 0;
-				outputOver = false;
-				state = STATE_PREPARED;
-				break;
+			final ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
+			try {
+				final long len = fileDescriptor.getStatSize();
+				if (nativeMediaCodec) {
+					final long[] params = new long[4];
+					final int ret = MediaContext.mediaCodecPrepare(fileDescriptor.getFd(), len, params);
+					if (ret == -1)
+						throw new UnsupportedFormatException();
+					else if (ret < 0)
+						throw new IOException();
+					nativeObj = params[0];
+					srcSampleRate = (int)params[1];
+					dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
+					channelCount = (int)params[2];
+					durationInMS = (int)(params[3] / 1000L);
+					currentPositionInFrames = 0;
+					outputOver = false;
+					state = STATE_PREPARED;
+					break;
+				}
+				mediaExtractor = new MediaExtractor();
+				mediaExtractor.setDataSource(fileDescriptor.getFileDescriptor(), 0, len);
+			} finally {
+				try {
+					fileDescriptor.close();
+				} catch (Throwable ex) {
+					//just ignore
+				}
 			}
-			mediaExtractor = new MediaExtractor();
-			mediaExtractor.setDataSource(fileDescriptor.getFileDescriptor(), 0, len);
 			final int numTracks = mediaExtractor.getTrackCount();
 			int i;
 			MediaFormat format = null;
@@ -702,14 +708,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				//just ignore
 			}
 			mediaExtractor = null;
-		}
-		if (fileDescriptor != null) {
-			try {
-				fileDescriptor.close();
-			} catch (Throwable ex) {
-				//just ignore
-			}
-			fileDescriptor = null;
 		}
 		if (mediaCodec != null) {
 			try {
