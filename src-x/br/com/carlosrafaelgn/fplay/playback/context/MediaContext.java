@@ -40,6 +40,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
+import android.os.Process;
 import android.os.SystemClock;
 
 import java.io.IOException;
@@ -690,7 +691,18 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	@Override
 	public void run() {
-		thread.setPriority(Thread.MAX_PRIORITY);
+		try {
+			final int tid = Process.myTid();
+			Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
+			if (Process.getThreadPriority(tid) != Process.THREAD_PRIORITY_AUDIO)
+				thread.setPriority(Thread.MAX_PRIORITY);
+		} catch (Throwable ex) {
+			try {
+				thread.setPriority(Thread.MAX_PRIORITY);
+			} catch (Throwable ex2) {
+				//just ignore
+			}
+		}
 
 		PowerManager.WakeLock wakeLock;
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;

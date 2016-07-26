@@ -566,12 +566,12 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			//enforce our policy
 			if (httpStreamReceiver != null)
 				throw new UnsupportedOperationException("internet streams must used prepareAsync()");
+			fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
+			final int fd = fileDescriptor.getFd();
+			final long len = fileDescriptor.getStatSize();
 			if (nativeMediaCodec) {
-				fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
 				final long[] params = new long[4];
-				int hhh = fileDescriptor.getFd();
-				long sss = fileDescriptor.getStatSize();
-				final int ret = MediaContext.mediaCodecPrepare(hhh, sss, params);
+				final int ret = MediaContext.mediaCodecPrepare(fd, len, params);
 				if (ret == -1)
 					throw new UnsupportedFormatException();
 				else if (ret < 0)
@@ -587,7 +587,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				break;
 			}
 			mediaExtractor = new MediaExtractor();
-			mediaExtractor.setDataSource(path);
+			mediaExtractor.setDataSource(fileDescriptor.getFileDescriptor(), 0, len);
 			final int numTracks = mediaExtractor.getTrackCount();
 			int i;
 			MediaFormat format = null;
@@ -695,14 +695,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			MediaContext.mediaCodecRelease(nativeObj);
 			nativeObj = 0;
 		}
-		if (fileDescriptor != null) {
-			try {
-				fileDescriptor.close();
-			} catch (Throwable ex) {
-				//just ignore
-			}
-			fileDescriptor = null;
-		}
 		if (mediaExtractor != null) {
 			try {
 				mediaExtractor.release();
@@ -710,6 +702,14 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				//just ignore
 			}
 			mediaExtractor = null;
+		}
+		if (fileDescriptor != null) {
+			try {
+				fileDescriptor.close();
+			} catch (Throwable ex) {
+				//just ignore
+			}
+			fileDescriptor = null;
 		}
 		if (mediaCodec != null) {
 			try {
