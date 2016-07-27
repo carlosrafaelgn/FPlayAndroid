@@ -45,6 +45,7 @@ static void* libmediandk;
 #define AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM 4
 #define AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED -3
 #define AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED -2
+#define AMEDIACODEC_INFO_TRY_AGAIN_LATER -1
 #define media_status_t int32_t
 #define AMediaCodec void
 #define AMediaExtractor void
@@ -71,6 +72,7 @@ static ssize_t (*AMediaCodec_dequeueOutputBuffer)(AMediaCodec*, AMediaCodecBuffe
 static media_status_t (*AMediaCodec_flush)(AMediaCodec*);
 static uint8_t* (*AMediaCodec_getInputBuffer)(AMediaCodec*, size_t idx, size_t *out_size);
 static uint8_t* (*AMediaCodec_getOutputBuffer)(AMediaCodec*, size_t idx, size_t *out_size);
+static AMediaFormat* (*AMediaCodec_getOutputFormat)(AMediaCodec*);
 static media_status_t (*AMediaCodec_queueInputBuffer)(AMediaCodec*, size_t idx, off_t offset, size_t size, uint64_t time, uint32_t flags);
 static media_status_t (*AMediaCodec_releaseOutputBuffer)(AMediaCodec*, size_t idx, bool render);
 static media_status_t (*AMediaCodec_start)(AMediaCodec*);
@@ -117,7 +119,7 @@ private:
 public:
 	MediaCodec() {
 		inputOver = false;
-		bufferIndex = -1;
+		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
 		mediaExtractor = 0;
 		mediaCodec = 0;
@@ -125,7 +127,7 @@ public:
 
 	~MediaCodec() {
 		inputOver = false;
-		bufferIndex = -1;
+		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
 		if (mediaExtractor) {
 			AMediaExtractor_delete(mediaExtractor);
@@ -161,17 +163,17 @@ public:
 			if (isAudio(mime)) {
 				if ((ret = AMediaExtractor_selectTrack(mediaExtractor, i)))
 					return ret;
-				int32_t sampleRate, channelCount;
+				int32_t channelCount, sampleRate;
 				int64_t duration;
-				if (!AMediaFormat_getInt32(format, "sample-rate", &sampleRate) ||
-					!AMediaFormat_getInt32(format, "channel-count", &channelCount) ||
+				if (!AMediaFormat_getInt32(format, "channel-count", &channelCount) ||
+					!AMediaFormat_getInt32(format, "sample-rate", &sampleRate) ||
 					!AMediaFormat_getInt64(format, "durationUs", &duration))
 					continue;
 				//only mono and stereo files for now...
 				if (channelCount != 1 && channelCount != 2)
 					return -1;
-				outParams[1] = (uint64_t)sampleRate;
-				outParams[2] = (uint64_t)channelCount;
+				outParams[1] = (uint64_t)channelCount;
+				outParams[2] = (uint64_t)sampleRate;
 				outParams[3] = (uint64_t)duration;
 				break;
 			}
@@ -190,7 +192,7 @@ public:
 			return ret;
 
 		inputOver = false;
-		bufferIndex = -1;
+		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
 
 		if ((ret = fillInputBuffers()))
@@ -206,7 +208,7 @@ public:
 		if ((ret = AMediaExtractor_seekTo(mediaExtractor, (int64_t)msec * 1000LL, AMEDIAEXTRACTOR_SEEK_CLOSEST_SYNC)))
 			return (int64_t)ret;
 		inputOver = false;
-		bufferIndex = -1;
+		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
 		const int64_t sampleTime = AMediaExtractor_getSampleTime(mediaExtractor);
 		if ((ret = fillInputBuffers()))
@@ -254,12 +256,22 @@ public:
 
 		AMediaCodecBufferInfo bufferInfo;
 		bufferInfo.flags = 0;
-		do {
-			bufferIndex = AMediaCodec_dequeueOutputBuffer(mediaCodec, &bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
-		} while (bufferIndex == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED);
+		bufferIndex = AMediaCodec_dequeueOutputBuffer(mediaCodec, &bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 
-		if (bufferIndex < 0)
+		if (bufferIndex < 0) {
+			if (bufferIndex == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED) {
+				bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
+				AMediaFormat* format = AMediaCodec_getOutputFormat(mediaCodec);
+				if (format) {
+					int32_t newChannelCount, newSampleRate;
+					if (AMediaFormat_getInt32(format, "channel-count", &newChannelCount) &&
+						AMediaFormat_getInt32(format, "sample-rate", &newSampleRate))
+						return ((newChannelCount << 28) | newSampleRate);
+				}
+			}
+
 			return ((bufferInfo.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) ? 0x7FFFFFFF : 0x7FFFFFFE);
+		}
 
 		size_t outputBufferCapacity;
 		buffer = AMediaCodec_getOutputBuffer(mediaCodec, bufferIndex, &outputBufferCapacity);
@@ -277,7 +289,7 @@ public:
 	void releaseOutputBuffer() {
 		if (mediaCodec && bufferIndex >= 0) {
 			AMediaCodec_releaseOutputBuffer(mediaCodec, bufferIndex, 0);
-			bufferIndex = -1;
+			bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 			buffer = 0;
 		}
 	}
@@ -354,6 +366,8 @@ int32_t JNICALL mediaCodecLoadExternalLibrary(JNIEnv* env, jclass clazz) {
         return -8;
     if (!(*((void**)&AMediaCodec_getOutputBuffer) = dlsym(libmediandk, "AMediaCodec_getOutputBuffer")))
         return -9;
+	if (!(*((void**)&AMediaCodec_getOutputFormat) = dlsym(libmediandk, "AMediaCodec_getOutputFormat")))
+		return -91;
     if (!(*((void**)&AMediaCodec_queueInputBuffer) = dlsym(libmediandk, "AMediaCodec_queueInputBuffer")))
         return -10;
     if (!(*((void**)&AMediaCodec_releaseOutputBuffer) = dlsym(libmediandk, "AMediaCodec_releaseOutputBuffer")))

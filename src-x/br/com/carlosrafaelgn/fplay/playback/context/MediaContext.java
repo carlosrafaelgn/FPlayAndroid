@@ -36,6 +36,7 @@ import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.media.MediaCodec;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
@@ -379,6 +380,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public int commitFinalFrames(int emptyFrames) {
 			if (pendingDstFrames > 0)
 				return write(null, emptyFrames);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				if (tempDstArray == null)
+					tempDstArray = new byte[1024];
+			}
 			Arrays.fill(tempDstArray, 0, 1024, (byte)0);
 			audioTrack.write(tempDstArray, 0, 1024);
 			//allow method run() to sleep
@@ -781,6 +786,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								currentPlayer.updateDstSampleRate();
 								if (nextPlayer != null)
 									nextPlayer.updateDstSampleRate();
+								if (!currentPlayer.isSrcConfigValid())
+									throw new MediaPlayerBase.UnsupportedFormatException();
 								if (dstSampleRate != currentPlayer.getDstSampleRate() || bufferConfigChanged) {
 									bufferConfigChanged = false;
 									dstSampleRate = currentPlayer.getDstSampleRate();
@@ -1022,6 +1029,62 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				if (outputBuffer.index < 0) {
 					sourcePlayer.nextOutputBuffer(outputBuffer);
 					if (outputBuffer.index < 0) {
+						if (outputBuffer.index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+							if (dstSampleRate != sourcePlayer.getDstSampleRate()) {
+								if (sourcePlayer == nextPlayer) {
+									//go back to currentPlayer and handle everything later
+									outputBuffer.release();
+									sourcePlayer = currentPlayer;
+									updateNativeSrc(sourcePlayer);
+									nextPlayer = null;
+									nextFramesWritten = 0;
+									continue;
+								}
+
+								//worst case!!! we will have to recreate everything!!!
+								//sorry for just modifying a copy/paste from ACTION_PLAY... :(
+								synchronized (engineSync) {
+									engine.release();
+								}
+								outputBuffer.release();
+								currentPlayer.resetDecoderIfOutputAlreadyUsed();
+								framesWritten = currentPlayer.getCurrentPositionInFrames();
+								framesPlayed = framesWritten;
+								nextFramesWritten = 0;
+								if (!currentPlayer.isSrcConfigValid())
+									throw new MediaPlayerBase.UnsupportedFormatException();
+								dstSampleRate = currentPlayer.getDstSampleRate();
+								synchronized (engineSync) {
+									checkEngineResult(engine.create(dstSampleRate));
+								}
+								bufferSizeInFrames = engine.getActualBufferSizeInFrames();
+								fillThresholdInFrames = engine.getFillThresholdInFrames();
+								sleepTime = (engine.getSingleBufferSizeInFrames() * 1000) / dstSampleRate;
+								if (sleepTime > 30) sleepTime = 30;
+								else if (sleepTime < 15) sleepTime = 15;
+								playPending = true;
+								framesWrittenBeforePlaying = 0;
+								bufferingStart(currentPlayer);
+								updateNativeSrcAndReset(currentPlayer);
+								lastHeadPositionInFrames = engine.getHeadPositionInFrames();
+							} else {
+								if (sourcePlayer == nextPlayer) {
+									if (!sourcePlayer.isSrcConfigValid()) {
+										//go back to currentPlayer and let the error be handled later
+										outputBuffer.release();
+										sourcePlayer = currentPlayer;
+										updateNativeSrc(sourcePlayer);
+										nextPlayer = null;
+										nextFramesWritten = 0;
+										continue;
+									}
+								}
+								//just update all source params :D
+								updateNativeSrc(sourcePlayer);
+							}
+							continue;
+						}
+
 						boolean sleepNow = true;
 						if (outputBuffer.streamOver && nextPlayer == null) {
 							//when the input stream is over and we do not have a nextPlayer to produce
