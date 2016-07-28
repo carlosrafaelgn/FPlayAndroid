@@ -558,7 +558,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	private String getSecondsBeforePlaybackString(int index) {
 		final int ms = Player.getMSBeforePlayback(index);
-		return UI.formatIntAsFloat(ms / 100, false, true) + " " + ((ms == 1000) ? getText(R.string.second) : getText(R.string.seconds));
+		final String fmt = UI.formatIntAsFloat(ms / 100, false, true) + " " + ((ms == 1000) ? getText(R.string.second) : getText(R.string.seconds));
+		return ((index == 1) ? (fmt + " (" + getText(R.string.recommended) + ")") : fmt);
 	}
 
 	private String getMinuteString(int minutes) {
@@ -646,6 +647,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	private String getBufferSizeString(int bufferConfig) {
 		final int ms;
+		boolean recommended = false;
 		switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
 		case Player.BUFFER_SIZE_500MS:
 			ms = 500;
@@ -660,10 +662,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			ms = 2500;
 			break;
 		default:
+			recommended = true;
 			ms = 1000;
 			break;
 		}
-		return UI.formatIntAsFloat(ms / 100, false, true) + " " + ((ms == 1000) ? getText(R.string.second) : getText(R.string.seconds));
+		final String fmt = UI.formatIntAsFloat(ms / 100, false, true) + " " + ((ms == 1000) ? getText(R.string.second) : getText(R.string.seconds));
+		return (recommended ? (fmt + " (" + getText(R.string.recommended) + ")") : fmt);
 	}
 
 	private String getFillThresholdString(int bufferConfig) {

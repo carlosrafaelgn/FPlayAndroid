@@ -341,5 +341,6 @@
     <string name="enable_external_fx">Activer les effets externes</string>
     <string name="external_fx_warning">(La désactivation peut prendre un certain temps)</string>
     <string name="playback_engine">Moteur de lecture (vous devez redémarrer le lecteur pour que les modifications prennent effet) :</string>
+    <string name="recommended">conseillé</string>
 
 </resources>

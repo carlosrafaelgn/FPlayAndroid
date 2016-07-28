@@ -124,6 +124,10 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 		}
 
+		private void createAudioTrack(MediaFormat format, int bufferSizeInMS) {
+			createAudioTrack(format.getInteger(MediaFormat.KEY_CHANNEL_COUNT), format.getInteger(MediaFormat.KEY_SAMPLE_RATE), bufferSizeInMS);
+		}
+
 		@SuppressWarnings("deprecation")
 		private void createAudioTrack(int channelCount, int sampleRate, int bufferSizeInMS) {
 			final int minBufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
@@ -218,7 +222,9 @@ public final class HttpStreamReceiver implements Runnable {
 				final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 
 				prepareMediaCodec(extractor.createMediaCodec());
-				createAudioTrack(extractor.getChannelCount(), extractor.getSampleRate(), initialAudioBufferInMS);
+
+				//postpone the creation of the AudioTrack until we have received the first buffer with
+				//valid data, or we have received INFO_OUTPUT_FORMAT_CHANGED
 
 				short[] tmpShortOutput = new short[extractor.getChannelCount() * extractor.getSamplesPerFrame()]; //1 frame @ mono/stereo, 16 bits per sample
 				boolean okToProcessMoreInput = true, playbackStarted = false;
@@ -258,6 +264,11 @@ public final class HttpStreamReceiver implements Runnable {
 							info.presentationTimeUs = 0;
 							info.size = 0;
 							switch (outputBufferIndex) {
+							case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+								if (audioTrack != null)
+									audioTrack.release();
+								createAudioTrack(mediaCodec.getOutputFormat(), initialAudioBufferInMS);
+								break;
 							case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
 								outputBuffers = mediaCodec.getOutputBuffers();
 								if (outputBuffers.length != outputBuffersAsShort.length)
@@ -286,8 +297,12 @@ public final class HttpStreamReceiver implements Runnable {
 								break OutputLoop;
 							}
 						}
-						if (outputBufferIndex >= 0)
+						if (outputBufferIndex >= 0) {
+							//if we do not have an AudioTrack by now, it is time to create it
+							if (audioTrack == null)
+								createAudioTrack(extractor.getChannelCount(), extractor.getSampleRate(), initialAudioBufferInMS);
 							timedoutFrameCount = 0;
+						}
 					} catch (Throwable ex) {
 						//exceptions usually happen here when the data inside inputBuffer was invalid
 						//(this happens if the other thread overwrites our data before we actually

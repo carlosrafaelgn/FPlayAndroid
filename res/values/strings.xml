@@ -342,5 +342,6 @@
     <string name="enable_external_fx">Enable external effects</string>
     <string name="external_fx_warning">(The deactivation may take some time)</string>
     <string name="playback_engine">Playback engine (you must restart the player for the changes to take effect):</string>
+    <string name="recommended">recommended</string>
 
 </resources>

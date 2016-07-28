@@ -341,5 +341,6 @@
     <string name="enable_external_fx">Habilitar efeitos externos</string>
     <string name="external_fx_warning">(A desativação pode levar algum tempo)</string>
     <string name="playback_engine">Engine de reprodução (você deve reiniciar o player para as mudanças fazerem efeito):</string>
+    <string name="recommended">recomendado</string>
 
 </resources>

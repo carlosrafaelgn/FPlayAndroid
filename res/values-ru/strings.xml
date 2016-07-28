@@ -341,5 +341,6 @@
     <string name="enable_external_fx">Включите внешние эффекты</string>
     <string name="external_fx_warning">(Дезактивация может занять некоторое время)</string>
     <string name="playback_engine">Воспроизведение двигателя (необходимо перезапустить проигрыватель для того, чтобы изменения вступили в силу):</string>
+    <string name="recommended">рекомендуемые</string>
 
 </resources>
