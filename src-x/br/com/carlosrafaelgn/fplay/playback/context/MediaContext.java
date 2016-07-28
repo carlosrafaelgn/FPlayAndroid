@@ -101,7 +101,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
 	private static volatile int requestedAction, requestedSeekMS;
 	private static Message effectsMessage;
-	private static int bufferConfig, nativeSampleRate, srcChannelCount;
+	private static int bufferConfig, nativeSampleRate, srcChannelCount, srcSampleRate;
 	private static float gain = 1.0f;
 	private static Handler handler;
 	private static Thread thread;
@@ -643,13 +643,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static void updateNativeSrcAndReset(MediaCodecPlayer player) {
 		if (player == null)
 			return;
-		updateSrcParams(player.getSrcSampleRate(), srcChannelCount = player.getChannelCount(), 1);
+		updateSrcParams(srcSampleRate = player.getSrcSampleRate(), srcChannelCount = player.getChannelCount(), 1);
 	}
 
 	private static void updateNativeSrc(MediaCodecPlayer player) {
 		if (player == null)
 			return;
-		updateSrcParams(player.getSrcSampleRate(), srcChannelCount = player.getChannelCount(), 0);
+		updateSrcParams(srcSampleRate = player.getSrcSampleRate(), srcChannelCount = player.getChannelCount(), 0);
 	}
 
 	private static void checkEngineResult(int result) {
@@ -1566,6 +1566,16 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static MediaPlayerBase createMediaPlayer() {
 		return new MediaCodecPlayer();
+	}
+
+	public static int[] getCurrentPlaybackInfo() {
+		final int dstSampleRate = getDstSampleRate(srcSampleRate);
+		return new int[] {
+			nativeSampleRate,
+			srcSampleRate,
+			dstSampleRate,
+			Engine.getFramesPerBuffer(dstSampleRate)
+		};
 	}
 
 	public static int getFeatures() {

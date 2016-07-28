@@ -1770,6 +1770,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final int FEATURE_DECODING_NATIVE = 0x0040;
 	public static final int FEATURE_DECODING_DIRECT = 0x0080;
 
+	public static int[] getCurrentPlaybackInfo() {
+		return MediaContext.getCurrentPlaybackInfo();
+	}
+
 	public static int getFeatures() {
 		return MediaContext.getFeatures();
 	}

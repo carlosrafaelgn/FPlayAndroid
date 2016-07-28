@@ -55,7 +55,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		return getText(R.string.about);
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions", "deprecation" })
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_about);
@@ -142,6 +142,30 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 			sb.append("\nNative Decoding");
 		else if ((features & Player.FEATURE_DECODING_DIRECT) != 0)
 			sb.append("\nDirect Decoding");
+		final int[] playbackInfo = Player.getCurrentPlaybackInfo();
+		if (playbackInfo != null && playbackInfo.length >= 4) {
+			if (playbackInfo[0] > 0) {
+				sb.append("\nNative Sample Rate (Device)");
+				sb.append(UI.collon());
+				sb.append(playbackInfo[0]);
+				sb.append(" Hz");
+			}
+			if (playbackInfo[1] > 0) {
+				sb.append("\nInput Sample Rate (Track)");
+				sb.append(UI.collon());
+				sb.append(playbackInfo[1]);
+				sb.append(" Hz");
+
+				sb.append("\nOutput Sample Rate (Playback)");
+				sb.append(UI.collon());
+				sb.append(playbackInfo[2]);
+				sb.append(" Hz");
+
+				sb.append("\nFrames per Buffer");
+				sb.append(UI.collon());
+				sb.append(playbackInfo[3]);
+			}
+		}
 		lblDbg.setTypeface(UI.defaultTypeface);
 		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);

@@ -45,6 +45,10 @@ public final class MediaContext {
 		return new MediaPlayerWrapper();
 	}
 
+	public static int[] getCurrentPlaybackInfo() {
+		return null;
+	}
+
 	public static int getFeatures() {
 		return 0;
 	}
