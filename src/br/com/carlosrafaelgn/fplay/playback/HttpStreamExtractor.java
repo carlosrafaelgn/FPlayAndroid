@@ -43,7 +43,7 @@ import java.io.IOException;
 public abstract class HttpStreamExtractor {
 	private final String srcType;
 	private String dstType;
-	private int channelCount, sampleRate, samplesPerFrame, srcStreamChannelCount, srcStreamSampleRate;
+	private int channelCount, sampleRate, samplesPerFrame, bitRate;
 
 	public HttpStreamExtractor(String srcType) {
 		this.srcType = srcType;
@@ -69,7 +69,7 @@ public abstract class HttpStreamExtractor {
 		this.channelCount = channelCount;
 	}
 
-	public int getSampleRate() {
+	public final int getSampleRate() {
 		return sampleRate;
 	}
 
@@ -77,7 +77,7 @@ public abstract class HttpStreamExtractor {
 		this.sampleRate = sampleRate;
 	}
 
-	public int getSamplesPerFrame() {
+	public final int getSamplesPerFrame() {
 		return samplesPerFrame;
 	}
 
@@ -85,20 +85,12 @@ public abstract class HttpStreamExtractor {
 		this.samplesPerFrame = samplesPerFrame;
 	}
 
-	public int getSrcStreamChannelCount() {
-		return srcStreamChannelCount;
+	public final int getBitRate() {
+		return bitRate;
 	}
 
-	protected final void setSrcStreamChannelCount(int srcStreamChannelCount) {
-		this.srcStreamChannelCount = srcStreamChannelCount;
-	}
-
-	public int getSrcStreamSampleRate() {
-		return srcStreamSampleRate;
-	}
-
-	protected final void setSrcStreamSampleRate(int srcStreamSampleRate) {
-		this.srcStreamSampleRate = srcStreamSampleRate;
+	protected final void setBitRate(int bitRate) {
+		this.bitRate = bitRate;
 	}
 
 	public abstract int waitToReadHeader(boolean fillProperties);
@@ -106,59 +98,22 @@ public abstract class HttpStreamExtractor {
 	public abstract int canReadHeader();
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	protected boolean prepareToRetry() {
-		return false;
+	protected void formatMediaCodec(MediaFormat format) {
 	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	protected abstract void formatMediaCodec(MediaFormat format);
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@SuppressWarnings("deprecation")
 	public final MediaCodec createMediaCodec() throws IOException {
-		int attempts = 0;
-		for (; ; ) {
-			attempts++;
-			MediaCodec mediaCodec = null;
-			try {
-				mediaCodec = MediaCodec.createDecoderByType(getDstType());
-				final MediaFormat format = new MediaFormat();
-				format.setString(MediaFormat.KEY_MIME, getDstType());
-				format.setInteger(MediaFormat.KEY_SAMPLE_RATE, getSrcStreamSampleRate());
-				format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, getSrcStreamChannelCount());
-				format.setInteger(MediaFormat.KEY_CHANNEL_MASK, (getSrcStreamChannelCount() == 1) ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
-				formatMediaCodec(format);
-				mediaCodec.configure(format, null, null, 0);
-				mediaCodec.start();
-				if (attempts != 1) {
-					try {
-						//apparently, we must wait some time before retrying in a few devices...
-						Thread.sleep(200);
-					} catch (Throwable ex2) {
-						//just ignore
-					}
-				}
-				//if something goes wrong, we must handle here in order to retry (if possible)
-				mediaCodec.getInputBuffers();
-				mediaCodec.getOutputBuffers();
-				return mediaCodec;
-			} catch (RuntimeException ex) {
-				if (mediaCodec != null) {
-					try {
-						mediaCodec.release();
-					} catch (Throwable ex2) {
-						//just ignore
-					}
-				}
-				if (attempts != 1 || !prepareToRetry())
-					throw ex;
-				try {
-					//apparently, we must wait some time before retrying in a few devices...
-					Thread.sleep(200);
-				} catch (Throwable ex2) {
-					//just ignore
-				}
-			}
-		}
+		MediaCodec mediaCodec = MediaCodec.createDecoderByType(getDstType());
+		final MediaFormat format = new MediaFormat();
+		format.setString(MediaFormat.KEY_MIME, getDstType());
+		format.setInteger(MediaFormat.KEY_SAMPLE_RATE, getSampleRate());
+		format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, getChannelCount());
+		format.setInteger(MediaFormat.KEY_CHANNEL_MASK, (getChannelCount() == 1) ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
+		format.setInteger(MediaFormat.KEY_BIT_RATE, getBitRate());
+		formatMediaCodec(format);
+		mediaCodec.configure(format, null, null, 0);
+		mediaCodec.start();
+		return mediaCodec;
 	}
 }

@@ -1254,8 +1254,6 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 		};
 
-		private int bitRate;
-
 		public MpegExtractor() {
 			super("audio/mpeg");
 			setDstType("audio/mpeg");
@@ -1355,9 +1353,7 @@ public final class HttpStreamReceiver implements Runnable {
 				setChannelCount(((b >>> 6) == 3) ? 1 : 2); //channel count
 				setSampleRate(sampleRate);
 				setSamplesPerFrame(MPEG_SAMPLES_PER_FRAME[version & 1][layer - 1]);
-				setSrcStreamChannelCount(((b >>> 6) == 3) ? 1 : 2);
-				setSrcStreamSampleRate(sampleRate);
-				this.bitRate = bitRate;
+				setBitRate(bitRate);
 			}
 
 			//2 bits: mode extension (ignored)
@@ -1432,12 +1428,6 @@ public final class HttpStreamReceiver implements Runnable {
 
 			return -1;
 		}
-
-		@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-		@Override
-		protected void formatMediaCodec(MediaFormat format) {
-			format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-		}
 	}
 
 	private final class AacExtractor extends HttpStreamExtractor {
@@ -1445,7 +1435,7 @@ public final class HttpStreamReceiver implements Runnable {
 			96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350, 0, 0, 0
 		};
 
-		private int bitRate, profile, streamSampleRateIndex;
+		private int profile, sampleRateIndex;
 
 		public AacExtractor(String srcType) {
 			super(srcType);
@@ -1574,40 +1564,17 @@ public final class HttpStreamReceiver implements Runnable {
 				//(each data block contains 1024 samples, and a typical aac frame contains
 				//1024 compressed samples)
 
-				//a few devices accept a profile of 5, but several don't!
-				//I had created a mechanism to retry the creation should the
-				//first creation fail... but... the creation of two MediaCodec's
-				//in a row (even after releasing the first one and switching the
-				//profile back to 2) causes the creation of the second MediaCodec
-				//to fail in a few devices... :(
-				//that's why I gave up on even trying to initially set profile = 5
-				if (getSrcType().equals("audio/aacp") && profile == 2) { //2: AAC LC (Low Complexity)
-					//seriously... it's a jungle out there!!! lots and lots of streams report
-					//mono, but they are actually stereo!
-					setChannelCount(2);
-					//http://stackoverflow.com/a/4678183/3569421
-					//AAC+ reports half of the sample rate for compatibility with
-					//old LC-only decoders
-					setSampleRate(sampleRate << 1);
-					//this.profile = 5; //5: SBR (Spectral Band Replication) = AAC-HEv2
-				} else if (getSrcType().equals("audio/aac") && profile == 2 && sampleRate < 32000) {
-					//let the guessing begin!!! (a few streams declare to be audio/aac,
-					//but they are actually audio/aacp.............)
-					setChannelCount(channelCfg);
-					setSampleRate(sampleRate << 1);
-					//this.profile = 5;
-				} else {
-					setChannelCount(channelCfg);
-					setSampleRate(sampleRate);
-					//this.profile = profile;
-				}
-				this.profile = profile;
+				//even though AAC+ headers report half of the sample rate for compatibility
+				//with old LC-only decoders (AAC+ uses SBR (Spectral Band Replication) = AAC-HEv2),
+				//let's just pass on the information we got from the header without modifications,
+				//and wait for MediaCodec to return INFO_OUTPUT_FORMAT_CHANGED
 
+				setChannelCount(channelCfg);
+				setSampleRate(sampleRate);
 				setSamplesPerFrame(1024 + ((buffer.peekReadArray(offset + 6) & 0x03) << 10));
-				setSrcStreamChannelCount(channelCfg);
-				setSrcStreamSampleRate(sampleRate);
-				this.bitRate = ((frameSize << 3) * sampleRate) / getSamplesPerFrame(); //bit rate (must be figured out manually)
-				this.streamSampleRateIndex = sampleRateIndex;
+				setBitRate(((frameSize << 3) * sampleRate) / getSamplesPerFrame()); //bit rate must be figured out manually
+				this.profile = profile;
+				this.sampleRateIndex = sampleRateIndex;
 			}
 
 			return frameSize;
@@ -1671,27 +1638,15 @@ public final class HttpStreamReceiver implements Runnable {
 
 		@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 		@Override
-		protected boolean prepareToRetry() {
-			if (profile == 5) {
-				//a few devices support profile 5... others don't!!!
-				profile = 2;
-				return true;
-			}
-			return false;
-		}
-
-		@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-		@Override
 		protected void formatMediaCodec(MediaFormat format) {
-			format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
 			format.setInteger(MediaFormat.KEY_AAC_PROFILE, profile);
 			format.setInteger(MediaFormat.KEY_IS_ADTS, 1);
 			//https://developer.android.com/reference/android/media/MediaCodec.html
 			//http://stackoverflow.com/a/36278858/3569421
 			//http://stackoverflow.com/a/36278662/3569421
 			final ByteBuffer csd = ByteBuffer.allocate(2);
-			csd.put(0, (byte)((profile << 3) | (streamSampleRateIndex >>> 1)));
-			csd.put(1, (byte)(((streamSampleRateIndex & 0x01) << 7) | (getSrcStreamChannelCount() << 3)));
+			csd.put(0, (byte)((profile << 3) | (sampleRateIndex >>> 1)));
+			csd.put(1, (byte)(((sampleRateIndex & 0x01) << 7) | (getChannelCount() << 3)));
 			csd.limit(2);
 			csd.position(0);
 			format.setByteBuffer("csd-0", csd);
