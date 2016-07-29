@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
-import android.annotation.TargetApi;
 import android.os.Build;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -63,7 +62,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		playing = Player.localPlaying;
 		failed = false;
 		visualizerReady = false;
-		timer = new Timer((Timer.TimerHandler)this, "Visualizer Thread", false, false, true);
+		timer = new Timer(this, "Visualizer Thread", false, false, true);
 		timer.start(16);
 	}
 
@@ -98,55 +97,6 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 			paused = false;
 			timer.resume();
 			timer = null;
-		}
-	}
-
-	public void updateVisualizerDataType() {
-		if (visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-			if ((visualizer.requiredDataType() & Visualizer.DATA_VUMETER) != 0)
-				setScalingModeVUMeter();
-			else
-				setScalingModeFFT();
-		}
-	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void setScalingModeFFT() {
-		try {
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			disableRms();
-	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void setScalingModeVUMeter() {
-		try {
-			//unfortunately, when SCALING_MODE_NORMALIZED is used, Android normalizes the samples
-			//making data better for FFT, and , on the other hand, making it very hard to detect
-			//changes in the actual volume! :(
-
-			//setMeasurementMode exists only from API 19+, and could be a workaround....
-			//https://android.googlesource.com/platform/frameworks/av/+/master/media/libeffects/visualizer/EffectVisualizer.cpp
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			disableRms();
-	}
-
-	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private void disableRms() {
-		try {
-			//see comments above...
-			fxVisualizer.setMeasurementMode(android.media.audiofx.Visualizer.MEASUREMENT_MODE_NONE);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
 		}
 	}
 
@@ -188,8 +138,13 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 			fxVisualizer = null;
 			audioSessionId = -1;
 		}
-		if (fxVisualizer != null) {
-			updateVisualizerDataType();
+		if (fxVisualizer != null && visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+			try {
+				fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
+				fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 			return true;
 		}
 		return false;

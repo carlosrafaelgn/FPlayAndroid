@@ -140,8 +140,6 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	public void syncDataType() {
 		dataType = (Player.isBluetoothUsingVUMeter() ? (DATA_FFT | DATA_VUMETER | BEAT_DETECTION_2) : DATA_FFT);
-		if (mediaVisualizer != null)
-			mediaVisualizer.updateVisualizerDataType();
 	}
 
 	public void startTransmission() {

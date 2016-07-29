@@ -1939,8 +1939,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	//I know this is far from "organized"... but this is the only way to prevent
-	//the class BluetoothVisualizerController from loading into memory without need!!!
+	//I know this is far from "organized"... but this is the only way to prevent the
+	//class BluetoothVisualizerController from being loading into memory unnecessarily!!!
 	public static Object bluetoothVisualizerController;
 	//bluetoothVisualizerConfig bits:
 	//0 1 2 = size

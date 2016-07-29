@@ -63,7 +63,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		playing = Player.localPlaying;
 		failed = false;
 		visualizerReady = false;
-		timer = new Timer((Timer.TimerHandler)this, "Visualizer Thread", false, false, true);
+		timer = new Timer(this, "Visualizer Thread", false, false, true);
 		timer.start(16);
 	}
 
