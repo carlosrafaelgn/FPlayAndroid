@@ -32,9 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
-import android.annotation.TargetApi;
-import android.os.Build;
-
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Timer;
@@ -47,19 +44,14 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 	}
 	private Visualizer visualizer;
 	private Handler handler;
-	private android.media.audiofx.Visualizer fxVisualizer;
-	private boolean hasEverBeenAlive;
-	private volatile boolean alive, paused, reset, playing, failed, visualizerReady;
-	private int audioSessionId;
+	private volatile boolean alive, reset, playing, failed, visualizerReady;
 	private Timer timer;
 
 	public MediaVisualizer(Visualizer visualizer, Handler handler) {
 		this.visualizer = visualizer;
 		this.handler = handler;
-		audioSessionId = -1;
 		alive = true;
 		reset = true;
-		paused = false;
 		playing = Player.localPlaying;
 		failed = false;
 		visualizerReady = false;
@@ -72,22 +64,19 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 	}
 
 	public void pause() {
-		paused = true;
+		if (timer != null)
+			timer.pause();
 	}
 
 	public void resume() {
-		if (timer != null) {
-			paused = false;
+		if (timer != null)
 			timer.resume();
-		}
 	}
 
 	public void resetAndResume() {
-		if (timer != null) {
-			reset = true;
-			paused = false;
+		//unlike the traditional visualizer, there is no need to reset this visualizer
+		if (timer != null)
 			timer.resume();
-		}
 	}
 
 	public void destroy() {
@@ -95,104 +84,9 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 			alive = false;
 			if (visualizer != null)
 				visualizer.cancelLoading();
-			paused = false;
 			timer.resume();
 			timer = null;
 		}
-	}
-
-	public void updateVisualizerDataType() {
-		if (visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-			if ((visualizer.requiredDataType() & Visualizer.DATA_VUMETER) != 0)
-				setScalingModeVUMeter();
-			else
-				setScalingModeFFT();
-		}
-	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void setScalingModeFFT() {
-		try {
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			disableRms();
-	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void setScalingModeVUMeter() {
-		try {
-			//unfortunately, when SCALING_MODE_NORMALIZED is used, Android normalizes the samples
-			//making data better for FFT, and , on the other hand, making it very hard to detect
-			//changes in the actual volume! :(
-
-			//setMeasurementMode exists only from API 19+, and could be a workaround....
-			//https://android.googlesource.com/platform/frameworks/av/+/master/media/libeffects/visualizer/EffectVisualizer.cpp
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
-			fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-			disableRms();
-	}
-
-	@TargetApi(Build.VERSION_CODES.KITKAT)
-	private void disableRms() {
-		try {
-			//see comments above...
-			fxVisualizer.setMeasurementMode(android.media.audiofx.Visualizer.MEASUREMENT_MODE_NONE);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-	}
-
-	private boolean initialize() {
-		try {
-			final int g = Player.audioSessionId;
-			if (g < 0)
-				return true;
-			if (fxVisualizer != null) {
-				if (audioSessionId == g) {
-					try {
-						fxVisualizer.setEnabled(true);
-						return true;
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
-				}
-				try {
-					fxVisualizer.release();
-				} catch (Throwable ex) {
-					fxVisualizer = null;
-					ex.printStackTrace();
-				}
-			}
-			fxVisualizer = new android.media.audiofx.Visualizer(g);
-			audioSessionId = g;
-		} catch (Throwable ex) {
-			failed = true;
-			fxVisualizer = null;
-			audioSessionId = -1;
-			return false;
-		}
-		try {
-			fxVisualizer.setCaptureSize(Visualizer.CAPTURE_SIZE);
-			fxVisualizer.setEnabled(true);
-		} catch (Throwable ex) {
-			failed = true;
-			fxVisualizer.release();
-			fxVisualizer = null;
-			audioSessionId = -1;
-		}
-		if (fxVisualizer != null) {
-			updateVisualizerDataType();
-			return true;
-		}
-		return false;
 	}
 
 	@Override
@@ -213,54 +107,24 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 	@Override
 	public void handleTimer(Timer timer, Object param) {
 		if (alive) {
-			if (paused) {
-				try {
-					if (fxVisualizer != null)
-						fxVisualizer.setEnabled(false);
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-				timer.pause();
-				return;
-			}
-			if (reset || fxVisualizer == null) {
+			if (reset) {
 				reset = false;
-				if (!initialize()) {
-					if (hasEverBeenAlive) {
-						//the player may be undergoing an unstable condition, such as successive
-						//fast track changes... try again later
-						failed = false;
-						paused = true;
-						timer.pause();
-					} else {
-						alive = false;
-					}
+				if (!MediaContext.startVisualizer()) {
+					failed = true;
+					alive = false;
 				} else if (!visualizerReady && alive && visualizer != null) {
-					hasEverBeenAlive = true;
 					visualizer.load();
 					visualizerReady = true;
 				}
 			}
 			if (visualizer != null)
-				visualizer.processFrame(playing ? fxVisualizer : null);
+				visualizer.processFrame(null);
 		}
 		if (!alive) {
 			timer.release();
 			if (visualizer != null)
 				visualizer.release();
-			if (fxVisualizer != null) {
-				try {
-					fxVisualizer.setEnabled(false);
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-				try {
-					fxVisualizer.release();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-				fxVisualizer = null;
-			}
+			MediaContext.stopVisualizer();
 			MainHandler.postToMainThread(this);
 			System.gc();
 		}

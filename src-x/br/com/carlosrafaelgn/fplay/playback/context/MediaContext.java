@@ -76,6 +76,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_UPDATE_BUFFER_CONFIG = 0x0008;
 	private static final int ACTION_ENABLE_EFFECTS_GAIN = 0x0009;
 	private static final int ACTION_DISABLE_EFFECTS_GAIN = 0x000A;
+	private static final int ACTION_START_VISUALIZER = 0x000B;
+	private static final int ACTION_STOP_VISUALIZER = 0x000C;
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
 	private static final int MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING = 1152;
@@ -96,7 +98,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	private static final Object threadNotification = new Object();
-	private static final Object notification = new Object();
 	private static final Object engineSync = new Object();
 	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
 	private static volatile int requestedAction, requestedSeekMS;
@@ -725,8 +726,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		if (initializationError) {
 			requestedAction = ACTION_NONE;
-			synchronized (notification) {
-				notification.notify();
+			synchronized (threadNotification) {
+				threadNotification.notify();
 			}
 			return;
 		}
@@ -736,14 +737,15 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		requestedAction = ACTION_NONE;
 
-		synchronized (notification) {
-			notification.notify();
+		synchronized (threadNotification) {
+			threadNotification.notify();
 		}
 
 		boolean paused = true, playPending = false;
 		int framesWrittenBeforePlaying = 0;
 		while (alive) {
 			if (paused || waitToReceiveAction) {
+				MediaCodecPlayer seekPendingPlayer = null;
 				synchronized (threadNotification) {
 					if (requestedAction == ACTION_NONE) {
 						try {
@@ -758,7 +760,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 					if (requestedAction != ACTION_NONE) {
 						waitToReceiveAction = false;
-						MediaCodecPlayer seekPendingPlayer = null;
 						requestSucceeded = false;
 						try {
 							//**** before calling notification.notify() we can safely assume the player thread
@@ -933,6 +934,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							case ACTION_DISABLE_EFFECTS_GAIN:
 								enableAutomaticEffectsGain(0);
 								break;
+							case ACTION_START_VISUALIZER:
+								requestSucceeded = true;
+								break;
+							case ACTION_STOP_VISUALIZER:
+								requestSucceeded = true;
+								break;
 							}
 						} catch (Throwable ex) {
 							synchronized (engineSync) {
@@ -959,59 +966,57 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						} finally {
 							requestedAction = ACTION_NONE;
 							playerRequestingAction = null;
-							synchronized (notification) {
-								notification.notify();
-							}
+							threadNotification.notify();
 						}
-						if (seekPendingPlayer != null) {
+					}
+				}
+				if (seekPendingPlayer != null) {
+					try {
+						outputBuffer.release();
+						updateNativeSrcAndReset(seekPendingPlayer);
+						if (sourcePlayer == seekPendingPlayer) {
+							synchronized (engineSync) {
+								checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
+							}
+							bufferSizeInFrames = engine.getActualBufferSizeInFrames();
+							fillThresholdInFrames = engine.getFillThresholdInFrames();
+						}
+						lastHeadPositionInFrames = engine.getHeadPositionInFrames();
+						if (nextPlayer != null) {
 							try {
-								outputBuffer.release();
-								updateNativeSrcAndReset(seekPendingPlayer);
-								if (sourcePlayer == seekPendingPlayer) {
-									synchronized (engineSync) {
-										checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
-									}
-									bufferSizeInFrames = engine.getActualBufferSizeInFrames();
-									fillThresholdInFrames = engine.getFillThresholdInFrames();
-								}
-								lastHeadPositionInFrames = engine.getHeadPositionInFrames();
-								if (nextPlayer != null) {
-									try {
-										nextPlayer.resetDecoderIfOutputAlreadyUsed();
-									} catch (Throwable ex) {
-										nextPlayer = null;
-										handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(nextPlayer, ex)), SystemClock.uptimeMillis());
-									}
-									nextFramesWritten = 0;
-								}
-								framesWritten = seekPendingPlayer.doSeek(requestedSeekMS);
-								framesPlayed = framesWritten;
-								framesWrittenBeforePlaying = 0;
-								handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, seekPendingPlayer), SystemClock.uptimeMillis());
+								nextPlayer.resetDecoderIfOutputAlreadyUsed();
 							} catch (Throwable ex) {
-								synchronized (engineSync) {
-									engine.release();
-									dstSampleRate = 0;
-								}
-								try {
-									outputBuffer.release();
-								} catch (Throwable ex2) {
-									//just ignore
-								}
-								paused = true;
-								playPending = false;
-								framesWrittenBeforePlaying = 0;
-								currentPlayer = null;
 								nextPlayer = null;
-								sourcePlayer = null;
-								framesWritten = 0;
-								framesPlayed = 0;
-								nextFramesWritten = 0;
-								wakeLock.release();
-								handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(seekPendingPlayer, ex)), SystemClock.uptimeMillis());
-								continue;
+								handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(nextPlayer, ex)), SystemClock.uptimeMillis());
 							}
+							nextFramesWritten = 0;
 						}
+						framesWritten = seekPendingPlayer.doSeek(requestedSeekMS);
+						framesPlayed = framesWritten;
+						framesWrittenBeforePlaying = 0;
+						handler.sendMessageAtTime(Message.obtain(handler, MSG_SEEKCOMPLETE, seekPendingPlayer), SystemClock.uptimeMillis());
+					} catch (Throwable ex) {
+						synchronized (engineSync) {
+							engine.release();
+							dstSampleRate = 0;
+						}
+						try {
+							outputBuffer.release();
+						} catch (Throwable ex2) {
+							//just ignore
+						}
+						paused = true;
+						playPending = false;
+						framesWrittenBeforePlaying = 0;
+						currentPlayer = null;
+						nextPlayer = null;
+						sourcePlayer = null;
+						framesWritten = 0;
+						framesPlayed = 0;
+						nextFramesWritten = 0;
+						wakeLock.release();
+						handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(seekPendingPlayer, ex)), SystemClock.uptimeMillis());
+						continue;
 					}
 				}
 			}
@@ -1245,8 +1250,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		if (wakeLock != null)
 			wakeLock.release();
-		synchronized (notification) {
-			notification.notify();
+		synchronized (threadNotification) {
+			threadNotification.notify();
 		}
 	}
 
@@ -1296,10 +1301,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		thread = new Thread(theMediaContext, "MediaContext Output Thread");
 		thread.start();
 
-		synchronized (notification) {
+		synchronized (threadNotification) {
 			if (requestedAction == ACTION_INITIALIZE) {
 				try {
-					notification.wait();
+					threadNotification.wait();
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1349,11 +1354,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			playerRequestingAction = player;
 			requestedAction = ACTION_PLAY;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (playerRequestingAction != null) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1373,11 +1376,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			playerRequestingAction = player;
 			requestedAction = ACTION_PAUSE;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (playerRequestingAction != null) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1397,11 +1398,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			playerRequestingAction = player;
 			requestedAction = ACTION_RESUME;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (playerRequestingAction != null) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1422,11 +1421,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			requestedSeekMS = msec;
 			requestedAction = ACTION_SEEK;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (playerRequestingAction != null) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1444,11 +1441,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			nextPlayerRequested = nextPlayer;
 			requestedAction = ACTION_SETNEXT;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (playerRequestingAction != null) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1465,11 +1460,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			playerRequestingAction = player;
 			requestedAction = ACTION_RESET;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (playerRequestingAction != null) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1503,11 +1496,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			effectsMessage = message;
 			requestedAction = ACTION_EFFECTS;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (requestedAction == ACTION_EFFECTS) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1564,6 +1555,41 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			sendEffectsMessage(Message.obtain(handler, MSG_VIRTUALIZER_STRENGTH, strength, 0));
 	}
 
+	static boolean startVisualizer() {
+		if (!alive)
+			return false;
+		waitToReceiveAction = true;
+		synchronized (threadNotification) {
+			requestedAction = ACTION_START_VISUALIZER;
+			threadNotification.notify();
+			if (requestedAction == ACTION_START_VISUALIZER) {
+				try {
+					threadNotification.wait(PLAYER_TIMEOUT);
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			}
+		}
+		return requestSucceeded;
+	}
+
+	static void stopVisualizer() {
+		if (!alive)
+			return;
+		waitToReceiveAction = true;
+		synchronized (threadNotification) {
+			requestedAction = ACTION_STOP_VISUALIZER;
+			threadNotification.notify();
+			if (requestedAction == ACTION_STOP_VISUALIZER) {
+				try {
+					threadNotification.wait(PLAYER_TIMEOUT);
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			}
+		}
+	}
+
 	public static MediaPlayerBase createMediaPlayer() {
 		return new MediaCodecPlayer();
 	}
@@ -1598,11 +1624,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		synchronized (threadNotification) {
 			requestedAction = ACTION_UPDATE_BUFFER_CONFIG;
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (requestedAction == ACTION_UPDATE_BUFFER_CONFIG) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
@@ -1620,11 +1644,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		synchronized (threadNotification) {
 			requestedAction = ((enabled == 0) ? ACTION_DISABLE_EFFECTS_GAIN : ACTION_ENABLE_EFFECTS_GAIN);
 			threadNotification.notify();
-		}
-		synchronized (notification) {
 			if (requestedAction == ACTION_DISABLE_EFFECTS_GAIN || requestedAction == ACTION_ENABLE_EFFECTS_GAIN) {
 				try {
-					notification.wait(PLAYER_TIMEOUT);
+					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
 					//just ignore
 				}
