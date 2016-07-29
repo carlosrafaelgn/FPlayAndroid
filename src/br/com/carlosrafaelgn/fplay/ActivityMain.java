@@ -255,6 +255,18 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			stringBuilder.append(song.length);
 		}
 
+		if (song == Player.localSong) {
+			//this information is only available for the song currently being played
+			final int sampleRate = Player.getSrcSampleRate();
+			final int channelCount = Player.getChannelCount();
+			if (sampleRate > 0 && channelCount > 0) {
+				stringBuilder.append("\n\n");
+				stringBuilder.append(sampleRate);
+				stringBuilder.append(" Hz / ");
+				stringBuilder.append((channelCount == 1) ? "Mono" : "Stereo");
+			}
+		}
+
 		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
 		l.addView(UI.createDialogEditText(getHostActivity(), 0, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS));
 		final BgDialog dialog = new BgDialog(getHostActivity(), l, null);

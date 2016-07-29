@@ -128,7 +128,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		return ((i < 0) ? path : path.substring(i + 1)) + " - " + super.toString();
 	}
 
-	int getSrcSampleRate() {
+	@Override
+	public int getSrcSampleRate() {
 		return srcSampleRate;
 	}
 
@@ -140,7 +141,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		dstSampleRate = MediaContext.getDstSampleRate(srcSampleRate);
 	}
 
-	int getChannelCount() {
+	@Override
+	public int getChannelCount() {
 		return channelCount;
 	}
 

@@ -95,6 +95,10 @@ public abstract class MediaPlayerBase {
 		boolean onError(MediaPlayerBase mp, int what, int extra);
 	}
 
+	public abstract int getSrcSampleRate();
+
+	public abstract int getChannelCount();
+
 	public abstract void start();
 
 	public abstract void pause();

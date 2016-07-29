@@ -55,6 +55,16 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	}
 
 	@Override
+	public int getSrcSampleRate() {
+		return 0;
+	}
+
+	@Override
+	public int getChannelCount() {
+		return 0;
+	}
+
+	@Override
 	public void start() {
 		player.start();
 	}

@@ -921,6 +921,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				-1));
 	}
 
+	public static int getSrcSampleRate() {
+		return ((httpStreamReceiver != null) ? 0 :
+			((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getSrcSampleRate() :
+				0));
+	}
+
+	public static int getChannelCount() {
+		return ((httpStreamReceiver != null) ? 0 :
+			((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getChannelCount() :
+				0));
+	}
+
 	private static MediaPlayerBase _createPlayer() {
 		MediaPlayerBase mp = MediaContext.createMediaPlayer();
 		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
