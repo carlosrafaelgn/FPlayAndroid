@@ -426,7 +426,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
 				//UP TO/PAST THE END OF IT!
 
-				if ((okToQuitIfFull && sizeInFrames >= emptyFrames) || sizeInFrames == 0)
+				//+ MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING to ensure that there is some
+				//extra empty space inside audioTrack's buffer (trying to further prevent blocks
+				//during audioTrack.write() calls)
+				if ((okToQuitIfFull && (sizeInFrames + MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING) >= emptyFrames) || sizeInFrames == 0)
 					return 0;
 
 				final MediaCodecPlayer player = buffer.player;
