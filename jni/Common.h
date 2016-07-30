@@ -378,7 +378,7 @@ if (!neonMode) {
 
 
 #define PACK_BIN(BIN) if ((BIN) == 0x01 || (BIN) == 0x1B) { *packet = 0x1B; packet[1] = ((uint8_t)(BIN) ^ 1); packet += 2; len += 2; } else { *packet = (uint8_t)(BIN); packet++; len++; }
-	uint8_t* packet = (uint8_t*)waveform;
+	uint8_t* packet = waveform;
 	int32_t len = 0, last;
 	uint8_t avg;
 	uint8_t b;
@@ -557,8 +557,8 @@ if (!neonMode) {
 	}
 #undef PACK_BIN
 	//fill in the payload length
-	((uint8_t*)waveform)[2] = (len & 0x7F) << 1; //lower 7 bits, left shifted by 1
-	((uint8_t*)waveform)[3] = (len >> 6) & 0xFE; //upper 7 bits, left shifted by 1
+	waveform[2] = (len & 0x7F) << 1; //lower 7 bits, left shifted by 1
+	waveform[3] = (len >> 6) & 0xFE; //upper 7 bits, left shifted by 1
 	*packet = 4; //EOT - End of Transmission
 	env->ReleasePrimitiveArrayCritical(jwaveform, waveform, 0);
 	return len + 5;

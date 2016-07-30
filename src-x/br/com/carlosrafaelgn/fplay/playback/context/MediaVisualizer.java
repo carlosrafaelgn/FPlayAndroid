@@ -45,6 +45,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 	private Visualizer visualizer;
 	private Handler handler;
 	private volatile boolean alive, reset, playing, failed, visualizerReady;
+	private byte[] waveform;
 	private Timer timer;
 
 	public MediaVisualizer(Visualizer visualizer, Handler handler) {
@@ -55,6 +56,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		playing = Player.localPlaying;
 		failed = false;
 		visualizerReady = false;
+		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		timer = new Timer(this, "Visualizer Thread", false, false, true);
 		timer.start(16);
 	}
@@ -100,6 +102,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 			handler.onFinalCleanup();
 			handler = null;
 		}
+		waveform = null;
 		timer = null;
 		visualizer = null;
 	}
@@ -117,8 +120,11 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 					visualizerReady = true;
 				}
 			}
-			if (visualizer != null)
-				visualizer.processFrame(null);
+			if (visualizer != null) {
+				if (playing)
+					MediaContext.getVisualizerWaveform(waveform);
+				visualizer.processFrame(playing, waveform);
+			}
 		}
 		if (!alive) {
 			timer.release();

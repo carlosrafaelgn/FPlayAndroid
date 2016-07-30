@@ -81,7 +81,6 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	static native void glSetImmersiveCfg(int diffusion, int riseSpeed);
 	static native void glReleaseView();
 
-	private byte[] waveform;
 	private final SlimLock lock;
 	private Point point;
 	private SurfaceHolder surfaceHolder;
@@ -96,7 +95,6 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	public SimpleVisualizerJni(Activity activity, boolean landscape, Intent extras) {
 		super(activity);
-		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		init(UI.color_visualizer565);
 		lock = new SlimLock();
 		point = new Point();
@@ -275,21 +273,15 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	
 	//Runs on a SECONDARY thread
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer) {
+	public void processFrame(boolean playing, byte[] waveform) {
 		if (!lock.lockLowPriority())
 			return;
 		try {
 			if (surface != null) {
-				//We use ignoreInput, because taking 1024 samples, 60 times a seconds
+				//We use ignoreInput because taking 1024 samples, 60 times a seconds,
 				//is useless, as there are only 44100 or 48000 samples in one second
-				if (ignoreInput == 0) {
-					//WE MUST NEVER call any method from visualizer
-					//while the player is not actually playing
-					if (visualizer == null)
-						Arrays.fill(waveform, 0, 1024, (byte)0x80);
-					else
-						visualizer.getWaveForm(waveform);
-				}
+				if (ignoreInput == 0 && !playing)
+					Arrays.fill(waveform, (byte)0x80);
 				if (!voice)
 					process(waveform, surface, ignoreInput | DATA_FFT);
 				else
@@ -304,7 +296,6 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	//Runs on a SECONDARY thread
 	@Override
 	public void release() {
-		waveform = null;
 		terminate();
 	}
 

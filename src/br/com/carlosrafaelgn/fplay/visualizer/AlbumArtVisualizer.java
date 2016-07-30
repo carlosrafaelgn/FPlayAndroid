@@ -193,7 +193,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	
 	//Runs on a SECONDARY thread
 	@Override
-	public void processFrame(android.media.audiofx.Visualizer visualizer) {
+	public void processFrame(boolean playing, byte[] waveform) {
 	}
 	
 	//Runs on a SECONDARY thread

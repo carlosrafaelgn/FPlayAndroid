@@ -71,7 +71,7 @@ void JNICALL init(JNIEnv* env, jclass clazz, int32_t jbgColor) {
 
 void JNICALL terminate(JNIEnv* env, jclass clazz) {
 	if (voice) {
-		free(voice);
+		delete voice;
 		voice = 0;
 	}
 }
@@ -104,7 +104,7 @@ int32_t JNICALL prepareSurface(JNIEnv* env, jclass clazz, jobject surface) {
 	return ret;
 }
 
-void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface, int32_t opt) {
+void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jwaveform, jobject surface, int32_t opt) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return;
@@ -124,20 +124,23 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	uint8_t* bfft;
+	uint8_t* fftI;
 	if (!(opt & IGNORE_INPUT)) {
-		bfft = (uint8_t*)env->GetPrimitiveArrayCritical(jbfft, 0);
-		if (!bfft) {
+		uint8_t* const waveform = (uint8_t*)env->GetPrimitiveArrayCritical(jwaveform, 0);
+		if (!waveform) {
 			ANativeWindow_unlockAndPost(wnd);
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft(bfft, bfft, DATA_FFT);
 
+		fftI = _fftI;
+		doFft(waveform, fftI, DATA_FFT);
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-		bfft[1] = 0;
+		fftI[1] = 0;
+
+		env->ReleasePrimitiveArrayCritical(jwaveform, waveform, JNI_ABORT);
 	} else {
-		bfft = 0;
+		fftI = 0;
 	}
 
 	float* const fft = _fft;
@@ -152,10 +155,10 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 	float previous = 0;
 	for (int32_t i = 0; i < barBins; i++) {
 		float m;
-		if (bfft) {
-			//bfft[i] stores values from 0 to 255 (inclusive)
-			const int32_t re = (uint32_t)bfft[i << 1];
-			const int32_t im = (uint32_t)bfft[(i << 1) + 1];
+		if (fftI) {
+			//fftI[i] stores values from 0 to 255 (inclusive)
+			const int32_t re = (uint32_t)fftI[i << 1];
+			const int32_t im = (uint32_t)fftI[(i << 1) + 1];
 			const int32_t amplSq = (re * re) + (im * im);
 			m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 			previousM[i] = m;
@@ -312,13 +315,11 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surfac
 		}
 	}
 
-	if (bfft)
-		env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
 	ANativeWindow_unlockAndPost(wnd);
 	ANativeWindow_release(wnd);
 }
 
-void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject surface, int32_t opt) {
+void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jwaveform, jobject surface, int32_t opt) {
 	ANativeWindow* wnd = ANativeWindow_fromSurface(env, surface);
 	if (!wnd)
 		return;
@@ -335,8 +336,8 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 	}
 	if (recreateVoice) {
 		if (voice)
-			free(voice);
-		voice = (uint16_t*)malloc(((inf.stride * inf.height) << 1) + 16);
+			delete voice;
+		voice = (uint16_t*)(new uint8_t[((inf.stride * inf.height) << 1) + 16]);
 		uint8_t* al = (uint8_t*)voice;
 		while ((((size_t)al) & 15))
 			al++;
@@ -360,30 +361,33 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 	//fft format:
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
-	uint8_t* bfft;
+	uint8_t* fftI;
 	if (!(opt & IGNORE_INPUT)) {
-		bfft = (uint8_t*)env->GetPrimitiveArrayCritical(jbfft, 0);
-		if (!bfft) {
+		uint8_t* const waveform = (uint8_t*)env->GetPrimitiveArrayCritical(jwaveform, 0);
+		if (!waveform) {
 			ANativeWindow_unlockAndPost(wnd);
 			ANativeWindow_release(wnd);
 			return;
 		}
-		doFft(bfft, bfft, DATA_FFT);
 
+		fftI = _fftI;
+		doFft(waveform, fftI, DATA_FFT);
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
-		bfft[1] = 0;
+		fftI[1] = 0;
+
+		env->ReleasePrimitiveArrayCritical(jwaveform, waveform, JNI_ABORT);
 	} else {
-		bfft = 0;
+		fftI = 0;
 	}
 
 	float previous = 0;
 	
 	for (int32_t i = 0; i < barBins; i++) {
-		//bfft[i] stores values from 0 to 255 (inclusive)
+		//fftI[i] stores values from 0 to 255 (inclusive)
 		float m;
-		if (bfft) {
-			const int32_t re = (uint32_t)bfft[i << 1];
-			const int32_t im = (uint32_t)bfft[(i << 1) + 1];
+		if (fftI) {
+			const int32_t re = (uint32_t)fftI[i << 1];
+			const int32_t im = (uint32_t)fftI[(i << 1) + 1];
 			const int32_t amplSq = (re * re) + (im * im);
 			m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
 			previousM[i] = m;
@@ -405,8 +409,7 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jbfft, jobject s
 			}
 		}
 	}
-	if (bfft)
-		env->ReleasePrimitiveArrayCritical(jbfft, bfft, JNI_ABORT);
+
 	memcpy(inf.bits, alignedVoice, inf.stride * inf.height);
 	ANativeWindow_unlockAndPost(wnd);
 	ANativeWindow_release(wnd);

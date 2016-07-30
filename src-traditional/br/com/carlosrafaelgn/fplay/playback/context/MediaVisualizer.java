@@ -50,6 +50,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 	private boolean hasEverBeenAlive;
 	private volatile boolean alive, paused, reset, playing, failed, visualizerReady;
 	private int audioSessionId;
+	private byte[] waveform;
 	private Timer timer;
 
 	public MediaVisualizer(Visualizer visualizer, Handler handler) {
@@ -62,6 +63,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		playing = Player.localPlaying;
 		failed = false;
 		visualizerReady = false;
+		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		timer = new Timer(this, "Visualizer Thread", false, false, true);
 		timer.start(16);
 	}
@@ -161,6 +163,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 			handler.onFinalCleanup();
 			handler = null;
 		}
+		waveform = null;
 		timer = null;
 		visualizer = null;
 	}
@@ -196,8 +199,13 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 					visualizerReady = true;
 				}
 			}
-			if (visualizer != null)
-				visualizer.processFrame(playing ? fxVisualizer : null);
+			if (visualizer != null) {
+				//WE MUST NEVER call any method from visualizer
+				//while the player is not actually playing
+				if (playing)
+					fxVisualizer.getWaveForm(waveform);
+				visualizer.processFrame(playing, waveform);
+			}
 		}
 		if (!alive) {
 			timer.release();

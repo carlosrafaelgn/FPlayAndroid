@@ -57,6 +57,7 @@ static uint32_t headPositionInFrames, bufferSizeInFrames, singleBufferSizeInFram
 static size_t contextVersion;
 
 void resetOpenSL() {
+	resetVisualizer();
 	headPositionInFrames = 0;
 	bufferWriteIndex = 0;
 	bufferReadIndex = 0;
@@ -199,7 +200,7 @@ int32_t JNICALL openSLInitialize(JNIEnv* env, jclass clazz) {
 	return 0;
 }
 
-int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t dstSampleRate, uint32_t bufferSizeInFrames, uint32_t singleBufferSizeInFrames) {
+int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t dstSampleRate, uint32_t bufferCount, uint32_t singleBufferSizeInFrames) {
 	openSLRelease(env, clazz);
 
 	if (::dstSampleRate != dstSampleRate) {
@@ -209,9 +210,10 @@ int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t dstSampleRate, 
 		virtualizerConfigChanged();
 	}
 
-	if (::bufferSizeInFrames != bufferSizeInFrames || ::singleBufferSizeInFrames != singleBufferSizeInFrames) {
-		::bufferSizeInFrames = bufferSizeInFrames;
+	if (::bufferCount != bufferCount || ::singleBufferSizeInFrames != singleBufferSizeInFrames) {
+		::bufferCount = bufferCount;
 		::singleBufferSizeInFrames = singleBufferSizeInFrames;
+		bufferSizeInFrames = bufferCount * singleBufferSizeInFrames;
 
 		processingBufferSizeInFrames = singleBufferSizeInFrames;
 		while (processingBufferSizeInFrames > MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING)
@@ -228,8 +230,6 @@ int32_t JNICALL openSLCreate(JNIEnv* env, jclass clazz, uint32_t dstSampleRate, 
 		fullBuffer = new uint8_t[bufferSizeInFrames << 2];
 		if (!fullBuffer)
 			return SL_RESULT_MEMORY_FAILURE;
-
-		bufferCount = bufferSizeInFrames / singleBufferSizeInFrames;
 
 		if (commitedFramesPerBuffer) {
 			delete commitedFramesPerBuffer;
@@ -390,6 +390,8 @@ int64_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 		memset((uint8_t*)dstBuffer + (commitedFramesPerBuffer[bufferWriteIndex] << 2), 0, (singleBufferSizeInFrames - commitedFramesPerBuffer[bufferWriteIndex]) << 2);
 	}
 
+	advanceVisualizer(dstBuffer, singleBufferSizeInFrames);
+
 	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
 	int16_t* procBuffer = dstBuffer;
 	for (uint32_t i = 0; i < processingBufferCount; i++, procBuffer += (processingBufferSizeInFrames << 1))
@@ -466,6 +468,8 @@ int64_t JNICALL openSLWrite(JNIEnv* env, jclass clazz, jbyteArray jarray, jobjec
 	//assertion
 	if (commitedFramesPerBuffer[bufferWriteIndex] > singleBufferSizeInFrames)
 		return -SL_RESULT_PRECONDITIONS_VIOLATED;
+
+	advanceVisualizer(dstBuffer, singleBufferSizeInFrames);
 
 	//we must not process too many samples at once, because the AGC algorithm expects at most ~1k samples
 	int16_t* procBuffer = dstBuffer;

@@ -119,6 +119,7 @@ void swapShorts(int16_t* srcBuffer, uint32_t sizeInShorts, int16_t* dstBuffer) {
 	}
 }
 
+#include "Visualizer.h"
 #include "Effects.h"
 #include "Resampler.h"
 #include "MediaCodec.h"
@@ -202,6 +203,8 @@ int64_t JNICALL audioTrackProcessEffects(JNIEnv* env, jclass clazz, jbyteArray j
 	if (!jsrcBuffer)
 		env->ReleasePrimitiveArrayCritical(jsrcArray, srcBuffer, JNI_ABORT);
 
+	advanceVisualizer(dstBuffer, ret.dstFramesUsed);
+
 	effectProc(dstBuffer, ret.dstFramesUsed);
 
 	if (!jdstBuffer)
@@ -221,6 +224,8 @@ int64_t JNICALL audioTrackProcessNativeEffects(JNIEnv* env, jclass clazz, uint64
 	WriteRet ret;
 	ret.srcFramesUsed = 0;
 	ret.dstFramesUsed = resampleProc((int16_t*)(((MediaCodec*)nativeObj)->buffer + offsetInBytes), sizeInFrames, dstBuffer, MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 1, ret.srcFramesUsed);
+
+	advanceVisualizer(dstBuffer, ret.dstFramesUsed);
 
 	effectProc(dstBuffer, ret.dstFramesUsed);
 
@@ -277,6 +282,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	initializeEffects();
 	initializeMediaCodec();
 	initializeResampler();
+	initializeVisualizer();
 	tmpSwapBufferForAudioTrack = 0;
 
 	JNINativeMethod methodTable[] = {
@@ -318,7 +324,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLSetVolumeInMillibels", "(I)V", (void*)openSLSetVolumeInMillibels},
 		{"openSLGetHeadPositionInFrames", "()I", (void*)openSLGetHeadPositionInFrames},
 		{"openSLWriteNative", "(JII)J", (void*)openSLWriteNative},
-		{"openSLWrite", "([BLjava/nio/ByteBuffer;III)J", (void*)openSLWrite}
+		{"openSLWrite", "([BLjava/nio/ByteBuffer;III)J", (void*)openSLWrite},
+		{"visualizerStart", "(II)I", (void*)visualizerStart},
+		{"visualizerStop", "()V", (void*)visualizerStop},
+		{"visualizerGetWaveform", "([BI)V", (void*)visualizerGetWaveform}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)
@@ -334,6 +343,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 	openSLTerminate(0, 0);
 	terminateMediaCodec();
 	terminateResampler();
+	terminateVisualizer();
 	if (tmpSwapBufferForAudioTrack) {
 		delete tmpSwapBufferForAudioTrack;
 		tmpSwapBufferForAudioTrack = 0;

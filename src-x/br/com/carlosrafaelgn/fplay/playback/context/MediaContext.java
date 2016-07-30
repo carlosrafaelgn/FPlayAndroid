@@ -155,7 +155,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native long audioTrackProcessEffects(byte[] srcArray, ByteBuffer srcBuffer, int offsetInBytes, int sizeInFrames, int needsSwap, byte[] dstArray, ByteBuffer dstBuffer);
 
 	private static native int openSLInitialize();
-	private static native int openSLCreate(int dstSampleRate, int bufferSizeInFrames, int singleBufferSizeInFrames);
+	private static native int openSLCreate(int dstSampleRate, int bufferCount, int singleBufferSizeInFrames);
 	private static native int openSLPlay();
 	private static native int openSLPause();
 	private static native int openSLStopAndFlush();
@@ -165,6 +165,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native int openSLGetHeadPositionInFrames();
 	private static native long openSLWriteNative(long nativeObj, int offsetInBytes, int sizeInFrames);
 	private static native long openSLWrite(byte[] array, ByteBuffer buffer, int offsetInBytes, int sizeInFrames, int needsSwap);
+
+	private static native int visualizerStart(int bufferSizeInFrames, int createIfNotCreated);
+	private static native void visualizerStop();
+	private static native void visualizerGetWaveform(byte[] waveform, int headPositionInFrames);
 
 	private static abstract class Engine {
 		@SuppressWarnings("deprecation")
@@ -205,6 +209,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public abstract int getSingleBufferSizeInFrames();
 		public abstract int getHeadPositionInFrames();
 		public abstract int getFillThresholdInFrames();
+		public abstract void getVisualizerWaveform(byte[] waveform);
 		public abstract int commitFinalFrames(int emptyFrames);
 		public abstract int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames);
 	}
@@ -294,7 +299,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				//apparently, there are times when audioTrack creation fails, but the constructor
 				//above does not throw any exceptions (only getNativeFrameCount() throws exceptions
 				//in such cases)
-				getActualBufferSizeInFrames();
+				visualizerStart(getActualBufferSizeInFrames(), 0);
 			} catch (Throwable ex) {
 				return AUDIO_TRACK_OUT_OF_MEMORY;
 			}
@@ -375,6 +380,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public int getFillThresholdInFrames() {
 			//the AudioTrack must only start playing when it returns 0
 			return 0x7fffffff;
+		}
+
+		@Override
+		public void getVisualizerWaveform(byte[] waveform) {
+			if (audioTrack == null)
+				Arrays.fill(waveform, (byte)0x80);
+			else
+				visualizerGetWaveform(waveform, audioTrack.getPlaybackHeadPosition());
 		}
 
 		@Override
@@ -500,15 +513,18 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				break;
 			}
 
+			final int bufferCount;
 			if (bufferSizeInFrames <= (singleBufferSizeInFrames << 1)) {
 				//we need at least 2 buffers + 1 extra buffer (refer to OpenSL.h)
-				bufferSizeInFrames = singleBufferSizeInFrames * 3;
+				bufferCount = 3;
 			} else {
 				//otherwise, make sure it is a multiple of our minimal buffer size and add 1 extra buffer (refer to OpenSL.h)
-				bufferSizeInFrames = (1 + (bufferSizeInFrames / singleBufferSizeInFrames)) * singleBufferSizeInFrames;
+				bufferCount = 1 + (bufferSizeInFrames / singleBufferSizeInFrames);
 			}
+			bufferSizeInFrames = bufferCount * singleBufferSizeInFrames;
 
-			final int ret = openSLCreate(dstSampleRate, bufferSizeInFrames, singleBufferSizeInFrames);
+			final int ret = openSLCreate(dstSampleRate, bufferCount, singleBufferSizeInFrames);
+			visualizerStart(bufferSizeInFrames, 0);
 			setVolume();
 			return ret;
 		}
@@ -574,6 +590,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				return ((bufferSizeInFrames * 3) >> 2);
 			}
 			return bufferSizeInFrames;
+		}
+
+		@Override
+		public void getVisualizerWaveform(byte[] waveform) {
+			visualizerGetWaveform(waveform, openSLGetHeadPositionInFrames());
 		}
 
 		@Override
@@ -935,9 +956,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								enableAutomaticEffectsGain(0);
 								break;
 							case ACTION_START_VISUALIZER:
-								requestSucceeded = true;
+								synchronized (engineSync) {
+									requestSucceeded = (visualizerStart(0, 1) == 0);
+								}
 								break;
 							case ACTION_STOP_VISUALIZER:
+								synchronized (engineSync) {
+									visualizerStop();
+								}
 								requestSucceeded = true;
 								break;
 							}
@@ -1574,8 +1600,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static void stopVisualizer() {
-		if (!alive)
+		if (!alive) {
+			visualizerStop();
 			return;
+		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			requestedAction = ACTION_STOP_VISUALIZER;
@@ -1587,6 +1615,15 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
+		}
+	}
+
+	static void getVisualizerWaveform(byte[] waveform) {
+		synchronized (engineSync) {
+			if (alive && engine != null)
+				engine.getVisualizerWaveform(waveform);
+			else
+				Arrays.fill(waveform, (byte)0x80);
 		}
 	}
 
