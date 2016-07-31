@@ -50,29 +50,38 @@
 #define FEATURE_DECODING_DIRECT 0x0080
 
 #if defined(__arm__) || defined(__aarch64__)
-	//arm or arm64
-	#define FPLAY_ARM
+//arm or arm64
+#define FPLAY_ARM
 #elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	//x86 or x86_64
-	#define FPLAY_X86
+//x86 or x86_64
+#define FPLAY_X86
 #else
-	#error ("Unknown platform!")
+#error ("Unknown platform!")
 #endif
 
 #if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
-	//arm64 or x86_64
-	#define FPLAY_64_BITS
+//arm64 or x86_64
+#define FPLAY_64_BITS
 #else
-	#define FPLAY_32_BITS
+#define FPLAY_32_BITS
 #endif
 
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html
 //http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html
 
 #ifdef FPLAY_ARM
-	#include <errno.h>
-	#include <fcntl.h>
-	static uint32_t neonMode;
+#include <errno.h>
+#include <fcntl.h>
+static uint32_t neonMode;
+#else
+//https://developer.android.com/ndk/guides/abis.html#x86
+//https://developer.android.com/ndk/guides/abis.html#86-64
+//All x86 Android devices use at least Atom processors (all Atom processor have SSE, SSE2, SSE3 and SSSE3 support, and all 64-bits Atom have SSE4.1/4.2 support)
+#include <xmmintrin.h> //SSE
+#include <emmintrin.h> //SSE2
+#include <pmmintrin.h> //SSE3
+#include <tmmintrin.h> //SSSE3
+//https://software.intel.com/sites/landingpage/IntrinsicsGuide/
 #endif
 
 #define MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING 1152
@@ -327,6 +336,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"openSLWrite", "([BLjava/nio/ByteBuffer;III)J", (void*)openSLWrite},
 		{"visualizerStart", "(II)I", (void*)visualizerStart},
 		{"visualizerStop", "()V", (void*)visualizerStop},
+		{"visualizerZeroOut", "()V", (void*)visualizerZeroOut},
 		{"visualizerGetWaveform", "([BI)V", (void*)visualizerGetWaveform}
 	};
 	JNIEnv* env;

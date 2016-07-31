@@ -31,14 +31,79 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-static uint32_t visualizerWriteOffsetInFrames, visualizerBufferSizeInFrames, visualizerCreatedBufferSizeInFrames;
-static uint8_t* visualizerBuffer;
+uint32_t visualizerWriteOffsetInFrames, visualizerBufferSizeInFrames;
+uint8_t* visualizerBuffer;
+static uint32_t visualizerCreatedBufferSizeInFrames;
+#ifdef FPLAY_X86
+static const int8_t visualizerShuffleIndices[16] __attribute__((aligned(16))) = { 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15 };
+static const int8_t visualizerx80[16] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0, 0, 0, 0, 0, 0, 0, 0 };
+#define visualizerWriteProc visualizerWrite
+#else
+typedef void (*VISUALIZERPROC)(const int16_t* srcBuffer, uint32_t bufferSizeInFrames);
+extern void visualizerWriteNeon(const int16_t* srcBuffer, uint32_t bufferSizeInFrames);
+static VISUALIZERPROC visualizerWriteProc;
+#endif
 
 #define resetVisualizer() visualizerWriteOffsetInFrames = 0
-#define advanceVisualizer(A, B) if (visualizerBuffer) visualizerWrite(A, B); visualizerWriteOffsetInFrames += B; while (visualizerWriteOffsetInFrames >= visualizerBufferSizeInFrames) visualizerWriteOffsetInFrames -= visualizerBufferSizeInFrames
+#define advanceVisualizer(A, B) if (visualizerBuffer) visualizerWriteProc(A, B); visualizerWriteOffsetInFrames += B; while (visualizerWriteOffsetInFrames >= visualizerBufferSizeInFrames) visualizerWriteOffsetInFrames -= visualizerBufferSizeInFrames
 
-void visualizerWrite(int16_t* buffer, uint32_t bufferSizeInFrames) {
-	
+void visualizerWrite(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) {
+	const uint32_t frameCountAtTheEnd = visualizerBufferSizeInFrames - visualizerWriteOffsetInFrames;
+	uint8_t* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
+	uint32_t count = ((bufferSizeInFrames <= frameCountAtTheEnd) ? bufferSizeInFrames : frameCountAtTheEnd);
+#ifdef FPLAY_X86
+	const __m128i x80 = _mm_load_si128((const __m128i*)visualizerx80);
+	const __m128i indices = _mm_load_si128((const __m128i*)visualizerShuffleIndices);
+#endif
+	do {
+		uint32_t i = count;
+#ifdef FPLAY_X86
+		while (i >= 8) {
+			//L0 R0 L1 R1 L2 R2 L3 R3
+			__m128i src = _mm_lddqu_si128((__m128i const*)srcBuffer);
+			//L4 R4 L5 R5 L6 R6 L7 R7
+			__m128i src2 = _mm_lddqu_si128((__m128i const*)(srcBuffer + 8));
+			//L0 R0 L1 R1 L2 R2 L3 R3 -> L0 L1 L2 L3 R0 R1 R2 R3
+			src = _mm_shuffle_epi8(src, indices);
+			//L4 R4 L5 R5 L6 R6 L7 R7 -> L4 L5 L6 L7 R4 R5 R6 R7
+			src2 = _mm_shuffle_epi8(src2, indices);
+			//L0 L1 L2 L3 L4 L5 L6 L7
+			const __m128i left = _mm_castps_si128(_mm_movelh_ps(_mm_castsi128_ps(src), _mm_castsi128_ps(src2)));
+			//R0 R1 R2 R3 R4 R5 R6 R7
+			const __m128i right = _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(src2), _mm_castsi128_ps(src)));
+			const __m128i tmpZero = _mm_setzero_si128();
+			const __m128i tmpSignExtensionL = _mm_cmpgt_epi16(tmpZero, left); //tmpSignExtensionL = (0 > left ? 0xFFFF : 0)
+			__m128i left32_0 = _mm_unpacklo_epi16(left, tmpSignExtensionL); //convert the lower 4 int16_t's into 4 int32_t's
+			__m128i left32_1 = _mm_unpackhi_epi16(left, tmpSignExtensionL); //convert the upper 4 int16_t's into 4 int32_t's
+			const __m128i tmpSignExtensionR = _mm_cmpgt_epi16(tmpZero, right); //tmpSignExtensionR = (0 > right ? 0xFFFF : 0)
+			const __m128i right32_0 = _mm_unpacklo_epi16(right, tmpSignExtensionR); //convert the lower 4 int16_t's into 4 int32_t's
+			const __m128i right32_1 = _mm_unpackhi_epi16(right, tmpSignExtensionR); //convert the upper 4 int16_t's into 4 int32_t's
+
+			left32_0 = _mm_add_epi32(left32_0, right32_0);
+			left32_1 = _mm_add_epi32(left32_1, right32_1);
+
+			left32_0 = _mm_srai_epi32(left32_0, 9);
+			left32_1 = _mm_srai_epi32(left32_1, 9);
+
+			left32_0 = _mm_packs_epi32(left32_0, left32_1);
+			left32_0 = _mm_packs_epi16(left32_0, left32_0);
+
+			left32_0 = _mm_xor_si128(left32_0, x80);
+
+			_mm_store_sd((double*)dstBuffer, _mm_castsi128_pd(left32_0));
+			dstBuffer += 8;
+			srcBuffer += 16;
+			i -= 8;
+		}
+#endif
+		while (i--) {
+			*dstBuffer++ = (uint8_t)((((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) >> 9) ^ 0x80); // >> 9 = 1 (average) + 8 (remove lower byte)
+			srcBuffer += 2;
+		}
+		bufferSizeInFrames -= count;
+		count = bufferSizeInFrames;
+		dstBuffer = visualizerBuffer;
+	} while (bufferSizeInFrames);
 }
 
 int32_t JNICALL visualizerStart(JNIEnv* env, jclass clazz, uint32_t bufferSizeInFrames, uint32_t createIfNotCreated) {
@@ -55,6 +120,17 @@ int32_t JNICALL visualizerStart(JNIEnv* env, jclass clazz, uint32_t bufferSizeIn
 	visualizerBuffer = new uint8_t[visualizerBufferSizeInFrames];
 
 	if (visualizerBuffer) {
+		uint32_t* buffer = (uint32_t*)visualizerBuffer;
+		bufferSizeInFrames = visualizerBufferSizeInFrames;
+		while (bufferSizeInFrames >= 4) {
+			*buffer++ = 0x80808080;
+			bufferSizeInFrames -= 4;
+		}
+		while (bufferSizeInFrames) {
+			*((uint8_t*)buffer) = 0x80;
+			buffer = (uint32_t*)((uint8_t*)buffer + 1);
+			bufferSizeInFrames--;
+		}
 		visualizerCreatedBufferSizeInFrames = visualizerBufferSizeInFrames;
 		return 0;
 	}
@@ -68,6 +144,22 @@ void JNICALL visualizerStop(JNIEnv* env, jclass clazz) {
 	if (visualizerBuffer) {
 		delete visualizerBuffer;
 		visualizerBuffer = 0;
+	}
+}
+
+void JNICALL visualizerZeroOut(JNIEnv* env, jclass clazz) {
+	if (visualizerBuffer) {
+		uint32_t* buffer = (uint32_t*)visualizerBuffer;
+		uint32_t bufferSizeInFrames = visualizerBufferSizeInFrames;
+		while (bufferSizeInFrames >= 4) {
+			*buffer++ = 0x80808080;
+			bufferSizeInFrames -= 4;
+		}
+		while (bufferSizeInFrames) {
+			*((uint8_t*)buffer) = 0x80;
+			buffer = (uint32_t*)((uint8_t*)buffer + 1);
+			bufferSizeInFrames--;
+		}
 	}
 }
 
@@ -98,6 +190,9 @@ void initializeVisualizer() {
 	visualizerBufferSizeInFrames = 0;
 	visualizerCreatedBufferSizeInFrames = 0;
 	visualizerBuffer = 0;
+#ifdef FPLAY_ARM
+	visualizerWriteProc = (neonMode ? visualizerWriteNeon : visualizerWrite);
+#endif
 }
 
 #define terminateVisualizer() visualizerStop(0, 0)

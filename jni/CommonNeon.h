@@ -32,20 +32,20 @@
 //
 
 #if defined(__arm__) || defined(__aarch64__)
-	//arm or arm64
-	#define FPLAY_ARM
+//arm or arm64
+#define FPLAY_ARM
 #elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	//x86 or x86_64
-	#define FPLAY_X86
+//x86 or x86_64
+#define FPLAY_X86
 #else
-	#error ("Unknown platform!")
+#error ("Unknown platform!")
 #endif
 
 #if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
-	//arm64 or x86_64
-	#define FPLAY_64_BITS
+//arm64 or x86_64
+#define FPLAY_64_BITS
 #else
-	#define FPLAY_32_BITS
+#define FPLAY_32_BITS
 #endif
 
 #include <inttypes.h>

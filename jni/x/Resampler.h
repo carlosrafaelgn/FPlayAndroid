@@ -57,17 +57,6 @@ static int32_t *resampleCoeffOriginalINT;
 #endif
 static RESAMPLEPROC resampleProc;
 
-#ifdef FPLAY_X86
-//https://developer.android.com/ndk/guides/abis.html#x86
-//https://developer.android.com/ndk/guides/abis.html#86-64
-//All x86 Android devices use at least Atom processors (all Atom processor have SSE, SSE2, SSE3 and SSSE3 support, and all 64-bits Atom have SSE4.1/4.2 support)
-#include <xmmintrin.h> //SSE
-#include <emmintrin.h> //SSE2
-#include <pmmintrin.h> //SSE3
-#include <tmmintrin.h> //SSSE3
-//https://software.intel.com/sites/landingpage/IntrinsicsGuide/
-#endif
-
 uint32_t resampleNull(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//nothing to be done but copying from source to destination
 	if (srcSizeInFrames > dstSizeInFrames)

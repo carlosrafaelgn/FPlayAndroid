@@ -359,3 +359,50 @@ uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 	srcFramesUsed = usedSrc;
 	return usedDst;
 }
+
+extern uint32_t visualizerWriteOffsetInFrames, visualizerBufferSizeInFrames;
+extern uint8_t* visualizerBuffer;
+static const int8_t visualizerx80[8] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+
+void visualizerWriteNeon(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) {
+	const uint32_t frameCountAtTheEnd = visualizerBufferSizeInFrames - visualizerWriteOffsetInFrames;
+	uint8_t* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
+	uint32_t count = ((bufferSizeInFrames <= frameCountAtTheEnd) ? bufferSizeInFrames : frameCountAtTheEnd);
+	const int8x8_t x80 = vld1_s8(visualizerx80);
+	do {
+		uint32_t i = count;
+		while (i >= 8) {
+			//[0] = L0 L1 L2 L3
+			//[1] = R0 R1 R2 R3
+			int16x4x2_t src = vld2_s16(srcBuffer); //srcBuffer is unaligned, so the performance here won't be the best as possible
+			//[0] = L4 L5 L6 L7
+			//[1] = R4 R5 R6 R7
+			int16x4x2_t src2 = vld2_s16(srcBuffer + 8);
+
+			int32x4_t left32_0 = vmovl_s16(src.val[0]);
+			int32x4_t right32_0 = vmovl_s16(src.val[1]);
+			int32x4_t left32_1 = vmovl_s16(src2.val[0]);
+			int32x4_t right32_1 = vmovl_s16(src2.val[1]);
+
+			left32_0 = vaddq_s32(left32_0, right32_0);
+			left32_1 = vaddq_s32(left32_1, right32_1);
+
+			left32_0 = vshrq_n_s32(left32_0, 9);
+			left32_1 = vshrq_n_s32(left32_1, 9);
+			
+			int8x8_t left8 = vqmovn_s16(vcombine_s16(vqmovn_s32(left32_0), vqmovn_s32(left32_1)));
+			
+			vst1_s8((int8_t*)dstBuffer, veor_s8(left8, x80));			
+			dstBuffer += 8;
+			srcBuffer += 16;
+			i -= 8;
+		}
+		while (i--) {
+			*dstBuffer++ = (uint8_t)((((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) >> 9) ^ 0x80); // >> 9 = 1 (average) + 8 (remove lower byte)
+			srcBuffer += 2;
+		}
+		bufferSizeInFrames -= count;
+		count = bufferSizeInFrames;
+		dstBuffer = visualizerBuffer;
+	} while (bufferSizeInFrames);
+}

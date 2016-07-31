@@ -59,10 +59,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		audioSessionId = -1;
 		alive = true;
 		reset = true;
-		paused = false;
 		playing = Player.localPlaying;
-		failed = false;
-		visualizerReady = false;
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		timer = new Timer(this, "Visualizer Thread", false, false, true);
 		timer.start(16);

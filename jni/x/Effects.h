@@ -75,10 +75,6 @@ equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
 
 #ifdef FPLAY_X86
 static const uint32_t effectsAbsSample[4] __attribute__((aligned(16))) = { 0x7FFFFFFF, 0x7FFFFFFF, 0, 0 };
-#include <xmmintrin.h> //SSE
-#include <emmintrin.h> //SSE2
-#include <pmmintrin.h> //SSE3
-//https://software.intel.com/sites/landingpage/IntrinsicsGuide/
 #else
 extern void processEqualizerNeon(int16_t* buffer, uint32_t sizeInFrames);
 extern void processVirtualizerNeon(int16_t* buffer, uint32_t sizeInFrames);

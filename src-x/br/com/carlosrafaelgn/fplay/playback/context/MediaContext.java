@@ -168,6 +168,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static native int visualizerStart(int bufferSizeInFrames, int createIfNotCreated);
 	private static native void visualizerStop();
+	private static native void visualizerZeroOut();
 	private static native void visualizerGetWaveform(byte[] waveform, int headPositionInFrames);
 
 	private static abstract class Engine {
@@ -1620,6 +1621,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					//just ignore
 				}
 			}
+		}
+	}
+
+	static void zeroOutVisualizer() {
+		synchronized (engineSync) {
+			if (alive)
+				visualizerZeroOut();
 		}
 	}
 

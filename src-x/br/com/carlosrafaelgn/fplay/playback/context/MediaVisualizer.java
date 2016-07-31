@@ -44,7 +44,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 	}
 	private Visualizer visualizer;
 	private Handler handler;
-	private volatile boolean alive, reset, playing, failed, visualizerReady;
+	private volatile boolean alive, reset, created, playing, failed, visualizerReady;
 	private byte[] waveform;
 	private Timer timer;
 
@@ -54,8 +54,6 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		alive = true;
 		reset = true;
 		playing = Player.localPlaying;
-		failed = false;
-		visualizerReady = false;
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
 		timer = new Timer(this, "Visualizer Thread", false, false, true);
 		timer.start(16);
@@ -77,6 +75,8 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 
 	public void resetAndResume() {
 		//unlike the traditional visualizer, there is no need to reset this visualizer
+		//(we only need to zero it out)
+		reset = true;
 		if (timer != null)
 			timer.resume();
 	}
@@ -112,12 +112,18 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		if (alive) {
 			if (reset) {
 				reset = false;
-				if (!MediaContext.startVisualizer()) {
-					failed = true;
-					alive = false;
-				} else if (!visualizerReady && alive && visualizer != null) {
-					visualizer.load();
-					visualizerReady = true;
+				if (created) {
+					MediaContext.zeroOutVisualizer();
+				} else {
+					if (!MediaContext.startVisualizer()) {
+						created = false;
+						failed = true;
+						alive = false;
+					} else if (!visualizerReady && alive && visualizer != null) {
+						visualizer.load();
+						visualizerReady = true;
+						created = true;
+					}
 				}
 			}
 			if (visualizer != null) {
