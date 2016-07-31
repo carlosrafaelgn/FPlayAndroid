@@ -143,7 +143,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		else if ((features & Player.FEATURE_DECODING_DIRECT) != 0)
 			sb.append("\nDirect Decoding");
 		final int[] playbackInfo = Player.getCurrentPlaybackInfo();
-		if (playbackInfo != null && playbackInfo.length >= 4) {
+		if (playbackInfo != null && playbackInfo.length >= 5) {
 			if (playbackInfo[0] > 0) {
 				sb.append("\nNative Sample Rate (Device)");
 				sb.append(UI.collon());
@@ -161,9 +161,13 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 				sb.append(playbackInfo[2]);
 				sb.append(" Hz");
 
-				sb.append("\nFrames per Buffer");
+				sb.append("\nFrames per Buffer (Device)");
 				sb.append(UI.collon());
 				sb.append(playbackInfo[3]);
+
+				sb.append("\nFrames per Buffer (Actually Used)");
+				sb.append(UI.collon());
+				sb.append(playbackInfo[4]);
 			}
 		}
 		lblDbg.setTypeface(UI.defaultTypeface);

@@ -417,20 +417,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			if (pendingDstFrames <= 0) {
 				int sizeInFrames = buffer.remainingBytes >> srcChannelCount;
 
+				if (sizeInFrames == 0)
+					return 0;
+
 				//we cannot let audioTrack block for too long (should it actually block)
 				while (sizeInFrames > MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING)
 					sizeInFrames >>= 1;
-
-				//*** NEVER TRY TO RETURN 0 HERE, MANUALLY CONTROLLING WHETHER THE AUDIOTRACK IS FULL,
-				//BEFORE MAKING SURE WE HAVE WRITTEN UP TO/PAST THE END OF IT!!!
-				//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
-				//UP TO/PAST THE END OF IT!
-
-				//+ MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING to ensure that there is some
-				//extra empty space inside audioTrack's buffer (trying to further prevent blocks
-				//during audioTrack.write() calls)
-				if ((okToQuitIfFull && (sizeInFrames + MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING) >= emptyFrames) || sizeInFrames == 0)
-					return 0;
 
 				final MediaCodecPlayer player = buffer.player;
 				long dstSrcRet;
@@ -449,6 +441,14 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				buffer.offsetInBytes += srcBytesUsed;
 				pendingOffsetInBytes = 0;
 			}
+
+			//*** NEVER TRY TO RETURN 0 HERE, MANUALLY CONTROLLING WHETHER THE AUDIOTRACK IS FULL,
+			//BEFORE MAKING SURE WE HAVE WRITTEN UP TO/PAST THE END OF IT FIRST!!!
+			//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
+			//UP TO/PAST THE END OF IT!
+
+			if (okToQuitIfFull && pendingDstFrames >= emptyFrames)
+				return 0;
 
 			//from here on, tempDstBuffer/Array will always contain stereo frames
 			final int sizeInBytes = pendingDstFrames << 2;
@@ -485,7 +485,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				dstSampleRate = 44100;
 
 			int framesPerBuffer = getFramesPerBuffer(dstSampleRate);
-			//make sure framesPerBuffer is even, so singleBufferSizeInFrames will also be
+			//make sure framesPerBuffer is even, so singleBufferSizeInFrames will also be even
 			if ((framesPerBuffer & 1) != 0)
 				framesPerBuffer <<= 1;
 
@@ -495,7 +495,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 			//to be sure that singleBufferSizeInFrames still will be a valid multiple after
 			//dividing by 2, we need to make sure singleBufferSizeInFrames is an even number
-			while (((singleBufferSizeInFrames & 1) == 0) && singleBufferSizeInFrames >= (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 16))
+			//(this limits the maximum size of a single buffer as an attempt to make the
+			//visualizer not too laggy)
+			while (((singleBufferSizeInFrames & 1) == 0) && singleBufferSizeInFrames > ((MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 3) / 2))
 				singleBufferSizeInFrames >>= 1;
 
 			switch ((bufferConfig & Player.BUFFER_SIZE_MASK)) {
@@ -1636,11 +1638,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static int[] getCurrentPlaybackInfo() {
 		final int dstSampleRate = getDstSampleRate(srcSampleRate);
+		final int nativeFramesPerBuffer = Engine.getFramesPerBuffer(dstSampleRate);
+		final int usedFramesPerBuffer;
+		synchronized (engineSync) {
+			usedFramesPerBuffer = ((engine != null) ? engine.getSingleBufferSizeInFrames() : nativeFramesPerBuffer);
+		}
 		return new int[] {
 			nativeSampleRate,
 			srcSampleRate,
 			dstSampleRate,
-			Engine.getFramesPerBuffer(dstSampleRate)
+			nativeFramesPerBuffer,
+			usedFramesPerBuffer
 		};
 	}
 
