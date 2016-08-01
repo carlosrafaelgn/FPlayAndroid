@@ -399,10 +399,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				if (tempDstArray == null)
 					tempDstArray = new byte[1024];
 			}
-			Arrays.fill(tempDstArray, 0, 1024, (byte)0);
-			audioTrack.write(tempDstArray, 0, 1024);
-			//allow method run() to sleep
-			return 0;
+			if (emptyFrames > 256)
+				emptyFrames = 256;
+			else if (emptyFrames <= 0)
+				return 0;
+			final int sizeInBytes = emptyFrames << 2;
+			Arrays.fill(tempDstArray, 0, sizeInBytes, (byte)0);
+			final int ret = audioTrack.write(tempDstArray, 0, sizeInBytes);
+			if (ret < 0)
+				return ret;
+			//ret was in bytes, but we need to return frames
+			return (ret >> 2);
 		}
 
 		@Override
@@ -461,8 +468,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			} else {
 				ret = audioTrack.write(tempDstArray, pendingOffsetInBytes, sizeInBytes);
 			}
-			if (ret == 0)
+			if (ret <= 0) {
+				if (ret < 0)
+					return ret;
 				okToQuitIfFull = true;
+			}
 			pendingOffsetInBytes += ret;
 			//ret was in bytes, but we need to return frames
 			ret >>= 2;
@@ -1123,24 +1133,36 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						}
 
 						boolean sleepNow = true;
-						if (outputBuffer.streamOver && nextPlayer == null) {
-							//when the input stream is over and we do not have a nextPlayer to produce
-							//new samples, we need to tell OpenSL to flush any pending data it had stored
-							//if we were using AudioTrack, then we need to write 0 samples in order to
-							//fill up the buffer, otherwise, if it was not playing, it would never start
-							final int framesWrittenThisTime = engine.commitFinalFrames(bufferSizeInFrames - (int)(framesWritten - framesPlayed));
-							if (framesWrittenThisTime < 0) {
-								throw new IOException("engine.write() returned " + framesWrittenThisTime);
-							} else if (framesWrittenThisTime > 0) {
+						if (outputBuffer.streamOver) {
+							int framesWrittenThisTime = 0;
+							if (nextPlayer == null || sourcePlayer == nextPlayer) {
+								//when the input stream is over and we do not have a nextPlayer to produce
+								//new samples, we need to tell OpenSL to flush any pending data it had stored
+								//if we were using AudioTrack, then we need to write 0 samples in order to
+								//fill up the buffer, otherwise, if it was not playing, it would never start
+								framesWrittenThisTime = engine.commitFinalFrames(bufferSizeInFrames - (int)(framesWritten - framesPlayed));
+								if (framesWrittenThisTime < 0)
+									throw new IOException("engine.write() returned " + framesWrittenThisTime);
+							}
+
+							if (playPending) {
 								sleepNow = false;
+								framesWrittenBeforePlaying += framesWrittenThisTime;
+								if (framesWrittenThisTime == 0 || framesWrittenBeforePlaying >= fillThresholdInFrames) {
+									//the song ended before we had a chance to start playing before, so do it now!
+									playPending = false;
+									checkEngineResult(engine.play());
+									bufferingEnd(sourcePlayer);
+								}
 							}
 						}
 
 						if (sleepNow) {
 							try {
 								synchronized (threadNotification) {
+									//sleep only for a very brief period, do not use the standard sleep time!
 									if (requestedAction == ACTION_NONE)
-										threadNotification.wait(sleepTime);
+										threadNotification.wait(10);
 								}
 							} catch (Throwable ex) {
 								//just ignore
@@ -1180,26 +1202,20 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						}
 						continue;
 					} else {
-						if (sourcePlayer == currentPlayer) {
+						if (sourcePlayer == currentPlayer)
 							framesWritten += framesWrittenThisTime;
-							if (playPending) {
-								framesWrittenBeforePlaying += framesWrittenThisTime;
-								if (framesWrittenBeforePlaying >= fillThresholdInFrames) {
-									//we have just filled the buffer, time to start playing
-									playPending = false;
-									checkEngineResult(engine.play());
-									bufferingEnd(sourcePlayer);
-								}
-							}
-						} else {
+						else
 							nextFramesWritten += framesWrittenThisTime;
+						if (playPending) {
+							framesWrittenBeforePlaying += framesWrittenThisTime;
+							if (framesWrittenBeforePlaying >= fillThresholdInFrames) {
+								//we have just filled the buffer, time to start playing
+								playPending = false;
+								checkEngineResult(engine.play());
+								bufferingEnd(sourcePlayer);
+							}
 						}
 					}
-				} else if (playPending && currentPlayer.isOutputOver()) {
-					//the song ended before we had a chance to start playing before, so do it now!
-					playPending = false;
-					checkEngineResult(engine.play());
-					bufferingEnd(sourcePlayer);
 				}
 
 				if (outputBuffer.remainingBytes <= 0) {
