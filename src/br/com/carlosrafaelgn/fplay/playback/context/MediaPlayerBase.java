@@ -43,7 +43,8 @@ public abstract class MediaPlayerBase {
 
 	//extra
 	public static final int ERROR_NOT_FOUND = 1001; //internal constant (not used by the original MediaPlayer class) used to indicate that the file has not been found
-	public static final int ERROR_OUT_OF_MEMORY = 1002; //internal constant (not used by the original MediaPlayer class) used to indicate that the file has not been found
+	public static final int ERROR_OUT_OF_MEMORY = 1002; //internal constant (not used by the original MediaPlayer class) used to indicate that there was not enough memory to fulfill the request
+	public static final int ERROR_PERMISSION = 1003; //internal constant (not used by the original MediaPlayer class) used to indicate that a security-related error has occurred
 	//public static final int ERROR_MALFORMED = -1007; //MediaPlayer.MEDIA_ERROR_MALFORMED
 	public static final int ERROR_UNSUPPORTED_FORMAT = -1010; //MediaPlayer.MEDIA_ERROR_UNSUPPORTED
 	public static final int ERROR_IO = -1004; //MediaPlayer.MEDIA_ERROR_IO

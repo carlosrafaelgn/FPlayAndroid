@@ -372,7 +372,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_songListDeserialized(msg.obj);
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_ERROR:
-				_httpStreamReceiverError(msg.arg1, msg.arg2);
+				_httpStreamReceiverError(msg.arg1, (msg.obj instanceof Throwable) ? (Throwable)msg.obj : null, msg.arg2);
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_PREPARED:
 				_httpStreamReceiverPrepared(msg.arg1);
@@ -1638,11 +1638,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
 				_fullCleanup();
-				final Throwable result = ((extra == MediaPlayerBase.ERROR_OUT_OF_MEMORY) ? new OutOfMemoryError() :
-					((extra == MediaPlayerBase.ERROR_NOT_FOUND) ? new FileNotFoundException() :
-						((extra == MediaPlayerBase.ERROR_TIMED_OUT) ? new MediaPlayerBase.TimeoutException() :
-							((extra == MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT) ? new MediaPlayerBase.UnsupportedFormatException() :
-								new IOException()))));
+				final Throwable result = ((extra == MediaPlayerBase.ERROR_PERMISSION) ? new MediaPlayerBase.PermissionDeniedException() :
+					((extra == MediaPlayerBase.ERROR_OUT_OF_MEMORY) ? new OutOfMemoryError() :
+						((extra == MediaPlayerBase.ERROR_NOT_FOUND) ? new FileNotFoundException() :
+							((extra == MediaPlayerBase.ERROR_TIMED_OUT) ? new MediaPlayerBase.TimeoutException() :
+								((extra == MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT) ? new MediaPlayerBase.UnsupportedFormatException() :
+									new IOException())))));
 				//_handleFailure used to be called only when howThePlayerStarted == SongList.HOW_NEXT_AUTO
 				//and the song was being prepared
 				if (howThePlayerStarted != SongList.HOW_CURRENT && howThePlayerStarted < 0)
@@ -1869,11 +1870,24 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		httpOptions = (httpOptions & ~0xF0) | ((msBeforePlayingIndex & 0x0F) << 4);
 	}
 
-	private static void _httpStreamReceiverError(int version, int errorCode) {
+	private static void _httpStreamReceiverError(int version, Throwable exception, int errorCode) {
 		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
 			return;
 		_releaseInternetObjects();
-		thePlayer.onError(player, MediaPlayerBase.ERROR_UNKNOWN, !isConnectedToTheInternet() ? MediaPlayerBase.ERROR_NOT_FOUND : errorCode);
+		if (!Player.isConnectedToTheInternet()) {
+			exception = null;
+			errorCode = MediaPlayerBase.ERROR_NOT_FOUND;
+		}
+		thePlayer.onError(player,
+			((exception != null) && (exception instanceof MediaPlayerBase.MediaServerDiedException)) ? MediaPlayerBase.ERROR_SERVER_DIED :
+				MediaPlayerBase.ERROR_UNKNOWN,
+			((exception == null) ? errorCode :
+				((exception instanceof MediaPlayerBase.TimeoutException) ? MediaPlayerBase.ERROR_TIMED_OUT :
+					((exception instanceof MediaPlayerBase.PermissionDeniedException) ? MediaPlayerBase.ERROR_PERMISSION :
+						((exception instanceof OutOfMemoryError) ? MediaPlayerBase.ERROR_OUT_OF_MEMORY :
+							((exception instanceof FileNotFoundException) ? MediaPlayerBase.ERROR_NOT_FOUND :
+								((exception instanceof MediaPlayerBase.UnsupportedFormatException) ? MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT :
+									((exception instanceof IOException) ? MediaPlayerBase.ERROR_IO : MediaPlayerBase.ERROR_UNKNOWN))))))));
 	}
 
 	private static void httpStreamReceiverMetadataUpdate(HttpStreamReceiver.Metadata metadata) {

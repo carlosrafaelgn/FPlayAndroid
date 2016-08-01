@@ -543,7 +543,7 @@ public final class HttpStreamReceiver implements Runnable {
 					if (!alive)
 						return;
 					if (handler != null)
-						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? MediaPlayerBase.ERROR_TIMED_OUT : ((ex instanceof FileNotFoundException) ? MediaPlayerBase.ERROR_NOT_FOUND : MediaPlayerBase.ERROR_IO)), SystemClock.uptimeMillis());
+						handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, 0, (ex instanceof SocketTimeoutException) ? new MediaPlayerBase.TimeoutException() : ex), SystemClock.uptimeMillis());
 				}
 			} finally {
 				synchronized (sync) {
@@ -821,8 +821,11 @@ public final class HttpStreamReceiver implements Runnable {
 							case '3':
 								shouldRedirectOnCompletion = true;
 								break;
-							case '4': //assume all 4xx codes as 404
-								throw new FileNotFoundException();
+							case '4':
+								if (line.charAt(lineLen + 3) >= '1' && line.charAt(lineLen + 3) <= '3')
+									throw new MediaPlayerBase.PermissionDeniedException();
+								else //assume all other 4xx codes as 404
+									throw new FileNotFoundException();
 							default: //we do not accept 1xx and 5xx replies
 								throw new IOException();
 							}
@@ -1085,7 +1088,7 @@ public final class HttpStreamReceiver implements Runnable {
 				if (!alive)
 					return;
 				if (handler != null)
-					handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, (ex instanceof SocketTimeoutException) ? 0 : ((ex instanceof FileNotFoundException) ? -1 : -2)), SystemClock.uptimeMillis());
+					handler.sendMessageAtTime(Message.obtain(handler, errorMsg, arg1, 0, (ex instanceof SocketTimeoutException) ? new MediaPlayerBase.TimeoutException() : ex), SystemClock.uptimeMillis());
 			}
 		} finally {
 			synchronized (sync) {

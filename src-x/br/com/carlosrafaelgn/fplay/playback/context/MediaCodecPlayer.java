@@ -216,7 +216,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			return true;
 		switch (msg.what) {
 		case MSG_HTTP_STREAM_RECEIVER_ERROR:
-			onError(null, !Player.isConnectedToTheInternet() ? MediaPlayerBase.ERROR_NOT_FOUND : msg.arg2);
+			onError((msg.obj instanceof Throwable) ? (Throwable)msg.obj : null, !Player.isConnectedToTheInternet() ? MediaPlayerBase.ERROR_NOT_FOUND : msg.arg2);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
 			if (msg.obj != null)
@@ -900,10 +900,12 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				((exception != null) && (exception instanceof MediaServerDiedException)) ? ERROR_SERVER_DIED :
 					ERROR_UNKNOWN,
 				((exception == null) ? errorCode :
-					((exception instanceof OutOfMemoryError) ? ERROR_OUT_OF_MEMORY :
-						((exception instanceof FileNotFoundException) ? ERROR_NOT_FOUND :
-							((exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :
-								((exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN))))));
+					((exception instanceof TimeoutException) ? ERROR_TIMED_OUT :
+						((exception instanceof PermissionDeniedException) ? ERROR_PERMISSION :
+							((exception instanceof OutOfMemoryError) ? ERROR_OUT_OF_MEMORY :
+								((exception instanceof FileNotFoundException) ? ERROR_NOT_FOUND :
+									((exception instanceof UnsupportedFormatException) ? ERROR_UNSUPPORTED_FORMAT :
+										((exception instanceof IOException) ? ERROR_IO : ERROR_UNKNOWN))))))));
 	}
 
 	void onInfo(int what, int extra, Object extraObject) {
