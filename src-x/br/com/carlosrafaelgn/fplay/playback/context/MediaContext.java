@@ -751,7 +751,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
 		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		outputBuffer.index = -1;
-		int dstSampleRate = 0, sleepTime = 0, lastHeadPositionInFrames = 0, bufferSizeInFrames = 0, fillThresholdInFrames = 0;
+		int dstSampleRate = 0, lastHeadPositionInFrames = 0, bufferSizeInFrames = 0, fillThresholdInFrames = 0;
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
 		boolean bufferConfigChanged = false;
 
@@ -839,9 +839,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								bufferSizeInFrames = engine.getActualBufferSizeInFrames();
 								fillThresholdInFrames = engine.getFillThresholdInFrames();
-								sleepTime = (engine.getSingleBufferSizeInFrames() * 1000) / dstSampleRate;
-								if (sleepTime > 30) sleepTime = 30;
-								else if (sleepTime < 15) sleepTime = 15;
 								playPending = true;
 								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
@@ -1106,9 +1103,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								bufferSizeInFrames = engine.getActualBufferSizeInFrames();
 								fillThresholdInFrames = engine.getFillThresholdInFrames();
-								sleepTime = (engine.getSingleBufferSizeInFrames() * 1000) / dstSampleRate;
-								if (sleepTime > 30) sleepTime = 30;
-								else if (sleepTime < 15) sleepTime = 15;
 								playPending = true;
 								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
@@ -1188,7 +1182,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						int actualSleepTime = (int)SystemClock.uptimeMillis();
 						sourcePlayer.fillInputBuffers();
 						try {
-							actualSleepTime = sleepTime - ((int)SystemClock.uptimeMillis() - actualSleepTime);
+							actualSleepTime = 100 - ((int)SystemClock.uptimeMillis() - actualSleepTime);
 							if (actualSleepTime > 0) {
 								//wait(0) will block the thread until someone
 								//calls notify() or notifyAll()
@@ -1265,7 +1259,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						try {
 							synchronized (threadNotification) {
 								if (requestedAction == ACTION_NONE)
-									threadNotification.wait(sleepTime);
+									threadNotification.wait(10);
 							}
 						} catch (Throwable ex) {
 							//just ignore

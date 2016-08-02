@@ -481,7 +481,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		}
 		if ((Player.localPlaying || Player.isPreparing()) && !Player.controlMode) {
 			if (!tmrSong.isAlive())
-				tmrSong.start(250);
+				tmrSong.start(200);
 		} else {
 			tmrSong.stop();
 		}
