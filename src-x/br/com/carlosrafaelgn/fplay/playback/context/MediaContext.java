@@ -106,12 +106,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static float gain = 1.0f;
 	private static Handler handler;
 	private static Thread thread;
-	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested;
+	private static volatile MediaCodecPlayer playerRequestingAction, nextPlayerRequested, currentPlayerForReference;
 	private static MediaContext theMediaContext;
 	private static Engine engine;
 	public static boolean useOpenSLEngine;
 	final static boolean externalNativeLibraryAvailable;
-	static boolean engineNeedsFullBufferBeforeResuming;
+	static boolean engineBlocks;
 
 	static {
 		System.loadLibrary("MediaContextJni");
@@ -206,6 +206,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public abstract void release();
 		public abstract void terminate();
 		public abstract void setVolume();
+		public abstract void pauseFromOtherThreadIfBlocking();
 		public abstract int getActualBufferSizeInFrames();
 		public abstract int getSingleBufferSizeInFrames();
 		public abstract int getHeadPositionInFrames();
@@ -235,7 +236,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		@Override
 		public int initialize() {
-			engineNeedsFullBufferBeforeResuming = true;
+			engineBlocks = true;
 			//MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING << 3:
 			//* 2 = short
 			//* 2 = stereo
@@ -262,7 +263,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 			//to be sure that singleBufferSizeInFrames still will be a valid multiple after
 			//dividing by 2, we need to make sure singleBufferSizeInFrames is an even number
-			while (((singleBufferSizeInFrames & 1) == 0) && singleBufferSizeInFrames >= (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 16))
+			while (((singleBufferSizeInFrames & 1) == 0) && singleBufferSizeInFrames >= (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 8))
 				singleBufferSizeInFrames >>= 1;
 
 			int bufferSizeInFrames;
@@ -289,7 +290,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				bufferSizeInFrames = minBufferSizeInFrames;
 
 			//round, but keep roundedBufferSizeInFrames not too above bufferSizeInFrames
-			final int roundedBufferSizeInFrames = (bufferSizeInFrames / singleBufferSizeInFrames) * singleBufferSizeInFrames;
+			//(also, make sure we have at least 2 buffers)
+			final int bufferCount = bufferSizeInFrames / singleBufferSizeInFrames;
+			final int roundedBufferSizeInFrames = ((bufferCount <= 2) ? 2 : bufferCount) * singleBufferSizeInFrames;
 			bufferSizeInFrames = ((roundedBufferSizeInFrames >= bufferSizeInFrames) ?
 				roundedBufferSizeInFrames :
 				(((bufferSizeInFrames + (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 4)) / singleBufferSizeInFrames) * singleBufferSizeInFrames));
@@ -360,6 +363,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public void setVolume() {
 			if (audioTrack != null)
 				audioTrack.setStereoVolume(gain, gain);
+		}
+
+		@Override
+		public void pauseFromOtherThreadIfBlocking() {
+			if (audioTrack != null)
+				audioTrack.pause();
 		}
 
 		@Override
@@ -450,16 +459,24 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				pendingOffsetInBytes = 0;
 			}
 
+			//from here on, tempDstBuffer/Array will always contain stereo frames
+			int sizeInBytes = pendingDstFrames << 2;
+
 			//*** NEVER TRY TO RETURN 0 HERE, MANUALLY CONTROLLING WHETHER THE AUDIOTRACK IS FULL,
 			//BEFORE MAKING SURE WE HAVE WRITTEN UP TO/PAST THE END OF IT FIRST!!!
 			//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
 			//UP TO/PAST THE END OF IT!
+			if (okToQuitIfFull) {
+				if (pendingDstFrames > emptyFrames) {
+					//if the buffer appears to be full, instead of simply returning 0 at all times,
+					//let's try to write something, even if not our whole buffer
+					if (emptyFrames <= (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING >> 1))
+						return 0;
 
-			if (okToQuitIfFull && pendingDstFrames >= emptyFrames)
-				return 0;
+					sizeInBytes = emptyFrames << 2;
+				}
+			}
 
-			//from here on, tempDstBuffer/Array will always contain stereo frames
-			final int sizeInBytes = pendingDstFrames << 2;
 			int ret;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 				tempDstBuffer.limit(pendingOffsetInBytes + sizeInBytes);
@@ -486,7 +503,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		@Override
 		public int initialize() {
-			engineNeedsFullBufferBeforeResuming = false;
+			engineBlocks = false;
 			return openSLInitialize();
 		}
 
@@ -578,6 +595,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		@Override
 		public void setVolume() {
 			openSLSetVolumeInMillibels((gain <= 0.0001f) ? MediaContext.SL_MILLIBEL_MIN : ((gain >= 1.0f) ? 0 : (int)(2000.0 * Math.log(gain))));
+		}
+
+		@Override
+		public void pauseFromOtherThreadIfBlocking() {
 		}
 
 		@Override
@@ -747,9 +768,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 		}
 
-		PowerManager.WakeLock wakeLock;
+		final MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
-		MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		outputBuffer.index = -1;
 		int dstSampleRate = 0, lastHeadPositionInFrames = 0, bufferSizeInFrames = 0, fillThresholdInFrames = 0;
 		long framesWritten = 0, framesPlayed = 0, nextFramesWritten = 0;
@@ -769,7 +789,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			return;
 		}
 
-		wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
+		final PowerManager.WakeLock wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);
 
 		requestedAction = ACTION_NONE;
@@ -812,6 +832,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								outputBuffer.release();
 								currentPlayer = playerRequestingAction;
+								currentPlayerForReference = currentPlayer;
 								nextPlayer = null;
 								sourcePlayer = currentPlayer;
 								currentPlayer.resetDecoderIfOutputAlreadyUsed();
@@ -872,7 +893,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								break;
 							case ACTION_RESUME:
 								if (playerRequestingAction == currentPlayer) {
-									if ((framesWritten - framesPlayed) < 512 || engineNeedsFullBufferBeforeResuming) {
+									if ((framesWritten - framesPlayed) < 512) {
 										playPending = true;
 										framesWrittenBeforePlaying = 0;
 										bufferingStart(currentPlayer);
@@ -941,6 +962,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									playPending = false;
 									framesWrittenBeforePlaying = 0;
 									currentPlayer = null;
+									currentPlayerForReference = null;
 									nextPlayer = null;
 									sourcePlayer = null;
 									framesWritten = 0;
@@ -994,6 +1016,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							playPending = false;
 							framesWrittenBeforePlaying = 0;
 							currentPlayer = null;
+							currentPlayerForReference = null;
 							nextPlayer = null;
 							sourcePlayer = null;
 							framesWritten = 0;
@@ -1048,6 +1071,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						playPending = false;
 						framesWrittenBeforePlaying = 0;
 						currentPlayer = null;
+						currentPlayerForReference = null;
 						nextPlayer = null;
 						sourcePlayer = null;
 						framesWritten = 0;
@@ -1180,9 +1204,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//next input buffers before waiting some time (discount the time spent
 						//inside fillInputBuffers())
 						int actualSleepTime = (int)SystemClock.uptimeMillis();
+						if (outputBuffer.remainingBytes <= 0)
+							outputBuffer.release();
 						sourcePlayer.fillInputBuffers();
 						try {
-							actualSleepTime = 100 - ((int)SystemClock.uptimeMillis() - actualSleepTime);
+							actualSleepTime = 10 - ((int)SystemClock.uptimeMillis() - actualSleepTime);
 							if (actualSleepTime > 0) {
 								//wait(0) will block the thread until someone
 								//calls notify() or notifyAll()
@@ -1242,9 +1268,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							framesWritten = nextFramesWritten;
 						}
 						handler.sendMessageAtTime(Message.obtain(handler, MSG_COMPLETION, currentPlayer), SystemClock.uptimeMillis());
-						currentPlayer = nextPlayer;
-						if (currentPlayer != null)
-							currentPlayer.startedAsNext();
+						synchronized (threadNotification) {
+							currentPlayer = nextPlayer;
+							if (currentPlayer != null)
+								currentPlayer.startedAsNext();
+							currentPlayerForReference = currentPlayer;
+						}
 						nextPlayer = null;
 						nextFramesWritten = 0;
 						sourcePlayer = currentPlayer;
@@ -1280,6 +1309,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					paused = true;
 					playPending = false;
 					currentPlayer = null;
+					currentPlayerForReference = null;
 					wakeLock.release();
 				}
 				handler.sendMessageAtTime(Message.obtain(handler, MSG_ERROR, new ErrorStructure(sourcePlayer, ex)), SystemClock.uptimeMillis());
@@ -1293,6 +1323,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (wakeLock != null)
 			wakeLock.release();
 		synchronized (threadNotification) {
+			currentPlayerForReference = null;
 			threadNotification.notify();
 		}
 	}
@@ -1415,6 +1446,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
+			if (engineBlocks && player == currentPlayerForReference) {
+				synchronized (engineSync) {
+					if (engine != null)
+						engine.pauseFromOtherThreadIfBlocking();
+				}
+			}
 			playerRequestingAction = player;
 			requestedAction = ACTION_PAUSE;
 			threadNotification.notify();
@@ -1459,6 +1496,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
+			if (engineBlocks && player == currentPlayerForReference) {
+				synchronized (engineSync) {
+					if (engine != null)
+						engine.pauseFromOtherThreadIfBlocking();
+				}
+			}
 			playerRequestingAction = player;
 			requestedSeekMS = msec;
 			requestedAction = ACTION_SEEK;
@@ -1499,6 +1542,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			return;
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
+			if (engineBlocks && player == currentPlayerForReference) {
+				synchronized (engineSync) {
+					if (engine != null)
+						engine.pauseFromOtherThreadIfBlocking();
+				}
+			}
 			playerRequestingAction = player;
 			requestedAction = ACTION_RESET;
 			threadNotification.notify();

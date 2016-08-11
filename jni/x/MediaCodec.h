@@ -94,7 +94,7 @@ static bool (*AMediaFormat_getInt64)(AMediaFormat*, const char *name, int64_t *o
 static bool (*AMediaFormat_getString)(AMediaFormat*, const char *name, const char **out);
 
 #define INPUT_BUFFER_TIMEOUT_IN_US 0
-#define OUTPUT_BUFFER_TIMEOUT_IN_US 4000
+#define OUTPUT_BUFFER_TIMEOUT_IN_US 0
 
 class MediaCodec {
 public:
@@ -219,7 +219,8 @@ public:
 	int32_t fillInputBuffers() {
 		if (inputOver)
 			return 0;
-		for (int32_t i = 0; i < 16 && !inputOver; i++) {
+		const uint32_t initialTime = uptimeMillis();
+		for (int32_t i = 0; i < 10 && !inputOver; i++) {
 			const ssize_t index = AMediaCodec_dequeueInputBuffer(mediaCodec, INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
 				break;
@@ -227,7 +228,7 @@ public:
 			uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mediaCodec, index, &inputBufferCapacity);
 			if (!inputBuffer)
 				break;
-			ssize_t size = AMediaExtractor_readSampleData(mediaExtractor, inputBuffer, inputBufferCapacity);
+			const ssize_t size = AMediaExtractor_readSampleData(mediaExtractor, inputBuffer, inputBufferCapacity);
 			if (size < 0) {
 				inputOver = true;
 				int32_t ret;
@@ -242,6 +243,8 @@ public:
 				//(end of stream)", sometimes, AMediaExtractor_advance() returns false in other cases....
 				AMediaExtractor_advance(mediaExtractor);
 			}
+			if ((uptimeMillis() - initialTime) >= 10)
+				break;
 		}
 		return 0;
 	}

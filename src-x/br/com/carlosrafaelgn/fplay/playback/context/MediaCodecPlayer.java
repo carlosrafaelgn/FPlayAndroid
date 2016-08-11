@@ -39,6 +39,7 @@ import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
+import android.os.SystemClock;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,7 +70,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	private static final int STATE_END = 9;
 
 	private static final int INPUT_BUFFER_TIMEOUT_IN_US = 0;
-	private static final int OUTPUT_BUFFER_TIMEOUT_IN_US = 4000;
+	private static final int OUTPUT_BUFFER_TIMEOUT_IN_US = 0;
 
 	static final class OutputBuffer {
 		public MediaCodecPlayer player;
@@ -178,7 +179,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			}
 			return false;
 		}
-		for (int i = 0; i < inputBuffers.length && !inputOver; i++) {
+		final int initialTime = (int)SystemClock.uptimeMillis();
+		for (int i = 0; i < 10 && !inputOver; i++) {
 			final int inputFrameSize, index;
 			if ((inputFrameSize = httpStreamExtractor.canReadHeader()) <= 0)
 				break;
@@ -186,16 +188,19 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				break;
 			httpStreamReceiver.readArray(inputBuffers[index], 0, inputFrameSize);
 			mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
+			if (((int)SystemClock.uptimeMillis() - initialTime) >= 10)
+				break;
 		}
 		return true;
 	}
 
 	private void fillInputBuffersInternal() throws IOException {
-		for (int i = 0; i < inputBuffers.length && !inputOver; i++) {
+		final int initialTime = (int)SystemClock.uptimeMillis();
+		for (int i = 0; i < 10 && !inputOver; i++) {
 			final int index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
 				break;
-			int size = mediaExtractor.readSampleData(inputBuffers[index], 0);
+			final int size = mediaExtractor.readSampleData(inputBuffers[index], 0);
 			if (size < 0) {
 				inputOver = true;
 				mediaCodec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
@@ -206,6 +211,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				//(end of stream)", sometimes, advance() returns false in other cases....
 				mediaExtractor.advance();
 			}
+			if (((int)SystemClock.uptimeMillis() - initialTime) >= 10)
+				break;
 		}
 	}
 

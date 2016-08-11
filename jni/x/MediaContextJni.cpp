@@ -36,6 +36,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <byteswap.h>
+#include <time.h>
 
 #define FFT_SIZE 1024 //FFT_SIZE must be a power of 2 <= 65536
 #define QUARTER_FFT_SIZE (FFT_SIZE / 4)
@@ -110,6 +111,14 @@ union WriteRet {
         uint32_t srcFramesUsed; //high
     };
 };
+
+uint32_t uptimeMillis() {
+	struct timespec t;
+	t.tv_sec = 0;
+	t.tv_nsec = 0;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	return (uint32_t)((t.tv_sec * 1000) + (t.tv_nsec / 1000000));
+}
 
 void swapShortsInplace(int16_t* buffer, uint32_t sizeInShorts) {
 	while (sizeInShorts) {
