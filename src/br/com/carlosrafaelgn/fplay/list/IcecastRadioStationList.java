@@ -82,6 +82,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 							v = parser.getText().trim();
 							//https://developer.android.com/guide/appendix/media-formats.html
 							//ADTS raw AAC (.aac, decode in Android 3.1+)
+							//res = (v.equals("MP3") ? 1 : 0);
 							res = ((v.equals("MP3") || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) && v.startsWith("AAC"))) ? 1 : 0);
 							fields[2] = v;
 						}

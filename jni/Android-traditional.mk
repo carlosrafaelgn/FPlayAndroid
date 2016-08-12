@@ -11,4 +11,6 @@ else
 	# x86 also uses this file -> https://developer.android.com/ndk/guides/x86.html
 	LOCAL_SRC_FILES += NeonFunctions.cpp
 endif
+# Make sure we compile a library with position independent code (no text relocations)
+LOCALC_FLAGS    += -fPIC
 include $(BUILD_SHARED_LIBRARY)

@@ -190,6 +190,7 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 			}
 			//https://developer.android.com/guide/appendix/media-formats.html
 			//ADTS raw AAC (.aac, decode in Android 3.1+)
+			//urlConnection = Player.createConnection(baseUrl + "&f=xml&mt=audio/mpeg&limit=" + pageNumber + ",20&" +
 			urlConnection = Player.createConnection(baseUrl + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) ? "&f=xml&limit=" : "&f=xml&mt=audio/mpeg&limit=") + pageNumber + ",20&" +
 				((genre != null) ? ("genre_id=" + genre.id) : ("search=" + URLEncoder.encode(searchTerm, "UTF-8"))));
 			if (myVersion != version)
