@@ -70,4 +70,11 @@ public final class MediaContext {
 
 	public static void _enableAutomaticEffectsGain(int enabled) {
 	}
+
+	public static boolean isResamplingEnabled() {
+		return false;
+	}
+
+	public static void _enableResampling(boolean enabled) {
+	}
 }

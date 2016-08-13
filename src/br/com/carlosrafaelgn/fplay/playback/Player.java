@@ -185,6 +185,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_ENABLE_EXTERNAL_FX = 0x011F;
 	private static final int MSG_SET_BUFFER_CONFIG = 0x0120;
 	private static final int MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN = 0x0121;
+	private static final int MSG_ENABLE_RESAMPLING = 0x0122;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -392,6 +393,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				MediaContext._enableAutomaticEffectsGain(msg.arg1);
 				if (msg.obj != null)
 					MainHandler.postToMainThread((Runnable)msg.obj);
+				break;
+			case MSG_ENABLE_RESAMPLING:
+				MediaContext._enableResampling(msg.arg1 != 0);
 				break;
 			}
 		}
@@ -2201,6 +2205,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_PLAY_WITH_LONG_PRESS = 53;
 	private static final int OPTBIT_AUTOMATIC_EFFECTS_GAIN = 54;
 	private static final int OPTBIT_USE_OPENSL_ENGINE = 55;
+	private static final int OPTBIT_RESAMPLING_ENABLED = 56;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2326,6 +2331,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
 		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
+		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED, true));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -2428,6 +2434,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_PLAY_WITH_LONG_PRESS, UI.playWithLongPress);
 		opts.putBit(OPTBIT_AUTOMATIC_EFFECTS_GAIN, MediaContext.isAutomaticEffectsGainEnabled() != 0);
 		opts.putBit(OPTBIT_USE_OPENSL_ENGINE, MediaContext.useOpenSLEngine);
+		opts.putBit(OPTBIT_RESAMPLING_ENABLED, MediaContext.isResamplingEnabled());
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

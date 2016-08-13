@@ -41,7 +41,7 @@
 #define VIRTUALIZER_ENABLED 4
 
 extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, dstSampleRate;
-extern int32_t effectsMustReduceGain, effectsFramesBeforeRecoveringGain, effectsTemp[] __attribute__((aligned(16)));
+extern int32_t effectsFramesBeforeRecoveringGain, effectsMinimumAmountOfFramesToReduce, effectsTemp[] __attribute__((aligned(16)));
 extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
 effectsGainReductionPerFrame[] __attribute__((aligned(16))),
 effectsGainRecoveryPerFrame[] __attribute__((aligned(16))),
@@ -52,12 +52,15 @@ equalizerSamples[] __attribute__((aligned(16)));
 //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0491h/CIHJBEFE.html
 
 void processEqualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
-	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	if (effectsMinimumAmountOfFramesToReduce <= 0)
+		effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	else
+		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
 	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
-	const float32x2_t gainClipMul = vld1_f32(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+	const float32x2_t gainClipMul = vld1_f32((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
@@ -76,12 +79,15 @@ void processEqualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
 }
 
 void processVirtualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
-	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	if (effectsMinimumAmountOfFramesToReduce <= 0)
+		effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	else
+		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
 	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
-	const float32x2_t gainClipMul = vld1_f32(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+	const float32x2_t gainClipMul = vld1_f32((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;
@@ -100,12 +106,15 @@ void processVirtualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
 }
 
 void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
-	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	if (effectsMinimumAmountOfFramesToReduce <= 0)
+		effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	else
+		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
 	float32x2_t gainClip = vld1_f32(effectsGainClip);
 	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
 	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
-	const float32x2_t gainClipMul = vld1_f32(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+	const float32x2_t gainClipMul = vld1_f32((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 
 	while ((sizeInFrames--)) {
 		float *samples = equalizerSamples;

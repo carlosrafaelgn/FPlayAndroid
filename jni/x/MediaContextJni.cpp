@@ -85,8 +85,6 @@ static uint32_t neonMode;
 //https://software.intel.com/sites/landingpage/IntrinsicsGuide/
 #endif
 
-#define MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING 1152
-
 //when channelCount is 1, the frame size is 2 (16 bits per sample, mono)
 //when channelCount is 2, the frame size is 4 (16 bits per sample, stereo)
 //therefore:

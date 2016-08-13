@@ -33,6 +33,8 @@
 
 typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 
+#define MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING 1152
+
 #define MAX_ALLOWED_SAMPLE_VALUE 31000.0f //31000/32768 = 0.946 = -0.48dB
 
 #define x_n1_L samples[0]
@@ -114,7 +116,7 @@ typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 	inR *= gainClip; */ \
 	inLR = _mm_mul_ps(inLR, gainClip); \
 	\
-	if (effectsMustReduceGain) { \
+	if (effectsMinimumAmountOfFramesToReduce > 0) { \
 		effectsGainClip[0] *= effectsGainReductionPerFrame[0]; \
 		effectsGainClip[1] = effectsGainClip[0]; \
 		gainClip = _mm_load_ps(effectsGainClip); \
@@ -179,18 +181,17 @@ typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 	
 #define footerX86() \
 	if (!effectsGainEnabled) { \
-		effectsMustReduceGain = 0; \
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
+		effectsMinimumAmountOfFramesToReduce = 0; \
 		return; \
 	} \
 	\
 	_mm_store_ps(effectsGainClip, gainClip); \
 	_mm_store_ps((float*)effectsTemp, maxAbsSample); \
 	if (((float*)effectsTemp)[0] > MAX_ALLOWED_SAMPLE_VALUE || ((float*)effectsTemp)[1] > MAX_ALLOWED_SAMPLE_VALUE) { \
-		effectsMustReduceGain = 1; \
 		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; /* wait some time before starting to recover the gain */ \
-	} else { \
-		effectsMustReduceGain = 0; \
+		effectsMinimumAmountOfFramesToReduce = (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 3) >> 1; \
+	} else if (effectsMinimumAmountOfFramesToReduce <= 0) { \
 		if (effectsGainClip[0] >= 1.0f) \
 			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 	}
@@ -236,7 +237,7 @@ typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 	inL *= gainClip; \
 	inR *= gainClip; \
 	\
-	if (effectsMustReduceGain) { \
+	if (effectsMinimumAmountOfFramesToReduce > 0) { \
 		gainClip *= effectsGainReductionPerFrame[0]; \
 	} else if (effectsFramesBeforeRecoveringGain <= 0) { \
 		gainClip *= effectsGainRecoveryPerFrame[0]; \
@@ -261,17 +262,16 @@ typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 
 #define footerPlain() \
 	if (!effectsGainEnabled) { \
-		effectsMustReduceGain = 0; \
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
+		effectsMinimumAmountOfFramesToReduce = 0; \
 		return; \
 	} \
 	\
 	effectsGainClip[0] = gainClip; \
 	if (maxAbsSample > MAX_ALLOWED_SAMPLE_VALUE) { \
-		effectsMustReduceGain = 1; \
 		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; /* wait some time before starting to recover the gain */ \
-	} else { \
-		effectsMustReduceGain = 0; \
+		effectsMinimumAmountOfFramesToReduce = (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 3) >> 1; \
+	} else if (effectsMinimumAmountOfFramesToReduce <= 0) { \
 		if (effectsGainClip[0] >= 1.0f) \
 			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 	}
@@ -409,18 +409,17 @@ typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 
 #define footerNeon() \
 	if (!effectsGainEnabled) { \
-		effectsMustReduceGain = 0; \
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
+		effectsMinimumAmountOfFramesToReduce = 0; \
 		return; \
 	} \
 	\
 	vst1_f32(effectsGainClip, gainClip); \
 	vst1_f32((float*)effectsTemp, maxAbsSample); \
 	if (((float*)effectsTemp)[0] > MAX_ALLOWED_SAMPLE_VALUE || ((float*)effectsTemp)[1] > MAX_ALLOWED_SAMPLE_VALUE) { \
-		effectsMustReduceGain = 1; \
 		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; /* wait some time before starting to recover the gain */ \
-	} else { \
-		effectsMustReduceGain = 0; \
+		effectsMinimumAmountOfFramesToReduce = (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 3) >> 1; \
+	} else if (effectsMinimumAmountOfFramesToReduce <= 0) { \
 		if (effectsGainClip[0] >= 1.0f) \
 			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF; \
 	}

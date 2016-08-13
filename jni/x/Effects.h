@@ -47,14 +47,14 @@
 //https://en.wikipedia.org/wiki/Dynamic_range_compression#Limiting
 //as the article states, brick-wall limiting are harsh and unpleasant.. also... reducing the gain abruptly causes audible clicks!
 #define GAIN_REDUCTION_PER_SECOND_DB -40.0 //-40.0dB/s
-#define GAIN_RECOVERY_PER_SECOND_DB 0.5 //+0.5dB/s
+#define GAIN_RECOVERY_PER_SECOND_DB 0.25 //+0.25dB/s
 
 static uint32_t bassBoostStrength, virtualizerStrength;
 static float equalizerGainInDB[BAND_COUNT];
 static EFFECTPROC effectProc;
 
 uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled;
-int32_t effectsMustReduceGain, effectsFramesBeforeRecoveringGain, effectsTemp[4] __attribute__((aligned(16)));
+int32_t effectsFramesBeforeRecoveringGain, effectsMinimumAmountOfFramesToReduce, effectsTemp[4] __attribute__((aligned(16)));
 float effectsGainRecoveryOne[4] __attribute__((aligned(16))) = { 1.0f, 1.0f, 0.0f, 0.0f },
 effectsGainReductionPerFrame[4] __attribute__((aligned(16))),
 effectsGainRecoveryPerFrame[4] __attribute__((aligned(16))),
@@ -97,8 +97,8 @@ void JNICALL enableAutomaticEffectsGain(JNIEnv* env, jclass clazz, uint32_t enab
 		effectsGainClip[1] = 1.0f;
 		effectsGainClip[2] = 0.0f;
 		effectsGainClip[3] = 0.0f;
-		effectsMustReduceGain = 0;
 		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+		effectsMinimumAmountOfFramesToReduce = 0;
 	}
 }	
 
@@ -111,8 +111,8 @@ void resetEqualizer() {
 	effectsGainClip[1] = 1.0f;
 	effectsGainClip[2] = 0.0f;
 	effectsGainClip[3] = 0.0f;
-	effectsMustReduceGain = 0;
 	effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+	effectsMinimumAmountOfFramesToReduce = 0;
 
 	memset(effectsTemp, 0, 4 * sizeof(int32_t));
 	memset(equalizerSamples, 0, 2 * 4 * BAND_COUNT * sizeof(float));
@@ -197,7 +197,10 @@ void processNull(int16_t* buffer, uint32_t sizeInFrames) {
 }
 
 void processEqualizer(int16_t* buffer, uint32_t sizeInFrames) {
-	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	if (effectsMinimumAmountOfFramesToReduce <= 0)
+		effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	else
+		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
 #ifdef FPLAY_X86
 	__m128 gainClip = _mm_load_ps(effectsGainClip);
@@ -206,7 +209,7 @@ void processEqualizer(int16_t* buffer, uint32_t sizeInFrames) {
 	//x86 in 32 bits mode does not have enough registers :(
 	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
 	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
-	const __m128 gainClipMul = _mm_load_ps(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+	const __m128 gainClipMul = _mm_load_ps((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 #endif
 
 	while ((sizeInFrames--)) {
@@ -244,7 +247,10 @@ void processEqualizer(int16_t* buffer, uint32_t sizeInFrames) {
 }
 
 void processVirtualizer(int16_t* buffer, uint32_t sizeInFrames) {
-	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	if (effectsMinimumAmountOfFramesToReduce <= 0)
+		effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	else
+		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
 #ifdef FPLAY_X86
 	__m128 gainClip = _mm_load_ps(effectsGainClip);
@@ -253,7 +259,7 @@ void processVirtualizer(int16_t* buffer, uint32_t sizeInFrames) {
 	//x86 in 32 bits mode does not have enough registers :(
 	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
 	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
-	const __m128 gainClipMul = _mm_load_ps(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+	const __m128 gainClipMul = _mm_load_ps((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 #endif
 
 	while ((sizeInFrames--)) {
@@ -291,7 +297,10 @@ void processVirtualizer(int16_t* buffer, uint32_t sizeInFrames) {
 }
 
 void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
-	effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	if (effectsMinimumAmountOfFramesToReduce <= 0)
+		effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	else
+		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
 #ifdef FPLAY_X86
 	__m128 gainClip = _mm_load_ps(effectsGainClip);
@@ -300,7 +309,7 @@ void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 	//x86 in 32 bits mode does not have enough registers :(
 	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
 	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
-	const __m128 gainClipMul = _mm_load_ps(effectsMustReduceGain ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
+	const __m128 gainClipMul = _mm_load_ps((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
 #endif
 
 	while ((sizeInFrames--)) {

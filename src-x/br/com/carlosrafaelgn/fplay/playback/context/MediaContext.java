@@ -78,6 +78,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static final int ACTION_DISABLE_EFFECTS_GAIN = 0x000A;
 	private static final int ACTION_START_VISUALIZER = 0x000B;
 	private static final int ACTION_STOP_VISUALIZER = 0x000C;
+	private static final int ACTION_ENABLE_RESAMPLING = 0x000D;
+	private static final int ACTION_DISABLE_RESAMPLING = 0x000E;
 	private static final int ACTION_INITIALIZE = 0xFFFF;
 
 	private static final int MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING = 1152;
@@ -99,7 +101,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static final Object threadNotification = new Object();
 	private static final Object engineSync = new Object();
-	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError;
+	private static volatile boolean alive, waitToReceiveAction, requestSucceeded, initializationError, resamplingEnabled;
 	private static volatile int requestedAction, requestedSeekMS;
 	private static Message effectsMessage;
 	private static int bufferConfig, nativeSampleRate, srcChannelCount, srcSampleRate;
@@ -687,7 +689,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	static int getDstSampleRate(int srcSampleRate) {
-		if (nativeSampleRate <= 0 || srcSampleRate == nativeSampleRate)
+		if (nativeSampleRate <= 0 || srcSampleRate == nativeSampleRate || !resamplingEnabled)
 			return srcSampleRate; //no conversion (simply use srcSampleRate as dstSampleRate)
 
 		//downsampling is only performed from 48000 Hz to 44100 Hz because we are not
@@ -1001,6 +1003,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								}
 								requestSucceeded = true;
 								break;
+							case ACTION_ENABLE_RESAMPLING:
+								resamplingEnabled = true;
+								break;
+							case ACTION_DISABLE_RESAMPLING:
+								resamplingEnabled = false;
+								break;
 							}
 						} catch (Throwable ex) {
 							synchronized (engineSync) {
@@ -1204,11 +1212,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//next input buffers before waiting some time (discount the time spent
 						//inside fillInputBuffers())
 						int actualSleepTime = (int)SystemClock.uptimeMillis();
+						//we cannot call nextOutputBuffer() here, so let's just release
 						if (outputBuffer.remainingBytes <= 0)
 							outputBuffer.release();
 						sourcePlayer.fillInputBuffers();
 						try {
-							actualSleepTime = 10 - ((int)SystemClock.uptimeMillis() - actualSleepTime);
+							actualSleepTime = 40 - ((int)SystemClock.uptimeMillis() - actualSleepTime);
 							if (actualSleepTime > 0) {
 								//wait(0) will block the thread until someone
 								//calls notify() or notifyAll()
@@ -1705,7 +1714,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static int[] getCurrentPlaybackInfo() {
 		final int dstSampleRate = getDstSampleRate(srcSampleRate);
-		final int nativeFramesPerBuffer = Engine.getFramesPerBuffer(dstSampleRate);
+		final int nativeFramesPerBuffer = Engine.getFramesPerBuffer(nativeSampleRate);
 		final int usedFramesPerBuffer;
 		synchronized (engineSync) {
 			usedFramesPerBuffer = ((engine != null) ? engine.getSingleBufferSizeInFrames() : nativeFramesPerBuffer);
@@ -1760,6 +1769,30 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			requestedAction = ((enabled == 0) ? ACTION_DISABLE_EFFECTS_GAIN : ACTION_ENABLE_EFFECTS_GAIN);
 			threadNotification.notify();
 			if (requestedAction == ACTION_DISABLE_EFFECTS_GAIN || requestedAction == ACTION_ENABLE_EFFECTS_GAIN) {
+				try {
+					threadNotification.wait(PLAYER_TIMEOUT);
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			}
+		}
+	}
+
+	public static boolean isResamplingEnabled() {
+		return resamplingEnabled;
+	}
+
+	public static void _enableResampling(boolean enabled) {
+		if (!alive) {
+			resamplingEnabled = enabled;
+			return;
+		}
+
+		waitToReceiveAction = true;
+		synchronized (threadNotification) {
+			requestedAction = (enabled ? ACTION_ENABLE_RESAMPLING : ACTION_DISABLE_RESAMPLING);
+			threadNotification.notify();
+			if (requestedAction == ACTION_ENABLE_RESAMPLING || requestedAction == ACTION_DISABLE_RESAMPLING) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
 				} catch (Throwable ex) {
