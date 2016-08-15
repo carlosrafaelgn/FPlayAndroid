@@ -345,5 +345,6 @@
     <string name="recommended">recommended</string>
     <string name="resample_track_to_native">Change the sampling frequency of the songs to the native sampling frequency of the device</string>
     <string name="performance">Performance</string>
+    <string name="previous_resets_after_the_beginning">\"Previous\" button returns to the beginning of the song before skipping to the previous track</string>
 
 </resources>

@@ -104,7 +104,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause,
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
-		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, lastMenuView;
+		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
+		lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -1083,6 +1084,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optWidgetTextColor.setColor(UI.widgetTextColor);
 			optWidgetIconColor = new SettingView(ctx, UI.ICON_PALETTE, getText(R.string.icon_color).toString(), null, false, false, true);
 			optWidgetIconColor.setColor(UI.widgetIconColor);
+			optPreviousResetsAfterTheBeginning = new SettingView(ctx, UI.ICON_PREV, getText(R.string.previous_resets_after_the_beginning).toString(), null, true, Player.previousResetsAfterTheBeginning, false);
 			optHandleCallKey = new SettingView(ctx, UI.ICON_DIAL, getText(R.string.opt_handle_call_key).toString(), null, true, Player.handleCallKey, false);
 			optHeadsetHook1 = new SettingView(ctx, UI.ICON_HEADSETHOOK1, getText(R.string.headset_hook_1).toString(), getHeadsetHookString(1), false, false, false);
 			optHeadsetHook2 = new SettingView(ctx, UI.ICON_HEADSETHOOK2, getText(R.string.headset_hook_2).toString(), getHeadsetHookString(2), false, false, false);
@@ -1180,6 +1182,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (ExternalFx.isSupported())
 				addOption(optExternalFx);
 			addOption(optPlayWhenHeadsetPlugged);
+			addOption(optPreviousResetsAfterTheBeginning);
 			addOption(optHandleCallKey);
 			addOption(optHeadsetHook1);
 			addOption(optHeadsetHook2);
@@ -1315,6 +1318,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFillThreshold = null;
 		optPlaybackEngine = null;
 		optResampling = null;
+		optPreviousResetsAfterTheBeginning = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -1533,6 +1537,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
 		} else if (view == optResampling) {
 			Player.enableResampling(optResampling.isChecked());
+		} else if (view == optPreviousResetsAfterTheBeginning) {
+			Player.previousResetsAfterTheBeginning = optPreviousResetsAfterTheBeginning.isChecked();
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
 			view == optForceOrientation || view == optTransition || view == optPopupTransition ||

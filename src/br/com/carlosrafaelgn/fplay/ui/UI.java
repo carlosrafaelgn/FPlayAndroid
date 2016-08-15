@@ -101,9 +101,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 88;
+	public static final int VERSION_CODE = 89;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
-	public static final String VERSION_NAME = "v1.53";
+	public static final String VERSION_NAME = "v1.54";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -1458,12 +1458,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void showNextStartupMsg(Context context) {
-		if (msgStartup >= 30) {
-			msgStartup = 30;
+		if (msgStartup >= 31) {
+			msgStartup = 31;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 30;
+		msgStartup = 31;
 		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.startup_message).toString();
@@ -1471,7 +1471,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		//final String content = "- " + context.getText(R.string.visualizer).toString() + ":\n" +  context.getText(R.string.album_art).toString() + "\nInto the Particles! :D\n\n- " + context.getText(R.string.color_theme).toString() + ":\nFPlay\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.accessibility) + "\n- 3D\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? context.getText(R.string.visualizer) + ":\n- Into the Particles (VR)\n\n" : "") + context.getText(R.string.startup_message).toString() + "\n- " + context.getText(R.string.loudspeaker).toString() + "\n- " + context.getText(R.string.earphones).toString() + "\n- " + context.getText(R.string.bluetooth).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + context.getText(R.string.radio) : "") + "\n- " + context.getText(R.string.play_with_long_press) + "\n- " + context.getText(R.string.accessibility) + "\n- 3D\n\n" + context.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") + context.getText(R.string.transition) + "\n- " + getTransitionString(TRANSITION_SLIDE_SMOOTH) + "\n\n" + ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) ? context.getText(R.string.visualizer) + punctuationSpace(":\n- Into the Particles (VR)\n\n") : "") + context.getText(R.string.startup_message).toString() + "\n- " + context.getText(R.string.loudspeaker).toString() + "\n- " + context.getText(R.string.earphones).toString() + "\n- " + context.getText(R.string.bluetooth).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
-		final String content = context.getText(R.string.there_are_new_features) +
+		/*final String content = context.getText(R.string.there_are_new_features) +
+			"\n- " + context.getText(R.string.hdr_playback) + punctuationSpace(": ") + context.getText(R.string.previous_resets_after_the_beginning) +
 			"\n- " + context.getText(R.string.hdr_playback) + punctuationSpace(": ") + context.getText(R.string.enable_external_fx) +
 			"\n- " + context.getText(R.string.color_theme) + punctuationSpace(": FPlay ") + context.getText(R.string.dark) +
 			((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? "\n- " + context.getText(R.string.radio) : "") +
@@ -1479,6 +1480,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			"\n- " + context.getText(R.string.accessibility) +
 			"\n- 3D\n\n" +
 			context.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") +
+			context.getText(R.string.check_it_out).toString();*/
+		final String content = context.getText(R.string.there_are_new_features) +
+			"\n\n- " + context.getText(R.string.hdr_playback) + punctuationSpace(": ") + context.getText(R.string.previous_resets_after_the_beginning) +
+			"\n\n" +
 			context.getText(R.string.check_it_out).toString();
 		final BgDialog dialog = new BgDialog(context, createDialogView(context, content), null);
 		dialog.setTitle(title);

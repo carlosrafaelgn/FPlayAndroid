@@ -344,5 +344,6 @@
     <string name="recommended">рекомендуемые</string>
     <string name="resample_track_to_native">Изменение частоты дискретизации песен на исходную частоту дискретизации устройства</string>
     <string name="performance">Представление</string>
+    <string name="previous_resets_after_the_beginning">Кнопка \"Предыдущая\" возвращается к началу песни, прежде чем она переходит к предыдущему трек</string>
 
 </resources>

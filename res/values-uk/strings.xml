@@ -344,5 +344,6 @@
     <string name="recommended">рекомендований</string>
     <string name="resample_track_to_native">Зміна частоти дискретизації пісень на вихідну частоту дискретизації пристрою</string>
     <string name="performance">Продуктивність</string>
+    <string name="previous_resets_after_the_beginning">Кнопка \"Попередня\" повертається до початку пісні, перш ніж вона переходить до попереднього трек</string>
 
 </resources>
