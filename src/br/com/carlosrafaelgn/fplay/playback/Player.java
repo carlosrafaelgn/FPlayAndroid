@@ -1819,6 +1819,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN, enabled ? 1 : 0, 0, callback), SystemClock.uptimeMillis());
 	}
 
+	public static boolean isResamplingEnabled() {
+		return MediaContext.isResamplingEnabled();
+	}
+
+	public static void enableResampling(boolean enabled) {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_RESAMPLING, enabled ? 1 : 0, 0), SystemClock.uptimeMillis());
+	}
+
 	private static int httpStreamReceiverVersion, httpOptions;
 	private static HttpStreamReceiver httpStreamReceiver;
 
@@ -2331,7 +2341,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
 		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
-		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED, true));
+		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {

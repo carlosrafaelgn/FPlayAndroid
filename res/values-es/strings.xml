@@ -342,5 +342,7 @@
     <string name="external_fx_warning">(La desactivación puede tomar algún tiempo)</string>
     <string name="playback_engine">Motor de reproducción (debe reiniciar el reproductor para que los cambios surtan efecto):</string>
     <string name="recommended">recomendado</string>
+    <string name="resample_track_to_native">Cambiar la frecuencia de muestreo de las canciones a la frecuencia de muestreo original del dispositivo</string>
+    <string name="performance">Desempeño</string>
 
 </resources>

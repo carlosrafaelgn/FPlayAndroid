@@ -342,5 +342,7 @@
     <string name="external_fx_warning">(A desativação pode levar algum tempo)</string>
     <string name="playback_engine">Engine de reprodução (você deve reiniciar o player para as mudanças fazerem efeito):</string>
     <string name="recommended">recomendado</string>
+    <string name="resample_track_to_native">Alterar a frequência de amostragem da música para a frequência de amostragem nativa do dispositivo</string>
+    <string name="performance">Desempenho</string>
 
 </resources>

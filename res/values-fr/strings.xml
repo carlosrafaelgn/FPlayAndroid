@@ -342,5 +342,7 @@
     <string name="external_fx_warning">(La désactivation peut prendre un certain temps)</string>
     <string name="playback_engine">Moteur de lecture (vous devez redémarrer le lecteur pour que les modifications prennent effet) :</string>
     <string name="recommended">conseillé</string>
+    <string name="resample_track_to_native">Changer la fréquence d\'échantillonnage des chansons à la fréquence d\'échantillonnage natif du dispositif</string>
+    <string name="performance">Performance</string>
 
 </resources>

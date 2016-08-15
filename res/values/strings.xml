@@ -343,5 +343,7 @@
     <string name="external_fx_warning">(The deactivation may take some time)</string>
     <string name="playback_engine">Playback engine (you must restart the player for the changes to take effect):</string>
     <string name="recommended">recommended</string>
+    <string name="resample_track_to_native">Change the sampling frequency of the songs to the native sampling frequency of the device</string>
+    <string name="performance">Performance</string>
 
 </resources>

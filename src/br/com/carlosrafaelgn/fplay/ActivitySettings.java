@@ -104,7 +104,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause,
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
-		optBufferSize, optFillThreshold, optPlaybackEngine, lastMenuView;
+		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -1116,15 +1116,27 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				optBufferSize = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_buffer_length).toString(), getBufferSizeString(Player.getBufferConfig()), false, false, false);
 				optFillThreshold = new SettingView(ctx, UI.ICON_PERCENTAGE, getText(R.string.percentage_to_decode_before_playback).toString(), getFillThresholdString(Player.getBufferConfig()), false, false, false);
 				optPlaybackEngine = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_engine).toString(), getPlaybackEngineString(MediaContext.useOpenSLEngine), false, false, false);
+				optResampling = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.resample_track_to_native).toString(), null, true, Player.isResamplingEnabled(), false);
 			}
 
 			int hIdx = 0;
-			headers = new TextView[(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? 8 : 7];
+			headers = new TextView[BuildConfig.X ? 9 : ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? 8 : 7)];
 			addHeader(ctx, R.string.msg_turn_off_title, optAutoTurnOffPlaylist, hIdx++);
 			addOption(optAutoTurnOff);
 			addOption(optAutoIdleTurnOff);
 			addOption(optAutoTurnOffPlaylist);
-			addHeader(ctx, R.string.hdr_display, optAutoTurnOffPlaylist, hIdx++);
+			if (BuildConfig.X) {
+				addHeader(ctx, R.string.performance, optAutoTurnOffPlaylist, hIdx++);
+				addOption(optPlaybackEngine);
+				addOption(optBufferSize);
+				if (!MediaContext.useOpenSLEngine)
+					optFillThreshold.setVisibility(View.GONE);
+				addOption(optFillThreshold);
+				addOption(optResampling);
+				addHeader(ctx, R.string.hdr_display, optResampling, hIdx++);
+			} else {
+				addHeader(ctx, R.string.hdr_display, optAutoTurnOffPlaylist, hIdx++);
+			}
 			addOption(optKeepScreenOn);
 			addOption(optTheme);
 			addOption(opt3D);
@@ -1167,13 +1179,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.hdr_playback, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? (BuildConfig.X ? optBytesBeforeDecoding : optMSBeforePlayback) : optWidgetIconColor, hIdx++);
 			if (ExternalFx.isSupported())
 				addOption(optExternalFx);
-			if (BuildConfig.X) {
-				addOption(optPlaybackEngine);
-				addOption(optBufferSize);
-				if (!MediaContext.useOpenSLEngine)
-					optFillThreshold.setVisibility(View.GONE);
-				addOption(optFillThreshold);
-			}
 			addOption(optPlayWhenHeadsetPlugged);
 			addOption(optHandleCallKey);
 			addOption(optHeadsetHook1);
@@ -1309,6 +1314,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBufferSize = null;
 		optFillThreshold = null;
 		optPlaybackEngine = null;
+		optResampling = null;
 		lastMenuView = null;
 		if (colorViews != null) {
 			for (int i = colorViews.length - 1; i >= 0; i--)
@@ -1525,6 +1531,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.announceCurrentSong = optAnnounceCurrentSong.isChecked();
 		} else if (view == optFollowCurrentSong) {
 			Player.followCurrentSong = optFollowCurrentSong.isChecked();
+		} else if (view == optResampling) {
+			Player.enableResampling(optResampling.isChecked());
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
 			view == optForceOrientation || view == optTransition || view == optPopupTransition ||

@@ -342,5 +342,7 @@
     <string name="external_fx_warning">(Дезактивація може зайняти деякий час)</string>
     <string name="playback_engine">Відтворення двигуна (необхідно перезапустити програвач для того, щоб зміни вступили в силу):</string>
     <string name="recommended">рекомендований</string>
+    <string name="resample_track_to_native">Зміна частоти дискретизації пісень на вихідну частоту дискретизації пристрою</string>
+    <string name="performance">Продуктивність</string>
 
 </resources>

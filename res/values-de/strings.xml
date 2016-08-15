@@ -342,5 +342,7 @@
     <string name="external_fx_warning">(Die Deaktivierung kann einige Zeit dauern)</string>
     <string name="playback_engine">Wiedergabe-Engine (Sie müssen den Player neu starten, damit die Änderungen wirksam werden):</string>
     <string name="recommended">empfohlen</string>
+    <string name="resample_track_to_native">Verändern der Abtastfrequenz der Lieder auf die native Abtastfrequenz der Vorrichtung</string>
+    <string name="performance">Leistung</string>
 
 </resources>
