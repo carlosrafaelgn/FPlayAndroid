@@ -58,10 +58,10 @@ typedef enum {
 } SeekMode;
 
 struct AMediaCodecBufferInfo {
-    int32_t offset;
-    int32_t size;
-    int64_t presentationTimeUs;
-    uint32_t flags;
+	int32_t offset;
+	int32_t size;
+	int64_t presentationTimeUs;
+	uint32_t flags;
 };
 
 static media_status_t (*AMediaCodec_configure)(AMediaCodec*, const AMediaFormat* format, void* surface, void* crypto, uint32_t flags);
@@ -353,58 +353,58 @@ int32_t JNICALL mediaCodecLoadExternalLibrary(JNIEnv* env, jclass clazz) {
 	libmediandk = dlopen("libmediandk.so", RTLD_NOW | RTLD_LOCAL);
 	if (!libmediandk)
 		return -1;
-    if (!(*((void**)&AMediaCodec_configure) = dlsym(libmediandk, "AMediaCodec_configure")))
-        return -2;
-    if (!(*((void**)&AMediaCodec_createDecoderByType) = dlsym(libmediandk, "AMediaCodec_createDecoderByType")))
-        return -3;
-    if (!(*((void**)&AMediaCodec_delete) = dlsym(libmediandk, "AMediaCodec_delete")))
-        return -4;
-    if (!(*((void**)&AMediaCodec_dequeueInputBuffer) = dlsym(libmediandk, "AMediaCodec_dequeueInputBuffer")))
-        return -5;
-    if (!(*((void**)&AMediaCodec_dequeueOutputBuffer) = dlsym(libmediandk, "AMediaCodec_dequeueOutputBuffer")))
-        return -6;
-    if (!(*((void**)&AMediaCodec_flush) = dlsym(libmediandk, "AMediaCodec_flush")))
-        return -7;
-    if (!(*((void**)&AMediaCodec_getInputBuffer) = dlsym(libmediandk, "AMediaCodec_getInputBuffer")))
-        return -8;
-    if (!(*((void**)&AMediaCodec_getOutputBuffer) = dlsym(libmediandk, "AMediaCodec_getOutputBuffer")))
-        return -9;
+	if (!(*((void**)&AMediaCodec_configure) = dlsym(libmediandk, "AMediaCodec_configure")))
+		return -2;
+	if (!(*((void**)&AMediaCodec_createDecoderByType) = dlsym(libmediandk, "AMediaCodec_createDecoderByType")))
+		return -3;
+	if (!(*((void**)&AMediaCodec_delete) = dlsym(libmediandk, "AMediaCodec_delete")))
+		return -4;
+	if (!(*((void**)&AMediaCodec_dequeueInputBuffer) = dlsym(libmediandk, "AMediaCodec_dequeueInputBuffer")))
+		return -5;
+	if (!(*((void**)&AMediaCodec_dequeueOutputBuffer) = dlsym(libmediandk, "AMediaCodec_dequeueOutputBuffer")))
+		return -6;
+	if (!(*((void**)&AMediaCodec_flush) = dlsym(libmediandk, "AMediaCodec_flush")))
+		return -7;
+	if (!(*((void**)&AMediaCodec_getInputBuffer) = dlsym(libmediandk, "AMediaCodec_getInputBuffer")))
+		return -8;
+	if (!(*((void**)&AMediaCodec_getOutputBuffer) = dlsym(libmediandk, "AMediaCodec_getOutputBuffer")))
+		return -9;
 	if (!(*((void**)&AMediaCodec_getOutputFormat) = dlsym(libmediandk, "AMediaCodec_getOutputFormat")))
 		return -91;
-    if (!(*((void**)&AMediaCodec_queueInputBuffer) = dlsym(libmediandk, "AMediaCodec_queueInputBuffer")))
-        return -10;
-    if (!(*((void**)&AMediaCodec_releaseOutputBuffer) = dlsym(libmediandk, "AMediaCodec_releaseOutputBuffer")))
-        return -11;
-    if (!(*((void**)&AMediaCodec_start) = dlsym(libmediandk, "AMediaCodec_start")))
-        return -12;
-    if (!(*((void**)&AMediaCodec_stop) = dlsym(libmediandk, "AMediaCodec_stop")))
-        return -13;
-    if (!(*((void**)&AMediaExtractor_advance) = dlsym(libmediandk, "AMediaExtractor_advance")))
-        return -14;
-    if (!(*((void**)&AMediaExtractor_delete) = dlsym(libmediandk, "AMediaExtractor_delete")))
-        return -15;
-    if (!(*((void**)&AMediaExtractor_getSampleTime) = dlsym(libmediandk, "AMediaExtractor_getSampleTime")))
-        return -16;
-    if (!(*((void**)&AMediaExtractor_getTrackCount) = dlsym(libmediandk, "AMediaExtractor_getTrackCount")))
-        return -17;
-    if (!(*((void**)&AMediaExtractor_getTrackFormat) = dlsym(libmediandk, "AMediaExtractor_getTrackFormat")))
-        return -18;
-    if (!(*((void**)&AMediaExtractor_new) = dlsym(libmediandk, "AMediaExtractor_new")))
-        return -19;
-    if (!(*((void**)&AMediaExtractor_readSampleData) = dlsym(libmediandk, "AMediaExtractor_readSampleData")))
-        return -20;
-    if (!(*((void**)&AMediaExtractor_seekTo) = dlsym(libmediandk, "AMediaExtractor_seekTo")))
-        return -21;
-    if (!(*((void**)&AMediaExtractor_selectTrack) = dlsym(libmediandk, "AMediaExtractor_selectTrack")))
-        return -22;
-    if (!(*((void**)&AMediaExtractor_setDataSourceFd) = dlsym(libmediandk, "AMediaExtractor_setDataSourceFd")))
-        return -23;
-    if (!(*((void**)&AMediaFormat_getInt32) = dlsym(libmediandk, "AMediaFormat_getInt32")))
-        return -24;
-    if (!(*((void**)&AMediaFormat_getInt64) = dlsym(libmediandk, "AMediaFormat_getInt64")))
-        return -25;
-    if (!(*((void**)&AMediaFormat_getString) = dlsym(libmediandk, "AMediaFormat_getString")))
-        return -26;
+	if (!(*((void**)&AMediaCodec_queueInputBuffer) = dlsym(libmediandk, "AMediaCodec_queueInputBuffer")))
+		return -10;
+	if (!(*((void**)&AMediaCodec_releaseOutputBuffer) = dlsym(libmediandk, "AMediaCodec_releaseOutputBuffer")))
+		return -11;
+	if (!(*((void**)&AMediaCodec_start) = dlsym(libmediandk, "AMediaCodec_start")))
+		return -12;
+	if (!(*((void**)&AMediaCodec_stop) = dlsym(libmediandk, "AMediaCodec_stop")))
+		return -13;
+	if (!(*((void**)&AMediaExtractor_advance) = dlsym(libmediandk, "AMediaExtractor_advance")))
+		return -14;
+	if (!(*((void**)&AMediaExtractor_delete) = dlsym(libmediandk, "AMediaExtractor_delete")))
+		return -15;
+	if (!(*((void**)&AMediaExtractor_getSampleTime) = dlsym(libmediandk, "AMediaExtractor_getSampleTime")))
+		return -16;
+	if (!(*((void**)&AMediaExtractor_getTrackCount) = dlsym(libmediandk, "AMediaExtractor_getTrackCount")))
+		return -17;
+	if (!(*((void**)&AMediaExtractor_getTrackFormat) = dlsym(libmediandk, "AMediaExtractor_getTrackFormat")))
+		return -18;
+	if (!(*((void**)&AMediaExtractor_new) = dlsym(libmediandk, "AMediaExtractor_new")))
+		return -19;
+	if (!(*((void**)&AMediaExtractor_readSampleData) = dlsym(libmediandk, "AMediaExtractor_readSampleData")))
+		return -20;
+	if (!(*((void**)&AMediaExtractor_seekTo) = dlsym(libmediandk, "AMediaExtractor_seekTo")))
+		return -21;
+	if (!(*((void**)&AMediaExtractor_selectTrack) = dlsym(libmediandk, "AMediaExtractor_selectTrack")))
+		return -22;
+	if (!(*((void**)&AMediaExtractor_setDataSourceFd) = dlsym(libmediandk, "AMediaExtractor_setDataSourceFd")))
+		return -23;
+	if (!(*((void**)&AMediaFormat_getInt32) = dlsym(libmediandk, "AMediaFormat_getInt32")))
+		return -24;
+	if (!(*((void**)&AMediaFormat_getInt64) = dlsym(libmediandk, "AMediaFormat_getInt64")))
+		return -25;
+	if (!(*((void**)&AMediaFormat_getString) = dlsym(libmediandk, "AMediaFormat_getString")))
+		return -26;
 
 	return 0;
 }

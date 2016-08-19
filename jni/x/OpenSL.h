@@ -386,7 +386,7 @@ int64_t JNICALL openSLWriteNative(JNIEnv* env, jclass clazz, uint64_t nativeObj,
 		bufferWriteIndex = 0;
 	writtenBufferCount++;
 
-    const SLresult result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, dstBuffer, singleBufferSizeInBytes);
+	const SLresult result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, dstBuffer, singleBufferSizeInBytes);
 	if (result != SL_RESULT_SUCCESS)
 		return -(abs((int32_t)result));
 

@@ -103,11 +103,11 @@ union int64_3232 {
 };
 
 union WriteRet {
-    uint64_t val;
-    struct {
-        uint32_t dstFramesUsed; //low
-        uint32_t srcFramesUsed; //high
-    };
+	uint64_t val;
+	struct {
+		uint32_t dstFramesUsed; //low
+		uint32_t srcFramesUsed; //high
+	};
 };
 
 uint32_t uptimeMillis() {

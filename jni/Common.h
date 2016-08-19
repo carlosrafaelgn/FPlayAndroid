@@ -357,7 +357,7 @@ if (!neonMode) {
 				beatPeakOrValley = m;
 				beatThreshold = ((m * 5) >> 2); //125%
 				if (beatThreshold < BEAT_MIN_RISE_THRESHOLD)
-                	beatThreshold = BEAT_MIN_RISE_THRESHOLD;
+					beatThreshold = BEAT_MIN_RISE_THRESHOLD;
 			}
 		}
 		if (beatSilenceDeltaMillis >= 2000) {
