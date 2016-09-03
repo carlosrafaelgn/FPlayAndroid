@@ -41,7 +41,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
-import android.os.Process;
 import android.os.SystemClock;
 
 import java.io.IOException;
@@ -464,12 +463,17 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			//from here on, tempDstBuffer/Array will always contain stereo frames
 			int sizeInBytes = pendingDstFrames << 2;
 
-			//*** NEVER TRY TO RETURN 0 HERE, MANUALLY CONTROLLING WHETHER THE AUDIOTRACK IS FULL,
-			//BEFORE MAKING SURE WE HAVE WRITTEN UP TO/PAST THE END OF IT FIRST!!!
-			//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
-			//UP TO/PAST THE END OF IT!
-			if (okToQuitIfFull) {
-				if (pendingDstFrames > emptyFrames) {
+			int ret;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				tempDstBuffer.limit(pendingOffsetInBytes + sizeInBytes);
+				tempDstBuffer.position(pendingOffsetInBytes);
+				ret = audioTrack.write(tempDstBuffer, sizeInBytes, AudioTrack.WRITE_NON_BLOCKING);
+			} else {
+				//*** NEVER TRY TO RETURN 0 HERE, MANUALLY CONTROLLING WHETHER THE AUDIOTRACK IS FULL,
+				//BEFORE MAKING SURE WE HAVE WRITTEN UP TO/PAST THE END OF IT FIRST!!!
+				//*** THERE IS A BUG IN AUDIOTRACK, AND IT ONLY STARTS PLAYING IF SAMPLES ARE WRITTEN
+				//UP TO/PAST THE END OF IT!
+				if (okToQuitIfFull && pendingDstFrames > emptyFrames) {
 					//if the buffer appears to be full, instead of simply returning 0 at all times,
 					//let's try to write something, even if not our whole buffer
 					if (emptyFrames <= (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING >> 1))
@@ -477,14 +481,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 					sizeInBytes = emptyFrames << 2;
 				}
-			}
 
-			int ret;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				tempDstBuffer.limit(pendingOffsetInBytes + sizeInBytes);
-				tempDstBuffer.position(pendingOffsetInBytes);
-				ret = audioTrack.write(tempDstBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
-			} else {
 				ret = audioTrack.write(tempDstArray, pendingOffsetInBytes, sizeInBytes);
 			}
 			if (ret <= 0) {
@@ -757,18 +754,18 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	@Override
 	public void run() {
-		try {
+		/*try {
 			final int tid = Process.myTid();
 			Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 			if (Process.getThreadPriority(tid) != Process.THREAD_PRIORITY_AUDIO)
 				thread.setPriority(Thread.MAX_PRIORITY);
 		} catch (Throwable ex) {
-			try {
-				thread.setPriority(Thread.MAX_PRIORITY);
-			} catch (Throwable ex2) {
+			try {*/
+				thread.setPriority(Thread.MAX_PRIORITY - 1);
+			/*} catch (Throwable ex2) {
 				//just ignore
 			}
-		}
+		}*/
 
 		final MediaCodecPlayer.OutputBuffer outputBuffer = new MediaCodecPlayer.OutputBuffer();
 		MediaCodecPlayer currentPlayer = null, nextPlayer = null, sourcePlayer = null;
@@ -1329,8 +1326,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 		}
 
-		if (wakeLock != null)
-			wakeLock.release();
+		wakeLock.release();
 		synchronized (threadNotification) {
 			currentPlayerForReference = null;
 			threadNotification.notify();
