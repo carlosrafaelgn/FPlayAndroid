@@ -454,7 +454,10 @@ void resampleComputeCoeffs() {
 		delete resampleCoeffOriginal;
 	resampleCoeffOriginal = new float[resampleCoeffLen + 4];
 	//align memory on a 16-byte boundary (luckly, 20 * sizeof(float) is a multiple of 16)
-	resampleCoeff = (float*)((size_t)resampleCoeffOriginal + 16 - ((size_t)resampleCoeffOriginal & 15));
+	if (((size_t)resampleCoeffOriginal & 15))
+		resampleCoeff = (float*)((size_t)resampleCoeffOriginal + 16 - ((size_t)resampleCoeffOriginal & 15));
+	else
+		resampleCoeff = resampleCoeffOriginal;
 	if (resampleAdvance)
 		delete resampleAdvance;
 	resampleAdvance = new uint32_t[factDst];

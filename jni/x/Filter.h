@@ -31,44 +31,50 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-float getBandGainInDB(uint32_t band) {
-	if ((effectsEnabled & BASSBOOST_ENABLED)) {
-		if (band < BASSBOOST_BAND_COUNT)
-			return ((effectsEnabled & EQUALIZER_ENABLED) ?
-					//bassBoostStrength 0    -> +0dB
-					//bassBoostStrength 1000 -> +10dB
-					(equalizerGainInDB[band] + ((float)bassBoostStrength / 100.0f)) :
-						((float)bassBoostStrength / 100.0f));
-		else
-			return ((effectsEnabled & EQUALIZER_ENABLED) ?
-					equalizerGainInDB[band] :
-						0.0f);
-	}
-	return equalizerGainInDB[band];
-}
-
 void computeFilter(uint32_t band) {
-	//the method used to compute b0, b1, b2, a1 and a2 was created by Haruki Hasegawa,
-	//for his OpenSLMediaPlayer: https://github.com/h6ah4i/android-openslmediaplayer
-	//the original formula was in his spreadsheet: https://docs.google.com/spreadsheets/d/1hj2aoW83rGraANzHxKaCpECFQ0WawVbap4tgxZ9FSmo/pubhtml?gid=1587344290&single=true
-	//
-	//Copyright (C) 2014-2015 Haruki Hasegawa
-	//
-	//Licensed under the Apache License, Version 2.0 (the "License");
-	//you may not use this file except in compliance with the License.
-	//You may obtain a copy of the License at
-	//
-	//http://www.apache.org/licenses/LICENSE-2.0
-	//
-	//Unless required by applicable law or agreed to in writing, software
-	//distributed under the License is distributed on an "AS IS" BASIS,
-	//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	//See the License for the specific language governing permissions and
-	//limitations under the License.
-	//
+	if (band >= equalizerMaxBandCount) {
+		//nothing to be done in this band...
+		return;
+	}
 
+	if (band == (equalizerMaxBandCount - 1)) {
+		//the last band is not a filter, it's just a simple gain
+		if (!equalizerActuallyUsedGainInMillibels[band]) {
+			equalizerLastBandGain[0] = 1.0f;
+			equalizerLastBandGain[1] = 1.0f;
+		} else {
+			equalizerLastBandGain[0] = (float)pow(10.0, (double)equalizerActuallyUsedGainInMillibels[band] / 2000.0);
+			equalizerLastBandGain[1] = equalizerLastBandGain[0];
+		}
+		return;
+	}
+
+	//the idea for this equalizer is simple/trick ;)
 	//
-	//Additional reference (excellent quality :D):
+	//band Max-1 is an ordinary gain, corresponding to its gain
+	//band Max-2 is a lowshelf filter, applying a gain corresponding to this delta: Band Max-2's gain - Band Max-1's gain
+	//...
+	//band 0 is a lowshelf filter, applying a gain corresponding to this delta: Band 0's gain - Band 1's gain
+
+	EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band]);
+
+	if (!equalizerActuallyUsedGainInMillibels[band]) {
+		//this band is an easy one! ;)
+		equalizerCoef->b0L = 1.0f;
+		equalizerCoef->b0R = 1.0f;
+		equalizerCoef->b1L = 0.0f;
+		equalizerCoef->b1R = 0.0f;
+		equalizerCoef->_a1L = 0.0f;
+		equalizerCoef->_a1R = 0.0f;
+		equalizerCoef->b2L = 0.0f;
+		equalizerCoef->b2R = 0.0f;
+		equalizerCoef->_a2L = 0.0f;
+		equalizerCoef->_a2R = 0.0f;
+		return;
+	}
+
+	//the method used to compute b0, b1, b2, a1 and a2 was created
+	//by Robert Bristow-Johnson (extracted from his Audio-EQ-Cookbook.txt)
 	//
 	//Cookbook formulae for audio EQ biquad filter coefficients
 	//by Robert Bristow-Johnson  <rbj@audioimagination.com>
@@ -78,59 +84,61 @@ void computeFilter(uint32_t band) {
 	//http://www.musicdsp.org/archive.php?classid=3#198
 	//http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 	//http://www.musicdsp.org/files/EQ-Coefficients.pdf
+	//http://www.earlevel.com/main/2010/12/20/biquad-calculator/
 	//
 
-	if (band >= equalizerMaxBandCount) {
-		//nothing to be done in this band...
-		equalizerCoefs[(band << 3)    ] = 1.0f; //b0 L
-		equalizerCoefs[(band << 3) + 1] = 1.0f; //b0 R
-		equalizerCoefs[(band << 3) + 2] = 0.0f; //b1 (a1) L
-		equalizerCoefs[(band << 3) + 3] = 0.0f; //b1 (a1) R
-		equalizerCoefs[(band << 3) + 4] = 0.0f; //b2 L
-		equalizerCoefs[(band << 3) + 5] = 0.0f; //b2 R
-		equalizerCoefs[(band << 3) + 6] = 0.0f; //-a2 L
-		equalizerCoefs[(band << 3) + 7] = 0.0f; //-a2 R
-		return;
-	}
-
-#define BW_S 1.0
-#define neighborBandCorrelationCoef -0.15
 #define PI 3.1415926535897932384626433832795
-#define LN2_2 0.34657359027997265470861606072909
-	static const double bands[BAND_COUNT] = { 31.25, 62.5, 125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0, 16000.0 };
-	const double fs = (double)dstSampleRate;
-	const double f0 = bands[band];
-	const double w0 = ((2.0 * PI) * f0) / fs;
-	const double sinw0 = sin(w0);
+
+	const double A = sqrt(pow(10.0, (double)equalizerActuallyUsedGainInMillibels[band] / 4000.0));
+	const double Fs = (double)dstSampleRate;
+	double f0; //f0 = shelf midpoint frequency = frequency where the gain is (gain * 1/sqrt(2))
+	switch (band) {
+	case 0: //31.25 Hz / 62.5 Hz
+		f0 = 92.75;
+		break;
+	case 1: //125 Hz / 250 Hz
+		f0 = 375.0;
+		break;
+	case 2: //500 Hz / 1000 Hz
+		f0 = 1500.0;
+		break;
+	default: //2000 Hz / 4000 Hz
+		f0 = 6000.0;
+		break;
+	}
+	const double w0 = 2.0 * PI * f0 / Fs;
 	const double cosw0 = cos(w0);
-	const double Q = 1.0 / (2.0 * sinh(LN2_2 * BW_S * (w0 / sinw0)));
-	const double gainCorrelationInDB = (neighborBandCorrelationCoef *
-										((band == 0) ? getBandGainInDB(band + 1) :
-											((band == (equalizerMaxBandCount - 1)) ? getBandGainInDB(band - 1) :
-												(getBandGainInDB(band - 1) + getBandGainInDB(band + 1)))));
-	const double modGainInDB = getBandGainInDB(band) + gainCorrelationInDB;
-	const double alpha = sinw0 / (2.0 * Q);
-	const double A = pow(10.0, modGainInDB / 40.0);
-	const double alpha_mul_A = alpha * A;
-	const double alpha_div_A = alpha / A;
-	const double a0 = 1.0 + alpha_div_A;
+	const double sinw0 = sin(w0);
 
-	//a1 and b1 are equal!
-	const float b0 = (float)((1.0 + alpha_mul_A) / a0);
-	equalizerCoefs[(band << 3)    ] = b0; //L
-	equalizerCoefs[(band << 3) + 1] = b0; //R
-	const float b1 = (float)((-2.0 * cosw0) / a0);
-	equalizerCoefs[(band << 3) + 2] = b1; //L
-	equalizerCoefs[(band << 3) + 3] = b1; //R
-	const float b2 = (float)((1.0 - alpha_mul_A) / a0);
-	equalizerCoefs[(band << 3) + 4] = b2; //L
-	equalizerCoefs[(band << 3) + 5] = b2; //R
-	const float _a2 = -(float)((1.0 - alpha_div_A) / a0); //invert a2's signal to make processEqualizer()'s life easier
-	equalizerCoefs[(band << 3) + 6] = _a2; //L
-	equalizerCoefs[(band << 3) + 7] = _a2; //R
+	//S = a "shelf slope" parameter (for shelving EQ only).  When S = 1,
+	//the shelf slope is as steep as it can be and remain monotonically
+	//increasing or decreasing gain with frequency.  The shelf slope, in
+	//dB/octave, remains proportional to S for all other values for a
+	//fixed f0/Fs and dBgain.
 
-#undef BW_S
-#undef neighborBandCorrelationCoef
+	//alpha = sin(w0)/2 * sqrt( (A + 1/A)*(1/S - 1) + 2 )
+	//since we will use S = 1:
+	//const double alpha = sinw0 * 0.5 * sqrt(2.0);
+	const double alpha = sinw0 * 0.70710678118654752440084436210485;
+
+	const double two_sqrtA_alpha = 2.0 * sqrt(A) * alpha;
+
+	const double b0 =     A*( (A+1.0) - ((A-1.0)*cosw0) + two_sqrtA_alpha );
+	const double b1 = 2.0*A*( (A-1.0) - ((A+1.0)*cosw0)                   );
+	const double b2 =     A*( (A+1.0) - ((A-1.0)*cosw0) - two_sqrtA_alpha );
+	const double a0 =         (A+1.0) + ((A-1.0)*cosw0) + two_sqrtA_alpha;
+	const double a1 =  -2.0*( (A-1.0) + ((A+1.0)*cosw0)                   );
+	const double a2 =         (A+1.0) + ((A-1.0)*cosw0) - two_sqrtA_alpha;
+
+	equalizerCoef->b0L = b0 / a0;
+	equalizerCoef->b0R = equalizerCoef->b0L;
+	equalizerCoef->b1L = b1 / a0;
+	equalizerCoef->b1R = equalizerCoef->b1L;
+	equalizerCoef->_a1L = -a1 / a0; //we must invert a1 and a2's signal in order to use only additions!
+	equalizerCoef->_a1R = equalizerCoef->_a1L;
+	equalizerCoef->b2L = b2 / a0;
+	equalizerCoef->b2R = equalizerCoef->b2L;
+	equalizerCoef->_a2L = -a2 / a0;
+	equalizerCoef->_a2R = equalizerCoef->_a2L;
 #undef PI
-#undef LN2_2
 }

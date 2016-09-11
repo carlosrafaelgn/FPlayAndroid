@@ -34,14 +34,12 @@
 #include "EffectsImplMacros.h"
 
 #define DB_RANGE 1500 //+-15dB (in millibels)
-#define BAND_COUNT 10
+#define BAND_COUNT 5
 #define COEF_SET_COUNT 8
 
 #define EQUALIZER_ENABLED 1
 #define BASSBOOST_ENABLED 2
 #define VIRTUALIZER_ENABLED 4
-
-#define BASSBOOST_BAND_COUNT 3 //(31.25 Hz, 62.5 Hz and 125 Hz)
 
 //https://en.wikipedia.org/wiki/Dynamic_range_compression
 //https://en.wikipedia.org/wiki/Dynamic_range_compression#Limiting
@@ -50,34 +48,24 @@
 #define GAIN_RECOVERY_PER_SECOND_DB 0.25 //+0.25dB/s
 
 static uint32_t bassBoostStrength, virtualizerStrength;
-static float equalizerGainInDB[BAND_COUNT];
+static int32_t equalizerGainInMillibels[BAND_COUNT], equalizerActuallyUsedGainInMillibels[BAND_COUNT];
 static EFFECTPROC effectProc;
+static float* effectsFloatSamplesOriginal;
 
 uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled;
 int32_t effectsFramesBeforeRecoveringGain, effectsMinimumAmountOfFramesToReduce, effectsTemp[4] __attribute__((aligned(16)));
 float effectsGainRecoveryOne[4] __attribute__((aligned(16))) = { 1.0f, 1.0f, 0.0f, 0.0f },
-effectsGainReductionPerFrame[4] __attribute__((aligned(16))),
-effectsGainRecoveryPerFrame[4] __attribute__((aligned(16))),
-effectsGainClip[4] __attribute__((aligned(16))),
-equalizerCoefs[2 * 4 * BAND_COUNT] __attribute__((aligned(16))),
-//order for equalizerCoefs:
-//0 band0 b0 L
-//1 band0 b0 R
-//2 band0 b1 L (which is also a1 in our case)
-//3 band0 b1 R (which is also a1 in our case)
-//4 band0 b2 L
-//5 band0 b2 R
-//6 band0 -a2 L
-//7 band0 -a2 R
-//8 band1 b0
-//...
-equalizerSamples[2 * 4 * BAND_COUNT] __attribute__((aligned(16)));
+	effectsGainReductionPerFrame[4] __attribute__((aligned(16))),
+	effectsGainRecoveryPerFrame[4] __attribute__((aligned(16))),
+	effectsGainClip[4] __attribute__((aligned(16))),
+	equalizerLastBandGain[4] __attribute__((aligned(16)));
+EqualizerCoefs equalizerCoefs[BAND_COUNT - 1] __attribute__((aligned(16)));
+EqualizerState equalizerStates[BAND_COUNT - 1] __attribute__((aligned(16)));
+float *effectsFloatSamples;
 
 #ifdef FPLAY_X86
 static const uint32_t effectsAbsSample[4] __attribute__((aligned(16))) = { 0x7FFFFFFF, 0x7FFFFFFF, 0, 0 };
 #else
-extern void processEqualizerNeon(int16_t* buffer, uint32_t sizeInFrames);
-extern void processVirtualizerNeon(int16_t* buffer, uint32_t sizeInFrames);
 extern void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames);
 #endif
 
@@ -115,7 +103,7 @@ void resetEqualizer() {
 	effectsMinimumAmountOfFramesToReduce = 0;
 
 	memset(effectsTemp, 0, 4 * sizeof(int32_t));
-	memset(equalizerSamples, 0, 2 * 4 * BAND_COUNT * sizeof(float));
+	memset(equalizerStates, 0, (BAND_COUNT - 1) * sizeof(EqualizerState));
 }
 
 void destroyVirtualizer() {
@@ -125,18 +113,12 @@ void resetVirtualizer() {
 }
 
 void equalizerConfigChanged() {
-	//this only happens in two moments: upon initialization and when the sample rate changes
+	//this only happens in two moments: upon initialization and when the sample rate changes (even when the equalizer is not enabled!)
 
-	if (dstSampleRate > (2 * 16000))
-		equalizerMaxBandCount = 10;
-	else if (dstSampleRate > (2 * 8000))
-		equalizerMaxBandCount = 9;
-	else if (dstSampleRate > (2 * 4000))
-		equalizerMaxBandCount = 8;
-	else if (dstSampleRate > (2 * 2000))
-		equalizerMaxBandCount = 7;
+	if (dstSampleRate > (2 * 6000))
+		equalizerMaxBandCount = 5;
 	else
-		equalizerMaxBandCount = 6; //Android's minimum allowed sample rate is 4000 Hz
+		equalizerMaxBandCount = 4; //Android's minimum allowed sample rate is 4000 Hz
 
 	effectsGainReductionPerFrame[0] = (float)pow(10.0, GAIN_REDUCTION_PER_SECOND_DB / (double)(dstSampleRate * 20));
 	effectsGainReductionPerFrame[1] = effectsGainReductionPerFrame[0];
@@ -173,7 +155,9 @@ void initializeEffects() {
 	effectsEnabled = 0;
 	bassBoostStrength = 0;
 	virtualizerStrength = 0;
-	equalizerMaxBandCount = 0;
+	equalizerMaxBandCount = BAND_COUNT;
+	effectsFloatSamplesOriginal = 0;
+	effectsFloatSamples = 0;
 	effectsGainEnabled = 1;
 	effectsGainReductionPerFrame[0] = 1.0f;
 	effectsGainReductionPerFrame[1] = 1.0f;
@@ -183,8 +167,14 @@ void initializeEffects() {
 	effectsGainRecoveryPerFrame[1] = 1.0f;
 	effectsGainRecoveryPerFrame[2] = 0.0f;
 	effectsGainRecoveryPerFrame[3] = 0.0f;
+	equalizerLastBandGain[0] = 1.0f;
+	equalizerLastBandGain[1] = 1.0f;
+	equalizerLastBandGain[2] = 0.0f;
+	equalizerLastBandGain[3] = 0.0f;
 
-	memset(equalizerGainInDB, 0, BAND_COUNT * sizeof(float));
+	memset(equalizerGainInMillibels, 0, BAND_COUNT * sizeof(int32_t));
+	memset(equalizerActuallyUsedGainInMillibels, 0, BAND_COUNT * sizeof(int32_t));
+	memset(equalizerCoefs, 0, (BAND_COUNT - 1) * sizeof(EqualizerCoefs));
 
 	resetEqualizer();
 	resetVirtualizer();
@@ -192,108 +182,16 @@ void initializeEffects() {
 	updateEffectProc();
 }
 
+void terminateEffects() {
+	if (effectsFloatSamplesOriginal) {
+		delete effectsFloatSamplesOriginal;
+		effectsFloatSamplesOriginal = 0;
+		effectsFloatSamples = 0;
+	}
+}
+
 void processNull(int16_t* buffer, uint32_t sizeInFrames) {
 	//nothing to be done :)
-}
-
-void processEqualizer(int16_t* buffer, uint32_t sizeInFrames) {
-	if (effectsMinimumAmountOfFramesToReduce <= 0)
-		effectsFramesBeforeRecoveringGain -= sizeInFrames;
-	else
-		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
-
-#ifdef FPLAY_X86
-	__m128 gainClip = _mm_load_ps(effectsGainClip);
-	__m128 maxAbsSample = _mm_setzero_ps();
-#ifdef FPLAY_64_BITS
-	//x86 in 32 bits mode does not have enough registers :(
-	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
-	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
-	const __m128 gainClipMul = _mm_load_ps((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
-#endif
-
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
-
-		effectsTemp[0] = (int32_t)buffer[0];
-		effectsTemp[1] = (int32_t)buffer[1];
-		//inLR = { L, R, xxx, xxx }
-		__m128 inLR;
-		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
-
-		equalizerX86();
-
-		floatToShortX86();
-	}
-
-	footerX86();
-#else
-	float gainClip = effectsGainClip[0];
-	float maxAbsSample = 0.0f;
-
-	//no neon support... :(
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
-
-		float inL = (float)buffer[0], inR = (float)buffer[1];
-
-		equalizerPlain();
-
-		floatToShortPlain();
-	}
-
-	footerPlain();
-#endif
-}
-
-void processVirtualizer(int16_t* buffer, uint32_t sizeInFrames) {
-	if (effectsMinimumAmountOfFramesToReduce <= 0)
-		effectsFramesBeforeRecoveringGain -= sizeInFrames;
-	else
-		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
-
-#ifdef FPLAY_X86
-	__m128 gainClip = _mm_load_ps(effectsGainClip);
-	__m128 maxAbsSample = _mm_setzero_ps();
-#ifdef FPLAY_64_BITS
-	//x86 in 32 bits mode does not have enough registers :(
-	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
-	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
-	const __m128 gainClipMul = _mm_load_ps((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
-#endif
-
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
-
-		effectsTemp[0] = (int32_t)buffer[0];
-		effectsTemp[1] = (int32_t)buffer[1];
-		//inLR = { L, R, xxx, xxx }
-		__m128 inLR;
-		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
-
-		virtualizerX86();
-
-		floatToShortX86();
-	}
-
-	footerX86();
-#else
-	float gainClip = effectsGainClip[0];
-	float maxAbsSample = 0.0f;
-
-	//no neon support... :(
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
-
-		float inL = (float)buffer[0], inR = (float)buffer[1];
-
-		virtualizerPlain();
-
-		floatToShortPlain();
-	}
-
-	footerPlain();
-#endif
 }
 
 void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
@@ -302,52 +200,107 @@ void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 	else
 		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
-#ifdef FPLAY_X86
-	__m128 gainClip = _mm_load_ps(effectsGainClip);
-	__m128 maxAbsSample = _mm_setzero_ps();
-#ifdef FPLAY_64_BITS
-	//x86 in 32 bits mode does not have enough registers :(
-	const __m128 andAbs = _mm_load_ps((const float*)effectsAbsSample);
-	const __m128 one = _mm_load_ps(effectsGainRecoveryOne);
-	const __m128 gainClipMul = _mm_load_ps((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
-#endif
+	if (!(effectsEnabled & EQUALIZER_ENABLED)) {
+		for (int32_t i = ((sizeInFrames << 1) - 1); i >= 0; i--)
+			effectsFloatSamples[i] = (float)buffer[i];
+	} else {
+		const float lastBandGain = equalizerLastBandGain[0];
+		for (int32_t i = ((sizeInFrames << 1) - 1); i >= 0; i--)
+			effectsFloatSamples[i] = (float)buffer[i] * lastBandGain;
 
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
+		//apply each filter in all samples before moving on to the next filter
+		for (int32_t band = equalizerMaxBandCount - 2; band >= 0; band--) {
+			//we will work with local copies, not with the original pointers
+			const EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band]);
+			const float b0 = equalizerCoef->b0L;
+			const float b1 = equalizerCoef->b1L;
+			const float _a1 = equalizerCoef->_a1L;
+			const float b2 = equalizerCoef->b2L;
+			const float _a2 = equalizerCoef->_a2L;
+			EqualizerState equalizerState = equalizerStates[band];
 
-		effectsTemp[0] = (int32_t)buffer[0];
-		effectsTemp[1] = (int32_t)buffer[1];
-		//inLR = { L, R, xxx, xxx }
-		__m128 inLR;
-		inLR = _mm_cvtpi32_ps(inLR, *((__m64*)effectsTemp));
+			float* samples = effectsFloatSamples;
 
-		equalizerX86();
+			for (int32_t i = sizeInFrames - 1; i >= 0; i--) {
+				const float inL = samples[0];
+				const float inR = samples[1];
 
-		virtualizerX86();
+				const float outL = (b0 * inL) + (b1 * equalizerState.x_n1_L) + (_a1 * equalizerState.y_n1_L) + (b2 * equalizerState.x_n2_L) + (_a2 * equalizerState.y_n2_L);
+				const float outR = (b0 * inR) + (b1 * equalizerState.x_n1_R) + (_a1 * equalizerState.y_n1_R) + (b2 * equalizerState.x_n2_R) + (_a2 * equalizerState.y_n2_R);
 
-		floatToShortX86();
+				equalizerState.x_n2_L = equalizerState.x_n1_L;
+				equalizerState.x_n2_R = equalizerState.x_n1_R;
+				equalizerState.y_n2_L = equalizerState.y_n1_L;
+				equalizerState.y_n2_R = equalizerState.y_n1_R;
+
+				equalizerState.x_n1_L = inL;
+				equalizerState.x_n1_R = inR;
+				equalizerState.y_n1_L = outL;
+				equalizerState.y_n1_R = outR;
+
+				samples[0] = outL;
+				samples[1] = outR;
+
+				samples += 2;
+			}
+
+			equalizerStates[band] = equalizerState;
+		}
 	}
 
-	footerX86();
-#else
+	//if ((effectsEnabled & BASSBOOST_ENABLED)) {
+	//}
+
+	//if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
+	//}
+
 	float gainClip = effectsGainClip[0];
 	float maxAbsSample = 0.0f;
+	float* floatSamples = effectsFloatSamples;
 
-	//no neon support... :(
 	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
+		float inL = floatSamples[0] * gainClip;
+		float inR = floatSamples[1] * gainClip;
+		floatSamples += 2;
 
-		float inL = (float)buffer[0], inR = (float)buffer[1];
+		if (effectsMinimumAmountOfFramesToReduce > 0) {
+			gainClip *= effectsGainReductionPerFrame[0];
+		} else if (effectsFramesBeforeRecoveringGain <= 0) {
+			gainClip *= effectsGainRecoveryPerFrame[0];
+			if (gainClip > 1.0f)
+				gainClip = 1.0f;
+		}
 
-		equalizerPlain();
+		//abs
+		const uint32_t tmpAbsL = *((uint32_t*)&inL) & 0x7FFFFFFF;
+		if (maxAbsSample < *((float*)&tmpAbsL))
+			maxAbsSample = *((float*)&tmpAbsL);
+		const uint32_t tmpAbsR = *((uint32_t*)&inL) & 0x7FFFFFFF;;
+		if (maxAbsSample < *((float*)&tmpAbsR))
+			maxAbsSample = *((float*)&tmpAbsR);
 
-		virtualizerPlain();
+		const int32_t iL = (int32_t)inL;
+		const int32_t iR = (int32_t)inR;
+		buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL));
+		buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR));
 
-		floatToShortPlain();
+		buffer += 2;
 	}
 
-	footerPlain();
-#endif
+	if (!effectsGainEnabled) {
+		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+		effectsMinimumAmountOfFramesToReduce = 0;
+		return;
+	}
+
+	effectsGainClip[0] = gainClip;
+	if (maxAbsSample > MAX_ALLOWED_SAMPLE_VALUE) {
+		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; // wait some time before starting to recover the gain
+		effectsMinimumAmountOfFramesToReduce = (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 3) >> 1;
+	} else if (effectsMinimumAmountOfFramesToReduce <= 0) {
+		if (effectsGainClip[0] >= 1.0f)
+			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+	}
 }
 
 void JNICALL enableEqualizer(JNIEnv* env, jclass clazz, uint32_t enabled) {
@@ -355,12 +308,6 @@ void JNICALL enableEqualizer(JNIEnv* env, jclass clazz, uint32_t enabled) {
 		effectsEnabled |= EQUALIZER_ENABLED;
 	else
 		effectsEnabled &= ~EQUALIZER_ENABLED;
-
-	//recompute the filter if the bass boost is enabled
-	if ((effectsEnabled & BASSBOOST_ENABLED)) {
-		for (int32_t i = 0; i < BAND_COUNT; i++)
-			computeFilter(i);
-	}
 
 	updateEffectProc();
 }
@@ -373,14 +320,17 @@ void JNICALL setEqualizerBandLevel(JNIEnv* env, jclass clazz, uint32_t band, int
 	if (band >= BAND_COUNT)
 		return;
 
-	equalizerGainInDB[band] = (float)((level <= -DB_RANGE) ? -DB_RANGE : ((level >= DB_RANGE) ? DB_RANGE : level)) / 100.0f; //level is given in millibels
+	equalizerGainInMillibels[band] = ((level <= -DB_RANGE) ? -DB_RANGE : ((level >= DB_RANGE) ? DB_RANGE : level));
 
-	//both the previous and the next bands depend on this one (if they exist)
-	if (band > 0)
-		computeFilter(band - 1);
-	computeFilter(band);
-	if (band < (equalizerMaxBandCount - 1))
-		computeFilter(band + 1);
+	for (int32_t i = 0; i < BAND_COUNT - 1; i++) {
+		equalizerActuallyUsedGainInMillibels[i] = equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1];
+		computeFilter(i);
+	}
+
+	equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1] = equalizerGainInMillibels[BAND_COUNT - 1];
+	computeFilter(BAND_COUNT - 1);
+
+	memset(equalizerStates, 0, (BAND_COUNT - 1) * sizeof(EqualizerState));
 }
 
 void JNICALL setEqualizerBandLevels(JNIEnv* env, jclass clazz, jshortArray jlevels) {
@@ -389,12 +339,19 @@ void JNICALL setEqualizerBandLevels(JNIEnv* env, jclass clazz, jshortArray jleve
 		return;
 
 	for (int32_t i = 0; i < BAND_COUNT; i++)
-		equalizerGainInDB[i] = (float)((levels[i] <= -DB_RANGE) ? -DB_RANGE : ((levels[i] >= DB_RANGE) ? DB_RANGE : levels[i])) / 100.0f; //level is given in millibels
+		equalizerGainInMillibels[i] = ((levels[i] <= -DB_RANGE) ? -DB_RANGE : ((levels[i] >= DB_RANGE) ? DB_RANGE : levels[i]));
 
 	env->ReleasePrimitiveArrayCritical(jlevels, levels, JNI_ABORT);
 
-	for (int32_t i = 0; i < BAND_COUNT; i++)
+	for (int32_t i = 0; i < BAND_COUNT - 1; i++) {
+		equalizerActuallyUsedGainInMillibels[i] = equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1];
 		computeFilter(i);
+	}
+
+	equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1] = equalizerGainInMillibels[BAND_COUNT - 1];
+	computeFilter(BAND_COUNT - 1);
+
+	memset(equalizerStates, 0, (BAND_COUNT - 1) * sizeof(EqualizerState));
 }
 
 void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, uint32_t enabled) {
@@ -404,8 +361,8 @@ void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, uint32_t enabled) {
 		effectsEnabled &= ~BASSBOOST_ENABLED;
 
 	//recompute the entire filter (whether the bass boost is enabled or not)
-	for (int32_t i = 0; i < BAND_COUNT; i++)
-		computeFilter(i);
+	//for (int32_t i = 0; i < BAND_COUNT; i++)
+	//	computeFilter(i);
 
 	updateEffectProc();
 }
@@ -419,8 +376,6 @@ void JNICALL setBassBoostStrength(JNIEnv* env, jclass clazz, int32_t strength) {
 
 	//recompute the filter if the bass boost is enabled
 	if ((effectsEnabled & BASSBOOST_ENABLED)) {
-		for (int32_t i = 0; i < BAND_COUNT; i++)
-			computeFilter(i);
 	}
 }
 
@@ -460,28 +415,27 @@ int32_t JNICALL getVirtualizerRoundedStrength(JNIEnv* env, jclass clazz) {
 }
 
 void updateEffectProc() {
+	if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED | VIRTUALIZER_ENABLED))) {
 #ifdef FPLAY_X86
-	if ((effectsEnabled & VIRTUALIZER_ENABLED))
-		effectProc = ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) ? processEffects : processVirtualizer);
-	else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
-		effectProc = processEqualizer;
-	else
-		effectProc = processNull;
+		effectProc = processEffects;
 #else
-	if (neonMode) {
-		if ((effectsEnabled & VIRTUALIZER_ENABLED))
-			effectProc = ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) ? processEffectsNeon : processVirtualizerNeon);
-		else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
-			effectProc = processEqualizerNeon;
-		else
-			effectProc = processNull;
-	} else {
-		if ((effectsEnabled & VIRTUALIZER_ENABLED))
-			effectProc = ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) ? processEffects : processVirtualizer);
-		else if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
-			effectProc = processEqualizer;
-		else
-			effectProc = processNull;
-	}
+		effectProc = (neonMode ? processEffects : processEffects);
 #endif
+		if (!effectsFloatSamplesOriginal) {
+			//MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 2, because audioTrack allows up to MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 2 frames
+			effectsFloatSamplesOriginal = new float[4 + (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 2 * 2)];
+			//align memory on a 16-byte boundary
+			if (((size_t)effectsFloatSamplesOriginal & 15))
+				effectsFloatSamples = (float*)((size_t)effectsFloatSamplesOriginal + 16 - ((size_t)effectsFloatSamplesOriginal & 15));
+			else
+				effectsFloatSamples = effectsFloatSamplesOriginal;
+		}
+	} else {
+		effectProc = processNull;
+		if (effectsFloatSamplesOriginal) {
+			delete effectsFloatSamplesOriginal;
+			effectsFloatSamplesOriginal = 0;
+			effectsFloatSamples = 0;
+		}
+	}
 }

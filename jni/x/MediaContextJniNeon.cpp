@@ -40,98 +40,20 @@
 #define BASSBOOST_ENABLED 2
 #define VIRTUALIZER_ENABLED 4
 
-extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, dstSampleRate;
+extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled;
 extern int32_t effectsFramesBeforeRecoveringGain, effectsMinimumAmountOfFramesToReduce, effectsTemp[] __attribute__((aligned(16)));
 extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
-effectsGainReductionPerFrame[] __attribute__((aligned(16))),
-effectsGainRecoveryPerFrame[] __attribute__((aligned(16))),
-effectsGainClip[] __attribute__((aligned(16))),
-equalizerCoefs[] __attribute__((aligned(16))),
-equalizerSamples[] __attribute__((aligned(16)));
+	effectsGainReductionPerFrame[] __attribute__((aligned(16))),
+	effectsGainRecoveryPerFrame[] __attribute__((aligned(16))),
+	effectsGainClip[] __attribute__((aligned(16))),
+	equalizerLastBandGain[] __attribute__((aligned(16)));
+extern EqualizerCoefs equalizerCoefs[] __attribute__((aligned(16)));
+extern EqualizerState equalizerState[] __attribute__((aligned(16)));
+extern float *effectsFloatSamples;
 
 //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0491h/CIHJBEFE.html
 
-void processEqualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
-	if (effectsMinimumAmountOfFramesToReduce <= 0)
-		effectsFramesBeforeRecoveringGain -= sizeInFrames;
-	else
-		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
-
-	float32x2_t gainClip = vld1_f32(effectsGainClip);
-	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
-	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
-	const float32x2_t gainClipMul = vld1_f32((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
-
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
-
-		effectsTemp[0] = (int32_t)buffer[0];
-		effectsTemp[1] = (int32_t)buffer[1];
-		//inLR = { L, R }
-		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
-
-		equalizerNeon();
-
-		floatToShortNeon();
-	}
-
-	footerNeon();
-}
-
-void processVirtualizerNeon(int16_t* buffer, uint32_t sizeInFrames) {
-	if (effectsMinimumAmountOfFramesToReduce <= 0)
-		effectsFramesBeforeRecoveringGain -= sizeInFrames;
-	else
-		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
-
-	float32x2_t gainClip = vld1_f32(effectsGainClip);
-	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
-	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
-	const float32x2_t gainClipMul = vld1_f32((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
-
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
-
-		effectsTemp[0] = (int32_t)buffer[0];
-		effectsTemp[1] = (int32_t)buffer[1];
-		//inLR = { L, R }
-		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
-
-		virtualizerNeon();
-
-		floatToShortNeon();
-	}
-
-	footerNeon();
-}
-
 void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
-	if (effectsMinimumAmountOfFramesToReduce <= 0)
-		effectsFramesBeforeRecoveringGain -= sizeInFrames;
-	else
-		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
-
-	float32x2_t gainClip = vld1_f32(effectsGainClip);
-	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
-	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
-	const float32x2_t gainClipMul = vld1_f32((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));
-
-	while ((sizeInFrames--)) {
-		float *samples = equalizerSamples;
-
-		effectsTemp[0] = (int32_t)buffer[0];
-		effectsTemp[1] = (int32_t)buffer[1];
-		//inLR = { L, R }
-		float32x2_t inLR = vcvt_f32_s32(*((int32x2_t*)effectsTemp));
-
-		equalizerNeon();
-
-		virtualizerNeon();
-
-		floatToShortNeon();
-	}
-
-	footerNeon();
 }
 
 extern uint32_t resamplePendingAdvances, resampleCoeffLen, resampleCoeffIdx, resampleAdvanceIdx;
