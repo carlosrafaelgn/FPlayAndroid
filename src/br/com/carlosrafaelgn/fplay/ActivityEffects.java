@@ -83,15 +83,37 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		return getText(R.string.audio_effects);
 	}
 
-	private String formatEqualizer(int frequency, int level) {
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
+	private String formatEqualizer(int frequencyIndex, int level) {
 		if (txtBuilder == null)
 			return "";
 		txtBuilder.delete(0, txtBuilder.length());
-		if (frequency < 1000)
-			txtBuilder.append(frequency);
-		else
-			UI.formatIntAsFloat(txtBuilder, frequency / 100, false, true);
-		txtBuilder.append((frequency < 1000) ? " Hz  " : " kHz  ");
+		if (BuildConfig.X) {
+			switch (frequencyIndex) {
+			case 0:
+				txtBuilder.append("31 / 62 Hz  ");
+				break;
+			case 1:
+				txtBuilder.append("125 / 250 Hz  ");
+				break;
+			case 2:
+				txtBuilder.append("500 / 1k Hz  ");
+				break;
+			case 3:
+				txtBuilder.append("2k / 4k Hz  ");
+				break;
+			default:
+				txtBuilder.append("8k / 16k Hz  ");
+				break;
+			}
+		} else {
+			final int frequency = frequencies[frequencyIndex];
+			if (frequency < 1000)
+				txtBuilder.append(frequency);
+			else
+				UI.formatIntAsFloat(txtBuilder, frequency / 100, false, true);
+			txtBuilder.append((frequency < 1000) ? " Hz  " : " kHz  ");
+		}
 		if (level >= 0)
 			txtBuilder.append('+');
 		UI.formatIntAsFloat(txtBuilder, level / 10, false, false);
@@ -604,7 +626,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 						seekBar.setValue(-min / 50);
 					}
 					Equalizer.setBandLevel(i, level, audioSink);
-					seekBar.setText(formatEqualizer(frequencies[i], Equalizer.getBandLevel(i, audioSink)));
+					seekBar.setText(formatEqualizer(i, Equalizer.getBandLevel(i, audioSink)));
 					return;
 				}
 			}
@@ -640,7 +662,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				final BgSeekBar bar = bars[i];
 				if (bar != null) {
 					final int level = Equalizer.getBandLevel(i, audioSink);
-					bars[i].setText(formatEqualizer(frequencies[i], level));
+					bars[i].setText(formatEqualizer(i, level));
 					bars[i].setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 				}
 			}
@@ -719,7 +741,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 					final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
 					bar.setLayoutParams(p);
 					bar.setMax((max - min) / 50);
-					bar.setText(formatEqualizer(frequencies[i], level));
+					bar.setText(formatEqualizer(i, level));
 					bar.setKeyIncrement(1);
 					bar.setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 					bar.setOnBgSeekBarChangeListener(this);
