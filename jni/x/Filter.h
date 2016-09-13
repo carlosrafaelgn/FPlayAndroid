@@ -89,7 +89,7 @@ void computeFilter(uint32_t band) {
 
 #define PI 3.1415926535897932384626433832795
 
-	const double A = sqrt(pow(10.0, (double)equalizerActuallyUsedGainInMillibels[band] / 4000.0));
+	const double A = pow(10.0, (double)equalizerActuallyUsedGainInMillibels[band] / 4000.0);
 	const double Fs = (double)dstSampleRate;
 	double f0; //f0 = shelf midpoint frequency = frequency where the gain is (gain * 1/sqrt(2))
 	switch (band) {
