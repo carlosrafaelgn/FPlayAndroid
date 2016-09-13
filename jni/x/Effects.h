@@ -295,7 +295,7 @@ void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 
 	effectsGainClip[0] = gainClip;
 	if (maxAbsSample > MAX_ALLOWED_SAMPLE_VALUE) {
-		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; // wait some time before starting to recover the gain
+		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; //wait some time before starting to recover the gain
 		effectsMinimumAmountOfFramesToReduce = (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 3) >> 1;
 	} else if (effectsMinimumAmountOfFramesToReduce <= 0) {
 		if (effectsGainClip[0] >= 1.0f)
@@ -419,7 +419,7 @@ void updateEffectProc() {
 #ifdef FPLAY_X86
 		effectProc = processEffects;
 #else
-		effectProc = (neonMode ? processEffects : processEffects);
+		effectProc = (neonMode ? processEffectsNeon : processEffects);
 #endif
 		if (!effectsFloatSamplesOriginal) {
 			//MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 2, because audioTrack allows up to MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 2 frames

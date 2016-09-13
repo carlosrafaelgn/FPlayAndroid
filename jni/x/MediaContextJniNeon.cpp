@@ -40,7 +40,7 @@
 #define BASSBOOST_ENABLED 2
 #define VIRTUALIZER_ENABLED 4
 
-extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled;
+extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, dstSampleRate;
 extern int32_t effectsFramesBeforeRecoveringGain, effectsMinimumAmountOfFramesToReduce, effectsTemp[] __attribute__((aligned(16)));
 extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
 	effectsGainReductionPerFrame[] __attribute__((aligned(16))),
@@ -48,12 +48,126 @@ extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
 	effectsGainClip[] __attribute__((aligned(16))),
 	equalizerLastBandGain[] __attribute__((aligned(16)));
 extern EqualizerCoefs equalizerCoefs[] __attribute__((aligned(16)));
-extern EqualizerState equalizerState[] __attribute__((aligned(16)));
+extern EqualizerState equalizerStates[] __attribute__((aligned(16)));
 extern float *effectsFloatSamples;
 
 //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0491h/CIHJBEFE.html
 
 void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
+	if (effectsMinimumAmountOfFramesToReduce <= 0)
+		effectsFramesBeforeRecoveringGain -= sizeInFrames;
+	else
+		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
+
+	if (!(effectsEnabled & EQUALIZER_ENABLED)) {
+		const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 2; //L R L R
+		for (int32_t i = 0; i < sizeInShortsEven; i += 4) {
+			const int16x4_t bufferLRLRs16 = vld1_s16(buffer + i);
+			const int32x4_t bufferLRLRs32 = vmovl_s16(bufferLRLRs16);
+			vst1q_f32(effectsFloatSamples + i, vcvtq_f32_s32(bufferLRLRs32));
+		}
+		if ((sizeInFrames & 1)) {
+			//last frame (there was an odd number of frames)
+			effectsFloatSamples[(sizeInFrames << 1) - 2] = (float)buffer[(sizeInFrames << 1) - 2];
+			effectsFloatSamples[(sizeInFrames << 1) - 1] = (float)buffer[(sizeInFrames << 1) - 1];
+		}
+	} else {
+		const float32x4_t lastBandGain = vdupq_n_f32(equalizerLastBandGain[0]);
+		const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 2; //L R L R
+		for (int32_t i = 0; i < sizeInShortsEven; i += 4) {
+			const int16x4_t bufferLRLRs16 = vld1_s16(buffer + i);
+			const int32x4_t bufferLRLRs32 = vmovl_s16(bufferLRLRs16);
+			vst1q_f32(effectsFloatSamples + i, vmulq_f32(vcvtq_f32_s32(bufferLRLRs32), lastBandGain));
+		}
+		if ((sizeInFrames & 1)) {
+			//last frame (there was an odd number of frames)
+			effectsFloatSamples[(sizeInFrames << 1) - 2] = (float)buffer[(sizeInFrames << 1) - 2] * equalizerLastBandGain[0];
+			effectsFloatSamples[(sizeInFrames << 1) - 1] = (float)buffer[(sizeInFrames << 1) - 1] * equalizerLastBandGain[0];
+		}
+
+		//apply each filter in all samples before moving on to the next filter
+		for (int32_t band = equalizerMaxBandCount - 2; band >= 0; band--) {
+			//we will work with local copies, not with the original pointers
+			const float32x2_t b0 = vld1_f32(&(equalizerCoefs[band].b0L));
+			const float32x4_t b1_a1 = vld1q_f32(&(equalizerCoefs[band].b1L));
+			const float32x4_t b2_a2 = vld1q_f32(&(equalizerCoefs[band].b2L));
+
+			float32x4_t x_n1_y_n1 = vld1q_f32(&(equalizerStates[band].x_n1_L));
+			float32x4_t x_n2_y_n2 = vld1q_f32(&(equalizerStates[band].x_n2_L));
+
+			float* samples = effectsFloatSamples;
+
+			for (int32_t i = sizeInFrames - 1; i >= 0; i--) {
+				const float32x2_t inLR = vld1_f32(samples); // { samples[0], samples[1] }
+
+				const float32x4_t tmp = vaddq_f32(vmulq_f32(x_n1_y_n1, b1_a1), vmulq_f32(x_n2_y_n2, b2_a2)); // { b1 + b2 L, b1 + b2 R, _a1 + _a2 L, _a1 + _a2 R }
+
+				x_n2_y_n2 = x_n1_y_n1;
+
+				// { samples[0], samples[1], b0 + b1 + b2 + _a1 + _a2 L, b0 + b1 + b2 + _a1 + _a2 R }
+				x_n1_y_n1 = vcombine_f32(inLR, vadd_f32(vadd_f32(vmul_f32(inLR, b0), vget_low_f32(tmp)), vget_high_f32(tmp)));
+
+				vst1_f32(samples, vget_high_f32(x_n1_y_n1));
+
+				samples += 2;
+			}
+
+			vst1q_f32(&(equalizerStates[band].x_n1_L), x_n1_y_n1);
+			vst1q_f32(&(equalizerStates[band].x_n2_L), x_n2_y_n2);
+		}
+	}
+
+	//if ((effectsEnabled & BASSBOOST_ENABLED)) {
+	//}
+
+	//if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
+	//}
+
+	float32x2_t gainClip = vld1_f32(effectsGainClip);
+	float32x2_t maxAbsSample = vdup_n_f32(0.0f);
+	const float32x2_t one = vld1_f32(effectsGainRecoveryOne);
+	const float32x2_t gainClipMul = vld1_f32((effectsMinimumAmountOfFramesToReduce > 0) ? effectsGainReductionPerFrame : ((effectsFramesBeforeRecoveringGain <= 0) ? effectsGainRecoveryPerFrame : effectsGainRecoveryOne));		
+	float* floatSamples = effectsFloatSamples;
+
+	while ((sizeInFrames--)) {
+		const float32x2_t inLR = vmul_f32(vld1_f32(floatSamples), gainClip);
+		floatSamples += 2;
+
+		//gainClip *= effectsGainReductionPerFrame or effectsGainRecoveryPerFrame or 1.0f;
+		//if (gainClip > 1.0f)
+		//	gainClip = 1.0f;
+		gainClip = vmul_f32(gainClip, gainClipMul);
+		gainClip = vmin_f32(gainClip, one);
+
+		maxAbsSample = vmax_f32(maxAbsSample, vabs_f32(inLR));
+
+		//const int32_t iL = (int32_t)inL;
+		//const int32_t iR = (int32_t)inR;
+		const int32x2_t iLR = vcvt_s32_f32(inLR);
+
+		//buffer[0] = (iL >= 32767 ? 32767 : (iL <= -32768 ? -32768 : (int16_t)iL));
+		//buffer[1] = (iR >= 32767 ? 32767 : (iR <= -32768 ? -32768 : (int16_t)iR));
+		const int16x4_t iLRshort = vqmovn_s32(vcombine_s32(iLR, iLR));
+		vst1_lane_s32((int32_t*)buffer, vreinterpret_s32_s16(iLRshort), 0);
+
+		buffer += 2;
+	}
+
+	if (!effectsGainEnabled) {
+		effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+		effectsMinimumAmountOfFramesToReduce = 0;
+		return;
+	}
+
+	vst1_f32(effectsGainClip, gainClip);
+	vst1_f32((float*)effectsTemp, maxAbsSample);
+	if (((float*)effectsTemp)[0] > MAX_ALLOWED_SAMPLE_VALUE || ((float*)effectsTemp)[1] > MAX_ALLOWED_SAMPLE_VALUE) {
+		effectsFramesBeforeRecoveringGain = dstSampleRate << 2; //wait some time before starting to recover the gain
+		effectsMinimumAmountOfFramesToReduce = (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 3) >> 1;
+	} else if (effectsMinimumAmountOfFramesToReduce <= 0) {
+		if (effectsGainClip[0] >= 1.0f)
+			effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+	}
 }
 
 extern uint32_t resamplePendingAdvances, resampleCoeffLen, resampleCoeffIdx, resampleAdvanceIdx;
