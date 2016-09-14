@@ -36,12 +36,11 @@
 
 #include "EffectsImplMacros.h"
 
-#define EQUALIZER_ENABLED 1
-#define BASSBOOST_ENABLED 2
-#define VIRTUALIZER_ENABLED 4
-
 extern uint32_t effectsEnabled, equalizerMaxBandCount, effectsGainEnabled, dstSampleRate;
-extern int32_t effectsFramesBeforeRecoveringGain, effectsMinimumAmountOfFramesToReduce, effectsTemp[] __attribute__((aligned(16)));
+extern int32_t effectsFramesBeforeRecoveringGain,
+	effectsMinimumAmountOfFramesToReduce,
+	effectsTemp[] __attribute__((aligned(16))),
+	equalizerActuallyUsedGainInMillibels[];
 extern float effectsGainRecoveryOne[] __attribute__((aligned(16))),
 	effectsGainReductionPerFrame[] __attribute__((aligned(16))),
 	effectsGainRecoveryPerFrame[] __attribute__((aligned(16))),
@@ -59,7 +58,7 @@ void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 	else
 		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
-	if (!(effectsEnabled & EQUALIZER_ENABLED)) {
+	if (!(effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) || !equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1]) {
 		const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 2; //L R L R
 		for (int32_t i = 0; i < sizeInShortsEven; i += 4) {
 			const int16x4_t bufferLRLRs16 = vld1_s16(buffer + i);
@@ -71,22 +70,31 @@ void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 			effectsFloatSamples[(sizeInFrames << 1) - 2] = (float)buffer[(sizeInFrames << 1) - 2];
 			effectsFloatSamples[(sizeInFrames << 1) - 1] = (float)buffer[(sizeInFrames << 1) - 1];
 		}
-	} else {
-		const float32x4_t lastBandGain = vdupq_n_f32(equalizerLastBandGain[0]);
-		const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 2; //L R L R
-		for (int32_t i = 0; i < sizeInShortsEven; i += 4) {
-			const int16x4_t bufferLRLRs16 = vld1_s16(buffer + i);
-			const int32x4_t bufferLRLRs32 = vmovl_s16(bufferLRLRs16);
-			vst1q_f32(effectsFloatSamples + i, vmulq_f32(vcvtq_f32_s32(bufferLRLRs32), lastBandGain));
-		}
-		if ((sizeInFrames & 1)) {
-			//last frame (there was an odd number of frames)
-			effectsFloatSamples[(sizeInFrames << 1) - 2] = (float)buffer[(sizeInFrames << 1) - 2] * equalizerLastBandGain[0];
-			effectsFloatSamples[(sizeInFrames << 1) - 1] = (float)buffer[(sizeInFrames << 1) - 1] * equalizerLastBandGain[0];
+	}
+	
+	if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
+		if (equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1]) {
+			const float32x4_t lastBandGain = vdupq_n_f32(equalizerLastBandGain[0]);
+			const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 2; //L R L R
+			for (int32_t i = 0; i < sizeInShortsEven; i += 4) {
+				const int16x4_t bufferLRLRs16 = vld1_s16(buffer + i);
+				const int32x4_t bufferLRLRs32 = vmovl_s16(bufferLRLRs16);
+				vst1q_f32(effectsFloatSamples + i, vmulq_f32(vcvtq_f32_s32(bufferLRLRs32), lastBandGain));
+			}
+			if ((sizeInFrames & 1)) {
+				//last frame (there was an odd number of frames)
+				effectsFloatSamples[(sizeInFrames << 1) - 2] = (float)buffer[(sizeInFrames << 1) - 2] * equalizerLastBandGain[0];
+				effectsFloatSamples[(sizeInFrames << 1) - 1] = (float)buffer[(sizeInFrames << 1) - 1] * equalizerLastBandGain[0];
+			}
 		}
 
-		//apply each filter in all samples before moving on to the next filter
-		for (int32_t band = equalizerMaxBandCount - 2; band >= 0; band--) {
+		//apply each filter in all samples before moving on to the next filter (band 0 = pre)
+		for (int32_t band = equalizerMaxBandCount - 2; band >= 1; band--) {
+			//if this band has no gain at all, we can skip it completely (there is no need to worry about
+			//equalizerStates[band] because when any gain is changed, all states are zeroed out in updateGains())
+			if (!equalizerActuallyUsedGainInMillibels[band])
+				continue;
+
 			//we will work with local copies, not with the original pointers
 			const float32x2_t b0 = vld1_f32(&(equalizerCoefs[band].b0L));
 			const float32x4_t b1_a1 = vld1q_f32(&(equalizerCoefs[band].b1L));
@@ -116,9 +124,6 @@ void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 			vst1q_f32(&(equalizerStates[band].x_n2_L), x_n2_y_n2);
 		}
 	}
-
-	//if ((effectsEnabled & BASSBOOST_ENABLED)) {
-	//}
 
 	//if ((effectsEnabled & VIRTUALIZER_ENABLED)) {
 	//}

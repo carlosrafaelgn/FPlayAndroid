@@ -91,15 +91,21 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		if (BuildConfig.X) {
 			switch (frequencyIndex) {
 			case 0:
-				txtBuilder.append("31 / 62 Hz  ");
+				txtBuilder.append("Pre  ");
 				break;
 			case 1:
-				txtBuilder.append("125 / 250 Hz  ");
+				txtBuilder.append("31 / 62 Hz  ");
 				break;
 			case 2:
-				txtBuilder.append("500 / 1k Hz  ");
+				txtBuilder.append("125 Hz  ");
 				break;
 			case 3:
+				txtBuilder.append("250 Hz  ");
+				break;
+			case 4:
+				txtBuilder.append("500 / 1k Hz  ");
+				break;
+			case 5:
 				txtBuilder.append("2k / 4k Hz  ");
 				break;
 			default:

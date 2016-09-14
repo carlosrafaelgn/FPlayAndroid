@@ -32,8 +32,9 @@
 //
 
 void computeFilter(uint32_t band) {
-	if (band >= equalizerMaxBandCount) {
+	if (!band || band >= equalizerMaxBandCount) {
 		//nothing to be done in this band...
+		//(band 0 is the pre amp, which is accounted for in the last band)
 		return;
 	}
 
@@ -51,12 +52,13 @@ void computeFilter(uint32_t band) {
 
 	//the idea for this equalizer is simple/trick ;)
 	//
-	//band Max-1 is an ordinary gain, corresponding to its gain
+	//band Max-1 is an ordinary gain, corresponding to its gain + pre amp
 	//band Max-2 is a lowshelf filter, applying a gain corresponding to this delta: Band Max-2's gain - Band Max-1's gain
 	//...
-	//band 0 is a lowshelf filter, applying a gain corresponding to this delta: Band 0's gain - Band 1's gain
+	//band 1 is a lowshelf filter, applying a gain corresponding to this delta: Band 1's gain - Band 2's gain
+	//band 0 is the pre amp (accounted for in band Max-1)
 
-	EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band]);
+	EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band - 1]);
 
 	if (!equalizerActuallyUsedGainInMillibels[band]) {
 		//this band is an easy one! ;)
@@ -93,13 +95,16 @@ void computeFilter(uint32_t band) {
 	const double Fs = (double)dstSampleRate;
 	double f0; //f0 = shelf midpoint frequency = frequency where the gain is (gain * 1/sqrt(2))
 	switch (band) {
-	case 0: //31.25 Hz / 62.5 Hz
+	case 1: //31.25 Hz / 62.5 Hz
 		f0 = 92.75;
 		break;
-	case 1: //125 Hz / 250 Hz
+	case 2: //125 Hz
+		f0 = 187.5f;
+		break;
+	case 3: //250 Hz
 		f0 = 375.0;
 		break;
-	case 2: //500 Hz / 1000 Hz
+	case 4: //500 Hz / 1000 Hz
 		f0 = 1500.0;
 		break;
 	default: //2000 Hz / 4000 Hz

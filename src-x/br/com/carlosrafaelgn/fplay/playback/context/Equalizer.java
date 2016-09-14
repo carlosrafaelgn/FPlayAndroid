@@ -42,12 +42,16 @@ public final class Equalizer {
 	public int getCenterFreq(short band) {
 		switch (band) {
 		case 0:
-			return (31250 + 62500) >> 1;
+			return 0;
 		case 1:
-			return (125000 + 250000) >> 1;
+			return (31250 + 62500) >> 1;
 		case 2:
-			return (500000 + 1000000) >> 1;
+			return 125000;
 		case 3:
+			return 250000;
+		case 4:
+			return (500000 + 1000000) >> 1;
+		case 5:
 			return (2000000 + 4000000) >> 1;
 		default:
 			return (8000000 + 16000000) >> 1;
@@ -55,7 +59,7 @@ public final class Equalizer {
 	}
 
 	public short getNumberOfBands() {
-		return 5;
+		return 7;
 	}
 
 	public void setBandLevel(short band, short level) {
@@ -63,7 +67,7 @@ public final class Equalizer {
 	}
 
 	public void setProperties(short numBands, short[] bandLevels) {
-		if (numBands != 5 || bandLevels == null || bandLevels.length < 5)
+		if (numBands != 7 || bandLevels == null || bandLevels.length < 7)
 			return;
 		MediaContext._setEqualizerBandLevels(bandLevels);
 	}

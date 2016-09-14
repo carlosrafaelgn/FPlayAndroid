@@ -37,6 +37,13 @@ typedef void (*EFFECTPROC)(int16_t* buffer, uint32_t sizeInFrames);
 
 #define MAX_ALLOWED_SAMPLE_VALUE 31000.0f //31000/32768 = 0.946 = -0.48dB
 
+#define DB_RANGE 1500 //+-15dB (in millibels)
+#define BAND_COUNT 7 //Pre 31/62 125 250 500/1k 2k/4k 8k/16k
+
+#define EQUALIZER_ENABLED 1
+#define BASSBOOST_ENABLED 2
+#define VIRTUALIZER_ENABLED 4
+
 struct EqualizerCoefs {
 	float b0L, b0R, zeroL, zeroR;
 	float b1L, b1R, _a1L, _a1R;
