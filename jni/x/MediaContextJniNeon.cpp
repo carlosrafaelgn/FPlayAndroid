@@ -91,37 +91,44 @@ void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 		//apply each filter in all samples before moving on to the next filter (band 0 = pre)
 		for (int32_t band = equalizerMaxBandCount - 2; band >= 1; band--) {
 			//if this band has no gain at all, we can skip it completely (there is no need to worry about
-			//equalizerStates[band] because when any gain is changed, all states are zeroed out in updateGains())
+			//equalizerStates[band - 1] because when any gain is changed, all states are zeroed out in updateGains())
 			if (!equalizerActuallyUsedGainInMillibels[band])
 				continue;
 
 			//we will work with local copies, not with the original pointers
-			const float32x2_t b0 = vld1_f32(&(equalizerCoefs[band].b0L));
-			const float32x4_t b1_a1 = vld1q_f32(&(equalizerCoefs[band].b1L));
-			const float32x4_t b2_a2 = vld1q_f32(&(equalizerCoefs[band].b2L));
+			const EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band - 1]);
+			const float32x2_t b0 = vld1_f32(&(equalizerCoef->b0L));
+			const float32x4_t b1_a1 = vld1q_f32(&(equalizerCoef->b1L));
+			const float32x4_t b2_a2 = vld1q_f32(&(equalizerCoef->b2L));
 
-			float32x4_t x_n1_y_n1 = vld1q_f32(&(equalizerStates[band].x_n1_L));
-			float32x4_t x_n2_y_n2 = vld1q_f32(&(equalizerStates[band].x_n2_L));
+			EqualizerState* const equalizerState = &(equalizerStates[band - 1]);
+			float32x4_t x_n1_y_n1 = vld1q_f32(&(equalizerState->x_n1_L));
+			float32x4_t x_n2_y_n2 = vld1q_f32(&(equalizerState->x_n2_L));
 
 			float* samples = effectsFloatSamples;
 
 			for (int32_t i = sizeInFrames - 1; i >= 0; i--) {
-				const float32x2_t inLR = vld1_f32(samples); // { samples[0], samples[1] }
+				// { samples[0], samples[1] }
+				const float32x2_t inLR = vld1_f32(samples);
 
-				const float32x4_t tmp = vaddq_f32(vmulq_f32(x_n1_y_n1, b1_a1), vmulq_f32(x_n2_y_n2, b2_a2)); // { b1 + b2 L, b1 + b2 R, _a1 + _a2 L, _a1 + _a2 R }
+				// { b1 + b2 L, b1 + b2 R, _a1 + _a2 L, _a1 + _a2 R }
+				const float32x4_t tmp = vmlaq_f32(vmulq_f32(x_n1_y_n1, b1_a1), x_n2_y_n2, b2_a2);
 
 				x_n2_y_n2 = x_n1_y_n1;
 
-				// { samples[0], samples[1], b0 + b1 + b2 + _a1 + _a2 L, b0 + b1 + b2 + _a1 + _a2 R }
-				x_n1_y_n1 = vcombine_f32(inLR, vadd_f32(vadd_f32(vmul_f32(inLR, b0), vget_low_f32(tmp)), vget_high_f32(tmp)));
+				// { b0 + b1 + b2 + _a1 + _a2 L, b0 + b1 + b2 + _a1 + _a2 R }
+				const float32x2_t outLR = vadd_f32(vmla_f32(vget_low_f32(tmp), inLR, b0), vget_high_f32(tmp));
 
-				vst1_f32(samples, vget_high_f32(x_n1_y_n1));
+				// { samples[0], samples[1], outL, outR }
+				x_n1_y_n1 = vcombine_f32(inLR, outLR);
+
+				vst1_f32(samples, outLR);
 
 				samples += 2;
 			}
 
-			vst1q_f32(&(equalizerStates[band].x_n1_L), x_n1_y_n1);
-			vst1q_f32(&(equalizerStates[band].x_n2_L), x_n2_y_n2);
+			vst1q_f32(&(equalizerState->x_n1_L), x_n1_y_n1);
+			vst1q_f32(&(equalizerState->x_n2_L), x_n2_y_n2);
 		}
 	}
 

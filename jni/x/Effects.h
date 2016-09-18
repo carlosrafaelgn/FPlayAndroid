@@ -85,24 +85,37 @@ void JNICALL enableAutomaticEffectsGain(JNIEnv* env, jclass clazz, uint32_t enab
 	}
 }	
 
+void resetAutomaticEffectsGain() {
+	effectsGainClip[0] = 1.0f;
+	effectsGainClip[1] = 1.0f;
+	effectsGainClip[2] = 0.0f;
+	effectsGainClip[3] = 0.0f;
+	effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
+	effectsMinimumAmountOfFramesToReduce = 0;
+}
+
 uint32_t JNICALL isAutomaticEffectsGainEnabled(JNIEnv* env, jclass clazz) {
 	return effectsGainEnabled;
 }
 
-void updateEqualizerGains() {
+void updateEqualizerGains(int32_t bandToReset) {
 	if (!(effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)))
 		return;
 
 	if (!(effectsEnabled & EQUALIZER_ENABLED)) {
 		//only the bass boost is enabled (set all gains to 0, except for band 2 (0 - 125 Hz))
-		for (int32_t i = 1; i < BAND_COUNT; i++) {
+		//band 0 = pre
+		equalizerActuallyUsedGainInMillibels[0] = 0;
+		for (int32_t i = 1; i < equalizerMaxBandCount; i++) {
 			equalizerActuallyUsedGainInMillibels[i] = ((i == 2) ? bassBoostStrength : 0);
 			computeFilter(i);
 		}
 	} else {
+		const int32_t lastBand = equalizerMaxBandCount - 1;
 		//band 0 = pre
-		for (int32_t i = 1; i < BAND_COUNT - 1; i++) {
-			//when enabled, add the bass boost to bands 1 and 2 (0 - 125 Hz)
+		equalizerActuallyUsedGainInMillibels[0] = 0;
+		for (int32_t i = 1; i < lastBand; i++) {
+			//when enabled, add the bass boost to band 2 (0 - 125 Hz)
 			equalizerActuallyUsedGainInMillibels[i] = ((i == 2 && (effectsEnabled & BASSBOOST_ENABLED)) ?
 														(bassBoostStrength + equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]) :
 														(equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]));
@@ -110,23 +123,21 @@ void updateEqualizerGains() {
 		}
 
 		//pre amp (band 0) is accounted for in the last band
-		equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1] = equalizerGainInMillibels[BAND_COUNT - 1] + equalizerGainInMillibels[0];
-		computeFilter(BAND_COUNT - 1);
+		equalizerActuallyUsedGainInMillibels[lastBand] = equalizerGainInMillibels[lastBand] + equalizerGainInMillibels[0];
+		computeFilter(lastBand);
 	}
 
-	memset(equalizerStates, 0, (BAND_COUNT - 1) * sizeof(EqualizerState));
+	if (bandToReset < 1) //reset all bands
+		memset(equalizerStates, 0, (BAND_COUNT - 2) * sizeof(EqualizerState));
+	else if (bandToReset == 1) //reset only the first band
+		memset(equalizerStates, 0, sizeof(EqualizerState));
+	else //reset the given band + its previous one
+		memset(equalizerStates + (bandToReset - 2), 0, 2 * sizeof(EqualizerState));
 }
 
 void resetEqualizer() {
-	effectsGainClip[0] = 1.0f;
-	effectsGainClip[1] = 1.0f;
-	effectsGainClip[2] = 0.0f;
-	effectsGainClip[3] = 0.0f;
-	effectsFramesBeforeRecoveringGain = 0x7FFFFFFF;
-	effectsMinimumAmountOfFramesToReduce = 0;
-
 	memset(effectsTemp, 0, 4 * sizeof(int32_t));
-	memset(equalizerStates, 0, (BAND_COUNT - 1) * sizeof(EqualizerState));
+	memset(equalizerStates, 0, (BAND_COUNT - 2) * sizeof(EqualizerState));
 }
 
 void destroyVirtualizer() {
@@ -148,7 +159,8 @@ void equalizerConfigChanged() {
 	effectsGainRecoveryPerFrame[0] = (float)pow(10.0, GAIN_RECOVERY_PER_SECOND_DB / (double)(dstSampleRate * 20));
 	effectsGainRecoveryPerFrame[1] = effectsGainRecoveryPerFrame[0];
 
-	updateEqualizerGains();
+	updateEqualizerGains(-1);
+	resetAutomaticEffectsGain();
 	resetEqualizer();
 }
 
@@ -195,8 +207,9 @@ void initializeEffects() {
 
 	memset(equalizerGainInMillibels, 0, BAND_COUNT * sizeof(int32_t));
 	memset(equalizerActuallyUsedGainInMillibels, 0, BAND_COUNT * sizeof(int32_t));
-	memset(equalizerCoefs, 0, (BAND_COUNT - 1) * sizeof(EqualizerCoefs));
+	memset(equalizerCoefs, 0, (BAND_COUNT - 2) * sizeof(EqualizerCoefs));
 
+	resetAutomaticEffectsGain();
 	resetEqualizer();
 	resetVirtualizer();
 
@@ -236,18 +249,18 @@ void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 		//apply each filter in all samples before moving on to the next filter (band 0 = pre)
 		for (int32_t band = equalizerMaxBandCount - 2; band >= 1; band--) {
 			//if this band has no gain at all, we can skip it completely (there is no need to worry about
-			//equalizerStates[band] because when any gain is changed, all states are zeroed out in updateEqualizerGains())
+			//equalizerStates[band - 1] because when any gain is changed, all states are zeroed out in updateEqualizerGains())
 			if (!equalizerActuallyUsedGainInMillibels[band])
 				continue;
 
 			//we will work with local copies, not with the original pointers
-			const EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band]);
+			const EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band - 1]);
 			const float b0 = equalizerCoef->b0L;
 			const float b1 = equalizerCoef->b1L;
 			const float _a1 = equalizerCoef->_a1L;
 			const float b2 = equalizerCoef->b2L;
 			const float _a2 = equalizerCoef->_a2L;
-			EqualizerState equalizerState = equalizerStates[band];
+			EqualizerState equalizerState = equalizerStates[band - 1];
 
 			float* samples = effectsFloatSamples;
 
@@ -274,7 +287,7 @@ void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 				samples += 2;
 			}
 
-			equalizerStates[band] = equalizerState;
+			equalizerStates[band - 1] = equalizerState;
 		}
 	}
 
@@ -331,12 +344,16 @@ void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 }
 
 void JNICALL enableEqualizer(JNIEnv* env, jclass clazz, uint32_t enabled) {
+	const uint32_t oldEffects = effectsEnabled;
 	if (enabled)
 		effectsEnabled |= EQUALIZER_ENABLED;
 	else
 		effectsEnabled &= ~EQUALIZER_ENABLED;
 
-	updateEqualizerGains();
+	if (!oldEffects && effectsEnabled)
+		resetAutomaticEffectsGain();
+
+	updateEqualizerGains(-1);
 	updateEffectProc();
 }
 
@@ -351,7 +368,7 @@ void JNICALL setEqualizerBandLevel(JNIEnv* env, jclass clazz, uint32_t band, int
 	equalizerGainInMillibels[band] = ((level <= -DB_RANGE) ? -DB_RANGE : ((level >= DB_RANGE) ? DB_RANGE : level));
 
 	if ((effectsEnabled & EQUALIZER_ENABLED))
-		updateEqualizerGains();
+		updateEqualizerGains(band);
 }
 
 void JNICALL setEqualizerBandLevels(JNIEnv* env, jclass clazz, jshortArray jlevels) {
@@ -365,16 +382,20 @@ void JNICALL setEqualizerBandLevels(JNIEnv* env, jclass clazz, jshortArray jleve
 	env->ReleasePrimitiveArrayCritical(jlevels, levels, JNI_ABORT);
 
 	if ((effectsEnabled & EQUALIZER_ENABLED))
-		updateEqualizerGains();
+		updateEqualizerGains(-1);
 }
 
 void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, uint32_t enabled) {
+	const uint32_t oldEffects = effectsEnabled;
 	if (enabled)
 		effectsEnabled |= BASSBOOST_ENABLED;
 	else
 		effectsEnabled &= ~BASSBOOST_ENABLED;
 
-	updateEqualizerGains();
+	if (!oldEffects && effectsEnabled)
+		resetAutomaticEffectsGain();
+
+	updateEqualizerGains(2);
 	updateEffectProc();
 }
 
@@ -386,7 +407,7 @@ void JNICALL setBassBoostStrength(JNIEnv* env, jclass clazz, int32_t strength) {
 	bassBoostStrength = ((strength <= 0) ? 0 : ((strength >= 1000) ? 1000 : strength));
 
 	if ((effectsEnabled & BASSBOOST_ENABLED))
-		updateEqualizerGains();
+		updateEqualizerGains(2);
 }
 
 int32_t JNICALL getBassBoostRoundedStrength(JNIEnv* env, jclass clazz) {
@@ -394,10 +415,14 @@ int32_t JNICALL getBassBoostRoundedStrength(JNIEnv* env, jclass clazz) {
 }
 
 void JNICALL enableVirtualizer(JNIEnv* env, jclass clazz, int32_t enabled) {
+	const uint32_t oldEffects = effectsEnabled;
 	if (enabled)
 		effectsEnabled |= VIRTUALIZER_ENABLED;
 	else
 		effectsEnabled &= ~VIRTUALIZER_ENABLED;
+
+	if (!oldEffects && effectsEnabled)
+		resetAutomaticEffectsGain();
 
 	//recreate the filter if the virtualizer is enabled
 	if ((effectsEnabled & VIRTUALIZER_ENABLED))
