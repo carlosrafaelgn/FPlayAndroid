@@ -240,7 +240,7 @@ void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
 	}
 
 	if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
-		if (equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1]) {
+		if (equalizerActuallyUsedGainInMillibels[equalizerMaxBandCount - 1]) {
 			const float lastBandGain = equalizerLastBandGain[0];
 			for (int32_t i = ((sizeInFrames << 1) - 1); i >= 0; i--)
 				effectsFloatSamples[i] = (float)buffer[i] * lastBandGain;
