@@ -597,7 +597,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		case STATE_INITIALIZED:
 			//enforce our policy
 			if (httpStreamReceiver != null)
-				throw new UnsupportedOperationException("internet streams must used prepareAsync()");
+				throw new UnsupportedOperationException("internet streams must use prepareAsync()");
 			final ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
 			try {
 				final long len = fileDescriptor.getStatSize();
@@ -643,6 +643,12 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 					//well, well, well... we are assuming 16 bit PCM...
 					//http://stackoverflow.com/a/23574899/3569421
 					//http://stackoverflow.com/a/30246720/3569421
+					//
+					//specially here -> Raw Audio Buffers
+					//https://developer.android.com/reference/android/media/MediaCodec.html
+					//Raw audio buffers contain entire frames of PCM audio data, which is one
+					//sample for each channel in channel order. Each sample is a 16-bit signed
+					//integer in native byte order.
 
 					durationInMS = (int)(format.getLong(MediaFormat.KEY_DURATION) / 1000L);
 					break;
@@ -683,7 +689,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		case STATE_INITIALIZED:
 			//enforce our policy
 			if (httpStreamReceiver == null)
-				throw new UnsupportedOperationException("streams other than internet streams must used prepare()");
+				throw new UnsupportedOperationException("streams other than internet streams must use prepare()");
 			state = STATE_PREPARING;
 			if (!httpStreamReceiver.start())
 				throw new MediaPlayerBase.PermissionDeniedException();
