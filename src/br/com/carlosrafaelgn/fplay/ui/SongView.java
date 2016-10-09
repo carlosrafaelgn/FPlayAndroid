@@ -80,10 +80,10 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			rightMarginForDrawing = 0;
 			bottomMargin = 0;
 		}
-		height = (UI._1dp << 1) + (UI.verticalMargin << 1) + UI._22spBox + UI._14spBox + topMargin + bottomMargin;
+		height = (UI._1dp << 1) + (UI.verticalMargin << 1) + UI._HeadingspBox + UI._14spBox + topMargin + bottomMargin;
 		textX = leftMargin + UI.controlMargin;
-		titleY = UI.verticalMargin + UI._22spYinBox + topMargin;
-		extraY = UI.verticalMargin + UI._1dp + UI._22spBox + UI._14spYinBox + topMargin;
+		titleY = UI.verticalMargin + UI._HeadingspYinBox + topMargin;
+		extraY = UI.verticalMargin + UI._1dp + UI._HeadingspBox + UI._14spYinBox + topMargin;
 		currentY = height - UI.defaultControlContentsSize - UI.controlXtraSmallMargin - bottomMargin;
 		return height;
 	}
@@ -98,7 +98,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 
 	private void processEllipsis() {
 		final int w = lengthX - textX - UI.controlMargin;
-		ellipsizedTitle = UI.ellipsizeText(song.title, UI._22sp, w, false);
+		ellipsizedTitle = UI.ellipsizeText(song.title, UI._Headingsp, w, false);
 		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, w, false);
 	}
 
@@ -212,7 +212,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, textX, titleY);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._Headingsp, textX, titleY);
 		if (song.isHttp)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);
 		else

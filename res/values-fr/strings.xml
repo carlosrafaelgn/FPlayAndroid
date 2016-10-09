@@ -345,5 +345,6 @@
     <string name="resample_track_to_native">Changer la fréquence d\'échantillonnage des chansons à la fréquence d\'échantillonnage natif du dispositif</string>
     <string name="performance">Performance</string>
     <string name="previous_resets_after_the_beginning">Bouton \"Précédent\" retourne au début de la chanson avant de sauter à la piste précédente</string>
+    <string name="larger_text_size">Agrandir la taille du texte</string>
 
 </resources>

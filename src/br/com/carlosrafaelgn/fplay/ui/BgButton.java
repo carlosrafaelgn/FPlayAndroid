@@ -84,7 +84,7 @@ public final class BgButton extends Button {
 		super.setDrawingCacheEnabled(false);
 		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
-		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp); //UI.isLargeScreen ? UI._22sp : UI._18sp);
+		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		super.setGravity(Gravity.CENTER);
 		super.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
 		super.setFocusableInTouchMode(!UI.hasTouch);

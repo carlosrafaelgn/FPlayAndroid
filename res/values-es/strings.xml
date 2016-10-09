@@ -345,5 +345,6 @@
     <string name="resample_track_to_native">Cambiar la frecuencia de muestreo de las canciones a la frecuencia de muestreo original del dispositivo</string>
     <string name="performance">Desempeño</string>
     <string name="previous_resets_after_the_beginning">Botón \"Anterior\" vuelve al comienzo de la canción antes de saltar a la pista anterior</string>
+    <string name="larger_text_size">Tamaño de texto más grande</string>
 
 </resources>

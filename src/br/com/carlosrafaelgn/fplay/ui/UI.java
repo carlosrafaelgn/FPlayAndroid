@@ -101,9 +101,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 89;
+	public static final int VERSION_CODE = 90;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
-	public static final String VERSION_NAME = "v1.54";
+	public static final String VERSION_NAME = "v1.55";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -230,6 +230,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_PERCENTAGE = "8";
 	public static final String ICON_CLIP = "C";
 	public static final String ICON_SPINNERARROW = "e";
+	public static final String ICON_LARGESIZEISLARGE = "n";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
@@ -431,9 +432,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
-		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress;
-	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _LargeItemsp, _LargeItemspBox, _LargeItemspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogMargin, dialogDropDownVerticalMargin, verticalMargin, menuMargin,
-		strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation, msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
+		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress, isChromebook, largeSizeIsLarge;
+	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _Largesp, _LargespBox, _LargespYinBox,
+		_Headingsp, _HeadingspBox, _HeadingspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogMargin, dialogDropDownVerticalMargin, verticalMargin,
+		menuMargin, strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation,
+		msgs, msgStartup, widgetTextColor, widgetIconColor, lastVersionCode, browserScrollBarType, songListScrollBarType;
 	public static int[] lastViewCenterLocation = new int[2];
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
@@ -545,14 +548,26 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		textPaint.getFontMetrics(fm);
 		_14spBox = (int)(fm.descent - fm.ascent + 0.5f);
 		_14spYinBox = _14spBox - (int)(fm.descent);
-		if (isLargeScreen) {
-			_LargeItemsp = _22sp;
-			_LargeItemspBox = _22spBox;
-			_LargeItemspYinBox = _22spYinBox;
+		if (largeSizeIsLarge) {
+			_Largesp = _22sp;
+			_LargespBox = _22spBox;
+			_LargespYinBox = _22spYinBox;
+			_Headingsp = _22sp;
+			_HeadingspBox = _22spBox;
+			_HeadingspYinBox = _22spYinBox;
 		} else {
-			_LargeItemsp = _18sp;
-			_LargeItemspBox = _18spBox;
-			_LargeItemspYinBox = _18spYinBox;
+			_Largesp = _18sp;
+			_LargespBox = _18spBox;
+			_LargespYinBox = _18spYinBox;
+			if (isChromebook) {
+				_Headingsp = _18sp;
+				_HeadingspBox = _18spBox;
+				_HeadingspYinBox = _18spYinBox;
+			} else {
+				_Headingsp = _22sp;
+				_HeadingspBox = _22spBox;
+				_HeadingspYinBox = _22spYinBox;
+			}
 		}
 	}
 
@@ -1777,12 +1792,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 	
 	public static void largeText(TextView view) {
-		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _22sp);
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _Largesp);
 		view.setTypeface(defaultTypeface);
 	}
 	
 	public static void largeTextAndColor(TextView view) {
-		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _22sp);
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _Largesp);
 		view.setTextColor(colorState_text_static);
 		view.setTypeface(defaultTypeface);
 	}
@@ -1859,7 +1874,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 		mnu.setBackground(hasBorders ? new BorderDrawable(color_menu_border, color_menu, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_menu));
 		mnu.setPadding(0);
-		mnu.setItemTextSizeInPixels(_LargeItemsp);
+		mnu.setItemTextSizeInPixels(_Largesp);
 		mnu.setItemTextColor(colorState_text_menu_reactive);
 		mnu.setItemPadding(menuMargin);
 		mnu.setItemGravity(Gravity.START | Gravity.CENTER_VERTICAL);

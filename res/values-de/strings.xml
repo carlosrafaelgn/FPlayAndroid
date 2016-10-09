@@ -345,5 +345,6 @@
     <string name="resample_track_to_native">Verändern der Abtastfrequenz der Lieder auf die native Abtastfrequenz der Vorrichtung</string>
     <string name="performance">Leistung</string>
     <string name="previous_resets_after_the_beginning">Schaltfläche \"Zurück\" kehrt zum Anfang des Songs, bevor er springt zum vorherigen Titel</string>
+    <string name="larger_text_size">Größere Textgröße</string>
 
 </resources>

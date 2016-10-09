@@ -38,7 +38,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.text.InputType;
-import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
@@ -787,7 +786,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		setContentView(R.layout.activity_browser2);
 		lblPath = (TextView)findViewById(R.id.lblPath);
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
-		UI.mediumText(lblPath);
+		UI.largeText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		msgEmptyList = getText(R.string.empty_list);
 		msgLoading = getText(R.string.loading);
@@ -864,8 +863,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY);
-		if (UI.isLargeScreen)
-			lblPath.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 		if (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED ||
 			UI.browserScrollBarType == BgListView.SCROLLBAR_LARGE) {
 			UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);

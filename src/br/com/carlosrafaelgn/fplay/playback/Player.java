@@ -700,9 +700,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (previousResetsAfterTheBeginning &&
 			localSong != null &&
 			!localSong.isHttp &&
-			localPlayer != null &&
-			localPlayerState == PLAYER_STATE_LOADED &&
-			localPlayer.getCurrentPosition() >= 3000) {
+			(
+				(
+					(localPlayer == null || localPlayerState == PLAYER_STATE_NEW) &&
+					storedSongTime >= 3000
+				)
+				||
+				(
+					localPlayer != null &&
+					localPlayerState == PLAYER_STATE_LOADED &&
+					localPlayer.getCurrentPosition() >= 3000
+				)
+			)) {
 			seekTo(0);
 			return;
 		}
@@ -1316,11 +1325,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					player.pause();
 				}
 				player.seekToAsync(timeMS);
-				_updateState(false, null);
+				_updateState(true, null);
 			} catch (Throwable ex) {
 				_fullCleanup();
 				_updateState(false, ex);
 			}
+		} else {
+			//just set storedSongTime and broadcast the change
+			_updateState(true, null);
 		}
 	}
 
@@ -2226,6 +2238,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_USE_OPENSL_ENGINE = 55;
 	private static final int OPTBIT_RESAMPLING_ENABLED = 56;
 	private static final int OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING = 57;
+	private static final int OPTBIT_CHROMEBOOK = 58;
+	private static final int OPTBIT_LARGE_SIZE_ISLARGE = 59;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2324,7 +2338,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.setVerticalMarginLarge(opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
 		handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
 		playWhenHeadsetPlugged = opts.getBit(OPTBIT_PLAYWHENHEADSETPLUGGED, true);
-		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		goBackWhenPlayingFolders = opts.getBit(OPTBIT_GOBACKWHENPLAYINGFOLDERS);
 		UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
 		UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
@@ -2353,6 +2366,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
 		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED));
 		previousResetsAfterTheBeginning = opts.getBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING);
+		if (UI.lastVersionCode >= 90) {
+			UI.isChromebook = opts.getBit(OPTBIT_CHROMEBOOK);
+		} else {
+			//http://stackoverflow.com/q/39784415/3569421
+			try {
+				UI.isChromebook = theApplication.getPackageManager().hasSystemFeature("org.chromium.arc.device_management");
+			} catch (Throwable ex) {
+				UI.isChromebook = ("chromium".equals(Build.BRAND) || "chromium".equals(Build.MANUFACTURER));
+			}
+		}
+		UI.largeSizeIsLarge = opts.getBit(OPTBIT_LARGE_SIZE_ISLARGE, UI.isLargeScreen && !UI.isChromebook);
+		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -2457,6 +2482,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_USE_OPENSL_ENGINE, MediaContext.useOpenSLEngine);
 		opts.putBit(OPTBIT_RESAMPLING_ENABLED, MediaContext.isResamplingEnabled());
 		opts.putBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING, previousResetsAfterTheBeginning);
+		opts.putBit(OPTBIT_CHROMEBOOK, UI.isChromebook);
+		opts.putBit(OPTBIT_LARGE_SIZE_ISLARGE, UI.largeSizeIsLarge);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

@@ -89,9 +89,9 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			bottomMargin = 0;
 		}
 		textX = leftMargin + UI.controlMargin;
-		iconY = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + ((UI._18spBox - UI._18sp) >> 1);
-		onAirY = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spYinBox;
-		return (height = topMargin + bottomMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spBox + (3 * UI._14spBox) + UI.controlSmallMargin + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI.controlXtraSmallMargin + UI.strokeSize) : UI.controlXtraSmallMargin), UI.verticalMargin + (UI._14spBox << 1)) + UI.controlSmallMargin);
+		iconY = topMargin + UI.verticalMargin + UI._HeadingspBox + UI.controlXtraSmallMargin + ((UI._18spBox - UI._18sp) >> 1);
+		onAirY = topMargin + UI.verticalMargin + UI._HeadingspBox + UI.controlXtraSmallMargin + UI._18spYinBox;
+		return (height = topMargin + bottomMargin + UI.verticalMargin + UI._HeadingspBox + UI.controlXtraSmallMargin + UI._18spBox + (3 * UI._14spBox) + UI.controlSmallMargin + Math.max(UI.defaultControlSize + (UI.isDividerVisible ? (UI.controlXtraSmallMargin + UI.strokeSize) : UI.controlXtraSmallMargin), UI.verticalMargin + (UI._14spBox << 1)) + UI.controlSmallMargin);
 	}
 
 	public RadioStationView(Context context) {
@@ -126,7 +126,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			tagsLines[0] = null;
 			return;
 		}
-		ellipsizedTitle = UI.ellipsizeText(station.title, UI._22sp, width - hMargin, true);
+		ellipsizedTitle = UI.ellipsizeText(station.title, UI._Headingsp, width - hMargin, true);
 		ellipsizedOnAir = UI.ellipsizeText(station.onAir, UI._18sp, width - hMargin - UI._18sp - UI.controlSmallMargin, true);
 		UI.textPaint.setTextSize(UI._14sp);
 		
@@ -146,7 +146,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		tagsY = height - bottomMargin - UI.verticalMargin - (visibleLines * UI._14spBox) + UI._14spYinBox;
 		
 		//center the description vertically, considering all available space
-		final int top = topMargin + UI.verticalMargin + UI._22spBox + UI.controlXtraSmallMargin + UI._18spBox, bottom = bottomMargin + Math.max(UI.defaultControlSize + UI.controlXtraSmallMargin, UI.verticalMargin + (visibleLines * UI._14spBox));
+		final int top = topMargin + UI.verticalMargin + UI._HeadingspBox + UI.controlXtraSmallMargin + UI._18spBox, bottom = bottomMargin + Math.max(UI.defaultControlSize + UI.controlXtraSmallMargin, UI.verticalMargin + (visibleLines * UI._14spBox));
 		
 		layout = new StaticLayout(station.description, UI.textPaint, width - hMargin, Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
 		visibleLines = Math.min(3, layout.getLineCount());
@@ -276,7 +276,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		UI.rect.top += topMargin;
 		UI.rect.right -= rightMarginForDrawing;
 		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
-		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._22sp, textX, topMargin + UI.verticalMargin + UI._22spYinBox);
+		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._Headingsp, textX, topMargin + UI.verticalMargin + UI._HeadingspYinBox);
 		TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, textX, iconY, UI._18sp, txtColor2);
 		UI.drawText(canvas, ellipsizedOnAir, txtColor2, UI._18sp, textX + UI._18sp + UI.controlSmallMargin, onAirY);
 		int i = 0, y = descriptionY;

@@ -105,10 +105,10 @@ public final class SettingView extends View {
 			if (textLines == null || textLines.length < 1)
 				textLines = new int[1];
 			textLines[0] = -1;
-			textHeight = UI._LargeItemspBox;
+			textHeight = UI._LargespBox;
 			lineCount = 1;
 		} else {
-			UI.textPaint.setTextSize(UI._LargeItemsp);
+			UI.textPaint.setTextSize(UI._Largesp);
 			final StaticLayout layout = new StaticLayout(text, UI.textPaint, usableWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
 			lineCount = layout.getLineCount();
 			if (lineCount <= 1) {
@@ -117,7 +117,7 @@ public final class SettingView extends View {
 				textLines[0] = 0;
 				textLines[1] = text.length();
 				textLines[2] = -1;
-				textHeight = UI._LargeItemspBox;
+				textHeight = UI._LargespBox;
 			} else {
 				if (textLines == null || textLines.length < ((lineCount << 1) + 1))
 					textLines = new int[(lineCount << 1) + 1];
@@ -126,17 +126,17 @@ public final class SettingView extends View {
 					textLines[(i << 1)] = layout.getLineStart(i);
 					textLines[(i << 1) + 1] = layout.getLineEnd(i);
 				}
-				textHeight = UI._LargeItemspBox * lineCount;
+				textHeight = UI._LargespBox * lineCount;
 			}
 		}
 		height += Math.max(textHeight, UI.defaultControlContentsSize);
 		if (secondaryTextWidth > 0) {
 			height += UI._18spBox + ((lineCount <= 1) ? 0 : (UI._14spBox >> 2));
-			textY = extraBorders + UI.verticalMargin + UI._LargeItemspYinBox;
+			textY = extraBorders + UI.verticalMargin + UI._LargespYinBox;
 		} else {
 			textY = ((textHeight <= UI.defaultControlContentsSize) ?
-				(((height - textHeight) >> 1) + UI._LargeItemspYinBox) :
-				(extraBorders + UI.verticalMargin + UI._LargeItemspYinBox));
+				(((height - textHeight) >> 1) + UI._LargespYinBox) :
+				(extraBorders + UI.verticalMargin + UI._LargespYinBox));
 		}
 	}
 
@@ -359,8 +359,8 @@ public final class SettingView extends View {
 		if (textLines != null) {
 			int y = textY, i = 0, start;
 			while ((start = textLines[i]) >= 0) {
-				UI.drawText(canvas, text, start, textLines[i + 1], txtColor, UI._LargeItemsp, x, y);
-				y += UI._LargeItemspBox;
+				UI.drawText(canvas, text, start, textLines[i + 1], txtColor, UI._Largesp, x, y);
+				y += UI._LargespBox;
 				i += 2;
 			}
 		}

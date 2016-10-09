@@ -166,7 +166,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				(UI.controlMargin << 1) - //btnAudioSink's padding
 				UI.defaultControlContentsSize - //btnAudioSink's TextIconDrawable
 				UI.controlMargin; //bonus :)
-			description = UI.ellipsizeText(description, UI.isLargeScreen ? UI._22sp : UI._18sp, availWidth, false);
+			description = UI.ellipsizeText(description, UI._18sp, availWidth, false);
 		}
 		return description;
 	}

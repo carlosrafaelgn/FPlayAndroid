@@ -345,5 +345,6 @@
     <string name="resample_track_to_native">Alterar a frequência de amostragem da música para a frequência de amostragem nativa do dispositivo</string>
     <string name="performance">Desempenho</string>
     <string name="previous_resets_after_the_beginning">Botão \"Anterior\" retorna para o início da música antes de pular para a faixa anterior</string>
+    <string name="larger_text_size">Tamanho do texto maior</string>
 
 </resources>

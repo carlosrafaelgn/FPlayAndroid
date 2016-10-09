@@ -116,14 +116,14 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			rightMarginForDrawing = 0;
 			bottomMargin = 0;
 		}
-		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._LargeItemsp + UI._14sp) + topMargin + bottomMargin;
+		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._Largesp + UI._14sp) + topMargin + bottomMargin;
 		usableHeight = height - (topMargin + bottomMargin);
 
 		iconY = topMargin + ((usableHeight - UI.defaultControlContentsSize) >> 1);
-		nameYNoSecondary = topMargin + ((usableHeight - UI._LargeItemspBox) >> 1) + UI._LargeItemspYinBox;
-		final int sec = ((usableHeight - (UI._LargeItemspBox + UI.controlMargin + UI._14spBox)) >> 1);
-		nameY = topMargin + sec + UI._LargeItemspYinBox;
-		secondaryY = topMargin + sec + UI._LargeItemspBox + UI._14spYinBox + UI.controlMargin;
+		nameYNoSecondary = topMargin + ((usableHeight - UI._LargespBox) >> 1) + UI._LargespYinBox;
+		final int sec = ((usableHeight - (UI._LargespBox + UI.controlMargin + UI._14spBox)) >> 1);
+		nameY = topMargin + sec + UI._LargespYinBox;
+		secondaryY = topMargin + sec + UI._LargespBox + UI._14spYinBox + UI.controlMargin;
 		return height;
 	}
 
@@ -171,7 +171,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 
 	private void processEllipsis() {
-		ellipsizedName = UI.ellipsizeText(file.name, UI._LargeItemsp, width - leftPadding - (checkBoxVisible ? UI.defaultControlSize : 0) - UI.controlMargin - rightMargin, true);
+		ellipsizedName = UI.ellipsizeText(file.name, UI._Largesp, width - leftPadding - (checkBoxVisible ? UI.defaultControlSize : 0) - UI.controlMargin - rightMargin, true);
 	}
 
 	public void refreshItem() {
@@ -444,7 +444,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		else if (icon != null)
 			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, iconY, UI.defaultControlContentsSize, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary);
 		if (secondaryText == null) {
-			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameYNoSecondary);
+			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._Largesp, leftPadding, nameYNoSecondary);
 			//switch (specialType) {
 			//case FileSt.TYPE_ICECAST:
 			//case FileSt.TYPE_SHOUTCAST:
@@ -452,7 +452,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			//	break;
 			//}
 		} else {
-			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._LargeItemsp, leftPadding, nameY);
+			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._Largesp, leftPadding, nameY);
 			UI.drawText(canvas, secondaryText, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth - rightMargin, secondaryY);
 		}
 		super.dispatchDraw(canvas);
