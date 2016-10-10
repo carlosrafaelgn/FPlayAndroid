@@ -569,7 +569,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			lblLoading.setTextColor(UI.color_text_disabled);
-			UI.largeText(lblLoading);
+			UI.headingText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);
 		} else if (firstCreation) {
 			list.setCustomEmptyText(msgLoading);

@@ -105,7 +105,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
-		optLargeSizeIsLarge, lastMenuView;
+		optLargeTextIs22sp, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -1071,7 +1071,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!UI.isLargeScreen)
 				optPlaceTitleAtTheBottom = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.place_title_at_the_bottom).toString(), null, true, UI.placeTitleAtTheBottom, false);
 			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(UI.forcedLocale), false, false, false);
-			optLargeSizeIsLarge = new SettingView(ctx, UI.ICON_LARGESIZEISLARGE, getText(R.string.larger_text_size).toString(), null, true, UI.largeSizeIsLarge, false);
+			optLargeTextIs22sp = new SettingView(ctx, UI.ICON_LARGETEXTIS22SP, getText(R.string.larger_text_size).toString(), null, true, UI.largeTextIs22sp, false);
 			if (UI.isLargeScreen)
 				optPlacePlaylistToTheRight = new SettingView(ctx, UI.ICON_HAND, getText(R.string.place_the_playlist_to_the_right).toString(), null, true, UI.controlsToTheLeft, false);
 			optScrollBarToTheLeft = new SettingView(ctx, UI.ICON_HAND, getText(R.string.scrollbar_to_the_left).toString(), null, true, UI.scrollBarToTheLeft, false);
@@ -1158,7 +1158,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addOption(optUseAlternateTypeface);
 			addOption(optForcedLocale);
 			addHeader(ctx, R.string.accessibility, optForcedLocale, hIdx++);
-			addOption(optLargeSizeIsLarge);
+			addOption(optLargeTextIs22sp);
 			if (UI.isLargeScreen)
 				addOption(optPlacePlaylistToTheRight);
 			addOption(optAnnounceCurrentSong);
@@ -1272,7 +1272,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optExtraSpacing = null;
 		optPlaceTitleAtTheBottom = null;
 		optForcedLocale = null;
-		optLargeSizeIsLarge = null;
+		optLargeTextIs22sp = null;
 		optPlacePlaylistToTheRight = null;
 		optScrollBarToTheLeft = null;
 		optScrollBarSongList = null;
@@ -1493,8 +1493,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.enableExternalFx(optExternalFx.isChecked(), this);
 		} else if (view == optPlayWhenHeadsetPlugged) {
 			Player.playWhenHeadsetPlugged = optPlayWhenHeadsetPlugged.isChecked();
-		} else if (view == optLargeSizeIsLarge) {
-			UI.largeSizeIsLarge = optLargeSizeIsLarge.isChecked();
+		} else if (view == optLargeTextIs22sp) {
+			UI.largeTextIs22sp = optLargeTextIs22sp.isChecked();
 			UI.setUsingAlternateTypeface(UI.isUsingAlternateTypeface);
 			onCleanupLayout();
 			onCreateLayout(false);

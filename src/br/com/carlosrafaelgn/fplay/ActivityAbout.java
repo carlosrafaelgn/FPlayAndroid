@@ -65,7 +65,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		findViewById(R.id.list).setBackgroundDrawable(new ColorDrawable(UI.color_list_original));
 		final TextView lblTitle = (TextView)findViewById(R.id.lblTitle);
 		lblTitle.setText(R.string.app_name);
-		UI.largeTextAndColor(lblTitle);
+		UI.headingTextAndColor(lblTitle);
 		final TextView lblVersion = (TextView)findViewById(R.id.lblVersion);
 		UI.smallTextAndColor(lblVersion);
 		//hardcode this in order to try to speed up things a little bit
@@ -138,12 +138,14 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 			sb.append("\nLDPI");
 		if (UI.isLargeScreen)
 			sb.append("\nLarge Screen");
+		if (UI.isChromebook)
+			sb.append("\nChromebook");
 		if ((features & Player.FEATURE_DECODING_NATIVE) != 0)
 			sb.append("\nNative Decoding");
 		else if ((features & Player.FEATURE_DECODING_DIRECT) != 0)
 			sb.append("\nDirect Decoding");
 		final int[] playbackInfo = Player.getCurrentPlaybackInfo();
-		if (playbackInfo != null && playbackInfo.length >= 5) {
+		if (playbackInfo != null && playbackInfo.length >= 6) {
 			if (playbackInfo[0] > 0) {
 				sb.append("\nNative Sample Rate (Device)");
 				sb.append(UI.collon());
@@ -169,6 +171,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 				sb.append(UI.collon());
 				sb.append(playbackInfo[4]);
 			}
+			if (playbackInfo[5] > 0)
+				sb.append((playbackInfo[5] == 1) ? "\nAudioTrack engine" : "\nOpenSL ES engine");
 		}
 		lblDbg.setTypeface(UI.defaultTypeface);
 		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);

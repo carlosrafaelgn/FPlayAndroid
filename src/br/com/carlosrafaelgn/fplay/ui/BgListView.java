@@ -337,7 +337,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		if (text == null) {
 			emptyLayout = null;
 		} else {
-			UI.textPaint.setTextSize(UI._Largesp);
+			UI.textPaint.setTextSize(UI._Headingsp);
 			emptyLayout = new StaticLayout(text, UI.textPaint, (viewWidth < (UI.controlLargeMargin << 1)) ? 0 : (viewWidth - (UI.controlLargeMargin << 1)), Alignment.ALIGN_CENTER, 1.0f, 0.0f, false);
 		}
 	}
@@ -917,7 +917,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				final float y = (float)((viewHeight - emptyLayout.getHeight()) >> 1);
 				canvas.translate(x, y);
 				UI.textPaint.setColor(UI.color_text_disabled);
-				UI.textPaint.setTextSize(UI._Largesp);
+				UI.textPaint.setTextSize(UI._Headingsp);
 				emptyLayout.draw(canvas);
 				canvas.translate(-x, -y);
 			}

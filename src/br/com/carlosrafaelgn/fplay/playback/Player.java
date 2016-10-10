@@ -2239,7 +2239,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_RESAMPLING_ENABLED = 56;
 	private static final int OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING = 57;
 	private static final int OPTBIT_CHROMEBOOK = 58;
-	private static final int OPTBIT_LARGE_SIZE_ISLARGE = 59;
+	private static final int OPTBIT_LARGE_TEXT_IS_22SP = 59;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2376,7 +2376,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				UI.isChromebook = ("chromium".equals(Build.BRAND) || "chromium".equals(Build.MANUFACTURER));
 			}
 		}
-		UI.largeSizeIsLarge = opts.getBit(OPTBIT_LARGE_SIZE_ISLARGE, UI.isLargeScreen && !UI.isChromebook);
+		UI.largeTextIs22sp = opts.getBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.isLargeScreen && (UI.scaledDensity > UI.density));
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
@@ -2483,7 +2483,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_RESAMPLING_ENABLED, MediaContext.isResamplingEnabled());
 		opts.putBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING, previousResetsAfterTheBeginning);
 		opts.putBit(OPTBIT_CHROMEBOOK, UI.isChromebook);
-		opts.putBit(OPTBIT_LARGE_SIZE_ISLARGE, UI.largeSizeIsLarge);
+		opts.putBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.largeTextIs22sp);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

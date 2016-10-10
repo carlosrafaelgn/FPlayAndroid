@@ -1720,7 +1720,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			srcSampleRate,
 			dstSampleRate,
 			nativeFramesPerBuffer,
-			usedFramesPerBuffer
+			usedFramesPerBuffer,
+			(engine == null) ? 0 : ((engine instanceof AudioTrackEngine) ? 1 : 2)
 		};
 	}
 

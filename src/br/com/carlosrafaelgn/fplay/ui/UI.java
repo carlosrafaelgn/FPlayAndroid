@@ -230,7 +230,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_PERCENTAGE = "8";
 	public static final String ICON_CLIP = "C";
 	public static final String ICON_SPINNERARROW = "e";
-	public static final String ICON_LARGESIZEISLARGE = "n";
+	public static final String ICON_LARGETEXTIS22SP = "n";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
@@ -432,7 +432,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
-		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress, isChromebook, largeSizeIsLarge;
+		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress, isChromebook, largeTextIs22sp;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _Largesp, _LargespBox, _LargespYinBox,
 		_Headingsp, _HeadingspBox, _HeadingspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogMargin, dialogDropDownVerticalMargin, verticalMargin,
 		menuMargin, strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation,
@@ -548,7 +548,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		textPaint.getFontMetrics(fm);
 		_14spBox = (int)(fm.descent - fm.ascent + 0.5f);
 		_14spYinBox = _14spBox - (int)(fm.descent);
-		if (largeSizeIsLarge) {
+		if (largeTextIs22sp) {
 			_Largesp = _22sp;
 			_LargespBox = _22spBox;
 			_LargespYinBox = _22spYinBox;
@@ -1801,7 +1801,18 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		view.setTextColor(colorState_text_static);
 		view.setTypeface(defaultTypeface);
 	}
-	
+
+	public static void headingText(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _Headingsp);
+		view.setTypeface(defaultTypeface);
+	}
+
+	public static void headingTextAndColor(TextView view) {
+		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _Headingsp);
+		view.setTextColor(colorState_text_static);
+		view.setTypeface(defaultTypeface);
+	}
+
 	public static int getViewPaddingForLargeScreen() {
 		return ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
 	}

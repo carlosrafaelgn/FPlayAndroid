@@ -987,7 +987,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
 			final int panelControlsPadding = (UI.isLowDpiScreen ? UI.controlMargin : UI.controlLargeMargin);
 			panelControls.setPadding(panelControlsPadding, panelControlsPadding, panelControlsPadding, panelControlsPadding);
-			UI.largeText(lblTitle);
+			UI.headingText(lblTitle);
 			btnPrev.setIconNoChanges(UI.ICON_PREV);
 			btnNext.setIconNoChanges(UI.ICON_NEXT);
 			btnMenu.setIconNoChanges(UI.ICON_MENU);
@@ -1077,7 +1077,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnPrev.setTextColor(UI.colorState_text_control_mode_reactive);
 			btnNext.setTextColor(UI.colorState_text_control_mode_reactive);
 		} else {
-			UI.largeText(lblTitle);
+			UI.headingText(lblTitle);
 			btnPrev.setIcon(UI.ICON_PREV);
 			btnNext.setIcon(UI.ICON_NEXT);
 			btnMenu.setIcon(UI.ICON_MENU);
@@ -1101,7 +1101,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				UI.isLargeScreen = (lblArtist != null);
 			
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
-			UI.largeText(lblMsgSelMove);
+			UI.headingText(lblMsgSelMove);
 			lblMsgSelMove.setTextColor(UI.colorState_text_title_static);
 			lblMsgSelMove.setHorizontalFadingEdgeEnabled(false);
 			lblMsgSelMove.setVerticalFadingEdgeEnabled(false);
@@ -1154,16 +1154,16 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblAlbumStatic));
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblLengthStatic));
 				lblArtist.setTextColor(UI.colorState_text_title_static);
-				UI.largeText(lblArtist);
+				UI.headingText(lblArtist);
 				lblTrack = (TextView)findViewById(R.id.lblTrack);
 				lblTrack.setTextColor(UI.colorState_text_title_static);
-				UI.largeText(lblTrack);
+				UI.headingText(lblTrack);
 				lblAlbum = (TextView)findViewById(R.id.lblAlbum);
 				lblAlbum.setTextColor(UI.colorState_text_title_static);
-				UI.largeText(lblAlbum);
+				UI.headingText(lblAlbum);
 				lblLength = (TextView)findViewById(R.id.lblLength);
 				lblLength.setTextColor(UI.colorState_text_title_static);
-				UI.largeText(lblLength);
+				UI.headingText(lblLength);
 			} else {
 				lblTrack = null;
 				lblAlbum = null;

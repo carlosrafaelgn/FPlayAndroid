@@ -532,7 +532,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_disabled);
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
-			UI.largeText(lblLoading);
+			UI.headingText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);
 		}
 		fileList.setObserver(list);
