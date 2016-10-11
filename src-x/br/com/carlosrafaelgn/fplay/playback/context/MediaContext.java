@@ -200,7 +200,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		public abstract int initialize();
 		public abstract int create(int dstSampleRate);
-		public abstract int recreateIfNeeded(int dstSampleRate);
+		public abstract int recreateIfNeeded();
 		public abstract int play();
 		public abstract int pause();
 		public abstract int stopAndFlush();
@@ -208,6 +208,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public abstract void terminate();
 		public abstract void setVolume();
 		public abstract void pauseFromOtherThreadIfBlocking();
+		public abstract int getCurrentDstSampleRate();
 		public abstract int getActualBufferSizeInFrames();
 		public abstract int getSingleBufferSizeInFrames();
 		public abstract int getHeadPositionInFrames();
@@ -233,7 +234,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		private byte[] tempDstArray;
 		private ByteBuffer tempDstBuffer;
 		private boolean okToQuitIfFull;
-		private int pendingOffsetInBytes, pendingDstFrames, singleBufferSizeInFrames;
+		private int pendingOffsetInBytes, pendingDstFrames, singleBufferSizeInFrames, currentDstSampleRate;
 
 		@Override
 		public int initialize() {
@@ -298,6 +299,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				roundedBufferSizeInFrames :
 				(((bufferSizeInFrames + (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 4)) / singleBufferSizeInFrames) * singleBufferSizeInFrames));
 
+			currentDstSampleRate = dstSampleRate;
 			audioTrackCreate(dstSampleRate);
 			audioTrack = new QueryableAudioTrack(AudioManager.STREAM_MUSIC, dstSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << 2, AudioTrack.MODE_STREAM);
 			try {
@@ -313,8 +315,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public int recreateIfNeeded(int dstSampleRate) {
-			return (audioTrack != null ? 0 : create(dstSampleRate));
+		public int recreateIfNeeded() {
+			return (audioTrack != null ? 0 : create(currentDstSampleRate));
 		}
 
 		@Override
@@ -370,6 +372,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public void pauseFromOtherThreadIfBlocking() {
 			if (audioTrack != null)
 				audioTrack.pause();
+		}
+
+		@Override
+		public int getCurrentDstSampleRate() {
+			return currentDstSampleRate;
 		}
 
 		@Override
@@ -498,7 +505,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	private static final class OpenSLEngine extends Engine {
-		private int bufferSizeInFrames, singleBufferSizeInFrames;
+		private int bufferSizeInFrames, singleBufferSizeInFrames, currentDstSampleRate;
 
 		@Override
 		public int initialize() {
@@ -555,6 +562,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			bufferSizeInFrames = bufferCount * singleBufferSizeInFrames;
 
+			currentDstSampleRate = dstSampleRate;
 			final int ret = openSLCreate(dstSampleRate, bufferCount, singleBufferSizeInFrames);
 			visualizerStart(bufferSizeInFrames, 0);
 			setVolume();
@@ -562,7 +570,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public int recreateIfNeeded(int dstSampleRate) {
+		public int recreateIfNeeded() {
 			return 0;
 		}
 
@@ -598,6 +606,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 		@Override
 		public void pauseFromOtherThreadIfBlocking() {
+		}
+
+		@Override
+		public int getCurrentDstSampleRate() {
+			return currentDstSampleRate;
 		}
 
 		@Override
@@ -854,7 +867,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									}
 								} else {
 									synchronized (engineSync) {
-										checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
+										checkEngineResult(engine.recreateIfNeeded());
 									}
 								}
 								bufferSizeInFrames = engine.getActualBufferSizeInFrames();
@@ -875,7 +888,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 										//"mini-reset" here
 										synchronized (engineSync) {
 											checkEngineResult(engine.stopAndFlush());
-											checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
+											checkEngineResult(engine.recreateIfNeeded());
 										}
 										bufferSizeInFrames = engine.getActualBufferSizeInFrames();
 										fillThresholdInFrames = engine.getFillThresholdInFrames();
@@ -1043,7 +1056,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						updateNativeSrcAndReset(seekPendingPlayer);
 						if (sourcePlayer == seekPendingPlayer) {
 							synchronized (engineSync) {
-								checkEngineResult(engine.recreateIfNeeded(dstSampleRate));
+								checkEngineResult(engine.recreateIfNeeded());
 							}
 							bufferSizeInFrames = engine.getActualBufferSizeInFrames();
 							fillThresholdInFrames = engine.getFillThresholdInFrames();
@@ -1709,10 +1722,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	public static int[] getCurrentPlaybackInfo() {
-		final int dstSampleRate = getDstSampleRate(srcSampleRate);
+		final int dstSampleRate;
 		final int nativeFramesPerBuffer = Engine.getFramesPerBuffer(nativeSampleRate);
 		final int usedFramesPerBuffer;
 		synchronized (engineSync) {
+			dstSampleRate = ((engine != null) ? engine.getCurrentDstSampleRate() : srcSampleRate);
 			usedFramesPerBuffer = ((engine != null) ? engine.getSingleBufferSizeInFrames() : nativeFramesPerBuffer);
 		}
 		return new int[] {

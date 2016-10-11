@@ -668,7 +668,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.removeDestroyedObserver(this);
 		finalCleanup();
 		super.onDestroy();
-		if (exitOnDestroy)
+		if (exitOnDestroy || UI.isChromebook)
 			Player.stopService();
 	}
 

@@ -2307,6 +2307,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : 0);
 		UI.setTransitions((UI.lastVersionCode < 85 && UI.transitions != 0) ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : UI.transitions);
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
+
+		if (UI.lastVersionCode >= 90) {
+			UI.isChromebook = opts.getBit(OPTBIT_CHROMEBOOK);
+		} else {
+			//http://stackoverflow.com/q/39784415/3569421
+			try {
+				UI.isChromebook = theApplication.getPackageManager().hasSystemFeature("org.chromium.arc.device_management");
+			} catch (Throwable ex) {
+				UI.isChromebook = ("chromium".equals(Build.BRAND) || "chromium".equals(Build.MANUFACTURER));
+			}
+		}
+
 		//the volume control types changed on version 71
 		if (UI.lastVersionCode <= 70 && UI.lastVersionCode != 0) {
 			final int volumeControlType = opts.getInt(OPT_VOLUMECONTROLTYPE, UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
@@ -2333,7 +2345,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.hasBorders = ((UI.lastVersionCode >= 87) && opts.getBit(OPTBIT_BORDERS, false));
 		UI.animationEnabled = ((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) || opts.getBit(OPTBIT_ANIMATIONS, UI.deviceSupportsAnimations));
 		UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
-		UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY);
+		UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY, UI.isChromebook);
 		UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
 		UI.setVerticalMarginLarge(opts.getBit(OPTBIT_ISVERTICALMARGINLARGE, true)); //UI.isLargeScreen || !UI.isLowDpiScreen));
 		handleCallKey = opts.getBit(OPTBIT_HANDLECALLKEY, true);
@@ -2366,16 +2378,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
 		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED));
 		previousResetsAfterTheBeginning = opts.getBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING);
-		if (UI.lastVersionCode >= 90) {
-			UI.isChromebook = opts.getBit(OPTBIT_CHROMEBOOK);
-		} else {
-			//http://stackoverflow.com/q/39784415/3569421
-			try {
-				UI.isChromebook = theApplication.getPackageManager().hasSystemFeature("org.chromium.arc.device_management");
-			} catch (Throwable ex) {
-				UI.isChromebook = ("chromium".equals(Build.BRAND) || "chromium".equals(Build.MANUFACTURER));
-			}
-		}
 		UI.largeTextIs22sp = opts.getBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.isLargeScreen && (UI.scaledDensity > UI.density));
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 
