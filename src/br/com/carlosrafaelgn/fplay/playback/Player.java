@@ -2328,7 +2328,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				setVolumeControlType(volumeControlType);
 		} else {
 			//load the volume control type the new way
-			final int defVolumeControlType = (UI.isTV ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
+			final int defVolumeControlType = ((UI.isTV || UI.isChromebook) ? VOLUME_CONTROL_NONE : VOLUME_CONTROL_STREAM);
 			setVolumeControlType(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE0, defVolumeControlType & 1) |
 					(opts.getBitI(OPTBIT_VOLUMECONTROLTYPE1, defVolumeControlType >> 1) << 1));
 		}
