@@ -827,7 +827,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 
 	@Override
 	public int getCurrentPosition() {
-		return (int)((currentPositionInFrames * 1000L) / (long)dstSampleRate);
+		return (dstSampleRate <= 0 ? -1 : (int)((currentPositionInFrames * 1000L) / (long)dstSampleRate));
 	}
 
 	@Override
