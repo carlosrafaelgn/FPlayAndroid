@@ -110,7 +110,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
-	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume;
+	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume, btnSetRingtone;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand;
@@ -670,7 +670,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
+			.setIcon(new TextIconDrawable(UI.ICON_CONFIG));
 		UI.separator(menu, 2, 5);
 		menu.add(3, MNU_EXIT, 0, R.string.exit)
 			.setOnMenuItemClickListener(this)
@@ -875,6 +875,20 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		} else if (view == list) {
 			if (Player.songs.getCount() == 0)
 				addSongs(view);
+		} else if (view == btnSetRingtone) {
+			final int sel = Player.songs.getFirstSelectedPosition();
+			final Song song;
+			if (Player.songs.getCount() > 0 && sel >= 0) {
+				if (Player.songs.getLastSelectedPosition() != sel) {
+					//error! only one must be selected
+					UI.toast(1);
+				} else if ((song = Player.songs.getItemT(sel)).isHttp) {
+					//error! must not be http
+					UI.toast(2);
+				} else {
+
+				}
+			}
 		}
 	}
 

@@ -231,6 +231,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_CLIP = "C";
 	public static final String ICON_SPINNERARROW = "e";
 	public static final String ICON_LARGETEXTIS22SP = "n";
+	public static final String ICON_FULLSCREEN = "p";
+	public static final String ICON_RINGTONE = "9";
+	public static final String ICON_CONFIG = "g";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
