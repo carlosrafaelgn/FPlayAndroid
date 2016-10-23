@@ -257,19 +257,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 0, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
+			menu.add(1, UI.TRANSITION_ZOOM_FADE, 0, UI.getTransitionString(UI.TRANSITION_ZOOM_FADE))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 1, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_SLIDE, 1, UI.getTransitionString(UI.TRANSITION_SLIDE))
+			menu.add(1, UI.TRANSITION_SLIDE, 2, UI.getTransitionString(UI.TRANSITION_SLIDE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_FADE, 2, UI.getTransitionString(UI.TRANSITION_FADE))
+			menu.add(1, UI.TRANSITION_FADE, 3, UI.getTransitionString(UI.TRANSITION_FADE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_DISSOLVE, 3, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
+			menu.add(1, UI.TRANSITION_DISSOLVE, 4, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_ZOOM, 4, UI.getTransitionString(UI.TRANSITION_ZOOM))
+			menu.add(1, UI.TRANSITION_ZOOM, 5, UI.getTransitionString(UI.TRANSITION_ZOOM))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optPopupTransition) {
@@ -280,14 +283,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 0, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				menu.add(1, UI.TRANSITION_ZOOM_FADE, 0, UI.getTransitionString(UI.TRANSITION_ZOOM_FADE))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 1, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
-			menu.add(1, UI.TRANSITION_FADE, 1, UI.getTransitionString(UI.TRANSITION_FADE))
+			menu.add(1, UI.TRANSITION_FADE, 2, UI.getTransitionString(UI.TRANSITION_FADE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-				menu.add(1, UI.TRANSITION_DISSOLVE, 2, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
+				menu.add(1, UI.TRANSITION_DISSOLVE, 3, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
 		} else if (view == optScrollBarSongList || view == optScrollBarBrowser) {
@@ -1113,9 +1120,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!BuildConfig.X) {
 				optMSBeforePlayback = new SettingView(ctx, UI.ICON_RADIO, getText(R.string.seconds_before_playback).toString(), getSecondsBeforePlaybackString(Player.getMSBeforePlaybackIndex()), false, false, false);
 			} else {
-				optBufferSize = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_buffer_length).toString(), getBufferSizeString(Player.getBufferConfig()), false, false, false);
+				optBufferSize = new SettingView(ctx, UI.ICON_PLAY, getText(R.string.playback_buffer_length).toString(), getBufferSizeString(Player.getBufferConfig()), false, false, false);
 				optFillThreshold = new SettingView(ctx, UI.ICON_PERCENTAGE, getText(R.string.percentage_to_decode_before_playback).toString(), getFillThresholdString(Player.getBufferConfig()), false, false, false);
-				optPlaybackEngine = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.playback_engine).toString(), getPlaybackEngineString(MediaContext.useOpenSLEngine), false, false, false);
+				optPlaybackEngine = new SettingView(ctx, UI.ICON_FPLAY, getText(R.string.playback_engine).toString(), getPlaybackEngineString(MediaContext.useOpenSLEngine), false, false, false);
 				optResampling = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.resample_track_to_native).toString(), null, true, Player.isResamplingEnabled(), false);
 			}
 

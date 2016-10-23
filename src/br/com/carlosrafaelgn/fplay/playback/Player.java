@@ -2304,8 +2304,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000012);
 		MediaContext._setBufferConfig(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
-		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : 0);
-		UI.setTransitions((UI.lastVersionCode < 85 && UI.transitions != 0) ? (UI.TRANSITION_SLIDE_SMOOTH | (UI.TRANSITION_SLIDE_SMOOTH << 8)) : UI.transitions);
+		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_ZOOM_FADE | (UI.TRANSITION_ZOOM_FADE << 8)) : 0);
+		UI.setTransitions((UI.lastVersionCode < 90 && UI.transitions != 0) ? (UI.TRANSITION_ZOOM_FADE | (UI.TRANSITION_ZOOM_FADE << 8)) : UI.transitions);
 		headsetHookActions = opts.getInt(OPT_HEADSETHOOKACTIONS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE | (KeyEvent.KEYCODE_MEDIA_NEXT << 8) | (KeyEvent.KEYCODE_MEDIA_PREVIOUS << 16));
 
 		if (UI.lastVersionCode >= 90) {

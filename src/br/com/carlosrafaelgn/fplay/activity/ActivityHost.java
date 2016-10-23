@@ -240,7 +240,30 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				oldView = parent.getChildAt(0);
 				if (oldView != null) {
 					newView = view;
-					if (transition == UI.TRANSITION_SLIDE_SMOOTH) {
+					if (transition == UI.TRANSITION_ZOOM_FADE) {
+						final AnimationSet animationSet = new AnimationSet(false);
+						anim = animationSet;
+						Animation tmp;
+						accelerate = false;
+						if (useFadeOutNextTime || forceFadeOut) {
+							tmp = new ScaleAnimation(1.0f, 1.1f, 1.0f, 1.1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+							tmp.setInterpolator(this);
+							animationSet.addAnimation(tmp);
+							tmp = new AlphaAnimation(1.0f, 0.0f);
+							tmp.setInterpolator(Player.theUI);
+							animationSet.addAnimation(tmp);
+						} else {
+							tmp = new ScaleAnimation(1.1f, 1.0f, 1.1f, 1.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+							tmp.setInterpolator(this);
+							animationSet.addAnimation(tmp);
+							tmp = new AlphaAnimation(0.0f, 1.0f);
+							tmp.setInterpolator(Player.theUI);
+							animationSet.addAnimation(tmp);
+						}
+						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
+						anim.setRepeatCount(0);
+						anim.setFillAfter(false);
+					} else if (transition == UI.TRANSITION_SLIDE_SMOOTH) {
 						final AnimationSet animationSet = new AnimationSet(false);
 						anim = animationSet;
 						Animation tmp;

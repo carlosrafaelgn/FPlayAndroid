@@ -585,7 +585,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			.setIcon(new TextIconDrawable(Player.controlMode ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
 		if (UI.isLandscape && !UI.isLargeScreen) {
 			s = menu.addSubMenu(2, 0, 1, R.string.more)
-					.setIcon(new TextIconDrawable(UI.ICON_MENU));
+					.setIcon(new TextIconDrawable(UI.ICON_MENU_MORE));
 			UI.prepare(s);
 		} else {
 			s = menu;

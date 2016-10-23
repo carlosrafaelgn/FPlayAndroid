@@ -471,7 +471,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		}
 		btnMenu = (BgButton)findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
-		btnMenu.setIcon(UI.ICON_MENU);
+		btnMenu.setIcon(UI.ICON_MENU_MORE);
 		btnChangeEffect = (BgButton)findViewById(R.id.btnChangeEffect);
 		if (btnChangeEffect != null) {
 			btnChangeEffect.setOnClickListener(this);

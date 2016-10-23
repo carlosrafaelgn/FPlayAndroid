@@ -138,6 +138,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int TRANSITION_DISSOLVE = 3;
 	public static final int TRANSITION_SLIDE = 4;
 	public static final int TRANSITION_SLIDE_SMOOTH = 5;
+	public static final int TRANSITION_ZOOM_FADE = 6;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES_SLOW = 300;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 200; //used to be 300
 	public static final int TRANSITION_DURATION_FOR_VIEWS = 200; //used to be 300
@@ -149,7 +150,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_PLAY = "P";
 	public static final String ICON_PAUSE = "|";
 	public static final String ICON_NEXT = ">";
-	public static final String ICON_MENU = "N";
+	public static final String ICON_MENU_MORE = "N";
 	public static final String ICON_LIST = "l";
 	public static final String ICON_MOVE = "M";
 	public static final String ICON_REMOVE = "R";
@@ -234,6 +235,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_FULLSCREEN = "p";
 	public static final String ICON_RINGTONE = "9";
 	public static final String ICON_CONFIG = "g";
+	public static final String ICON_MENU = "z";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
@@ -1420,6 +1422,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static void setTransition(int transition) {
 		switch (transition) {
+		case TRANSITION_ZOOM_FADE:
 		case TRANSITION_SLIDE_SMOOTH:
 		case TRANSITION_SLIDE:
 		case TRANSITION_FADE:
@@ -1436,6 +1439,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static void setPopupTransition(int transition) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 			switch (transition) {
+			case TRANSITION_ZOOM_FADE:
 			case TRANSITION_SLIDE_SMOOTH:
 			case TRANSITION_FADE:
 			case TRANSITION_DISSOLVE:
@@ -1447,6 +1451,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			}
 		} else {
 			switch (transition) {
+			case TRANSITION_ZOOM_FADE:
+				UI.transitions = (UI.transitions & (~0xFF00)) | (TRANSITION_SLIDE_SMOOTH << 8);
+				break;
 			case TRANSITION_SLIDE_SMOOTH:
 			case TRANSITION_FADE:
 				UI.transitions = (UI.transitions & (~0xFF00)) | (transition << 8);
@@ -1460,6 +1467,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static String getTransitionString(int transition) {
 		switch (transition) {
+		case TRANSITION_ZOOM_FADE:
+			return Player.theApplication.getText(R.string.zoom).toString() + " + " + Player.theApplication.getText(R.string.fade).toString();
 		case TRANSITION_SLIDE_SMOOTH:
 			return Player.theApplication.getText(R.string.slide).toString() + " (" + Player.theApplication.getText(R.string.smooth).toString() + ")";
 		case TRANSITION_SLIDE:
@@ -1960,6 +1969,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final Window window = dialog.getWindow();
 		if (window != null) {
 			switch (transitions >>> 8) {
+			case TRANSITION_ZOOM_FADE:
+				window.setWindowAnimations(R.style.ZoomFadeAnimation);
+				break;
 			case TRANSITION_SLIDE_SMOOTH:
 				window.setWindowAnimations(R.style.SlideSmoothAnimation);
 				break;

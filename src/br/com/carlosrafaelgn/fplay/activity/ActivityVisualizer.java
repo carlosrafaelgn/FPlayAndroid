@@ -272,7 +272,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		p.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 		p.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 		btnMenu.setLayoutParams(p);
-		btnMenu.setIcon(UI.ICON_MENU);
+		btnMenu.setIcon(UI.ICON_MENU_MORE);
 		
 		if (visualizer != null) {
 			final InterceptableLayout.LayoutParams ip;
