@@ -405,13 +405,13 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	protected void onCreate() {
 		txtBuilder = new StringBuilder(32);
 		final int _600dp = UI.dpToPxI(600);
-		screenNotSoLarge = ((UI.screenWidth < _600dp) || (UI.screenHeight < _600dp));
+		screenNotSoLarge = ((UI.usableScreenWidth < _600dp) || (UI.usableScreenHeight < _600dp));
 	}
 	
 	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions", "deprecation" })
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
-		setContentView(R.layout.activity_effects);
+		setContentView(UI.isLargeScreen ? R.layout.activity_effects_ls : R.layout.activity_effects);
 		audioSink = (storedAudioSink <= 0 ? Player.localAudioSinkUsedInEffects : storedAudioSink);
 		storedAudioSink = audioSink;
 		panelControls = (LinearLayout)findViewById(R.id.panelControls);

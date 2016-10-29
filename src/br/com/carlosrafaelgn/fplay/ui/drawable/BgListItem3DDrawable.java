@@ -44,6 +44,16 @@ public final class BgListItem3DDrawable extends Drawable {
 	private boolean hasBounds;
 
 	@Override
+	public ConstantState getConstantState() {
+		return null;
+	}
+
+	@Override
+	public int getChangingConfigurations() {
+		return 0;
+	}
+
+	@Override
 	public void setBounds(Rect bounds) {
 		if (bounds != null) {
 			hasBounds = true;

@@ -470,7 +470,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 				btnGenreSecondary.setSelectedItemPosition(getSecondaryGenreIndex());
 			}
 
-			UI.disableEdgeEffect();
+			UI.disableEdgeEffect(getHostActivity());
 			final BgDialog dialog = new BgDialog(ctx, l, this);
 			dialog.setTitle(R.string.search);
 			dialog.setPositiveButton(R.string.search);

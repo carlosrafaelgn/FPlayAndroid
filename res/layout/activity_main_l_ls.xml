@@ -20,6 +20,6 @@
         <requestFocus/>
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
-    <include layout="@layout/activity_main_l_controls"/>
+    <include layout="@layout/activity_main_l_controls_ls"/>
 
 </LinearLayout>

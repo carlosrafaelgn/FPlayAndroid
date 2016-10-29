@@ -38,7 +38,32 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 
 public final class NullDrawable extends Drawable {
+	private static final class NullConstantState extends ConstantState {
+		@Override
+		public Drawable newDrawable() {
+			return new NullDrawable();
+		}
+
+		@Override
+		public int getChangingConfigurations() {
+			return 0;
+		}
+	}
+
+	private ConstantState constantState;
+
 	public NullDrawable() {
+	}
+
+	@Override
+	public ConstantState getConstantState() {
+		if (constantState == null) constantState = new NullConstantState();
+		return constantState;
+	}
+
+	@Override
+	public int getChangingConfigurations() {
+		return 0;
 	}
 
 	@Override

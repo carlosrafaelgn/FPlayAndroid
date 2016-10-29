@@ -48,6 +48,16 @@ public final class ScrollBarThumbDrawable extends Drawable {
 		setColor(color);
 	}
 
+	@Override
+	public ConstantState getConstantState() {
+		return null;
+	}
+
+	@Override
+	public int getChangingConfigurations() {
+		return 0;
+	}
+
 	public int getColor() {
 		return color;
 	}

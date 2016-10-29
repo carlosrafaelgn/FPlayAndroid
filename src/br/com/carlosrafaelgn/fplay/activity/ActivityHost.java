@@ -576,7 +576,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			return;
 		}
 		Player.theApplication = getApplicationContext();
-		UI.initialize(this);
+		UI.initialize(this, null);
 		Player.startService();
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
@@ -612,7 +612,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		super.onConfigurationChanged(newConfig);
 		final boolean i = UI.isLandscape;
 		ActivityMain.localeHasBeenChanged = false;
-		UI.initialize(this);
+		UI.initialize(this, newConfig);
 		if (i != UI.isLandscape) {
 			if (top != null) {
 				ignoreFadeNextTime = true;

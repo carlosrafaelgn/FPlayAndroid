@@ -988,7 +988,12 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			finish(0, null, false);
 			return;
 		}
-		setContentView(Player.controlMode ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) : (UI.isLandscape ? ((UI.isLargeScreen && UI.controlsToTheLeft) ? R.layout.activity_main_l_left : R.layout.activity_main_l) : R.layout.activity_main), true, forceFadeOut);
+		setContentView(Player.controlMode ? (UI.isLandscape ? R.layout.activity_main_control_l : R.layout.activity_main_control) :
+			(UI.isLargeScreen ? (UI.isLandscape ? (UI.controlsToTheLeft ? R.layout.activity_main_l_left_ls :
+				R.layout.activity_main_l_ls) :
+					R.layout.activity_main_ls) :
+						(UI.isLandscape ? R.layout.activity_main_l :
+							R.layout.activity_main)));
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		btnPrev = (BgButton)findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);

@@ -121,6 +121,16 @@ public final class TextIconDrawable extends Drawable {
 		super.setBounds(0, 0, width, height);
 	}
 
+	@Override
+	public ConstantState getConstantState() {
+		return null;
+	}
+
+	@Override
+	public int getChangingConfigurations() {
+		return 0;
+	}
+
 	public String getIcon() {
 		return icon;
 	}

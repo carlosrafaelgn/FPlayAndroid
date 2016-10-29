@@ -65,6 +65,16 @@ public final class BgShadowDrawable extends Drawable {
 	}
 
 	@Override
+	public ConstantState getConstantState() {
+		return null;
+	}
+
+	@Override
+	public int getChangingConfigurations() {
+		return 0;
+	}
+
+	@Override
 	public void draw(Canvas canvas) {
 		final Rect bounds = getBounds();
 		final int l = bounds.left, t = bounds.top, r = bounds.right, b = bounds.bottom;

@@ -229,7 +229,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 			return;
 		
 		if (updateInfo)
-			info.getInfo();
+			info.getInfo(getResources().getConfiguration());
 		
 		panelTopHiding = 0;
 		panelTopAlpha = 1.0f;
@@ -280,7 +280,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 				ip = new InterceptableLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			} else {
 				if (visualizerRequiresHiddenControls) {
-					final Point pt = visualizer.getDesiredSize(info.screenWidth, info.screenHeight);
+					final Point pt = visualizer.getDesiredSize(info.usableScreenWidth, info.usableScreenHeight);
 					ip = new InterceptableLayout.LayoutParams(pt.x, pt.y);
 					ip.addRule(InterceptableLayout.CENTER_IN_PARENT, InterceptableLayout.TRUE);
 				} else {
@@ -368,7 +368,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 				final Class<?> clazz = Class.forName(name);
 				if (clazz != null) {
 					try {
-						info.getInfo();
+						info.getInfo(getResources().getConfiguration());
 						visualizer = (Visualizer)clazz.getConstructor(Activity.class, boolean.class, Intent.class).newInstance(this, info.isLandscape, si);
 					} catch (Throwable ex) {
 						ex.printStackTrace();
@@ -495,7 +495,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 			return;
 		final boolean i = info.isLandscape;
 		final int w = info.usableScreenWidth, h = info.usableScreenHeight;
-		info.getInfo();
+		info.getInfo(newConfig);
 		if (i != info.isLandscape || w != info.usableScreenWidth || h != info.usableScreenHeight) {
 			final Visualizer v = visualizer;
 			if (v != null)

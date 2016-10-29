@@ -337,7 +337,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		public int usableScreenWidth, usableScreenHeight, screenWidth, screenHeight;
 		public boolean isLandscape, isLargeScreen, isLowDpiScreen;
 		public DisplayMetrics displayMetrics;
-		
+
 		private void initializeScreenDimensions(Display display, DisplayMetrics outDisplayMetrics) {
 			display.getMetrics(outDisplayMetrics);
 			screenWidth = outDisplayMetrics.widthPixels;
@@ -369,8 +369,17 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			screenWidth = outDisplayMetrics.widthPixels;
 			screenHeight = outDisplayMetrics.heightPixels;
 		}
-		
-		public void getInfo() {
+
+		@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+		private void updateUsableScreenDimensionsFromConfig(DisplayMetrics displayMetrics, Configuration configuration) {
+			if (configuration.screenWidthDp > 0 && configuration.screenHeightDp > 0) {
+				final float density = displayMetrics.density;
+				usableScreenWidth = (int)(((float)configuration.screenWidthDp * density) + 0.5f);
+				usableScreenHeight = (int)(((float)configuration.screenHeightDp * density) + 0.5f);
+			}
+		}
+
+		public void getInfo(Configuration configuration) {
 			final Display display = ((WindowManager)Player.theApplication.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 			displayMetrics = new DisplayMetrics();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -379,15 +388,19 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				initializeScreenDimensions14(display, displayMetrics);
 			else
 				initializeScreenDimensions(display, displayMetrics);
+			if (configuration != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				updateUsableScreenDimensionsFromConfig(displayMetrics, configuration);
 			//improved detection for tablets, based on:
 			//http://developer.android.com/guide/practices/screens_support.html#DeclaringTabletLayouts
 			//(There is also the solution at http://stackoverflow.com/questions/11330363/how-to-detect-device-is-android-phone-or-android-tablet
 			//but the former link says it is deprecated...)
 			//*** I decided to treat screens >= 500dp as large screens because there are
 			//lots of 7" phones/tablets with resolutions starting at around 533dp ***
+			final int _550dp = (int)((550.0f * displayMetrics.density) + 0.5f);
 			final int _500dp = (int)((500.0f * displayMetrics.density) + 0.5f);
-			isLandscape = (screenWidth >= screenHeight);
-			isLargeScreen = ((screenWidth >= _500dp) && (screenHeight >= _500dp));
+			isLandscape = (usableScreenWidth > usableScreenHeight);
+			isLargeScreen = ((usableScreenWidth >= _550dp) ? (usableScreenHeight >= _500dp) :
+					((usableScreenHeight >= _550dp) && (usableScreenWidth >= _500dp)));
 			isLowDpiScreen = (displayMetrics.densityDpi < 160);
 		}
 	}
@@ -643,6 +656,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		return Player.theApplication.getText(R.string.standard_language).toString();
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static int getCurrentLocale() {
 		try {
 			final String l = Player.theApplication.getResources().getConfiguration().locale.getLanguage().toLowerCase(Locale.US);
@@ -681,6 +695,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		setForcedLocale(activityContext, forcedLocale);
 	}
 
+	@SuppressWarnings("deprecation")
 	public static boolean setForcedLocale(Activity activityContext, int localeCode) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
@@ -737,7 +752,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		widgetIconColor = opts.getInt(0x0024, 0xff000000);
 	}
 	
-	public static void initialize(Activity activityContext) {
+	public static void initialize(Activity activityContext, Configuration configuration) {
+		final Resources resources = (activityContext != null ? activityContext.getResources() : Player.theApplication.getResources());
+
+		if (configuration == null)
+			configuration = resources.getConfiguration();
+
 		accessibilityManager = (AccessibilityManager)Player.theApplication.getSystemService(Context.ACCESSIBILITY_SERVICE);
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(Player.theApplication.getAssets(), "fonts/icons.ttf");
@@ -757,7 +777,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			fullyInitialized = true;
 		}
 		final DisplayInfo info = new DisplayInfo();
-		info.getInfo();
+		info.getInfo(configuration);
 		density = info.displayMetrics.density;
 		densityDpi = info.displayMetrics.densityDpi;
 		scaledDensity = info.displayMetrics.scaledDensity;
@@ -774,7 +794,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 		//apparently, the display metrics returned by Resources.getDisplayMetrics()
 		//is not the same as the one returned by Display.getMetrics()/getRealMetrics()
-		final float sd = Player.theApplication.getResources().getDisplayMetrics().scaledDensity;
+		final float sd = resources.getDisplayMetrics().scaledDensity;
 		if (sd > 0)
 			scaledDensity = sd;
 		else if (scaledDensity <= 0)
@@ -828,7 +848,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if (icPrev != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(null);
+			initialize(null, null);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		textPaint.setColor(widgetIconColor);
@@ -856,7 +876,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if (icPrevNotif != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(null);
+			initialize(null, null);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		//instead of guessing the color, try to fetch the actual one first
@@ -1956,8 +1976,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	
 	public static void storeViewCenterLocationForFade(View view) {
 		if (view == null) {
-			lastViewCenterLocation[0] = screenWidth >> 1;
-			lastViewCenterLocation[1] = screenHeight >> 1;
+			lastViewCenterLocation[0] = usableScreenWidth >> 1;
+			lastViewCenterLocation[1] = usableScreenHeight >> 1;
 		} else {
 			view.getLocationOnScreen(lastViewCenterLocation);
 			lastViewCenterLocation[0] += (view.getWidth() >> 1);
@@ -2003,7 +2023,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffect(View view, int placement) {
 		final int color = (placement == PLACEMENT_MENU ? color_menu_icon : color_glow);
-		final Resources resources = Player.theApplication.getResources();
+		final Resources resources = view.getContext().getResources();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 			try {
 				if (glowFilter == null) {
@@ -2091,15 +2111,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void disableEdgeEffect() {
+	public static void disableEdgeEffect(Context context) {
 		if (glowFilter == null)
 			return;
 		try {
 			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
-			Drawable drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			final Resources resources = context.getResources();
+			Drawable drawable = resources.getDrawable(resources.getIdentifier("overscroll_glow", "drawable", "android"));
 			if (drawable != null)
 				drawable.setColorFilter(null);
-			drawable = Player.theApplication.getResources().getDrawable(Player.theApplication.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			drawable = resources.getDrawable(resources.getIdentifier("overscroll_edge", "drawable", "android"));
 			if (drawable != null)
 				drawable.setColorFilter(null);
 		} catch (Throwable ex) {
@@ -2113,10 +2134,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return;
 		try {
 			//http://evendanan.net/android/branding/2013/12/09/branding-edge-effect/
-			Drawable drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_glow", "drawable", "android"));
+			final Resources resources = context.getResources();
+			Drawable drawable = resources.getDrawable(resources.getIdentifier("overscroll_glow", "drawable", "android"));
 			if (drawable != null)
 				drawable.setColorFilter(glowFilter);
-			drawable = context.getResources().getDrawable(context.getResources().getIdentifier("overscroll_edge", "drawable", "android"));
+			drawable = resources.getDrawable(resources.getIdentifier("overscroll_edge", "drawable", "android"));
 			if (drawable != null)
 				drawable.setColorFilter(glowFilter);//edgeFilter);
 		} catch (Throwable ex) {

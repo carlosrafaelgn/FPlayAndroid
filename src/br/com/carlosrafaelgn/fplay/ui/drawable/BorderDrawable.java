@@ -52,6 +52,16 @@ public final class BorderDrawable extends Drawable {
 		this.bottomSize = bottomSize;
 	}
 
+	@Override
+	public ConstantState getConstantState() {
+		return null;
+	}
+
+	@Override
+	public int getChangingConfigurations() {
+		return 0;
+	}
+
 	public void changeColors(int strokeColor, int fillColor) {
 		this.strokeColor = strokeColor;
 		this.fillColor = fillColor;
