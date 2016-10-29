@@ -115,8 +115,8 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		public View getView(int position, View convertView, ViewGroup parent) {
 			FileView view = (FileView)convertView;
 			if (view == null)
-				view = new FileView(Player.theApplication, null, false, false);
-			view.setItemState(items[position].fileSt, position, getItemState(position) | (items[position].recentlyUsed ? UI.STATE_CURRENT : 0), this);
+				view = new FileView(Player.theApplication, false, false);
+			view.setItemState(items[position].fileSt, position, getItemState(position) | (items[position].recentlyUsed ? UI.STATE_CURRENT : 0), this, null);
 			return view;
 		}
 

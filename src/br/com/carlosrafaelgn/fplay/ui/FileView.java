@@ -55,7 +55,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
-	private AlbumArtFetcher albumArtFetcher;
+	private volatile AlbumArtFetcher albumArtFetcher;
 	private Handler handler;
 	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
@@ -128,18 +128,15 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 
 	public FileView(Context context) {
-		this(context, null, false, false);
+		this(context, false, false);
 	}
 
-	public FileView(Context context, AlbumArtFetcher albumArtFetcher, boolean hasCheckbox, boolean force2D) {
+	public FileView(Context context, boolean hasCheckbox, boolean force2D) {
 		super(context);
-		this.albumArtFetcher = albumArtFetcher;
 		albumStr = context.getText(R.string.albumL).toString();
 		albumsStr = " " + context.getText(R.string.albumsL);
 		trackStr = context.getText(R.string.trackL).toString();
 		tracksStr = " " + context.getText(R.string.tracksL);
-		if (albumArtFetcher != null)
-			handler = new Handler(Looper.getMainLooper(), this);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
@@ -156,11 +153,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			p.rightMargin = rightMargin;
 			p.bottomMargin = bottomMargin;
 			btnCheckbox.setLayoutParams(p);
-			btnCheckbox.formatAsPlainCheckBox(false, true, false);
-			btnCheckbox.setContentDescription(context.getText(R.string.unselect), context.getText(R.string.select));
-			btnCheckbox.setTextColor(UI.colorState_text_listitem_reactive);
-			btnCheckbox.setOnClickListener(this);
 			addView(btnCheckbox);
+			btnCheckbox = null; //let setItemState() format the button...
 		} else {
 			btnCheckbox = null;
 		}
@@ -177,7 +171,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	public void refreshItem() {
 		//tiny workaround to force complete execution of setItemState()
 		checkBoxVisible = !checkBoxVisible;
-		setItemState(file, position, state, baseList);
+		setItemState(file, position, state, baseList, albumArtFetcher);
 		invalidate();
 	}
 
@@ -209,19 +203,26 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		return super.getContentDescription();
 	}
 
-	public void setItemState(FileSt file, int position, int state, BaseList<?> baseList) {
+	public void setItemState(FileSt file, int position, int state, BaseList<?> baseList, AlbumArtFetcher albumArtFetcher) {
 		if (file == null)
 			return;
 		final int specialType = file.specialType;
 		final boolean showCheckbox = (hasCheckbox && ((specialType == 0) || (specialType == FileSt.TYPE_ALBUM) || (specialType == FileSt.TYPE_ALBUM_ITEM) || (specialType == FileSt.TYPE_ARTIST)));
-		final boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != specialType));
+		boolean specialTypeChanged = ((this.file != null) && (this.file.specialType != specialType));
 		this.position = position;
 		this.baseList = baseList;
+		//a few devices detach views from the listview before recycling, hence attaching
+		//them back to the window without recreating the object
+		if (btnCheckbox == null && hasCheckbox && getChildCount() > 0 && (getChildAt(0) instanceof BgButton)) {
+			specialTypeChanged = true;
+			btnCheckbox = (BgButton)getChildAt(0);
+			btnCheckbox.formatAsPlainCheckBox(false, true, false);
+			btnCheckbox.setContentDescription(getContext().getText(R.string.unselect), getContext().getText(R.string.select));
+			btnCheckbox.setOnClickListener(this);
+		}
 		if (btnCheckbox != null) {
 			if (specialTypeChanged || this.file != file || (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
-				//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : ((specialType == FileSt.TYPE_ALBUM_ITEM) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
 				btnCheckbox.setTextColor(((state != 0) || (specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
-				//btnPlay.setTextColor((state != 0) ? UI.colorState_text_selected_static : ((specialType == FileSt.TYPE_ALBUM_ITEM) ? UI.colorState_text_reactive : UI.colorState_text_listitem_reactive));
 			btnCheckbox.setChecked(file.isChecked);
 			if (btnCheckBoxMarginsPreparedForIndexedScrollBars != scrollBarCurrentlyIndexed) {
 				btnCheckBoxMarginsPreparedForIndexedScrollBars = scrollBarCurrentlyIndexed;
@@ -237,6 +238,12 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.file == file && checkBoxVisible == showCheckbox)
 			return;
+		//refer to the comment above (about views being detached from the listview)
+		if (albumArtFetcher != null) {
+			this.albumArtFetcher = albumArtFetcher;
+			if (handler == null)
+				handler = new Handler(Looper.getMainLooper(), this);
+		}
 		secondaryText = null;
 		this.file = file;
 		if (checkBoxVisible != showCheckbox) {
@@ -391,9 +398,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		final boolean old = (state == 0);
 		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
 		if ((state == 0) != old && btnCheckbox != null)
-			//btnCheckbox.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_highlight_reactive : UI.colorState_text_listitem_reactive));
 			btnCheckbox.setTextColor(((state != 0) || ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM))) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
-			//btnCheckbox.setTextColor((state != 0) ? UI.colorState_text_selected_static : (((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_reactive : UI.colorState_text_listitem_reactive));
 	}
 
 	@Override

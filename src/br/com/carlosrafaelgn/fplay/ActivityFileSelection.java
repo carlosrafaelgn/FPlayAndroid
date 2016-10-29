@@ -300,7 +300,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 
 	@Override
 	public View onCreateView() {
-		return new FileView(Player.theApplication, null, true, false);
+		return new FileView(Player.theApplication, true, false);
 	}
 
 	@Override
@@ -600,7 +600,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (list != null && UI.isLargeScreen)
+		if (list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	

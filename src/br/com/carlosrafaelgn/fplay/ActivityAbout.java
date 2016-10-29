@@ -178,8 +178,8 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 		lblDbg.setText(sb.toString());
+		panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
 		if (UI.isLargeScreen) {
-			panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
 			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI.controlMargin, UI.controlMargin);
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		}
@@ -188,8 +188,12 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen && panelSecondary != null)
-			UI.prepareViewPaddingForLargeScreen(panelSecondary, UI.controlMargin, UI.controlMargin);
+		if (panelSecondary != null) {
+			if (UI.isLargeScreen)
+				UI.prepareViewPaddingForLargeScreen(panelSecondary, UI.controlMargin, UI.controlMargin);
+			else
+				panelSecondary.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
+		}
 	}
 	
 	@Override

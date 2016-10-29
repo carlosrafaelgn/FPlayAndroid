@@ -640,7 +640,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (list != null && UI.isLargeScreen)
+		if (list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	

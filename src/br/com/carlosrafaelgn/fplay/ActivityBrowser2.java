@@ -79,7 +79,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	private RelativeLayout panelSecondary;
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
-	private AlbumArtFetcher albumArtFetcher;
 	private int checkedCount;
 	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
 	private FastAnimator animator;
@@ -236,10 +235,9 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 					final TypedRawArrayList<FileSt> filesToAdd = new TypedRawArrayList<>(FileSt.class, 256);
 					try {
 						Throwable firstException = null;
-						for (int i = 0; i < fs.length; i++) {
+						for (FileSt file : fs) {
 							if (Player.state >= Player.STATE_TERMINATING)
 								return;
-							final FileSt file = fs[i];
 							if (file == null)
 								continue;
 							if (!file.isDirectory) {
@@ -446,7 +444,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 
 	@Override
 	public View onCreateView() {
-		return new FileView(Player.theApplication, albumArtFetcher, true, false);
+		return new FileView(Player.theApplication, true, false);
 	}
 
 	@Override
@@ -767,6 +765,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			Player.originalPath = "";
 		isAtHome = (Player.path.length() == 0);
 		fileList = new FileList();
+		fileList.albumArtFetcher = new AlbumArtFetcher();
 		fileList.setItemClickListener(this);
 		fileList.setActionListener(this);
 		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
@@ -777,7 +776,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		//	ic_closed_folder = new ReleasableBitmapWrapper(BitmapFactory.decodeResource(res, R.drawable.ic_closed_folder));
 		//} catch (Throwable ex) {
 		//}
-		albumArtFetcher = new AlbumArtFetcher();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -918,7 +916,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (list != null && UI.isLargeScreen)
+		if (list != null)
 			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 	}
 	
@@ -957,11 +955,11 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			fileList.setItemClickListener(null);
 			fileList.setActionListener(null);
 			fileList.cancel();
+			if (fileList.albumArtFetcher != null) {
+				fileList.albumArtFetcher.stopAndCleanup();
+				fileList.albumArtFetcher = null;
+			}
 			fileList = null;
-		}
-		if (albumArtFetcher != null) {
-			albumArtFetcher.stopAndCleanup();
-			albumArtFetcher = null;
 		}
 	}
 

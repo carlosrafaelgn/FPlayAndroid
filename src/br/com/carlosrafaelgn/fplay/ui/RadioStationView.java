@@ -108,16 +108,19 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		p.rightMargin = rightMargin;
 		p.bottomMargin = bottomMargin;
 		btnFavorite.setLayoutParams(p);
-		btnFavorite.setHideBorders(true);
-		btnFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, true, true, true);
-		btnFavorite.setContentDescription(context.getText(R.string.favorite));
-		btnFavorite.setOnClickListener(this);
-		btnFavorite.setTextColor(UI.colorState_text_listitem_reactive);
 		addView(btnFavorite);
+		btnFavorite = null; //let setItemState() format the button...
 		super.setDrawingCacheEnabled(false);
 	}
 
 	private void processEllipsis() {
+		//a few devices detach views from the listview before recycling, hence attaching
+		//them back to the window without recreating the object
+		if (descriptionLines == null)
+			descriptionLines = new String[4];
+		if (tagsLines == null)
+			tagsLines = new String[3];
+
 		final int hMargin = (UI.controlMargin << 1) + leftMargin + rightMargin;
 		if (width <= hMargin) {
 			ellipsizedTitle = "";
@@ -177,7 +180,15 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 
 	public void setItemState(RadioStation station, int position, int state, BaseList<RadioStation> baseList) {
 		this.position = position;
-		if (btnFavorite != null && (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
+		//refer to the comment inside processEllipsis()
+		if (btnFavorite == null && getChildCount() > 0 && (getChildAt(0) instanceof BgButton)) {
+			btnFavorite = (BgButton)getChildAt(0);
+			btnFavorite.setHideBorders(true);
+			btnFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, true, true, true);
+			btnFavorite.setContentDescription(getContext().getText(R.string.favorite));
+			btnFavorite.setOnClickListener(this);
+			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
+		} else if (btnFavorite != null && (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
 			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.baseList = baseList;

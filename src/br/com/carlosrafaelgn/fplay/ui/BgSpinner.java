@@ -79,8 +79,8 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 		public View getView(int position, View convertView, ViewGroup parent) {
 			FileView view = (FileView)convertView;
 			if (view == null)
-				view = new FileView(Player.theApplication, null, false, true);
-			view.setItemState(items[position], position, getItemState(position), this);
+				view = new FileView(Player.theApplication, false, true);
+			view.setItemState(items[position], position, getItemState(position), this, null);
 			return view;
 		}
 

@@ -1846,7 +1846,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static int getViewPaddingForLargeScreen() {
-		return ((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10);
+		return (UI.isLargeScreen ? (((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10)) : 0);
 	}
 	
 	public static void prepareViewPaddingForLargeScreen(View view, int topPadding, int bottomPadding) {

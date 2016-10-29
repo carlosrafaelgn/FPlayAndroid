@@ -1028,8 +1028,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		prepareHeader(lblTitle);
 
-		if (UI.isLargeScreen)
-			setListPadding();
+		setListPadding();
 
 		list.setOnScrollListener(this);
 		if (colorMode) {
@@ -1242,8 +1241,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	protected void onOrientationChanged() {
-		if (UI.isLargeScreen)
-			setListPadding();
+		setListPadding();
 	}
 	
 	@Override

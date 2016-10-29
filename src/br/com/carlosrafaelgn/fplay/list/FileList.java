@@ -52,6 +52,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	private FileFetcher fetcher;
 	private String[] sections;
 	private int[] sectionPositions;
+	public AlbumArtFetcher albumArtFetcher;
 	
 	public FileList() {
 		super(FileSt.class, 16384);
@@ -172,7 +173,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		final FileView view = (FileView)((convertView != null) ? convertView : getActionListener().onCreateView());
-		view.setItemState(items[position], position, getItemState(position), this);
+		view.setItemState(items[position], position, getItemState(position), this, albumArtFetcher);
 		return view;
 	}
 	
