@@ -448,7 +448,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final Rect rect = new Rect();
 	public static final RectF rectF = new RectF();
 	public static char decimalSeparator;
-	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
+	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isScreenWidthLarge, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible, isVerticalMarginLarge, keepScreenOn, doubleClickMode,
 		marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList, extraSpacing, albumArt, visualizerPortrait,
 		scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress, isChromebook, largeTextIs22sp;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _Largesp, _LargespBox, _LargespYinBox,
@@ -786,6 +786,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		screenHeight = info.screenHeight;
 		usableScreenWidth = info.usableScreenWidth;
 		usableScreenHeight = info.usableScreenHeight;
+		isScreenWidthLarge = (usableScreenWidth >= dpToPxI(550));
 		isLargeScreen = (isTV || info.isLargeScreen);
 		isLandscape = info.isLandscape;
 		isLowDpiScreen = info.isLowDpiScreen;
@@ -1845,12 +1846,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		view.setTypeface(defaultTypeface);
 	}
 
-	public static int getViewPaddingForLargeScreen() {
-		return (UI.isLargeScreen ? (((usableScreenWidth < usableScreenHeight) ? usableScreenWidth : usableScreenHeight) / (isLandscape ? 5 : 10)) : 0);
+	public static int getViewPaddingBasedOnScreenWidth(int defaultHorizontalPadding) {
+		final int padding = (isScreenWidthLarge ? (usableScreenWidth / 7) : defaultHorizontalPadding);
+		return ((padding > defaultHorizontalPadding) ? padding : defaultHorizontalPadding);
 	}
 	
-	public static void prepareViewPaddingForLargeScreen(View view, int topPadding, int bottomPadding) {
-		final int p = getViewPaddingForLargeScreen();
+	public static void prepareViewPaddingBasedOnScreenWidth(View view, int defaultHorizontalPadding, int topPadding, int bottomPadding) {
+		final int p = getViewPaddingBasedOnScreenWidth(defaultHorizontalPadding);
 		view.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
 		view.setPadding(p, topPadding, p, bottomPadding);
 	}

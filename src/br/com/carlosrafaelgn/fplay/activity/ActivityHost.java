@@ -610,10 +610,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
-		final boolean landscape = UI.isLandscape, largeScreen = UI.isLargeScreen;
+		final int usableScreenWidth = UI.usableScreenWidth, usableScreenHeight = UI.usableScreenHeight;
 		ActivityMain.localeHasBeenChanged = false;
 		UI.initialize(this, newConfig);
-		if ((landscape != UI.isLandscape || largeScreen != UI.isLargeScreen) && top != null) {
+		if ((usableScreenWidth != UI.usableScreenWidth || usableScreenHeight != UI.usableScreenHeight) && top != null) {
 			ignoreFadeNextTime = true;
 			top.onOrientationChanged();
 			ignoreFadeNextTime = false;

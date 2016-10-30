@@ -868,10 +868,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private void setListPadding() {
 		//for lblTitle to look nice, we must have no paddings
 		if (panelSettings != null)
-			UI.prepareViewPaddingForLargeScreen(panelSettings, 0, 0);
+			UI.prepareViewPaddingBasedOnScreenWidth(panelSettings, 0, 0, 0);
 		if (lblTitle != null) {
 			final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)lblTitle.getLayoutParams();
-			lp.leftMargin = UI.getViewPaddingForLargeScreen();
+			lp.leftMargin = UI.getViewPaddingBasedOnScreenWidth(0);
 			lp.rightMargin = lp.leftMargin;
 			lblTitle.setLayoutParams(lp);
 		}
@@ -1019,8 +1019,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		final Context ctx = getHostActivity();
 
 		list = (ObservableScrollView)findViewById(R.id.list);
-		if (!UI.isLargeScreen)
-			UI.offsetTopEdgeEffect(list);
 		//for lblTitle to look nice, we must have no paddings
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
@@ -1218,7 +1216,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		lastViewAdded.setNextFocusDownId(R.id.btnGoBack);
 		lastViewAdded = null;
 
-		UI.prepareControlContainer(panelControls, false, UI.isLargeScreen);
+		UI.prepareControlContainer(panelControls, false, true);
 		btnAbout.setDefaultHeight();
 	}
 

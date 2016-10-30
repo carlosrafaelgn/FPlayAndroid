@@ -608,8 +608,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		btnPlay.setIcon(UI.ICON_PLAY);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		UI.prepareControlContainer(panelSecondary, true, false);
-		if (UI.isLargeScreen)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 	}
 
 	@Override
@@ -641,7 +640,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	@Override
 	protected void onOrientationChanged() {
 		if (list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 	}
 	
 	@Override

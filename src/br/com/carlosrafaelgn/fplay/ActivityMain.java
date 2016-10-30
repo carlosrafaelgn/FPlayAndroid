@@ -993,7 +993,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				R.layout.activity_main_l_ls) :
 					R.layout.activity_main_ls) :
 						(UI.isLandscape ? R.layout.activity_main_l :
-							R.layout.activity_main)));
+							R.layout.activity_main)), true, forceFadeOut);
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		btnPrev = (BgButton)findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);
@@ -1116,9 +1116,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			lblTitle.setTextColor(UI.colorState_text_title_static);
 			
 			lblArtist = (TextView)findViewById(R.id.lblArtist);
-			if (UI.isLargeScreen == (lblArtist == null))
-				UI.isLargeScreen = (lblArtist != null);
-			
+
 			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
 			UI.headingText(lblMsgSelMove);
 			lblMsgSelMove.setTextColor(UI.colorState_text_title_static);

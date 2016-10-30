@@ -573,9 +573,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				panelSecondary.setLayoutParams(rp);
 			}
 		}
-		if (UI.isLargeScreen)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
+		UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 		isCreatingLayout = true;
 		updateOverallLayout();
 		isCreatingLayout = false;
@@ -601,7 +600,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	@Override
 	protected void onOrientationChanged() {
 		if (list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 	}
 	
 	@Override

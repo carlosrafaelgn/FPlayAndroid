@@ -874,8 +874,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, true);
 		}
 		UI.prepareControlContainer(panelSecondary, true, false);
-		if (UI.isLargeScreen)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+		UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 		//this is the opposite as in updateButtons(), to force updateOverallLayout()
 		//to be called at least once
 		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE)) {
@@ -917,7 +916,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	@Override
 	protected void onOrientationChanged() {
 		if (list != null)
-			UI.prepareViewPaddingForLargeScreen(list, 0, 0);
+			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 	}
 	
 	@Override

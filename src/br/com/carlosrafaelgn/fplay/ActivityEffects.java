@@ -73,7 +73,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	private BgButton btnGoBack, btnAudioSink, btnMenu, btnChangeEffect;
 	private int min, max, audioSink, storedAudioSink;
 	private int[] frequencies;
-	private boolean enablingEffect, screenNotSoLarge, resizingEq;
+	private boolean enablingEffect, screenConsideredLarge, resizingEq;
 	private BgSeekBar[] bars;
 	private BgSeekBar barBass, barVirtualizer;
 	private StringBuilder txtBuilder;
@@ -311,7 +311,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 
 			final int availableWidth = panelBars.getWidth();
 
-			int hMargin = ((UI.isLandscape || UI.isLargeScreen) ? (UI.controlLargeMargin << 1) : UI.controlLargeMargin);
+			int hMargin = ((UI.isLandscape || screenConsideredLarge) ? (UI.controlLargeMargin << 1) : UI.controlLargeMargin);
 
 			while (hMargin > UI.controlXtraSmallMargin && ((bandCount * UI.defaultControlSize) + ((bandCount - 1) * hMargin)) > availableWidth)
 				hMargin--;
@@ -329,7 +329,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				final LinearLayout.LayoutParams p = (LinearLayout.LayoutParams)bar.getLayoutParams();
 				if (i > 0)
 					p.leftMargin = hMargin;
-				bar.setSize(size, UI.isLandscape && !UI.isLargeScreen);
+				bar.setSize(size, UI.isLandscape && !screenConsideredLarge);
 				bar.setLayoutParams(p);
 			}
 		}
@@ -404,14 +404,27 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	@Override
 	protected void onCreate() {
 		txtBuilder = new StringBuilder(32);
-		final int _600dp = UI.dpToPxI(600);
-		screenNotSoLarge = ((UI.usableScreenWidth < _600dp) || (UI.usableScreenHeight < _600dp));
 	}
 	
 	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions", "deprecation" })
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
-		setContentView(UI.isLargeScreen ? R.layout.activity_effects_ls : R.layout.activity_effects);
+		final boolean addLargeEmptySpaces;
+		if (UI.isLargeScreen) {
+			final int _800dp = UI.dpToPxI(800);
+			if (UI.isLandscape) {
+				screenConsideredLarge = (UI.usableScreenWidth >= UI.dpToPxI(600));
+				addLargeEmptySpaces = (UI.usableScreenWidth >= _800dp);
+			} else {
+				screenConsideredLarge = (UI.usableScreenHeight >= _800dp);
+				addLargeEmptySpaces = true;
+			}
+		} else {
+			screenConsideredLarge = false;
+			addLargeEmptySpaces = false;
+		}
+
+		setContentView(screenConsideredLarge ? R.layout.activity_effects_ls : R.layout.activity_effects);
 		audioSink = (storedAudioSink <= 0 ? Player.localAudioSinkUsedInEffects : storedAudioSink);
 		storedAudioSink = audioSink;
 		panelControls = (LinearLayout)findViewById(R.id.panelControls);
@@ -421,7 +434,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		final ViewGroup panelScroll = (ViewGroup)findViewById(R.id.panelScroll);
 		final ViewGroup panelScrollContents = (ViewGroup)findViewById(R.id.panelScrollContents);
 		if (UI.is3D) {
-			final int padding = (UI.isLargeScreen ? UI.controlLargeMargin :
+			final int padding = (addLargeEmptySpaces ? UI.controlLargeMargin :
 				(UI.isLowDpiScreen ? UI.controlSmallMargin :
 					UI.controlMargin));
 			panelEqualizer.setPadding(padding, padding, padding, padding);
@@ -479,7 +492,6 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			btnChangeEffect.setMinimumHeight(UI.defaultControlSize);
 			btnChangeEffect.setTextColor(UI.colorState_text_listitem_reactive);
 		} else {
-			UI.isLargeScreen = true;
 			Player.bassBoostMode = false;
 		}
 		barBass = (BgSeekBar)findViewById(R.id.barBass);
@@ -500,18 +512,21 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			barVirtualizer.setNextFocusRightId(R.id.chkAGC);
 			barVirtualizer.setNextFocusDownId(R.id.chkAGC);
 			UI.setNextFocusForwardId(barVirtualizer, R.id.chkAGC);
-			if (UI.isLargeScreen) {
+			if (screenConsideredLarge) {
 				btnGoBack.setNextFocusLeftId(R.id.chkAGC);
 				btnMenu.setNextFocusUpId(R.id.chkAGC);
 			}
 		}
 		LinearLayout.LayoutParams lp;
-		if (UI.isLargeScreen) {
-			UI.prepareViewPaddingForLargeScreen(panelControls, 0, (screenNotSoLarge && !UI.isLandscape) ? UI.controlMargin : UI.controlLargeMargin);
+		if (screenConsideredLarge) {
+			if (addLargeEmptySpaces)
+				UI.prepareViewPaddingBasedOnScreenWidth(panelControls, 0, 0, 0);
+			else
+				panelControls.setPadding(0, 0, 0, !UI.isLandscape ? UI.controlMargin : UI.controlLargeMargin);
 			if (!UI.isLandscape) {
 				panelControls.setOrientation(LinearLayout.VERTICAL);
 				panelControls.setWeightSum(0);
-				final int margin = (screenNotSoLarge ? UI.controlMargin : (UI.controlLargeMargin << 1));
+				final int margin = (addLargeEmptySpaces ? (UI.controlLargeMargin << 1) : UI.controlMargin);
 				lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 				lp.leftMargin = margin;
 				lp.topMargin = margin >> 1;
@@ -521,23 +536,21 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0);
 				lp.weight = 1;
 				lp.leftMargin = margin;
-				lp.topMargin = (screenNotSoLarge ? UI.controlLargeMargin : margin);
+				lp.topMargin = (addLargeEmptySpaces ? margin : UI.controlLargeMargin);
 				lp.rightMargin = margin;
 				lp.bottomMargin = margin >> 1;
 				panelEqualizer.setLayoutParams(lp);
 			}
-			if (screenNotSoLarge || BuildConfig.X) {
+			if (!addLargeEmptySpaces || BuildConfig.X) {
 				lp = (LinearLayout.LayoutParams)barBass.getLayoutParams();
 				lp.bottomMargin = UI.controlLargeMargin;
 				barBass.setLayoutParams(lp);
 			}
 		} else {
 			if (UI.isLandscape) {
-				if (btnChangeEffect != null) {
-					lp = (LinearLayout.LayoutParams)btnChangeEffect.getLayoutParams();
-					lp.topMargin = 0;
-					btnChangeEffect.setLayoutParams(lp);
-				}
+				lp = (LinearLayout.LayoutParams)btnChangeEffect.getLayoutParams();
+				lp.topMargin = 0;
+				btnChangeEffect.setLayoutParams(lp);
 				lp = (LinearLayout.LayoutParams)chkEqualizer.getLayoutParams();
 				lp.bottomMargin = 0;
 				chkEqualizer.setLayoutParams(lp);
@@ -555,9 +568,9 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 					lp.topMargin = UI.controlMargin;
 					chkAGC.setLayoutParams(lp);
 				}
-				panelControls.setPadding(UI.controlLargeMargin, UI.thickDividerSize, UI.controlLargeMargin, 0);
+				UI.prepareViewPaddingBasedOnScreenWidth(panelControls, UI.controlLargeMargin, UI.thickDividerSize, 0);
 			} else {
-				panelControls.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, 0);
+				UI.prepareViewPaddingBasedOnScreenWidth(panelControls, UI.controlMargin, UI.controlMargin, 0);
 			}
 		}
 		UI.prepareControlContainer(findViewById(R.id.panelTop), false, true);
