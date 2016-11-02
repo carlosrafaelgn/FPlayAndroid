@@ -57,7 +57,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 	private BgButton btnNeutral, btnNegative, btnPositive;
 	private View contentView;
 	private CharSequence title;
-	private boolean titleVisible, emptyBackground, scanChildren, titleBorder, neutralIcon;
+	private boolean titleVisible, emptyBackground, scanChildren, titleBorder, neutralIcon, hideSoftInput;
 	private Drawable backgroundDrawable;
 	private int backgroundId;
 	private DialogInterface.OnClickListener clickListener;
@@ -165,6 +165,10 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		backgroundId = resId;
 	}
 
+	public void setHideSoftInput(boolean hideSoftInput) {
+		this.hideSoftInput = hideSoftInput;
+	}
+
 	@Override
 	public boolean dispatchPopulateAccessibilityEvent(@NonNull AccessibilityEvent event) {
 		if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
@@ -217,7 +221,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		super.onCreate(savedInstanceState);
 
 		if (getWindow() != null)
-			getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+			getWindow().setSoftInputMode(hideSoftInput ? WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN : WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
 		final Context context = getContext();
 

@@ -79,9 +79,9 @@ public final class TextIconDrawable extends Drawable {
 
 	public TextIconDrawable(String icon, int color) {
 		this.icon = icon;
-		this.width = UI.defaultCheckIconSize + UI.controlMargin;
-		this.height = UI.defaultCheckIconSize;
-		this.textSize = UI.defaultCheckIconSize;
+		this.width = UI.defaultControlContentsSize + UI.controlMargin;
+		this.height = UI.defaultControlContentsSize;
+		this.textSize = UI.defaultControlContentsSize;
 		this.color = color;
 		this.currentColor = color;
 		this.stateSet = super.getState();

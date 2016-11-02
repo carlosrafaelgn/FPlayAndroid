@@ -970,7 +970,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			btnAbout.setText(R.string.apply_theme);
 		} else if (bluetoothMode) {
 			btnAbout.setText(R.string.tutorial);
-			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.defaultControlContentsSize), null, null, null);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor()), null, null, null);
 		} else {
 			try {
 				showBluetooth = (BluetoothAdapter.getDefaultAdapter() != null);
@@ -990,7 +990,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				sep.setVisibility(View.VISIBLE);
 				btnBluetooth.setVisibility(View.VISIBLE);
 			}
-			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, UI.color_text), null, null, null);
 		}
 
 		btnGoBack.setNextFocusDownId(2);
@@ -1141,7 +1141,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else {
 				addHeader(ctx, R.string.hdr_display, optAutoTurnOffPlaylist, hIdx++);
 			}
-			addOption(optKeepScreenOn);
+			if (!UI.isChromebook)
+				addOption(optKeepScreenOn);
 			addOption(optTheme);
 			addOption(opt3D);
 			addOption(optFlat);
@@ -1153,7 +1154,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optTransition);
 			addOption(optPopupTransition);
 			addOption(optAnimations);
-			addOption(optNotFullscreen);
+			if (!UI.isChromebook)
+				addOption(optNotFullscreen);
 			addOption(optIsVerticalMarginLarge);
 			addOption(optExtraSpacing);
 			if (!UI.isLargeScreen)
@@ -1201,7 +1203,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optBackKeyAlwaysReturnsToPlayerWhenBrowsing);
 			addOption(optClearListWhenPlayingFolders);
 			addOption(optGoBackWhenPlayingFolders);
-			addOption(optBlockBackKey);
+			if (!UI.isChromebook)
+				addOption(optBlockBackKey);
 			addOption(optWrapAroundList);
 			addOption(optDoubleClickMode);
 			addOption(optMarqueeTitle);

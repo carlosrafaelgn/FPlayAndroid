@@ -154,7 +154,7 @@ public final class BgButton extends Button {
 		this.checked = checked;
 	}
 
-	public void formatAsPlainCheckBox(boolean checked, boolean changeWidth, boolean changeHeight) {
+	public void formatAsChildCheckBox(boolean checked, boolean changeWidth, boolean changeHeight) {
 		formatAsCheckBox(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, checked, changeWidth, changeHeight);
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.defaultCheckIconSize);
 	}

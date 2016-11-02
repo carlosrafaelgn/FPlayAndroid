@@ -542,13 +542,13 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			btnMenu.setText(txt);
 			btnMenu.setContentDescription(txt);
 			btnMenu.setDefaultHeight();
-			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_SAVE, UI.color_text, UI.defaultControlContentsSize)), null, null, null);
+			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_SAVE, UI.color_text)), null, null, null);
 		} else {
 			final CharSequence txt = getText(R.string.msg_delete_button);
 			btnMenu.setText(txt);
 			btnMenu.setContentDescription(txt);
 			btnMenu.setDefaultHeight();
-			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_DELETE, UI.color_text, UI.defaultControlContentsSize)), null, null, null);
+			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_DELETE, UI.color_text)), null, null, null);
 			btnAdd = (BgButton)findViewById(R.id.btnAdd);
 			btnAdd.setTextColor(UI.colorState_text_reactive);
 			btnAdd.setOnClickListener(this);

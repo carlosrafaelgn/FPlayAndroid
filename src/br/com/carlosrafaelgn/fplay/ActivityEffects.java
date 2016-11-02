@@ -453,7 +453,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		btnAudioSink = (BgButton)findViewById(R.id.btnAudioSink);
 		btnAudioSink.setOnClickListener(this);
 		btnAudioSink.setDefaultHeight();
-		btnAudioSink.setCompoundDrawables(new TextIconDrawable(UI.ICON_SETTINGS, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+		btnAudioSink.setCompoundDrawables(new TextIconDrawable(UI.ICON_SETTINGS, UI.color_text), null, null, null);
 		chkEqualizer = (BgButton)findViewById(R.id.chkEqualizer);
 		chkEqualizer.setOnClickListener(this);
 		chkEqualizer.setTextColor(UI.colorState_text_listitem_reactive);
@@ -476,7 +476,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			txtAGC = (TextView)findViewById(R.id.txtAGC);
 			UI.mediumText(txtAGC);
 			txtAGC.setTextColor(UI.colorState_text_listitem_static);
-			txtAGC.setCompoundDrawables(new TextIconDrawable(UI.ICON_CLIP, UI.color_text_listitem_secondary, UI.defaultControlContentsSize), null, null, null);
+			txtAGC.setCompoundDrawables(new TextIconDrawable(UI.ICON_CLIP, UI.color_text_listitem_secondary), null, null, null);
 			txtAGC.setVisibility(View.VISIBLE);
 			updateAGCText();
 			tmrAGC = new Timer(this, "AGC Update Timer", false, true, false);
@@ -488,7 +488,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		btnChangeEffect = (BgButton)findViewById(R.id.btnChangeEffect);
 		if (btnChangeEffect != null) {
 			btnChangeEffect.setOnClickListener(this);
-			btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, UI.color_text_listitem, UI.defaultControlContentsSize), null, null, null);
+			btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, UI.color_text_listitem), null, null, null);
 			btnChangeEffect.setMinimumHeight(UI.defaultControlSize);
 			btnChangeEffect.setTextColor(UI.colorState_text_listitem_reactive);
 		} else {

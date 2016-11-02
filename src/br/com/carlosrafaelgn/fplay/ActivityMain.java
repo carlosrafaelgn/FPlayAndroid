@@ -67,6 +67,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
+import br.com.carlosrafaelgn.fplay.ui.BgEditText;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
@@ -268,10 +269,15 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		}
 
 		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
-		l.addView(UI.createDialogEditText(getHostActivity(), 0, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS));
+		final BgEditText editText = UI.createDialogEditText(getHostActivity(), 0, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			editText.setShowSoftInputOnFocus(false);
+		l.addView(editText);
 		final BgDialog dialog = new BgDialog(getHostActivity(), l, null);
 		dialog.setTitle(R.string.information);
 		dialog.setPositiveButton(R.string.ok);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			dialog.setHideSoftInput(true);
 		dialog.show();
 	}
 
@@ -944,6 +950,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			return true;
 		} else*/ if (Player.songs.selecting || Player.songs.moving) {
 			cancelSelection(false);
+			return true;
+		}
+		if (UI.isChromebook) {
+			getHostActivity().moveTaskToBack(true);
 			return true;
 		}
 		return UI.blockBackKey;

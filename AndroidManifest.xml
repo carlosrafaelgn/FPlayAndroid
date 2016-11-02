@@ -97,6 +97,7 @@
             android:launchMode="singleTask"
             android:multiprocess="false"
             android:screenOrientation="unspecified"
+            android:resizeableActivity="true"
             android:stateNotNeeded="true"
             android:theme="@style/AppTheme" >
             <intent-filter>
@@ -210,6 +211,7 @@
             android:multiprocess="false"
             android:parentActivityName="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
             android:screenOrientation="unspecified"
+            android:resizeableActivity="true"
             android:stateNotNeeded="true"
             android:theme="@style/AppTheme" >
             <meta-data

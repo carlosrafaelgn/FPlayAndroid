@@ -216,7 +216,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (btnCheckbox == null && hasCheckbox && getChildCount() > 0 && (getChildAt(0) instanceof BgButton)) {
 			specialTypeChanged = true;
 			btnCheckbox = (BgButton)getChildAt(0);
-			btnCheckbox.formatAsPlainCheckBox(false, true, false);
+			btnCheckbox.formatAsChildCheckBox(false, true, false);
 			btnCheckbox.setContentDescription(getContext().getText(R.string.unselect), getContext().getText(R.string.select));
 			btnCheckbox.setOnClickListener(this);
 		}

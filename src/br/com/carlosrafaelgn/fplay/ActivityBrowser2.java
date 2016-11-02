@@ -813,7 +813,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		btnURL = (BgButton)findViewById(R.id.btnURL);
 		btnURL.setOnClickListener(this);
 		btnURL.setDefaultHeight();
-		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text), null, null, null);
 		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
 		chkFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, true, true);
@@ -838,12 +838,12 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		sep.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
 		chkAll = (BgButton)findViewById(R.id.chkAll);
 		chkAll.setOnClickListener(this);
-		chkAll.formatAsPlainCheckBox(false, true, true);
+		chkAll.formatAsChildCheckBox(false, true, true);
 		chkAll.setContentDescription(getText(R.string.unselect_everything), getText(R.string.select_everything));
 		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
 		btnGoBackToPlayer.setTextColor(UI.colorState_text_reactive);
 		btnGoBackToPlayer.setOnClickListener(this);
-		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_LIST, UI.color_text, UI.defaultControlContentsSize), null, null, null);
+		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_LIST, UI.color_text), null, null, null);
 		btnGoBackToPlayer.setDefaultHeight();
 		btnAdd = (BgButton)findViewById(R.id.btnAdd);
 		btnAdd.setTextColor(UI.colorState_text_reactive);
