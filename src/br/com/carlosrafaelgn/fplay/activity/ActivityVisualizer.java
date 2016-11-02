@@ -509,7 +509,10 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	}
 
 	@Override
-	protected void onPause() {
+	protected void onStop() {
+		//changed from onPaused() to onStop()
+		//https://developer.android.com/guide/topics/ui/multi-window.html#lifecycle
+		//In multi-window mode, an app can be in the paused state and still be visible to the user.
 		if (visualizer != null && !visualizerPaused) {
 			visualizerPaused = true;
 			visualizer.onActivityPause();
@@ -518,7 +521,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		if (mediaVisualizer != null)
 			mediaVisualizer.pause();
 		Player.setAppNotInForeground(true);
-		super.onPause();
+		super.onStop();
 	}
 	
 	@Override

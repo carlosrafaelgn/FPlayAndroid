@@ -622,7 +622,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 	
 	@Override
-	protected void onPause() {
+	protected void onStop() {
+		//changed from onPaused() to onStop()
+		//https://developer.android.com/guide/topics/ui/multi-window.html#lifecycle
+		//In multi-window mode, an app can be in the paused state and still be visible to the user.
 		if (animator != null)
 			animator.end();
 		else if (anim != null)
@@ -633,7 +636,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.onPause();
 		}
 		Player.setAppNotInForeground(true);
-		super.onPause();
+		super.onStop();
 	}
 
 	@Override
