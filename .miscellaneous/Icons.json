@@ -732,9 +732,9 @@
         {
           "id": 40,
           "paths": [
-            "M0 0v1024h1024v-1024zM896 896h-768v-768h768z"
+            "M0 0v1024h1024v-1024zM938.688 938.688h-853.312v-853.312h853.312z"
           ],
-          "grid": 16,
+          "grid": 24,
           "tags": [
             "checkbox-unchecked"
           ],
@@ -1109,11 +1109,13 @@
         {
           "id": 27,
           "paths": [
-            "M512 0c-282.77 0-512 229.23-512 512s229.23 512 512 512c282.77 0 512-229.23 512-512s-229.23-512-512-512zM512 96c229.75 0 416 186.25 416 416s-186.25 416-416 416c-229.75 0-416-186.25-416-416s186.25-416 416-416zM512 256c-141.385 0-256 114.615-256 256s114.615 256 256 256c141.385 0 256-114.615 256-256s-114.615-256-256-256z"
+            "M512 0c-282.769 0-512 229.231-512 512 0 282.752 229.231 512 512 512 282.752 0 512-229.248 512-512 0-282.769-229.248-512-512-512zM512 85.333c235.641 0 426.667 191.025 426.667 426.667s-191.025 426.667-426.667 426.667c-235.641 0-426.667-191.025-426.667-426.667s191.025-426.667 426.667-426.667z",
+            "M768 512c0 141.385-114.615 256-256 256s-256-114.615-256-256c0-141.385 114.615-256 256-256s256 114.615 256 256z"
           ],
           "defaultCode": 120,
-          "grid": 32,
+          "grid": 24,
           "attrs": [
+            {},
             {}
           ],
           "tags": [
@@ -1125,10 +1127,10 @@
         {
           "id": 28,
           "paths": [
-            "M512 0c-282.771 0-512 229.229-512 512s229.229 512 512 512 512-229.229 512-512-229.248-512-512-512zM512 96c229.754 0 416 186.246 416 416s-186.246 416-416 416-416-186.24-416-416c0-229.754 186.246-416 416-416zM512 768c-341.331 170.669-170.669 85.331 0 0z"
+            "M512 0c-282.769 0-512 229.231-512 512 0 282.752 229.231 512 512 512 282.752 0 512-229.248 512-512 0-282.769-229.248-512-512-512zM512 85.333c235.641 0 426.667 191.025 426.667 426.667s-191.025 426.667-426.667 426.667c-235.641 0-426.667-191.025-426.667-426.667s191.025-426.667 426.667-426.667z"
           ],
           "defaultCode": 111,
-          "grid": 32,
+          "grid": 24,
           "attrs": [
             {}
           ],
@@ -1291,7 +1293,7 @@
           "name": "Config",
           "prevSize": 32,
           "code": 103,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 98,
@@ -1299,7 +1301,7 @@
           "name": "Ringtone",
           "prevSize": 32,
           "code": 57,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 97,
@@ -1419,7 +1421,7 @@
           "name": "3DPan",
           "prevSize": 32,
           "code": 41,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 71,
@@ -1427,7 +1429,7 @@
           "name": "Root",
           "prevSize": 32,
           "code": 40,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 69,
@@ -1443,7 +1445,7 @@
           "prevSize": 32,
           "code": 121,
           "name": "RepeatOne",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 68,
@@ -1460,7 +1462,7 @@
           "prevSize": 32,
           "code": 117,
           "name": "USB",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1496,7 +1498,7 @@
           "prevSize": 32,
           "code": 97,
           "name": "Hand",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1514,7 +1516,7 @@
           "prevSize": 32,
           "code": 87,
           "name": "Bluetooth",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1541,7 +1543,7 @@
           "prevSize": 32,
           "code": 109,
           "name": "Mic",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1559,7 +1561,7 @@
           "prevSize": 32,
           "code": 58,
           "name": "OptDial",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1631,7 +1633,7 @@
           "prevSize": 32,
           "code": 64,
           "name": "OptOrientation",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1649,7 +1651,7 @@
           "prevSize": 32,
           "code": 96,
           "name": "OptScreenOn",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1658,7 +1660,7 @@
           "prevSize": 32,
           "code": 46,
           "name": "OptTurnOff",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1712,16 +1714,16 @@
           "prevSize": 32,
           "code": 55,
           "name": "Icon",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
-          "order": 104,
+          "order": 106,
           "id": 0,
           "prevSize": 32,
           "code": 81,
           "name": "checkbox-unchecked",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1730,7 +1732,7 @@
           "prevSize": 32,
           "code": 113,
           "name": "checkbox-checked",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1739,16 +1741,16 @@
           "prevSize": 32,
           "code": 80,
           "name": "Play",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
-          "order": 34,
+          "order": 105,
           "id": 3,
           "prevSize": 32,
           "code": 108,
           "name": "List",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1757,7 +1759,7 @@
           "prevSize": 32,
           "code": 82,
           "name": "Remove",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1766,7 +1768,7 @@
           "prevSize": 32,
           "code": 83,
           "name": "Save",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1775,7 +1777,7 @@
           "prevSize": 32,
           "code": 76,
           "name": "Load",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1784,7 +1786,7 @@
           "prevSize": 32,
           "code": 85,
           "name": "Link",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1793,7 +1795,7 @@
           "prevSize": 32,
           "code": 42,
           "name": "FavoriteOff",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1802,7 +1804,7 @@
           "prevSize": 32,
           "code": 35,
           "name": "FavoriteOn",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1811,7 +1813,7 @@
           "prevSize": 32,
           "code": 65,
           "name": "Add",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1820,7 +1822,7 @@
           "prevSize": 32,
           "code": 69,
           "name": "Effects",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1829,7 +1831,7 @@
           "prevSize": 32,
           "code": 115,
           "name": "Settings",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1838,7 +1840,7 @@
           "prevSize": 32,
           "code": 86,
           "name": "Bars",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1847,7 +1849,7 @@
           "prevSize": 32,
           "code": 73,
           "name": "Info",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1856,7 +1858,7 @@
           "prevSize": 32,
           "code": 104,
           "name": "Shuffle",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1865,7 +1867,7 @@
           "prevSize": 32,
           "code": 116,
           "name": "Repeat",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1874,7 +1876,7 @@
           "prevSize": 32,
           "code": 88,
           "name": "Exit",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1883,7 +1885,7 @@
           "prevSize": 32,
           "code": 60,
           "name": "Previous",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1892,7 +1894,7 @@
           "prevSize": 32,
           "code": 62,
           "name": "Next",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1901,7 +1903,7 @@
           "prevSize": 32,
           "code": 124,
           "name": "Pause",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1910,7 +1912,7 @@
           "prevSize": 32,
           "code": 77,
           "name": "Move",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1919,7 +1921,7 @@
           "prevSize": 32,
           "code": 72,
           "name": "Home",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1928,7 +1930,7 @@
           "prevSize": 32,
           "code": 94,
           "name": "Up",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1937,7 +1939,7 @@
           "prevSize": 32,
           "code": 68,
           "name": "Delete",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1946,7 +1948,7 @@
           "prevSize": 32,
           "code": 122,
           "name": "Menu",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1955,7 +1957,7 @@
           "prevSize": 32,
           "code": 70,
           "name": "Search",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1964,7 +1966,7 @@
           "prevSize": 32,
           "code": 120,
           "name": "OptOn",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1973,7 +1975,7 @@
           "prevSize": 32,
           "code": 111,
           "name": "OptOff",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1982,7 +1984,7 @@
           "prevSize": 32,
           "code": 43,
           "name": "VolPlus",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1991,7 +1993,7 @@
           "prevSize": 32,
           "code": 45,
           "name": "VolMinus",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2000,7 +2002,7 @@
           "prevSize": 32,
           "code": 48,
           "name": "Mute",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2009,7 +2011,7 @@
           "prevSize": 32,
           "code": 49,
           "name": "Vol1",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2018,7 +2020,7 @@
           "prevSize": 32,
           "code": 50,
           "name": "Vol2",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2027,7 +2029,7 @@
           "prevSize": 32,
           "code": 51,
           "name": "Vol3",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2036,7 +2038,7 @@
           "prevSize": 32,
           "code": 52,
           "name": "Vol4",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2045,7 +2047,7 @@
           "prevSize": 32,
           "code": 33,
           "name": "Error",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2054,7 +2056,7 @@
           "prevSize": 32,
           "code": 63,
           "name": "Question",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2063,7 +2065,7 @@
           "prevSize": 32,
           "code": 71,
           "name": "Grip",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         }
       ],

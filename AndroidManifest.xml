@@ -93,9 +93,6 @@
         <!-- http://stackoverflow.com/a/14185426/3569421 -->
         <uses-library android:required="false" android:name="com.sec.android.app.multiwindow" />
         <meta-data android:name="com.sec.android.support.multiwindow" android:value="true" />
-        <!-- http://dominoc925.blogspot.com.br/2014/05/how-to-enable-multiwindow-support-for.html -->
-        <meta-data android:name="android.intent.category.MULTIWINDOW_LAUNCHER" android:value="true" />
-        <meta-data android:name="com.sec.android.intent.category.MULTIWINDOW_LAUNCHER" android:value="true" />"
         <meta-data android:name="com.sec.android.multiwindow.DEFAULT_SIZE_W" android:value="320dp" />
         <meta-data android:name="com.sec.android.multiwindow.DEFAULT_SIZE_H" android:value="320dp" />
         <meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_W" android:value="320dp" />

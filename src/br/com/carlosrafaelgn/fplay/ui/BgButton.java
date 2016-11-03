@@ -161,7 +161,7 @@ public final class BgButton extends Button {
 
 	public void formatAsLabelledCheckBox() {
 		checkable = true;
-		checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, getTextColors().getDefaultColor());
+		checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, getTextColors().getDefaultColor(), UI.defaultCheckIconSize);
 		super.setCompoundDrawables(checkBox, null, null, null);
 	}
 

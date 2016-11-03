@@ -68,7 +68,7 @@ public final class TextIconDrawable extends Drawable {
 
 	public TextIconDrawable(String icon) {
 		this.icon = icon;
-		this.width = UI.defaultCheckIconSize + UI.menuMargin;// UI._8sp + UI._8sp + 1;
+		this.width = UI.defaultCheckIconSize + UI.menuMargin;
 		this.height = UI.defaultCheckIconSize;
 		this.textSize = UI.defaultCheckIconSize;
 		this.color = UI.color_menu_icon;
