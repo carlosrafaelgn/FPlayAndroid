@@ -129,103 +129,103 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			final int c = ((view == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes);
 			menu.add(0, 0, 0, R.string.never)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s <= 0 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(s <= 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, c, 0, getMinuteString(c))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s == c ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(s == c ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 1, 1);
 			menu.add(2, 60, 0, getMinuteString(60))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s == 60 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(s == 60 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(2, 90, 1, getMinuteString(90))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s == 90 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(s == 90 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(2, 120, 2, getMinuteString(120))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s == 120 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(s == 120 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 2, 4);
 			menu.add(3, -2, 0, R.string.custom)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optForcedLocale) {
 			final int o = UI.forcedLocale;
 			lastMenuView = optForcedLocale;
 			UI.prepare(menu);
 			menu.add(0, UI.LOCALE_NONE, 0, R.string.standard_language)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_NONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, UI.LOCALE_DE, 0, UI.getLocaleDescriptionFromCode(UI.LOCALE_DE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_DE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_DE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.LOCALE_US, 1, UI.getLocaleDescriptionFromCode(UI.LOCALE_US))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_US) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_US) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.LOCALE_ES, 2, UI.getLocaleDescriptionFromCode(UI.LOCALE_ES))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_ES) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_ES) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.LOCALE_FR, 3, UI.getLocaleDescriptionFromCode(UI.LOCALE_FR))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_FR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_FR) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.LOCALE_PTBR, 4, UI.getLocaleDescriptionFromCode(UI.LOCALE_PTBR))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_PTBR) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_PTBR) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.LOCALE_RU, 5, UI.getLocaleDescriptionFromCode(UI.LOCALE_RU))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_RU) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.LOCALE_UK, 6, UI.getLocaleDescriptionFromCode(UI.LOCALE_UK))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optTheme) {
 			final int o = UI.theme;
 			lastMenuView = optTheme;
 			UI.prepare(menu);
 			menu.add(0, UI.THEME_CUSTOM, 0, UI.getThemeString(UI.THEME_CUSTOM))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_CUSTOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_CUSTOM) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, UI.THEME_FPLAY, 0, UI.getThemeString(UI.THEME_FPLAY))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_FPLAY_DARK, 1, UI.getThemeString(UI.THEME_FPLAY_DARK))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY_DARK) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY_DARK) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_CREAMY, 2, UI.getThemeString(UI.THEME_CREAMY))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_CREAMY) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_CREAMY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_DARK_LIGHT, 3, UI.getThemeString(UI.THEME_DARK_LIGHT))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_DARK_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_DARK_LIGHT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_BLUE_ORANGE, 4, UI.getThemeString(UI.THEME_BLUE_ORANGE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE_ORANGE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_BLUE, 5, UI.getThemeString(UI.THEME_BLUE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_ORANGE, 6, UI.getThemeString(UI.THEME_ORANGE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_ORANGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_ORANGE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_LIGHT, 7, UI.getThemeString(UI.THEME_LIGHT))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_LIGHT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.THEME_LIGHT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optVolumeControlType) {
 			lastMenuView = optVolumeControlType;
 			UI.prepare(menu);
 			menu.add(0, Player.VOLUME_CONTROL_STREAM, 0, R.string.volume_control_type_integrated)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, Player.VOLUME_CONTROL_DB, 0, R.string.volume_control_type_decibels)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_DB) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_DB) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, Player.VOLUME_CONTROL_PERCENT, 1, R.string.volume_control_type_percentage)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_PERCENT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_PERCENT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 1, 2);
 			menu.add(2, Player.VOLUME_CONTROL_NONE, 0, R.string.noneM)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((Player.volumeControlType == Player.VOLUME_CONTROL_NONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optExtraInfoMode) {
 			lastMenuView = optExtraInfoMode;
 			UI.prepare(menu);
@@ -233,7 +233,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = Song.EXTRA_ARTIST; i <= Song.EXTRA_ARTIST_ALBUM; i++) {
 				menu.add(0, i, i, getExtraInfoModeString(i))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((o == i) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			}
 		} else if (view == optForceOrientation) {
 			lastMenuView = optForceOrientation;
@@ -241,62 +241,62 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			final int o = UI.forcedOrientation;
 			menu.add(0, 0, 0, R.string.none)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, -1, 0, R.string.landscape)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o < 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o < 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, 1, 1, R.string.portrait)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o > 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o > 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optTransition) {
 			lastMenuView = optTransition;
 			UI.prepare(menu);
 			final int o = UI.transitions & 0xFF;
 			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(UI.TRANSITION_NONE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, UI.TRANSITION_ZOOM_FADE, 0, UI.getTransitionString(UI.TRANSITION_ZOOM_FADE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM_FADE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 1, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.TRANSITION_SLIDE, 2, UI.getTransitionString(UI.TRANSITION_SLIDE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.TRANSITION_FADE, 3, UI.getTransitionString(UI.TRANSITION_FADE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.TRANSITION_DISSOLVE, 4, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.TRANSITION_ZOOM, 5, UI.getTransitionString(UI.TRANSITION_ZOOM))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optPopupTransition) {
 			lastMenuView = optPopupTransition;
 			UI.prepare(menu);
 			final int o = UI.transitions >>> 8;
 			menu.add(0, UI.TRANSITION_NONE, 0, UI.getTransitionString(UI.TRANSITION_NONE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_NONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 				menu.add(1, UI.TRANSITION_ZOOM_FADE, 0, UI.getTransitionString(UI.TRANSITION_ZOOM_FADE))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((o == UI.TRANSITION_ZOOM_FADE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.TRANSITION_SLIDE_SMOOTH, 1, UI.getTransitionString(UI.TRANSITION_SLIDE_SMOOTH))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_SLIDE_SMOOTH) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.TRANSITION_FADE, 2, UI.getTransitionString(UI.TRANSITION_FADE))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((o == UI.TRANSITION_FADE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 				menu.add(1, UI.TRANSITION_DISSOLVE, 3, UI.getTransitionString(UI.TRANSITION_DISSOLVE))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((o == UI.TRANSITION_DISSOLVE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optScrollBarSongList || view == optScrollBarBrowser) {
 			lastMenuView = (SettingView)view;
 			UI.prepare(menu);
@@ -304,34 +304,34 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (view == optScrollBarBrowser)
 				menu.add(0, BgListView.SCROLLBAR_INDEXED, 0, R.string.indexed_if_possible)
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_INDEXED) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_INDEXED) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, BgListView.SCROLLBAR_LARGE, 1, R.string.large)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_LARGE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_LARGE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, BgListView.SCROLLBAR_SYSTEM, 2, R.string.system_integrated)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((d != BgListView.SCROLLBAR_INDEXED && d != BgListView.SCROLLBAR_LARGE && d != BgListView.SCROLLBAR_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((d != BgListView.SCROLLBAR_INDEXED && d != BgListView.SCROLLBAR_LARGE && d != BgListView.SCROLLBAR_NONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 3);
 			menu.add(1, BgListView.SCROLLBAR_NONE, 0, R.string.none)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((d == BgListView.SCROLLBAR_NONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optFadeInFocus || view == optFadeInPause || view == optFadeInOther) {
 			lastMenuView = (SettingView)view;
 			UI.prepare(menu);
 			final int d = ((view == optFadeInFocus) ? Player.fadeInIncrementOnFocus : ((view == optFadeInPause) ? Player.fadeInIncrementOnPause : Player.fadeInIncrementOnOther));
 			menu.add(0, 0, 0, R.string.none)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((d <= 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((d <= 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, 250, 0, R.string.dshort)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((d >= 250) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((d >= 250) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, 125, 1, R.string.dmedium)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(((d >= 125) && (d < 250)) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(((d >= 125) && (d < 250)) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, 62, 2, R.string.dlong)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(((d > 0) && (d < 125)) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(((d > 0) && (d < 125)) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optHeadsetHook1 || view == optHeadsetHook2 || view == optHeadsetHook3) {
 			lastMenuView = (SettingView)view;
 			UI.prepare(menu);
@@ -339,17 +339,17 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			final int action = Player.getHeadsetHookAction(pressCount);
 			menu.add(0, 0, 0, R.string.nothing)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((action == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((action == 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
 			menu.add(1, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0, getText(R.string.play) + "/" + getText(R.string.pause))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, KeyEvent.KEYCODE_MEDIA_NEXT, 1, R.string.next)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_NEXT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_NEXT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, KeyEvent.KEYCODE_MEDIA_PREVIOUS, 2, R.string.previous)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_PREVIOUS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((action == KeyEvent.KEYCODE_MEDIA_PREVIOUS) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optBtSize) {
 			lastMenuView = optBtSize;
 			UI.prepare(menu);
@@ -357,7 +357,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = 0; i <= 6; i++) {
 				menu.add(0, i, i, Integer.toString(1 << (2 + i)))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((size == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((size == i) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			}
 		} else if (view == optBtSpeed) {
 			lastMenuView = optBtSpeed;
@@ -366,7 +366,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = 0; i <= 2; i++) {
 				menu.add(0, i, i, Integer.toString(3 - i))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((speed == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((speed == i) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			}
 		} else if (view == optBtFramesToSkip) {
 			lastMenuView = optBtFramesToSkip;
@@ -375,7 +375,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = 0; i <= 11; i++) {
 				menu.add(0, i, i, Integer.toString(Player.getBluetoothVisualizerFramesPerSecond(i)))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((framesToSkip == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((framesToSkip == i) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			}
 		} else if (view == optBytesBeforeDecoding) {
 			lastMenuView = optBytesBeforeDecoding;
@@ -384,7 +384,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = 0; i <= 7; i++) {
 				menu.add(0, i, i, getBytesBeforeDecodingString(i))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((bytesBeforeDecodingIndex == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((bytesBeforeDecodingIndex == i) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			}
 		} else if (view == optMSBeforePlayback) {
 			lastMenuView = optMSBeforePlayback;
@@ -393,7 +393,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			for (int i = 0; i <= 4; i++) {
 				menu.add(0, i, i, getSecondsBeforePlaybackString(i))
 					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable((secondsBeforePlaybackIndex == i) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+					.setIcon(new TextIconDrawable((secondsBeforePlaybackIndex == i) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			}
 		} else if (view == optBufferSize) {
 			lastMenuView = optBufferSize;
@@ -401,44 +401,44 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			final int bufferSizeIndex = (Player.getBufferConfig() & Player.BUFFER_SIZE_MASK);
 			menu.add(0, Player.BUFFER_SIZE_500MS, 0, getBufferSizeString(Player.BUFFER_SIZE_500MS))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_500MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_500MS) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, Player.BUFFER_SIZE_1000MS, 1, getBufferSizeString(Player.BUFFER_SIZE_1000MS))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_1000MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_1000MS) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, Player.BUFFER_SIZE_1500MS, 2, getBufferSizeString(Player.BUFFER_SIZE_1500MS))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_1500MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_1500MS) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, Player.BUFFER_SIZE_2000MS, 3, getBufferSizeString(Player.BUFFER_SIZE_2000MS))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_2000MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_2000MS) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, Player.BUFFER_SIZE_2500MS, 4, getBufferSizeString(Player.BUFFER_SIZE_2500MS))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_2500MS) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((bufferSizeIndex == Player.BUFFER_SIZE_2500MS) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optFillThreshold) {
 			lastMenuView = optFillThreshold;
 			UI.prepare(menu);
 			final int fillThresholdIndex = (Player.getBufferConfig() & Player.FILL_THRESHOLD_MASK);
 			menu.add(0, Player.FILL_THRESHOLD_25, 0, getFillThresholdString(Player.FILL_THRESHOLD_25))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_25) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_25) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, Player.FILL_THRESHOLD_50, 1, getFillThresholdString(Player.FILL_THRESHOLD_50))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_50) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_50) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, Player.FILL_THRESHOLD_75, 2, getFillThresholdString(Player.FILL_THRESHOLD_75))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_75) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_75) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, Player.FILL_THRESHOLD_100, 3, getFillThresholdString(Player.FILL_THRESHOLD_100))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_100) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((fillThresholdIndex == Player.FILL_THRESHOLD_100) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optPlaybackEngine) {
 			lastMenuView = optPlaybackEngine;
 			UI.prepare(menu);
 			menu.add(0, 0, 0, getPlaybackEngineString(false))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(!MediaContext.useOpenSLEngine ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(!MediaContext.useOpenSLEngine ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, 1, 1, getPlaybackEngineString(true))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(MediaContext.useOpenSLEngine ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable(MediaContext.useOpenSLEngine ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		}
 	}
 	
@@ -1036,9 +1036,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optBtConnect = new SettingView(ctx, UI.ICON_BLUETOOTH, "", null, false, false, false);
 			optBtStart = new SettingView(ctx, Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_TRANSMITTING ? UI.ICON_PAUSE : UI.ICON_PLAY, "", null, false, false, false);
 			optBtFramesToSkip = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.bt_fps).toString(), getFramesToSkipString(), false, false, false);
-			optBtSize = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.bt_sample_count).toString(), getSizeString(), false, false, false);
-			optBtVUMeter = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.bt_vumeter).toString(), null, true, Player.isBluetoothUsingVUMeter(), false);
-			optBtSpeed = new SettingView(ctx, UI.ICON_VISUALIZER, getText(R.string.sustain).toString(), getSpeedString(), false, false, false);
+			optBtSize = new SettingView(ctx, UI.ICON_VISUALIZER24, getText(R.string.bt_sample_count).toString(), getSizeString(), false, false, false);
+			optBtVUMeter = new SettingView(ctx, UI.ICON_VISUALIZER24, getText(R.string.bt_vumeter).toString(), null, true, Player.isBluetoothUsingVUMeter(), false);
+			optBtSpeed = new SettingView(ctx, UI.ICON_VISUALIZER24, getText(R.string.sustain).toString(), getSpeedString(), false, false, false);
 			refreshBluetoothStatus(true);
 
 			headers = new TextView[3];

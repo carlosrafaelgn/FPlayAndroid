@@ -172,13 +172,13 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		UI.separator(menu, 1, 2);
 		menu.add(2, MNU_LORES, 0, "LoRes")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((!voice && !lerp) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((!voice && !lerp) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		menu.add(2, MNU_HIRES, 1, "HiRes")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(lerp ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable(lerp ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		menu.add(2, MNU_VOICEPRINT, 2, "VoicePrint")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(voice ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable(voice ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 	}
 	
 	//Runs on the MAIN thread

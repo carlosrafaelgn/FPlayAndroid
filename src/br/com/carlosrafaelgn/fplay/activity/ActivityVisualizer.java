@@ -229,8 +229,8 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 			return;
 		
 		if (updateInfo)
-			info.getInfo(getResources().getConfiguration());
-		
+			updateInfoWithConfiguration(null);
+
 		panelTopHiding = 0;
 		panelTopAlpha = 1.0f;
 
@@ -293,6 +293,15 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		}
 		
 		panelControls.requestLayout();
+	}
+
+	private void updateInfoWithConfiguration(Configuration configuration) {
+		if (configuration == null)
+			configuration = getResources().getConfiguration();
+		if (configuration != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+			info.getInfo(UI.dpToPxI(configuration.screenWidthDp), UI.dpToPxI(configuration.screenHeightDp));
+		else
+			info.getInfo(0, 0);
 	}
 
 	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!
@@ -368,7 +377,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 				final Class<?> clazz = Class.forName(name);
 				if (clazz != null) {
 					try {
-						info.getInfo(getResources().getConfiguration());
+						updateInfoWithConfiguration(null);
 						visualizer = (Visualizer)clazz.getConstructor(Activity.class, boolean.class, Intent.class).newInstance(this, info.isLandscape, si);
 					} catch (Throwable ex) {
 						ex.printStackTrace();
@@ -495,7 +504,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 			return;
 		final boolean i = info.isLandscape;
 		final int w = info.usableScreenWidth, h = info.usableScreenHeight;
-		info.getInfo(newConfig);
+		updateInfoWithConfiguration(newConfig);
 		if (i != info.isLandscape || w != info.usableScreenWidth || h != info.usableScreenHeight) {
 			final Visualizer v = visualizer;
 			if (v != null)

@@ -900,31 +900,31 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			UI.prepare(s);
 			s.add(0, MNU_DIFFUSION0, 0, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 0"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((diffusion == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((diffusion == 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			s.add(0, MNU_DIFFUSION1, 1, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 1"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((diffusion != 0 && diffusion != 2 && diffusion != 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((diffusion != 0 && diffusion != 2 && diffusion != 3) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			s.add(0, MNU_DIFFUSION2, 2, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 2"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((diffusion == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((diffusion == 2) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			s.add(0, MNU_DIFFUSION3, 3, Player.theApplication.getText(R.string.diffusion) + UI.punctuationSpace(": 3"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((diffusion == 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((diffusion == 3) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			s = menu.addSubMenu(1, 0, 2, Player.theApplication.getText(R.string.speed) + "\u2026")
 				.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
 			UI.prepare(s);
 			s.add(0, MNU_RISESPEED0, 0, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 0"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((riseSpeed == 0) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((riseSpeed == 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			s.add(0, MNU_RISESPEED1, 1, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 1"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((riseSpeed != 0 && riseSpeed != 2 && riseSpeed != 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((riseSpeed != 0 && riseSpeed != 2 && riseSpeed != 3) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			s.add(0, MNU_RISESPEED2, 2, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 2"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((riseSpeed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((riseSpeed == 2) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			s.add(0, MNU_RISESPEED3, 3, Player.theApplication.getText(R.string.speed) + UI.punctuationSpace(": 3"))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((riseSpeed == 3) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((riseSpeed == 3) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			break;
 		default:
 			UI.separator(menu, 1, 0);
@@ -936,13 +936,13 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		UI.separator(menu, 2, 0);
 		menu.add(2, MNU_SPEED0, 1, Player.theApplication.getText(R.string.sustain) + " 3")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		menu.add(2, MNU_SPEED1, 2, Player.theApplication.getText(R.string.sustain) + " 2")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((speed == 1) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((speed == 1) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		menu.add(2, MNU_SPEED2, 3, Player.theApplication.getText(R.string.sustain) + " 1")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((speed == 2) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((speed == 2) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 	}
 	
 	//Runs on the MAIN thread

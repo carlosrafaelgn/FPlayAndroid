@@ -1,8 +1,8 @@
 {
   "metadata": {
     "name": "Icons",
-    "lastOpened": 1476027386919,
-    "created": 1476027385313
+    "lastOpened": 1478347417646,
+    "created": 1478347414847
   },
   "iconSets": [
     {
@@ -10,13 +10,88 @@
       "metadata": {
         "name": "Icons",
         "importSize": {
-          "width": 16,
-          "height": 16
+          "width": 24,
+          "height": 24
         }
       },
       "height": 1024,
       "prevSize": 32,
       "icons": [
+        {
+          "id": 99,
+          "paths": [
+            "M810.667 170.667v640h128v-640h-128zM512 298.667v128h-426.667v128h426.667v128l256-192-256-192z"
+          ],
+          "attrs": [
+            {}
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false,
+          "grid": 24,
+          "tags": [
+            "RepeatNone24"
+          ]
+        },
+        {
+          "id": 98,
+          "paths": [
+            "M362.684 153.6l533.291-154.18v688.853c-0.001 51.401-6.529 90.159-19.584 116.267-13.057 26.108-35.232 47.663-66.526 64.661-31.294 16.994-66.628 25.489-106.005 25.489-45.18 0-81.237-12.954-108.181-38.857-26.942-25.907-40.413-59.379-40.412-100.407-0.001-41.451 15.957-77.197 47.872-107.251 31.915-30.050 73.156-45.077 123.725-45.077 16.579 0 31.189 1.408 43.831 4.386 12.641 2.901 32.691 10.355 61.291 22.383v-450.133l-405.321 115.021v519.765c0 50.15-9.080 89.216-22.343 117.197-13.264 27.977-36.060 50.253-68.39 66.833-32.33 16.585-67.563 24.866-105.694 24.866-45.18 0-80.926-12.74-107.247-38.234-26.32-25.489-39.479-58.756-39.479-99.785-0-43.524 15.75-80.102 47.249-109.734 31.5-29.632 72.742-44.454 123.725-44.454 32.329 0 68.39 9.536 108.181 28.599z"
+          ],
+          "attrs": [
+            {}
+          ],
+          "grid": 24,
+          "tags": [
+            "Icon24"
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false
+        },
+        {
+          "id": 97,
+          "paths": [
+            "M128 42.667v256h554.667v-256h-554.667zM768 213.333l42.667 256 77.013-92.416c44.117 98.133 24.491 203.221-0.085 269.995l-76.928-92.245-42.667 256h256l-72.405-86.912c37.845-78.293 93.525-258.688-0.939-422.421l73.344-88h-256zM0 384v256h554.667v-256h-554.667zM128 725.333v256h554.667v-256h-554.667z"
+          ],
+          "attrs": [
+            {}
+          ],
+          "grid": 24,
+          "tags": [
+            "Move24"
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false
+        },
+        {
+          "id": 96,
+          "paths": [
+            "M768.128 146.938c-11.764-0-23.548 4.486-32.563 13.5l-63.552 63.562 128 128 63.562-63.562c18.028-18.028 18.028-47.034 0-65.062l-62.912-62.938c-9.024-9.014-20.736-13.501-32.512-13.501zM640 256l-512 512v128h128l512-512z"
+          ],
+          "attrs": [
+            {}
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false,
+          "grid": 32,
+          "tags": [
+            "Create"
+          ]
+        },
+        {
+          "id": 95,
+          "paths": [
+            "M170.667 42.667v128h85.333v-128h-85.333zM469.333 42.667v597.333h85.333v-597.333h-85.333zM768 42.667v128h85.333v-128h-85.333zM123.648 213.333c-21.265 0-38.332 17.062-38.332 38.332v51.337c0 21.265 17.067 38.332 38.332 38.332h179.337c21.265 0 38.332-17.067 38.332-38.332v-51.337c0-21.269-17.067-38.332-38.332-38.332h-179.337zM720.981 213.333c-21.248 0-38.315 17.062-38.315 38.332v51.337c0 21.265 17.067 38.332 38.315 38.332h179.371c21.248 0 38.315-17.067 38.315-38.332v-51.337c0-21.269-17.067-38.332-38.315-38.332h-179.371zM170.667 384v597.333h85.333v-597.333h-85.333zM768 384v597.333h85.333v-597.333h-85.333zM422.332 682.667c-21.265 0-38.332 17.067-38.332 38.315v51.371c0 21.248 17.067 38.315 38.332 38.315h179.354c21.248 0 38.315-17.067 38.315-38.315v-51.371c0-21.248-17.067-38.315-38.315-38.315h-179.354zM469.333 853.333v128h85.333v-128h-85.333z"
+          ],
+          "attrs": [
+            {}
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false,
+          "grid": 24,
+          "tags": [
+            "Effects24"
+          ]
+        },
         {
           "id": 94,
           "paths": [
@@ -42,9 +117,9 @@
           ],
           "isMulticolor": false,
           "isMulticolor2": false,
-          "grid": 32,
+          "grid": 24,
           "tags": [
-            "Config"
+            "Config24"
           ]
         },
         {
@@ -220,18 +295,16 @@
         {
           "id": 79,
           "paths": [
-            "M512 320v128h-448v128h448v128l256-192z",
-            "M960 832v-640h-128v640z"
+            "M832 192v640h128v-640h-128zM512 320v128h-448v128h448v128l256-192-256-192z"
           ],
           "attrs": [
-            {},
             {}
           ],
-          "isMulticolor": false,
           "grid": 16,
           "tags": [
             "RepeatNone"
           ],
+          "isMulticolor": false,
           "isMulticolor2": false
         },
         {
@@ -243,7 +316,7 @@
             {}
           ],
           "isMulticolor": false,
-          "grid": 16,
+          "grid": 32,
           "tags": [
             "Flat"
           ]
@@ -302,14 +375,14 @@
         {
           "id": 74,
           "paths": [
-            "M704 0v128h-576v320h128v-192h448v128l256-192-256-192zM544 320l-128 64v64h96v256h96v-384h-64zM768 576v192h-448v-128l-256 192 256 192v-128h576v-320h-128z"
+            "M768 0v128h-640v384h128v-256h512v128l256-192-256-192zM554.667 341.333l-128 85.333v85.333l85.333-42.667v213.333h85.333v-341.333h-42.667zM768 512v256h-512v-128l-256 192 256 192v-128h640v-384h-128z"
           ],
           "attrs": [
             {}
           ],
-          "grid": 32,
+          "grid": 24,
           "tags": [
-            "RepeatOne"
+            "RepeatOne24"
           ],
           "isMulticolor": false,
           "isMulticolor2": false
@@ -736,7 +809,7 @@
           ],
           "grid": 24,
           "tags": [
-            "checkbox-unchecked"
+            "CheckOff24"
           ],
           "attrs": [
             {}
@@ -747,11 +820,11 @@
         {
           "id": 39,
           "paths": [
-            "M397.331 793.6l512-512-80-82.662-432 432-202.669-202.669-80 80zM1024-0v1024h-1024v-1024z"
+            "M384 810.667l512-512-85.333-85.333-426.667 426.667-170.667-170.667-85.333 85.333zM1024 0v1024h-1024v-1024z"
           ],
-          "grid": 32,
+          "grid": 24,
           "tags": [
-            "checkbox-checked"
+            "CheckOn24"
           ],
           "attrs": [
             {}
@@ -781,47 +854,59 @@
             "M0 1024v-256h1024v256zM0 256v-256h1024v256zM0 640v-256h1024v256z"
           ],
           "defaultCode": 108,
-          "grid": 16,
+          "grid": 24,
           "attrs": [],
           "tags": [
-            ""
+            "List24"
           ]
         },
         {
           "id": 3,
           "paths": [
-            "M192 0l-192 192 320 320-320 320 192 192 320-320 320 320 192-192-320-320 320-320-192-192-320 320-320-320z"
+            "M213.333 0l-213.333 213.333 298.667 298.667-298.667 298.667 213.333 213.333 298.667-298.667 298.667 298.667 213.333-213.333-298.667-298.667 298.667-298.667-213.333-213.333-298.667 298.667-298.667-298.667z"
           ],
           "defaultCode": 82,
-          "grid": 16,
+          "grid": 24,
           "attrs": [
             {}
           ],
-          "isMulticolor": false,
           "tags": [
-            ""
-          ]
+            "Remove24"
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false
         },
         {
           "id": 4,
           "paths": [
-            "M896 512h-160l-224 224-224-224h-160l-128 256v64h1024v-64l-128-256zM0 896h1024v64h-1024v-64zM576 320v-256h-128v256h-224l288 288 288-288h-224z"
+            "M896 512h-128l-256 256-256-256h-128l-128 213.333v85.333h1024v-85.333zM0 853.333h1024v85.333h-1024zM597.333 341.333v-256h-170.667v256h-213.333l298.667 298.667 298.667-298.667z"
           ],
           "defaultCode": 83,
-          "grid": 16,
-          "attrs": [],
+          "grid": 24,
+          "attrs": [
+            {}
+          ],
           "tags": [
-            ""
-          ]
+            "Save24"
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false
         },
         {
           "id": 5,
           "paths": [
-            "M0 896h1024v64h-1024zM1024 768v64h-1024v-64l128-256h256v128h256v-128h256zM224 320l288-288 288 288h-224v256h-128v-256z"
+            "M512 85.333l-298.667 298.667h213.333v256h170.667v-256h213.333zM128 512l-128 213.333v85.333h1024v-85.333l-128-213.333h-213.333v213.333h-341.333v-213.333zM0 853.333v85.333h1024v-85.333z"
           ],
           "defaultCode": 76,
-          "grid": 16,
-          "attrs": []
+          "grid": 24,
+          "attrs": [
+            {}
+          ],
+          "tags": [
+            "Load24"
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false
         },
         {
           "id": 6,
@@ -891,7 +976,7 @@
             {}
           ],
           "tags": [
-            ""
+            "Effects"
           ],
           "isMulticolor": false,
           "isMulticolor2": false
@@ -911,14 +996,18 @@
         {
           "id": 12,
           "paths": [
-            "M832 64v704h128v-704h-128zM320 256v512h128v-512h-128zM576 384v384h128v-384h-128zM64 512v256h128v-256h-128zM0 832v128h1024v-128h-1024z"
+            "M853.333 85.333v640h128v-640zM341.333 256v469.333h128v-469.333zM597.333 384v341.333h128v-341.333zM85.333 512v213.333h128v-213.333zM0 810.667v128h1024v-128z"
           ],
           "defaultCode": 86,
-          "grid": 16,
+          "grid": 24,
           "attrs": [
             {}
           ],
-          "isMulticolor": false
+          "tags": [
+            "Visualizer24"
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false
         },
         {
           "id": 13,
@@ -935,15 +1024,15 @@
         {
           "id": 14,
           "paths": [
-            "M691.648 601.6l200.608 200.608 131.744-131.744v353.312h-353.312l131.744-131.744-200.608-200.608 89.824-89.824zM670.689-0.224h353.312v353.312l-131.744-131.744-802.432 802.432-89.824-89.824 802.432-802.432-131.744-131.744zM422.177 332.128l-89.824 89.824-332.352-332.352 89.824-89.824 332.352 332.352z"
+            "M217.835 127.334l-90.5 90.5 264 264 90.5-90.5-264-264zM896.661 127.334l-316.757 45.248 90.496 90.5-543.104 543.104 90.517 90.496 543.061-543.104 90.496 90.496 45.269-316.74zM632.64 542.165l-90.496 90.496 128.256 128.256-90.496 90.496 316.757 45.269-45.269-316.757-90.496 90.496-128.256-128.256z"
           ],
           "defaultCode": 104,
-          "grid": 32,
+          "grid": 24,
           "attrs": [
             {}
           ],
           "tags": [
-            "Shuffle"
+            "Shuffle24"
           ],
           "isMulticolor": false,
           "isMulticolor2": false
@@ -951,15 +1040,15 @@
         {
           "id": 15,
           "paths": [
-            "M704 0v128h-576v320h128v-192h448v128l256-192-256-192zM768 576v192h-448v-128l-256 192 256 192v-128h576v-320h-128z"
+            "M768 0v128h-640v384h128v-256h512v128l256-192-256-192zM768 512v256h-512v-128l-256 192 256 192v-128h640v-384h-128z"
           ],
           "defaultCode": 116,
-          "grid": 16,
+          "grid": 24,
           "attrs": [
             {}
           ],
           "tags": [
-            ""
+            "Repeat24"
           ],
           "isMulticolor": false,
           "isMulticolor2": false
@@ -977,7 +1066,7 @@
             {}
           ],
           "tags": [
-            ""
+            "Exit"
           ],
           "isMulticolor": false,
           "isMulticolor2": false
@@ -1038,11 +1127,14 @@
             "M128 64v256h576v-256h-576zM768 192l32 256 74-74c46.901 100.796 26.489 209.758 1 277l-75-75-32 256 256-32-82-82c37.332-79.999 87.589-251.994-1-411l83-83-256-32zM0 384v256h576v-256h-576zM128 704v256h576v-256h-576z"
           ],
           "defaultCode": 77,
-          "grid": 16,
+          "grid": 32,
           "attrs": [
             {}
           ],
-          "isMulticolor": false
+          "isMulticolor": false,
+          "tags": [
+            "Move"
+          ]
         },
         {
           "id": 21,
@@ -1119,7 +1211,7 @@
             {}
           ],
           "tags": [
-            ""
+            "RadioOn24"
           ],
           "isMulticolor": false,
           "isMulticolor2": false
@@ -1135,7 +1227,7 @@
             {}
           ],
           "tags": [
-            ""
+            "RadioOff24"
           ],
           "isMulticolor": false,
           "isMulticolor2": false
@@ -1274,26 +1366,66 @@
           ],
           "isMulticolor": false,
           "tags": [
-            ""
+            "Grip"
           ]
         }
       ],
       "selection": [
+        {
+          "order": 114,
+          "id": 98,
+          "name": "RepeatNone24",
+          "prevSize": 32,
+          "code": 178,
+          "tempChar": ""
+        },
+        {
+          "order": 112,
+          "id": 97,
+          "name": "Icon24",
+          "prevSize": 32,
+          "code": 161,
+          "tempChar": ""
+        },
+        {
+          "order": 113,
+          "id": 96,
+          "name": "Move24",
+          "prevSize": 32,
+          "code": 114,
+          "tempChar": ""
+        },
+        {
+          "order": 110,
+          "id": 95,
+          "name": "Create",
+          "prevSize": 32,
+          "code": 38,
+          "tempChar": ""
+        },
+        {
+          "order": 108,
+          "id": 94,
+          "name": "Effects24",
+          "prevSize": 32,
+          "code": 90,
+          "tempChar": ""
+        },
         {
           "order": 102,
           "id": 93,
           "name": "MenuMore",
           "prevSize": 32,
           "code": 78,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 99,
           "id": 92,
-          "name": "Config",
+          "name": "Config24",
           "prevSize": 32,
           "code": 103,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 98,
@@ -1301,7 +1433,7 @@
           "name": "Ringtone",
           "prevSize": 32,
           "code": 57,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 97,
@@ -1309,7 +1441,7 @@
           "name": "Fullscreen",
           "prevSize": 32,
           "code": 112,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 93,
@@ -1317,7 +1449,7 @@
           "name": "LargeItemSize",
           "prevSize": 32,
           "code": 110,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 92,
@@ -1325,7 +1457,7 @@
           "prevSize": 32,
           "code": 101,
           "name": "SpinnerArrow",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 90,
@@ -1333,7 +1465,7 @@
           "prevSize": 32,
           "code": 67,
           "name": "Clip",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 88,
@@ -1341,7 +1473,7 @@
           "prevSize": 32,
           "code": 56,
           "name": "Perc",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 86,
@@ -1349,7 +1481,7 @@
           "prevSize": 32,
           "code": 84,
           "name": "ShoutcastText",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 85,
@@ -1357,7 +1489,7 @@
           "prevSize": 32,
           "code": 79,
           "name": "IcecastText",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 84,
@@ -1365,7 +1497,7 @@
           "prevSize": 32,
           "code": 74,
           "name": "Shoutcast",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 83,
@@ -1373,7 +1505,7 @@
           "prevSize": 32,
           "code": 75,
           "name": "Icecast",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 82,
@@ -1381,7 +1513,7 @@
           "prevSize": 32,
           "code": 107,
           "name": "HeadsetHookClick3",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 81,
@@ -1389,7 +1521,7 @@
           "prevSize": 32,
           "code": 106,
           "name": "HeadsetHookClick2",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 80,
@@ -1397,7 +1529,7 @@
           "prevSize": 32,
           "code": 105,
           "name": "HeadsetHookClick1",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 79,
@@ -1405,7 +1537,7 @@
           "prevSize": 32,
           "code": 89,
           "name": "RepeatNone",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 76,
@@ -1413,7 +1545,7 @@
           "prevSize": 32,
           "code": 47,
           "name": "Flat",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 74,
@@ -1421,7 +1553,7 @@
           "name": "3DPan",
           "prevSize": 32,
           "code": 41,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 71,
@@ -1429,7 +1561,7 @@
           "name": "Root",
           "prevSize": 32,
           "code": 40,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 69,
@@ -1437,15 +1569,15 @@
           "prevSize": 32,
           "code": 37,
           "name": "Transition",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 67,
           "id": 73,
           "prevSize": 32,
           "code": 121,
-          "name": "RepeatOne",
-          "tempChar": ""
+          "name": "RepeatOne24",
+          "tempChar": ""
         },
         {
           "order": 68,
@@ -1453,7 +1585,7 @@
           "prevSize": 32,
           "code": 53,
           "name": "SeekBar",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1462,7 +1594,7 @@
           "prevSize": 32,
           "code": 117,
           "name": "USB",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1471,7 +1603,7 @@
           "prevSize": 32,
           "code": 102,
           "name": "Folder",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1480,7 +1612,7 @@
           "prevSize": 32,
           "code": 100,
           "name": "SD",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1489,7 +1621,7 @@
           "prevSize": 32,
           "code": 99,
           "name": "ScrollBar",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1498,7 +1630,7 @@
           "prevSize": 32,
           "code": 97,
           "name": "Hand",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1507,7 +1639,7 @@
           "prevSize": 32,
           "code": 119,
           "name": "Radio",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1516,7 +1648,7 @@
           "prevSize": 32,
           "code": 87,
           "name": "Bluetooth",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1525,7 +1657,7 @@
           "prevSize": 32,
           "code": 98,
           "name": "NoAlbumArt",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1534,7 +1666,7 @@
           "prevSize": 32,
           "code": 66,
           "name": "AlbumArt",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1543,7 +1675,7 @@
           "prevSize": 32,
           "code": 109,
           "name": "Mic",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1552,7 +1684,7 @@
           "prevSize": 32,
           "code": 59,
           "name": "OptFade",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1561,7 +1693,7 @@
           "prevSize": 32,
           "code": 58,
           "name": "OptDial",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1570,7 +1702,7 @@
           "prevSize": 32,
           "code": 123,
           "name": "OptHeadsetPlay",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1579,7 +1711,7 @@
           "prevSize": 32,
           "code": 125,
           "name": "OptTransparent",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1588,7 +1720,7 @@
           "prevSize": 32,
           "code": 91,
           "name": "OptColor",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1597,7 +1729,7 @@
           "prevSize": 32,
           "code": 93,
           "name": "OptLanguage",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1606,7 +1738,7 @@
           "prevSize": 32,
           "code": 92,
           "name": "OptTheme",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1615,7 +1747,7 @@
           "prevSize": 32,
           "code": 61,
           "name": "OptSpaceList",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1624,7 +1756,7 @@
           "prevSize": 32,
           "code": 126,
           "name": "OptSpaceHeader",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1633,7 +1765,7 @@
           "prevSize": 32,
           "code": 64,
           "name": "OptOrientation",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1642,7 +1774,7 @@
           "prevSize": 32,
           "code": 36,
           "name": "OptDyslexia",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1651,7 +1783,7 @@
           "prevSize": 32,
           "code": 96,
           "name": "OptScreenOn",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1660,7 +1792,7 @@
           "prevSize": 32,
           "code": 46,
           "name": "OptTurnOff",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1669,7 +1801,7 @@
           "prevSize": 32,
           "code": 44,
           "name": "OptDiv",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1678,7 +1810,7 @@
           "prevSize": 32,
           "code": 54,
           "name": "Right",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1687,7 +1819,7 @@
           "prevSize": 32,
           "code": 34,
           "name": "SliderTop",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1696,7 +1828,7 @@
           "prevSize": 32,
           "code": 39,
           "name": "SliderBottom",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1705,7 +1837,7 @@
           "prevSize": 32,
           "code": 95,
           "name": "Back",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1714,7 +1846,7 @@
           "prevSize": 32,
           "code": 55,
           "name": "Icon",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1722,8 +1854,8 @@
           "id": 0,
           "prevSize": 32,
           "code": 81,
-          "name": "checkbox-unchecked",
-          "tempChar": "",
+          "name": "CheckOff24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1731,8 +1863,8 @@
           "id": 0,
           "prevSize": 32,
           "code": 113,
-          "name": "checkbox-checked",
-          "tempChar": "",
+          "name": "CheckOn24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1741,16 +1873,16 @@
           "prevSize": 32,
           "code": 80,
           "name": "Play",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
-          "order": 105,
+          "order": 107,
           "id": 3,
           "prevSize": 32,
           "code": 108,
-          "name": "List",
-          "tempChar": "",
+          "name": "List24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1758,8 +1890,8 @@
           "id": 4,
           "prevSize": 32,
           "code": 82,
-          "name": "Remove",
-          "tempChar": "",
+          "name": "Remove24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1767,8 +1899,8 @@
           "id": 5,
           "prevSize": 32,
           "code": 83,
-          "name": "Save",
-          "tempChar": "",
+          "name": "Save24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1776,8 +1908,8 @@
           "id": 6,
           "prevSize": 32,
           "code": 76,
-          "name": "Load",
-          "tempChar": "",
+          "name": "Load24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1786,7 +1918,7 @@
           "prevSize": 32,
           "code": 85,
           "name": "Link",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1795,7 +1927,7 @@
           "prevSize": 32,
           "code": 42,
           "name": "FavoriteOff",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1804,7 +1936,7 @@
           "prevSize": 32,
           "code": 35,
           "name": "FavoriteOn",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1813,7 +1945,7 @@
           "prevSize": 32,
           "code": 65,
           "name": "Add",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1822,7 +1954,7 @@
           "prevSize": 32,
           "code": 69,
           "name": "Effects",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1831,7 +1963,7 @@
           "prevSize": 32,
           "code": 115,
           "name": "Settings",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1839,8 +1971,8 @@
           "id": 13,
           "prevSize": 32,
           "code": 86,
-          "name": "Bars",
-          "tempChar": "",
+          "name": "Visualizer24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1849,7 +1981,7 @@
           "prevSize": 32,
           "code": 73,
           "name": "Info",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1857,17 +1989,17 @@
           "id": 15,
           "prevSize": 32,
           "code": 104,
-          "name": "Shuffle",
-          "tempChar": "",
+          "name": "Shuffle24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
-          "order": 11,
+          "order": 109,
           "id": 16,
           "prevSize": 32,
           "code": 116,
-          "name": "Repeat",
-          "tempChar": "",
+          "name": "Repeat24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1876,7 +2008,7 @@
           "prevSize": 32,
           "code": 88,
           "name": "Exit",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1885,7 +2017,7 @@
           "prevSize": 32,
           "code": 60,
           "name": "Previous",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1894,7 +2026,7 @@
           "prevSize": 32,
           "code": 62,
           "name": "Next",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1903,7 +2035,7 @@
           "prevSize": 32,
           "code": 124,
           "name": "Pause",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1912,7 +2044,7 @@
           "prevSize": 32,
           "code": 77,
           "name": "Move",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1921,7 +2053,7 @@
           "prevSize": 32,
           "code": 72,
           "name": "Home",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1930,7 +2062,7 @@
           "prevSize": 32,
           "code": 94,
           "name": "Up",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1939,7 +2071,7 @@
           "prevSize": 32,
           "code": 68,
           "name": "Delete",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1948,7 +2080,7 @@
           "prevSize": 32,
           "code": 122,
           "name": "Menu",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1957,7 +2089,7 @@
           "prevSize": 32,
           "code": 70,
           "name": "Search",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1965,8 +2097,8 @@
           "id": 28,
           "prevSize": 32,
           "code": 120,
-          "name": "OptOn",
-          "tempChar": "",
+          "name": "RadioOn24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1974,8 +2106,8 @@
           "id": 29,
           "prevSize": 32,
           "code": 111,
-          "name": "OptOff",
-          "tempChar": "",
+          "name": "RadioOff24",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1984,7 +2116,7 @@
           "prevSize": 32,
           "code": 43,
           "name": "VolPlus",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1993,7 +2125,7 @@
           "prevSize": 32,
           "code": 45,
           "name": "VolMinus",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2002,7 +2134,7 @@
           "prevSize": 32,
           "code": 48,
           "name": "Mute",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2011,7 +2143,7 @@
           "prevSize": 32,
           "code": 49,
           "name": "Vol1",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2020,7 +2152,7 @@
           "prevSize": 32,
           "code": 50,
           "name": "Vol2",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2029,7 +2161,7 @@
           "prevSize": 32,
           "code": 51,
           "name": "Vol3",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2038,7 +2170,7 @@
           "prevSize": 32,
           "code": 52,
           "name": "Vol4",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2047,7 +2179,7 @@
           "prevSize": 32,
           "code": 33,
           "name": "Error",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2056,7 +2188,7 @@
           "prevSize": 32,
           "code": 63,
           "name": "Question",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2065,7 +2197,7 @@
           "prevSize": 32,
           "code": 71,
           "name": "Grip",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         }
       ],

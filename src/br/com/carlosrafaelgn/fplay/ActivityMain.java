@@ -561,34 +561,34 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		UI.prepare(menu);
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_FPLAY));
+			.setIcon(new TextIconDrawable(UI.ICON_FPLAY24));
 		UI.separator(menu, 0, 1);
 		Menu s2, s = menu.addSubMenu(1, 0, 0, R.string.list)
-				.setIcon(new TextIconDrawable(UI.ICON_LIST));
+				.setIcon(new TextIconDrawable(UI.ICON_LIST24));
 		UI.prepare(s);
 		s.add(0, MNU_CLEARLIST, 0, R.string.clear_list)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_REMOVE));
+			.setIcon(new TextIconDrawable(UI.ICON_REMOVE24));
 		s.add(0, MNU_LOADLIST, 1, R.string.load_list)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_LOAD));
+			.setIcon(new TextIconDrawable(UI.ICON_LOAD24));
 		s.add(0, MNU_SAVELIST, 2, R.string.save_list)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_SAVE));
+			.setIcon(new TextIconDrawable(UI.ICON_SAVE24));
 		UI.separator(s, 0, 3);
 		s.add(0, MNU_SORT_BY_TITLE, 4, R.string.sort_by_title)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_MOVE));
+			.setIcon(new TextIconDrawable(UI.ICON_MOVE24));
 		s.add(0, MNU_SORT_BY_ARTIST, 5, R.string.sort_by_artist)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_MOVE));
+			.setIcon(new TextIconDrawable(UI.ICON_MOVE24));
 		s.add(0, MNU_SORT_BY_ALBUM, 6, R.string.sort_by_album)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_MOVE));
+			.setIcon(new TextIconDrawable(UI.ICON_MOVE24));
 		UI.separator(menu, 1, 1);
 		menu.add(2, MNU_TOGGLECONTROLMODE, 0, R.string.control_mode)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(Player.controlMode ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK));
+			.setIcon(new TextIconDrawable(Player.controlMode ? UI.ICON_OPTCHK24 : UI.ICON_OPTUNCHK24));
 		if (UI.isLandscape && !UI.isLargeScreen) {
 			s = menu.addSubMenu(2, 0, 1, R.string.more)
 					.setIcon(new TextIconDrawable(UI.ICON_MENU_MORE));
@@ -600,20 +600,20 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		final String mnuIcon;
 		if (Player.songs.isInRandomMode()) {
 			mnuId = R.string.random_mode;
-			mnuIcon = UI.ICON_SHUFFLE;
+			mnuIcon = UI.ICON_SHUFFLE24;
 		} else {
 			switch (Player.songs.getRepeatMode()) {
 			case SongList.REPEAT_NONE:
 				mnuId = R.string.repeat_none;
-				mnuIcon = UI.ICON_REPEATNONE;
+				mnuIcon = UI.ICON_REPEATNONE24;
 				break;
 			case SongList.REPEAT_ONE:
 				mnuId = R.string.repeat_one;
-				mnuIcon = UI.ICON_REPEATONE;
+				mnuIcon = UI.ICON_REPEATONE24;
 				break;
 			default:
 				mnuId = R.string.repeat_all;
-				mnuIcon = UI.ICON_REPEAT;
+				mnuIcon = UI.ICON_REPEAT24;
 				break;
 			}
 		}
@@ -622,37 +622,37 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		UI.prepare(s2);
 		s2.add(2, MNU_REPEAT, 0, getText(R.string.repeat_all))
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_ALL && !Player.songs.isInRandomMode()) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_ALL && !Player.songs.isInRandomMode()) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		s2.add(2, MNU_REPEAT_ONE, 1, getText(R.string.repeat_one))
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_ONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_ONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		UI.separator(s2, 2, 2);
 		s2.add(2, MNU_RANDOMMODE, 3, getText(R.string.random_mode))
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable(Player.songs.isInRandomMode() ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		UI.separator(s2, 2, 4);
 		s2.add(2, MNU_REPEAT_NONE, 5, getText(R.string.repeat_none))
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_NONE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+			.setIcon(new TextIconDrawable((Player.songs.getRepeatMode() == SongList.REPEAT_NONE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		UI.separator(s, 2, 1);
 		s.add(2, MNU_EFFECTS, 2, R.string.audio_effects)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_EQUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_EQUALIZER24));
 		s2 = s.addSubMenu(2, 0, 3, getText(R.string.visualizer) + "\u2026")
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		UI.prepare(s2);
 		s2.add(0, MNU_VISUALIZER_SPECTRUM, 0, "Spectrum")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		s2.add(0, MNU_VISUALIZER_SPECTRUM2, 1, "Spectrum 2")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		s2.add(0, MNU_VISUALIZER_SPIN, 2, "Spinning Rainbow")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		s2.add(0, MNU_VISUALIZER_PARTICLE, 3, "Sound Particles")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		s2.add(0, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 4, "Into the Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
@@ -670,13 +670,13 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		UI.separator(s2, 2, 0);
 		s2.add(2, MNU_VISUALIZER_LIQUID, 1, "Liquid Spectrum")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		s2.add(2, MNU_VISUALIZER, 2, "Classic")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER));
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		s.add(2, MNU_SETTINGS, 4, R.string.settings)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_CONFIG));
+			.setIcon(new TextIconDrawable(UI.ICON_CONFIG24));
 		UI.separator(menu, 2, 5);
 		menu.add(3, MNU_EXIT, 0, R.string.exit)
 			.setOnMenuItemClickListener(this)

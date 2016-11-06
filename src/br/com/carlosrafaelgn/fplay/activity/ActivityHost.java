@@ -38,6 +38,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -46,6 +47,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
@@ -53,6 +55,9 @@ import android.view.animation.Interpolator;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 import br.com.carlosrafaelgn.fplay.ActivityMain;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -78,6 +83,112 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private Animation anim;
 	private FastAnimator animator; //used only with UI.TRANSITION_FADE
 	private int systemBgColor;
+
+	//http://developer.samsung.com/html/techdoc/ProgrammingGuide_MultiWindow.pdf
+	//http://developer.samsung.com/galaxy/multiwindow
+	//https://blogs.oracle.com/poonam/entry/how_to_implement_an_interface
+	private static Method samsungWindowGetMultiPhoneWindowEvent;
+	private static Method samsungMultiPhoneWindowEventSetStateChangeListener;
+	private Object samsungStateChangeListener;
+	private int samsungSMultiWindowWidth, samsungSMultiWindowHeight;
+	private class SamsungStateChangeListener implements java.lang.reflect.InvocationHandler {
+		@Override
+		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			try {
+				/*
+				public interface StateChangeListener
+				{
+					void onModeChanged(boolean isMultiWindow);
+					void onZoneChanged(int zoneInfo);
+					void onSizeChanged(Rect rectInfo);
+				}
+				*/
+				boolean changed = false;
+				if (method.getName().equals("onModeChanged")) {
+					if (!(boolean)args[0]) {
+						samsungSMultiWindowWidth = 0;
+						samsungSMultiWindowHeight = 0;
+						changed = true;
+					}
+				} else if (method.getName().equals("onSizeChanged")) {
+					final Rect rectInfo = (Rect)args[0];
+					samsungSMultiWindowWidth = rectInfo.width();
+					samsungSMultiWindowHeight = rectInfo.height();
+					changed = true;
+				}
+				if (changed) {
+					final int usableScreenWidth = UI.usableScreenWidth, usableScreenHeight = UI.usableScreenHeight;
+					ActivityMain.localeHasBeenChanged = false;
+
+					UI.initialize(ActivityHost.this, samsungSMultiWindowWidth, samsungSMultiWindowHeight);
+
+					if ((usableScreenWidth != UI.usableScreenWidth || usableScreenHeight != UI.usableScreenHeight) && top != null) {
+						ignoreFadeNextTime = true;
+						top.onOrientationChanged();
+						ignoreFadeNextTime = false;
+						System.gc();
+					}
+				}
+			} catch (Throwable ex) {
+				//just ignore
+			}
+			return null;
+		}
+	}
+
+	private void preprareSamsungMultiWindowListener() {
+		samsungSMultiWindowWidth = 0;
+		samsungSMultiWindowHeight = 0;
+		samsungStateChangeListener = null;
+		try {
+			final Window window = getWindow();
+			final Object multiPhoneWindowEvent = samsungWindowGetMultiPhoneWindowEvent.invoke(window, (Class[])null);
+			if (multiPhoneWindowEvent == null) {
+				samsungWindowGetMultiPhoneWindowEvent = null;
+				samsungMultiPhoneWindowEventSetStateChangeListener = null;
+				return;
+			}
+			if (samsungMultiPhoneWindowEventSetStateChangeListener == null) {
+				for (Method method : multiPhoneWindowEvent.getClass().getMethods()) {
+					if (method.getName().equals("setStateChangeListener")) {
+						samsungMultiPhoneWindowEventSetStateChangeListener = method;
+						break;
+					}
+				}
+			}
+			if (samsungMultiPhoneWindowEventSetStateChangeListener == null) {
+				samsungWindowGetMultiPhoneWindowEvent = null;
+				samsungMultiPhoneWindowEventSetStateChangeListener = null;
+				return;
+			}
+			final Class<?> stateChangeListenerClass = samsungMultiPhoneWindowEventSetStateChangeListener.getParameterTypes()[0];
+			samsungStateChangeListener = Proxy.newProxyInstance(stateChangeListenerClass.getClassLoader(), new Class<?>[]{stateChangeListenerClass}, new SamsungStateChangeListener());
+			samsungMultiPhoneWindowEventSetStateChangeListener.invoke(multiPhoneWindowEvent, samsungStateChangeListener);
+		} catch (Throwable ex) {
+			//just ignore
+		}
+	}
+
+	private void cleanupSamsungMultiWindowListener() {
+		try {
+			final Object multiPhoneWindowEvent = samsungWindowGetMultiPhoneWindowEvent.invoke(getWindow(), (Class[])null);
+			if (multiPhoneWindowEvent != null && samsungMultiPhoneWindowEventSetStateChangeListener != null)
+				samsungMultiPhoneWindowEventSetStateChangeListener.invoke(multiPhoneWindowEvent, new Object[] { null });
+		} catch (Throwable ex) {
+			//just ignore
+		}
+		samsungStateChangeListener = null;
+	}
+
+	static {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+			try {
+				samsungWindowGetMultiPhoneWindowEvent = Window.class.getMethod("getMultiPhoneWindowEvent", (Class[])null);
+			} catch (Throwable ex) {
+				samsungWindowGetMultiPhoneWindowEvent = null;
+			}
+		}
+	}
 
 	private void disableTopView() {
 		FrameLayout parent;
@@ -576,7 +687,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			return;
 		}
 		Player.theApplication = getApplicationContext();
-		UI.initialize(this, null);
+		if (samsungWindowGetMultiPhoneWindowEvent != null)
+			preprareSamsungMultiWindowListener();
+		UI.initialize(this, samsungSMultiWindowWidth, samsungSMultiWindowHeight);
 		Player.startService();
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
@@ -612,7 +725,18 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		super.onConfigurationChanged(newConfig);
 		final int usableScreenWidth = UI.usableScreenWidth, usableScreenHeight = UI.usableScreenHeight;
 		ActivityMain.localeHasBeenChanged = false;
-		UI.initialize(this, newConfig);
+
+		int w = 0, h = 0;
+		if (samsungSMultiWindowWidth > 0 && samsungSMultiWindowHeight > 0) {
+			w = samsungSMultiWindowWidth;
+			h = samsungSMultiWindowHeight;
+		} else if (newConfig != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+			w = UI.dpToPxI(newConfig.screenWidthDp);
+			h = UI.dpToPxI(newConfig.screenHeightDp);
+		}
+
+		UI.initialize(this, w, h);
+
 		if ((usableScreenWidth != UI.usableScreenWidth || usableScreenHeight != UI.usableScreenHeight) && top != null) {
 			ignoreFadeNextTime = true;
 			top.onOrientationChanged();
@@ -658,6 +782,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	private void finalCleanup() {
 		ClientActivity c = top, p;
+		if (samsungStateChangeListener != null)
+			cleanupSamsungMultiWindowListener();
 		top = null;
 		parent = null;
 		oldView = null;

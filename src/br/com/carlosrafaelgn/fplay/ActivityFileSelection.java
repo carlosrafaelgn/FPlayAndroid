@@ -123,7 +123,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 		final CharSequence txt;
 		if (checkedFile == null) {
 			txt = getText(R.string.msg_create_new);
-			btnMenuIcon.setIcon(UI.ICON_SAVE);
+			btnMenuIcon.setIcon(UI.ICON_CREATE);
 		} else {
 			txt = getText(R.string.msg_delete_button);
 			btnMenuIcon.setIcon(UI.ICON_DELETE);
@@ -205,7 +205,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				UI.animationFinishedObserver = this;
 			UI.animationCommit(isCreatingLayout, null);
 		} else {
-			if (btnMenuIcon != null && btnMenu != null && btnMenuIcon.getIcon() != ((checkedFile != null) ? UI.ICON_DELETE : UI.ICON_SAVE)) {
+			if (btnMenuIcon != null && btnMenu != null && btnMenuIcon.getIcon() != ((checkedFile != null) ? UI.ICON_DELETE : UI.ICON_CREATE)) {
 				if (UI.animationEnabled && !isCreatingLayout) {
 					btnMenuIconAnimation = true;
 					UI.animationFinishedObserver = this;
@@ -542,7 +542,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			btnMenu.setText(txt);
 			btnMenu.setContentDescription(txt);
 			btnMenu.setDefaultHeight();
-			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_SAVE, UI.color_text)), null, null, null);
+			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_CREATE, UI.color_text)), null, null, null);
 		} else {
 			final CharSequence txt = getText(R.string.msg_delete_button);
 			btnMenu.setText(txt);

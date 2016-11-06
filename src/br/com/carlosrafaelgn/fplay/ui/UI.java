@@ -151,13 +151,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_PAUSE = "|";
 	public static final String ICON_NEXT = ">";
 	public static final String ICON_MENU_MORE = "N";
-	public static final String ICON_LIST = "l";
+	public static final String ICON_LIST24 = "l";
 	public static final String ICON_MOVE = "M";
-	public static final String ICON_REMOVE = "R";
+	public static final String ICON_REMOVE24 = "R";
 	public static final String ICON_UP = "^";
 	public static final String ICON_GOBACK = "_";
-	public static final String ICON_SAVE = "S";
-	public static final String ICON_LOAD = "L";
+	public static final String ICON_SAVE24 = "S";
+	public static final String ICON_LOAD24 = "L";
 	public static final String ICON_FAVORITE_ON = "#";
 	public static final String ICON_FAVORITE_OFF = "*";
 	public static final String ICON_ADD = "A";
@@ -165,7 +165,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_LINK = "U";
 	public static final String ICON_EQUALIZER = "E";
 	public static final String ICON_SETTINGS = "s";
-	public static final String ICON_VISUALIZER = "V";
+	public static final String ICON_VISUALIZER24 = "V";
 	public static final String ICON_EXIT = "X";
 	public static final String ICON_VOLUME0 = "0";
 	public static final String ICON_VOLUME1 = "1";
@@ -178,13 +178,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_INFORMATION = "I";
 	public static final String ICON_QUESTION = "?";
 	public static final String ICON_EXCLAMATION = "!";
-	public static final String ICON_SHUFFLE = "h";
-	public static final String ICON_REPEAT = "t";
+	public static final String ICON_SHUFFLE24 = "h";
+	public static final String ICON_REPEAT24 = "t";
 	public static final String ICON_DELETE = "D";
-	public static final String ICON_RADIOCHK = "x";
-	public static final String ICON_RADIOUNCHK = "o";
-	public static final String ICON_OPTCHK = "q";
-	public static final String ICON_OPTUNCHK = "Q";
+	public static final String ICON_RADIOCHK24 = "x";
+	public static final String ICON_RADIOUNCHK24 = "o";
+	public static final String ICON_OPTCHK24 = "q";
+	public static final String ICON_OPTUNCHK24 = "Q";
 	public static final String ICON_GRIP = "G";
 	public static final String ICON_FPLAY = "7";
 	public static final String ICON_SLIDERTOP = "\"";
@@ -217,7 +217,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_USB = "u";
 	public static final String ICON_SEEKBAR = "5";
 	public static final String ICON_TRANSITION = "%";
-	public static final String ICON_REPEATONE = "y";
+	public static final String ICON_REPEATONE24 = "y";
 	public static final String ICON_ROOT = "(";
 	public static final String ICON_3DPAN = ")";
 	public static final String ICON_REPEATNONE = "Y";
@@ -234,8 +234,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_LARGETEXTIS22SP = "n";
 	public static final String ICON_FULLSCREEN = "p";
 	public static final String ICON_RINGTONE = "9";
-	public static final String ICON_CONFIG = "g";
+	public static final String ICON_CONFIG24 = "g";
 	public static final String ICON_MENU = "z";
+	public static final String ICON_EQUALIZER24 = "Z";
+	public static final String ICON_CREATE = "&";
+	public static final String ICON_MOVE24 = "r";
+	public static final String ICON_FPLAY24 = "¡";
+	public static final String ICON_REPEATNONE24 = "²";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
@@ -370,16 +375,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			screenHeight = outDisplayMetrics.heightPixels;
 		}
 
-		@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-		private void updateUsableScreenDimensionsFromConfig(DisplayMetrics displayMetrics, Configuration configuration) {
-			if (configuration.screenWidthDp > 0 && configuration.screenHeightDp > 0) {
-				final float density = displayMetrics.density;
-				usableScreenWidth = (int)(((float)configuration.screenWidthDp * density) + 0.5f);
-				usableScreenHeight = (int)(((float)configuration.screenHeightDp * density) + 0.5f);
-			}
-		}
-
-		public void getInfo(Configuration configuration) {
+		public void getInfo(int newUsableScreenWidth, int newUsableScreenHeight) {
 			final Display display = ((WindowManager)Player.theApplication.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 			displayMetrics = new DisplayMetrics();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -388,8 +384,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				initializeScreenDimensions14(display, displayMetrics);
 			else
 				initializeScreenDimensions(display, displayMetrics);
-			if (configuration != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-				updateUsableScreenDimensionsFromConfig(displayMetrics, configuration);
+
+			if (newUsableScreenWidth > 0 && newUsableScreenHeight > 0) {
+				usableScreenWidth = newUsableScreenWidth;
+				usableScreenHeight = newUsableScreenHeight;
+			}
+
 			//improved detection for tablets, based on:
 			//http://developer.android.com/guide/practices/screens_support.html#DeclaringTabletLayouts
 			//(There is also the solution at http://stackoverflow.com/questions/11330363/how-to-detect-device-is-android-phone-or-android-tablet
@@ -752,11 +752,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		widgetIconColor = opts.getInt(0x0024, 0xff000000);
 	}
 	
-	public static void initialize(Activity activityContext, Configuration configuration) {
+	public static void initialize(Activity activityContext, int newUsableScreenWidth, int newUsableScreenHeight) {
 		final Resources resources = (activityContext != null ? activityContext.getResources() : Player.theApplication.getResources());
-
-		if (configuration == null)
-			configuration = resources.getConfiguration();
+		final Configuration configuration = resources.getConfiguration();
 
 		accessibilityManager = (AccessibilityManager)Player.theApplication.getSystemService(Context.ACCESSIBILITY_SERVICE);
 		if (iconsTypeface == null)
@@ -777,7 +775,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			fullyInitialized = true;
 		}
 		final DisplayInfo info = new DisplayInfo();
-		info.getInfo(configuration);
+		info.getInfo(newUsableScreenWidth, newUsableScreenHeight);
 		density = info.displayMetrics.density;
 		densityDpi = info.displayMetrics.densityDpi;
 		scaledDensity = info.displayMetrics.scaledDensity;
@@ -849,7 +847,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if (icPrev != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(null, null);
+			initialize(null, 0, 0);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		textPaint.setColor(widgetIconColor);
@@ -877,7 +875,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if (icPrevNotif != null)
 			return;
 		if (iconsTypeface == null)
-			initialize(null, null);
+			initialize(null, 0, 0);
 		final Canvas c = new Canvas();
 		textPaint.setTypeface(iconsTypeface);
 		//instead of guessing the color, try to fetch the actual one first

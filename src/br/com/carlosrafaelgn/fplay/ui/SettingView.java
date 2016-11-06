@@ -374,7 +374,7 @@ public final class SettingView extends View {
 				UI.rect.bottom = UI.rect.top + UI.defaultCheckIconSize;
 				UI.fillRect(canvas, color);
 			}
-			TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, UI.rect.left, UI.rect.top, UI.defaultCheckIconSize, txtColor);
+			TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK24 : UI.ICON_OPTUNCHK24, UI.rect.left, UI.rect.top, UI.defaultCheckIconSize, txtColor);
 		}
 	}
 

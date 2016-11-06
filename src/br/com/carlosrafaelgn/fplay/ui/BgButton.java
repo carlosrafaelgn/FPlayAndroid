@@ -155,13 +155,13 @@ public final class BgButton extends Button {
 	}
 
 	public void formatAsChildCheckBox(boolean checked, boolean changeWidth, boolean changeHeight) {
-		formatAsCheckBox(UI.ICON_OPTCHK, UI.ICON_OPTUNCHK, checked, changeWidth, changeHeight);
+		formatAsCheckBox(UI.ICON_OPTCHK24, UI.ICON_OPTUNCHK24, checked, changeWidth, changeHeight);
 		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI.defaultCheckIconSize);
 	}
 
 	public void formatAsLabelledCheckBox() {
 		checkable = true;
-		checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK, getTextColors().getDefaultColor(), UI.defaultCheckIconSize);
+		checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK24 : UI.ICON_OPTUNCHK24, getTextColors().getDefaultColor(), UI.defaultCheckIconSize);
 		super.setCompoundDrawables(checkBox, null, null, null);
 	}
 
@@ -218,7 +218,7 @@ public final class BgButton extends Button {
 		if (this.checked != checked) {
 			this.checked = checked;
 			if (checkBox != null) {
-				checkBox.setIcon(checked ? UI.ICON_OPTCHK : UI.ICON_OPTUNCHK);
+				checkBox.setIcon(checked ? UI.ICON_OPTCHK24 : UI.ICON_OPTUNCHK24);
 				invalidate();
 			} else {
 				super.setText(checked ? iconChecked : iconUnchecked);

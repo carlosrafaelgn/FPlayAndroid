@@ -182,23 +182,23 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		if (view == btnAudioSink) {
 			menu.add(0, MNU_AUDIOSINK_DEVICE, 0, getAudioSinkDescription(Player.AUDIO_SINK_DEVICE, false))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_DEVICE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_DEVICE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, MNU_AUDIOSINK_WIRE, 1, getAudioSinkDescription(Player.AUDIO_SINK_WIRE, false))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_WIRE) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_WIRE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(0, MNU_AUDIOSINK_BT, 2, getAudioSinkDescription(Player.AUDIO_SINK_BT, false))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_BT) ? UI.ICON_RADIOCHK : UI.ICON_RADIOUNCHK));
+				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_BT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else {
 			menu.add(0, MNU_ZEROPRESET, 0, R.string.zero_preset)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_REMOVE));
+				.setIcon(new TextIconDrawable(UI.ICON_REMOVE24));
 			menu.add(0, MNU_LOADPRESET, 1, R.string.load_preset)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_LOAD));
+				.setIcon(new TextIconDrawable(UI.ICON_LOAD24));
 			menu.add(0, MNU_SAVEPRESET, 2, R.string.save_preset)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(UI.ICON_SAVE));
+				.setIcon(new TextIconDrawable(UI.ICON_SAVE24));
 		}
 	}
 	
