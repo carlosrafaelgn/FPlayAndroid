@@ -617,7 +617,10 @@ public final class BgSeekBar extends View {
 					UI.rect.right = filledSize + thumbWidth;
 				}
 				UI.drawBgBorderless(canvas, state);
-				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize, (bottom - thumbWidth) >> 1, thumbWidth, color);
+				//thumbWidth -> (UI.defaultControlContentsSize * 3) >> 2
+				//thumbWidth -> 0.75 * UI.defaultControlContentsSize
+				//0.125 * UI.defaultControlContentsSize / thumbWidth / 0.125 * UI.defaultControlContentsSize
+				TextIconDrawable.drawIcon(canvas, UI.ICON_GRIP, filledSize - (UI.defaultControlContentsSize >> 3), (bottom - UI.defaultControlContentsSize) >> 1, UI.defaultControlContentsSize, color);
 			}
 		}
 		if (vertical)

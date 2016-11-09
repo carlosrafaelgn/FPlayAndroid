@@ -77,7 +77,7 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 //
 public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer, Interpolator {
 	private ClientActivity top;
-	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate;
+	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate, isCreatingLayout, pendingOrientationChanges;
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
@@ -116,13 +116,18 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					samsungSMultiWindowHeight = rectInfo.height();
 					changed = true;
 				}
-				if (changed) {
-					final int usableScreenWidth = UI.usableScreenWidth, usableScreenHeight = UI.usableScreenHeight;
-					ActivityMain.localeHasBeenChanged = false;
+				if (changed && top != null) {
+					//samsung multi-window bug! on API's < N, with multi-window turned on, sometimes
+					//onSizeChanged() is called WHILE executing setContentView() inside onCreateLayout()
+					if (isCreatingLayout) {
+						pendingOrientationChanges = true;
+					} else {
+						pendingOrientationChanges = false;
 
-					UI.initialize(ActivityHost.this, samsungSMultiWindowWidth, samsungSMultiWindowHeight);
+						ActivityMain.localeHasBeenChanged = false;
 
-					if ((usableScreenWidth != UI.usableScreenWidth || usableScreenHeight != UI.usableScreenHeight) && top != null) {
+						UI.initialize(ActivityHost.this, samsungSMultiWindowWidth, samsungSMultiWindowHeight);
+
 						ignoreFadeNextTime = true;
 						top.onOrientationChanged();
 						ignoreFadeNextTime = false;
@@ -218,10 +223,23 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (activity != null && !activity.finished) {
 			createLayoutCausedAnimation = false;
 			activity.postCreateCalled = (firstCreation ? 2 : 0);
+			isCreatingLayout = true;
 			activity.onCreateLayout(firstCreation);
 			if (!activity.finished && !createLayoutCausedAnimation && (activity.postCreateCalled & 1) == 0) {
 				activity.postCreateCalled = 1;
 				activity.onPostCreateLayout(firstCreation);
+			}
+			isCreatingLayout = false;
+			//samsung multi-window bug! on API's < N, with multi-window turned on, sometimes
+			//onSizeChanged() is called WHILE executing setContentView() inside onCreateLayout()
+			if (pendingOrientationChanges) {
+				pendingOrientationChanges = false;
+				if (!activity.finished) {
+					ignoreFadeNextTime = true;
+					activity.onOrientationChanged();
+					ignoreFadeNextTime = false;
+					System.gc();
+				}
 			}
 		}
 	}
@@ -693,6 +711,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.startService();
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
+		pendingOrientationChanges = false;
 		top = new ActivityMain();
 		top.finished = false;
 		top.activity = this;
