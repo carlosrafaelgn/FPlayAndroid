@@ -314,6 +314,7 @@
     <string name="loudspeaker">Loudspeaker</string>
     <string name="earphones">Earphones</string>
     <string name="bluetooth">Bluetooth</string>
+    <string name="headset" translatable="false">Headset</string>
     <string name="follow_current_song">Follow current song on main screen</string>
     <string name="announce_current_song">Announce when current song changes</string>
     <string name="place_title_at_the_bottom">Place the title at the bottom</string>

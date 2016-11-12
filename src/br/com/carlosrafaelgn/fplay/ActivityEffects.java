@@ -62,7 +62,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
 public final class ActivityEffects extends ClientActivity implements Timer.TimerHandler, Runnable, View.OnClickListener, ObservableLinearLayout.OnSizeChangeListener, BgSeekBar.OnBgSeekBarChangeListener, ActivityFileSelection.OnFileSelectionListener, Player.PlayerObserver {
-	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102, MNU_AUDIOSINK_DEVICE = 103, MNU_AUDIOSINK_WIRE = 104, MNU_AUDIOSINK_BT = 105;
+	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102, MNU_AUDIOSINK_DEVICE = 103, MNU_AUDIOSINK_WIRE = 104, MNU_AUDIOSINK_BT = 105, MNU_AUDIOSINK_WIRE_MIC = 106;
 	private static final int ACG_UPDATE_INTERVAL = 500;
 	private LinearLayout panelControls, panelEqualizer;
 	private ObservableLinearLayout panelBars;
@@ -150,6 +150,9 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		case Player.AUDIO_SINK_WIRE:
 			description += getText(R.string.earphones).toString();
 			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			description += getText(R.string.headset).toString();
+			break;
 		case Player.AUDIO_SINK_BT:
 			description += getText(R.string.bluetooth).toString();
 			break;
@@ -186,7 +189,10 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			menu.add(0, MNU_AUDIOSINK_WIRE, 1, getAudioSinkDescription(Player.AUDIO_SINK_WIRE, false))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_WIRE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(0, MNU_AUDIOSINK_BT, 2, getAudioSinkDescription(Player.AUDIO_SINK_BT, false))
+			menu.add(0, MNU_AUDIOSINK_WIRE_MIC, 2, getAudioSinkDescription(Player.AUDIO_SINK_WIRE_MIC, false))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_WIRE_MIC) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(0, MNU_AUDIOSINK_BT, 3, getAudioSinkDescription(Player.AUDIO_SINK_BT, false))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((audioSink == Player.AUDIO_SINK_BT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else {
@@ -236,6 +242,13 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			if (enablingEffect)
 				break;
 			audioSink = Player.AUDIO_SINK_WIRE;
+			storedAudioSink = audioSink;
+			updateEffects();
+			break;
+		case MNU_AUDIOSINK_WIRE_MIC:
+			if (enablingEffect)
+				break;
+			audioSink = Player.AUDIO_SINK_WIRE_MIC;
 			storedAudioSink = audioSink;
 			updateEffects();
 			break;

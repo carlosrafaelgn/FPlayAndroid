@@ -38,8 +38,8 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Equalizer {
 	private static int minBandLevel, maxBandLevel;
-	private static boolean enabled, enabled_wire, enabled_bt;
-	private static int[] bandLevels, bandLevels_wire, bandLevels_bt, bandFrequencies;
+	private static boolean enabled, enabled_wire, enabled_wire_mic, enabled_bt;
+	private static int[] bandLevels, bandLevels_wire, bandLevels_wire_mic, bandLevels_bt, bandFrequencies;
 	private static br.com.carlosrafaelgn.fplay.playback.context.Equalizer theEqualizer;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
@@ -47,6 +47,9 @@ public final class Equalizer {
 		switch (audioSink) {
 		case Player.AUDIO_SINK_WIRE:
 			enabled_wire = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
+			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			enabled_wire_mic = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
 			break;
 		case Player.AUDIO_SINK_BT:
 			enabled_bt = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
@@ -65,6 +68,11 @@ public final class Equalizer {
 				if (bandLevels_wire == null || bandLevels_wire.length != count)
 					bandLevels_wire = new int[count];
 				levels = bandLevels_wire;
+				break;
+			case Player.AUDIO_SINK_WIRE_MIC:
+				if (bandLevels_wire_mic == null || bandLevels_wire_mic.length != count)
+					bandLevels_wire_mic = new int[count];
+				levels = bandLevels_wire_mic;
 				break;
 			case Player.AUDIO_SINK_BT:
 				if (bandLevels_bt == null || bandLevels_bt.length != count)
@@ -90,6 +98,10 @@ public final class Equalizer {
 			opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled_wire);
 			levels = bandLevels_wire;
 			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled_wire_mic);
+			levels = bandLevels_wire_mic;
+			break;
 		case Player.AUDIO_SINK_BT:
 			opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled_bt);
 			levels = bandLevels_bt;
@@ -110,6 +122,7 @@ public final class Equalizer {
 		enabled = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED);
 		//use the regular enabled flag as the default for the new presets
 		enabled_wire = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE, enabled);
+		enabled_wire_mic = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE_MIC, enabled_wire);
 		enabled_bt = opts.getBit(Player.OPTBIT_EQUALIZER_ENABLED_BT, enabled);
 		int count = opts.getInt(Player.OPT_EQUALIZER_LEVELCOUNT);
 		if (count > 0) {
@@ -119,12 +132,15 @@ public final class Equalizer {
 				bandLevels = new int[count];
 			if (bandLevels_wire == null || bandLevels_wire.length != count)
 				bandLevels_wire = new int[count];
+			if (bandLevels_wire_mic == null || bandLevels_wire_mic.length != count)
+				bandLevels_wire_mic = new int[count];
 			if (bandLevels_bt == null || bandLevels_bt.length != count)
 				bandLevels_bt = new int[count];
 			for (int i = bandLevels.length - 1; i >= 0; i--) {
 				bandLevels[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0 + i, bandLevels[i]);
 				//use the regular levels as the default for the new presets
 				bandLevels_wire[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0_WIRE + i, bandLevels[i]);
+				bandLevels_wire_mic[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0_WIRE_MIC + i, bandLevels_wire[i]);
 				bandLevels_bt[i] = opts.getInt(Player.OPT_EQUALIZER_LEVEL0_BT + i, bandLevels[i]);
 			}
 		}
@@ -133,6 +149,7 @@ public final class Equalizer {
 	static void saveConfig(SerializableMap opts) {
 		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED, enabled);
 		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE, enabled_wire);
+		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED_WIRE_MIC, enabled_wire_mic);
 		opts.putBit(Player.OPTBIT_EQUALIZER_ENABLED_BT, enabled_bt);
 		opts.put(Player.OPT_EQUALIZER_LEVELCOUNT, (bandLevels != null) ? bandLevels.length : 0);
 		if (bandLevels != null) {
@@ -142,6 +159,10 @@ public final class Equalizer {
 		if (bandLevels_wire != null) {
 			for (int i = bandLevels_wire.length - 1; i >= 0; i--)
 				opts.put(Player.OPT_EQUALIZER_LEVEL0_WIRE + i, bandLevels_wire[i]);
+		}
+		if (bandLevels_wire_mic != null) {
+			for (int i = bandLevels_wire_mic.length - 1; i >= 0; i--)
+				opts.put(Player.OPT_EQUALIZER_LEVEL0_WIRE_MIC + i, bandLevels_wire_mic[i]);
 		}
 		if (bandLevels_bt != null) {
 			for (int i = bandLevels_bt.length - 1; i >= 0; i--)
@@ -173,6 +194,10 @@ public final class Equalizer {
 				bandLevels_wire = new int[bandCount];
 			else if (bandLevels_wire.length != bandCount)
 				bandLevels_wire = Arrays.copyOf(bandLevels_wire, bandCount);
+			if (bandLevels_wire_mic == null)
+				bandLevels_wire_mic = new int[bandCount];
+			else if (bandLevels_wire_mic.length != bandCount)
+				bandLevels_wire_mic = Arrays.copyOf(bandLevels_wire_mic, bandCount);
 			if (bandLevels_bt == null)
 				bandLevels_bt = new int[bandCount];
 			else if (bandLevels_bt.length != bandCount)
@@ -201,6 +226,7 @@ public final class Equalizer {
 			_release();
 			bandLevels = null;
 			bandLevels_wire = null;
+			bandLevels_wire_mic = null;
 			bandLevels_bt = null;
 			bandFrequencies = null;
 		}
@@ -222,7 +248,7 @@ public final class Equalizer {
 	}
 
 	public static boolean isEnabled(int audioSink) {
-		return ((audioSink == Player.AUDIO_SINK_WIRE) ? enabled_wire : ((audioSink == Player.AUDIO_SINK_BT) ? enabled_bt : enabled));
+		return ((audioSink == Player.AUDIO_SINK_WIRE) ? enabled_wire : ((audioSink == Player.AUDIO_SINK_WIRE_MIC) ? enabled_wire_mic : ((audioSink == Player.AUDIO_SINK_BT) ? enabled_bt : enabled)));
 	}
 
 	public static int getBandCount() {
@@ -242,12 +268,12 @@ public final class Equalizer {
 	}
 
 	public static int getBandLevel(int band, int audioSink) {
-		final int[] levels = ((audioSink == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((audioSink == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels));
+		final int[] levels = ((audioSink == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((audioSink == Player.AUDIO_SINK_WIRE_MIC) ? bandLevels_wire_mic : ((audioSink == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels)));
 		return ((levels == null || band >= levels.length) ? 0 : levels[band]);
 	}
 
 	public static void setBandLevel(int band, int level, int audioSink) {
-		final int[] levels = ((audioSink == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((audioSink == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels));
+		final int[] levels = ((audioSink == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((audioSink == Player.AUDIO_SINK_WIRE_MIC) ? bandLevels_wire_mic : ((audioSink == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels)));
 		if (levels == null || band >= levels.length)
 			return;
 		if (level > maxBandLevel)
@@ -261,6 +287,9 @@ public final class Equalizer {
 		switch (audioSink) {
 		case Player.AUDIO_SINK_WIRE:
 			Equalizer.enabled_wire = enabled;
+			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			Equalizer.enabled_wire_mic = enabled;
 			break;
 		case Player.AUDIO_SINK_BT:
 			Equalizer.enabled_bt = enabled;
@@ -286,6 +315,9 @@ public final class Equalizer {
 		case Player.AUDIO_SINK_WIRE:
 			Equalizer.enabled_wire = enabled;
 			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			Equalizer.enabled_wire_mic = enabled;
+			break;
 		case Player.AUDIO_SINK_BT:
 			Equalizer.enabled_bt = enabled;
 			break;
@@ -301,7 +333,7 @@ public final class Equalizer {
 		if (band < 0) {
 			_applyAllBandSettings();
 		} else {
-			final int[] levels = ((audioSink == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((audioSink == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels));
+			final int[] levels = ((audioSink == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((audioSink == Player.AUDIO_SINK_WIRE_MIC) ? bandLevels_wire_mic : ((audioSink == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels)));
 			try {
 				theEqualizer.setBandLevel((short)band, (short)levels[band]);
 			} catch (Throwable ex) {
@@ -311,7 +343,7 @@ public final class Equalizer {
 	}
 
 	private static void _applyAllBandSettings() {
-		final int[] levels = ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels));
+		final int[] levels = ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_WIRE) ? bandLevels_wire : ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_WIRE_MIC) ? bandLevels_wire_mic : ((Player.audioSinkUsedInEffects == Player.AUDIO_SINK_BT) ? bandLevels_bt : bandLevels)));
 		if (levels != null && levels.length > 0) {
 			try {
 				int i = ((levels.length > (int)theEqualizer.getNumberOfBands()) ? (int)theEqualizer.getNumberOfBands() : levels.length);

@@ -58,7 +58,7 @@ public final class ExternalReceiver extends BroadcastReceiver {
 		case "android.intent.action.HEADSET_PLUG":
 			if (Player.hasFocus)
 				Player.registerMediaButtonEventReceiver();
-			Player.audioSinkChanged(intent.getExtras().getInt("state", -1) > 0);
+			Player.audioSinkChanged(intent.getExtras().getInt("state", -1) > 0, intent.getExtras().getInt("microphone", -1) > 0);
 			break;
 		case "android.intent.action.MEDIA_BUTTON":
 			final Object o = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
@@ -79,7 +79,7 @@ public final class ExternalReceiver extends BroadcastReceiver {
 		case "android.bluetooth.intent.action.HEADSET_STATE_CHANGED":
 			if (Player.hasFocus)
 				Player.registerMediaButtonEventReceiver();
-			Player.audioSinkChanged(false);
+			Player.audioSinkChanged(false, false);
 			break;
 		}
 		if (isOrderedBroadcast())

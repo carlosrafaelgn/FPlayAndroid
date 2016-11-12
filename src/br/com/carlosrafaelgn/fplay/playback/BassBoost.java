@@ -35,8 +35,8 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class BassBoost {
-	private static int strength, strength_wire, strength_bt;
-	private static boolean enabled, enabled_wire, enabled_bt, strengthSupported, supported;
+	private static int strength, strength_wire, strength_wire_mic, strength_bt;
+	private static boolean enabled, enabled_wire, enabled_wire_mic, enabled_bt, strengthSupported, supported;
 	private static br.com.carlosrafaelgn.fplay.playback.context.BassBoost theBooster;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
@@ -45,6 +45,10 @@ public final class BassBoost {
 		case Player.AUDIO_SINK_WIRE:
 			enabled_wire = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
 			strength_wire = opts.getInt(Player.OPT_BASSBOOST_STRENGTH);
+			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			enabled_wire_mic = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
+			strength_wire_mic = opts.getInt(Player.OPT_BASSBOOST_STRENGTH);
 			break;
 		case Player.AUDIO_SINK_BT:
 			enabled_bt = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
@@ -64,6 +68,10 @@ public final class BassBoost {
 			opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED, enabled_wire);
 			opts.put(Player.OPT_BASSBOOST_STRENGTH, strength_wire);
 			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED, enabled_wire_mic);
+			opts.put(Player.OPT_BASSBOOST_STRENGTH, strength_wire_mic);
+			break;
 		case Player.AUDIO_SINK_BT:
 			opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED, enabled_bt);
 			opts.put(Player.OPT_BASSBOOST_STRENGTH, strength_bt);
@@ -79,19 +87,23 @@ public final class BassBoost {
 		enabled = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED);
 		//use the regular enabled flag as the default for the new presets
 		enabled_wire = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED_WIRE, enabled);
+		enabled_wire_mic = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED_WIRE_MIC, enabled_wire);
 		enabled_bt = opts.getBit(Player.OPTBIT_BASSBOOST_ENABLED_BT, enabled);
 		strength = opts.getInt(Player.OPT_BASSBOOST_STRENGTH);
 		//use the regular strength as the default for the new presets
 		strength_wire = opts.getInt(Player.OPT_BASSBOOST_STRENGTH_WIRE, strength);
+		strength_wire_mic = opts.getInt(Player.OPT_BASSBOOST_STRENGTH_WIRE_MIC, strength_wire);
 		strength_bt = opts.getInt(Player.OPT_BASSBOOST_STRENGTH_BT, strength);
 	}
 
 	static void saveConfig(SerializableMap opts) {
 		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED, enabled);
 		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED_WIRE, enabled_wire);
+		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED_WIRE_MIC, enabled_wire_mic);
 		opts.putBit(Player.OPTBIT_BASSBOOST_ENABLED_BT, enabled_bt);
 		opts.put(Player.OPT_BASSBOOST_STRENGTH, strength);
 		opts.put(Player.OPT_BASSBOOST_STRENGTH_WIRE, strength_wire);
+		opts.put(Player.OPT_BASSBOOST_STRENGTH_WIRE_MIC, strength_wire_mic);
 		opts.put(Player.OPT_BASSBOOST_STRENGTH_BT, strength_bt);
 	}
 
@@ -133,7 +145,7 @@ public final class BassBoost {
 	}
 
 	public static boolean isEnabled(int audioSink) {
-		return ((audioSink == Player.AUDIO_SINK_WIRE) ? enabled_wire : ((audioSink == Player.AUDIO_SINK_BT) ? enabled_bt : enabled));
+		return ((audioSink == Player.AUDIO_SINK_WIRE) ? enabled_wire : ((audioSink == Player.AUDIO_SINK_WIRE_MIC) ? enabled_wire_mic : ((audioSink == Player.AUDIO_SINK_BT) ? enabled_bt : enabled)));
 	}
 
 	public static int getMaxStrength() {
@@ -145,7 +157,7 @@ public final class BassBoost {
 	}
 
 	public static int getStrength(int audioSink) {
-		return ((audioSink == Player.AUDIO_SINK_WIRE) ? strength_wire : ((audioSink == Player.AUDIO_SINK_BT) ? strength_bt : strength));
+		return ((audioSink == Player.AUDIO_SINK_WIRE) ? strength_wire : ((audioSink == Player.AUDIO_SINK_WIRE_MIC) ? strength_wire_mic : ((audioSink == Player.AUDIO_SINK_BT) ? strength_bt : strength)));
 	}
 
 	public static void setStrength(int strength, int audioSink) {
@@ -156,6 +168,9 @@ public final class BassBoost {
 		switch (audioSink) {
 		case Player.AUDIO_SINK_WIRE:
 			BassBoost.strength_wire = strength;
+			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			BassBoost.strength_wire_mic = strength;
 			break;
 		case Player.AUDIO_SINK_BT:
 			BassBoost.strength_bt = strength;
@@ -170,6 +185,9 @@ public final class BassBoost {
 		switch (audioSink) {
 		case Player.AUDIO_SINK_WIRE:
 			BassBoost.enabled_wire = enabled;
+			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			BassBoost.enabled_wire_mic = enabled;
 			break;
 		case Player.AUDIO_SINK_BT:
 			BassBoost.enabled_bt = enabled;
@@ -188,6 +206,9 @@ public final class BassBoost {
 					switch (audioSink) {
 					case Player.AUDIO_SINK_WIRE:
 						strength_wire = 1000;
+						break;
+					case Player.AUDIO_SINK_WIRE_MIC:
+						strength_wire_mic = 1000;
 						break;
 					case Player.AUDIO_SINK_BT:
 						strength_bt = 1000;
@@ -208,6 +229,9 @@ public final class BassBoost {
 		case Player.AUDIO_SINK_WIRE:
 			BassBoost.enabled_wire = enabled;
 			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			BassBoost.enabled_wire_mic = enabled;
+			break;
 		case Player.AUDIO_SINK_BT:
 			BassBoost.enabled_bt = enabled;
 			break;
@@ -225,6 +249,10 @@ public final class BassBoost {
 			case Player.AUDIO_SINK_WIRE:
 				theBooster.setStrength(strengthSupported ? (short)strength_wire : (short)((strength_wire == 0) ? 0 : 1000));
 				strength_wire = theBooster.getRoundedStrength();
+				break;
+			case Player.AUDIO_SINK_WIRE_MIC:
+				theBooster.setStrength(strengthSupported ? (short)strength_wire_mic : (short)((strength_wire_mic == 0) ? 0 : 1000));
+				strength_wire_mic = theBooster.getRoundedStrength();
 				break;
 			case Player.AUDIO_SINK_BT:
 				theBooster.setStrength(strengthSupported ? (short)strength_bt : (short)((strength_bt == 0) ? 0 : 1000));

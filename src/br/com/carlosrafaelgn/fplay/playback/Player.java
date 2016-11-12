@@ -67,6 +67,7 @@ import android.widget.RemoteViews;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashSet;
@@ -201,6 +202,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final int AUDIO_SINK_DEVICE = 1;
 	public static final int AUDIO_SINK_WIRE = 2;
 	public static final int AUDIO_SINK_BT = 4;
+	public static final int AUDIO_SINK_WIRE_MIC = 8;
 
 	public static final int VOLUME_MIN_DB = -4000;
 	public static final int VOLUME_CONTROL_DB = 0;
@@ -252,6 +254,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int audioSink, audioSinkBeforeFocusLoss;
 	static int audioSinkUsedInEffects;
 	public static int localAudioSinkUsedInEffects;
+	private static boolean audioSinkMicrophoneCheckDone;
+	private static Method audioSinkMicrophoneCheckMethod;
 
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
 	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
@@ -285,13 +289,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//this cleanup must be done, as sometimes, when changing between two output types,
 				//the effects are lost...
 				_fullCleanup();
-				_checkAudioSink(false, false, true);
+				_checkAudioSink(false, false, false, true);
 				break;
 			case MSG_FADE_IN_VOLUME_TIMER:
 				_processFadeInVolumeTimer(msg.arg1);
 				break;
 			case MSG_AUDIO_SINK_CHANGED:
-				_checkAudioSink(msg.arg1 != 0, true, true);
+				_checkAudioSink(msg.arg1 != 0, msg.arg2 != 0, true, true);
 				break;
 			case MSG_PAUSE:
 				if (playing)
@@ -577,7 +581,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Virtualizer._checkSupport();
 					if (!BuildConfig.X)
 						ExternalFx._checkSupport();
-					_checkAudioSink(false, false, false);
+					_checkAudioSink(false, false, false, false);
 					audioSinkUsedInEffects = audioSink;
 					_reinitializeEffects();
 					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
@@ -2164,6 +2168,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPT_EQUALIZER_LEVEL0 = 0x20000;
 	static final int OPT_EQUALIZER_LEVEL0_WIRE = 0x21000;
 	static final int OPT_EQUALIZER_LEVEL0_BT = 0x22000;
+	static final int OPT_EQUALIZER_LEVEL0_WIRE_MIC = 0x23000;
 	//static final int OPT_BASSBOOST_ENABLED = 0x0110;
 	static final int OPT_BASSBOOST_STRENGTH = 0x0111;
 	//static final int OPT_VIRTUALIZER_ENABLED = 0x0112;
@@ -2172,6 +2177,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPT_VIRTUALIZER_STRENGTH_WIRE = 0x0115;
 	static final int OPT_BASSBOOST_STRENGTH_BT = 0x0116;
 	static final int OPT_VIRTUALIZER_STRENGTH_BT = 0x0117;
+	static final int OPT_BASSBOOST_STRENGTH_WIRE_MIC = 0x0118;
+	static final int OPT_VIRTUALIZER_STRENGTH_WIRE_MIC = 0x0119;
 
 	private static final int OPTBIT_CONTROLMODE = 0;
 	private static final int OPTBIT_BASSBOOSTMODE = 1;
@@ -2240,6 +2247,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING = 57;
 	private static final int OPTBIT_CHROMEBOOK = 58;
 	private static final int OPTBIT_LARGE_TEXT_IS_22SP = 59;
+	static final int OPTBIT_EQUALIZER_ENABLED_WIRE_MIC = 60;
+	static final int OPTBIT_BASSBOOST_ENABLED_WIRE_MIC = 61;
+	static final int OPTBIT_VIRTUALIZER_ENABLED_WIRE_MIC = 62;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2904,7 +2914,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						volumeStreamMax = info.getVolumeMax();
 						if (volumeStreamMax < 1)
 							volumeStreamMax = 1;
-						audioSinkChanged(false);
+						audioSinkChanged(false, false);
 					}
 				}
 				@Override
@@ -3091,9 +3101,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			handler.sendEmptyMessageAtTime(MSG_BECOMING_NOISY, SystemClock.uptimeMillis());
 	}
 
-	public static void audioSinkChanged(boolean wiredHeadsetJustPlugged) {
+	public static void audioSinkChanged(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone) {
 		if (handler != null)
-			handler.sendMessageAtTime(Message.obtain(handler, MSG_AUDIO_SINK_CHANGED, wiredHeadsetJustPlugged ? 1 : 0, 0), SystemClock.uptimeMillis());
+			handler.sendMessageAtTime(Message.obtain(handler, MSG_AUDIO_SINK_CHANGED, wiredHeadsetJustPlugged ? 1 : 0, wiredHeadsetHasMicrophone ? 1 : 0), SystemClock.uptimeMillis());
 	}
 
 	public static void setHeadsetHookAction(int pressCount, int action) {
@@ -3245,8 +3255,38 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			destroyedObservers.remove(observer);
 	}
 
+	private static boolean _checkAudioSinkMicrophone() {
+		//AudioSystem.getDeviceConnectionState(DEVICE_OUT_WIRED_HEADSET,"") != AudioSystem.DEVICE_STATE_UNAVAILABLE
+		//DEVICE_OUT_WIRED_HEADSET = 0x4
+		//DEVICE_STATE_UNAVAILABLE = 0
+		if (!audioSinkMicrophoneCheckDone) {
+			audioSinkMicrophoneCheckDone = true;
+			audioSinkMicrophoneCheckMethod = null;
+			try {
+				for (Method method : Player.class.getClassLoader().loadClass("android.media.AudioSystem").getMethods()) {
+					//public static native int getDeviceConnectionState(int device, String device_address);
+					if (method.getName().equals("getDeviceConnectionState")) {
+						audioSinkMicrophoneCheckMethod = method;
+						break;
+					}
+				}
+			} catch (Throwable ex) {
+				//just ignore
+				ex.printStackTrace();
+			}
+		}
+		if (audioSinkMicrophoneCheckMethod == null)
+			return false;
+		try {
+			return ((int)audioSinkMicrophoneCheckMethod.invoke(null, 4, "") != 0);
+		} catch (Throwable ex) {
+			audioSinkMicrophoneCheckMethod = null;
+		}
+		return false;
+	}
+
 	@SuppressWarnings("deprecation")
-	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean triggerNoisy, boolean reinitializeEffects) {
+	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone, boolean triggerNoisy, boolean reinitializeEffects) {
 		if (audioManager == null)
 			return;
 		final int oldAudioSink = audioSink;
@@ -3292,9 +3332,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		if (audioSink == 0)
 			audioSink = AUDIO_SINK_DEVICE;
+		else if (audioSink == AUDIO_SINK_WIRE && (wiredHeadsetHasMicrophone || _checkAudioSinkMicrophone()))
+			audioSink = AUDIO_SINK_WIRE_MIC;
 		if (oldAudioSink != audioSink && oldAudioSink != 0) {
 			switch (audioSink) {
 			case AUDIO_SINK_WIRE:
+			case AUDIO_SINK_WIRE_MIC:
 				if (!playing && playWhenHeadsetPlugged) {
 					if (!hasFocus) {
 						try {
@@ -3304,8 +3347,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 							ex.printStackTrace();
 						}
 					}
-					if (reinitializeEffects && audioSinkUsedInEffects != audioSink && player != null)
+					if (reinitializeEffects && audioSinkUsedInEffects != audioSink && player != null) {
+						reinitializeEffects = false;
 						_reinitializeEffects();
+					}
 					_playPause();
 				}
 				break;
