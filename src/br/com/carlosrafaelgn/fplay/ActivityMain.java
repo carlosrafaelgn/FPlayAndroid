@@ -1020,44 +1020,34 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnPrev.setIconNoChanges(UI.ICON_PREV);
 			btnNext.setIconNoChanges(UI.ICON_NEXT);
 			btnMenu.setIconNoChanges(UI.ICON_MENU);
-			btnPrev.setIconStretchable(true);
-			btnNext.setIconStretchable(true);
-			btnMenu.setIconStretchable(true);
-			
+
 			volumeButtonPressed = 0;
 			btnDecreaseVolume = (BgButton)findViewById(R.id.btnDecreaseVolume);
 			btnDecreaseVolume.setOnClickListener(this);
 			btnDecreaseVolume.setOnPressingChangeListener(this);
 			btnDecreaseVolume.setIconNoChanges(UI.ICON_DECREASE_VOLUME);
-			btnDecreaseVolume.setIconStretchable(true);
 			btnIncreaseVolume = (BgButton)findViewById(R.id.btnIncreaseVolume);
 			btnIncreaseVolume.setOnClickListener(this);
 			btnIncreaseVolume.setOnPressingChangeListener(this);
 			btnIncreaseVolume.setIconNoChanges(UI.ICON_INCREASE_VOLUME);
-			btnIncreaseVolume.setIconStretchable(true);
 			btnVolume = (BgButton)findViewById(R.id.btnVolume);
 			btnVolume.setIconNoChanges(UI.ICON_VOLUME0);
-			btnVolume.setIconStretchable(true);
 			btnVolume.setEnabled(false);
 			
 			Player.songs.selecting = false;
 			Player.songs.moving = false;
-			
+
 			lblTitle.setOnClickListener(this);
-			final int w = getDecorViewWidth() - (panelControlsPadding << 1), h = getDecorViewHeight() - (panelControlsPadding << 1);
-			final int min, max;
-			if (w < h) {
-				min = w;
-				max = h;
-			} else {
-				min = h;
-				max = w;
-			}
-			int panelH = (UI.isLandscape ? ((min * 25) / 100) : ((max * 14) / 100));
-			if (!UI.isLandscape && panelH > (min >> 2))
-				panelH = (min >> 2);
+
+			final int w = UI.usableScreenWidth - (panelControlsPadding << 1), h = UI.usableScreenHeight - (panelControlsPadding << 1);
+			int panelH = ((UI.isLandscape) ? (h >> 2) : ((h * 15) / 100));
+			if (panelH < UI.defaultControlSize)
+				panelH = UI.defaultControlSize;
+			if (panelH > (w >> 2))
+				panelH = w >> 2;
+
 			findViewById(R.id.panelTop).setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, panelH));
-			
+
 			RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(panelH, panelH);
 			rp.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
 			btnDecreaseVolume.setLayoutParams(rp);
@@ -1074,30 +1064,18 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
 			btnMenu.setLayoutParams(rp);
 
-			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.colorState_text_control_mode_reactive.getDefaultColor(), panelH >> 1);
-			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
-
-			final int lds = ((UI.isLowDpiScreen && !UI.isLargeScreen) ? (UI.isLandscape ? ((UI.controlMargin * 3) >> 1) : UI.controlMargin) : UI.controlLargeMargin);
-			btnDecreaseVolume.setPadding(lds, lds, lds, lds);
-			btnIncreaseVolume.setPadding(lds, lds, lds, lds);
-			btnVolume.setPadding(lds, lds, lds, lds);
-			btnMenu.setPadding(lds, lds, lds, lds);
-
-			if (UI.isLandscape) {
-				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (min * 9) / 100);
-				final int pa = (min * 7) / 100;
-				btnPrev.setPadding(pa, pa, pa, pa);
-				btnNext.setPadding(pa, pa, pa, pa);
-			} else {
-				LinearLayout.LayoutParams p2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (max * 40) / 100);
+			if (!UI.isLandscape) {
+				LinearLayout.LayoutParams p2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (h * 40) / 100);
 				p2.topMargin = UI.controlLargeMargin;
 				p2.bottomMargin = UI.controlLargeMargin;
 				lblTitle.setLayoutParams(p2);
-				lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, (min * 9) / 100);
-				final int ph = (min * 12) / 100, pv = (max * 12) / 100;
-				btnPrev.setPadding(ph, pv, ph, pv);
-				btnNext.setPadding(ph, pv, ph, pv);
 			}
+
+			lblTitleIcon = new TextIconDrawable(UI.ICON_PLAY, UI.colorState_text_control_mode_reactive.getDefaultColor(), Math.min(Math.max((((panelH * 3) >> 2) + 8) & ~15, UI.defaultControlContentsSize), (UI.defaultControlContentsSize * 3) >> 1));
+			lblTitle.setCompoundDrawables(null, null, lblTitleIcon, null);
+
+			lblTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, Math.min(Math.max(UI._18sp, (Math.max(w, h) * 5) / 100), (UI._22sp * 3) >> 1));
+
 			btnDecreaseVolume.setTextColor(UI.colorState_text_control_mode_reactive);
 			btnVolume.setTextColor(UI.colorState_text_control_mode_reactive);
 			btnIncreaseVolume.setTextColor(UI.colorState_text_control_mode_reactive);
@@ -1105,6 +1083,21 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			lblTitle.setTextColor(UI.colorState_text_control_mode_reactive);
 			btnPrev.setTextColor(UI.colorState_text_control_mode_reactive);
 			btnNext.setTextColor(UI.colorState_text_control_mode_reactive);
+
+			final int panelControlButtonsPadding = (UI.isLowDpiScreen ? UI.controlXtraSmallMargin : UI.controlSmallMargin);
+			btnDecreaseVolume.setPadding(panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding);
+			btnVolume.setPadding(panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding);
+			btnIncreaseVolume.setPadding(panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding);
+			btnMenu.setPadding(panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding, panelControlButtonsPadding);
+			btnPrev.setPadding(0, 0, 0, 0);
+			btnNext.setPadding(0, 0, 0, 0);
+
+			btnDecreaseVolume.setIconStretchable(true);
+			btnVolume.setIconStretchable(true);
+			btnIncreaseVolume.setIconStretchable(true);
+			btnMenu.setIconStretchable(true);
+			btnPrev.setIconStretchable(true);
+			btnNext.setIconStretchable(true);
 		} else {
 			UI.headingText(lblTitle);
 			btnPrev.setIcon(UI.ICON_PREV);

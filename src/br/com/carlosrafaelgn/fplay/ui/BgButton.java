@@ -191,18 +191,31 @@ public final class BgButton extends Button {
 		this.pressingChangeListener = pressingChangeListener;
 	}
 	
-	private void fixTextSize(int w, int h) {
+	private void fixStretchableTextSize(int w, int h) {
 		if (w <= 0 || h <= 0)
 			return;
 		w -= (getPaddingLeft() + getPaddingRight());
 		h -= (getPaddingTop() + getPaddingBottom());
-		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, (w < h) ? w : h);
+		if (w > h)
+			w = h;
+		else
+			h = w;
+		w = ((w * 3) >> 2); //75% of the smallest dimension
+		if (w < UI.defaultControlContentsSize) {
+			w = ((h >= UI.defaultControlContentsSize) ? UI.defaultControlContentsSize : (UI.defaultControlContentsSize >> 1));
+		} else {
+			//try to round up to a multiple of 16
+			w = ((w + 8) & ~15);
+			if (w > (UI.defaultControlContentsSize << 1))
+				w = (UI.defaultControlContentsSize << 1);
+		}
+		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, w);
 	}
 
 	public void setIconStretchable(boolean stretchable) {
 		this.stretchable = stretchable;
 		if (stretchable)
-			fixTextSize(getWidth(), getHeight());
+			fixStretchableTextSize(getWidth(), getHeight());
 	}
 
 	public void toggle() {
@@ -345,7 +358,7 @@ public final class BgButton extends Button {
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (stretchable)
-			fixTextSize(w, h);
+			fixStretchableTextSize(w, h);
 	}
 	
 	@Override
