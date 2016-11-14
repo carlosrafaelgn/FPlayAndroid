@@ -37,8 +37,13 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.media.AudioManager;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -57,8 +62,11 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.util.Locale;
+
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
@@ -106,6 +114,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 //
 public final class ActivityMain extends ClientActivity implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, SongList.ItemClickListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEAT_ONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124;
+	private static final int REQUEST_WRITE_SETTINGS = 123;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -114,7 +123,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume, btnSetRingtone;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
-	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand;
+	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand, idForRingtoneContent;
 	private boolean skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
@@ -299,6 +308,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				}
 			}
 			UI.animationReset();
+			if (btnSetRingtone != null)
+				UI.animationAddViewToShow(btnSetRingtone);
 			UI.animationAddViewToShow(btnMoreInfo);
 			UI.animationAddViewToShow(btnMoveSel);
 			UI.animationAddViewToShow(btnRemoveSel);
@@ -692,6 +703,20 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		}
 	}
 
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == REQUEST_WRITE_SETTINGS) {
+			try {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.System.canWrite(Player.theApplication)) {
+					RingtoneManager.setActualDefaultRingtoneUri(Player.theApplication, RingtoneManager.TYPE_RINGTONE, Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, Integer.toString(idForRingtoneContent)));
+					UI.toast(R.string.success);
+				}
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		}
+	}
+
 	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private void openVisualizer(int id) {
 		if (!BuildConfig.X && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -879,17 +904,51 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (Player.songs.getCount() == 0)
 				addSongs(view);
 		} else if (view == btnSetRingtone) {
-			final int sel = Player.songs.getFirstSelectedPosition();
+			final int sel = Player.songs.getSelection();
 			final Song song;
-			if (Player.songs.getCount() > 0 && sel >= 0) {
-				if (Player.songs.getLastSelectedPosition() != sel) {
-					//error! only one must be selected
-					UI.toast(1);
-				} else if ((song = Player.songs.getItemT(sel)).isHttp) {
-					//error! must not be http
-					UI.toast(2);
+			if (sel >= 0 && sel < Player.songs.getCount()) {
+				if ((song = Player.songs.getItemT(sel)).isHttp ||
+					!song.path.toLowerCase(Locale.US).endsWith(".mp3")) {
+					//error! must be mp3 and must not be http
+					UI.toast(R.string.ringtone_error);
 				} else {
-
+					(new Thread("Ringtone Thread") {
+						@Override
+						public void run() {
+							if (Player.state != Player.STATE_ALIVE)
+								return;
+							try {
+								final Cursor cursor = Player.theApplication.getContentResolver().query(
+									MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+									new String[] { "_id" },
+									"_data=? ",
+									new String[] { song.path }, null);
+								if (cursor != null) {
+									if (cursor.moveToNext()) {
+										final int id = cursor.getInt(0);
+										if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+											if (!Settings.System.canWrite(Player.theApplication)) {
+												idForRingtoneContent = id;
+												//https://developer.android.com/guide/topics/security/permissions.html#normal-dangerous
+												//https://developer.android.com/reference/android/Manifest.permission.html#WRITE_SETTINGS
+												final Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+												intent.setData(Uri.parse("package:" + Player.theApplication.getPackageName()));
+												getHostActivity().startActivityForResult(intent, REQUEST_WRITE_SETTINGS);
+												return;
+											}
+										}
+										RingtoneManager.setActualDefaultRingtoneUri(Player.theApplication, RingtoneManager.TYPE_RINGTONE, Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, Integer.toString(id)));
+										MainHandler.toast(R.string.success);
+									} else {
+										MainHandler.toast(R.string.ringtone_error);
+									}
+									cursor.close();
+								}
+							} catch (Throwable ex) {
+								MainHandler.toast(R.string.ringtone_error);
+							}
+						}
+					}).start();
 				}
 			}
 		}
@@ -1151,16 +1210,24 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
 			btnMoreInfo = (BgButton)findViewById(R.id.btnMoreInfo);
 			btnMoreInfo.setOnClickListener(this);
-			btnMoreInfo.setIcon(UI.ICON_INFORMATION, UI.isLargeScreen || !UI.isLandscape, true);
+			btnMoreInfo.setIcon(UI.ICON_INFORMATION);
 			btnMoveSel = (BgButton)findViewById(R.id.btnMoveSel);
 			btnMoveSel.setOnClickListener(this);
-			btnMoveSel.setIcon(UI.ICON_MOVE, UI.isLargeScreen || !UI.isLandscape, true);
+			btnMoveSel.setIcon(UI.ICON_MOVE);
 			btnRemoveSel = (BgButton)findViewById(R.id.btnRemoveSel);
 			btnRemoveSel.setOnClickListener(this);
-			btnRemoveSel.setIcon(UI.ICON_DELETE, UI.isLargeScreen || !UI.isLandscape, true);
+			btnRemoveSel.setIcon(UI.ICON_DELETE);
 			btnCancelSel = (BgButton)findViewById(R.id.btnCancelSel);
 			btnCancelSel.setOnClickListener(this);
 			btnCancelSel.setIcon(UI.ICON_GOBACK);
+			btnSetRingtone = (BgButton)findViewById(R.id.btnSetRingtone);
+			if (Player.deviceHasTelephonyRadio()) {
+				btnSetRingtone.setOnClickListener(this);
+				btnSetRingtone.setIcon(UI.ICON_RINGTONE);
+			} else {
+				btnSetRingtone.setVisibility(View.GONE);
+				btnSetRingtone = null;
+			}
 
 			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
 			btnVolume = (BgButton)findViewById(R.id.btnVolume);
@@ -1459,6 +1526,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		btnMoveSel = null;
 		btnRemoveSel = null;
 		btnCancelSel = null;
+		btnSetRingtone = null;
 		btnDecreaseVolume = null;
 		btnIncreaseVolume = null;
 		btnVolume = null;

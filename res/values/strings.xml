@@ -348,5 +348,8 @@
     <string name="performance">Performance</string>
     <string name="previous_resets_after_the_beginning">\"Previous\" button returns to the beginning of the song before skipping to the previous track</string>
     <string name="larger_text_size">Larger text size</string>
+    <string name="ringtone">Ringtone</string>
+    <string name="ringtone_error">Ringtones must be songs in MP3 format :(</string>
+    <string name="success">Success :)</string>
 
 </resources>

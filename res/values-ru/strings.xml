@@ -346,5 +346,8 @@
     <string name="performance">Представление</string>
     <string name="previous_resets_after_the_beginning">Кнопка \"Предыдущая\" возвращается к началу песни, прежде чем она переходит к предыдущему трек</string>
     <string name="larger_text_size">Увеличить размер шрифта</string>
+    <string name="ringtone">Рингтон</string>
+    <string name="ringtone_error">Вызов мелодии должны быть песни в формате MP3 :(</string>
+    <string name="success">Успех :)</string>
 
 </resources>

@@ -346,5 +346,8 @@
     <string name="performance">Desempeño</string>
     <string name="previous_resets_after_the_beginning">Botón \"Anterior\" vuelve al comienzo de la canción antes de saltar a la pista anterior</string>
     <string name="larger_text_size">Tamaño de texto más grande</string>
+    <string name="ringtone">Tono de llamada</string>
+    <string name="ringtone_error">Los tonos deben ser canciones en formato MP3 :(</string>
+    <string name="success">Éxito :)</string>
 
 </resources>

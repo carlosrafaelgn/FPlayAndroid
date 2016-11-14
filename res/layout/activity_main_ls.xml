@@ -293,13 +293,38 @@
             android:visibility="gone">
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnCancelSel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="40dp"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnMoreInfo"
+                android:nextFocusLeft="@+id/list"
+                android:nextFocusRight="@+id/btnMoreInfo"
+                android:nextFocusUp="@+id/list"
+                android:text="@string/cancel"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnSetRingtone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:contentDescription="@string/ringtone"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnMoreInfo"
+                android:nextFocusLeft="@+id/btnCancelSel"
+                android:nextFocusRight="@+id/btnMoreInfo"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMoreInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
                 android:contentDescription="@string/information"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnMoveSel"
-                android:nextFocusLeft="@+id/list"
+                android:nextFocusLeft="@+id/btnCancelSel"
                 android:nextFocusRight="@+id/btnMoveSel"
                 android:nextFocusUp="@+id/list"/>
 
@@ -307,7 +332,7 @@
                 android:id="@+id/btnMoveSel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
                 android:contentDescription="@string/move"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnRemoveSel"
@@ -319,25 +344,12 @@
                 android:id="@+id/btnRemoveSel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
                 android:contentDescription="@string/remove"
                 android:nextFocusDown="@+id/list"
-                android:nextFocusForward="@+id/btnCancelSel"
-                android:nextFocusLeft="@+id/btnMoveSel"
-                android:nextFocusRight="@+id/btnCancelSel"
-                android:nextFocusUp="@+id/list"/>
-
-            <br.com.carlosrafaelgn.fplay.ui.BgButton
-                android:id="@+id/btnCancelSel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="32dp"
-                android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/list"
-                android:nextFocusLeft="@+id/btnRemoveSel"
+                android:nextFocusLeft="@+id/btnMoveSel"
                 android:nextFocusRight="@+id/list"
-                android:nextFocusUp="@+id/list"
-                android:text="@string/cancel"/>
+                android:nextFocusUp="@+id/list"/>
         </LinearLayout>
     </LinearLayout>
 

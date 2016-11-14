@@ -2259,7 +2259,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin;
 	private static HashSet<String> favoriteFolders;
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
-	private static int headsetHookActions, headsetHookPressCount;
+	private static int headsetHookActions, headsetHookPressCount, telephonyFeatureState;
 	public static String path, originalPath, radioSearchTerm;
 	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
 	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
@@ -2698,6 +2698,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		urlConnection.setRequestMethod("GET");
 		urlConnection.setUseCaches(false);
 		return urlConnection;
+	}
+
+	public static boolean deviceHasTelephonyRadio() {
+		if (telephonyFeatureState == 0) {
+			telephonyFeatureState = 2;
+			try {
+				final PackageManager packageManager = theApplication.getPackageManager();
+				if (packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY) ||
+					packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_CDMA) ||
+					packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_GSM))
+					telephonyFeatureState = 1;
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		}
+		return (telephonyFeatureState == 1);
 	}
 
 	public static boolean isConnectedToTheInternet() {

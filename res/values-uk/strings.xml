@@ -346,5 +346,8 @@
     <string name="performance">Продуктивність</string>
     <string name="previous_resets_after_the_beginning">Кнопка \"Попередня\" повертається до початку пісні, перш ніж вона переходить до попереднього трек</string>
     <string name="larger_text_size">Збільшити розмір шрифту</string>
+    <string name="ringtone">Рингтон</string>
+    <string name="ringtone_error">Виклик мелодії повинні бути пісні в форматі MP3 :(</string>
+    <string name="success">Успіх :)</string>
 
 </resources>

@@ -346,5 +346,8 @@
     <string name="performance">Leistung</string>
     <string name="previous_resets_after_the_beginning">Schaltfläche \"Zurück\" kehrt zum Anfang des Songs, bevor er springt zum vorherigen Titel</string>
     <string name="larger_text_size">Größere Textgröße</string>
+    <string name="ringtone">Anruf Klingelton</string>
+    <string name="ringtone_error">Klingeltöne müssen Songs im MP3-Format sein :(</string>
+    <string name="success">Erfolg :)</string>
 
 </resources>

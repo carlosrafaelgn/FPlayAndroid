@@ -190,6 +190,20 @@
                 android:text="@string/cancel"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
+                android:id="@+id/btnSetRingtone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@+id/btnCancelSel"
+                android:layout_marginRight="8dp"
+                android:layout_toLeftOf="@+id/btnMoreInfo"
+                android:contentDescription="@string/ringtone"
+                android:nextFocusDown="@+id/list"
+                android:nextFocusForward="@+id/btnMoreInfo"
+                android:nextFocusLeft="@+id/btnCancelSel"
+                android:nextFocusRight="@+id/btnMoreInfo"
+                android:nextFocusUp="@+id/list"/>
+
+            <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnMoreInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

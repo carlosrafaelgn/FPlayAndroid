@@ -346,5 +346,8 @@
     <string name="performance">Desempenho</string>
     <string name="previous_resets_after_the_beginning">Botão \"Anterior\" retorna para o início da música antes de pular para a faixa anterior</string>
     <string name="larger_text_size">Tamanho do texto maior</string>
+    <string name="ringtone">Toque de chamada</string>
+    <string name="ringtone_error">Toques devem ser músicas no formato MP3 :(</string>
+    <string name="success">Sucesso :)</string>
 
 </resources>
