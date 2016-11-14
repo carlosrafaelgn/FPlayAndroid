@@ -18,6 +18,21 @@
       "prevSize": 32,
       "icons": [
         {
+          "id": 101,
+          "paths": [
+            "M469.333 0v554.667h85.333v-554.667h-85.333zM182.916 119.748c-112.137 94.55-182.884 235.117-182.884 392.207 0 62.844 11.322 123.044 32.038 178.67 72.482 194.664 260 333.331 479.909 333.357 219.915-0.027 407.433-138.694 479.915-333.357 20.719-55.631 32.043-115.835 32.043-178.685 0-157.083-70.74-297.643-182.1-391.563l-55.679 64.769c93.48 78.778 152.466 195.915 152.491 326.831 0 235.646-191.025 426.671-426.667 426.671s-426.667-191.025-426.667-426.667c0.151-130.852 59.182-247.887 152.020-326.054l-54.437-66.198z"
+          ],
+          "attrs": [
+            {}
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false,
+          "grid": 24,
+          "tags": [
+            "Exit24"
+          ]
+        },
+        {
           "id": 99,
           "paths": [
             "M810.667 170.667v640h128v-640h-128zM512 298.667v128h-426.667v128h426.667v128l256-192-256-192z"
@@ -125,17 +140,17 @@
         {
           "id": 92,
           "paths": [
-            "M274.003 441.6q-148-147.264-152-149.254l60-61.69 152 151.245-60 59.699zM554.003 111.251v210.944h-84v-210.944h84zM902.003 292.346l-152 149.254-60-59.699 152-151.245 60 61.69zM1012 734.131q12 11.942 12 29.856 0 17.907-12 29.85l-105.997 105.472q-12 11.942-30 11.942t-30-11.942q-56-51.738-114.003-79.597-24-9.958-24-37.818v-131.341q-92.032-19.2-196.032-19.2t-196 29.85v131.341q0 29.856-24 39.802-64 29.856-113.997 77.613-12 11.942-30 11.942t-30-11.942l-105.997-108.8q-12-12.8-12-32 0-17.914 12-29.856 210.003-199.002 500-199.002 290.003 0 500 199.002z"
+            "M480 128v192h64v-192h-64zM184.25 267.002l-45.248 45.248 135.75 135.75 45.248-45.248-135.75-135.75zM839.738 267.002l-135.744 135.75 45.248 45.248 135.744-135.75-45.248-45.248zM511.994 544c-193.331 0-360 58.208-500 190.848-8 8-12 17.984-12 29.888 0 11.968 4 21.952 12 29.888l106.003 105.344c8 8 17.997 12.032 29.997 12.032s21.997-4.032 29.997-12.032c33.338-31.808 71.334-57.536 114.003-77.44 16-6.656 24-19.968 24-39.872v-112.768c61.331-19.904 126.669-29.888 196-29.888s134.656 9.984 195.968 29.888v112.768c0 18.56 8.064 31.232 24.064 37.824 38.656 18.624 76.608 45.056 113.984 79.488 8 8 17.984 12.032 30.016 12.032 11.968 0 21.952-4.032 29.952-12.032l105.984-105.344c8.064-7.936 12.032-17.92 12.032-29.888 0-11.904-3.968-21.888-12.032-29.888-139.968-132.64-306.624-190.848-499.968-190.848z"
           ],
           "attrs": [
             {}
           ],
-          "isMulticolor": false,
-          "isMulticolor2": false,
           "grid": 32,
           "tags": [
             "Ringtone"
-          ]
+          ],
+          "isMulticolor": false,
+          "isMulticolor2": false
         },
         {
           "id": 91,
@@ -1060,7 +1075,7 @@
             "M576 0v576h-128v-576z"
           ],
           "defaultCode": 88,
-          "grid": 32,
+          "grid": 16,
           "attrs": [
             {},
             {}
@@ -1379,12 +1394,20 @@
       ],
       "selection": [
         {
+          "order": 120,
+          "id": 100,
+          "name": "Exit24",
+          "prevSize": 32,
+          "code": 179,
+          "tempChar": ""
+        },
+        {
           "order": 114,
           "id": 98,
           "name": "RepeatNone24",
           "prevSize": 32,
           "code": 178,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 112,
@@ -1392,7 +1415,7 @@
           "name": "Icon24",
           "prevSize": 32,
           "code": 161,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 113,
@@ -1400,7 +1423,7 @@
           "name": "Move24",
           "prevSize": 32,
           "code": 114,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 110,
@@ -1408,7 +1431,7 @@
           "name": "Create",
           "prevSize": 32,
           "code": 38,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 108,
@@ -1416,7 +1439,7 @@
           "name": "Effects24",
           "prevSize": 32,
           "code": 90,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 102,
@@ -1432,15 +1455,15 @@
           "name": "Config24",
           "prevSize": 32,
           "code": 103,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
-          "order": 98,
+          "order": 118,
           "id": 91,
           "name": "Ringtone",
           "prevSize": 32,
           "code": 57,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 97,
@@ -1552,7 +1575,7 @@
           "prevSize": 32,
           "code": 47,
           "name": "Flat",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 74,
@@ -1560,7 +1583,7 @@
           "name": "3DPan",
           "prevSize": 32,
           "code": 41,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 71,
@@ -1568,7 +1591,7 @@
           "name": "Root",
           "prevSize": 32,
           "code": 40,
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 69,
@@ -1584,7 +1607,7 @@
           "prevSize": 32,
           "code": 121,
           "name": "RepeatOne24",
-          "tempChar": ""
+          "tempChar": ""
         },
         {
           "order": 68,
@@ -1601,7 +1624,7 @@
           "prevSize": 32,
           "code": 117,
           "name": "USB",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1637,7 +1660,7 @@
           "prevSize": 32,
           "code": 97,
           "name": "Hand",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1655,7 +1678,7 @@
           "prevSize": 32,
           "code": 87,
           "name": "Bluetooth",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1682,7 +1705,7 @@
           "prevSize": 32,
           "code": 109,
           "name": "Mic",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1700,7 +1723,7 @@
           "prevSize": 32,
           "code": 58,
           "name": "OptDial",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1772,7 +1795,7 @@
           "prevSize": 32,
           "code": 64,
           "name": "OptOrientation",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1790,7 +1813,7 @@
           "prevSize": 32,
           "code": 96,
           "name": "OptScreenOn",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1799,7 +1822,7 @@
           "prevSize": 32,
           "code": 46,
           "name": "OptTurnOff",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1853,7 +1876,7 @@
           "prevSize": 32,
           "code": 55,
           "name": "Icon",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1862,7 +1885,7 @@
           "prevSize": 32,
           "code": 81,
           "name": "CheckOff24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1871,7 +1894,7 @@
           "prevSize": 32,
           "code": 113,
           "name": "CheckOn24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1889,7 +1912,7 @@
           "prevSize": 32,
           "code": 108,
           "name": "List24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1898,7 +1921,7 @@
           "prevSize": 32,
           "code": 82,
           "name": "Remove24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1907,7 +1930,7 @@
           "prevSize": 32,
           "code": 83,
           "name": "Save24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1916,7 +1939,7 @@
           "prevSize": 32,
           "code": 76,
           "name": "Load24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1952,7 +1975,7 @@
           "prevSize": 32,
           "code": 65,
           "name": "Add",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1961,11 +1984,11 @@
           "prevSize": 32,
           "code": 69,
           "name": "Effects",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
-          "order": 7,
+          "order": 117,
           "id": 12,
           "prevSize": 32,
           "code": 115,
@@ -1979,7 +2002,7 @@
           "prevSize": 32,
           "code": 86,
           "name": "Visualizer24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1988,7 +2011,7 @@
           "prevSize": 32,
           "code": 73,
           "name": "Info",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -1997,7 +2020,7 @@
           "prevSize": 32,
           "code": 104,
           "name": "Shuffle24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2006,7 +2029,7 @@
           "prevSize": 32,
           "code": 116,
           "name": "Repeat24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2015,7 +2038,7 @@
           "prevSize": 32,
           "code": 88,
           "name": "Exit",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2042,7 +2065,7 @@
           "prevSize": 32,
           "code": 124,
           "name": "Pause",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2060,7 +2083,7 @@
           "prevSize": 32,
           "code": 72,
           "name": "Home",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2069,7 +2092,7 @@
           "prevSize": 32,
           "code": 94,
           "name": "Up",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2096,7 +2119,7 @@
           "prevSize": 32,
           "code": 70,
           "name": "Search",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2105,7 +2128,7 @@
           "prevSize": 32,
           "code": 120,
           "name": "RadioOn24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2114,7 +2137,7 @@
           "prevSize": 32,
           "code": 111,
           "name": "RadioOff24",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2123,7 +2146,7 @@
           "prevSize": 32,
           "code": 43,
           "name": "VolPlus",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2132,7 +2155,7 @@
           "prevSize": 32,
           "code": 45,
           "name": "VolMinus",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2141,7 +2164,7 @@
           "prevSize": 32,
           "code": 48,
           "name": "Mute",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2150,7 +2173,7 @@
           "prevSize": 32,
           "code": 49,
           "name": "Vol1",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2159,7 +2182,7 @@
           "prevSize": 32,
           "code": 50,
           "name": "Vol2",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2168,7 +2191,7 @@
           "prevSize": 32,
           "code": 51,
           "name": "Vol3",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2177,7 +2200,7 @@
           "prevSize": 32,
           "code": 52,
           "name": "Vol4",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {
@@ -2186,7 +2209,7 @@
           "prevSize": 32,
           "code": 33,
           "name": "Error",
-          "tempChar": "",
+          "tempChar": "",
           "ligatures": ""
         },
         {

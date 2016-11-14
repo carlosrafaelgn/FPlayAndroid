@@ -680,7 +680,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		UI.separator(menu, 2, 5);
 		menu.add(3, MNU_EXIT, 0, R.string.exit)
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_EXIT));
+			.setIcon(new TextIconDrawable(UI.ICON_EXIT24));
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
