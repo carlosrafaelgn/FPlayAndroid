@@ -302,7 +302,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			UI.animationAddViewToShow(btnMoreInfo);
 			UI.animationAddViewToShow(btnMoveSel);
 			UI.animationAddViewToShow(btnRemoveSel);
-			btnCancelSel.setText(R.string.cancel);
 			UI.animationAddViewToHide(panelControls);
 			UI.animationAddViewToHide(panelSecondary);
 			UI.animationAddViewToShow(panelSelection);
@@ -338,12 +337,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (UI.animationEnabled) {
 				UI.animationAddViewToHide(btnCancelSel);
 				UI.animationAddViewToHide(lblMsgSelMove);
-				btnCancelSel.setTag(getText(R.string.done));
 				lblMsgSelMove.setTag(getText(R.string.msg_move));
 				UI.animationAddViewToShow(btnCancelSel);
 				UI.animationAddViewToShow(lblMsgSelMove);
 			} else {
-				btnCancelSel.setText(R.string.done);
 				lblMsgSelMove.setText(R.string.msg_move);
 			}
 			UI.animationCommit(isCreatingLayout, null);
@@ -1163,7 +1160,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnRemoveSel.setIcon(UI.ICON_DELETE, UI.isLargeScreen || !UI.isLandscape, true);
 			btnCancelSel = (BgButton)findViewById(R.id.btnCancelSel);
 			btnCancelSel.setOnClickListener(this);
-			
+			btnCancelSel.setIcon(UI.ICON_GOBACK);
+
 			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
 			btnVolume = (BgButton)findViewById(R.id.btnVolume);
 
