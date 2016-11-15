@@ -349,5 +349,6 @@
     <string name="ringtone">Toque de chamada</string>
     <string name="ringtone_error">Toques devem ser músicas no formato MP3 :(</string>
     <string name="success">Sucesso :)</string>
+    <string name="display_song_number_and_count">Exibir o número e a contagem de músicas</string>
 
 </resources>

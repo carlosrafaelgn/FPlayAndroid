@@ -76,6 +76,11 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	private Handler handler;
 	private Looper looper;
 
+	/**
+	 * Setup LRU cache, canvas for bitmap
+	 * set maximum memory limit for cache to 8 MB
+	 * and start a new thread to fetch bitmap.
+	 */
 	public AlbumArtFetcher() {
 		sync = new Object();
 		opts = new BitmapFactory.Options();
@@ -112,6 +117,12 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	}
 	
 	//Runs on a SECONDARY thread
+
+	/**
+	 * Get the URI for a file's album art and fetch it into
+	 * a bitmap, add item to cache.
+	 * @param msg AlbumArtFetcherListener as a Message object
+	 */
 	@Override
 	public boolean handleMessage(Message msg) {
 		final AlbumArtFetcherListener listener = (AlbumArtFetcherListener)msg.obj;
@@ -309,6 +320,11 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	}
 	
 	//Runs on the MAIN thread
+
+	/**
+	 * Clean the cache and clear the memory allocated
+	 * to the canvas.
+	 */
 	public void stopAndCleanup() {
 		synchronized (sync) {
 			handler = null;

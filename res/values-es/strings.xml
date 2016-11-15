@@ -349,5 +349,6 @@
     <string name="ringtone">Tono de llamada</string>
     <string name="ringtone_error">Los tonos deben ser canciones en formato MP3 :(</string>
     <string name="success">Éxito :)</string>
+    <string name="display_song_number_and_count">Mostrar el número de la canción y la cantidad de canciones</string>
 
 </resources>

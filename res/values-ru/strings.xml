@@ -349,5 +349,6 @@
     <string name="ringtone">Рингтон</string>
     <string name="ringtone_error">Вызов мелодии должны быть песни в формате MP3 :(</string>
     <string name="success">Успех :)</string>
+    <string name="display_song_number_and_count">Дисплей номер песни и количество песен</string>
 
 </resources>

@@ -38,7 +38,6 @@ import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.view.ContextMenu;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
@@ -52,6 +51,9 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
+/**
+ * View class to get the Album art for a music file.
+ */
 public final class AlbumArtVisualizer extends View implements Visualizer, MainHandler.Callback, AlbumArtFetcher.AlbumArtFetcherListener {
 	private static final int MSG_IMAGE_LOADED = 0x0600;
 
@@ -67,6 +69,15 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	private volatile String nextPath;
 	private volatile ReleasableBitmapWrapper nextBmp;
 
+	/**
+	 * Constructor for the class. It calculates the size of the album art
+	 * depending on the device screen width and height with bounds
+	 * set from 100 dp to 300 dp.
+	 *
+	 * @param activity The calling activity
+	 * @param landscape N/A
+	 * @param extras N/A
+	 */
 	public AlbumArtVisualizer(Activity activity, boolean landscape, Intent extras) {
 		super(activity);
 		sync = new Object();
@@ -125,6 +136,13 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	}
 
 	//Runs on the MAIN thread
+
+	/**
+	 *  Update the album art when song changes or queue ends.
+	 * @param currentSong Song that needs to be played
+	 * @param songHasChanged Flag that indicates whether the current song has changed or not
+	 * @param ex Exception
+	 */
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
 		if (currentSong == null) {
@@ -271,7 +289,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	}
 
 	@Override
-	public void draw(@NonNull Canvas canvas) {
+	protected void onDraw(Canvas canvas) {
 		if (bmp != null) {
 			canvas.drawBitmap(bmp.bitmap, srcRect, dstRect, null);
 		} else {
@@ -308,6 +326,13 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		return true;
 	}
 
+	/**
+	 * Update next bitmap when the bitmap is available and send a message to
+	 * the MainHandler.
+	 *
+	 * @param bitmap ReleasableBitmapWrapper for the next song
+	 * @param requestId requestId for the bitmap
+	 */
 	@Override
 	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
 		if (bitmap == null)

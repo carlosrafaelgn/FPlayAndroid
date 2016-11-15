@@ -43,14 +43,16 @@ import android.view.ViewDebug.ExportedProperty;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener {
 	private Song song;
-	private String ellipsizedTitle, ellipsizedExtraInfo;
-	private int state, width, lengthX, lengthWidth, position;
+	private String ellipsizedTitle, ellipsizedExtraInfo, numberAndCount;
+	private int state, width, lengthX, lengthWidth, numberAndCountX, numberAndCountWidth, position;
 	private BaseList<Song> baseList;
 
-	private static int height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin, rightMargin, rightMarginForDrawing;
+	private static int height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin,
+		rightMargin, rightMarginForDrawing, numberAndCountColor, numberAndCountColorSelected;
 
 	public static int getViewHeight() {
 		final int bottomMargin;
@@ -93,13 +95,15 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		setOnClickListener(this);
 		setOnLongClickListener(this);
 		getViewHeight();
+		numberAndCountColor = ColorUtils.blend(UI.color_text_listitem, UI.color_list, 0.5f);
+		numberAndCountColorSelected = ColorUtils.blend(UI.color_text_selected, UI.color_selected, 0.5f);
 		super.setDrawingCacheEnabled(false);
 	}
 
 	private void processEllipsis() {
 		final int w = lengthX - textX - UI.controlMargin;
 		ellipsizedTitle = UI.ellipsizeText(song.title, UI._Headingsp, w, false);
-		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, w, false);
+		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, (numberAndCount == null) ? w : (numberAndCountX - textX - UI.controlMargin), false);
 	}
 
 	public void updateIfCurrent() {
@@ -126,6 +130,13 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		this.song = song;
 		lengthWidth = (song.isHttp ? UI._14spBox : UI.measureText(song.length, UI._14sp));
 		lengthX = width - lengthWidth - UI.controlMargin - rightMargin;
+		if (!UI.displaySongNumberAndCount || ((state & UI.STATE_CURRENT) != 0)) {
+			numberAndCount = null;
+		} else {
+			numberAndCount = (position + 1) + " / " + baseList.getCount();
+			numberAndCountWidth = UI.measureText(numberAndCount, UI._14sp);
+			numberAndCountX = width - numberAndCountWidth - UI.controlMargin - rightMargin;
+		}
 		processEllipsis();
 	}
 
@@ -195,7 +206,9 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (width != w) {
 			width = w;
 			currentX = w - UI.defaultControlContentsSize - rightMargin;
-			lengthX = width - lengthWidth - UI.controlMargin - rightMargin;
+			lengthX = w - lengthWidth - UI.controlMargin - rightMargin;
+			if (numberAndCount != null)
+				numberAndCountX = w - numberAndCountWidth - UI.controlMargin - rightMargin;
 			processEllipsis();
 		}
 	}
@@ -212,6 +225,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
+		else if (numberAndCount != null)
+			UI.drawText(canvas, numberAndCount, ((state & ~UI.STATE_CURRENT) == 0) ? numberAndCountColor : numberAndCountColorSelected, UI._14sp, numberAndCountX, extraY);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, UI._Headingsp, textX, titleY);
 		if (song.isHttp)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);

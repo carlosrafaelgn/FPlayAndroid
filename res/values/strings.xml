@@ -351,5 +351,6 @@
     <string name="ringtone">Ringtone</string>
     <string name="ringtone_error">Ringtones must be songs in MP3 format :(</string>
     <string name="success">Success :)</string>
+    <string name="display_song_number_and_count">Display song number and count</string>
 
 </resources>

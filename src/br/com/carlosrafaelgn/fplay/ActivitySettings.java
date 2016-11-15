@@ -105,7 +105,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
-		optLargeTextIs22sp, lastMenuView;
+		optLargeTextIs22sp, optDisplaySongNumberAndCount, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -1103,6 +1103,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optClearListWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_clear_list_when_playing_folders).toString(), null, true, Player.clearListWhenPlayingFolders, false);
 			optGoBackWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
 			optExtraInfoMode = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.secondary_line_of_text).toString(), getExtraInfoModeString(Song.extraInfoMode), false, false, false);
+			optDisplaySongNumberAndCount = new SettingView(ctx, UI.ICON_NUMBER, getText(R.string.display_song_number_and_count).toString(), null, true, UI.displaySongNumberAndCount, false);
 			optForceOrientation = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
 			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(UI.transitions & 0xFF), false, false, false);
 			optPopupTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition_popup).toString(), UI.getTransitionString(UI.transitions >>> 8), false, false, false);
@@ -1150,6 +1151,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!UI.is3D)
 				addOption(optIsDividerVisible);
 			addOption(optExtraInfoMode);
+			addOption(optDisplaySongNumberAndCount);
 			addOption(optForceOrientation);
 			addOption(optTransition);
 			addOption(optPopupTransition);
@@ -1301,6 +1303,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optClearListWhenPlayingFolders = null;
 		optGoBackWhenPlayingFolders = null;
 		optExtraInfoMode = null;
+		optDisplaySongNumberAndCount = null;
 		optForceOrientation = null;
 		optTransition = null;
 		optPopupTransition = null;
@@ -1551,6 +1554,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.enableResampling(optResampling.isChecked());
 		} else if (view == optPreviousResetsAfterTheBeginning) {
 			Player.previousResetsAfterTheBeginning = optPreviousResetsAfterTheBeginning.isChecked();
+		} else if (view == optDisplaySongNumberAndCount) {
+			UI.displaySongNumberAndCount = optDisplaySongNumberAndCount.isChecked();
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
 			view == optForceOrientation || view == optTransition || view == optPopupTransition ||

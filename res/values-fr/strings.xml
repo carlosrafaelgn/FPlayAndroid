@@ -349,5 +349,6 @@
     <string name="ringtone">Sonnerie d\'appel</string>
     <string name="ringtone_error">Les sonneries d\'appel doivent être des chansons au format MP3 :(</string>
     <string name="success">Succès :)</string>
+    <string name="display_song_number_and_count">Afficher le numéro de la chanson et le nombre de chansons</string>
 
 </resources>
