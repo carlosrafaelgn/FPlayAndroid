@@ -108,6 +108,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	//Runs on the MAIN thread
 	@Override
 	public void onActivityResume() {
+		postInvalidateDelayed(100);
 	}
 
 	//Runs on the MAIN thread
@@ -286,6 +287,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		if (minSize > absMax)
 			minSize = absMax;
 		updateRects();
+		postInvalidateDelayed(100);
 	}
 
 	@Override
@@ -323,6 +325,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 			invalidate();
 			break;
 		}
+		postInvalidateDelayed(100);
 		return true;
 	}
 

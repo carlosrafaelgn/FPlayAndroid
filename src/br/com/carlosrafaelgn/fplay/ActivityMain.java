@@ -1500,7 +1500,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			cancelSelection(false);
 		Player.songs.setItemClickListener(null);
 		Player.songs.setObserver(null);
-		Player.observer = null;
+		if (Player.observer == this)
+			Player.observer = null;
 		lastTime = -2;
 		pendingListCommand = 0;
 		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {

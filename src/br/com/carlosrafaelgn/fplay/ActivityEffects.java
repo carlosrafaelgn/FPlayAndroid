@@ -599,7 +599,8 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 
 	@Override
 	protected void onPause() {
-		Player.observer = null;
+		if (Player.observer == this)
+			Player.observer = null;
 		if (tmrAGC != null)
 			tmrAGC.stop();
 	}

@@ -526,7 +526,8 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 			visualizerPaused = true;
 			visualizer.onActivityPause();
 		}
-		Player.observer = null;
+		if (Player.observer == this)
+			Player.observer = null;
 		if (mediaVisualizer != null)
 			mediaVisualizer.pause();
 		Player.setAppNotInForeground(true);
