@@ -88,6 +88,7 @@ import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BgShadowDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ScrollBarThumbDrawable;
@@ -1507,12 +1508,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void showNextStartupMsg(Context context) {
-		if (msgStartup >= 31) {
-			msgStartup = 31;
+		if (msgStartup >= 32) {
+			msgStartup = 32;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 31;
+		msgStartup = 32;
 		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.startup_message).toString();
@@ -1530,7 +1531,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			"\n- 3D\n\n" +
 			context.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") +
 			context.getText(R.string.check_it_out).toString();*/
-		final String content = context.getText(R.string.there_are_new_features) +
+		final String content = "- " + context.getText(R.string.ringtone) +
+			"\n\n" +
+			context.getText(R.string.there_are_new_features) +
+			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.display_song_number_and_count) +
 			"\n\n- " + context.getText(R.string.hdr_playback) + punctuationSpace(": ") + context.getText(R.string.previous_resets_after_the_beginning) +
 			"\n\n" +
 			context.getText(R.string.check_it_out).toString();
@@ -1876,7 +1880,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		view.setTextColor(colorState_text_highlight_static);
 		view.setBackgroundDrawable(hasBorders ? new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_highlight));
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	public static void toast(CharSequence text) {
 		if (internalToast == null) {
 			final Toast t = new Toast(Player.theApplication);
@@ -1886,11 +1891,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			v.setGravity(Gravity.CENTER);
 			v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 			v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
-			t.setView(v);
+			final LinearLayout linearLayout = new LinearLayout(Player.theApplication);
+			linearLayout.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+			linearLayout.setOrientation(LinearLayout.VERTICAL);
+			linearLayout.setBackgroundDrawable(new BgShadowDrawable());
+			linearLayout.addView(v);
+			t.setView(linearLayout);
 			t.setDuration(Toast.LENGTH_LONG);
 			internalToast = t;
 		}
-		((TextView)internalToast.getView()).setText(text);
+		((TextView)((ViewGroup)internalToast.getView()).getChildAt(0)).setText(text);
 		internalToast.show();
 	}
 

@@ -262,13 +262,10 @@
             android:text="@string/msg_sel"
             android:visibility="gone"/>
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/panelSelection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:baselineAligned="false"
-            android:gravity="right"
-            android:orientation="horizontal"
             android:splitMotionEvents="false"
             android:visibility="gone">
 
@@ -276,7 +273,7 @@
                 android:id="@+id/btnCancelSel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="40dp"
+                android:layout_alignParentLeft="true"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnMoreInfo"
                 android:nextFocusLeft="@+id/list"
@@ -289,6 +286,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="8dp"
+                android:layout_toLeftOf="@+id/btnMoreInfo"
                 android:contentDescription="@string/ringtone"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnMoreInfo"
@@ -301,6 +299,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="8dp"
+                android:layout_toLeftOf="@+id/btnMoveSel"
                 android:contentDescription="@string/information"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnMoveSel"
@@ -313,6 +312,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="8dp"
+                android:layout_toLeftOf="@+id/btnRemoveSel"
                 android:contentDescription="@string/move"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnRemoveSel"
@@ -324,12 +324,13 @@
                 android:id="@+id/btnRemoveSel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
                 android:contentDescription="@string/remove"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/list"
                 android:nextFocusLeft="@+id/btnMoveSel"
                 android:nextFocusRight="@+id/list"
                 android:nextFocusUp="@+id/list"/>
-        </LinearLayout>
+        </RelativeLayout>
     </LinearLayout>
 </RelativeLayout>

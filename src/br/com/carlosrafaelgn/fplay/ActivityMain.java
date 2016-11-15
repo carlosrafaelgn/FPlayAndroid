@@ -321,16 +321,27 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				UI.animationAddViewToHide(lblTitle);
 			UI.animationAddViewToShow(lblMsgSelMove);
 			lblMsgSelMove.setSelected(true);
-			if (UI.isLargeScreen) {
-				btnCancelSel.setNextFocusLeftId(R.id.btnRemoveSel);
-				UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
-			} else if (UI.isLandscape) {
-				btnCancelSel.setNextFocusUpId(R.id.btnRemoveSel);
-				UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
+			if (btnSetRingtone != null) {
+				if (UI.isLargeScreen || !UI.isLandscape) {
+					btnMoreInfo.setNextFocusLeftId(R.id.btnSetRingtone);
+					btnCancelSel.setNextFocusRightId(R.id.btnSetRingtone);
+					UI.setNextFocusForwardId(btnCancelSel, R.id.btnSetRingtone);
+					UI.setNextFocusForwardId(list, R.id.btnCancelSel);
+				} else {
+					btnRemoveSel.setNextFocusDownId(R.id.btnSetRingtone);
+					btnCancelSel.setNextFocusUpId(R.id.btnSetRingtone);
+					UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
+					UI.setNextFocusForwardId(btnRemoveSel, R.id.btnSetRingtone);
+				}
 			} else {
-				btnCancelSel.setNextFocusRightId(R.id.btnMoreInfo);
-				UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoreInfo);
-				UI.setNextFocusForwardId(list, R.id.btnCancelSel);
+				if (UI.isLargeScreen || !UI.isLandscape) {
+					btnCancelSel.setNextFocusRightId(R.id.btnMoreInfo);
+					UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoreInfo);
+					UI.setNextFocusForwardId(list, R.id.btnCancelSel);
+				} else {
+					btnCancelSel.setNextFocusUpId(R.id.btnRemoveSel);
+					UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
+				}
 			}
 			Player.songs.selecting = true;
 			Player.songs.moving = false;
@@ -342,27 +353,25 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private void startMovingSelection() {
 		if (Player.songs.getFirstSelectedPosition() >= 0) {
 			UI.animationReset();
+			if (btnSetRingtone != null)
+				UI.animationAddViewToHide(btnSetRingtone);
 			UI.animationAddViewToHide(btnMoreInfo);
 			UI.animationAddViewToHide(btnMoveSel);
 			UI.animationAddViewToHide(btnRemoveSel);
 			if (UI.animationEnabled) {
-				UI.animationAddViewToHide(btnCancelSel);
 				UI.animationAddViewToHide(lblMsgSelMove);
 				lblMsgSelMove.setTag(getText(R.string.msg_move));
-				UI.animationAddViewToShow(btnCancelSel);
 				UI.animationAddViewToShow(lblMsgSelMove);
 			} else {
 				lblMsgSelMove.setText(R.string.msg_move);
 			}
 			UI.animationCommit(isCreatingLayout, null);
 			lblMsgSelMove.setSelected(true);
-			if (UI.isLargeScreen) {
-				btnCancelSel.setNextFocusLeftId(R.id.list);
-			} else if (UI.isLandscape) {
-				btnCancelSel.setNextFocusUpId(R.id.list);
-			} else {
+			if (UI.isLargeScreen || !UI.isLandscape) {
 				btnCancelSel.setNextFocusRightId(R.id.list);
 				UI.setNextFocusForwardId(btnCancelSel, R.id.list);
+			} else {
+				btnCancelSel.setNextFocusUpId(R.id.list);
 			}
 			UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 			Player.songs.selecting = false;
@@ -1342,7 +1351,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 					panelSelection.setPadding(0, 0, UI.isLandscape ? UI.thickDividerSize : 0, 0);
 				}
 			}
-			btnCancelSel.setDefaultHeight();
 			final boolean m = Player.songs.moving;
 			isCreatingLayout = true;
 			if (m || Player.songs.selecting)
@@ -1371,7 +1379,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		case UI.KEY_LEFT:
 			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnRemoveSel != null && btnMenu != null && vwVolume != null) {
 				if (Player.songs.selecting)
-					(UI.isLargeScreen ? btnCancelSel : (UI.isLandscape ? btnMoreInfo : btnRemoveSel)).requestFocus();
+					((UI.isLargeScreen || !UI.isLandscape) ? btnRemoveSel : btnMoreInfo).requestFocus();
 				else if (Player.songs.moving)
 					btnCancelSel.requestFocus();
 				else if (UI.isLargeScreen)
@@ -1383,7 +1391,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		case UI.KEY_RIGHT:
 			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnAdd != null && vwVolume != null) {
 				if (Player.songs.selecting)
-					((UI.isLargeScreen || UI.isLandscape) ? btnMoreInfo : btnCancelSel).requestFocus();
+					((UI.isLargeScreen || !UI.isLandscape) ? btnCancelSel : btnMoreInfo).requestFocus();
 				else if (Player.songs.moving)
 					btnCancelSel.requestFocus();
 				else if (UI.isLargeScreen)
