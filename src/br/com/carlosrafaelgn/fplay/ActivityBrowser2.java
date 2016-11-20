@@ -821,6 +821,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		chkAlbumArt = (BgButton)findViewById(R.id.chkAlbumArt);
 		chkAlbumArt.setOnClickListener(this);
 		chkAlbumArt.formatAsCheckBox(UI.ICON_ALBUMART, UI.ICON_ALBUMART_OFF, UI.albumArt, true, true);
+		chkAlbumArt.setContentDescription(getText(R.string.hide_album_art), getText(R.string.show_album_art));
 		btnHome = (BgButton)findViewById(R.id.btnHome);
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);

@@ -58,7 +58,7 @@ public final class BgButton extends Button {
 	private static String selected, unselected;
 
 	private int state;
-	private boolean checkable, checked, stretchable, hideBorders, forceDescription;
+	private boolean checkable, checked, stretchable, hideBorders, forceDescription, ignoreNextClick;
 	private String iconChecked, iconUnchecked;
 	private CharSequence descriptionChecked, descriptionUnchecked;
 	private TextIconDrawable checkBox;
@@ -91,6 +91,7 @@ public final class BgButton extends Button {
 		super.setFocusable(true);
 		super.setMinimumWidth(UI.defaultControlSize);
 		super.setMinimumHeight(UI.defaultControlSize);
+		super.setLongClickable(true);
 		//Seriously?! Feature?!?!? :P
 		//http://stackoverflow.com/questions/26958909/why-is-my-button-text-coerced-to-all-caps-on-lollipop
 		super.setTransformationMethod(null);
@@ -152,6 +153,7 @@ public final class BgButton extends Button {
 		this.iconUnchecked = iconUnchecked;
 		this.checkable = true;
 		this.checked = checked;
+		updateContentDescription();
 	}
 
 	public void formatAsChildCheckBox(boolean checked, boolean changeWidth, boolean changeHeight) {
@@ -163,32 +165,36 @@ public final class BgButton extends Button {
 		checkable = true;
 		checkBox = new TextIconDrawable(checked ? UI.ICON_OPTCHK24 : UI.ICON_OPTUNCHK24, getTextColors().getDefaultColor(), UI.defaultCheckIconSize);
 		super.setCompoundDrawables(checkBox, null, null, null);
+		updateContentDescription();
 	}
 
-	@Override
-	public CharSequence getContentDescription() {
-		if (checkable) {
-			if (checked) {
-				if (descriptionChecked != null)
-					return descriptionChecked;
-			} else if (descriptionUnchecked != null) {
-				return descriptionUnchecked;
+	public void updateContentDescription() {
+		if (!checkable)
+			return;
+		if (checked) {
+			if (descriptionChecked != null) {
+				setContentDescription(descriptionChecked);
+				return;
 			}
-			CharSequence c = super.getContentDescription();
-			if (c == null)
-				c = getText();
-			return c + UI.collon() + (checked ? selected : unselected);
+		} else if (descriptionUnchecked != null) {
+			setContentDescription(descriptionUnchecked);
+			return;
 		}
-		return super.getContentDescription();
+		CharSequence c = super.getContentDescription();
+		if (c == null)
+			c = getText();
+		setContentDescription(c + UI.collon() + (checked ? selected : unselected));
 	}
 
 	public void setContentDescription(CharSequence descriptionChecked, CharSequence descriptionUnchecked) {
 		this.descriptionChecked = descriptionChecked;
 		this.descriptionUnchecked = descriptionUnchecked;
+		updateContentDescription();
 	}
 
 	public void setOnPressingChangeListener(OnPressingChangeListener pressingChangeListener) {
 		this.pressingChangeListener = pressingChangeListener;
+		setLongClickable(false);
 	}
 	
 	private void fixStretchableTextSize(int w, int h) {
@@ -236,6 +242,7 @@ public final class BgButton extends Button {
 			} else {
 				super.setText(checked ? iconChecked : iconUnchecked);
 			}
+			updateContentDescription();
 		}
 	}
 
@@ -250,6 +257,10 @@ public final class BgButton extends Button {
 
 	@Override
 	public boolean performClick() {
+		if (ignoreNextClick) {
+			ignoreNextClick = false;
+			return true;
+		}
 		if (checkable) {
 			toggle();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
@@ -257,7 +268,19 @@ public final class BgButton extends Button {
 		}
 		return super.performClick();
 	}
-	
+
+	@Override
+	public boolean performLongClick() {
+		if (getTypeface() == UI.iconsTypeface) {
+			final CharSequence description = getContentDescription();
+			if (description != null && description.length() > 0) {
+				ignoreNextClick = true;
+				UI.toast(description, true);
+			}
+		}
+		return super.performLongClick();
+	}
+
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	@Override
 	public void setBackground(Drawable background) {

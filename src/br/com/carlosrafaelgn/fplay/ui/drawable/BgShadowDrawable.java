@@ -47,8 +47,9 @@ public final class BgShadowDrawable extends Drawable {
 	private final Bitmap bitmap;
 	private final Paint paint;
 	private final int size;
+	private final boolean large;
 
-	public BgShadowDrawable() {
+	public BgShadowDrawable(boolean large) {
 		bitmap = Bitmap.createBitmap(new int[] {
 			0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 			0x00000000, 0x30000000, 0x30000000, 0x30000000, 0x00000000,
@@ -61,7 +62,8 @@ public final class BgShadowDrawable extends Drawable {
 		paint.setFilterBitmap(true);
 		paint.setDither(true);
 		paint.setAlpha(255);
-		size = (UI.defaultControlContentsSize << 1) / 3;
+		size = (large ? ((UI.defaultControlContentsSize << 1) / 3) : (UI.defaultControlContentsSize >> 2));
+		this.large = large;
 	}
 
 	@Override
@@ -78,8 +80,8 @@ public final class BgShadowDrawable extends Drawable {
 	public void draw(Canvas canvas) {
 		final Rect bounds = getBounds();
 		final int l = bounds.left, t = bounds.top, r = bounds.right, b = bounds.bottom;
-		final int hiddenMargin = UI.defaultControlContentsSize - size;
-		final int bitmapSize = (UI.defaultControlContentsSize * 5) >> 2;
+		final int hiddenMargin = (large ? (UI.defaultControlContentsSize - size) : UI.defaultControlContentsSize >> 3);
+		final int bitmapSize = (size * 15) >> 3;
 
 		//don't even bother trying to clip using difference or reverse_difference
 		//http://stackoverflow.com/a/9213065/3569421

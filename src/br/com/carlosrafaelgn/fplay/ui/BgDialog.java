@@ -311,7 +311,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 			//if the user configured the device in such way (whereas touching the original background
 			//does not produce any feedback)
 			parent.setOnTouchListener(this);
-			parent.setBackgroundDrawable(new BgShadowDrawable());
+			parent.setBackgroundDrawable(new BgShadowDrawable(true));
 		}
 	}
 }

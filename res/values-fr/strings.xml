@@ -143,7 +143,7 @@
     <string name="album">Album</string>
     <string name="albumL">1 album</string>
     <string name="albumsL">albums</string>
-    <string name="album_art">Album art</string>
+    <string name="album_art">Art de l\'album</string>
     <string name="track">Track</string>
     <string name="trackL">1 track</string>
     <string name="tracksL">tracks</string>
@@ -350,5 +350,7 @@
     <string name="ringtone_error">Les sonneries d\'appel doivent être des chansons au format MP3 :(</string>
     <string name="success">Succès :)</string>
     <string name="display_song_number_and_count">Afficher le numéro de la chanson et le nombre de chansons</string>
+    <string name="show_album_art">Afficher l\'art de l\'album</string>
+    <string name="hide_album_art">Masquer l\'art de l\'album</string>
 
 </resources>

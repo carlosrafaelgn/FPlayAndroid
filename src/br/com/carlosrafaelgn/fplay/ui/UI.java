@@ -466,7 +466,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	
 	private static int currentLocale, createdWidgetIconColor;
 	private static boolean alternateTypefaceActive, fullyInitialized;
-	private static Toast internalToast;
+	//private static Toast internalToast;
 
 	//These guys used to be private, but I decided to make them public, even though they still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
@@ -1376,7 +1376,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static void setTheme(ActivityHost activityHost, int theme) {
 		UI.theme = theme;
 		Gradient.purgeAll();
-		internalToast = null;
+		//internalToast = null;
 		switch (theme) {
 		case THEME_CUSTOM:
 			loadCustomTheme();
@@ -1868,11 +1868,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			s = Player.theApplication.getText(R.string.error).toString() + " " + s;
 		else
 			s = Player.theApplication.getText(R.string.error).toString() + " " + ex.getClass().getName();
-		toast(s);
+		toast(s, false);
 	}
 	
 	public static void toast(int resId) {
-		toast(Player.theApplication.getText(resId));
+		toast(Player.theApplication.getText(resId), false);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -1883,25 +1883,36 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	@SuppressWarnings("deprecation")
 	public static void toast(CharSequence text) {
-		if (internalToast == null) {
-			final Toast t = new Toast(Player.theApplication);
-			final TextView v = new TextView(Player.theApplication);
+		toast(text, false);
+	}
+
+	@SuppressWarnings("deprecation")
+	public static void toast(CharSequence text, boolean descriptionPopup) {
+		//if (internalToast == null) {
+		final Toast t = new Toast(Player.theApplication);
+		final TextView v = new TextView(Player.theApplication);
+		if (descriptionPopup)
+			smallText(v);
+		else
 			mediumText(v);
-			prepareNotificationViewColors(v);
-			v.setGravity(Gravity.CENTER);
-			v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		prepareNotificationViewColors(v);
+		v.setGravity(Gravity.CENTER);
+		v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		if (descriptionPopup)
+			v.setPadding(controlSmallMargin, controlSmallMargin, controlSmallMargin, controlSmallMargin);
+		else
 			v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
-			final LinearLayout linearLayout = new LinearLayout(Player.theApplication);
-			linearLayout.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-			linearLayout.setOrientation(LinearLayout.VERTICAL);
-			linearLayout.setBackgroundDrawable(new BgShadowDrawable());
-			linearLayout.addView(v);
-			t.setView(linearLayout);
-			t.setDuration(Toast.LENGTH_LONG);
-			internalToast = t;
-		}
-		((TextView)((ViewGroup)internalToast.getView()).getChildAt(0)).setText(text);
-		internalToast.show();
+		final LinearLayout linearLayout = new LinearLayout(Player.theApplication);
+		linearLayout.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		linearLayout.setOrientation(LinearLayout.VERTICAL);
+		linearLayout.setBackgroundDrawable(new BgShadowDrawable(false));
+		linearLayout.addView(v);
+		t.setView(linearLayout);
+		t.setDuration(descriptionPopup ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
+		//	internalToast = t;
+		//}
+		((TextView)((ViewGroup)t.getView()).getChildAt(0)).setText(text);
+		t.show();
 	}
 
 	@SuppressWarnings("deprecation")

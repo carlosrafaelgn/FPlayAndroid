@@ -350,5 +350,7 @@
     <string name="ringtone_error">Klingeltöne müssen Songs im MP3-Format sein :(</string>
     <string name="success">Erfolg :)</string>
     <string name="display_song_number_and_count">Anzeige von Song-Nummer und Song-Zählung</string>
+    <string name="show_album_art">Anzeigen Album-Art</string>
+    <string name="hide_album_art">Ausblenden Album-Art</string>
 
 </resources>

@@ -350,5 +350,7 @@
     <string name="ringtone_error">Toques devem ser músicas no formato MP3 :(</string>
     <string name="success">Sucesso :)</string>
     <string name="display_song_number_and_count">Exibir o número e a contagem de músicas</string>
+    <string name="show_album_art">Mostrar arte do álbum</string>
+    <string name="hide_album_art">Ocultar arte do álbum</string>
 
 </resources>
