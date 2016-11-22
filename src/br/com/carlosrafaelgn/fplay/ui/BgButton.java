@@ -42,6 +42,7 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.ViewGroup.LayoutParams;
 import android.view.accessibility.AccessibilityEvent;
@@ -366,6 +367,25 @@ public final class BgButton extends Button {
 			break;
 		}
 		return super.onKeyUp(keyCode, event);
+	}
+
+	@Override
+	public boolean onTouchEvent(@NonNull MotionEvent event) {
+		switch (event.getAction()) {
+		case MotionEvent.ACTION_UP:
+			if (ignoreNextClick) {
+				if (event.getX() < 0.0f ||
+					event.getX() >= (float)getWidth() ||
+					event.getY() < 0.0f ||
+					event.getY() >= (float)getHeight())
+					ignoreNextClick = false;
+			}
+			break;
+		case MotionEvent.ACTION_CANCEL:
+			ignoreNextClick = false;
+			break;
+		}
+		return super.onTouchEvent(event);
 	}
 
 	@Override
