@@ -141,6 +141,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
 		setGravity(Gravity.END);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
 		getViewHeight(force2D);
 		if (hasCheckbox) {
 			LayoutParams p;

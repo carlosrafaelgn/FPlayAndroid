@@ -64,6 +64,8 @@ public final class SettingView extends View {
 		setFocusableInTouchMode(!UI.hasTouch);
 		setFocusable(true);
 		setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
 		this.icon = icon;
 		this.text = text;
 		this.secondaryText = secondaryText;

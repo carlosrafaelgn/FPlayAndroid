@@ -94,6 +94,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		super(context);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
 		getViewHeight();
 		numberAndCountColor = ColorUtils.blend(UI.color_text_listitem, UI.color_list, 0.5f);
 		numberAndCountColorSelected = ColorUtils.blend(UI.color_text_selected, UI.color_selected, 0.5f);

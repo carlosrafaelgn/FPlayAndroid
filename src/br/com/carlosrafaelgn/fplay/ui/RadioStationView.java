@@ -100,6 +100,8 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		setOnLongClickListener(this);
 		setBaselineAligned(false);
 		setGravity(Gravity.END | Gravity.BOTTOM);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
 		getViewHeight();
 		descriptionLines = new String[4];
 		tagsLines = new String[3];
