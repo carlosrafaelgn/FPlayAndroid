@@ -45,6 +45,7 @@ import android.support.annotation.NonNull;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -203,6 +204,12 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		if (file != null)
 			return makeContextDescription(hasCheckbox, getContext(), file);
 		return super.getContentDescription();
+	}
+
+	@Override
+	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+		super.onInitializeAccessibilityEvent(event);
+		event.setContentDescription(getContentDescription());
 	}
 
 	public void setItemState(FileSt file, int position, int state, BaseList<?> baseList, AlbumArtFetcher albumArtFetcher) {

@@ -199,6 +199,12 @@ public final class BgSeekBar extends View {
 		return d;
 	}
 
+	@Override
+	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+		super.onInitializeAccessibilityEvent(event);
+		event.setContentDescription(getContentDescription());
+	}
+
 	public void setAdditionalContentDescription(String additionalContentDescription) {
 		this.additionalContentDescription = additionalContentDescription;
 	}

@@ -39,6 +39,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.accessibility.AccessibilityEvent;
 
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -120,6 +121,12 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (song != null)
 			return song.title;
 		return super.getContentDescription();
+	}
+
+	@Override
+	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+		super.onInitializeAccessibilityEvent(event);
+		event.setContentDescription(getContentDescription());
 	}
 
 	public void setItemState(Song song, int position, int state, BaseList<Song> baseList) {

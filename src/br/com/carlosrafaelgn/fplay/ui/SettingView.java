@@ -43,6 +43,7 @@ import android.text.StaticLayout;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -90,6 +91,12 @@ public final class SettingView extends View {
 		else if (color != 0)
 			return text;
 		return super.getContentDescription();
+	}
+
+	@Override
+	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+		super.onInitializeAccessibilityEvent(event);
+		event.setContentDescription(getContentDescription());
 	}
 
 	private void updateLayout() {
