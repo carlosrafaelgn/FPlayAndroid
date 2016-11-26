@@ -60,7 +60,7 @@ public final class BgButton extends Button {
 
 	private int state;
 	private boolean checkable, checked, stretchable, hideBorders, forceDescription, ignoreNextClick;
-	private String iconChecked, iconUnchecked;
+	private String iconChecked, iconUnchecked, originalDescription;
 	private CharSequence descriptionChecked, descriptionUnchecked;
 	private TextIconDrawable checkBox;
 	private OnPressingChangeListener pressingChangeListener;
@@ -184,7 +184,9 @@ public final class BgButton extends Button {
 		CharSequence c = super.getContentDescription();
 		if (c == null)
 			c = getText();
-		setContentDescription(c + UI.collon() + (checked ? selected : unselected));
+		if (originalDescription == null)
+			originalDescription = c.toString();
+		setContentDescription(originalDescription + UI.collon() + (checked ? selected : unselected));
 	}
 
 	public void setContentDescription(CharSequence descriptionChecked, CharSequence descriptionUnchecked) {
@@ -418,6 +420,7 @@ public final class BgButton extends Button {
 	protected void onDetachedFromWindow() {
 		iconChecked = null;
 		iconUnchecked = null;
+		originalDescription = null;
 		descriptionChecked = null;
 		descriptionUnchecked = null;
 		checkBox = null;

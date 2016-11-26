@@ -104,6 +104,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		descriptionLines = new String[4];
 		tagsLines = new String[3];
 		btnFavorite = new BgButton(context);
+		btnFavorite.setContentDescription(context.getText(R.string.favorite));
 		LayoutParams p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 		p.rightMargin = rightMargin;
 		p.bottomMargin = bottomMargin;
@@ -185,7 +186,6 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			btnFavorite = (BgButton)getChildAt(0);
 			btnFavorite.setHideBorders(true);
 			btnFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, true, true, true);
-			btnFavorite.setContentDescription(getContext().getText(R.string.favorite));
 			btnFavorite.setOnClickListener(this);
 			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 		} else if (btnFavorite != null && (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED)) {
