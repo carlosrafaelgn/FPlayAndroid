@@ -125,7 +125,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		this.position = position;
 		this.baseList = baseList;
 		//watch out, DO NOT use equals() in favor of speed!
-		if (this.song == song)
+		if (this.song == song && !UI.displaySongNumberAndCount)
 			return;
 		this.song = song;
 		lengthWidth = (song.isHttp ? UI._14spBox : UI.measureText(song.length, UI._14sp));
