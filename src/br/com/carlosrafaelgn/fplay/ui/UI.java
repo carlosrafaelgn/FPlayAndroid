@@ -1868,11 +1868,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			s = Player.theApplication.getText(R.string.error).toString() + " " + s;
 		else
 			s = Player.theApplication.getText(R.string.error).toString() + " " + ex.getClass().getName();
-		toast(s, false);
+		toast(s, null);
 	}
 	
 	public static void toast(int resId) {
-		toast(Player.theApplication.getText(resId), false);
+		toast(Player.theApplication.getText(resId), null);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -1883,32 +1883,41 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	@SuppressWarnings("deprecation")
 	public static void toast(CharSequence text) {
-		toast(text, false);
+		toast(text, null);
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void toast(CharSequence text, boolean descriptionPopup) {
+	public static void toast(CharSequence text, View descriptionPopupOwner) {
 		//if (internalToast == null) {
 		final Toast t = new Toast(Player.theApplication);
 		final TextView v = new TextView(Player.theApplication);
-		if (descriptionPopup)
+		if (descriptionPopupOwner != null) {
+			final int[] location = new int[2];
+			descriptionPopupOwner.getLocationOnScreen(location);
+			//try to place the toast above the control / to its left
+			location[0] -= (controlLargeMargin << 1);
+			if (location[0] < 0)
+				location[0] = 0;
+			final int height = (controlMargin << 1) + UI._14spBox;
+			location[1] -= (height + controlMargin + _22sp); //22sp to make up for the status bar (sort of...)
+			if (location[1] < 0)
+				location[1] += height + controlMargin + descriptionPopupOwner.getHeight();
+			t.setGravity(Gravity.TOP | Gravity.START, location[0], location[1]);
 			smallText(v);
-		else
+		} else {
 			mediumText(v);
+		}
 		prepareNotificationViewColors(v);
 		v.setGravity(Gravity.CENTER);
 		v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-		if (descriptionPopup)
-			v.setPadding(controlSmallMargin, controlSmallMargin, controlSmallMargin, controlSmallMargin);
-		else
-			v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
+		v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
 		final LinearLayout linearLayout = new LinearLayout(Player.theApplication);
 		linearLayout.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 		linearLayout.setOrientation(LinearLayout.VERTICAL);
 		linearLayout.setBackgroundDrawable(new BgShadowDrawable(false));
 		linearLayout.addView(v);
 		t.setView(linearLayout);
-		t.setDuration(descriptionPopup ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
+		t.setDuration(descriptionPopupOwner != null ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
 		//	internalToast = t;
 		//}
 		((TextView)((ViewGroup)t.getView()).getChildAt(0)).setText(text);

@@ -278,7 +278,7 @@ public final class BgButton extends Button {
 			final CharSequence description = getContentDescription();
 			if (description != null && description.length() > 0) {
 				ignoreNextClick = true;
-				UI.toast(description, true);
+				UI.toast(description, this);
 			}
 		}
 		return super.performLongClick();
