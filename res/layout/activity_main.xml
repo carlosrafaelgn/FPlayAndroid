@@ -187,6 +187,7 @@
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/btnMoveSel"
                 android:nextFocusUp="@+id/list"
+                android:contentDescription="@string/cancel"
                 android:text="@string/cancel"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
