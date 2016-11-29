@@ -220,6 +220,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 
 	@Override
 	public void run() {
+		if (!isLayoutCreated())
+			return;
 		if (btnMenuIconAnimation) {
 			if (btnMenu == null)
 				return;
@@ -259,6 +261,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	
 	@Override
 	public void onItemClicked(int position) {
+		if (!isLayoutCreated())
+			return;
 		//see the comments at processItemClick(), in ActivityBrowser2
 		if (list == null || fileList == null)
 			return;
@@ -283,6 +287,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 
 	@Override
 	public void onItemCheckboxClicked(int position) {
+		if (!isLayoutCreated())
+			return;
 		//see the comments at processItemButtonClick(), in ActivityBrowser2
 		if (list == null || fileList == null)
 			return;
@@ -305,7 +311,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 
 	@Override
 	public void onLoadingProcessChanged(boolean started) {
-		if (fileList == null)
+		if (!isLayoutCreated() || fileList == null)
 			return;
 		loading = started;
 		if (list != null) {
@@ -342,6 +348,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
+		if (!isLayoutCreated())
+			return true;
 		final int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
@@ -397,6 +405,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 
 	@Override
 	public void onClick(View view) {
+		if (!isLayoutCreated())
+			return;
 		if (view == btnGoBack) {
 			finish(0, view, true);
 		} if (view == btnMenu) {
@@ -451,6 +461,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
+		if (!isLayoutCreated())
+			return;
 		if (which == AlertDialog.BUTTON_POSITIVE) {
 			final OnFileSelectionListener listener = this.listener;
 			if (confirmDeleteIndex == Integer.MIN_VALUE) {

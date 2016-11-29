@@ -210,6 +210,8 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
+		if (!isLayoutCreated())
+			return true;
 		switch (item.getItemId()) {
 		case MNU_ZEROPRESET:
 			if (enablingEffect)
@@ -265,6 +267,8 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	@Override
 	public void onClick(View view) {
+		if (!isLayoutCreated())
+			return;
 		if (view == btnGoBack) {
 			finish(0, view, true);
 		} else if (view == btnAudioSink) {
@@ -314,6 +318,8 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	@Override
 	public void run() {
+		if (!isLayoutCreated())
+			return;
 		if (resizingEq) {
 			resizingEq = false;
 
@@ -642,7 +648,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	@Override
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
-		if (!fromUser)
+		if (!isLayoutCreated() || !fromUser)
 			return;
 		if (seekBar == barBass) {
 			BassBoost.setStrength(barToActualBassBoost(value), audioSink);
@@ -673,6 +679,8 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	@Override
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
+		if (!isLayoutCreated())
+			return;
 		if (seekBar == barBass) {
 			Player.commitBassBoost(audioSink);
 		} else if (seekBar == barVirtualizer) {
@@ -819,6 +827,8 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	@Override
 	public void onFileSelected(int id, FileSt file) {
+		if (!isLayoutCreated())
+			return;
 		if (id == MNU_LOADPRESET) {
 			final SerializableMap opts = SerializableMap.deserialize(file.path);
 			if (opts != null) {
@@ -848,6 +858,10 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	@Override
 	public boolean onDeleteClicked(int id, FileSt file) {
 		return false;
+	}
+
+	@Override
+	public void onPlayerFirstLoaded() {
 	}
 
 	@Override

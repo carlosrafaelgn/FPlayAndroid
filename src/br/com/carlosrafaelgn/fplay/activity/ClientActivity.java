@@ -50,7 +50,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	ActivityHost activity;
 	ClientActivity previousActivity;
 	int requestCode, postCreateCalled;
-	boolean finished, paused;
+	boolean finished, paused, layoutCreated;
 	
 	public final int getDecorViewWidth() {
 		final int w = activity.getWindow().getDecorView().getWidth();
@@ -140,6 +140,15 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 	
 	public final Resources getResources() {
 		return activity.getResources();
+	}
+
+	public final boolean isLayoutCreated() {
+		return layoutCreated;
+	}
+
+	protected final void titleChanged() {
+		if (activity != null)
+			activity.updateTitle(getTitle(), true);
 	}
 
 	public abstract CharSequence getTitle();

@@ -134,6 +134,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
 public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayerBase.OnErrorListener, MediaPlayerBase.OnSeekCompleteListener, MediaPlayerBase.OnPreparedListener, MediaPlayerBase.OnCompletionListener, MediaPlayerBase.OnInfoListener, ArraySorter.Comparer<FileSt> {
 	public interface PlayerObserver {
+		void onPlayerFirstLoaded();
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		void onPlayerMetadataChanged(Song currentSong);
 		void onPlayerControlModeChanged(boolean controlMode);
@@ -432,6 +433,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					break;
 				case STATE_INITIALIZING_STEP2:
 					state = STATE_ALIVE;
+					if (observer != null)
+						observer.onPlayerFirstLoaded();
 					handler.sendMessageAtTime(Message.obtain(handler, MSG_OVERRIDE_VOLUME_MULTIPLIER, (volumeControlType != VOLUME_CONTROL_DB && volumeControlType != VOLUME_CONTROL_PERCENT) ? 1 : 0, 0), SystemClock.uptimeMillis());
 					setTurnOffTimer(turnOffTimerSelectedMinutes);
 					setIdleTurnOffTimer(idleTurnOffTimerSelectedMinutes);
@@ -927,9 +930,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static String getCurrentTitle(boolean preparing) {
-		return ((localSong == null) ? theApplication.getText(R.string.nothing_playing).toString() :
-				(!preparing ? localSong.title :
-					(theApplication.getText(R.string.loading) + " " + localSong.title)));
+		return ((state < STATE_ALIVE) ? theApplication.getText(R.string.loading).toString() :
+				((localSong == null) ? theApplication.getText(R.string.nothing_playing).toString() :
+					(!preparing ? localSong.title :
+						(theApplication.getText(R.string.loading) + " " + localSong.title))));
 	}
 
 	public static int getPosition() {
@@ -2391,7 +2395,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		previousResetsAfterTheBeginning = opts.getBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING);
 		UI.largeTextIs22sp = opts.getBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.isLargeScreen && (UI.scaledDensity > UI.density));
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
-		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT);
+		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.lastVersionCode < 92);
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {

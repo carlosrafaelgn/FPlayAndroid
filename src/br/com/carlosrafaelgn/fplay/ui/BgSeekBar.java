@@ -64,7 +64,7 @@ public final class BgSeekBar extends View {
 	}
 	
 	private String additionalContentDescription, text, icon;
-	private boolean insideList, vertical, sliderMode;
+	private boolean insideList, vertical, sliderMode, recursingSetValue;
 	private int state, thumbWidth, width, height, filledSize, value, max, textWidth, textX, textY, textColor,
 		textSize, keyIncrement, size, thumbMargin, trackingOffset, secondaryBgColor, secondaryBgColorBlended;
 	private OnBgSeekBarChangeListener listener;
@@ -306,12 +306,18 @@ public final class BgSeekBar extends View {
 		else if (value > max)
 			value = max;
 		if (this.value != value) {
+			final int originalValue = this.value;
+			final boolean wasSettingValue = recursingSetValue;
+			recursingSetValue = true;
 			this.value = value;
 			if (listener != null)
 				listener.onValueChanged(this, value, fromUser, usingKeys);
 			updateBar();
-			if (fromUser && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-				sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED);
+			if (!wasSettingValue) {
+				recursingSetValue = false;
+				if (originalValue != this.value && fromUser && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+					sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED);
+			}
 		}
 	}
 	

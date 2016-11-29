@@ -294,7 +294,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	private void processItemCheckboxClickInternal(int position, boolean forceNotifyCheckedChanged) {
 		//somehow, Google Play indicates a NullPointerException, either here or
 		//in processItemClick, in a LG Optimus L3 (2.3.3) :/
-		if (list == null || fileList == null)
+		if (!isLayoutCreated() || list == null || fileList == null)
 			return;
 		if (!list.isInTouchMode())
 			fileList.setSelection(position, true);
@@ -375,7 +375,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	public void onItemClicked(int position) {
 		//somehow, Google Play indicates a NullPointerException, either here or
 		//in processItemButtonClick, in a LG Optimus L3 (2.3.3) :/
-		if (list == null || fileList == null)
+		if (!isLayoutCreated() || list == null || fileList == null)
 			return;
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
 			final FileSt file = fileList.getItemT(position);
@@ -404,7 +404,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	
 	@Override
 	public void onItemLongClicked(int position) {
-		if (loading || list == null || fileList == null || position < 0 || position >= fileList.getCount())
+		if (!isLayoutCreated() || loading || list == null || fileList == null || position < 0 || position >= fileList.getCount())
 			return;
 		if (!isAtHome) {
 			if (!UI.playWithLongPress)
@@ -449,6 +449,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 
 	@Override
 	public void onLoadingProcessChanged(boolean started) {
+		if (!isLayoutCreated())
+			return;
 		loading = started;
 		if (fileList != null) {
 			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
@@ -483,22 +485,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		//	updateButtons(true);
 	}
 
-	private void processMenuItemClick(int id) {
-		switch (id) {
-		case MNU_REMOVEFAVORITE:
-			if (lastClickedFavorite != null) {
-				Player.removeFavoriteFolder(lastClickedFavorite.path);
-				fileList.setSelection(fileList.indexOf(lastClickedFavorite), false);
-				fileList.removeSelection();
-				fileList.setSelection(-1, false);
-			} else {
-				UI.toast(R.string.msg_select_favorite_remove);
-			}
-			lastClickedFavorite = null;
-			break;
-		}
-	}
-
 	@Override
 	public View getNullContextMenuView() {
 		if (isAtHome && !loading && list != null && fileList != null) {
@@ -523,7 +509,21 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	
 	@Override
 	public boolean onMenuItemClick(MenuItem item) {
-		processMenuItemClick(item.getItemId());
+		if (!isLayoutCreated())
+			return true;
+		switch (item.getItemId()) {
+		case MNU_REMOVEFAVORITE:
+			if (lastClickedFavorite != null) {
+				Player.removeFavoriteFolder(lastClickedFavorite.path);
+				fileList.setSelection(fileList.indexOf(lastClickedFavorite), false);
+				fileList.removeSelection();
+				fileList.setSelection(-1, false);
+			} else {
+				UI.toast(R.string.msg_select_favorite_remove);
+			}
+			lastClickedFavorite = null;
+			break;
+		}
 		return true;
 	}
 	
@@ -593,6 +593,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
+		if (!isLayoutCreated())
+			return true;
 		final int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
@@ -620,6 +622,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	
 	@Override
 	public void onClick(View view) {
+		if (!isLayoutCreated())
+			return;
 		if (view == btnGoBack) {
 			if (chkAll != null && checkedCount != 0) {
 				chkAll.setChecked(false);
@@ -713,6 +717,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
+		if (!isLayoutCreated())
+			return;
 		if (which == AlertDialog.BUTTON_POSITIVE && txtURL != null && txtTitle != null) {
 			String url = txtURL.getText().toString().trim();
 			if (url.length() >= 4) {
@@ -751,6 +757,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	
 	@Override
 	protected boolean onBackPressed() {
+		if (!isLayoutCreated())
+			return true;
 		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing || isAtHome)
 			return false;
 		onClick(btnGoBack);

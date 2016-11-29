@@ -862,7 +862,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public boolean onBackPressed() {
-		return cancelGoBack();
+		return (!isLayoutCreated() || cancelGoBack());
 	}
 
 	private void setListPadding() {
@@ -878,7 +878,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 
 	private void refreshBluetoothStatus(boolean postAgain) {
-		if (optBtMessage == null)
+		if (!isLayoutCreated() || optBtMessage == null)
 			return;
 		if (Player.bluetoothVisualizerLastErrorMessage != 0) {
 			btErrorMessage = Player.bluetoothVisualizerLastErrorMessage;
@@ -1345,6 +1345,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void onClick(View view) {
+		if (!isLayoutCreated())
+			return;
 		if (view == btnGoBack) {
 			if (!cancelGoBack())
 				finish(0, view, true);
@@ -1573,6 +1575,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
+		if (!isLayoutCreated())
+			return;
 		if (which == AlertDialog.BUTTON_POSITIVE) {
 			if (colorMode) {
 				if (checkingReturn) {
@@ -1623,6 +1627,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void onColorPicked(ColorPickerView picker, View parentView, int color) {
+		if (!isLayoutCreated())
+			return;
 		if (colorMode && lastColorView >= 0) {
 			if (colorViews[lastColorView].getColor() != color) {
 				changed = true;
@@ -1661,7 +1667,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void onScroll(ObservableScrollView view, int l, int t, int oldl, int oldt) {
-		if (headers == null || panelSettings == null || lblTitle == null || oldt == t)
+		if (!isLayoutCreated() || headers == null || panelSettings == null || lblTitle == null || oldt == t)
 			return;
 		if (t < 0)
 			t = 0;

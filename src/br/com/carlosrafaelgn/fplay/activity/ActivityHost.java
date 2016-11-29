@@ -225,9 +225,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			activity.postCreateCalled = (firstCreation ? 2 : 0);
 			isCreatingLayout = true;
 			activity.onCreateLayout(firstCreation);
-			if (!activity.finished && !createLayoutCausedAnimation && (activity.postCreateCalled & 1) == 0) {
-				activity.postCreateCalled = 1;
-				activity.onPostCreateLayout(firstCreation);
+			if (!activity.finished) {
+				activity.layoutCreated = true;
+				if (!createLayoutCausedAnimation && (activity.postCreateCalled & 1) == 0) {
+					activity.postCreateCalled = 1;
+					activity.onPostCreateLayout(firstCreation);
+				}
 			}
 			isCreatingLayout = false;
 			//samsung multi-window bug! on API's < N, with multi-window turned on, sometimes
@@ -244,7 +247,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 	}
 
-	private void updateTitle(CharSequence title, boolean announce) {
+	void updateTitle(CharSequence title, boolean announce) {
 		setTitle(title);
 		//announce should be false when starting/finishing an activity from a menu
 		//because in those cases AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED will
@@ -535,6 +538,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			}
 			if (top != null) {
 				disableTopView();
+				top.layoutCreated = false;
 				top.onCleanupLayout();
 			}
 		}
@@ -551,6 +555,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			activity.onPause();
 		}
 		disableTopView();
+		activity.layoutCreated = false;
 		activity.onCleanupLayout();
 		activity.onDestroy();
 		top = ((top != null) ? top.previousActivity : null);
@@ -716,7 +721,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		top.finished = false;
 		top.activity = this;
 		top.previousActivity = null;
-		setTitle(top.getTitle());
+		//prevent the title from being said by TalkBack while the
+		//application is still loading... (ActivityMain will change its
+		//title when the player finishes loading)
+		setTitle(Player.state == Player.STATE_ALIVE ? top.getTitle() : "\u00A0");
 		getWindow().setBackgroundDrawable(new NullDrawable());
 		top.paused = true;
 		top.onCreate();
@@ -822,6 +830,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 					c.paused = true;
 					c.onPause();
 				}
+				c.layoutCreated = false;
 				c.onCleanupLayout();
 				c.onDestroy();
 			}

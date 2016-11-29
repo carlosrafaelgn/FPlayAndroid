@@ -612,6 +612,10 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	}
 
 	@Override
+	public void onPlayerFirstLoaded() {
+	}
+
+	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 		if (mediaVisualizer != null) {
 			if (!songHasChanged && Player.localPlaying)

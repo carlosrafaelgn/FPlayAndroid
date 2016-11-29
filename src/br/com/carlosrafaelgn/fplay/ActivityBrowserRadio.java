@@ -172,6 +172,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onItemClicked(int position) {
+		if (!isLayoutCreated())
+			return;
 		//UI.doubleClickMode is ignored for radio stations!
 		if (radioStationList.getSelection() == position)
 			addPlaySelectedItem(true);
@@ -181,6 +183,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	
 	@Override
 	public void onItemLongClicked(int position) {
+		if (!isLayoutCreated())
+			return;
 		if (radioStationList.getSelection() != position)
 			radioStationList.setSelection(position, true);
 		if (UI.playWithLongPress)
@@ -189,6 +193,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onItemCheckboxClicked(int position) {
+		if (!isLayoutCreated())
+			return;
 		final RadioStation station = radioStationList.getItemT(position);
 		if (station.isFavorite)
 			radioStationList.addFavoriteStation(station);
@@ -203,7 +209,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onLoadingProcessChanged(boolean started) {
-		if (radioStationList == null)
+		if (!isLayoutCreated() || radioStationList == null)
 			return;
 		loading = started;
 		if (panelLoading != null) {
@@ -238,6 +244,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onSelectionChanged(BaseList<RadioStation> list) {
+		if (!isLayoutCreated())
+			return;
 		updateButtons();
 	}
 
@@ -320,6 +328,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
+		if (!isLayoutCreated())
+			return true;
 		int p;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
@@ -371,6 +381,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onClick(View view) {
+		if (!isLayoutCreated())
+			return;
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
 				isAtFavorites = false;
@@ -492,6 +504,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
+		if (!isLayoutCreated())
+			return;
 		if (which == AlertDialog.BUTTON_POSITIVE) {
 			if (btnType != null)
 				Player.lastRadioSearchWasByGenre = (btnType.getSelectedItemPosition() == 0);
@@ -527,6 +541,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	protected boolean onBackPressed() {
+		if (!isLayoutCreated())
+			return true;
 		if (UI.backKeyAlwaysReturnsToPlayerWhenBrowsing) {
 			finish(-1, null, false);
 			return true;
@@ -715,6 +731,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onItemSelected(BgSpinner<RadioStationGenre> spinner, int position) {
+		if (!isLayoutCreated())
+			return;
 		if (spinner == btnGenre) {
 			if (btnGenre != null && btnGenreSecondary != null && genres != null && position >= 0 && position < genres.length) {
 				btnGenreSecondary.setSelectedItemPosition(0);

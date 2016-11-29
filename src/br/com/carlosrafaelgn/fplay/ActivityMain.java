@@ -459,6 +459,15 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	}
 
 	@Override
+	public void onPlayerFirstLoaded() {
+		if (lblTitle != null) {
+			lblTitle.setText(Player.getCurrentTitle(barSeek == null && Player.isPreparing()));
+			lblTitle.setSelected(true);
+		}
+		titleChanged();
+	}
+
+	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 		final String icon = (Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		if (btnPlay != null) {
@@ -473,10 +482,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (lblTitle != null) {
 				lblTitle.setText(Player.getCurrentTitle(barSeek == null && Player.isPreparing()));
 				lblTitle.setSelected(true);
-				//if (ignoreAnnouncement)
-				//	ignoreAnnouncement = false;
-				//else if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
-				//	UI.announceAccessibilityText(title);
 			}
 			if (lblArtist != null)
 				lblArtist.setText((currentSong == null) ? "-" : currentSong.artist);
@@ -794,7 +799,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			finish(0, null, false);
 			return true;
 		}
-		if (Player.state != Player.STATE_ALIVE)
+		if (!isLayoutCreated() || Player.state != Player.STATE_ALIVE)
 			return true;
 		switch (id) {
 		case MNU_ADDSONGS:
@@ -874,6 +879,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onClick(View view) {
+		if (!isLayoutCreated())
+			return;
 		if (view == btnAdd) {
 			addSongs(view);
 		} else if (view == btnPrev) {
@@ -965,6 +972,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onItemClicked(int position) {
+		if (!isLayoutCreated())
+			return;
 		if (Player.songs.selecting) {
 			lastSel = position;
 			Player.songs.setSelection(firstSel, position, position, true, true);
@@ -994,6 +1003,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onItemLongClicked(int position) {
+		if (!isLayoutCreated())
+			return;
 		if (!Player.songs.selecting && !Player.songs.moving) {
 			//select the clicked item before opening the menu
 			if (!Player.songs.isSelected(position))
@@ -1010,6 +1021,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public boolean onBackPressed() {
+		if (!isLayoutCreated())
+			return true;
 		/*if (Player.controlMode) {
 			Player.setControlMode(false);
 			return true;
@@ -1375,6 +1388,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
+		if (!isLayoutCreated())
+			return true;
 		switch (keyCode) {
 		case UI.KEY_LEFT:
 			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnRemoveSel != null && btnMenu != null && vwVolume != null) {
@@ -1646,6 +1661,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	
 	@Override
 	public void onValueChanged(BgSeekBar seekBar, int value, boolean fromUser, boolean usingKeys) {
+		if (!isLayoutCreated())
+			return;
 		if (fromUser) {
 			if (seekBar == barVolume) {
 				final int volume = Player.setVolume(
@@ -1671,6 +1688,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	
 	@Override
 	public boolean onStartTrackingTouch(BgSeekBar seekBar) {
+		if (!isLayoutCreated())
+			return true;
 		if (seekBar == barSeek) {
 			if (Player.localSong != null && Player.localSong.lengthMS > 0) {
 				if (UI.expandSeekBar && !UI.isLargeScreen) {
@@ -1687,6 +1706,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	
 	@Override
 	public void onStopTrackingTouch(BgSeekBar seekBar, boolean cancelled) {
+		if (!isLayoutCreated())
+			return;
 		if (seekBar == barSeek) {
 			if (Player.localSong != null) {
 				final int ms = getMSFromBarValue(seekBar.getValue());
@@ -1705,6 +1726,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onFileSelected(int id, FileSt file) {
+		if (!isLayoutCreated())
+			return;
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
 			Player.songs.startDeserializingOrImportingFrom(file, true, false, false);
@@ -1717,6 +1740,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onAddClicked(int id, FileSt file) {
+		if (!isLayoutCreated())
+			return;
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializingOrImportingFrom(file, false, true, false);
 			BackgroundActivityMonitor.start(getHostActivity());
@@ -1725,6 +1750,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onPlayClicked(int id, FileSt file) {
+		if (!isLayoutCreated())
+			return;
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializingOrImportingFrom(file, false, !Player.clearListWhenPlayingFolders, true);
 			BackgroundActivityMonitor.start(getHostActivity());
@@ -1733,12 +1760,16 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public boolean onDeleteClicked(int id, FileSt file) {
+		if (!isLayoutCreated())
+			return true;
 		SongList.delete(file);
 		return true;
 	}
 
 	@Override
 	public void onPressingChanged(BgButton button, boolean pressed) {
+		if (!isLayoutCreated())
+			return;
 		if (button == btnDecreaseVolume) {
 			if (pressed) {
 				if (Player.volumeControlType == Player.VOLUME_CONTROL_NONE) {
