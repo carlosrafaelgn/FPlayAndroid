@@ -182,13 +182,12 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
+                android:contentDescription="@string/go_back"
                 android:nextFocusDown="@+id/list"
                 android:nextFocusForward="@+id/btnMoveSel"
                 android:nextFocusLeft="@+id/list"
                 android:nextFocusRight="@+id/btnMoveSel"
-                android:nextFocusUp="@+id/list"
-                android:contentDescription="@string/cancel"
-                android:text="@string/cancel"/>
+                android:nextFocusUp="@+id/list"/>
 
             <br.com.carlosrafaelgn.fplay.ui.BgButton
                 android:id="@+id/btnSetRingtone"

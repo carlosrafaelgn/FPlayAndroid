@@ -247,13 +247,12 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentBottom="true"
                     android:layout_alignParentLeft="true"
+                    android:contentDescription="@string/go_back"
                     android:nextFocusDown="@+id/list"
                     android:nextFocusForward="@+id/list"
                     android:nextFocusLeft="@+id/list"
                     android:nextFocusRight="@+id/list"
-                    android:nextFocusUp="@+id/btnRemoveSel"
-                    android:contentDescription="@string/cancel"
-                    android:text="@string/cancel"/>
+                    android:nextFocusUp="@+id/btnRemoveSel"/>
             </RelativeLayout>
         </LinearLayout>
 
