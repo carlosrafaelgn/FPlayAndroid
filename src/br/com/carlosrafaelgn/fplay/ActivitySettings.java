@@ -185,28 +185,31 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_CUSTOM) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
-			menu.add(1, UI.THEME_FPLAY, 0, UI.getThemeString(UI.THEME_FPLAY))
+			menu.add(1, UI.THEME_FPLAY_ICY, 0, UI.getThemeString(UI.THEME_FPLAY_ICY))
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY_ICY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_FPLAY_DARK, 1, UI.getThemeString(UI.THEME_FPLAY_DARK))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY_DARK) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, UI.THEME_CREAMY, 2, UI.getThemeString(UI.THEME_CREAMY))
+			menu.add(1, UI.THEME_FPLAY, 2, UI.getThemeString(UI.THEME_FPLAY))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(1, UI.THEME_CREAMY, 3, UI.getThemeString(UI.THEME_CREAMY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_CREAMY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, UI.THEME_DARK_LIGHT, 3, UI.getThemeString(UI.THEME_DARK_LIGHT))
+			menu.add(1, UI.THEME_DARK_LIGHT, 4, UI.getThemeString(UI.THEME_DARK_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_DARK_LIGHT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, UI.THEME_BLUE_ORANGE, 4, UI.getThemeString(UI.THEME_BLUE_ORANGE))
+			menu.add(1, UI.THEME_BLUE_ORANGE, 5, UI.getThemeString(UI.THEME_BLUE_ORANGE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE_ORANGE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, UI.THEME_BLUE, 5, UI.getThemeString(UI.THEME_BLUE))
+			menu.add(1, UI.THEME_BLUE, 6, UI.getThemeString(UI.THEME_BLUE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_BLUE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, UI.THEME_ORANGE, 6, UI.getThemeString(UI.THEME_ORANGE))
+			menu.add(1, UI.THEME_ORANGE, 7, UI.getThemeString(UI.THEME_ORANGE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_ORANGE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, UI.THEME_LIGHT, 7, UI.getThemeString(UI.THEME_LIGHT))
+			menu.add(1, UI.THEME_LIGHT, 8, UI.getThemeString(UI.THEME_LIGHT))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_LIGHT) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optVolumeControlType) {
@@ -798,11 +801,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				UI.IDX_COLOR_TEXT_HIGHLIGHT,
 				UI.IDX_COLOR_HIGHLIGHT,
 				UI.IDX_COLOR_TEXT,
-				UI.IDX_COLOR_TEXT_DISABLED,
 				UI.IDX_COLOR_WINDOW,
 				UI.IDX_COLOR_CONTROL_MODE,
 				UI.IDX_COLOR_VISUALIZER,
 				UI.IDX_COLOR_TEXT_LISTITEM,
+				UI.IDX_COLOR_TEXT_LISTITEM_DISABLED,
 				UI.IDX_COLOR_TEXT_LISTITEM_SECONDARY,
 				UI.IDX_COLOR_LIST,
 				UI.IDX_COLOR_TEXT_MENU,
@@ -838,7 +841,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				case 0:
 					addHeader(ctx, R.string.general, optLoadCurrentTheme, hIdx++);
 					break;
-				case 8:
+				case 7:
 					addHeader(ctx, R.string.list2, colorViews[colorOrder[i - 1]], hIdx++);
 					break;
 				case 11:
@@ -851,9 +854,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					addHeader(ctx, R.string.keyboard_focus, colorViews[colorOrder[i - 1]], hIdx++);
 					break;
 				}
-				//don't show this to the user as it is not atually being used...
-				if (idx != UI.IDX_COLOR_TEXT_DISABLED)
-					addOption(colorViews[idx]);
+				addOption(colorViews[idx]);
 			}
 			lblTitle.setVisibility(View.GONE);
 			currentHeader = -1;

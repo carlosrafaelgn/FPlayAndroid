@@ -211,7 +211,7 @@
     <string name="text">Texto</string>
     <string name="text_secondary">Texto (secundario)</string>
     <string name="window_text">Texto de la ventana</string>
-    <string name="window_text_disabled">Texto de la ventana (deshabilitar)</string>
+    <string name="text_disabled">Texto (desactivado)</string>
     <string name="highlight_text">Texto de titulo de menu</string>
     <string name="there_are_new_features">Hay nuevas características disponibles en la opcion \"Configuración\" del menú:</string>
     <string name="custom_widget">Widget personalizable</string>
@@ -352,5 +352,6 @@
     <string name="display_song_number_and_count">Mostrar el número de la canción y la cantidad de canciones</string>
     <string name="show_album_art">Mostrar carátula del álbum</string>
     <string name="hide_album_art">Ocultar carátula del álbum</string>
+    <string name="icy">Glacial</string>
 
 </resources>

@@ -211,7 +211,7 @@
     <string name="text">Текст</string>
     <string name="text_secondary">Текст (другорядний)</string>
     <string name="window_text">Текст вікна</string>
-    <string name="window_text_disabled">Текст вікна (неактивний)</string>
+    <string name="text_disabled">Текст (неактивний)</string>
     <string name="highlight_text">Виділений текст</string>
     <string name="there_are_new_features">Доступні нові можливості в меню \"Налаштування\":</string>
     <string name="custom_widget">Настроюваний віджет</string>
@@ -352,5 +352,6 @@
     <string name="display_song_number_and_count">Дисплей номер пісні і кількість пісень</string>
     <string name="show_album_art">Показати обкладинку альбому</string>
     <string name="hide_album_art">Приховати обкладинки альбому</string>
+    <string name="icy">Льодовий</string>
 
 </resources>

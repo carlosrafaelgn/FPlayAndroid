@@ -459,15 +459,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	}
 
 	@Override
-	public void onPlayerFirstLoaded() {
-		if (lblTitle != null) {
-			lblTitle.setText(Player.getCurrentTitle(barSeek == null && Player.isPreparing()));
-			lblTitle.setSelected(true);
-		}
-		titleChanged();
-	}
-
-	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 		final String icon = (Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		if (btnPlay != null) {
@@ -1222,7 +1213,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			final int iconIdx = originalText.indexOf('\u266B');
 			if (iconIdx > 0) {
 				final SpannableStringBuilder txt = new SpannableStringBuilder(originalText);
-				txt.setSpan(new ImageSpan(new TextIconDrawable(UI.ICON_FPLAY, UI.color_text_disabled, UI._22sp, 0), DynamicDrawableSpan.ALIGN_BASELINE), iconIdx, iconIdx + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				txt.setSpan(new ImageSpan(new TextIconDrawable(UI.ICON_FPLAY, UI.color_text_listitem_disabled, UI._22sp, 0), DynamicDrawableSpan.ALIGN_BASELINE), iconIdx, iconIdx + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 				list.setCustomEmptyText(txt);
 			} else {
 				list.setCustomEmptyText(originalText);

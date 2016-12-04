@@ -132,6 +132,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int THEME_FPLAY = 7;
 	//present the new FPlay Dark theme to all those using FPlay theme ;)
 	public static final int THEME_FPLAY_DARK = 3;
+	public static final int THEME_FPLAY_ICY = 8;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -268,7 +269,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int IDX_COLOR_HIGHLIGHT = 8;
 	public static final int IDX_COLOR_TEXT_HIGHLIGHT = 9;
 	public static final int IDX_COLOR_TEXT = 10;
-	public static final int IDX_COLOR_TEXT_DISABLED = 11;
+	public static final int IDX_COLOR_TEXT_LISTITEM_DISABLED = 11;
 	public static final int IDX_COLOR_TEXT_LISTITEM = 12;
 	public static final int IDX_COLOR_TEXT_LISTITEM_SECONDARY = 13;
 	public static final int IDX_COLOR_TEXT_SELECTED = 14;
@@ -301,7 +302,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static int color_highlight;
 	public static int color_text_highlight;
 	public static int color_text;
-	public static int color_text_disabled;
+	public static int color_text_listitem_disabled;
 	public static int color_text_listitem;
 	public static int color_text_listitem_secondary;
 	public static int color_text_selected;
@@ -979,7 +980,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		case 10:
 			return Player.theApplication.getText(R.string.window_text);
 		case 11:
-			return Player.theApplication.getText(R.string.window_text_disabled);
+			return Player.theApplication.getText(R.string.text_disabled);
 		case 12:
 		case 14:
 		case 15:
@@ -1022,7 +1023,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		serializeThemeColor(colors, 3 * IDX_COLOR_HIGHLIGHT, color_highlight);
 		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_HIGHLIGHT, color_text_highlight);
 		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT, color_text);
-		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_DISABLED, color_text_disabled);
+		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM_DISABLED, color_text_listitem_disabled);
 		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM, color_text_listitem);
 		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM_SECONDARY, color_text_listitem_secondary);
 		serializeThemeColor(colors, 3 * IDX_COLOR_TEXT_SELECTED, color_text_selected);
@@ -1053,7 +1054,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_highlight = deserializeThemeColor(colors, 3 * IDX_COLOR_HIGHLIGHT);
 		color_text_highlight = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_HIGHLIGHT);
 		color_text = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT);
-		color_text_disabled = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_DISABLED);
+		color_text_listitem_disabled = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM_DISABLED);
 		color_text_listitem = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM);
 		color_text_listitem_secondary = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_LISTITEM_SECONDARY);
 		color_text_selected = deserializeThemeColor(colors, 3 * IDX_COLOR_TEXT_SELECTED);
@@ -1090,8 +1091,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_selected = ColorUtils.blend(color_selected_grad_lt, color_selected_grad_dk, 0.5f);
 		color_focused = ColorUtils.blend(color_focused_grad_lt, color_focused_grad_dk, 0.5f);
 		color_selected_multi = ColorUtils.blend(color_selected, color_list, 0.7f);
-		color_selected_pressed_border = color_selected_border;
-		color_focused_pressed_border = color_focused_border;
+		color_selected_pressed_border = ColorUtils.blend(color_selected_border, color_selected_pressed, 0.7f);
+		color_focused_pressed_border = ColorUtils.blend(color_focused_border, color_focused_pressed, 0.7f);
 		colorState_text_white_reactive = new BgColorStateList(0xffffffff, color_text_selected);
 		colorState_text_menu_reactive = new BgColorStateList(color_text_menu, color_text_selected);
 		colorState_text_reactive = new BgColorStateList(color_text, color_text_selected);
@@ -1105,8 +1106,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		colorState_text_highlight_reactive = new BgColorStateList(color_text_highlight, color_text_selected);
 
 		if (!custom) {
-			color_text_title = color_highlight;
-			colorState_text_title_static = colorState_highlight_static;
+			if (theme == THEME_FPLAY_ICY) {
+				color_text_title = color_text;
+				colorState_text_title_static = colorState_text_static;
+			} else {
+				color_text_title = color_highlight;
+				colorState_text_title_static = colorState_highlight_static;
+			}
 			color_menu_border = color_selected_border;
 			colorState_text_control_mode_reactive = colorState_text_reactive;
 			colorState_text_visualizer_static = colorState_text_static;
@@ -1131,7 +1137,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 		color_divider_pressed = ColorUtils.blend(color_divider, color_text_listitem, 0.7f);
 
-		//color_glow = ((theme == THEME_FPLAY || theme == THEME_FPLAY_DARK) ? color_text_listitem_secondary : ((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window : ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary : color_text_listitem)));
 		color_glow = ((color_text_listitem_secondary != color_highlight) ? color_text_listitem_secondary :
 			((ColorUtils.contrastRatio(color_window, color_list) >= 3.5) ? color_window :
 				color_text_listitem));
@@ -1214,7 +1219,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_highlight = 0xfffad35a;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
-		color_text_disabled = 0xff8c8c8c;
+		color_text_listitem_disabled = 0xff8c8c8c;
 		color_text_listitem = 0xffffffff;
 		color_text_listitem_secondary = 0xfffad35a;
 		color_text_selected = 0xff000000;
@@ -1304,7 +1309,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_highlight = 0xffffcc66;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
-		color_text_disabled = 0xff555555;
+		color_text_listitem_disabled = 0xff555555;
 		color_text_listitem = 0xff000000;
 		color_text_listitem_secondary = 0xff353be0;
 		color_text_selected = 0xff000000;
@@ -1333,7 +1338,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_highlight = 0xffffcc66;
 		color_text_highlight = 0xff000000;
 		color_text = 0xffffffff;
-		color_text_disabled = 0xff555555;
+		color_text_listitem_disabled = 0xff555555;
 		color_text_listitem = 0xff000000;
 		color_text_listitem_secondary = 0xff3a40a8;
 		color_text_selected = 0xff000000;
@@ -1348,6 +1353,33 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_focused_pressed = 0xffe5e6ff;
 		finishLoadingTheme(false, true);
 		color_menu_border = 0xff808299;
+	}
+
+	public static void loadFPlayIcyTheme() {
+		color_window = 0xff333333;
+		color_control_mode = 0xff000000;
+		color_visualizer = 0xff000000;
+		color_list = 0xffcccccc;
+		color_menu = 0xff333333;
+		color_menu_icon = 0xff5599ff;
+		color_highlight = 0xff5599ff;
+		color_text_highlight = 0xff000000;
+		color_text = 0xffffffff;
+		color_text_listitem_disabled = 0xff555555;
+		color_text_listitem = 0xff333333;
+		color_text_listitem_secondary = 0xff0044aa;
+		color_text_selected = 0xff000000;
+		color_text_menu = 0xffaaccff;
+		color_selected_grad_lt = 0xffaaccff;
+		color_selected_grad_dk = 0xff5599ff;
+		color_selected_border = 0xff0044aa;
+		color_selected_pressed = 0xffaaccff;
+		color_focused_grad_lt = 0xfff0f0f0;
+		color_focused_grad_dk = 0xfff0f0f0;
+		color_focused_border = 0xff888888;
+		color_focused_pressed = 0xffffffff;
+		finishLoadingTheme(false, true);
+		color_menu_border = 0xff5599ff;
 	}
 
 	public static String getThemeString(int theme) {
@@ -1368,6 +1400,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return Player.theApplication.getText(R.string.creamy).toString();
 		case THEME_FPLAY:
 			return "FPlay";
+		case THEME_FPLAY_ICY:
+			return "FPlay " + Player.theApplication.getText(R.string.icy).toString();
 		default:
 			return "FPlay " + Player.theApplication.getText(R.string.dark).toString();
 		}
@@ -1401,6 +1435,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			break;
 		case THEME_FPLAY:
 			loadFPlayTheme();
+			break;
+		case THEME_FPLAY_ICY:
+			loadFPlayIcyTheme();
 			break;
 		default:
 			UI.theme = THEME_FPLAY_DARK;
@@ -1508,12 +1545,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void showNextStartupMsg(Context context) {
-		if (msgStartup >= 33) {
-			msgStartup = 33;
+		if (msgStartup >= 34) {
+			msgStartup = 34;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 33;
+		msgStartup = 34;
 		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.startup_message).toString();
@@ -1534,6 +1571,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final String content = "- " + context.getText(R.string.ringtone) +
 			"\n\n" +
 			context.getText(R.string.there_are_new_features) +
+			"\n\n- " + context.getText(R.string.color_theme) + punctuationSpace(": ") + "FPlay " + context.getText(R.string.icy) +
 			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.display_song_number_and_count) +
 			"\n\n- " + context.getText(R.string.hdr_playback) + punctuationSpace(": ") + context.getText(R.string.previous_resets_after_the_beginning) +
 			"\n\n" +

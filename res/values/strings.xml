@@ -212,7 +212,7 @@
     <string name="text">Text</string>
     <string name="text_secondary">Text (secondary)</string>
     <string name="window_text">Window text</string>
-    <string name="window_text_disabled">Window text (disabled)</string>
+    <string name="text_disabled">Text (disabled)</string>
     <string name="highlight_text">Highlight text</string>
     <string name="there_are_new_features">There are new features available in the \"Settings\" menu:</string>
     <string name="custom_widget">Customizable widget</string>
@@ -354,5 +354,6 @@
     <string name="display_song_number_and_count">Display song number and count</string>
     <string name="show_album_art">Show album art</string>
     <string name="hide_album_art">Hide album art</string>
+    <string name="icy">Icy</string>
 
 </resources>

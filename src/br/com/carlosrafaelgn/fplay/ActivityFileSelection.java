@@ -542,7 +542,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			list.setCustomEmptyText(msgEmptyList);
 			animator = new FastAnimator(list, false, this, 0);
 			lblLoading = (TextView)findViewById(R.id.lblLoading);
-			lblLoading.setTextColor(UI.color_text_disabled);
+			lblLoading.setTextColor(UI.color_text_listitem_disabled);
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			UI.headingText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);

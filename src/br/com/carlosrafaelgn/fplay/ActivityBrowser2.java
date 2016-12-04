@@ -807,7 +807,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			//try to center the text by making up for panelSecondary
 			lblLoading.setPadding(0, 0, 0, UI.defaultControlSize + UI._1dp + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
-			lblLoading.setTextColor(UI.color_text_disabled);
+			lblLoading.setTextColor(UI.color_text_listitem_disabled);
 			UI.headingText(lblLoading);
 			//when returning from the radio
 			lblLoading.setVisibility((fileList.getCount() > 0) ? View.GONE : View.VISIBLE);

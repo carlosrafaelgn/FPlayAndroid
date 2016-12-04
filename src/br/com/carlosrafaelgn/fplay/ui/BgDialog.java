@@ -233,7 +233,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 			txtTitle.setId(1);
 			txtTitle.setTypeface(UI.defaultTypeface);
 			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
-			txtTitle.setTextColor(UI.colorState_highlight_static);
+			txtTitle.setTextColor(UI.colorState_text_title_static);
 			UI.prepareControlContainer(txtTitle, false, titleBorder, UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin, UI.controlLargeMargin);
 			panel.addView(txtTitle, new BgFlexLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
 		}

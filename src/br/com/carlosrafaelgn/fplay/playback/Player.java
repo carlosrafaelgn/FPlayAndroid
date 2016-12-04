@@ -134,7 +134,6 @@ import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
 public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayerBase.OnErrorListener, MediaPlayerBase.OnSeekCompleteListener, MediaPlayerBase.OnPreparedListener, MediaPlayerBase.OnCompletionListener, MediaPlayerBase.OnInfoListener, ArraySorter.Comparer<FileSt> {
 	public interface PlayerObserver {
-		void onPlayerFirstLoaded();
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		void onPlayerMetadataChanged(Song currentSong);
 		void onPlayerControlModeChanged(boolean controlMode);
@@ -433,8 +432,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					break;
 				case STATE_INITIALIZING_STEP2:
 					state = STATE_ALIVE;
-					if (observer != null)
-						observer.onPlayerFirstLoaded();
 					handler.sendMessageAtTime(Message.obtain(handler, MSG_OVERRIDE_VOLUME_MULTIPLIER, (volumeControlType != VOLUME_CONTROL_DB && volumeControlType != VOLUME_CONTROL_PERCENT) ? 1 : 0, 0), SystemClock.uptimeMillis());
 					setTurnOffTimer(turnOffTimerSelectedMinutes);
 					setIdleTurnOffTimer(idleTurnOffTimerSelectedMinutes);
@@ -2678,7 +2675,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (newCurrentSong != null)
 			localSong = newCurrentSong;
 		if (handler != null) {
-			if (newCurrentSong != null)
+			if (newCurrentSong != null || state < STATE_ALIVE)
 				handler.sendMessageAtTime(Message.obtain(handler, MSG_SONG_LIST_DESERIALIZED, newCurrentSong), SystemClock.uptimeMillis());
 			if (ex != null)
 				handler.sendMessageAtTime(Message.obtain(handler, MSG_SONG_LIST_DESERIALIZED, ex), SystemClock.uptimeMillis());
@@ -2888,7 +2885,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			_updateState(false, (Throwable)obj);
 		} else {
 			song = (Song)obj;
-			_updateState(false, null);
+			_updateState(true, null);
 		}
 	}
 

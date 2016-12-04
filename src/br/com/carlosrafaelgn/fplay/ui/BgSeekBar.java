@@ -104,10 +104,18 @@ public final class BgSeekBar extends View {
 
 	private void updateSecondaryBgColorBlended() {
 		final int state = (insideList ? (this.state ^ UI.STATE_FOCUSED) : this.state);
-		secondaryBgColorBlended = ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
-			(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed : UI.color_selected_pressed) :
-				(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused : UI.color_selected),
-					secondaryBgColor, 0.35f);
+		final boolean blendWithBorder = (((state & UI.STATE_FOCUSED) != 0) ?
+			ColorUtils.contrastRatio(UI.color_focused_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_focused, secondaryBgColor) :
+			ColorUtils.contrastRatio(UI.color_selected_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_selected, secondaryBgColor));
+		secondaryBgColorBlended = (blendWithBorder ?
+			ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
+				(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed_border : UI.color_selected_pressed_border) :
+					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_border : UI.color_selected_border),
+						secondaryBgColor, 0.15f) :
+			ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
+				(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed : UI.color_selected_pressed) :
+					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused : UI.color_selected),
+						secondaryBgColor, 0.35f));
 	}
 
 	public void setSliderMode(boolean sliderMode) {

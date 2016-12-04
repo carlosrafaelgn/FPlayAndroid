@@ -916,7 +916,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				final float x = (float)((viewWidth - emptyLayout.getWidth()) >> 1);
 				final float y = (float)((viewHeight - emptyLayout.getHeight()) >> 1);
 				canvas.translate(x, y);
-				UI.textPaint.setColor(UI.color_text_disabled);
+				UI.textPaint.setColor(UI.color_text_listitem_disabled);
 				UI.textPaint.setTextSize(UI._Headingsp);
 				emptyLayout.draw(canvas);
 				canvas.translate(-x, -y);

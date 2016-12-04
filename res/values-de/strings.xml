@@ -211,7 +211,7 @@
     <string name="text">Text</string>
     <string name="text_secondary">Text (sekundär)</string>
     <string name="window_text">Fenster-Text</string>
-    <string name="window_text_disabled">Fenster-Text (deaktiviert)</string>
+    <string name="text_disabled">Text (deaktiviert)</string>
     <string name="highlight_text">Hervorgehobener Text</string>
     <string name="there_are_new_features">Es sind neue Funktionen verfügbar im \"Einstellungen\" Menü:</string>
     <string name="custom_widget">Veränderbares Widget</string>
@@ -352,5 +352,6 @@
     <string name="display_song_number_and_count">Anzeige von Song-Nummer und Song-Zählung</string>
     <string name="show_album_art">Anzeigen Album-Art</string>
     <string name="hide_album_art">Ausblenden Album-Art</string>
+    <string name="icy">Eisig</string>
 
 </resources>

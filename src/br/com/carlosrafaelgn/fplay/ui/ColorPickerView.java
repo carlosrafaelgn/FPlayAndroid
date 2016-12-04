@@ -78,15 +78,15 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			hsv.h = 0.0;
 			hsv.s = 0.0;
 			hsv.v = 4.0 / 4.0;
-			colors[0    ] = hsv.toRGB(false);
+			colors[0] = hsv.toRGBWeb(false);
 			hsv.v = 3.0 / 4.0;
-			colors[1] = hsv.toRGB(false);
+			colors[1] = hsv.toRGBWeb(false);
 			hsv.v = 2.0 / 4.0;
-			colors[2] = hsv.toRGB(false);
+			colors[2] = hsv.toRGBWeb(false);
 			hsv.v = 1.0 / 4.0;
-			colors[3] = hsv.toRGB(false);
+			colors[3] = hsv.toRGBWeb(false);
 			hsv.v = 0.0 / 4.0;
-			colors[4] = hsv.toRGB(false);
+			colors[4] = hsv.toRGBWeb(false);
 			for (int i = 0; i < (30 * 5); i += 5) {
 				hsv.h = (double)(i * 12) / (5.0 * 360.0);
 				hsv.v = 1.0;

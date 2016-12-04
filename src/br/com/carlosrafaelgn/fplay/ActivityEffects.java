@@ -861,10 +861,6 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	}
 
 	@Override
-	public void onPlayerFirstLoaded() {
-	}
-
-	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 	}
 
