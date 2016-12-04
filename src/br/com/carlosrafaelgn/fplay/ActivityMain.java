@@ -1717,8 +1717,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onFileSelected(int id, FileSt file) {
-		if (!isLayoutCreated())
-			return;
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
 			Player.songs.startDeserializingOrImportingFrom(file, true, false, false);
@@ -1731,8 +1729,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onAddClicked(int id, FileSt file) {
-		if (!isLayoutCreated())
-			return;
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializingOrImportingFrom(file, false, true, false);
 			BackgroundActivityMonitor.start(getHostActivity());
@@ -1741,8 +1737,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onPlayClicked(int id, FileSt file) {
-		if (!isLayoutCreated())
-			return;
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializingOrImportingFrom(file, false, !Player.clearListWhenPlayingFolders, true);
 			BackgroundActivityMonitor.start(getHostActivity());
@@ -1751,8 +1745,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public boolean onDeleteClicked(int id, FileSt file) {
-		if (!isLayoutCreated())
-			return true;
 		SongList.delete(file);
 		return true;
 	}

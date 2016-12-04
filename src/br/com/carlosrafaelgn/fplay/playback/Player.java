@@ -432,6 +432,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					break;
 				case STATE_INITIALIZING_STEP2:
 					state = STATE_ALIVE;
+					handler.sendMessageAtTime(Message.obtain(handler, MSG_SONG_LIST_DESERIALIZED, localSong), SystemClock.uptimeMillis());
 					handler.sendMessageAtTime(Message.obtain(handler, MSG_OVERRIDE_VOLUME_MULTIPLIER, (volumeControlType != VOLUME_CONTROL_DB && volumeControlType != VOLUME_CONTROL_PERCENT) ? 1 : 0, 0), SystemClock.uptimeMillis());
 					setTurnOffTimer(turnOffTimerSelectedMinutes);
 					setIdleTurnOffTimer(idleTurnOffTimerSelectedMinutes);
@@ -2675,7 +2676,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (newCurrentSong != null)
 			localSong = newCurrentSong;
 		if (handler != null) {
-			if (newCurrentSong != null || state < STATE_ALIVE)
+			if (newCurrentSong != null && state >= STATE_ALIVE)
 				handler.sendMessageAtTime(Message.obtain(handler, MSG_SONG_LIST_DESERIALIZED, newCurrentSong), SystemClock.uptimeMillis());
 			if (ex != null)
 				handler.sendMessageAtTime(Message.obtain(handler, MSG_SONG_LIST_DESERIALIZED, ex), SystemClock.uptimeMillis());

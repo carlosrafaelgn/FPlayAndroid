@@ -827,8 +827,6 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	@Override
 	public void onFileSelected(int id, FileSt file) {
-		if (!isLayoutCreated())
-			return;
 		if (id == MNU_LOADPRESET) {
 			final SerializableMap opts = SerializableMap.deserialize(file.path);
 			if (opts != null) {
