@@ -928,10 +928,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static String getCurrentTitle(boolean preparing) {
-		return ((state < STATE_ALIVE) ? theApplication.getText(R.string.loading).toString() :
-				((localSong == null) ? theApplication.getText(R.string.nothing_playing).toString() :
-					(!preparing ? localSong.title :
-						(theApplication.getText(R.string.loading) + " " + localSong.title))));
+		return ((state == STATE_NEW) ? theApplication.getText(R.string.nothing_playing).toString() :
+				((state < STATE_ALIVE) ? theApplication.getText(R.string.loading).toString() :
+					((localSong == null) ? theApplication.getText(R.string.nothing_playing).toString() :
+						(!preparing ? localSong.title :
+							(theApplication.getText(R.string.loading) + " " + localSong.title)))));
 	}
 
 	public static int getPosition() {
