@@ -36,18 +36,22 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BgShadowDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
 public final class BackgroundActivityMonitor implements Timer.TimerHandler {
-	private static TextView notification;
+	private static LinearLayout notification;
+	private static TextView notificationTextView;
 	private static int lastMsg;
 	private static final Timer timer = new Timer(new BackgroundActivityMonitor(), "Background Activity Monitor Timer", false, true, false);
 
+	@SuppressWarnings("deprecation")
 	public static void start(ActivityHost activity) {
 		if (Player.state != Player.STATE_ALIVE || Player.songs.isAdding() || Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL || Player.bluetoothVisualizerLastErrorMessage != 0) {
 			stop();
@@ -55,20 +59,29 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 			//http://android-developers.blogspot.com.br/2009/03/android-layout-tricks-3-optimize-by.html
 			View parent = activity.findViewByIdDirect(android.R.id.content);
 			if (parent != null && parent instanceof FrameLayout) {
-				notification = new TextView(activity);
-				FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-				p.leftMargin = UI.controlMargin;
-				p.topMargin = UI.controlMargin;
-				p.rightMargin = UI.controlMargin;
-				p.bottomMargin = UI.controlMargin;
+				notificationTextView = new TextView(activity);
+				UI.smallText(notificationTextView);
+				UI.prepareNotificationViewColors(notificationTextView);
+				lastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : R.string.bt_active)));
+				notificationTextView.setText(lastMsg);
+				notificationTextView.setGravity(Gravity.CENTER);
+				notificationTextView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+				notificationTextView.setPadding(UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin, UI.controlSmallMargin);
+
+				notification = new LinearLayout(activity);
+				final FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+				p.leftMargin = UI.controlSmallMargin;
+				p.topMargin = UI.controlSmallMargin;
+				p.rightMargin = UI.controlSmallMargin;
+				p.bottomMargin = UI.controlSmallMargin;
 				p.gravity = Gravity.START | Gravity.BOTTOM;
 				notification.setLayoutParams(p);
-				UI.smallText(notification);
-				UI.prepareNotificationViewColors(notification);
-				lastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : R.string.bt_active)));
-				notification.setText(lastMsg);
-				notification.setPadding(UI.controlXtraSmallMargin, UI.controlXtraSmallMargin, UI.controlXtraSmallMargin, UI.controlXtraSmallMargin);
+				notification.setOrientation(LinearLayout.VERTICAL);
+				notification.setBackgroundDrawable(new BgShadowDrawable(false));
+				notification.addView(notificationTextView);
+
 				((FrameLayout)parent).addView(notification);
+
 				if (Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_INITIAL)
 					timer.start(250);
 			}
@@ -78,9 +91,9 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 	public static void bluetoothEnded() {
 		if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding()) {
 			if (Player.bluetoothVisualizerLastErrorMessage != 0) {
-				if (lastMsg != R.string.bt_error && notification != null) {
+				if (lastMsg != R.string.bt_error && notificationTextView != null) {
 					lastMsg = R.string.bt_error;
-					notification.setText(lastMsg);
+					notificationTextView.setText(lastMsg);
 				}
 			} else {
 				stop();
@@ -96,6 +109,7 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 			if (p != null && p instanceof FrameLayout)
 				((FrameLayout)p).removeView(notification);
 			notification = null;
+			notificationTextView = null;
 		}
 		timer.stop();
 	}
@@ -108,7 +122,8 @@ public final class BackgroundActivityMonitor implements Timer.TimerHandler {
 		} else {
 			if (lastMsg != msg) {
 				lastMsg = msg;
-				notification.setText(msg);
+				if (notificationTextView != null)
+					notificationTextView.setText(msg);
 			}
 			if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding())
 				BackgroundActivityMonitor.timer.stop();
