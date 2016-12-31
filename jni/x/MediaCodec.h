@@ -201,19 +201,28 @@ public:
 		return 0;
 	}
 
-	int64_t doSeek(int32_t msec) {
+	int64_t doSeek(int32_t msec, int32_t totalMsec) {
 		int32_t ret;
 		if ((ret = AMediaCodec_flush(mediaCodec)))
 			return (int64_t)ret;
-		if ((ret = AMediaExtractor_seekTo(mediaExtractor, (int64_t)msec * 1000LL, AMEDIAEXTRACTOR_SEEK_CLOSEST_SYNC)))
+		if ((ret = AMediaExtractor_seekTo(mediaExtractor, (int64_t)msec * 1000LL, AMEDIAEXTRACTOR_SEEK_CLOSEST_SYNC))) {
+			if (msec > (totalMsec - 500)) {
+				inputOver = true;
+				return 0x7FFFFFFFFFFFFFFFLL;
+			}
 			return (int64_t)ret;
+		}
 		inputOver = false;
 		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
 		const int64_t sampleTime = AMediaExtractor_getSampleTime(mediaExtractor);
+		if (sampleTime < 0) {
+			inputOver = true;
+			return 0x7FFFFFFFFFFFFFFFLL;
+		}
 		if ((ret = fillInputBuffers()))
 			return (int64_t)ret;
-		return ((sampleTime < 0) ? 0x7FFFFFFFFFFFFFFFLL : sampleTime);
+		return sampleTime;
 	}
 
 	int32_t fillInputBuffers() {
@@ -332,11 +341,11 @@ int32_t JNICALL mediaCodecNextOutputBuffer(JNIEnv* env, jclass clazz, uint64_t n
 	return ((MediaCodec*)nativeObj)->nextOutputBuffer();
 }
 
-int64_t JNICALL mediaCodecSeek(JNIEnv* env, jclass clazz, uint64_t nativeObj, int32_t msec) {
-	if (!nativeObj || msec < 0)
+int64_t JNICALL mediaCodecSeek(JNIEnv* env, jclass clazz, uint64_t nativeObj, int32_t msec, int32_t totalMsec) {
+	if (!nativeObj || msec < 0 || totalMsec < 0)
 		return -1;
 
-	return ((MediaCodec*)nativeObj)->doSeek(msec);
+	return ((MediaCodec*)nativeObj)->doSeek(msec, totalMsec);
 }
 
 void JNICALL mediaCodecReleaseOutputBuffer(JNIEnv* env, jclass clazz, uint64_t nativeObj) {

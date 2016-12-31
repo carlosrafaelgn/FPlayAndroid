@@ -145,7 +145,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native int mediaCodecPrepare(int fd, long length, long[] outParams);
 	static native int mediaCodecFillInputBuffers(long nativeObj);
 	static native int mediaCodecNextOutputBuffer(long nativeObj);
-	static native long mediaCodecSeek(long nativeObj, int msec);
+	static native long mediaCodecSeek(long nativeObj, int msec, int totalMsec);
 	static native void mediaCodecReleaseOutputBuffer(long nativeObj);
 	static native void mediaCodecRelease(long nativeObj);
 	static native int mediaCodecLoadExternalLibrary();

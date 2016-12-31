@@ -456,7 +456,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		}
 
 		if (nativeMediaCodec) {
-			long ret = MediaContext.mediaCodecSeek(nativeObj, msec);
+			long ret = MediaContext.mediaCodecSeek(nativeObj, msec, durationInMS);
 			if (ret < 0)
 				throw new IOException();
 			outputOver = (ret == 0x7FFFFFFFFFFFFFFFL);

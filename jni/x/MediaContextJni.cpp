@@ -323,7 +323,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"mediaCodecPrepare", "(IJ[J)I", (void*)mediaCodecPrepare},
 		{"mediaCodecFillInputBuffers", "(J)I", (void*)mediaCodecFillInputBuffers},
 		{"mediaCodecNextOutputBuffer", "(J)I", (void*)mediaCodecNextOutputBuffer},
-		{"mediaCodecSeek", "(JI)J", (void*)mediaCodecSeek},
+		{"mediaCodecSeek", "(JII)J", (void*)mediaCodecSeek},
 		{"mediaCodecReleaseOutputBuffer", "(J)V", (void*)mediaCodecReleaseOutputBuffer},
 		{"mediaCodecRelease", "(J)V", (void*)mediaCodecRelease},
 		{"mediaCodecLoadExternalLibrary", "()I", (void*)mediaCodecLoadExternalLibrary},
