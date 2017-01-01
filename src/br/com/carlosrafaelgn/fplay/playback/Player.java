@@ -258,7 +258,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static Method audioSinkMicrophoneCheckMethod;
 
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
-	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer;
+	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer, seekInProgress;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayerBase player, nextPlayer;
 	public static int audioSessionId;
@@ -1045,6 +1045,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		playAfterSeeking = false;
 		prepareNextAfterSeeking = false;
 		resumePlaybackAfterFocusGain = false;
+		seekInProgress = false;
 		songScheduledForPreparation = null;
 		nextSongScheduledForPreparation = null;
 		_releaseInternetObjects();
@@ -1331,6 +1332,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					playing = false;
 					player.pause();
 				}
+				seekInProgress = true;
 				player.seekToAsync(timeMS);
 				_updateState(true, null);
 			} catch (Throwable ex) {
@@ -1669,6 +1671,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				nextSong = null;
 				nextPlayerState = PLAYER_STATE_NEW;
 			} else {
+				if (seekInProgress)
+					storedSongTime = -1;
 				_fullCleanup();
 				final Throwable result = ((extra == MediaPlayerBase.ERROR_PERMISSION) ? new MediaPlayerBase.PermissionDeniedException() :
 					((extra == MediaPlayerBase.ERROR_OUT_OF_MEMORY) ? new OutOfMemoryError() :
@@ -1759,6 +1763,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						playAfterSeeking = true;
 						prepareNextAfterSeeking = true;
 						playerState = PLAYER_STATE_PREPARING;
+						seekInProgress = true;
 						player.seekToAsync(storedSongTime);
 					}
 					songWhenFirstErrorHappened = null;
@@ -1779,6 +1784,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		if (mediaPlayer == player) {
+			seekInProgress = false;
 			try {
 				playerState = PLAYER_STATE_LOADED;
 				if (playAfterSeeking)
