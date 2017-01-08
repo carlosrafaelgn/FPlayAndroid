@@ -840,7 +840,13 @@ public final class HttpStreamReceiver implements Runnable {
 							lineLen = 0;
 							continue;
 						}
-						if (line.regionMatches(true, 0, "location", 0, 8)) {
+						if (line.regionMatches(true, 0, "transfer-encoding", 0, 17)) {
+							final String transferEncoding = line.substring(lineLen + 1).trim();
+							if (transferEncoding.regionMatches(true, 0, "chunked", 0, 7)) {
+								//chunked transfers are not yet supported!!!!
+								throw new IOException();
+							}
+						} else if (line.regionMatches(true, 0, "location", 0, 8)) {
 							if (shouldRedirectOnCompletion)
 								contentType = line.substring(lineLen + 1).trim();
 						} else if (line.regionMatches(true, 0, "content-type", 0, 12)) {
