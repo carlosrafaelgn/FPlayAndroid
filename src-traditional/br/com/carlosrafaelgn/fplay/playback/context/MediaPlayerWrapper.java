@@ -209,7 +209,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	@Override
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	public void setNextMediaPlayer(MediaPlayerBase next) {
-		player.setNextMediaPlayer(((MediaPlayerWrapper)next).player);
+		player.setNextMediaPlayer((next == null) ? null : ((MediaPlayerWrapper)next).player);
 	}
 
 	@Override
