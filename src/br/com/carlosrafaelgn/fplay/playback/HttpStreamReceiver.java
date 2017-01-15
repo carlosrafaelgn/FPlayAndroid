@@ -95,9 +95,11 @@ public final class HttpStreamReceiver implements Runnable {
 	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady;
 	private RadioStationResolver resolver;
-	private boolean released;
+	private boolean released, chunked;
 	private String contentType, icyName, icyUrl, icyGenre;
-	private int icyBitRate, icyMetaInterval;
+	private int icyBitRate, icyMetaInterval, currentChunkLen, currentChunkState;
+	private byte[] tempChunkData;
+	private ByteBuffer tempChunkBuffer;
 	private Handler handler;
 	private Thread clientThread, serverThread;
 	private SocketChannel clientSocket, playerSocket;
@@ -815,6 +817,9 @@ public final class HttpStreamReceiver implements Runnable {
 							}
 							//we need a line like "HTTPx 2xx" or "ICYx 2xx"
 							okToGo = true;
+							chunked = false;
+							tempChunkData = null;
+							tempChunkBuffer = null;
 							switch (line.charAt(lineLen + 1)) {
 							case '2':
 								break;
@@ -843,8 +848,12 @@ public final class HttpStreamReceiver implements Runnable {
 						if (line.regionMatches(true, 0, "transfer-encoding", 0, 17)) {
 							final String transferEncoding = line.substring(lineLen + 1).trim();
 							if (transferEncoding.regionMatches(true, 0, "chunked", 0, 7)) {
-								//chunked transfers are not yet supported!!!!
-								throw new IOException();
+								chunked = true;
+								tempChunkBuffer = ByteBuffer.wrap((tempChunkData = new byte[1]));
+								currentChunkLen = 0;
+								currentChunkState = 0;
+							} else if (!transferEncoding.regionMatches(true, 0, "identity", 0, 8)) {
+								throw new MediaPlayerBase.UnsupportedFormatException();
 							}
 						} else if (line.regionMatches(true, 0, "location", 0, 8)) {
 							if (shouldRedirectOnCompletion)
@@ -969,6 +978,89 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 	}
 
+	private int clientSocketRead(ByteBuffer dst) throws IOException {
+		if (!chunked)
+			return clientSocket.read(dst);
+
+		int len, oldLimit;
+		byte b;
+
+		do {
+			if (currentChunkState == 2) {
+				//actual data
+				oldLimit = dst.limit();
+				dst.limit(dst.position() + Math.min(currentChunkLen, dst.remaining()));
+				if ((len = clientSocket.read(dst)) < 0) {
+					dst.limit(oldLimit);
+					return -1;
+				}
+				dst.limit(oldLimit);
+				currentChunkLen -= len;
+				if (currentChunkLen <= 0)
+					currentChunkState = 3;
+				return len;
+			}
+
+			tempChunkBuffer.limit(1);
+			tempChunkBuffer.position(0);
+
+			if ((len = clientSocket.read(tempChunkBuffer)) > 0) {
+				switch (currentChunkState) {
+				case 0: //read chunk size in hex + \r
+					switch ((b = tempChunkData[0])) {
+					case '\r':
+						currentChunkState = 1;
+						break;
+					case '\n':
+						currentChunkState = 2;
+						break;
+					default:
+						if (b >= '0' && b <= '9')
+							currentChunkLen = (currentChunkLen << 4) | (b - '0');
+						else if (b >= 'a' && b <= 'f')
+							currentChunkLen = (currentChunkLen << 4) | (10 + b - 'a');
+						else if (b >= 'A' && b <= 'F')
+							currentChunkLen = (currentChunkLen << 4) | (10 + b - 'A');
+						else
+							throw new IOException();
+						break;
+					}
+					break;
+				case 1:
+					//\n
+					if (tempChunkData[0] != '\n')
+						throw new IOException();
+					currentChunkState = ((currentChunkLen <= 0) ? 3 : 2);
+					break;
+				case 3:
+					//final \r\n
+					switch (tempChunkData[0]) {
+					case '\r':
+						currentChunkState = 4;
+						break;
+					case '\n':
+						//leave prepared for next chunk
+						currentChunkLen = 0;
+						currentChunkState = 0;
+						break;
+					default:
+						throw new IOException();
+					}
+					break;
+				default: //final \n
+					if (tempChunkData[0] != '\n')
+						throw new IOException();
+					//leave prepared for next chunk
+					currentChunkLen = 0;
+					currentChunkState = 0;
+					break;
+				}
+			}
+		} while (alive);
+
+		return (alive ? len : -1);
+	}
+
 	private int processMetadata(ByteBuffer metaByteBuffer, int metaCountdown) throws IOException {
 		int len;
 		if (metaCountdown < 0) {
@@ -976,7 +1068,7 @@ public final class HttpStreamReceiver implements Runnable {
 			metaByteBuffer.limit(1);
 			metaByteBuffer.position(0);
 		}
-		if ((len = clientSocket.read(metaByteBuffer)) <= 0)
+		if ((len = clientSocketRead(metaByteBuffer)) <= 0)
 			return metaCountdown;
 		bytesReceivedSoFar += len;
 		final byte[] array = metaByteBuffer.array();
@@ -1053,11 +1145,11 @@ public final class HttpStreamReceiver implements Runnable {
 				}
 
 				//if we limit the amount to be read to MAX_PACKET_LENGTH bytes we won't block
-				//clientSocket.read for long periods (also to consider: we cannot read metadata as audio)
+				//clientSocketRead for long periods (also to consider: we cannot read metadata as audio)
 				buffer.waitUntilCanWrite((MAX_PACKET_LENGTH <= audioCountdown || metaByteBuffer == null) ? MAX_PACKET_LENGTH : audioCountdown);
 
 				try {
-					if ((len = clientSocket.read(buffer.writeBuffer)) < 0) {
+					if ((len = clientSocketRead(buffer.writeBuffer)) < 0) {
 						//that's it! end of stream (probably this was just a file rather than a stream...)
 						finished = true;
 						buffer.commitWritten(0);
