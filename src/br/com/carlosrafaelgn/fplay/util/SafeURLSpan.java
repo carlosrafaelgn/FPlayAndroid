@@ -39,14 +39,28 @@ import android.provider.Browser;
 import android.support.annotation.NonNull;
 import android.text.Html;
 import android.text.Spannable;
+import android.text.TextPaint;
 import android.text.style.URLSpan;
 import android.view.View;
 
 public final class SafeURLSpan extends URLSpan {
-	public SafeURLSpan(String url) {
+	private final int color;
+	private final boolean underlineText;
+
+	public SafeURLSpan(String url, int color, boolean underlineText) {
 		super(url);
+		this.color = color;
+		this.underlineText = underlineText;
 	}
-	
+
+	@Override
+	public void updateDrawState(TextPaint ds) {
+		super.updateDrawState(ds);
+		if (color != 0)
+			ds.setColor(color);
+		ds.setUnderlineText(underlineText);
+	}
+
 	@Override
 	public void onClick(@NonNull View widget) {
 		try {
@@ -61,12 +75,18 @@ public final class SafeURLSpan extends URLSpan {
 			ex.printStackTrace();
 		}
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	public static CharSequence parseSafeHtml(CharSequence html) {
-		return replaceURLSpans(Html.fromHtml(html.toString()));
+		return replaceURLSpans(Html.fromHtml(html.toString()), 0, true);
 	}
-	
-	public static CharSequence replaceURLSpans(CharSequence text) {
+
+	@SuppressWarnings("deprecation")
+	public static CharSequence parseSafeHtml(CharSequence html, int color, boolean underlineText) {
+		return replaceURLSpans(Html.fromHtml(html.toString()), color, underlineText);
+	}
+
+	public static CharSequence replaceURLSpans(CharSequence text, int color, boolean underlineText) {
 		if (text instanceof Spannable) {
 			final Spannable s = (Spannable)text;
 			final URLSpan[] spans = s.getSpans(0, s.length(), URLSpan.class);
@@ -77,7 +97,7 @@ public final class SafeURLSpan extends URLSpan {
 					final int end = s.getSpanEnd(span);
 					final int flags = s.getSpanFlags(span);
 					s.removeSpan(span);
-					s.setSpan(new SafeURLSpan(span.getURL()), start, end, flags);
+					s.setSpan(new SafeURLSpan(span.getURL(), color, underlineText), start, end, flags);
 				}
 			}
 		}

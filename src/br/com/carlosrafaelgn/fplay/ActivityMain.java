@@ -48,6 +48,7 @@ import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils.TruncateAt;
+import android.text.method.LinkMovementMethod;
 import android.text.style.DynamicDrawableSpan;
 import android.text.style.ImageSpan;
 import android.util.TypedValue;
@@ -84,6 +85,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
+import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.AlbumArtVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
@@ -116,7 +118,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEAT_ONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124;
 	private static final int REQUEST_WRITE_SETTINGS = 123;
 	private View vwVolume;
-	private TextView lblTitle, lblArtist, lblTrack, lblAlbum, lblLength, lblMsgSelMove;
+	private TextView lblTitle, lblArtist, lblTrack, lblAlbumStatic, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
@@ -458,6 +460,25 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		return false;
 	}
 
+	private CharSequence parseCurrentSongURL(String url, int color) {
+		if (url.length() < 3)
+			return null;
+		String parsedUrl = url;
+		if (!url.regionMatches(true, 0, "http", 0, 4))
+			url = "http://" + url;
+		else if (parsedUrl.regionMatches(true, 0, "http://", 0, 7))
+			parsedUrl = parsedUrl.substring(7);
+		else if (parsedUrl.regionMatches(true, 0, "https://", 0, 8))
+			parsedUrl = parsedUrl.substring(8);
+		if (parsedUrl.endsWith("/"))
+			parsedUrl = parsedUrl.substring(0, parsedUrl.length() - 1);
+		if (parsedUrl.length() == 0)
+			parsedUrl = url;
+		url = url.replace("\"", "%22").replace(" ", "%20");
+		parsedUrl = parsedUrl.replace("&amp;", "&").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+		return SafeURLSpan.parseSafeHtml("<a href=\"" + url + "\">" + parsedUrl + "</a>", color, true);
+	}
+
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
 		final String icon = (Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
@@ -478,8 +499,24 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				lblArtist.setText((currentSong == null) ? "-" : currentSong.artist);
 			if (lblTrack != null)
 				lblTrack.setText((currentSong == null || currentSong.track <= 0) ? "-" : Integer.toString(currentSong.track));
-			if (lblAlbum != null)
-				lblAlbum.setText((currentSong == null) ? "-" : currentSong.album);
+			if (lblAlbumStatic != null)
+				lblAlbumStatic.setText(getText((currentSong == null || !currentSong.isHttp) ? R.string.album : R.string.url));
+			if (lblAlbum != null) {
+				CharSequence urlSpan;
+				if (currentSong == null || !currentSong.isHttp) {
+					lblAlbum.setText((currentSong == null) ? "-" : currentSong.album);
+					lblAlbum.setMovementMethod(null);
+				} else if (currentSong.album.length() == 0 || currentSong.album.equals("-")) {
+					lblAlbum.setText("-");
+					lblAlbum.setMovementMethod(null);
+				} else if ((urlSpan = parseCurrentSongURL(currentSong.album, UI.color_text_title)) == null) {
+					lblAlbum.setText(currentSong.album);
+					lblAlbum.setMovementMethod(null);
+				} else {
+					lblAlbum.setText(urlSpan);
+					lblAlbum.setMovementMethod(LinkMovementMethod.getInstance());
+				}
+			}
 			if (lblLength != null)
 				lblLength.setText((currentSong == null || currentSong.length == null || currentSong.length.length() == 0) ? "-" : currentSong.length);
 			//if the user adds a song while in control mode, but quickly leaves control mode, they
@@ -1256,6 +1293,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				lblTrack = (TextView)findViewById(R.id.lblTrack);
 				lblTrack.setTextColor(UI.colorState_text_title_static);
 				UI.headingText(lblTrack);
+				lblAlbumStatic = (TextView)findViewById(R.id.lblAlbumStatic);
 				lblAlbum = (TextView)findViewById(R.id.lblAlbum);
 				lblAlbum.setTextColor(UI.colorState_text_title_static);
 				UI.headingText(lblAlbum);
@@ -1264,6 +1302,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				UI.headingText(lblLength);
 			} else {
 				lblTrack = null;
+				lblAlbumStatic = null;
 				lblAlbum = null;
 				lblLength = null;
 			}
@@ -1522,6 +1561,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		lblTitle = null;
 		lblArtist = null;
 		lblTrack = null;
+		lblAlbumStatic = null;
 		lblAlbum = null;
 		lblLength = null;
 		lblTitleIcon = null;
