@@ -301,12 +301,23 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 					p.height = UI.defaultControlSize;
 					lblMsgSelMove.setLayoutParams(p);
 				}
-			} else if (!UI.isLandscape) {
-				final int h = (UI.defaultControlSize << 1) + panelControls.getPaddingBottom() + panelSecondary.getPaddingBottom();
+			} else {
+				final int s = (UI.defaultControlSize << 1) + (UI.isLandscape ?
+					panelControls.getPaddingLeft() + panelControls.getPaddingRight() + panelSecondary.getPaddingRight() :
+					panelControls.getPaddingBottom() + panelSecondary.getPaddingBottom());
 				final ViewGroup.LayoutParams p = panelSelection.getLayoutParams();
-				if (p != null && p.height != h) {
-					p.height = h;
-					panelSelection.setLayoutParams(p);
+				if (p != null) {
+					if (UI.isLandscape) {
+						if (p.width != s) {
+							p.width = s;
+							panelSelection.setLayoutParams(p);
+						}
+					} else {
+						if (p.height != s) {
+							p.height = s;
+							panelSelection.setLayoutParams(p);
+						}
+					}
 				}
 			}
 			UI.animationReset();
@@ -327,24 +338,28 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				if (UI.isLargeScreen || !UI.isLandscape) {
 					btnMoreInfo.setNextFocusLeftId(R.id.btnSetRingtone);
 					btnCancelSel.setNextFocusRightId(R.id.btnSetRingtone);
+					if (!UI.isLargeScreen)
+						btnCancelSel.setNextFocusDownId(R.id.btnSetRingtone);
 					UI.setNextFocusForwardId(btnCancelSel, R.id.btnSetRingtone);
-					UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 				} else {
-					btnRemoveSel.setNextFocusDownId(R.id.btnSetRingtone);
-					btnCancelSel.setNextFocusUpId(R.id.btnSetRingtone);
-					UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
-					UI.setNextFocusForwardId(btnRemoveSel, R.id.btnSetRingtone);
+					btnMoreInfo.setNextFocusUpId(R.id.btnSetRingtone);
+					btnCancelSel.setNextFocusDownId(R.id.btnSetRingtone);
+					btnCancelSel.setNextFocusRightId(R.id.btnSetRingtone);
+					UI.setNextFocusForwardId(btnCancelSel, R.id.btnSetRingtone);
 				}
 			} else {
 				if (UI.isLargeScreen || !UI.isLandscape) {
 					btnCancelSel.setNextFocusRightId(R.id.btnMoreInfo);
+					if (!UI.isLargeScreen)
+						btnCancelSel.setNextFocusDownId(R.id.btnMoreInfo);
 					UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoreInfo);
-					UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 				} else {
-					btnCancelSel.setNextFocusUpId(R.id.btnRemoveSel);
-					UI.setNextFocusForwardId(list, R.id.btnMoreInfo);
+					btnCancelSel.setNextFocusDownId(R.id.btnMoreInfo);
+					btnCancelSel.setNextFocusRightId(R.id.btnMoreInfo);
+					UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoreInfo);
 				}
 			}
+			UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 			Player.songs.selecting = true;
 			Player.songs.moving = false;
 			list.skipUpDownTranslation = true;
@@ -369,12 +384,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			}
 			UI.animationCommit(isCreatingLayout, null);
 			lblMsgSelMove.setSelected(true);
-			if (UI.isLargeScreen || !UI.isLandscape) {
-				btnCancelSel.setNextFocusRightId(R.id.list);
-				UI.setNextFocusForwardId(btnCancelSel, R.id.list);
-			} else {
-				btnCancelSel.setNextFocusUpId(R.id.list);
-			}
+			btnCancelSel.setNextFocusRightId(R.id.list);
+			btnCancelSel.setNextFocusDownId(R.id.list);
+			UI.setNextFocusForwardId(btnCancelSel, R.id.list);
 			UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 			Player.songs.selecting = false;
 			Player.songs.moving = true;
@@ -1391,7 +1403,12 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				} else {
 					if (!UI.isLandscape)
 						panelControls.setPadding(0, 0, 0, UI.isLowDpiScreen ? 0 : UI.controlMargin);
-					panelSelection.setPadding(0, 0, UI.isLandscape ? UI.thickDividerSize : 0, 0);
+					panelSelection.setPadding(0, 0, UI.isLandscape ? (UI.controlMargin + UI.thickDividerSize) : 0, UI.isLandscape ? 0 : (UI.controlMargin + UI.thickDividerSize));
+				}
+				if (!UI.isLandscape && (UI.extraSpacing || !UI.isLowDpiScreen)) {
+					final ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams)btnCancelSel.getLayoutParams();
+					marginLayoutParams.bottomMargin = UI.controlMargin;
+					btnCancelSel.setLayoutParams(marginLayoutParams);
 				}
 			}
 			final boolean m = Player.songs.moving;
@@ -1424,7 +1441,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		case UI.KEY_LEFT:
 			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnRemoveSel != null && btnMenu != null && vwVolume != null) {
 				if (Player.songs.selecting)
-					((UI.isLargeScreen || !UI.isLandscape) ? btnRemoveSel : btnMoreInfo).requestFocus();
+					((UI.isLargeScreen || !UI.isLandscape) ? btnRemoveSel : (btnSetRingtone != null ? btnSetRingtone : btnMoreInfo)).requestFocus();
 				else if (Player.songs.moving)
 					btnCancelSel.requestFocus();
 				else if (UI.isLargeScreen)
@@ -1434,9 +1451,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			}
 			return true;
 		case UI.KEY_RIGHT:
-			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnAdd != null && vwVolume != null) {
+			if (btnCancelSel != null && btnMoveSel != null && btnAdd != null && vwVolume != null) {
 				if (Player.songs.selecting)
-					((UI.isLargeScreen || !UI.isLandscape) ? btnCancelSel : btnMoreInfo).requestFocus();
+					btnCancelSel.requestFocus();
 				else if (Player.songs.moving)
 					btnCancelSel.requestFocus();
 				else if (UI.isLargeScreen)
