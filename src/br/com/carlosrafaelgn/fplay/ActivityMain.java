@@ -293,8 +293,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	}
 
 	private void prepareBtnCancelSel() {
-		btnCancelSel.setIcon(UI.ICON_OK);
-		btnCancelSel.setContentDescription(getText(R.string.done));
 		if (!UI.isLargeScreen) {
 			final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 			if (UI.isLandscape) {
@@ -306,6 +304,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			}
 			btnCancelSel.setLayoutParams(layoutParams);
 		}
+		btnCancelSel.setIcon(UI.ICON_OK);
+		btnCancelSel.setContentDescription(getText(R.string.done));
 	}
 
 	@SuppressWarnings("deprecation")
@@ -346,8 +346,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			UI.animationAddViewToHide(panelSecondary);
 			UI.animationAddViewToShow(panelSelection);
 			lblMsgSelMove.setText(R.string.msg_sel);
-			btnCancelSel.setIcon(UI.ICON_GOBACK);
-			btnCancelSel.setContentDescription(getText(R.string.go_back));
 			if (!UI.isLargeScreen) {
 				UI.animationAddViewToHide(lblTitle);
 				final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -356,6 +354,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				layoutParams.rightMargin = UI.controlMargin;
 				btnCancelSel.setLayoutParams(layoutParams);
 			}
+			btnCancelSel.setIcon(UI.ICON_GOBACK);
+			btnCancelSel.setContentDescription(getText(R.string.go_back));
 			UI.animationAddViewToShow(lblMsgSelMove);
 			lblMsgSelMove.setSelected(true);
 			if (btnSetRingtone != null) {
