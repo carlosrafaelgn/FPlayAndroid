@@ -105,11 +105,12 @@ public final class BgButton extends Button {
 	public void setHideBorders(boolean hideBorders) {
 		this.hideBorders = hideBorders;
 	}
-	
+
 	public void setDefaultHeight() {
 		LayoutParams p = getLayoutParams();
 		if (p == null)
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+		p.width = LayoutParams.WRAP_CONTENT;
 		p.height = UI.defaultControlSize;
 		super.setLayoutParams(p);
 		super.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
@@ -147,7 +148,13 @@ public final class BgButton extends Button {
 	public void setIcon(String icon) {
 		setIcon(icon, true, true);
 	}
-	
+
+	/*public void removeIcon() {
+		super.setTypeface(UI.defaultTypeface);
+		super.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
+		setDefaultHeight();
+	}*/
+
 	public void formatAsCheckBox(String iconChecked, String iconUnchecked, boolean checked, boolean changeWidth, boolean changeHeight) {
 		setIcon(checked ? iconChecked : iconUnchecked, changeWidth, changeHeight);
 		this.iconChecked = iconChecked;

@@ -245,6 +245,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_REPEATNONE24 = "²";
 	public static final String ICON_EXIT24 = "³";
 	public static final String ICON_NUMBER = "¤";
+	public static final String ICON_OK = "±";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;
@@ -2286,6 +2287,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
+	public interface AnimationPreShowViewHandler {
+		void onAnimationPreShowView(View view);
+	}
+
 	private static final int ANIMATION_STATE_NONE = 0;
 	private static final int ANIMATION_STATE_HIDING = 1;
 	private static final int ANIMATION_STATE_SHOWING = 2;
@@ -2321,6 +2326,19 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		animation.setRepeatCount(0);
 		animation.setFillAfter(false);
 		return animation;
+	}
+
+	private static void animationHandleTag(View view) {
+		final Object tag;
+		if ((tag = view.getTag()) != null) {
+			if (tag instanceof AnimationPreShowViewHandler) {
+				view.setTag(null);
+				((AnimationPreShowViewHandler)tag).onAnimationPreShowView(view);
+			} else if (tag instanceof CharSequence && view instanceof TextView) {
+				view.setTag(null);
+				((TextView)view).setText((CharSequence)tag);
+			}
+		}
 	}
 
 	private static void animationFinished(boolean abortAll) {
@@ -2366,11 +2384,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					if (view != null) {
 						if (view.getVisibility() != View.VISIBLE) {
 							finished = false;
-							final Object tag;
-							if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
-								view.setTag(null);
-								((TextView)view).setText((CharSequence)tag);
-							}
+							animationHandleTag(view);
 							view.setVisibility(View.VISIBLE);
 							if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
 								view.startAnimation(animationShow);
@@ -2395,11 +2409,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 						else
 							view.setAlpha(1.0f);
 						if (abortAll && view.getVisibility() != View.VISIBLE) {
-							final Object tag;
-							if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
-								view.setTag(null);
-								((TextView)view).setText((CharSequence)tag);
-							}
+							animationHandleTag(view);
 							view.setVisibility(View.VISIBLE);
 						}
 						animationViewsToHideAndShow[i] = null;
@@ -2461,11 +2471,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			for (int i = 0; i < animationShowCount; i++) {
 				final View view = animationViewsToHideAndShow[16 + i];
 				if (view != null) {
-					final Object tag;
-					if ((tag = view.getTag()) != null && tag instanceof CharSequence && view instanceof TextView) {
-						view.setTag(null);
-						((TextView)view).setText((CharSequence)tag);
-					}
+					animationHandleTag(view);
 					view.setVisibility(View.VISIBLE);
 					animationViewsToHideAndShow[16 + i] = null;
 				}
