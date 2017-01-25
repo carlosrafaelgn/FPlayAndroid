@@ -351,7 +351,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 				layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-				layoutParams.rightMargin = UI.controlMargin;
+				if (UI.extraSpacing)
+					layoutParams.bottomMargin = UI.controlMargin;
 				btnCancelSel.setLayoutParams(layoutParams);
 			}
 			btnCancelSel.setIcon(UI.ICON_GOBACK);
