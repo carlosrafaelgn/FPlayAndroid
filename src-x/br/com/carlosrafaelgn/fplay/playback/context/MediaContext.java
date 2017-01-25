@@ -1219,6 +1219,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					if (framesWrittenThisTime < 0) {
 						throw new IOException("engine.write() returned " + framesWrittenThisTime);
 					} else if (framesWrittenThisTime == 0) {
+						//apparently, if the engine starves for longer than a brief period, it does
+						//not start playing automatically (even after filling up the entire buffer!)
 						amountOfTimesNoFramesWereWritten++;
 						if (playPending || amountOfTimesNoFramesWereWritten > 3) {
 							//we have just filled the buffer, time to start playing
