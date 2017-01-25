@@ -811,7 +811,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		boolean paused = true, playPending = false;
-		int framesWrittenBeforePlaying = 0;
+		int framesWrittenBeforePlaying = 0, amountOfTimesNoFramesWereWritten = 0;
 		while (alive) {
 			if (paused || waitToReceiveAction) {
 				MediaCodecPlayer seekPendingPlayer = null;
@@ -873,6 +873,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								bufferSizeInFrames = engine.getActualBufferSizeInFrames();
 								fillThresholdInFrames = engine.getFillThresholdInFrames();
 								playPending = true;
+								amountOfTimesNoFramesWereWritten = 0;
 								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
 								updateNativeSrcAndReset(currentPlayer);
@@ -907,6 +908,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (playerRequestingAction == currentPlayer) {
 									if ((framesWritten - framesPlayed) < 512) {
 										playPending = true;
+										amountOfTimesNoFramesWereWritten = 0;
 										framesWrittenBeforePlaying = 0;
 										bufferingStart(currentPlayer);
 									} else {
@@ -972,6 +974,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									outputBuffer.release();
 									paused = true;
 									playPending = false;
+									amountOfTimesNoFramesWereWritten = 0;
 									framesWrittenBeforePlaying = 0;
 									currentPlayer = null;
 									currentPlayerForReference = null;
@@ -1032,6 +1035,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							}
 							paused = true;
 							playPending = false;
+							amountOfTimesNoFramesWereWritten = 0;
 							framesWrittenBeforePlaying = 0;
 							currentPlayer = null;
 							currentPlayerForReference = null;
@@ -1087,6 +1091,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						}
 						paused = true;
 						playPending = false;
+						amountOfTimesNoFramesWereWritten = 0;
 						framesWrittenBeforePlaying = 0;
 						currentPlayer = null;
 						currentPlayerForReference = null;
@@ -1146,6 +1151,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								bufferSizeInFrames = engine.getActualBufferSizeInFrames();
 								fillThresholdInFrames = engine.getFillThresholdInFrames();
 								playPending = true;
+								amountOfTimesNoFramesWereWritten = 0;
 								framesWrittenBeforePlaying = 0;
 								bufferingStart(currentPlayer);
 								updateNativeSrcAndReset(currentPlayer);
@@ -1187,6 +1193,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (framesWrittenThisTime == 0 || framesWrittenBeforePlaying >= fillThresholdInFrames) {
 									//the song ended before we had a chance to start playing before, so do it now!
 									playPending = false;
+									amountOfTimesNoFramesWereWritten = 0;
 									checkEngineResult(engine.play());
 									bufferingEnd(sourcePlayer);
 								}
@@ -1212,9 +1219,11 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					if (framesWrittenThisTime < 0) {
 						throw new IOException("engine.write() returned " + framesWrittenThisTime);
 					} else if (framesWrittenThisTime == 0) {
-						if (playPending) {
+						amountOfTimesNoFramesWereWritten++;
+						if (playPending || amountOfTimesNoFramesWereWritten > 3) {
 							//we have just filled the buffer, time to start playing
 							playPending = false;
+							amountOfTimesNoFramesWereWritten = 0;
 							checkEngineResult(engine.play());
 							bufferingEnd(sourcePlayer);
 						}
@@ -1241,6 +1250,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						}
 						continue;
 					} else {
+						amountOfTimesNoFramesWereWritten = 0;
 						if (sourcePlayer == currentPlayer)
 							framesWritten += framesWrittenThisTime;
 						else
@@ -1301,6 +1311,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//underrun!!!
 						checkEngineResult(engine.pause());
 						playPending = true;
+						amountOfTimesNoFramesWereWritten = 0;
 						framesWrittenBeforePlaying = 0;
 						bufferingStart(currentPlayer);
 						//give the decoder some time to decode something
@@ -1327,6 +1338,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					}
 					paused = true;
 					playPending = false;
+					amountOfTimesNoFramesWereWritten = 0;
 					currentPlayer = null;
 					currentPlayerForReference = null;
 					wakeLock.release();
