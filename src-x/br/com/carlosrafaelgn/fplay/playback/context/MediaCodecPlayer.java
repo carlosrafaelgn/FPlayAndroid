@@ -216,7 +216,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public boolean handleMessage(Message msg) {
 		if (msg.arg1 != httpStreamReceiverVersion || handler == null || httpStreamReceiver == null)
@@ -254,8 +253,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				currentPositionInFrames = 0;
 				inputOver = false;
 				outputOver = false;
-				inputBuffers = mediaCodec.getInputBuffers();
-				prepareOutputBuffers();
+				prepareIOBuffers();
 				fillInternetInputBuffers();
 				switch (state) {
 				case STATE_PREPARING:
@@ -280,7 +278,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	}
 
 	@SuppressWarnings("deprecation")
-	private void prepareOutputBuffers() {
+	private void prepareIOBuffers() {
+		inputBuffers = mediaCodec.getInputBuffers();
 		outputBuffers = mediaCodec.getOutputBuffers();
 		//we will assume that all buffers are alike
 		isDirect = outputBuffers[0].isDirect();
@@ -389,7 +388,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 					}
 					break IndexChecker;
 				case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-					prepareOutputBuffers();
+					prepareIOBuffers();
 					index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 					break;
 				default:
@@ -485,6 +484,9 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		//a rare case, in which this player had already started producing output buffers as the next
 		//player, but became the current player due to a user interation, rather than due to the
 		//completion of the previous current player
+		//the other scenario this method is executed is when this player, while being the next
+		//player, had already started producing output buffers since the current player's end, but
+		//the current player started producing output buffer again, also due to a user interaction
 		if (outputBuffersHaveBeenUsed) {
 			final String tmp = path;
 			resetInternal();
@@ -586,7 +588,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
 	public void prepare() throws IOException {
 		switch (state) {
 		case STATE_PREPARING:
@@ -668,8 +669,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			currentPositionInFrames = 0;
 			inputOver = false;
 			outputOver = false;
-			inputBuffers = mediaCodec.getInputBuffers();
-			prepareOutputBuffers();
+			prepareIOBuffers();
 			fillInputBuffersInternal();
 			state = STATE_PREPARED;
 			break;

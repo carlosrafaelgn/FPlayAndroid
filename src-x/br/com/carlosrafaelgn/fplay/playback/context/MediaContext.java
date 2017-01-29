@@ -1056,6 +1056,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				}
 				if (seekPendingPlayer != null) {
 					try {
+						if (seekPendingPlayer == currentPlayer)
+							sourcePlayer = currentPlayer;
 						outputBuffer.release();
 						updateNativeSrcAndReset(seekPendingPlayer);
 						if (sourcePlayer == seekPendingPlayer) {
