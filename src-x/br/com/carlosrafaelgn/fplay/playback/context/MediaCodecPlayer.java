@@ -50,6 +50,7 @@ import java.nio.ByteOrder;
 
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamExtractor;
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
+import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback {
@@ -99,9 +100,11 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	private volatile int state, httpStreamReceiverVersion;
 	private volatile long currentPositionInFrames;
 	private int srcSampleRate, dstSampleRate, channelCount, durationInMS, stateBeforeSeek;
-	private long nativeObj;
+	private long nativeObj, lastTimestampRead, lastTimestampWritten, finalTimestamp;
 	private MediaExtractor mediaExtractor;
-	private MediaCodec mediaCodec;
+	private MediaCodec mediaCodec, originalMediaCodec;
+	private MediaCodecPlayer exportedPlayer;
+	private MetadataExtractor.SequenceUUID sequenceUUID;
 	private Handler handler;
 	private HttpStreamReceiver httpStreamReceiver;
 	private HttpStreamExtractor httpStreamExtractor;
@@ -118,6 +121,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	public MediaCodecPlayer() {
 		state = STATE_IDLE;
 		durationInMS = -1;
+		finalTimestamp = Long.MAX_VALUE;
 		bufferInfo = new MediaCodec.BufferInfo();
 	}
 
@@ -203,10 +207,12 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			final int size = mediaExtractor.readSampleData(inputBuffers[index], 0);
 			if (size < 0) {
 				inputOver = true;
-				mediaCodec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+				finalTimestamp = lastTimestampWritten;
+				if (sequenceUUID == null || lastTimestampRead >= lastTimestampWritten)
+					mediaCodec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
 				break;
 			} else {
-				mediaCodec.queueInputBuffer(index, 0, size, 0, 0);
+				mediaCodec.queueInputBuffer(index, 0, size, ++lastTimestampWritten, 0);
 				//although the doc says "Returns false if no more sample data is available
 				//(end of stream)", sometimes, advance() returns false in other cases....
 				mediaExtractor.advance();
@@ -263,7 +269,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 					break;
 				case STATE_STARTED:
 					//resume MediaContext ONLY HERE!!!!
-					//otherwise, that thread could call (directly or indirectly) prepareOutputBuffers()
+					//otherwise, that thread could call (directly or indirectly) prepareIOBuffers()
 					//or fillInternetInputBuffers(), concurrently with this thread!!!
 					if (!MediaContext.resume(this))
 						throw new IllegalStateException();
@@ -397,7 +403,12 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			}
 			outputBuffer.index = index;
 			outputBuffer.player = this;
-			outputOver = ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0);
+			if (sequenceUUID == null) {
+				outputOver = ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0);
+			} else {
+				lastTimestampRead = bufferInfo.presentationTimeUs;
+				outputOver = (finalTimestamp <= lastTimestampRead);
+			}
 			outputBuffer.streamOver = outputOver;
 			if (index < 0) {
 				outputBuffer.remainingBytes = 0;
@@ -466,6 +477,9 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			return currentPositionInFrames;
 		}
 
+		lastTimestampRead = 0;
+		lastTimestampWritten = 0;
+		finalTimestamp = Long.MAX_VALUE;
 		mediaCodec.flush();
 		mediaExtractor.seekTo((long)msec * 1000L, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
 		inputOver = false;
@@ -499,6 +513,33 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		if (state != STATE_PREPARED)
 			throw new IllegalStateException("startedAsNext() - player was in an invalid state: " + state);
 		state = STATE_STARTED;
+	}
+
+	void exportCodec(MediaCodecPlayer exportedPlayer) {
+		if (exportedPlayer.sequenceUUID == null || !exportedPlayer.sequenceUUID.comesAfter(sequenceUUID))
+			return;
+		this.exportedPlayer = exportedPlayer;
+		exportedPlayer.originalMediaCodec = exportedPlayer.mediaCodec;
+		exportedPlayer.mediaCodec = mediaCodec;
+		mediaCodec = null;
+		exportedPlayer.inputBuffers = inputBuffers;
+		exportedPlayer.outputBuffers = outputBuffers;
+	}
+
+	void takeBackExportedCodec() {
+		if (exportedPlayer == null)
+			return;
+		mediaCodec = exportedPlayer.mediaCodec;
+		exportedPlayer.mediaCodec = exportedPlayer.originalMediaCodec;
+		exportedPlayer.originalMediaCodec = null;
+		lastTimestampRead = 0;
+		lastTimestampWritten = 0;
+		finalTimestamp = Long.MAX_VALUE;
+		exportedPlayer.mediaCodec.flush();
+		mediaCodec.flush();
+		exportedPlayer.prepareIOBuffers();
+		prepareIOBuffers();
+		exportedPlayer = null;
 	}
 
 	//**************************************************************
@@ -599,7 +640,10 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			//enforce our policy
 			if (httpStreamReceiver != null)
 				throw new UnsupportedOperationException("internet streams must use prepareAsync()");
-			final ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
+			final File file = new File(path);
+			if (path.length() >= 4 && path.regionMatches(true, path.length() - 4, ".mp3", 0, 4))
+				sequenceUUID = MetadataExtractor.extractSequenceUUID(file);
+			final ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
 			try {
 				final long len = fileDescriptor.getStatSize();
 				if (nativeMediaCodec) {
@@ -670,7 +714,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			inputOver = false;
 			outputOver = false;
 			prepareIOBuffers();
-			fillInputBuffersInternal();
+			if (sequenceUUID == null || sequenceUUID.isFirstInSequence())
+				fillInputBuffersInternal();
 			state = STATE_PREPARED;
 			break;
 		default:
@@ -758,6 +803,26 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			}
 			mediaCodec = null;
 		}
+		if (originalMediaCodec != null) {
+			//this cannot be released inside startedAsNext() because this operation takes
+			//too long, causing an audio glitch...
+			try {
+				originalMediaCodec.stop();
+			} catch (Throwable ex) {
+				//just ignore
+			}
+			try {
+				originalMediaCodec.release();
+			} catch (Throwable ex) {
+				//just ignore
+			}
+			originalMediaCodec = null;
+		}
+		lastTimestampRead = 0;
+		lastTimestampWritten = 0;
+		finalTimestamp = Long.MAX_VALUE;
+		exportedPlayer = null;
+		sequenceUUID = null;
 		httpStreamBufferingAfterPause = false;
 		inputOver = false;
 		outputOver = false;
