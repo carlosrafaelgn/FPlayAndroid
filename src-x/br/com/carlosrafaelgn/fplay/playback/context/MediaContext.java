@@ -142,7 +142,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void setVirtualizerStrength(int strength);
 	static native int getVirtualizerRoundedStrength();
 
-	static native int mediaCodecPrepare(int fd, long length, long[] outParams);
+	static native void mediaCodecExportCodec(long thisNativeObj, long expNativeObj);
+	static native void mediaCodecTakeBackExportedCodec(long thisNativeObj);
+	static native int mediaCodecPrepare(int fd, long length, long[] outParams, int sequenceUUID);
 	static native int mediaCodecFillInputBuffers(long nativeObj);
 	static native int mediaCodecNextOutputBuffer(long nativeObj);
 	static native long mediaCodecSeek(long nativeObj, int msec, int totalMsec);

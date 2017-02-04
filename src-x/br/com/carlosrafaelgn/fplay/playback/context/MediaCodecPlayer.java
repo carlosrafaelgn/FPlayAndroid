@@ -407,7 +407,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				outputOver = ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0);
 			} else {
 				lastTimestampRead = bufferInfo.presentationTimeUs;
-				outputOver = (finalTimestamp <= lastTimestampRead);
+				outputOver = ((finalTimestamp <= lastTimestampRead) || ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0));
 			}
 			outputBuffer.streamOver = outputOver;
 			if (index < 0) {
@@ -516,29 +516,43 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	}
 
 	void exportCodec(MediaCodecPlayer exportedPlayer) {
+		takeBackExportedCodec();
+
 		if (exportedPlayer.sequenceUUID == null || !exportedPlayer.sequenceUUID.comesAfter(sequenceUUID))
 			return;
+
 		this.exportedPlayer = exportedPlayer;
-		exportedPlayer.originalMediaCodec = exportedPlayer.mediaCodec;
-		exportedPlayer.mediaCodec = mediaCodec;
-		mediaCodec = null;
-		exportedPlayer.inputBuffers = inputBuffers;
-		exportedPlayer.outputBuffers = outputBuffers;
+
+		if (nativeMediaCodec) {
+			MediaContext.mediaCodecExportCodec(nativeObj, exportedPlayer.nativeObj);
+		} else {
+			exportedPlayer.originalMediaCodec = exportedPlayer.mediaCodec;
+			exportedPlayer.mediaCodec = mediaCodec;
+			mediaCodec = null;
+			exportedPlayer.inputBuffers = inputBuffers;
+			exportedPlayer.outputBuffers = outputBuffers;
+		}
 	}
 
 	void takeBackExportedCodec() {
 		if (exportedPlayer == null)
 			return;
-		mediaCodec = exportedPlayer.mediaCodec;
-		exportedPlayer.mediaCodec = exportedPlayer.originalMediaCodec;
-		exportedPlayer.originalMediaCodec = null;
-		lastTimestampRead = 0;
-		lastTimestampWritten = 0;
-		finalTimestamp = Long.MAX_VALUE;
-		exportedPlayer.mediaCodec.flush();
-		mediaCodec.flush();
-		exportedPlayer.prepareIOBuffers();
-		prepareIOBuffers();
+
+		if (nativeMediaCodec) {
+			MediaContext.mediaCodecTakeBackExportedCodec(nativeObj);
+		} else {
+			mediaCodec = exportedPlayer.mediaCodec;
+			exportedPlayer.mediaCodec = exportedPlayer.originalMediaCodec;
+			exportedPlayer.originalMediaCodec = null;
+			lastTimestampRead = 0;
+			lastTimestampWritten = 0;
+			finalTimestamp = Long.MAX_VALUE;
+			exportedPlayer.mediaCodec.flush();
+			mediaCodec.flush();
+			exportedPlayer.prepareIOBuffers();
+			prepareIOBuffers();
+		}
+
 		exportedPlayer = null;
 	}
 
@@ -648,7 +662,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				final long len = fileDescriptor.getStatSize();
 				if (nativeMediaCodec) {
 					final long[] params = new long[4];
-					final int ret = MediaContext.mediaCodecPrepare(fileDescriptor.getFd(), len, params);
+					final int ret = MediaContext.mediaCodecPrepare(fileDescriptor.getFd(), len, params, (sequenceUUID == null) ? 0 : (sequenceUUID.isFirstInSequence() ? 3 : 1));
 					if (ret == -1)
 						throw new UnsupportedFormatException();
 					else if (ret < 0)
