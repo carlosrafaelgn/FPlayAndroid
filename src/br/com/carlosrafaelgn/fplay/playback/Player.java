@@ -67,6 +67,7 @@ import android.widget.RemoteViews;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -3313,6 +3314,57 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return false;
 	}
 
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	private static int _checkAudioSinkViaRoute() {
+		try {
+			final MediaRouter router = (MediaRouter)theApplication.getSystemService(Context.MEDIA_ROUTER_SERVICE);
+			final MediaRouter.RouteInfo info = router.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
+			final String name = info.getName(theApplication).toString();
+
+			//com.android.internal.R.string.default_audio_route_name_headphones = "Headphones"
+			//com.android.internal.R.string.bluetooth_a2dp_audio_route_name = "Bluetooth audio"
+			int id;
+			String original;
+
+			final Class<?> clazz = Class.forName("com.android.internal.R$string");
+
+			Field field = clazz.getDeclaredField("bluetooth_a2dp_audio_route_name");
+			field.setAccessible(true);
+			id = (int)field.get(null);
+			original = theApplication.getText(id).toString();
+			if (name.equalsIgnoreCase(original))
+				return AUDIO_SINK_BT;
+
+			field = clazz.getDeclaredField("default_audio_route_name_headphones");
+			field.setAccessible(true);
+			id = (int)field.get(null);
+			original = theApplication.getText(id).toString();
+			if (name.equalsIgnoreCase(original))
+				return AUDIO_SINK_WIRE;
+
+			//Another possible hack (but fails sometimes)
+			//Class<?> audioSystem = Class.forName("android.media.AudioSystem");
+			//Method getd = audioSystem.getMethod("getDeviceConnectionState", int.class, String.class);
+			//int x;
+			//public static final int DEVICE_OUT_EARPIECE = 0x1;
+		    //public static final int DEVICE_OUT_SPEAKER = 0x2;
+		    //public static final int DEVICE_OUT_WIRED_HEADSET = 0x4;
+		    //public static final int DEVICE_OUT_WIRED_HEADPHONE = 0x8;
+		    //public static final int DEVICE_OUT_BLUETOOTH_SCO = 0x10;
+		    //public static final int DEVICE_OUT_BLUETOOTH_SCO_HEADSET = 0x20;
+		    //public static final int DEVICE_OUT_BLUETOOTH_SCO_CARKIT = 0x40;
+		    //public static final int DEVICE_OUT_BLUETOOTH_A2DP = 0x80;
+		    //public static final int DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES = 0x100;
+		    //public static final int DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER = 0x200;
+		    //public static final int DEVICE_STATE_UNAVAILABLE = 0;
+			//public static final int DEVICE_STATE_AVAILABLE = 1;
+			//x = (int)getd.invoke(null, 0x1, "");
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return 0;
+	}
+
 	@SuppressWarnings("deprecation")
 	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone, boolean triggerNoisy, boolean reinitializeEffects) {
 		if (audioManager == null)
@@ -3358,6 +3410,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
+		if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			audioSink = _checkAudioSinkViaRoute();
 		if (audioSink == 0)
 			audioSink = AUDIO_SINK_DEVICE;
 		else if (audioSink == AUDIO_SINK_WIRE && (wiredHeadsetHasMicrophone || _checkAudioSinkMicrophone()))
