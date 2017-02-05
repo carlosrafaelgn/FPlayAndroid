@@ -64,8 +64,8 @@ void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 		effectsMinimumAmountOfFramesToReduce -= sizeInFrames;
 
 	if (!(effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED)) || !equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1]) {
-		const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 2; //L R L R
-		for (int32_t i = 0; i < sizeInShortsEven; i += 4) {
+		const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 1; //each frame has 2 shorts!
+		for (int32_t i = 0; i < sizeInShortsEven; i += 4) { //this loop processes 4 shorts (or 2 stereo frames - L R L R) at a time
 			const int16x4_t bufferLRLRs16 = vld1_s16(buffer + i);
 			const int32x4_t bufferLRLRs32 = vmovl_s16(bufferLRLRs16);
 			vst1q_f32(effectsFloatSamples + i, vcvtq_f32_s32(bufferLRLRs32));
@@ -80,8 +80,8 @@ void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 	if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
 		if (equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1]) {
 			const float32x4_t lastBandGain = vdupq_n_f32(equalizerLastBandGain[0]);
-			const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 2; //L R L R
-			for (int32_t i = 0; i < sizeInShortsEven; i += 4) {
+			const uint32_t sizeInShortsEven = (sizeInFrames & ~1) << 1; //each frame has 2 shorts!
+			for (int32_t i = 0; i < sizeInShortsEven; i += 4) { //this loop processes 4 shorts (or 2 stereo frames - L R L R) at a time
 				const int16x4_t bufferLRLRs16 = vld1_s16(buffer + i);
 				const int32x4_t bufferLRLRs32 = vmovl_s16(bufferLRLRs16);
 				vst1q_f32(effectsFloatSamples + i, vmulq_f32(vcvtq_f32_s32(bufferLRLRs32), lastBandGain));
