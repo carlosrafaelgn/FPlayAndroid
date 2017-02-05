@@ -53,6 +53,11 @@ extern float *effectsFloatSamples;
 //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0491h/CIHJBEFE.html
 
 void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
+    //a few buggy devices change the audio sink so fast and so repeatedly,
+    //that this case indeed happens... :(
+	if (!effectsFloatSamples)
+		return;
+
 	if (effectsMinimumAmountOfFramesToReduce <= 0)
 		effectsFramesBeforeRecoveringGain -= sizeInFrames;
 	else

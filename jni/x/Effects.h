@@ -231,6 +231,11 @@ void processNull(int16_t* buffer, uint32_t sizeInFrames) {
 }
 
 void processEffects(int16_t* buffer, uint32_t sizeInFrames) {
+    //a few buggy devices change the audio sink so fast and so repeatedly,
+    //that this case indeed happens... :(
+	if (!effectsFloatSamples)
+		return;
+
 	if (effectsMinimumAmountOfFramesToReduce <= 0)
 		effectsFramesBeforeRecoveringGain -= sizeInFrames;
 	else
