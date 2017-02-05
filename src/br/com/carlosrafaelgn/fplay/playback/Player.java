@@ -2374,7 +2374,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.widgetTransparentBg = opts.getBit(OPTBIT_WIDGETTRANSPARENTBG);
 		UI.backKeyAlwaysReturnsToPlayerWhenBrowsing = opts.getBit(OPTBIT_BACKKEYALWAYSRETURNSTOPLAYERWHENBROWSING);
 		UI.wrapAroundList = opts.getBit(OPTBIT_WRAPAROUNDLIST);
-		UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, UI.isTV || (UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
+		UI.extraSpacing = opts.getBit(OPTBIT_EXTRASPACING, UI.isTV || UI.isLargeScreen);//(UI.screenWidth >= UI.dpToPxI(600)) || (UI.screenHeight >= UI.dpToPxI(600)));
 		//headsetHookDoublePressPauses = opts.getBit(OPTBIT_HEADSETHOOK_DOUBLE_PRESS_PAUSES);
 		doNotAttenuateVolume = opts.getBit(OPTBIT_DO_NOT_ATTENUATE_VOLUME);
 		UI.scrollBarToTheLeft = opts.getBit(OPTBIT_SCROLLBAR_TO_THE_LEFT);

@@ -127,12 +127,14 @@ void updateEqualizerGains(int32_t bandToReset) {
 		computeFilter(lastBand);
 	}
 
-	if (bandToReset < 1) //reset all bands
+	//Apparently, resetting only a few bands puts the entire equalizer in an
+	//unstable state some times... :/
+	//if (bandToReset < 1) //reset all bands
 		memset(equalizerStates, 0, (BAND_COUNT - 2) * sizeof(EqualizerState));
-	else if (bandToReset == 1) //reset only the first band
-		memset(equalizerStates, 0, sizeof(EqualizerState));
-	else //reset the given band + its previous one
-		memset(equalizerStates + (bandToReset - 2), 0, 2 * sizeof(EqualizerState));
+	//else if (bandToReset == 1) //reset only the first band
+	//	memset(equalizerStates, 0, sizeof(EqualizerState));
+	//else //reset the given band + its previous one
+	//	memset(equalizerStates + (bandToReset - 2), 0, 2 * sizeof(EqualizerState));
 }
 
 void resetEqualizer() {

@@ -404,8 +404,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			final int _550dp = (int)((550.0f * displayMetrics.density) + 0.5f);
 			final int _500dp = (int)((500.0f * displayMetrics.density) + 0.5f);
 			isLandscape = (usableScreenWidth > usableScreenHeight);
-			isLargeScreen = ((usableScreenWidth >= _550dp) ? (usableScreenHeight >= _500dp) :
-					((usableScreenHeight >= _550dp) && (usableScreenWidth >= _500dp)));
+			isLargeScreen = (
+				((usableScreenWidth >= _550dp) && (usableScreenHeight >= _500dp)) ||
+				((usableScreenHeight >= _550dp) && (usableScreenWidth >= _500dp))
+			);
 			isLowDpiScreen = (displayMetrics.densityDpi < 160);
 		}
 	}

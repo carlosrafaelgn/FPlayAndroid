@@ -640,7 +640,6 @@ void resetResampler() {
 		//applying any filters
 		if ((srcSampleRate == 48000 && dstSampleRate == 44100) ||
 			(srcSampleRate >= 8000 && dstSampleRate > srcSampleRate)) {
-
 #ifdef FPLAY_X86
 			resampleProc = ((srcChannelCount == 2) ? resampleLagrange : resampleLagrangeMono);
 #else
