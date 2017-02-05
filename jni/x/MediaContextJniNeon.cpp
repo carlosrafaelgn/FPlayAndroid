@@ -76,7 +76,7 @@ void processEffectsNeon(int16_t* buffer, uint32_t sizeInFrames) {
 			effectsFloatSamples[(sizeInFrames << 1) - 1] = (float)buffer[(sizeInFrames << 1) - 1];
 		}
 	}
-	
+
 	if ((effectsEnabled & (EQUALIZER_ENABLED | BASSBOOST_ENABLED))) {
 		if (equalizerActuallyUsedGainInMillibels[BAND_COUNT - 1]) {
 			const float32x4_t lastBandGain = vdupq_n_f32(equalizerLastBandGain[0]);
