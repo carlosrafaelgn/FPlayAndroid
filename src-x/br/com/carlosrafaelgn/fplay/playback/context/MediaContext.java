@@ -530,7 +530,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				framesPerBuffer <<= 1;
 
 			singleBufferSizeInFrames = framesPerBuffer;
-			while (singleBufferSizeInFrames < ((2 * MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING) / 3))
+			while (singleBufferSizeInFrames < ((4 * MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING) / 5))
 				singleBufferSizeInFrames += framesPerBuffer;
 
 			//to be sure that singleBufferSizeInFrames still will be a valid multiple after
