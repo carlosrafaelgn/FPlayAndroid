@@ -101,12 +101,10 @@ public:
 	unsigned char* buffer;
 
 private:
-	int32_t inputOver, sequenceUUID;
+	int32_t inputOver;
 	ssize_t bufferIndex;
-	uint64_t lastTimestampRead, lastTimestampWritten, finalTimestamp;
 	AMediaExtractor* mediaExtractor;
-	AMediaCodec* mediaCodec, *originalMediaCodec;
-	MediaCodec* exportedPlayer;
+	AMediaCodec* mediaCodec;
 
 	static bool isAudio(const char* mime) {
 		return (mime &&
@@ -121,21 +119,14 @@ private:
 public:
 	MediaCodec() {
 		inputOver = false;
-		sequenceUUID = 0;
 		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
-		lastTimestampRead = 0;
-		lastTimestampWritten = 0;
-		finalTimestamp = 0xFFFFFFFFFFFFFFFFL;
 		mediaExtractor = 0;
 		mediaCodec = 0;
-		originalMediaCodec = 0;
-		exportedPlayer = 0;
 	}
 
 	~MediaCodec() {
 		inputOver = false;
-		sequenceUUID = 0;
 		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
 		if (mediaExtractor) {
@@ -147,45 +138,9 @@ public:
 			AMediaCodec_delete(mediaCodec);
 			mediaCodec = 0;
 		}
-		if (originalMediaCodec) {
-			AMediaCodec_stop(originalMediaCodec);
-			AMediaCodec_delete(originalMediaCodec);
-			originalMediaCodec = 0;
-		}
-		lastTimestampRead = 0;
-		lastTimestampWritten = 0;
-		finalTimestamp = 0xFFFFFFFFFFFFFFFFL;
-		exportedPlayer = 0;
 	}
 
-	void exportCodec(MediaCodec* exportedPlayer) {
-		this->exportedPlayer = exportedPlayer;
-
-		exportedPlayer->originalMediaCodec = exportedPlayer->mediaCodec;
-		exportedPlayer->mediaCodec = mediaCodec;
-		mediaCodec = 0;
-		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
-		buffer = 0;
-	}
-
-	void takeBackExportedCodec() {
-		mediaCodec = exportedPlayer->mediaCodec;
-		exportedPlayer->mediaCodec = exportedPlayer->originalMediaCodec;
-		exportedPlayer->originalMediaCodec = 0;
-		lastTimestampRead = 0;
-		lastTimestampWritten = 0;
-		finalTimestamp = 0xFFFFFFFFFFFFFFFFL;
-		AMediaCodec_flush(exportedPlayer->mediaCodec);
-		AMediaCodec_flush(mediaCodec);
-		exportedPlayer->bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
-		exportedPlayer->buffer = 0;
-		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
-		buffer = 0;
-
-		exportedPlayer = 0;
-	}
-	
-	int32_t prepare(int32_t fd, uint64_t length, uint64_t* outParams, int32_t sequenceUUID) {
+	int32_t prepare(int32_t fd, uint64_t length, uint64_t* outParams) {
 		int32_t ret;
 
 		mediaExtractor = AMediaExtractor_new();
@@ -194,8 +149,6 @@ public:
 
 		if ((ret = AMediaExtractor_setDataSourceFd(mediaExtractor, fd, 0, length)))
 			return ret;
-
-		this->sequenceUUID = (sequenceUUID & 1);
 
 		const size_t numTracks = AMediaExtractor_getTrackCount(mediaExtractor);
 		size_t i;
@@ -242,9 +195,7 @@ public:
 		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
 
-		//bit 0 = (sequenceUUID != null)
-		//bit 1 = sequenceUUID.isFirstInSequence() (if bit 0 == 0 then bit 1 will be 0 as well)
-		if ((!sequenceUUID || (sequenceUUID & 2)) && (ret = fillInputBuffers()))
+		if ((ret = fillInputBuffers()))
 			return ret;
 
 		return 0;
@@ -252,9 +203,6 @@ public:
 
 	int64_t doSeek(int32_t msec, int32_t totalMsec) {
 		int32_t ret;
-		lastTimestampRead = 0;
-		lastTimestampWritten = 0;
-		finalTimestamp = 0xFFFFFFFFFFFFFFFFL;
 		if ((ret = AMediaCodec_flush(mediaCodec)))
 			return (int64_t)ret;
 		if ((ret = AMediaExtractor_seekTo(mediaExtractor, (int64_t)msec * 1000LL, AMEDIAEXTRACTOR_SEEK_CLOSEST_SYNC))) {
@@ -292,15 +240,13 @@ public:
 			const ssize_t size = AMediaExtractor_readSampleData(mediaExtractor, inputBuffer, inputBufferCapacity);
 			if (size < 0) {
 				inputOver = true;
-				finalTimestamp = lastTimestampWritten;
 				int32_t ret;
-				if ((!sequenceUUID || lastTimestampRead >= lastTimestampWritten) &&
-					(ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, 0, 0, AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM)))
+				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, 0, 0, AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM)))
 					return ret;
 				break;
 			} else {
 				int32_t ret;
-				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, size, ++lastTimestampWritten, 0)))
+				if ((ret = AMediaCodec_queueInputBuffer(mediaCodec, index, 0, size, 0, 0)))
 					return ret;
 				//although the doc says "Returns false if no more sample data is available
 				//(end of stream)", sometimes, AMediaExtractor_advance() returns false in other cases....
@@ -322,7 +268,6 @@ public:
 
 		AMediaCodecBufferInfo bufferInfo;
 		bufferInfo.flags = 0;
-		bufferInfo.presentationTimeUs = 0;
 		bufferIndex = AMediaCodec_dequeueOutputBuffer(mediaCodec, &bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 
 		if (bufferIndex < 0) {
@@ -345,18 +290,12 @@ public:
 		if (!buffer) {
 			if ((ret = AMediaCodec_releaseOutputBuffer(mediaCodec, bufferIndex, 0)))
 				return ret;
-			return (sequenceUUID ? 
-				(((finalTimestamp <= (lastTimestampRead = bufferInfo.presentationTimeUs)) || (bufferInfo.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM)) ? 0x7FFFFFFF : 0x7FFFFFFE) :
-				((bufferInfo.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) ? 0x7FFFFFFF : 0x7FFFFFFE));
+			return ((bufferInfo.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) ? 0x7FFFFFFF : 0x7FFFFFFE);
 		}
 
 		buffer += bufferInfo.offset;
 
-		return (
-			(bufferInfo.size << 1) |
-			((bufferInfo.flags >> 2) & 1) |
-			((sequenceUUID && (finalTimestamp <= (lastTimestampRead = bufferInfo.presentationTimeUs))) ? 1 : 0)
-		);
+		return ((bufferInfo.size << 1) | ((bufferInfo.flags >> 2) & 1));
 	}
 
 	void releaseOutputBuffer() {
@@ -368,28 +307,14 @@ public:
 	}
 };
 
-void JNICALL mediaCodecExportCodec(JNIEnv* env, jclass clazz, uint64_t thisNativeObj, uint64_t expNativeObj) {
-	if (!thisNativeObj || !expNativeObj)
-		return;
-
-	((MediaCodec*)thisNativeObj)->exportCodec((MediaCodec*)expNativeObj);
-}
-
-void JNICALL mediaCodecTakeBackExportedCodec(JNIEnv* env, jclass clazz, uint64_t thisNativeObj) {
-	if (!thisNativeObj)
-		return;
-
-	((MediaCodec*)thisNativeObj)->takeBackExportedCodec();
-}
-
-int32_t JNICALL mediaCodecPrepare(JNIEnv* env, jclass clazz, int32_t fd, uint64_t length, jlongArray joutParams, int32_t sequenceUUID) {
+int32_t JNICALL mediaCodecPrepare(JNIEnv* env, jclass clazz, int32_t fd, uint64_t length, jlongArray joutParams) {
 	if (!fd || !joutParams || env->GetArrayLength(joutParams) < 4)
 		return -1;
 
 	uint64_t outParams[4];
 
 	MediaCodec* nativeObj = new MediaCodec();
-	const int32_t ret = nativeObj->prepare(fd, length, outParams, sequenceUUID);
+	const int32_t ret = nativeObj->prepare(fd, length, outParams);
 
 	if (ret < 0) {
 		delete nativeObj;

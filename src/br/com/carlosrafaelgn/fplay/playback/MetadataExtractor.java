@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Locale;
@@ -40,64 +39,6 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 
 public final class MetadataExtractor {
-	public static class SequenceUUID {
-		public final long previousH, previousL, currentH, currentL;
-
-		public static SequenceUUID fromASCII(byte[] buffer, int offset) {
-			long ph = 0, pl = 0, ch = 0, cl = 0;
-			for (int i = 0; i < 16; i++, offset++) {
-				int b = buffer[offset];
-				if (b >= '0' && b <= '9') b -= '0';
-				else if (b >= 'a' && b <= 'f') b = b - 'a' + 10;
-				else if (b >= 'A' && b <= 'F') b = b - 'A' + 10;
-				else return null;
-				ph = (ph << 4) | b;
-			}
-			for (int i = 0; i < 16; i++, offset++) {
-				int b = buffer[offset];
-				if (b >= '0' && b <= '9') b -= '0';
-				else if (b >= 'a' && b <= 'f') b = b - 'a' + 10;
-				else if (b >= 'A' && b <= 'F') b = b - 'A' + 10;
-				else return null;
-				pl = (pl << 4) | b;
-			}
-			for (int i = 0; i < 16; i++, offset++) {
-				int b = buffer[offset];
-				if (b >= '0' && b <= '9') b -= '0';
-				else if (b >= 'a' && b <= 'f') b = b - 'a' + 10;
-				else if (b >= 'A' && b <= 'F') b = b - 'A' + 10;
-				else return null;
-				ch = (ch << 4) | b;
-			}
-			for (int i = 0; i < 16; i++, offset++) {
-				int b = buffer[offset];
-				if (b >= '0' && b <= '9') b -= '0';
-				else if (b >= 'a' && b <= 'f') b = b - 'a' + 10;
-				else if (b >= 'A' && b <= 'F') b = b - 'A' + 10;
-				else return null;
-				cl = (cl << 4) | b;
-			}
-			return new SequenceUUID(ph, pl, ch, cl);
-		}
-
-		public SequenceUUID(long previousH, long previousL, long currentH, long currentL) {
-			this.previousH = previousH;
-			this.previousL = previousL;
-			this.currentH = currentH;
-			this.currentL = currentL;
-		}
-
-		public boolean comesAfter(SequenceUUID previous) {
-			return (previous != null &&
-				previous.currentH == previousH &&
-				previous.currentL == previousL);
-		}
-
-		public boolean isFirstInSequence() {
-			return (previousH == 0 && previousL == 0);
-		}
-	}
-
 	private static final int FIELD_COUNT = 6;
 	public static final int TITLE = 0;
 	public static final int ARTIST = 1;
@@ -364,96 +305,6 @@ public final class MetadataExtractor {
 		try {
 			f = ((file.file != null) ? new RandomAccessFile(file.file, "r") : new RandomAccessFile(file.path, "r"));
 			return extractID3v2Andv1(f, tmpPtr);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		} finally {
-			if (f != null) {
-				try {
-					f.close();
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-			}
-		}
-		return null;
-	}
-
-	public static SequenceUUID extractSequenceUUID(File file) {
-		//struct _ID3v2TagHdr {
-		//public:
-		//	unsigned int hdr;
-		//	unsigned char hdrRev;
-		//	unsigned char flags;
-		//	unsigned char sizeBytes[4];
-		//} tagV2Hdr;
-
-		byte[] tmp = null;
-		RandomAccessFile f = null;
-		try {
-			f = new RandomAccessFile(file, "r");
-
-			//readInt() reads a big-endian 32-bit integer
-			final int hdr = f.readInt();
-			if ((hdr & 0xffffff00) != 0x49443300) //ID3
-				return null;
-			final int hdrRev = f.read();
-			final int flags = f.read();
-			final int sizeBytes0 = f.read();
-			final int sizeBytes1 = f.read();
-			final int sizeBytes2 = f.read();
-			final int sizeBytes3 = f.read();
-			int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
-				(
-					(sizeBytes3 & 0x7f) |
-					((sizeBytes2 & 0x7f) << 7) |
-					((sizeBytes1 & 0x7f) << 14) |
-					((sizeBytes0 & 0x7f) << 21)
-				);
-			if ((hdr & 0xff) > 2 || hdrRev != 0) { //only rev 3 or greater supported
-				//http://id3.org/id3v2.3.0
-				//http://id3.org/id3v2.4.0-structure
-				//http://id3.org/id3v2.4.0-frames
-				while (size > 0) {
-					//struct _ID3v2FrameHdr {
-					//public:
-					//	unsigned int id;
-					//	unsigned int size;
-					//	unsigned short flags;
-					//} frame;
-					final int frameId = f.readInt();
-					final int frameSize = f.readInt();
-					//skip the flags
-					f.readShort();
-					if (frameId == 0 || frameSize <= 0 || frameSize > size)
-						break;
-					switch (frameId) {
-					case 0x54585858: //TXXX
-						//sequence UUID frame size (69 bytes):
-						//- 1: text encoding
-						//- 4: SEQ\0
-						//- 32: previous song guid
-						//- 32: this song guid
-						if (frameSize != 69) {
-							f.skipBytes(frameSize);
-							break;
-						}
-						if (tmp == null)
-							tmp = new byte[69];
-						f.readFully(tmp, 0, 69);
-						if ((tmp[0] == 0 || tmp[0] == 3) && //encoding = ISO-8859-1 or UTF-8
-							tmp[1] == (byte)'S' &&
-							tmp[2] == (byte)'E' &&
-							tmp[3] == (byte)'Q' &&
-							tmp[4] == 0)
-							return SequenceUUID.fromASCII(tmp, 5);
-						break;
-					default:
-						f.skipBytes(frameSize);
-						break;
-					}
-					size -= (10 + frameSize);
-				}
-			}
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		} finally {

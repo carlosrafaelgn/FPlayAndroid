@@ -142,9 +142,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void setVirtualizerStrength(int strength);
 	static native int getVirtualizerRoundedStrength();
 
-	static native void mediaCodecExportCodec(long thisNativeObj, long expNativeObj);
-	static native void mediaCodecTakeBackExportedCodec(long thisNativeObj);
-	static native int mediaCodecPrepare(int fd, long length, long[] outParams, int sequenceUUID);
+	static native int mediaCodecPrepare(int fd, long length, long[] outParams);
 	static native int mediaCodecFillInputBuffers(long nativeObj);
 	static native int mediaCodecNextOutputBuffer(long nativeObj);
 	static native long mediaCodecSeek(long nativeObj, int msec, int totalMsec);
@@ -853,7 +851,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								currentPlayerForReference = currentPlayer;
 								nextPlayer = null;
 								sourcePlayer = currentPlayer;
-								currentPlayer.takeBackExportedCodec();
 								currentPlayer.resetDecoderIfOutputAlreadyUsed();
 								framesWritten = currentPlayer.getCurrentPositionInFrames();
 								framesPlayed = framesWritten;
@@ -941,7 +938,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								if (currentPlayer == playerRequestingAction && nextPlayer != nextPlayerRequested) {
 									//if we had already started outputting nextPlayer's audio then it is too
 									//late... just remove the nextPlayer
-									currentPlayer.takeBackExportedCodec();
 									if (currentPlayer.isOutputOver()) {
 										//go back to currentPlayer
 										if (sourcePlayer == nextPlayer) {
@@ -975,7 +971,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							case ACTION_RESET:
 								if (playerRequestingAction == currentPlayer) {
 									//releasing prevents clicks when changing tracks
-									currentPlayer.takeBackExportedCodec();
 									synchronized (engineSync) {
 										engine.release();
 										dstSampleRate = 0;
@@ -995,7 +990,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 									wakeLock.release();
 								} else if (playerRequestingAction == nextPlayer) {
 									//go back to currentPlayer
-									currentPlayer.takeBackExportedCodec();
 									if (sourcePlayer == nextPlayer) {
 										outputBuffer.release();
 										sourcePlayer = currentPlayer;
@@ -1047,10 +1041,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 							playPending = false;
 							amountOfTimesNoFramesWereWritten = 0;
 							framesWrittenBeforePlaying = 0;
-							if (currentPlayer != null) {
-								currentPlayer.takeBackExportedCodec();
-								currentPlayer = null;
-							}
+							currentPlayer = null;
 							currentPlayerForReference = null;
 							nextPlayer = null;
 							sourcePlayer = null;
@@ -1071,7 +1062,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					try {
 						if (seekPendingPlayer == currentPlayer)
 							sourcePlayer = currentPlayer;
-						seekPendingPlayer.takeBackExportedCodec();
 						outputBuffer.release();
 						updateNativeSrcAndReset(seekPendingPlayer);
 						if (sourcePlayer == seekPendingPlayer) {
@@ -1109,10 +1099,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						playPending = false;
 						amountOfTimesNoFramesWereWritten = 0;
 						framesWrittenBeforePlaying = 0;
-						if (currentPlayer != null) {
-							currentPlayer.takeBackExportedCodec();
-							currentPlayer = null;
-						}
+						currentPlayer = null;
 						currentPlayerForReference = null;
 						nextPlayer = null;
 						sourcePlayer = null;
@@ -1294,7 +1281,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//from now on, we will start outputting audio from the next player (if any)
 						if (nextPlayer != null) {
 							sourcePlayer = nextPlayer;
-							currentPlayer.exportCodec(nextPlayer);
 							updateNativeSrc(sourcePlayer);
 						}
 					}
@@ -1361,10 +1347,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 					paused = true;
 					playPending = false;
 					amountOfTimesNoFramesWereWritten = 0;
-					if (currentPlayer != null) {
-						currentPlayer.takeBackExportedCodec();
-						currentPlayer = null;
-					}
+					currentPlayer = null;
 					currentPlayerForReference = null;
 					wakeLock.release();
 				}
