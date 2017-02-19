@@ -216,8 +216,12 @@ uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
 
-		for (int32_t i = 0; i < 9; i++)
-			((uint64_t*)resampleYINT)[i] = ((uint64_t*)resampleYINT)[i + 1];
+		//for (int32_t i = 0; i < 9; i++)
+		//	((uint64_t*)resampleYINT)[i] = ((uint64_t*)resampleYINT)[i + 1];
+		for (int32_t i = 0; i < 18; i += 2) {
+			resampleYINT[i] = resampleYINT[i + 2];
+			resampleYINT[i + 1] = resampleYINT[i + 3];
+		}
 		resampleYINT[18] = (int32_t)srcBuffer[0];
 		resampleYINT[19] = (int32_t)srcBuffer[1];
 
@@ -278,8 +282,12 @@ uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16
 		while (resamplePendingAdvances) {
 			resamplePendingAdvances--;
 
-			for (int32_t i = 0; i < 9; i++)
-				((uint64_t*)resampleYINT)[i] = ((uint64_t*)resampleYINT)[i + 1];
+			//for (int32_t i = 0; i < 9; i++)
+			//	((uint64_t*)resampleYINT)[i] = ((uint64_t*)resampleYINT)[i + 1];
+			for (int32_t i = 0; i < 18; i += 2) {
+				resampleYINT[i] = resampleYINT[i + 2];
+				resampleYINT[i + 1] = resampleYINT[i + 3];
+			}
 			resampleYINT[18] = (int32_t)srcBuffer[0];
 			resampleYINT[19] = (int32_t)srcBuffer[1];
 

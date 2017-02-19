@@ -251,6 +251,10 @@ int64_t JNICALL audioTrackProcessNativeEffects(JNIEnv* env, jclass clazz, uint64
 
 #ifdef FPLAY_ARM
 void checkNeonMode() {
+#ifdef FPLAY_64_BITS
+	//can we safely assume this???
+	neonMode = FEATURE_PROCESSOR_NEON;
+#else
 	//based on
 	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.c?r=2195
 	//http://code.google.com/p/webrtc/source/browse/trunk/src/system_wrappers/source/android/cpu-features.h?r=2195
@@ -286,6 +290,7 @@ void checkNeonMode() {
 			}
 		}
 	}
+#endif
 }
 #endif
 
