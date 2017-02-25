@@ -557,7 +557,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optPlaybackEngine) {
 			MediaContext.useOpenSLEngine = (item.getItemId() == 1);
 			optPlaybackEngine.setSecondaryText(getPlaybackEngineString(MediaContext.useOpenSLEngine));
-			optFillThreshold.setVisibility(MediaContext.useOpenSLEngine ? View.VISIBLE : View.GONE);
+			//We must remove/add from the panel because its top position is reported to be 0 by a few
+			//devices when not visible, messing up with getChildIndexAroundPosition()'s results
+			//Since it has to be removed from the panel, SettingView.onDetachedFromWindow() is called,
+			//cleaning up all its fields and thus, forcing us to recreate it before adding it back again...
+			panelSettings.removeView(optFillThreshold);
+			if (MediaContext.useOpenSLEngine)
+				panelSettings.addView(optFillThreshold = createOptFillThreshold(), panelSettings.indexOfChild(optResampling));
 		}
 		configsChanged = true;
 		return true;
@@ -860,7 +866,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			currentHeader = -1;
 		}
 	}
-	
+
+	private SettingView createOptFillThreshold() {
+		return new SettingView(getHostActivity(), UI.ICON_PERCENTAGE, getText(R.string.percentage_to_decode_before_playback).toString(), getFillThresholdString(Player.getBufferConfig()), false, false, false);
+	}
+
 	@Override
 	public boolean onBackPressed() {
 		return (!isLayoutCreated() || cancelGoBack());
@@ -1120,7 +1130,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				optMSBeforePlayback = new SettingView(ctx, UI.ICON_RADIO, getText(R.string.seconds_before_playback).toString(), getSecondsBeforePlaybackString(Player.getMSBeforePlaybackIndex()), false, false, false);
 			} else {
 				optBufferSize = new SettingView(ctx, UI.ICON_PLAY, getText(R.string.playback_buffer_length).toString(), getBufferSizeString(Player.getBufferConfig()), false, false, false);
-				optFillThreshold = new SettingView(ctx, UI.ICON_PERCENTAGE, getText(R.string.percentage_to_decode_before_playback).toString(), getFillThresholdString(Player.getBufferConfig()), false, false, false);
+				optFillThreshold = createOptFillThreshold();
 				optPlaybackEngine = new SettingView(ctx, UI.ICON_FPLAY, getText(R.string.playback_engine).toString(), getPlaybackEngineString(MediaContext.useOpenSLEngine), false, false, false);
 				optResampling = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.resample_track_to_native).toString(), null, true, Player.isResamplingEnabled(), false);
 			}
@@ -1135,9 +1145,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addHeader(ctx, R.string.performance, optAutoTurnOffPlaylist, hIdx++);
 				addOption(optPlaybackEngine);
 				addOption(optBufferSize);
-				if (!MediaContext.useOpenSLEngine)
-					optFillThreshold.setVisibility(View.GONE);
-				addOption(optFillThreshold);
+				if (MediaContext.useOpenSLEngine)
+					addOption(optFillThreshold);
 				addOption(optResampling);
 				addHeader(ctx, R.string.hdr_display, optResampling, hIdx++);
 			} else {
