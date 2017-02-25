@@ -32,9 +32,10 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Locale;
+import java.nio.channels.FileChannel;
 
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 
@@ -55,16 +56,17 @@ public final class MetadataExtractor {
 	private static final int TRACK_B = 0x08;
 	private static final int YEAR_B = 0x10;
 	private static final int LENGTH_B = 0x20;
-	
-	private static String readV2Frame(RandomAccessFile f, int frameSize, byte[][] tmpPtr) throws IOException {
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private static String readV2Frame(BufferedInputStream f, int frameSize, byte[][] tmpPtr) throws IOException {
 		if (frameSize < 2) {
-			f.skipBytes(frameSize);
+			f.skip(frameSize);
 			return null;
 		}
 		final int encoding = f.read();
 		frameSize--; //discount the encoding
 		if (encoding < 0 || encoding > 3) {
-			f.skipBytes(frameSize);
+			f.skip(frameSize);
 			return null;
 		}
 		byte[] tmp = tmpPtr[0];
@@ -72,7 +74,7 @@ public final class MetadataExtractor {
 			tmp = new byte[frameSize + 16];
 			tmpPtr[0] = tmp;
 		}
-		f.readFully(tmp, 0, frameSize);
+		frameSize = f.read(tmp, 0, frameSize);
 		//according to http://developer.android.com/reference/java/nio/charset/Charset.html
 		//the following charsets are ALWAYS available:
 		//ISO-8859-1
@@ -99,11 +101,14 @@ public final class MetadataExtractor {
 		}
 		return ((ret != null && ret.length() == 0) ? null : ret);
 	}
-	
-	private static String[] extractID3v1(RandomAccessFile f, int found, String[] fields, byte[] tmp) {
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private static String[] extractID3v1(FileInputStream fileInputStream, int found, String[] fields, byte[] tmp) {
+		FileChannel fileChannel = null;
 		try {
-			f.seek(f.length() - 128);
-			f.readFully(tmp, 0, 128);
+			fileChannel = fileInputStream.getChannel();
+			fileChannel.position(fileChannel.size() - 128);
+			fileInputStream.read(tmp, 0, 128);
 			if (tmp[0] != 0x54 ||
 				tmp[1] != 0x41 ||
 				tmp[2] != 0x47) //TAG
@@ -165,11 +170,21 @@ public final class MetadataExtractor {
 		} catch (Throwable ex) {
 			//ignore all exceptions while reading ID3v1, in favor of
 			//everything that has already been read in ID3v2
+		} finally {
+			if (fileChannel != null) {
+				try {
+					fileChannel.close();
+				} catch (Throwable ex) {
+					//ignore all exceptions while reading ID3v1, in favor of
+					//everything that has already been read in ID3v2
+				}
+			}
 		}
 		return fields;
 	}
 	
-	private static String[] extractID3v2Andv1(RandomAccessFile f, byte[][] tmpPtr) throws IOException  {
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private static String[] extractID3v2Andv1(BufferedInputStream f, FileInputStream fileInputStream, byte[][] tmpPtr) throws IOException  {
 		//struct _ID3v2TagHdr {
 		//public:
 		//	unsigned int hdr;
@@ -179,9 +194,10 @@ public final class MetadataExtractor {
 		//} tagV2Hdr;
 		
 		//readInt() reads a big-endian 32-bit integer
-		final int hdr = f.readInt();
-		if ((hdr & 0xffffff00) != 0x49443300) //ID3
+		final int hdr = (f.read() << 16) | (f.read() << 8) | f.read();
+		if (hdr != 0x00494433) //ID3
 			return null;
+		f.skip(1);
 		final int hdrRev = f.read();
 		final int flags = f.read();
 		final int sizeBytes0 = f.read();
@@ -208,10 +224,10 @@ public final class MetadataExtractor {
 				//	unsigned int size;
 				//	unsigned short flags;
 				//} frame;
-				final int frameId = f.readInt();
-				final int frameSize = f.readInt();
+				final int frameId = (f.read() << 24) | (f.read() << 16) | (f.read() << 8) | f.read();
+				final int frameSize = (f.read() << 24) | (f.read() << 16) | (f.read() << 8) | f.read();
 				//skip the flags
-				f.readShort();
+				f.skip(2);
 				if (frameId == 0 || frameSize <= 0 || frameSize > size)
 					break;
 				switch (frameId) {
@@ -221,7 +237,7 @@ public final class MetadataExtractor {
 						if (fields[TITLE] != null)
 							found |= TITLE_B;
 					} else {
-						f.skipBytes(frameSize);
+						f.skip(frameSize);
 					}
 					break;
 				case 0x54504531: //artist - TPE1
@@ -230,7 +246,7 @@ public final class MetadataExtractor {
 						if (fields[ARTIST] != null)
 							found |= ARTIST_B;
 					} else {
-						f.skipBytes(frameSize);
+						f.skip(frameSize);
 					}
 					break;
 				case 0x54414c42: //album - TALB
@@ -239,7 +255,7 @@ public final class MetadataExtractor {
 						if (fields[ALBUM] != null)
 							found |= ALBUM_B;
 					} else {
-						f.skipBytes(frameSize);
+						f.skip(frameSize);
 					}
 					break;
 				case 0x5452434b: //track - TRCK
@@ -248,7 +264,7 @@ public final class MetadataExtractor {
 						if (fields[TRACK] != null)
 							found |= TRACK_B;
 					} else {
-						f.skipBytes(frameSize);
+						f.skip(frameSize);
 					}
 					break;
 				case 0x54594552: //year - TYER
@@ -257,7 +273,7 @@ public final class MetadataExtractor {
 						if (fields[YEAR] != null)
 							found |= YEAR_B;
 					} else {
-						f.skipBytes(frameSize);
+						f.skip(frameSize);
 					}
 					break;
 				case 0x54445243: //Recording time - TDRC
@@ -269,7 +285,7 @@ public final class MetadataExtractor {
 							found |= YEAR_B;
 						}
 					} else {
-						f.skipBytes(frameSize);
+						f.skip(frameSize);
 					}
 					break;
 				case 0x544c454e: //length - TLEN
@@ -278,39 +294,45 @@ public final class MetadataExtractor {
 						if (fields[LENGTH] != null)
 							found |= LENGTH_B;
 					} else {
-						f.skipBytes(frameSize);
+						f.skip(frameSize);
 					}
 					break;
 				default:
-					f.skipBytes(frameSize);
+					f.skip(frameSize);
 					break;
 				}
 				size -= (10 + frameSize);
 			}
 			//try to extract ID3v1 only if there are any blank fields
-			return (((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B) ? extractID3v1(f, found, fields, tmpPtr[0]) : fields);
+			return (((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B) ? extractID3v1(fileInputStream, found, fields, tmpPtr[0]) : fields);
 		}
 		return null;
 	}
 	
 	public static String[] extract(FileSt file, byte[][] tmpPtr) {
-		int i = file.path.lastIndexOf('.');
-		if (i < 0)
-			return null;
-		final String ext = file.path.substring(i + 1).toLowerCase(Locale.US);
 		//the only two formats supported for now... I hope to add ogg soon ;)
-		if (!ext.equals("mp3") && !ext.equals("aac"))
+		if (!file.path.regionMatches(true, file.path.length() - 4, ".mp3", 0, 4) &&
+			!file.path.regionMatches(true, file.path.length() - 4, ".aac", 0, 4))
 			return null;
-		RandomAccessFile f = null;
+		FileInputStream fileInputStream = null;
+		BufferedInputStream bufferedInputStream = null;
 		try {
-			f = ((file.file != null) ? new RandomAccessFile(file.file, "r") : new RandomAccessFile(file.path, "r"));
-			return extractID3v2Andv1(f, tmpPtr);
+			fileInputStream = ((file.file != null) ? new FileInputStream(file.file) : new FileInputStream(file.path));
+			bufferedInputStream = new BufferedInputStream(fileInputStream, 32768);
+			return extractID3v2Andv1(bufferedInputStream, fileInputStream, tmpPtr);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		} finally {
-			if (f != null) {
+			if (bufferedInputStream != null) {
 				try {
-					f.close();
+					bufferedInputStream.close();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			}
+			if (fileInputStream != null) {
+				try {
+					fileInputStream.close();
 				} catch (Throwable ex) {
 					ex.printStackTrace();
 				}

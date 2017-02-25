@@ -83,9 +83,9 @@ public final class Song extends BaseItem {
 		//MediaMetadataRetriever simply returns null for all keys, except METADATA_KEY_DURATION,
 		//on several devices, even though the file has the metadata... :(
 		//So, trust our MetadataExtractor, and only call MediaMetadataRetriever for unsupported file types
-		
+
 		final String[] fields = MetadataExtractor.extract(fileSt, tmpPtr);
-		
+
 		if (fields != null) {
 			this.title = fields[MetadataExtractor.TITLE];
 			this.artist = fields[MetadataExtractor.ARTIST];
