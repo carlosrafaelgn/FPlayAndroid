@@ -1897,7 +1897,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		return ((padding > defaultHorizontalPadding) ? padding : defaultHorizontalPadding);
 	}
 	
-	public static void prepareViewPaddingBasedOnScreenWidth(View view, int defaultHorizontalPadding, int topPadding, int bottomPadding) {
+	public static void prepareViewPaddingBasedOnScreenWidth(ViewGroup view, int defaultHorizontalPadding, int topPadding, int bottomPadding) {
 		final int p = getViewPaddingBasedOnScreenWidth(defaultHorizontalPadding);
 		view.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
 		view.setPadding(p, topPadding, p, bottomPadding);
@@ -2095,7 +2095,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void prepareEdgeEffect(View view, int placement) {
+	public static void prepareEdgeEffect(ViewGroup view, int placement) {
 		final int color = (placement == PLACEMENT_MENU ? color_menu_icon : color_glow);
 		final Resources resources = view.getContext().getResources();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
@@ -2140,6 +2140,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
+			} finally {
+				view.setClipToPadding(true);
 			}
 		}
 		try {
@@ -2162,6 +2164,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				drawable.setColorFilter(glowFilter);//edgeFilter);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
+		} finally {
+			view.setClipToPadding(true);
 		}
 	}
 

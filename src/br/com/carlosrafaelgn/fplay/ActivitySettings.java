@@ -878,8 +878,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	private void setListPadding() {
 		//for lblTitle to look nice, we must have no paddings
-		if (panelSettings != null)
-			UI.prepareViewPaddingBasedOnScreenWidth(panelSettings, 0, 0, 0);
+		if (list != null)
+			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 		if (lblTitle != null) {
 			final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)lblTitle.getLayoutParams();
 			lp.leftMargin = UI.getViewPaddingBasedOnScreenWidth(0);
@@ -1030,7 +1030,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		final Context ctx = getHostActivity();
 
 		list = (ObservableScrollView)findViewById(R.id.list);
-		//for lblTitle to look nice, we must have no paddings
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
 		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);

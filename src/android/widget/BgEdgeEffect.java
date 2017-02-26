@@ -389,13 +389,13 @@ public class BgEdgeEffect extends EdgeEffect {
 		canvas.save();
 		UI.fillPaint.setAntiAlias(true);
 		UI.fillPaint.setColor(((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mColor);
-		UI.rect.left = 0;
+		UI.rect.left = mX;
 		UI.rect.top = mOffsetY;
-		UI.rect.right = mWidth;
+		UI.rect.right = mX + mWidth;
 		UI.rect.bottom = mMaxHeight + mOffsetY;
 		canvas.clipRect(UI.rect);
-		UI.rectF.left = (float)-UI._18sp;
-		UI.rectF.right = (float)(mWidth + UI._18sp);
+		UI.rectF.left = (float)(mX - UI._18sp);
+		UI.rectF.right = (float)(mX + mWidth + UI._18sp);
 		UI.rectF.bottom = (mScaleY * (float)(mMaxHeight + mOffsetY));
 		UI.rectF.top = -UI.rectF.bottom + (float)mOffsetY;
 		canvas.drawOval(UI.rectF, UI.fillPaint);
