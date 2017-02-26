@@ -50,6 +50,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -91,6 +92,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private TextView lblTitle;
 	private RelativeLayout panelControls;
 	private LinearLayout panelSettings;
+	private ViewGroup viewForPadding;
 	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface,
 		optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat,
 		optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume,
@@ -878,8 +880,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	private void setListPadding() {
 		//for lblTitle to look nice, we must have no paddings
-		if (list != null)
-			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
+		if (viewForPadding != null)
+			UI.prepareViewPaddingBasedOnScreenWidth(viewForPadding, 0, 0, 0);
 		if (lblTitle != null) {
 			final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)lblTitle.getLayoutParams();
 			lp.leftMargin = UI.getViewPaddingBasedOnScreenWidth(0);
@@ -1036,6 +1038,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		prepareHeader(lblTitle);
 
+		viewForPadding = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? (ViewGroup)list : panelSettings);
 		setListPadding();
 
 		list.setOnScrollListener(this);
@@ -1265,6 +1268,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		lblTitle = null;
 		panelControls = null;
 		panelSettings = null;
+		viewForPadding = null;
 		if (headers != null) {
 			for (int i = headers.length - 1; i >= 0; i--)
 				headers[i] = null;

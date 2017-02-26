@@ -2141,7 +2141,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			} finally {
-				view.setClipToPadding(true);
+				view.setClipToPadding(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
 			}
 		}
 		try {
@@ -2165,7 +2165,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		} finally {
-			view.setClipToPadding(true);
+			view.setClipToPadding(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
 		}
 	}
 

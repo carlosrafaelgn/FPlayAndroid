@@ -36,6 +36,7 @@ import android.os.Build;
 import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
@@ -48,6 +49,7 @@ import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
 public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
 	private ObservableScrollView list;
+	private LinearLayout panelSecondary;
 	private BgButton btnGoBack;
 
 	@Override
@@ -179,7 +181,14 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblDbg.setText(sb.toString());
 		list = (ObservableScrollView)findViewById(R.id.list);
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list_original));
-		UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
+			panelSecondary = null;
+		} else {
+			panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
+			UI.prepareViewPaddingBasedOnScreenWidth(panelSecondary, UI.controlLargeMargin, UI.controlMargin, UI.controlMargin);
+			list = null;
+		}
 		if (UI.isLargeScreen)
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
@@ -189,11 +198,14 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	protected void onOrientationChanged() {
 		if (list != null)
 			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
+		else if (panelSecondary != null)
+			UI.prepareViewPaddingBasedOnScreenWidth(panelSecondary, UI.controlLargeMargin, UI.controlMargin, UI.controlMargin);
 	}
 	
 	@Override
 	protected void onCleanupLayout() {
 		list = null;
+		panelSecondary = null;
 		btnGoBack = null;
 	}
 	
