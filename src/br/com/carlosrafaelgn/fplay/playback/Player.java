@@ -3347,16 +3347,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//Method getd = audioSystem.getMethod("getDeviceConnectionState", int.class, String.class);
 			//int x;
 			//public static final int DEVICE_OUT_EARPIECE = 0x1;
-		    //public static final int DEVICE_OUT_SPEAKER = 0x2;
-		    //public static final int DEVICE_OUT_WIRED_HEADSET = 0x4;
-		    //public static final int DEVICE_OUT_WIRED_HEADPHONE = 0x8;
-		    //public static final int DEVICE_OUT_BLUETOOTH_SCO = 0x10;
-		    //public static final int DEVICE_OUT_BLUETOOTH_SCO_HEADSET = 0x20;
-		    //public static final int DEVICE_OUT_BLUETOOTH_SCO_CARKIT = 0x40;
-		    //public static final int DEVICE_OUT_BLUETOOTH_A2DP = 0x80;
-		    //public static final int DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES = 0x100;
-		    //public static final int DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER = 0x200;
-		    //public static final int DEVICE_STATE_UNAVAILABLE = 0;
+			//public static final int DEVICE_OUT_SPEAKER = 0x2;
+			//public static final int DEVICE_OUT_WIRED_HEADSET = 0x4;
+			//public static final int DEVICE_OUT_WIRED_HEADPHONE = 0x8;
+			//public static final int DEVICE_OUT_BLUETOOTH_SCO = 0x10;
+			//public static final int DEVICE_OUT_BLUETOOTH_SCO_HEADSET = 0x20;
+			//public static final int DEVICE_OUT_BLUETOOTH_SCO_CARKIT = 0x40;
+			//public static final int DEVICE_OUT_BLUETOOTH_A2DP = 0x80;
+			//public static final int DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES = 0x100;
+			//public static final int DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER = 0x200;
+			//public static final int DEVICE_STATE_UNAVAILABLE = 0;
 			//public static final int DEVICE_STATE_AVAILABLE = 1;
 			//x = (int)getd.invoke(null, 0x1, "");
 		} catch (Throwable ex) {
