@@ -32,13 +32,16 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
+import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class Song extends BaseItem {
@@ -49,6 +52,7 @@ public final class Song extends BaseItem {
 	public static final int EXTRA_TRACK_ARTIST_ALBUM = 4;
 	public static final int EXTRA_ARTIST_ALBUM = 5;
 	public static int extraInfoMode;
+	private static final String[] projLengthOnly = { "duration" }, projFull = { "title", "artist", "album", "track", "duration", "year" };
 	public String path; //the only thread/method allowed to change the path is Player._httpStreamReceiverUrlUpdated()
 	public boolean isHttp;
 	public String title, artist, album, extraInfo;
@@ -112,7 +116,9 @@ public final class Song extends BaseItem {
 				}
 			}
 		}
-		if (fields == null || this.lengthMS <= 0) {
+		if ((fields == null || this.lengthMS <= 0) && !fetchMetadataFromMediaStore(fields != null)) {
+			//Use MediaMetadataRetriever only as a last resource, since it is
+			//very slow on a few devices
 			final MediaMetadataRetriever retr = new MediaMetadataRetriever();
 			try {
 				retr.setDataSource(fileSt.path);
@@ -162,7 +168,39 @@ public final class Song extends BaseItem {
 		}
 		validateFields(fileSt.name);
 	}
-	
+
+	private boolean fetchMetadataFromMediaStore(boolean lengthOnly) {
+		Cursor c = null;
+		try {
+			c = Player.theApplication.getContentResolver().query(
+				Uri.parse("content://media/external/audio/media"),
+				lengthOnly ? projLengthOnly : projFull,
+				"_data=?",
+				new String[]{ path },
+				null);
+
+			if (c != null && c.moveToNext()) {
+				if (lengthOnly) {
+					lengthMS = c.getInt(0);
+				} else {
+					title = c.getString(0);
+					artist = c.getString(1);
+					album = c.getString(2);
+					track = c.getInt(3);
+					lengthMS = c.getInt(4);
+					year = c.getInt(5);
+				}
+				return true;
+			}
+		} catch (Throwable ex) {
+			//just ignore
+		} finally {
+			if (c != null)
+				c.close();
+		}
+		return false;
+	}
+
 	private void validateFields(String fileName) {
 		if (title == null || title.length() == 0) {
 			if (fileName != null) {
