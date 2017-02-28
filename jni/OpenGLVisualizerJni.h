@@ -56,6 +56,7 @@
 #define TYPE_IMMERSIVE_PARTICLE 4
 #define TYPE_IMMERSIVE_PARTICLE_VR 5
 #define TYPE_SPECTRUM2 6
+#define TYPE_LIQUID_POWER_SAVER 7
 
 #define left -1.0f
 #define top 1.0f
@@ -523,7 +524,7 @@ void glDrawSpectrumWithoutAmplitudeTexture() {
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 128 * 2);
 }
 
-int32_t glCreateLiquid() {
+int32_t glCreateLiquid(uint32_t powerSaver) {
 	commonTimeLimit = 12566; //2 * 2 * pi * 1000
 
 	int32_t l;
@@ -547,6 +548,22 @@ int32_t glCreateLiquid() {
 		"vTexCoord = coord; }",
 
 		//fragment shader
+		powerSaver ?
+		//power saver version (no ripples, thanks to James Fung -> https://github.com/james34602)
+		"precision highp float; varying vec2 vTexCoord; varying float vAmpl; uniform sampler2D texColor; void main() {" \
+
+		/* This equation was based on: http://glslsandbox.com/e#21421.0 */ \
+		"vec2 p = (vec2(vTexCoord.x, mix(vTexCoord.y, vAmpl, 0.25)) * 6.0) - vec2(125.0);" \
+
+		/* Let's perform only one iteration, in favor of speed ;) */ \
+		"float t = (vAmpl * vAmpl * vAmpl);" \
+		"vec2 i = p;" \
+
+		"gl_FragColor = (0.5 * t) + (0.7 * vec4(0.15625, 0.25625, 0.35625, 0.0)) + texture2D(texColor, vec2(vTexCoord.x, vTexCoord.y * (1.0 - (min(1.0, (1.2 * 0.15625)) * 0.55))));" \
+
+		"}"
+		:
+		//regular version (with ripples)
 		"precision highp float; varying vec2 vTexCoord; varying float vAmpl; uniform sampler2D texColor; uniform float time; void main() {" \
 
 		/* This water equation (length, sin, cos) was based on: http://glslsandbox.com/e#21421.0 */ \
@@ -1314,7 +1331,10 @@ int32_t JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int32_t bgColor, i
 
 	switch (type) {
 	case TYPE_LIQUID:
-		ret = glCreateLiquid();
+		ret = glCreateLiquid(false);
+		break;
+	case TYPE_LIQUID_POWER_SAVER:
+		ret = glCreateLiquid(true);
 		break;
 	case TYPE_SPIN:
 		ret = glCreateSpin(estimatedWidth, estimatedHeight, dp1OrLess);

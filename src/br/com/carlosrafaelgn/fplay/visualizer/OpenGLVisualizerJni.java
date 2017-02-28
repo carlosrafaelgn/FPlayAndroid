@@ -100,9 +100,9 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public static final int TYPE_IMMERSIVE_PARTICLE = 4;
 	public static final int TYPE_IMMERSIVE_PARTICLE_VR = 5;
 	public static final int TYPE_SPECTRUM2 = 6;
+	public static final int TYPE_LIQUID_POWER_SAVER = 7;
 
 	private final int type;
-	private byte[] waveform;
 	private volatile boolean supported, alerted, okToRender;
 	private volatile int error;
 	private volatile Uri selectedUri;
@@ -126,13 +126,12 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public OpenGLVisualizerJni(Activity activity, boolean landscape, Intent extras) {
 		super(activity);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
-		type = ((t < TYPE_LIQUID || t > TYPE_SPECTRUM2) ? TYPE_SPECTRUM : t);
-		waveform = new byte[Visualizer.CAPTURE_SIZE];
+		type = ((t < TYPE_LIQUID || t > TYPE_LIQUID_POWER_SAVER) ? TYPE_SPECTRUM : t);
 		setClickable(true);
 		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_LIQUID) ? 0 : 2);
+		speed = ((type == TYPE_LIQUID || type == TYPE_LIQUID_POWER_SAVER) ? 0 : 2);
 		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 2);
 		ignoreInput = 0;
@@ -682,6 +681,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		//onSurfaceCreated is not called, only onSurfaceChanged is! :/
 	}
 
+	@SuppressWarnings("deprecation")
 	private void loadBitmap() {
 		if (selectedUri == null)
 			return;
@@ -884,6 +884,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		Menu s;
 		switch (type) {
 		case TYPE_LIQUID:
+		case TYPE_LIQUID_POWER_SAVER:
 			UI.separator(menu, 1, 0);
 			menu.add(1, MNU_CHOOSE_IMAGE, 1, R.string.choose_image)
 				.setOnMenuItemClickListener(this)
@@ -1022,7 +1023,6 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	//Runs on a SECONDARY thread (B)
 	@Override
 	public void release() {
-		waveform = null;
 		synchronized (this) {
 			releaseCamera();
 		}
