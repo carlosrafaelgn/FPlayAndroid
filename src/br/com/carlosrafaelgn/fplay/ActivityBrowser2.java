@@ -80,28 +80,42 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	private EditText txtURL, txtTitle;
 	private BgButton btnGoBack, btnURL, chkFavorite, chkAlbumArt, btnHome, chkAll, btnGoBackToPlayer, btnAdd, btnPlay;
 	private int checkedCount;
-	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout;
-	private FastAnimator animator;
+	private boolean loading, isAtHome, verifyAlbumWhenChecking, isCreatingLayout, animSectionsEnabled, animUpdateListLayout;
+	private FastAnimator animator, animatorFadeOut;
 	private CharSequence msgEmptyList, msgLoading;
-	private String pendingTo;
+	private String pendingTo, animTo, animFrom;
 
 	@Override
 	public CharSequence getTitle() {
 		return getText(R.string.add_songs);
 	}
 
+	private void updateListLayout() {
+		if (list == null)
+			return;
+		final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+		rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+		if (isAtHome)
+			rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+		else
+			rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
+		list.setLayoutParams(rp);
+		animUpdateListLayout = false;
+	}
+
 	private void updateOverallLayout() {
-		RelativeLayout.LayoutParams rp;
+		final RelativeLayout.LayoutParams rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
+		rp.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+		lblPath.setLayoutParams(rp);
+		final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
+		lblPath.setPadding(m, m - UI.thickDividerSize, m, m);
 		if (isAtHome) {
-			lblPath.setPadding(0, 0, 0, 0);
-			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
-			rp.height = 0;
-			lblPath.setLayoutParams(rp);
+			lblPath.setText(" ");
 			if (panelSecondary.getVisibility() != View.GONE) {
-				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
-				rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-				list.setLayoutParams(rp);
+				if (animator != null)
+					animUpdateListLayout = true;
+				else
+					updateListLayout();
 				//do not change lblLoading's layout, as it covers the background behind panelSecondary
 				/*if (lblLoading != null) {
 					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -123,17 +137,12 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			btnGoBack.setNextFocusLeftId(R.id.list);
 			UI.setNextFocusForwardId(list, R.id.btnGoBack);
 		} else {
-			rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
-			rp.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
-			lblPath.setLayoutParams(rp);
-			final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
-			lblPath.setPadding(m, m - UI.thickDividerSize, m, m);
 			if (panelSecondary.getVisibility() != View.VISIBLE) {
 				panelSecondary.setVisibility(View.VISIBLE);
-				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-				rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
-				rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
-				list.setLayoutParams(rp);
+				if (animator != null)
+					animUpdateListLayout = true;
+				else
+					updateListLayout();
 				//do not change lblLoading's layout, as it covers the background behind panelSecondary
 				/*if (lblLoading != null) {
 					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -526,8 +535,18 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		}
 		return true;
 	}
-	
+
+	private void setPathInternal() {
+		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !animSectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
+		FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED, false);
+		fileList.setPath(animTo, animFrom, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && animSectionsEnabled);
+		animTo = null;
+		animFrom = null;
+	}
+
 	private void navigateTo(String to, String from, boolean onlyUpdateButtons) {
+		if (animator != null && (animator.isRunning() || animatorFadeOut.isRunning()))
+			return;
 		UI.animationReset();
 		if (isAtHome)
 			Player.originalPath = to;
@@ -575,11 +594,17 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		UI.animationCommit(isCreatingLayout, null);
 		Player.path = to;
 		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
-		final boolean sectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
-		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !sectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
-		FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED, false);
-		if (!onlyUpdateButtons)
-			fileList.setPath(to, from, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && sectionsEnabled);
+		animSectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
+		animTo = to;
+		animFrom = from;
+		if (!onlyUpdateButtons) {
+			if (animatorFadeOut != null && !isCreatingLayout) {
+				lblLoading.setVisibility(View.VISIBLE);
+				animatorFadeOut.start();
+			} else {
+				setPathInternal();
+			}
+		}
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
@@ -803,6 +828,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				list.setVisibility(View.GONE);
 			list.setCustomEmptyText(msgEmptyList);
 			animator = new FastAnimator(list, false, this, 0);
+			animatorFadeOut = new FastAnimator(list, true, this, 0);
 			lblLoading = (TextView)findViewById(R.id.lblLoading);
 			//try to center the text by making up for panelSecondary
 			lblLoading.setPadding(0, 0, 0, UI.defaultControlSize + UI._1dp + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
@@ -932,9 +958,15 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	protected void onCleanupLayout() {
 		UI.animationReset();
 		pendingTo = null;
+		animTo = null;
+		animFrom = null;
 		if (animator != null) {
 			animator.release();
 			animator = null;
+		}
+		if (animatorFadeOut != null) {
+			animatorFadeOut.release();
+			animatorFadeOut = null;
 		}
 		lastClickedFavorite = null;
 		lblPath = null;
@@ -977,7 +1009,15 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 
 	@Override
 	public void onEnd(FastAnimator animator) {
-		if (lblLoading != null)
-			lblLoading.setVisibility(View.GONE);
+		if (animator == this.animator) {
+			if (lblLoading != null)
+				lblLoading.setVisibility(View.GONE);
+		} else if (animator == this.animatorFadeOut) {
+			if (animTo == null && animFrom == null)
+				return;
+			if (animUpdateListLayout)
+				updateListLayout();
+			setPathInternal();
+		}
 	}
 }

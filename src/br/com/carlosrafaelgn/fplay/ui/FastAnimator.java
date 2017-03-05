@@ -76,6 +76,10 @@ public final class FastAnimator implements Animation.AnimationListener {
 		this.referenceView = referenceView;
 	}
 
+	public boolean isRunning() {
+		return running;
+	}
+
 	public void release() {
 		end();
 		viewToFade = null;
