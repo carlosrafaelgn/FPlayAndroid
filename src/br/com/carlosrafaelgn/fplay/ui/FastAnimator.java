@@ -159,6 +159,11 @@ public final class FastAnimator implements Animation.AnimationListener {
 		}
 	}
 
+	public void prepareToRestart(View referenceView) {
+		end();
+		this.referenceView = referenceView;
+	}
+
 	@Override
 	public void onAnimationStart(Animation animation) {
 

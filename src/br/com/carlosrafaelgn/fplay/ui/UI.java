@@ -2548,8 +2548,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private static void animationCommit11(View focusView) {
+		final View referenceView = (focusView != null ? focusView : (animationViewToShowFirst != null ? animationViewToShowFirst : (animationViewsToHideAndShow[0] != null ? animationViewsToHideAndShow[0] : animationViewsToHideAndShow[16])));
 		if (animationAnimatorShowFirst == null) {
-			final View referenceView = (focusView != null ? focusView : (animationViewToShowFirst != null ? animationViewToShowFirst : (animationViewsToHideAndShow[0] != null ? animationViewsToHideAndShow[0] : animationViewsToHideAndShow[16])));
 			animationAnimatorShowFirst = new FastAnimator(new FastAnimator.Observer() {
 				@Override
 				public void onUpdate(FastAnimator animator, float value) {
@@ -2597,9 +2597,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				}
 			}, 0, referenceView);
 		} else {
-			animationAnimatorShowFirst.end();
-			animationAnimatorHide.end();
-			animationAnimatorShow.end();
+			animationAnimatorShowFirst.prepareToRestart(referenceView);
+			animationAnimatorHide.prepareToRestart(referenceView);
+			animationAnimatorShow.prepareToRestart(referenceView);
 		}
 		if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
 			animationState = ANIMATION_STATE_HIDING;

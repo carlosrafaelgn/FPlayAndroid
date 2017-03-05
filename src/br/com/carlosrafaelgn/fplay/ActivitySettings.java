@@ -890,8 +890,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 	}
 
-	private void refreshBluetoothStatus(boolean postAgain) {
-		if (!isLayoutCreated() || optBtMessage == null)
+	private void refreshBluetoothStatus(boolean postAgain, boolean ignoreLayoutStatus) {
+		if ((!ignoreLayoutStatus && !isLayoutCreated()) || optBtMessage == null)
 			return;
 		if (Player.bluetoothVisualizerLastErrorMessage != 0) {
 			btErrorMessage = Player.bluetoothVisualizerLastErrorMessage;
@@ -1052,7 +1052,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optBtSize = new SettingView(ctx, UI.ICON_VISUALIZER24, getText(R.string.bt_sample_count).toString(), getSizeString(), false, false, false);
 			optBtVUMeter = new SettingView(ctx, UI.ICON_VISUALIZER24, getText(R.string.bt_vumeter).toString(), null, true, Player.isBluetoothUsingVUMeter(), false);
 			optBtSpeed = new SettingView(ctx, UI.ICON_VISUALIZER24, getText(R.string.sustain).toString(), getSpeedString(), false, false, false);
-			refreshBluetoothStatus(true);
+			refreshBluetoothStatus(true, true);
 
 			headers = new TextView[3];
 			addHeader(ctx, R.string.information, optBtMessage, 0);
@@ -1392,27 +1392,27 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				if (Player.bluetoothVisualizerController == null) {
 					startTransmissionOnConnection = false;
 					Player.startBluetoothVisualizer(getHostActivity(), false);
-					refreshBluetoothStatus(false);
+					refreshBluetoothStatus(false, false);
 				} else if (Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING) {
 					Player.stopBluetoothVisualizer();
-					refreshBluetoothStatus(false);
+					refreshBluetoothStatus(false, false);
 				}
 			} else if (view == optBtStart) {
 				if (Player.bluetoothVisualizerController != null) {
 					switch (Player.bluetoothVisualizerState) {
 					case Player.BLUETOOTH_VISUALIZER_STATE_CONNECTED:
 						((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).startTransmission();
-						refreshBluetoothStatus(false);
+						refreshBluetoothStatus(false, false);
 						break;
 					case Player.BLUETOOTH_VISUALIZER_STATE_TRANSMITTING:
 						((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).stopTransmission();
-						refreshBluetoothStatus(false);
+						refreshBluetoothStatus(false, false);
 						break;
 					}
 				} else if (Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING) {
 					startTransmissionOnConnection = true;
 					Player.startBluetoothVisualizer(getHostActivity(), true);
-					refreshBluetoothStatus(false);
+					refreshBluetoothStatus(false, false);
 				}
 			} else if (view == optBtVUMeter) {
 				Player.setBluetoothUsingVUMeter(optBtVUMeter.isChecked());
@@ -1732,7 +1732,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public boolean handleMessage(Message msg) {
 		switch (msg.what) {
 		case MSG_REFRESH_BLUETOOTH:
-			refreshBluetoothStatus(true);
+			refreshBluetoothStatus(true, false);
 			break;
 		case MSG_SAVE_CONFIG:
 			if (Player.state < Player.STATE_TERMINATING)
