@@ -104,13 +104,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	}
 
 	private void updateOverallLayout() {
-		final RelativeLayout.LayoutParams rp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
-		rp.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
-		lblPath.setLayoutParams(rp);
-		final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
-		lblPath.setPadding(m, m - UI.thickDividerSize, m, m);
 		if (isAtHome) {
-			lblPath.setText(" ");
 			if (panelSecondary.getVisibility() != View.GONE) {
 				if (animator != null)
 					animUpdateListLayout = true;
@@ -593,7 +587,11 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		updateButtons(false);
 		UI.animationCommit(isCreatingLayout, null);
 		Player.path = to;
-		lblPath.setText(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ? to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) : to);
+		lblPath.setText(isAtHome ?
+			getText(R.string.home).toString() :
+			(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ?
+				to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) :
+				to));
 		animSectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
 		animTo = to;
 		animFrom = from;
@@ -819,6 +817,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.largeText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
+		final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
+		lblPath.setPadding(m, m, m, m);
 		msgEmptyList = getText(R.string.empty_list);
 		msgLoading = getText(R.string.loading);
 		list = (BgListView)findViewById(R.id.list);
@@ -898,7 +898,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		btnPlay.setIcon(UI.ICON_PLAY);
 		if (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED ||
 			UI.browserScrollBarType == BgListView.SCROLLBAR_LARGE) {
-			UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
+			UI.prepareControlContainer(findViewById(R.id.panelControls), false, false);
 		} else {
 			if (UI.extraSpacing) {
 				final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
@@ -906,7 +906,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				lp.rightMargin = UI.controlMargin;
 				btnURL.setLayoutParams(lp);
 			}
-			UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, true);
+			UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, false);
 		}
 		UI.prepareControlContainer(panelSecondary, true, false);
 		UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
