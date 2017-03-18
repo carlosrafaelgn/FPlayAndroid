@@ -102,9 +102,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 97;
+	public static final int VERSION_CODE = 98;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
-	public static final String VERSION_NAME = "v1.62";
+	public static final String VERSION_NAME = "v1.63";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -2306,7 +2306,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	private static int animationHideCount, animationShowCount, animationState;
 	private static View animationViewToShowFirst;
 	private static View[] animationViewsToHideAndShow;
-	private static FastAnimator animationAnimatorShowFirst, animationAnimatorHide, animationAnimatorShow;
+	//private static FastAnimator animationAnimatorShowFirst, animationAnimatorHide, animationAnimatorShow;
 	private static Animation animationShowFirst, animationHide, animationShow;
 	public static Runnable animationFinishedObserver;
 
@@ -2348,28 +2348,28 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	private static void animationFinished(boolean abortAll) {
-		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || (animationShow == null && animationAnimatorShow == null));
+		boolean finished = (abortAll || (animationState == ANIMATION_STATE_SHOWING) || (animationShow == null));// && animationAnimatorShow == null));
 		if (animationHideCount > 0 || animationShowCount > 0 || animationViewToShowFirst != null) {
 			if (abortAll) {
 				animationState = ANIMATION_STATE_NONE;
 				if (animationShowFirst != null)
 					animationShowFirst.cancel();
-				if (animationAnimatorShowFirst != null)
-					animationAnimatorShowFirst.end();
+				//if (animationAnimatorShowFirst != null)
+				//	animationAnimatorShowFirst.end();
 				if (animationHide != null)
 					animationHide.cancel();
-				if (animationAnimatorHide != null)
-					animationAnimatorHide.end();
+				//if (animationAnimatorHide != null)
+				//	animationAnimatorHide.end();
 				if (animationShow != null)
 					animationShow.cancel();
-				if (animationAnimatorShow != null)
-					animationAnimatorShow.end();
+				//if (animationAnimatorShow != null)
+				//	animationAnimatorShow.end();
 			}
 			if (abortAll || animationState == ANIMATION_STATE_HIDING) {
 				for (int i = 0; i < animationHideCount; i++) {
 					final View view = animationViewsToHideAndShow[i];
 					if (view != null) {
-						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+						//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
 							view.setAnimation(null);
 						view.setVisibility(View.GONE);
 						animationViewsToHideAndShow[i] = null;
@@ -2377,7 +2377,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				}
 				animationHideCount = 0;
 				if (animationViewToShowFirst != null) {
-					if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+					//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
 						animationViewToShowFirst.setAnimation(null);
 					animationViewToShowFirst = null;
 				}
@@ -2392,28 +2392,28 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 							finished = false;
 							animationHandleTag(view);
 							view.setVisibility(View.VISIBLE);
-							if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+							//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
 								view.startAnimation(animationShow);
-							else
-								view.setAlpha(0.0f);
-						} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+							//else
+							//	view.setAlpha(0.0f);
+						} else { //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 							animationViewsToHideAndShow[16 + i] = null;
-							view.setAlpha(1.0f);
+							//view.setAlpha(1.0f);
 						}
 					}
 				}
-				if (!finished && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-					animationAnimatorShow.start();
+				//if (!finished && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				//	animationAnimatorShow.start();
 			}
 			if (finished) {
 				animationState = ANIMATION_STATE_NONE;
 				for (int i = 0; i < animationShowCount; i++) {
 					final View view = animationViewsToHideAndShow[16 + i];
 					if (view != null) {
-						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+						//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
 							view.setAnimation(null);
-						else
-							view.setAlpha(1.0f);
+						//else
+						//	view.setAlpha(1.0f);
 						if (abortAll && view.getVisibility() != View.VISIBLE) {
 							animationHandleTag(view);
 							view.setVisibility(View.VISIBLE);
@@ -2493,8 +2493,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				animationFinishedObserver = null;
 				observer.run();
 			}
-		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			animationCommit11(focusView);
+		//} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+		//	animationCommit11(focusView);
 		} else {
 			if (animationShowFirst == null) {
 				(animationShowFirst = animationCreateAlpha(0.0f, 1.0f)).setAnimationListener(Player.theUI);
@@ -2546,7 +2546,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public void onAnimationStart(Animation animation) {
 	}
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	/*@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private static void animationCommit11(View focusView) {
 		final View referenceView = (focusView != null ? focusView : (animationViewToShowFirst != null ? animationViewToShowFirst : (animationViewsToHideAndShow[0] != null ? animationViewsToHideAndShow[0] : animationViewsToHideAndShow[16])));
 		if (animationAnimatorShowFirst == null) {
@@ -2625,5 +2625,5 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			animationShowCount = 0;
 			animationViewToShowFirst = null;
 		}
-	}
+	}*/
 }

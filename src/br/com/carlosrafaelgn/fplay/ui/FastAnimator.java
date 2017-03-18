@@ -32,12 +32,12 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-import android.os.Build;
-import android.os.SystemClock;
+//import android.os.Build;
+//import android.os.SystemClock;
 import android.view.View;
 import android.view.animation.Animation;
 
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+//import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 
 public final class FastAnimator implements Animation.AnimationListener {
 	public interface Observer {
@@ -45,36 +45,36 @@ public final class FastAnimator implements Animation.AnimationListener {
 		void onEnd(FastAnimator animator);
 	}
 
-	private View viewToFade, referenceView;
+	private View viewToFade;//, referenceView;
 	private Animation animation;
 	private Observer observer;
-	private float invDuration;
-	private boolean fadeOut, running;
-	private int version, ellapsedTime, duration, lastTime;
-	private Runnable runnable;
+	//private float invDuration;
+	private boolean /*fadeOut,*/ running;
+	//private int version, ellapsedTime, duration, lastTime;
+	//private Runnable runnable;
 
 	public FastAnimator(View viewToFade, boolean fadeOut, Observer endObserver, int duration) {
 		this.viewToFade = viewToFade;
-		this.fadeOut = fadeOut;
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+		//this.fadeOut = fadeOut;
+		//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
 			this.animation = UI.animationCreateAlpha(fadeOut ? 1.0f : 0.0f, fadeOut ? 0.0f : 1.0f);
 			if (endObserver != null)
 				this.animation.setAnimationListener(this);
-		}
+		//}
 		this.observer = endObserver;
-		this.duration = (duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
-		this.invDuration = 1.0f / (float)this.duration;
-		this.referenceView = viewToFade;
+		//this.duration = (duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
+		//this.invDuration = 1.0f / (float)this.duration;
+		//this.referenceView = viewToFade;
 	}
 
-	public FastAnimator(Observer observer, int duration, View referenceView) {
+	/*public FastAnimator(Observer observer, int duration, View referenceView) {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
 			throw new RuntimeException("FastAnimator must be used with API 11+ for the observer to work properly");
 		this.observer = observer;
 		this.duration = (duration <= 0 ? UI.TRANSITION_DURATION_FOR_VIEWS : duration);
 		this.invDuration = 1.0f / (float)this.duration;
 		this.referenceView = referenceView;
-	}
+	}*/
 
 	public boolean isRunning() {
 		return running;
@@ -83,7 +83,7 @@ public final class FastAnimator implements Animation.AnimationListener {
 	public void release() {
 		end();
 		viewToFade = null;
-		referenceView = null;
+		//referenceView = null;
 		animation = null;
 		observer = null;
 	}
@@ -92,7 +92,7 @@ public final class FastAnimator implements Animation.AnimationListener {
 		if (running)
 			end();
 		running = true;
-		version++;
+		/*version++;
 		ellapsedTime = 0;
 		runnable = new Runnable() {
 			private final int myVersion = version;
@@ -124,49 +124,49 @@ public final class FastAnimator implements Animation.AnimationListener {
 					}
 				}
 			}
-		};
+		};*/
 		if (viewToFade != null) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-				viewToFade.setAlpha(fadeOut ? 1.0f : 0.0f);
-			} else {
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			//	viewToFade.setAlpha(fadeOut ? 1.0f : 0.0f);
+			//} else {
 				viewToFade.startAnimation(animation);
-				return;
-			}
-		} else if (observer != null) {
+				//return;
+			//}
+		} /*else if (observer != null) {
 			observer.onUpdate(this, 0.0f);
 		}
 		lastTime = (int)SystemClock.uptimeMillis();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && referenceView != null)
 			referenceView.postOnAnimation(runnable);
 		else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			MainHandler.postToMainThreadAtTime(runnable, lastTime + 16);
+			MainHandler.postToMainThreadAtTime(runnable, lastTime + 16);*/
 	}
 
 	public void end() {
 		if (!running)
 			return;
 		running = false;
-		version++;
-		runnable = null;
+		//version++;
+		//runnable = null;
 		if (viewToFade != null) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-				viewToFade.setAlpha(fadeOut ? 0.0f : 1.0f);
-				if (observer != null)
-					observer.onEnd(this);
-			} else {
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			//	viewToFade.setAlpha(fadeOut ? 0.0f : 1.0f);
+			//	if (observer != null)
+			//		observer.onEnd(this);
+			//} else {
 				viewToFade.setAnimation(null);
 				animation.cancel();
-			}
+			//}
 		} else if (observer != null) {
 			observer.onUpdate(this, 1.0f);
 			observer.onEnd(this);
 		}
 	}
 
-	public void prepareToRestart(View referenceView) {
+	/*public void prepareToRestart(View referenceView) {
 		end();
 		this.referenceView = referenceView;
-	}
+	}*/
 
 	@Override
 	public void onAnimationStart(Animation animation) {
@@ -178,8 +178,8 @@ public final class FastAnimator implements Animation.AnimationListener {
 		if (!running)
 			return;
 		running = false;
-		version++;
-		runnable = null;
+		//version++;
+		//runnable = null;
 		if (viewToFade != null)
 			viewToFade.setAnimation(null);
 		else if (observer != null)

@@ -146,8 +146,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		samsungSMultiWindowHeight = 0;
 		samsungStateChangeListener = null;
 		try {
-			final Window window = getWindow();
-			final Object multiPhoneWindowEvent = samsungWindowGetMultiPhoneWindowEvent.invoke(window, (Class[])null);
+			final Object multiPhoneWindowEvent = samsungWindowGetMultiPhoneWindowEvent.invoke(getWindow());
 			if (multiPhoneWindowEvent == null) {
 				samsungWindowGetMultiPhoneWindowEvent = null;
 				samsungMultiPhoneWindowEventSetStateChangeListener = null;
@@ -176,7 +175,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	private void cleanupSamsungMultiWindowListener() {
 		try {
-			final Object multiPhoneWindowEvent = samsungWindowGetMultiPhoneWindowEvent.invoke(getWindow(), (Class[])null);
+			final Object multiPhoneWindowEvent = samsungWindowGetMultiPhoneWindowEvent.invoke(getWindow());
 			if (multiPhoneWindowEvent != null && samsungMultiPhoneWindowEventSetStateChangeListener != null)
 				samsungMultiPhoneWindowEventSetStateChangeListener.invoke(multiPhoneWindowEvent, new Object[] { null });
 		} catch (Throwable ex) {
@@ -188,7 +187,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	static {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
 			try {
-				samsungWindowGetMultiPhoneWindowEvent = Window.class.getMethod("getMultiPhoneWindowEvent", (Class[])null);
+				samsungWindowGetMultiPhoneWindowEvent = Window.class.getMethod("getMultiPhoneWindowEvent");
 			} catch (Throwable ex) {
 				samsungWindowGetMultiPhoneWindowEvent = null;
 			}
@@ -197,12 +196,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	private void disableTopView() {
 		FrameLayout parent;
-		View view;
 		try {
 			parent = (FrameLayout)findViewById(android.R.id.content);
 		} catch (Throwable ex) {
 			parent = null;
 		}
+		final View view;
 		if (parent != null && (view = parent.getChildAt(0)) != null) {
 			view.setEnabled(false);
 			if (view instanceof ViewGroup)
@@ -212,10 +211,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	private void disableGroup(ViewGroup viewGroup) {
 		for (int i = viewGroup.getChildCount() - 1; i >= 0; i--) {
-			View view = viewGroup.getChildAt(i);
-			view.setEnabled(false);
-			if (view instanceof ViewGroup)
-				disableGroup((ViewGroup)view);
+			final View view;
+			if ((view = viewGroup.getChildAt(i)) != null) {
+				view.setEnabled(false);
+				if (view instanceof ViewGroup)
+					disableGroup((ViewGroup)view);
+			}
 		}
 	}
 
@@ -559,17 +560,19 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		activity.onCleanupLayout();
 		activity.onDestroy();
 		top = ((top != null) ? top.previousActivity : null);
-		if (top != null)
-			updateTitle(top.getTitle(), announce);
-		else
-			//prevent the title from being said by TalkBack when the
-			//application finishes in response to a menu item
-			setTitle("\u00A0");
 		activity.activity = null;
 		activity.previousActivity = null;
 		final ClientActivity oldTop = top;
-		if (oldTop != null && !oldTop.finished)
-			oldTop.activityFinished(activity, activity.requestCode, code);
+		if (oldTop != null) {
+			oldTop.activity = this;
+			updateTitle(oldTop.getTitle(), announce);
+			if (!oldTop.finished)
+				oldTop.activityFinished(activity, activity.requestCode, code);
+		} else {
+			//prevent the title from being said by TalkBack when the
+			//application finishes in response to a menu item
+			setTitle("\u00A0");
+		}
 		if (newActivity != null) {
 			useFadeOutNextTime = false;
 			startActivityInternal(newActivity, announce);
