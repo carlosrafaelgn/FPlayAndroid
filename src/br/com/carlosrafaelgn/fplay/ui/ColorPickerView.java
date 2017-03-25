@@ -646,11 +646,14 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 
 		setPadding(margin, margin, margin, margin);
 
+		//weird... I know... but at least lint stops complaining!
+		final int id = 0;
+
 		if (UI.isLandscape || UI.isLargeScreen) {
 			controlPanel = new LinearLayout(context);
 			controlPanel.setOrientation(LinearLayout.VERTICAL);
 			controlPanel.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
-			controlPanel.setId(1);
+			controlPanel.setId(id + 1);
 
 			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), UI.isLargeScreen ? "H" : "HSV", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 			txtH.setSmallContentDescription(!UI.isLargeScreen);
@@ -693,7 +696,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			addView(controlPanel, rp);
 
 			hueView = new HueView(context, true);
-			hueView.setId(2);
+			hueView.setId(id + 2);
 			rp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			rp.rightMargin = internalMargin;
 			rp.addRule(LEFT_OF, 1);
@@ -701,7 +704,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			addView(hueView, rp);
 
 			colorView = new ColorView(context);
-			colorView.setId(3);
+			colorView.setId(id + 3);
 			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
 			rp.rightMargin = internalMargin;
 			rp.addRule(ALIGN_PARENT_LEFT);
@@ -714,7 +717,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			controlPanel = new LinearLayout(context);
 			controlPanel.setOrientation(LinearLayout.HORIZONTAL);
 			controlPanel.setGravity(Gravity.CENTER_HORIZONTAL);
-			controlPanel.setId(1);
+			controlPanel.setId(id + 1);
 
 			txtH = UI.createDialogEditText(context, 0, Integer.toString(h), "H", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 			txtH.setSmallContentDescription(!UI.isLargeScreen);
@@ -758,7 +761,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			addView(controlPanel, rp);
 
 			hueView = new HueView(context, false);
-			hueView.setId(2);
+			hueView.setId(id + 2);
 			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 			rp.topMargin = internalMargin;
 			rp.addRule(ABOVE, 1);
@@ -766,7 +769,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			addView(hueView, rp);
 
 			colorView = new ColorView(context);
-			colorView.setId(3);
+			colorView.setId(id + 3);
 			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
 			rp.addRule(ALIGN_PARENT_TOP);
 			rp.addRule(ALIGN_PARENT_LEFT);

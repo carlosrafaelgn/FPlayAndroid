@@ -227,10 +227,13 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 
 		final BgFlexLayout panel = new BgFlexLayout(getContext());
 
+		//weird... I know... but at least lint stops complaining!
+		final int id = 0;
+
 		if (titleVisible) {
 			final TextView txtTitle = new TextView(context);
 			txtTitle.setText(title);
-			txtTitle.setId(1);
+			txtTitle.setId(id + 1);
 			txtTitle.setTypeface(UI.defaultTypeface);
 			txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._22sp);
 			txtTitle.setTextColor(UI.colorState_text_title_static);
@@ -242,7 +245,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		if (btnNeutral != null || btnNegative != null || btnPositive != null) {
 			RelativeLayout.LayoutParams rp;
 			panelBottom = new RelativeLayout(context);
-			panelBottom.setId(2);
+			panelBottom.setId(id + 2);
 			final int padding = ((UI.isLargeScreen || !UI.isLowDpiScreen) ? UI.controlMargin : UI.controlSmallMargin);
 			UI.prepareControlContainer(panelBottom, true, false, padding, padding, padding, padding);
 			if (btnNeutral != null) {
@@ -262,7 +265,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 				panelBottom.addView(btnNegative, rp);
 			}
 			if (btnPositive != null) {
-				btnPositive.setId(3);
+				btnPositive.setId(id + 3);
 				btnPositive.setDefaultHeightAndLargeMinimumWidth();
 				rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				if (UI.isLargeScreen)

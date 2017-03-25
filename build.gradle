@@ -19,21 +19,21 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 24
+    compileSdkVersion 25
     buildToolsVersion "20.0.0"
 
 	productFlavors {
 		traditional {
 			applicationId "br.com.carlosrafaelgn.fplay"
 			minSdkVersion 10
-			targetSdkVersion 24
+			targetSdkVersion 25
 			buildConfigField 'boolean', 'X', 'false'
 		}
 
 		x {
 			applicationId "br.com.carlosrafaelgn.fplay.x"
 			minSdkVersion 16
-			targetSdkVersion 24
+			targetSdkVersion 25
 			buildConfigField 'boolean', 'X', 'true'
 		}
 	}

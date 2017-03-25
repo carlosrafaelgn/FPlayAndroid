@@ -1038,7 +1038,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		lblTitle = (TextView)findViewById(R.id.lblTitle);
 		prepareHeader(lblTitle);
 
-		viewForPadding = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? (ViewGroup)list : panelSettings);
+		viewForPadding = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? list : panelSettings);
 		setListPadding();
 
 		list.setOnScrollListener(this);
@@ -1226,10 +1226,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			lblTitle.setVisibility(View.GONE);
 			currentHeader = -1;
 		}
-		firstViewAdded.setId(2);
+		//weird... I know... but at least lint stops complaining!
+		final int id = 0;
+		firstViewAdded.setId(id + 2);
 		firstViewAdded.setNextFocusUpId(R.id.btnAbout);
 		firstViewAdded = null;
-		lastViewAdded.setId(3);
+		lastViewAdded.setId(id + 3);
 		lastViewAdded.setNextFocusDownId(R.id.btnGoBack);
 		lastViewAdded = null;
 

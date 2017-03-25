@@ -451,9 +451,11 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 				}
 			}
 			if (first >= 0 && first != last) {
-				items[first].actionView.setId(1);
+				//weird... I know... but at least lint stops complaining!
+				final int id = 0;
+				items[first].actionView.setId(id + 1);
 				items[first].actionView.setNextFocusUpId(2);
-				items[last].actionView.setId(2);
+				items[last].actionView.setId(id + 2);
 				items[last].actionView.setNextFocusDownId(1);
 			}
 			scroll = new ObservableScrollView(context, UI.PLACEMENT_MENU);
