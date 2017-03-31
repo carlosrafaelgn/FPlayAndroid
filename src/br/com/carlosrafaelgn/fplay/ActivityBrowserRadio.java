@@ -86,7 +86,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
 	private boolean loading, isAtFavorites, isHidingLoadingPanel, animateListBox;
-	private FastAnimator animator, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
+	private FastAnimator animatorFadeIn, animatorFadeOut, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
 	public ActivityBrowserRadio(boolean useShoutcast) {
@@ -225,16 +225,16 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		}
 		if (list != null) {
 			list.setCustomEmptyText(started ? msgLoading : (isAtFavorites ? msgNoFavorites : msgNoStations));
-			if (animator != null && animateListBox) {
-				animator.end();
-				//when the animation ends, lblLoading is made hidden...
-				//that's why we set the visibility after calling end()
+			if (animatorFadeIn != null && animateListBox) {
 				lblLoading.setVisibility(View.VISIBLE);
 				if (started) {
+					//when the animation ends, list is made visible...
+					//that's why we set the visibility after calling end()
+					animatorFadeOut.end();
 					list.setVisibility(View.INVISIBLE);
 				} else if (list.getVisibility() != View.VISIBLE) {
 					list.setVisibility(View.VISIBLE);
-					animator.start();
+					animatorFadeIn.start();
 				}
 			}
 		}
@@ -310,6 +310,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	}
 
 	private void doSearch(boolean firstSearch) {
+		if (animatorFadeIn != null && (animatorFadeIn.isRunning() || animatorFadeOut.isRunning()))
+			return;
 		animateListBox = firstSearch;
 		final int selection = radioStationList.getSelection();
 		if (Player.radioSearchTerm != null) {
@@ -386,7 +388,12 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
 				isAtFavorites = false;
-				restoreCacheOrDoSearch();
+				if (animatorFadeOut != null) {
+					lblLoading.setVisibility(View.VISIBLE);
+					animatorFadeOut.start();
+				} else {
+					restoreCacheOrDoSearch();
+				}
 			} else {
 				finish(0, view, true);
 			}
@@ -394,7 +401,12 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			final int selection = radioStationList.getSelection();
 			isAtFavorites = true;
 			radioStationList.cancel();
-			radioStationList.fetchFavorites();
+			if (animatorFadeOut != null) {
+				lblLoading.setVisibility(View.VISIBLE);
+				animatorFadeOut.start();
+			} else {
+				radioStationList.fetchFavorites();
+			}
 			//do not call updateButtons() if onSelectionChanged() got called before!
 			if (selection < 0)
 				updateButtons();
@@ -577,11 +589,12 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		list.setOnScrollListener(this);
 		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
 		if (UI.animationEnabled) {
-			list.setVisibility(View.GONE);
+			list.setVisibility(View.INVISIBLE);
 			loadingPanelAnimatorHide = new FastAnimator(panelLoading, true, this, 0);
 			loadingPanelAnimatorShow = new FastAnimator(panelLoading, false, null, 0);
 			radioStationList.radioStationAddedObserver = this;
-			animator = new FastAnimator(list, false, this, 0);
+			animatorFadeIn = new FastAnimator(list, false, this, 0);
+			animatorFadeOut = new FastAnimator(list, true, this, 0);
 			lblLoading = (TextView)findViewById(R.id.lblLoading);
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			lblLoading.setTextColor(UI.color_text_listitem_disabled);
@@ -662,9 +675,13 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	@Override
 	protected void onCleanupLayout() {
 		UI.animationReset();
-		if (animator != null) {
-			animator.release();
-			animator = null;
+		if (animatorFadeIn != null) {
+			animatorFadeIn.release();
+			animatorFadeIn = null;
+		}
+		if (animatorFadeOut != null) {
+			animatorFadeOut.release();
+			animatorFadeOut = null;
 		}
 		if (loadingPanelAnimatorHide != null) {
 			loadingPanelAnimatorHide.release();
@@ -705,10 +722,10 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onRadioStationAdded() {
-		if (list != null && animator != null && list.getVisibility() != View.VISIBLE) {
-			animator.end();
+		if (list != null && animatorFadeIn != null && list.getVisibility() != View.VISIBLE) {
+			animatorFadeIn.end();
 			list.setVisibility(View.VISIBLE);
-			animator.start();
+			animatorFadeIn.start();
 		}
 	}
 
@@ -718,9 +735,18 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onEnd(FastAnimator animator) {
-		if (animator == this.animator) {
+		if (animator == this.animatorFadeIn) {
 			if (lblLoading != null)
 				lblLoading.setVisibility(View.GONE);
+		} else if (animator == animatorFadeOut) {
+			if (list != null && radioStationList != null) {
+				list.setVisibility(View.INVISIBLE);
+				animateListBox = true;
+				if (isAtFavorites)
+					radioStationList.fetchFavorites();
+				else
+					restoreCacheOrDoSearch();
+			}
 		} else {
 			if (isHidingLoadingPanel && panelLoading != null) {
 				isHidingLoadingPanel = false;
