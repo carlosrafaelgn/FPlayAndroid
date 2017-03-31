@@ -106,7 +106,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	private void updateOverallLayout() {
 		if (isAtHome) {
 			if (panelSecondary.getVisibility() != View.GONE) {
-				if (animator != null)
+				if (animator != null && !isCreatingLayout)
 					animUpdateListLayout = true;
 				else
 					updateListLayout();
@@ -133,7 +133,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		} else {
 			if (panelSecondary.getVisibility() != View.VISIBLE) {
 				panelSecondary.setVisibility(View.VISIBLE);
-				if (animator != null)
+				if (animator != null && !isCreatingLayout)
 					animUpdateListLayout = true;
 				else
 					updateListLayout();
@@ -1012,6 +1012,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		if (animator == this.animator) {
 			if (lblLoading != null)
 				lblLoading.setVisibility(View.GONE);
+			if (animUpdateListLayout)
+				updateListLayout();
 		} else if (animator == this.animatorFadeOut) {
 			if (animTo == null && animFrom == null)
 				return;
