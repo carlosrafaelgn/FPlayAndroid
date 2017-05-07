@@ -1349,7 +1349,8 @@ public final class HttpStreamReceiver implements Runnable {
 				384   //Layer I
 			},
 			//MPEG 1
-			{   1152, //Layer III
+			{
+				1152, //Layer III
 				1152, //Layer II
 				384   //Layer I
 			}
@@ -1398,9 +1399,9 @@ public final class HttpStreamReceiver implements Runnable {
 				int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
 					(
 						(sizeBytes3 & 0x7f) |
-							((sizeBytes2 & 0x7f) << 7) |
-							((sizeBytes1 & 0x7f) << 14) |
-							((sizeBytes0 & 0x7f) << 21)
+						((sizeBytes2 & 0x7f) << 7) |
+						((sizeBytes1 & 0x7f) << 14) |
+						((sizeBytes0 & 0x7f) << 21)
 					) + 10; //the first 10 bytes
 				while (size > 0 && alive) {
 					final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
@@ -1465,12 +1466,6 @@ public final class HttpStreamReceiver implements Runnable {
 			b = buffer.peekReadArray(offset + 3);
 
 			//2 bits: channel mode
-			if (fillProperties) {
-				setChannelCount(((b >>> 6) == 3) ? 1 : 2); //channel count
-				setSampleRate(sampleRate);
-				setSamplesPerFrame(MPEG_SAMPLES_PER_FRAME[version & 1][layer - 1]);
-				setBitRate(bitRate);
-			}
 
 			//2 bits: mode extension (ignored)
 
@@ -1481,6 +1476,13 @@ public final class HttpStreamReceiver implements Runnable {
 			//2 bits: emphasis (must be != 2)
 			if ((b & 0x03) == 2)
 				return -1;
+
+			if (fillProperties) {
+				setChannelCount(((b >>> 6) == 3) ? 1 : 2); //channel count
+				setSampleRate(sampleRate);
+				setSamplesPerFrame(MPEG_SAMPLES_PER_FRAME[version & 1][layer - 1]);
+				setBitRate(bitRate);
+			}
 
 			int frameSize = (((MPEG_COEFF[version & 1][layer - 1] * bitRate) / sampleRate) + padding);
 			if (layer == 3) //Layer I
