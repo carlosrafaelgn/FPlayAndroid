@@ -203,11 +203,6 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	}
 
 	@Override
-	public View onCreateView() {
-		return new RadioStationView(Player.theApplication);
-	}
-
-	@Override
 	public void onLoadingProcessChanged(boolean started) {
 		if (!isLayoutCreated() || radioStationList == null)
 			return;

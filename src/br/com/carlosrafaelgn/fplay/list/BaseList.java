@@ -56,7 +56,6 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 
 	public interface ActionListener {
-		View onCreateView();
 		void onLoadingProcessChanged(boolean started);
 	}
 

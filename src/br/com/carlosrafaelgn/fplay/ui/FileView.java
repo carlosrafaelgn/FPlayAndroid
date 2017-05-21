@@ -129,7 +129,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 
 	public FileView(Context context) {
-		this(context, false, false);
+		this(context, true, false);
 	}
 
 	public FileView(Context context, boolean hasCheckbox, boolean force2D) {

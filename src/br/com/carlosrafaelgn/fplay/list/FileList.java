@@ -37,6 +37,7 @@ import android.view.ViewGroup;
 
 import java.io.File;
 
+import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.FileView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
@@ -172,7 +173,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		final FileView view = (FileView)((convertView != null) ? convertView : getActionListener().onCreateView());
+		final FileView view = ((convertView != null) ? (FileView)convertView : new FileView(Player.theApplication));
 		view.setItemState(items[position], position, getItemState(position), this, albumArtFetcher);
 		return view;
 	}

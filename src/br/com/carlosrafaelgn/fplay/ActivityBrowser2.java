@@ -446,11 +446,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	}
 
 	@Override
-	public View onCreateView() {
-		return new FileView(Player.theApplication, true, false);
-	}
-
-	@Override
 	public void onLoadingProcessChanged(boolean started) {
 		if (!isLayoutCreated())
 			return;
