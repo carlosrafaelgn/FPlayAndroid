@@ -2558,11 +2558,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (notification) {
 				UI.prepareNotificationPlaybackIcons();
 				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
-				if (notificationFirstTime) {
-					views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
-					views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
-					views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
+				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
+				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
+				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
 
+				if (notificationFirstTime) {
 					views.setOnClickPendingIntent(R.id.btnPrev, intentPrevious);
 					views.setOnClickPendingIntent(R.id.btnPlay, intentPlayPause);
 					views.setOnClickPendingIntent(R.id.btnNext, intentNext);
@@ -2604,20 +2604,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			notification.when = 0;
 			notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
 			notification.contentIntent = intentActivityHost;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-					//any need for this technique???
-					//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
-					//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
-					notification.visibility = Notification.VISIBILITY_PUBLIC;
-					if (mediaSession != null)
-						notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
-				}
-				notificationRemoteViews = new RemoteViews(theApplication.getPackageName(), R.layout.notification);
-			} else {
-				notificationRemoteViews = new RemoteViews(theApplication.getPackageName(), R.layout.notification_simple);
-			}
+			notificationRemoteViews = new RemoteViews(theApplication.getPackageName(), (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? R.layout.notification : R.layout.notification_simple);
 			notification.contentView = notificationRemoteViews;
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			//any need for this technique???
+			//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
+			//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
+			notification.visibility = Notification.VISIBILITY_PUBLIC;
+			if (mediaSession != null)
+				notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
 		}
 		prepareRemoteViews(notificationRemoteViews, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
 		return notification;

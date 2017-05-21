@@ -1199,16 +1199,20 @@ public final class HttpStreamReceiver implements Runnable {
 	public boolean start() {
 		if (alive || released)
 			return false;
-		if (clientThread != null) {
+		Thread thread = clientThread;
+		if (thread != null) {
+			thread.interrupt();
 			try {
-				clientThread.join(50000);
+				thread.join(10000);
 			} catch (Throwable ex) {
 				//we tried to wait...
 			}
 		}
-		if (serverThread != null) {
+		thread = serverThread;
+		if (thread != null) {
+			thread.interrupt();
 			try {
-				serverThread.join(50000);
+				thread.join(10000);
 			} catch (Throwable ex) {
 				//we tried to wait...
 			}
@@ -1254,10 +1258,11 @@ public final class HttpStreamReceiver implements Runnable {
 		//let's remove the synchronization for the sake of speed during the fadeins
 		//synchronized (sync) {
 			try {
+				AudioTrack audioTrack = this.audioTrack;
 				if (audioTrack != null)
 					audioTrack.setStereoVolume(left, right);
 			} catch (Throwable ex) {
-				ex.printStackTrace();
+				//We knew something could go wrong...
 			}
 		//}
 	}
@@ -1297,6 +1302,12 @@ public final class HttpStreamReceiver implements Runnable {
 	public void release() {
 		alive = false;
 		released = true;
+		Thread thread = clientThread;
+		if (thread != null)
+			thread.interrupt();
+		thread = serverThread;
+		if (thread != null)
+			thread.interrupt();
 		synchronized (sync) {
 			if (resolver != null) {
 				resolver.release();
