@@ -768,14 +768,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				volume = 0;
 			else if (volume > volumeStreamMax)
 				volume = volumeStreamMax;
+			final int oldVolume = localVolumeStream;
 			localVolumeStream = volume;
+			//try to unmute the device, without calling setStreamMute...
+			try {
+				if (audioManager != null)
+					audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, (volume >= oldVolume) ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER, 0);
+			} catch (Throwable ex) {
+				//too bad...
+			}
 			//apparently a few devices don't like to have the streamVolume changed from another thread....
 			//maybe there is another reason for why it fails... I just haven't found yet :(
 			try {
 				if (audioManager != null)
 					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
 			} catch (Throwable ex) {
-				ex.printStackTrace();
+				//too bad...
 			}
 			return volume;
 		case VOLUME_CONTROL_DB:
