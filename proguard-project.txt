@@ -21,16 +21,21 @@
 
 #
 # http://developer.android.com/tools/help/proguard.html
+# https://www.guardsquare.com/en/proguard/manual/usage#obfuscationoptions
+# https://www.guardsquare.com/en/proguard/manual/optimizations
+# https://www.guardsquare.com/en/proguard/manual/examples
 # http://proguard.sourceforge.net/index.html#manual/examples.html
 #
 
 # **********************************************************************************************************
-# I made the following changes to the file proguard-android-optimize.txt:
+# I made the following changes to the file sdk/tools/proguard/proguard-android-optimize.txt
 #
 # removed -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
 # added -optimizations !code/simplification/cast,!field/*,!class/merging/*
 # **********************************************************************************************************
 -printmapping build/outputs/mapping/mapping.txt
+-optimizationpasses 9
+-useuniqueclassmembernames
 -allowaccessmodification
 -repackageclasses ''
 
