@@ -123,7 +123,13 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void reset() {
-		player.reset();
+		try {
+			player.reset();
+		} catch (Throwable ex) {
+			//we will just ignore, since it is a rare case
+			//when Player class called reset() on a player that
+			//had already been released!
+		}
 	}
 
 	@Override
