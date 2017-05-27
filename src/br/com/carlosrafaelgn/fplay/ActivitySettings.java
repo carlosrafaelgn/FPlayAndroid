@@ -65,7 +65,6 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
-import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
@@ -896,7 +895,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (Player.bluetoothVisualizerLastErrorMessage != 0) {
 			btErrorMessage = Player.bluetoothVisualizerLastErrorMessage;
 			Player.bluetoothVisualizerLastErrorMessage = 0;
-			BackgroundActivityMonitor.bluetoothEnded();
+			getHostActivity().bgMonitorBluetoothEnded();
 		}
 		if (Player.bluetoothVisualizerController != null) {
 			btErrorMessage = 0;

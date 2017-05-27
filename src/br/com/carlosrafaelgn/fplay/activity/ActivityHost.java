@@ -44,6 +44,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,13 +61,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 import br.com.carlosrafaelgn.fplay.ActivityMain;
+import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
+import br.com.carlosrafaelgn.fplay.ui.BgFrameLayout;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
+import br.com.carlosrafaelgn.fplay.util.Timer;
 
 //
 //Handling Runtime Changes
@@ -75,14 +78,16 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer, Interpolator {
+public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer, Interpolator, Timer.TimerHandler {
 	private ClientActivity top;
 	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate, isCreatingLayout, pendingOrientationChanges;
+	private BgFrameLayout baseParent;
 	private FrameLayout parent;
 	private View oldView, newView;
 	private Animation anim;
 	private FastAnimator animator; //used only with UI.TRANSITION_FADE
-	private int systemBgColor;
+	private int systemBgColor, bgMonitorLastMsg;
+	private Timer bgMonitorTimer;
 
 	//http://developer.samsung.com/html/techdoc/ProgrammingGuide_MultiWindow.pdf
 	//http://developer.samsung.com/galaxy/multiwindow
@@ -195,12 +200,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	private void disableTopView() {
-		FrameLayout parent;
-		try {
-			parent = (FrameLayout)findViewById(android.R.id.content);
-		} catch (Throwable ex) {
-			parent = null;
-		}
+		final FrameLayout parent = baseParent;
 		final View view;
 		if (parent != null && (view = parent.getChildAt(0)) != null) {
 			view.setEnabled(false);
@@ -288,7 +288,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				parent = null;
 			}
 		}
-		BackgroundActivityMonitor.start(this);
 		if (top != null && !top.finished && (top.postCreateCalled & 1) == 0) {
 			top.postCreateCalled |= 1;
 			top.onPostCreateLayout((top.postCreateCalled & 2) != 0);
@@ -322,10 +321,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		return (1.0f - (input * input));
 	}
 
-	public View findViewByIdDirect(int id) {
-		return super.findViewById(id);
-	}
-
 	@Override
 	public View findViewById(int id) {
 		return ((newView != null) ? newView.findViewById(id) : super.findViewById(id));
@@ -333,39 +328,31 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@Override
 	public void setContentView(View view) {
-		super.setContentView(view);
+		baseParent.removeAllViews();
+		baseParent.addView(view);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			updateSystemColors(false);
-		BackgroundActivityMonitor.start(this);
 	}
 
 	@Override
 	public void setContentView(View view, ViewGroup.LayoutParams params) {
-		super.setContentView(view, params);
+		baseParent.removeAllViews();
+		baseParent.addView(view, params);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			updateSystemColors(false);
-		BackgroundActivityMonitor.start(this);
 	}
 
 	@Override
 	public void setContentView(int layoutResID) {
-		super.setContentView(layoutResID);
+		baseParent.removeAllViews();
+		((LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE)).inflate(layoutResID, baseParent, true);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			updateSystemColors(false);
-		BackgroundActivityMonitor.start(this);
 	}
 
 	void setContentViewWithTransition(View view, boolean fadeAllowed, boolean forceFadeOut) {
 		final int transition = UI.transitions & 0xFF;
-		if (fadeAllowed && !ignoreFadeNextTime && transition != UI.TRANSITION_NONE) {
-			try {
-				parent = (FrameLayout)findViewById(android.R.id.content);
-			} catch (Throwable ex) {
-				parent = null;
-			}
-		} else {
-			parent = null;
-		}
+		parent = ((fadeAllowed && !ignoreFadeNextTime && transition != UI.TRANSITION_NONE) ? baseParent : null);
 		if (parent != null) {
 			anim = null;
 			animator = null;
@@ -483,14 +470,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				parent = null;
 			}
 			if (animator != null) {
-				BackgroundActivityMonitor.stop();
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 				((useFadeOutNextTime || forceFadeOut) ? oldView : view).bringToFront();
 				animator.start();
 				isFading = true;
 				createLayoutCausedAnimation = true;
 			} else if (anim != null) {
-				BackgroundActivityMonitor.stop();
 				anim.setAnimationListener(this);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 				if (useFadeOutNextTime || forceFadeOut) {
@@ -661,12 +646,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		final Uri data;
 		if (Player.state >= Player.STATE_TERMINATING || intent == null || !Intent.ACTION_VIEW.equals(intent.getAction()) || (data = intent.getData()) == null)
 			return;
-		if (Player.state == Player.STATE_ALIVE) {
-			if (Player.songs.addPathAndForceScrollIntoView(data.getPath(), true))
-				BackgroundActivityMonitor.start(this);
-		} else {
+		if (Player.state == Player.STATE_ALIVE)
+			Player.songs.addPathAndForceScrollIntoView(data.getPath(), true);
+		else
 			Player.pathToPlayWhenStarting = data.getPath();
-		}
 	}
 
 	@Override
@@ -719,6 +702,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.startService();
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
+		super.setContentView(baseParent = new BgFrameLayout(this));
 		pendingOrientationChanges = false;
 		top = new ActivityMain();
 		top.finished = false;
@@ -784,7 +768,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			animator.end();
 		else if (anim != null)
 			anim.cancel();
-		BackgroundActivityMonitor.stop();
+		bgMonitorStop();
 		if (top != null && !top.paused) {
 			top.paused = true;
 			top.onPause();
@@ -806,7 +790,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.paused = false;
 			top.onResume();
 		}
-		BackgroundActivityMonitor.start(this);
+		bgMonitorStart();
 		super.onResume();
 	}
 	
@@ -842,6 +826,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			c.previousActivity = null;
 			c = p;
 		}
+		baseParent = null;
+		bgMonitorTimer = null;
 	}
 	
 	@Override
@@ -897,5 +883,60 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	public void onPlayerDestroyed() {
 		finalCleanup();
 		finish();
+	}
+
+	@SuppressWarnings("deprecation")
+	public void bgMonitorStart() {
+		if (Player.state != Player.STATE_ALIVE || Player.songs.isAdding() || Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL || Player.bluetoothVisualizerLastErrorMessage != 0) {
+			bgMonitorStop();
+			if (baseParent != null) {
+				bgMonitorLastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : R.string.bt_active)));
+				baseParent.setMessage(bgMonitorLastMsg);
+				if (Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_INITIAL) {
+					if (bgMonitorTimer == null)
+						bgMonitorTimer = new Timer(this, "Background Activity Monitor Timer", false, true, false);
+					bgMonitorTimer.start(250);
+				}
+			}
+		}
+	}
+
+	public void bgMonitorBluetoothEnded() {
+		if (baseParent == null)
+			return;
+		if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding()) {
+			if (Player.bluetoothVisualizerLastErrorMessage != 0) {
+				if (bgMonitorLastMsg != R.string.bt_error) {
+					bgMonitorLastMsg = R.string.bt_error;
+					baseParent.setMessage(bgMonitorLastMsg);
+				}
+			} else {
+				bgMonitorStop();
+			}
+		}
+	}
+
+	public void bgMonitorStop() {
+		bgMonitorLastMsg = 0;
+		if (baseParent != null)
+			baseParent.setMessage(0);
+		if (bgMonitorTimer != null)
+			bgMonitorTimer.stop();
+	}
+
+	@Override
+	public void handleTimer(Timer timer, Object param) {
+		final int msg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : ((Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL) ? R.string.bt_active : 0))));
+		if (msg == 0) {
+			bgMonitorStop();
+		} else {
+			if (bgMonitorLastMsg != msg) {
+				bgMonitorLastMsg = msg;
+				if (baseParent != null)
+					baseParent.setMessage(msg);
+			}
+			if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding() && bgMonitorTimer != null)
+				bgMonitorTimer.stop();
+		}
 	}
 }

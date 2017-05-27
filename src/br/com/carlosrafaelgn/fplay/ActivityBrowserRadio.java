@@ -61,7 +61,6 @@ import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.RadioStationResolver;
-import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
@@ -143,7 +142,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			return;
 		}
 		Player.songs.addingStarted();
-		BackgroundActivityMonitor.start(getHostActivity());
+		getHostActivity().bgMonitorStart();
 		try {
 			(new Thread("Checked Radio Station Adder Thread") {
 				@Override

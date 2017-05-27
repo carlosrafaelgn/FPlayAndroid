@@ -73,7 +73,6 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgEditText;
@@ -1814,18 +1813,17 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		if (id == MNU_LOADLIST) {
 			Player.songs.clear();
 			Player.songs.startDeserializingOrImportingFrom(file, true, false, false);
-			BackgroundActivityMonitor.start(getHostActivity());
 		} else {
 			Player.songs.startExportingTo(file);
-			BackgroundActivityMonitor.start(getHostActivity());
 		}
+		getHostActivity().bgMonitorStart();
 	}
 
 	@Override
 	public void onAddClicked(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializingOrImportingFrom(file, false, true, false);
-			BackgroundActivityMonitor.start(getHostActivity());
+			getHostActivity().bgMonitorStart();
 		}
 	}
 
@@ -1833,7 +1831,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	public void onPlayClicked(int id, FileSt file) {
 		if (id == MNU_LOADLIST) {
 			Player.songs.startDeserializingOrImportingFrom(file, false, !Player.clearListWhenPlayingFolders, true);
-			BackgroundActivityMonitor.start(getHostActivity());
+			getHostActivity().bgMonitorStart();
 		}
 	}
 

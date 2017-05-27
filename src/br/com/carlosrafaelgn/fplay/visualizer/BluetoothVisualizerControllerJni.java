@@ -49,7 +49,6 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaVisualizer;
-import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
@@ -103,6 +102,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 	private volatile boolean connected, transmitting;
 	private boolean jniCalled, startTransmissionOnConnection;
 	private int lastPlayerCommandTime, ignoreInput;
+	private ActivityHost activityHost;
 
 	public BluetoothVisualizerControllerJni(ActivityHost activity, boolean startTransmissionOnConnection) {
 		waveform = new byte[Visualizer.CAPTURE_SIZE];
@@ -115,10 +115,11 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 		Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING;
 		bt = new BluetoothConnectionManager(this);
 		final int err = bt.showDialogAndScan(activity);
+		activityHost = activity;
 		if (err != BluetoothConnectionManager.OK)
 			onBluetoothError(bt, err);
 		else
-			BackgroundActivityMonitor.start(activity);
+			activity.bgMonitorStart();
 	}
 
 	public int getPacketsSent() {
@@ -209,7 +210,10 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 				mediaVisualizer = null;
 			}
 			Player.stopBluetoothVisualizer();
-			BackgroundActivityMonitor.bluetoothEnded();
+			if (activityHost != null) {
+				activityHost.bgMonitorBluetoothEnded();
+				activityHost = null;
+			}
 		}
 	}
 

@@ -58,7 +58,6 @@ import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.BackgroundActivityMonitor;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
@@ -214,7 +213,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		if (checkedCount <= 0)
 			return;
 		Player.songs.addingStarted();
-		BackgroundActivityMonitor.start(getHostActivity());
+		getHostActivity().bgMonitorStart();
 		boolean addingFolder = false;
 		try {
 			int c = 0;
