@@ -524,9 +524,13 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		return true;
 	}
 
-	private void setPathInternal() {
+	private void adjustScrollBar() {
 		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !animSectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED, false);
+	}
+
+	private void setPathInternal() {
+		adjustScrollBar();
 		fileList.setPath(animTo, animFrom, list.isInTouchMode(), (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && animSectionsEnabled);
 		animTo = null;
 		animFrom = null;
@@ -817,6 +821,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		msgLoading = getText(R.string.loading);
 		list = (BgListView)findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
+		adjustScrollBar();
 		if (UI.animationEnabled) {
 			if (firstCreation)
 				list.setVisibility(View.GONE);
@@ -984,7 +989,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	
 	@Override
 	protected void onDestroy() {
-		FileView.updateExtraMargins(false, false);
 		if (fileList != null) {
 			fileList.setItemClickListener(null);
 			fileList.setActionListener(null);

@@ -531,6 +531,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 		list = (BgListView)findViewById(R.id.list);
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setOnKeyDownObserver(this);
+		FileView.updateExtraMargins(false, false);
 		if (UI.animationEnabled) {
 			if (firstCreation)
 				list.setVisibility(View.GONE);
