@@ -621,7 +621,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		looper.quit();
 
 		try {
-			thread.join();
+			thread.interrupt();
+		} catch (Throwable ex) {
+			//just ignore
+		}
+
+		try {
+			//ANR is triggered after 5 seconds
+			thread.join(3750);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
