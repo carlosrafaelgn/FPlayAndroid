@@ -303,11 +303,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@Override
-	public void onUpdate(FastAnimator animator, float value) {
-
-	}
-
-	@Override
 	public void onEnd(FastAnimator animator) {
 		onAnimationEnd(null);
 	}

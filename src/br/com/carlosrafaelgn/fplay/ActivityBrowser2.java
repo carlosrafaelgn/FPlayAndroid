@@ -998,10 +998,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	}
 
 	@Override
-	public void onUpdate(FastAnimator animator, float value) {
-	}
-
-	@Override
 	public void onEnd(FastAnimator animator) {
 		if (animator == this.animator) {
 			if (lblLoading != null)

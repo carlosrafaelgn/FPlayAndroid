@@ -32,16 +32,15 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
-//import android.os.Build;
-//import android.os.SystemClock;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.animation.Animation;
 
-//import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 
-public final class FastAnimator implements Animation.AnimationListener {
+public final class FastAnimator implements Animation.AnimationListener, Runnable {
 	public interface Observer {
-		void onUpdate(FastAnimator animator, float value);
+		//void onUpdate(FastAnimator animator, float value);
 		void onEnd(FastAnimator animator);
 	}
 
@@ -50,12 +49,13 @@ public final class FastAnimator implements Animation.AnimationListener {
 	private Observer observer;
 	//private float invDuration;
 	private boolean /*fadeOut,*/ running;
+	private final boolean fadeOut;
 	//private int version, ellapsedTime, duration, lastTime;
 	//private Runnable runnable;
 
 	public FastAnimator(View viewToFade, boolean fadeOut, Observer endObserver, int duration) {
 		this.viewToFade = viewToFade;
-		//this.fadeOut = fadeOut;
+		this.fadeOut = fadeOut;
 		//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
 			this.animation = UI.animationCreateAlpha(fadeOut ? 1.0f : 0.0f, fadeOut ? 0.0f : 1.0f);
 			if (endObserver != null)
@@ -126,6 +126,16 @@ public final class FastAnimator implements Animation.AnimationListener {
 			}
 		};*/
 		if (viewToFade != null) {
+			if (viewToFade.getVisibility() != View.VISIBLE) {
+				if (fadeOut) {
+					//don't even start the animation if there is nothing to animate...
+					running = true;
+					MainHandler.postToMainThreadAtTime(this, SystemClock.uptimeMillis() + 16);
+					return;
+				} else {
+					viewToFade.setVisibility(View.VISIBLE);
+				}
+			}
 			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			//	viewToFade.setAlpha(fadeOut ? 1.0f : 0.0f);
 			//} else {
@@ -157,16 +167,22 @@ public final class FastAnimator implements Animation.AnimationListener {
 				viewToFade.setAnimation(null);
 				animation.cancel();
 			//}
-		} else if (observer != null) {
-			observer.onUpdate(this, 1.0f);
+		} //else if (observer != null) {
+			//observer.onUpdate(this, 1.0f);
+		//}
+		if (observer != null)
 			observer.onEnd(this);
-		}
 	}
 
 	/*public void prepareToRestart(View referenceView) {
 		end();
 		this.referenceView = referenceView;
 	}*/
+
+	@Override
+	public void run() {
+		end();
+	}
 
 	@Override
 	public void onAnimationStart(Animation animation) {
@@ -182,8 +198,8 @@ public final class FastAnimator implements Animation.AnimationListener {
 		//runnable = null;
 		if (viewToFade != null)
 			viewToFade.setAnimation(null);
-		else if (observer != null)
-			observer.onUpdate(this, 1.0f);
+		//else if (observer != null)
+			//observer.onUpdate(this, 1.0f);
 		if (observer != null)
 			observer.onEnd(this);
 	}

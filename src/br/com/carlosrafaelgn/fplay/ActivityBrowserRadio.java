@@ -724,10 +724,6 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	}
 
 	@Override
-	public void onUpdate(FastAnimator animator, float value) {
-	}
-
-	@Override
 	public void onEnd(FastAnimator animator) {
 		if (animator == this.animatorFadeIn) {
 			if (lblLoading != null)

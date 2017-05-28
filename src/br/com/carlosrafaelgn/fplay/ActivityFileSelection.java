@@ -645,10 +645,6 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	}
 
 	@Override
-	public void onUpdate(FastAnimator animator, float value) {
-	}
-
-	@Override
 	public void onEnd(FastAnimator animator) {
 		if (lblLoading != null)
 			lblLoading.setVisibility(View.GONE);
