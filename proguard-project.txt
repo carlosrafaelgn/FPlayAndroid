@@ -52,11 +52,3 @@
 -keep class android.widget.BgEdgeEffect {
     public *;
 }
-
--keep class com.h6ah4i.android.media.opensl.OpenSLMediaPlayer {
-    private static void postEventFromNative(java.lang.Object, int, int, int, java.lang.Object);
-}
-
--keep class com.h6ah4i.android.media.opensl.audiofx.OpenSLHQVisualizer {
-    private static void raiseCaptureEventFromNative(java.lang.Object, int, float[], int, int);
-}

@@ -390,8 +390,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 						i++;
 					}
 					try {
-						//a few old phones erroneously return these 3 as mounted devices
-						if (!it.pathLC.equals("/system") && !it.pathLC.equals("/data") && !it.pathLC.equals("/cache"))
+						//a few old phones erroneously return these 4 as mounted devices
+						if (!it.pathLC.equals("/system") && !it.pathLC.equals("/data") && !it.pathLC.equals("/cache") && !it.pathLC.equals("/firmware"))
 							addStorage(new File(it.path), true, internalCount, externalCount, usbCount, addedCount, addedPaths);
 					} catch (Throwable ex) {
 						ex.printStackTrace();
