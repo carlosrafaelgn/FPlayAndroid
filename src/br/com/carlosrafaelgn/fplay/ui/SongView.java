@@ -37,6 +37,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.accessibility.AccessibilityEvent;
@@ -270,5 +271,18 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
 			itemClickListener.onItemLongClicked(position);
 		return true;
+	}
+
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	@Override
+	public boolean onGenericMotionEvent(MotionEvent event) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH &&
+			((event.getButtonState() & (MotionEvent.BUTTON_SECONDARY | MotionEvent.BUTTON_TERTIARY | MotionEvent.BUTTON_STYLUS_SECONDARY)) != 0) &&
+			(event.getActionMasked() == MotionEvent.ACTION_DOWN || event.getActionMasked() == MotionEvent.ACTION_UP)) {
+			if (event.getActionMasked() == MotionEvent.ACTION_DOWN)
+				onLongClick(this);
+			return true;
+		}
+		return super.onGenericMotionEvent(event);
 	}
 }
