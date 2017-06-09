@@ -1,4 +1,3 @@
-*.iml
 .gradle/
 .idea/
 .settings/
@@ -9,3 +8,7 @@ gen/
 proguard/
 ic_launcher-web.png
 local.properties
+# Intellij project files
+*.iml
+*.ipr
+*.iws
