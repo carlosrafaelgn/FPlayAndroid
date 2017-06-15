@@ -263,7 +263,26 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		try {
 			BluetoothDevice device = btAdapter.getRemoteDevice(deviceItem.address);
 			final UUID SERIAL_PORT_SERVICE_CLASS_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-			btSocket = device.createRfcommSocketToServiceRecord(SERIAL_PORT_SERVICE_CLASS_UUID);
+			//Reflection obtained from http://pymasde.es/blueterm/
+			btSocket = null;
+			try {
+				btSocket = (BluetoothSocket)device.getClass().getMethod("createInsecureRfcommSocket", int.class).invoke(device, 1);
+			} catch (Throwable ex) {
+				//try to create the socket in another way...
+			}
+			if (btSocket == null) {
+				try {
+					btSocket = (BluetoothSocket)device.getClass().getMethod("createRfcommSocket", int.class).invoke(device, 1);
+				} catch (Throwable ex) {
+					//try to create the socket in another way...
+				}
+			}
+			if (btSocket == null) {
+				if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.HONEYCOMB)
+					btSocket = device.createInsecureRfcommSocketToServiceRecord(SERIAL_PORT_SERVICE_CLASS_UUID);
+				else
+					btSocket = device.createRfcommSocketToServiceRecord(SERIAL_PORT_SERVICE_CLASS_UUID);
+			}
 			try {
 				btSocket.connect();
 			} catch (Throwable ex) {

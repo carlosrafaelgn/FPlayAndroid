@@ -426,106 +426,110 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 		try {
 			final InputStream inputStream = bt.getInputStream();
 			int state = 0, payloadLength = 0, payload = 0, currentMessage = 0;
+			byte[] recvBuffer = new byte[64];
 			while (connected && myVersion == version) {
-				final int data = inputStream.read();
-				if (data == StartOfHeading) {
-					//Restart the state machine
-					state &= (~(FlagEscape | FlagState));
-					continue;
-				}
-				switch ((state & FlagState)) {
-				case 0:
-					//This byte should be the message type
-					switch (data) {
-					case MessageStartBinTransmission:
-					case MessageStopBinTransmission:
-					case MessagePlayerCommand:
-						//Take the state machine to its next state
-						currentMessage = data;
-						state++;
-						continue;
-					default:
-						//Take the state machine to its error state
-						state |= FlagState;
+				final int bytesReceived = inputStream.read(recvBuffer);
+				for (int i = 0; i < bytesReceived; i++) {
+					final int data = recvBuffer[i];
+					if (data == StartOfHeading) {
+						//Restart the state machine
+						state &= (~(FlagEscape | FlagState));
 						continue;
 					}
-				case 1:
-					//This should be payload length's first byte
-					//(bits 0 - 6 left shifted by 1)
-					if ((data & 0x01) != 0) {
-						//Take the state machine to its error state
-						state |= FlagState;
-					} else {
-						payloadLength = data >> 1;
-						//Take the state machine to its next state
-						state++;
-					}
-					continue;
-				case 2:
-					//This should be payload length's second byte
-					//(bits 7 - 13 left shifted by 1)
-					if ((data & 0x01) != 0) {
-						//Take the state machine to its error state
-						state |= FlagState;
-					} else {
-						payloadLength |= (data << 6);
-
-						if (currentMessage == MessageStopBinTransmission) {
-							if (payloadLength != 0) {
-								//Take the state machine to its error state
-								state |= FlagState;
-								continue;
-							}
-							// Skip two states as this message has no payload
-							state += 2;
+					switch ((state & FlagState)) {
+					case 0:
+						//This byte should be the message type
+						switch (data) {
+						case MessageStartBinTransmission:
+						case MessageStopBinTransmission:
+						case MessagePlayerCommand:
+							//Take the state machine to its next state
+							currentMessage = data;
+							state++;
+							continue;
+						default:
+							//Take the state machine to its error state
+							state |= FlagState;
+							continue;
+						}
+					case 1:
+						//This should be payload length's first byte
+						//(bits 0 - 6 left shifted by 1)
+						if ((data & 0x01) != 0) {
+							//Take the state machine to its error state
+							state |= FlagState;
 						} else {
-							if (payloadLength != 1) {
-								if (currentMessage != MessagePlayerCommand || payloadLength != 2) {
+							payloadLength = data >> 1;
+							//Take the state machine to its next state
+							state++;
+						}
+						continue;
+					case 2:
+						//This should be payload length's second byte
+						//(bits 7 - 13 left shifted by 1)
+						if ((data & 0x01) != 0) {
+							//Take the state machine to its error state
+							state |= FlagState;
+						} else {
+							payloadLength |= (data << 6);
+
+							if (currentMessage == MessageStopBinTransmission) {
+								if (payloadLength != 0) {
 									//Take the state machine to its error state
 									state |= FlagState;
 									continue;
 								}
+								// Skip two states as this message has no payload
+								state += 2;
+							} else {
+								if (payloadLength != 1) {
+									if (currentMessage != MessagePlayerCommand || payloadLength != 2) {
+										//Take the state machine to its error state
+										state |= FlagState;
+										continue;
+									}
+								}
+								//Take the state machine to its next state
+								state++;
+								payload = 0;
 							}
-							//Take the state machine to its next state
-							state++;
-							payload = 0;
 						}
-					}
-					continue;
-				case 3:
-					//We are receiving the payload
+						continue;
+					case 3:
+						//We are receiving the payload
 
-					if (data == Escape) {
-						//Until this date, the only payloads which are
-						//valid for reception do not include escapable bytes...
+						if (data == Escape) {
+							//Until this date, the only payloads which are
+							//valid for reception do not include escapable bytes...
 
+							//Take the state machine to its error state
+							state |= FlagState;
+							continue;
+						}
+
+						if (currentMessage == MessagePlayerCommand) {
+							payload = (payload << 8) | data;
+							payloadLength--;
+
+							//Keep the machine in state 3
+							if (payloadLength > 0)
+								continue;
+						} else {
+							payload = data;
+						}
+
+						//For now, the only payload received is 1 byte long
+						state++;
+						continue;
+					case 4:
 						//Take the state machine to its error state
 						state |= FlagState;
-						continue;
+
+						//Sanity check: data should be EoT
+						if (data == EndOfTransmission)
+							//Message correctly received
+							MainHandler.sendMessage(this, MSG_PLAYER_COMMAND, currentMessage, payload);
 					}
-
-					if (currentMessage == MessagePlayerCommand) {
-						payload = (payload << 8) | data;
-						payloadLength--;
-
-						//Keep the machine in state 3
-						if (payloadLength > 0)
-							continue;
-					} else {
-						payload = data;
-					}
-
-					//For now, the only payload received is 1 byte long
-					state++;
-					continue;
-				case 4:
-					//Take the state machine to its error state
-					state |= FlagState;
-
-					//Sanity check: data should be EoT
-					if (data == EndOfTransmission)
-						//Message correctly received
-						MainHandler.sendMessage(this, MSG_PLAYER_COMMAND, currentMessage, payload);
 				}
 			}
 		} catch (IOException ex) {
