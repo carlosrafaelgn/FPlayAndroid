@@ -525,8 +525,10 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	}
 
 	private void adjustScrollBar() {
-		list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !animSectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
-		FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED, false);
+		if (list != null) {
+			list.setScrollBarType(((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) && !animSectionsEnabled) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
+			FileView.updateExtraMargins(list.getScrollBarType() == BgListView.SCROLLBAR_INDEXED, false);
+		}
 	}
 
 	private void setPathInternal() {
