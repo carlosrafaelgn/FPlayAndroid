@@ -224,9 +224,9 @@ public final class SerializableMap {
 			bitCount = bitIndex + 1;
 		int i = ((bitCount + 7) >>> 3);
 		if (bitStorage == null) {
-			bitStorage = new byte[i + 8];
+			bitStorage = new byte[i + 10];
 		} else if (bitStorage.length < i) {
-			final byte[] tmp = new byte[i + 8];
+			final byte[] tmp = new byte[i + 10];
 			System.arraycopy(bitStorage, 0, tmp, 0, bitStorage.length);
 			bitStorage = tmp;
 		}

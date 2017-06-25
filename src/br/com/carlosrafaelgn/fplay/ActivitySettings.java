@@ -106,7 +106,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
-		optLargeTextIs22sp, optDisplaySongNumberAndCount, lastMenuView;
+		optLargeTextIs22sp, optDisplaySongNumberAndCount, optAllowLockScreen, lastMenuView;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
 	private TextView[] headers;
@@ -1116,6 +1116,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optGoBackWhenPlayingFolders = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_go_back_when_playing_folders).toString(), null, true, Player.goBackWhenPlayingFolders, false);
 			optExtraInfoMode = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.secondary_line_of_text).toString(), getExtraInfoModeString(Song.extraInfoMode), false, false, false);
 			optDisplaySongNumberAndCount = new SettingView(ctx, UI.ICON_NUMBER, getText(R.string.display_song_number_and_count).toString(), null, true, UI.displaySongNumberAndCount, false);
+			optAllowLockScreen = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.allow_lock_screen).toString(), null, true, UI.allowPlayerAboveLockScreen, false);
 			optForceOrientation = new SettingView(ctx, UI.ICON_ORIENTATION, getText(R.string.opt_force_orientation).toString(), getOrientationString(), false, false, false);
 			optTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition).toString(), UI.getTransitionString(UI.transitions & 0xFF), false, false, false);
 			optPopupTransition = new SettingView(ctx, UI.ICON_TRANSITION, getText(R.string.transition_popup).toString(), UI.getTransitionString(UI.transitions >>> 8), false, false, false);
@@ -1163,6 +1164,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addOption(optIsDividerVisible);
 			addOption(optExtraInfoMode);
 			addOption(optDisplaySongNumberAndCount);
+			addOption(optAllowLockScreen);
 			addOption(optForceOrientation);
 			addOption(optTransition);
 			addOption(optPopupTransition);
@@ -1318,6 +1320,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optGoBackWhenPlayingFolders = null;
 		optExtraInfoMode = null;
 		optDisplaySongNumberAndCount = null;
+		optAllowLockScreen = null;
 		optForceOrientation = null;
 		optTransition = null;
 		optPopupTransition = null;
@@ -1572,6 +1575,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.previousResetsAfterTheBeginning = optPreviousResetsAfterTheBeginning.isChecked();
 		} else if (view == optDisplaySongNumberAndCount) {
 			UI.displaySongNumberAndCount = optDisplaySongNumberAndCount.isChecked();
+		} else if (view == optAllowLockScreen) {
+			UI.allowPlayerAboveLockScreen = optAllowLockScreen.isChecked();
+			if (UI.allowPlayerAboveLockScreen)
+				addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+			else
+				clearWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||
 			view == optForceOrientation || view == optTransition || view == optPopupTransition ||

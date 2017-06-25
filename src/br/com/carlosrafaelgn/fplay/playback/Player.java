@@ -2276,6 +2276,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPTBIT_BASSBOOST_ENABLED_WIRE_MIC = 61;
 	static final int OPTBIT_VIRTUALIZER_ENABLED_WIRE_MIC = 62;
 	private static final int OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT = 63;
+	private static final int OPTBIT_ALLOW_LOCK_SCREEN = 64;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2417,6 +2418,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.largeTextIs22sp = opts.getBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.isLargeScreen && (UI.scaledDensity > UI.density));
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.lastVersionCode < 92);
+		UI.allowPlayerAboveLockScreen = opts.getBit(OPTBIT_ALLOW_LOCK_SCREEN, true);
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -2524,6 +2526,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_CHROMEBOOK, UI.isChromebook);
 		opts.putBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.largeTextIs22sp);
 		opts.putBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.displaySongNumberAndCount);
+		opts.putBit(OPTBIT_ALLOW_LOCK_SCREEN, UI.allowPlayerAboveLockScreen);
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

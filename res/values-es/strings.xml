@@ -353,5 +353,6 @@
     <string name="show_album_art">Mostrar carátula del álbum</string>
     <string name="hide_album_art">Ocultar carátula del álbum</string>
     <string name="icy">Glacial</string>
+    <string name="allow_lock_screen">Permitir que la aplicación se mantenga por encima de la pantalla de bloqueo</string>
 
 </resources>

@@ -353,5 +353,6 @@
     <string name="show_album_art">Показать обложку альбома</string>
     <string name="hide_album_art">Скрыть обложки альбома</string>
     <string name="icy">Ледяной</string>
+    <string name="allow_lock_screen">Разрешить приложению оставаться выше экрана блокировки</string>
 
 </resources>

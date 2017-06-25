@@ -1122,7 +1122,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			skipToDestruction = false;
 		}
 		localeHasBeenChanged = false;
-		addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+		if (UI.allowPlayerAboveLockScreen)
+			addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+		else
+			clearWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		else

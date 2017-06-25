@@ -414,7 +414,10 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 			//getWindow().requestFeature(Window.FEATURE_NO_TITLE |
 			//	Window.FEATURE_ACTION_MODE_OVERLAY);
 		} else {
-			getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+			if (UI.allowPlayerAboveLockScreen)
+				getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+			else
+				getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 			//Apparently, Bluetooth stops transmitting when the screen is off :(
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 			//if (UI.keepScreenOn)

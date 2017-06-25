@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.carlosrafaelgn.fplay"
     android:installLocation="auto"
-    android:versionCode="101"
-    android:versionName="1.67" >
+    android:versionCode="102"
+    android:versionName="1.68" >
 
     <!-- versionCode must be kept in sync with UI.VERSION_CODE -->
     <!-- versionName must be kept in sync with UI.VERSION_NAME -->

@@ -353,5 +353,6 @@
     <string name="show_album_art">Anzeigen Album-Art</string>
     <string name="hide_album_art">Ausblenden Album-Art</string>
     <string name="icy">Eisig</string>
+    <string name="allow_lock_screen">Lassen Sie die App über dem Sperrbildschirm stehen</string>
 
 </resources>

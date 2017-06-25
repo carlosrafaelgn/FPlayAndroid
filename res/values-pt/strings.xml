@@ -353,5 +353,6 @@
     <string name="show_album_art">Mostrar arte do álbum</string>
     <string name="hide_album_art">Ocultar arte do álbum</string>
     <string name="icy">Glacial</string>
+    <string name="allow_lock_screen">Permitir que o aplicativo fique acima da tela de bloqueio</string>
 
 </resources>
