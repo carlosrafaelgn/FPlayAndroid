@@ -246,6 +246,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_EXIT24 = "³";
 	public static final String ICON_NUMBER = "¤";
 	public static final String ICON_OK = "±";
+	public static final String ICON_SHARE = "°";
 
 	public static final int KEY_UP = KeyEvent.KEYCODE_DPAD_UP;
 	public static final int KEY_DOWN = KeyEvent.KEYCODE_DPAD_DOWN;

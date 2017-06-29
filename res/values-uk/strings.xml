@@ -354,5 +354,6 @@
     <string name="hide_album_art">Приховати обкладинки альбому</string>
     <string name="icy">Льодовий</string>
     <string name="allow_lock_screen">Дозволити додатку залишатися над екраном блокування</string>
+    <string name="share">Поділитися</string>
 
 </resources>

@@ -194,11 +194,25 @@
                     android:layout_alignParentLeft="true"
                     android:layout_marginRight="8dp"
                     android:contentDescription="@string/go_back"
-                    android:nextFocusDown="@+id/btnMoreInfo"
-                    android:nextFocusForward="@+id/btnMoreInfo"
+                    android:nextFocusDown="@+id/btnShare"
+                    android:nextFocusForward="@+id/btnShare"
                     android:nextFocusLeft="@+id/list"
-                    android:nextFocusRight="@+id/btnMoreInfo"
+                    android:nextFocusRight="@+id/btnShare"
                     android:nextFocusUp="@+id/list"/>
+
+                <br.com.carlosrafaelgn.fplay.ui.BgButton
+                    android:id="@+id/btnShare"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@+id/btnSetRingtone"
+                    android:layout_toRightOf="@+id/btnCancelSel"
+                    android:layout_marginBottom="8dp"
+                    android:contentDescription="@string/share"
+                    android:nextFocusDown="@+id/btnSetRingtone"
+                    android:nextFocusForward="@+id/btnSetRingtone"
+                    android:nextFocusLeft="@+id/btnCancelSel"
+                    android:nextFocusRight="@+id/list"
+                    android:nextFocusUp="@+id/btnCancelSel"/>
 
                 <br.com.carlosrafaelgn.fplay.ui.BgButton
                     android:id="@+id/btnSetRingtone"
@@ -212,7 +226,7 @@
                     android:nextFocusForward="@+id/btnMoreInfo"
                     android:nextFocusLeft="@+id/btnCancelSel"
                     android:nextFocusRight="@+id/list"
-                    android:nextFocusUp="@+id/btnCancelSel"/>
+                    android:nextFocusUp="@+id/btnShare"/>
 
                 <br.com.carlosrafaelgn.fplay.ui.BgButton
                     android:id="@+id/btnMoreInfo"
@@ -226,7 +240,7 @@
                     android:nextFocusForward="@+id/btnMoveSel"
                     android:nextFocusLeft="@+id/btnCancelSel"
                     android:nextFocusRight="@+id/list"
-                    android:nextFocusUp="@+id/btnCancelSel"/>
+                    android:nextFocusUp="@+id/btnSetRingtone"/>
 
                 <br.com.carlosrafaelgn.fplay.ui.BgButton
                     android:id="@+id/btnMoveSel"

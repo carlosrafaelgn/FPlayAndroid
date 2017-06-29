@@ -354,5 +354,6 @@
     <string name="hide_album_art">Masquer l\'art de l\'album</string>
     <string name="icy">Glacé</string>
     <string name="allow_lock_screen">Autoriser l\'application à rester au-dessus de l\'écran de verrouillage</string>
+    <string name="share">Partager</string>
 
 </resources>

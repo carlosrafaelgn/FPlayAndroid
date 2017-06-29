@@ -356,5 +356,6 @@
     <string name="hide_album_art">Hide album art</string>
     <string name="icy">Icy</string>
     <string name="allow_lock_screen">Allow the app to stay above the lock screen</string>
+    <string name="share">Share</string>
 
 </resources>

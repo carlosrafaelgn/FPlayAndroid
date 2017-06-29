@@ -63,11 +63,13 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.File;
 import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.FileFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
@@ -121,7 +123,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private TextIconDrawable lblTitleIcon;
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
-	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume, btnSetRingtone;
+	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume, btnSetRingtone, btnShare;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand, idForRingtoneContent;
@@ -291,6 +293,80 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		dialog.show();
 	}
 
+	private void setRingtone() {
+		final int sel = Player.songs.getSelection();
+		final Song song;
+		if (sel >= 0 && sel < Player.songs.getCount()) {
+			if ((song = Player.songs.getItemT(sel)).isHttp ||
+				!song.path.toLowerCase(Locale.US).endsWith(".mp3")) {
+				//error! must be mp3 and must not be http
+				UI.toast(R.string.ringtone_error);
+			} else {
+				(new Thread("Ringtone Thread") {
+					@Override
+					public void run() {
+						if (Player.state != Player.STATE_ALIVE)
+							return;
+						try {
+							final Cursor cursor = Player.theApplication.getContentResolver().query(
+								MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+								new String[] { "_id" },
+								"_data=? ",
+								new String[] { song.path }, null);
+							if (cursor != null) {
+								if (cursor.moveToNext()) {
+									final int id = cursor.getInt(0);
+									if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+										if (!Settings.System.canWrite(Player.theApplication)) {
+											idForRingtoneContent = id;
+											//https://developer.android.com/guide/topics/security/permissions.html#normal-dangerous
+											//https://developer.android.com/reference/android/Manifest.permission.html#WRITE_SETTINGS
+											final Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+											intent.setData(Uri.parse("package:" + Player.theApplication.getPackageName()));
+											getHostActivity().startActivityForResult(intent, REQUEST_WRITE_SETTINGS);
+											return;
+										}
+									}
+									RingtoneManager.setActualDefaultRingtoneUri(Player.theApplication, RingtoneManager.TYPE_RINGTONE, Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, Integer.toString(id)));
+									MainHandler.toast(R.string.success);
+								} else {
+									MainHandler.toast(R.string.ringtone_error);
+								}
+								cursor.close();
+							}
+						} catch (Throwable ex) {
+							MainHandler.toast(R.string.ringtone_error);
+						}
+					}
+				}).start();
+			}
+		}
+	}
+
+	private void share() {
+		try {
+			final int p;
+			if ((p = Player.songs.getSelection()) < 0 || p >= Player.songs.getCount())
+				return;
+			final Song song = Player.songs.getItemT(p);
+			if (song == null)
+				return;
+			Intent shareIntent = new Intent(Intent.ACTION_SEND);
+			if (song.isHttp) {
+				shareIntent.setType("text/plain");
+				shareIntent.putExtra(Intent.EXTRA_TEXT, song.getHumanReadablePath());
+			} else {
+				shareIntent.setType(FileFetcher.mimeType(song.path));
+				shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(song.path)));
+			}
+			shareIntent = Intent.createChooser(shareIntent, getText(R.string.share));
+			if (shareIntent != null)
+				getHostActivity().startActivity(shareIntent);
+		} catch (Throwable ex) {
+			UI.toast(R.string.error_gen);
+		}
+	}
+
 	private void prepareBtnCancelSel() {
 		if (!UI.isLargeScreen) {
 			final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -336,6 +412,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				}
 			}
 			UI.animationReset();
+			UI.animationAddViewToShow(btnShare);
 			if (btnSetRingtone != null)
 				UI.animationAddViewToShow(btnSetRingtone);
 			UI.animationAddViewToShow(btnMoreInfo);
@@ -358,31 +435,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnCancelSel.setContentDescription(getText(R.string.go_back));
 			UI.animationAddViewToShow(lblMsgSelMove);
 			lblMsgSelMove.setSelected(true);
-			if (btnSetRingtone != null) {
-				if (UI.isLargeScreen || !UI.isLandscape) {
-					btnMoreInfo.setNextFocusLeftId(R.id.btnSetRingtone);
-					btnCancelSel.setNextFocusRightId(R.id.btnSetRingtone);
-					if (!UI.isLargeScreen)
-						btnCancelSel.setNextFocusDownId(R.id.btnSetRingtone);
-					UI.setNextFocusForwardId(btnCancelSel, R.id.btnSetRingtone);
-				} else {
-					btnMoreInfo.setNextFocusUpId(R.id.btnSetRingtone);
-					btnCancelSel.setNextFocusDownId(R.id.btnSetRingtone);
-					btnCancelSel.setNextFocusRightId(R.id.btnSetRingtone);
-					UI.setNextFocusForwardId(btnCancelSel, R.id.btnSetRingtone);
-				}
-			} else {
-				if (UI.isLargeScreen || !UI.isLandscape) {
-					btnCancelSel.setNextFocusRightId(R.id.btnMoreInfo);
-					if (!UI.isLargeScreen)
-						btnCancelSel.setNextFocusDownId(R.id.btnMoreInfo);
-					UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoreInfo);
-				} else {
-					btnCancelSel.setNextFocusDownId(R.id.btnMoreInfo);
-					btnCancelSel.setNextFocusRightId(R.id.btnMoreInfo);
-					UI.setNextFocusForwardId(btnCancelSel, R.id.btnMoreInfo);
-				}
-			}
 			UI.setNextFocusForwardId(list, R.id.btnCancelSel);
 			Player.songs.selecting = true;
 			Player.songs.moving = false;
@@ -394,6 +446,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private void startMovingSelection() {
 		if (Player.songs.getFirstSelectedPosition() >= 0) {
 			UI.animationReset();
+			UI.animationAddViewToHide(btnShare);
 			if (btnSetRingtone != null)
 				UI.animationAddViewToHide(btnSetRingtone);
 			UI.animationAddViewToHide(btnMoreInfo);
@@ -996,53 +1049,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (Player.songs.getCount() == 0)
 				addSongs(view);
 		} else if (view == btnSetRingtone) {
-			final int sel = Player.songs.getSelection();
-			final Song song;
-			if (sel >= 0 && sel < Player.songs.getCount()) {
-				if ((song = Player.songs.getItemT(sel)).isHttp ||
-					!song.path.toLowerCase(Locale.US).endsWith(".mp3")) {
-					//error! must be mp3 and must not be http
-					UI.toast(R.string.ringtone_error);
-				} else {
-					(new Thread("Ringtone Thread") {
-						@Override
-						public void run() {
-							if (Player.state != Player.STATE_ALIVE)
-								return;
-							try {
-								final Cursor cursor = Player.theApplication.getContentResolver().query(
-									MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-									new String[] { "_id" },
-									"_data=? ",
-									new String[] { song.path }, null);
-								if (cursor != null) {
-									if (cursor.moveToNext()) {
-										final int id = cursor.getInt(0);
-										if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-											if (!Settings.System.canWrite(Player.theApplication)) {
-												idForRingtoneContent = id;
-												//https://developer.android.com/guide/topics/security/permissions.html#normal-dangerous
-												//https://developer.android.com/reference/android/Manifest.permission.html#WRITE_SETTINGS
-												final Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-												intent.setData(Uri.parse("package:" + Player.theApplication.getPackageName()));
-												getHostActivity().startActivityForResult(intent, REQUEST_WRITE_SETTINGS);
-												return;
-											}
-										}
-										RingtoneManager.setActualDefaultRingtoneUri(Player.theApplication, RingtoneManager.TYPE_RINGTONE, Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, Integer.toString(id)));
-										MainHandler.toast(R.string.success);
-									} else {
-										MainHandler.toast(R.string.ringtone_error);
-									}
-									cursor.close();
-								}
-							} catch (Throwable ex) {
-								MainHandler.toast(R.string.ringtone_error);
-							}
-						}
-					}).start();
-				}
-			}
+			setRingtone();
+		} else if (view == btnShare) {
+			share();
 		}
 	}
 
@@ -1309,6 +1318,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			panelControls = (ViewGroup)findViewById(R.id.panelControls);
 			panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
 			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
+			btnShare = (BgButton)findViewById(R.id.btnShare);
+			btnShare.setOnClickListener(this);
+			btnShare.setIcon(UI.ICON_SHARE);
 			btnMoreInfo = (BgButton)findViewById(R.id.btnMoreInfo);
 			btnMoreInfo.setOnClickListener(this);
 			btnMoreInfo.setIcon(UI.ICON_INFORMATION);
@@ -1326,6 +1338,19 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				btnSetRingtone.setOnClickListener(this);
 				btnSetRingtone.setIcon(UI.ICON_RINGTONE);
 			} else {
+				final RelativeLayout.LayoutParams rp = (RelativeLayout.LayoutParams)btnShare.getLayoutParams();
+				if (UI.isLargeScreen || !UI.isLandscape) {
+					rp.addRule(RelativeLayout.LEFT_OF, R.id.btnMoreInfo);
+					btnShare.setNextFocusRightId(R.id.btnMoreInfo);
+					UI.setNextFocusForwardId(btnShare, R.id.btnMoreInfo);
+					btnMoreInfo.setNextFocusLeftId(R.id.btnShare);
+				} else {
+					rp.addRule(RelativeLayout.ABOVE, R.id.btnMoreInfo);
+					btnShare.setNextFocusDownId(R.id.btnMoreInfo);
+					UI.setNextFocusForwardId(btnShare, R.id.btnMoreInfo);
+					btnMoreInfo.setNextFocusUpId(R.id.btnShare);
+				}
+				btnShare.setLayoutParams(rp);
 				btnSetRingtone.setVisibility(View.GONE);
 				btnSetRingtone = null;
 			}
@@ -1480,7 +1505,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		case UI.KEY_LEFT:
 			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnRemoveSel != null && btnMenu != null && vwVolume != null) {
 				if (Player.songs.selecting)
-					((UI.isLargeScreen || !UI.isLandscape) ? btnRemoveSel : (btnSetRingtone != null ? btnSetRingtone : btnMoreInfo)).requestFocus();
+					((UI.isLargeScreen || !UI.isLandscape) ? btnRemoveSel : btnShare).requestFocus();
 				else if (Player.songs.moving)
 					btnCancelSel.requestFocus();
 				else if (UI.isLargeScreen)
@@ -1638,6 +1663,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		btnRemoveSel = null;
 		btnCancelSel = null;
 		btnSetRingtone = null;
+		btnShare = null;
 		btnDecreaseVolume = null;
 		btnIncreaseVolume = null;
 		btnVolume = null;

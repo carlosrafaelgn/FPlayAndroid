@@ -354,5 +354,6 @@
     <string name="hide_album_art">Скрыть обложки альбома</string>
     <string name="icy">Ледяной</string>
     <string name="allow_lock_screen">Разрешить приложению оставаться выше экрана блокировки</string>
+    <string name="share">Поделиться</string>
 
 </resources>

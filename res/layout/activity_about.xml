@@ -107,6 +107,14 @@
                 android:layout_marginTop="8dp"
                 android:focusable="false"
                 android:gravity="right"/>
+
+            <TextView
+                android:id="@+id/lblUsage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="right"
+                android:maxLines="3"/>
         </LinearLayout>
     </br.com.carlosrafaelgn.fplay.ui.ObservableScrollView>
 

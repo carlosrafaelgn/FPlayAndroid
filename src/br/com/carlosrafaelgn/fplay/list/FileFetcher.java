@@ -45,7 +45,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -88,7 +87,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 
 	private static final int LIST_DELTA = 32;
-	private static final HashSet<String> supportedTypes;
+	private static final HashMap<String, String> supportedTypes;
 	public final String path, unknownArtist;
 	public FileSt[] files;
 	public String[] sections;
@@ -102,30 +101,40 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private volatile boolean cancelled;
 
 	static {
+		//Media formats, file extensions and mime types
 		//http://developer.android.com/guide/appendix/media-formats.html
-		supportedTypes = new HashSet<>(21);
-		supportedTypes.add(".3gp");
-		supportedTypes.add(".3ga");
-		supportedTypes.add(".3gpa");
-		supportedTypes.add(".mp4");
-		supportedTypes.add(".m4a");
-		supportedTypes.add(".aac");
-		supportedTypes.add(".mp3");
-		supportedTypes.add(".mid");
-		supportedTypes.add(".rmi");
-		supportedTypes.add(".xmf");
-		supportedTypes.add(".mxmf");
-		supportedTypes.add(".rtttl");
-		supportedTypes.add(".rtx");
-		supportedTypes.add(".ota");
-		supportedTypes.add(".imy");
-		supportedTypes.add(".ogg");
-		supportedTypes.add(".oga");
-		supportedTypes.add(".wav");
-		supportedTypes.add(".mka");
-		supportedTypes.add(".mkv");
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
-			supportedTypes.add(".flac");
+		supportedTypes = new HashMap<>(22);
+		supportedTypes.put(".3gp", "audio/3gpp");
+		supportedTypes.put(".3gpp", "audio/3gpp");
+		supportedTypes.put(".3ga", "audio/3ga");
+		supportedTypes.put(".3gpa", "audio/3ga");
+		supportedTypes.put(".mp4", "audio/mp4");
+		supportedTypes.put(".m4a", "audio/mp4");
+		supportedTypes.put(".aac", "audio/aac");
+		supportedTypes.put(".mp3", "audio/mpeg");
+		supportedTypes.put(".mid", "audio/mid");
+		supportedTypes.put(".rmi", "audio/mid");
+		supportedTypes.put(".xmf", "audio/mobile-xmf");
+		supportedTypes.put(".mxmf", "audio/mobile-xmf");
+		supportedTypes.put(".rtttl", "audio/x-rtttl");
+		supportedTypes.put(".rtx", "audio/rtx");
+		supportedTypes.put(".ota", "audio/ota"); //???
+		supportedTypes.put(".imy", "audio/imy"); //???
+		supportedTypes.put(".ogg", "audio/ogg");
+		supportedTypes.put(".oga", "audio/ogg");
+		supportedTypes.put(".wav", "audio/wav"); //audio/vnd.wave ?
+		supportedTypes.put(".mka", "audio/x-matroska");
+		supportedTypes.put(".mkv", "audio/x-matroska");
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
+			supportedTypes.put(".flac", "audio/flac");
+		}
+	}
+
+	public static String mimeType(String path) {
+		final int i = path.lastIndexOf('.');
+		if (i < 0) return "audio/*";
+		path = supportedTypes.get(path.substring(i).toLowerCase(Locale.US));
+		return (path == null ? "audio/*" : path);
 	}
 
 	@Override
@@ -133,12 +142,12 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		if (file.isDirectory()) return true;
 		final String name = file.getName();
 		final int i = name.lastIndexOf('.');
-		return ((i >= 0) && supportedTypes.contains(name.substring(i).toLowerCase(Locale.US)));
+		return ((i >= 0) && supportedTypes.containsKey(name.substring(i).toLowerCase(Locale.US)));
 	}
 
 	public static boolean isFileAcceptable(String name) {
 		int i;
-		return (name != null && (i = name.lastIndexOf('.')) >= 0 && supportedTypes.contains(name.substring(i).toLowerCase(Locale.US)));
+		return (name != null && (i = name.lastIndexOf('.')) >= 0 && supportedTypes.containsKey(name.substring(i).toLowerCase(Locale.US)));
 	}
 
 	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode, boolean createSections) {
