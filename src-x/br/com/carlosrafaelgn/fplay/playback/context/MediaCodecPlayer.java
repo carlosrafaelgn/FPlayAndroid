@@ -487,7 +487,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		//the other scenario this method is executed is when this player, while being the next
 		//player, had already started producing output buffers since the current player's end, but
 		//the current player started producing output buffer again, also due to a user interaction
-		if (outputBuffersHaveBeenUsed) {
+		//(do not do anything for http streams, as it would lead to an inconsistent state)
+		if (outputBuffersHaveBeenUsed && httpStreamReceiver == null) {
 			final String tmp = path;
 			resetInternal();
 			setDataSource(tmp);
@@ -512,7 +513,10 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	public void start() {
 		if (state == STATE_INITIALIZED) {
 			try {
-				prepare();
+				if (httpStreamReceiver == null)
+					prepare();
+				else
+					prepareAsync();
 			} catch (Throwable ex) {
 				throw new RuntimeException(ex);
 			}

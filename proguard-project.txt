@@ -52,3 +52,11 @@
 -keep class android.widget.BgEdgeEffect {
     public *;
 }
+
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+-keepclassmembers class * {
+    native <methods>;
+}
