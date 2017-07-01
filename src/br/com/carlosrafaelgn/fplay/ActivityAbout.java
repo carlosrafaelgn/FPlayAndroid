@@ -33,13 +33,21 @@
 package br.com.carlosrafaelgn.fplay;
 
 import android.os.Build;
+import android.os.Process;
+import android.os.SystemClock;
+import android.system.Os;
+import android.system.OsConstants;
 import android.text.method.LinkMovementMethod;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.io.RandomAccessFile;
+import java.util.Locale;
+
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.ObservableScrollView;
@@ -47,10 +55,13 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
 
-public final class ActivityAbout extends ClientActivity implements View.OnClickListener {
+public final class ActivityAbout extends ClientActivity implements View.OnClickListener, Runnable {
 	private ObservableScrollView list;
 	private LinearLayout panelSecondary;
 	private BgButton btnGoBack;
+	private TextView lblUsage;
+	private int pid;
+	private long _SC_CLK_TCK, lastTime, lastTickCount;
 
 	@Override
 	public CharSequence getTitle() {
@@ -189,9 +200,15 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 			UI.prepareViewPaddingBasedOnScreenWidth(panelSecondary, UI.controlLargeMargin, UI.controlMargin, UI.controlMargin);
 			list = null;
 		}
+		lblUsage = (TextView)findViewById(R.id.lblUsage);
+		lblUsage.setTypeface(UI.defaultTypeface);
+		lblUsage.setTextColor(UI.colorState_text_listitem_secondary_static);
+		lblUsage.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
+		lblUsage.setText("");
 		if (UI.isLargeScreen)
 			lblMsg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._18sp);
 		UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
+		MainHandler.postToMainThreadAtTime(this, SystemClock.uptimeMillis() + 1000);
 	}
 
 	@Override
@@ -207,11 +224,59 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		list = null;
 		panelSecondary = null;
 		btnGoBack = null;
+		lblUsage = null;
 	}
 	
 	@Override
 	public void onClick(View view) {
 		if (view == btnGoBack)
 			finish(0, view, true);
+	}
+
+	@Override
+	public void run() {
+		if (lblUsage != null) {
+			if (pid == 0)
+				pid = Process.myPid();
+			if (_SC_CLK_TCK == 0) {
+				try {
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+						_SC_CLK_TCK = Os.sysconf(OsConstants._SC_CLK_TCK);
+					else
+						_SC_CLK_TCK = 100;
+				} catch (Throwable ex) {
+					_SC_CLK_TCK = 100; //silly assumption :/
+				}
+			}
+
+			RandomAccessFile reader = null;
+			try {
+				//http://man7.org/linux/man-pages/man5/proc.5.html
+				//http://man7.org/linux/man-pages/man3/sysconf.3.html
+				reader = new RandomAccessFile("/proc/" + pid + "/stat", "r");
+				final String[] parts = reader.readLine().split(" +");
+				final long tickCount = Long.parseLong(parts[13], 10) + Long.parseLong(parts[14], 10);
+				final long time = SystemClock.elapsedRealtime();
+				if (lastTime != 0) {
+					//CPU time in seconds, not ticks (* 100000L = * 1000 (ms to s) * 100 (%))
+					lblUsage.setText(String.format(Locale.US, "CPU usage: %.2f%%",
+						(double)((tickCount - lastTickCount) * 100000L) / (double)(_SC_CLK_TCK * (time - lastTime))));
+				}
+				lastTickCount = tickCount;
+				lastTime = time;
+			} catch (Throwable ex) {
+				//just ignore...
+			} finally {
+				if (reader != null) {
+					try {
+						reader.close();
+					} catch (Throwable ex) {
+						//just ignore...
+					}
+				}
+			}
+
+			MainHandler.postToMainThreadAtTime(this, SystemClock.uptimeMillis() + 1000);
+		}
 	}
 }

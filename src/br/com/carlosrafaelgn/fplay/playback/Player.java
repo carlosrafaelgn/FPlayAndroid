@@ -53,6 +53,7 @@ import android.media.session.PlaybackState;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -2630,8 +2631,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
 			//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
 			notification.visibility = Notification.VISIBILITY_PUBLIC;
-			if (mediaSession != null)
+			if (mediaSession != null) {
+				if (notification.extras == null)
+					notification.extras = new Bundle();
 				notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
+			}
 		}
 		prepareRemoteViews(notificationRemoteViews, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
 		return notification;
