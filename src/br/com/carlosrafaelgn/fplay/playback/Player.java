@@ -1574,18 +1574,20 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					return;
 			}
 		}
-		if (Equalizer.isEnabled(audioSinkUsedInEffects)) {
+
+		if (Equalizer.isEnabled(audioSinkUsedInEffects))
 			Equalizer._initialize();
-			Equalizer._setEnabled(true, audioSinkUsedInEffects);
-		}
-		if (BassBoost.isEnabled(audioSinkUsedInEffects)) {
+		if (BassBoost.isEnabled(audioSinkUsedInEffects))
 			BassBoost._initialize();
-			BassBoost._setEnabled(true, audioSinkUsedInEffects);
-		}
-		if (Virtualizer.isEnabled(audioSinkUsedInEffects)) {
+		if (Virtualizer.isEnabled(audioSinkUsedInEffects))
 			Virtualizer._initialize();
+
+		if (Equalizer.isEnabled(audioSinkUsedInEffects))
+			Equalizer._setEnabled(true, audioSinkUsedInEffects);
+		if (BassBoost.isEnabled(audioSinkUsedInEffects))
+			BassBoost._setEnabled(true, audioSinkUsedInEffects);
+		if (Virtualizer.isEnabled(audioSinkUsedInEffects))
 			Virtualizer._setEnabled(true, audioSinkUsedInEffects);
-		}
 	}
 
 	@Override

@@ -301,9 +301,8 @@ public final class Equalizer {
 		if (theEqualizer == null || audioSink != Player.audioSinkUsedInEffects)
 			return;
 		try {
-			if (!enabled) {
-				theEqualizer.setEnabled(false);
-			} else {
+			theEqualizer.setEnabled(false);
+			if (enabled) {
 				_applyAllBandSettings();
 				theEqualizer.setEnabled(true);
 			}

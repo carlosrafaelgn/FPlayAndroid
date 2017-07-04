@@ -35,8 +35,10 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class BassBoost {
+	// Do not cache strengthSupported, as it appears a few devices change this value
+	// for different audio sinks
 	private static int strength, strength_wire, strength_wire_mic, strength_bt;
-	private static boolean enabled, enabled_wire, enabled_wire_mic, enabled_bt, strengthSupported, supported;
+	private static boolean enabled, enabled_wire, enabled_wire_mic, enabled_bt, supported;
 	private static br.com.carlosrafaelgn.fplay.playback.context.BassBoost theBooster;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
@@ -121,7 +123,6 @@ public final class BassBoost {
 			return;
 		try {
 			theBooster = new br.com.carlosrafaelgn.fplay.playback.context.BassBoost();
-			strengthSupported = theBooster.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {
 			_release();
@@ -199,25 +200,8 @@ public final class BassBoost {
 		if (theBooster == null || audioSink != Player.audioSinkUsedInEffects)
 			return;
 		try {
-			if (!enabled) {
-				theBooster.setEnabled(false);
-			} else {
-				if (!strengthSupported) {
-					switch (audioSink) {
-					case Player.AUDIO_SINK_WIRE:
-						strength_wire = 1000;
-						break;
-					case Player.AUDIO_SINK_WIRE_MIC:
-						strength_wire_mic = 1000;
-						break;
-					case Player.AUDIO_SINK_BT:
-						strength_bt = 1000;
-						break;
-					default:
-						strength = 1000;
-						break;
-					}
-				}
+			theBooster.setEnabled(false);
+			if (enabled) {
 				_commit(audioSink);
 				theBooster.setEnabled(true);
 			}
@@ -247,20 +231,16 @@ public final class BassBoost {
 		try {
 			switch (audioSink) {
 			case Player.AUDIO_SINK_WIRE:
-				theBooster.setStrength(strengthSupported ? (short)strength_wire : (short)((strength_wire == 0) ? 0 : 1000));
-				strength_wire = theBooster.getRoundedStrength();
+				theBooster.setStrength((short)strength_wire);
 				break;
 			case Player.AUDIO_SINK_WIRE_MIC:
-				theBooster.setStrength(strengthSupported ? (short)strength_wire_mic : (short)((strength_wire_mic == 0) ? 0 : 1000));
-				strength_wire_mic = theBooster.getRoundedStrength();
+				theBooster.setStrength((short)strength_wire_mic);
 				break;
 			case Player.AUDIO_SINK_BT:
-				theBooster.setStrength(strengthSupported ? (short)strength_bt : (short)((strength_bt == 0) ? 0 : 1000));
-				strength_bt = theBooster.getRoundedStrength();
+				theBooster.setStrength((short)strength_bt);
 				break;
 			default:
-				theBooster.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
-				strength = theBooster.getRoundedStrength();
+				theBooster.setStrength((short)strength);
 				break;
 			}
 		} catch (Throwable ex) {

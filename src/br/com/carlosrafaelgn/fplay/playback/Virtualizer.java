@@ -35,8 +35,10 @@ package br.com.carlosrafaelgn.fplay.playback;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 
 public final class Virtualizer {
+	// Do not cache strengthSupported, as it appears a few devices change this value
+	// for different audio sinks
 	private static int strength, strength_wire, strength_wire_mic, strength_bt;
-	private static boolean enabled, enabled_wire, enabled_wire_mic, enabled_bt, strengthSupported, supported;
+	private static boolean enabled, enabled_wire, enabled_wire_mic, enabled_bt, supported;
 	private static br.com.carlosrafaelgn.fplay.playback.context.Virtualizer theVirtualizer;
 
 	public static void deserialize(SerializableMap opts, int audioSink) {
@@ -121,7 +123,6 @@ public final class Virtualizer {
 			return;
 		try {
 			theVirtualizer = new br.com.carlosrafaelgn.fplay.playback.context.Virtualizer();
-			strengthSupported = theVirtualizer.getStrengthSupported();
 			supported = true;
 		} catch (Throwable ex) {
 			_release();
@@ -195,25 +196,8 @@ public final class Virtualizer {
 		if (theVirtualizer == null || audioSink != Player.audioSinkUsedInEffects)
 			return;
 		try {
-			if (!enabled) {
-				theVirtualizer.setEnabled(false);
-			} else {
-				if (!strengthSupported) {
-					switch (audioSink) {
-					case Player.AUDIO_SINK_WIRE:
-						strength_wire = 1000;
-						break;
-					case Player.AUDIO_SINK_WIRE_MIC:
-						strength_wire_mic = 1000;
-						break;
-					case Player.AUDIO_SINK_BT:
-						strength_bt = 1000;
-						break;
-					default:
-						strength = 1000;
-						break;
-					}
-				}
+			theVirtualizer.setEnabled(false);
+			if (enabled) {
 				_commit(audioSink);
 				theVirtualizer.setEnabled(true);
 			}
@@ -243,20 +227,16 @@ public final class Virtualizer {
 		try {
 			switch (audioSink) {
 			case Player.AUDIO_SINK_WIRE:
-				theVirtualizer.setStrength(strengthSupported ? (short)strength_wire : (short)((strength_wire == 0) ? 0 : 1000));
-				strength_wire = theVirtualizer.getRoundedStrength();
+				theVirtualizer.setStrength((short)strength_wire);
 				break;
 			case Player.AUDIO_SINK_WIRE_MIC:
-				theVirtualizer.setStrength(strengthSupported ? (short)strength_wire_mic : (short)((strength_wire_mic == 0) ? 0 : 1000));
-				strength_wire_mic = theVirtualizer.getRoundedStrength();
+				theVirtualizer.setStrength((short)strength_wire_mic);
 				break;
 			case Player.AUDIO_SINK_BT:
-				theVirtualizer.setStrength(strengthSupported ? (short)strength_bt : (short)((strength_bt == 0) ? 0 : 1000));
-				strength_bt = theVirtualizer.getRoundedStrength();
+				theVirtualizer.setStrength((short)strength_bt);
 				break;
 			default:
-				theVirtualizer.setStrength(strengthSupported ? (short)strength : (short)((strength == 0) ? 0 : 1000));
-				strength = theVirtualizer.getRoundedStrength();
+				theVirtualizer.setStrength((short)strength);
 				break;
 			}
 		} catch (Throwable ex) {
