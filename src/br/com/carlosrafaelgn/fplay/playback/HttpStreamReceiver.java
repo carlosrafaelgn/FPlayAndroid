@@ -117,12 +117,14 @@ public final class HttpStreamReceiver implements Runnable {
 		@SuppressWarnings("deprecation")
 		private void prepareMediaCodec(MediaCodec mediaCodec) throws IOException {
 			this.mediaCodec = mediaCodec;
-			inputBuffers = mediaCodec.getInputBuffers();
-			outputBuffers = mediaCodec.getOutputBuffers();
-			outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
-			for (int i = 0; i < outputBuffers.length; i++) {
-				outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
-				outputBuffersAsShort[i].limit(outputBuffersAsShort[i].capacity());
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+				inputBuffers = mediaCodec.getInputBuffers();
+				outputBuffers = mediaCodec.getOutputBuffers();
+				outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
+				for (int i = 0; i < outputBuffers.length; i++) {
+					outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
+					outputBuffersAsShort[i].limit(outputBuffersAsShort[i].capacity());
+				}
 			}
 		}
 
@@ -228,7 +230,9 @@ public final class HttpStreamReceiver implements Runnable {
 				//postpone the creation of the AudioTrack until we have received the first buffer with
 				//valid data, or we have received INFO_OUTPUT_FORMAT_CHANGED
 
-				short[] tmpShortOutput = new short[extractor.getChannelCount() * extractor.getSamplesPerFrame()]; //1 frame @ mono/stereo, 16 bits per sample
+				short[] tmpShortOutput = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) ?
+					new short[extractor.getChannelCount() * extractor.getSamplesPerFrame()] : //1 frame @ mono/stereo, 16 bits per sample
+					null);
 				boolean okToProcessMoreInput = true, playbackStarted = false;
 				int timedoutFrameCount = 0;
 
@@ -243,7 +247,12 @@ public final class HttpStreamReceiver implements Runnable {
 							if (!alive)
 								return;
 						}
-						buffer.readArray(inputBuffers[inputBufferIndex], 0, inputFrameSize);
+
+						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+							buffer.readArray(inputBuffers[inputBufferIndex], 0, inputFrameSize);
+						else
+							buffer.readArray(mediaCodec.getInputBuffer(inputBufferIndex), 0, inputFrameSize);
+
 						buffer.commitRead(inputFrameSize);
 
 						//queue the input buffer for decoding
@@ -272,12 +281,14 @@ public final class HttpStreamReceiver implements Runnable {
 								createAudioTrack(mediaCodec.getOutputFormat(), initialAudioBufferInMS);
 								break;
 							case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-								outputBuffers = mediaCodec.getOutputBuffers();
-								if (outputBuffers.length != outputBuffersAsShort.length)
-									outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
-								for (int i = 0; i < outputBuffers.length; i++) {
-									outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
-									outputBuffersAsShort[i].limit(outputBuffersAsShort[i].capacity());
+								if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+									outputBuffers = mediaCodec.getOutputBuffers();
+									if (outputBuffers.length != outputBuffersAsShort.length)
+										outputBuffersAsShort = new ShortBuffer[outputBuffers.length];
+									for (int i = 0; i < outputBuffers.length; i++) {
+										outputBuffersAsShort[i] = outputBuffers[i].asShortBuffer();
+										outputBuffersAsShort[i].limit(outputBuffersAsShort[i].capacity());
+									}
 								}
 								break;
 							case MediaCodec.INFO_TRY_AGAIN_LATER:
@@ -291,8 +302,15 @@ public final class HttpStreamReceiver implements Runnable {
 										if (!alive)
 											return;
 									}
-									inputBuffers[inputBufferIndex].limit(0);
-									inputBuffers[inputBufferIndex].position(0);
+
+									final ByteBuffer inputBuffer;
+									if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+										inputBuffer = inputBuffers[inputBufferIndex];
+									else
+										inputBuffer = mediaCodec.getInputBuffer(inputBufferIndex);
+									inputBuffer.limit(0);
+									inputBuffer.position(0);
+
 									mediaCodec.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
 								}
 								info.size = Integer.MAX_VALUE;
@@ -322,24 +340,36 @@ public final class HttpStreamReceiver implements Runnable {
 
 					//output data to audioTrack
 					if (info.size > 0 && info.size < Integer.MAX_VALUE) {
-						info.size >>= 1; //from bytes to shorts
+						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+							info.size >>= 1; //from bytes to shorts
 
-						if (info.size > tmpShortOutput.length)
-							tmpShortOutput = new short[info.size];
+							if (info.size > tmpShortOutput.length)
+								tmpShortOutput = new short[info.size];
 
-						outputBuffersAsShort[outputBufferIndex].position(info.offset >> 1); //from bytes to shorts
-						outputBuffersAsShort[outputBufferIndex].get(tmpShortOutput, 0, info.size);
+							outputBuffersAsShort[outputBufferIndex].position(info.offset >> 1); //from bytes to shorts
+							outputBuffersAsShort[outputBufferIndex].get(tmpShortOutput, 0, info.size);
 
-						//release the output buffer
-						mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
+							//release the output buffer
+							mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
+						}
 
 						//send the decoded audio to audioTrack
 						synchronized (sync) {
 							if (!alive)
 								break;
 							while (alive) {
-								final int actuallyWrittenShorts = audioTrack.write(tmpShortOutput, 0, info.size);
-								if (actuallyWrittenShorts == 0) {
+								final int dataActuallyWritten;
+								if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+									dataActuallyWritten = audioTrack.write(tmpShortOutput, 0, info.size);
+								} else {
+									final ByteBuffer outputBuffer = mediaCodec.getOutputBuffer(outputBufferIndex);
+
+									outputBuffer.limit(info.offset + info.size);
+									outputBuffer.position(info.offset);
+
+									dataActuallyWritten = audioTrack.write(outputBuffer, info.size, AudioTrack.WRITE_BLOCKING);
+								}
+								if (dataActuallyWritten == 0) {
 									if (!playbackStarted) {
 										playbackStarted = true;
 										//start the playback as soon as the buffer is full
@@ -354,9 +384,13 @@ public final class HttpStreamReceiver implements Runnable {
 									} catch (Throwable ex) {
 										//just ignore
 									}
-								} else if (actuallyWrittenShorts < 0) {
+								} else if (dataActuallyWritten < 0) {
 									throw new IOException();
 								} else {
+									if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+										//release the output buffer
+										mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
+									}
 									break;
 								}
 							}
@@ -376,6 +410,7 @@ public final class HttpStreamReceiver implements Runnable {
 						return;
 				}
 			} catch (Throwable ex) {
+				ex.printStackTrace();
 				//abort everything!
 				synchronized (sync) {
 					if (!alive)
