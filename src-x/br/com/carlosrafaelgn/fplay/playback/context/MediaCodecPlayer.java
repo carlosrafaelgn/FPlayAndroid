@@ -39,7 +39,6 @@ import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
-import android.os.SystemClock;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -179,8 +178,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			}
 			return false;
 		}
-		final int initialTime = (int)SystemClock.uptimeMillis();
-		for (int i = 0; i < 10 && !inputOver; i++) {
+		while (!inputOver) {
 			final int inputFrameSize, index;
 			if ((inputFrameSize = httpStreamExtractor.canReadHeader()) <= 0)
 				break;
@@ -188,15 +186,12 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				break;
 			httpStreamReceiver.readArray(inputBuffers[index], 0, inputFrameSize);
 			mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
-			if (((int)SystemClock.uptimeMillis() - initialTime) >= 10)
-				break;
 		}
 		return true;
 	}
 
 	private void fillInputBuffersInternal() throws IOException {
-		final int initialTime = (int)SystemClock.uptimeMillis();
-		for (int i = 0; i < 10 && !inputOver; i++) {
+		while (!inputOver) {
 			final int index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
 				break;
@@ -211,8 +206,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				//(end of stream)", sometimes, advance() returns false in other cases....
 				mediaExtractor.advance();
 			}
-			if (((int)SystemClock.uptimeMillis() - initialTime) >= 10)
-				break;
 		}
 	}
 
@@ -360,17 +353,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			outputBuffer.streamOver = outputOver;
 			outputBuffer.offsetInBytes = 0;
 		} else {
-			if (httpStreamReceiver != null) {
-				if (!fillInternetInputBuffers()) {
-					outputBuffer.index = MediaCodec.INFO_TRY_AGAIN_LATER;
-					outputBuffer.player = this;
-					outputBuffer.remainingBytes = 0;
-					outputBuffer.streamOver = false;
-					return;
-				}
-			} else {
-				fillInputBuffersInternal();
-			}
 			int index = mediaCodec.dequeueOutputBuffer(bufferInfo, OUTPUT_BUFFER_TIMEOUT_IN_US);
 			IndexChecker:
 			for (; ; ) {
@@ -470,13 +452,16 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		mediaExtractor.seekTo((long)msec * 1000L, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
 		inputOver = false;
 		bufferInfo.flags = 0;
+
 		final long sampleTimeInUS = mediaExtractor.getSampleTime();
 		outputOver = (sampleTimeInUS < 0);
 		currentPositionInFrames = (outputOver ?
 			getDurationInFrames() :
 			((sampleTimeInUS * (long)dstSampleRate) //us * frames per second
 				/ 1000000L)); //us to second;
+
 		fillInputBuffersInternal();
+
 		return currentPositionInFrames;
 	}
 

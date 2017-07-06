@@ -203,8 +203,10 @@ public:
 
 	int64_t doSeek(int32_t msec, int32_t totalMsec) {
 		int32_t ret;
+
 		if ((ret = AMediaCodec_flush(mediaCodec)))
 			return (int64_t)ret;
+
 		if ((ret = AMediaExtractor_seekTo(mediaExtractor, (int64_t)msec * 1000LL, AMEDIAEXTRACTOR_SEEK_CLOSEST_SYNC))) {
 			if (msec > (totalMsec - 500)) {
 				inputOver = true;
@@ -212,24 +214,25 @@ public:
 			}
 			return (int64_t)ret;
 		}
+
 		inputOver = false;
 		bufferIndex = AMEDIACODEC_INFO_TRY_AGAIN_LATER;
 		buffer = 0;
+
 		const int64_t sampleTime = AMediaExtractor_getSampleTime(mediaExtractor);
 		if (sampleTime < 0) {
 			inputOver = true;
 			return 0x7FFFFFFFFFFFFFFFLL;
 		}
+
 		if ((ret = fillInputBuffers()))
 			return (int64_t)ret;
+
 		return sampleTime;
 	}
 
 	int32_t fillInputBuffers() {
-		if (inputOver)
-			return 0;
-		const uint32_t initialTime = uptimeMillis();
-		for (int32_t i = 0; i < 10 && !inputOver; i++) {
+		while (!inputOver) {
 			const ssize_t index = AMediaCodec_dequeueInputBuffer(mediaCodec, INPUT_BUFFER_TIMEOUT_IN_US);
 			if (index < 0)
 				break;
@@ -252,8 +255,6 @@ public:
 				//(end of stream)", sometimes, AMediaExtractor_advance() returns false in other cases....
 				AMediaExtractor_advance(mediaExtractor);
 			}
-			if ((uptimeMillis() - initialTime) >= 10)
-				break;
 		}
 		return 0;
 	}
@@ -262,9 +263,6 @@ public:
 		//positive: ok (odd means input over)
 		//negative: error
 		int32_t ret;
-
-		if ((ret = fillInputBuffers()))
-			return ret;
 
 		AMediaCodecBufferInfo bufferInfo;
 		bufferInfo.flags = 0;

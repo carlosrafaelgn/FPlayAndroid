@@ -1178,6 +1178,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								updateNativeSrc(sourcePlayer);
 							}
 							continue;
+						} else {
+							//fill the input only when there is no more output available
+							sourcePlayer.fillInputBuffers();
 						}
 
 						boolean sleepNow = true;
@@ -1211,7 +1214,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								synchronized (threadNotification) {
 									//sleep only for a very brief period, do not use the standard sleep time!
 									if (requestedAction == ACTION_NONE)
-										threadNotification.wait(10);
+										threadNotification.wait(20);
 								}
 							} catch (Throwable ex) {
 								//just ignore
@@ -1242,9 +1245,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						//we cannot call nextOutputBuffer() here, so let's just release
 						if (outputBuffer.remainingBytes <= 0)
 							outputBuffer.release();
-						sourcePlayer.fillInputBuffers();
+						//sourcePlayer.fillInputBuffers();
 						try {
-							actualSleepTime = 40 - ((int)SystemClock.uptimeMillis() - actualSleepTime);
+							actualSleepTime = 200 - ((int)SystemClock.uptimeMillis() - actualSleepTime);
 							if (actualSleepTime > 0) {
 								//wait(0) will block the thread until someone
 								//calls notify() or notifyAll()
