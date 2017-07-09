@@ -219,7 +219,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		final int p;
 		if ((p = Player.songs.getSelection()) < 0 || p >= Player.songs.getCount())
 			return;
-		final Song song = Player.songs.getItemT(p);
+		final Song song = Player.songs.getItem(p);
 		if (song == null)
 			return;
 		final StringBuilder stringBuilder = new StringBuilder(1024);
@@ -297,7 +297,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		final int sel = Player.songs.getSelection();
 		final Song song;
 		if (sel >= 0 && sel < Player.songs.getCount()) {
-			if ((song = Player.songs.getItemT(sel)).isHttp ||
+			if ((song = Player.songs.getItem(sel)).isHttp ||
 				!song.path.toLowerCase(Locale.US).endsWith(".mp3")) {
 				//error! must be mp3 and must not be http
 				UI.toast(R.string.ringtone_error);
@@ -348,7 +348,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			final int p;
 			if ((p = Player.songs.getSelection()) < 0 || p >= Player.songs.getCount())
 				return;
-			final Song song = Player.songs.getItemT(p);
+			final Song song = Player.songs.getItem(p);
 			if (song == null)
 				return;
 			Intent shareIntent = new Intent(Intent.ACTION_SEND);
@@ -1067,7 +1067,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		} else {
 			if (UI.doubleClickMode) {
 				if (Player.songs.getFirstSelectedPosition() == position) {
-					if (Player.songs.getItemT(position) == Player.localSong && !Player.localPlaying)
+					if (Player.songs.getItem(position) == Player.localSong && !Player.localPlaying)
 						Player.playPause();
 					else
 						Player.play(position);
@@ -1076,7 +1076,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				}
 			} else {
 				boolean ok = true;
-				if (Player.songs.getItemT(position) == Player.localSong && !Player.localPlaying)
+				if (Player.songs.getItem(position) == Player.localSong && !Player.localPlaying)
 					Player.playPause();
 				else
 					ok = Player.play(position);
@@ -1573,7 +1573,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				return true;
 			case UI.KEY_ENTER:
 				if (s >= 0) {
-					if (Player.songs.getItemT(s) == Player.localSong && !Player.localPlaying)
+					if (Player.songs.getItem(s) == Player.localSong && !Player.localPlaying)
 						Player.playPause();
 					else
 						Player.play(s);

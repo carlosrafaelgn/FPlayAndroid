@@ -192,16 +192,16 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	}
 	
 	private void selectAlbumSongs(int position) {
-		final boolean check = fileList.getItemT(position).isChecked;
+		final boolean check = fileList.getItem(position).isChecked;
 		FileSt file;
 		position++;
-		while (position < fileList.getCount() && (file = fileList.getItemT(position)).specialType == 0) {
+		while (position < fileList.getCount() && (file = fileList.getItem(position)).specialType == 0) {
 			file.isChecked = check;
 			position++;
 		}
 		checkedCount = 0;
 		for (int i = fileList.getCount() - 1; i >= 0; i--) {
-			if (fileList.getItemT(i).isChecked)
+			if (fileList.getItem(i).isChecked)
 				checkedCount++;
 		}
 		chkAll.setChecked(checkedCount == fileList.getCount());
@@ -219,7 +219,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			int c = 0;
 			final FileSt[] fs = new FileSt[checkedCount];
 			for (int i = fileList.getCount() - 1, j = checkedCount - 1; i >= 0 && j >= 0; i--) {
-				final FileSt file = fileList.getItemT(i);
+				final FileSt file = fileList.getItem(i);
 				if (file.isChecked && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
 					if (!addingFolder) {
 						c++;
@@ -287,7 +287,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			chkAll.setChecked(false);
 			checkedCount = 0;
 			for (int c = fileList.getCount() - 1; c >= 0; c--)
-				fileList.getItemT(c).isChecked = false;
+				fileList.getItem(c).isChecked = false;
 			fileList.notifyCheckedChanged();
 			updateButtons(true);
 		}
@@ -300,7 +300,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			return;
 		if (!list.isInTouchMode())
 			fileList.setSelection(position, true);
-		final FileSt file = fileList.getItemT(position);
+		final FileSt file = fileList.getItem(position);
 		if (file == null) //same as above
 			return;
 		final int originalPosition = position;
@@ -311,11 +311,11 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				if (verifyAlbumWhenChecking) {
 					//check the album if all of its songs are checked
 					while (--position >= 0) {
-						final FileSt album = fileList.getItemT(position);
+						final FileSt album = fileList.getItem(position);
 						if (album.specialType == FileSt.TYPE_ALBUM_ITEM) {
 							boolean checkAlbum = true;
 							while (++position < fileList.getCount()) {
-								final FileSt song = fileList.getItemT(position);
+								final FileSt song = fileList.getItem(position);
 								if (song.specialType != 0)
 									break;
 								if (!song.isChecked) {
@@ -342,7 +342,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				if (verifyAlbumWhenChecking) {
 					//uncheck the album
 					while (--position >= 0) {
-						final FileSt album = fileList.getItemT(position);
+						final FileSt album = fileList.getItem(position);
 						if (album.specialType == FileSt.TYPE_ALBUM_ITEM) {
 							if (album.isChecked) {
 								album.isChecked = false;
@@ -380,7 +380,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		if (!isLayoutCreated() || list == null || fileList == null)
 			return;
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
-			final FileSt file = fileList.getItemT(position);
+			final FileSt file = fileList.getItem(position);
 			if (file == null) //same as above
 				return;
 			switch (file.specialType) {
@@ -416,8 +416,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			int i = fileList.getCount() - 1;
 			checkedCount = 0;
 			for (; i >= 0; i--)
-				fileList.getItemT(i).isChecked = false;
-			final FileSt file = fileList.getItemT(position);
+				fileList.getItem(i).isChecked = false;
+			final FileSt file = fileList.getItem(position);
 			file.isChecked = true;
 			processItemCheckboxClickInternal(position, false);
 			addPlayCheckedItems(true);
@@ -429,7 +429,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			}
 			return;
 		}
-		lastClickedFavorite = fileList.getItemT(position);
+		lastClickedFavorite = fileList.getItem(position);
 		if (lastClickedFavorite.specialType == FileSt.TYPE_FAVORITE) {
 			if (UI.doubleClickMode && fileList.getSelection() != position)
 				fileList.setSelection(position, true);
@@ -450,7 +450,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			return;
 		loading = started;
 		if (fileList != null) {
-			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItemT(0).specialType == FileSt.TYPE_ALBUM_ITEM));
+			verifyAlbumWhenChecking = ((fileList.getCount() > 0) && (fileList.getItem(0).specialType == FileSt.TYPE_ALBUM_ITEM));
 			if (list != null && !list.isInTouchMode())
 				list.centerItem(fileList.getSelection());
 		}
@@ -474,7 +474,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 					UI.announceAccessibilityText(msgEmptyList);
 				} else {
 					final int i = fileList.getFirstSelectedPosition();
-					UI.announceAccessibilityText(FileView.makeContextDescription(!isAtHome, getHostActivity(), fileList.getItemT(i < 0 ? 0 : i)));
+					UI.announceAccessibilityText(FileView.makeContextDescription(!isAtHome, getHostActivity(), fileList.getItem(i < 0 ? 0 : i)));
 				}
 			}
 		}
@@ -488,7 +488,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			final int p = fileList.getSelection();
 			if (p < 0 || p >= fileList.getCount())
 				return null;
-			lastClickedFavorite = fileList.getItemT(p);
+			lastClickedFavorite = fileList.getItem(p);
 			if (lastClickedFavorite.specialType == FileSt.TYPE_FAVORITE)
 				return list;
 			lastClickedFavorite = null;
@@ -634,7 +634,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			return true;
 		case UI.KEY_EXTRA:
 			if (!isAtHome && fileList != null && (p = fileList.getSelection()) >= 0) {
-				final FileSt file = fileList.getItemT(p);
+				final FileSt file = fileList.getItem(p);
 				file.isChecked = !file.isChecked;
 				processItemCheckboxClickInternal(p, true);
 			}
@@ -652,7 +652,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				chkAll.setChecked(false);
 				checkedCount = 0;
 				for (int i = fileList.getCount() - 1; i >= 0; i--)
-					fileList.getItemT(i).isChecked = false;
+					fileList.getItem(i).isChecked = false;
 				fileList.notifyCheckedChanged();
 				updateButtons(true);
 				return;
@@ -726,7 +726,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			int i = fileList.getCount() - 1;
 			checkedCount = (ck ? (i + 1) : 0);
 			for (; i >= 0; i--)
-				fileList.getItemT(i).isChecked = ck;
+				fileList.getItem(i).isChecked = ck;
 			fileList.notifyCheckedChanged();
 			updateButtons(true);
 		} else if (view == btnGoBackToPlayer) {

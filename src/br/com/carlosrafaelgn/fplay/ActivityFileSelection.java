@@ -267,7 +267,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 		if (list == null || fileList == null)
 			return;
 		if (!UI.doubleClickMode || fileList.getSelection() == position) {
-			final FileSt file = fileList.getItemT(position);
+			final FileSt file = fileList.getItem(position);
 			if (save) {
 				confirm(file, -1);
 				return;
@@ -294,7 +294,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			return;
 		if (!list.isInTouchMode() && fileList.getSelection() != position)
 			fileList.setSelection(position, true);
-		final FileSt file = fileList.getItemT(position);
+		final FileSt file = fileList.getItem(position);
 		if (file == null) //same as above
 			return;
 		if (checkedFile != file && checkedFile != null)
@@ -329,7 +329,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				final int count = fileList.getCount();
 				if (!started) {
 					if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
-						UI.announceAccessibilityText(count == 0 ? msgEmptyList : FileView.makeContextDescription(true, getHostActivity(), fileList.getItemT(0)));
+						UI.announceAccessibilityText(count == 0 ? msgEmptyList : FileView.makeContextDescription(true, getHostActivity(), fileList.getItem(0)));
 					if (count > 0 && !list.isInTouchMode()) {
 						fileList.setSelection(0, true);
 						list.centerItem(0);
@@ -361,7 +361,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			return true;
 		case UI.KEY_EXTRA:
 			if (fileList != null && (p = fileList.getSelection()) >= 0) {
-				final FileSt file = fileList.getItemT(p);
+				final FileSt file = fileList.getItem(p);
 				file.isChecked = !file.isChecked;
 				onItemCheckboxClicked(p);
 			}
@@ -411,7 +411,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				final Context ctx = getHostActivity();
 				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 
-				txtSaveAsName = UI.createDialogEditText(ctx, 0, (fileList != null && fileList.getSelection() >= 0) ? fileList.getItemT(fileList.getSelection()).name : null, format(R.string.msg_enter_name, itemType), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+				txtSaveAsName = UI.createDialogEditText(ctx, 0, (fileList != null && fileList.getSelection() >= 0) ? fileList.getItem(fileList.getSelection()).name : null, format(R.string.msg_enter_name, itemType), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 				txtSaveAsName.setFilters(new InputFilter[]{this, new InputFilter.LengthFilter(64)});
 				l.addView(txtSaveAsName, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
@@ -467,7 +467,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				if (n.length() > 64)
 					n = n.substring(0, 64);
 				for (int i = fileList.getCount() - 1; i >= 0; i--) {
-					final FileSt f = fileList.getItemT(i);
+					final FileSt f = fileList.getItem(i);
 					if (f.name.equals(n)) {
 						dialog.dismiss();
 						confirm(f, -1);

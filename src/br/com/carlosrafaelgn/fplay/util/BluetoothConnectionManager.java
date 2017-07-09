@@ -416,7 +416,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	@Override
 	public void onItemClicked(int position) {
 		if (dialog != null && deviceList != null && position >= 0 && position < deviceList.getCount()) {
-			final DeviceItem item = deviceList.getItemT(position);
+			final DeviceItem item = deviceList.getItem(position);
 			if (item != null && item.address != null) {
 				stopDialogDiscovery();
 				deviceItem = item;
@@ -459,7 +459,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			final String name = device.getName();
 			boolean paired = false;
 			for (int i = deviceList.getCount() - 1; i >= 0; i--) {
-				final DeviceItem di = deviceList.getItemT(i);
+				final DeviceItem di = deviceList.getItem(i);
 				if (di.address.equalsIgnoreCase(address)) {
 					//an item with this same address/name is already on the list
 					if (di.name.equalsIgnoreCase(name))

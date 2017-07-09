@@ -136,7 +136,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	private void addPlaySelectedItem(final boolean play) {
 		if (radioStationList.getSelection() < 0)
 			return;
-		final RadioStation radioStation = radioStationList.getItemT(radioStationList.getSelection());
+		final RadioStation radioStation = radioStationList.getItem(radioStationList.getSelection());
 		if (radioStation.m3uUrl == null || radioStation.m3uUrl.length() < 0) {
 			UI.toast(R.string.error_file_not_found);
 			return;
@@ -194,7 +194,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	public void onItemCheckboxClicked(int position) {
 		if (!isLayoutCreated())
 			return;
-		final RadioStation station = radioStationList.getItemT(position);
+		final RadioStation station = radioStationList.getItem(position);
 		if (station.isFavorite)
 			radioStationList.addFavoriteStation(station);
 		else
@@ -347,7 +347,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			if (radioStationList != null) {
 				p = radioStationList.getSelection();
 				if (p >= 0) {
-					final RadioStation station = radioStationList.getItemT(p);
+					final RadioStation station = radioStationList.getItem(p);
 					station.isFavorite = !station.isFavorite;
 					onItemCheckboxClicked(p);
 					if (list != null) {

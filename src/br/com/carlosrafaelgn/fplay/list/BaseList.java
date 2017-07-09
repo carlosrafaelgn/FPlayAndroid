@@ -379,11 +379,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	}
 
 	@Override
-	public final Object getItem(int position) {
-		return items[position];
-	}
-
-	public final E getItemT(int position) {
+	public final E getItem(int position) {
 		return items[position];
 	}
 
