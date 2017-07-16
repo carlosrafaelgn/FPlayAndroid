@@ -115,7 +115,7 @@ public final class Serializer {
 				(is.read() & 0xff) | ((is.read() & 0xff) << 8) | ((is.read() & 0xff) << 16) | (is.read() << 24)
 			) & 0xFFFFFFFFL) |
 			((long)(
-				(is.read() & 0xff) | ((is.read() & 0xff) << 8) | ((is.read() & 0xff) << 16) | ((is.read() & 0xff) << 24)
+				(is.read() & 0xff) | ((is.read() & 0xff) << 8) | ((is.read() & 0xff) << 16) | (is.read() << 24)
 			) << 32);
 	}
 	
@@ -125,7 +125,7 @@ public final class Serializer {
 				(input[offset] & 0xff) | ((input[offset + 1] & 0xff) << 8) | ((input[offset + 2] & 0xff) << 16) | (input[offset + 3] << 24)
 			) & 0xFFFFFFFFL) |
 			((long)(
-				(input[offset + 4] & 0xff) | ((input[offset + 5] & 0xff) << 8) | ((input[offset + 6] & 0xff) << 16) | ((input[offset + 7] & 0xff) << 24)
+				(input[offset + 4] & 0xff) | ((input[offset + 5] & 0xff) << 8) | ((input[offset + 6] & 0xff) << 16) | (input[offset + 7] << 24)
 			) << 32);
 	}
 	
