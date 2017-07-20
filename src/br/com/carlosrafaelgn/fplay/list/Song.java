@@ -53,6 +53,9 @@ public final class Song extends BaseItem {
 	public static final int EXTRA_ARTIST_ALBUM = 5;
 	public static int extraInfoMode;
 	private static final String[] projLengthOnly = { "duration" }, projFull = { "title", "artist", "album", "track", "duration", "year" };
+	private static final int STORE_FAIL = 0;
+	private static final int STORE_MISSING_DURATION = 1;
+	private static final int STORE_OK = 2;
 	public String path; //the only thread/method allowed to change the path is Player._httpStreamReceiverUrlUpdated()
 	public boolean isHttp;
 	public String title, artist, album, extraInfo;
@@ -116,14 +119,17 @@ public final class Song extends BaseItem {
 				}
 			}
 		}
-		if ((fields == null || this.lengthMS <= 0) && !fetchMetadataFromMediaStore(fields != null)) {
+		int mode = ((fields == null) ? STORE_FAIL : ((this.lengthMS > 0) ? STORE_OK : STORE_MISSING_DURATION));
+		if (mode != STORE_OK && (mode = fetchMetadataFromMediaStore(mode == STORE_MISSING_DURATION)) != STORE_OK) {
 			//Use MediaMetadataRetriever only as a last resource, since it is
-			//very slow on a few devices
+			//very slow on a few devices. Yet, this is necessary as (as amazing
+			//as it might sound) some times, media store has corrupted data,
+			//whereas MediaMetadataRetriever doesn't!
 			final MediaMetadataRetriever retr = new MediaMetadataRetriever();
 			try {
 				retr.setDataSource(fileSt.path);
 				String s;
-				if (fields == null) {
+				if (mode == STORE_FAIL) {
 					try {
 						this.title = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
 					} catch (Throwable ex) {
@@ -169,7 +175,7 @@ public final class Song extends BaseItem {
 		validateFields(fileSt.name);
 	}
 
-	private boolean fetchMetadataFromMediaStore(boolean lengthOnly) {
+	private int fetchMetadataFromMediaStore(boolean lengthOnly) {
 		Cursor c = null;
 		try {
 			c = Player.theApplication.getContentResolver().query(
@@ -190,7 +196,7 @@ public final class Song extends BaseItem {
 					lengthMS = c.getInt(4);
 					year = c.getInt(5);
 				}
-				return true;
+				return (lengthMS > 0 ? STORE_OK : STORE_MISSING_DURATION);
 			}
 		} catch (Throwable ex) {
 			//just ignore
@@ -198,7 +204,7 @@ public final class Song extends BaseItem {
 			if (c != null)
 				c.close();
 		}
-		return false;
+		return STORE_FAIL;
 	}
 
 	private void validateFields(String fileName) {
