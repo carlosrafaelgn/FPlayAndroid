@@ -102,11 +102,11 @@ public final class Serializer {
 	}
 	
 	public static int deserializeInt(InputStream is) throws IOException {
-		return ((is.read() & 0xff) | ((is.read() & 0xff) << 8) | ((is.read() & 0xff) << 16) | ((is.read() & 0xff) << 24));
+		return ((is.read() & 0xff) | ((is.read() & 0xff) << 8) | ((is.read() & 0xff) << 16) | (is.read() << 24));
 	}
 	
 	public static int deserializeInt(byte[] input, int offset) {
-		return (input[offset] & 0xff) | ((input[offset + 1] & 0xff) << 8) | ((input[offset + 2] & 0xff) << 16) | ((input[offset + 3] & 0xff) << 24);
+		return (input[offset] & 0xff) | ((input[offset + 1] & 0xff) << 8) | ((input[offset + 2] & 0xff) << 16) | (input[offset + 3] << 24);
 	}
 	
 	public static long deserializeLong(InputStream is) throws IOException {
