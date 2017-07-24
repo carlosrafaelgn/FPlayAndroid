@@ -1155,7 +1155,7 @@ public final class HttpStreamReceiver implements Runnable {
 			} else {
 				headerOk = true;
 				synchronized (sync) {
-					sync.notify();
+					sync.notifyAll();
 				}
 			}
 

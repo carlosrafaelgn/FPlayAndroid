@@ -800,7 +800,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		if (initializationError) {
 			requestedAction = ACTION_NONE;
 			synchronized (threadNotification) {
-				threadNotification.notify();
+				threadNotification.notifyAll();
 			}
 			return;
 		}
@@ -811,7 +811,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		requestedAction = ACTION_NONE;
 
 		synchronized (threadNotification) {
-			threadNotification.notify();
+			threadNotification.notifyAll();
 		}
 
 		boolean paused = true, playPending = false;
@@ -1054,7 +1054,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 						} finally {
 							requestedAction = ACTION_NONE;
 							playerRequestingAction = null;
-							threadNotification.notify();
+							threadNotification.notifyAll();
 						}
 					}
 				}
@@ -1365,7 +1365,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		wakeLock.release();
 		synchronized (threadNotification) {
 			currentPlayerForReference = null;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 		}
 	}
 
@@ -1434,7 +1434,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	public static void _release() {
 		alive = false;
 		synchronized (threadNotification) {
-			threadNotification.notify();
+			threadNotification.notifyAll();
 		}
 		if (thread != null) {
 			try {
@@ -1467,7 +1467,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		synchronized (threadNotification) {
 			playerRequestingAction = player;
 			requestedAction = ACTION_PLAY;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (playerRequestingAction != null) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1495,7 +1495,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			playerRequestingAction = player;
 			requestedAction = ACTION_PAUSE;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (playerRequestingAction != null) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1517,7 +1517,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		synchronized (threadNotification) {
 			playerRequestingAction = player;
 			requestedAction = ACTION_RESUME;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (playerRequestingAction != null) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1546,7 +1546,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			playerRequestingAction = player;
 			requestedSeekMS = msec;
 			requestedAction = ACTION_SEEK;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (playerRequestingAction != null) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1566,7 +1566,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			playerRequestingAction = player;
 			nextPlayerRequested = nextPlayer;
 			requestedAction = ACTION_SETNEXT;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (playerRequestingAction != null) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1591,7 +1591,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 			playerRequestingAction = player;
 			requestedAction = ACTION_RESET;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (playerRequestingAction != null) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1627,7 +1627,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		synchronized (threadNotification) {
 			effectsMessage = message;
 			requestedAction = ACTION_EFFECTS;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (requestedAction == ACTION_EFFECTS) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1693,7 +1693,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			requestedAction = ACTION_START_VISUALIZER;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (requestedAction == ACTION_START_VISUALIZER) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1713,7 +1713,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			requestedAction = ACTION_STOP_VISUALIZER;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (requestedAction == ACTION_STOP_VISUALIZER) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1781,7 +1781,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			requestedAction = ACTION_UPDATE_BUFFER_CONFIG;
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (requestedAction == ACTION_UPDATE_BUFFER_CONFIG) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1801,7 +1801,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			requestedAction = ((enabled == 0) ? ACTION_DISABLE_EFFECTS_GAIN : ACTION_ENABLE_EFFECTS_GAIN);
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (requestedAction == ACTION_DISABLE_EFFECTS_GAIN || requestedAction == ACTION_ENABLE_EFFECTS_GAIN) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);
@@ -1825,7 +1825,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		waitToReceiveAction = true;
 		synchronized (threadNotification) {
 			requestedAction = (enabled ? ACTION_ENABLE_RESAMPLING : ACTION_DISABLE_RESAMPLING);
-			threadNotification.notify();
+			threadNotification.notifyAll();
 			if (requestedAction == ACTION_ENABLE_RESAMPLING || requestedAction == ACTION_DISABLE_RESAMPLING) {
 				try {
 					threadNotification.wait(PLAYER_TIMEOUT);

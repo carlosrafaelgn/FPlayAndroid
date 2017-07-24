@@ -33,7 +33,6 @@
 package br.com.carlosrafaelgn.fplay.list;
 
 import android.database.DataSetObserver;
-import android.view.View;
 import android.widget.BaseAdapter;
 
 import java.lang.reflect.Array;

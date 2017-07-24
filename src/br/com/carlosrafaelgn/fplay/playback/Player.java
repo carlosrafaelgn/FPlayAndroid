@@ -223,7 +223,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static String pathToPlayWhenStarting;
 	private static String startCommand;
 
-	public static int state;
+	public static volatile int state;
 	private static Thread thread;
 	private static Looper looper;
 	public static Context theApplication; //once the app has been started, this is never null
@@ -259,11 +259,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static boolean audioSinkMicrophoneCheckDone;
 	private static Method audioSinkMicrophoneCheckMethod;
 
+	//These are only written/read from Core thread (except the volatile ones that are accessed from the main thread)
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
-	private static boolean resumePlaybackAfterFocusGain, postPlayPending, playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer, seekInProgress;
+	private static volatile boolean resumePlaybackAfterFocusGain, postPlayPending;
+	private static boolean playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer, seekInProgress;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayerBase player, nextPlayer;
-	public static int audioSessionId;
+	public static volatile int audioSessionId;
 
 	//keep these fields here, instead of in their respective activities, to allow them to survive
 	//their activity's destruction (and even the class garbage collection)
@@ -2071,7 +2073,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static void updateBluetoothVisualizer(boolean songHasChanged) {
 		if (bluetoothVisualizerController != null) {
 			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
-			if (!songHasChanged && playing)
+			if (!songHasChanged && localPlaying)
 				b.resetAndResume();
 			else
 				b.resume();
@@ -2578,7 +2580,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (prepareButtons) {
 			if (notification) {
 				UI.prepareNotificationPlaybackIcons();
-				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPauseNotif : UI.icPlayNotif);
+				views.setImageViewBitmap(R.id.btnPlay, localPlaying ? UI.icPauseNotif : UI.icPlayNotif);
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrevNotif);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNextNotif);
 				views.setImageViewBitmap(R.id.btnExit, UI.icExitNotif);
@@ -2604,7 +2606,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 				UI.prepareWidgetPlaybackIcons();
 				views.setImageViewBitmap(R.id.btnPrev, UI.icPrev);
-				views.setImageViewBitmap(R.id.btnPlay, playing ? UI.icPause : UI.icPlay);
+				views.setImageViewBitmap(R.id.btnPlay, localPlaying ? UI.icPause : UI.icPlay);
 				views.setImageViewBitmap(R.id.btnNext, UI.icNext);
 
 				views.setOnClickPendingIntent(R.id.btnPrev, intentPrevious);
@@ -2837,7 +2839,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			return;
 		}
 		boolean wasPlayingBeforeOngoingCall = false, sendMessage = false;
-		final boolean idle = (!playing && appNotInForeground);
+		final boolean idle = (!localPlaying && appNotInForeground);
 		if (idle && telephonyManager != null) {
 			//check for ongoing call
 			try {
@@ -3497,7 +3499,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (localSong == null) {
 				remoteControlClient.setPlaybackState(RemoteControlClient.PLAYSTATE_STOPPED);
 			} else {
-				remoteControlClient.setPlaybackState(preparing ? RemoteControlClient.PLAYSTATE_BUFFERING : (playing ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED));
+				remoteControlClient.setPlaybackState(preparing ? RemoteControlClient.PLAYSTATE_BUFFERING : (localPlaying ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED));
 				if (titleOrSongHaveChanged) {
 					final RemoteControlClient.MetadataEditor ed = remoteControlClient.editMetadata(true);
 					ed.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, title);
@@ -3524,7 +3526,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (localSong == null) {
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			} else {
-				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
+				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (localPlaying ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
 				if (titleOrSongHaveChanged) {
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, title);
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, localSong.artist);
@@ -3576,7 +3578,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			stickyBroadcast.putExtra("album", localSong.album);
 			stickyBroadcast.putExtra("duration", (long)localSong.lengthMS);
 			//stickyBroadcast.putExtra("position", (long)0);
-			stickyBroadcast.putExtra("playing", playing);
+			stickyBroadcast.putExtra("playing", localPlaying);
 		}
 		//thePlayer.sendBroadcast(stickyBroadcast);
 		//maybe check if api >= 23, and if so, use sendBroadcast instead.....???

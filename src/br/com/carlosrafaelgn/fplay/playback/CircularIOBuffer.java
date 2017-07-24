@@ -57,10 +57,12 @@ public final class CircularIOBuffer {
 	}
 
 	public void reset() {
-		alive = true;
-		filledSize = 0;
-		writeBuffer.limit(0);
-		readBuffer.limit(0);
+		synchronized (sync) {
+			alive = true;
+			filledSize = 0;
+			writeBuffer.limit(0);
+			readBuffer.limit(0);
+		}
 	}
 
 	public void abortPendingReadsAndWrites() {
@@ -71,8 +73,8 @@ public final class CircularIOBuffer {
 	}
 
 	public int waitUntilCanRead(int length) {
-		while (alive && filledSize < length) {
-			synchronized (sync) {
+		synchronized (sync) {
+			while (alive && filledSize < length) {
 				try {
 					sync.wait(10);
 				} catch (Throwable ex) {
@@ -84,8 +86,10 @@ public final class CircularIOBuffer {
 	}
 
 	public int canRead(int length) {
-		if (!alive || filledSize < length)
-			return -1;
+		synchronized (sync) {
+			if (!alive || filledSize < length)
+				return -1;
+		}
 		if (readBuffer.position() >= capacity)
 			readBuffer.position(0);
 		final int bytesAvailableBeforeEndOfBuffer = capacity - readBuffer.position();
@@ -140,8 +144,8 @@ public final class CircularIOBuffer {
 	}
 
 	public int waitUntilCanWrite(int length) {
-		while (alive && (capacity - filledSize) < length) {
-			synchronized (sync) {
+		synchronized (sync) {
+			while (alive && (capacity - filledSize) < length) {
 				try {
 					sync.wait(10);
 				} catch (Throwable ex) {
