@@ -44,6 +44,7 @@ import java.io.IOException;
 
 final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
 	private final MediaPlayer player;
+	private volatile boolean prepared;
 	private OnCompletionListener completionListener;
 	private OnErrorListener errorListener;
 	private OnInfoListener infoListener;
@@ -76,6 +77,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void setDataSource(String path) throws IOException {
+		prepared = false;
 		if (path.startsWith("file:")) {
 			final Uri uri = Uri.parse(path);
 			path = uri.getPath();
@@ -98,11 +100,14 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void prepare() throws IOException {
+		prepared = false;
 		player.prepare();
+		prepared = true;
 	}
 
 	@Override
 	public void prepareAsync() {
+		prepared = false;
 		player.prepareAsync();
 	}
 
@@ -113,6 +118,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void release() {
+		prepared = false;
 		player.release();
 		completionListener = null;
 		errorListener = null;
@@ -123,6 +129,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void reset() {
+		prepared = false;
 		try {
 			player.reset();
 		} catch (Throwable ex) {
@@ -144,6 +151,11 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public int getDuration() {
+		//calling getDuration() while the player is not
+		//fully prepared causes exception on a few devices,
+		//and causes error (-38,0) on others
+		if (!prepared)
+			return -1;
 		try {
 			return player.getDuration();
 		} catch (Throwable ex) {
@@ -153,6 +165,11 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public int getCurrentPosition() {
+		//calling getCurrentPosition() while the player is not
+		//fully prepared causes exception on a few devices,
+		//and causes error (-38,0) on others
+		if (!prepared)
+			return -1;
 		try {
 			final int position = player.getCurrentPosition();
 			//sometimes, when the player is still loading, player.getCurrentPosition() returns weird values!
@@ -220,12 +237,14 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
+		prepared = false;
 		if (completionListener != null)
 			completionListener.onCompletion(this);
 	}
 
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
+		prepared = false;
 		return ((errorListener != null) && errorListener.onError(this, what, extra));
 	}
 
@@ -236,6 +255,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void onPrepared(MediaPlayer mp) {
+		prepared = true;
 		if (preparedListener != null)
 			preparedListener.onPrepared(this);
 	}
