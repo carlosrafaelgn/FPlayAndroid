@@ -99,7 +99,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList,
 		optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor,
 		optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optExternalFx,
-		optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing,
+		optFileBufferSize, optPlayWhenHeadsetPlugged, optBlockBackKey, optBackKeyAlwaysReturnsToPlayerWhenBrowsing,
 		optWrapAroundList, optDoubleClickMode, optMarqueeTitle, optPrepareNext,
 		optClearListWhenPlayingFolders, optGoBackWhenPlayingFolders, optExtraInfoMode, optForceOrientation,
 		optTransition, optPopupTransition, optAnimations, optNotFullscreen, optFadeInFocus, optFadeInPause,
@@ -443,6 +443,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(0, 1, 1, getPlaybackEngineString(true))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(MediaContext.useOpenSLEngine ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+		} else if (view == optFileBufferSize) {
+			lastMenuView = optFileBufferSize;
+			UI.prepare(menu);
+			menu.add(0, 0, 0, getFileBufferSizeString(0))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			UI.separator(menu, 0, 1);
+			menu.add(1, 1, 1, getFileBufferSizeString(64 * 1024))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 64 * 1024) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(1, 2, 2, getFileBufferSizeString(128 * 1024))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 128 * 1024) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(1, 3, 3, getFileBufferSizeString(256 * 1024))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 256 * 1024) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		}
 	}
 	
@@ -565,6 +581,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			panelSettings.removeView(optFillThreshold);
 			if (MediaContext.useOpenSLEngine)
 				panelSettings.addView(optFillThreshold = createOptFillThreshold(), panelSettings.indexOfChild(optResampling));
+		} else if (lastMenuView == optFileBufferSize) {
+			switch (item.getItemId()) {
+			case 1:
+				Player.filePrefetchSize = 64 * 1024;
+				break;
+			case 2:
+				Player.filePrefetchSize = 128 * 1024;
+				break;
+			case 3:
+				Player.filePrefetchSize = 256 * 1024;
+				break;
+			default:
+				Player.filePrefetchSize = 0;
+				break;
+			}
+			optFileBufferSize.setSecondaryText(getFileBufferSizeString(Player.filePrefetchSize));
 		}
 		configsChanged = true;
 		return true;
@@ -702,6 +734,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	private String getPlaybackEngineString(boolean useOpenSLEngine) {
 		return (useOpenSLEngine ? "OpenSL ES" : "AudioTrack");
+	}
+
+	private String getFileBufferSizeString(int fileBufferSize) {
+		return ((fileBufferSize == 0) ? getText(R.string.noneM).toString() : (fileBufferSize >>> 10) + " KiB");
 	}
 
 	@SuppressWarnings("deprecation")
@@ -1105,6 +1141,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optHeadsetHook3 = new SettingView(ctx, UI.ICON_HEADSETHOOK3, getText(R.string.headset_hook_3).toString(), getHeadsetHookString(3), false, false, false);
 			if (ExternalFx.isSupported())
 				optExternalFx = new SettingView(ctx, UI.ICON_EQUALIZER, getText(R.string.enable_external_fx) + " " + getText(R.string.external_fx_warning), null, true, ExternalFx.isEnabled(), false);
+			optFileBufferSize = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.file_prefetch_size).toString(), getFileBufferSizeString(Player.filePrefetchSize), false, false, false);
 			optPlayWhenHeadsetPlugged = new SettingView(ctx, UI.ICON_HEADSET, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
 			optBlockBackKey = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
 			optBackKeyAlwaysReturnsToPlayerWhenBrowsing = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_back_key_always_returns_to_player_when_browsing).toString(), null, true, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing, false);
@@ -1201,6 +1238,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.hdr_playback, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? (BuildConfig.X ? optBytesBeforeDecoding : optMSBeforePlayback) : optWidgetIconColor, hIdx++);
 			if (ExternalFx.isSupported())
 				addOption(optExternalFx);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+				addOption(optFileBufferSize);
 			addOption(optPlayWhenHeadsetPlugged);
 			addOption(optPreviousResetsAfterTheBeginning);
 			addOption(optHandleCallKey);
@@ -1309,6 +1348,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optHeadsetHook2 = null;
 		optHeadsetHook3 = null;
 		optExternalFx = null;
+		optFileBufferSize = null;
 		optPlayWhenHeadsetPlugged = null;
 		optBlockBackKey = null;
 		optBackKeyAlwaysReturnsToPlayerWhenBrowsing = null;
@@ -1588,7 +1628,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			view == optScrollBarSongList || view == optScrollBarBrowser || view == optHeadsetHook1 ||
 			view == optHeadsetHook2 || view == optHeadsetHook3 || view == optBytesBeforeDecoding ||
 			view == optMSBeforePlayback || view == optBufferSize || view == optFillThreshold ||
-			view == optPlaybackEngine) {
+			view == optPlaybackEngine || view == optFileBufferSize) {
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;

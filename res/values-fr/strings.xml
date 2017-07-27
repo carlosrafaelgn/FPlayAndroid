@@ -355,5 +355,6 @@
     <string name="icy">Glacé</string>
     <string name="allow_lock_screen">Autoriser l\'application à rester au-dessus de l\'écran de verrouillage</string>
     <string name="share">Partager</string>
+    <string name="file_prefetch_size">Octets à stocker en mémoire lors de la lecture de fichiers :</string>
 
 </resources>

@@ -355,5 +355,6 @@
     <string name="icy">Glacial</string>
     <string name="allow_lock_screen">Permitir que o aplicativo fique acima da tela de bloqueio</string>
     <string name="share">Compartilhar</string>
+    <string name="file_prefetch_size">Bytes para armazenar na memória ao reproduzir arquivos:</string>
 
 </resources>

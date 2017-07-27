@@ -357,5 +357,6 @@
     <string name="icy">Icy</string>
     <string name="allow_lock_screen">Allow the app to stay above the lock screen</string>
     <string name="share">Share</string>
+    <string name="file_prefetch_size">Bytes to store in memory when playing files:</string>
 
 </resources>

@@ -770,6 +770,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	@Override
+	@SuppressWarnings("ConstantConditions")
 	public void run() {
 		/*try {
 			final int tid = Process.myTid();
@@ -1117,6 +1118,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 				if (paused)
 					continue;
 
+				//int tmpnow = (int)SystemClock.uptimeMillis();
+				//System.out.println("@@@ getHeadPositionInFrames " + (tmpnow - now));
+				//now = tmpnow;
 				final int currentHeadPositionInFrames = engine.getHeadPositionInFrames();
 				framesPlayed += (currentHeadPositionInFrames - lastHeadPositionInFrames);
 				lastHeadPositionInFrames = currentHeadPositionInFrames;
@@ -1214,7 +1218,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 								synchronized (threadNotification) {
 									//sleep only for a very brief period, do not use the standard sleep time!
 									if (requestedAction == ACTION_NONE)
-										threadNotification.wait(20);
+										threadNotification.wait(5);
 								}
 							} catch (Throwable ex) {
 								//just ignore
@@ -1764,7 +1768,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	public static int getFeatures() {
 		return (getProcessorFeatures() |
-			(externalNativeLibraryAvailable ? Player.FEATURE_DECODING_NATIVE : 0) |
+			(externalNativeLibraryAvailable && (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Player.filePrefetchSize == 0) ? Player.FEATURE_DECODING_NATIVE : 0) |
 			(MediaCodecPlayer.isDirect ? Player.FEATURE_DECODING_DIRECT : 0));
 	}
 

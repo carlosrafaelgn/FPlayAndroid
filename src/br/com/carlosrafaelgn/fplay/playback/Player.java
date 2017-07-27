@@ -2282,6 +2282,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	static final int OPTBIT_VIRTUALIZER_ENABLED_WIRE_MIC = 62;
 	private static final int OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT = 63;
 	private static final int OPTBIT_ALLOW_LOCK_SCREEN = 64;
+	private static final int OPTBIT_FILE_PREFETCH_SIZE0 = 65;
+	private static final int OPTBIT_FILE_PREFETCH_SIZE1 = 66;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2294,7 +2296,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int headsetHookActions, headsetHookPressCount, telephonyFeatureState;
 	public static String path, originalPath, radioSearchTerm;
 	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
-	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes;
+	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, filePrefetchSize;
 	public static Object radioStationCache, radioStationCacheShoutcast;
 
 	public static SerializableMap loadConfigFromFile() {
@@ -2424,6 +2426,20 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.lastVersionCode < 92);
 		UI.allowPlayerAboveLockScreen = opts.getBit(OPTBIT_ALLOW_LOCK_SCREEN, true);
+		switch ((opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE1, 0) << 1) | opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE0, 0)) {
+		case 1:
+			filePrefetchSize = 64 * 1024;
+			break;
+		case 2:
+			filePrefetchSize = 128 * 1024;
+			break;
+		case 3:
+			filePrefetchSize = 256 * 1024;
+			break;
+		default:
+			filePrefetchSize = 0;
+			break;
+		}
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -2532,6 +2548,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.largeTextIs22sp);
 		opts.putBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.displaySongNumberAndCount);
 		opts.putBit(OPTBIT_ALLOW_LOCK_SCREEN, UI.allowPlayerAboveLockScreen);
+		switch (filePrefetchSize) {
+		case 64 * 1024:
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, true);
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, false);
+			break;
+		case 128 * 1024:
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, false);
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, true);
+			break;
+		case 256 * 1024:
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, true);
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, true);
+			break;
+		default:
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, false);
+			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, false);
+			break;
+		}
+
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
 			int i = 0;

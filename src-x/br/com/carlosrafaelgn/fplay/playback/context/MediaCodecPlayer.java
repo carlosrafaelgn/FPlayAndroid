@@ -36,6 +36,7 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
@@ -50,6 +51,7 @@ import java.nio.ByteOrder;
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamExtractor;
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.util.BufferedMediaDataSource;
 
 final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback {
 	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x0100;
@@ -97,7 +99,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 
 	private volatile int state, httpStreamReceiverVersion;
 	private volatile long currentPositionInFrames;
-	private int srcSampleRate, dstSampleRate, channelCount, durationInMS, stateBeforeSeek;
+	private int srcSampleRate, dstSampleRate, channelCount, durationInMS, stateBeforeSeek, filePrefetchSize;
 	private long nativeObj;
 	private MediaExtractor mediaExtractor;
 	private MediaCodec mediaCodec;
@@ -571,7 +573,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				throw new FileNotFoundException(path);
 			if (!file.canRead())
 				throw new SecurityException(path);
-			nativeMediaCodec = MediaContext.externalNativeLibraryAvailable;
+			nativeMediaCodec = (((filePrefetchSize = Player.filePrefetchSize) == 0) && MediaContext.externalNativeLibraryAvailable);
 		}
 		state = STATE_INITIALIZED;
 	}
@@ -588,12 +590,13 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			//enforce our policy
 			if (httpStreamReceiver != null)
 				throw new UnsupportedOperationException("internet streams must use prepareAsync()");
-			final ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
+			final File file = new File(path);
+			ParcelFileDescriptor fileDescriptor = null;
 			try {
-				final long len = fileDescriptor.getStatSize();
 				if (nativeMediaCodec) {
+					fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
 					final long[] params = new long[4];
-					final int ret = MediaContext.mediaCodecPrepare(fileDescriptor.getFd(), len, params);
+					final int ret = MediaContext.mediaCodecPrepare(fileDescriptor.getFd(), fileDescriptor.getStatSize(), params);
 					if (ret == -1)
 						throw new UnsupportedFormatException();
 					else if (ret < 0)
@@ -609,10 +612,16 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 					break;
 				}
 				mediaExtractor = new MediaExtractor();
-				mediaExtractor.setDataSource(fileDescriptor.getFileDescriptor(), 0, len);
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && filePrefetchSize > 0) {
+					mediaExtractor.setDataSource(new BufferedMediaDataSource(path, file.length(), filePrefetchSize));
+				} else {
+					fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
+					mediaExtractor.setDataSource(fileDescriptor.getFileDescriptor(), 0, fileDescriptor.getStatSize());
+				}
 			} finally {
 				try {
-					fileDescriptor.close();
+					if (fileDescriptor != null)
+						fileDescriptor.close();
 				} catch (Throwable ex) {
 					//just ignore
 				}
