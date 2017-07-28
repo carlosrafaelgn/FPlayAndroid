@@ -355,6 +355,6 @@
     <string name="icy">Eisig</string>
     <string name="allow_lock_screen">Lassen Sie die App über dem Sperrbildschirm stehen</string>
     <string name="share">Aktie</string>
-    <string name="file_prefetch_size">Bytes zum Speichern im Speicher beim Abspielen von Dateien:</string>
+    <string name="file_prefetch_size">Bytes zum Speichern in Speicher bei der Wiedergabe von lokalen Dateien:</string>
 
 </resources>

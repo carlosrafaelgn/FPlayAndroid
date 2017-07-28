@@ -42,6 +42,9 @@ import android.os.ParcelFileDescriptor;
 import java.io.File;
 import java.io.IOException;
 
+import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.util.BufferedMediaDataSource;
+
 final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
 	private final MediaPlayer player;
 	private volatile boolean prepared;
@@ -83,14 +86,22 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 			path = uri.getPath();
 		}
 		if (path.charAt(0) == File.separatorChar) {
-			final ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
-			try {
-				player.setDataSource(fileDescriptor.getFileDescriptor(), 0, fileDescriptor.getStatSize());
-			} finally {
+			final File file = new File(path);
+			ParcelFileDescriptor fileDescriptor = null;
+			final int filePrefetchSize = Player.filePrefetchSize;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && filePrefetchSize > 0) {
+				player.setDataSource(new BufferedMediaDataSource(path, file.length(), filePrefetchSize));
+			} else {
 				try {
-					fileDescriptor.close();
-				} catch (Throwable ex) {
-					//just ignore
+					fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
+					player.setDataSource(fileDescriptor.getFileDescriptor(), 0, fileDescriptor.getStatSize());
+				} finally {
+					try {
+						if (fileDescriptor != null)
+							fileDescriptor.close();
+					} catch (Throwable ex) {
+						//just ignore
+					}
 				}
 			}
 		} else {

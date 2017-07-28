@@ -2426,20 +2426,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.lastVersionCode < 92);
 		UI.allowPlayerAboveLockScreen = opts.getBit(OPTBIT_ALLOW_LOCK_SCREEN, true);
-		switch ((opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE1, 0) << 1) | opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE0, 0)) {
-		case 1:
-			filePrefetchSize = 64 * 1024;
-			break;
-		case 2:
-			filePrefetchSize = 128 * 1024;
-			break;
-		case 3:
-			filePrefetchSize = 256 * 1024;
-			break;
-		default:
-			filePrefetchSize = 0;
-			break;
-		}
+		filePrefetchSize = getFilePrefetchSizeFromOptions((opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE1, 0) << 1) | opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE0, 0));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -2548,24 +2535,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.largeTextIs22sp);
 		opts.putBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.displaySongNumberAndCount);
 		opts.putBit(OPTBIT_ALLOW_LOCK_SCREEN, UI.allowPlayerAboveLockScreen);
-		switch (filePrefetchSize) {
-		case 64 * 1024:
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, true);
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, false);
-			break;
-		case 128 * 1024:
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, false);
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, true);
-			break;
-		case 256 * 1024:
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, true);
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, true);
-			break;
-		default:
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, false);
-			opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, false);
-			break;
-		}
+		final int filePrefetchSizeOption = getOptionsFromFilePrefetchSize(filePrefetchSize);
+		opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, (filePrefetchSizeOption & 1) != 0);
+		opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, (filePrefetchSizeOption & 2) != 0);
 
 		if (favoriteFolders != null && favoriteFolders.size() > 0) {
 			opts.put(OPT_FAVORITEFOLDERCOUNT, favoriteFolders.size());
@@ -2723,6 +2695,32 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		ArraySorter.sort(ffs, 0, ffs.length - extra, thePlayer);
 		return ffs;
+	}
+
+	public static int getFilePrefetchSizeFromOptions(int options) {
+		switch (options) {
+		case 1:
+			return 64 << 10;
+		case 2:
+			return 128 << 10;
+		case 3:
+			return 256 << 10;
+		default:
+			return 0;
+		}
+	}
+
+	public static int getOptionsFromFilePrefetchSize(int filePrefetchSize) {
+		switch (filePrefetchSize) {
+		case 64 << 10:
+			return 1;
+		case 128 << 10:
+			return 2;
+		case 256 << 10:
+			return 3;
+		default:
+			return 0;
+		}
 	}
 
 	public static void setSelectionAfterAdding(int positionToSelect) {

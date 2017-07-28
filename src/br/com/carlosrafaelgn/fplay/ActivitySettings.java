@@ -446,19 +446,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optFileBufferSize) {
 			lastMenuView = optFileBufferSize;
 			UI.prepare(menu);
-			menu.add(0, 0, 0, getFileBufferSizeString(0))
+			menu.add(0, 0, 0, getFileBufferSizeString(Player.getFilePrefetchSizeFromOptions(0)))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 0) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 0, 1);
-			menu.add(1, 1, 1, getFileBufferSizeString(64 * 1024))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 64 * 1024) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, 2, 2, getFileBufferSizeString(128 * 1024))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 128 * 1024) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(1, 3, 3, getFileBufferSizeString(256 * 1024))
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable((Player.filePrefetchSize == 256 * 1024) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			for (int i = 1; i <= 3; i++) {
+				final int filePrefetchSize = Player.getFilePrefetchSizeFromOptions(i);
+				menu.add(1, i, i, getFileBufferSizeString(filePrefetchSize))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable((Player.filePrefetchSize == filePrefetchSize) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			}
 		}
 	}
 	
@@ -582,20 +579,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (MediaContext.useOpenSLEngine)
 				panelSettings.addView(optFillThreshold = createOptFillThreshold(), panelSettings.indexOfChild(optResampling));
 		} else if (lastMenuView == optFileBufferSize) {
-			switch (item.getItemId()) {
-			case 1:
-				Player.filePrefetchSize = 64 * 1024;
-				break;
-			case 2:
-				Player.filePrefetchSize = 128 * 1024;
-				break;
-			case 3:
-				Player.filePrefetchSize = 256 * 1024;
-				break;
-			default:
-				Player.filePrefetchSize = 0;
-				break;
-			}
+			Player.filePrefetchSize = Player.getFilePrefetchSizeFromOptions(item.getItemId());
 			optFileBufferSize.setSecondaryText(getFileBufferSizeString(Player.filePrefetchSize));
 		}
 		configsChanged = true;
