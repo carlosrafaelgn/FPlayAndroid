@@ -22,12 +22,12 @@ public final class BufferedMediaDataSource extends MediaDataSource {
 
 	@Override
 	public int readAt(long position, byte[] buffer, int offset, int size) throws IOException {
-		if (size > this.buffer.length) {
-			file.seek(position);
-			return file.read(buffer, offset, size);
-		}
-		int readSoFar = 0;
 		synchronized (this.buffer) {
+			if (size > this.buffer.length) {
+				file.seek(position);
+				return file.read(buffer, offset, size);
+			}
+			int readSoFar = 0;
 			if (position >= fileStartOffset && position < fileEndOffset) {
 				if ((position + size) <= fileEndOffset) {
 					System.arraycopy(this.buffer, (int)(position - fileStartOffset), buffer, offset, size);
