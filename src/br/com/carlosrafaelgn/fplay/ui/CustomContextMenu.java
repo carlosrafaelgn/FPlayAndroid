@@ -409,6 +409,8 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 							}
 						} else {
 							btn = new Button(context);
+							if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+								btn.setDefaultFocusHighlightEnabled(false);
 						}
 						if (minWidth != 0)
 							btn.setMinWidth(minWidth);

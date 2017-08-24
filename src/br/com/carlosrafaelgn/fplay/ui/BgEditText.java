@@ -86,6 +86,8 @@ public final class BgEditText extends EditText {
 		setCursorColor(UI.color_dialog_detail_highlight);
 		setColors(UI.color_dialog_detail, UI.color_dialog_detail_highlight);
 		textMargin = (UI.isLargeScreen ? UI.controlMargin : UI.controlSmallMargin);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	public void setSmallContentDescription(boolean small) {

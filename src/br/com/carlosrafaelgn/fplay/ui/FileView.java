@@ -165,6 +165,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		this.checkBoxVisible = hasCheckbox;
 		this.force2D = force2D;
 		super.setDrawingCacheEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	private void processEllipsis() {

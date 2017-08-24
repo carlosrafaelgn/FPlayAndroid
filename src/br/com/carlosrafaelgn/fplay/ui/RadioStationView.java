@@ -115,6 +115,8 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		addView(btnFavorite);
 		btnFavorite = null; //let setItemState() format the button...
 		super.setDrawingCacheEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	private void processEllipsis() {

@@ -129,6 +129,8 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 		super.setMinimumWidth(UI.defaultControlSize);
 		super.setMinimumHeight(UI.defaultControlSize);
 		super.setOnClickListener(this);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	@SuppressWarnings("unchecked")

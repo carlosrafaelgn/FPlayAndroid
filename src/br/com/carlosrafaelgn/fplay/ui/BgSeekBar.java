@@ -100,6 +100,8 @@ public final class BgSeekBar extends View {
 		super.setFocusable(true);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	private void updateSecondaryBgColorBlended() {

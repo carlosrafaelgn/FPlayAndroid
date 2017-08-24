@@ -841,11 +841,6 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	}
 
 	@Override
-	public void setAudioStreamType(int streamtype) {
-		//unnecessary (handled in MediaContext)
-	}
-
-	@Override
 	public void setWakeMode(Context context, int mode) {
 		//unnecessary (handled in MediaContext)
 	}

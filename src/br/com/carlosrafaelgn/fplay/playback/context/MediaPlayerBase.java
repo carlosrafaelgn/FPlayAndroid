@@ -128,8 +128,6 @@ public abstract class MediaPlayerBase {
 
 	public abstract void setVolume(float leftVolume, float rightVolume);
 
-	public abstract void setAudioStreamType(int streamtype);
-
 	public abstract void setWakeMode(Context context, int mode);
 
 	public abstract void setNextMediaPlayer(MediaPlayerBase next);

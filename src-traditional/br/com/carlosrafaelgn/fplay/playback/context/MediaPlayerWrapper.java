@@ -34,6 +34,8 @@ package br.com.carlosrafaelgn.fplay.playback.context;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -109,8 +111,22 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 		}
 	}
 
+	private void setAudioAttributes() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			player.setAudioAttributes(new AudioAttributes.Builder()
+				.setLegacyStreamType(AudioManager.STREAM_MUSIC)
+				.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+				.setUsage(AudioAttributes.USAGE_MEDIA)
+				.build());
+		} else {
+			//noinspection deprecation
+			player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		}
+	}
+
 	@Override
 	public void prepare() throws IOException {
+		setAudioAttributes();
 		prepared = false;
 		player.prepare();
 		prepared = true;
@@ -118,6 +134,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void prepareAsync() {
+		setAudioAttributes();
 		prepared = false;
 		player.prepareAsync();
 	}
@@ -198,11 +215,6 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
 		player.setVolume(leftVolume, rightVolume);
-	}
-
-	@Override
-	public void setAudioStreamType(int streamtype) {
-		player.setAudioStreamType(streamtype);
 	}
 
 	@Override

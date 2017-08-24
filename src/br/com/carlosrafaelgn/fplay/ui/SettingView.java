@@ -80,6 +80,8 @@ public final class SettingView extends View {
 		updateLayout();
 
 		super.setDrawingCacheEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	@Override

@@ -65,6 +65,8 @@ public final class BgTextView extends TextView {
 		super.setDrawingCacheEnabled(false);
 		super.setTextColor(UI.colorState_text_reactive);
 		super.setTypeface(UI.defaultTypeface);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)

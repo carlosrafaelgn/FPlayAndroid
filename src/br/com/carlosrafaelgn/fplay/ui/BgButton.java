@@ -93,6 +93,8 @@ public final class BgButton extends Button {
 		super.setMinimumWidth(UI.defaultControlSize);
 		super.setMinimumHeight(UI.defaultControlSize);
 		super.setLongClickable(true);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 		//Seriously?! Feature?!?!? :P
 		//http://stackoverflow.com/questions/26958909/why-is-my-button-text-coerced-to-all-caps-on-lollipop
 		super.setTransformationMethod(null);

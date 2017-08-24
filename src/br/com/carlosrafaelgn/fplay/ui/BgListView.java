@@ -155,6 +155,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//http://stackoverflow.com/questions/7106692/remove-shadow-from-top-and-bottom-of-listview-in-android
 		//Changing the ListView shadow color and size
 		//http://stackoverflow.com/questions/5627063/changing-the-listview-shadow-color-and-size
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	//massive workaround!!!

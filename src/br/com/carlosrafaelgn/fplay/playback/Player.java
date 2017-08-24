@@ -983,7 +983,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static MediaPlayerBase _createPlayer() {
 		MediaPlayerBase mp = MediaContext.createMediaPlayer();
-		mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		//handled internally by the implementations of MediaPlayerBase
+		//mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		mp.setOnErrorListener(thePlayer);
 		mp.setOnSeekCompleteListener(thePlayer);
 		mp.setOnCompletionListener(thePlayer);

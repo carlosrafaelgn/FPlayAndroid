@@ -32,7 +32,9 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -220,7 +222,13 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 	private static final class AudioTrackEngine extends Engine {
 		private static final class QueryableAudioTrack extends AudioTrack {
+			@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+			public QueryableAudioTrack(AudioAttributes attributes, AudioFormat format, int bufferSizeInBytes, int mode) {
+				super(attributes, format, bufferSizeInBytes, mode, AudioManager.AUDIO_SESSION_ID_GENERATE);
+			}
+
 			public QueryableAudioTrack(int streamType, int sampleRateInHz, int channelConfig, int audioFormat, int bufferSizeInBytes, int mode) {
+				//noinspection deprecation
 				super(streamType, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes, mode);
 			}
 
@@ -301,7 +309,29 @@ public final class MediaContext implements Runnable, Handler.Callback {
 
 			currentDstSampleRate = dstSampleRate;
 			audioTrackCreate(dstSampleRate);
-			audioTrack = new QueryableAudioTrack(AudioManager.STREAM_MUSIC, dstSampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << 2, AudioTrack.MODE_STREAM);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				audioTrack = new QueryableAudioTrack(
+					new AudioAttributes.Builder()
+						.setLegacyStreamType(AudioManager.STREAM_MUSIC)
+						.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+						.setUsage(AudioAttributes.USAGE_MEDIA)
+						.build(),
+					new AudioFormat.Builder()
+						.setSampleRate(dstSampleRate)
+						.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+						.setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+						.build(),
+					bufferSizeInFrames << 2,
+					AudioTrack.MODE_STREAM);
+			} else {
+				audioTrack = new QueryableAudioTrack(
+					AudioManager.STREAM_MUSIC,
+					dstSampleRate,
+					AudioFormat.CHANNEL_OUT_STEREO,
+					AudioFormat.ENCODING_PCM_16BIT,
+					bufferSizeInFrames << 2,
+					AudioTrack.MODE_STREAM);
+			}
 			try {
 				//apparently, there are times when audioTrack creation fails, but the constructor
 				//above does not throw any exceptions (only getNativeFrameCount() throws exceptions

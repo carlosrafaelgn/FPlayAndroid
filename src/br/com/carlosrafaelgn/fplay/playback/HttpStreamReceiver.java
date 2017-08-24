@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.playback;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -132,7 +133,6 @@ public final class HttpStreamReceiver implements Runnable {
 			createAudioTrack(format.getInteger(MediaFormat.KEY_CHANNEL_COUNT), format.getInteger(MediaFormat.KEY_SAMPLE_RATE), bufferSizeInMS);
 		}
 
-		@SuppressWarnings("deprecation")
 		private void createAudioTrack(int channelCount, int sampleRate, int bufferSizeInMS) {
 			final int minBufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
 			int minBufferSizeInFrames = minBufferSizeInBytes >> channelCount;
@@ -149,8 +149,35 @@ public final class HttpStreamReceiver implements Runnable {
 				bufferSizeInFrames = ((bufferSizeInFrames + minBufferSizeInFrames - 1) / minBufferSizeInFrames) * minBufferSizeInFrames;
 			}
 
-			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, (channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInFrames << channelCount, AudioTrack.MODE_STREAM, audioSessionId);
-			audioTrack.setStereoVolume(0.0f, 0.0f);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				audioTrack = new AudioTrack(
+					new AudioAttributes.Builder()
+						.setLegacyStreamType(AudioManager.STREAM_MUSIC)
+						.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+						.setUsage(AudioAttributes.USAGE_MEDIA)
+						.build(),
+					new AudioFormat.Builder()
+						.setSampleRate(sampleRate)
+						.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+						.setChannelMask((channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO)
+						.build(),
+					bufferSizeInFrames << channelCount,
+					AudioTrack.MODE_STREAM,
+					audioSessionId);
+				audioTrack.setVolume(0.0f);
+			} else {
+				//noinspection deprecation
+				audioTrack = new AudioTrack(
+					AudioManager.STREAM_MUSIC,
+					sampleRate,
+					(channelCount == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO,
+					AudioFormat.ENCODING_PCM_16BIT,
+					bufferSizeInFrames << channelCount,
+					AudioTrack.MODE_STREAM,
+					audioSessionId);
+				//noinspection deprecation
+				audioTrack.setStereoVolume(0.0f, 0.0f);
+			}
 		}
 
 		private void releaseMediaCodec() {

@@ -102,6 +102,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		numberAndCountColor = ColorUtils.blend(UI.color_text_listitem, UI.color_list, 0.5f);
 		numberAndCountColorSelected = ColorUtils.blend(UI.color_text_selected, UI.color_selected, 0.5f);
 		super.setDrawingCacheEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			super.setDefaultFocusHighlightEnabled(false);
 	}
 
 	private void processEllipsis() {
