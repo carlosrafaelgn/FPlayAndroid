@@ -53,6 +53,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	private FileFetcher fetcher;
 	private String[] sections;
 	private int[] sectionPositions;
+	public int scrollBarType;
 	public AlbumArtFetcher albumArtFetcher;
 	
 	public FileList() {
@@ -173,8 +174,8 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		final FileView view = ((convertView != null) ? (FileView)convertView : new FileView(Player.theApplication));
-		view.setItemState(items[position], position, getItemState(position), this, albumArtFetcher);
+		final FileView view = ((convertView != null) ? (FileView)convertView : new FileView(Player.theApplication, true, false, scrollBarType));
+		view.setItemState(items[position], position, getItemState(position), this, albumArtFetcher, scrollBarType);
 		return view;
 	}
 	

@@ -217,17 +217,18 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	}
 
 	/**
-	 * Adds the objects in the specified collection to this {@code TypedRawArrayList}.
+	 * Adds the objects in the specified array to this {@code TypedRawArrayList}.
 	 *
-	 * @param collection
-	 *            the collection of objects.
+	 * @param objects
+	 *            the array of objects.
 	 * @return {@code true} if this {@code TypedRawArrayList} is modified, {@code false}
 	 *         otherwise.
 	 */
 	@SuppressWarnings("unchecked")
-	@Override public boolean addAll(Collection<? extends E> collection) {
-		final E[] newPart = collection.toArray((E[])Array.newInstance(clazz, collection.size()));
-		final int newPartSize = newPart.length;
+	public boolean addAll(E[] objects) {
+		if (objects == null)
+			return false;
+		final int newPartSize = objects.length;
 		if (newPartSize == 0)
 			return false;
 		E[] a = array;
@@ -239,10 +240,23 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 			System.arraycopy(a, 0, newArray, 0, s);
 			array = a = newArray;
 		}
-		System.arraycopy(newPart, 0, a, s, newPartSize);
+		System.arraycopy(objects, 0, a, s, newPartSize);
 		size = newSize;
 		modCount++;
 		return true;
+	}
+
+	/**
+	 * Adds the objects in the specified collection to this {@code TypedRawArrayList}.
+	 *
+	 * @param collection
+	 *            the collection of objects.
+	 * @return {@code true} if this {@code TypedRawArrayList} is modified, {@code false}
+	 *         otherwise.
+	 */
+	@SuppressWarnings("unchecked")
+	@Override public boolean addAll(Collection<? extends E> collection) {
+		return addAll(collection.toArray((E[])Array.newInstance(clazz, collection.size())));
 	}
 
 	/**
@@ -539,7 +553,7 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 *             when the type of an element in this {@code TypedRawArrayList} cannot
 	 *             be stored in the type of the specified array.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "SuspiciousSystemArraycopy"})
 	@NonNull
 	@Override public <T> T[] toArray(@NonNull T[] contents) {
 		final int s = size;

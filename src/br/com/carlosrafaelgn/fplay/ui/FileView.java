@@ -62,62 +62,45 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private FileSt file;
 	private BgButton btnCheckbox;
 	private String icon, ellipsizedName, secondaryText, albumStr, albumsStr, trackStr, tracksStr;
-	private boolean pendingAlbumArtRequest, checkBoxVisible, btnCheckBoxMarginsPreparedForIndexedScrollBars;
+	private boolean pendingAlbumArtRequest, checkBoxVisible;
 	private final boolean hasCheckbox, force2D;
-	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth;
+	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth, scrollBarType, leftMargin, rightMargin, rightMarginForDrawing;
+	private final int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, topMargin, bottomMargin;
 	private BaseList<?> baseList;
 
-	private static boolean scrollBarCurrentlyIndexed;
-	private static int height, usableHeight, iconY, nameYNoSecondary, nameY, secondaryY, extraLeftMargin, extraRightMargin, leftMargin, topMargin, rightMargin, rightMarginForDrawing, bottomMargin;
-
-	public static void updateExtraMargins(boolean isScrollBarIndexed, boolean force2D) {
-		if (isScrollBarIndexed) {
-			if (UI.scrollBarToTheLeft) {
-				extraLeftMargin = UI.controlSmallMargin;
-				extraRightMargin = 0;
-			} else {
-				extraLeftMargin = 0;
-				extraRightMargin = UI.controlSmallMargin;
-			}
-		} else {
-			extraLeftMargin = 0;
-			extraRightMargin = 0;
-		}
-		scrollBarCurrentlyIndexed = isScrollBarIndexed;
-		getViewHeight(force2D);
-	}
-
 	public static int getViewHeight(boolean force2D) {
+		final int topMargin, bottomMargin;
 		if (!force2D && UI.is3D) {
-			switch (UI.browserScrollBarType) {
-			case BgListView.SCROLLBAR_INDEXED:
-			case BgListView.SCROLLBAR_LARGE:
-				if (UI.scrollBarToTheLeft) {
-					leftMargin = 0;
-					rightMarginForDrawing = UI.controlSmallMargin;
-				} else {
-					leftMargin = UI.controlSmallMargin;
-					rightMarginForDrawing = 0;
-				}
-				break;
-			default:
-				leftMargin = UI.controlSmallMargin;
-				rightMarginForDrawing = UI.controlSmallMargin;
-				break;
-			}
-			leftMargin += extraLeftMargin;
 			topMargin = UI.controlSmallMargin;
-			rightMarginForDrawing += extraRightMargin;
-			rightMargin = rightMarginForDrawing + UI.strokeSize;
 			bottomMargin = UI.strokeSize;
 		} else {
-			leftMargin = 0;
 			topMargin = 0;
-			rightMargin = 0;
-			rightMarginForDrawing = 0;
 			bottomMargin = 0;
 		}
-		height = (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._Largesp + UI._14sp) + topMargin + bottomMargin;
+		return (UI.verticalMargin << 1) + Math.max(UI.defaultControlContentsSize, UI._Largesp + UI._14sp) + topMargin + bottomMargin;
+	}
+
+	public FileView(Context context) {
+		this(context, true, false, UI.browserScrollBarType);
+	}
+
+	public FileView(Context context, boolean hasCheckbox, boolean force2D, int scrollBarType) {
+		super(context);
+
+		this.scrollBarType = scrollBarType;
+		this.hasCheckbox = hasCheckbox;
+		this.checkBoxVisible = hasCheckbox;
+		this.force2D = force2D;
+
+		updateHorizontalMargins();
+		if (!force2D && UI.is3D) {
+			topMargin = UI.controlSmallMargin;
+			bottomMargin = UI.strokeSize;
+		} else {
+			topMargin = 0;
+			bottomMargin = 0;
+		}
+		height = getViewHeight(force2D);
 		usableHeight = height - (topMargin + bottomMargin);
 
 		iconY = topMargin + ((usableHeight - UI.defaultControlContentsSize) >> 1);
@@ -125,15 +108,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		final int sec = ((usableHeight - (UI._LargespBox + UI.controlMargin + UI._14spBox)) >> 1);
 		nameY = topMargin + sec + UI._LargespYinBox;
 		secondaryY = topMargin + sec + UI._LargespBox + UI._14spYinBox + UI.controlMargin;
-		return height;
-	}
 
-	public FileView(Context context) {
-		this(context, true, false);
-	}
-
-	public FileView(Context context, boolean hasCheckbox, boolean force2D) {
-		super(context);
 		albumStr = context.getText(R.string.albumL).toString();
 		albumsStr = " " + context.getText(R.string.albumsL);
 		trackStr = context.getText(R.string.trackL).toString();
@@ -144,12 +119,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		setGravity(Gravity.END);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
-		getViewHeight(force2D);
 		if (hasCheckbox) {
 			LayoutParams p;
 			btnCheckbox = new BgButton(context);
 			btnCheckbox.setHideBorders(true);
-			btnCheckBoxMarginsPreparedForIndexedScrollBars = scrollBarCurrentlyIndexed;
 			p = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 			p.leftMargin = UI.controlMargin;
 			p.topMargin = topMargin;
@@ -161,9 +134,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		} else {
 			btnCheckbox = null;
 		}
-		this.hasCheckbox = hasCheckbox;
-		this.checkBoxVisible = hasCheckbox;
-		this.force2D = force2D;
 		super.setDrawingCacheEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
@@ -173,10 +143,49 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		ellipsizedName = UI.ellipsizeText(file.name, UI._Largesp, width - leftPadding - (checkBoxVisible ? UI.defaultControlSize : 0) - UI.controlMargin - rightMargin, true);
 	}
 
+	private void updateHorizontalMargins() {
+		final int extraLeftMargin, extraRightMargin;
+		if (scrollBarType == BgListView.SCROLLBAR_INDEXED) {
+			if (UI.scrollBarToTheLeft) {
+				extraLeftMargin = UI.controlSmallMargin;
+				extraRightMargin = 0;
+			} else {
+				extraLeftMargin = 0;
+				extraRightMargin = UI.controlSmallMargin;
+			}
+		} else {
+			extraLeftMargin = 0;
+			extraRightMargin = 0;
+		}
+		if (!force2D && UI.is3D) {
+			switch (scrollBarType) {
+			case BgListView.SCROLLBAR_INDEXED:
+			case BgListView.SCROLLBAR_LARGE:
+				if (UI.scrollBarToTheLeft) {
+					leftMargin = extraLeftMargin;
+					rightMarginForDrawing = UI.controlSmallMargin + extraRightMargin;
+				} else {
+					leftMargin = UI.controlSmallMargin + extraLeftMargin;
+					rightMarginForDrawing = extraRightMargin;
+				}
+				break;
+			default:
+				leftMargin = UI.controlSmallMargin + extraLeftMargin;
+				rightMarginForDrawing = UI.controlSmallMargin + extraRightMargin;
+				break;
+			}
+			rightMargin = rightMarginForDrawing + UI.strokeSize;
+		} else {
+			leftMargin = 0;
+			rightMargin = 0;
+			rightMarginForDrawing = 0;
+		}
+	}
+
 	public void refreshItem() {
 		//tiny workaround to force complete execution of setItemState()
 		checkBoxVisible = !checkBoxVisible;
-		setItemState(file, position, state, baseList, albumArtFetcher);
+		setItemState(file, position, state, baseList, albumArtFetcher, scrollBarType);
 		invalidate();
 	}
 
@@ -214,7 +223,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		event.setContentDescription(getContentDescription());
 	}
 
-	public void setItemState(FileSt file, int position, int state, BaseList<?> baseList, AlbumArtFetcher albumArtFetcher) {
+	public void setItemState(FileSt file, int position, int state, BaseList<?> baseList, AlbumArtFetcher albumArtFetcher, int scrollBarType) {
 		if (file == null)
 			return;
 		final int specialType = file.specialType;
@@ -235,8 +244,10 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			if (specialTypeChanged || this.file != file || (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED))
 				btnCheckbox.setTextColor(((state != 0) || (specialType == FileSt.TYPE_ALBUM_ITEM)) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 			btnCheckbox.setChecked(file.isChecked);
-			if (btnCheckBoxMarginsPreparedForIndexedScrollBars != scrollBarCurrentlyIndexed) {
-				btnCheckBoxMarginsPreparedForIndexedScrollBars = scrollBarCurrentlyIndexed;
+			if (this.scrollBarType != scrollBarType) {
+				this.scrollBarType = scrollBarType;
+				updateHorizontalMargins();
+
 				final LayoutParams p = (LayoutParams)btnCheckbox.getLayoutParams();
 				p.leftMargin = UI.controlMargin;
 				p.topMargin = topMargin;
@@ -244,6 +255,9 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				p.bottomMargin = bottomMargin;
 				btnCheckbox.setLayoutParams(p);
 			}
+		} else if (this.scrollBarType != scrollBarType) {
+			this.scrollBarType = scrollBarType;
+			updateHorizontalMargins();
 		}
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!

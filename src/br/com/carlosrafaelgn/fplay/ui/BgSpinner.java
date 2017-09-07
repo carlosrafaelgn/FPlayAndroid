@@ -60,6 +60,8 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 	}
 
 	private static final class SpinnerList<E> extends BaseList<FileSt> {
+		public int scrollBarType;
+
 		public SpinnerList() {
 			//we are reusing FileSt class just to avoid creating a new class with the sole purpose
 			//of carrying a string...
@@ -79,8 +81,8 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 		public View getView(int position, View convertView, ViewGroup parent) {
 			FileView view = (FileView)convertView;
 			if (view == null)
-				view = new FileView(Player.theApplication, false, true);
-			view.setItemState(items[position], position, getItemState(position), this, null);
+				view = new FileView(Player.theApplication, false, true, scrollBarType);
+			view.setItemState(items[position], position, getItemState(position), this, null, scrollBarType);
 			return view;
 		}
 
@@ -297,11 +299,10 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 	public void onClick(View view) {
 		if (spinnerList == null || spinnerList.getCount() == 0 || dialog != null)
 			return;
-		FileView.updateExtraMargins(true, true);
 
 		BgListView listView = new BgListView(getContext(), true);
 		listView.setOnKeyDownObserver(this);
-		listView.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM);
+		listView.setScrollBarType(spinnerList.scrollBarType = ((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM));
 		spinnerList.setObserver(listView);
 		spinnerList.setSelection(selectedPosition, false);
 

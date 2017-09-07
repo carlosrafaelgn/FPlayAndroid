@@ -107,16 +107,20 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	}
 
 	private static final class DeviceList extends BaseList<DeviceItem> implements ArraySorter.Comparer<DeviceItem> {
-		public DeviceList() {
+		private final int scrollBarType;
+
+		public DeviceList(int scrollBarType) {
 			super(DeviceItem.class, 256);
+
+			this.scrollBarType = scrollBarType;
 		}
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			FileView view = (FileView)convertView;
 			if (view == null)
-				view = new FileView(Player.theApplication, false, false);
-			view.setItemState(items[position].fileSt, position, getItemState(position) | (items[position].recentlyUsed ? UI.STATE_CURRENT : 0), this, null);
+				view = new FileView(Player.theApplication, false, false, scrollBarType);
+			view.setItemState(items[position].fileSt, position, getItemState(position) | (items[position].recentlyUsed ? UI.STATE_CURRENT : 0), this, null, scrollBarType);
 			return view;
 		}
 
@@ -357,13 +361,12 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 
 		l.addView(panelControls, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-		FileView.updateExtraMargins(true, false);
-
+		final int scrollBarType;
 		listView = new BgListView(activity);
-		listView.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM);
+		listView.setScrollBarType(scrollBarType = ((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM));
 		l.addView(listView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-		deviceList = new DeviceList();
+		deviceList = new DeviceList(scrollBarType);
 		deviceList.setItemClickListener(this);
 
 		final Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
