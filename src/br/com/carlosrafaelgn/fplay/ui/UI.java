@@ -2048,7 +2048,14 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		scrollView.addView(txt);
 		return scrollView;
 	}
-	
+
+	public static void showDialogMessage(Context context, CharSequence title, CharSequence message, int buttonResId) {
+		final BgDialog dialog = new BgDialog(context, UI.createDialogView(context, message), null);
+		dialog.setTitle(title);
+		dialog.setNegativeButton(buttonResId);
+		dialog.show();
+	}
+
 	public static void storeViewCenterLocationForFade(View view) {
 		if (view == null) {
 			lastViewCenterLocation[0] = usableScreenWidth >> 1;

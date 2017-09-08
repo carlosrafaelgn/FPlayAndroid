@@ -1467,10 +1467,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					dialog.show();
 					return;
 				case -2:
-					dialog = new BgDialog(getHostActivity(), UI.createDialogView(getHostActivity(), getText(R.string.unreadable_theme)), null);
-					dialog.setTitle(R.string.oops);
-					dialog.setPositiveButton(R.string.got_it);
-					dialog.show();
+					UI.showDialogMessage(getHostActivity(), getText(R.string.oops), getText(R.string.unreadable_theme), R.string.got_it);
 					return;
 				}
 				applyTheme(view);
