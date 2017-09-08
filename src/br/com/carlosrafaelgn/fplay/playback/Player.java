@@ -2411,7 +2411,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.expandSeekBar = ((UI.lastVersionCode >= 87) && opts.getBit(OPTBIT_EXPANDSEEKBAR));
 		songs.setRepeatMode(opts.getBit(OPTBIT_REPEATONE) ? SongList.REPEAT_ONE : (opts.getBit(OPTBIT_REPEATNONE) ? SongList.REPEAT_NONE : SongList.REPEAT_ALL));
 		songs.setRandomMode(opts.getBit(OPTBIT_RANDOMMODE));
-		UI.notFullscreen = opts.getBit(OPTBIT_NOTFULLSCREEN);
+		UI.notFullscreen = (UI.isChromebook || opts.getBit(OPTBIT_NOTFULLSCREEN));
 		UI.controlsToTheLeft = opts.getBit(OPTBIT_CONTROLS_TO_THE_LEFT);
 		UI.visualizerPortrait = opts.getBit(OPTBIT_VISUALIZER_PORTRAIT);
 		turnOffWhenPlaylistEnds = opts.getBit(OPTBIT_TURNOFFPLAYLIST);
