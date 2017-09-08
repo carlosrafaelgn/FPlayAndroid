@@ -39,14 +39,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -56,17 +50,10 @@ import java.util.UUID;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
-import br.com.carlosrafaelgn.fplay.list.BaseItem;
-import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
-import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.ui.BgDialog;
-import br.com.carlosrafaelgn.fplay.ui.BgListView;
-import br.com.carlosrafaelgn.fplay.ui.BgProgressBar;
-import br.com.carlosrafaelgn.fplay.ui.FileView;
-import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog;
 
-public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BaseList.ItemClickListener {
+public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, ItemSelectorDialog.Listener<BluetoothConnectionManager.DeviceItem> {
 	public static final int REQUEST_ENABLE = 0x1000;
 
 	public static final int OK = 0;
@@ -87,66 +74,16 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		void onBluetoothError(BluetoothConnectionManager manager, int error);
 	}
 
-	private static final class DeviceItem extends BaseItem {
+	public static final class DeviceItem extends ItemSelectorDialog.Item {
 		public final String name, address;
 		public final boolean paired, recentlyUsed;
-		public final FileSt fileSt;
 
 		public DeviceItem(String name, String address, boolean paired, boolean recentlyUsed) {
+			super(new FileSt(address, name + " - " + address, 0));
 			this.name = name;
 			this.address = address;
 			this.paired = paired;
 			this.recentlyUsed = recentlyUsed;
-			this.fileSt = new FileSt(address, name + " - " + address, 0);
-		}
-
-		@Override
-		public String toString() {
-			return fileSt.name;
-		}
-	}
-
-	private static final class DeviceList extends BaseList<DeviceItem> implements ArraySorter.Comparer<DeviceItem> {
-		private final int scrollBarType;
-
-		public DeviceList(int scrollBarType) {
-			super(DeviceItem.class, 256);
-
-			this.scrollBarType = scrollBarType;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			FileView view = (FileView)convertView;
-			if (view == null)
-				view = new FileView(Player.theApplication, false, false, scrollBarType);
-			view.setItemState(items[position].fileSt, position, getItemState(position) | (items[position].recentlyUsed ? UI.STATE_CURRENT : 0), this, null, scrollBarType);
-			return view;
-		}
-
-		@Override
-		public int getViewHeight() {
-			return FileView.getViewHeight(false);
-		}
-
-		@Override
-		public int compare(DeviceItem a, DeviceItem b) {
-			//if (a.recentlyUsed != b.recentlyUsed)
-			//	return (a.recentlyUsed ? -1 : 1);
-			return a.fileSt.name.compareToIgnoreCase(b.fileSt.name);
-		}
-
-		public void sort() {
-			//synchronized (sync) {
-				modificationVersion++;
-				ArraySorter.sort(items, 0, this.count, this);
-				current = -1;
-				firstSel = -1;
-				lastSel = -1;
-				originalSel = -1;
-				indexOfPreviouslyDeletedCurrentItem = -1;
-			//}
-			notifyDataSetChanged(-1, CONTENT_MOVED);
 		}
 	}
 
@@ -156,12 +93,8 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	private BluetoothSocket btSocket;
 	private InputStream inputStream;
 	private OutputStream outputStream;
-	private DeviceList deviceList;
-	private TextView lblTitle;
-	private BgProgressBar barWait;
-	private BgListView listView;
-	private BgDialog dialog;
-	private boolean closed, connecting, finished, okToStartDiscovery;
+	private ItemSelectorDialog<DeviceItem> itemSelectorDialog;
+	private boolean connecting, finished, okToStartDiscovery;
 	private int lastError;
 	private volatile DeviceItem deviceItem;
 	private volatile boolean cancelled;
@@ -193,21 +126,12 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			}
 			btAdapter = null;
 		}
-		if (listView != null) {
-			listView.setAdapter(null);
-			listView = null;
-		}
 		if (activity != null) {
 			activity.unregisterReceiver(this);
 			activity = null;
 		}
-		if (deviceList != null) {
-			deviceList.setItemClickListener(null);
-			deviceList = null;
-		}
-		lblTitle = null;
-		barWait = null;
-		dialog = null;
+		if (itemSelectorDialog != null)
+			itemSelectorDialog.dismiss();
 		deviceItem = null;
 	}
 
@@ -249,8 +173,6 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			final boolean success = (inputStream != null && outputStream != null && lastError == OK);
 			final boolean callObserver = !finished;
 			finished = true;
-			if (dialog != null)
-				dialog.dismiss();
 			destroyUI();
 			connecting = false;
 			if (observer != null && callObserver) {
@@ -335,47 +257,17 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		activity.registerReceiver(this, new IntentFilter(BluetoothDevice.ACTION_FOUND));
 		activity.registerReceiver(this, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 
-		final LinearLayout l = new LinearLayout(activity);
-		final LinearLayout panelControls = new LinearLayout(activity);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			UI.removeSplitTouch(l);
-			UI.removeSplitTouch(panelControls);
-		}
-		l.setOrientation(LinearLayout.VERTICAL);
-		l.setBaselineAligned(false);
-		panelControls.setOrientation(LinearLayout.VERTICAL);
-		panelControls.setBaselineAligned(false);
-		UI.prepareControlContainer(panelControls, false, true, 0, 0, 0, 0);
-
-		lblTitle = UI.createDialogTextView(activity, 0, activity.getText(R.string.bt_scanning));
-		lblTitle.setPadding(UI.dialogMargin, 0, UI.dialogMargin, UI.dialogMargin);
-		lblTitle.setTextColor(UI.colorState_text_static);
-		panelControls.addView(lblTitle, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		barWait = new BgProgressBar(activity);
-		final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		p.leftMargin = UI.dialogMargin;
-		p.rightMargin = UI.dialogMargin;
-		p.bottomMargin = UI.dialogMargin;
-		panelControls.addView(barWait, p);
-
-		l.addView(panelControls, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		final int scrollBarType;
-		listView = new BgListView(activity);
-		listView.setScrollBarType(scrollBarType = ((UI.browserScrollBarType == BgListView.SCROLLBAR_NONE) ? BgListView.SCROLLBAR_NONE : BgListView.SCROLLBAR_SYSTEM));
-		l.addView(listView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-		deviceList = new DeviceList(scrollBarType);
-		deviceList.setItemClickListener(this);
+		if (itemSelectorDialog != null)
+			itemSelectorDialog.dismiss();
 
 		final Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
+		final DeviceItem[] initialItems = new DeviceItem[pairedDevices.size()];
+		int i = 0;
 		if (pairedDevices.size() > 0) {
 			for (BluetoothDevice device : pairedDevices)
-				deviceList.add(new DeviceItem(device.getName(), device.getAddress(), true, false), -1);
-			deviceList.sort();
+				initialItems[i++] = new DeviceItem(device.getName(), device.getAddress(), true, false);
 		}
-		deviceList.setObserver(listView);
+
 		try {
 			if (btAdapter.isDiscovering())
 				btAdapter.cancelDiscovery();
@@ -388,15 +280,8 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			return ERROR_DISCOVERY;
 		}
 
-		dialog = new BgDialog(activity, l, this);
-		dialog.setTitle(R.string.bt_devices);
-		dialog.setPositiveButton(R.string.refresh_list);
-		dialog.setNegativeButton(R.string.cancel);
-		dialog.setOnCancelListener(this);
-		dialog.setOnDismissListener(this);
-		dialog.setEmptyBackground();
-		dialog.removeTitleBorder();
-		dialog.show();
+		itemSelectorDialog = ItemSelectorDialog.showDialog(activity, activity.getText(R.string.bt_devices), activity.getText(R.string.bt_scanning), activity.getText(R.string.bt_connecting), true, DeviceItem.class, initialItems, this);
+
 		okToStartDiscovery = false;
 
 		return OK;
@@ -409,51 +294,14 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		if (lblTitle != null)
-			lblTitle.setVisibility(View.GONE);
-		if (barWait != null)
-			barWait.setVisibility(View.GONE);
+		if (itemSelectorDialog != null)
+			itemSelectorDialog.showProgressBar(false);
 		okToStartDiscovery = true;
 	}
 
 	@Override
-	public void onItemClicked(int position) {
-		if (dialog != null && deviceList != null && position >= 0 && position < deviceList.getCount()) {
-			final DeviceItem item = deviceList.getItem(position);
-			if (item != null && item.address != null) {
-				stopDialogDiscovery();
-				deviceItem = item;
-				if (lblTitle != null) {
-					lblTitle.setText(R.string.bt_connecting);
-					lblTitle.setVisibility(View.VISIBLE);
-				}
-				if (barWait != null)
-					barWait.setVisibility(View.VISIBLE);
-				if (listView != null)
-					listView.setVisibility(View.GONE);
-				okToStartDiscovery = false;
-				if (observer != null)
-					observer.onBluetoothPairingStarted(BluetoothConnectionManager.this, item.fileSt.name, item.address);
-				lastError = OK;
-				cancelled = false;
-				finished = false;
-				connecting = true;
-				(new Thread(BluetoothConnectionManager.this, "Bluetooth Manager Thread")).start();
-			}
-		}
-	}
-
-	@Override
-	public void onItemLongClicked(int position) {
-	}
-
-	@Override
-	public void onItemCheckboxClicked(int position) {
-	}
-
-	@Override
 	public void onReceive(Context context, Intent intent) {
-		if (activity == null || deviceList == null)
+		if (activity == null || itemSelectorDialog == null)
 			return;
 		final String action = intent.getAction();
 		if (BluetoothDevice.ACTION_FOUND.equals(action)) {
@@ -461,65 +309,36 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			final String address = device.getAddress();
 			final String name = device.getName();
 			boolean paired = false;
-			for (int i = deviceList.getCount() - 1; i >= 0; i--) {
-				final DeviceItem di = deviceList.getItem(i);
-				if (di.address.equalsIgnoreCase(address)) {
+			for (int i = itemSelectorDialog.getCount() - 1; i >= 0; i--) {
+				final DeviceItem di = itemSelectorDialog.getItem(i);
+				if (di != null && di.address.equalsIgnoreCase(address)) {
 					//an item with this same address/name is already on the list
 					if (di.name.equalsIgnoreCase(name))
 						return;
 					paired = di.paired;
-					deviceList.setSelection(i, true);
-					deviceList.removeSelection();
+					itemSelectorDialog.remove(i);
 					break;
 				}
 			}
-			deviceList.add(new DeviceItem(((name == null || name.length() == 0) ? activity.getText(R.string.bt_null_device_name).toString() : name), address, paired, false), -1);
-			deviceList.setSelection(-1, true);
+			itemSelectorDialog.add(new DeviceItem(((name == null || name.length() == 0) ? activity.getText(R.string.bt_null_device_name).toString() : name), address, paired, false));
 			//stop sorting as the devices are discovered, to prevent the
 			//order of the list from changing
 			//deviceList.sort();
 		} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
 			if (!connecting) {
 				stopDialogDiscovery();
-				if (deviceList.getCount() == 0)
-					deviceList.add(new DeviceItem(activity.getText(R.string.bt_not_found).toString(), null, false, false), -1);
+				if (itemSelectorDialog.getCount() == 0)
+					itemSelectorDialog.add(new DeviceItem(activity.getText(R.string.bt_not_found).toString(), null, false, false));
 			}
 		}
 	}
 
 	@Override
-	public void onClick(DialogInterface dialog, int which) {
-		switch (which) {
-		case DialogInterface.BUTTON_POSITIVE:
-			if (okToStartDiscovery && btAdapter != null && !connecting) {
-				if (lblTitle != null)
-					lblTitle.setVisibility(View.VISIBLE);
-				if (barWait != null)
-					barWait.setVisibility(View.VISIBLE);
-				try {
-					btAdapter.startDiscovery();
-				} catch (Throwable ex) {
-					return;
-				}
-				okToStartDiscovery = false;
-			}
-			break;
-		case DialogInterface.BUTTON_NEGATIVE:
-			cancelled = true;
-			dialog.dismiss();
-			break;
-		}
-	}
-
-	@Override
-	public void onDismiss(DialogInterface dialog) {
-		if (activity != null)
-			UI.reenableEdgeEffect(activity);
-		if (!closed) {
-			closed = true;
+	public void onItemSelectorDialogClosed(ItemSelectorDialog<DeviceItem> itemSelectorDialog) {
+		if (this.itemSelectorDialog != null && this.itemSelectorDialog == itemSelectorDialog) {
 			destroyUI();
 			if (!finished) {
-				cancelled = true;
+				cancelled = itemSelectorDialog.isCancelled();
 				finished = true;
 				if (observer != null) {
 					if (deviceItem != null)
@@ -531,7 +350,33 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	}
 
 	@Override
-	public void onCancel(DialogInterface dialog) {
-		onDismiss(dialog);
+	public void onItemSelectorDialogRefreshList(ItemSelectorDialog<DeviceItem> itemSelectorDialog) {
+		if (okToStartDiscovery && btAdapter != null && !connecting && this.itemSelectorDialog != null && this.itemSelectorDialog == itemSelectorDialog) {
+			try {
+				btAdapter.startDiscovery();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+				return;
+			}
+			itemSelectorDialog.showProgressBar(true);
+			okToStartDiscovery = false;
+		}
+	}
+
+	@Override
+	public void onItemSelectorDialogItemClicked(ItemSelectorDialog<DeviceItem> itemSelectorDialog, int position, DeviceItem item) {
+		if (this.itemSelectorDialog != null && this.itemSelectorDialog == itemSelectorDialog && item != null && item.address != null) {
+			stopDialogDiscovery();
+			deviceItem = item;
+			itemSelectorDialog.showConnecting(true);
+			okToStartDiscovery = false;
+			if (observer != null)
+				observer.onBluetoothPairingStarted(BluetoothConnectionManager.this, item.fileSt.name, item.address);
+			lastError = OK;
+			cancelled = false;
+			finished = false;
+			connecting = true;
+			(new Thread(BluetoothConnectionManager.this, "Bluetooth Manager Thread")).start();
+		}
 	}
 }

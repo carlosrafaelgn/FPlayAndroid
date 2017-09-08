@@ -51,7 +51,7 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 	public interface Listener<E extends Item> {
 		void onItemSelectorDialogClosed(ItemSelectorDialog<E> itemSelectorDialog);
 		void onItemSelectorDialogRefreshList(ItemSelectorDialog<E> itemSelectorDialog);
-		void onItemSelectorDialogItemClicked(ItemSelectorDialog<E> itemSelectorDialog, int index, E item);
+		void onItemSelectorDialogItemClicked(ItemSelectorDialog<E> itemSelectorDialog, int position, E item);
 	}
 
 	public static class Item extends BaseItem {
@@ -109,21 +109,20 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 		}
 	}
 
-	private Activity activity;
 	private ItemList<E> itemList;
 	private Listener<E> listener;
 	private boolean progressBarVisible, cancelled;
+	private CharSequence loadingMessage, connectingMessage;
 	private TextView lblTitle;
 	private BgProgressBar barWait;
 	private BgListView listView;
 	private BgDialog dialog;
 
-	private ItemSelectorDialog(Activity activity, CharSequence title, CharSequence loadingMessage, Class<E> clazz, E[] initialElements, Listener<E> listener) {
-		this.activity = activity;
-
+	private ItemSelectorDialog(Activity activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, Class<E> clazz, E[] initialElements, Listener<E> listener) {
 		itemList = new ItemList<>(clazz);
 		if (initialElements != null && initialElements.length > 0)
 			itemList.add(0, initialElements, 0, initialElements.length);
+		itemList.sort();
 		this.listener = listener;
 
 		final LinearLayout l = new LinearLayout(activity);
@@ -138,7 +137,9 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 		panelControls.setBaselineAligned(false);
 		UI.prepareControlContainer(panelControls, false, true, 0, 0, 0, 0);
 
-		lblTitle = UI.createDialogTextView(activity, 0, loadingMessage);
+		this.connectingMessage = connectingMessage;
+
+		lblTitle = UI.createDialogTextView(activity, 0, this.loadingMessage = loadingMessage);
 		lblTitle.setPadding(UI.dialogMargin, 0, UI.dialogMargin, UI.dialogMargin);
 		lblTitle.setTextColor(UI.colorState_text_static);
 		lblTitle.setVisibility(View.GONE);
@@ -172,8 +173,8 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 		dialog.show();
 	}
 
-	public static <E extends Item> ItemSelectorDialog<E> showDialog(Activity activity, CharSequence title, CharSequence loadingMessage, boolean progressBarVisible, Class<E> clazz, E[] initialElements, Listener<E> listener) {
-		final ItemSelectorDialog<E> dialog = new ItemSelectorDialog<>(activity, title, loadingMessage, clazz, initialElements, listener);
+	public static <T extends Item> ItemSelectorDialog<T> showDialog(Activity activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, boolean progressBarVisible, Class<T> clazz, T[] initialElements, Listener<T> listener) {
+		final ItemSelectorDialog<T> dialog = new ItemSelectorDialog<>(activity, title, loadingMessage, connectingMessage, clazz, initialElements, listener);
 		dialog.showProgressBar(progressBarVisible);
 		return dialog;
 	}
@@ -186,6 +187,14 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 	public void clear() {
 		if (itemList != null)
 			itemList.clear();
+	}
+
+	public void remove(int position) {
+		if (itemList != null && position >= 0 && position < itemList.getCount()) {
+			itemList.setSelection(position, true);
+			itemList.removeSelection();
+			itemList.setSelection(-1, true);
+		}
 	}
 
 	public void dismiss() {
@@ -202,14 +211,34 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 		return cancelled;
 	}
 
+	public int getCount() {
+		return ((itemList != null) ? itemList.getCount() : 0);
+	}
+
+	public E getItem(int position) {
+		return ((itemList != null) ? itemList.getItem(position) : null);
+	}
+
 	public void showProgressBar(boolean show) {
 		if (progressBarVisible == show)
 			return;
 		progressBarVisible = show;
+		final boolean forceTitle = (listView == null || listView.getVisibility() != View.VISIBLE);
 		if (lblTitle != null)
-			lblTitle.setVisibility(show ? View.VISIBLE : View.GONE);
+			lblTitle.setVisibility((forceTitle || show) ? View.VISIBLE : View.GONE);
 		if (barWait != null)
 			barWait.setVisibility(show ? View.VISIBLE : View.GONE);
+	}
+
+	public void showConnecting(boolean connecting) {
+		if (dialog != null)
+			dialog.showPositiveButton(!connecting);
+		if (lblTitle != null) {
+			lblTitle.setText(connecting ? connectingMessage : loadingMessage);
+			showProgressBar(connecting);
+		}
+		if (listView != null)
+			listView.setVisibility(connecting ? View.GONE : View.VISIBLE);
 	}
 
 	@Override
@@ -242,8 +271,6 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 
 	@Override
 	public void onDismiss(DialogInterface dialog) {
-		if (activity != null)
-			UI.reenableEdgeEffect(activity);
 		if (this.dialog != null) {
 			this.dialog = null;
 			if (listener != null) {
@@ -258,9 +285,10 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 				itemList.setItemClickListener(null);
 				itemList = null;
 			}
-			activity = null;
 			lblTitle = null;
 			barWait = null;
+			loadingMessage = null;
+			connectingMessage = null;
 		}
 	}
 

@@ -169,6 +169,20 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		this.hideSoftInput = hideSoftInput;
 	}
 
+	public void showPositiveButton(boolean show) {
+		if (btnPositive == null)
+			return;
+		if (btnNegative != null) {
+			final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+			if (show)
+				rp.addRule(RelativeLayout.LEFT_OF, 3);
+			else
+				rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+			btnNegative.setLayoutParams(rp);
+		}
+		btnPositive.setVisibility(show ? View.VISIBLE : View.GONE);
+	}
+
 	@Override
 	public boolean dispatchPopulateAccessibilityEvent(@NonNull AccessibilityEvent event) {
 		if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
