@@ -815,6 +815,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static int decreaseVolume() {
+		if (state != STATE_ALIVE)
+			return Integer.MIN_VALUE;
 		switch (volumeControlType) {
 		case VOLUME_CONTROL_STREAM:
 			return setVolume(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) - 1);
@@ -831,6 +833,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static int increaseVolume() {
+		if (state != STATE_ALIVE)
+			return Integer.MIN_VALUE;
 		switch (volumeControlType) {
 		case VOLUME_CONTROL_STREAM:
 			return setVolume(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) + 1);

@@ -862,6 +862,11 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
+	public void requestPluginStoragePermission(int pluginId) {
+		requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, pluginId);
+	}
+
+	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
