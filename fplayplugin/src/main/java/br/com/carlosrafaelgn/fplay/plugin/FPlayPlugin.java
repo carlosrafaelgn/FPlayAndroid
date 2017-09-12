@@ -33,6 +33,14 @@
 package br.com.carlosrafaelgn.fplay.plugin;
 
 public interface FPlayPlugin {
+	// When creating a plugin, the most important detail:
+	// add fplayplugin.jar as provided not as compile (by doing so all
+	// the interfaces and classes are not copied to the destination apk)
+	//
+	// https://stackoverflow.com/questions/28472785/compile-provided-apk-android-dependency-scope
+	//
+	// provided fileTree(dir: 'libs', include: ['*.jar'])
+
 	int API_VERSION = 1;
 
 	int getApiVersion();
@@ -40,6 +48,4 @@ public interface FPlayPlugin {
 
 	void load(FPlay fplay);
 	void destroy();
-	void blah();
 }
-

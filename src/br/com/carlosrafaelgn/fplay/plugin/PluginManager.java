@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.plugin;
 
-import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Environment;
@@ -52,7 +51,6 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import dalvik.system.DexClassLoader;
-import dalvik.system.DexFile;
 
 public final class PluginManager implements MainHandler.Callback, FPlay {
 	private static final int MSG_ERROR_GEN = 0x0A00;
@@ -148,11 +146,6 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 				optimizedPath = codeCache.getAbsolutePath();
 			}
 
-			File ooo = new File(optimizedPath);
-			for (File f : ooo.listFiles()) {
-				System.out.println("@@@ " + f.getAbsolutePath());
-			}
-
 			//this way the plugin is loaded in a totally different class loader, and it is impossible
 			//to cast the plugin to FPlayPlugin
 			////final DexClassLoader dexClassLoader = new DexClassLoader(pluginApkFile.getAbsolutePath(), optimizedPath, null, ClassLoader.getSystemClassLoader().getParent());
@@ -169,20 +162,13 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 			//final DexFile df = new DexFile(pluginApkFile);
 			//final Class<?> clazz = df.loadClass(className, activity.getClassLoader());
 
-			//so, we will switch between the second and the third approaches...
+			//so, we will stick to the second approach
 			final Class<?> clazz;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-				final DexClassLoader dexClassLoader = new DexClassLoader(pluginApkFile.getAbsolutePath(), optimizedPath, null, activity.getClassLoader());
-				clazz = dexClassLoader.loadClass(className);
-			} else {
-				//noinspection deprecation
-				final DexFile df = new DexFile(pluginApkFile);
-				clazz = df.loadClass(className, activity.getClassLoader());
-			}
-
-			for (File f : ooo.listFiles()) {
-				System.out.println("@@@ " + f.getAbsolutePath());
-			}
+			final ClassLoader classLoader = activity.getClassLoader();
+			classLoader.loadClass("br.com.carlosrafaelgn.fplay.plugin.FPlay");
+			classLoader.loadClass("br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin");
+			final DexClassLoader dexClassLoader = new DexClassLoader(pluginApkFile.getAbsolutePath(), optimizedPath, null, classLoader);
+			clazz = dexClassLoader.loadClass(className);
 
 			if (clazz != null) {
 				synchronized (pluginClasses) {
@@ -202,6 +188,7 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	public static void createPlugin(final ActivityHost activity, final String className, final String pluginName, final String pluginDownloadUri, final boolean skipToDowload, final int pluginId, final Observer observer) {
 		//based on:
 		//https://stackoverflow.com/q/6857807/3569421
+		//https://stackoverflow.com/a/22687446/3569421
 		//https://developer.android.com/reference/dalvik/system/DexClassLoader.html
 		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.0.1_r1/android/support/v4/content/ContextCompat.java#ContextCompat.getCodeCacheDir%28android.content.Context%29
 
@@ -311,7 +298,7 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	}
 
 	@Override
-	public Context getApplicationContext() {
+	public Object getApplicationContext() {
 		return Player.theApplication;
 	}
 

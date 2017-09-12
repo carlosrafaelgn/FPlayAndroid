@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.plugin;
 
-import android.content.Context;
-
 public interface FPlay {
 	int SONG_TITLE = 0;
 	int SONG_ARTIST = 1;
@@ -45,7 +43,7 @@ public interface FPlay {
 	int getApiVersion();
 	int getFPlayVersion();
 
-	Context getApplicationContext();
+	Object getApplicationContext();
 	CharSequence getText(int id);
 	boolean isOnMainThread();
 	void postToMainThread(Runnable runnable);
