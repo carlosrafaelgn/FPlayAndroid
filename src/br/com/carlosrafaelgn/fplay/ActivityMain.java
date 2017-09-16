@@ -833,12 +833,14 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-		if (requestCode > 100 && requestCode < 200 && Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-			openVisualizer(requestCode);
-		} else if (requestCode == 2 && pendingListCommand != 0) {
-			if (Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-				selectPlaylist(pendingListCommand);
-			pendingListCommand = 0;
+		if (Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+			if (requestCode > 100 && requestCode < 200) {
+				openVisualizer(requestCode);
+			} else if (requestCode == 2 && pendingListCommand != 0) {
+				if (Player.state == Player.STATE_ALIVE)
+					selectPlaylist(pendingListCommand);
+				pendingListCommand = 0;
+			}
 		}
 	}
 
@@ -1132,8 +1134,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		}
 		localeHasBeenChanged = false;
 		if (UI.allowPlayerAboveLockScreen)
+			//noinspection deprecation
 			addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		else
+			//noinspection deprecation
 			clearWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		if (UI.keepScreenOn)
 			addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
