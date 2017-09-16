@@ -604,11 +604,25 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static String collon() {
-		return ((currentLocale == LOCALE_FR) ? " : " : ": ");
+		switch (currentLocale) {
+		case LOCALE_FR:
+			return " : ";
+		case LOCALE_ZH:
+			return "：";
+		default:
+			return ": ";
+		}
 	}
 
 	public static String collonNoSpace() {
-		return ((currentLocale == LOCALE_FR) ? " :" : ":");
+		switch (currentLocale) {
+		case LOCALE_FR:
+			return " :";
+		case LOCALE_ZH:
+			return "：";
+		default:
+			return ":";
+		}
 	}
 
 	public static Locale getLocaleFromCode(int localeCode) {
@@ -667,7 +681,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		case LOCALE_FR:
 			return "Français";
 		case LOCALE_ZH:
-			return "简体中文";
+			return "中文（简体）";
 		}
 		return Player.theApplication.getText(R.string.standard_language).toString();
 	}

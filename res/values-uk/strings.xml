@@ -324,7 +324,7 @@
     <string name="radio_directory">Каталог інтернет радіо</string>
     <string name="all_kinds">Всі типи</string>
     <string name="listeners">Слухачі</string>
-    <string name="connecting">Підключення…</string>
+    <string name="connecting">Підключення&#8230;</string>
     <string name="bytes_before_decoding">Почати декодування після завантаження скільки байт:</string>
     <string name="seconds_before_playback">Початок відтворення через декодування скільки секунд:</string>
     <string name="playback_buffer_length">Розмір буфера відтворення (велике значення приносить стабільність, але викликає затримку при зміні ефектів):</string>

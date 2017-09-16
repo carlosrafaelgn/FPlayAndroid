@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+	<!--
+		I do not speak Chinese, so I keep these here as a lesson/reminder :)
+		、 - IDEOGRAPHIC COMMA (U+3001) - in Chinese, delimits items in a list or series
+		， - FULLWIDTH COMMA (U+FF0C) - in Chinese, indicates a pause
+	-->
 	<string name="app_by">作者 Carlos Rafael Gimenes das Neves</string>
 	<string name="app_description">简洁的音乐播放器，支持均衡器和低音增强，可修改主题颜色</string>
-	<string name="app_more_info">正在查找更多信息吗？&lt;br/&gt;需要源代码？&lt;br/&gt;想要什么功能？&lt;br/&gt;发现了Bug？！？&lt;br/&gt;只是想找我聊聊？ :)&lt;br/&gt;&lt;br/&gt;给我发邮件吧：&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;或在GitHub查看这个程序项目：&lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;特别感谢以下帮助翻译了FPlay的朋友:</string>
+	<string name="app_more_info">正在查找更多信息吗？&lt;br/&gt;需要源代码？&lt;br/&gt;想要什么功能？&lt;br/&gt;发现了Bug？！？&lt;br/&gt;只是想找我聊聊？ :)&lt;br/&gt;&lt;br/&gt;给我发邮件吧：&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;或在GitHub查看这个程序项目：&lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;特别感谢以下帮助翻译了FPlay的朋友：</string>
 	<string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;非常感谢！！ :D&lt;br/&gt;&lt;br/&gt;可读性字体是由Abelardo Gonzalez制作的OpenDyslexic Regular，在&lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; 上可用，并以&lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;知识共享署名 3.0 未本地化版本许可协议 &lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权。被用作绘制可缩放图标的字体 icons.ttf 是通过 Keyamoon 的 IcoMoon App 制作，在&lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt; 可用。一些可缩放的图标是由我创建的，还有一些是来自Keyamoon 的 IcoMoon Free 图标集，以&lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;知识共享署名 3.0 许可协议&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权。BgEdgeEffect、 BitmapLruCache、 FixedFFT 和 NonNull 这些 Class 类基于The Android Open Source Prolicensed的现有代码，以 &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权；Vector3 、Matrix3x3、So3Util、OrientationEKF 和 HeadTracker  是基于&lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; 和 &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt; 的现有代码，以 &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;授权。FPlay 基于FreeBSD License 授权。</string>
 	<string name="system_info">系统信息</string>
 	<string name="resolution">分辨率</string>
@@ -12,7 +17,7 @@
 	<string name="loading">缓冲中&#8230;</string>
 	<string name="adding_songs">正在添加歌曲&#8230;</string>
 	<string name="empty_list">空列表！</string>
-	<string name="error">错误：:</string>
+	<string name="error">错误：</string>
 	<string name="ok">好</string>
 	<string name="cancel">取消</string>
 	<string name="done">完成</string>
@@ -30,10 +35,10 @@
 	<string name="msg_turn_off_title">自动关闭</string>
 	<string name="msg_turn_off">多少分钟后自动关闭播放器</string>
 	<string name="msg_enter_name">为新%s命名</string>
-	<string name="msg_confirm_overwrite">你真的要覆盖 %1$s \"%2$s\"吗?</string>
-	<string name="msg_confirm_delete">你真的要删除 %1$s \"%2$s\"吗?</string>
-	<string name="msg_overwrite">覆盖 %1$s \"%2$s\"</string>
-	<string name="msg_delete">删除 %1$s \"%2$s\"</string>
+	<string name="msg_confirm_overwrite">你真的要覆盖 %1$s “%2$s”吗？</string>
+	<string name="msg_confirm_delete">你真的要删除 %1$s “%2$s”吗？</string>
+	<string name="msg_overwrite">覆盖 %1$s “%2$s”</string>
+	<string name="msg_delete">删除 %1$s “%2$s”</string>
 	<string name="msg_delete_button">删除&#8230;</string>
 	<string name="msg_create_new_title">新建 %s</string>
 	<string name="msg_create_new">新建&#8230;</string>
@@ -45,7 +50,7 @@
 	<string name="opt_use_alternate_typeface">使用阅读友好的字体</string>
 	<string name="opt_auto_turn_off">自动关闭播放器：</string>
 	<string name="opt_auto_idle_turn_off">当无歌曲播放时，自动关闭播放器</string>
-	<string name="opt_auto_turn_off_playlist">当播放列表播放完后，自动关闭播放器(必须同时选择\"不重复\")</string>
+	<string name="opt_auto_turn_off_playlist">当播放列表播放完后，自动关闭播放器（必须同时选择“不重复”）</string>
 	<string name="opt_keep_screen_on">保持屏幕常亮</string>
 	<string name="opt_volume_control_type">音量控制类型</string>
 	<string name="opt_is_divider_visible">在播放列表条目间绘制分隔线</string>
@@ -62,7 +67,7 @@
 	<string name="opt_force_orientation">强制设置屏幕方向为：</string>
 	<string name="opt_fade_in_focus">打断播放（如通话）后，音量的淡入时间：</string>
 	<string name="opt_fade_in_pause">从暂停继续播放后，音量的淡入时间：</string>
-	<string name="opt_fade_in_other">从静止到开始播放后，音量的淡入时间：Volume fade in\'s duration when starting new songs after silence:</string>
+	<string name="opt_fade_in_other">从静止到开始播放后，音量的淡入时间：</string>
 	<string name="hdr_display">显示</string>
 	<string name="hdr_playback">播放</string>
 	<string name="hdr_behavior">行为</string>
@@ -324,7 +329,7 @@
 	<string name="radio_directory">在线电台目录</string>
 	<string name="all_kinds">所有类型</string>
 	<string name="listeners">聆听者</string>
-	<string name="connecting">连接中...</string>
+	<string name="connecting">连接中&#8230;</string>
 	<string name="bytes_before_decoding">开始解码前要下载的字节数：</string>
 	<string name="seconds_before_playback">开始播放前要解码的秒数：</string>
 	<string name="playback_buffer_length">播放缓冲区的大小（较大的值会更稳定性，但在更改效果时会导致延迟）：</string>
@@ -336,7 +341,7 @@
 	<string name="slide">滑动</string>
 	<string name="play_with_long_press">在添加歌曲时，长按播放该歌曲</string>
 	<string name="smooth">平滑</string>
-	<string name="transition_popup">转场 （菜单）(Menu):</string>
+	<string name="transition_popup">转场 （菜单）：</string>
 	<string name="dark">暗</string>
 	<string name="enable_external_fx">启用外部音效</string>
 	<string name="external_fx_warning">（停用可能需要一些时间）</string>

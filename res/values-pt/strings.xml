@@ -324,7 +324,7 @@
     <string name="radio_directory">Diretório de rádios online</string>
     <string name="all_kinds">Todos os tipos</string>
     <string name="listeners">Ouvintes</string>
-    <string name="connecting">Conectando…</string>
+    <string name="connecting">Conectando&#8230;</string>
     <string name="bytes_before_decoding">Bytes para fazer o download antes de começar a decodificar:</string>
     <string name="seconds_before_playback">Segundos para decodificar antes de iniciar a reprodução:</string>
     <string name="playback_buffer_length">Tamanho do buffer de reprodução (um valor grande traz mais estabilidade, mas provoca um atraso nas alterações dos efeitos):</string>
