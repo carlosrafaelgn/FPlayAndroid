@@ -178,6 +178,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.LOCALE_UK, 6, UI.getLocaleDescriptionFromCode(UI.LOCALE_UK))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.LOCALE_UK) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(1, UI.LOCALE_ZH, 7, UI.getLocaleDescriptionFromCode(UI.LOCALE_ZH))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.LOCALE_ZH) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optTheme) {
 			final int o = UI.theme;
 			lastMenuView = optTheme;
@@ -1086,7 +1089,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optBtSpeed);
 			currentHeader = -1;
 		} else {
-			if (!UI.isCurrentLocaleCyrillic()) {
+			if (!UI.dyslexiaFontSupportsCurrentLocale()) {
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
 			}
 			optAutoTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
@@ -1196,7 +1199,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optExtraSpacing);
 			if (!UI.isLargeScreen)
 				addOption(optPlaceTitleAtTheBottom);
-			if (!UI.isCurrentLocaleCyrillic())
+			if (!UI.dyslexiaFontSupportsCurrentLocale())
 				addOption(optUseAlternateTypeface);
 			addOption(optForcedLocale);
 			addHeader(ctx, R.string.accessibility, optForcedLocale, hIdx++);
@@ -1474,7 +1477,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else {
 				startActivity(new ActivityAbout(), 0, view, true);
 			}
-		} else if (!UI.isCurrentLocaleCyrillic() && view == optUseAlternateTypeface) {
+		} else if (!UI.dyslexiaFontSupportsCurrentLocale() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
 			UI.setUsingAlternateTypeface(desired);
 			if (UI.isUsingAlternateTypeface != desired) {
@@ -1599,8 +1602,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optAllowLockScreen) {
 			UI.allowPlayerAboveLockScreen = optAllowLockScreen.isChecked();
 			if (UI.allowPlayerAboveLockScreen)
+				//noinspection deprecation
 				addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 			else
+				//noinspection deprecation
 				clearWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||

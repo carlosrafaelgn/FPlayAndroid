@@ -120,7 +120,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int LOCALE_ES = 5;
 	public static final int LOCALE_DE = 6;
 	public static final int LOCALE_FR = 7;
-	public static final int LOCALE_MAX = 7;
+	public static final int LOCALE_ZH = 8;
+	public static final int LOCALE_MAX = 8;
 	
 	public static final int THEME_CUSTOM = -1;
 	public static final int THEME_BLUE_ORANGE = 0;
@@ -543,7 +544,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static void setUsingAlternateTypeface(boolean useAlternateTypeface) {
 		UI.isUsingAlternateTypeface = useAlternateTypeface;
-		if (useAlternateTypeface && !isCurrentLocaleCyrillic()) {
+		if (useAlternateTypeface && !dyslexiaFontSupportsCurrentLocale()) {
 			if (defaultTypeface == null || !alternateTypefaceActive) {
 				alternateTypefaceActive = true;
 				try {
@@ -641,6 +642,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if (!"fr".equals(l.getLanguage()))
 				return new Locale("fr");
 			break;
+		case LOCALE_ZH:
+			if (!"zh".equals(l.getLanguage()))
+				return new Locale("zh");
+			break;
 		}
 		return l;
 	}
@@ -661,6 +666,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return "Deutsch";
 		case LOCALE_FR:
 			return "Français";
+		case LOCALE_ZH:
+			return "简体中文";
 		}
 		return Player.theApplication.getText(R.string.standard_language).toString();
 	}
@@ -681,14 +688,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				return LOCALE_DE;
 			if ("fr".equals(l))
 				return LOCALE_FR;
+			if ("zh".equals(l))
+				return LOCALE_ZH;
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return LOCALE_US;
 	}
 	
-	public static boolean isCurrentLocaleCyrillic() {
-		return ((currentLocale == LOCALE_RU) || (currentLocale == LOCALE_UK));
+	public static boolean dyslexiaFontSupportsCurrentLocale() {
+		return ((currentLocale == LOCALE_RU) || (currentLocale == LOCALE_UK) || (currentLocale == LOCALE_ZH));
 	}
 
 	private static void updateDecimalSeparator() {
@@ -713,7 +722,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			updateDecimalSeparator();
 			return false;
 		}
-		final boolean wasCyrillic = isCurrentLocaleCyrillic();
+		final boolean dyslexiaSupported = dyslexiaFontSupportsCurrentLocale();
 		try {
 			final Locale l = getLocaleFromCode(localeCode);
 			final Resources res = Player.theApplication.getResources();
@@ -734,7 +743,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			currentLocale = getCurrentLocale();
 		}
 		updateDecimalSeparator();
-		if (fullyInitialized && isUsingAlternateTypeface && wasCyrillic != isCurrentLocaleCyrillic()) {
+		if (fullyInitialized && isUsingAlternateTypeface && dyslexiaSupported != dyslexiaFontSupportsCurrentLocale()) {
 			setUsingAlternateTypeface(true);
 			return true;
 		}
