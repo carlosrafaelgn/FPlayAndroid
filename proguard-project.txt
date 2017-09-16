@@ -60,3 +60,13 @@
 -keepclassmembers class * {
     native <methods>;
 }
+
+-keep public interface br.com.carlosrafaelgn.fplay.plugin.FPlay
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.FPlay {
+    public *;
+}
+
+-keep public interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin {
+    public *;
+}
