@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.plugin;
 
+@SuppressWarnings("unused")
 public interface FPlay {
 	int SONG_TITLE = 0;
 	int SONG_ARTIST = 1;

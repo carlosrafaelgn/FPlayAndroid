@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.plugin;
 
+@SuppressWarnings("unused")
 public interface FPlayPlugin {
 	// When creating a plugin, the most important detail:
 	// add fplayplugin.jar as provided not as compile (by doing so all
