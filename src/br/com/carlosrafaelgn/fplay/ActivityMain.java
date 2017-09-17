@@ -75,6 +75,7 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgEditText;
@@ -91,7 +92,6 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 import br.com.carlosrafaelgn.fplay.visualizer.AlbumArtVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
-import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
 //
 //How to create a ListView using ArrayAdapter in Android

@@ -39,13 +39,13 @@
 -allowaccessmodification
 -repackageclasses ''
 
--keep public interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer
--keepclassmembers interface br.com.carlosrafaelgn.fplay.visualizer.Visualizer {
+-keep public interface br.com.carlosrafaelgn.fplay.plugin.Visualizer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.Visualizer {
     public *;
 }
 
--keep class * implements br.com.carlosrafaelgn.fplay.visualizer.Visualizer
--keepclassmembers class * implements br.com.carlosrafaelgn.fplay.visualizer.Visualizer {
+-keep class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer
+-keepclassmembers class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer {
     public *;
 }
 

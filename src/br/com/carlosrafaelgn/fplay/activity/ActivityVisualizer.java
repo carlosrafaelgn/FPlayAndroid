@@ -62,6 +62,8 @@ import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaVisualizer;
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgColorStateList;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
@@ -70,7 +72,6 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
 public final class ActivityVisualizer extends Activity implements MediaVisualizer.Handler, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
 	@SuppressLint("InlinedApi")
@@ -151,6 +152,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	private static final int MSG_HIDE = 0x0400;
 	private static final int MSG_SYSTEM_UI_CHANGED = 0x0401;
 	private static final int MNU_ORIENTATION = 100;
+	private SongInfo songInfo;
 	private Visualizer visualizer;
 	private MediaVisualizer mediaVisualizer;
 	private UI.DisplayInfo info;
@@ -166,7 +168,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	private Timer uiAnimTimer;
 	private BgColorStateList buttonColor, lblColor;
 	private ColorDrawable panelTopBackground;
-	
+
 	private void hideAllUIDelayed() {
 		if (!visualizerRequiresHiddenControls)
 			return;
@@ -280,7 +282,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 				ip = new InterceptableLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
 			} else {
 				if (visualizerRequiresHiddenControls) {
-					final Point pt = visualizer.getDesiredSize(info.usableScreenWidth, info.usableScreenHeight);
+					final Point pt = (Point)visualizer.getDesiredSize(info.usableScreenWidth, info.usableScreenHeight);
 					ip = new InterceptableLayout.LayoutParams(pt.x, pt.y);
 					ip.addRule(InterceptableLayout.CENTER_IN_PARENT, InterceptableLayout.TRUE);
 				} else {
@@ -352,6 +354,8 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(this);
+
+		songInfo = new SongInfo();
 
 		buttonColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.color_text_selected);
 		lblColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.colorState_text_visualizer_reactive.getDefaultColor());
@@ -581,6 +585,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		buttonColor = null;
 		lblColor = null;
 		panelTopBackground = null;
+		songInfo = null;
 	}
 	
 	@Override
@@ -630,8 +635,9 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		if (songHasChanged || preparingHasChanged)
 			updateTitle();
 		final Visualizer v = visualizer;
-		if (v != null)
-			v.onPlayerChanged(currentSong, songHasChanged, ex);
+		final SongInfo s = songInfo;
+		if (v != null && s != null)
+			v.onPlayerChanged((currentSong == null) ? null : currentSong.info(s), songHasChanged, ex);
 	}
 
 	@Override

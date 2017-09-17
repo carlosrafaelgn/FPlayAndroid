@@ -378,19 +378,12 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	}
 
 	@Override
-	public String[] currentSongInfo(String[] info) {
+	public boolean currentSongInfo(SongInfo info) {
 		final Song song = Player.localSong;
 		if (song == null)
-			return null;
-		if (info == null || info.length < 6)
-			info = new String[6];
-		info[SONG_TITLE] = song.title;
-		info[SONG_ARTIST] = song.artist;
-		info[SONG_ALBUM] = song.album;
-		info[SONG_TRACK] = Integer.toString(song.track);
-		info[SONG_YEAR] = Integer.toString(song.year);
-		info[SONG_LENGTH] = Integer.toString(song.lengthMS);
-		return info;
+			return false;
+		song.info(info);
+		return true;
 	}
 
 	@Override

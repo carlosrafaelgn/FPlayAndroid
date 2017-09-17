@@ -33,27 +33,11 @@
 package br.com.carlosrafaelgn.fplay.plugin;
 
 @SuppressWarnings("unused")
-public interface FPlay {
-	int getApiVersion();
-	int getFPlayVersion();
-
-	Object getApplicationContext();
-	CharSequence getText(int id);
-	boolean isOnMainThread();
-	void postToMainThread(Runnable runnable);
-	void postToMainThreadAtTime(Runnable runnable, long uptimeMillis);
-	void toast(String message);
-	String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact);
-	void formatIntAsFloat(StringBuilder sb, int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact);
-	int dpToPxI(float dp);
-	int spToPxI(float sp);
-
-	void previous();
-	void pause();
-	void playPause();
-	void next();
-	int increaseVolume();
-	int decreaseVolume();
-	boolean currentSongInfo(SongInfo info);
-	String formatTime(int timeMS);
+public class SongInfo {
+	public long id;
+	public String path;
+	public boolean isHttp;
+	public String title, artist, album, extraInfo;
+	public int track, lengthMS, year;
+	public String length;
 }

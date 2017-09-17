@@ -76,8 +76,9 @@ import javax.microedition.khronos.opengles.GL10;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
-import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
@@ -856,21 +857,24 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	}
 
 	//Runs on the MAIN thread
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Object intent) {
 		if (requestCode == 1234) {
 			browsing = false;
 			if (resultCode == Activity.RESULT_OK)
-				selectedUri = data.getData();
+				selectedUri = ((Intent)intent).getData();
 		}
 	}
 
 	//Runs on the MAIN thread
+	@Override
 	public void onActivityPause() {
 		if (sensorManager != null)
 			sensorManager.unregister();
 	}
 
 	//Runs on the MAIN thread
+	@Override
 	public void onActivityResume() {
 		if (sensorManager != null) {
 			sensorManager.reset();
@@ -880,7 +884,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on the MAIN thread
 	@Override
-	public void onCreateContextMenu(ContextMenu menu) {
+	public void onCreateContextMenu(Object contextMenu) {
+		final ContextMenu menu = (ContextMenu)contextMenu;
 		Menu s;
 		switch (type) {
 		case TYPE_LIQUID:
@@ -953,7 +958,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 
 	//Runs on the MAIN thread
 	@Override
-	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	public void onPlayerChanged(SongInfo currentSongInfo, boolean songHasChanged, Throwable ex) {
 	}
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
@@ -963,7 +968,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	}
 
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight) {
+	@Override
+	public Object getDesiredSize(int availableWidth, int availableHeight) {
 		return new Point(availableWidth, availableHeight);
 	}
 

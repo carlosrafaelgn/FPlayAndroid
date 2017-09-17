@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.list;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.view.ViewDebug;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +43,8 @@ import java.io.OutputStream;
 
 import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.FPlay;
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
 public final class Song extends BaseItem {
@@ -247,7 +250,22 @@ public final class Song extends BaseItem {
 			year = -1;
 		length = (isHttp ? "" : formatTime(lengthMS));
 	}
-	
+
+	public SongInfo info(SongInfo info) {
+		info.id = id;
+		info.path = path;
+		info.isHttp = isHttp;
+		info.title = title;
+		info.artist = artist;
+		info.album = album;
+		info.extraInfo = extraInfo;
+		info.track = track;
+		info.lengthMS = lengthMS;
+		info.year = year;
+		info.length = length;
+		return info;
+	}
+
 	@Override
 	public String toString() {
 		return title;

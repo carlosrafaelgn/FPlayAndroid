@@ -38,14 +38,14 @@ import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Message;
-import android.view.ContextMenu;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
-import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
@@ -64,7 +64,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	private Rect srcRect, dstRect;
 	private AlbumArtFetcher albumArtFetcher;
 	private ReleasableBitmapWrapper bmp;
-	private Song currentSong;
+	private SongInfo currentSong;
 	private volatile int version;
 	private volatile String nextPath;
 	private volatile ReleasableBitmapWrapper nextBmp;
@@ -97,7 +97,8 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	}
 
 	//Runs on the MAIN thread
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Object intent) {
 	}
 
 	//Runs on the MAIN thread
@@ -113,7 +114,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	//Runs on the MAIN thread
 	@Override
-	public void onCreateContextMenu(ContextMenu menu) {
+	public void onCreateContextMenu(Object contextMenu) {
 	}
 
 	//Runs on the MAIN thread
@@ -121,7 +122,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	public void onClick() {
 	}
 
-	private void releaseBitmapsAndSetCurrentSong(Song song) {
+	private void releaseBitmapsAndSetCurrentSong(SongInfo song) {
 		synchronized (sync) {
 			version++;
 			currentSong = song;
@@ -140,16 +141,16 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	/**
 	 *  Update the album art when song changes or queue ends.
-	 * @param currentSong Song that needs to be played
+	 * @param currentSongInfo Song that needs to be played
 	 * @param songHasChanged Flag that indicates whether the current song has changed or not
 	 * @param ex Exception
 	 */
 	@Override
-	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	public void onPlayerChanged(SongInfo currentSongInfo, boolean songHasChanged, Throwable ex) {
 		if (currentSong == null) {
 			releaseBitmapsAndSetCurrentSong(null);
 			updateRects();
-		} else if (this.currentSong != currentSong && albumArtFetcher != null) {
+		} else if (this.currentSong.id != currentSongInfo.id && albumArtFetcher != null) {
 			releaseBitmapsAndSetCurrentSong(currentSong);
 			updateRects(); //force the album icon to be displayed
 			nextPath = currentSong.path;
@@ -165,7 +166,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	}
 
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight) {
+	public Object getDesiredSize(int availableWidth, int availableHeight) {
 		point.x = availableWidth;
 		point.y = availableHeight;
 		return point;

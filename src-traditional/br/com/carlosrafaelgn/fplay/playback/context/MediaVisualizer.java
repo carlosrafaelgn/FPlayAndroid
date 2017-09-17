@@ -36,8 +36,8 @@ import android.os.Build;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
 public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 	public interface Handler {

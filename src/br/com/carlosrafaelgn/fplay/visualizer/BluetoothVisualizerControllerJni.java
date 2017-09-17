@@ -32,11 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.visualizer;
 
-import android.content.Intent;
-import android.graphics.Point;
 import android.os.Message;
 import android.os.SystemClock;
-import android.view.ContextMenu;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +46,8 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaVisualizer;
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
 
@@ -218,7 +217,8 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 	}
 
 	//Runs on the MAIN thread
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Object intent) {
 	}
 
 	//Runs on the MAIN thread
@@ -233,7 +233,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	//Runs on the MAIN thread
 	@Override
-	public void onCreateContextMenu(ContextMenu menu) {
+	public void onCreateContextMenu(Object contextMenu) {
 	}
 
 	//Runs on the MAIN thread
@@ -243,7 +243,7 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 
 	//Runs on the MAIN thread
 	@Override
-	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	public void onPlayerChanged(SongInfo currentSongInfo, boolean songHasChanged, Throwable ex) {
 	}
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
@@ -253,7 +253,8 @@ public final class BluetoothVisualizerControllerJni implements Visualizer, Bluet
 	}
 
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight) {
+	@Override
+	public Object getDesiredSize(int availableWidth, int availableHeight) {
 		return null;
 	}
 

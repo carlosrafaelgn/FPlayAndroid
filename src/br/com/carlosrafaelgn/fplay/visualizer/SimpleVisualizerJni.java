@@ -47,7 +47,8 @@ import android.view.ViewDebug.ExportedProperty;
 import java.util.Arrays;
 
 import br.com.carlosrafaelgn.fplay.R;
-import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SlimLock;
@@ -149,7 +150,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	}
 
 	//Runs on the MAIN thread
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Object intent) {
 	}
 
 	//Runs on the MAIN thread
@@ -164,7 +166,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	//Runs on the MAIN thread
 	@Override
-	public void onCreateContextMenu(ContextMenu menu) {
+	public void onCreateContextMenu(Object contextMenu) {
+		final ContextMenu menu = (ContextMenu)contextMenu;
 		UI.separator(menu, 1, 0);
 		menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
 			.setOnMenuItemClickListener(this)
@@ -208,7 +211,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	//Runs on the MAIN thread
 	@Override
-	public void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex) {
+	public void onPlayerChanged(SongInfo currentSongInfo, boolean songHasChanged, Throwable ex) {
 	}
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
@@ -218,7 +221,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	}
 
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	public Point getDesiredSize(int availableWidth, int availableHeight) {
+	@Override
+	public Object getDesiredSize(int availableWidth, int availableHeight) {
 		point.x = ((availableWidth > availableHeight) ? ((availableWidth * 7) >> 3) : availableWidth) >> 8;
 		point.y = ((availableWidth < availableHeight) ? availableWidth : availableHeight) >> 1;
 		if (point.x < 1)

@@ -30,14 +30,9 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.visualizer;
+package br.com.carlosrafaelgn.fplay.plugin;
 
-import android.content.Intent;
-import android.graphics.Point;
-import android.view.ContextMenu;
-
-import br.com.carlosrafaelgn.fplay.list.Song;
-
+@SuppressWarnings("unused")
 public interface Visualizer {
 	String EXTRA_VISUALIZER_CLASS_NAME = "br.com.carlosrafaelgn.fplay.ActivityVisualizer.VISUALIZER_CLASS_NAME";
 
@@ -64,7 +59,7 @@ public interface Visualizer {
 	int ORIENTATION_PORTRAIT = 2;
 
 	//Runs on the MAIN thread
-	void onActivityResult(int requestCode, int resultCode, Intent data);
+	void onActivityResult(int requestCode, int resultCode, Object intent);
 
 	//Runs on the MAIN thread
 	void onActivityPause();
@@ -73,19 +68,19 @@ public interface Visualizer {
 	void onActivityResume();
 
 	//Runs on the MAIN thread
-	void onCreateContextMenu(ContextMenu menu);
+	void onCreateContextMenu(Object contextMenu);
 
 	//Runs on the MAIN thread
 	void onClick();
 
 	//Runs on the MAIN thread
-	void onPlayerChanged(Song currentSong, boolean songHasChanged, Throwable ex);
+	void onPlayerChanged(SongInfo currentSongInfo, boolean songHasChanged, Throwable ex);
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
 	boolean isFullscreen();
 
 	//Runs on the MAIN thread (called only if isFullscreen() returns false)
-	Point getDesiredSize(int availableWidth, int availableHeight);
+	Object getDesiredSize(int availableWidth, int availableHeight);
 
 	//Runs on the MAIN thread (returned value MUST always be the same)
 	boolean requiresHiddenControls();
