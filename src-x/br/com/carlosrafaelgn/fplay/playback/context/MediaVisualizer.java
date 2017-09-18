@@ -34,14 +34,11 @@ package br.com.carlosrafaelgn.fplay.playback.context;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
+import br.com.carlosrafaelgn.fplay.plugin.VisualizerService;
 import br.com.carlosrafaelgn.fplay.util.Timer;
-import br.com.carlosrafaelgn.fplay.visualizer.Visualizer;
 
-public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
-	public interface Handler {
-		void onFailure();
-		void onFinalCleanup();
-	}
+public final class MediaVisualizer implements VisualizerService, Runnable, Timer.TimerHandler {
 	private Visualizer visualizer;
 	private Handler handler;
 	private volatile boolean alive, reset, created, playing, failed, visualizerReady;
@@ -59,20 +56,24 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		timer.start(16);
 	}
 
+	@Override
 	public void playingChanged() {
 		playing = Player.localPlaying;
 	}
 
+	@Override
 	public void pause() {
 		if (timer != null)
 			timer.pause();
 	}
 
+	@Override
 	public void resume() {
 		if (timer != null)
 			timer.resume();
 	}
 
+	@Override
 	public void resetAndResume() {
 		//unlike the traditional visualizer, there is no need to reset this visualizer
 		//(we only need to zero it out)
@@ -81,6 +82,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 			timer.resume();
 	}
 
+	@Override
 	public void destroy() {
 		if (timer != null) {
 			alive = false;

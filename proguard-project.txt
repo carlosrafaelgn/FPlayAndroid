@@ -70,3 +70,8 @@
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin {
     public *;
 }
+
+-keep public interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService {
+    public *;
+}

@@ -37,13 +37,10 @@ import android.os.Build;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
+import br.com.carlosrafaelgn.fplay.plugin.VisualizerService;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
-	public interface Handler {
-		void onFailure();
-		void onFinalCleanup();
-	}
+public final class MediaVisualizer implements VisualizerService, Runnable, Timer.TimerHandler {
 	private Visualizer visualizer;
 	private Handler handler;
 	private android.media.audiofx.Visualizer fxVisualizer;
@@ -65,14 +62,17 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		timer.start(16);
 	}
 
+	@Override
 	public void playingChanged() {
 		playing = Player.localPlaying;
 	}
 
+	@Override
 	public void pause() {
 		paused = true;
 	}
 
+	@Override
 	public void resume() {
 		if (timer != null) {
 			paused = false;
@@ -80,6 +80,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		}
 	}
 
+	@Override
 	public void resetAndResume() {
 		if (timer != null) {
 			reset = true;
@@ -88,6 +89,7 @@ public final class MediaVisualizer implements Runnable, Timer.TimerHandler {
 		}
 	}
 
+	@Override
 	public void destroy() {
 		if (timer != null) {
 			alive = false;
