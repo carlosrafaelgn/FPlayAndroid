@@ -39,10 +39,17 @@ public interface FPlay {
 
 	Object getApplicationContext();
 	CharSequence getText(int id);
+
 	boolean isOnMainThread();
 	void postToMainThread(Runnable runnable);
 	void postToMainThreadAtTime(Runnable runnable, long uptimeMillis);
+	void sendMessage(Object callback, int what);
+	void sendMessage(Object callback, int what, int arg1, int arg2);
+	void sendMessageAtTime(Object callback, int what, int arg1, int arg2, long uptimeMillis);
+	void removeMessages(Object callback, int what);
+
 	void toast(String message);
+
 	String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact);
 	void formatIntAsFloat(StringBuilder sb, int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact);
 	int dpToPxI(float dp);

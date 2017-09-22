@@ -323,6 +323,26 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	}
 
 	@Override
+	public void sendMessage(Object callback, int what) {
+		MainHandler.sendMessage((MainHandler.Callback)callback, what);
+	}
+
+	@Override
+	public void sendMessage(Object callback, int what, int arg1, int arg2) {
+		MainHandler.sendMessage((MainHandler.Callback)callback, what, arg1, arg2);
+	}
+
+	@Override
+	public void sendMessageAtTime(Object callback, int what, int arg1, int arg2, long uptimeMillis) {
+		MainHandler.sendMessageAtTime((MainHandler.Callback)callback, what, arg1, arg2, uptimeMillis);
+	}
+
+	@Override
+	public void removeMessages(Object callback, int what) {
+		MainHandler.removeMessages((MainHandler.Callback)callback, what);
+	}
+
+	@Override
 	public void toast(String message) {
 		MainHandler.toast(message);
 	}
