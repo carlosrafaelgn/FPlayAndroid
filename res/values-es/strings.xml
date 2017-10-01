@@ -154,7 +154,7 @@
     <string name="artists">Artistas</string>
     <string name="albums">Álbums</string>
     <string name="music">Música</string>
-    <string name="downloads">Decargas</string>
+    <string name="downloads">Descargas</string>
     <string name="all_files">Todos los archivos</string>
     <string name="internal_storage">Almacenamiento Interno</string>
     <string name="external_storage">Almacenamiento Externo</string>
@@ -356,5 +356,7 @@
     <string name="allow_lock_screen">Permitir que la aplicación se mantenga por encima de la pantalla de bloqueo</string>
     <string name="share">Compartir</string>
     <string name="file_prefetch_size">Bytes para almacenar en memoria al reproducir archivos locales:</string>
+    <string name="download">Descarga</string>
+    <string name="download_confimation">Esta función requiere la extensión externa \"%s\". Desea descargarlo ahora?</string>
 
 </resources>

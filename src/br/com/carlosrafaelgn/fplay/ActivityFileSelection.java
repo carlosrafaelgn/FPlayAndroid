@@ -45,8 +45,6 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import java.util.Formatter;
-
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
@@ -73,8 +71,6 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	private final int id;
 	private CharSequence title;
 	private OnFileSelectionListener listener;
-	private StringBuilder formatterSB;
-	private Formatter formatter;
 	private EditText txtSaveAsName;
 	private BgListView list;
 	private TextView lblLoading;
@@ -107,8 +103,6 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 		this.itemType = itemType;
 		this.fileType = fileType;
 		this.listener = listener;
-		this.formatterSB = new StringBuilder();
-		this.formatter = new Formatter(formatterSB);
 		this.confirmDeleteIndex = Integer.MIN_VALUE;
 	}
 
@@ -237,15 +231,13 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	}
 
 	private String format(int resId, String p1) {
-		formatterSB.delete(0, formatterSB.length());
-		formatter.format(getText(resId).toString(), p1);
-		return formatterSB.toString();
+		//replace %s... faster than format() ;)
+		return getText(resId).toString().replace("%s", p1);
 	}
 	
 	private String format(int resId, String p1, String p2) {
-		formatterSB.delete(0, formatterSB.length());
-		formatter.format(getText(resId).toString(), p1, p2);
-		return formatterSB.toString();
+		//replace %s... faster than format() ;)
+		return getText(resId).toString().replace("%1$s", p1).replace("%2$s", p2);
 	}
 
 	private void confirm(FileSt file, int deleteIndex) {
@@ -521,14 +513,14 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_file_selection);
-		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack = findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		btnMenu = (BgButton)findViewById(R.id.btnMenu);
+		btnMenu = findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		msgEmptyList = getText(R.string.empty_list);
 		msgLoading = getText(R.string.loading);
-		list = (BgListView)findViewById(R.id.list);
+		list = findViewById(R.id.list);
 		list.setScrollBarType(fileList.scrollBarType = ((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType));
 		list.setOnKeyDownObserver(this);
 		if (UI.animationEnabled) {
@@ -536,14 +528,14 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				list.setVisibility(View.GONE);
 			list.setCustomEmptyText(msgEmptyList);
 			animator = new FastAnimator(list, false, this, 0);
-			lblLoading = (TextView)findViewById(R.id.lblLoading);
+			lblLoading = findViewById(R.id.lblLoading);
 			lblLoading.setTextColor(UI.color_text_listitem_disabled);
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			UI.headingText(lblLoading);
 			lblLoading.setVisibility(View.VISIBLE);
 		}
 		fileList.setObserver(list);
-		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
+		panelSecondary = findViewById(R.id.panelSecondary);
 		if (save) {
 			final CharSequence txt = getText(R.string.msg_create_new);
 			btnMenu.setText(txt);
@@ -556,12 +548,12 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			btnMenu.setContentDescription(txt);
 			btnMenu.setDefaultHeight();
 			btnMenu.setCompoundDrawables((btnMenuIcon = new TextIconDrawable(UI.ICON_DELETE, UI.color_text)), null, null, null);
-			btnAdd = (BgButton)findViewById(R.id.btnAdd);
+			btnAdd = findViewById(R.id.btnAdd);
 			btnAdd.setTextColor(UI.colorState_text_reactive);
 			btnAdd.setOnClickListener(this);
 			btnAdd.setIcon(UI.ICON_ADD);
 			RelativeLayout.LayoutParams rp;
-			final TextView sep2 = (TextView)findViewById(R.id.sep2);
+			final TextView sep2 = findViewById(R.id.sep2);
 			rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 			rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 			rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
@@ -569,7 +561,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 			rp.rightMargin = UI.controlMargin;
 			sep2.setLayoutParams(rp);
 			sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
-			btnPlay = (BgButton)findViewById(R.id.btnPlay);
+			btnPlay = findViewById(R.id.btnPlay);
 			btnPlay.setTextColor(UI.colorState_text_reactive);
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
@@ -640,8 +632,6 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 		}
 		title = null;
 		listener = null;
-		formatterSB = null;
-		formatter = null;
 	}
 
 	@Override

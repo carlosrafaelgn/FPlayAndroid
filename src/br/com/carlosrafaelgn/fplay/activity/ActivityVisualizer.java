@@ -61,7 +61,7 @@ import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.playback.context.MediaVisualizer;
+import br.com.carlosrafaelgn.fplay.playback.context.VisualizerService;
 import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
 import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
@@ -73,7 +73,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public final class ActivityVisualizer extends Activity implements MediaVisualizer.Handler, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
+public final class ActivityVisualizer extends Activity implements br.com.carlosrafaelgn.fplay.plugin.VisualizerService.Observer, MainHandler.Callback, Player.PlayerObserver, Player.PlayerDestroyedObserver, View.OnClickListener, MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener, View.OnTouchListener, Timer.TimerHandler {
 	@SuppressLint("InlinedApi")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static final class SystemUIObserver implements View.OnSystemUiVisibilityChangeListener {
@@ -154,7 +154,7 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	private static final int MNU_ORIENTATION = 100;
 	private SongInfo songInfo;
 	private Visualizer visualizer;
-	private MediaVisualizer mediaVisualizer;
+	private VisualizerService visualizerService;
 	private UI.DisplayInfo info;
 	private InterceptableLayout panelControls;
 	private RelativeLayout panelTop;
@@ -435,24 +435,24 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		
 		setContentView(R.layout.activity_visualizer);
 		
-		panelControls = (InterceptableLayout)findViewById(R.id.panelControls);
+		panelControls = findViewById(R.id.panelControls);
 		panelControls.setOnClickListener(this);
 		panelControls.setInterceptedTouchEventListener(this);
-		panelTop = (RelativeLayout)findViewById(R.id.panelTop);
-		panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
-		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		panelTop = findViewById(R.id.panelTop);
+		panelSecondary = findViewById(R.id.panelSecondary);
+		btnGoBack = findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		btnPrev = (BgButton)findViewById(R.id.btnPrev);
+		btnPrev = findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);
-		btnPlay = (BgButton)findViewById(R.id.btnPlay);
+		btnPlay = findViewById(R.id.btnPlay);
 		btnPlay.setOnClickListener(this);
-		btnNext = (BgButton)findViewById(R.id.btnNext);
+		btnNext = findViewById(R.id.btnNext);
 		btnNext.setOnClickListener(this);
 		btnNext.setIcon(UI.ICON_NEXT);
-		btnMenu = (BgButton)findViewById(R.id.btnMenu);
+		btnMenu = findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
-		lblTitle = (TextView)findViewById(R.id.lblTitle);
+		lblTitle = findViewById(R.id.lblTitle);
 		UI.mediumText(lblTitle);
 		updateTitle();
 
@@ -483,14 +483,14 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		if (!btnGoBack.isInTouchMode())
 			btnGoBack.requestFocus();
 
-		mediaVisualizer = null;
+		visualizerService = null;
 		if (visualizer != null) {
 			visualizerPaused = false;
 			visualizer.onActivityResume();
 			if (!visualizerRequiresThread)
 				visualizer.load();
 			else
-				mediaVisualizer = new MediaVisualizer(visualizer, this);
+				visualizerService = new VisualizerService(visualizer, this);
 		}
 
 		uiAnimTimer = (visualizerRequiresHiddenControls ? new Timer(this, "UI Anim Timer", false, true, false) : null);
@@ -535,8 +535,8 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 		}
 		if (Player.observer == this)
 			Player.observer = null;
-		if (mediaVisualizer != null)
-			mediaVisualizer.pause();
+		if (visualizerService != null)
+			visualizerService.pause();
 		Player.setAppNotInForeground(true);
 		super.onStop();
 	}
@@ -545,8 +545,8 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	protected void onResume() {
 		Player.setAppNotInForeground(false);
 		Player.observer = this;
-		if (mediaVisualizer != null)
-			mediaVisualizer.resetAndResume();
+		if (visualizerService != null)
+			visualizerService.resetAndResume();
 		onPlayerChanged(Player.localSong, true, true, null);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
@@ -559,9 +559,9 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	
 	private void finalCleanup() {
 		Player.removeDestroyedObserver(this);
-		if (mediaVisualizer != null) {
-			mediaVisualizer.destroy();
-			mediaVisualizer = null;
+		if (visualizerService != null) {
+			visualizerService.destroy();
+			visualizerService = null;
 		} else if (visualizer != null) {
 			visualizer.cancelLoading();
 			visualizer.release();
@@ -621,12 +621,12 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
-		if (mediaVisualizer != null) {
+		if (visualizerService != null) {
 			if (!songHasChanged && Player.localPlaying)
-				mediaVisualizer.resetAndResume();
+				visualizerService.resetAndResume();
 			else
-				mediaVisualizer.resume();
-			mediaVisualizer.playingChanged();
+				visualizerService.resume();
+			visualizerService.playingChanged();
 		}
 		if (btnPlay != null) {
 			btnPlay.setText(Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
@@ -655,8 +655,8 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 	
 	@Override
 	public void onPlayerAudioSinkChanged() {
-		if (mediaVisualizer != null)
-			mediaVisualizer.resetAndResume();
+		if (visualizerService != null)
+			visualizerService.resetAndResume();
 	}
 	
 	@Override
@@ -708,14 +708,14 @@ public final class ActivityVisualizer extends Activity implements MediaVisualize
 			finish();
 		} else if (view == btnPrev) {
 			Player.previous();
-			if (mediaVisualizer != null)
-				mediaVisualizer.resetAndResume();
+			if (visualizerService != null)
+				visualizerService.resetAndResume();
 		} else if (view == btnPlay) {
 			Player.playPause();
 		} else if (view == btnNext) {
 			Player.next();
-			if (mediaVisualizer != null)
-				mediaVisualizer.resetAndResume();
+			if (visualizerService != null)
+				visualizerService.resetAndResume();
 		} else if (view == btnMenu) {
 			onPrepareOptionsMenu(null);
 		} else if (view == visualizer || view == panelControls) {

@@ -86,12 +86,12 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
+import br.com.carlosrafaelgn.fplay.plugin.WirelessVisualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
-import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
 //
 //MediaPlayer CALLBACKS ARE CALLED ON THE THREAD WHERE THE PLAYER IS CREATED (WHICH
@@ -600,6 +600,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_fullCleanup();
 					hasFocus = false;
 					if (audioManager != null && thePlayer != null)
+						//noinspection deprecation
 						audioManager.abandonAudioFocus(thePlayer);
 					MediaContext._release();
 				}
@@ -636,7 +637,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			ex.printStackTrace();
 		}
 
-		if (bluetoothVisualizerController != null)
+		if (bluetoothVisualizer != null)
 			stopBluetoothVisualizer();
 
 		unregisterMediaButtonEventReceiver();
@@ -1112,6 +1113,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static boolean _requestFocus() {
+		//noinspection deprecation
 		if (thePlayer == null || audioManager == null || audioManager.requestAudioFocus(thePlayer, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 			hasFocus = false;
 			return false;
@@ -2040,50 +2042,30 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	//I know this is far from "organized"... but this is the only way to prevent the
-	//class BluetoothVisualizerController from being loading into memory unnecessarily!!!
-	public static Object bluetoothVisualizerController;
+	//classes/interfaces from being loaded into memory unnecessarily!!!
+	public static Object bluetoothVisualizer;
 	//bluetoothVisualizerConfig bits:
 	//0 1 2 = size
 	//3 4 = speed
 	//5 6 7 8 = frames to skip (index)
 	//9 = vu meter
-	public static int bluetoothVisualizerLastErrorMessage, bluetoothVisualizerConfig, bluetoothVisualizerState;
+	public static String bluetoothVisualizerLastErrorMessage;
+	private static int bluetoothVisualizerConfig;
+	public static int bluetoothVisualizerState;
 	public static final int BLUETOOTH_VISUALIZER_STATE_INITIAL = 0;
 	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTING = 1;
 	public static final int BLUETOOTH_VISUALIZER_STATE_CONNECTED = 2;
 	public static final int BLUETOOTH_VISUALIZER_STATE_TRANSMITTING = 3;
 
-	public static boolean startBluetoothVisualizer(ActivityHost activity, boolean startTransmissionOnConnection) {
-		if (state != STATE_ALIVE)
-			return false;
-		stopBluetoothVisualizer();
-		final BluetoothVisualizerControllerJni b = new BluetoothVisualizerControllerJni(activity, startTransmissionOnConnection);
-		if (bluetoothVisualizerLastErrorMessage == 0) {
-			bluetoothVisualizerController = b;
-			return true;
-		}
-		b.destroy();
-		return false;
-	}
-
 	public static void stopBluetoothVisualizer() {
 		bluetoothVisualizerState = BLUETOOTH_VISUALIZER_STATE_INITIAL;
-		if (bluetoothVisualizerController != null) {
-			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
-			bluetoothVisualizerController = null;
-			b.destroy();
-		}
+		if (bluetoothVisualizer != null)
+			((WirelessVisualizer)bluetoothVisualizer).destroy();
 	}
 
 	private static void updateBluetoothVisualizer(boolean songHasChanged) {
-		if (bluetoothVisualizerController != null) {
-			final BluetoothVisualizerControllerJni b = (BluetoothVisualizerControllerJni)bluetoothVisualizerController;
-			if (!songHasChanged && localPlaying)
-				b.resetAndResume();
-			else
-				b.resume();
-			b.playingChanged();
-		}
+		if (bluetoothVisualizer != null)
+			((WirelessVisualizer)bluetoothVisualizer).update(songHasChanged);
 	}
 
 	public static int getBluetoothVisualizerSize() {
@@ -3130,6 +3112,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					}
 				});
 				mediaSession.setSessionActivity(intentActivityHost);
+				//noinspection deprecation
 				mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			}
@@ -3648,7 +3631,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		broadcastStateChange(title, preparing, songHasChanged | preparingHasChanged);
 		if (idleTurnOffTimerSelectedMinutes > 0)
 			processIdleTurnOffTimer();
-		if (bluetoothVisualizerController != null)
+		if (bluetoothVisualizer != null)
 			updateBluetoothVisualizer(songHasChanged);
 		Throwable ex = null;
 		if (songHasChanged && announceCurrentSong && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && state == STATE_ALIVE)

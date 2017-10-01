@@ -814,7 +814,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_browser2);
-		lblPath = (TextView)findViewById(R.id.lblPath);
+		lblPath = findViewById(R.id.lblPath);
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.largeText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
@@ -822,7 +822,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		lblPath.setPadding(m, m, m, m);
 		msgEmptyList = getText(R.string.empty_list);
 		msgLoading = getText(R.string.loading);
-		list = (BgListView)findViewById(R.id.list);
+		list = findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
 		adjustScrollBar();
 		if (UI.animationEnabled) {
@@ -831,7 +831,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			list.setCustomEmptyText(msgEmptyList);
 			animator = new FastAnimator(list, false, this, 0);
 			animatorFadeOut = new FastAnimator(list, true, this, 0);
-			lblLoading = (TextView)findViewById(R.id.lblLoading);
+			lblLoading = findViewById(R.id.lblLoading);
 			//try to center the text by making up for panelSecondary
 			lblLoading.setPadding(0, 0, 0, UI.defaultControlSize + UI._1dp + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
@@ -843,29 +843,29 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			list.setCustomEmptyText(msgLoading);
 		}
 		fileList.setObserver(list);
-		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack = findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		btnURL = (BgButton)findViewById(R.id.btnURL);
+		btnURL = findViewById(R.id.btnURL);
 		btnURL.setOnClickListener(this);
 		btnURL.setDefaultHeight();
 		btnURL.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text), null, null, null);
-		chkFavorite = (BgButton)findViewById(R.id.chkFavorite);
+		chkFavorite = findViewById(R.id.chkFavorite);
 		chkFavorite.setOnClickListener(this);
 		chkFavorite.formatAsCheckBox(UI.ICON_FAVORITE_ON, UI.ICON_FAVORITE_OFF, false, true, true);
 		chkFavorite.setContentDescription(getText(R.string.remove_from_favorites), getText(R.string.add_to_favorites));
-		chkAlbumArt = (BgButton)findViewById(R.id.chkAlbumArt);
+		chkAlbumArt = findViewById(R.id.chkAlbumArt);
 		chkAlbumArt.setOnClickListener(this);
 		chkAlbumArt.formatAsCheckBox(UI.ICON_ALBUMART, UI.ICON_ALBUMART_OFF, UI.albumArt, true, true);
 		chkAlbumArt.setContentDescription(getText(R.string.hide_album_art), getText(R.string.show_album_art));
-		btnHome = (BgButton)findViewById(R.id.btnHome);
+		btnHome = findViewById(R.id.btnHome);
 		btnHome.setOnClickListener(this);
 		btnHome.setIcon(UI.ICON_HOME);
-		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
+		panelSecondary = findViewById(R.id.panelSecondary);
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, UI.thickDividerSize + UI.defaultControlSize + (UI.extraSpacing ? (UI.controlMargin << 1) : 0));
 		rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 		panelSecondary.setLayoutParams(rp);
-		sep = (TextView)findViewById(R.id.sep);
+		sep = findViewById(R.id.sep);
 		rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.chkAll);
@@ -873,20 +873,20 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		rp.rightMargin = UI.controlMargin;
 		sep.setLayoutParams(rp);
 		sep.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
-		chkAll = (BgButton)findViewById(R.id.chkAll);
+		chkAll = findViewById(R.id.chkAll);
 		chkAll.setOnClickListener(this);
 		chkAll.formatAsChildCheckBox(false, true, true);
 		chkAll.setContentDescription(getText(R.string.unselect_everything), getText(R.string.select_everything));
-		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
+		btnGoBackToPlayer = findViewById(R.id.btnGoBackToPlayer);
 		btnGoBackToPlayer.setTextColor(UI.colorState_text_reactive);
 		btnGoBackToPlayer.setOnClickListener(this);
 		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_LIST24, UI.color_text), null, null, null);
 		btnGoBackToPlayer.setDefaultHeight();
-		btnAdd = (BgButton)findViewById(R.id.btnAdd);
+		btnAdd = findViewById(R.id.btnAdd);
 		btnAdd.setTextColor(UI.colorState_text_reactive);
 		btnAdd.setOnClickListener(this);
 		btnAdd.setIcon(UI.ICON_ADD);
-		sep2 = (TextView)findViewById(R.id.sep2);
+		sep2 = findViewById(R.id.sep2);
 		rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
@@ -894,7 +894,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		rp.rightMargin = UI.controlMargin;
 		sep2.setLayoutParams(rp);
 		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
-		btnPlay = (BgButton)findViewById(R.id.btnPlay);
+		btnPlay = findViewById(R.id.btnPlay);
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY);

@@ -356,5 +356,7 @@
     <string name="allow_lock_screen">Разрешить приложению оставаться выше экрана блокировки</string>
     <string name="share">Поделиться</string>
     <string name="file_prefetch_size">Байты для хранения в памяти при воспроизведении локальных файлов:</string>
+    <string name="download">Загрузка</string>
+    <string name="download_confimation">Для этой функции требуется внешнее расширение \"%s\". Вы хотите скачать его сейчас?</string>
 
 </resources>

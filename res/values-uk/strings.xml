@@ -356,5 +356,7 @@
     <string name="allow_lock_screen">Дозволити додатку залишатися над екраном блокування</string>
     <string name="share">Поділитися</string>
     <string name="file_prefetch_size">Байтів для зберігання в пам\'яті під час відтворення локальних файлів:</string>
+    <string name="download">Завантажити</string>
+    <string name="download_confimation">Для цієї функції потрібне зовнішнє розширення \"%s\". Хочете завантажити його зараз?</string>
 
 </resources>

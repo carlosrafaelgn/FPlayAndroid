@@ -1174,15 +1174,15 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 					R.layout.activity_main_ls) :
 						(UI.isLandscape ? R.layout.activity_main_l :
 							R.layout.activity_main)), true, forceFadeOut);
-		lblTitle = (TextView)findViewById(R.id.lblTitle);
-		btnPrev = (BgButton)findViewById(R.id.btnPrev);
+		lblTitle = findViewById(R.id.lblTitle);
+		btnPrev = findViewById(R.id.btnPrev);
 		btnPrev.setOnClickListener(this);
-		btnNext = (BgButton)findViewById(R.id.btnNext);
+		btnNext = findViewById(R.id.btnNext);
 		btnNext.setOnClickListener(this);
-		btnMenu = (BgButton)findViewById(R.id.btnMenu);
+		btnMenu = findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		if (Player.controlMode) {
-			final ViewGroup panelControls = (ViewGroup)findViewById(R.id.panelControls);
+			final ViewGroup panelControls = findViewById(R.id.panelControls);
 			panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
 			final int panelControlsPadding = (UI.isLowDpiScreen ? UI.controlMargin : UI.controlLargeMargin);
 			panelControls.setPadding(panelControlsPadding, panelControlsPadding, panelControlsPadding, panelControlsPadding);
@@ -1192,15 +1192,15 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnMenu.setIconNoChanges(UI.ICON_MENU);
 
 			volumeButtonPressed = 0;
-			btnDecreaseVolume = (BgButton)findViewById(R.id.btnDecreaseVolume);
+			btnDecreaseVolume = findViewById(R.id.btnDecreaseVolume);
 			btnDecreaseVolume.setOnClickListener(this);
 			btnDecreaseVolume.setOnPressingChangeListener(this);
 			btnDecreaseVolume.setIconNoChanges(UI.ICON_DECREASE_VOLUME);
-			btnIncreaseVolume = (BgButton)findViewById(R.id.btnIncreaseVolume);
+			btnIncreaseVolume = findViewById(R.id.btnIncreaseVolume);
 			btnIncreaseVolume.setOnClickListener(this);
 			btnIncreaseVolume.setOnPressingChangeListener(this);
 			btnIncreaseVolume.setIconNoChanges(UI.ICON_INCREASE_VOLUME);
-			btnVolume = (BgButton)findViewById(R.id.btnVolume);
+			btnVolume = findViewById(R.id.btnVolume);
 			btnVolume.setIconNoChanges(UI.ICON_VOLUME0);
 			btnVolume.setEnabled(false);
 			
@@ -1274,7 +1274,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnNext.setIcon(UI.ICON_NEXT);
 			btnMenu.setIcon(UI.ICON_MENU);
 			
-			btnAdd = (BgButton)findViewById(R.id.btnAdd);
+			btnAdd = findViewById(R.id.btnAdd);
 			btnAdd.setOnClickListener(this);
 			btnAdd.setIcon(UI.ICON_FPLAY);
 			
@@ -1288,24 +1288,24 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			}
 			lblTitle.setTextColor(UI.colorState_text_title_static);
 			
-			lblArtist = (TextView)findViewById(R.id.lblArtist);
+			lblArtist = findViewById(R.id.lblArtist);
 
-			lblMsgSelMove = (TextView)findViewById(R.id.lblMsgSelMove);
+			lblMsgSelMove = findViewById(R.id.lblMsgSelMove);
 			UI.headingText(lblMsgSelMove);
 			lblMsgSelMove.setTextColor(UI.colorState_text_title_static);
 			lblMsgSelMove.setHorizontalFadingEdgeEnabled(false);
 			lblMsgSelMove.setVerticalFadingEdgeEnabled(false);
 			//lblMsgSelMove.setFadingEdgeLength(0);
-			barSeek = (BgSeekBar)findViewById(R.id.barSeek);
+			barSeek = findViewById(R.id.barSeek);
 			barSeek.setAdditionalContentDescription(getText(R.string.go_to).toString());
 			barSeek.setOnBgSeekBarChangeListener(this);
 			barSeek.setMax(MAX_SEEK);
 			barSeek.setVertical(UI.isLandscape && !UI.isLargeScreen);
 			barSeek.setFocusable(false);
-			btnPlay = (BgButton)findViewById(R.id.btnPlay);
+			btnPlay = findViewById(R.id.btnPlay);
 			btnPlay.setOnClickListener(this);
 			btnPlay.setIcon(UI.ICON_PLAY);
-			list = (BgListView)findViewById(R.id.list);
+			list = findViewById(R.id.list);
 			list.setScrollBarType(UI.songListScrollBarType);
 			list.setOnKeyDownObserver(this);
 			list.setEmptyListOnClickListener(this);
@@ -1319,25 +1319,25 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			} else {
 				list.setCustomEmptyText(originalText);
 			}
-			panelControls = (ViewGroup)findViewById(R.id.panelControls);
-			panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
-			panelSelection = (ViewGroup)findViewById(R.id.panelSelection);
-			btnShare = (BgButton)findViewById(R.id.btnShare);
+			panelControls = findViewById(R.id.panelControls);
+			panelSecondary = findViewById(R.id.panelSecondary);
+			panelSelection = findViewById(R.id.panelSelection);
+			btnShare = findViewById(R.id.btnShare);
 			btnShare.setOnClickListener(this);
 			btnShare.setIcon(UI.ICON_SHARE);
-			btnMoreInfo = (BgButton)findViewById(R.id.btnMoreInfo);
+			btnMoreInfo = findViewById(R.id.btnMoreInfo);
 			btnMoreInfo.setOnClickListener(this);
 			btnMoreInfo.setIcon(UI.ICON_INFORMATION);
-			btnMoveSel = (BgButton)findViewById(R.id.btnMoveSel);
+			btnMoveSel = findViewById(R.id.btnMoveSel);
 			btnMoveSel.setOnClickListener(this);
 			btnMoveSel.setIcon(UI.ICON_MOVE);
-			btnRemoveSel = (BgButton)findViewById(R.id.btnRemoveSel);
+			btnRemoveSel = findViewById(R.id.btnRemoveSel);
 			btnRemoveSel.setOnClickListener(this);
 			btnRemoveSel.setIcon(UI.ICON_DELETE);
-			btnCancelSel = (BgButton)findViewById(R.id.btnCancelSel);
+			btnCancelSel = findViewById(R.id.btnCancelSel);
 			btnCancelSel.setOnClickListener(this);
 			btnCancelSel.setIcon(UI.ICON_GOBACK);
-			btnSetRingtone = (BgButton)findViewById(R.id.btnSetRingtone);
+			btnSetRingtone = findViewById(R.id.btnSetRingtone);
 			if (Player.deviceHasTelephonyRadio()) {
 				btnSetRingtone.setOnClickListener(this);
 				btnSetRingtone.setIcon(UI.ICON_RINGTONE);
@@ -1359,8 +1359,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				btnSetRingtone = null;
 			}
 
-			barVolume = (BgSeekBar)findViewById(R.id.barVolume);
-			btnVolume = (BgButton)findViewById(R.id.btnVolume);
+			barVolume = findViewById(R.id.barVolume);
+			btnVolume = findViewById(R.id.btnVolume);
 
 			if (UI.isLargeScreen) {
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblTitleStatic));
@@ -1370,14 +1370,14 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				UI.mediumTextAndColor((TextView)findViewById(R.id.lblLengthStatic));
 				lblArtist.setTextColor(UI.colorState_text_title_static);
 				UI.headingText(lblArtist);
-				lblTrack = (TextView)findViewById(R.id.lblTrack);
+				lblTrack = findViewById(R.id.lblTrack);
 				lblTrack.setTextColor(UI.colorState_text_title_static);
 				UI.headingText(lblTrack);
-				lblAlbumStatic = (TextView)findViewById(R.id.lblAlbumStatic);
-				lblAlbum = (TextView)findViewById(R.id.lblAlbum);
+				lblAlbumStatic = findViewById(R.id.lblAlbumStatic);
+				lblAlbum = findViewById(R.id.lblAlbum);
 				lblAlbum.setTextColor(UI.colorState_text_title_static);
 				UI.headingText(lblAlbum);
-				lblLength = (TextView)findViewById(R.id.lblLength);
+				lblLength = findViewById(R.id.lblLength);
 				lblLength.setTextColor(UI.colorState_text_title_static);
 				UI.headingText(lblLength);
 			} else {
@@ -1451,7 +1451,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 					list.setTopBorder();
 					panelSecondary.setPadding(0, 0, UI.controlMargin + UI.thickDividerSize, UI.controlLargeMargin);
 				} else {
-					final LinearLayout panelTop = (LinearLayout)findViewById(R.id.panelTop);
+					final LinearLayout panelTop = findViewById(R.id.panelTop);
 					if (UI.placeTitleAtTheBottom) {
 						panelTop.removeView(lblTitle);
 						panelTop.removeView(lblMsgSelMove);

@@ -575,13 +575,13 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		msgLoading = getText(R.string.loading);
 		msgNoFavorites = getText(R.string.no_favorites);
 		msgNoStations = getText(R.string.no_stations);
-		list = (BgListView)findViewById(R.id.list);
+		list = findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);
 		list.setCustomEmptyText(msgLoading);
 		list.setEmptyListOnClickListener(this);
 		list.setOnScrollListener(this);
-		panelLoading = (RelativeLayout)findViewById(R.id.panelLoading);
+		panelLoading = findViewById(R.id.panelLoading);
 		if (UI.animationEnabled) {
 			list.setVisibility(View.INVISIBLE);
 			loadingPanelAnimatorHide = new FastAnimator(panelLoading, true, this, 0);
@@ -589,7 +589,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			radioStationList.radioStationAddedObserver = this;
 			animatorFadeIn = new FastAnimator(list, false, this, 0);
 			animatorFadeOut = new FastAnimator(list, true, this, 0);
-			lblLoading = (TextView)findViewById(R.id.lblLoading);
+			lblLoading = findViewById(R.id.lblLoading);
 			lblLoading.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 			lblLoading.setTextColor(UI.color_text_listitem_disabled);
 			UI.headingText(lblLoading);
@@ -598,26 +598,26 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			list.setCustomEmptyText(msgLoading);
 		}
 		radioStationList.setObserver(list);
-		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack = findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		btnFavorite = (BgButton)findViewById(R.id.btnFavorite);
+		btnFavorite = findViewById(R.id.btnFavorite);
 		btnFavorite.setOnClickListener(this);
 		btnFavorite.setIcon(UI.ICON_FAVORITE_ON);
-		btnSearch = (BgButton)findViewById(R.id.btnSearch);
+		btnSearch = findViewById(R.id.btnSearch);
 		btnSearch.setOnClickListener(this);
 		btnSearch.setIcon(UI.ICON_SEARCH);
-		panelSecondary = (RelativeLayout)findViewById(R.id.panelSecondary);
-		btnGoBackToPlayer = (BgButton)findViewById(R.id.btnGoBackToPlayer);
+		panelSecondary = findViewById(R.id.panelSecondary);
+		btnGoBackToPlayer = findViewById(R.id.btnGoBackToPlayer);
 		btnGoBackToPlayer.setTextColor(UI.colorState_text_reactive);
 		btnGoBackToPlayer.setOnClickListener(this);
 		btnGoBackToPlayer.setCompoundDrawables(new TextIconDrawable(UI.ICON_LIST24, UI.color_text), null, null, null);
 		btnGoBackToPlayer.setDefaultHeight();
-		btnAdd = (BgButton)findViewById(R.id.btnAdd);
+		btnAdd = findViewById(R.id.btnAdd);
 		btnAdd.setTextColor(UI.colorState_text_reactive);
 		btnAdd.setOnClickListener(this);
 		btnAdd.setIcon(UI.ICON_ADD);
-		sep2 = (TextView)findViewById(R.id.sep2);
+		sep2 = findViewById(R.id.sep2);
 		RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 		rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 		rp.addRule(RelativeLayout.LEFT_OF, R.id.btnPlay);
@@ -625,7 +625,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		rp.rightMargin = UI.controlMargin;
 		sep2.setLayoutParams(rp);
 		sep2.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
-		btnPlay = (BgButton)findViewById(R.id.btnPlay);
+		btnPlay = findViewById(R.id.btnPlay);
 		btnPlay.setTextColor(UI.colorState_text_reactive);
 		btnPlay.setOnClickListener(this);
 		btnPlay.setIcon(UI.ICON_PLAY);

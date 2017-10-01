@@ -51,7 +51,7 @@ import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
 import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
-import br.com.carlosrafaelgn.fplay.util.SlimLock;
+import br.com.carlosrafaelgn.fplay.plugin.SlimLock;
 
 public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHolder.Callback, Visualizer, MenuItem.OnMenuItemClickListener {
 	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_LORES = MNU_VISUALIZER + 2, MNU_HIRES = MNU_VISUALIZER + 3, MNU_VOICEPRINT = MNU_VISUALIZER + 4;
@@ -60,10 +60,10 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		System.loadLibrary("SimpleVisualizerJni");
 	}
 
-	static native void commonSetSpeed(int speed);
-	static native void commonSetColorIndex(int colorIndex);
-	static native void commonUpdateMultiplier(boolean isVoice, boolean hq);
-	static native int commonProcess(byte[] waveform, int opt);
+	public static native void commonSetSpeed(int speed);
+	public static native void commonSetColorIndex(int colorIndex);
+	public static native void commonUpdateMultiplier(boolean isVoice, boolean hq);
+	public static native int commonProcess(byte[] waveform, int opt);
 
 	private static native void setLerp(boolean lerp);
 	private static native void init(int bgColor);

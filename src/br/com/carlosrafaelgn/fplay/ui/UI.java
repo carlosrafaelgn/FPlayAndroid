@@ -37,6 +37,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.UiModeManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -727,7 +728,31 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		setForcedLocale(activityContext, forcedLocale);
 	}
 
+	public static void reapplyForcedLocaleOnPlugins(Context context) {
+		try {
+			setForcedLocaleOnContexts(context, null, forcedLocale);
+		} catch (Throwable ex) {
+			//just ignore
+		}
+	}
+
 	@SuppressWarnings("deprecation")
+	private static void setForcedLocaleOnContexts(Context context, Activity activityContext, int localeCode) {
+		final Locale l = getLocaleFromCode(localeCode);
+		final Resources res = context.getResources();
+		final Configuration cfg = new Configuration();
+		cfg.locale = l;
+		res.getConfiguration().updateFrom(cfg);
+		res.updateConfiguration(res.getConfiguration(), res.getDisplayMetrics());
+		if (activityContext != null) {
+			final Resources res2 = activityContext.getResources();
+			if (res != res2) {
+				res2.getConfiguration().updateFrom(cfg);
+				res2.updateConfiguration(res2.getConfiguration(), res2.getDisplayMetrics());
+			}
+		}
+	}
+
 	public static boolean setForcedLocale(Activity activityContext, int localeCode) {
 		if (localeCode < 0 || localeCode > LOCALE_MAX)
 			localeCode = LOCALE_NONE;
@@ -738,21 +763,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 		final boolean dyslexiaSupported = dyslexiaFontSupportsCurrentLocale();
 		try {
-			final Locale l = getLocaleFromCode(localeCode);
-			final Resources res = Player.theApplication.getResources();
-			Configuration cfg = new Configuration();
-			cfg.locale = l;
-			res.getConfiguration().updateFrom(cfg);
-			res.updateConfiguration(res.getConfiguration(), res.getDisplayMetrics());
 			forcedLocale = localeCode;
 			currentLocale = ((localeCode == 0) ? getCurrentLocale() : localeCode);
-			if (activityContext != null) {
-				final Resources res2 = activityContext.getResources();
-				if (res != res2) {
-					res2.getConfiguration().updateFrom(cfg);
-					res2.updateConfiguration(res2.getConfiguration(), res2.getDisplayMetrics());
-				}
-			}
+			setForcedLocaleOnContexts(Player.theApplication, activityContext, localeCode);
 		} catch (Throwable ex) {
 			currentLocale = getCurrentLocale();
 		}
@@ -2076,6 +2089,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final BgDialog dialog = new BgDialog(context, UI.createDialogView(context, message), null);
 		dialog.setTitle(title);
 		dialog.setNegativeButton(buttonResId);
+		dialog.show();
+	}
+
+	public static void showDialogMessage(Context context, CharSequence title, CharSequence message, int positiveResId, int negativeResId, DialogInterface.OnClickListener clickListener, DialogInterface.OnDismissListener dismissListener) {
+		final BgDialog dialog = new BgDialog(context, UI.createDialogView(context, message), clickListener);
+		dialog.setTitle(title);
+		dialog.setPositiveButton(positiveResId);
+		dialog.setNegativeButton(negativeResId);
+		if (dismissListener != null)
+			dialog.setOnDismissListener(dismissListener);
 		dialog.show();
 	}
 

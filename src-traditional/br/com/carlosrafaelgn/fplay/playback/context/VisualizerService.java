@@ -32,22 +32,27 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
+import android.os.Build;
+
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
-import br.com.carlosrafaelgn.fplay.plugin.VisualizerService;
 import br.com.carlosrafaelgn.fplay.util.Timer;
 
-public final class MediaVisualizer implements VisualizerService, Runnable, Timer.TimerHandler {
+public final class VisualizerService implements br.com.carlosrafaelgn.fplay.plugin.VisualizerService, Runnable, Timer.TimerHandler {
 	private Visualizer visualizer;
-	private Handler handler;
-	private volatile boolean alive, reset, created, playing, failed, visualizerReady;
+	private Observer observer;
+	private android.media.audiofx.Visualizer fxVisualizer;
+	private boolean hasEverBeenAlive;
+	private volatile boolean alive, paused, reset, playing, failed, visualizerReady;
+	private int audioSessionId;
 	private byte[] waveform;
 	private Timer timer;
 
-	public MediaVisualizer(Visualizer visualizer, Handler handler) {
+	public VisualizerService(Visualizer visualizer, Observer observer) {
 		this.visualizer = visualizer;
-		this.handler = handler;
+		this.observer = observer;
+		audioSessionId = -1;
 		alive = true;
 		reset = true;
 		playing = Player.localPlaying;
@@ -63,23 +68,24 @@ public final class MediaVisualizer implements VisualizerService, Runnable, Timer
 
 	@Override
 	public void pause() {
-		if (timer != null)
-			timer.pause();
+		paused = true;
 	}
 
 	@Override
 	public void resume() {
-		if (timer != null)
+		if (timer != null) {
+			paused = false;
 			timer.resume();
+		}
 	}
 
 	@Override
 	public void resetAndResume() {
-		//unlike the traditional visualizer, there is no need to reset this visualizer
-		//(we only need to zero it out)
-		reset = true;
-		if (timer != null)
+		if (timer != null) {
+			reset = true;
+			paused = false;
 			timer.resume();
+		}
 	}
 
 	@Override
@@ -88,21 +94,72 @@ public final class MediaVisualizer implements VisualizerService, Runnable, Timer
 			alive = false;
 			if (visualizer != null)
 				visualizer.cancelLoading();
+			paused = false;
 			timer.resume();
 			timer = null;
 		}
+	}
+
+	private boolean initialize() {
+		try {
+			final int g = Player.audioSessionId;
+			if (g < 0)
+				return true;
+			if (fxVisualizer != null) {
+				if (audioSessionId == g) {
+					try {
+						fxVisualizer.setEnabled(true);
+						return true;
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				}
+				try {
+					fxVisualizer.release();
+				} catch (Throwable ex) {
+					fxVisualizer = null;
+					ex.printStackTrace();
+				}
+			}
+			fxVisualizer = new android.media.audiofx.Visualizer(g);
+			audioSessionId = g;
+		} catch (Throwable ex) {
+			failed = true;
+			fxVisualizer = null;
+			audioSessionId = -1;
+			return false;
+		}
+		try {
+			fxVisualizer.setCaptureSize(Visualizer.CAPTURE_SIZE);
+			fxVisualizer.setEnabled(true);
+		} catch (Throwable ex) {
+			failed = true;
+			fxVisualizer.release();
+			fxVisualizer = null;
+			audioSessionId = -1;
+		}
+		if (fxVisualizer != null && visualizer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+			try {
+				fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_AS_PLAYED);
+				fxVisualizer.setScalingMode(android.media.audiofx.Visualizer.SCALING_MODE_NORMALIZED);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			return true;
+		}
+		return false;
 	}
 
 	@Override
 	public void run() {
 		if (failed) {
 			failed = false;
-			if (handler != null)
-				handler.onFailure();
+			if (observer != null)
+				observer.onFailure();
 		}
-		if (handler != null) {
-			handler.onFinalCleanup();
-			handler = null;
+		if (observer != null) {
+			observer.onFinalCleanup();
+			observer = null;
 		}
 		waveform = null;
 		timer = null;
@@ -112,25 +169,39 @@ public final class MediaVisualizer implements VisualizerService, Runnable, Timer
 	@Override
 	public void handleTimer(Timer timer, Object param) {
 		if (alive) {
-			if (reset) {
+			if (paused) {
+				try {
+					if (fxVisualizer != null)
+						fxVisualizer.setEnabled(false);
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+				timer.pause();
+				return;
+			}
+			if (reset || fxVisualizer == null) {
 				reset = false;
-				if (created) {
-					MediaContext.zeroOutVisualizer();
-				} else {
-					if (!MediaContext.startVisualizer()) {
-						created = false;
-						failed = true;
+				if (!initialize()) {
+					if (hasEverBeenAlive) {
+						//the player may be undergoing an unstable condition, such as successive
+						//fast track changes... try again later
+						failed = false;
+						paused = true;
+						timer.pause();
+					} else {
 						alive = false;
-					} else if (!visualizerReady && alive && visualizer != null) {
-						visualizer.load();
-						visualizerReady = true;
-						created = true;
 					}
+				} else if (!visualizerReady && alive && visualizer != null) {
+					hasEverBeenAlive = true;
+					visualizer.load();
+					visualizerReady = true;
 				}
 			}
 			if (visualizer != null) {
+				//WE MUST NEVER call any method from visualizer
+				//while the player is not actually playing
 				if (playing)
-					MediaContext.getVisualizerWaveform(waveform);
+					fxVisualizer.getWaveForm(waveform);
 				visualizer.processFrame(playing, waveform);
 			}
 		}
@@ -138,7 +209,19 @@ public final class MediaVisualizer implements VisualizerService, Runnable, Timer
 			timer.release();
 			if (visualizer != null)
 				visualizer.release();
-			MediaContext.stopVisualizer();
+			if (fxVisualizer != null) {
+				try {
+					fxVisualizer.setEnabled(false);
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+				try {
+					fxVisualizer.release();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+				fxVisualizer = null;
+			}
 			MainHandler.postToMainThread(this);
 			System.gc();
 		}

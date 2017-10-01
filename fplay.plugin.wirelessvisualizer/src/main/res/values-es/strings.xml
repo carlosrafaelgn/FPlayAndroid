@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="bt_inactive">Bluetooth inactivo</string>
+    <string name="bt_active">Bluetooth activo&#8230;</string>
+    <string name="bt_error">Problemas con Bluetooth!</string>
+    <string name="bt_packets_sent">Mensajes enviados:</string>
+    <string name="bt_fps">Mensajes por segundo:</string>
+    <string name="bt_sample_count">Muestras por mensaje:</string>
+    <string name="bt_connect">Conectar a un dispositivo Bluetooth&#8230;</string>
+    <string name="bt_disconnect">Desconectar dispositivo Bluetooth</string>
+    <string name="bt_start">Iniciar la transmisión</string>
+    <string name="bt_stop">Detener la transmisión</string>
+    <string name="bt_vumeter">VU meter + detección de BPM</string>
+    <string name="bt_pairing">Por favor, intente conectarse de nuevo después de emparejar el dispositivo.</string>
+    <string name="bt_connection_error">Se ha producido un error al conectar con el dispositivo Bluetooth :(</string>
+    <string name="bt_communication_error">Se ha producido un error durante la comunicación con el dispositivo Bluetooth :(</string>
+    <string name="bt_needs_to_be_enabled">Necesitas habilitar Bluetooth para proceder :(</string>
+    <string name="bt_not_supported">Bluetooth no es compatible :(</string>
+    <string name="bt_discovery_error">Se ha producido un error al buscar los dispositivos Bluetooth :(</string>
+    <string name="bt_devices">Dispositivos Bluetooth</string>
+    <string name="bt_connecting">Conectando con el dispositivo Bluetooth. Por favor, espera&#8230;</string>
+    <string name="bt_scanning">Buscando dispositivos Bluetooth.&#8230;</string>
+    <string name="bt_not_paired">No hay dispositivos Bluetooth emparejados :(</string>
+    <string name="bt_not_found">No se han encontrado dispositivos Bluetooth :(</string>
+    <string name="bt_null_device_name">(Dispositivo BT)</string>
+
+</resources>

@@ -30,35 +30,32 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.util;
+package br.com.carlosrafaelgn.fplay.plugin;
 
-import java.util.concurrent.atomic.AtomicInteger;
+public interface ItemSelectorDialog<E> {
+	interface Observer<E> {
+		void onItemSelectorDialogClosed(ItemSelectorDialog<E> itemSelectorDialog);
+		void onItemSelectorDialogRefreshList(ItemSelectorDialog<E> itemSelectorDialog);
+		void onItemSelectorDialogItemClicked(ItemSelectorDialog<E> itemSelectorDialog, int position, E item);
+	}
 
-//I know... I know... SlimLock *SHOULD* contain an AtomicInteger and not extend it...
-//Such is life.... I don't want to instantiate a new object within SlimLock :)
-public final class SlimLock extends AtomicInteger {
-	private static final long serialVersionUID = 4827458715458080067L;
-	
-	public SlimLock() {
-		super(0);
-	}
-	
-	public void lockHighPriority() {
-		addAndGet(2);
-		while ((get() & 1) != 0) {
-			Thread.yield();
-		}
-	}
-	
-	public void releaseHighPriority() {
-		set(0);
-	}
-	
-	public boolean lockLowPriority() {
-		return compareAndSet(0, 1);
-	}
-	
-	public void releaseLowPriority() {
-		decrementAndGet();
-	}
+	void add(E item);
+
+	void clear();
+
+	void remove(int position);
+
+	void dismiss();
+
+	void cancel();
+
+	boolean isCancelled();
+
+	int getCount();
+
+	E getItem(int position);
+
+	void showProgressBar(boolean show);
+
+	void showConnecting(boolean connecting);
 }

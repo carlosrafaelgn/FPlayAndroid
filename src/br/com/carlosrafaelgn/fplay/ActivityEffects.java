@@ -446,12 +446,12 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		setContentView(screenConsideredLarge ? R.layout.activity_effects_ls : R.layout.activity_effects);
 		audioSink = (storedAudioSink <= 0 ? Player.localAudioSinkUsedInEffects : storedAudioSink);
 		storedAudioSink = audioSink;
-		panelControls = (LinearLayout)findViewById(R.id.panelControls);
+		panelControls = findViewById(R.id.panelControls);
 		panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
-		panelEqualizer = (LinearLayout)findViewById(R.id.panelEqualizer);
-		panelSecondary = (ViewGroup)findViewById(R.id.panelSecondary);
-		final ViewGroup panelScroll = (ViewGroup)findViewById(R.id.panelScroll);
-		final ViewGroup panelScrollContents = (ViewGroup)findViewById(R.id.panelScrollContents);
+		panelEqualizer = findViewById(R.id.panelEqualizer);
+		panelSecondary = findViewById(R.id.panelSecondary);
+		final ViewGroup panelScroll = findViewById(R.id.panelScroll);
+		final ViewGroup panelScrollContents = findViewById(R.id.panelScrollContents);
 		if (UI.is3D) {
 			final int padding = (addLargeEmptySpaces ? UI.controlLargeMargin :
 				(UI.isLowDpiScreen ? UI.controlSmallMargin :
@@ -466,33 +466,33 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			panelEqualizer.setBackgroundDrawable(new BgListItem3DDrawable());
 			panelSecondary.setBackgroundDrawable(new BgListItem3DDrawable());
 		}
-		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack = findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		btnAudioSink = (BgButton)findViewById(R.id.btnAudioSink);
+		btnAudioSink = findViewById(R.id.btnAudioSink);
 		btnAudioSink.setOnClickListener(this);
 		btnAudioSink.setDefaultHeight();
 		btnAudioSink.setCompoundDrawables(new TextIconDrawable(UI.ICON_SETTINGS, UI.color_text), null, null, null);
-		chkEqualizer = (BgButton)findViewById(R.id.chkEqualizer);
+		chkEqualizer = findViewById(R.id.chkEqualizer);
 		chkEqualizer.setOnClickListener(this);
 		chkEqualizer.setTextColor(UI.colorState_text_listitem_reactive);
 		chkEqualizer.formatAsLabelledCheckBox();
-		chkBass = (BgButton)findViewById(R.id.chkBass);
+		chkBass = findViewById(R.id.chkBass);
 		chkBass.setOnClickListener(this);
 		chkBass.setTextColor(UI.colorState_text_listitem_reactive);
 		chkBass.formatAsLabelledCheckBox();
-		chkVirtualizer = (BgButton)findViewById(R.id.chkVirtualizer);
+		chkVirtualizer = findViewById(R.id.chkVirtualizer);
 		chkVirtualizer.setOnClickListener(this);
 		chkVirtualizer.setTextColor(UI.colorState_text_listitem_reactive);
 		chkVirtualizer.formatAsLabelledCheckBox();
 		if (BuildConfig.X) {
-			chkAGC = (BgButton)findViewById(R.id.chkAGC);
+			chkAGC = findViewById(R.id.chkAGC);
 			chkAGC.setOnClickListener(this);
 			chkAGC.setTextColor(UI.colorState_text_listitem_reactive);
 			chkAGC.formatAsLabelledCheckBox();
 			chkAGC.setVisibility(View.VISIBLE);
 			chkAGC.setChecked(Player.isAutomaticEffectsGainEnabled());
-			txtAGC = (TextView)findViewById(R.id.txtAGC);
+			txtAGC = findViewById(R.id.txtAGC);
 			UI.mediumText(txtAGC);
 			txtAGC.setTextColor(UI.colorState_text_listitem_static);
 			txtAGC.setCompoundDrawables(new TextIconDrawable(UI.ICON_CLIP, UI.color_text_listitem_secondary), null, null, null);
@@ -501,10 +501,10 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			tmrAGC = new Timer(this, "AGC Update Timer", false, true, false);
 			tmrAGC.start(ACG_UPDATE_INTERVAL);
 		}
-		btnMenu = (BgButton)findViewById(R.id.btnMenu);
+		btnMenu = findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		btnMenu.setIcon(UI.ICON_MENU_MORE);
-		btnChangeEffect = (BgButton)findViewById(R.id.btnChangeEffect);
+		btnChangeEffect = findViewById(R.id.btnChangeEffect);
 		if (btnChangeEffect != null) {
 			btnChangeEffect.setOnClickListener(this);
 			btnChangeEffect.setCompoundDrawables(new TextIconDrawable(UI.ICON_EQUALIZER, UI.color_text_listitem), null, null, null);
@@ -513,14 +513,14 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		} else {
 			Player.bassBoostMode = false;
 		}
-		barBass = (BgSeekBar)findViewById(R.id.barBass);
+		barBass = findViewById(R.id.barBass);
 		barBass.setMax(actualToBarBassBoost(BassBoost.getMaxStrength()));
 		barBass.setValue(actualToBarBassBoost(BassBoost.getStrength(audioSink)));
 		barBass.setKeyIncrement(1);
 		barBass.setOnBgSeekBarChangeListener(this);
 		barBass.setInsideList(true);
 		barBass.setAdditionalContentDescription(getText(R.string.bass_boost).toString());
-		barVirtualizer = (BgSeekBar)findViewById(R.id.barVirtualizer);
+		barVirtualizer = findViewById(R.id.barVirtualizer);
 		barVirtualizer.setMax(actualToBarVirtualizer(Virtualizer.getMaxStrength()));
 		barVirtualizer.setValue(actualToBarVirtualizer(Virtualizer.getStrength(audioSink)));
 		barVirtualizer.setKeyIncrement(1);

@@ -356,5 +356,7 @@
     <string name="allow_lock_screen">Permitir que o aplicativo fique acima da tela de bloqueio</string>
     <string name="share">Compartilhar</string>
     <string name="file_prefetch_size">Bytes para armazenar na memória ao reproduzir arquivos locais:</string>
+    <string name="download">Download</string>
+    <string name="download_confimation">Esse recurso requer a extensão externa \"%s\". Gostaria de baixá-la agora?</string>
 
 </resources>

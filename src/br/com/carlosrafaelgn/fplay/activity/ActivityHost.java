@@ -316,9 +316,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		return (1.0f - (input * input));
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public View findViewById(int id) {
-		return ((newView != null) ? newView.findViewById(id) : super.findViewById(id));
+	public <T extends View> T findViewById(int id) {
+		return ((newView != null) ? (T)newView.findViewById(id) : (T)super.findViewById(id));
 	}
 
 	@Override
@@ -862,11 +863,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
-	public void requestPluginStoragePermission(int pluginId) {
-		requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, pluginId);
-	}
-
-	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -887,16 +883,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@SuppressWarnings("deprecation")
 	public void bgMonitorStart() {
-		if (Player.state != Player.STATE_ALIVE || Player.songs.isAdding() || Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL || Player.bluetoothVisualizerLastErrorMessage != 0) {
+		if (Player.state != Player.STATE_ALIVE || Player.songs.isAdding() || Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL || Player.bluetoothVisualizerLastErrorMessage != null) {
 			bgMonitorStop();
 			if (baseParent != null) {
-				bgMonitorLastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : R.string.bt_active)));
+				bgMonitorLastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != null) ? R.string.bt_error : R.string.bt_active)));
 				baseParent.setMessage(bgMonitorLastMsg);
-				if (Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_INITIAL) {
-					if (bgMonitorTimer == null)
-						bgMonitorTimer = new Timer(this, "Background Activity Monitor Timer", false, true, false);
-					bgMonitorTimer.start(250);
-				}
+				if (bgMonitorTimer == null)
+					bgMonitorTimer = new Timer(this, "Background Activity Monitor Timer", false, true, false);
+				bgMonitorTimer.start(250);
 			}
 		}
 	}
@@ -905,7 +899,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (baseParent == null)
 			return;
 		if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding()) {
-			if (Player.bluetoothVisualizerLastErrorMessage != 0) {
+			if (Player.bluetoothVisualizerLastErrorMessage != null) {
 				if (bgMonitorLastMsg != R.string.bt_error) {
 					bgMonitorLastMsg = R.string.bt_error;
 					baseParent.setMessage(bgMonitorLastMsg);
@@ -926,7 +920,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@Override
 	public void handleTimer(Timer timer, Object param) {
-		final int msg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != 0) ? R.string.bt_error : ((Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL) ? R.string.bt_active : 0))));
+		final int msg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != null) ? R.string.bt_error : ((Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL) ? R.string.bt_active : 0))));
 		if (msg == 0) {
 			bgMonitorStop();
 		} else {

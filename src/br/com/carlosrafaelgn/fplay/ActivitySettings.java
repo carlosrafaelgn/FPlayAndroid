@@ -65,6 +65,9 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
+import br.com.carlosrafaelgn.fplay.plugin.WirelessVisualizer;
+import br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin;
+import br.com.carlosrafaelgn.fplay.plugin.PluginManager;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
@@ -75,11 +78,9 @@ import br.com.carlosrafaelgn.fplay.ui.SettingView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
-import br.com.carlosrafaelgn.fplay.util.BluetoothConnectionManager;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
-import br.com.carlosrafaelgn.fplay.visualizer.BluetoothVisualizerControllerJni;
 
-public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable, MainHandler.Callback {
+public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable, MainHandler.Callback, PluginManager.Observer {
 	private static final int MSG_REFRESH_BLUETOOTH = 0x0900;
 	private static final int MSG_SAVE_CONFIG = 0x0901;
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
@@ -107,8 +108,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
 		optLargeTextIs22sp, optDisplaySongNumberAndCount, optAllowLockScreen, lastMenuView;
+	private String btErrorMessage;
 	private SettingView[] colorViews;
-	private int lastColorView, currentHeader, btMessageText, btErrorMessage, btConnectText, btStartText;
+	private int lastColorView, currentHeader, btMessageText, btConnectText, btStartText, optBtSizeLastSize;
 	private TextView[] headers;
 
 	public ActivitySettings(boolean colorMode, boolean bluetoothMode) {
@@ -545,20 +547,20 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.setHeadsetHookAction(pressCount, item.getItemId());
 			lastMenuView.setSecondaryText(getHeadsetHookString(pressCount));
 		} else if (lastMenuView == optBtSize) {
-			Player.setBluetoothVisualizerSize(item.getItemId());
+			Player.setBluetoothVisualizerSize(optBtSizeLastSize = item.getItemId());
 			optBtSize.setSecondaryText(getSizeString());
-			if (Player.bluetoothVisualizerController != null)
-				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncSize();
+			if (Player.bluetoothVisualizer != null)
+				((WirelessVisualizer)Player.bluetoothVisualizer).syncSize();
 		} else if (lastMenuView == optBtSpeed) {
 			Player.setBluetoothVisualizerSpeed(item.getItemId());
 			optBtSpeed.setSecondaryText(getSpeedString());
-			if (Player.bluetoothVisualizerController != null)
-				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncSpeed();
+			if (Player.bluetoothVisualizer != null)
+				((WirelessVisualizer)Player.bluetoothVisualizer).syncSpeed();
 		} else if (lastMenuView == optBtFramesToSkip) {
 			Player.setBluetoothVisualizerFramesToSkipIndex(item.getItemId());
 			optBtFramesToSkip.setSecondaryText(getFramesToSkipString());
-			if (Player.bluetoothVisualizerController != null)
-				((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncFramesToSkip();
+			if (Player.bluetoothVisualizer != null)
+				((WirelessVisualizer)Player.bluetoothVisualizer).syncFramesToSkip();
 		} else if (lastMenuView == optBytesBeforeDecoding) {
 			Player.setBytesBeforeDecodingIndex(item.getItemId());
 			optBytesBeforeDecoding.setSecondaryText(getBytesBeforeDecodingString(item.getItemId()));
@@ -912,16 +914,31 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 	}
 
+	@Override
+	public void onPluginCreated(int id, FPlayPlugin plugin) {
+		if (plugin == null || id != 1 || !isLayoutCreated() || Player.state != Player.STATE_ALIVE)
+			return;
+
+		WirelessVisualizer.create(plugin);
+		((WirelessVisualizer)Player.bluetoothVisualizer).start(getHostActivity(), startTransmissionOnConnection);
+		refreshBluetoothStatus(false, false);
+	}
+
+	private void startBluetoothVisualizer(boolean startTransmissionOnConnection) {
+		this.startTransmissionOnConnection = startTransmissionOnConnection;
+		PluginManager.createPlugin(getHostActivity(), WirelessVisualizer.PLUGIN_CLASS, WirelessVisualizer.PLUGIN_PACKAGE, WirelessVisualizer.PLUGIN_NAME, 1, this);
+	}
+
 	private void refreshBluetoothStatus(boolean postAgain, boolean ignoreLayoutStatus) {
 		if ((!ignoreLayoutStatus && !isLayoutCreated()) || optBtMessage == null)
 			return;
-		if (Player.bluetoothVisualizerLastErrorMessage != 0) {
+		if (Player.bluetoothVisualizerLastErrorMessage != null) {
 			btErrorMessage = Player.bluetoothVisualizerLastErrorMessage;
-			Player.bluetoothVisualizerLastErrorMessage = 0;
+			Player.bluetoothVisualizerLastErrorMessage = null;
 			getHostActivity().bgMonitorBluetoothEnded();
 		}
-		if (Player.bluetoothVisualizerController != null) {
-			btErrorMessage = 0;
+		if (Player.bluetoothVisualizer != null) {
+			btErrorMessage = null;
 			if (Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING) {
 				if (btMessageText != R.string.bt_scanning) {
 					btMessageText = R.string.bt_scanning;
@@ -929,18 +946,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				}
 			} else {
 				btMessageText = 0;
-				optBtMessage.setText(getText(R.string.bt_packets_sent).toString() + " " + ((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).getPacketsSent());
+				optBtMessage.setText(getText(R.string.bt_packets_sent).toString() + " " + ((WirelessVisualizer)Player.bluetoothVisualizer).getSentPackets());
 			}
 		} else {
-			if (btErrorMessage != 0) {
-				if (btMessageText != btErrorMessage) {
-					btMessageText = btErrorMessage;
-					optBtMessage.setText(getText(btErrorMessage).toString());
+			if (btErrorMessage != null) {
+				if (btMessageText != Integer.MAX_VALUE) {
+					btMessageText = Integer.MAX_VALUE;
+					optBtMessage.setText(btErrorMessage);
 				}
 			} else if (btMessageText != R.string.bt_inactive) {
 				btMessageText = R.string.bt_inactive;
 				optBtMessage.setText(getText(R.string.bt_inactive).toString());
 			}
+		}
+		if (optBtSize != null && optBtSizeLastSize != Player.getBluetoothVisualizerSize()) {
+			optBtSizeLastSize = Player.getBluetoothVisualizerSize();
+			optBtSize.setSecondaryText(getSizeString());
 		}
 		if (optBtConnect != null && optBtStart != null) {
 			switch (Player.bluetoothVisualizerState) {
@@ -985,7 +1006,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (!bluetoothMode || optBtConnect == null)
 			return;
-		if (requestCode == BluetoothConnectionManager.REQUEST_ENABLE && resultCode == Activity.RESULT_OK)
+		if (requestCode == WirelessVisualizer.REQUEST_ENABLE && resultCode == Activity.RESULT_OK)
 			onClick(startTransmissionOnConnection ? optBtStart : optBtConnect);
 	}
 
@@ -993,12 +1014,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_settings);
-		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack = findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		btnBluetooth = (BgButton)findViewById(R.id.btnBluetooth);
+		btnBluetooth = findViewById(R.id.btnBluetooth);
 		btnBluetooth.setOnClickListener(this);
-		btnAbout = (BgButton)findViewById(R.id.btnAbout);
+		btnAbout = findViewById(R.id.btnAbout);
 		btnAbout.setOnClickListener(this);
 		boolean showBluetooth = false;
 		if (colorMode) {
@@ -1014,7 +1035,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 			if (showBluetooth) {
 				btnBluetooth.setIcon(UI.ICON_BLUETOOTH);
-				final TextView sep = (TextView)findViewById(R.id.sep);
+				final TextView sep = findViewById(R.id.sep);
 				final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(UI.strokeSize, UI.defaultControlContentsSize);
 				rp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 				rp.addRule(RelativeLayout.LEFT_OF, R.id.btnAbout);
@@ -1053,11 +1074,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		
 		final Context ctx = getHostActivity();
 
-		list = (ObservableScrollView)findViewById(R.id.list);
+		list = findViewById(R.id.list);
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
-		panelControls = (RelativeLayout)findViewById(R.id.panelControls);
-		panelSettings = (LinearLayout)findViewById(R.id.panelSettings);
-		lblTitle = (TextView)findViewById(R.id.lblTitle);
+		panelControls = findViewById(R.id.panelControls);
+		panelSettings = findViewById(R.id.panelSettings);
+		lblTitle = findViewById(R.id.lblTitle);
 		prepareHeader(lblTitle);
 
 		viewForPadding = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? list : panelSettings);
@@ -1067,6 +1088,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (colorMode) {
 			loadColors(true, false);
 		} else if (bluetoothMode) {
+			optBtSizeLastSize = Player.getBluetoothVisualizerSize();
 			optBtMessage = new SettingView(ctx, UI.ICON_INFORMATION, "", null, false, false, false);
 			optBtConnect = new SettingView(ctx, UI.ICON_BLUETOOTH, "", null, false, false, false);
 			optBtStart = new SettingView(ctx, Player.bluetoothVisualizerState == Player.BLUETOOTH_VISUALIZER_STATE_TRANSMITTING ? UI.ICON_PAUSE : UI.ICON_PLAY, "", null, false, false, false);
@@ -1420,35 +1442,31 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					ex.printStackTrace();
 				}
 			} else if (view == optBtConnect) {
-				if (Player.bluetoothVisualizerController == null) {
-					startTransmissionOnConnection = false;
-					Player.startBluetoothVisualizer(getHostActivity(), false);
-					refreshBluetoothStatus(false, false);
+				if (Player.bluetoothVisualizer == null) {
+					startBluetoothVisualizer(false);
 				} else if (Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING) {
 					Player.stopBluetoothVisualizer();
 					refreshBluetoothStatus(false, false);
 				}
 			} else if (view == optBtStart) {
-				if (Player.bluetoothVisualizerController != null) {
+				if (Player.bluetoothVisualizer != null) {
 					switch (Player.bluetoothVisualizerState) {
 					case Player.BLUETOOTH_VISUALIZER_STATE_CONNECTED:
-						((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).startTransmission();
+						((WirelessVisualizer)Player.bluetoothVisualizer).startTransmission();
 						refreshBluetoothStatus(false, false);
 						break;
 					case Player.BLUETOOTH_VISUALIZER_STATE_TRANSMITTING:
-						((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).stopTransmission();
+						((WirelessVisualizer)Player.bluetoothVisualizer).stopTransmission();
 						refreshBluetoothStatus(false, false);
 						break;
 					}
 				} else if (Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING) {
-					startTransmissionOnConnection = true;
-					Player.startBluetoothVisualizer(getHostActivity(), true);
-					refreshBluetoothStatus(false, false);
+					startBluetoothVisualizer(true);
 				}
 			} else if (view == optBtVUMeter) {
 				Player.setBluetoothUsingVUMeter(optBtVUMeter.isChecked());
-				if (Player.bluetoothVisualizerController != null)
-					((BluetoothVisualizerControllerJni)Player.bluetoothVisualizerController).syncDataType();
+				if (Player.bluetoothVisualizer != null)
+					((WirelessVisualizer)Player.bluetoothVisualizer).syncDataType();
 			} else if (view == optBtSize || view == optBtSpeed || view == optBtFramesToSkip) {
 				CustomContextMenu.openContextMenu(view, this);
 			}

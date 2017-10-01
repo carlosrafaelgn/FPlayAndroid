@@ -32,32 +32,33 @@
 //
 package br.com.carlosrafaelgn.fplay.plugin;
 
-@SuppressWarnings("unused")
-public interface FPlayPlugin {
-	interface Observer {
-		int message(int message, int arg1, int arg2, Object obj);
+import java.util.concurrent.atomic.AtomicInteger;
+
+//I know... I know... SlimLock *SHOULD* contain an AtomicInteger and not extend it...
+//Such is life.... I don't want to instantiate a new object within SlimLock :)
+public final class SlimLock extends AtomicInteger {
+	private static final long serialVersionUID = 4827458715458080067L;
+	
+	public SlimLock() {
+		super(0);
 	}
-
-	// When creating a plugin, the most important detail:
-	// add fplayplugin.jar as provided not as compile (by doing so all
-	// the interfaces and classes are not copied to the destination apk)
-	//
-	// https://stackoverflow.com/questions/28472785/compile-provided-apk-android-dependency-scope
-	//
-	// provided fileTree(dir: 'libs', include: ['*.jar'])
-
-	int API_VERSION = 1;
-
-	int getApiVersion();
-	int getPluginVersion();
-
-	void init(Object pluginContext, FPlay fplay);
-	void destroy();
-
-	void setObserver(Observer observer);
-
-	void load();
-	void unload();
-
-	int message(int message, int arg1, int arg2, Object obj);
+	
+	public void lockHighPriority() {
+		addAndGet(2);
+		while ((get() & 1) != 0) {
+			Thread.yield();
+		}
+	}
+	
+	public void releaseHighPriority() {
+		set(0);
+	}
+	
+	public boolean lockLowPriority() {
+		return compareAndSet(0, 1);
+	}
+	
+	public void releaseLowPriority() {
+		decrementAndGet();
+	}
 }

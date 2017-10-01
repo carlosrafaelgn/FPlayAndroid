@@ -34,11 +34,14 @@ package br.com.carlosrafaelgn.fplay.plugin;
 
 @SuppressWarnings("unused")
 public interface FPlay {
-	int getApiVersion();
-	int getFPlayVersion();
+	int STR_VISUALIZER_NOT_SUPPORTED = 0x0001;
 
+	int getApiVersion();
+	int getFPlayVersionCode();
+	String getFPlayVersionName();
+
+	boolean isAlive();
 	Object getApplicationContext();
-	CharSequence getText(int id);
 
 	boolean isOnMainThread();
 	void postToMainThread(Runnable runnable);
@@ -50,17 +53,34 @@ public interface FPlay {
 
 	void toast(String message);
 
+	<E> ItemSelectorDialog<E> showItemSelectorDialog(Object activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, boolean progressBarVisible, Class<E> clazz, E[] initialElements, ItemSelectorDialog.Observer<E> observer);
+
+	String getString(int str);
+	void fixLocale(Object context);
 	String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact);
 	void formatIntAsFloat(StringBuilder sb, int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact);
 	int dpToPxI(float dp);
 	int spToPxI(float sp);
 
+	VisualizerService createVisualizerService(Visualizer visualizer, VisualizerService.Observer observer);
+	void visualizerSetSpeed(int speed);
+	void visualizerSetColorIndex(int colorIndex);
+	void visualizerUpdateMultiplier(boolean isVoice, boolean hq);
+	int visualizerProcess(byte[] waveform, int opt);
+
 	void previous();
 	void pause();
 	void playPause();
 	void next();
+	void setVolumeInPercentage(int percentage);
+	int getVolumeInPercentage();
 	int increaseVolume();
 	int decreaseVolume();
+	boolean isPlaying();
+	boolean isPreparing();
+	int getPlaybackPosition();
+	boolean isMediaButton(int keyCode);
+	boolean handleMediaButton(int keyCode);
 	boolean currentSongInfo(SongInfo info);
 	String formatTime(int timeMS);
 }

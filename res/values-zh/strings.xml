@@ -361,5 +361,7 @@
 	<string name="allow_lock_screen">允许播放器保持在锁屏上方</string>
 	<string name="share">分享</string>
 	<string name="file_prefetch_size">播放本地文件时，存储到内存中的字节数：</string>
+    <string name="download">下载</string>
+    <string name="download_confimation">此功能需要外部扩展名“%s”。 您要现在下载吗？</string>
 
 </resources>

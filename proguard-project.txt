@@ -45,9 +45,6 @@
 }
 
 -keep class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer
--keepclassmembers class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer {
-    public *;
-}
 
 -keep class android.widget.BgEdgeEffect {
     public *;
@@ -75,3 +72,31 @@
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService {
     public *;
 }
+
+-keep public interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService.Observer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService.Observer {
+    public *;
+}
+
+-keep public interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog {
+    public *;
+}
+
+-keep public interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog.Observer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog.Observer {
+    public *;
+}
+
+-keep class br.com.carlosrafaelgn.fplay.plugin.SlimLock
+-keepclassmembers class br.com.carlosrafaelgn.fplay.plugin.SlimLock {
+    public *;
+}
+
+# Uncomment this to preserve the line number information for
+# debugging stack traces.
+#-keepattributes SourceFile,LineNumberTable
+
+# If you keep the line number information, uncomment this to
+# hide the original source file name.
+#-renamesourcefileattribute SourceFile

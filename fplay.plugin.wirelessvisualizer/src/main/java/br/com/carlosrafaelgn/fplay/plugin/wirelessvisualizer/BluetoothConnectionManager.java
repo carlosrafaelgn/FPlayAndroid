@@ -30,8 +30,7 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-
-package br.com.carlosrafaelgn.fplay.util;
+package br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -48,12 +47,10 @@ import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.UUID;
 
-import br.com.carlosrafaelgn.fplay.R;
-import br.com.carlosrafaelgn.fplay.activity.MainHandler;
-import br.com.carlosrafaelgn.fplay.list.FileSt;
-import br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog;
+import br.com.carlosrafaelgn.fplay.plugin.FPlay;
+import br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog;
 
-public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, ItemSelectorDialog.Listener<BluetoothConnectionManager.DeviceItem> {
+public final class BluetoothConnectionManager extends BroadcastReceiver implements Runnable, ItemSelectorDialog.Observer<BluetoothConnectionManager.DeviceItem> {
 	public static final int REQUEST_ENABLE = 0x1000;
 
 	public static final int OK = 0;
@@ -74,19 +71,26 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		void onBluetoothError(BluetoothConnectionManager manager, int error);
 	}
 
-	public static final class DeviceItem extends ItemSelectorDialog.Item {
-		public final String name, address;
-		public final boolean paired, recentlyUsed;
+	static final class DeviceItem {
+		final String name, address, description;
+		final boolean paired, recentlyUsed;
 
 		public DeviceItem(String name, String address, boolean paired, boolean recentlyUsed) {
-			super(new FileSt(address, name + " - " + address, 0));
 			this.name = name;
 			this.address = address;
 			this.paired = paired;
 			this.recentlyUsed = recentlyUsed;
+			description = name + " - " + address;
+		}
+
+		@Override
+		public String toString() {
+			return description;
 		}
 	}
 
+	private Context pluginContext;
+	private FPlay fplay;
 	private BluetoothObserver observer;
 	private Activity activity;
 	private BluetoothAdapter btAdapter;
@@ -99,7 +103,9 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 	private volatile DeviceItem deviceItem;
 	private volatile boolean cancelled;
 
-	public BluetoothConnectionManager(BluetoothObserver observer) {
+	public BluetoothConnectionManager(Context pluginContext, FPlay fplay, BluetoothObserver observer) {
+		this.pluginContext = pluginContext;
+		this.fplay = fplay;
 		this.observer = observer;
 		try {
 			btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -161,22 +167,25 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			btSocket = null;
 		}
 		destroyUI();
+		pluginContext = null;
+		fplay = null;
 		observer = null;
 	}
 
 	@Override
 	public void run() {
+		final FPlay fplay = this.fplay;
 		final DeviceItem deviceItem = this.deviceItem;
-		if (deviceItem == null)
+		if (deviceItem == null || fplay == null)
 			return;
-		if (MainHandler.isOnMainThread()) {
+		if (fplay.isOnMainThread()) {
 			final boolean success = (inputStream != null && outputStream != null && lastError == OK);
 			final boolean callObserver = !finished;
 			finished = true;
 			destroyUI();
 			connecting = false;
 			if (observer != null && callObserver) {
-				observer.onBluetoothPairingFinished(this, deviceItem.fileSt.name, deviceItem.address, success);
+				observer.onBluetoothPairingFinished(this, deviceItem.name, deviceItem.address, success);
 				if (cancelled)
 					observer.onBluetoothCancelled(this);
 				else if (lastError == OK)
@@ -189,44 +198,41 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 		try {
 			BluetoothDevice device = btAdapter.getRemoteDevice(deviceItem.address);
 			final UUID SERIAL_PORT_SERVICE_CLASS_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-			//Reflection obtained from http://pymasde.es/blueterm/
-			btSocket = null;
 			try {
-				btSocket = (BluetoothSocket)device.getClass().getMethod("createInsecureRfcommSocket", int.class).invoke(device, 1);
-			} catch (Throwable ex) {
-				//try to create the socket in another way...
-			}
-			if (btSocket == null) {
-				try {
-					btSocket = (BluetoothSocket)device.getClass().getMethod("createRfcommSocket", int.class).invoke(device, 1);
-				} catch (Throwable ex) {
-					//try to create the socket in another way...
-				}
-			}
-			if (btSocket == null) {
 				if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.HONEYCOMB)
 					btSocket = device.createInsecureRfcommSocketToServiceRecord(SERIAL_PORT_SERVICE_CLASS_UUID);
 				else
 					btSocket = device.createRfcommSocketToServiceRecord(SERIAL_PORT_SERVICE_CLASS_UUID);
-			}
-			try {
 				btSocket.connect();
 			} catch (Throwable ex) {
 				btSocket = null;
 				if (!deviceItem.paired) {
 					lastError = ERROR_STILL_PAIRING;
-					MainHandler.postToMainThread(this);
+					fplay.postToMainThread(this);
 					return;
 				}
-				// try another method for connection, this should work on the HTC desire, credits to Michael Biermann
+				//Reflection obtained from http://pymasde.es/blueterm/
+				//try another method for connection, this should work on the HTC desire, credits to Michael Biermann
 				try {
-					Method mMethod = device.getClass().getMethod("createRfcommSocket", int.class);
-					btSocket = (BluetoothSocket)mMethod.invoke(device, 1);
+					btSocket = (BluetoothSocket)device.getClass().getMethod("createInsecureRfcommSocket", int.class).invoke(device, 1);
 					btSocket.connect();
-				} catch (Throwable e1){
+				} catch (Throwable ex2) {
+					//try to create the socket in another way...
+					btSocket = null;
+				}
+				if (btSocket == null) {
+					try {
+						btSocket = (BluetoothSocket)device.getClass().getMethod("createRfcommSocket", int.class).invoke(device, 1);
+						btSocket.connect();
+					} catch (Throwable ex2) {
+						//try to create the socket in another way...
+						btSocket = null;
+					}
+				}
+				if (btSocket == null) {
 					btSocket = null;
 					lastError = ERROR_CONNECTION;
-					MainHandler.postToMainThread(this);
+					fplay.postToMainThread(this);
 					return;
 				}
 			}
@@ -234,16 +240,19 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			outputStream = btSocket.getOutputStream();
 		} catch (Throwable ex) {
 			lastError = (!deviceItem.paired ? ERROR_STILL_PAIRING : ERROR_CONNECTION);
-			MainHandler.postToMainThread(this);
+			fplay.postToMainThread(this);
 			return;
 		}
 		lastError = OK;
-		MainHandler.postToMainThread(this);
+		fplay.postToMainThread(this);
 	}
 
 	public int showDialogAndScan(Activity activity) {
-		if (btAdapter == null)
+		if (pluginContext == null || fplay == null || btAdapter == null)
 			return ERROR;
+
+		fplay.fixLocale(pluginContext);
+
 		try {
 			if (!btAdapter.isEnabled()) {
 				activity.startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQUEST_ENABLE);
@@ -280,7 +289,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			return ERROR_DISCOVERY;
 		}
 
-		itemSelectorDialog = ItemSelectorDialog.showDialog(activity, activity.getText(R.string.bt_devices), activity.getText(R.string.bt_scanning), activity.getText(R.string.bt_connecting), true, DeviceItem.class, initialItems, this);
+		itemSelectorDialog = fplay.showItemSelectorDialog(activity, pluginContext.getText(R.string.bt_devices), pluginContext.getText(R.string.bt_scanning), pluginContext.getText(R.string.bt_connecting), true, DeviceItem.class, initialItems, this);
 
 		okToStartDiscovery = false;
 
@@ -301,7 +310,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		if (activity == null || itemSelectorDialog == null)
+		if (pluginContext == null || fplay == null || activity == null || itemSelectorDialog == null)
 			return;
 		final String action = intent.getAction();
 		if (BluetoothDevice.ACTION_FOUND.equals(action)) {
@@ -320,7 +329,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 					break;
 				}
 			}
-			itemSelectorDialog.add(new DeviceItem(((name == null || name.length() == 0) ? activity.getText(R.string.bt_null_device_name).toString() : name), address, paired, false));
+			itemSelectorDialog.add(new DeviceItem(((name == null || name.length() == 0) ? pluginContext.getText(R.string.bt_null_device_name).toString() : name), address, paired, false));
 			//stop sorting as the devices are discovered, to prevent the
 			//order of the list from changing
 			//deviceList.sort();
@@ -328,7 +337,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			if (!connecting) {
 				stopDialogDiscovery();
 				if (itemSelectorDialog.getCount() == 0)
-					itemSelectorDialog.add(new DeviceItem(activity.getText(R.string.bt_not_found).toString(), null, false, false));
+					itemSelectorDialog.add(new DeviceItem(pluginContext.getText(R.string.bt_not_found).toString(), null, false, false));
 			}
 		}
 	}
@@ -342,7 +351,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 				finished = true;
 				if (observer != null) {
 					if (deviceItem != null)
-						observer.onBluetoothPairingFinished(this, deviceItem.fileSt.name, deviceItem.address, false);
+						observer.onBluetoothPairingFinished(this, deviceItem.name, deviceItem.address, false);
 					observer.onBluetoothCancelled(this);
 				}
 			}
@@ -371,7 +380,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			itemSelectorDialog.showConnecting(true);
 			okToStartDiscovery = false;
 			if (observer != null)
-				observer.onBluetoothPairingStarted(BluetoothConnectionManager.this, item.fileSt.name, item.address);
+				observer.onBluetoothPairingStarted(BluetoothConnectionManager.this, item.name, item.address);
 			lastError = OK;
 			cancelled = false;
 			finished = false;

@@ -33,7 +33,7 @@
 package br.com.carlosrafaelgn.fplay.plugin;
 
 public interface VisualizerService {
-	interface Handler {
+	interface Observer {
 		void onFailure();
 		void onFinalCleanup();
 	}

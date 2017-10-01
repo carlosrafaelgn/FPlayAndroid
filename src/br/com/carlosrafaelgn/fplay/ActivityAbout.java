@@ -72,13 +72,13 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_about);
-		btnGoBack = (BgButton)findViewById(R.id.btnGoBack);
+		btnGoBack = findViewById(R.id.btnGoBack);
 		btnGoBack.setOnClickListener(this);
 		btnGoBack.setIcon(UI.ICON_GOBACK);
-		final TextView lblTitle = (TextView)findViewById(R.id.lblTitle);
+		final TextView lblTitle = findViewById(R.id.lblTitle);
 		lblTitle.setText(R.string.app_name);
 		UI.headingTextAndColor(lblTitle);
-		final TextView lblVersion = (TextView)findViewById(R.id.lblVersion);
+		final TextView lblVersion = findViewById(R.id.lblVersion);
 		UI.smallTextAndColor(lblVersion);
 		//hardcode this in order to try to speed up things a little bit
 		lblVersion.setText(UI.VERSION_NAME);
@@ -89,7 +89,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		//	ex.printStackTrace();
 		//}
 		UI.smallTextAndColor((TextView)findViewById(R.id.lblAppBy));
-		final TextView lblMsg = (TextView)findViewById(R.id.lblMsg);
+		final TextView lblMsg = findViewById(R.id.lblMsg);
 		final StringBuilder sb = new StringBuilder(2048);
 		sb.append(getText(R.string.app_more_info));
 		sb.append(getText(R.string.app_more_info_thanks));
@@ -102,7 +102,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblMsg.setTextColor(UI.colorState_text_listitem_static);
 		lblMsg.setText(SafeURLSpan.parseSafeHtml(sb));
 		lblMsg.setMovementMethod(LinkMovementMethod.getInstance());
-		final TextView lblDbg = (TextView)findViewById(R.id.lblDbg);
+		final TextView lblDbg = findViewById(R.id.lblDbg);
 		final int features = Player.getFeatures();
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));
@@ -191,17 +191,17 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		lblDbg.setTextColor(UI.colorState_text_listitem_secondary_static);
 		lblDbg.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 		lblDbg.setText(sb.toString());
-		list = (ObservableScrollView)findViewById(R.id.list);
+		list = findViewById(R.id.list);
 		list.setBackgroundDrawable(new ColorDrawable(UI.color_list_original));
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
 			panelSecondary = null;
 		} else {
-			panelSecondary = (LinearLayout)findViewById(R.id.panelSecondary);
+			panelSecondary = findViewById(R.id.panelSecondary);
 			UI.prepareViewPaddingBasedOnScreenWidth(panelSecondary, UI.controlLargeMargin, UI.controlMargin, UI.controlMargin);
 			list = null;
 		}
-		lblUsage = (TextView)findViewById(R.id.lblUsage);
+		lblUsage = findViewById(R.id.lblUsage);
 		lblUsage.setTypeface(UI.defaultTypeface);
 		lblUsage.setTextColor(UI.colorState_text_listitem_secondary_static);
 		lblUsage.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);

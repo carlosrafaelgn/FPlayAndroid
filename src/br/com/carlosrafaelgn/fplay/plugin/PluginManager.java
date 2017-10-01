@@ -32,30 +32,33 @@
 //
 package br.com.carlosrafaelgn.fplay.plugin;
 
-import android.content.pm.ApplicationInfo;
-import android.os.Build;
-import android.os.Environment;
+import android.app.Activity;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Message;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.util.HashMap;
+import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 import dalvik.system.DexClassLoader;
 
-public final class PluginManager implements MainHandler.Callback, FPlay {
+public final class PluginManager implements MainHandler.Callback, DialogInterface.OnClickListener, DialogInterface.OnDismissListener, FPlay {
 	private static final int MSG_ERROR_GEN = 0x0A00;
+	private static final int MSG_INSTALL_PLUGIN = 0x0A01;
 
 	private static final HashMap<String, Class<?>> pluginClasses = new HashMap<>();
+	private static final HashMap<String, Object> pluginContexts = new HashMap<>();
 	private static volatile boolean isPluginLoading;
 	private static final PluginManager pluginManager = new PluginManager();
 
@@ -68,44 +71,9 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	}
 
 	private volatile ActivityHost activity;
+	private volatile String pluginName, packageName;
 
 	private PluginManager() {
-	}
-
-	private static void copyFile(File from, File to) throws IOException {
-		FileInputStream fileInputStream = null;
-		FileOutputStream fileOutputStream = null;
-		FileChannel fromFile = null, toFile = null;
-		try {
-			fromFile = (fileInputStream = new FileInputStream(from)).getChannel();
-			toFile = (fileOutputStream = new FileOutputStream(to)).getChannel();
-			toFile.transferFrom(fromFile, 0, fromFile.size());
-		} finally {
-			try {
-				if (fileInputStream != null)
-					fileInputStream.close();
-			} catch (Throwable ex) {
-				//just ignore...
-			}
-			try {
-				if (fileOutputStream != null)
-					fileOutputStream.close();
-			} catch (Throwable ex) {
-				//just ignore...
-			}
-			try {
-				if (fromFile != null)
-					fromFile.close();
-			} catch (Throwable ex) {
-				//just ignore...
-			}
-			try {
-				if (toFile != null)
-					toFile.close();
-			} catch (Throwable ex) {
-				//just ignore...
-			}
-		}
 	}
 
 	private static boolean tryToCreatePluginFromCache(ActivityHost activity, String className, int pluginId, Observer observer) {
@@ -113,67 +81,91 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 			synchronized (pluginClasses) {
 				final Class<?> clazz;
 				if ((clazz = pluginClasses.get(className)) != null) {
-					final Object plugin = clazz.newInstance();
+					final FPlayPlugin plugin = (FPlayPlugin)clazz.newInstance();
 					if (plugin != null) {
-						observer.onPluginCreated(pluginId, (FPlayPlugin)plugin);
+						plugin.init(pluginContexts.get(className), pluginManager);
+						observer.onPluginCreated(pluginId, plugin);
 						return true;
 					}
 				}
 			}
 		} catch (Throwable ex) {
-			pluginManager.showMessage(activity, MSG_ERROR_GEN);
+			pluginManager.showMessage(activity, MSG_ERROR_GEN, null, null);
 			return true;
 		}
 		return false;
 	}
 
-	private static boolean tryToCreatePluginFromApkFile(Runnable runnable, ActivityHost activity, String className, File pluginApkFile) {
+	private static boolean tryToCreatePluginFromPackage(Runnable runnable, ActivityHost activity, String className, String packageName) {
 		try {
 			//the plugin has already been downloaded, now we just need to load it
 
-			final String optimizedPath;
-			final ApplicationInfo appInfo = activity.getApplicationInfo();
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				optimizedPath = activity.getCodeCacheDir().getAbsolutePath();
-			} else {
-				File codeCache = new File(appInfo.dataDir, "code_cache");
-				if (!codeCache.exists()) {
-					if (!codeCache.mkdirs()) {
-						if (!codeCache.exists())
-							codeCache = activity.getFilesDir();
+			//unfortunatelly, although getCodeCacheDir() is read/writable,
+			//we cannot list its contents on a few devices... :(
+			final File codeCacheDir = activity.getFilesDir();
+			//final ApplicationInfo appInfo = activity.getApplicationInfo();
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			//	codeCacheDir = activity.getCodeCacheDir();
+			//} else {
+			//	codeCacheDir = new File(appInfo.dataDir, "code_cache");
+			//	if (!codeCacheDir.exists()) {
+			//		if (!codeCacheDir.mkdirs()) {
+			//			if (!codeCacheDir.exists())
+			//				codeCacheDir = activity.getFilesDir();
+			//		}
+			//	}
+			//}
+
+			final Context context = activity.createPackageContext(packageName, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
+
+			if (context == null)
+				return false;
+
+			final String apkFilePath = context.getPackageCodePath();
+
+			//delete old cached dex files in order to make sure they are
+			//always up-to-date with their apk files (which might have changed)
+			for (File file : codeCacheDir.listFiles()) {
+				if (file.getName().toLowerCase(Locale.US).startsWith(packageName)) {
+					try {
+						if (file.delete())
+							break;
+					} catch (Throwable ex) {
+						ex.printStackTrace();
 					}
 				}
-				optimizedPath = codeCache.getAbsolutePath();
 			}
+			/*final int apk = apkFilePath.lastIndexOf(packageName);
+			if (apk > 0) {
+				//could be a.b.c[-XXX]/YYY.apk or a.b.c[-XXX].apk
+				int end = apkFilePath.indexOf(File.separatorChar, apk);
+				if (end < apk)
+					end = apkFilePath.lastIndexOf(".apk");
+				if (end > apk) {
+					final File oldDex = new File(codeCacheDir, apkFilePath.substring(apk, end) + ".dex");
+					try {
+						if (oldDex.exists()) {
+							oldDex.delete();
+						}
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				}
+			}*/
 
-			//this way the plugin is loaded in a totally different class loader, and it is impossible
-			//to cast the plugin to FPlayPlugin
-			////final DexClassLoader dexClassLoader = new DexClassLoader(pluginApkFile.getAbsolutePath(), optimizedPath, null, ClassLoader.getSystemClassLoader().getParent());
-
-			//this way, on the other hand, the plugin is loaded in a different class loader, but it
-			//references our class loader, making the casts to FPlayPlugin work properly... nevertheless,
-			//Class.forName still will not be able to find the plugin class (which will have to be reloaded
-			//everytime, unless we cache the resulting class for the first time...)
-			//final DexClassLoader dexClassLoader = new DexClassLoader(pluginApkFile.getAbsolutePath(), optimizedPath, null, activity.getClassLoader());
-			//final Class<?> clazz = dexClassLoader.loadClass(className);
-
-			//https://developer.android.com/reference/dalvik/system/DexFile.html
-			//this way works like a charm, but DexFile will be removed in API 27, or API 28 :(
-			//final DexFile df = new DexFile(pluginApkFile);
-			//final Class<?> clazz = df.loadClass(className, activity.getClassLoader());
-
-			//so, we will stick to the second approach
 			final Class<?> clazz;
 			final ClassLoader classLoader = activity.getClassLoader();
 			classLoader.loadClass("br.com.carlosrafaelgn.fplay.plugin.FPlay");
 			classLoader.loadClass("br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin");
-			final DexClassLoader dexClassLoader = new DexClassLoader(pluginApkFile.getAbsolutePath(), optimizedPath, null, classLoader);
+			final DexClassLoader dexClassLoader = new DexClassLoader(apkFilePath, codeCacheDir.getAbsolutePath(), null, classLoader);
 			clazz = dexClassLoader.loadClass(className);
 
 			if (clazz != null) {
 				synchronized (pluginClasses) {
 					if (!pluginClasses.containsKey(className))
 						pluginClasses.put(className, clazz);
+					if (!pluginContexts.containsKey(className))
+						pluginContexts.put(className, context);
 				}
 				MainHandler.postToMainThread(runnable);
 				return true;
@@ -185,23 +177,9 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 		return false;
 	}
 
-	public static void createPlugin(final ActivityHost activity, final String className, final String pluginName, final String pluginDownloadUri, final boolean skipToDowload, final int pluginId, final Observer observer) {
-		//based on:
-		//https://stackoverflow.com/q/6857807/3569421
-		//https://stackoverflow.com/a/22687446/3569421
-		//https://developer.android.com/reference/dalvik/system/DexClassLoader.html
-		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.0.1_r1/android/support/v4/content/ContextCompat.java#ContextCompat.getCodeCacheDir%28android.content.Context%29
-
-		if (!skipToDowload && tryToCreatePluginFromCache(activity, className, pluginId, observer))
+	public static void createPlugin(final ActivityHost activity, final String className, final String packageName, final String pluginName, final int pluginId, final Observer observer) {
+		if (tryToCreatePluginFromCache(activity, className, pluginId, observer))
 			return;
-
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			if (!activity.isReadStoragePermissionGranted() ||
-				!activity.isWriteStoragePermissionGranted()) {
-				activity.requestPluginStoragePermission(pluginId);
-				return;
-			}
-		}
 
 		synchronized (pluginClasses) {
 			if (isPluginLoading)
@@ -219,36 +197,21 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 						return;
 					}
 
-					boolean mustDownload = true;
-					File downloadFile = null;
-					final String pluginApkFileName = pluginDownloadUri.substring(pluginDownloadUri.lastIndexOf('/') + 1);
-					final File pluginApkFile = activity.getFileStreamPath(pluginApkFileName);
+					boolean mustDownload;
 
-					if (!skipToDowload) {
-						if (pluginApkFile.exists() && tryToCreatePluginFromApkFile(this, activity, className, pluginApkFile))
-							return;
-
-						//we must download the plugin only if it has not been downloaded yet
-						try {
-							downloadFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), pluginApkFileName);
-							mustDownload = !downloadFile.exists();
-						} catch (Throwable ex) {
-							mustDownload = true;
-						}
+					try {
+						mustDownload = (activity.getPackageManager().getPackageInfo(packageName, 0) == null);
+					} catch (Throwable ex) {
+						mustDownload = true;
 					}
 
 					if (mustDownload) {
-						//download plugin file here...
-					} else {
-						try {
-							copyFile(downloadFile, pluginApkFile);
-						} catch (Throwable ex) {
-							pluginManager.showMessage(activity, MSG_ERROR_GEN);
-							return;
-						}
-						if (!tryToCreatePluginFromApkFile(this, activity, className, pluginApkFile))
-							pluginManager.showMessage(activity, MSG_ERROR_GEN);
+						pluginManager.showMessage(activity, MSG_INSTALL_PLUGIN, pluginName, packageName);
+						return;
 					}
+
+					if (!tryToCreatePluginFromPackage(this, activity, className, packageName))
+						pluginManager.showMessage(activity, MSG_ERROR_GEN, null, null);
 				} finally {
 					isPluginLoading = false;
 				}
@@ -264,9 +227,11 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 		}
 	}
 
-	private void showMessage(ActivityHost activity, int message) {
+	private void showMessage(ActivityHost activity, int message, String pluginName, String packageName) {
 		synchronized (pluginClasses) {
 			this.activity = activity;
+			this.pluginName = pluginName;
+			this.packageName = packageName;
 			MainHandler.sendMessage(this, message);
 		}
 	}
@@ -283,8 +248,44 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 				}
 			}
 			break;
+		case MSG_INSTALL_PLUGIN:
+			synchronized (pluginClasses) {
+				//replace %s... faster than format() ;)
+				if (activity != null && pluginName != null && packageName != null)
+					UI.showDialogMessage(activity, activity.getText(R.string.download), activity.getText(R.string.download_confimation).toString().replace("%s", pluginName), R.string.download, R.string.no, this, this);
+			}
+			break;
 		}
 		return false;
+	}
+
+	@Override
+	public void onClick(DialogInterface dialog, int which) {
+		synchronized (pluginClasses) {
+			if (activity != null && pluginName != null && packageName != null && which == DialogInterface.BUTTON_POSITIVE) {
+				try {
+					final Intent intent = new Intent(Intent.ACTION_VIEW);
+					intent.setData(Uri.parse("market://details?id=" + packageName));
+					activity.startActivity(intent);
+				} catch (Throwable ex) {
+					showMessage(activity, MSG_ERROR_GEN, null, null);
+					return;
+				}
+			}
+			activity = null;
+			pluginName = null;
+			packageName = null;
+		}
+		dialog.dismiss();
+	}
+
+	@Override
+	public void onDismiss(DialogInterface dialogInterface) {
+		synchronized (pluginClasses) {
+			activity = null;
+			pluginName = null;
+			packageName = null;
+		}
 	}
 
 	@Override
@@ -293,18 +294,23 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	}
 
 	@Override
-	public int getFPlayVersion() {
+	public int getFPlayVersionCode() {
 		return UI.VERSION_CODE;
+	}
+
+	@Override
+	public String getFPlayVersionName() {
+		return UI.VERSION_NAME;
+	}
+
+	@Override
+	public boolean isAlive() {
+		return (Player.state == Player.STATE_ALIVE);
 	}
 
 	@Override
 	public Object getApplicationContext() {
 		return Player.theApplication;
-	}
-
-	@Override
-	public CharSequence getText(int id) {
-		return "";
 	}
 
 	@Override
@@ -348,6 +354,130 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	}
 
 	@Override
+	public <E> ItemSelectorDialog<E> showItemSelectorDialog(final Object activity, final CharSequence title, final CharSequence loadingMessage, final CharSequence connectingMessage, final boolean progressBarVisible, final Class<E> clazz, final E[] initialElements, final ItemSelectorDialog.Observer<E> observer) {
+		//I know this is *SUPER UGLY*! But it saves a few classes :)
+		final class Local extends br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog.Item implements ItemSelectorDialog<E>, br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog.Observer<Local> {
+			private final br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog<Local> dialog;
+			private final E item;
+
+			Local(E item) {
+				super(new FileSt("", (item == null) ? "" : item.toString(), 0));
+				this.dialog = null;
+				this.item = item;
+			}
+
+			Local() {
+				super(null);
+
+				final Local[] localInitialElements = ((initialElements == null) ? null : new Local[initialElements.length]);
+
+				if (initialElements != null) {
+					for (int i = initialElements.length - 1; i >= 0; i--)
+						localInitialElements[i] = new Local(initialElements[i]);
+				}
+
+				dialog = br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog.showDialog((Activity)activity, title, loadingMessage, connectingMessage, progressBarVisible, Local.class, localInitialElements, this);
+				item = null;
+			}
+
+			@Override
+			public void onItemSelectorDialogClosed(br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog<Local> itemSelectorDialog) {
+				if (observer != null)
+					observer.onItemSelectorDialogClosed(this);
+			}
+
+			@Override
+			public void onItemSelectorDialogRefreshList(br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog<Local> itemSelectorDialog) {
+				if (observer != null)
+					observer.onItemSelectorDialogRefreshList(this);
+			}
+
+			@Override
+			public void onItemSelectorDialogItemClicked(br.com.carlosrafaelgn.fplay.ui.ItemSelectorDialog<Local> itemSelectorDialog, int position, Local item) {
+				if (observer != null)
+					observer.onItemSelectorDialogItemClicked(this, position, item.item);
+			}
+
+			@Override
+			public void add(E item) {
+				if (dialog != null)
+					dialog.add(new Local(item));
+			}
+
+			@Override
+			public void clear() {
+				if (dialog != null)
+					dialog.clear();
+			}
+
+			@Override
+			public void remove(int position) {
+				if (dialog != null)
+					dialog.remove(position);
+			}
+
+			@Override
+			public void dismiss() {
+				if (dialog != null)
+					dialog.dismiss();
+			}
+
+			@Override
+			public void cancel() {
+				if (dialog != null)
+					dialog.cancel();
+			}
+
+			@Override
+			public boolean isCancelled() {
+				return (dialog == null || dialog.isCancelled());
+			}
+
+			@Override
+			public int getCount() {
+				return (dialog == null ? 0 : dialog.getCount());
+			}
+
+			@Override
+			public E getItem(int position) {
+				if (dialog == null)
+					return null;
+				final Local item = dialog.getItem(position);
+				return (item == null ? null : item.item);
+			}
+
+			@Override
+			public void showProgressBar(boolean show) {
+				if (dialog != null)
+					dialog.showProgressBar(show);
+			}
+
+			@Override
+			public void showConnecting(boolean connecting) {
+				if (dialog != null)
+					dialog.showConnecting(connecting);
+			}
+		}
+
+		return new Local();
+	}
+
+	@Override
+	public String getString(int str) {
+		switch (str) {
+		case STR_VISUALIZER_NOT_SUPPORTED:
+			return Player.theApplication.getText(R.string.visualizer_not_supported).toString();
+		}
+		return "";
+	}
+
+	@Override
+	public void fixLocale(Object context) {
+		if (context != null)
+			UI.reapplyForcedLocaleOnPlugins((Context)context);
+	}
+
+	@Override
 	public String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
 		return UI.formatIntAsFloat(number, useTwoDecimalPlaces, removeDecimalPlacesIfExact);
 	}
@@ -365,6 +495,31 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	@Override
 	public int spToPxI(float sp) {
 		return UI.spToPxI(sp);
+	}
+
+	@Override
+	public VisualizerService createVisualizerService(Visualizer visualizer, VisualizerService.Observer observer) {
+		return new br.com.carlosrafaelgn.fplay.playback.context.VisualizerService(visualizer, observer);
+	}
+
+	@Override
+	public void visualizerSetSpeed(int speed) {
+		SimpleVisualizerJni.commonSetSpeed(speed);
+	}
+
+	@Override
+	public void visualizerSetColorIndex(int colorIndex) {
+		SimpleVisualizerJni.commonSetColorIndex(colorIndex);
+	}
+
+	@Override
+	public void visualizerUpdateMultiplier(boolean isVoice, boolean hq) {
+		SimpleVisualizerJni.commonUpdateMultiplier(isVoice, hq);
+	}
+
+	@Override
+	public int visualizerProcess(byte[] waveform, int opt) {
+		return SimpleVisualizerJni.commonProcess(waveform, opt);
 	}
 
 	@Override
@@ -388,6 +543,16 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	}
 
 	@Override
+	public void setVolumeInPercentage(int percentage) {
+		Player.setVolumeInPercentage(percentage);
+	}
+
+	@Override
+	public int getVolumeInPercentage() {
+		return Player.getVolumeInPercentage();
+	}
+
+	@Override
 	public int increaseVolume() {
 		return Player.increaseVolume();
 	}
@@ -395,6 +560,31 @@ public final class PluginManager implements MainHandler.Callback, FPlay {
 	@Override
 	public int decreaseVolume() {
 		return Player.decreaseVolume();
+	}
+
+	@Override
+	public boolean isPlaying() {
+		return Player.localPlaying;
+	}
+
+	@Override
+	public boolean isPreparing() {
+		return Player.isPreparing();
+	}
+
+	@Override
+	public int getPlaybackPosition() {
+		return Player.getPosition();
+	}
+
+	@Override
+	public boolean isMediaButton(int keyCode) {
+		return Player.isMediaButton(keyCode);
+	}
+
+	@Override
+	public boolean handleMediaButton(int keyCode) {
+		return Player.handleMediaButton(keyCode);
 	}
 
 	@Override

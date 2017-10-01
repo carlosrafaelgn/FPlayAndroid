@@ -48,7 +48,7 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> implements DialogInterface.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener, BaseList.ItemClickListener {
-	public interface Listener<E extends Item> {
+	public interface Observer<E extends Item> {
 		void onItemSelectorDialogClosed(ItemSelectorDialog<E> itemSelectorDialog);
 		void onItemSelectorDialogRefreshList(ItemSelectorDialog<E> itemSelectorDialog);
 		void onItemSelectorDialogItemClicked(ItemSelectorDialog<E> itemSelectorDialog, int position, E item);
@@ -110,7 +110,7 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 	}
 
 	private ItemList<E> itemList;
-	private Listener<E> listener;
+	private Observer<E> observer;
 	private boolean progressBarVisible, cancelled;
 	private CharSequence loadingMessage, connectingMessage;
 	private TextView lblTitle;
@@ -118,12 +118,12 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 	private BgListView listView;
 	private BgDialog dialog;
 
-	private ItemSelectorDialog(Activity activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, Class<E> clazz, E[] initialElements, Listener<E> listener) {
+	private ItemSelectorDialog(Activity activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, Class<E> clazz, E[] initialElements, Observer<E> observer) {
 		itemList = new ItemList<>(clazz);
 		if (initialElements != null && initialElements.length > 0)
 			itemList.add(0, initialElements, 0, initialElements.length);
 		itemList.sort();
-		this.listener = listener;
+		this.observer = observer;
 
 		final LinearLayout l = new LinearLayout(activity);
 		final LinearLayout panelControls = new LinearLayout(activity);
@@ -173,8 +173,8 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 		dialog.show();
 	}
 
-	public static <T extends Item> ItemSelectorDialog<T> showDialog(Activity activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, boolean progressBarVisible, Class<T> clazz, T[] initialElements, Listener<T> listener) {
-		final ItemSelectorDialog<T> dialog = new ItemSelectorDialog<>(activity, title, loadingMessage, connectingMessage, clazz, initialElements, listener);
+	public static <T extends Item> ItemSelectorDialog<T> showDialog(Activity activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, boolean progressBarVisible, Class<T> clazz, T[] initialElements, Observer<T> observer) {
+		final ItemSelectorDialog<T> dialog = new ItemSelectorDialog<>(activity, title, loadingMessage, connectingMessage, clazz, initialElements, observer);
 		dialog.showProgressBar(progressBarVisible);
 		return dialog;
 	}
@@ -243,8 +243,8 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 
 	@Override
 	public void onItemClicked(int position) {
-		if (dialog != null && itemList != null && position >= 0 && position < itemList.getCount() && listener != null)
-			listener.onItemSelectorDialogItemClicked(this, position, itemList.getItem(position));
+		if (dialog != null && itemList != null && position >= 0 && position < itemList.getCount() && observer != null)
+			observer.onItemSelectorDialogItemClicked(this, position, itemList.getItem(position));
 	}
 
 	@Override
@@ -259,8 +259,8 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 	public void onClick(DialogInterface dialog, int which) {
 		switch (which) {
 		case DialogInterface.BUTTON_POSITIVE:
-			if (listener != null && !progressBarVisible)
-				listener.onItemSelectorDialogRefreshList(this);
+			if (observer != null && !progressBarVisible)
+				observer.onItemSelectorDialogRefreshList(this);
 			break;
 		case DialogInterface.BUTTON_NEGATIVE:
 			if (this.dialog != null)
@@ -273,9 +273,9 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 	public void onDismiss(DialogInterface dialog) {
 		if (this.dialog != null) {
 			this.dialog = null;
-			if (listener != null) {
-				listener.onItemSelectorDialogClosed(this);
-				listener = null;
+			if (observer != null) {
+				observer.onItemSelectorDialogClosed(this);
+				observer = null;
 			}
 			if (listView != null) {
 				listView.setAdapter(null);

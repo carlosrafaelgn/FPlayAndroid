@@ -111,7 +111,7 @@ public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener
 		activity.setContentViewWithTransition(view, true, false);
 	}
 
-	public final View findViewById(int id) {
+	public final <T extends View> T findViewById(int id) {
 		return activity.findViewById(id);
 	}
 

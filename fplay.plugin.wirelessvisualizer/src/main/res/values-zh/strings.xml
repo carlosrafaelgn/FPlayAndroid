@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<!--
+		I do not speak Chinese, so I keep these here as a lesson/reminder :)
+		、 - IDEOGRAPHIC COMMA (U+3001) - in Chinese, delimits items in a list or series
+		， - FULLWIDTH COMMA (U+FF0C) - in Chinese, indicates a pause
+	-->
+	<string name="bt_inactive">蓝牙可见</string>
+	<string name="bt_active">蓝牙已激活&#8230;</string>
+	<string name="bt_error">蓝牙错误！</string>
+	<string name="bt_packets_sent">信息发送：</string>
+	<string name="bt_fps">每秒信息：</string>
+	<string name="bt_sample_count">每条信息的Bins：</string>
+	<string name="bt_connect">连接到蓝牙设备&#8230;</string>
+	<string name="bt_disconnect">断开蓝牙设备</string>
+	<string name="bt_start">开始传输</string>
+	<string name="bt_stop">停止传输</string>
+	<string name="bt_vumeter">VU 表+ BPM 检测</string>
+	<string name="bt_pairing">请尝试在配对设备后再次连接。</string>
+	<string name="bt_connection_error">连接到蓝牙设备时出错 :(</string>
+	<string name="bt_communication_error">与蓝牙设备通信时出错 :(</string>
+	<string name="bt_needs_to_be_enabled">你需要打开蓝牙以继续 :(</string>
+	<string name="bt_not_supported">不支持蓝牙 :(</string>
+	<string name="bt_discovery_error">搜索蓝牙设备时出错 :(</string>
+	<string name="bt_devices">蓝牙设备</string>
+	<string name="bt_connecting">正在连接到你的蓝牙设备，请等待&#8230;</string>
+	<string name="bt_scanning">正在搜索蓝牙设备&#8230;</string>
+	<string name="bt_not_paired">没有已配对的蓝牙设备 :(</string>
+	<string name="bt_not_found">未找到蓝牙设备 :(</string>
+	<string name="bt_null_device_name">(蓝牙设备)</string>
+
+</resources>
