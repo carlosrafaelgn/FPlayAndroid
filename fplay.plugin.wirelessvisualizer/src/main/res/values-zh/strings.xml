@@ -18,16 +18,16 @@
 	<string name="bt_stop">停止传输</string>
 	<string name="bt_vumeter">VU 表+ BPM 检测</string>
 	<string name="bt_pairing">请尝试在配对设备后再次连接。</string>
-	<string name="bt_connection_error">连接到蓝牙设备时出错 :(</string>
-	<string name="bt_communication_error">与蓝牙设备通信时出错 :(</string>
-	<string name="bt_needs_to_be_enabled">你需要打开蓝牙以继续 :(</string>
-	<string name="bt_not_supported">不支持蓝牙 :(</string>
-	<string name="bt_discovery_error">搜索蓝牙设备时出错 :(</string>
+	<string name="bt_connection_error">连接到蓝牙设备时出错 &#128546;</string>
+	<string name="bt_communication_error">与蓝牙设备通信时出错 &#128546;</string>
+	<string name="bt_needs_to_be_enabled">你需要打开蓝牙以继续 &#128546;</string>
+	<string name="bt_not_supported">不支持蓝牙 &#128546;</string>
+	<string name="bt_discovery_error">搜索蓝牙设备时出错 &#128546;</string>
 	<string name="bt_devices">蓝牙设备</string>
 	<string name="bt_connecting">正在连接到你的蓝牙设备，请等待&#8230;</string>
 	<string name="bt_scanning">正在搜索蓝牙设备&#8230;</string>
-	<string name="bt_not_paired">没有已配对的蓝牙设备 :(</string>
-	<string name="bt_not_found">未找到蓝牙设备 :(</string>
+	<string name="bt_not_paired">没有已配对的蓝牙设备 &#128546;</string>
+	<string name="bt_not_found">未找到蓝牙设备 &#128546;</string>
 	<string name="bt_null_device_name">(蓝牙设备)</string>
 
 </resources>

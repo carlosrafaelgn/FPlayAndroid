@@ -3,7 +3,7 @@
 
     <string name="app_by">von Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Schlanker Musikplayer mit intuitiv bedienbarer Oberfläche, Equalizer, Bass Boost, Sound Virtualisierung und einstellbaren Farben</string>
-    <string name="app_more_info">Mehr Infos notwendig?&lt;br/&gt;Quellcode benötigt?&lt;br/&gt;Fragen?&lt;br/&gt;Fehler gefunden?!?&lt;br/&gt;Mich einfach nur kontaktieren? :)&lt;br/&gt;&lt;br/&gt;Schick mir eine E-Mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;oder besuche die Webseite dieses Projekts auf GitHub: &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Besonderer Dank an die Personen, die mir bei der Übersetzung von FPlay geholfen haben:</string>
+    <string name="app_more_info">Mehr Infos notwendig?&lt;br/&gt;Quellcode benötigt?&lt;br/&gt;Fragen?&lt;br/&gt;Fehler gefunden?!?&lt;br/&gt;Mich einfach nur kontaktieren? &#128516;&lt;br/&gt;&lt;br/&gt;Schick mir eine E-Mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;oder besuche die Webseite dieses Projekts auf GitHub: &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Besonderer Dank an die Personen, die mir bei der Übersetzung von FPlay geholfen haben:</string>
     <string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;Vielen Dank!! :D&lt;br/&gt;&lt;br/&gt;Der Schriftfont, der als dyslexiefreundlich genutzt wird, ist OpenDyslexic Regular, von Abelardo Gonzalez, verfügbar unter &lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; und lizenziert unter &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons Attribution 3.0 Unported License&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Der Schriftfont für die skalierbaren Symbole/Icons (icons.ttf) wurde erstellt unter Nutzung der IcoMoon App von Keyamoon, verfügbar unter: &lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Einige der skalierbaren Symbole wurden von mir erstellt und einige kommen aus dem "IcoMoon Free icon set" von Keyamoon, lizenziert unter &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons License 3.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Die Klassen BgEdgeEffect, BitmapLruCache, FixedFFT und NonNull werden auf vorhandenen Code aus dem Android Open Source Projekt, lizenziert unter der &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Die Klassen Vector3, Matrix3x3, So3Util, OrientationEKF und HeadTracker werden auf vorhandenen Code aus &lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; und &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt;, lizenziert unter der &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;FPlay ist lizenziert unter den Bedingungen von der FreeBSD Lizenz.</string>
     <string name="system_info">System Informationen</string>
     <string name="resolution">Auflösung</string>
@@ -39,8 +39,8 @@
     <string name="msg_create_new">Neu erstellen&#8230;</string>
     <string name="msg_add">Diese Schaltfläche fügt alle Titel des Ordners und der Unterordner zur Wiedergabeliste hinzu.</string>
     <string name="msg_play">Diese Schaltfläche fügt alle Titel des Ordners und der Unterordner zur Wiedergabeliste hinzu und startet die Wiedergabe.</string>
-    <string name="msg_error_download_path">Kein Zugriff auf den Download Ordner :(</string>
-    <string name="msg_error_exporting_settings">Problem beim Export der Einstellungen :(</string>
+    <string name="msg_error_download_path">Kein Zugriff auf den Download Ordner &#128546;</string>
+    <string name="msg_error_exporting_settings">Problem beim Export der Einstellungen &#128546;</string>
     <string name="opt_language">Sprache:</string>
     <string name="opt_use_alternate_typeface">Dyslexie freundliche Schrift verwenden</string>
     <string name="opt_auto_turn_off">Player automatisch beenden nach:</string>
@@ -100,7 +100,7 @@
     <string name="item_list">Liste</string>
     <string name="more">Mehr&#8230;</string>
     <string name="more_effects">Weitere Effekte&#8230;</string>
-    <string name="visualizer_not_supported">Dieses Gerät unterstützt keine Visualisierung :(</string>
+    <string name="visualizer_not_supported">Dieses Gerät unterstützt keine Visualisierung &#128546;</string>
     <string name="audio_effects">Audio Effekte</string>
     <string name="zero_preset">Einstellungen löschen</string>
     <string name="load_preset">Einstellungen laden</string>
@@ -159,20 +159,20 @@
     <string name="internal_storage">Interner Speicher</string>
     <string name="external_storage">Externer Speicher</string>
     <string name="usb_storage">USB Speicher</string>
-    <string name="error_connection">Keine Internetverbindung :(</string>
-    <string name="error_gen">Tut mir leid! Etwas ist schiefgelaufen :(</string>
-    <string name="error_playback">Tut mir leid! Etwas ist schiefgelaufen während der Wiedergabe :(</string>
+    <string name="error_connection">Keine Internetverbindung &#128546;</string>
+    <string name="error_gen">Tut mir leid! Etwas ist schiefgelaufen &#128546;</string>
+    <string name="error_playback">Tut mir leid! Etwas ist schiefgelaufen während der Wiedergabe &#128546;</string>
     <string name="error_msg">Tut mir leid! Etwas ist schiefgelaufen während der Wiedergabe:</string>
-    <string name="error_state">Tut mir leid! Die Wiedergabe wurde gestoppt, denn der Player hat falsch reagiert :(</string>
-    <string name="error_io">Tut mir leid! Es gab ein Problem beim Auslesen der Audiodaten :(</string>
-    <string name="error_file_not_found">Tut mir leid! Die Datei wurde nicht gefunden :(</string>
-    <string name="error_server_not_found">Tut mir leid! Die Server wurde nicht gefunden :(</string>
-    <string name="error_timeout">Tut mir leid! Die Zeit für den Zugriff auf die Audiodaten ist abgelaufen :(</string>
-    <string name="error_server_died">Tut mir leid! Der Medienserver hat während der Wiedergabe plötzlich nicht mehr reagiert :(</string>
-    <string name="error_security">Tut mir leid! Ein Sicherheitsproblem ist aufgetreten :(</string>
-    <string name="error_unsupported_format">Tut mir leid! Diese Audiocodec wird nicht unterstützt! :(</string>
-    <string name="error_try_smaller_buffer">Tut mir leid! Out of memory! Versuchen Sie, die Größe des Wiedergabepuffer zu reduzieren :(</string>
-    <string name="coming_soon">Kommt bald&#8230; ;)</string>
+    <string name="error_state">Tut mir leid! Die Wiedergabe wurde gestoppt, denn der Player hat falsch reagiert &#128546;</string>
+    <string name="error_io">Tut mir leid! Es gab ein Problem beim Auslesen der Audiodaten &#128546;</string>
+    <string name="error_file_not_found">Tut mir leid! Die Datei wurde nicht gefunden &#128546;</string>
+    <string name="error_server_not_found">Tut mir leid! Die Server wurde nicht gefunden &#128546;</string>
+    <string name="error_timeout">Tut mir leid! Die Zeit für den Zugriff auf die Audiodaten ist abgelaufen &#128546;</string>
+    <string name="error_server_died">Tut mir leid! Der Medienserver hat während der Wiedergabe plötzlich nicht mehr reagiert &#128546;</string>
+    <string name="error_security">Tut mir leid! Ein Sicherheitsproblem ist aufgetreten &#128546;</string>
+    <string name="error_unsupported_format">Tut mir leid! Diese Audiocodec wird nicht unterstützt! &#128546;</string>
+    <string name="error_try_smaller_buffer">Tut mir leid! Out of memory! Versuchen Sie, die Größe des Wiedergabepuffer zu reduzieren &#128546;</string>
+    <string name="coming_soon">Kommt bald&#8230; &#128521;</string>
     <string name="blue_orange">Blau/Orange</string>
     <string name="blue">Blau</string>
     <string name="green">Grün</string>
@@ -181,7 +181,7 @@
     <string name="dark_light">Dunkel/Hell</string>
     <string name="new_setting">Neue Einstellung!</string>
     <string name="there_is_a_new_setting">Eine neue Einstellung ist im \"Einstellungen\" Menü verfügbar:</string>
-    <string name="check_it_out">Einfach mal testen :)</string>
+    <string name="check_it_out">Einfach mal testen &#128516;</string>
     <string name="color_theme">Farbschema</string>
     <string name="flat_details">Details in hellen Farben</string>
     <string name="widget">Widget</string>
@@ -190,7 +190,7 @@
     <string name="icon_color">Symbol-Farbe</string>
     <string name="apply_theme">Schema aktivieren</string>
     <string name="hard_theme">Dieses Schema enthält mindestens eine schwer lesbare Kombination zwischen Text- und Hintergrundfarben&#8230; Trotzdem aktivieren?</string>
-    <string name="unreadable_theme">Dieses Schema enthält mindestens eine unlesbare Kombination zwischen Text- und Hintergrundfarben :(</string>
+    <string name="unreadable_theme">Dieses Schema enthält mindestens eine unlesbare Kombination zwischen Text- und Hintergrundfarben &#128546;</string>
     <string name="discard_theme">Die Änderungen am Schema wirklich verwerfen?</string>
     <string name="load_colors_from_current_theme">Farben vom aktuellen Schema laden</string>
     <string name="general">Allgemein</string>
@@ -218,11 +218,11 @@
     <string name="custom_color_theme">Veränderbares Farbschema</string>
     <string name="add_artist">Interpret hinzufügen</string>
     <string name="play_artist">Interpret wiedergeben</string>
-    <string name="effect_not_supported">Dieses Gerät unterstützt den Effekt nicht :(</string>
-    <string name="equalizer_not_supported">Dieses Gerät unterstützt den Equalizer nicht :(</string>
-    <string name="bass_boost_not_supported">Dieses Gerät unterstützt den Bass Boost nicht :(</string>
-    <string name="bass_boost_strength_not_supported">Dieses Gerät unterstützt die feinere Bass Boost Einstellung nicht :(</string>
-    <string name="touch_to_add_songs">Liste leer!\n\nHier berühren oder &#9835; Schaltfläche, um Titel hinzuzufügen :)</string>
+    <string name="effect_not_supported">Dieses Gerät unterstützt den Effekt nicht &#128546;</string>
+    <string name="equalizer_not_supported">Dieses Gerät unterstützt den Equalizer nicht &#128546;</string>
+    <string name="bass_boost_not_supported">Dieses Gerät unterstützt den Bass Boost nicht &#128546;</string>
+    <string name="bass_boost_strength_not_supported">Dieses Gerät unterstützt die feinere Bass Boost Einstellung nicht &#128546;</string>
+    <string name="touch_to_add_songs">Liste leer!\n\nHier berühren oder &#9835; Schaltfläche, um Titel hinzuzufügen &#128516;</string>
     <string name="custom_key_behavior">Veränderbares Verhalten</string>
     <string name="opt_wrap_around_list">Verschieben der Selektion an das andere Ende der Liste wenn Anfang oder Ende erreicht wird</string>
     <string name="opt_extra_spacing">Großer Abstand in den Überschriften</string>
@@ -251,10 +251,10 @@
     <string name="genre">Genre</string>
     <string name="search_term">Suchbegriff</string>
     <string name="tags">Schlagworte</string>
-    <string name="no_description">Keine Beschreibung :(</string>
-    <string name="no_tags">Keine Schlagworte :(</string>
-    <string name="no_favorites">Es gibt noch keine Favoriten!\n\nMarkiere Radiosender als Favorit um sie hier wiederzufinden :)</string>
-    <string name="no_stations">Keine Radiosender gefunden :(\n\nHier berühren um Favoriten der Radiosender zu sehen :)</string>
+    <string name="no_description">Keine Beschreibung &#128546;</string>
+    <string name="no_tags">Keine Schlagworte &#128546;</string>
+    <string name="no_favorites">Es gibt noch keine Favoriten!\n\nMarkiere Radiosender als Favorit um sie hier wiederzufinden &#128516;</string>
+    <string name="no_stations">Keine Radiosender gefunden &#128546;\n\nHier berühren um Favoriten der Radiosender zu sehen &#128516;</string>
     <string name="expand_seek_bar">Lautstärkebalken erweitern bei Nutzung</string>
     <string name="provided_by">Bereitgestellt von</string>
     <string name="creamy">Kremig</string>
@@ -282,7 +282,7 @@
     <string name="sustain">Erhalten:</string>
     <string name="diffusion">Diffusion</string>
     <string name="msg_immersive">&#8634; Bewegen Sie das Gerät (Vorsicht!)</string>
-    <string name="msg_no_sensors">Tut mir leid, aber Ihr Gerät nicht über die erforderlichen Sensoren :(</string>
+    <string name="msg_no_sensors">Tut mir leid, aber Ihr Gerät nicht über die erforderlichen Sensoren &#128546;</string>
     <string name="tutorial">Lernprogramm</string>
     <string name="information">Informationen</string>
 
@@ -298,16 +298,16 @@
     <string name="bt_stop">Stoppen Übertragungs</string>
     <string name="bt_vumeter">VU-Meter + BPM-Erkennung</string>
     <string name="bt_pairing">Bitte nach dem Pairen der Geräte nochmals versuchen, die Verbindung herzustellen.</string>
-    <string name="bt_connection_error">Fehler während der Verbindung zum Bluetooth Gerät :(</string>
-    <string name="bt_communication_error">Fehler bei der Kommunikation mit Bluetooth-Gerät :(</string>
-    <string name="bt_needs_to_be_enabled">Bluetooth muss aktiviert werden, bevor fortgesetzt werden kann :(</string>
-    <string name="bt_not_supported">Bluetooth nicht unterstützt :(</string>
-    <string name="bt_discovery_error">Fehler während der suche nach Bluetooth Geräten :(</string>
+    <string name="bt_connection_error">Fehler während der Verbindung zum Bluetooth Gerät &#128546;</string>
+    <string name="bt_communication_error">Fehler bei der Kommunikation mit Bluetooth-Gerät &#128546;</string>
+    <string name="bt_needs_to_be_enabled">Bluetooth muss aktiviert werden, bevor fortgesetzt werden kann &#128546;</string>
+    <string name="bt_not_supported">Bluetooth nicht unterstützt &#128546;</string>
+    <string name="bt_discovery_error">Fehler während der suche nach Bluetooth Geräten &#128546;</string>
     <string name="bt_devices">Bluetooth Geräte</string>
     <string name="bt_connecting">Verbinde das Bluetooth Gerät. Bitte warten&#8230;</string>
     <string name="bt_scanning">Suche nach Bluetooth Geräten&#8230;</string>
-    <string name="bt_not_paired">Keine Bluetooth Geräte wurden verbunden :(</string>
-    <string name="bt_not_found">Keine Bluetooth Geräte wurden gefunden :(</string>
+    <string name="bt_not_paired">Keine Bluetooth Geräte wurden verbunden &#128546;</string>
+    <string name="bt_not_found">Keine Bluetooth Geräte wurden gefunden &#128546;</string>
     <string name="bt_null_device_name">(BT Gerät)</string>
 
     <string name="loudspeaker">Lautsprecher</string>
@@ -347,8 +347,8 @@
     <string name="previous_resets_after_the_beginning">Schaltfläche \"Zurück\" kehrt zum Anfang des Songs, bevor er springt zum vorherigen Titel</string>
     <string name="larger_text_size">Größere Textgröße</string>
     <string name="ringtone">Anruf Klingelton</string>
-    <string name="ringtone_error">Klingeltöne müssen Songs im MP3-Format sein :(</string>
-    <string name="success">Erfolg :)</string>
+    <string name="ringtone_error">Klingeltöne müssen Songs im MP3-Format sein &#128546;</string>
+    <string name="success">Erfolg &#128516;</string>
     <string name="display_song_number_and_count">Anzeige von Song-Nummer und Song-Zählung</string>
     <string name="show_album_art">Anzeigen Album-Art</string>
     <string name="hide_album_art">Ausblenden Album-Art</string>

@@ -37,14 +37,11 @@
 -optimizationpasses 9
 -useuniqueclassmembernames
 -allowaccessmodification
--repackageclasses ''
+-repackageclasses 'fpwv'
 
--keep public interface br.com.carlosrafaelgn.fplay.plugin.Visualizer
--keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.Visualizer {
-    public *;
-}
-
--keep class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer
+# **********************************************************************************************************
+# Common area
+# **********************************************************************************************************
 
 -keepclasseswithmembernames class * {
     native <methods>;
@@ -54,24 +51,66 @@
     native <methods>;
 }
 
--keep public interface br.com.carlosrafaelgn.fplay.plugin.FPlay
+-keep interface br.com.carlosrafaelgn.fplay.plugin.FPlay
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.FPlay {
     public *;
 }
 
--keep public interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin
+-keep interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin {
     public *;
 }
 
--keep public interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService
+-keep interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin$Observer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin$Observer {
+    public *;
+}
+
+-keep interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog {
+    public *;
+}
+
+-keep interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog$Observer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog$Observer {
+    public *;
+}
+
+-keep interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog$Observer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.ItemSelectorDialog$Observer {
+    public *;
+}
+
+-keep class br.com.carlosrafaelgn.fplay.plugin.SlimLock
+-keepclassmembers class br.com.carlosrafaelgn.fplay.plugin.SlimLock {
+    public *;
+}
+
+-keep class br.com.carlosrafaelgn.fplay.plugin.SongInfo
+-keepclassmembers class br.com.carlosrafaelgn.fplay.plugin.SongInfo {
+    public *;
+}
+
+-keep class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer
+
+-keep interface br.com.carlosrafaelgn.fplay.plugin.Visualizer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.Visualizer {
+    public *;
+}
+
+-keep interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService {
+    public *;
+}
+
+-keep interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService$Observer
+-keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.VisualizerService$Observer {
     public *;
 }
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.

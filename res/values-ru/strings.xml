@@ -3,7 +3,7 @@
 
     <string name="app_by">от Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Простой и понятный музыкальный плеер с эквалайзером для Android</string>
-    <string name="app_more_info">Нужна более подробная информация?&lt;br/&gt;Возможно интересует исходный код?&lt;br/&gt;Есть предложение по развитию проекта?&lt;br/&gt;Нашли ошибку в программе?!?&lt;br/&gt;Просто хотите пообщаться со мной? :)&lt;br/&gt;&lt;br/&gt;Пишите на e-mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;или посетите сайт программыn\на GitHub:&lt;br/&gt; &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Очень особую благодарность людям, которые помогли перевод FPlay:</string>
+    <string name="app_more_info">Нужна более подробная информация?&lt;br/&gt;Возможно интересует исходный код?&lt;br/&gt;Есть предложение по развитию проекта?&lt;br/&gt;Нашли ошибку в программе?!?&lt;br/&gt;Просто хотите пообщаться со мной? &#128516;&lt;br/&gt;&lt;br/&gt;Пишите на e-mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;или посетите сайт программыn\на GitHub:&lt;br/&gt; &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Очень особую благодарность людям, которые помогли перевод FPlay:</string>
     <string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;Большое спасибо!! :D&lt;br/&gt;&lt;br/&gt;Шрифт OpenDyslexic Regular от Abelardo Gonzalez, используемый в качестве дислексического шрифта, доступен по ссылке: &lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; под лицензией &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons Attribution 3.0 Unported License&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Шрифт, используемый для отображения масштабируемых пиктограмм, icons.ttf, создан, используя IcoMoon App, автор Keyamoon, доступен на сайте: &lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Некоторые из масштабируемых пиктограмм были созданы мной, часть взята из набора иконок IcoMoon Free, автор Keyamoon, под лицензией &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons License 3.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Классы BgEdgeEffect, BitmapLruCache, FixedFFT и NonNull приходят из существующего кода от The Android Open Source Project, под лицензией &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Классы Vector3, Matrix3x3, So3Util, OrientationEKF и HeadTracker приходят из существующего кода от &lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; и &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt;, под лицензией &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;FPlay лицензируется в соответствии с условиями лицензии FreeBSD.</string>
     <string name="system_info">Системная информация</string>
     <string name="resolution">Разрешение</string>
@@ -39,8 +39,8 @@
     <string name="msg_create_new">Создать новый&#8230;</string>
     <string name="msg_add">Эта кнопка добавляет в список воспроизведения все композиции в папке и её подпапках.</string>
     <string name="msg_play">Эта кнопка добавляет в список воспроизведения все композиции в папке и её подпапках и начинает воспроизведение.</string>
-    <string name="msg_error_download_path">Отсутствует возможность получить доступ к папке загрузки :(</string>
-    <string name="msg_error_exporting_settings">Что-то пошло не так при экспорте настроек :(</string>
+    <string name="msg_error_download_path">Отсутствует возможность получить доступ к папке загрузки &#128546;</string>
+    <string name="msg_error_exporting_settings">Что-то пошло не так при экспорте настроек &#128546;</string>
     <string name="opt_language">Язык:</string>
     <string name="opt_use_alternate_typeface">Использовать дислексический шрифт (опция недоступна для данного языка)</string>
     <string name="opt_auto_turn_off">Выключить плеер автоматически после:</string>
@@ -100,7 +100,7 @@
     <string name="item_list">список</string>
     <string name="more">Подробнее&#8230;</string>
     <string name="more_effects">Подробнее&#8230;</string>
-    <string name="visualizer_not_supported">Ваше устройство не поддерживает визуализацию :(</string>
+    <string name="visualizer_not_supported">Ваше устройство не поддерживает визуализацию &#128546;</string>
     <string name="audio_effects">Звуковые эффекты</string>
     <string name="zero_preset">Сбросить предустановку</string>
     <string name="load_preset">Загрузить предустановку</string>
@@ -159,20 +159,20 @@
     <string name="internal_storage">Внутренняя память</string>
     <string name="external_storage">Внешняя память</string>
     <string name="usb_storage">USB память</string>
-    <string name="error_connection">Нет доступа в Интернет :(</string>
-    <string name="error_gen">Извините! Что-то пошло не так :(</string>
-    <string name="error_playback">Извините! Что-то пошло не так во время воспроизведения :(</string>
+    <string name="error_connection">Нет доступа в Интернет &#128546;</string>
+    <string name="error_gen">Извините! Что-то пошло не так &#128546;</string>
+    <string name="error_playback">Извините! Что-то пошло не так во время воспроизведения &#128546;</string>
     <string name="error_msg">Извините! Что-то пошло не так во время воспроизведения:</string>
-    <string name="error_state">Извините! Воспроизведение было остановлено в связи с аварийным завершением работы плеера :(</string>
-    <string name="error_io">Извините! Был проблема чтения аудио данных :(</string>
-    <string name="error_file_not_found">Извините! Файл не найден :(</string>
-    <string name="error_server_not_found">Извините! Сервер не найден :(</string>
-    <string name="error_timeout">Извините! Время доступа к данным истекло во время воспроизведения :(</string>
-    <string name="error_server_died">Извините! Медиа сервер внезапно умер :(</string>
-    <string name="error_security">Извините! Проблема безопасности случилось :(</string>
-    <string name="error_unsupported_format">Извините! Этот аудио кодек не поддерживается :(</string>
-    <string name="error_try_smaller_buffer">Извините! Недостаточно памяти! Попробуйте уменьшить размер буфера воспроизведения :(</string>
-    <string name="coming_soon">Скоро&#8230; ;)</string>
+    <string name="error_state">Извините! Воспроизведение было остановлено в связи с аварийным завершением работы плеера &#128546;</string>
+    <string name="error_io">Извините! Был проблема чтения аудио данных &#128546;</string>
+    <string name="error_file_not_found">Извините! Файл не найден &#128546;</string>
+    <string name="error_server_not_found">Извините! Сервер не найден &#128546;</string>
+    <string name="error_timeout">Извините! Время доступа к данным истекло во время воспроизведения &#128546;</string>
+    <string name="error_server_died">Извините! Медиа сервер внезапно умер &#128546;</string>
+    <string name="error_security">Извините! Проблема безопасности случилось &#128546;</string>
+    <string name="error_unsupported_format">Извините! Этот аудио кодек не поддерживается &#128546;</string>
+    <string name="error_try_smaller_buffer">Извините! Недостаточно памяти! Попробуйте уменьшить размер буфера воспроизведения &#128546;</string>
+    <string name="coming_soon">Скоро&#8230; &#128521;</string>
     <string name="blue_orange">Сине-оранжевая</string>
     <string name="blue">Синяя</string>
     <string name="green">Зеленый</string>
@@ -181,7 +181,7 @@
     <string name="dark_light">Темный/Светлая</string>
     <string name="new_setting">Новая настройка!</string>
     <string name="there_is_a_new_setting">Существует новый параметр в меню \"Настройки\":</string>
-    <string name="check_it_out">Перевірте це :)</string>
+    <string name="check_it_out">Перевірте це &#128516;</string>
     <string name="color_theme">Цветовая схема</string>
     <string name="flat_details">Подробности в твердых цветах</string>
     <string name="widget">Виджет</string>
@@ -190,7 +190,7 @@
     <string name="icon_color">Цвет иконки</string>
     <string name="apply_theme">Применить тему</string>
     <string name="hard_theme">Ваша цветовая схема имеет как минимум одну комбинацию цветов тяжёлых для восприятия текста/фона&#8230; Применить цветовух схему?</string>
-    <string name="unreadable_theme">Извините, но Ваша цветовая схема имеет как минимум одну невосприимчивую для восприятия комбинацию цветов текста/фона :(</string>
+    <string name="unreadable_theme">Извините, но Ваша цветовая схема имеет как минимум одну невосприимчивую для восприятия комбинацию цветов текста/фона &#128546;</string>
     <string name="discard_theme">Вы действительно хотите отменить все сделанные изменения в данной цветовой схеме?</string>
     <string name="load_colors_from_current_theme">Загрузка цветов из текущей темы</string>
     <string name="general">Общее</string>
@@ -218,11 +218,11 @@
     <string name="custom_color_theme">Настраиваемая цветовая схема</string>
     <string name="add_artist">Добавить исполнителя</string>
     <string name="play_artist">Воспроизвести исполнителя</string>
-    <string name="effect_not_supported">Ваше устройство не поддерживает этот эффект :(</string>
-    <string name="equalizer_not_supported">Ваше устройство не поддерживает эквалайзер :(</string>
-    <string name="bass_boost_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
-    <string name="bass_boost_strength_not_supported">Ваше устройство не поддерживает усиление басов :(</string>
-    <string name="touch_to_add_songs">Список пустой!\n\nНажмите здесь или элемент &#9835;, чтобы добавить композиции :)</string>
+    <string name="effect_not_supported">Ваше устройство не поддерживает этот эффект &#128546;</string>
+    <string name="equalizer_not_supported">Ваше устройство не поддерживает эквалайзер &#128546;</string>
+    <string name="bass_boost_not_supported">Ваше устройство не поддерживает усиление басов &#128546;</string>
+    <string name="bass_boost_strength_not_supported">Ваше устройство не поддерживает усиление басов &#128546;</string>
+    <string name="touch_to_add_songs">Список пустой!\n\nНажмите здесь или элемент &#9835;, чтобы добавить композиции &#128516;</string>
     <string name="custom_key_behavior">Настраиваемые поведения клавиш</string>
     <string name="opt_wrap_around_list">Переместить курсор в противоположный конец списка при достижении его верха/низа</string>
     <string name="opt_extra_spacing">Использовать широкий отступ в заголовках</string>
@@ -251,10 +251,10 @@
     <string name="genre">Жанр</string>
     <string name="search_term">Критерии поиска</string>
     <string name="tags">Теги</string>
-    <string name="no_description">Нет описания :(</string>
-    <string name="no_tags">Нет тегов :(</string>
-    <string name="no_favorites">Нет избранных еще!\n\nКак только вы выбираете ваши любимые радиостанции, вы найдете их здесь :)</string>
-    <string name="no_stations">Невозможно найти радиостанции :(\n\nНажмите здесь, чтобы просмотреть свои любимые радиостанции :)</string>
+    <string name="no_description">Нет описания &#128546;</string>
+    <string name="no_tags">Нет тегов &#128546;</string>
+    <string name="no_favorites">Нет избранных еще!\n\nКак только вы выбираете ваши любимые радиостанции, вы найдете их здесь &#128516;</string>
+    <string name="no_stations">Невозможно найти радиостанции &#128546;\n\nНажмите здесь, чтобы просмотреть свои любимые радиостанции &#128516;</string>
     <string name="expand_seek_bar">Развернуть искать бар перед поиском</string>
     <string name="provided_by">Питание от</string>
     <string name="creamy">Сливочный</string>
@@ -282,7 +282,7 @@
     <string name="sustain">Поддерживать:</string>
     <string name="diffusion">Диффузия</string>
     <string name="msg_immersive">&#8634; Наведите устройство вокруг (будьте осторожны!)</string>
-    <string name="msg_no_sensors">Извините, но устройство не имеет необходимых датчиков :(</string>
+    <string name="msg_no_sensors">Извините, но устройство не имеет необходимых датчиков &#128546;</string>
     <string name="tutorial">Учебник</string>
     <string name="information">Информация</string>
 
@@ -298,16 +298,16 @@
     <string name="bt_stop">Stop transmission</string>
     <string name="bt_vumeter">VU meter + BPM detection</string>
     <string name="bt_pairing">Please, try to connect again after pairing the device.</string>
-    <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device :(</string>
-    <string name="bt_communication_error">An error occurred while communicating with the Bluetooth device :(</string>
-    <string name="bt_needs_to_be_enabled">You need to enable Bluetooth to proceed :(</string>
-    <string name="bt_not_supported">Bluetooth not supported :(</string>
-    <string name="bt_discovery_error">An error occurred while searching for the Bluetooth devices :(</string>
+    <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device &#128546;</string>
+    <string name="bt_communication_error">An error occurred while communicating with the Bluetooth device &#128546;</string>
+    <string name="bt_needs_to_be_enabled">You need to enable Bluetooth to proceed &#128546;</string>
+    <string name="bt_not_supported">Bluetooth not supported &#128546;</string>
+    <string name="bt_discovery_error">An error occurred while searching for the Bluetooth devices &#128546;</string>
     <string name="bt_devices">Bluetooth Devices</string>
     <string name="bt_connecting">Connecting to your Bluetooth device. Please wait&#8230;</string>
     <string name="bt_scanning">Searching for Bluetooth devices&#8230;</string>
-    <string name="bt_not_paired">No Bluetooth devices were paired :(</string>
-    <string name="bt_not_found">No Bluetooth devices were found :(</string>
+    <string name="bt_not_paired">No Bluetooth devices were paired &#128546;</string>
+    <string name="bt_not_found">No Bluetooth devices were found &#128546;</string>
     <string name="bt_null_device_name">(BT Device)</string>
 
     <string name="loudspeaker">Громкоговоритель</string>
@@ -347,8 +347,8 @@
     <string name="previous_resets_after_the_beginning">Кнопка \"Предыдущая\" возвращается к началу песни, прежде чем она переходит к предыдущему трек</string>
     <string name="larger_text_size">Увеличить размер шрифта</string>
     <string name="ringtone">Рингтон</string>
-    <string name="ringtone_error">Вызов мелодии должны быть песни в формате MP3 :(</string>
-    <string name="success">Успех :)</string>
+    <string name="ringtone_error">Вызов мелодии должны быть песни в формате MP3 &#128546;</string>
+    <string name="success">Успех &#128516;</string>
     <string name="display_song_number_and_count">Дисплей номер песни и количество песен</string>
     <string name="show_album_art">Показать обложку альбома</string>
     <string name="hide_album_art">Скрыть обложки альбома</string>

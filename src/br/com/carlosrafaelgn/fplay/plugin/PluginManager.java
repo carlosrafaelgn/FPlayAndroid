@@ -90,6 +90,7 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 				}
 			}
 		} catch (Throwable ex) {
+			ex.printStackTrace();
 			pluginManager.showMessage(activity, MSG_ERROR_GEN, null, null);
 			return true;
 		}
