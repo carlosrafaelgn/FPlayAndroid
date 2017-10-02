@@ -8,7 +8,7 @@
     -->
     <style name="AppBaseTheme" parent="@android:style/Theme.Material.Light.NoActionBar.Fullscreen">
         <!-- API 21 theme customizations can go here. -->
-        <item name="android:colorPrimary">#ff444abf</item> <!-- #ff444abf -->
+        <item name="android:colorPrimary">#ff3344bb</item> <!-- #ff444abf -->
         <item name="android:colorAccent">#ff3344bb</item> <!-- #ff444abf -->
         <item name="android:colorControlNormal">#ff6d6d6d</item>
     </style>
