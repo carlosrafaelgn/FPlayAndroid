@@ -2322,8 +2322,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS);
-		UI.is3D = ((UI.lastVersionCode < 87) || opts.getBit(OPTBIT_3D, true));
-		UI.setTheme(null, (UI.lastVersionCode < 87) ? UI.THEME_FPLAY_DARK : opts.getInt(OPT_THEME, UI.THEME_FPLAY_DARK));
+		UI.is3D = ((UI.lastVersionCode < 106) || opts.getBit(OPTBIT_3D, true));
+		UI.setTheme(null, (UI.lastVersionCode < 106) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);

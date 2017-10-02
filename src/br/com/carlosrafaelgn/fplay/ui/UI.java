@@ -103,9 +103,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 105;
+	public static final int VERSION_CODE = 106;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
-	public static final String VERSION_NAME = "v1.71";
+	public static final String VERSION_NAME = "v1.72";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -131,10 +131,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int THEME_LIGHT = 4;
 	public static final int THEME_DARK_LIGHT = 5;
 	public static final int THEME_CREAMY = 6;
-	public static final int THEME_FPLAY = 7;
-	//present the new FPlay Dark theme to all those using FPlay theme ;)
-	public static final int THEME_FPLAY_DARK = 3;
+	public static final int THEME_FPLAY_2016 = 7;
+	//present the new FPlay theme to all those using FPlay Old/Dark theme ;)
+	public static final int THEME_FPLAY = 3;
 	public static final int THEME_FPLAY_ICY = 8;
+	public static final int THEME_FPLAY_DARK = 9;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -1189,10 +1190,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		glowFilter = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) ? new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN) : null);
 	}
 	
-	public static boolean loadCustomTheme() {
+	private static boolean loadCustomTheme(ActivityHost activityHost) {
 		if (!deserializeThemeFromArray(customColors)) {
 			customColors = null;
-			loadFPlayDarkTheme();
+			setTheme(activityHost, THEME_FPLAY);
 			return false;
 		}
 		finishLoadingTheme(true, false);
@@ -1248,7 +1249,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		return true;
 	}
 	
-	public static void loadCommonColors(boolean invertSelectedAndFocus) {
+	private static void loadCommonColors(boolean invertSelectedAndFocus) {
 		color_window = 0xff303030;
 		color_control_mode = 0xff000000;
 		color_visualizer = 0xff000000;
@@ -1284,143 +1285,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			color_focused_pressed = 0xffffeed4;
 		}
 	}
-	
-	public static void loadBlueOrangeTheme() {
-		loadCommonColors(false);
-		finishLoadingTheme(false, true);
-	}
-	
-	public static void loadBlueTheme() {
-		loadCommonColors(false);
-		color_highlight = 0xff94c0ff;
-		color_text_listitem_secondary = 0xff94c0ff;
-		finishLoadingTheme(false, true);
-	}
-	
-	public static void loadOrangeTheme() {
-		loadCommonColors(true);
-		finishLoadingTheme(false, true);
-	}
-	
-	public static void loadLightTheme() {
-		loadCommonColors(false);
-		color_window = 0xffe0e0e0;
-		color_control_mode = 0xffe0e0e0;
-		color_visualizer = 0xffe0e0e0;
-		color_list = 0xfff2f2f2;
-		color_highlight = 0xff0000f1;
-		color_text_highlight = 0xffffffff;
-		color_text = 0xff000000;
-		color_text_listitem_secondary = 0xff0000f1;
-		color_text_listitem = 0xff000000;
-		finishLoadingTheme(false, true);
-		color_menu_border = color_divider; //0xffc4c4c4;
-	}
-	
-	public static void loadDarkLightTheme() {
-		loadCommonColors(false);
-		color_list = 0xfff2f2f2;
-		color_text_listitem_secondary = 0xff0000f1;
-		color_text_listitem = 0xff000000;
-		finishLoadingTheme(false, true);
-		color_menu_border = color_divider; //0xffc4c4c4;
-	}
-	
-	public static void loadCreamyTheme() {
-		loadCommonColors(false);
-		color_window = 0xff275a96;
-		color_list = 0xfff9f6ea;
-		color_divider = 0xffaabbcc;
-		color_text_listitem_secondary = 0xff0052a8;
-		color_text_listitem = 0xff000000;
-		finishLoadingTheme(false, false);
-		color_menu_border = color_divider;
-		color_text_title = color_text;
-		colorState_text_title_static = colorState_text_static;
-	}
-
-	public static void loadFPlayTheme() {
-		color_window = 0xff444abf;
-		color_control_mode = 0xff000000;
-		color_visualizer = 0xff000000;
-		color_list = 0xfffcfcfc;
-		color_menu = 0xfffcfcfc;
-		color_menu_icon = 0xff555555;
-		color_highlight = 0xffffcc66;
-		color_text_highlight = 0xff000000;
-		color_text = 0xffffffff;
-		color_text_listitem_disabled = 0xff555555;
-		color_text_listitem = 0xff000000;
-		color_text_listitem_secondary = 0xff353be0;
-		color_text_selected = 0xff000000;
-		color_text_menu = 0xff000000;
-		color_selected_grad_lt = 0xffffdd99;
-		color_selected_grad_dk = 0xffffbb33;
-		color_selected_border = 0xffce9731;
-		color_selected_pressed = 0xffffe5b5;
-		color_focused_grad_lt = 0xffd6d8ff;
-		color_focused_grad_dk = 0xffaaafff;
-		color_focused_border = 0xff696dbf;
-		color_focused_pressed = 0xffe5e6ff;
-		finishLoadingTheme(false, true);
-		color_menu_border = color_divider; //0xffc4c4c4;
-		color_text_title = color_text;
-		colorState_text_title_static = colorState_text_static;
-	}
-
-	public static void loadFPlayDarkTheme() {
-		color_window = 0xff3d3d5b;
-		color_control_mode = 0xff000000;
-		color_visualizer = 0xff000000;
-		color_list = 0xffcccccc;
-		color_menu = 0xff3d3d5b;
-		color_menu_icon = 0xffffcc66;
-		color_highlight = 0xffffcc66;
-		color_text_highlight = 0xff000000;
-		color_text = 0xffffffff;
-		color_text_listitem_disabled = 0xff555555;
-		color_text_listitem = 0xff000000;
-		color_text_listitem_secondary = 0xff3a40a8;
-		color_text_selected = 0xff000000;
-		color_text_menu = 0xffd6d8ff;
-		color_selected_grad_lt = 0xffffdd99;
-		color_selected_grad_dk = 0xffffbb33;
-		color_selected_border = 0xffce9731;
-		color_selected_pressed = 0xffffe5b5;
-		color_focused_grad_lt = 0xffaaafff;
-		color_focused_grad_dk = 0xff878dff;
-		color_focused_border = 0xff696dbf;
-		color_focused_pressed = 0xffe5e6ff;
-		finishLoadingTheme(false, true);
-		color_menu_border = 0xff808299;
-	}
-
-	public static void loadFPlayIcyTheme() {
-		color_window = 0xff333333;
-		color_control_mode = 0xff000000;
-		color_visualizer = 0xff000000;
-		color_list = 0xffcccccc;
-		color_menu = 0xff333333;
-		color_menu_icon = 0xff5599ff;
-		color_highlight = 0xff5599ff;
-		color_text_highlight = 0xff000000;
-		color_text = 0xffffffff;
-		color_text_listitem_disabled = 0xff555555;
-		color_text_listitem = 0xff333333;
-		color_text_listitem_secondary = 0xff0044aa;
-		color_text_selected = 0xff000000;
-		color_text_menu = 0xffaaccff;
-		color_selected_grad_lt = 0xffaaccff;
-		color_selected_grad_dk = 0xff5599ff;
-		color_selected_border = 0xff0044aa;
-		color_selected_pressed = 0xffaaccff;
-		color_focused_grad_lt = 0xfff0f0f0;
-		color_focused_grad_dk = 0xfff0f0f0;
-		color_focused_border = 0xff888888;
-		color_focused_pressed = 0xffffffff;
-		finishLoadingTheme(false, true);
-		color_menu_border = 0xff5599ff;
-	}
 
 	public static String getThemeString(int theme) {
 		switch (theme) {
@@ -1438,12 +1302,14 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return Player.theApplication.getText(R.string.dark_light).toString();
 		case THEME_CREAMY:
 			return Player.theApplication.getText(R.string.creamy).toString();
-		case THEME_FPLAY:
-			return "FPlay";
+		case THEME_FPLAY_2016:
+			return "FPlay (2016)";
 		case THEME_FPLAY_ICY:
 			return "FPlay " + Player.theApplication.getText(R.string.icy).toString();
-		default:
+		case THEME_FPLAY_DARK:
 			return "FPlay " + Player.theApplication.getText(R.string.dark).toString();
+		default:
+			return "FPlay";
 		}
 	}
 
@@ -1453,35 +1319,144 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		//internalToast = null;
 		switch (theme) {
 		case THEME_CUSTOM:
-			loadCustomTheme();
+			loadCustomTheme(activityHost);
 			break;
 		case THEME_BLUE_ORANGE:
-			loadBlueOrangeTheme();
+			loadCommonColors(false);
+			finishLoadingTheme(false, true);
 			break;
 		case THEME_BLUE:
-			loadBlueTheme();
+			loadCommonColors(false);
+			color_highlight = 0xff94c0ff;
+			color_text_listitem_secondary = 0xff94c0ff;
+			finishLoadingTheme(false, true);
 			break;
 		case THEME_ORANGE:
-			loadOrangeTheme();
+			loadCommonColors(true);
+			finishLoadingTheme(false, true);
 			break;
 		case THEME_LIGHT:
-			loadLightTheme();
+			loadCommonColors(false);
+			color_window = 0xffe0e0e0;
+			color_control_mode = 0xffe0e0e0;
+			color_visualizer = 0xffe0e0e0;
+			color_list = 0xfff2f2f2;
+			color_highlight = 0xff0000f1;
+			color_text_highlight = 0xffffffff;
+			color_text = 0xff000000;
+			color_text_listitem_secondary = 0xff0000f1;
+			color_text_listitem = 0xff000000;
+			finishLoadingTheme(false, true);
+			color_menu_border = color_divider; //0xffc4c4c4;
 			break;
 		case THEME_DARK_LIGHT:
-			loadDarkLightTheme();
+			loadCommonColors(false);
+			color_list = 0xfff2f2f2;
+			color_text_listitem_secondary = 0xff0000f1;
+			color_text_listitem = 0xff000000;
+			finishLoadingTheme(false, true);
+			color_menu_border = color_divider; //0xffc4c4c4;
 			break;
 		case THEME_CREAMY:
-			loadCreamyTheme();
+			loadCommonColors(false);
+			color_window = 0xff275a96;
+			color_list = 0xfff9f6ea;
+			color_divider = 0xffaabbcc;
+			color_text_listitem_secondary = 0xff0052a8;
+			color_text_listitem = 0xff000000;
+			finishLoadingTheme(false, false);
+			color_menu_border = color_divider;
+			color_text_title = color_text;
+			colorState_text_title_static = colorState_text_static;
 			break;
-		case THEME_FPLAY:
-			loadFPlayTheme();
+		case THEME_FPLAY_2016:
+			color_window = 0xff444abf;
+			color_control_mode = 0xff000000;
+			color_visualizer = 0xff000000;
+			color_list = 0xfffcfcfc;
+			color_menu = 0xfffcfcfc;
+			color_menu_icon = 0xff555555;
+			color_highlight = 0xffffcc66;
+			color_text_highlight = 0xff000000;
+			color_text = 0xffffffff;
+			color_text_listitem_disabled = 0xff555555;
+			color_text_listitem = 0xff000000;
+			color_text_listitem_secondary = 0xff353be0;
+			color_text_selected = 0xff000000;
+			color_text_menu = 0xff000000;
+			color_selected_grad_lt = 0xffffdd99;
+			color_selected_grad_dk = 0xffffbb33;
+			color_selected_border = 0xffce9731;
+			color_selected_pressed = 0xffffe5b5;
+			color_focused_grad_lt = 0xffd6d8ff;
+			color_focused_grad_dk = 0xffaaafff;
+			color_focused_border = 0xff696dbf;
+			color_focused_pressed = 0xffe5e6ff;
+			finishLoadingTheme(false, true);
+			color_menu_border = color_divider; //0xffc4c4c4;
+			color_text_title = color_text;
+			colorState_text_title_static = colorState_text_static;
 			break;
 		case THEME_FPLAY_ICY:
-			loadFPlayIcyTheme();
+			color_window = 0xff333333;
+			color_control_mode = 0xff000000;
+			color_visualizer = 0xff000000;
+			color_list = 0xffcccccc;
+			color_menu = 0xff333333;
+			color_menu_icon = 0xff5599ff;
+			color_highlight = 0xff5599ff;
+			color_text_highlight = 0xff000000;
+			color_text = 0xffffffff;
+			color_text_listitem_disabled = 0xff555555;
+			color_text_listitem = 0xff333333;
+			color_text_listitem_secondary = 0xff0044aa;
+			color_text_selected = 0xff000000;
+			color_text_menu = 0xffaaccff;
+			color_selected_grad_lt = 0xffaaccff;
+			color_selected_grad_dk = 0xff5599ff;
+			color_selected_border = 0xff0044aa;
+			color_selected_pressed = 0xffaaccff;
+			color_focused_grad_lt = 0xfff0f0f0;
+			color_focused_grad_dk = 0xfff0f0f0;
+			color_focused_border = 0xff888888;
+			color_focused_pressed = 0xffffffff;
+			finishLoadingTheme(false, true);
+			color_menu_border = 0xff5599ff;
 			break;
 		default:
-			UI.theme = THEME_FPLAY_DARK;
-			loadFPlayDarkTheme();
+			if (theme == THEME_FPLAY_DARK) {
+				color_window = 0xff3d3d5b;
+				color_menu = 0xff3d3d5b;
+				color_menu_icon = 0xffffcc66;
+				color_text_menu = 0xffd6d8ff;
+				color_text_listitem_secondary = 0xff3a40a8;
+			} else {
+				UI.theme = THEME_FPLAY;
+				color_window = 0xff3344bb;
+				color_menu = 0xff222244;
+				color_menu_icon = 0xffffbb33;
+				color_text_menu = 0xffaaccff;
+				color_text_listitem_secondary = 0xff0033cc;
+			}
+			color_control_mode = 0xff000000;
+			color_visualizer = 0xff000000;
+			color_list = 0xffcccccc;
+			color_highlight = 0xffffcc66;
+			color_text_highlight = 0xff000000;
+			color_text = 0xffffffff;
+			color_text_listitem_disabled = 0xff555555;
+			color_text_listitem = 0xff000000;
+			color_text_selected = 0xff000000;
+			color_selected_grad_lt = 0xffffdd99;
+			color_selected_grad_dk = 0xffffbb33;
+			color_selected_border = 0xffce9731;
+			color_selected_pressed = 0xffffe5b5;
+			color_focused_grad_lt = 0xffaaafff;
+			color_focused_grad_dk = 0xff878dff;
+			color_focused_border = 0xff696dbf;
+			color_focused_pressed = 0xffe5e6ff;
+			finishLoadingTheme(false, true);
+			color_menu_border = (theme == THEME_FPLAY_DARK ? 0xff808299 : 0xff0066ff);
 			break;
 		}
 		if (activityHost != null)
