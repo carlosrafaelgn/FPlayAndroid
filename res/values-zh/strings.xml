@@ -35,8 +35,8 @@
 	<string name="msg_turn_off_title">自动关闭</string>
 	<string name="msg_turn_off">多少分钟后自动关闭播放器</string>
 	<string name="msg_enter_name">为新%s命名</string>
-	<string name="msg_confirm_overwrite">你真的要覆盖 %1$s “%2$s”吗？</string>
-	<string name="msg_confirm_delete">你真的要删除 %1$s “%2$s”吗？</string>
+	<string name="msg_confirm_overwrite">您真的要覆盖 %1$s “%2$s”吗？</string>
+	<string name="msg_confirm_delete">您真的要删除 %1$s “%2$s”吗？</string>
 	<string name="msg_overwrite">覆盖 %1$s “%2$s”</string>
 	<string name="msg_delete">删除 %1$s “%2$s”</string>
 	<string name="msg_delete_button">删除&#8230;</string>
@@ -105,7 +105,7 @@
 	<string name="item_list">列表</string>
 	<string name="more">更多&#8230;</string>
 	<string name="more_effects">更多效果&#8230;</string>
-	<string name="visualizer_not_supported">你的设备不支持可视化效果 &#128546;</string>
+	<string name="visualizer_not_supported">您的设备不支持可视化效果 &#128546;</string>
 	<string name="audio_effects">音频效果</string>
 	<string name="zero_preset">无输出的预设</string>
 	<string name="load_preset">载入预设</string>
@@ -194,9 +194,9 @@
 	<string name="text_color">文字颜色</string>
 	<string name="icon_color">图标颜色</string>
 	<string name="apply_theme">应用主题</string>
-	<string name="hard_theme">你的主题含有至少一组难以阅读的文字与背景颜色&#8230; 仍然要应用主题吗？</string>
-	<string name="unreadable_theme">抱歉，你的主题含有至少一组不可读的文字或背景颜色 &#128546;</string>
-	<string name="discard_theme">你真的不保存对主题的修改吗？</string>
+	<string name="hard_theme">您的主题含有至少一组难以阅读的文字与背景颜色&#8230; 仍然要应用主题吗？</string>
+	<string name="unreadable_theme">抱歉，您的主题含有至少一组不可读的文字或背景颜色 &#128546;</string>
+	<string name="discard_theme">您真的不保存对主题的修改吗？</string>
 	<string name="load_colors_from_current_theme">从现有主题中载入颜色</string>
 	<string name="general">普通</string>
 	<string name="selection">选择</string>
@@ -223,10 +223,10 @@
 	<string name="custom_color_theme">自定义主题颜色</string>
 	<string name="add_artist">添加歌手</string>
 	<string name="play_artist">播放艺术家</string>
-	<string name="effect_not_supported">你的设备不支持这个效果 &#128546;</string>
-	<string name="equalizer_not_supported">你的设备不支持均衡器 &#128546;</string>
-	<string name="bass_boost_not_supported">你的设备不支持低音增强 &#128546;</string>
-	<string name="bass_boost_strength_not_supported">你的设备不支持精细的低音增强调节 &#128546;</string>
+	<string name="effect_not_supported">您的设备不支持这个效果 &#128546;</string>
+	<string name="equalizer_not_supported">您的设备不支持均衡器 &#128546;</string>
+	<string name="bass_boost_not_supported">您的设备不支持低音增强 &#128546;</string>
+	<string name="bass_boost_strength_not_supported">您的设备不支持精细的低音增强调节 &#128546;</string>
 	<string name="touch_to_add_songs">空列表\n\n点击这里，或者 &#9835; 按钮，来添加歌曲 &#128516;</string>
 	<string name="custom_key_behavior">自定义按键作用</string>
 	<string name="opt_wrap_around_list">当到达列表的顶端或底端时，移动键盘选择项到其的另一端</string>
@@ -259,7 +259,7 @@
 	<string name="no_description">无描述 &#128546;</string>
 	<string name="no_tags">无标签 &#128546;</string>
 	<string name="no_favorites">还没有标记喜爱的歌曲！\n\n将广播标记为喜爱，以便在这里找到它们 &#128516;</string>
-	<string name="no_stations">未找到广播！ &#128546;\n\n点击这里查看你标记为喜爱的广播 &#128516;</string>
+	<string name="no_stations">未找到广播！ &#128546;\n\n点击这里查看您标记为喜爱的广播 &#128516;</string>
 	<string name="expand_seek_bar">滑动调节播放进度或音量时展开滑动条</string>
 	<string name="provided_by">提供者</string>
 	<string name="creamy">奶油</string>
@@ -286,8 +286,8 @@
 	<string name="place_the_playlist_to_the_right">将播放列表放在右侧</string>
 	<string name="sustain">类型：</string>
 	<string name="diffusion">扩散</string>
-	<string name="msg_immersive">&#8634; 移动你的设备吧（注意安全！）</string>
-	<string name="msg_no_sensors">抱歉，你的设备缺少必要的传感器 &#128546;</string>
+	<string name="msg_immersive">&#8634; 移动您的设备吧（注意安全！）</string>
+	<string name="msg_no_sensors">抱歉，您的设备缺少必要的传感器 &#128546;</string>
 	<string name="tutorial">教程</string>
 	<string name="information">信息</string>
    
@@ -305,11 +305,11 @@
 	<string name="bt_pairing">请尝试在配对设备后再次连接。</string>
 	<string name="bt_connection_error">连接到蓝牙设备时出错 &#128546;</string>
 	<string name="bt_communication_error">与蓝牙设备通信时出错 &#128546;</string>
-	<string name="bt_needs_to_be_enabled">你需要打开蓝牙以继续 &#128546;</string>
+	<string name="bt_needs_to_be_enabled">您需要打开蓝牙以继续 &#128546;</string>
 	<string name="bt_not_supported">不支持蓝牙 &#128546;</string>
 	<string name="bt_discovery_error">搜索蓝牙设备时出错 &#128546;</string>
 	<string name="bt_devices">蓝牙设备</string>
-	<string name="bt_connecting">正在连接到你的蓝牙设备，请等待&#8230;</string>
+	<string name="bt_connecting">正在连接到您的蓝牙设备，请等待&#8230;</string>
 	<string name="bt_scanning">正在搜索蓝牙设备&#8230;</string>
 	<string name="bt_not_paired">没有已配对的蓝牙设备 &#128546;</string>
 	<string name="bt_not_found">未找到蓝牙设备 &#128546;</string>
