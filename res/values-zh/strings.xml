@@ -319,8 +319,8 @@
 	<string name="earphones">耳机</string>
 	<string name="bluetooth">蓝牙</string>
 	<string name="follow_current_song">跟随当前歌曲</string>
-	<string name="announce_current_song">在当前歌曲更改时提示</string>
-	<string name="place_title_at_the_bottom">将标题放在底部</string>
+	<string name="announce_current_song">在播放下一首歌曲时提示</string>
+	<string name="place_title_at_the_bottom">将标题栏放在底部</string>
 	<string name="headset_hook_1">单击耳机按钮：</string>
 	<string name="headset_hook_2">双击耳机按钮：</string>
 	<string name="headset_hook_3">三击耳机按钮：</string>
@@ -328,7 +328,7 @@
 	<string name="path">路径</string>
 	<string name="radio_directory">在线电台目录</string>
 	<string name="all_kinds">所有类型</string>
-	<string name="listeners">聆听者</string>
+	<string name="listeners">耳机</string>
 	<string name="connecting">连接中&#8230;</string>
 	<string name="bytes_before_decoding">开始解码前要下载的字节数：</string>
 	<string name="seconds_before_playback">开始播放前要解码的秒数：</string>
@@ -358,7 +358,7 @@
 	<string name="show_album_art">显示专辑封面</string>
 	<string name="hide_album_art">隐藏专辑封面</string>
 	<string name="icy">冰</string>
-	<string name="allow_lock_screen">允许播放器显示在锁屏上</string>
+	<string name="allow_lock_screen">允许播放器显示在锁屏</string>
 	<string name="share">分享</string>
 	<string name="file_prefetch_size">播放本地文件时，暂存到内存中的字节数：</string>
     <string name="download">下载</string>
