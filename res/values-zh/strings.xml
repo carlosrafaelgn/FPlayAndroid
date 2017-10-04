@@ -8,17 +8,17 @@
 	-->
 	<string name="app_by">作者 Carlos Rafael Gimenes das Neves</string>
 	<string name="app_description">简洁的音乐播放器，支持均衡器和低音增强，可修改主题颜色</string>
-	<string name="app_more_info">正在查找更多信息吗？&lt;br/&gt;需要源代码？&lt;br/&gt;想要什么功能？&lt;br/&gt;发现了Bug？！？&lt;br/&gt;只是想找我聊聊？ &#128516;&lt;br/&gt;&lt;br/&gt;给我发邮件吧：&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;或在GitHub查看这个程序项目：&lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;特别感谢以下帮助翻译了FPlay的朋友：</string>
+	<string name="app_more_info">需要更多信息吗？&lt;br/&gt;需要源代码？&lt;br/&gt;想要什么功能？&lt;br/&gt;发现了Bug？！？&lt;br/&gt;只是想找我聊聊？ &#128516;&lt;br/&gt;&lt;br/&gt;给我发邮件吧：&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;或在GitHub查看这个程序项目：&lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;特别感谢以下帮助翻译了FPlay的朋友：</string>
 	<string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;非常感谢！！ :D&lt;br/&gt;&lt;br/&gt;可读性字体是由Abelardo Gonzalez制作的OpenDyslexic Regular，在&lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; 上可用，并以&lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;知识共享署名 3.0 未本地化版本许可协议 &lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权。被用作绘制可缩放图标的字体 icons.ttf 是通过 Keyamoon 的 IcoMoon App 制作，在&lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt; 可用。一些可缩放的图标是由我创建的，还有一些是来自Keyamoon 的 IcoMoon Free 图标集，以&lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;知识共享署名 3.0 许可协议&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权。BgEdgeEffect、 BitmapLruCache、 FixedFFT 和 NonNull 这些 Class 类基于The Android Open Source Prolicensed的现有代码，以 &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权；Vector3 、Matrix3x3、So3Util、OrientationEKF 和 HeadTracker  是基于&lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; 和 &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt; 的现有代码，以 &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;授权。FPlay 基于FreeBSD License 授权。</string>
 	<string name="system_info">系统信息</string>
 	<string name="resolution">分辨率</string>
 	<string name="nothing_playing">无播放</string>
-	<string name="oops">噢噢&#8230;</string>
-	<string name="loading">缓冲中&#8230;</string>
+	<string name="oops">天哪&#8230;</string>
+	<string name="loading">正在加载&#8230;</string>
 	<string name="adding_songs">正在添加歌曲&#8230;</string>
 	<string name="empty_list">空列表！</string>
 	<string name="error">错误：</string>
-	<string name="ok">好</string>
+	<string name="ok">好的</string>
 	<string name="cancel">取消</string>
 	<string name="done">完成</string>
 	<string name="yes">是</string>
@@ -47,16 +47,16 @@
 	<string name="msg_error_download_path">无法访问下载文件夹 &#128546;</string>
 	<string name="msg_error_exporting_settings">导出设置时错误 &#128546;</string>
 	<string name="opt_language">语言：</string>
-	<string name="opt_use_alternate_typeface">使用阅读友好的字体</string>
+	<string name="opt_use_alternate_typeface">使用易读的字体（不支持中文）</string>
 	<string name="opt_auto_turn_off">自动关闭播放器：</string>
 	<string name="opt_auto_idle_turn_off">当无歌曲播放时，自动关闭播放器</string>
 	<string name="opt_auto_turn_off_playlist">当播放列表播放完后，自动关闭播放器（必须同时选择“不重复”）</string>
 	<string name="opt_keep_screen_on">保持屏幕常亮</string>
 	<string name="opt_volume_control_type">音量控制类型</string>
 	<string name="opt_is_divider_visible">在播放列表条目间绘制分隔线</string>
-	<string name="opt_is_vertical_margin_large">在播放列表条目间隔开</string>
+	<string name="opt_is_vertical_margin_large">增大每个条目的间距</string>
 	<string name="opt_handle_call_key">使用拨号键来控制播放/暂停</string>
-	<string name="opt_do_not_attenuate_volume">当收到消息时，不降低音乐音量</string>
+	<string name="opt_do_not_attenuate_volume">当收到通知时，不降低音乐音量</string>
 	<string name="opt_play_when_headset_plugged">当有线耳机插入时自动播放</string>
 	<string name="opt_block_back_key">阻止按返回键回到桌面</string>
 	<string name="opt_double_click_mode">在播放列表双击歌曲播放</string>
@@ -137,9 +137,9 @@
 	<string name="add_album">添加专辑</string>
 	<string name="play_album">播放专辑</string>
 	<string name="remove_favorite">移除喜爱</string>
-	<string name="previous">上一个</string>
+	<string name="previous">上一首</string>
 	<string name="pause">暂停</string>
-	<string name="next">下一个</string>
+	<string name="next">下一首</string>
 	<string name="play">播放</string>
 	<string name="add">添加</string>
 	<string name="unknownArtist">（未知歌手）</string>
@@ -155,7 +155,7 @@
 	<string name="duration">持续时间</string>
 	<string name="year">年份</string>
 	<string name="no_info">—</string>
-	<string name="standard_language">语言</string>
+	<string name="standard_language">系统语言</string>
 	<string name="artists">歌手</string>
 	<string name="albums">专辑</string>
 	<string name="music">音乐</string>
@@ -188,7 +188,7 @@
 	<string name="there_is_a_new_setting">新设置项在“设置”菜单可用：</string>
 	<string name="check_it_out">去看看吧 &#128516;</string>
 	<string name="color_theme">颜色主题</string>
-	<string name="flat_details">扁平化颜色的细节</string>
+	<string name="flat_details">扁平化细节</string>
 	<string name="widget">桌面小部件</string>
 	<string name="transparent_background">透明背景</string>
 	<string name="text_color">文字颜色</string>
@@ -239,7 +239,7 @@
 	<string name="sort_by_title">按歌曲名排序</string>
 	<string name="sort_by_artist">按歌手名排序</string>
 	<string name="sort_by_album">按专辑名排序</string>
-	<string name="secondary_line_of_text">第二行显示文字</string>
+	<string name="secondary_line_of_text">第二行显示的文字</string>
 	<string name="scrollbar">滚动条</string>
 	<string name="scrollbar_to_the_left">将滚动条置于左侧</string>
 	<string name="scrollbar_playlist">播放列表处滚动条显示类型：</string>
@@ -260,11 +260,11 @@
 	<string name="no_tags">无标签 &#128546;</string>
 	<string name="no_favorites">还没有标记喜爱的歌曲！\n\n将广播标记为喜爱，以便在这里找到它们 &#128516;</string>
 	<string name="no_stations">未找到广播！ &#128546;\n\n点击这里查看你标记为喜爱的广播 &#128516;</string>
-	<string name="expand_seek_bar">在寻找钱展开搜索条</string>
+	<string name="expand_seek_bar">滑动调节播放进度或音量时展开滑动条</string>
 	<string name="provided_by">提供者</string>
 	<string name="creamy">奶油</string>
-	<string name="transition">翻译：</string>
-	<string name="animations">动画</string>
+	<string name="transition">转场动画：</string>
+	<string name="animations">显示动画</string>
 	<string name="fade">淡出</string>
 	<string name="dissolve">溶解</string>
 	<string name="zoom">缩放</string>
@@ -284,9 +284,9 @@
 	<string name="choose_image">选择图片&#8230;</string>
 	<string name="accessibility">无障碍</string>
 	<string name="place_the_playlist_to_the_right">将播放列表放在右侧</string>
-	<string name="sustain">支持：</string>
+	<string name="sustain">类型：</string>
 	<string name="diffusion">扩散</string>
-	<string name="msg_immersive">&#8634; 移动你的设备吧 （小心点！）</string>
+	<string name="msg_immersive">&#8634; 移动你的设备吧（注意安全！）</string>
 	<string name="msg_no_sensors">抱歉，你的设备缺少必要的传感器 &#128546;</string>
 	<string name="tutorial">教程</string>
 	<string name="information">信息</string>
@@ -318,8 +318,8 @@
 	<string name="loudspeaker">扬声器</string>
 	<string name="earphones">耳机</string>
 	<string name="bluetooth">蓝牙</string>
-	<string name="follow_current_song">跟随主屏幕上的当前歌曲</string>
-	<string name="announce_current_song">当当前歌曲更改时播报</string>
+	<string name="follow_current_song">跟随当前歌曲</string>
+	<string name="announce_current_song">在当前歌曲更改时提示</string>
 	<string name="place_title_at_the_bottom">将标题放在底部</string>
 	<string name="headset_hook_1">单击耳机按钮：</string>
 	<string name="headset_hook_2">双击耳机按钮：</string>
@@ -341,15 +341,15 @@
 	<string name="slide">滑动</string>
 	<string name="play_with_long_press">在添加歌曲时，长按播放该歌曲</string>
 	<string name="smooth">平滑</string>
-	<string name="transition_popup">转场 （菜单）：</string>
+	<string name="transition_popup">转场动画（菜单）：</string>
 	<string name="dark">暗</string>
-	<string name="enable_external_fx">启用外部音效</string>
+	<string name="enable_external_fx">使用其它软件的声音效果器</string>
 	<string name="external_fx_warning">（停用可能需要一些时间）</string>
 	<string name="playback_engine">播放引擎（重新启动播放器后生效）：</string>
 	<string name="recommended">推荐</string>
 	<string name="resample_track_to_native">将歌曲的采样频率更改为设备的原始采样频率</string>
 	<string name="performance">Performance</string>
-	<string name="previous_resets_after_the_beginning">“上一个”按钮在跳到上一曲目前，先返回到当前歌曲的开头</string>
+	<string name="previous_resets_after_the_beginning">“上一首”按钮在跳到上一曲目前，先返回到当前歌曲的开头</string>
 	<string name="larger_text_size">大字号</string>
 	<string name="ringtone">铃声</string>
 	<string name="ringtone_error">铃声必须是MP3格式 &#128546;</string>
@@ -358,10 +358,10 @@
 	<string name="show_album_art">显示专辑封面</string>
 	<string name="hide_album_art">隐藏专辑封面</string>
 	<string name="icy">冰</string>
-	<string name="allow_lock_screen">允许播放器保持在锁屏上方</string>
+	<string name="allow_lock_screen">允许播放器显示在锁屏上</string>
 	<string name="share">分享</string>
-	<string name="file_prefetch_size">播放本地文件时，存储到内存中的字节数：</string>
+	<string name="file_prefetch_size">播放本地文件时，暂存到内存中的字节数：</string>
     <string name="download">下载</string>
-    <string name="download_confimation">此功能需要外部扩展名“%s”。 您要现在下载吗？</string>
+    <string name="download_confimation">此功能需要外部扩展“%s”。 您要现在下载吗？</string>
 
 </resources>
