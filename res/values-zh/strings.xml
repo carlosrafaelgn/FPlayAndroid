@@ -188,7 +188,7 @@
 	<string name="there_is_a_new_setting">新设置项在“设置”菜单可用：</string>
 	<string name="check_it_out">去看看吧 &#128516;</string>
 	<string name="color_theme">颜色主题</string>
-	<string name="flat_details">扁平化细节</string>
+	<string name="flat_details">扁平化</string>
 	<string name="widget">桌面小部件</string>
 	<string name="transparent_background">透明背景</string>
 	<string name="text_color">文字颜色</string>
@@ -239,7 +239,7 @@
 	<string name="sort_by_title">按歌曲名排序</string>
 	<string name="sort_by_artist">按歌手名排序</string>
 	<string name="sort_by_album">按专辑名排序</string>
-	<string name="secondary_line_of_text">第二行显示的文字</string>
+	<string name="secondary_line_of_text">在歌曲条目中第二行显示的文字</string>
 	<string name="scrollbar">滚动条</string>
 	<string name="scrollbar_to_the_left">将滚动条置于左侧</string>
 	<string name="scrollbar_playlist">播放列表处滚动条显示类型：</string>
@@ -264,7 +264,7 @@
 	<string name="provided_by">提供者</string>
 	<string name="creamy">奶油</string>
 	<string name="transition">转场动画：</string>
-	<string name="animations">显示动画</string>
+	<string name="animations">动画开关</string>
 	<string name="fade">淡出</string>
 	<string name="dissolve">溶解</string>
 	<string name="zoom">缩放</string>
