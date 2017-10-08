@@ -27,13 +27,8 @@
 # http://proguard.sourceforge.net/index.html#manual/examples.html
 #
 
-# **********************************************************************************************************
-# I made the following changes to the file sdk/tools/proguard/proguard-android-optimize.txt
-#
-# removed -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
-# added -optimizations !code/simplification/cast,!field/*,!class/merging/*
-# **********************************************************************************************************
 -printmapping build/outputs/mapping/mapping.txt
+-optimizations code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
 -optimizationpasses 9
 -useuniqueclassmembernames
 -allowaccessmodification
@@ -92,6 +87,9 @@
 }
 
 -keep class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer
+-keepclassmembers class * implements br.com.carlosrafaelgn.fplay.plugin.Visualizer {
+	public <init>(...);
+}
 
 -keep interface br.com.carlosrafaelgn.fplay.plugin.Visualizer
 -keepclassmembers interface br.com.carlosrafaelgn.fplay.plugin.Visualizer {

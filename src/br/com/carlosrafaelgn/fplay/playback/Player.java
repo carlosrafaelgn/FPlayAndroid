@@ -554,8 +554,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//The only exception is the MEDIA_BUTTON broadcast action, which MUST BE declared
 			//in the application manifest according to the documentation of the method
 			//registerMediaButtonEventReceiver!!! :(
+			//Well, at least before API 26...
+			//https://developer.android.com/about/versions/oreo/android-8.0-migration.html
+			//https://developer.android.com/about/versions/oreo/android-8.0.html
+			//https://developer.android.com/guide/components/broadcast-exceptions.html
 			final IntentFilter filter = new IntentFilter("android.media.AUDIO_BECOMING_NOISY");
-			//filter.addAction("android.intent.action.MEDIA_BUTTON");
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				filter.addAction("android.intent.action.MEDIA_BUTTON");
 			filter.addAction("android.intent.action.CALL_BUTTON");
 			filter.addAction("android.intent.action.HEADSET_PLUG");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
