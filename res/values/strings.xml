@@ -6,12 +6,17 @@
         Sad U+1F622 - &#128546;
         Happy U+1F604 - &#128516;
         Winking U+1F609 - &#128521;
+
+        BUGGGG!!
+        Loading strings from XML files with characters > 0xFFFF works only on Android 6+
+        JNI WARNING: input is not valid Modified UTF-8: illegal start byte 0xf0
+        https://stackoverflow.com/a/16789981/3569421
     -->
     <string name="app_by">by Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Music player with clean interface, equalizer, bass boost and customizable colors</string>
-    <string name="app_more_info">Looking for more info?&lt;br/&gt;Maybe the source code?&lt;br/&gt;Have a request?&lt;br/&gt;Found a bug?!?&lt;br/&gt;Just want to contact me? &#128516;&lt;br/&gt;&lt;br/&gt;Drop me an e-mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;or visit the application\'s project site on GitHub: &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Very special thanks to the people who helped translating FPlay:</string>
+    <string name="app_more_info">Looking for more info?&lt;br/&gt;Maybe the source code?&lt;br/&gt;Have a request?&lt;br/&gt;Found a bug?!?&lt;br/&gt;Just want to contact me? :)&lt;br/&gt;&lt;br/&gt;Drop me an e-mail:&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;or visit the application\'s project site on GitHub: &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Very special thanks to the people who helped translating FPlay:</string>
     <string name="app_more_info_thanks" translatable="false">&lt;br/&gt;&lt;br/&gt;Sviat Hurskyi (&lt;a href=\"mailto:sviat.hurskyi@gmail.com\"&gt;sviat.hurskyi@gmail.com&lt;/a&gt;)&lt;br/&gt;Stefan Fitzenreiter (&lt;a href=\"mailto:sfitzenreiter@gmail.com\"&gt;sfitzenreiter@gmail.com&lt;/a&gt;)&lt;br/&gt;David Gonzalez (&lt;a href=\"mailto:redandy16@gmail.com\"&gt;redandy16@gmail.com&lt;/a&gt;)&lt;br/&gt;Soudain (&lt;a href=\"mailto:grorigan@gmail.com\"&gt;grorigan@gmail.com&lt;/a&gt;)</string>
-    <string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;Thanks a lot!! &#128516;&lt;br/&gt;&lt;br/&gt;The typeface used as the dyslexia-friendly typeface is OpenDyslexic Regular, by Abelardo Gonzalez, available at &lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; and licensed under a &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons Attribution 3.0 Unported License&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;The typeface used to draw the scalable icons, icons.ttf, was created using IcoMoon App, by Keyamoon, available at: &lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Some of the scalable icons were created by me and some came from the IcoMoon Free icon set, by Keyamoon, licensed under the &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons License 3.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;The classes BgEdgeEffect, BitmapLruCache, FixedFFT and NonNull are based on existing code from The Android Open Source Project, licensed under the &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;The classes Vector3, Matrix3x3, So3Util, OrientationEKF and HeadTracker are based on existing code from &lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; and &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt;, licensed under the &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;FPlay is licensed under the terms of the FreeBSD License.</string>
+    <string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;Thanks a lot!! :)&lt;br/&gt;&lt;br/&gt;The typeface used as the dyslexia-friendly typeface is OpenDyslexic Regular, by Abelardo Gonzalez, available at &lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; and licensed under a &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons Attribution 3.0 Unported License&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;The typeface used to draw the scalable icons, icons.ttf, was created using IcoMoon App, by Keyamoon, available at: &lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Some of the scalable icons were created by me and some came from the IcoMoon Free icon set, by Keyamoon, licensed under the &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;Creative Commons License 3.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;The classes BgEdgeEffect, BitmapLruCache, FixedFFT and NonNull are based on existing code from The Android Open Source Project, licensed under the &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;The classes Vector3, Matrix3x3, So3Util, OrientationEKF and HeadTracker are based on existing code from &lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; and &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt;, licensed under the &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;FPlay is licensed under the terms of the FreeBSD License.</string>
     <string name="app_license" translatable="false">&lt;br/&gt;&lt;br/&gt;Copyright &#169; 2013–2014, Carlos Rafael Gimenes das Neves&lt;br/&gt;All rights reserved.&lt;br/&gt;&lt;br/&gt;Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:&lt;br/&gt;&lt;br/&gt;1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.&lt;br/&gt;2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.&lt;br/&gt;&lt;br/&gt;THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.&lt;br/&gt;&lt;br/&gt;The views and conclusions contained in the software and documentation are those of the authors and should not be interpreted as representing official policies, either expressed or implied, of the FreeBSD Project.</string>
     <string name="system_info">System information</string>
     <string name="resolution">Resolution</string>
@@ -47,8 +52,8 @@
     <string name="msg_create_new">Create new&#8230;</string>
     <string name="msg_add">This button adds to the playlist all songs in the folder and in its subfolders.</string>
     <string name="msg_play">This button adds to the playlist all songs in the folder and in its subfolders, and starts the playback.</string>
-    <string name="msg_error_download_path">It was not possible to access the download folder &#128546;</string>
-    <string name="msg_error_exporting_settings">Something went wrong while exporting the settings &#128546;</string>
+    <string name="msg_error_download_path">It was not possible to access the download folder :(</string>
+    <string name="msg_error_exporting_settings">Something went wrong while exporting the settings :(</string>
     <string name="opt_language">Language:</string>
     <string name="opt_use_alternate_typeface">Use dyslexia-friendly typeface</string>
     <string name="opt_auto_turn_off">Automatically turn off the player after:</string>
@@ -108,7 +113,7 @@
     <string name="item_list">list</string>
     <string name="more">More&#8230;</string>
     <string name="more_effects">More effects&#8230;</string>
-    <string name="visualizer_not_supported">Your device does not support visualization &#128546;</string>
+    <string name="visualizer_not_supported">Your device does not support visualization :(</string>
     <string name="audio_effects">Audio effects</string>
     <string name="zero_preset">Zero out preset</string>
     <string name="load_preset">Load preset</string>
@@ -167,20 +172,20 @@
     <string name="internal_storage">Internal storage</string>
     <string name="external_storage">External storage</string>
     <string name="usb_storage">USB storage</string>
-    <string name="error_connection">No Internet connection &#128546;</string>
-    <string name="error_gen">Sorry! Something went wrong &#128546;</string>
-    <string name="error_playback">Sorry! Something went wrong with the playback &#128546;</string>
+    <string name="error_connection">No Internet connection :(</string>
+    <string name="error_gen">Sorry! Something went wrong :(</string>
+    <string name="error_playback">Sorry! Something went wrong with the playback :(</string>
     <string name="error_msg">Sorry! Something went wrong with the playback:</string>
-    <string name="error_state">Sorry! The playback was stopped because the player has misbehaved &#128546;</string>
-    <string name="error_io">Sorry! There was a problem reading the audio data &#128546;</string>
-    <string name="error_file_not_found">Sorry! The file could not be found &#128546;</string>
-    <string name="error_server_not_found">Sorry! The server could not be found &#128546;</string>
-    <string name="error_timeout">Sorry! The time to access the audio data has expired &#128546;</string>
-    <string name="error_server_died">Sorry! The media server suddenly died &#128546;</string>
-    <string name="error_security">Sorry! A security problem has happened &#128546;</string>
-    <string name="error_unsupported_format">Sorry! This audio codec is not supported &#128546;</string>
-    <string name="error_try_smaller_buffer">Sorry! Out of memory! Try reducing the size of the playback buffer &#128546;</string>
-    <string name="coming_soon">Coming soon&#8230; &#128521;</string>
+    <string name="error_state">Sorry! The playback was stopped because the player has misbehaved :(</string>
+    <string name="error_io">Sorry! There was a problem reading the audio data :(</string>
+    <string name="error_file_not_found">Sorry! The file could not be found :(</string>
+    <string name="error_server_not_found">Sorry! The server could not be found :(</string>
+    <string name="error_timeout">Sorry! The time to access the audio data has expired :(</string>
+    <string name="error_server_died">Sorry! The media server suddenly died :(</string>
+    <string name="error_security">Sorry! A security problem has happened :(</string>
+    <string name="error_unsupported_format">Sorry! This audio codec is not supported :(</string>
+    <string name="error_try_smaller_buffer">Sorry! Out of memory! Try reducing the size of the playback buffer :(</string>
+    <string name="coming_soon">Coming soon&#8230; ;)</string>
     <string name="blue_orange">Blue/Orange</string>
     <string name="blue">Blue</string>
     <string name="green">Green</string>
@@ -189,7 +194,7 @@
     <string name="dark_light">Dark/Light</string>
     <string name="new_setting">New setting!</string>
     <string name="there_is_a_new_setting">There is a new setting available in the \"Settings\" menu:</string>
-    <string name="check_it_out">Check it out &#128516;</string>
+    <string name="check_it_out">Check it out :)</string>
     <string name="color_theme">Color theme</string>
     <string name="flat_details">Details in flat colors</string>
     <string name="widget">Widget</string>
@@ -198,7 +203,7 @@
     <string name="icon_color">Icon color</string>
     <string name="apply_theme">Apply theme</string>
     <string name="hard_theme">Your theme has at least one hard-to-read combination of text/background&#8230; Apply theme anyway?</string>
-    <string name="unreadable_theme">Sorry, but your theme has at least one unreadable combination of text/background colors &#128546;</string>
+    <string name="unreadable_theme">Sorry, but your theme has at least one unreadable combination of text/background colors :(</string>
     <string name="discard_theme">Do you really want to discard the changes made to the theme?</string>
     <string name="load_colors_from_current_theme">Load colors from current theme</string>
     <string name="general">General</string>
@@ -226,11 +231,11 @@
     <string name="custom_color_theme">Customizable color theme</string>
     <string name="add_artist">Add artist</string>
     <string name="play_artist">Play artist</string>
-    <string name="effect_not_supported">Your device does not support this effect &#128546;</string>
-    <string name="equalizer_not_supported">Your device does not support the equalizer &#128546;</string>
-    <string name="bass_boost_not_supported">Your device does not support bass boost &#128546;</string>
-    <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment &#128546;</string>
-    <string name="touch_to_add_songs">Empty list!\n\nTouch here, or the &#9835; button, to add songs &#128516;</string>
+    <string name="effect_not_supported">Your device does not support this effect :(</string>
+    <string name="equalizer_not_supported">Your device does not support the equalizer :(</string>
+    <string name="bass_boost_not_supported">Your device does not support bass boost :(</string>
+    <string name="bass_boost_strength_not_supported">Your device does not support fine bass boost adjustment :(</string>
+    <string name="touch_to_add_songs">Empty list!\n\nTouch here, or the &#9835; button, to add songs :)</string>
     <string name="custom_key_behavior">Customizable key behavior</string>
     <string name="opt_wrap_around_list">Move keyboard selection to the opposite end of a list when reaching its top/bottom</string>
     <string name="opt_extra_spacing">Use large spacing in headers</string>
@@ -259,10 +264,10 @@
     <string name="genre">Genre</string>
     <string name="search_term">Search term</string>
     <string name="tags">Tags</string>
-    <string name="no_description">No description &#128546;</string>
-    <string name="no_tags">No tags &#128546;</string>
-    <string name="no_favorites">No favorites yet!\n\nMark radio stations as favorite so you can find them here &#128516;</string>
-    <string name="no_stations">No radio stations found &#128546;\n\nTouch here to view your favorite radio stations &#128516;</string>
+    <string name="no_description">No description :(</string>
+    <string name="no_tags">No tags :(</string>
+    <string name="no_favorites">No favorites yet!\n\nMark radio stations as favorite so you can find them here :)</string>
+    <string name="no_stations">No radio stations found :(\n\nTouch here to view your favorite radio stations :)</string>
     <string name="expand_seek_bar">Expand the seek bar before seeking</string>
     <string name="provided_by">Provided by</string>
     <string name="creamy">Creamy</string>
@@ -290,7 +295,7 @@
     <string name="sustain">Sustain:</string>
     <string name="diffusion">Diffusion</string>
     <string name="msg_immersive">&#8634; Move your device around (be careful!)</string>
-    <string name="msg_no_sensors">Sorry, but your device does not have the necessary sensors &#128546;</string>
+    <string name="msg_no_sensors">Sorry, but your device does not have the necessary sensors :(</string>
     <string name="tutorial">Tutorial</string>
     <string name="information">Information</string>
 
@@ -306,16 +311,16 @@
     <string name="bt_stop">Stop transmission</string>
     <string name="bt_vumeter">VU meter + BPM detection</string>
     <string name="bt_pairing">Please, try to connect again after pairing the device.</string>
-    <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device &#128546;</string>
-    <string name="bt_communication_error">An error occurred while communicating with the Bluetooth device &#128546;</string>
-    <string name="bt_needs_to_be_enabled">You need to enable Bluetooth to proceed &#128546;</string>
-    <string name="bt_not_supported">Bluetooth not supported &#128546;</string>
-    <string name="bt_discovery_error">An error occurred while searching for the Bluetooth devices &#128546;</string>
+    <string name="bt_connection_error">An error occurred while connecting to the Bluetooth device :(</string>
+    <string name="bt_communication_error">An error occurred while communicating with the Bluetooth device :(</string>
+    <string name="bt_needs_to_be_enabled">You need to enable Bluetooth to proceed :(</string>
+    <string name="bt_not_supported">Bluetooth not supported :(</string>
+    <string name="bt_discovery_error">An error occurred while searching for the Bluetooth devices :(</string>
     <string name="bt_devices">Bluetooth Devices</string>
     <string name="bt_connecting">Connecting to your Bluetooth device. Please wait&#8230;</string>
     <string name="bt_scanning">Searching for Bluetooth devices&#8230;</string>
-    <string name="bt_not_paired">No Bluetooth devices were paired &#128546;</string>
-    <string name="bt_not_found">No Bluetooth devices were found &#128546;</string>
+    <string name="bt_not_paired">No Bluetooth devices were paired :(</string>
+    <string name="bt_not_found">No Bluetooth devices were found :(</string>
     <string name="bt_null_device_name">(BT Device)</string>
 
     <string name="loudspeaker">Loudspeaker</string>
@@ -356,8 +361,8 @@
     <string name="previous_resets_after_the_beginning">\"Previous\" button returns to the beginning of the song before skipping to the previous track</string>
     <string name="larger_text_size">Larger text size</string>
     <string name="ringtone">Ringtone</string>
-    <string name="ringtone_error">Ringtones must be songs in MP3 format &#128546;</string>
-    <string name="success">Success &#128516;</string>
+    <string name="ringtone_error">Ringtones must be songs in MP3 format :(</string>
+    <string name="success">Success :)</string>
     <string name="display_song_number_and_count">Display song number and count</string>
     <string name="show_album_art">Show album art</string>
     <string name="hide_album_art">Hide album art</string>

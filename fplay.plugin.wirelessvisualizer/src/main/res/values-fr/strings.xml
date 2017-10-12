@@ -13,16 +13,16 @@
     <string name="bt_stop">Arrêter l\'envoi</string>
 	<string name="bt_vumeter">VU-mètre + détection BPM</string>
     <string name="bt_pairing">Veuillez réessayer après appairage.</string>
-    <string name="bt_connection_error">Une erreur est survenue lors de la connexion &#128546;</string>
-    <string name="bt_communication_error">Une erreur est survenue dans la communication avec l\'appareil Bluetooth &#128546;</string>
-    <string name="bt_needs_to_be_enabled">Vous devez activer le Bluetooth pour continuer &#128546;</string>
-    <string name="bt_not_supported">Bluetooth non supporté &#128546;</string>
-    <string name="bt_discovery_error">Une erreur est survenue lors de la recherche des appareils Bluetooth &#128546;</string>
+    <string name="bt_connection_error">Une erreur est survenue lors de la connexion :(</string>
+    <string name="bt_communication_error">Une erreur est survenue dans la communication avec l\'appareil Bluetooth :(</string>
+    <string name="bt_needs_to_be_enabled">Vous devez activer le Bluetooth pour continuer :(</string>
+    <string name="bt_not_supported">Bluetooth non supporté :(</string>
+    <string name="bt_discovery_error">Une erreur est survenue lors de la recherche des appareils Bluetooth :(</string>
     <string name="bt_devices">Appareils Bluetooth</string>
     <string name="bt_connecting">Connexion à votre appareil Bluetooth. Veuillez patienter&#8230;</string>
     <string name="bt_scanning">Recherche des appareils Bluetooth&#8230;</string>
-    <string name="bt_not_paired">Aucun appareil Bluetooth appairé &#128546;</string>
-    <string name="bt_not_found">Aucun appareil Bluetooth n\'a été trouvé &#128546;</string>
+    <string name="bt_not_paired">Aucun appareil Bluetooth appairé :(</string>
+    <string name="bt_not_found">Aucun appareil Bluetooth n\'a été trouvé :(</string>
     <string name="bt_null_device_name">(Appareil BT)</string>
 
 </resources>

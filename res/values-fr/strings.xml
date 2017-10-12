@@ -3,7 +3,7 @@
 
     <string name="app_by">par Carlos Rafael Gimenes das Neves</string>
     <string name="app_description">Lecteur de musique avec une interface claire, equalizer, Bass Boost et couleurs personnalisables</string>
-    <string name="app_more_info">À la recherche de plus d\'informations ?&lt;br/&gt;Le code source peut-être ?&lt;br/&gt;Une question ?&lt;br/&gt;Un bug ?!?&lt;br/&gt;Simplement me contacter ? &#128516;&lt;br/&gt;&lt;br/&gt;Envoyez-moi un mail :&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;ou visitez le site GitHub du projet : &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Plein de poutous à ceux qui ont traduit FPlay :</string>
+    <string name="app_more_info">À la recherche de plus d\'informations ?&lt;br/&gt;Le code source peut-être ?&lt;br/&gt;Une question ?&lt;br/&gt;Un bug ?!?&lt;br/&gt;Simplement me contacter ? :)&lt;br/&gt;&lt;br/&gt;Envoyez-moi un mail :&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;ou visitez le site GitHub du projet : &lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Plein de poutous à ceux qui ont traduit FPlay :</string>
     <string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;Merci beaucoup !! :D&lt;br/&gt;&lt;br/&gt;La police utilisée pour faciliter la lecture aux dyslexiques est OpenDyslexic Regular, par Abelardo Gonzalez, disponible sur &lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; et est sous &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;licence Creative Commons Attribution 3.0 Unported&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;La police de caractères utilisée pour dessiner les icônes vectorielles, icon.ttf, a été créée grâce à IcoMoon, par Keyamoon, disponible sur : &lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;Certaines icônes vectorielles ont été créées par moi et d\'autres proviennent du pack libre d\'IcoMoon, par Keyamoon, sous &lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;licence Creative Commons Attribution 3.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Les classes BgEdgeEffect, BitmapLruCache, FixedFFT et NonNull sont basés sur un code provenant de The Android Open Source Project, sous &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;licence Apache 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;Les classes Vector3, Matrix3x3, So3Util, OrientationEKF et HeadTracker sont basés sur un code provenant de &lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; et &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt;, sous &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;licence Apache 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;FPlay est est licencié sous les termes de la licence FreeBSD.</string>
     <string name="system_info">Informations système</string>
     <string name="resolution">Resolution</string>
@@ -39,8 +39,8 @@
     <string name="msg_create_new">Créer un nouveau&#8230;</string>
     <string name="msg_add">Ce bouton ajoute à la playlist tous les morceaux du dossier et de ses sous-dossiers.</string>
     <string name="msg_play">Ce bouton ajoute à la playlist tous les morceaux du dossier et de ses sous-dossiers, et démarre la lecture.</string>
-    <string name="msg_error_download_path">Impossile d\'accéder au dossier de téléchargement &#128546;</string>
-    <string name="msg_error_exporting_settings">Un problème est survenu pendant l\'export des paramètres &#128546;</string>
+    <string name="msg_error_download_path">Impossile d\'accéder au dossier de téléchargement :(</string>
+    <string name="msg_error_exporting_settings">Un problème est survenu pendant l\'export des paramètres :(</string>
     <string name="opt_language">Langue :</string>
     <string name="opt_use_alternate_typeface">Utiliser la fonte pour dyslexiques</string>
     <string name="opt_auto_turn_off">Fermer FPlay automatiquement après :</string>
@@ -100,7 +100,7 @@
     <string name="item_list">liste</string>
     <string name="more">Plus&#8230;</string>
     <string name="more_effects">Plus d\'effets&#8230;</string>
-    <string name="visualizer_not_supported">Votre appareil ne supporte pas les visualisations &#128546;</string>
+    <string name="visualizer_not_supported">Votre appareil ne supporte pas les visualisations :(</string>
     <string name="audio_effects">Effets audio</string>
     <string name="zero_preset">Effacer les réglages</string>
     <string name="load_preset">Charger des réglages</string>
@@ -159,20 +159,20 @@
     <string name="internal_storage">Mémoire interne</string>
     <string name="external_storage">Mémoire externe</string>
     <string name="usb_storage">Stockage USB</string>
-    <string name="error_connection">Pas de connexion internet &#128546;</string>
-    <string name="error_gen">Désolé! Quelque chose s\'est mal passé &#128546;</string>
-    <string name="error_playback">Désolé! Quelque chose s\'est mal passé pendant la lecture &#128546;</string>
+    <string name="error_connection">Pas de connexion internet :(</string>
+    <string name="error_gen">Désolé! Quelque chose s\'est mal passé :(</string>
+    <string name="error_playback">Désolé! Quelque chose s\'est mal passé pendant la lecture :(</string>
     <string name="error_msg">Désolé! Quelque chose s\'est mal passé pendant la lecture :</string>
-    <string name="error_state">Désolé! La lecture a dû être arrêtée car le lecteur s\'est mal comporté &#128546;</string>
-    <string name="error_io">Désolé! Il y a eu un problème d\'accès aux données pendant la lecture &#128546;</string>
-    <string name="error_file_not_found">Désolé! Le fichier est introuvable &#128546;</string>
-    <string name="error_server_not_found">Désolé! Le serveur est introuvable &#128546;</string>
-    <string name="error_timeout">Désolé! Le temps d\'accès aux données du morceaux a été trop long pendant la lecture &#128546;</string>
-    <string name="error_server_died">Désolé! Le serveur du média est subitement mort &#128546;</string>
-    <string name="error_security">Désolé! Il y a eu un problème de sécurité pendant la lecture &#128546;</string>
-    <string name="error_unsupported_format">Désolé! Ce codec audio sera pas supporté &#128546;</string>
-    <string name="error_try_smaller_buffer">Désolé! Mémoire insuffisante! Essayer de réduire la taille de la mémoire tampon de lecture &#128546;</string>
-    <string name="coming_soon">C\'est pour bientôt&#8230; &#128521;</string>
+    <string name="error_state">Désolé! La lecture a dû être arrêtée car le lecteur s\'est mal comporté :(</string>
+    <string name="error_io">Désolé! Il y a eu un problème d\'accès aux données pendant la lecture :(</string>
+    <string name="error_file_not_found">Désolé! Le fichier est introuvable :(</string>
+    <string name="error_server_not_found">Désolé! Le serveur est introuvable :(</string>
+    <string name="error_timeout">Désolé! Le temps d\'accès aux données du morceaux a été trop long pendant la lecture :(</string>
+    <string name="error_server_died">Désolé! Le serveur du média est subitement mort :(</string>
+    <string name="error_security">Désolé! Il y a eu un problème de sécurité pendant la lecture :(</string>
+    <string name="error_unsupported_format">Désolé! Ce codec audio sera pas supporté :(</string>
+    <string name="error_try_smaller_buffer">Désolé! Mémoire insuffisante! Essayer de réduire la taille de la mémoire tampon de lecture :(</string>
+    <string name="coming_soon">C\'est pour bientôt&#8230; ;)</string>
     <string name="blue_orange">Bleu/Orange</string>
     <string name="blue">Bleu</string>
     <string name="green">Vert</string>
@@ -181,7 +181,7 @@
     <string name="dark_light">Sombre/Brillant</string>
     <string name="new_setting">Nouveau paramètre !</string>
     <string name="there_is_a_new_setting">Il y a un nouveau paramètre disponible dans le menu \"Réglages\" :</string>
-    <string name="check_it_out">Vérifiez-le &#128516;</string>
+    <string name="check_it_out">Vérifiez-le :)</string>
     <string name="color_theme">Thème (couleurs)</string>
     <string name="flat_details">Details en couleurs vives</string>
     <string name="widget">Widget</string>
@@ -190,7 +190,7 @@
     <string name="icon_color">Couleur des boutons</string>
     <string name="apply_theme">Appliquer le thème</string>
     <string name="hard_theme">Votre thème a au moins une combinaison texte/fond difficile à lire&#8230; Appliquer le thème quand-même ?</string>
-    <string name="unreadable_theme">Désolé, votre thème a au moins une combinaison texte/fond illisible &#128546;</string>
+    <string name="unreadable_theme">Désolé, votre thème a au moins une combinaison texte/fond illisible :(</string>
     <string name="discard_theme">Voulez-vous vraiment abandonner tous les changements effectués sur le thème ?</string>
     <string name="load_colors_from_current_theme">Charger les couleurs du thème courant</string>
     <string name="general">Général</string>
@@ -218,11 +218,11 @@
     <string name="custom_color_theme">Thème couleur paramétrable</string>
     <string name="add_artist">Ajouter un artiste</string>
     <string name="play_artist">Jouer un artiste</string>
-    <string name="effect_not_supported">Votre appareil ne supporte pas cet effet &#128546;</string>
-    <string name="equalizer_not_supported">Votre appareil ne supporte pas l\'equalizer &#128546;</string>
-    <string name="bass_boost_not_supported">Votre appareil ne supporte pas Bass Boost &#128546;</string>
-    <string name="bass_boost_strength_not_supported">Votre appareil ne supporte pas bien les ajustements Bass Boost &#128546;</string>
-    <string name="touch_to_add_songs">Liste vide !\n\nAppuyer ici, ou sur le bouton &#9835; pour ajouter des morceaux &#128516;</string>
+    <string name="effect_not_supported">Votre appareil ne supporte pas cet effet :(</string>
+    <string name="equalizer_not_supported">Votre appareil ne supporte pas l\'equalizer :(</string>
+    <string name="bass_boost_not_supported">Votre appareil ne supporte pas Bass Boost :(</string>
+    <string name="bass_boost_strength_not_supported">Votre appareil ne supporte pas bien les ajustements Bass Boost :(</string>
+    <string name="touch_to_add_songs">Liste vide !\n\nAppuyer ici, ou sur le bouton &#9835; pour ajouter des morceaux :)</string>
     <string name="custom_key_behavior">Comportement de la touche personnalisable</string>
     <string name="opt_wrap_around_list">Sélectionner l\'élément à l\'opposée de la liste lorsqu\'arrivé en bas/haut</string>
     <string name="opt_extra_spacing">Utilisez un écart important dans les entêtes</string>
@@ -251,10 +251,10 @@
     <string name="genre">Genre</string>
     <string name="search_term">Terme de recherche</string>
     <string name="tags">Tags</string>
-    <string name="no_description">Pas de description &#128546;</string>
-    <string name="no_tags">Pas de tags &#128546;</string>
-    <string name="no_favorites">Pas encore de favori !\n\nMarquez comme favories les stations de radio pour pouvoir les retrouver ici &#128516;</string>
-    <string name="no_stations">Pas de station radio trouvée &#128546;\n\nAppuyez ici pour trouver vos stations favories &#128516;</string>
+    <string name="no_description">Pas de description :(</string>
+    <string name="no_tags">Pas de tags :(</string>
+    <string name="no_favorites">Pas encore de favori !\n\nMarquez comme favories les stations de radio pour pouvoir les retrouver ici :)</string>
+    <string name="no_stations">Pas de station radio trouvée :(\n\nAppuyez ici pour trouver vos stations favories :)</string>
     <string name="expand_seek_bar">Développer la barre de recherche avant de chercher</string>
     <string name="provided_by">Fourni par</string>
     <string name="creamy">Crémeux</string>
@@ -282,7 +282,7 @@
     <string name="sustain">Soutenir :</string>
     <string name="diffusion">Diffusion</string>
     <string name="msg_immersive">&#8634; Déplacez votre appareil autour de vous (soyez prudent !)</string>
-    <string name="msg_no_sensors">Désolé, votre appareil n\'a pas les capteurs nécessaires &#128546;</string>
+    <string name="msg_no_sensors">Désolé, votre appareil n\'a pas les capteurs nécessaires :(</string>
     <string name="tutorial">Tutorial</string>
     <string name="information">Information</string>
 
@@ -298,16 +298,16 @@
     <string name="bt_stop">Arrêter l\'envoi</string>
 	<string name="bt_vumeter">VU-mètre + détection BPM</string>
     <string name="bt_pairing">Veuillez réessayer après appairage.</string>
-    <string name="bt_connection_error">Une erreur est survenue lors de la connexion &#128546;</string>
-    <string name="bt_communication_error">Une erreur est survenue dans la communication avec l\'appareil Bluetooth &#128546;</string>
-    <string name="bt_needs_to_be_enabled">Vous devez activer le Bluetooth pour continuer &#128546;</string>
-    <string name="bt_not_supported">Bluetooth non supporté &#128546;</string>
-    <string name="bt_discovery_error">Une erreur est survenue lors de la recherche des appareils Bluetooth &#128546;</string>
+    <string name="bt_connection_error">Une erreur est survenue lors de la connexion :(</string>
+    <string name="bt_communication_error">Une erreur est survenue dans la communication avec l\'appareil Bluetooth :(</string>
+    <string name="bt_needs_to_be_enabled">Vous devez activer le Bluetooth pour continuer :(</string>
+    <string name="bt_not_supported">Bluetooth non supporté :(</string>
+    <string name="bt_discovery_error">Une erreur est survenue lors de la recherche des appareils Bluetooth :(</string>
     <string name="bt_devices">Appareils Bluetooth</string>
     <string name="bt_connecting">Connexion à votre appareil Bluetooth. Veuillez patienter&#8230;</string>
     <string name="bt_scanning">Recherche des appareils Bluetooth&#8230;</string>
-    <string name="bt_not_paired">Aucun appareil Bluetooth appairé &#128546;</string>
-    <string name="bt_not_found">Aucun appareil Bluetooth n\'a été trouvé &#128546;</string>
+    <string name="bt_not_paired">Aucun appareil Bluetooth appairé :(</string>
+    <string name="bt_not_found">Aucun appareil Bluetooth n\'a été trouvé :(</string>
     <string name="bt_null_device_name">(Appareil BT)</string>
 
     <string name="loudspeaker">Haut-parleur</string>
@@ -347,8 +347,8 @@
     <string name="previous_resets_after_the_beginning">Bouton \"Précédent\" retourne au début de la chanson avant de sauter à la piste précédente</string>
     <string name="larger_text_size">Agrandir la taille du texte</string>
     <string name="ringtone">Sonnerie d\'appel</string>
-    <string name="ringtone_error">Les sonneries d\'appel doivent être des chansons au format MP3 &#128546;</string>
-    <string name="success">Succès &#128516;</string>
+    <string name="ringtone_error">Les sonneries d\'appel doivent être des chansons au format MP3 :(</string>
+    <string name="success">Succès :)</string>
     <string name="display_song_number_and_count">Afficher le numéro de la chanson et le nombre de chansons</string>
     <string name="show_album_art">Afficher l\'art de l\'album</string>
     <string name="hide_album_art">Masquer l\'art de l\'album</string>

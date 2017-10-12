@@ -8,7 +8,7 @@
 	-->
 	<string name="app_by">作者 Carlos Rafael Gimenes das Neves</string>
 	<string name="app_description">简洁的音乐播放器，支持均衡器和低音增强，可修改主题颜色</string>
-	<string name="app_more_info">正在查找更多信息吗？&lt;br/&gt;需要源代码？&lt;br/&gt;想要什么功能？&lt;br/&gt;发现了Bug？！？&lt;br/&gt;只是想找我聊聊？ &#128516;&lt;br/&gt;&lt;br/&gt;给我发邮件吧：&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;或在GitHub查看这个程序项目：&lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;特别感谢以下帮助翻译了FPlay的朋友：</string>
+	<string name="app_more_info">正在查找更多信息吗？&lt;br/&gt;需要源代码？&lt;br/&gt;想要什么功能？&lt;br/&gt;发现了Bug？！？&lt;br/&gt;只是想找我聊聊？ :)&lt;br/&gt;&lt;br/&gt;给我发邮件吧：&lt;br/&gt;&lt;a href=\"mailto:dev@carlosrafaelgn.com.br\"&gt;dev@carlosrafaelgn.com.br&lt;/a&gt;&lt;br/&gt;或在GitHub查看这个程序项目：&lt;a href=\"https://github.com/carlosrafaelgn/FPlayAndroid\"&gt;FPlayAndroid&lt;/a&gt;&lt;br/&gt;&lt;br/&gt;特别感谢以下帮助翻译了FPlay的朋友：</string>
 	<string name="app_more_info2">&lt;br/&gt;&lt;br/&gt;非常感谢！！ :D&lt;br/&gt;&lt;br/&gt;可读性字体是由Abelardo Gonzalez制作的OpenDyslexic Regular，在&lt;a href=\"http://dyslexicfonts.com\"&gt;dyslexicfonts.com&lt;/a&gt; 上可用，并以&lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;知识共享署名 3.0 未本地化版本许可协议 &lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权。被用作绘制可缩放图标的字体 icons.ttf 是通过 Keyamoon 的 IcoMoon App 制作，在&lt;a href=\"http://icomoon.io/app\"&gt;icomoon.io/app&lt;/a&gt;&lt;br/&gt;&lt;br/&gt; 可用。一些可缩放的图标是由我创建的，还有一些是来自Keyamoon 的 IcoMoon Free 图标集，以&lt;a href=\"https://creativecommons.org/licenses/by/3.0/us/legalcode\"&gt;知识共享署名 3.0 许可协议&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权。BgEdgeEffect、 BitmapLruCache、 FixedFFT 和 NonNull 这些 Class 类基于The Android Open Source Prolicensed的现有代码，以 &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt; 授权；Vector3 、Matrix3x3、So3Util、OrientationEKF 和 HeadTracker  是基于&lt;a href=\"https://github.com/googlesamples/cardboard-java\"&gt;Google Cardboard&lt;/a&gt; 和 &lt;a href=\"https://github.com/rsanchezsaez/cardboard-java\"&gt;github.com/rsanchezsaez/cardboard-java&lt;/a&gt; 的现有代码，以 &lt;a href=\"http://www.apache.org/licenses/LICENSE-2.0\"&gt;Apache License 2.0&lt;/a&gt;.&lt;br/&gt;&lt;br/&gt;授权。FPlay 基于FreeBSD License 授权。</string>
 	<string name="system_info">系统信息</string>
 	<string name="resolution">分辨率</string>
@@ -44,8 +44,8 @@
 	<string name="msg_create_new">新建&#8230;</string>
 	<string name="msg_add">这个按钮将所有在文件夹及其子文件夹内的所有歌曲添加到播放列表。</string>
 	<string name="msg_play">这个按钮将所有在文件夹及其子文件夹内的所有歌曲添加到播放列表，并开始播放。</string>
-	<string name="msg_error_download_path">无法访问下载文件夹 &#128546;</string>
-	<string name="msg_error_exporting_settings">导出设置时错误 &#128546;</string>
+	<string name="msg_error_download_path">无法访问下载文件夹 :(</string>
+	<string name="msg_error_exporting_settings">导出设置时错误 :(</string>
 	<string name="opt_language">语言：</string>
 	<string name="opt_use_alternate_typeface">使用阅读友好的字体</string>
 	<string name="opt_auto_turn_off">自动关闭播放器：</string>
@@ -105,7 +105,7 @@
 	<string name="item_list">列表</string>
 	<string name="more">更多&#8230;</string>
 	<string name="more_effects">更多效果&#8230;</string>
-	<string name="visualizer_not_supported">你的设备不支持可视化效果 &#128546;</string>
+	<string name="visualizer_not_supported">你的设备不支持可视化效果 :(</string>
 	<string name="audio_effects">音频效果</string>
 	<string name="zero_preset">无输出的预设</string>
 	<string name="load_preset">载入预设</string>
@@ -164,20 +164,20 @@
 	<string name="internal_storage">本地储存</string>
 	<string name="external_storage">扩展储存</string>
 	<string name="usb_storage">USB 储存</string>
-	<string name="error_connection">无网络连接 &#128546;</string>
-	<string name="error_gen">抱歉！出错了 &#128546;</string>
-	<string name="error_playback">抱歉！播放出错了 &#128546;</string>
+	<string name="error_connection">无网络连接 :(</string>
+	<string name="error_gen">抱歉！出错了 :(</string>
+	<string name="error_playback">抱歉！播放出错了 :(</string>
 	<string name="error_msg">抱歉！播放出错：</string>
-	<string name="error_state">抱歉！由于播放器出错，播放已停止 &#128546;</string>
-	<string name="error_io">抱歉！读取音频出错 &#128546;</string>
-	<string name="error_file_not_found">抱歉！找不到文件 &#128546;</string>
-	<string name="error_server_not_found">抱歉！找不到服务 &#128546;</string>
-	<string name="error_timeout">抱歉！读取音频文件超时 &#128546;</string>
-	<string name="error_server_died">抱歉！音频服务已停止 &#128546;</string>
-	<string name="error_security">抱歉！出现了安全错误 &#128546;</string>
-	<string name="error_unsupported_format">抱歉！该音频格式不支持 &#128546;</string>
-	<string name="error_try_smaller_buffer">抱歉！内存不足！尝试降低播放缓冲区大小 &#128546;</string>
-	<string name="coming_soon">敬请期待&#8230; &#128521;</string>
+	<string name="error_state">抱歉！由于播放器出错，播放已停止 :(</string>
+	<string name="error_io">抱歉！读取音频出错 :(</string>
+	<string name="error_file_not_found">抱歉！找不到文件 :(</string>
+	<string name="error_server_not_found">抱歉！找不到服务 :(</string>
+	<string name="error_timeout">抱歉！读取音频文件超时 :(</string>
+	<string name="error_server_died">抱歉！音频服务已停止 :(</string>
+	<string name="error_security">抱歉！出现了安全错误 :(</string>
+	<string name="error_unsupported_format">抱歉！该音频格式不支持 :(</string>
+	<string name="error_try_smaller_buffer">抱歉！内存不足！尝试降低播放缓冲区大小 :(</string>
+	<string name="coming_soon">敬请期待&#8230; ;)</string>
 	<string name="blue_orange">蓝色/橘色</string>
 	<string name="blue">蓝色</string>
 	<string name="green">绿色</string>
@@ -186,7 +186,7 @@
 	<string name="dark_light">亮/暗</string>
 	<string name="new_setting">新设置项！</string>
 	<string name="there_is_a_new_setting">新设置项在“设置”菜单可用：</string>
-	<string name="check_it_out">去看看吧 &#128516;</string>
+	<string name="check_it_out">去看看吧 :)</string>
 	<string name="color_theme">颜色主题</string>
 	<string name="flat_details">扁平化颜色的细节</string>
 	<string name="widget">桌面小部件</string>
@@ -195,7 +195,7 @@
 	<string name="icon_color">图标颜色</string>
 	<string name="apply_theme">应用主题</string>
 	<string name="hard_theme">你的主题含有至少一组难以阅读的文字与背景颜色&#8230; 仍然要应用主题吗？</string>
-	<string name="unreadable_theme">抱歉，你的主题含有至少一组不可读的文字或背景颜色 &#128546;</string>
+	<string name="unreadable_theme">抱歉，你的主题含有至少一组不可读的文字或背景颜色 :(</string>
 	<string name="discard_theme">你真的不保存对主题的修改吗？</string>
 	<string name="load_colors_from_current_theme">从现有主题中载入颜色</string>
 	<string name="general">普通</string>
@@ -223,11 +223,11 @@
 	<string name="custom_color_theme">自定义主题颜色</string>
 	<string name="add_artist">添加歌手</string>
 	<string name="play_artist">播放艺术家</string>
-	<string name="effect_not_supported">你的设备不支持这个效果 &#128546;</string>
-	<string name="equalizer_not_supported">你的设备不支持均衡器 &#128546;</string>
-	<string name="bass_boost_not_supported">你的设备不支持低音增强 &#128546;</string>
-	<string name="bass_boost_strength_not_supported">你的设备不支持精细的低音增强调节 &#128546;</string>
-	<string name="touch_to_add_songs">空列表\n\n点击这里，或者 &#9835; 按钮，来添加歌曲 &#128516;</string>
+	<string name="effect_not_supported">你的设备不支持这个效果 :(</string>
+	<string name="equalizer_not_supported">你的设备不支持均衡器 :(</string>
+	<string name="bass_boost_not_supported">你的设备不支持低音增强 :(</string>
+	<string name="bass_boost_strength_not_supported">你的设备不支持精细的低音增强调节 :(</string>
+	<string name="touch_to_add_songs">空列表\n\n点击这里，或者 &#9835; 按钮，来添加歌曲 :)</string>
 	<string name="custom_key_behavior">自定义按键作用</string>
 	<string name="opt_wrap_around_list">当到达列表的顶端或底端时，移动键盘选择项到其的另一端</string>
 	<string name="opt_extra_spacing">增大播放界面顶部间距</string>
@@ -256,10 +256,10 @@
 	<string name="genre">类型</string>
 	<string name="search_term">搜索条目</string>
 	<string name="tags">标签</string>
-	<string name="no_description">无描述 &#128546;</string>
-	<string name="no_tags">无标签 &#128546;</string>
-	<string name="no_favorites">还没有标记喜爱的歌曲！\n\n将广播标记为喜爱，以便在这里找到它们 &#128516;</string>
-	<string name="no_stations">未找到广播！ &#128546;\n\n点击这里查看你标记为喜爱的广播 &#128516;</string>
+	<string name="no_description">无描述 :(</string>
+	<string name="no_tags">无标签 :(</string>
+	<string name="no_favorites">还没有标记喜爱的歌曲！\n\n将广播标记为喜爱，以便在这里找到它们 :)</string>
+	<string name="no_stations">未找到广播！ :(\n\n点击这里查看你标记为喜爱的广播 :)</string>
 	<string name="expand_seek_bar">在寻找钱展开搜索条</string>
 	<string name="provided_by">提供者</string>
 	<string name="creamy">奶油</string>
@@ -287,7 +287,7 @@
 	<string name="sustain">支持：</string>
 	<string name="diffusion">扩散</string>
 	<string name="msg_immersive">&#8634; 移动你的设备吧 （小心点！）</string>
-	<string name="msg_no_sensors">抱歉，你的设备缺少必要的传感器 &#128546;</string>
+	<string name="msg_no_sensors">抱歉，你的设备缺少必要的传感器 :(</string>
 	<string name="tutorial">教程</string>
 	<string name="information">信息</string>
    
@@ -303,16 +303,16 @@
 	<string name="bt_stop">停止传输</string>
 	<string name="bt_vumeter">VU 表+ BPM 检测</string>
 	<string name="bt_pairing">请尝试在配对设备后再次连接。</string>
-	<string name="bt_connection_error">连接到蓝牙设备时出错 &#128546;</string>
-	<string name="bt_communication_error">与蓝牙设备通信时出错 &#128546;</string>
-	<string name="bt_needs_to_be_enabled">你需要打开蓝牙以继续 &#128546;</string>
-	<string name="bt_not_supported">不支持蓝牙 &#128546;</string>
-	<string name="bt_discovery_error">搜索蓝牙设备时出错 &#128546;</string>
+	<string name="bt_connection_error">连接到蓝牙设备时出错 :(</string>
+	<string name="bt_communication_error">与蓝牙设备通信时出错 :(</string>
+	<string name="bt_needs_to_be_enabled">你需要打开蓝牙以继续 :(</string>
+	<string name="bt_not_supported">不支持蓝牙 :(</string>
+	<string name="bt_discovery_error">搜索蓝牙设备时出错 :(</string>
 	<string name="bt_devices">蓝牙设备</string>
 	<string name="bt_connecting">正在连接到你的蓝牙设备，请等待&#8230;</string>
 	<string name="bt_scanning">正在搜索蓝牙设备&#8230;</string>
-	<string name="bt_not_paired">没有已配对的蓝牙设备 &#128546;</string>
-	<string name="bt_not_found">未找到蓝牙设备 &#128546;</string>
+	<string name="bt_not_paired">没有已配对的蓝牙设备 :(</string>
+	<string name="bt_not_found">未找到蓝牙设备 :(</string>
 	<string name="bt_null_device_name">(蓝牙设备)</string>
 
 	<string name="loudspeaker">扬声器</string>
@@ -352,8 +352,8 @@
 	<string name="previous_resets_after_the_beginning">“上一个”按钮在跳到上一曲目前，先返回到当前歌曲的开头</string>
 	<string name="larger_text_size">大字号</string>
 	<string name="ringtone">铃声</string>
-	<string name="ringtone_error">铃声必须是MP3格式 &#128546;</string>
-	<string name="success">成功 &#128516;</string>
+	<string name="ringtone_error">铃声必须是MP3格式 :(</string>
+	<string name="success">成功 :)</string>
 	<string name="display_song_number_and_count">显示歌曲数量</string>
 	<string name="show_album_art">显示专辑封面</string>
 	<string name="hide_album_art">隐藏专辑封面</string>

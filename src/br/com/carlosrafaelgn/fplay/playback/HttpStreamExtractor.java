@@ -49,6 +49,7 @@ public abstract class HttpStreamExtractor {
 		this.srcType = srcType;
 	}
 
+	@SuppressWarnings({"unused"})
 	public final String getSrcType() {
 		return srcType;
 	}
@@ -95,6 +96,7 @@ public abstract class HttpStreamExtractor {
 
 	public abstract int waitToReadHeader(boolean fillProperties);
 
+	@SuppressWarnings({"unused"})
 	public abstract int canReadHeader();
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)

@@ -763,6 +763,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return alive;
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	private int sendRequestAndParseResponse(int redirectCount) throws IOException {
 		if (!alive)
 			return -1;
@@ -1158,6 +1159,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return metaCountdown;
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	@Override
 	public void run() {
 		try {
@@ -1386,6 +1388,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
 	}
 
+	@SuppressWarnings({"unused"})
 	public void readArray(ByteBuffer dst, int dstOffset, int length) {
 		buffer.readArray(dst, dstOffset, length);
 		buffer.commitRead(length);
