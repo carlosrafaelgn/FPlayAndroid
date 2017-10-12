@@ -586,8 +586,11 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (Player.followCurrentSong && list != null && !list.changingCurrentWouldScareUser())
 				bringCurrentIntoView();
 			if (lblTitle != null) {
-				lblTitle.setText(Player.getCurrentTitle(barSeek == null && Player.isPreparing()));
-				lblTitle.setSelected(true);
+				final String newTitle = Player.getCurrentTitle(barSeek == null && Player.isPreparing());
+				if (!lblTitle.getText().equals(newTitle)) {
+					lblTitle.setText(newTitle);
+					lblTitle.setSelected(true);
+				}
 			}
 			if (lblArtist != null)
 				lblArtist.setText((currentSong == null) ? "-" : currentSong.artist);
@@ -625,8 +628,11 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 					barSeek.setValue(0);
 				}
 			} else if (lblTitle != null) {
-				lblTitle.setText(Player.getCurrentTitle(Player.isPreparing()));
-				lblTitle.setSelected(true);
+				final String newTitle = Player.getCurrentTitle(Player.isPreparing());
+				if (!lblTitle.getText().equals(newTitle)) {
+					lblTitle.setText(newTitle);
+					lblTitle.setSelected(true);
+				}
 			}
 		}
 		if ((Player.localPlaying || Player.isPreparing()) && !Player.controlMode) {
