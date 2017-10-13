@@ -521,7 +521,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				httpStreamBufferingAfterPause = true;
 				state = STATE_STARTED;
 				onInfo(MediaPlayerBase.INFO_BUFFERING_START, 0, null);
-				if (!httpStreamReceiver.start())
+				if (!httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex())))
 					throw new MediaPlayerBase.PermissionDeniedException();
 			} else if (MediaContext.resume(this)) {
 				state = STATE_STARTED;
@@ -689,7 +689,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			if (httpStreamReceiver == null)
 				throw new UnsupportedOperationException("streams other than internet streams must use prepare()");
 			state = STATE_PREPARING;
-			if (!httpStreamReceiver.start())
+			if (!httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex())))
 				throw new MediaPlayerBase.PermissionDeniedException();
 			break;
 		default:

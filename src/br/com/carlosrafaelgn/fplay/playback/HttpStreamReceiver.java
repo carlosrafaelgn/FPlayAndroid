@@ -73,7 +73,8 @@ public final class HttpStreamReceiver implements Runnable {
 	private static final int MAX_HEADER_PACKET_LENGTH = 512; //an average response header has ~360 bytes (for a request header, even less than that)
 	private static final int MAX_PACKET_LENGTH = 2048;
 	private static final int MIN_BUFFER_LENGTH = 4 * MAX_PACKET_LENGTH;
-	private static final int EXTERNAL_BUFFER_LENGTH = (128 * 1024); //5.3s worth of data @ 192kbps
+	//~10s worth of data @ 192kbps (maximum value allowed -> Player.getBytesBeforeDecoding())
+	private static final int EXTERNAL_BUFFER_LENGTH = (256 * 1024);
 
 	public static final class Metadata {
 		public final String streamTitle, icyName, icyUrl;
@@ -91,10 +92,10 @@ public final class HttpStreamReceiver implements Runnable {
 	private URL url;
 	private final String path;
 	private final Object sync;
-	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, arg1, audioSessionId, initialNetworkBufferLengthInBytes, initialAudioBufferInMS;
+	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, arg1, audioSessionId, initialAudioBufferInMS;
 	private final CircularIOBuffer buffer;
 	private volatile boolean alive, finished, headerOk;
-	private volatile int serverPortReady;
+	private volatile int serverPortReady, initialNetworkBufferLengthInBytes;
 	private RadioStationResolver resolver;
 	private boolean released, chunked;
 	private String contentType, icyName, icyUrl, icyGenre;
@@ -731,7 +732,7 @@ public final class HttpStreamReceiver implements Runnable {
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
 		//when isPerformingFullPlayback is true, we will need to use the data inside this buffer from Java very often!
 		//when isPerformingFullPlayback is false, and we will be just acting as a man-in-the-middle, then create a very small buffer
-		buffer = new CircularIOBuffer((!isPerformingFullPlayback || bytesBeforeDecoding <= 0) ? MIN_BUFFER_LENGTH : (bytesBeforeDecoding <= EXTERNAL_BUFFER_LENGTH ? EXTERNAL_BUFFER_LENGTH : (bytesBeforeDecoding + MIN_BUFFER_LENGTH)), !isPerformingFullPlayback);
+		buffer = new CircularIOBuffer((!isPerformingFullPlayback || bytesBeforeDecoding <= 0) ? MIN_BUFFER_LENGTH : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH, !isPerformingFullPlayback);
 		this.handler = handler;
 		this.errorMsg = errorMsg;
 		this.preparedMsg = preparedMsg;
@@ -1163,6 +1164,7 @@ public final class HttpStreamReceiver implements Runnable {
 	@Override
 	public void run() {
 		try {
+			final int initialNetworkBufferLengthInBytes = this.initialNetworkBufferLengthInBytes;
 			int timeoutCount = 0, metaCountdown = 0, bufferingCounter, audioCountdown;
 
 			if ((bufferingCounter = resolveUrlAndSendRequest()) < 0)
@@ -1260,9 +1262,12 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 	}
 
-	public boolean start() {
+	public boolean start(int bytesBeforeDecoding) {
 		if (alive || released)
 			return false;
+
+		initialNetworkBufferLengthInBytes = ((!isPerformingFullPlayback || bytesBeforeDecoding <= 0) ? 0 : bytesBeforeDecoding);
+
 		Thread thread = clientThread;
 		if (thread != null) {
 			thread.interrupt();

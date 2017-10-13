@@ -1338,7 +1338,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						//every time httpStreamReceiver starts, it is a preparation!
 						playerBuffering = true;
 						songScheduledForPreparation = song;
-						httpStreamReceiver.start();
+						httpStreamReceiver.start(getBytesBeforeDecoding(getBytesBeforeDecodingIndex()));
 					} else {
 						_startPlayer();
 					}
@@ -1913,7 +1913,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			return (64 << 10);
 		case 6:
 			return (128 << 10);
-		case 7:
+		case 7: //maximum value allowed -> HttpStreamReceiver.EXTERNAL_BUFFER_LENGTH
 			return (256 << 10);
 		default:
 			return (16 << 10);
@@ -2021,7 +2021,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		silenceMode = SILENCE_NORMAL;
 		playerBuffering = true;
 		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getMSBeforePlayback(getMSBeforePlaybackIndex()), audioSessionId, song.path);
-		if (httpStreamReceiver.start()) {
+		if (httpStreamReceiver.start(getBytesBeforeDecoding(getBytesBeforeDecodingIndex()))) {
 			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 				return;
 			playerBuffering = false;
