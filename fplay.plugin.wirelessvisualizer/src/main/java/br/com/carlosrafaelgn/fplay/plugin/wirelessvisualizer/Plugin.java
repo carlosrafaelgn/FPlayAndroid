@@ -467,25 +467,25 @@ public final class Plugin implements FPlayPlugin, Visualizer, BluetoothConnectio
 		switch (error) {
 		case BluetoothConnectionManager.NOT_ENABLED:
 		case BluetoothConnectionManager.ERROR_NOT_ENABLED:
-			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, pluginContext.getText(R.string.bt_needs_to_be_enabled).toString());
+			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, fplay.emoji(pluginContext.getText(R.string.bt_needs_to_be_enabled)));
 			break;
 		case BluetoothConnectionManager.ERROR_DISCOVERY:
-			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, pluginContext.getText(R.string.bt_discovery_error).toString());
+			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, fplay.emoji(pluginContext.getText(R.string.bt_discovery_error)));
 			break;
 		case BluetoothConnectionManager.ERROR_NOTHING_PAIRED:
-			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, pluginContext.getText(R.string.bt_not_paired).toString());
+			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, fplay.emoji(pluginContext.getText(R.string.bt_not_paired)));
 			break;
 		case BluetoothConnectionManager.ERROR_STILL_PAIRING:
-			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, pluginContext.getText(R.string.bt_pairing).toString());
+			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, fplay.emoji(pluginContext.getText(R.string.bt_pairing)));
 			break;
 		case BluetoothConnectionManager.ERROR_CONNECTION:
-			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, pluginContext.getText(R.string.bt_connection_error).toString());
+			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, fplay.emoji(pluginContext.getText(R.string.bt_connection_error)));
 			break;
 		case BluetoothConnectionManager.ERROR_COMMUNICATION:
-			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, pluginContext.getText(R.string.bt_communication_error).toString());
+			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, fplay.emoji(pluginContext.getText(R.string.bt_communication_error)));
 			break;
 		default:
-			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, pluginContext.getText(R.string.bt_not_supported).toString());
+			observer.message(PLUGIN_MSG_OBSERVER_ERROR_MESSAGE, 0, 0, fplay.emoji(pluginContext.getText(R.string.bt_not_supported)));
 			break;
 		}
 		observer.message(PLUGIN_MSG_OBSERVER_STOP, 0, 0, null);

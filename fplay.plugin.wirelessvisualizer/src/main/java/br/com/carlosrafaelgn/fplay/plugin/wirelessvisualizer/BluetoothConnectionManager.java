@@ -336,7 +336,7 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			if (!connecting) {
 				stopDialogDiscovery();
 				if (itemSelectorDialog.getCount() == 0)
-					itemSelectorDialog.add(new DeviceItem(pluginContext.getText(R.string.bt_not_found).toString(), null, false, false));
+					itemSelectorDialog.add(new DeviceItem(fplay.emoji(pluginContext.getText(R.string.bt_not_found).toString()), null, false, false));
 			}
 		}
 	}

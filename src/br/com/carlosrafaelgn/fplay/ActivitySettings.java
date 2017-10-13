@@ -955,7 +955,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (btErrorMessage != null) {
 				if (btMessageText != Integer.MAX_VALUE) {
 					btMessageText = Integer.MAX_VALUE;
-					optBtMessage.setText(btErrorMessage);
+					optBtMessage.setText(UI.emoji(btErrorMessage));
 				}
 			} else if (btMessageText != R.string.bt_inactive) {
 				btMessageText = R.string.bt_inactive;

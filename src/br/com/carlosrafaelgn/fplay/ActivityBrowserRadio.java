@@ -561,7 +561,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	
 	@Override
 	protected void onCreate() {
-		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", getText(R.string.no_description).toString()) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", getText(R.string.no_description).toString(), getText(R.string.no_tags).toString()));
+		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", UI.emoji(getText(R.string.no_description).toString())) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", UI.emoji(getText(R.string.no_description).toString()), getText(R.string.no_tags).toString()));
 		radioStationList.setItemClickListener(this);
 		radioStationList.setActionListener(this);
 		radioStationList.setSelectionChangedListener(this);
@@ -573,8 +573,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		setContentView(R.layout.activity_browser_radio);
 		UI.smallTextAndColor((TextView)findViewById(R.id.lblLoadingSmall));
 		msgLoading = getText(R.string.loading);
-		msgNoFavorites = getText(R.string.no_favorites);
-		msgNoStations = getText(R.string.no_stations);
+		msgNoFavorites = UI.emoji(getText(R.string.no_favorites));
+		msgNoStations = UI.emoji(getText(R.string.no_stations));
 		list = findViewById(R.id.list);
 		list.setOnKeyDownObserver(this);
 		list.setScrollBarType((UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED) ? BgListView.SCROLLBAR_LARGE : UI.browserScrollBarType);

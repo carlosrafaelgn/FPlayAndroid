@@ -1316,7 +1316,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			list.setOnKeyDownObserver(this);
 			list.setEmptyListOnClickListener(this);
 			//Apparently, not all devices can properly draw the character &#9835; :(
-			final String originalText = getText(R.string.touch_to_add_songs).toString();
+			final String originalText = UI.emoji(getText(R.string.touch_to_add_songs));
 			final int iconIdx = originalText.indexOf('\u266B');
 			if (iconIdx > 0) {
 				final SpannableStringBuilder txt = new SpannableStringBuilder(originalText);

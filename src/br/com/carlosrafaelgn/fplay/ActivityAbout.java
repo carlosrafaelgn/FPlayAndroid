@@ -93,7 +93,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		final StringBuilder sb = new StringBuilder(2048);
 		sb.append(getText(R.string.app_more_info));
 		sb.append(getText(R.string.app_more_info_thanks));
-		sb.append(getText(R.string.app_more_info2));
+		sb.append(UI.emoji(getText(R.string.app_more_info2)));
 		sb.append(getText(R.string.app_license));
 		lblMsg.setAutoLinkMask(0);
 		lblMsg.setLinksClickable(true);

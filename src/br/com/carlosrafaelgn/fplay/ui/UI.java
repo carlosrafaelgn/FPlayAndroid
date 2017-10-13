@@ -545,14 +545,14 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void setUsingAlternateTypeface(boolean useAlternateTypeface) {
-		UI.isUsingAlternateTypeface = useAlternateTypeface;
+		isUsingAlternateTypeface = useAlternateTypeface;
 		if (useAlternateTypeface && !dyslexiaFontSupportsCurrentLocale()) {
 			if (defaultTypeface == null || !alternateTypefaceActive) {
 				alternateTypefaceActive = true;
 				try {
 					defaultTypeface = Typeface.createFromAsset(Player.theApplication.getAssets(), "fonts/OpenDyslexicRegular.otf");
 				} catch (Throwable ex) {
-					UI.isUsingAlternateTypeface = false;
+					isUsingAlternateTypeface = false;
 					alternateTypefaceActive = false;
 					defaultTypeface = Typeface.DEFAULT;
 				}
@@ -779,7 +779,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 	
 	public static void setUsingAlternateTypefaceAndForcedLocale(boolean useAlternateTypeface, int localeCode) {
-		UI.isUsingAlternateTypeface = useAlternateTypeface;
+		isUsingAlternateTypeface = useAlternateTypeface;
 		if (!setForcedLocale(null, localeCode))
 			setUsingAlternateTypeface(useAlternateTypeface);
 	}
@@ -1474,7 +1474,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 				activityHost.updateSystemColors(true);
 		//}
-		if (UI.notFullscreen)
+		if (notFullscreen)
 			activityHost.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 	}
 
@@ -1503,10 +1503,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		case TRANSITION_FADE:
 		case TRANSITION_DISSOLVE:
 		case TRANSITION_ZOOM:
-			UI.transitions = (UI.transitions & (~0xFF)) | transition;
+			transitions = (transitions & (~0xFF)) | transition;
 			break;
 		default:
-			UI.transitions = (UI.transitions & (~0xFF));
+			transitions = (transitions & (~0xFF));
 			break;
 		}
 	}
@@ -1518,23 +1518,23 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			case TRANSITION_SLIDE_SMOOTH:
 			case TRANSITION_FADE:
 			case TRANSITION_DISSOLVE:
-				UI.transitions = (UI.transitions & (~0xFF00)) | (transition << 8);
+				transitions = (transitions & (~0xFF00)) | (transition << 8);
 				break;
 			default:
-				UI.transitions = (UI.transitions & (~0xFF00));
+				transitions = (transitions & (~0xFF00));
 				break;
 			}
 		} else {
 			switch (transition) {
 			case TRANSITION_ZOOM_FADE:
-				UI.transitions = (UI.transitions & (~0xFF00)) | (TRANSITION_SLIDE_SMOOTH << 8);
+				transitions = (transitions & (~0xFF00)) | (TRANSITION_SLIDE_SMOOTH << 8);
 				break;
 			case TRANSITION_SLIDE_SMOOTH:
 			case TRANSITION_FADE:
-				UI.transitions = (UI.transitions & (~0xFF00)) | (transition << 8);
+				transitions = (transitions & (~0xFF00)) | (transition << 8);
 				break;
 			default:
-				UI.transitions = (UI.transitions & (~0xFF00));
+				transitions = (transitions & (~0xFF00));
 				break;
 			}
 		}
@@ -1599,7 +1599,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static void setVerticalMarginLarge(boolean isVerticalMarginLarge) {
 		UI.isVerticalMarginLarge = isVerticalMarginLarge;
-		UI.verticalMargin = (isVerticalMarginLarge ? controlLargeMargin : controlMargin);
+		verticalMargin = (isVerticalMarginLarge ? controlLargeMargin : controlMargin);
 	}
 
 	public static boolean showMsg(Context context, int msg) {
@@ -1915,6 +1915,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		view.setPadding(p, topPadding, p, bottomPadding);
 	}
 
+	public static String emoji(CharSequence text) {
+		//check out strings.xml to understand why we need this...
+		if (text == null)
+			return null;
+		return text.toString()
+			.replace(":(", "\uD83D\uDE22")
+			.replace(":)", "\uD83D\uDE04")
+			.replace(";)", "\uD83D\uDE09");
+	}
+
 	public static void toast(Throwable ex) {
 		String s = ex.getMessage();
 		if (s != null && s.length() > 0)
@@ -1951,7 +1961,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			location[0] -= (controlLargeMargin << 1);
 			if (location[0] < 0)
 				location[0] = 0;
-			final int height = (controlMargin << 1) + UI._14spBox;
+			final int height = (controlMargin << 1) + _14spBox;
 			location[1] -= (height + controlMargin + _22sp); //22sp to make up for the status bar (sort of...)
 			if (location[1] < 0)
 				location[1] += height + controlMargin + descriptionPopupOwner.getHeight();
@@ -1973,7 +1983,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		t.setDuration(descriptionPopupOwner != null ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
 		//	internalToast = t;
 		//}
-		((TextView)((ViewGroup)t.getView()).getChildAt(0)).setText(text);
+		((TextView)((ViewGroup)t.getView()).getChildAt(0)).setText(emoji(text));
 		t.show();
 	}
 
@@ -1988,7 +1998,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		v.setGravity(Gravity.CENTER);
 		v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 		v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
-		v.setText(text);
+		v.setText(emoji(text));
 		t.setView(v);
 		t.setDuration(longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
 		t.show();
@@ -2054,21 +2064,21 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return l;
 		}
 		final ObservableScrollView scrollView = new ObservableScrollView(context, PLACEMENT_ALERT);
-		final TextView txt = createDialogTextView(context, 0, messageOnly);
+		final TextView txt = createDialogTextView(context, 0, emoji(messageOnly));
 		txt.setPadding(dialogMargin, dialogMargin, dialogMargin, dialogMargin);
 		scrollView.addView(txt);
 		return scrollView;
 	}
 
 	public static void showDialogMessage(Context context, CharSequence title, CharSequence message, int buttonResId) {
-		final BgDialog dialog = new BgDialog(context, UI.createDialogView(context, message), null);
+		final BgDialog dialog = new BgDialog(context, createDialogView(context, message), null);
 		dialog.setTitle(title);
 		dialog.setNegativeButton(buttonResId);
 		dialog.show();
 	}
 
 	public static void showDialogMessage(Context context, CharSequence title, CharSequence message, int positiveResId, int negativeResId, DialogInterface.OnClickListener clickListener, DialogInterface.OnDismissListener dismissListener) {
-		final BgDialog dialog = new BgDialog(context, UI.createDialogView(context, message), clickListener);
+		final BgDialog dialog = new BgDialog(context, createDialogView(context, message), clickListener);
 		dialog.setTitle(title);
 		dialog.setPositiveButton(positiveResId);
 		dialog.setNegativeButton(negativeResId);

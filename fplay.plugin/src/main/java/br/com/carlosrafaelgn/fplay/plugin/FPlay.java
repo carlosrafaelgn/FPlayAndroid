@@ -51,6 +51,7 @@ public interface FPlay {
 	void sendMessageAtTime(Object callback, int what, int arg1, int arg2, long uptimeMillis);
 	void removeMessages(Object callback, int what);
 
+	String emoji(CharSequence text);
 	void toast(String message);
 
 	<E> ItemSelectorDialog<E> showItemSelectorDialog(Object activity, CharSequence title, CharSequence loadingMessage, CharSequence connectingMessage, boolean progressBarVisible, Class<E> clazz, E[] initialElements, ItemSelectorDialog.Observer<E> observer);

@@ -350,6 +350,11 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	}
 
 	@Override
+	public String emoji(CharSequence text) {
+		return UI.emoji(text);
+	}
+
+	@Override
 	public void toast(String message) {
 		MainHandler.toast(message);
 	}
@@ -467,7 +472,7 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	public String getString(int str) {
 		switch (str) {
 		case STR_VISUALIZER_NOT_SUPPORTED:
-			return Player.theApplication.getText(R.string.visualizer_not_supported).toString();
+			return UI.emoji(Player.theApplication.getText(R.string.visualizer_not_supported));
 		}
 		return "";
 	}
