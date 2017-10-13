@@ -20,4 +20,5 @@ android {
 dependencies {
 	compile fileTree(include: ['*.jar'], dir: 'libs')
 	provided project(':fplay.plugin')
+	compile(name: 'IoTDCP', ext: 'aar')
 }

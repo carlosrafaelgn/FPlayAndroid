@@ -675,7 +675,6 @@ public final class Plugin implements FPlayPlugin, Visualizer, BluetoothConnectio
 			}
 			break;
 		case MSG_BLUETOOTH_RXTX_ERROR:
-
 			if (connected && bt != null)
 				onBluetoothError(bt, BluetoothConnectionManager.ERROR_COMMUNICATION);
 			break;

@@ -13,16 +13,16 @@
     <string name="bt_stop">Parar transmissão</string>
     <string name="bt_vumeter">VU meter + detecção de BPM</string>
     <string name="bt_pairing">Por favor, tente conectar-se de novo depois de parear o dispositivo.</string>
-    <string name="bt_connection_error">Houve um erro ao se conectar ao dispositivo Bluetooth &#128546;</string>
-    <string name="bt_communication_error">Houve um erro na comunicação com o dispositivo Bluetooth &#128546;</string>
-    <string name="bt_needs_to_be_enabled">Você precisa habilitar o Bluetooth para poder prosseguir &#128546;</string>
-    <string name="bt_not_supported">Bluetooth não suportado &#128546;</string>
-    <string name="bt_discovery_error">Houve um erro na procura pelos dispositivos Bluetooth &#128546;</string>
+    <string name="bt_connection_error">Houve um erro ao se conectar ao dispositivo Bluetooth :(</string>
+    <string name="bt_communication_error">Houve um erro na comunicação com o dispositivo Bluetooth :(</string>
+    <string name="bt_needs_to_be_enabled">Você precisa habilitar o Bluetooth para poder prosseguir :(</string>
+    <string name="bt_not_supported">Bluetooth não suportado :(</string>
+    <string name="bt_discovery_error">Houve um erro na procura pelos dispositivos Bluetooth :(</string>
     <string name="bt_devices">Dispositivos Bluetooth</string>
     <string name="bt_connecting">Conectando-se ao seu dispositivo Bluetooth. Por favor, aguarde&#8230;</string>
     <string name="bt_scanning">Procurando por dispositivos Bluetooth&#8230;</string>
-    <string name="bt_not_paired">Nenhum dispositivo Bluetooth pareado &#128546;</string>
-    <string name="bt_not_found">Nenhum dispositivo Bluetooth encontrado &#128546;</string>
+    <string name="bt_not_paired">Nenhum dispositivo Bluetooth pareado :(</string>
+    <string name="bt_not_found">Nenhum dispositivo Bluetooth encontrado :(</string>
     <string name="bt_null_device_name">(Dispositivo BT)</string>
 
 </resources>

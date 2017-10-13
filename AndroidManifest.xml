@@ -253,7 +253,10 @@
         <receiver android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver" >
             <intent-filter>
 
-                <!-- MEDIA_BUTTON broadcast action MUST be declared in the application manifest!!! -->
+                <!--
+                    MEDIA_BUTTON broadcast action MUST be declared in the application manifest,
+                    before API 26!!!!
+                -->
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
