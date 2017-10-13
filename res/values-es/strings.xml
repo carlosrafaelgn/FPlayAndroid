@@ -357,6 +357,6 @@
     <string name="share">Compartir</string>
     <string name="file_prefetch_size">Bytes para almacenar en memoria al reproducir archivos locales:</string>
     <string name="download">Descarga</string>
-    <string name="download_confimation">Esta función requiere la extensión externa \"%s\". Desea descargarlo ahora?</string>
+    <string name="download_confirmation">Esta función requiere la extensión externa \"%s\". Desea descargarlo ahora?</string>
 
 </resources>

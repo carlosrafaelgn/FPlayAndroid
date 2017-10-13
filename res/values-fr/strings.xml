@@ -357,6 +357,6 @@
     <string name="share">Partager</string>
     <string name="file_prefetch_size">Octets à mémoriser lors de la lecture de fichiers locaux :</string>
     <string name="download">Télécharger</string>
-    <string name="download_confimation">Cette fonctionnalité nécessite l\'extension externe \"%s\". Voulez-vous le télécharger maintenant?</string>
+    <string name="download_confirmation">Cette fonctionnalité nécessite l\'extension externe \"%s\". Voulez-vous le télécharger maintenant?</string>
 
 </resources>

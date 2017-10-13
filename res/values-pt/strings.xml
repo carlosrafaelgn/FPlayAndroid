@@ -357,6 +357,6 @@
     <string name="share">Compartilhar</string>
     <string name="file_prefetch_size">Bytes para armazenar na memória ao reproduzir arquivos locais:</string>
     <string name="download">Download</string>
-    <string name="download_confimation">Esse recurso requer a extensão externa \"%s\". Gostaria de baixá-la agora?</string>
+    <string name="download_confirmation">Esse recurso requer a extensão externa \"%s\". Gostaria de baixá-la agora?</string>
 
 </resources>

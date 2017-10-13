@@ -253,7 +253,7 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 			synchronized (pluginClasses) {
 				//replace %s... faster than format() ;)
 				if (activity != null && pluginName != null && packageName != null)
-					UI.showDialogMessage(activity, activity.getText(R.string.download), activity.getText(R.string.download_confimation).toString().replace("%s", pluginName), R.string.download, R.string.no, this, this);
+					UI.showDialogMessage(activity, activity.getText(R.string.download), activity.getText(R.string.download_confirmation).toString().replace("%s", pluginName), R.string.download, R.string.no, this, this);
 			}
 			break;
 		}
