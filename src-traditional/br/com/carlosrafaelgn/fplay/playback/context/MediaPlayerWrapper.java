@@ -213,6 +213,11 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	}
 
 	@Override
+	public int getHttpFilledBufferSize() {
+		return 0;
+	}
+
+	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
 		player.setVolume(leftVolume, rightVolume);
 	}

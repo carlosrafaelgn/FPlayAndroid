@@ -836,6 +836,13 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	}
 
 	@Override
+	public int getHttpFilledBufferSize() {
+		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
+		final HttpStreamReceiver receiver = httpStreamReceiver;
+		return ((receiver != null) ? receiver.getFilledBufferSize() : 0);
+	}
+
+	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
 		MediaContext.setVolume(leftVolume);
 	}

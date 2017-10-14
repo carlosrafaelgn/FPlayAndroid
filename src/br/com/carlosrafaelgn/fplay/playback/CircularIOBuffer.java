@@ -174,4 +174,8 @@ public final class CircularIOBuffer {
 			sync.notifyAll();
 		}
 	}
+
+	public int getFilledSize() {
+		return filledSize;
+	}
 }

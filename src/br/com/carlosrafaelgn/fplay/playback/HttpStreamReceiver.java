@@ -1393,6 +1393,10 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
 	}
 
+	public int getFilledBufferSize() {
+		return buffer.getFilledSize();
+	}
+
 	@SuppressWarnings({"unused"})
 	public void readArray(ByteBuffer dst, int dstOffset, int length) {
 		buffer.readArray(dst, dstOffset, length);

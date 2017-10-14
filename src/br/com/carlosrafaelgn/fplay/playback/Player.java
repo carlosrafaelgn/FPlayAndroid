@@ -979,6 +979,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				-1));
 	}
 
+	public static int getHttpFilledBufferSize() {
+		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
+		final HttpStreamReceiver receiver = httpStreamReceiver;
+		return ((receiver != null) ? receiver.getFilledBufferSize() :
+			((localPlayer != null) ? localPlayer.getHttpFilledBufferSize() :
+				0));
+	}
+
 	public static int getSrcSampleRate() {
 		return ((httpStreamReceiver != null) ? 0 :
 			((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getSrcSampleRate() :

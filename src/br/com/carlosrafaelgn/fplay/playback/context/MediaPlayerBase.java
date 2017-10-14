@@ -126,6 +126,8 @@ public abstract class MediaPlayerBase {
 
 	public abstract int getHttpPosition();
 
+	public abstract int getHttpFilledBufferSize();
+
 	public abstract void setVolume(float leftVolume, float rightVolume);
 
 	public abstract void setWakeMode(Context context, int mode);

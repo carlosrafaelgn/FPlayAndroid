@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -115,7 +116,7 @@ import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 //Maintain/Save/Restore scroll position when returning to a ListView
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
-public final class ActivityMain extends ClientActivity implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, SongList.ItemClickListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener, UI.AnimationPreShowViewHandler {
+public final class ActivityMain extends ClientActivity implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, SongList.ItemClickListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener, UI.AnimationPreShowViewHandler, DialogInterface.OnDismissListener {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEAT_ONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124, MNU_VISUALIZER_LIQUID_POWER_SAVER = 125;
 	private static final int REQUEST_WRITE_SETTINGS = 123;
 	private View vwVolume;
@@ -125,7 +126,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private ViewGroup panelControls, panelSecondary, panelSelection;
 	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume, btnSetRingtone, btnShare;
 	private BgListView list;
-	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume;
+	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume, tmrMoreInfo;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand, idForRingtoneContent;
 	private boolean skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
@@ -281,7 +282,12 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		}
 
 		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
-		final BgEditText editText = UI.createDialogEditText(getHostActivity(), 0, stringBuilder.toString(), null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		final String str = stringBuilder.toString();
+		final BgEditText editText = UI.createDialogEditText(getHostActivity(), 0,
+			song.isHttp ?
+				"HTTP buffer\n" + Player.getHttpFilledBufferSize() + " bytes\n\n" + str :
+				str,
+			null, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			editText.setShowSoftInputOnFocus(false);
 		l.addView(editText);
@@ -291,6 +297,16 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			dialog.setHideSoftInput(true);
 		dialog.show();
+
+		if (song.isHttp) {
+			if (tmrMoreInfo != null) {
+				tmrMoreInfo.release();
+				tmrMoreInfo = null;
+			}
+			dialog.setOnDismissListener(this);
+			tmrMoreInfo = new Timer(this, "More Info Timer", false, true, false);
+			tmrMoreInfo.start(1000, new Object[] { editText, str });
+		}
 	}
 
 	private void setRingtone() {
@@ -1631,6 +1647,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			tmrUpdateVolumeDisplay.stop();
 		if (tmrVolume != null)
 			tmrVolume.stop();
+		if (tmrMoreInfo != null) {
+			tmrMoreInfo.release();
+			tmrMoreInfo = null;
+		}
 		volumeButtonPressed = 0;
 		if (Player.songs.selecting || Player.songs.moving)
 			cancelSelection(false);
@@ -1701,6 +1721,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			tmrVolume.release();
 			tmrVolume = null;
 		}
+		if (tmrMoreInfo != null) {
+			tmrMoreInfo.release();
+			tmrMoreInfo = null;
+		}
 		timeBuilder = null;
 		volumeBuilder = null;
 	}
@@ -1728,6 +1752,17 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			return;
 		} else if (timer == tmrUpdateVolumeDisplay) {
 			updateVolumeDisplay(Integer.MIN_VALUE);
+			return;
+		} else if (timer == tmrMoreInfo) {
+			final Object[] params;
+			if (param != null &&
+				param instanceof Object[] &&
+				(params = (Object[])param).length == 2 &&
+				params[0] instanceof BgEditText &&
+				params[1] != null)
+				((BgEditText)params[0]).setText(
+					"HTTP buffer\n" + Player.getHttpFilledBufferSize() + " bytes\n\n" + params[1].toString()
+				);
 			return;
 		}
 		final Song s = Player.localSong;
@@ -1925,5 +1960,13 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	public void onAnimationPreShowView(View view) {
 		if (view == btnCancelSel && view != null)
 			prepareBtnCancelSel();
+	}
+
+	@Override
+	public void onDismiss(DialogInterface dialog) {
+		if (tmrMoreInfo != null) {
+			tmrMoreInfo.release();
+			tmrMoreInfo = null;
+		}
 	}
 }
