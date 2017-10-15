@@ -1919,10 +1919,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		//check out strings.xml to understand why we need this...
 		if (text == null)
 			return null;
-		return text.toString()
+		return ((Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) ? text.toString() :
+			text.toString()
 			.replace(":(", "\uD83D\uDE22")
 			.replace(":)", "\uD83D\uDE04")
-			.replace(";)", "\uD83D\uDE09");
+			.replace(";)", "\uD83D\uDE09"));
 	}
 
 	public static void toast(Throwable ex) {
