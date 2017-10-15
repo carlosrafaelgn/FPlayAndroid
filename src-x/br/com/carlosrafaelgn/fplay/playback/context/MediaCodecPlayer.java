@@ -558,7 +558,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		if (state != STATE_IDLE)
 			throw new IllegalStateException("setDataSource() - player was in an invalid state: " + state);
 		this.path = path;
-		if (Song.isPathHttp("http:")) {
+		if (Song.isPathHttp(path)) {
 			durationInMS = -1;
 			handler = new Handler(this);
 			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), 0, 1, path);
