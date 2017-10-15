@@ -181,14 +181,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_COMMIT_VIRTUALIZER = 0x0118;
 	private static final int MSG_COMMIT_ALL_EFFECTS = 0x0119;
 	private static final int MSG_TURN_OFF_NOW = 0x011A;
-	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x011B;
-	private static final int MSG_HTTP_STREAM_RECEIVER_PREPARED = 0x011C;
-	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x011D;
-	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x011E;
-	private static final int MSG_ENABLE_EXTERNAL_FX = 0x011F;
-	private static final int MSG_SET_BUFFER_CONFIG = 0x0120;
-	private static final int MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN = 0x0121;
-	private static final int MSG_ENABLE_RESAMPLING = 0x0122;
+	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x011B;
+	private static final int MSG_ENABLE_EXTERNAL_FX = 0x011C;
+	private static final int MSG_SET_BUFFER_CONFIG = 0x011D;
+	private static final int MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN = 0x011E;
+	private static final int MSG_ENABLE_RESAMPLING = 0x011F;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -262,7 +259,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	//These are only written/read from Core thread (except the volatile ones that are accessed from the main thread)
 	private static int storedSongTime, howThePlayerStarted, playerState, nextPlayerState;
 	private static volatile boolean resumePlaybackAfterFocusGain, postPlayPending;
-	private static boolean playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, httpStreamReceiverActsLikePlayer, seekInProgress;
+	private static boolean playing, playerBuffering, playAfterSeeking, prepareNextAfterSeeking, reviveAlreadyTried, seekInProgress;
 	private static Song song, nextSong, songScheduledForPreparation, nextSongScheduledForPreparation, songWhenFirstErrorHappened;
 	private static MediaPlayerBase player, nextPlayer;
 	public static volatile int audioSessionId;
@@ -380,20 +377,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case MSG_SONG_LIST_DESERIALIZED:
 				_songListDeserialized(msg.obj);
 				break;
-			case MSG_HTTP_STREAM_RECEIVER_ERROR:
-				_httpStreamReceiverError(msg.arg1, (msg.obj instanceof Throwable) ? (Throwable)msg.obj : null, msg.arg2);
-				break;
-			case MSG_HTTP_STREAM_RECEIVER_PREPARED:
-				_httpStreamReceiverPrepared(msg.arg1);
-				break;
-			case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
-				if (localHandler != null)
-					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, msg.arg1, 0, msg.obj), SystemClock.uptimeMillis());
-				break;
-			case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
-				if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion)
-					thePlayer.onInfo(player, MediaPlayerBase.INFO_URL_UPDATE, 0, msg.obj);
-				break;
 			case MSG_SET_BUFFER_CONFIG:
 				MediaContext._setBufferConfig(msg.arg1);
 				break;
@@ -458,7 +441,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				stopService();
 				break;
 			case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
-				if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion)
+				if (msg.obj != null)
 					thePlayer.onInfo(localPlayer, MediaPlayerBase.INFO_METADATA_UPDATE, 0, msg.obj);
 				break;
 			}
@@ -624,8 +607,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		state = STATE_TERMINATING;
-
-		_releaseInternetObjects();
 
 		looper.quit();
 
@@ -965,38 +946,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static int getPosition() {
-		return ((httpStreamReceiver != null) ? -1 :
-			((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() :
-				((localSong == null) ? -1 :
-					storedSongTime)));
+		return ((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getCurrentPosition() :
+			((localSong == null) ? -1 :
+				storedSongTime));
 	}
 
 	public static int getHttpPosition() {
-		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
-		final HttpStreamReceiver receiver = httpStreamReceiver;
-		return ((receiver != null) ? receiver.bytesReceivedSoFar :
-			((localPlayer != null) ? localPlayer.getHttpPosition() :
-				-1));
+		return ((localPlayer != null) ? localPlayer.getHttpPosition() : -1);
 	}
 
 	public static int getHttpFilledBufferSize() {
-		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
-		final HttpStreamReceiver receiver = httpStreamReceiver;
-		return ((receiver != null) ? receiver.getFilledBufferSize() :
-			((localPlayer != null) ? localPlayer.getHttpFilledBufferSize() :
-				0));
+		return ((localPlayer != null) ? localPlayer.getHttpFilledBufferSize() : 0);
 	}
 
 	public static int getSrcSampleRate() {
-		return ((httpStreamReceiver != null) ? 0 :
-			((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getSrcSampleRate() :
-				0));
+		return ((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getSrcSampleRate() : 0);
 	}
 
 	public static int getChannelCount() {
-		return ((httpStreamReceiver != null) ? 0 :
-			((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getChannelCount() :
-				0));
+		return ((localPlayer != null && playerState == PLAYER_STATE_LOADED) ? localPlayer.getChannelCount() : 0);
 	}
 
 	private static MediaPlayerBase _createPlayer() {
@@ -1016,7 +984,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		playing = true;
 		//when dimmed, decreased the volume by 20dB
 		float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
-		if (silenceMode != SILENCE_NONE) {
+		//always perform a fade in on http streams
+		if (silenceMode != SILENCE_NONE || (song != null && song.isHttp)) {
 			final int increment = ((silenceMode == SILENCE_FOCUS) ? fadeInIncrementOnFocus : ((howThePlayerStarted == SongList.HOW_CURRENT || (song != null && song.isHttp)) ? fadeInIncrementOnPause : fadeInIncrementOnOther));
 			if (increment > 30) {
 				volumeDBFading = VOLUME_MIN_DB;
@@ -1025,11 +994,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			}
 			silenceMode = SILENCE_NONE;
 		}
-		if (httpStreamReceiverActsLikePlayer) {
-			httpStreamReceiver.setVolume(multiplier, multiplier);
-			//httpStreamReceiver starts playing automatically (we just need to fix the volume, as
-			//it always starts playing muted)
-		} else if (player != null) {
+		if (player != null) {
 			player.setVolume(multiplier, multiplier);
 			player.start();
 		}
@@ -1086,7 +1051,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		seekInProgress = false;
 		songScheduledForPreparation = null;
 		nextSongScheduledForPreparation = null;
-		_releaseInternetObjects();
 		if (handler != null) {
 			handler.removeMessages(MSG_FOCUS_GAIN_TIMER);
 			handler.removeMessages(MSG_FADE_IN_VOLUME_TIMER);
@@ -1247,7 +1211,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					//	player.setVolume(multiplier, multiplier);
 					//}
 					songWhenFirstErrorHappened = null;
-					_releaseInternetObjects();
 					_scheduleNextPlayerForPreparation();
 					_updateState(false, null);
 					return;
@@ -1267,15 +1230,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					if (nextPreparationEnabled)
 						handler.removeMessages(MSG_PREPARE_NEXT_SONG);
 
-					_releaseInternetObjects();
 					_updateState(false, null);
 					return;
 				}
 			}
 			playing = false;
 			playerState = PLAYER_STATE_PREPARING;
-
-			_releaseInternetObjects();
 
 			if (how != SongList.HOW_CURRENT)
 				storedSongTime = -1;
@@ -1295,24 +1255,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//longer using prepareAsync
 			_updateState(false, null);
 
-			if (BuildConfig.X || !song.isHttp) {
-				//Even though it happens very rarely, a few devices will freeze and produce an ANR
-				//when calling setDataSource from the main thread :(
-				player.setDataSource(song.path);
-				if (song.isHttp) {
-					//http songs are handled by the player in X mode
-					player.setOnPreparedListener(thePlayer);
-					player.prepareAsync();
-				} else {
-					//I decided to stop calling prepareAsync for files
-					player.setOnPreparedListener(null);
-					player.prepare();
-					//onPrepared() will call _updateState when necessary
-					thePlayer.onPrepared(player);
-				}
+			//Even though it happens very rarely, a few devices will freeze and produce an ANR
+			//when calling setDataSource from the main thread :(
+			player.setDataSource(song.path);
+			if (song.isHttp) {
+				player.setOnPreparedListener(thePlayer);
+				player.prepareAsync();
 			} else {
-				_createInternetObjects();
-				_updateState(false, null);
+				//I decided to stop calling prepareAsync for files
+				player.setOnPreparedListener(null);
+				player.prepare();
+				//onPrepared() will call _updateState when necessary
+				thePlayer.onPrepared(player);
 			}
 		} catch (Throwable ex) {
 			_fullCleanup();
@@ -1330,10 +1284,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			resumePlaybackAfterFocusGain = false;
 			if (playing) {
 				playing = false;
-				if (httpStreamReceiverActsLikePlayer)
-					httpStreamReceiver.pause();
-				else
-					player.pause();
+				player.pause();
 				silenceMode = SILENCE_NORMAL;
 				_storeSongTime();
 				_updateState(false, null);
@@ -1342,14 +1293,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_PRE_PLAY, SongList.HOW_CURRENT, 0), SystemClock.uptimeMillis());
 				} else {
 					howThePlayerStarted = SongList.HOW_CURRENT;
-					if (httpStreamReceiverActsLikePlayer) {
-						//every time httpStreamReceiver starts, it is a preparation!
-						playerBuffering = true;
-						songScheduledForPreparation = song;
-						httpStreamReceiver.start(getBytesBeforeDecoding(getBytesBeforeDecodingIndex()));
-					} else {
-						_startPlayer();
-					}
+					_startPlayer();
 					_updateState(false, null);
 				}
 			}
@@ -1399,14 +1343,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (volumeDimmed)
 			multiplier *= 0.1f;
 		if (handler != null && hasFocus && player != null && playerState == PLAYER_STATE_LOADED) {
-			if (httpStreamReceiverActsLikePlayer) {
-				httpStreamReceiver.setVolume(multiplier, multiplier);
-			} else {
-				try {
-					player.setVolume(multiplier, multiplier);
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
+			try {
+				player.setVolume(multiplier, multiplier);
+			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 			if (send)
 				handler.sendMessageAtTime(Message.obtain(handler, MSG_FADE_IN_VOLUME_TIMER, increment, 0), SystemClock.uptimeMillis() + 50);
@@ -1432,8 +1372,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		volumeMultiplier = ((volumeDB <= VOLUME_MIN_DB) ? 0.0f : ((volumeDB >= 0) ? 1.0f : (float)Math.exp((double)volumeDB * 2.3025850929940456840179914546844 / 2000.0)));
 		//when dimmed, decreased the volume by 20dB
 		final float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
-		if (httpStreamReceiverActsLikePlayer)
-			httpStreamReceiver.setVolume(multiplier, multiplier);
 		if (player != null) {
 			try {
 				player.setVolume(multiplier, multiplier);
@@ -1456,8 +1394,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		volumeMultiplier = ((toMax || (volumeDB >= 0)) ? 1.0f : ((volumeDB <= VOLUME_MIN_DB) ? 0.0f : (float)Math.exp((double)volumeDB * 2.3025850929940456840179914546844 / 2000.0)));
 		//when dimmed, decreased the volume by 20dB
 		final float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
-		if (httpStreamReceiverActsLikePlayer)
-			httpStreamReceiver.setVolume(multiplier, multiplier);
 		if (player != null) {
 			try {
 				player.setVolume(multiplier, multiplier);
@@ -1630,9 +1566,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					handler.sendMessageAtTime(Message.obtain(handler, MSG_FOCUS_GAIN_TIMER), SystemClock.uptimeMillis() + 1500);
 			} else {
 				//came here from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
-				if (httpStreamReceiverActsLikePlayer) {
-					httpStreamReceiver.setVolume(volumeMultiplier, volumeMultiplier);
-				} else if (player != null && playerState == PLAYER_STATE_LOADED) {
+				if (player != null && playerState == PLAYER_STATE_LOADED) {
 					try {
 						player.setVolume(volumeMultiplier, volumeMultiplier);
 					} catch (Throwable ex) {
@@ -1671,9 +1605,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//when dimmed, decreased the volume by 20dB
 				final float multiplier = volumeMultiplier * 0.1f;
 				volumeDimmed = true;
-				if (httpStreamReceiverActsLikePlayer) {
-					httpStreamReceiver.setVolume(multiplier, multiplier);
-				} else if (player != null && playerState == PLAYER_STATE_LOADED) {
+				if (player != null && playerState == PLAYER_STATE_LOADED) {
 					try {
 						player.setVolume(multiplier, multiplier);
 					} catch (Throwable ex) {
@@ -1757,12 +1689,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					if (extraObject instanceof HttpStreamReceiver.Metadata)
 						httpStreamReceiverMetadataUpdate((HttpStreamReceiver.Metadata)extraObject);
 				} else if (localHandler != null) {
-					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, httpStreamReceiverVersion, 0, extraObject), SystemClock.uptimeMillis());
+					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, extra, 0, extraObject), SystemClock.uptimeMillis());
 				}
 				break;
 			case MediaPlayerBase.INFO_URL_UPDATE:
 				if (state == STATE_ALIVE && song != null)
 					song.path = extraObject.toString();
+				break;
+			case MediaPlayerBase.INFO_HTTP_PREPARED:
+				if (state == STATE_ALIVE && song != null && playerState == PLAYER_STATE_PREPARING)
+					onPrepared(mediaPlayer);
 				break;
 			}
 		}
@@ -1792,10 +1728,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					}
 					//when dimmed, decreased the volume by 20dB
 					float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
-					if (httpStreamReceiverActsLikePlayer)
-						httpStreamReceiver.setVolume(multiplier, multiplier);
-					else
+					if (!song.isHttp)
 						player.setVolume(multiplier, multiplier);
+					else
+						player.setVolume(0, 0); //always perform a fade in on http streams
 					if (storedSongTime < 0 || song.isHttp) {
 						storedSongTime = -1;
 						_startPlayer();
@@ -1904,8 +1840,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_ENABLE_RESAMPLING, enabled ? 1 : 0, 0), SystemClock.uptimeMillis());
 	}
 
-	private static int httpStreamReceiverVersion, httpOptions;
-	private static HttpStreamReceiver httpStreamReceiver;
+	private static int httpOptions;
 
 	public static int getBytesBeforeDecoding(int index) {
 		switch (index) {
@@ -1959,26 +1894,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		httpOptions = (httpOptions & ~0xF0) | ((msBeforePlayingIndex & 0x0F) << 4);
 	}
 
-	private static void _httpStreamReceiverError(int version, Throwable exception, int errorCode) {
-		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
-			return;
-		_releaseInternetObjects();
-		if (!Player.isConnectedToTheInternet()) {
-			exception = null;
-			errorCode = MediaPlayerBase.ERROR_NOT_FOUND;
-		}
-		thePlayer.onError(player,
-			((exception != null) && (exception instanceof MediaPlayerBase.MediaServerDiedException)) ? MediaPlayerBase.ERROR_SERVER_DIED :
-				MediaPlayerBase.ERROR_UNKNOWN,
-			((exception == null) ? errorCode :
-				((exception instanceof MediaPlayerBase.TimeoutException) ? MediaPlayerBase.ERROR_TIMED_OUT :
-					((exception instanceof MediaPlayerBase.PermissionDeniedException) ? MediaPlayerBase.ERROR_PERMISSION :
-						((exception instanceof OutOfMemoryError) ? MediaPlayerBase.ERROR_OUT_OF_MEMORY :
-							((exception instanceof FileNotFoundException) ? MediaPlayerBase.ERROR_NOT_FOUND :
-								((exception instanceof MediaPlayerBase.UnsupportedFormatException) ? MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT :
-									((exception instanceof IOException) ? MediaPlayerBase.ERROR_IO : MediaPlayerBase.ERROR_UNKNOWN))))))));
-	}
-
 	private static void httpStreamReceiverMetadataUpdate(HttpStreamReceiver.Metadata metadata) {
 		if (state != STATE_ALIVE || localSong == null || localPlayer == null || thePlayer == null)
 			return;
@@ -2014,43 +1929,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			songs.markAsChanged();
 			if (observer != null)
 				observer.onPlayerMetadataChanged(localSong);
-		}
-	}
-
-	private static void _httpStreamReceiverPrepared(int version) {
-		if (state != STATE_ALIVE || version != httpStreamReceiverVersion || song == null || player == null || thePlayer == null)
-			return;
-		playerBuffering = false;
-		thePlayer.onPrepared(player);
-	}
-
-	private static void _createInternetObjects() throws IOException {
-		//force the player to always start playing as if coming from a pause
-		silenceMode = SILENCE_NORMAL;
-		playerBuffering = true;
-		httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, ++httpStreamReceiverVersion, getBytesBeforeDecoding(getBytesBeforeDecodingIndex()), getMSBeforePlayback(getMSBeforePlaybackIndex()), audioSessionId, song.path);
-		if (httpStreamReceiver.start(getBytesBeforeDecoding(getBytesBeforeDecodingIndex()))) {
-			if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
-				return;
-			playerBuffering = false;
-			//Even though it happens very rarely, a few devices will freeze and produce an ANR
-			//when calling setDataSource from the main thread :(
-			player.setDataSource(httpStreamReceiver.getLocalURL());
-			player.setOnPreparedListener(thePlayer);
-			player.prepareAsync();
-		} else {
-			//when start() returns false, this means we were unable to create the local server
-			_releaseInternetObjects();
-			throw new MediaPlayerBase.PermissionDeniedException();
-		}
-	}
-
-	private static void _releaseInternetObjects() {
-		if (httpStreamReceiver != null) {
-			httpStreamReceiverVersion++;
-			httpStreamReceiver.release();
-			httpStreamReceiverActsLikePlayer = false;
-			httpStreamReceiver = null;
 		}
 	}
 

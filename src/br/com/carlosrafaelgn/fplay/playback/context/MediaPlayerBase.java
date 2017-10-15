@@ -36,7 +36,14 @@ import android.content.Context;
 
 import java.io.IOException;
 
+@SuppressWarnings({"unused"})
 public abstract class MediaPlayerBase {
+	protected static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x0100;
+	protected static final int MSG_HTTP_STREAM_RECEIVER_PREPARED = 0x0101;
+	protected static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x0102;
+	protected static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0103;
+	protected static final int MSG_HTTP_STREAM_RECEIVER_INFO = 0x0104;
+
 	//what
 	public static final int ERROR_UNKNOWN = 1; //MediaPlayer.MEDIA_ERROR_UNKNOWN
 	public static final int ERROR_SERVER_DIED = 100; //MediaPlayer.MEDIA_ERROR_SERVER_DIED
@@ -55,6 +62,7 @@ public abstract class MediaPlayerBase {
 	public static final int INFO_BUFFERING_END = 702; //MediaPlayer.MEDIA_INFO_BUFFERING_END
 	public static final int INFO_METADATA_UPDATE = 802; //MediaPlayer.MEDIA_INFO_METADATA_UPDATE
 	public static final int INFO_URL_UPDATE = -802; //internal constant (not used by the original MediaPlayer class)
+	public static final int INFO_HTTP_PREPARED = -803; //internal constant (not used by the original MediaPlayer class)
 
 	public static final class TimeoutException extends Exception {
 		private static final long serialVersionUID = 4571328670214281144L;

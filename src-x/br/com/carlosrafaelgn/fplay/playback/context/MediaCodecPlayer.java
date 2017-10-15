@@ -48,17 +48,13 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamExtractor;
 import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.BufferedMediaDataSource;
 
 final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback {
-	private static final int MSG_HTTP_STREAM_RECEIVER_ERROR = 0x0100;
-	private static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x0101;
-	private static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0102;
-	private static final int MSG_HTTP_STREAM_RECEIVER_INFO = 0x0103;
-
 	private static final int STATE_IDLE = 0;
 	private static final int STATE_INITIALIZED = 1;
 	private static final int STATE_PREPARING = 2;
@@ -562,7 +558,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		if (state != STATE_IDLE)
 			throw new IllegalStateException("setDataSource() - player was in an invalid state: " + state);
 		this.path = path;
-		if ((path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:"))) {
+		if (Song.isPathHttp("http:")) {
 			durationInMS = -1;
 			handler = new Handler(this);
 			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), 0, 1, path);

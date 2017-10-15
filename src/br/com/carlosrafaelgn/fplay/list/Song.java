@@ -35,7 +35,6 @@ package br.com.carlosrafaelgn.fplay.list;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.view.ViewDebug;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +42,6 @@ import java.io.OutputStream;
 
 import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.plugin.FPlay;
 import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
 
@@ -66,9 +64,13 @@ public final class Song extends BaseItem {
 	public String length;
 	public boolean alreadyPlayed, selected;
 
+	public static boolean isPathHttp(String path) {
+		return (path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:"));
+	}
+
 	public Song(String path, String title, String artist, String album, int track, int lengthMS, int year) {
 		this.path = path;
-		this.isHttp = (path.startsWith("http://") || path.startsWith("https://"));
+		this.isHttp = isPathHttp(path);
 		this.title = title;
 		this.artist = artist;
 		this.album = album;

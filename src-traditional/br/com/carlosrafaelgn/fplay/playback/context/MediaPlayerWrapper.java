@@ -39,15 +39,20 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
 import android.os.ParcelFileDescriptor;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import br.com.carlosrafaelgn.fplay.list.Song;
+import br.com.carlosrafaelgn.fplay.playback.HttpStreamReceiver;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.util.BufferedMediaDataSource;
 
-final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener {
+final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnSeekCompleteListener, Handler.Callback {
 	private final MediaPlayer player;
 	private volatile boolean prepared;
 	private OnCompletionListener completionListener;
@@ -55,6 +60,11 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	private OnInfoListener infoListener;
 	private OnPreparedListener preparedListener;
 	private OnSeekCompleteListener seekCompleteListener;
+
+	private Handler httpHandler;
+	private boolean httpStreamReceiverActsLikePlayer;
+	private int httpStreamReceiverVersion;
+	private HttpStreamReceiver httpStreamReceiver;
 
 	public MediaPlayerWrapper() {
 		player = new MediaPlayer();
@@ -72,42 +82,72 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void start() {
-		player.start();
+		if (httpStreamReceiverActsLikePlayer) {
+			//every time httpStreamReceiver starts, it is a preparation!
+			if (httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex())) &&
+				infoListener != null)
+				infoListener.onInfo(this, INFO_BUFFERING_START, 0, null);
+		} else {
+			player.start();
+		}
 	}
 
 	@Override
 	public void pause() {
-		player.pause();
+		if (httpStreamReceiverActsLikePlayer)
+			httpStreamReceiver.pause();
+		else
+			player.pause();
 	}
 
 	@Override
 	public void setDataSource(String path) throws IOException {
 		prepared = false;
-		if (path.startsWith("file:")) {
-			final Uri uri = Uri.parse(path);
-			path = uri.getPath();
-		}
-		if (path.charAt(0) == File.separatorChar) {
-			final File file = new File(path);
-			ParcelFileDescriptor fileDescriptor = null;
-			final int filePrefetchSize = Player.filePrefetchSize;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && filePrefetchSize > 0) {
-				player.setDataSource(new BufferedMediaDataSource(path, file.length(), filePrefetchSize));
+		if (Song.isPathHttp(path)) {
+			if (infoListener != null)
+				infoListener.onInfo(this, INFO_BUFFERING_START, 0, null);
+			httpHandler = new Handler(this);
+			httpStreamReceiver = new HttpStreamReceiver(httpHandler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getMSBeforePlayback(Player.getMSBeforePlaybackIndex()), Player.audioSessionId, path);
+			if (httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()))) {
+				if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
+					return;
+				if (infoListener != null)
+					infoListener.onInfo(this, INFO_BUFFERING_END, 0, null);
+				//Even though it happens very rarely, a few devices will freeze and produce an ANR
+				//when calling setDataSource from the main thread :(
+				player.setDataSource(httpStreamReceiver.getLocalURL());
 			} else {
-				try {
-					fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
-					player.setDataSource(fileDescriptor.getFileDescriptor(), 0, fileDescriptor.getStatSize());
-				} finally {
-					try {
-						if (fileDescriptor != null)
-							fileDescriptor.close();
-					} catch (Throwable ex) {
-						//just ignore
-					}
-				}
+				//when start() returns false, this means we were unable to create the local server
+				reset();
+				throw new MediaPlayerBase.PermissionDeniedException();
 			}
 		} else {
-			player.setDataSource(path);
+			if (path.startsWith("file:")) {
+				final Uri uri = Uri.parse(path);
+				path = uri.getPath();
+			}
+			if (path.charAt(0) == File.separatorChar) {
+				final File file = new File(path);
+				ParcelFileDescriptor fileDescriptor = null;
+				final int filePrefetchSize = Player.filePrefetchSize;
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && filePrefetchSize > 0) {
+					player.setDataSource(new BufferedMediaDataSource(path, file.length(), filePrefetchSize));
+				} else {
+					try {
+						fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
+						player.setDataSource(fileDescriptor.getFileDescriptor(), 0, fileDescriptor.getStatSize());
+					} finally {
+						try {
+							if (fileDescriptor != null)
+								fileDescriptor.close();
+						} catch (Throwable ex) {
+							//just ignore
+						}
+					}
+				}
+			} else {
+				player.setDataSource(path);
+			}
 		}
 	}
 
@@ -126,6 +166,8 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void prepare() throws IOException {
+		if (httpStreamReceiverActsLikePlayer)
+			return;
 		setAudioAttributes();
 		prepared = false;
 		player.prepare();
@@ -134,6 +176,8 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void prepareAsync() {
+		if (httpStreamReceiverActsLikePlayer)
+			return;
 		setAudioAttributes();
 		prepared = false;
 		player.prepareAsync();
@@ -141,12 +185,20 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public void seekToAsync(int msec) {
-		player.seekTo(msec);
+		if (httpStreamReceiver == null)
+			player.seekTo(msec);
 	}
 
 	@Override
 	public void release() {
 		prepared = false;
+		if (httpStreamReceiver != null) {
+			httpStreamReceiverActsLikePlayer = false;
+			httpHandler = null;
+			httpStreamReceiverVersion++;
+			httpStreamReceiver.release();
+			httpStreamReceiver = null;
+		}
 		player.release();
 		completionListener = null;
 		errorListener = null;
@@ -158,6 +210,13 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	@Override
 	public void reset() {
 		prepared = false;
+		if (httpStreamReceiver != null) {
+			httpStreamReceiverActsLikePlayer = false;
+			httpHandler = null;
+			httpStreamReceiverVersion++;
+			httpStreamReceiver.release();
+			httpStreamReceiver = null;
+		}
 		try {
 			player.reset();
 		} catch (Throwable ex) {
@@ -182,7 +241,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 		//calling getDuration() while the player is not
 		//fully prepared causes exception on a few devices,
 		//and causes error (-38,0) on others
-		if (!prepared)
+		if (!prepared || httpStreamReceiver != null)
 			return -1;
 		try {
 			return player.getDuration();
@@ -196,7 +255,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 		//calling getCurrentPosition() while the player is not
 		//fully prepared causes exception on a few devices,
 		//and causes error (-38,0) on others
-		if (!prepared)
+		if (!prepared || httpStreamReceiver != null)
 			return -1;
 		try {
 			final int position = player.getCurrentPosition();
@@ -209,17 +268,20 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public int getHttpPosition() {
-		return -1;
+		return (httpStreamReceiver != null ? httpStreamReceiver.bytesReceivedSoFar : -1);
 	}
 
 	@Override
 	public int getHttpFilledBufferSize() {
-		return 0;
+		return (httpStreamReceiver != null ? httpStreamReceiver.getFilledBufferSize() : 0);
 	}
 
 	@Override
 	public void setVolume(float leftVolume, float rightVolume) {
-		player.setVolume(leftVolume, rightVolume);
+		if (httpStreamReceiver == null)
+			player.setVolume(leftVolume, rightVolume);
+		else
+			httpStreamReceiver.setVolume(leftVolume, rightVolume);
 	}
 
 	@Override
@@ -260,7 +322,8 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	@Override
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	public void setNextMediaPlayer(MediaPlayerBase next) {
-		player.setNextMediaPlayer((next == null) ? null : ((MediaPlayerWrapper)next).player);
+		if (httpStreamReceiver == null)
+			player.setNextMediaPlayer((next == null) ? null : ((MediaPlayerWrapper)next).player);
 	}
 
 	@Override
@@ -292,5 +355,51 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	public void onSeekComplete(MediaPlayer mp) {
 		if (seekCompleteListener != null)
 			seekCompleteListener.onSeekComplete(this);
+	}
+
+	@Override
+	public boolean handleMessage(Message msg) {
+		switch (msg.what) {
+		case MSG_HTTP_STREAM_RECEIVER_ERROR:
+			//_httpStreamReceiverError(msg.arg1, (msg.obj instanceof Throwable) ? (Throwable)msg.obj : null, msg.arg2);
+			if (Player.state != Player.STATE_ALIVE || msg.arg1 != httpStreamReceiverVersion)
+				break;
+			reset();
+			Throwable exception = ((msg.obj instanceof Throwable) ? (Throwable)msg.obj : null);
+			int errorCode = msg.arg2;
+			if (!Player.isConnectedToTheInternet()) {
+				exception = null;
+				errorCode = MediaPlayerBase.ERROR_NOT_FOUND;
+			}
+			if (errorListener != null)
+				errorListener.onError(this,
+					((exception != null) && (exception instanceof MediaPlayerBase.MediaServerDiedException)) ? MediaPlayerBase.ERROR_SERVER_DIED :
+						MediaPlayerBase.ERROR_UNKNOWN,
+					((exception == null) ? errorCode :
+						((exception instanceof MediaPlayerBase.TimeoutException) ? MediaPlayerBase.ERROR_TIMED_OUT :
+							((exception instanceof MediaPlayerBase.PermissionDeniedException) ? MediaPlayerBase.ERROR_PERMISSION :
+								((exception instanceof OutOfMemoryError) ? MediaPlayerBase.ERROR_OUT_OF_MEMORY :
+									((exception instanceof FileNotFoundException) ? MediaPlayerBase.ERROR_NOT_FOUND :
+										((exception instanceof MediaPlayerBase.UnsupportedFormatException) ? MediaPlayerBase.ERROR_UNSUPPORTED_FORMAT :
+											((exception instanceof IOException) ? MediaPlayerBase.ERROR_IO : MediaPlayerBase.ERROR_UNKNOWN))))))));
+			break;
+		case MSG_HTTP_STREAM_RECEIVER_PREPARED:
+			if (msg.arg1 == httpStreamReceiverVersion && infoListener != null) {
+				if (httpStreamReceiverActsLikePlayer)
+					prepared = true;
+				infoListener.onInfo(this, INFO_BUFFERING_END, 0, null);
+				infoListener.onInfo(this, INFO_HTTP_PREPARED, 0, null);
+			}
+			break;
+		case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
+			if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion && infoListener != null)
+				infoListener.onInfo(this, INFO_METADATA_UPDATE, 0, msg.obj);
+			break;
+		case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
+			if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion && infoListener != null)
+				infoListener.onInfo(this, INFO_URL_UPDATE, 0, msg.obj);
+			break;
+		}
+		return true;
 	}
 }
