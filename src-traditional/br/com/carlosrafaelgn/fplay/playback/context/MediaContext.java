@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
+@SuppressWarnings({"unused"})
 public final class MediaContext {
 	public static boolean useOpenSLEngine;
 
