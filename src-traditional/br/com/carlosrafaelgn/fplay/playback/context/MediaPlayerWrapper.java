@@ -359,10 +359,12 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 
 	@Override
 	public boolean handleMessage(Message msg) {
+		if (msg.arg1 != httpStreamReceiverVersion)
+			return true;
 		switch (msg.what) {
 		case MSG_HTTP_STREAM_RECEIVER_ERROR:
 			//_httpStreamReceiverError(msg.arg1, (msg.obj instanceof Throwable) ? (Throwable)msg.obj : null, msg.arg2);
-			if (Player.state != Player.STATE_ALIVE || msg.arg1 != httpStreamReceiverVersion)
+			if (Player.state != Player.STATE_ALIVE)
 				break;
 			reset();
 			Throwable exception = ((msg.obj instanceof Throwable) ? (Throwable)msg.obj : null);
@@ -384,7 +386,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 											((exception instanceof IOException) ? MediaPlayerBase.ERROR_IO : MediaPlayerBase.ERROR_UNKNOWN))))))));
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_PREPARED:
-			if (msg.arg1 == httpStreamReceiverVersion && infoListener != null) {
+			if (infoListener != null) {
 				if (httpStreamReceiverActsLikePlayer)
 					prepared = true;
 				infoListener.onInfo(this, INFO_BUFFERING_END, 0, null);
@@ -392,15 +394,15 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 			}
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE:
-			if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion && infoListener != null)
+			if (msg.obj != null && infoListener != null)
 				infoListener.onInfo(this, INFO_METADATA_UPDATE, 0, msg.obj);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
-			if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion && infoListener != null)
+			if (msg.obj != null && infoListener != null)
 				infoListener.onInfo(this, INFO_URL_UPDATE, 0, msg.obj);
 			break;
 		case MSG_HTTP_STREAM_RECEIVER_BUFFERING:
-			if (msg.arg1 == httpStreamReceiverVersion && infoListener != null)
+			if (infoListener != null)
 				infoListener.onInfo(this, msg.arg2 == 0 ? INFO_BUFFERING_END : INFO_BUFFERING_START, 0, null);
 			break;
 		}
