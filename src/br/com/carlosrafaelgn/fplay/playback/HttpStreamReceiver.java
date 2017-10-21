@@ -1374,8 +1374,10 @@ public final class HttpStreamReceiver implements Runnable {
 				ex.printStackTrace();
 			}
 			releaseThreadsAndSockets();
+			bytesReceivedSoFar = -1;
+			if (handler != null)
+				handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 0), SystemClock.uptimeMillis());
 		}
-		bytesReceivedSoFar = -1;
 	}
 
 	private void releaseThreadsAndSockets() {
