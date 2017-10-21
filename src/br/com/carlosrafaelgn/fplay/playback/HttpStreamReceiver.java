@@ -92,7 +92,7 @@ public final class HttpStreamReceiver implements Runnable {
 	private URL url;
 	private final String path;
 	private final Object sync;
-	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, arg1, audioSessionId, initialAudioBufferInMS;
+	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, bufferingMsg, arg1, audioSessionId, initialAudioBufferInMS;
 	private final CircularIOBuffer buffer;
 	private volatile boolean alive, finished, headerOk;
 	private volatile int serverPortReady, initialNetworkBufferLengthInBytes;
@@ -725,20 +725,21 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int infoMsg, int arg1, int bytesBeforeDecoding, int msBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
+	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int infoMsg, int bufferingMsg, int arg1, int bytesBeforeDecoding, int msBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
 		this.url = (RadioStation.isRadioUrl(path) ? normalizeIcyUrl(RadioStation.extractUrl(path)) : new URL(path));
 		this.path = path;
 		sync = new Object();
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
 		//when isPerformingFullPlayback is true, we will need to use the data inside this buffer from Java very often!
 		//when isPerformingFullPlayback is false, and we will be just acting as a man-in-the-middle, then create a very small buffer
-		buffer = new CircularIOBuffer((!isPerformingFullPlayback || bytesBeforeDecoding <= 0) ? MIN_BUFFER_LENGTH : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH, !isPerformingFullPlayback);
+		buffer = new CircularIOBuffer(!isPerformingFullPlayback ? MIN_BUFFER_LENGTH : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH, !isPerformingFullPlayback);
 		this.handler = handler;
 		this.errorMsg = errorMsg;
 		this.preparedMsg = preparedMsg;
 		this.metadataMsg = metadataMsg;
 		this.urlMsg = urlMsg;
 		this.infoMsg = infoMsg;
+		this.bufferingMsg = bufferingMsg;
 		this.arg1 = arg1;
 		this.audioSessionId = audioSessionId;
 		bytesReceivedSoFar = -1;
@@ -1195,6 +1196,12 @@ public final class HttpStreamReceiver implements Runnable {
 			//do not allocate a direct buffer for the metadata, as we will have to constantly access that data from Java
 			final ByteBuffer metaByteBuffer = ((icyMetaInterval > 0) ? ByteBuffer.wrap(new byte[MAX_METADATA_LENGTH]) : null);
 
+			boolean buffering = true;
+			synchronized (sync) {
+				if (handler != null)
+					handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 1), SystemClock.uptimeMillis());
+			}
+
 			//from now on, just fill our local buffer
 			while (alive) {
 				int len;
@@ -1222,6 +1229,18 @@ public final class HttpStreamReceiver implements Runnable {
 						break;
 					}
 
+					if (buffer.getFilledSize() < 512 && !buffering) {
+						//apparently the connection is not so good, because we are starving!
+						//let's try to fill up the buffer for a while before decoding again
+						//(as if we had just started playing for the first time)
+						buffering = true;
+						bufferingCounter = buffer.getFilledSize();
+						synchronized (sync) {
+							if (handler != null)
+								handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 1), SystemClock.uptimeMillis());
+						}
+					}
+
 					audioCountdown -= len;
 					if (audioCountdown <= 0) {
 						metaCountdown = -1;
@@ -1234,6 +1253,13 @@ public final class HttpStreamReceiver implements Runnable {
 					if (bufferingCounter >= 0) {
 						bufferingCounter += len;
 						if (bufferingCounter >= initialNetworkBufferLengthInBytes) {
+							if (buffering) {
+								buffering = false;
+								synchronized (sync) {
+									if (handler != null)
+										handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 0), SystemClock.uptimeMillis());
+								}
+							}
 							buffer.commitWritten(bufferingCounter);
 							bufferingCounter = -1;
 						}

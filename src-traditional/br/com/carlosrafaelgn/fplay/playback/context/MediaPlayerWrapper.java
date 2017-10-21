@@ -107,7 +107,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 			if (infoListener != null)
 				infoListener.onInfo(this, INFO_BUFFERING_START, 0, null);
 			httpHandler = new Handler(this);
-			httpStreamReceiver = new HttpStreamReceiver(httpHandler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getMSBeforePlayback(Player.getMSBeforePlaybackIndex()), Player.audioSessionId, path);
+			httpStreamReceiver = new HttpStreamReceiver(httpHandler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, MSG_HTTP_STREAM_RECEIVER_BUFFERING, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getMSBeforePlayback(Player.getMSBeforePlaybackIndex()), Player.audioSessionId, path);
 			if (httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()))) {
 				if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 					return;
@@ -398,6 +398,10 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 		case MSG_HTTP_STREAM_RECEIVER_URL_UPDATED:
 			if (msg.obj != null && msg.arg1 == httpStreamReceiverVersion && infoListener != null)
 				infoListener.onInfo(this, INFO_URL_UPDATE, 0, msg.obj);
+			break;
+		case MSG_HTTP_STREAM_RECEIVER_BUFFERING:
+			if (msg.arg1 == httpStreamReceiverVersion && infoListener != null)
+				infoListener.onInfo(this, msg.arg2 == 0 ? INFO_BUFFERING_END : INFO_BUFFERING_START, 0, null);
 			break;
 		}
 		return true;

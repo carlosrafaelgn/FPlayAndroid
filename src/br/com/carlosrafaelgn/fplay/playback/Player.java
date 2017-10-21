@@ -1848,8 +1848,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			return (4 << 10);
 		case 1:
 			return (8 << 10);
-		case 3:
-			return (32 << 10);
+		case 2:
+			return (16 << 10);
 		case 4:
 			return (48 << 10);
 		case 5:
@@ -1859,7 +1859,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		case 7: //maximum value allowed -> HttpStreamReceiver.EXTERNAL_BUFFER_LENGTH
 			return (256 << 10);
 		default:
-			return (16 << 10);
+			return (32 << 10);
 		}
 	}
 
@@ -2224,7 +2224,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
-		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000012);
+		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000013);
 		MediaContext._setBufferConfig(opts.getInt(OPT_MEDIACONTEXTBUFFERCONFIG));
 		UI.transitions = opts.getInt(OPT_TRANSITION, UI.deviceSupportsAnimations ? (UI.TRANSITION_ZOOM_FADE | (UI.TRANSITION_ZOOM_FADE << 8)) : 0);
 		UI.setTransitions((UI.lastVersionCode < 90 && UI.transitions != 0) ? (UI.TRANSITION_ZOOM_FADE | (UI.TRANSITION_ZOOM_FADE << 8)) : UI.transitions);

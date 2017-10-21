@@ -264,6 +264,9 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				onError(ex, 0);
 			}
 			break;
+		case MSG_HTTP_STREAM_RECEIVER_BUFFERING:
+			onInfo(msg.arg2 == 0 ? INFO_BUFFERING_END : INFO_BUFFERING_START, 0, null);
+			break;
 		}
 		return true;
 	}
@@ -561,7 +564,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		if (Song.isPathHttp(path)) {
 			durationInMS = -1;
 			handler = new Handler(this);
-			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), 0, 1, path);
+			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, MSG_HTTP_STREAM_RECEIVER_BUFFERING, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), 0, 1, path);
 			nativeMediaCodec = false;
 		} else {
 			final File file = new File(path);

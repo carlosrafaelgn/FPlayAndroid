@@ -43,6 +43,7 @@ public abstract class MediaPlayerBase {
 	protected static final int MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE = 0x0102;
 	protected static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0103;
 	protected static final int MSG_HTTP_STREAM_RECEIVER_INFO = 0x0104;
+	protected static final int MSG_HTTP_STREAM_RECEIVER_BUFFERING = 0x0105;
 
 	//what
 	public static final int ERROR_UNKNOWN = 1; //MediaPlayer.MEDIA_ERROR_UNKNOWN
