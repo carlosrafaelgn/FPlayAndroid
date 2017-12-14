@@ -934,7 +934,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static boolean isPreparing() {
-		return (localPlayerState == PLAYER_STATE_PREPARING || playerBuffering);
+		return (localPlayerState == PLAYER_STATE_PREPARING || (playing && playerBuffering));
 	}
 
 	public static String getCurrentTitle(boolean preparing) {
@@ -3581,7 +3581,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (localHandler != null) {
 			final boolean songHasChanged = (metaHasChanged || (stateLastSong != song));
 			final boolean playbackHasChanged = (stateLastPlaying != playing);
-			final boolean preparing = (playerState == PLAYER_STATE_PREPARING || playerBuffering);
+			final boolean preparing = (playerState == PLAYER_STATE_PREPARING || (playing && playerBuffering));
 			final boolean preparingHasChanged = (stateLastPreparing != preparing);
 			if (!songHasChanged && !playbackHasChanged && !preparingHasChanged && ex == null)
 				return;
