@@ -539,6 +539,11 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	}
 
 	@Override
+	public void resume() {
+		Player.resume();
+	}
+
+	@Override
 	public void playPause() {
 		Player.playPause();
 	}

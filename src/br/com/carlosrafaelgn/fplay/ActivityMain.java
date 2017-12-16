@@ -1092,7 +1092,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (UI.doubleClickMode) {
 				if (Player.songs.getFirstSelectedPosition() == position) {
 					if (Player.songs.getItem(position) == Player.localSong && !Player.localPlaying)
-						Player.playPause();
+						Player.resume();
 					else
 						Player.play(position);
 				} else {
@@ -1101,7 +1101,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			} else {
 				boolean ok = true;
 				if (Player.songs.getItem(position) == Player.localSong && !Player.localPlaying)
-					Player.playPause();
+					Player.resume();
 				else
 					ok = Player.play(position);
 				if (ok)

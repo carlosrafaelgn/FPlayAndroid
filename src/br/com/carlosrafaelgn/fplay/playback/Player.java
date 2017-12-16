@@ -186,6 +186,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_SET_BUFFER_CONFIG = 0x011D;
 	private static final int MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN = 0x011E;
 	private static final int MSG_ENABLE_RESAMPLING = 0x011F;
+	private static final int MSG_RESUME = 0x0120;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -300,6 +301,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MSG_PAUSE:
 				if (playing)
+					_playPause();
+				break;
+			case MSG_RESUME:
+				if (!playing)
 					_playPause();
 				break;
 			case MSG_PLAYPAUSE:
@@ -729,6 +734,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state != STATE_ALIVE)
 			return;
 		handler.sendMessageAtTime(Message.obtain(handler, MSG_PAUSE), SystemClock.uptimeMillis());
+	}
+
+	public static void resume() {
+		if (state != STATE_ALIVE)
+			return;
+		handler.sendMessageAtTime(Message.obtain(handler, MSG_RESUME), SystemClock.uptimeMillis());
 	}
 
 	public static void playPause() {

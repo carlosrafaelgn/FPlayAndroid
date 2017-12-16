@@ -71,6 +71,7 @@ public interface FPlay {
 
 	void previous();
 	void pause();
+	void resume();
 	void playPause();
 	void next();
 	void setVolumeInPercentage(int percentage);
