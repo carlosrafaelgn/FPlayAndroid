@@ -350,6 +350,26 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	}
 
 	@Override
+	public boolean deviceHasTelephonyRadio() {
+		return Player.deviceHasTelephonyRadio();
+	}
+
+	@Override
+	public boolean isConnectedToTheInternet() {
+		return Player.isConnectedToTheInternet();
+	}
+
+	@Override
+	public boolean isInternetConnectedViaWiFi() {
+		return Player.isInternetConnectedViaWiFi();
+	}
+
+	@Override
+	public String getWiFiIpAddress() {
+		return Player.getWiFiIpAddress();
+	}
+
+	@Override
 	public String emoji(CharSequence text) {
 		return UI.emoji(text);
 	}

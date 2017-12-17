@@ -51,6 +51,11 @@ public interface FPlay {
 	void sendMessageAtTime(Object callback, int what, int arg1, int arg2, long uptimeMillis);
 	void removeMessages(Object callback, int what);
 
+	boolean deviceHasTelephonyRadio();
+	boolean isConnectedToTheInternet();
+	boolean isInternetConnectedViaWiFi();
+	String getWiFiIpAddress();
+
 	String emoji(CharSequence text);
 	void toast(String message);
 

@@ -52,6 +52,7 @@ import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -62,6 +63,7 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.telephony.TelephonyManager;
+import android.text.format.Formatter;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
@@ -2676,7 +2678,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static boolean isConnectedToTheInternet() {
 		if (thePlayer != null) {
 			try {
-				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
+				final ConnectivityManager mngr = (ConnectivityManager)theApplication.getSystemService(Context.CONNECTIVITY_SERVICE);
 				final NetworkInfo info = mngr.getActiveNetworkInfo();
 				return (info != null && info.isConnected());
 			} catch (Throwable ex) {
@@ -2699,6 +2701,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			}
 		}
 		return false;
+	}
+
+	@SuppressWarnings("deprecation")
+	public static String getWiFiIpAddress() {
+		try {
+			WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
+			return Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+		} catch (Throwable ex) {
+			return null;
+		}
 	}
 
 	private static void processTurnOffTimer() {
