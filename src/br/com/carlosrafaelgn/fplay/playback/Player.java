@@ -1016,6 +1016,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_startFadeInVolumeTimer();
 			else
 				player.setVolume(0, 0);
+			player.start();
 		}
 		reviveAlreadyTried = false;
 	}
