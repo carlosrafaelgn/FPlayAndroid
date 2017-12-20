@@ -992,9 +992,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return mp;
 	}
 
-	private static void _startPlayer() {
-		playAfterSeeking = false;
-		playing = true;
+	private static void _startFadeInVolumeTimer() {
 		//when dimmed, decreased the volume by 20dB
 		float multiplier = (volumeDimmed ? (volumeMultiplier * 0.1f) : volumeMultiplier);
 		//always perform a fade in on http streams
@@ -1007,9 +1005,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			}
 			silenceMode = SILENCE_NONE;
 		}
+		player.setVolume(multiplier, multiplier);
+	}
+
+	private static void _startPlayer() {
+		playAfterSeeking = false;
+		playing = true;
 		if (player != null) {
-			player.setVolume(multiplier, multiplier);
-			player.start();
+			if (song == null || !song.isHttp)
+				_startFadeInVolumeTimer();
+			else
+				player.setVolume(0, 0);
 		}
 		reviveAlreadyTried = false;
 	}
@@ -1045,6 +1051,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	private static void _partialCleanup() {
 		MediaContext._release();
+		_partialCleanupPlayersOnly();
+	}
+
+	private static void _partialCleanupPlayersOnly() {
 		playerState = PLAYER_STATE_NEW;
 		playerBuffering = false;
 		if (player != null) {
@@ -1299,6 +1309,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				playing = false;
 				player.pause();
 				silenceMode = SILENCE_NORMAL;
+				if (song != null && song.isHttp)
+					_partialCleanupPlayersOnly();
 				_storeSongTime();
 				_updateState(false, null);
 			} else {
@@ -1710,8 +1722,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					song.path = extraObject.toString();
 				break;
 			case MediaPlayerBase.INFO_HTTP_PREPARED:
-				if (state == STATE_ALIVE && song != null && playerState == PLAYER_STATE_PREPARING)
-					onPrepared(mediaPlayer);
+				if (state == STATE_ALIVE && song != null && player != null) {
+					if (playerState == PLAYER_STATE_PREPARING)
+						onPrepared(mediaPlayer);
+					_startFadeInVolumeTimer();
+				}
 				break;
 			}
 		}
