@@ -109,7 +109,7 @@ public abstract class MediaPlayerBase {
 
 	public abstract int getChannelCount();
 
-	public abstract void start();
+	public abstract boolean start();
 
 	public abstract void pause();
 

@@ -275,7 +275,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	//These are only set in the main thread
 	private static int localVolumeStream, localPlayerState;
 	public static int localVolumeDB;
-	public static boolean localPlaying;
+	public static boolean localPlaying, localPlayerBuffering;
 	public static Song localSong;
 	public static MediaPlayerBase localPlayer;
 
@@ -650,7 +650,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			saveConfig(true);
 		}
 
-		updateState(~0x27, new Object[] { null, null, null });
+		updateState(~0xA7, new Object[] { null, null, null });
 
 		/*if (restart && intentActivityHost != null) {
 			//http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
@@ -947,7 +947,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static boolean isPreparing() {
-		return (localPlayerState == PLAYER_STATE_PREPARING || (playing && playerBuffering));
+		return (localPlayerState == PLAYER_STATE_PREPARING || (localPlaying && localPlayerBuffering));
 	}
 
 	public static String getCurrentTitle(boolean preparing) {
@@ -1016,7 +1016,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				_startFadeInVolumeTimer();
 			else
 				player.setVolume(0, 0);
-			player.start();
+			if (player.start())
+				playerBuffering = true;
 		}
 		reviveAlreadyTried = false;
 	}
@@ -3441,7 +3442,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static Song stateLastSong;
-	private static boolean stateLastPlaying, stateLastPreparing;
+	private static boolean stateLastPlaying, stateLastPreparing, stateLastBuffering;
 
 	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
@@ -3543,6 +3544,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static void updateState(int arg1, Object[] objs) {
 		localPlaying = ((arg1 & 0x04) != 0);
 		localPlayerState = (arg1 & 0x03);
+		localPlayerBuffering = ((arg1 & 0x80) != 0);
 		localSong = (Song)objs[0];
 		objs[0] = null;
 		localPlayer = (MediaPlayerBase)objs[1];
@@ -3557,6 +3559,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//final boolean playbackHasChanged = ((arg1 & 0x10) != 0);
 		final boolean preparing = ((arg1 & 0x20) != 0);
 		final boolean preparingHasChanged = ((arg1 & 0x40) != 0);
+		//final boolean bufferingHasChanged = ((arg1 & 0x100) != 0);
 		final String title = ((localSong == null) ? null : getCurrentTitle(preparing));
 		broadcastStateChange(title, preparing, songHasChanged | preparingHasChanged);
 		if (idleTurnOffTimerSelectedMinutes > 0)
@@ -3616,18 +3619,21 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			observer.onPlayerChanged(localSong, songHasChanged, preparingHasChanged, ex);
 	}
 
+	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _updateState(boolean metaHasChanged, Throwable ex) {
 		if (localHandler != null) {
 			final boolean songHasChanged = (metaHasChanged || (stateLastSong != song));
 			final boolean playbackHasChanged = (stateLastPlaying != playing);
 			final boolean preparing = (playerState == PLAYER_STATE_PREPARING || (playing && playerBuffering));
 			final boolean preparingHasChanged = (stateLastPreparing != preparing);
-			if (!songHasChanged && !playbackHasChanged && !preparingHasChanged && ex == null)
+			final boolean bufferingHasChanged = (stateLastBuffering != playerBuffering);
+			if (!songHasChanged && !playbackHasChanged && !preparingHasChanged && !bufferingHasChanged && ex == null)
 				return;
 			stateLastSong = song;
 			stateLastPlaying = playing;
 			stateLastPreparing = preparing;
-			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_UPDATE_STATE, playerState | (playing ? 0x04 : 0) | (songHasChanged ? 0x08 : 0) | (playbackHasChanged ? 0x10 : 0) | (preparing ? 0x20 : 0) | (preparingHasChanged ? 0x40 : 0), 0, new Object[] { song, player, ex }), SystemClock.uptimeMillis());
+			stateLastBuffering = playerBuffering;
+			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_UPDATE_STATE, playerState | (playing ? 0x04 : 0) | (songHasChanged ? 0x08 : 0) | (playbackHasChanged ? 0x10 : 0) | (preparing ? 0x20 : 0) | (preparingHasChanged ? 0x40 : 0) | (playerBuffering ? 0x80 : 0) | (bufferingHasChanged ? 0x100 : 0), 0, new Object[] { song, player, ex }), SystemClock.uptimeMillis());
 		}
 	}
 }

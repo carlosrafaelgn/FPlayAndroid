@@ -81,15 +81,15 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	}
 
 	@Override
-	public void start() {
+	public boolean start() {
 		if (httpStreamReceiverActsLikePlayer) {
 			//every time httpStreamReceiver starts, it is a preparation!
-			if (httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex())) &&
-				infoListener != null)
-				infoListener.onInfo(this, INFO_BUFFERING_START, 0, null);
+			if (httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex())))
+				return true;
 		} else {
 			player.start();
 		}
+		return false;
 	}
 
 	@Override

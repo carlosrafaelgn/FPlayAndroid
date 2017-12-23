@@ -104,7 +104,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	private HttpStreamExtractor httpStreamExtractor;
 	private String path;
 	private ByteBuffer[] inputBuffers, outputBuffers;
-	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, nativeMediaCodec, httpStreamBufferingAfterPause;
+	private boolean inputOver, outputOver, outputBuffersHaveBeenUsed, nativeMediaCodec, httpStreamBufferingAfterPause, willBufferAfterSeek;
 	private MediaCodec.BufferInfo bufferInfo;
 	private OnCompletionListener completionListener;
 	private OnErrorListener errorListener;
@@ -437,6 +437,8 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			//just ignore
 		}
 
+		willBufferAfterSeek = true;
+
 		if (nativeMediaCodec) {
 			long ret = MediaContext.mediaCodecSeek(nativeObj, msec, durationInMS);
 			if (ret < 0)
@@ -496,7 +498,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	//**************************************************************
 
 	@Override
-	public void start() {
+	public boolean start() {
 		if (state == STATE_INITIALIZED) {
 			try {
 				if (httpStreamReceiver == null)
@@ -510,8 +512,10 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 
 		switch (state) {
 		case STATE_PREPARED:
-			if (MediaContext.play(this))
+			if (MediaContext.play(this)) {
 				state = STATE_STARTED;
+				return true;
+			}
 			break;
 		case STATE_STARTED:
 			break;
@@ -524,11 +528,17 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 					throw new MediaPlayerBase.PermissionDeniedException();
 			} else if (MediaContext.resume(this)) {
 				state = STATE_STARTED;
+				if (willBufferAfterSeek) {
+					willBufferAfterSeek = false;
+					return true;
+				}
 			}
 			break;
 		default:
 			throw new IllegalStateException("start() - player was in an invalid state: " + state);
 		}
+
+		return false;
 	}
 
 	@Override
@@ -768,6 +778,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		durationInMS = -1;
 		inputBuffers = null;
 		outputBuffers = null;
+		willBufferAfterSeek = false;
 	}
 
 	private void resetInternal() {
