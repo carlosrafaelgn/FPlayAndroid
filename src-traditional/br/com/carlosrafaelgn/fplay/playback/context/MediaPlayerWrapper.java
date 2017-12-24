@@ -389,7 +389,6 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 			if (infoListener != null) {
 				if (httpStreamReceiverActsLikePlayer)
 					prepared = true;
-				infoListener.onInfo(this, INFO_BUFFERING_END, 0, null);
 				infoListener.onInfo(this, INFO_HTTP_PREPARED, 0, null);
 			}
 			break;

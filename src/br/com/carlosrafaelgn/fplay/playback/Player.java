@@ -1701,13 +1701,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case MediaPlayerBase.INFO_BUFFERING_START:
 				if (!playerBuffering) {
 					playerBuffering = true;
-					_updateState(true, null);
+					_updateState(false, null);
 				}
 				break;
 			case MediaPlayerBase.INFO_BUFFERING_END:
 				if (playerBuffering) {
 					playerBuffering = false;
-					_updateState(true, null);
+					_updateState(false, null);
 				}
 				break;
 			case MediaPlayerBase.INFO_METADATA_UPDATE:
@@ -1725,8 +1725,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MediaPlayerBase.INFO_HTTP_PREPARED:
 				if (state == STATE_ALIVE && song != null && player != null) {
+					playerBuffering = false;
 					if (playerState == PLAYER_STATE_PREPARING)
 						onPrepared(mediaPlayer);
+					else
+						_updateState(false, null);
 					_startFadeInVolumeTimer();
 				}
 				break;

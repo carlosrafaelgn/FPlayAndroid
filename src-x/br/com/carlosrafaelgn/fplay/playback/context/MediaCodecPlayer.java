@@ -109,7 +109,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	private OnCompletionListener completionListener;
 	private OnErrorListener errorListener;
 	private OnInfoListener infoListener;
-	private OnPreparedListener preparedListener;
+	//private OnPreparedListener preparedListener;
 	private OnSeekCompleteListener seekCompleteListener;
 
 	public MediaCodecPlayer() {
@@ -249,8 +249,10 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				switch (state) {
 				case STATE_PREPARING:
 					state = STATE_PREPARED;
-					if (preparedListener != null)
-						preparedListener.onPrepared(this);
+					//if (preparedListener != null)
+					//	preparedListener.onPrepared(this);
+					if (infoListener != null)
+						infoListener.onInfo(this, INFO_HTTP_PREPARED, 0, null);
 					break;
 				case STATE_STARTED:
 					//resume MediaContext ONLY HERE!!!!
@@ -734,7 +736,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		completionListener = null;
 		errorListener = null;
 		infoListener = null;
-		preparedListener = null;
+		//preparedListener = null;
 		seekCompleteListener = null;
 		state = STATE_END;
 	}
@@ -879,7 +881,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 
 	@Override
 	public void setOnPreparedListener(OnPreparedListener listener) {
-		preparedListener = listener;
+		//preparedListener = listener;
 	}
 
 	@Override
