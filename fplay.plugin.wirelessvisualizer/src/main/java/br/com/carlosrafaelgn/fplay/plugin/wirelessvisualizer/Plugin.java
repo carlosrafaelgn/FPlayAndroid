@@ -159,6 +159,11 @@ public final class Plugin implements FPlayPlugin, Visualizer, BluetoothConnectio
 	}
 
 	@Override
+	public int getPluginType() {
+		return TYPE_VISUALIZER;
+	}
+
+	@Override
 	public void init(Object pluginContext, FPlay fplay) {
 		this.pluginContext = (Context)pluginContext;
 		this.fplay = fplay;

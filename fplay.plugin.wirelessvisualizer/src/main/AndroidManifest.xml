@@ -1,8 +1,8 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer"
+<manifest package="br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer"
+          xmlns:android="http://schemas.android.com/apk/res/android"
           android:installLocation="auto"
           android:versionCode="1"
-          android:versionName="1.00" >
+          android:versionName="1.00">
 
     <!-- http://developer.android.com/guide/topics/manifest/supports-screens-element.html -->
     <supports-screens
@@ -10,23 +10,23 @@
         android:largeScreens="true"
         android:normalScreens="true"
         android:smallScreens="true"
-        android:xlargeScreens="true" />
+        android:xlargeScreens="true"/>
 
     <!-- For Google Drive -->
     <!-- uses-permission android:name="android.permission.GET_ACCOUNTS" -->
     <!-- For http playback -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- To check the connection state -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- See this: http://developer.android.com/reference/android/bluetooth/BluetoothHeadset.html#ACTION_AUDIO_STATE_CHANGED -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
     <!-- For scanning bluetooth devices -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BROADCAST_STICKY"/>
     <!-- Apparently, a few devices require this.... (not only to make android.media.audiofx.PresetReverb work, but to control volume and other settings)  -->
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
 
     <!--
     Just to make Google Play show the App even to phones without Bluetooth,
@@ -34,32 +34,47 @@
     -->
     <uses-feature
         android:name="android.hardware.bluetooth"
-        android:required="false" />
+        android:required="false"/>
     <!--
     Support for devices without touch, devices without microphone and TVs
     as described in http://developer.android.com/guide/topics/manifest/uses-feature-element.html
     -->
     <uses-feature
         android:name="android.hardware.microphone"
-        android:required="false" />
+        android:required="false"/>
     <uses-feature
         android:name="android.hardware.touchscreen"
-        android:required="false" />
+        android:required="false"/>
     <uses-feature
         android:name="android.hardware.faketouch"
-        android:required="false" />
+        android:required="false"/>
 
     <application
         android:allowBackup="true"
         android:allowClearUserData="true"
-        android:killAfterRestore="true"
-        android:restoreAnyVersion="false"
-        android:description="@string/app_name"
-        android:icon="@mipmap/ic_launcher"
         android:banner="@mipmap/ic_launcher"
+        android:description="@string/app_name"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:killAfterRestore="true"
         android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:fullBackupContent="@xml/backup_rules" >
+        android:restoreAnyVersion="false"
+        android:supportsRtl="true">
+
+        <activity
+            android:name="br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer.ActivityMain"
+            android:clearTaskOnLaunch="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:multiprocess="false"
+            android:screenOrientation="unspecified"
+            android:stateNotNeeded="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
 
     </application>
 

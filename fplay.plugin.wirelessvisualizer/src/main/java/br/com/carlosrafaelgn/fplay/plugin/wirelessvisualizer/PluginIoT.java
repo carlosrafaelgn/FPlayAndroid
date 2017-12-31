@@ -75,6 +75,11 @@ public class PluginIoT implements FPlayPlugin, Visualizer, IoTClient.Observer, H
 	}
 
 	@Override
+	public int getPluginType() {
+		return TYPE_VISUALIZER;
+	}
+
+	@Override
 	public void init(Object pluginContext, FPlay fplay) {
 		this.pluginContext = (Context)pluginContext;
 		this.fplay = fplay;

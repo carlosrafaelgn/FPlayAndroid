@@ -48,8 +48,12 @@ public interface FPlayPlugin {
 
 	int API_VERSION = 1;
 
+	int TYPE_VISUALIZER = 1;
+	int TYPE_DECODER = 2;
+
 	int getApiVersion();
 	int getPluginVersion();
+	int getPluginType();
 
 	void init(Object pluginContext, FPlay fplay);
 	void destroy();
