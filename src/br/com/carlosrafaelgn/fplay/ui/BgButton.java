@@ -43,6 +43,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.ViewGroup.LayoutParams;
 import android.view.accessibility.AccessibilityEvent;
@@ -95,6 +96,8 @@ public final class BgButton extends Button {
 		super.setLongClickable(true);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 		//Seriously?! Feature?!?!? :P
 		//http://stackoverflow.com/questions/26958909/why-is-my-button-text-coerced-to-all-caps-on-lollipop
 		super.setTransformationMethod(null);
@@ -403,7 +406,7 @@ public final class BgButton extends Button {
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final int old = (state & UI.STATE_PRESSED);
-		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
 		if (pressingChangeListener != null && (state & UI.STATE_PRESSED) != old)
 			pressingChangeListener.onPressingChanged(this, old == 0);
 	}

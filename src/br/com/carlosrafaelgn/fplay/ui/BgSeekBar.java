@@ -43,6 +43,7 @@ import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
@@ -102,6 +103,8 @@ public final class BgSeekBar extends View {
 			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 	}
 
 	private void updateSecondaryBgColorBlended() {
@@ -381,7 +384,7 @@ public final class BgSeekBar extends View {
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
 		updateSecondaryBgColorBlended();
 	}
 	

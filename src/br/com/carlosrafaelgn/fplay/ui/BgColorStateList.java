@@ -63,7 +63,8 @@ public final class BgColorStateList extends ColorStateList {
 		if (stateSet != null) {
 			for (int i = stateSet.length - 1; i >= 0; i--) {
 				if (stateSet[i] == android.R.attr.state_pressed ||
-					stateSet[i] == android.R.attr.state_focused)
+					stateSet[i] == android.R.attr.state_focused ||
+					stateSet[i] == android.R.attr.state_hovered)
 					return alteredColor;
 			}
 		}

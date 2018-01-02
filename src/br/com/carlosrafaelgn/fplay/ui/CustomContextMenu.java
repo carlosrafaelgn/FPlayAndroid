@@ -310,7 +310,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		}
 	}
 
-	//used to prevent the caller from opening maore than one menu
+	//used to prevent the caller from opening more than one menu
 	private static int menuPreventionBits;
 
 	private Context context;

@@ -44,6 +44,7 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug;
 import android.view.ViewGroup;
@@ -133,6 +134,8 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 		super.setOnClickListener(this);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -267,7 +270,7 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
 	}
 
 	@Override

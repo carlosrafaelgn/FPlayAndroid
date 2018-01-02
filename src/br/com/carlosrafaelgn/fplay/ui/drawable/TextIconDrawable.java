@@ -161,6 +161,7 @@ public final class TextIconDrawable extends Drawable {
 			for (int i = stateSet.length - 1; i >= 0; i--) {
 				switch (stateSet[i]) {
 				case android.R.attr.state_focused:
+				case android.R.attr.state_hovered:
 					newState |= UI.STATE_FOCUSED;
 					break;
 				case android.R.attr.state_pressed:
