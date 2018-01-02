@@ -55,9 +55,9 @@
         android:name="android.hardware.bluetooth"
         android:required="false" />
     <!--
-   Just to make Google Play show the App even to phones without a camera,
-   despite the uses-permission above!
-   -->
+    Just to make Google Play show the App even to phones without a camera,
+    despite the uses-permission above!
+    -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -79,6 +79,13 @@
         android:required="false" />
     <uses-feature
         android:name="android.hardware.wifi"
+        android:required="false" />
+
+    <!--
+    Support for Chromebook and other PC-like devices with mouse and keyboard
+    -->
+    <uses-feature
+        android:name="android.hardware.type.pc"
         android:required="false" />
 
     <!-- http://developer.android.com/intl/pt-br/reference/android/app/backup/BackupManager.html -->
