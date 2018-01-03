@@ -1214,7 +1214,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optExtraInfoMode);
 			addOption(optDisplaySongNumberAndCount);
 			addOption(optAllowLockScreen);
-			addOption(optForceOrientation);
+			if (!UI.isChromebook)
+				addOption(optForceOrientation);
 			addOption(optTransition);
 			addOption(optPopupTransition);
 			addOption(optAnimations);

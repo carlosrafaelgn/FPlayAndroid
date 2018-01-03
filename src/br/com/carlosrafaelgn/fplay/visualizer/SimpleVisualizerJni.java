@@ -168,7 +168,6 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	@Override
 	public void onCreateContextMenu(Object contextMenu) {
 		final ContextMenu menu = (ContextMenu)contextMenu;
-		UI.separator(menu, 1, 0);
 		menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_THEME));

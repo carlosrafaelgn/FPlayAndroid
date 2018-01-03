@@ -887,10 +887,11 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public void onCreateContextMenu(Object contextMenu) {
 		final ContextMenu menu = (ContextMenu)contextMenu;
 		Menu s;
+		boolean itemsAdded = false;
 		switch (type) {
 		case TYPE_LIQUID:
 		case TYPE_LIQUID_POWER_SAVER:
-			UI.separator(menu, 1, 0);
+			itemsAdded = true;
 			menu.add(1, MNU_CHOOSE_IMAGE, 1, R.string.choose_image)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
@@ -899,8 +900,8 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		case TYPE_PARTICLE:
 			break;
 		case TYPE_IMMERSIVE_PARTICLE:
-			UI.separator(menu, 1, 0);
 		case TYPE_IMMERSIVE_PARTICLE_VR:
+			itemsAdded = true;
 			s = menu.addSubMenu(1, 0, 1, Player.theApplication.getText(R.string.diffusion) + "\u2026")
 				.setIcon(new TextIconDrawable(UI.ICON_SETTINGS));
 			UI.prepare(s);
@@ -933,13 +934,14 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 				.setIcon(new TextIconDrawable((riseSpeed == 3) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			break;
 		default:
-			UI.separator(menu, 1, 0);
+			itemsAdded = true;
 			menu.add(1, MNU_COLOR, 1, (colorIndex == 0) ? R.string.green : R.string.blue)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_PALETTE));
 			break;
 		}
-		UI.separator(menu, 2, 0);
+		if (itemsAdded)
+			UI.separator(menu, 2, 0);
 		menu.add(2, MNU_SPEED0, 1, Player.theApplication.getText(R.string.sustain) + " 3")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));

@@ -152,6 +152,7 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 	private static final int MSG_HIDE = 0x0400;
 	private static final int MSG_SYSTEM_UI_CHANGED = 0x0401;
 	private static final int MNU_ORIENTATION = 100;
+	private static final int MNU_DUMMY = 101;
 	private SongInfo songInfo;
 	private Visualizer visualizer;
 	private VisualizerService visualizerService;
@@ -680,13 +681,21 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(this);
 		UI.prepare(menu);
-		if (requiredOrientation == Visualizer.ORIENTATION_NONE)
+		boolean firstItem = false;
+		if (!UI.isChromebook && requiredOrientation == Visualizer.ORIENTATION_NONE) {
 			menu.add(0, MNU_ORIENTATION, 0, UI.visualizerPortrait ? R.string.landscape : R.string.portrait)
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_ORIENTATION));
+			firstItem = true;
+		}
 		final Visualizer v = visualizer;
 		if (v != null)
 			v.onCreateContextMenu(menu);
+		if (firstItem && menu.size() > 1)
+			UI.separator(menu, 1, 0);
+		if (menu.size() < 1)
+			menu.add(0, MNU_DUMMY, 0, R.string.empty_list)
+				.setOnMenuItemClickListener(this);
 	}
 	
 	@Override
