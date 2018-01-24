@@ -490,6 +490,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		if (state != STATE_PREPARED)
 			throw new IllegalStateException("startedAsNext() - player was in an invalid state: " + state);
 		state = STATE_STARTED;
+		willBufferAfterSeek = false;
 	}
 
 	//**************************************************************
@@ -515,6 +516,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		switch (state) {
 		case STATE_PREPARED:
 			if (MediaContext.play(this)) {
+				willBufferAfterSeek = false;
 				state = STATE_STARTED;
 				return true;
 			}
