@@ -1,0 +1,23 @@
+apply plugin: 'com.android.application'
+
+android {
+	compileSdkVersion 26
+	buildToolsVersion "20.0.0"
+
+	defaultConfig {
+		applicationId "br.com.carlosrafaelgn.fplay.plugin.httptransmitter"
+		minSdkVersion 10
+		targetSdkVersion 26
+	}
+	buildTypes {
+		release {
+			minifyEnabled true
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+		}
+	}
+}
+
+dependencies {
+	compile fileTree(include: ['*.jar'], dir: 'libs')
+	provided project(':fplay.plugin')
+}

@@ -30,7 +30,7 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer;
+package br.com.carlosrafaelgn.fplay.plugin.httptransmitter;
 
 import android.app.Activity;
 import android.content.Intent;
