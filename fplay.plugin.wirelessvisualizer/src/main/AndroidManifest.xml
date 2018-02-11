@@ -12,36 +12,15 @@
         android:smallScreens="true"
         android:xlargeScreens="true"/>
 
-    <!-- For Google Drive -->
-    <!-- uses-permission android:name="android.permission.GET_ACCOUNTS" -->
-    <!-- For http playback -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- To check the connection state -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-
     <!--
-    Just to make Google Play show the App even to phones without Bluetooth,
-    despite the uses-permission above!
-    -->
-    <uses-feature
-        android:name="android.hardware.bluetooth"
-        android:required="false"/>
-    <!--
-    Support for devices without touch, devices without microphone and TVs
+    Support for devices without touch and TVs
     as described in http://developer.android.com/guide/topics/manifest/uses-feature-element.html
     -->
-    <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="false"/>
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false"/>
     <uses-feature
         android:name="android.hardware.faketouch"
-        android:required="false"/>
-    <uses-feature
-        android:name="android.hardware.wifi"
         android:required="false"/>
 
     <application
