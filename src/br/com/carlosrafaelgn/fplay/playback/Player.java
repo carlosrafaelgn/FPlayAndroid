@@ -3352,17 +3352,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		//I would really be happy if things were as easy as the doc says... :(
 		//https://developer.android.com/training/managing-audio/audio-output.html
 		audioSink = 0;
-		try {
-			//isSpeakerphoneOn() has not actually returned true on any devices
-			//I have tested so far, anyway.... leaving this here won't hurt...
-			if (audioManager.isSpeakerphoneOn())
-				audioSink = AUDIO_SINK_DEVICE;
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
+		//The only device that returned true did so in the wrong moment!!!
+		//try {
+		//	//isSpeakerphoneOn() has not actually returned true on any devices
+		//	//I have tested so far, anyway.... leaving this here won't hurt...
+		//	if (audioManager.isSpeakerphoneOn())
+		//		audioSink = AUDIO_SINK_DEVICE;
+		//} catch (Throwable ex) {
+		//	ex.printStackTrace();
+		//}
 		try {
 			//apparently, devices tend to use the wired headset over bluetooth headsets
-			if (audioSink == 0 && (wiredHeadsetJustPlugged || audioManager.isWiredHeadsetOn()))
+			if (wiredHeadsetJustPlugged || audioManager.isWiredHeadsetOn())
 				audioSink = AUDIO_SINK_WIRE;
 		} catch (Throwable ex) {
 			ex.printStackTrace();
