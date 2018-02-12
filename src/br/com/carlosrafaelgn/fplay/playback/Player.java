@@ -630,8 +630,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			ex.printStackTrace();
 		}
 
-		if (bluetoothVisualizer != null)
-			stopBluetoothVisualizer();
+		stopAllBackgroundPlugins();
 
 		unregisterMediaButtonEventReceiver();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && thePlayer != null)
@@ -693,6 +692,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		} else {
 			System.exit(0);
 		}
+	}
+
+	public static void stopAllBackgroundPlugins() {
+		if (bluetoothVisualizer != null)
+			stopBluetoothVisualizer();
 	}
 
 	private static boolean prePlay(int how) {

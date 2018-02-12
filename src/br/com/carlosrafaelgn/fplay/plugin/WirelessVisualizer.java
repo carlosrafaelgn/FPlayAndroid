@@ -66,8 +66,7 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 	private ActivityHost activityHost;
 
 	public static void create(FPlayPlugin plugin) {
-		if (Player.bluetoothVisualizer != null)
-			((WirelessVisualizer)Player.bluetoothVisualizer).destroy();
+		Player.stopAllBackgroundPlugins();
 		Player.bluetoothVisualizer = new WirelessVisualizer(plugin);
 	}
 
