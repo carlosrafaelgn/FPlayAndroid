@@ -103,6 +103,10 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			items = Arrays.copyOf(items, capacity + LIST_DELTA);
 	}
 
+	public final int getModificationVersion() {
+		return modificationVersion;
+	}
+
 	public final void add(E item, int position) {
 		if (count >= maxCount)
 			return;

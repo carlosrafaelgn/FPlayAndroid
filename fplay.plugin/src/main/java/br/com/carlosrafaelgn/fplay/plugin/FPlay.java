@@ -90,4 +90,8 @@ public interface FPlay {
 	boolean handleMediaButton(int keyCode);
 	boolean currentSongInfo(SongInfo info);
 	String formatTime(int timeMS);
+
+	int getPlaylistVersion();
+	int getPlaylistCount();
+	void getPlaylistSongInfo(int index, SongInfo info);
 }

@@ -631,4 +631,19 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	public String formatTime(int timeMS) {
 		return Song.formatTime(timeMS);
 	}
+
+	@Override
+	public int getPlaylistVersion() {
+		return Player.songs.getModificationVersion();
+	}
+
+	@Override
+	public int getPlaylistCount() {
+		return Player.songs.getCount();
+	}
+
+	@Override
+	public void getPlaylistSongInfo(int index, SongInfo info) {
+		Player.songs.getItem(index).info(info);
+	}
 }
