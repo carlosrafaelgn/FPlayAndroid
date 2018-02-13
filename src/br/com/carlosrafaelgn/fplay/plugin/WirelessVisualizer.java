@@ -65,13 +65,29 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 	private FPlayPlugin plugin;
 	private ActivityHost activityHost;
 
-	public static void create(FPlayPlugin plugin) {
+	public static void create(FPlayPlugin plugin, ActivityHost activityHost, boolean startTransmissionOnConnection) {
+		if (plugin == null)
+			return;
+
+		final WirelessVisualizer wirelessVisualizer;
+
 		Player.stopAllBackgroundPlugins();
-		Player.bluetoothVisualizer = new WirelessVisualizer(plugin);
+		Player.bluetoothVisualizer = (wirelessVisualizer = new WirelessVisualizer(plugin, activityHost));
+
+		if (plugin.message(PLUGIN_MSG_START, startTransmissionOnConnection ? 1 : 0, 0, activityHost) == 1) {
+			wirelessVisualizer.syncSize();
+			wirelessVisualizer.syncSpeed();
+			wirelessVisualizer.syncFramesToSkip();
+			wirelessVisualizer.syncDataType();
+			Player.bluetoothVisualizerLastErrorMessage = null;
+			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING;
+			activityHost.bgMonitorStart();
+		}
 	}
 
-	private WirelessVisualizer(FPlayPlugin plugin) {
+	private WirelessVisualizer(FPlayPlugin plugin, ActivityHost activityHost) {
 		this.plugin = plugin;
+		this.activityHost = activityHost;
 		plugin.setObserver(this);
 	}
 
@@ -101,23 +117,6 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 		}
 
 		return 0;
-	}
-
-	public void start(ActivityHost activityHost, boolean startTransmissionOnConnection) {
-		if (plugin == null)
-			return;
-
-		this.activityHost = activityHost;
-
-		if (plugin.message(PLUGIN_MSG_START, startTransmissionOnConnection ? 1 : 0, 0, activityHost) == 1) {
-			syncSize();
-			syncSpeed();
-			syncFramesToSkip();
-			syncDataType();
-			Player.bluetoothVisualizerLastErrorMessage = null;
-			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING;
-			activityHost.bgMonitorStart();
-		}
 	}
 
 	public void destroy() {

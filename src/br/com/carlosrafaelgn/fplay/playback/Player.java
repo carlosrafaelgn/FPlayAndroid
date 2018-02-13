@@ -88,6 +88,8 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
+import br.com.carlosrafaelgn.fplay.plugin.HttpTransmitter;
+import br.com.carlosrafaelgn.fplay.plugin.PluginManager;
 import br.com.carlosrafaelgn.fplay.plugin.WirelessVisualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -697,6 +699,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static void stopAllBackgroundPlugins() {
 		if (bluetoothVisualizer != null)
 			stopBluetoothVisualizer();
+		if (httpTransmitter != null)
+			stopHttpTransmitter();
 	}
 
 	private static boolean prePlay(int how) {
@@ -2043,6 +2047,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			bluetoothVisualizerConfig |= (1 << 9);
 		else
 			bluetoothVisualizerConfig &= ~(1 << 9);
+	}
+
+	public static Object httpTransmitter;
+	public static String httpTransmitterLastErrorMessage;
+
+	public static void stopHttpTransmitter() {
+		if (httpTransmitter != null) {
+			((HttpTransmitter)httpTransmitter).destroy();
+			httpTransmitter = null;
+		}
 	}
 
 	//these options were deprecated on version 74 in favor of their bit equivalents

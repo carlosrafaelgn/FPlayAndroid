@@ -358,5 +358,9 @@
     <string name="file_prefetch_size">Octets à mémoriser lors de la lecture de fichiers locaux :</string>
     <string name="download">Télécharger</string>
     <string name="download_confirmation">Cette fonctionnalité nécessite l\'extension externe \"%s\". Voulez-vous le télécharger maintenant?</string>
+    <string name="error_wifi">Désolé! Une connexion Wifi active est requise :(</string>
+    <string name="transmission_error">Erreur de transmission!</string>
+    <string name="transmission_active">Transmission active&#8230;</string>
+    <string name="transmit">Transmettre&#8230;</string>
 
 </resources>

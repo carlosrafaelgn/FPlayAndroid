@@ -358,5 +358,9 @@
     <string name="file_prefetch_size">Bytes zum Speichern in Speicher bei der Wiedergabe von lokalen Dateien:</string>
     <string name="download">Download</string>
     <string name="download_confirmation">Diese Funktion erfordert die externe Erweiterung \"%s\". Möchten Sie es jetzt herunterladen?</string>
+    <string name="error_wifi">Tut mir leid! Eine aktive WLAN-Verbindung ist erforderlich :(</string>
+    <string name="transmission_error">Übertragungsfehler!</string>
+    <string name="transmission_active">Übertragung aktiv&#8230;</string>
+    <string name="transmit">Übertragen&#8230;</string>
 
 </resources>

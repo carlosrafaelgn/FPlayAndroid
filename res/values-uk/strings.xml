@@ -170,7 +170,7 @@
     <string name="error_timeout">Вибачте! Час доступу до даних минув під час відтворення :(</string>
     <string name="error_server_died">Вибачте! Медіа-сервер раптово помер :(</string>
     <string name="error_security">Вибачте! Проблема безпеки сталося :(</string>
-    <string name="error_unsupported_format">Извините! Цей аудіо кодек не дозволені :(</string>
+    <string name="error_unsupported_format">Вибачте! Цей аудіо кодек не дозволені :(</string>
     <string name="error_try_smaller_buffer">Вибачте! Недостатньо помяті! Спробуйте зменшити розмір буфера відтворення :(</string>
     <string name="coming_soon">Скоро&#8230; ;)</string>
     <string name="blue_orange">Синя/Помаранчева</string>
@@ -358,5 +358,9 @@
     <string name="file_prefetch_size">Байтів для зберігання в пам\'яті під час відтворення локальних файлів:</string>
     <string name="download">Завантажити</string>
     <string name="download_confirmation">Для цієї функції потрібне зовнішнє розширення \"%s\". Хочете завантажити його зараз?</string>
+    <string name="error_wifi">Вибачте! Потрібно активне з\'єднання Wi-Fi :(</string>
+    <string name="transmission_error">Помилка передачі!</string>
+    <string name="transmission_active">Передача активна&#8230;</string>
+    <string name="transmit">Для передачі&#8230;</string>
 
 </resources>

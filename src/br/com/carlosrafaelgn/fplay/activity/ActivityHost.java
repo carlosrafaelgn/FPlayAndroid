@@ -883,10 +883,17 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@SuppressWarnings("deprecation")
 	public void bgMonitorStart() {
-		if (Player.state != Player.STATE_ALIVE || Player.songs.isAdding() || Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL || Player.bluetoothVisualizerLastErrorMessage != null) {
+		if (Player.state != Player.STATE_ALIVE ||
+			Player.songs.isAdding() ||
+			Player.httpTransmitter != null || Player.httpTransmitterLastErrorMessage != null ||
+			Player.bluetoothVisualizerState != Player.BLUETOOTH_VISUALIZER_STATE_INITIAL || Player.bluetoothVisualizerLastErrorMessage != null) {
 			bgMonitorStop();
 			if (baseParent != null) {
-				bgMonitorLastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading : (Player.songs.isAdding() ? R.string.adding_songs : ((Player.bluetoothVisualizerLastErrorMessage != null) ? R.string.bt_error : R.string.bt_active)));
+				bgMonitorLastMsg = ((Player.state != Player.STATE_ALIVE) ? R.string.loading :
+					(Player.songs.isAdding() ? R.string.adding_songs :
+						((Player.httpTransmitterLastErrorMessage != null) ? R.string.transmission_error :
+							((Player.httpTransmitter != null) ? R.string.transmission_active :
+								((Player.bluetoothVisualizerLastErrorMessage != null) ? R.string.bt_error : R.string.bt_active)))));
 				baseParent.setMessage(bgMonitorLastMsg);
 				if (bgMonitorTimer == null)
 					bgMonitorTimer = new Timer(this, "Background Activity Monitor Timer", false, true, false);
@@ -902,6 +909,21 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			if (Player.bluetoothVisualizerLastErrorMessage != null) {
 				if (bgMonitorLastMsg != R.string.bt_error) {
 					bgMonitorLastMsg = R.string.bt_error;
+					baseParent.setMessage(bgMonitorLastMsg);
+				}
+			} else {
+				bgMonitorStop();
+			}
+		}
+	}
+
+	public void bgMonitorHttpEnded() {
+		if (baseParent == null)
+			return;
+		if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding()) {
+			if (Player.httpTransmitterLastErrorMessage != null) {
+				if (bgMonitorLastMsg != R.string.transmission_error) {
+					bgMonitorLastMsg = R.string.transmission_error;
 					baseParent.setMessage(bgMonitorLastMsg);
 				}
 			} else {

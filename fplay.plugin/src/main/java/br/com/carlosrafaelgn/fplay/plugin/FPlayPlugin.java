@@ -50,6 +50,7 @@ public interface FPlayPlugin {
 
 	int TYPE_VISUALIZER = 1;
 	int TYPE_DECODER = 2;
+	int TYPE_BACKGROUND_PROCESS = 3;
 
 	int getApiVersion();
 	int getPluginVersion();

@@ -288,7 +288,7 @@
 	<string name="diffusion">扩散</string>
 	<string name="msg_immersive">&#8634; 移动您的设备吧（注意安全！）</string>
 	<string name="msg_no_sensors">抱歉，您的设备缺少必要的传感器 :(</string>
-	<string name="tutorial">教程</string>
+	<string name="tutorial">发射机错误！</string>
 	<string name="information">信息</string>
    
 	<string name="bt_inactive">蓝牙可见</string>
@@ -363,5 +363,9 @@
 	<string name="file_prefetch_size">播放本地文件时，暂存到内存中的字节数：</string>
 	<string name="download">下载</string>
 	<string name="download_confirmation">此功能需要外部扩展“%s”。 您要现在下载吗？</string>
+    <string name="error_wifi">抱歉! 有效的Wifi连接是必需的 :(</string>
+    <string name="transmission_error">传输错误！</string>
+    <string name="transmission_active">传输活动&#8230;</string>
+    <string name="transmit">发送&#8230;</string>
 
 </resources>

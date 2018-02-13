@@ -65,6 +65,7 @@ import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
+import br.com.carlosrafaelgn.fplay.plugin.HttpTransmitter;
 import br.com.carlosrafaelgn.fplay.plugin.WirelessVisualizer;
 import br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin;
 import br.com.carlosrafaelgn.fplay.plugin.PluginManager;
@@ -81,10 +82,14 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable, MainHandler.Callback, PluginManager.Observer {
+	public static final int MODE_NORMAL = 0;
+	public static final int MODE_COLOR = 1;
+	public static final int MODE_BLUETOOTH = 2;
+	public static final int MODE_HTTP = 3;
 	private static final int MSG_REFRESH_BLUETOOTH = 0x0900;
 	private static final int MSG_SAVE_CONFIG = 0x0901;
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
-	private final boolean colorMode, bluetoothMode;
+	private final int mode;
 	private boolean changed, checkingReturn, configsChanged, lblTitleOk, startTransmissionOnConnection, tryingToEnableExternalFx;
 	private BgButton btnGoBack, btnBluetooth, btnAbout;
 	private EditText txtCustomMinutes;
@@ -113,14 +118,31 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private int lastColorView, currentHeader, btMessageText, btConnectText, btStartText, optBtSizeLastSize;
 	private TextView[] headers;
 
-	public ActivitySettings(boolean colorMode, boolean bluetoothMode) {
-		this.colorMode = colorMode;
-		this.bluetoothMode = bluetoothMode;
+	public ActivitySettings(int mode) {
+		switch (mode) {
+		case MODE_COLOR:
+		case MODE_BLUETOOTH:
+		case MODE_HTTP:
+			this.mode = mode;
+			break;
+		default:
+			this.mode = MODE_NORMAL;
+			break;
+		}
 	}
 
 	@Override
 	public CharSequence getTitle() {
-		return (bluetoothMode ? "Bluetooth + Arduino" : getText(colorMode ? R.string.custom_color_theme : R.string.settings));
+		switch (mode) {
+		case MODE_COLOR:
+			return getText(R.string.custom_color_theme);
+		case MODE_BLUETOOTH:
+			return "Bluetooth + Arduino";
+		case MODE_HTTP:
+			return getText(R.string.settings);
+		default:
+			return getText(R.string.settings);
+		}
 	}
 
 	@Override
@@ -504,7 +526,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 		} else if (lastMenuView == optTheme) {
 			if (item.getItemId() == UI.THEME_CUSTOM) {
-				startActivity(new ActivitySettings(true, false), 0, null, false);
+				startActivity(new ActivitySettings(MODE_COLOR), 0, null, false);
 			} else {
 				UI.setTheme(ctx, item.getItemId());
 				onCleanupLayout();
@@ -775,7 +797,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	}
 
 	private boolean cancelGoBack() {
-		if (colorMode && changed) {
+		if (mode == MODE_COLOR && changed) {
 			checkingReturn = true;
 			final BgDialog dialog = new BgDialog(getHostActivity(), UI.createDialogView(getHostActivity(), getText(R.string.discard_theme)), this);
 			dialog.setTitle(R.string.oops);
@@ -919,12 +941,23 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	@Override
 	public void onPluginCreated(int id, FPlayPlugin plugin) {
-		if (plugin == null || id != 1 || !isLayoutCreated() || Player.state != Player.STATE_ALIVE)
+		if (plugin == null || !isLayoutCreated() || Player.state != Player.STATE_ALIVE)
 			return;
 
-		WirelessVisualizer.create(plugin);
-		((WirelessVisualizer)Player.bluetoothVisualizer).start(getHostActivity(), startTransmissionOnConnection);
-		refreshBluetoothStatus(false, false);
+		switch (mode) {
+		case MODE_BLUETOOTH:
+			if (id != 1)
+				break;
+			WirelessVisualizer.create(plugin, getHostActivity(), startTransmissionOnConnection);
+			refreshBluetoothStatus(false, false);
+			break;
+		case MODE_HTTP:
+			if (id != 2)
+				break;
+			HttpTransmitter.create(plugin, getHostActivity());
+			refreshHttpStatus();
+			break;
+		}
 	}
 
 	private void startBluetoothVisualizer(boolean startTransmissionOnConnection) {
@@ -1005,9 +1038,38 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			MainHandler.sendMessageAtTime(this, MSG_REFRESH_BLUETOOTH, 0, 0, SystemClock.uptimeMillis() + 1000);
 	}
 
+	private void startHttpTransmitter() {
+		if (!Player.isConnectedToTheInternet()) {
+			Player.httpTransmitterLastErrorMessage = getText(R.string.error_connection).toString();
+			refreshHttpStatus();
+			return;
+		}
+
+		if (!Player.isInternetConnectedViaWiFi()) {
+			Player.httpTransmitterLastErrorMessage = getText(R.string.error_wifi).toString();
+			refreshHttpStatus();
+			return;
+		}
+
+		try {
+			PluginManager.createPlugin(getHostActivity(), HttpTransmitter.PLUGIN_CLASS, HttpTransmitter.PLUGIN_PACKAGE, HttpTransmitter.PLUGIN_NAME, 2, this);
+		} catch (Throwable ex) {
+			Player.httpTransmitterLastErrorMessage = getText(!Player.isInternetConnectedViaWiFi() ?
+				R.string.error_wifi :
+				(!Player.isConnectedToTheInternet() ?
+					R.string.error_connection :
+					R.string.error_gen)).toString();
+			refreshHttpStatus();
+		}
+	}
+
+	private void refreshHttpStatus() {
+
+	}
+
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (!bluetoothMode || optBtConnect == null)
+		if (mode != MODE_BLUETOOTH || optBtConnect == null)
 			return;
 		if (requestCode == WirelessVisualizer.REQUEST_ENABLE && resultCode == Activity.RESULT_OK)
 			onClick(startTransmissionOnConnection ? optBtStart : optBtConnect);
@@ -1025,9 +1087,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		btnAbout = findViewById(R.id.btnAbout);
 		btnAbout.setOnClickListener(this);
 		boolean showBluetooth = false;
-		if (colorMode) {
+		if (mode == MODE_COLOR) {
 			btnAbout.setText(R.string.apply_theme);
-		} else if (bluetoothMode) {
+		} else if (mode == MODE_BLUETOOTH) {
 			btnAbout.setText(R.string.tutorial);
 			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor()), null, null, null);
 		} else {
@@ -1088,9 +1150,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		setListPadding();
 
 		list.setOnScrollListener(this);
-		if (colorMode) {
+		if (mode == MODE_COLOR) {
 			loadColors(true, false);
-		} else if (bluetoothMode) {
+		} else if (mode == MODE_BLUETOOTH) {
 			optBtSizeLastSize = Player.getBluetoothVisualizerSize();
 			optBtMessage = new SettingView(ctx, UI.ICON_INFORMATION, "", null, false, false, false);
 			optBtConnect = new SettingView(ctx, UI.ICON_BLUETOOTH, "", null, false, false, false);
@@ -1113,6 +1175,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optBtSize);
 			addOption(optBtSpeed);
 			currentHeader = -1;
+		} else if (mode == MODE_HTTP) {
 		} else {
 			if (!UI.dyslexiaFontSupportsCurrentLocale()) {
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
@@ -1294,13 +1357,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 
 	@Override
 	protected void onPause() {
-		if (!colorMode && !bluetoothMode)
+		if (mode == MODE_NORMAL)
 			Player.turnOffTimerObserver = null;
 	}
 	
 	@Override
 	protected void onResume() {
-		if (!colorMode && !bluetoothMode) {
+		if (mode == MODE_NORMAL) {
 			Player.turnOffTimerObserver = this;
 			if (optAutoTurnOff != null)
 				optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
@@ -1409,7 +1472,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	@Override
 	protected void onDestroy() {
 		//give some time for the transition to happen before saving the configs
-		if (!colorMode && !bluetoothMode && configsChanged)
+		if (mode == MODE_NORMAL && configsChanged)
 			MainHandler.sendMessageAtTime(this, MSG_SAVE_CONFIG, 0, 0, SystemClock.uptimeMillis() + (UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW << 1));
 	}
 	
@@ -1422,7 +1485,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				finish(0, view, true);
 			return;
 		}
-		if (view == btnBluetooth && !colorMode && !bluetoothMode) {
+		if (view == btnBluetooth && mode == MODE_NORMAL) {
 			try {
 				getHostActivity().startActivity(new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS));
 			} catch (Throwable ex) {
@@ -1438,7 +1501,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					return;
 				}
 			}
-		} else if (bluetoothMode) {
+		} else if (mode == MODE_BLUETOOTH) {
 			if (view == btnAbout) {
 				try {
 					getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayArduino")));
@@ -1477,10 +1540,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			return;
 		}
 		if (view == optLoadCurrentTheme) {
-			if (colorMode)
+			if (mode == MODE_COLOR)
 				loadColors(false, true);
 		} else if (view == btnAbout) {
-			if (colorMode) {
+			if (mode == MODE_COLOR) {
 				checkingReturn = false;
 				final BgDialog dialog;
 				switch (validate()) {
@@ -1649,7 +1712,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (!isLayoutCreated())
 			return;
 		if (which == AlertDialog.BUTTON_POSITIVE) {
-			if (colorMode) {
+			if (mode == MODE_COLOR) {
 				if (checkingReturn) {
 					changed = false;
 					finish(0, null, false);
@@ -1700,7 +1763,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public void onColorPicked(ColorPickerView picker, View parentView, int color) {
 		if (!isLayoutCreated())
 			return;
-		if (colorMode && lastColorView >= 0) {
+		if (mode == MODE_COLOR && lastColorView >= 0) {
 			if (colorViews[lastColorView].getColor() != color) {
 				changed = true;
 				colorViews[lastColorView].setColor(color);

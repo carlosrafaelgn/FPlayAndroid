@@ -358,5 +358,9 @@
     <string name="file_prefetch_size">Bytes para armazenar na memória ao reproduzir arquivos locais:</string>
     <string name="download">Download</string>
     <string name="download_confirmation">Esse recurso requer a extensão externa \"%s\". Gostaria de baixá-la agora?</string>
+    <string name="error_wifi">Desculpe! É necessária uma conexão Wi-Fi ativa :(</string>
+    <string name="transmission_error">Erro de transmissão!</string>
+    <string name="transmission_active">Transmissão ativa&#8230;</string>
+    <string name="transmit">Transmitir&#8230;</string>
 
 </resources>
