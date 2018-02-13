@@ -116,18 +116,22 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 			}
 		}
 
+		@Override
 		public boolean exists() {
 			return (file != null || contents != null);
 		}
 
+		@Override
 		public String etag() {
 			return tag;
 		}
 
+		@Override
 		public long length() {
 			return (file != null ? file.length() : (contents != null ? contents.length : 0));
 		}
 
+		@Override
 		public InputStream createInputStream() throws IOException {
 			return (file != null ? new FileInputStream(file) : (contents != null ? new ByteArrayInputStream(contents) : null));
 		}
@@ -194,6 +198,8 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 		if (pluginContext == null || fplay == null)
 			return 0;
 
+		final String[] address;
+
 		switch (message) {
 		case PLUGIN_MSG_START:
 			if (webServer != null)
@@ -201,13 +207,13 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 
 			refreshList(true);
 
-			baseTag = Long.toString(System.currentTimeMillis()) + Long.toString(SystemClock.elapsedRealtime());
-
-			final String host = fplay.getWiFiIpAddress();
-			if (host == null)
-				throw new IllegalStateException("Could not resolve local Wifi address");
-
 			try {
+				baseTag = Long.toString(System.currentTimeMillis()) + Long.toString(SystemClock.elapsedRealtime());
+
+				final String host = fplay.getWiFiIpAddress();
+				if (host == null)
+					throw new IllegalStateException("Could not resolve local Wifi address");
+
 				webServer = new FileSystemWebServer(host, 0, this);
 				webServer.start();
 				final InetSocketAddress socketAddress = (InetSocketAddress)webServer.getMyServerSocket().getLocalSocketAddress();
@@ -216,15 +222,17 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 				throw new RuntimeException(ex);
 			}
 
-			return 1;
-		case PLUGIN_MSG_GET_ADDRESS:
-			final String[] address;
 			if (obj instanceof String[] && (address = (String[])obj).length > 0)
 				address[0] = localAddress;
-			break;
+
+			return 1;
+		case PLUGIN_MSG_GET_ADDRESS:
+			if (obj instanceof String[] && (address = (String[])obj).length > 0)
+				address[0] = localAddress;
+			return 1;
 		case PLUGIN_MSG_REFRESH_LIST:
 			refreshList(false);
-			break;
+			return 1;
 		}
 
 		return 0;

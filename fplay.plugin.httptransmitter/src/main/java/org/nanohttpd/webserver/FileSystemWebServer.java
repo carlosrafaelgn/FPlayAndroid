@@ -37,7 +37,6 @@ package org.nanohttpd.webserver;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -125,14 +124,14 @@ public final class FileSystemWebServer extends NanoHTTPD {
 		MIME_TYPES.put("jpg", "image/jpeg");
 		MIME_TYPES.put("jpeg", "image/jpeg");
 		MIME_TYPES.put("png", "image/png");
-		MIME_TYPES.put("css", "text/css");
-		MIME_TYPES.put("js", "text/javascript");
-		MIME_TYPES.put("htm", "text/html");
-		MIME_TYPES.put("html", "text/html");
+		MIME_TYPES.put("css", "text/css; charset=utf-8");
+		MIME_TYPES.put("js", "text/javascript; charset=utf-8");
+		MIME_TYPES.put("htm", "text/html; charset=utf-8");
+		MIME_TYPES.put("html", "text/html; charset=utf-8");
 
-		MIME_TYPES.put("m3u", "audio/mpeg-url");
-		MIME_TYPES.put("m3u8", "application/vnd.apple.mpegurl");
-		MIME_TYPES.put("json", "application/json");
+		MIME_TYPES.put("m3u", "audio/mpeg-url; charset=utf-8");
+		MIME_TYPES.put("m3u8", "application/vnd.apple.mpegurl; charset=utf-8");
+		MIME_TYPES.put("json", "application/json; charset=utf-8");
 
 		MIME_TYPES.put("3gp", "audio/3gpp");
 		MIME_TYPES.put("3gpp", "audio/3gpp");
@@ -155,11 +154,6 @@ public final class FileSystemWebServer extends NanoHTTPD {
 		MIME_TYPES.put("wav", "audio/wav"); //audio/vnd.wave ?
 		MIME_TYPES.put("mka", "audio/x-matroska");
 		MIME_TYPES.put("flac", "audio/flac");
-	}
-
-	public FileSystemWebServer(String host, int port) {
-		super(host, port);
-		fileHandlerFactory = null;
 	}
 
 	public FileSystemWebServer(String host, int port, FileHandlerFactory fileHandlerFactory) {
@@ -194,8 +188,9 @@ public final class FileSystemWebServer extends NanoHTTPD {
 			r = Response.newFixedLengthResponse(Status.OK, MIME_PLAINTEXT, null, 0);
 		} else {
 			// Remove URL arguments
-			if (uri.indexOf('?') >= 0)
-				uri = uri.substring(0, uri.indexOf('?'));
+			final int queryStringIndex;
+			if ((queryStringIndex = uri.indexOf('?')) >= 0)
+				uri = uri.substring(0, queryStringIndex);
 			if ((uri = uri.trim()).length() == 0)
 				return getNotFoundResponse();
 			if (uri.charAt(0) != '/')
@@ -283,13 +278,12 @@ public final class FileSystemWebServer extends NanoHTTPD {
 					startFrom = inputStreamToCloseOnError.skip(startFrom);
 
 					long newLen = endAt - startFrom + 1;
-					if (newLen < 0) {
+					if (newLen < 0)
 						newLen = 0;
-					}
 
 					res = Response.newFixedLengthResponse(Status.PARTIAL_CONTENT, mime, inputStreamToCloseOnError, newLen);
 					res.addHeader("Accept-Ranges", "bytes");
-					res.addHeader("Content-Length", "" + newLen);
+					res.addHeader("Content-Length", Long.toString(newLen));
 					res.addHeader("Content-Range", "bytes " + startFrom + "-" + endAt + "/" + fileLen);
 					res.addHeader("ETag", etag);
 					inputStreamToCloseOnError = null;
@@ -318,9 +312,11 @@ public final class FileSystemWebServer extends NanoHTTPD {
 				} else {
 					// supply the file
 					inputStreamToCloseOnError = fileHandler.createInputStream();
-					res = newFixedFileResponse(inputStreamToCloseOnError, fileHandler.length(), mime);
-					res.addHeader("Content-Length", "" + fileLen);
+					res = Response.newFixedLengthResponse(Status.OK, mime, inputStreamToCloseOnError, fileHandler.length());
+					res.addHeader("Accept-Ranges", "bytes");
+					res.addHeader("Content-Length", Long.toString(fileLen));
 					res.addHeader("ETag", etag);
+					inputStreamToCloseOnError = null;
 				}
 			}
 		} catch (IOException ioe) {
@@ -334,13 +330,6 @@ public final class FileSystemWebServer extends NanoHTTPD {
 			res = getForbiddenResponse("Reading file failed.");
 		}
 
-		return res;
-	}
-
-	private static Response newFixedFileResponse(InputStream inputStream, long length, String mime) throws FileNotFoundException {
-		Response res;
-		res = Response.newFixedLengthResponse(Status.OK, mime, inputStream, (int)length);
-		res.addHeader("Accept-Ranges", "bytes");
 		return res;
 	}
 }

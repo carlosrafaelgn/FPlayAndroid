@@ -50,9 +50,9 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 	private ActivityHost activityHost;
 	private String[] address;
 
-	public static void create(FPlayPlugin plugin, ActivityHost activityHost) {
+	public static boolean create(FPlayPlugin plugin, ActivityHost activityHost) {
 		if (plugin == null)
-			return;
+			return false;
 
 		Player.stopAllBackgroundPlugins();
 		Player.httpTransmitter = new HttpTransmitter(plugin, activityHost);
@@ -61,6 +61,10 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 			if (plugin.message(PLUGIN_MSG_START, 0, 0, activityHost) == 1) {
 				Player.httpTransmitterLastErrorMessage = null;
 				activityHost.bgMonitorStart();
+				return true;
+			} else {
+				Player.stopHttpTransmitter();
+				Player.httpTransmitterLastErrorMessage = activityHost.getText(R.string.transmission_error).toString();
 			}
 		} catch (Throwable ex) {
 			Player.stopHttpTransmitter();
@@ -70,6 +74,8 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 					R.string.error_connection :
 					R.string.error_gen)).toString();
 		}
+
+		return false;
 	}
 
 	private HttpTransmitter(FPlayPlugin plugin, ActivityHost activityHost) {

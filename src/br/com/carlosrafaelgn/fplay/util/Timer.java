@@ -216,6 +216,7 @@ public final class Timer implements MainHandler.Callback {
 		if (alive) {
 			if (handledOnMain) {
 				version++;
+				MainHandler.removeMessages(this, oneShot ? MSG_ONESHOT : MSG_INTERVAL);
 			} else {
 				synchronized (sync) {
 					version++;

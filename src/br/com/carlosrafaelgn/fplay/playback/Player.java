@@ -89,7 +89,6 @@ import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
 import br.com.carlosrafaelgn.fplay.plugin.HttpTransmitter;
-import br.com.carlosrafaelgn.fplay.plugin.PluginManager;
 import br.com.carlosrafaelgn.fplay.plugin.WirelessVisualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
