@@ -205,11 +205,11 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 			if (webServer != null)
 				return 0;
 
+			baseTag = Long.toString(System.currentTimeMillis()) + Long.toString(SystemClock.elapsedRealtime());
+
 			refreshList(true);
 
 			try {
-				baseTag = Long.toString(System.currentTimeMillis()) + Long.toString(SystemClock.elapsedRealtime());
-
 				final String host = fplay.getWiFiIpAddress();
 				if (host == null)
 					throw new IllegalStateException("Could not resolve local Wifi address");
@@ -217,7 +217,8 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 				webServer = new FileSystemWebServer(host, 0, this);
 				webServer.start();
 				final InetSocketAddress socketAddress = (InetSocketAddress)webServer.getMyServerSocket().getLocalSocketAddress();
-				localAddress = socketAddress.getAddress().toString() + ":" + socketAddress.getPort();
+				//localAddress = socketAddress.getAddress().toString() + ":" + socketAddress.getPort();
+				localAddress = host + ":" + socketAddress.getPort();
 			} catch (IOException ex) {
 				throw new RuntimeException(ex);
 			}
@@ -254,7 +255,10 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 		final int count = fplay.getPlaylistCount();
 		final SongInfo[] list = new SongInfo[count];
 		builder.append("{\"list\":[");
-		for (int i = count - 1; i >= 0; i--) {
+		for (int i = 0; i < count; i++) {
+			if (i != 0)
+				builder.append(',');
+
 			final SongInfo info = new SongInfo();
 			list[i] = info;
 			fplay.getPlaylistSongInfo(i, info);
@@ -280,7 +284,7 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 			builder.append(info.year);
 			builder.append(",\"length\":\"");
 			serializeString(builder, info.length);
-			builder.append("\"},");
+			builder.append("\"}");
 		}
 		builder.append("]}");
 

@@ -376,5 +376,6 @@
     <string name="transmission_error">Transmission error!</string>
     <string name="transmission_active">Transmission active&#8230;</string>
     <string name="transmit">Transmit&#8230;</string>
+    <string name="transmission_inactive">Transmission inactive</string>
 
 </resources>

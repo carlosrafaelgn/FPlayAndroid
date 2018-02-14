@@ -86,8 +86,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	public static final int MODE_COLOR = 1;
 	public static final int MODE_BLUETOOTH = 2;
 	public static final int MODE_HTTP = 3;
-	private static final int MSG_REFRESH_BLUETOOTH = 0x0900;
-	private static final int MSG_SAVE_CONFIG = 0x0901;
+	private static final int MSG_SAVE_CONFIG = 0x0900;
+	private static final int MSG_REFRESH_BLUETOOTH = 0x0901;
+	private static final int MSG_REFRESH_HTTP = 0x0902;
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
 	private final int mode;
 	private boolean changed, checkingReturn, configsChanged, lblTitleOk, startTransmissionOnConnection, tryingToEnableExternalFx;
@@ -954,8 +955,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		case MODE_HTTP:
 			if (id != 2)
 				break;
-			HttpTransmitter.create(plugin, getHostActivity());
-			refreshHttpStatus();
+			if (!HttpTransmitter.create(plugin, getHostActivity()) && Player.httpTransmitterLastErrorMessage == null)
+				Player.httpTransmitterLastErrorMessage = getText(R.string.transmission_error).toString();
+			refreshHttpStatus(false, false);
 			break;
 		}
 	}
@@ -971,7 +973,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (Player.bluetoothVisualizerLastErrorMessage != null) {
 			btErrorMessage = Player.bluetoothVisualizerLastErrorMessage;
 			Player.bluetoothVisualizerLastErrorMessage = null;
-			getHostActivity().bgMonitorBluetoothEnded();
+			if (Player.backgroundMonitor != null)
+				Player.backgroundMonitor.backgroundMonitorBluetoothEnded();
 		}
 		if (Player.bluetoothVisualizer != null) {
 			btErrorMessage = null;
@@ -1041,13 +1044,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private void startHttpTransmitter() {
 		if (!Player.isConnectedToTheInternet()) {
 			Player.httpTransmitterLastErrorMessage = getText(R.string.error_connection).toString();
-			refreshHttpStatus();
+			refreshHttpStatus(false, false);
 			return;
 		}
 
 		if (!Player.isInternetConnectedViaWiFi()) {
 			Player.httpTransmitterLastErrorMessage = getText(R.string.error_wifi).toString();
-			refreshHttpStatus();
+			refreshHttpStatus(false, false);
 			return;
 		}
 
@@ -1059,12 +1062,53 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				(!Player.isConnectedToTheInternet() ?
 					R.string.error_connection :
 					R.string.error_gen)).toString();
-			refreshHttpStatus();
+			refreshHttpStatus(false, false);
 		}
 	}
 
-	private void refreshHttpStatus() {
-
+	private void refreshHttpStatus(boolean postAgain, boolean ignoreLayoutStatus) {
+		if ((!ignoreLayoutStatus && !isLayoutCreated()) || optBtMessage == null)
+			return;
+		if (Player.httpTransmitterLastErrorMessage != null) {
+			btErrorMessage = Player.httpTransmitterLastErrorMessage;
+			Player.httpTransmitterLastErrorMessage = null;
+			if (Player.backgroundMonitor != null)
+				Player.backgroundMonitor.backgroundMonitorHttpEnded();
+		}
+		if (Player.httpTransmitter != null) {
+			btErrorMessage = null;
+			if (btMessageText != Integer.MAX_VALUE - 1) {
+				btMessageText = Integer.MAX_VALUE - 1;
+				optBtMessage.setText(((HttpTransmitter)Player.httpTransmitter).getAddress());
+			}
+		} else {
+			if (btErrorMessage != null) {
+				if (btMessageText != Integer.MAX_VALUE) {
+					btMessageText = Integer.MAX_VALUE;
+					optBtMessage.setText(UI.emoji(btErrorMessage));
+				}
+			} else if (btMessageText != R.string.transmission_inactive) {
+				btMessageText = R.string.transmission_inactive;
+				optBtMessage.setText(getText(R.string.transmission_inactive).toString());
+			}
+		}
+		if (optBtConnect != null) {
+			if (Player.httpTransmitter == null) {
+				if (btConnectText != R.string.bt_start) {
+					btConnectText = R.string.bt_start;
+					optBtConnect.setText(getText(R.string.bt_start).toString());
+					optBtConnect.setIcon(UI.ICON_PLAY);
+				}
+			} else {
+				if (btConnectText != R.string.bt_stop) {
+					btConnectText = R.string.bt_stop;
+					optBtConnect.setText(getText(R.string.bt_stop).toString());
+					optBtConnect.setIcon(UI.ICON_PAUSE);
+				}
+			}
+		}
+		if (postAgain)
+			MainHandler.sendMessageAtTime(this, MSG_REFRESH_HTTP, 0, 0, SystemClock.uptimeMillis() + 1000);
 	}
 
 	@Override
@@ -1090,6 +1134,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		if (mode == MODE_COLOR) {
 			btnAbout.setText(R.string.apply_theme);
 		} else if (mode == MODE_BLUETOOTH) {
+			btnAbout.setText(R.string.tutorial);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor()), null, null, null);
+		} else if (mode == MODE_HTTP) {
 			btnAbout.setText(R.string.tutorial);
 			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor()), null, null, null);
 		} else {
@@ -1176,6 +1223,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optBtSpeed);
 			currentHeader = -1;
 		} else if (mode == MODE_HTTP) {
+			optBtMessage = new SettingView(ctx, UI.ICON_INFORMATION, "", null, false, false, false);
+			optBtConnect = new SettingView(ctx, Player.httpTransmitter != null ? UI.ICON_PAUSE : UI.ICON_PLAY, "", null, false, false, false);
+			refreshHttpStatus(true, true);
+
+			headers = new TextView[2];
+			addHeader(ctx, R.string.information, optBtMessage, 0);
+			addOption(optBtMessage);
+			addHeader(ctx, R.string.general, optBtMessage, 1);
+			addOption(optBtConnect);
+			currentHeader = -1;
 		} else {
 			if (!UI.dyslexiaFontSupportsCurrentLocale()) {
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
@@ -1538,6 +1595,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				CustomContextMenu.openContextMenu(view, this);
 			}
 			return;
+		} else if (mode == MODE_HTTP) {
+			if (view == btnAbout) {
+				try {
+					getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayAndroid")));
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			} else if (view == optBtConnect) {
+				if (Player.httpTransmitter == null) {
+					startHttpTransmitter();
+				} else {
+					Player.stopHttpTransmitter();
+					refreshHttpStatus(false, false);
+				}
+			}
+			return;
 		}
 		if (view == optLoadCurrentTheme) {
 			if (mode == MODE_COLOR)
@@ -1852,12 +1925,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	@Override
 	public boolean handleMessage(Message msg) {
 		switch (msg.what) {
-		case MSG_REFRESH_BLUETOOTH:
-			refreshBluetoothStatus(true, false);
-			break;
 		case MSG_SAVE_CONFIG:
 			if (Player.state < Player.STATE_TERMINATING)
 				Player.saveConfig(false);
+			break;
+		case MSG_REFRESH_BLUETOOTH:
+			refreshBluetoothStatus(true, false);
+			break;
+		case MSG_REFRESH_HTTP:
+			refreshHttpStatus(true, false);
 			break;
 		}
 		return true;

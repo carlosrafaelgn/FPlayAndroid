@@ -157,6 +157,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		void onPlayerDestroyed();
 	}
 
+	public interface PlayerBackgroundMonitor {
+		void backgroundMonitorStart();
+
+		void backgroundMonitorBluetoothEnded();
+
+		void backgroundMonitorHttpEnded();
+	}
+
 	private static final int MSG_UPDATE_STATE = 0x0100;
 	private static final int MSG_PAUSE = 0x0101;
 	private static final int MSG_PLAYPAUSE = 0x0102;
@@ -1972,6 +1980,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	public static PlayerBackgroundMonitor backgroundMonitor;
+
 	//I know this is far from "organized"... but this is the only way to prevent the
 	//classes/interfaces from being loaded into memory unnecessarily!!!
 	public static Object bluetoothVisualizer;
@@ -2727,7 +2737,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@SuppressWarnings({"deprecation", "unused"})
 	public static boolean isInternetConnectedViaWiFi() {
-		if (thePlayer != null) {
+		return true;
+		/*if (thePlayer != null) {
 			try {
 				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
 				final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
@@ -2737,17 +2748,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				ex.printStackTrace();
 			}
 		}
-		return false;
+		return false;*/
 	}
 
 	@SuppressWarnings("deprecation")
 	public static String getWiFiIpAddress() {
-		try {
+		return "10.0.2.15";
+		/*try {
 			WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
 			return Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
 		} catch (Throwable ex) {
 			return null;
-		}
+		}*/
 	}
 
 	private static void processTurnOffTimer() {

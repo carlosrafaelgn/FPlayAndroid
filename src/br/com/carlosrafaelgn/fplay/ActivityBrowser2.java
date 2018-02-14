@@ -213,7 +213,6 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		if (checkedCount <= 0)
 			return;
 		Player.songs.addingStarted();
-		getHostActivity().bgMonitorStart();
 		boolean addingFolder = false;
 		try {
 			int c = 0;

@@ -396,6 +396,8 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		synchronized (currentAndCountMutex) {
 			adding++;
 		}
+		if (Player.backgroundMonitor != null)
+			Player.backgroundMonitor.backgroundMonitorStart();
 	}
 	
 	public void addingEnded() {

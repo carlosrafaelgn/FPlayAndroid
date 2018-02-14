@@ -362,5 +362,6 @@
     <string name="transmission_error">Übertragungsfehler!</string>
     <string name="transmission_active">Übertragung aktiv&#8230;</string>
     <string name="transmit">Übertragen&#8230;</string>
+    <string name="transmission_inactive">Übertragung inaktiv</string>
 
 </resources>

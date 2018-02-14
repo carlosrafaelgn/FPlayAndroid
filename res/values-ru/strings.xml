@@ -362,5 +362,6 @@
     <string name="transmission_error">Ошибка передачи!</string>
     <string name="transmission_active">Передача активна&#8230;</string>
     <string name="transmit">Передавать&#8230;</string>
+    <string name="transmission_inactive">Передача неактивна</string>
 
 </resources>

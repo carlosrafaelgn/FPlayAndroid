@@ -63,7 +63,6 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 	private static final int PLUGIN_MSG_OBSERVER_STATE_CHANGED_TRANSMITTING = 0x0002;
 
 	private FPlayPlugin plugin;
-	private ActivityHost activityHost;
 
 	public static void create(FPlayPlugin plugin, ActivityHost activityHost, boolean startTransmissionOnConnection) {
 		if (plugin == null)
@@ -72,7 +71,7 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 		final WirelessVisualizer wirelessVisualizer;
 
 		Player.stopAllBackgroundPlugins();
-		Player.bluetoothVisualizer = (wirelessVisualizer = new WirelessVisualizer(plugin, activityHost));
+		Player.bluetoothVisualizer = (wirelessVisualizer = new WirelessVisualizer(plugin));
 
 		if (plugin.message(PLUGIN_MSG_START, startTransmissionOnConnection ? 1 : 0, 0, activityHost) == 1) {
 			wirelessVisualizer.syncSize();
@@ -81,13 +80,13 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 			wirelessVisualizer.syncDataType();
 			Player.bluetoothVisualizerLastErrorMessage = null;
 			Player.bluetoothVisualizerState = Player.BLUETOOTH_VISUALIZER_STATE_CONNECTING;
-			activityHost.bgMonitorStart();
+			if (Player.backgroundMonitor != null)
+				Player.backgroundMonitor.backgroundMonitorStart();
 		}
 	}
 
-	private WirelessVisualizer(FPlayPlugin plugin, ActivityHost activityHost) {
+	private WirelessVisualizer(FPlayPlugin plugin) {
 		this.plugin = plugin;
-		this.activityHost = activityHost;
 		plugin.setObserver(this);
 	}
 
@@ -129,10 +128,8 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 		if (plugin != null)
 			plugin.destroy();
 
-		if (activityHost != null) {
-			activityHost.bgMonitorBluetoothEnded();
-			activityHost = null;
-		}
+		if (Player.backgroundMonitor != null)
+			Player.backgroundMonitor.backgroundMonitorBluetoothEnded();
 	}
 
 	public void update(boolean songHasChanged) {

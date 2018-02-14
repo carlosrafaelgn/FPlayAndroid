@@ -142,7 +142,6 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			return;
 		}
 		Player.songs.addingStarted();
-		getHostActivity().bgMonitorStart();
 		try {
 			(new Thread("Checked Radio Station Adder Thread") {
 				@Override

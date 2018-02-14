@@ -43,7 +43,7 @@ public class ActivityMain extends Activity {
 		super.onCreate(savedInstanceState);
 
 		try {
-			startActivity(new Intent(Intent.ACTION_DELETE, Uri.fromParts("package", "br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer", null)));
+			startActivity(new Intent(Intent.ACTION_DELETE, Uri.fromParts("package", "br.com.carlosrafaelgn.fplay.plugin.httptransmitter", null)));
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}

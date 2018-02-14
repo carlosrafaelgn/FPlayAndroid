@@ -47,20 +47,22 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0004;
 
 	private FPlayPlugin plugin;
-	private ActivityHost activityHost;
 	private String[] address;
 
 	public static boolean create(FPlayPlugin plugin, ActivityHost activityHost) {
 		if (plugin == null)
 			return false;
 
+		final HttpTransmitter httpTransmitter;
+
 		Player.stopAllBackgroundPlugins();
-		Player.httpTransmitter = new HttpTransmitter(plugin, activityHost);
+		Player.httpTransmitter = (httpTransmitter = new HttpTransmitter(plugin));
 
 		try {
-			if (plugin.message(PLUGIN_MSG_START, 0, 0, activityHost) == 1) {
+			if (plugin.message(PLUGIN_MSG_START, 0, 0, httpTransmitter.address) == 1) {
 				Player.httpTransmitterLastErrorMessage = null;
-				activityHost.bgMonitorStart();
+				if (Player.backgroundMonitor != null)
+					Player.backgroundMonitor.backgroundMonitorStart();
 				return true;
 			} else {
 				Player.stopHttpTransmitter();
@@ -78,9 +80,8 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 		return false;
 	}
 
-	private HttpTransmitter(FPlayPlugin plugin, ActivityHost activityHost) {
+	private HttpTransmitter(FPlayPlugin plugin) {
 		this.plugin = plugin;
-		this.activityHost = activityHost;
 		this.address = new String[1];
 		plugin.setObserver(this);
 	}
@@ -109,10 +110,8 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 		if (plugin != null)
 			plugin.destroy();
 
-		if (activityHost != null) {
-			activityHost.bgMonitorHttpEnded();
-			activityHost = null;
-		}
+		if (Player.backgroundMonitor != null)
+			Player.backgroundMonitor.backgroundMonitorHttpEnded();
 	}
 
 	public String getAddress() {

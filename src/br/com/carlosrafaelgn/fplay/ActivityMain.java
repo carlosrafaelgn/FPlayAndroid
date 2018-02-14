@@ -752,7 +752,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_MOVE24));
 		UI.separator(s, 0, 7);
-		s.add(0, MNU_HTTP_TRANSMITTER, 6, R.string.transmit)
+		s.add(0, MNU_HTTP_TRANSMITTER, 8, R.string.transmit)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SHARE24));
 		UI.separator(menu, 1, 1);
@@ -1897,23 +1897,18 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		} else {
 			Player.songs.startExportingTo(file);
 		}
-		getHostActivity().bgMonitorStart();
 	}
 
 	@Override
 	public void onAddClicked(int id, FileSt file) {
-		if (id == MNU_LOADLIST) {
+		if (id == MNU_LOADLIST)
 			Player.songs.startDeserializingOrImportingFrom(file, false, true, false);
-			getHostActivity().bgMonitorStart();
-		}
 	}
 
 	@Override
 	public void onPlayClicked(int id, FileSt file) {
-		if (id == MNU_LOADLIST) {
+		if (id == MNU_LOADLIST)
 			Player.songs.startDeserializingOrImportingFrom(file, false, !Player.clearListWhenPlayingFolders, true);
-			getHostActivity().bgMonitorStart();
-		}
 	}
 
 	@Override

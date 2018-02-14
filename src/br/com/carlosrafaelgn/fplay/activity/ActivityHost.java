@@ -78,7 +78,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Animation.AnimationListener, FastAnimator.Observer, Interpolator, Timer.TimerHandler {
+public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Player.PlayerBackgroundMonitor, Animation.AnimationListener, FastAnimator.Observer, Interpolator, Timer.TimerHandler {
 	private ClientActivity top;
 	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate, isCreatingLayout, pendingOrientationChanges;
 	private BgFrameLayout baseParent;
@@ -86,8 +86,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private View oldView, newView;
 	private Animation anim;
 	private FastAnimator animator; //used only with UI.TRANSITION_FADE
-	private int systemBgColor, bgMonitorLastMsg;
-	private Timer bgMonitorTimer;
+	private int systemBgColor, backgroundMonitorLastMsg;
+	private Timer backgroundMonitorTimer;
 
 	//http://developer.samsung.com/html/techdoc/ProgrammingGuide_MultiWindow.pdf
 	//http://developer.samsung.com/galaxy/multiwindow
@@ -764,11 +764,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			animator.end();
 		else if (anim != null)
 			anim.cancel();
-		bgMonitorStop();
+		backgroundMonitorStop();
 		if (top != null && !top.paused) {
 			top.paused = true;
 			top.onPause();
 		}
+		Player.backgroundMonitor = null;
 		Player.setAppNotInForeground(true);
 		super.onStop();
 	}
@@ -779,6 +780,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			finish();
 			return;
 		}
+		Player.backgroundMonitor = this;
 		Player.setAppNotInForeground(false);
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(this);
@@ -786,7 +788,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.paused = false;
 			top.onResume();
 		}
-		bgMonitorStart();
+		backgroundMonitorStart();
 		super.onResume();
 	}
 	
@@ -823,8 +825,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			c = p;
 		}
 		baseParent = null;
-		bgMonitorStop();
-		bgMonitorTimer = null;
+		backgroundMonitorStop();
+		backgroundMonitorTimer = null;
 	}
 	
 	@Override
@@ -882,7 +884,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		finish();
 	}
 
-	private static int bgMonitorCurrentMessage() {
+	private static int backgroundMonitorCurrentMessage() {
 		return ((Player.state != Player.STATE_ALIVE) ? R.string.loading :
 			(Player.songs.isAdding() ? R.string.adding_songs :
 				((Player.httpTransmitterLastErrorMessage != null) ? R.string.transmission_error :
@@ -893,64 +895,67 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	}
 
 	@SuppressWarnings("deprecation")
-	public void bgMonitorStart() {
-		final int msg = bgMonitorCurrentMessage();
+	@Override
+	public void backgroundMonitorStart() {
+		final int msg = backgroundMonitorCurrentMessage();
 		if (msg != 0) {
-			bgMonitorStop();
+			backgroundMonitorStop();
 			if (baseParent != null) {
-				bgMonitorLastMsg = msg;
-				baseParent.setMessage(bgMonitorLastMsg);
-				if (bgMonitorTimer == null)
-					bgMonitorTimer = new Timer(this, "Background Activity Monitor Timer", false, true, false);
-				bgMonitorTimer.start(250);
+				backgroundMonitorLastMsg = msg;
+				baseParent.setMessage(backgroundMonitorLastMsg);
+				if (backgroundMonitorTimer == null)
+					backgroundMonitorTimer = new Timer(this, "Background Activity Monitor Timer", false, true, false);
+				backgroundMonitorTimer.start(250);
 			}
 		}
 	}
 
-	private void bgMonitorBackgroundPluginEnded(boolean withError, int errorMsg) {
+	private void backgroundMonitorBackgroundPluginEnded(boolean withError, int errorMsg) {
 		if (baseParent == null)
 			return;
 		if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding()) {
 			if (withError) {
-				if (bgMonitorLastMsg != errorMsg) {
-					bgMonitorLastMsg = errorMsg;
-					baseParent.setMessage(bgMonitorLastMsg);
+				if (backgroundMonitorLastMsg != errorMsg) {
+					backgroundMonitorLastMsg = errorMsg;
+					baseParent.setMessage(backgroundMonitorLastMsg);
 				}
 			} else {
-				bgMonitorStop();
+				backgroundMonitorStop();
 			}
 		}
 	}
 
-	public void bgMonitorBluetoothEnded() {
-		bgMonitorBackgroundPluginEnded(Player.bluetoothVisualizerLastErrorMessage != null, R.string.bt_error);
+	@Override
+	public void backgroundMonitorBluetoothEnded() {
+		backgroundMonitorBackgroundPluginEnded(Player.bluetoothVisualizerLastErrorMessage != null, R.string.bt_error);
 	}
 
-	public void bgMonitorHttpEnded() {
-		bgMonitorBackgroundPluginEnded(Player.httpTransmitterLastErrorMessage != null, R.string.transmission_error);
+	@Override
+	public void backgroundMonitorHttpEnded() {
+		backgroundMonitorBackgroundPluginEnded(Player.httpTransmitterLastErrorMessage != null, R.string.transmission_error);
 	}
 
-	public void bgMonitorStop() {
-		bgMonitorLastMsg = 0;
+	private void backgroundMonitorStop() {
+		backgroundMonitorLastMsg = 0;
 		if (baseParent != null)
 			baseParent.setMessage(0);
-		if (bgMonitorTimer != null)
-			bgMonitorTimer.stop();
+		if (backgroundMonitorTimer != null)
+			backgroundMonitorTimer.stop();
 	}
 
 	@Override
 	public void handleTimer(Timer timer, Object param) {
-		final int msg = bgMonitorCurrentMessage();
+		final int msg = backgroundMonitorCurrentMessage();
 		if (msg == 0) {
-			bgMonitorStop();
+			backgroundMonitorStop();
 		} else {
-			if (bgMonitorLastMsg != msg) {
-				bgMonitorLastMsg = msg;
+			if (backgroundMonitorLastMsg != msg) {
+				backgroundMonitorLastMsg = msg;
 				if (baseParent != null)
 					baseParent.setMessage(msg);
 			}
-			if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding() && bgMonitorTimer != null)
-				bgMonitorTimer.stop();
+			if (Player.state == Player.STATE_ALIVE && !Player.songs.isAdding() && backgroundMonitorTimer != null)
+				backgroundMonitorTimer.stop();
 		}
 	}
 }
