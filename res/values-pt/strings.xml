@@ -363,5 +363,7 @@
     <string name="transmission_active">Transmissão ativa&#8230;</string>
     <string name="transmit">Transmitir&#8230;</string>
     <string name="transmission_inactive">Transmissão inativa</string>
+    <string name="listen_online">Ouça online</string>
+    <string name="transmission_details">Transmitindo em: %1$s\\nCódigo de compartilhamento: %2$s (toque para copiar)</string>
 
 </resources>

@@ -365,8 +365,13 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	}
 
 	@Override
-	public String getWiFiIpAddress() {
+	public int getWiFiIpAddress() {
 		return Player.getWiFiIpAddress();
+	}
+
+	@Override
+	public String getWiFiIpAddressStr() {
+		return Player.getWiFiIpAddressStr();
 	}
 
 	@Override

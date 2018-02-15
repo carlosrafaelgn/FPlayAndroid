@@ -54,7 +54,8 @@ public interface FPlay {
 	boolean deviceHasTelephonyRadio();
 	boolean isConnectedToTheInternet();
 	boolean isInternetConnectedViaWiFi();
-	String getWiFiIpAddress();
+	int getWiFiIpAddress();
+	String getWiFiIpAddressStr();
 
 	String emoji(CharSequence text);
 	void toast(String message);

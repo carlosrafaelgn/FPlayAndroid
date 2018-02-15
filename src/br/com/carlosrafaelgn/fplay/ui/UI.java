@@ -509,6 +509,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		//  edgeFilter = new PorterDuffColorFilter(0, PorterDuff.Mode.CLEAR);
 	}
 
+	public static String format(int resId, String p1) {
+		//replace %s... faster than format() ;)
+		return Player.theApplication.getText(resId).toString().replace("%s", p1);
+	}
+
+	public static String format(int resId, String p1, String p2) {
+		//replace %s... faster than format() ;)
+		return Player.theApplication.getText(resId).toString().replace("%1$s", p1).replace("%2$s", p2);
+	}
+
 	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
 		int dec;
 		if (useTwoDecimalPlaces) {

@@ -230,21 +230,11 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 		}
 	}
 
-	private String format(int resId, String p1) {
-		//replace %s... faster than format() ;)
-		return getText(resId).toString().replace("%s", p1);
-	}
-	
-	private String format(int resId, String p1, String p2) {
-		//replace %s... faster than format() ;)
-		return getText(resId).toString().replace("%1$s", p1).replace("%2$s", p2);
-	}
-
 	private void confirm(FileSt file, int deleteIndex) {
 		final Context ctx = getHostActivity();
 		confirmFile = file;
 		confirmDeleteIndex = deleteIndex;
-		final BgDialog dialog = new BgDialog(ctx, UI.createDialogView(getHostActivity(), format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)), this);
+		final BgDialog dialog = new BgDialog(ctx, UI.createDialogView(getHostActivity(), UI.format(deleteIndex >= 0 ? R.string.msg_confirm_delete : R.string.msg_confirm_overwrite, itemType, file.name)), this);
 		dialog.setTitle(R.string.oops);
 		dialog.setPositiveButton(deleteIndex >= 0 ? R.string.delete : R.string.overwrite);
 		dialog.setNegativeButton(R.string.cancel);
@@ -403,12 +393,12 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				final Context ctx = getHostActivity();
 				final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 
-				txtSaveAsName = UI.createDialogEditText(ctx, 0, (fileList != null && fileList.getSelection() >= 0) ? fileList.getItem(fileList.getSelection()).name : null, format(R.string.msg_enter_name, itemType), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+				txtSaveAsName = UI.createDialogEditText(ctx, 0, (fileList != null && fileList.getSelection() >= 0) ? fileList.getItem(fileList.getSelection()).name : null, UI.format(R.string.msg_enter_name, itemType), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 				txtSaveAsName.setFilters(new InputFilter[]{this, new InputFilter.LengthFilter(64)});
 				l.addView(txtSaveAsName, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
 				final BgDialog dialog = new BgDialog(ctx, l, this);
-				dialog.setTitle(format(R.string.msg_create_new_title, itemType), true);
+				dialog.setTitle(UI.format(R.string.msg_create_new_title, itemType), true);
 				dialog.setPositiveButton(R.string.create);
 				dialog.setNegativeButton(R.string.cancel);
 				dialog.show();

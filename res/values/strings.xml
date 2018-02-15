@@ -377,5 +377,7 @@
     <string name="transmission_active">Transmission active&#8230;</string>
     <string name="transmit">Transmit&#8230;</string>
     <string name="transmission_inactive">Transmission inactive</string>
+    <string name="listen_online">Listen online</string>
+    <string name="transmission_details">Transmitting at: %1$s\nShare code: %2$s (touch to copy)</string>
 
 </resources>

@@ -44,7 +44,8 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 	private static final int PLUGIN_MSG_START = 0x0001;
 	private static final int PLUGIN_MSG_ERROR_MESSAGE = 0x0002;
 	private static final int PLUGIN_MSG_GET_ADDRESS = 0x0003;
-	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0004;
+	private static final int PLUGIN_MSG_GET_ENCODED_ADDRESS = 0x0004;
+	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0005;
 
 	private FPlayPlugin plugin;
 	private String[] address;
@@ -53,13 +54,11 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 		if (plugin == null)
 			return false;
 
-		final HttpTransmitter httpTransmitter;
-
 		Player.stopAllBackgroundPlugins();
-		Player.httpTransmitter = (httpTransmitter = new HttpTransmitter(plugin));
+		Player.httpTransmitter = new HttpTransmitter(plugin);
 
 		try {
-			if (plugin.message(PLUGIN_MSG_START, 0, 0, httpTransmitter.address) == 1) {
+			if (plugin.message(PLUGIN_MSG_START, 0, 0, null) == 1) {
 				Player.httpTransmitterLastErrorMessage = null;
 				if (Player.backgroundMonitor != null)
 					Player.backgroundMonitor.backgroundMonitorStart();
@@ -118,6 +117,13 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 		if (plugin == null || address == null)
 			return "";
 		plugin.message(PLUGIN_MSG_GET_ADDRESS, 0, 0, address);
+		return (address[0] == null ? "" : address[0]);
+	}
+
+	public String getEncodedAddress() {
+		if (plugin == null || address == null)
+			return "";
+		plugin.message(PLUGIN_MSG_GET_ENCODED_ADDRESS, 0, 0, address);
 		return (address[0] == null ? "" : address[0]);
 	}
 

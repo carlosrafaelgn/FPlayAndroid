@@ -363,5 +363,7 @@
     <string name="transmission_active">Передача активна&#8230;</string>
     <string name="transmit">Для передачі&#8230;</string>
     <string name="transmission_inactive">Передача неактивна</string>
+    <string name="listen_online">Слухайте в Інтернеті</string>
+    <string name="transmission_details">Передача в: %1$s\\nКод розділу: %2$s (торкніться до копіювання)</string>
 
 </resources>

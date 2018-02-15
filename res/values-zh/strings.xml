@@ -368,5 +368,7 @@
     <string name="transmission_active">传输活动&#8230;</string>
     <string name="transmit">发送&#8230;</string>
     <string name="transmission_inactive">传输无效</string>
+    <string name="listen_online">在线收听</string>
+    <string name="transmission_details">传输：%1$s\n分享代码：%2$s（触摸即可复制）</string>
 
 </resources>

@@ -2737,8 +2737,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@SuppressWarnings({"deprecation", "unused"})
 	public static boolean isInternetConnectedViaWiFi() {
-		return true;
-		/*if (thePlayer != null) {
+		if (thePlayer != null) {
 			try {
 				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
 				final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
@@ -2748,18 +2747,26 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				ex.printStackTrace();
 			}
 		}
-		return false;*/
+		return false;
+	}
+
+	public static int getWiFiIpAddress() {
+		try {
+			WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
+			return wm.getConnectionInfo().getIpAddress();
+		} catch (Throwable ex) {
+			return 0;
+		}
 	}
 
 	@SuppressWarnings("deprecation")
-	public static String getWiFiIpAddress() {
-		return "10.0.2.15";
-		/*try {
+	public static String getWiFiIpAddressStr() {
+		try {
 			WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
 			return Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
 		} catch (Throwable ex) {
 			return null;
-		}*/
+		}
 	}
 
 	private static void processTurnOffTimer() {

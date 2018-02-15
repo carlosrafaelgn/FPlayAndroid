@@ -114,7 +114,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
 		optLargeTextIs22sp, optDisplaySongNumberAndCount, optAllowLockScreen, lastMenuView;
-	private String btErrorMessage;
+	private String btErrorMessage, httpShareCode;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btConnectText, btStartText, optBtSizeLastSize;
 	private TextView[] headers;
@@ -1079,9 +1079,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			btErrorMessage = null;
 			if (btMessageText != Integer.MAX_VALUE - 1) {
 				btMessageText = Integer.MAX_VALUE - 1;
-				optBtMessage.setText(((HttpTransmitter)Player.httpTransmitter).getAddress());
+				optBtMessage.setText(UI.format(R.string.transmission_details,
+					((HttpTransmitter)Player.httpTransmitter).getAddress(),
+					httpShareCode = ((HttpTransmitter)Player.httpTransmitter).getEncodedAddress()));
 			}
 		} else {
+			httpShareCode = null;
 			if (btErrorMessage != null) {
 				if (btMessageText != Integer.MAX_VALUE) {
 					btMessageText = Integer.MAX_VALUE;
@@ -1135,10 +1138,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			btnAbout.setText(R.string.apply_theme);
 		} else if (mode == MODE_BLUETOOTH) {
 			btnAbout.setText(R.string.tutorial);
-			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor()), null, null, null);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text), null, null, null);
 		} else if (mode == MODE_HTTP) {
-			btnAbout.setText(R.string.tutorial);
-			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.colorState_text_visualizer_reactive.getDefaultColor()), null, null, null);
+			btnAbout.setText(R.string.listen_online);
+			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_LINK, UI.color_text), null, null, null);
 		} else {
 			try {
 				showBluetooth = (BluetoothAdapter.getDefaultAdapter() != null);
@@ -1225,6 +1228,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (mode == MODE_HTTP) {
 			optBtMessage = new SettingView(ctx, UI.ICON_INFORMATION, "", null, false, false, false);
 			optBtConnect = new SettingView(ctx, Player.httpTransmitter != null ? UI.ICON_PAUSE : UI.ICON_PLAY, "", null, false, false, false);
+			optBtStart = new SettingView(ctx, UI.ICON_LIST24, getText(R.string.refresh_list).toString(), null, false, false, false);
 			refreshHttpStatus(true, true);
 
 			headers = new TextView[2];
@@ -1232,6 +1236,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optBtMessage);
 			addHeader(ctx, R.string.general, optBtMessage, 1);
 			addOption(optBtConnect);
+			addOption(optBtStart);
 			currentHeader = -1;
 		} else {
 			if (!UI.dyslexiaFontSupportsCurrentLocale()) {
@@ -1597,10 +1602,28 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			return;
 		} else if (mode == MODE_HTTP) {
 			if (view == btnAbout) {
-				try {
-					getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayAndroid")));
-				} catch (Throwable ex) {
-					ex.printStackTrace();
+				UI.toast(R.string.coming_soon);
+				//try {
+				//	getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayAndroid")));
+				//} catch (Throwable ex) {
+				//	ex.printStackTrace();
+				//}
+			} else if (view == optBtMessage) {
+				if (Player.httpTransmitter != null && httpShareCode != null) {
+					try {
+						final ActivityHost activityHost = getHostActivity();
+						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+							//noinspection deprecation
+							final android.text.ClipboardManager clipboard = (android.text.ClipboardManager)activityHost.getSystemService(ActivityHost.CLIPBOARD_SERVICE);
+							clipboard.setText(httpShareCode);
+						} else {
+							final android.content.ClipboardManager clipboard = (android.content.ClipboardManager)activityHost.getSystemService(ActivityHost.CLIPBOARD_SERVICE);
+							clipboard.setPrimaryClip(android.content.ClipData.newPlainText(httpShareCode, httpShareCode));
+						}
+						UI.toast(UI.emoji(getText(R.string.success)));
+					} catch (Throwable ex) {
+						UI.toast(UI.emoji(getText(R.string.error_gen)));
+					}
 				}
 			} else if (view == optBtConnect) {
 				if (Player.httpTransmitter == null) {
@@ -1609,6 +1632,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 					Player.stopHttpTransmitter();
 					refreshHttpStatus(false, false);
 				}
+			} else if (view == optBtStart) {
+				if (Player.httpTransmitter == null)
+					startHttpTransmitter();
+				else
+					((HttpTransmitter)Player.httpTransmitter).refreshList();
 			}
 			return;
 		}

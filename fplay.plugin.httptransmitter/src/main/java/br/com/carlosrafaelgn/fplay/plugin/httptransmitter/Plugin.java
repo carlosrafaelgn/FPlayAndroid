@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.plugin.httptransmitter;
 
 import android.content.Context;
 import android.os.SystemClock;
+import android.util.Base64;
 
 import org.nanohttpd.webserver.FileSystemWebServer;
 
@@ -53,7 +54,8 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 	private static final int PLUGIN_MSG_START = 0x0001;
 	private static final int PLUGIN_MSG_ERROR_MESSAGE = 0x0002;
 	private static final int PLUGIN_MSG_GET_ADDRESS = 0x0003;
-	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0004;
+	private static final int PLUGIN_MSG_GET_ENCODED_ADDRESS = 0x0004;
+	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0005;
 
 	private static final class Playlist {
 		final int listVersion;
@@ -141,7 +143,7 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 	private FPlay fplay;
 	private Observer observer;
 	private FileSystemWebServer webServer;
-	private String localAddress, baseTag;
+	private String localAddress, encodedLocalAddress, baseTag;
 	private volatile Playlist playlist;
 
 	@Override
@@ -176,6 +178,7 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 		fplay = null;
 		observer = null;
 		localAddress = null;
+		encodedLocalAddress = null;
 		baseTag = null;
 		playlist = null;
 	}
@@ -210,26 +213,37 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 			refreshList(true);
 
 			try {
-				final String host = fplay.getWiFiIpAddress();
-				if (host == null)
+				final int addr = fplay.getWiFiIpAddress();
+				final String addrStr = fplay.getWiFiIpAddressStr();
+				if (addr == 0 || addrStr == null)
 					throw new IllegalStateException("Could not resolve local Wifi address");
 
-				webServer = new FileSystemWebServer(host, 0, this);
+				webServer = new FileSystemWebServer(addrStr, 0, this);
 				webServer.start();
 				final InetSocketAddress socketAddress = (InetSocketAddress)webServer.getMyServerSocket().getLocalSocketAddress();
-				//localAddress = socketAddress.getAddress().toString() + ":" + socketAddress.getPort();
-				localAddress = host + ":" + socketAddress.getPort();
+				localAddress = socketAddress.getAddress().toString() + ":" + socketAddress.getPort();
+
+				final int port = socketAddress.getPort();
+				localAddress = addrStr + ":" + port;
+				encodedLocalAddress = Base64.encodeToString(new byte[] {
+					(byte)addr,
+					(byte)(addr >> 8),
+					(byte)(addr >> 16),
+					(byte)(addr >> 24),
+					(byte)port,
+					(byte)(port >> 8)
+				}, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE).replace('-', '@');
 			} catch (IOException ex) {
 				throw new RuntimeException(ex);
 			}
-
-			if (obj instanceof String[] && (address = (String[])obj).length > 0)
-				address[0] = localAddress;
-
 			return 1;
 		case PLUGIN_MSG_GET_ADDRESS:
 			if (obj instanceof String[] && (address = (String[])obj).length > 0)
 				address[0] = localAddress;
+			return 1;
+		case PLUGIN_MSG_GET_ENCODED_ADDRESS:
+			if (obj instanceof String[] && (address = (String[])obj).length > 0)
+				address[0] = encodedLocalAddress;
 			return 1;
 		case PLUGIN_MSG_REFRESH_LIST:
 			refreshList(false);
