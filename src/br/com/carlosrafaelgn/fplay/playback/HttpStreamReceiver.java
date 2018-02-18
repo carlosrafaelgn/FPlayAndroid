@@ -1765,40 +1765,69 @@ public final class HttpStreamReceiver implements Runnable {
 
 			int len;
 
-			if (b == 0x49 && buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
-				//process the ID3 tag by skipping it completely
-				if ((len = buffer.waitUntilCanRead(10)) < 10)
-					return (len < 0 ? -1 : 0);
+			switch (b) {
+			case 0x49:
+				if (buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
+					//process the ID3 tag by skipping it completely
+					if ((len = buffer.waitUntilCanRead(offset + 10)) < (offset + 10))
+						return (len < 0 ? -1 : 0);
 
-				//refer to MetadataExtractor.java -> extractID3v2Andv1()
-				final int flags = buffer.peekReadArray(offset + 5);
-				final int sizeBytes0 = buffer.peekReadArray(offset + 6);
-				final int sizeBytes1 = buffer.peekReadArray(offset + 7);
-				final int sizeBytes2 = buffer.peekReadArray(offset + 8);
-				final int sizeBytes3 = buffer.peekReadArray(offset + 9);
-				int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
-					(
-						(sizeBytes3 & 0x7f) |
-							((sizeBytes2 & 0x7f) << 7) |
-							((sizeBytes1 & 0x7f) << 14) |
-							((sizeBytes0 & 0x7f) << 21)
-					) + 10; //the first 10 bytes
-				while (size > 0 && alive) {
-					len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
-					if (len <= 0)
-						return len;
-					size -= len;
+					if (!alive)
+						return -1;
+
+					//refer to MetadataExtractor.java -> extractID3v2Andv1()
+					final int flags = buffer.peekReadArray(offset + 5);
+					final int sizeBytes0 = buffer.peekReadArray(offset + 6);
+					final int sizeBytes1 = buffer.peekReadArray(offset + 7);
+					final int sizeBytes2 = buffer.peekReadArray(offset + 8);
+					final int sizeBytes3 = buffer.peekReadArray(offset + 9);
+					int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
+						(
+							(sizeBytes3 & 0x7f) |
+								((sizeBytes2 & 0x7f) << 7) |
+								((sizeBytes1 & 0x7f) << 14) |
+								((sizeBytes0 & 0x7f) << 21)
+						) + 10; //the first 10 bytes
+
+					//skip only if we are not peeking...
+					if (offset > 0)
+						return size;
+
+					while (size > 0 && alive) {
+						len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+						if (len <= 0)
+							return len;
+						size -= len;
+						buffer.skip(len);
+						buffer.commitRead(len);
+					}
+
+					//proceed as if none of this had happened
+					if ((len = buffer.waitUntilCanRead(4)) < 4)
+						return (len < 0 ? -1 : 0);
+					b = buffer.peekReadArray(offset);
+				}
+				break;
+			case 0x54:
+				if (buffer.peekReadArray(offset + 1) == 0x41 && buffer.peekReadArray(offset + 2) == 0x47) {
+					//final TAG header? (this should be the last chunk of data in a file...)
+
+					//skip only if we are not peeking...
+					if (offset > 0)
+						return 128;
+
+					if ((len = buffer.waitUntilCanRead(128)) < 128)
+						return (len < 0 ? -1 : 0);
+
 					buffer.skip(len);
 					buffer.commitRead(len);
+
+					//proceed as if none of this had happened
+					if ((len = buffer.waitUntilCanRead(4)) < 4)
+						return (len < 0 ? -1 : 0);
+					b = buffer.peekReadArray(offset);
 				}
-
-				if (!alive)
-					return -1;
-
-				//proceed as if none of this had happened
-				if ((len = buffer.waitUntilCanRead(4)) < 4)
-					return (len < 0 ? -1 : 0);
-				b = buffer.peekReadArray(offset);
+				break;
 			}
 
 			//(the bits should be read in a sequence that must be treated as big endian and MSB)
