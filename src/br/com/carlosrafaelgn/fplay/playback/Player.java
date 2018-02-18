@@ -979,7 +979,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				storedSongTime));
 	}
 
-	public static int getHttpPosition() {
+	public static long getHttpPosition() {
 		return ((localPlayer != null) ? localPlayer.getHttpPosition() : -1);
 	}
 

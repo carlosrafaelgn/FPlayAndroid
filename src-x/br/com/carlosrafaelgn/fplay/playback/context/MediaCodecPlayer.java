@@ -178,10 +178,15 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		}
 		while (!inputOver) {
 			final int inputFrameSize, index;
-			if ((inputFrameSize = httpStreamExtractor.canReadHeader()) <= 0)
-				break;
 			if ((index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) < 0)
 				break;
+			if ((inputFrameSize = httpStreamExtractor.canReadHeader()) < 0)
+				break;
+			if (inputFrameSize == 0) {
+				inputOver = true;
+				mediaCodec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+				break;
+			}
 			httpStreamReceiver.readArray(inputBuffers[index], 0, inputFrameSize);
 			mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
 		}
@@ -269,6 +274,10 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		case MSG_HTTP_STREAM_RECEIVER_BUFFERING:
 			onInfo(msg.arg2 == 0 ? INFO_BUFFERING_END : INFO_BUFFERING_START, 0, null);
 			break;
+		//we do not need to handle this message, because in X, playback is controlled by
+		//MediaContext rather than by HttpStreamReceiver
+		//case MSG_HTTP_STREAM_RECEIVER_FINISHED:
+		//	break;
 		}
 		return true;
 	}
@@ -578,7 +587,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 		if (Song.isPathHttp(path)) {
 			durationInMS = -1;
 			handler = new Handler(this);
-			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, MSG_HTTP_STREAM_RECEIVER_BUFFERING, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), 0, 1, path);
+			httpStreamReceiver = new HttpStreamReceiver(handler, MSG_HTTP_STREAM_RECEIVER_ERROR, 0, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, MSG_HTTP_STREAM_RECEIVER_INFO, MSG_HTTP_STREAM_RECEIVER_BUFFERING, MSG_HTTP_STREAM_RECEIVER_FINISHED, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), 0, 1, path);
 			nativeMediaCodec = false;
 		} else {
 			final File file = new File(path);
@@ -790,6 +799,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			httpStreamReceiverVersion++;
 			httpStreamReceiver.release();
 			httpStreamReceiver = null;
+			httpStreamExtractor = null;
 		}
 		resetMedia();
 		path = null;
@@ -843,7 +853,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 	}
 
 	@Override
-	public int getHttpPosition() {
+	public long getHttpPosition() {
 		//by doing like this, we do not need to synchronize the access to httpStreamReceiver
 		final HttpStreamReceiver receiver = httpStreamReceiver;
 		return ((receiver != null) ? receiver.bytesReceivedSoFar : -1);
@@ -921,6 +931,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			httpStreamReceiverVersion++;
 			httpStreamReceiver.release();
 			httpStreamReceiver = null;
+			httpStreamExtractor = null;
 		}
 		if (errorListener != null)
 			errorListener.onError(this,

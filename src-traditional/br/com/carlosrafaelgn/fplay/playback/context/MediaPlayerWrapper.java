@@ -107,7 +107,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 			if (infoListener != null)
 				infoListener.onInfo(this, INFO_BUFFERING_START, 0, null);
 			httpHandler = new Handler(this);
-			httpStreamReceiver = new HttpStreamReceiver(httpHandler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, MSG_HTTP_STREAM_RECEIVER_BUFFERING, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getMSBeforePlayback(Player.getMSBeforePlaybackIndex()), Player.audioSessionId, path);
+			httpStreamReceiver = new HttpStreamReceiver(httpHandler, MSG_HTTP_STREAM_RECEIVER_ERROR, MSG_HTTP_STREAM_RECEIVER_PREPARED, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, MSG_HTTP_STREAM_RECEIVER_URL_UPDATED, 0, MSG_HTTP_STREAM_RECEIVER_BUFFERING, MSG_HTTP_STREAM_RECEIVER_FINISHED, ++httpStreamReceiverVersion, Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()), Player.getMSBeforePlayback(Player.getMSBeforePlaybackIndex()), Player.audioSessionId, path);
 			if (httpStreamReceiver.start(Player.getBytesBeforeDecoding(Player.getBytesBeforeDecodingIndex()))) {
 				if ((httpStreamReceiverActsLikePlayer = httpStreamReceiver.isPerformingFullPlayback))
 					return;
@@ -267,7 +267,7 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 	}
 
 	@Override
-	public int getHttpPosition() {
+	public long getHttpPosition() {
 		return (httpStreamReceiver != null ? httpStreamReceiver.bytesReceivedSoFar : -1);
 	}
 
@@ -403,6 +403,9 @@ final class MediaPlayerWrapper extends MediaPlayerBase implements MediaPlayer.On
 		case MSG_HTTP_STREAM_RECEIVER_BUFFERING:
 			if (infoListener != null)
 				infoListener.onInfo(this, msg.arg2 == 0 ? INFO_BUFFERING_END : INFO_BUFFERING_START, 0, null);
+			break;
+		case MSG_HTTP_STREAM_RECEIVER_FINISHED:
+			onCompletion(null);
 			break;
 		}
 		return true;

@@ -44,6 +44,7 @@ public abstract class MediaPlayerBase {
 	protected static final int MSG_HTTP_STREAM_RECEIVER_URL_UPDATED = 0x0103;
 	protected static final int MSG_HTTP_STREAM_RECEIVER_INFO = 0x0104;
 	protected static final int MSG_HTTP_STREAM_RECEIVER_BUFFERING = 0x0105;
+	protected static final int MSG_HTTP_STREAM_RECEIVER_FINISHED = 0x0106;
 
 	//what
 	public static final int ERROR_UNKNOWN = 1; //MediaPlayer.MEDIA_ERROR_UNKNOWN
@@ -133,7 +134,7 @@ public abstract class MediaPlayerBase {
 
 	public abstract int getCurrentPosition();
 
-	public abstract int getHttpPosition();
+	public abstract long getHttpPosition();
 
 	public abstract int getHttpFilledBufferSize();
 

@@ -92,13 +92,14 @@ public final class HttpStreamReceiver implements Runnable {
 	private URL url;
 	private final String path;
 	private final Object sync;
-	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, bufferingMsg, arg1, audioSessionId, initialAudioBufferInMS;
+	private final int errorMsg, preparedMsg, metadataMsg, urlMsg, infoMsg, bufferingMsg, finishedMsg, arg1, audioSessionId, initialAudioBufferInMS;
 	private final CircularIOBuffer buffer;
-	private volatile boolean alive, finished, headerOk;
+	private volatile boolean alive, headerOk;
 	private volatile int serverPortReady, initialNetworkBufferLengthInBytes;
 	private RadioStationResolver resolver;
 	private boolean released, chunked;
 	private String contentType, icyName, icyUrl, icyGenre;
+	private long contentLength;
 	private int icyBitRate, icyMetaInterval, currentChunkLen, currentChunkState;
 	private byte[] tempChunkData;
 	private ByteBuffer tempChunkBuffer;
@@ -107,7 +108,7 @@ public final class HttpStreamReceiver implements Runnable {
 	private SocketChannel clientSocket, playerSocket;
 	private ServerSocketChannel serverSocket;
 	private AudioTrack audioTrack;
-	public int bytesReceivedSoFar;
+	public long bytesReceivedSoFar;
 	public final boolean isPerformingFullPlayback;
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -261,12 +262,13 @@ public final class HttpStreamReceiver implements Runnable {
 				short[] tmpShortOutput = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) ?
 					new short[extractor.getChannelCount() * extractor.getSamplesPerFrame()] : //1 frame @ mono/stereo, 16 bits per sample
 					null);
-				boolean okToProcessMoreInput = true, playbackStarted = false;
+				boolean okToProcessMoreInput = true, finished = false, playbackStarted = false;
 				int timedoutFrameCount = 0;
 
 				while (alive) {
-					if (okToProcessMoreInput) {
-						if (buffer.waitUntilCanRead(inputFrameSize) < 0)
+					if (okToProcessMoreInput && !finished) {
+						final int bytesRead;
+						if ((bytesRead = buffer.waitUntilCanRead(inputFrameSize)) < 0)
 							break;
 
 						//get the next available input buffer
@@ -276,15 +278,25 @@ public final class HttpStreamReceiver implements Runnable {
 								return;
 						}
 
+						final ByteBuffer inputBuffer;
 						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-							buffer.readArray(inputBuffers[inputBufferIndex], 0, inputFrameSize);
+							inputBuffer = inputBuffers[inputBufferIndex];
 						else
-							buffer.readArray(mediaCodec.getInputBuffer(inputBufferIndex), 0, inputFrameSize);
+							inputBuffer = mediaCodec.getInputBuffer(inputBufferIndex);
 
-						buffer.commitRead(inputFrameSize);
+						if (bytesRead == 0) {
+							//input data has just finished!
+							finished = true;
+							inputBuffer.limit(0);
+							inputBuffer.position(0);
+							mediaCodec.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+						} else {
+							buffer.readArray(inputBuffer, 0, bytesRead);
+							buffer.commitRead(bytesRead);
 
-						//queue the input buffer for decoding
-						mediaCodec.queueInputBuffer(inputBufferIndex, 0, inputFrameSize, 0, 0);
+							//queue the input buffer for decoding
+							mediaCodec.queueInputBuffer(inputBufferIndex, 0, bytesRead, 0, 0);
+						}
 					}
 
 					//wait for the decoding process to complete
@@ -431,6 +443,11 @@ public final class HttpStreamReceiver implements Runnable {
 					if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
 						okToProcessMoreInput = true;
 						mediaCodec.flush();
+						if (finished) {
+							if (handler != null)
+								handler.sendMessageAtTime(Message.obtain(handler, finishedMsg, arg1, 0), SystemClock.uptimeMillis());
+							return;
+						}
 					}
 
 					inputFrameSize = extractor.waitToReadHeader(false);
@@ -509,6 +526,7 @@ public final class HttpStreamReceiver implements Runnable {
 								((icyGenre != null && icyGenre.length() > 0 && icyGenre.length() <= 200) ? ("\r\nicy-genre:" + icyGenre) : "") +
 								((icyUrl != null && icyUrl.length() > 0 && icyUrl.length() <= 200) ? ("\r\nicy-url:" + icyUrl) : "") +
 								((icyBitRate > 0) ? ("\r\nicy-br:" + icyBitRate) : "") +
+								((contentLength >= 0 && contentLength < Long.MAX_VALUE) ? ("\r\ncontent-length:" + contentLength) : "") +
 								"\r\nContent-Type: " + contentType + "\r\n\r\n").getBytes();
 							tmp.limit(hdr.length);
 							tmp.position(0);
@@ -539,17 +557,19 @@ public final class HttpStreamReceiver implements Runnable {
 		public void run() {
 			try {
 				final InetAddress address = Inet4Address.getByAddress(new byte[] { 127, 0, 0, 1 });
-				int port;
-				ServerSocketChannel tmpServerSocket = null;
-				for (port = 5000; port < 6500 && alive; port++) {
-					try {
-						tmpServerSocket = ServerSocketChannel.open();
-						tmpServerSocket.socket().bind(new InetSocketAddress(address, port), 2);
-						break;
-					} catch (Throwable ex) {
-						closeSocket(tmpServerSocket);
-					}
-				}
+				final ServerSocketChannel tmpServerSocket = ServerSocketChannel.open();
+				//let Android choose a port instead of guessing one...
+				tmpServerSocket.socket().bind(new InetSocketAddress(address, 0), 2);
+				final int port = tmpServerSocket.socket().getLocalPort();
+				//for (port = 5000; port < 6500 && alive; port++) {
+				//	try {
+				//		tmpServerSocket = ServerSocketChannel.open();
+				//		tmpServerSocket.socket().bind(new InetSocketAddress(address, port), 2);
+				//		break;
+				//	} catch (Throwable ex) {
+				//		closeSocket(tmpServerSocket);
+				//	}
+				//}
 				synchronized (sync) {
 					if (!alive) {
 						closeSocket(tmpServerSocket);
@@ -557,7 +577,8 @@ public final class HttpStreamReceiver implements Runnable {
 					}
 					serverSocket = tmpServerSocket;
 				}
-				serverPortReady = ((serverSocket == null || !alive) ? -1 : port);
+				//serverPortReady = ((serverSocket == null || !alive) ? -1 : port);
+				serverPortReady = (!alive ? -1 : port);
 			} catch (Throwable ex) {
 				serverPortReady = -1;
 			} finally {
@@ -578,7 +599,8 @@ public final class HttpStreamReceiver implements Runnable {
 
 				//now playerSocket will only be used for output and we will just ignore any bytes received hereafter
 
-				while (alive && !finished) {
+				//@@@ this must be fixed!!!
+				while (alive) {
 					//if we limit the amount to be written to MAX_PACKET_LENGTH bytes we won't block
 					//playerSocket.write for long periods
 					buffer.waitUntilCanRead(MAX_PACKET_LENGTH);
@@ -725,7 +747,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return ((ok == 3) ? temp : new URL(temp.getProtocol(), temp.getHost(), (temp.getPort() < 0) ? temp.getDefaultPort() : temp.getPort(), path + "?" + query));
 	}
 
-	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int infoMsg, int bufferingMsg, int arg1, int bytesBeforeDecoding, int msBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
+	public HttpStreamReceiver(Handler handler, int errorMsg, int preparedMsg, int metadataMsg, int urlMsg, int infoMsg, int bufferingMsg, int finishedMsg, int arg1, int bytesBeforeDecoding, int msBeforePlaying, int audioSessionId, String path) throws MalformedURLException {
 		this.url = (RadioStation.isRadioUrl(path) ? normalizeIcyUrl(RadioStation.extractUrl(path)) : new URL(path));
 		this.path = path;
 		sync = new Object();
@@ -740,6 +762,7 @@ public final class HttpStreamReceiver implements Runnable {
 		this.urlMsg = urlMsg;
 		this.infoMsg = infoMsg;
 		this.bufferingMsg = bufferingMsg;
+		this.finishedMsg = finishedMsg;
 		this.arg1 = arg1;
 		this.audioSessionId = audioSessionId;
 		bytesReceivedSoFar = -1;
@@ -773,6 +796,7 @@ public final class HttpStreamReceiver implements Runnable {
 			throw new FileNotFoundException();
 		headerOk = false;
 		contentType = null;
+		contentLength = Long.MAX_VALUE;
 		icyName = null;
 		icyUrl = null;
 		icyGenre = null;
@@ -860,7 +884,6 @@ public final class HttpStreamReceiver implements Runnable {
 							}
 							//leave both buffers prepared before leaving
 							final int leftovers = buffer.writeBuffer.remaining();
-							buffer.readBuffer.limit(buffer.writeBuffer.limit());
 							buffer.readBuffer.position(buffer.writeBuffer.position());
 							buffer.writeBuffer.position(buffer.writeBuffer.limit());
 							return leftovers;
@@ -926,6 +949,16 @@ public final class HttpStreamReceiver implements Runnable {
 						} else if (line.regionMatches(true, 0, "content-type", 0, 12)) {
 							if (!shouldRedirectOnCompletion)
 								contentType = line.substring(lineLen + 1).trim().toLowerCase(Locale.US);
+						} else if (line.regionMatches(true, 0, "content-length", 0, 14)) {
+							if (!shouldRedirectOnCompletion) {
+								try {
+									final long cl = Long.parseLong(line.substring(lineLen + 1).trim());
+									if (cl >= 0)
+										contentLength = cl;
+								} catch (Throwable ex) {
+									//not a valid content-length
+								}
+							}
 						} else if (line.regionMatches(true, 0, "icy-url", 0, 7)) {
 							icyUrl = line.substring(lineLen + 1).trim();
 						} else if (line.regionMatches(true, 0, "icy-genre", 0, 9)) {
@@ -1074,9 +1107,15 @@ public final class HttpStreamReceiver implements Runnable {
 				case 0: //read chunk size in hex + \r
 					switch ((b = tempChunkData[0])) {
 					case '\r':
+						//the last chunk was the last one!
+						if (currentChunkLen <= 0)
+							return -1;
 						currentChunkState = 1;
 						break;
 					case '\n':
+						//the last chunk was the last one!
+						if (currentChunkLen <= 0)
+							return -1;
 						currentChunkState = 2;
 						break;
 					default:
@@ -1192,6 +1231,7 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 
 			audioCountdown = icyMetaInterval - bufferingCounter;
+			bytesReceivedSoFar = bufferingCounter;
 
 			//do not allocate a direct buffer for the metadata, as we will have to constantly access that data from Java
 			final ByteBuffer metaByteBuffer = ((icyMetaInterval > 0) ? ByteBuffer.wrap(new byte[MAX_METADATA_LENGTH]) : null);
@@ -1224,8 +1264,13 @@ public final class HttpStreamReceiver implements Runnable {
 				try {
 					if ((len = clientSocketRead(buffer.writeBuffer)) < 0) {
 						//that's it! end of stream (probably this was just a file rather than a stream...)
-						finished = true;
-						buffer.commitWritten(0);
+						buffer.commitWrittenFinished(0);
+						break;
+					}
+					bytesReceivedSoFar += len;
+					if (bytesReceivedSoFar >= contentLength) {
+						//that's it! end of stream (probably this was just a file rather than a stream...)
+						buffer.commitWrittenFinished(len);
 						break;
 					}
 
@@ -1246,7 +1291,6 @@ public final class HttpStreamReceiver implements Runnable {
 						metaCountdown = -1;
 						audioCountdown = icyMetaInterval;
 					}
-					bytesReceivedSoFar += len;
 					timeoutCount = 0;
 
 					//before notifying the server for the first time, let's wait for the buffer to fill up
@@ -1496,39 +1540,71 @@ public final class HttpStreamReceiver implements Runnable {
 			//header byte 0
 			int b = buffer.peekReadArray(offset);
 
-			if (b == 0x49 && buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
-				//process the ID3 tag by skipping it completely
-				buffer.waitUntilCanRead(10);
+			int len;
 
-				if (!alive)
-					return -1;
+			switch (b) {
+			case 0x49:
+				if (buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
+					//process the ID3 tag by skipping it completely
+					if ((len = buffer.waitUntilCanRead(offset + 10)) < (offset + 10))
+						return (len < 0 ? -1 : 0);
 
-				//refer to MetadataExtractor.java -> extractID3v2Andv1()
-				final int flags = buffer.peekReadArray(offset + 5);
-				final int sizeBytes0 = buffer.peekReadArray(offset + 6);
-				final int sizeBytes1 = buffer.peekReadArray(offset + 7);
-				final int sizeBytes2 = buffer.peekReadArray(offset + 8);
-				final int sizeBytes3 = buffer.peekReadArray(offset + 9);
-				int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
-					(
-						(sizeBytes3 & 0x7f) |
-						((sizeBytes2 & 0x7f) << 7) |
-						((sizeBytes1 & 0x7f) << 14) |
-						((sizeBytes0 & 0x7f) << 21)
-					) + 10; //the first 10 bytes
-				while (size > 0 && alive) {
-					final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
-					size -= len;
-					buffer.readBuffer.position(buffer.readBuffer.limit());
-					buffer.commitRead(len);
+					if (!alive)
+						return -1;
+
+					//refer to MetadataExtractor.java -> extractID3v2Andv1()
+					final int flags = buffer.peekReadArray(offset + 5);
+					final int sizeBytes0 = buffer.peekReadArray(offset + 6);
+					final int sizeBytes1 = buffer.peekReadArray(offset + 7);
+					final int sizeBytes2 = buffer.peekReadArray(offset + 8);
+					final int sizeBytes3 = buffer.peekReadArray(offset + 9);
+					int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
+						(
+							(sizeBytes3 & 0x7f) |
+								((sizeBytes2 & 0x7f) << 7) |
+								((sizeBytes1 & 0x7f) << 14) |
+								((sizeBytes0 & 0x7f) << 21)
+						) + 10; //the first 10 bytes
+
+					//skip only if we are not peeking...
+					if (offset > 0)
+						return size;
+
+					while (size > 0 && alive) {
+						len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+						if (len <= 0)
+							return len;
+						size -= len;
+						buffer.skip(len);
+						buffer.commitRead(len);
+					}
+
+					//proceed as if none of this had happened
+					if ((len = buffer.waitUntilCanRead(4)) < 4)
+						return (len < 0 ? -1 : 0);
+					b = buffer.peekReadArray(offset);
 				}
+				break;
+			case 0x54:
+				if (buffer.peekReadArray(offset + 1) == 0x41 && buffer.peekReadArray(offset + 2) == 0x47) {
+					//final TAG header? (this should be the last chunk of data in a file...)
 
-				if (!alive)
-					return -1;
+					//skip only if we are not peeking...
+					if (offset > 0)
+						return 128;
 
-				//proceed as if none of this had happened
-				buffer.waitUntilCanRead(4);
-				b = buffer.peekReadArray(offset);
+					if ((len = buffer.waitUntilCanRead(128)) < 128)
+						return (len < 0 ? -1 : 0);
+
+					buffer.skip(len);
+					buffer.commitRead(len);
+
+					//proceed as if none of this had happened
+					if ((len = buffer.waitUntilCanRead(4)) < 4)
+						return (len < 0 ? -1 : 0);
+					b = buffer.peekReadArray(offset);
+				}
+				break;
 			}
 
 			//(the bits should be read in a sequence that must be treated as big endian and MSB)
@@ -1606,21 +1682,26 @@ public final class HttpStreamReceiver implements Runnable {
 
 		@Override
 		public int waitToReadHeader(boolean fillProperties) {
+			int len;
 			//we will look for the MPEG header
 			while (alive) {
-				buffer.waitUntilCanRead(4);
+				if ((len = buffer.waitUntilCanRead(4)) < 4)
+					return (len < 0 ? -1 : 0);
 
 				final int frameSize = isByteAtOffsetAValidMpegHeader(0, fillProperties);
-				if (frameSize <= 0) {
+				if (frameSize < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}
+				if (frameSize == 0)
+					return 0;
 
-				buffer.waitUntilCanRead(frameSize + 4);
+				if ((len = buffer.waitUntilCanRead(frameSize + 4)) < (frameSize + 4))
+					return (len < 0 ? -1 : (len < frameSize ? 0 : frameSize));
 
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
-				if (isByteAtOffsetAValidMpegHeader(frameSize, false) <= 0) {
+				if (isByteAtOffsetAValidMpegHeader(frameSize, false) < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}
@@ -1633,23 +1714,26 @@ public final class HttpStreamReceiver implements Runnable {
 
 		@Override
 		public int canReadHeader() {
+			int len;
 			//we will look for the MPEG header
 			while (alive) {
-				if (buffer.canRead(4) < 0)
-					break;
+				if ((len = buffer.canRead(4)) < 4)
+					return (len < 0 ? -1 : 0);
 
 				final int frameSize = isByteAtOffsetAValidMpegHeader(0, false);
-				if (frameSize <= 0) {
+				if (frameSize < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}
+				if (frameSize == 0)
+					return 0;
 
-				if (buffer.canRead(frameSize + 4) < 0)
-					break;
+				if ((len = buffer.canRead(frameSize + 4)) < (frameSize + 4))
+					return (len < 0 ? -1 : (len < frameSize ? 0 : frameSize));
 
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
-				if (isByteAtOffsetAValidMpegHeader(frameSize, false) <= 0) {
+				if (isByteAtOffsetAValidMpegHeader(frameSize, false) < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}
@@ -1679,12 +1763,12 @@ public final class HttpStreamReceiver implements Runnable {
 			//header byte 0
 			int b = buffer.peekReadArray(offset);
 
+			int len;
+
 			if (b == 0x49 && buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
 				//process the ID3 tag by skipping it completely
-				buffer.waitUntilCanRead(10);
-
-				if (!alive)
-					return -1;
+				if ((len = buffer.waitUntilCanRead(10)) < 10)
+					return (len < 0 ? -1 : 0);
 
 				//refer to MetadataExtractor.java -> extractID3v2Andv1()
 				final int flags = buffer.peekReadArray(offset + 5);
@@ -1700,9 +1784,11 @@ public final class HttpStreamReceiver implements Runnable {
 							((sizeBytes0 & 0x7f) << 21)
 					) + 10; //the first 10 bytes
 				while (size > 0 && alive) {
-					final int len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+					len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
+					if (len <= 0)
+						return len;
 					size -= len;
-					buffer.readBuffer.position(buffer.readBuffer.limit());
+					buffer.skip(len);
 					buffer.commitRead(len);
 				}
 
@@ -1710,7 +1796,8 @@ public final class HttpStreamReceiver implements Runnable {
 					return -1;
 
 				//proceed as if none of this had happened
-				buffer.waitUntilCanRead(4);
+				if ((len = buffer.waitUntilCanRead(4)) < 4)
+					return (len < 0 ? -1 : 0);
 				b = buffer.peekReadArray(offset);
 			}
 
@@ -1813,21 +1900,26 @@ public final class HttpStreamReceiver implements Runnable {
 
 		@Override
 		public int waitToReadHeader(boolean fillProperties) {
+			int len;
 			//we will look for the AAC ADTS header
 			while (alive) {
-				buffer.waitUntilCanRead(7);
+				if ((len = buffer.waitUntilCanRead(7)) < 7)
+					return (len < 0 ? -1 : 0);
 
 				final int frameSize = isByteAtOffsetAValidAdtsHeader(0, fillProperties);
-				if (frameSize <= 0) {
+				if (frameSize < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}
+				if (frameSize == 0)
+					return 0;
 
-				buffer.waitUntilCanRead(frameSize + 7);
+				if ((len = buffer.waitUntilCanRead(frameSize + 7)) < (frameSize + 7))
+					return (len < 0 ? -1 : (len < frameSize ? 0 : frameSize));
 
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
-				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) <= 0) {
+				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}
@@ -1840,23 +1932,26 @@ public final class HttpStreamReceiver implements Runnable {
 
 		@Override
 		public int canReadHeader() {
+			int len;
 			//we will look for the AAC ADTS header
 			while (alive) {
-				if (buffer.canRead(7) < 0)
-					break;
+				if ((len = buffer.canRead(7)) < 7)
+					return (len < 0 ? -1 : 0);
 
 				final int frameSize = isByteAtOffsetAValidAdtsHeader(0, false);
-				if (frameSize <= 0) {
+				if (frameSize < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}
+				if (frameSize == 0)
+					return 0;
 
-				if (buffer.canRead(frameSize + 7) < 0)
-					break;
+				if ((len = buffer.canRead(frameSize + 7)) < (frameSize + 7))
+					return (len < 0 ? -1 : (len < frameSize ? 0 : frameSize));
 
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
-				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) <= 0) {
+				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) < 0) {
 					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
 					continue;
 				}

@@ -35,7 +35,7 @@ package br.com.carlosrafaelgn.fplay.playback;
 import java.nio.ByteBuffer;
 
 public final class CircularIOBuffer {
-	private volatile boolean alive;
+	private volatile boolean alive, finished;
 	private volatile int filledSize;
 	private final Object sync;
 	public final int capacity;
@@ -54,14 +54,16 @@ public final class CircularIOBuffer {
 			writeBuffer = ByteBuffer.wrap(array);
 		}
 		readBuffer = writeBuffer.asReadOnlyBuffer();
+		readBuffer.limit(readBuffer.capacity());
 	}
 
 	public void reset() {
 		synchronized (sync) {
 			alive = true;
+			finished = false;
 			filledSize = 0;
 			writeBuffer.limit(0);
-			readBuffer.limit(0);
+			readBuffer.limit(readBuffer.capacity());
 		}
 	}
 
@@ -74,7 +76,7 @@ public final class CircularIOBuffer {
 
 	public int waitUntilCanRead(int length) {
 		synchronized (sync) {
-			while (alive && filledSize < length) {
+			while (alive && !finished && filledSize < length) {
 				try {
 					sync.wait(10);
 				} catch (Throwable ex) {
@@ -87,15 +89,16 @@ public final class CircularIOBuffer {
 
 	public int canRead(int length) {
 		synchronized (sync) {
-			if (!alive || filledSize < length)
+			if (!alive)
 				return -1;
+			if (filledSize < length) {
+				if (!finished)
+					return -1;
+				length = filledSize;
+			}
 		}
 		if (readBuffer.position() >= capacity)
 			readBuffer.position(0);
-		final int bytesAvailableBeforeEndOfBuffer = capacity - readBuffer.position();
-		if (length > bytesAvailableBeforeEndOfBuffer)
-			length = bytesAvailableBeforeEndOfBuffer;
-		readBuffer.limit(readBuffer.position() + length);
 		return length;
 	}
 
@@ -122,6 +125,19 @@ public final class CircularIOBuffer {
 	public int peekReadArray(int offsetFromPosition) {
 		offsetFromPosition += readBuffer.position();
 		return ((int)array[(offsetFromPosition >= capacity) ? (offsetFromPosition - capacity) : offsetFromPosition] & 0xFF);
+	}
+
+	public void skip(int length) {
+		final int readPosition = readBuffer.position();
+		final int bytesAvailableBeforeEndOfBuffer = capacity - readPosition;
+		if (bytesAvailableBeforeEndOfBuffer >= length) {
+			//one copy would do it
+			readBuffer.position(readPosition + length);
+		} else {
+			//two copies would be required
+			length -= bytesAvailableBeforeEndOfBuffer;
+			readBuffer.position(length);
+		}
 	}
 
 	public void readArray(ByteBuffer dst, int dstOffset, int length) {
@@ -170,6 +186,18 @@ public final class CircularIOBuffer {
 		synchronized (sync) {
 			if (capacity < (filledSize + length))
 				throw new IllegalArgumentException("capacity < (filledSize + length)");
+			filledSize += length;
+			sync.notifyAll();
+		}
+	}
+
+	public void commitWrittenFinished(int length) {
+		if (length < 0)
+			throw new IllegalArgumentException("length < 0");
+		synchronized (sync) {
+			if (capacity < (filledSize + length))
+				throw new IllegalArgumentException("capacity < (filledSize + length)");
+			finished = true;
 			filledSize += length;
 			sync.notifyAll();
 		}
