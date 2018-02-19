@@ -291,8 +291,7 @@ public final class HttpStreamReceiver implements Runnable {
 							inputBuffer.position(0);
 							mediaCodec.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
 						} else {
-							buffer.readArray(inputBuffer, 0, bytesRead);
-							buffer.commitRead(bytesRead);
+							buffer.read(inputBuffer, 0, bytesRead);
 
 							//queue the input buffer for decoding
 							mediaCodec.queueInputBuffer(inputBufferIndex, 0, bytesRead, 0, 0);
@@ -605,7 +604,7 @@ public final class HttpStreamReceiver implements Runnable {
 					//playerSocket.write for long periods
 					buffer.waitUntilCanRead(MAX_PACKET_LENGTH);
 					try {
-						buffer.commitRead(playerSocket.write(buffer.readBuffer));
+						buffer.skip(playerSocket.write(buffer.readBuffer));
 						timeoutCount = 0;
 					} catch (SocketTimeoutException ex) {
 						timeoutCount++;
@@ -1390,7 +1389,7 @@ public final class HttpStreamReceiver implements Runnable {
 		return (serverPortReady > 0);
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "unused", "deprecation" })
 	public void setVolume(float left, float right) {
 		if (!isPerformingFullPlayback || !alive || released)
 			return;
@@ -1461,6 +1460,7 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public String getLocalURL() {
 		return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
 	}
@@ -1469,10 +1469,9 @@ public final class HttpStreamReceiver implements Runnable {
 		return buffer.getFilledSize();
 	}
 
-	@SuppressWarnings({"unused"})
-	public void readArray(ByteBuffer dst, int dstOffset, int length) {
-		buffer.readArray(dst, dstOffset, length);
-		buffer.commitRead(length);
+	@SuppressWarnings("unused")
+	public void read(ByteBuffer dst, int dstOffset, int length) {
+		buffer.read(dst, dstOffset, length);
 	}
 
 	private final class MpegExtractor extends HttpStreamExtractor {
@@ -1538,72 +1537,20 @@ public final class HttpStreamReceiver implements Runnable {
 			//https://en.wikipedia.org/wiki/MP3
 
 			//header byte 0
-			int b = buffer.peekReadArray(offset);
-
-			int len;
+			int b = buffer.peek(offset);
 
 			switch (b) {
 			case 0x49:
-				if (buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
-					//process the ID3 tag by skipping it completely
-					if ((len = buffer.waitUntilCanRead(offset + 10)) < (offset + 10))
-						return (len < 0 ? -1 : 0);
-
-					if (!alive)
-						return -1;
-
-					//refer to MetadataExtractor.java -> extractID3v2Andv1()
-					final int flags = buffer.peekReadArray(offset + 5);
-					final int sizeBytes0 = buffer.peekReadArray(offset + 6);
-					final int sizeBytes1 = buffer.peekReadArray(offset + 7);
-					final int sizeBytes2 = buffer.peekReadArray(offset + 8);
-					final int sizeBytes3 = buffer.peekReadArray(offset + 9);
-					int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
-						(
-							(sizeBytes3 & 0x7f) |
-								((sizeBytes2 & 0x7f) << 7) |
-								((sizeBytes1 & 0x7f) << 14) |
-								((sizeBytes0 & 0x7f) << 21)
-						) + 10; //the first 10 bytes
-
-					//skip only if we are not peeking...
-					if (offset > 0)
-						return size;
-
-					while (size > 0 && alive) {
-						len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
-						if (len <= 0)
-							return len;
-						size -= len;
-						buffer.skip(len);
-						buffer.commitRead(len);
-					}
-
-					//proceed as if none of this had happened
-					if ((len = buffer.waitUntilCanRead(4)) < 4)
-						return (len < 0 ? -1 : 0);
-					b = buffer.peekReadArray(offset);
-				}
+				if ((b = processID3v2(buffer, offset, handler, metadataMsg, arg1)) != Integer.MAX_VALUE)
+					return b;
+				//if we got here, offset was 0 and the header has been consumed
+				b = buffer.peek(offset);
 				break;
 			case 0x54:
-				if (buffer.peekReadArray(offset + 1) == 0x41 && buffer.peekReadArray(offset + 2) == 0x47) {
-					//final TAG header? (this should be the last chunk of data in a file...)
-
-					//skip only if we are not peeking...
-					if (offset > 0)
-						return 128;
-
-					if ((len = buffer.waitUntilCanRead(128)) < 128)
-						return (len < 0 ? -1 : 0);
-
-					buffer.skip(len);
-					buffer.commitRead(len);
-
-					//proceed as if none of this had happened
-					if ((len = buffer.waitUntilCanRead(4)) < 4)
-						return (len < 0 ? -1 : 0);
-					b = buffer.peekReadArray(offset);
-				}
+				if ((b = processID3v1(buffer, offset)) != Integer.MAX_VALUE)
+					return b;
+				//if we got here, offset was 0 and the header has been consumed
+				b = buffer.peek(offset);
 				break;
 			}
 
@@ -1615,7 +1562,7 @@ public final class HttpStreamReceiver implements Runnable {
 			//could be the first byte of our header, let's just check the next 3 bytes
 
 			//header byte 1
-			b = buffer.peekReadArray(offset + 1);
+			b = buffer.peek(offset + 1);
 
 			//11 bits: sync word
 			if ((b & 0xE0) != 0xE0)
@@ -1626,7 +1573,7 @@ public final class HttpStreamReceiver implements Runnable {
 			if (version == 1)
 				return -1;
 
-			//2 bits: version must be != 1
+			//2 bits: layer must be != 0
 			final int layer = ((b >>> 1) & 0x03);
 			if (layer == 0)
 				return -1;
@@ -1634,7 +1581,7 @@ public final class HttpStreamReceiver implements Runnable {
 			//1 bit: error protection bit (ignored)
 
 			//header byte 2
-			b = buffer.peekReadArray(offset + 2);
+			b = buffer.peek(offset + 2);
 
 			//4 bits: bit rate
 			final int bitRate = MPEG_BIT_RATE[version & 1][layer - 1][b >>> 4];
@@ -1652,7 +1599,7 @@ public final class HttpStreamReceiver implements Runnable {
 			//1 bit: private bit (ignored)
 
 			//header byte 3
-			b = buffer.peekReadArray(offset + 3);
+			b = buffer.peek(offset + 3);
 
 			//2 bits: channel mode
 
@@ -1690,7 +1637,7 @@ public final class HttpStreamReceiver implements Runnable {
 
 				final int frameSize = isByteAtOffsetAValidMpegHeader(0, fillProperties);
 				if (frameSize < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 				if (frameSize == 0)
@@ -1702,7 +1649,7 @@ public final class HttpStreamReceiver implements Runnable {
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
 				if (isByteAtOffsetAValidMpegHeader(frameSize, false) < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 
@@ -1722,7 +1669,7 @@ public final class HttpStreamReceiver implements Runnable {
 
 				final int frameSize = isByteAtOffsetAValidMpegHeader(0, false);
 				if (frameSize < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 				if (frameSize == 0)
@@ -1734,7 +1681,7 @@ public final class HttpStreamReceiver implements Runnable {
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
 				if (isByteAtOffsetAValidMpegHeader(frameSize, false) < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 
@@ -1761,72 +1708,20 @@ public final class HttpStreamReceiver implements Runnable {
 			//https://wiki.multimedia.cx/index.php?title=ADTS
 
 			//header byte 0
-			int b = buffer.peekReadArray(offset);
-
-			int len;
+			int b = buffer.peek(offset);
 
 			switch (b) {
 			case 0x49:
-				if (buffer.peekReadArray(offset + 1) == 0x44 && buffer.peekReadArray(offset + 2) == 0x33) {
-					//process the ID3 tag by skipping it completely
-					if ((len = buffer.waitUntilCanRead(offset + 10)) < (offset + 10))
-						return (len < 0 ? -1 : 0);
-
-					if (!alive)
-						return -1;
-
-					//refer to MetadataExtractor.java -> extractID3v2Andv1()
-					final int flags = buffer.peekReadArray(offset + 5);
-					final int sizeBytes0 = buffer.peekReadArray(offset + 6);
-					final int sizeBytes1 = buffer.peekReadArray(offset + 7);
-					final int sizeBytes2 = buffer.peekReadArray(offset + 8);
-					final int sizeBytes3 = buffer.peekReadArray(offset + 9);
-					int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
-						(
-							(sizeBytes3 & 0x7f) |
-								((sizeBytes2 & 0x7f) << 7) |
-								((sizeBytes1 & 0x7f) << 14) |
-								((sizeBytes0 & 0x7f) << 21)
-						) + 10; //the first 10 bytes
-
-					//skip only if we are not peeking...
-					if (offset > 0)
-						return size;
-
-					while (size > 0 && alive) {
-						len = buffer.waitUntilCanRead((size >= MAX_PACKET_LENGTH) ? MAX_PACKET_LENGTH : size);
-						if (len <= 0)
-							return len;
-						size -= len;
-						buffer.skip(len);
-						buffer.commitRead(len);
-					}
-
-					//proceed as if none of this had happened
-					if ((len = buffer.waitUntilCanRead(4)) < 4)
-						return (len < 0 ? -1 : 0);
-					b = buffer.peekReadArray(offset);
-				}
+				if ((b = processID3v2(buffer, offset, handler, metadataMsg, arg1)) != Integer.MAX_VALUE)
+					return b;
+				//if we got here, offset was 0 and the header has been consumed
+				b = buffer.peek(offset);
 				break;
 			case 0x54:
-				if (buffer.peekReadArray(offset + 1) == 0x41 && buffer.peekReadArray(offset + 2) == 0x47) {
-					//final TAG header? (this should be the last chunk of data in a file...)
-
-					//skip only if we are not peeking...
-					if (offset > 0)
-						return 128;
-
-					if ((len = buffer.waitUntilCanRead(128)) < 128)
-						return (len < 0 ? -1 : 0);
-
-					buffer.skip(len);
-					buffer.commitRead(len);
-
-					//proceed as if none of this had happened
-					if ((len = buffer.waitUntilCanRead(4)) < 4)
-						return (len < 0 ? -1 : 0);
-					b = buffer.peekReadArray(offset);
-				}
+				if ((b = processID3v1(buffer, offset)) != Integer.MAX_VALUE)
+					return b;
+				//if we got here, offset was 0 and the header has been consumed
+				b = buffer.peek(offset);
 				break;
 			}
 
@@ -1840,7 +1735,7 @@ public final class HttpStreamReceiver implements Runnable {
 			//https://wiki.multimedia.cx/index.php?title=ADTS
 
 			//header byte 1
-			b = buffer.peekReadArray(offset + 1);
+			b = buffer.peek(offset + 1);
 
 			//12 bits: sync word
 			if ((b & 0xF0) != 0xF0)
@@ -1856,7 +1751,7 @@ public final class HttpStreamReceiver implements Runnable {
 			//1 bit: protection (CRC) absent (ignored)
 
 			//header byte 2
-			b = buffer.peekReadArray(offset + 2);
+			b = buffer.peek(offset + 2);
 
 			//2 bits: profile (in fact, the two bits store profile - 1)
 			int profile = ((b >>> 6) & 0x03) + 1;
@@ -1873,7 +1768,7 @@ public final class HttpStreamReceiver implements Runnable {
 			int channelCfg = (b & 0x01) << 2;
 
 			//header byte 3
-			b = buffer.peekReadArray(offset + 3);
+			b = buffer.peek(offset + 3);
 
 			channelCfg |= (b >>> 6) & 0x03;
 
@@ -1894,10 +1789,10 @@ public final class HttpStreamReceiver implements Runnable {
 			int frameSize = (b & 0x03) << 11;
 
 			//header byte 4
-			frameSize |= buffer.peekReadArray(offset + 4) << 3;
+			frameSize |= buffer.peek(offset + 4) << 3;
 
 			//header byte 5
-			frameSize |= (buffer.peekReadArray(offset + 5) >>> 5) & 0x07;
+			frameSize |= (buffer.peek(offset + 5) >>> 5) & 0x07;
 
 			if (frameSize < 7)
 				return -1;
@@ -1918,7 +1813,7 @@ public final class HttpStreamReceiver implements Runnable {
 
 				setChannelCount(channelCfg);
 				setSampleRate(sampleRate);
-				setSamplesPerFrame(1024 + ((buffer.peekReadArray(offset + 6) & 0x03) << 10));
+				setSamplesPerFrame(1024 + ((buffer.peek(offset + 6) & 0x03) << 10));
 				setBitRate(((frameSize << 3) * sampleRate) / getSamplesPerFrame()); //bit rate must be figured out manually
 				this.profile = profile;
 				this.sampleRateIndex = sampleRateIndex;
@@ -1937,7 +1832,7 @@ public final class HttpStreamReceiver implements Runnable {
 
 				final int frameSize = isByteAtOffsetAValidAdtsHeader(0, fillProperties);
 				if (frameSize < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 				if (frameSize == 0)
@@ -1949,7 +1844,7 @@ public final class HttpStreamReceiver implements Runnable {
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
 				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 
@@ -1969,7 +1864,7 @@ public final class HttpStreamReceiver implements Runnable {
 
 				final int frameSize = isByteAtOffsetAValidAdtsHeader(0, false);
 				if (frameSize < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 				if (frameSize == 0)
@@ -1981,7 +1876,7 @@ public final class HttpStreamReceiver implements Runnable {
 				//if the byte at offset 0 was actually a header, then THERE MUST be another header
 				//right after it (extra validation)
 				if (isByteAtOffsetAValidAdtsHeader(frameSize, false) < 0) {
-					buffer.advanceBufferAndCommitReadOneByteWithoutNotification();
+					buffer.skip(1);
 					continue;
 				}
 

@@ -35,19 +35,12 @@ package br.com.carlosrafaelgn.fplay.playback;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.channels.FileChannel;
 
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 
 public final class MetadataExtractor {
-	private static final int FIELD_COUNT = 6;
-	public static final int TITLE = 0;
-	public static final int ARTIST = 1;
-	public static final int ALBUM = 2;
-	public static final int TRACK = 3;
-	public static final int YEAR = 4;
-	public static final int LENGTH = 5;
-	
 	private static final int ALL_B = 0x3f;
 	private static final int ALL_BUT_LENGTH_B = 0x1f;
 	private static final int TITLE_B = 0x01;
@@ -57,8 +50,12 @@ public final class MetadataExtractor {
 	private static final int YEAR_B = 0x10;
 	private static final int LENGTH_B = 0x20;
 
+	public boolean hasData;
+	public String title, artist, album, track, year, length;
+	private byte[][] tmpPtr = new byte[][] { new byte[256] };
+
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private static String readV2Frame(BufferedInputStream f, int frameSize, byte[][] tmpPtr) throws IOException {
+	private String readV2Frame(BufferedInputStream f, int frameSize) throws IOException {
 		if (frameSize < 2) {
 			f.skip(frameSize);
 			return null;
@@ -103,7 +100,7 @@ public final class MetadataExtractor {
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private static String[] extractID3v1(FileInputStream fileInputStream, int found, String[] fields, byte[] tmp) {
+	private void extractID3v1(FileInputStream fileInputStream, int found, byte[] tmp) {
 		FileChannel fileChannel = null;
 		try {
 			fileChannel = fileInputStream.getChannel();
@@ -112,7 +109,7 @@ public final class MetadataExtractor {
 			if (tmp[0] != 0x54 ||
 				tmp[1] != 0x41 ||
 				tmp[2] != 0x47) //TAG
-				return fields;
+				return;
 			//struct _ID3v1 {
 			//public:
 			//	char title[30];
@@ -132,8 +129,10 @@ public final class MetadataExtractor {
 					c++;
 					i++;
 				}
-				if (c != 0)
-					fields[MetadataExtractor.TITLE] = new String(tmp, 3, c, "ISO-8859-1");
+				if (c != 0) {
+					title = new String(tmp, 3, c, "ISO-8859-1");
+					hasData = true;
+				}
 			}
 			if ((found & ARTIST_B) == 0) {
 				i = 3 + 30;
@@ -142,8 +141,10 @@ public final class MetadataExtractor {
 					c++;
 					i++;
 				}
-				if (c != 0)
-					fields[MetadataExtractor.ARTIST] = new String(tmp, 3 + 30, c, "ISO-8859-1");
+				if (c != 0) {
+					artist = new String(tmp, 3 + 30, c, "ISO-8859-1");
+					hasData = true;
+				}
 			}
 			if ((found & ALBUM_B) == 0) {
 				i = 3 + 30 + 30;
@@ -152,8 +153,10 @@ public final class MetadataExtractor {
 					c++;
 					i++;
 				}
-				if (c != 0)
-					fields[MetadataExtractor.ALBUM] = new String(tmp, 3 + 30 + 30, c, "ISO-8859-1");
+				if (c != 0) {
+					album = new String(tmp, 3 + 30 + 30, c, "ISO-8859-1");
+					hasData = true;
+				}
 			}
 			if ((found & YEAR_B) == 0) {
 				i = 3 + 30 + 30 + 30;
@@ -162,11 +165,15 @@ public final class MetadataExtractor {
 					c++;
 					i++;
 				}
-				if (c != 0)
-					fields[MetadataExtractor.YEAR] = new String(tmp, 3 + 30 + 30 + 30, c, "ISO-8859-1");
+				if (c != 0) {
+					year = new String(tmp, 3 + 30 + 30 + 30, c, "ISO-8859-1");
+					hasData = true;
+				}
 			}
-			if ((found & TRACK_B) == 0 && tmp[128 - 3] == 0 && tmp[128 - 2] != 0)
-				fields[MetadataExtractor.TRACK] = Integer.toString((int)tmp[128 - 2] & 0xff);
+			if ((found & TRACK_B) == 0 && tmp[128 - 3] == 0 && tmp[128 - 2] != 0) {
+				track = Integer.toString((int)tmp[128 - 2] & 0xff);
+				hasData = true;
+			}
 		} catch (Throwable ex) {
 			//ignore all exceptions while reading ID3v1, in favor of
 			//everything that has already been read in ID3v2
@@ -180,11 +187,10 @@ public final class MetadataExtractor {
 				}
 			}
 		}
-		return fields;
 	}
 	
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private static String[] extractID3v2Andv1(BufferedInputStream f, FileInputStream fileInputStream, byte[][] tmpPtr) throws IOException  {
+	private void extractID3v2Andv1(BufferedInputStream f, FileInputStream fileInputStream) throws IOException  {
 		//struct _ID3v2TagHdr {
 		//public:
 		//	unsigned int hdr;
@@ -196,7 +202,7 @@ public final class MetadataExtractor {
 		//readInt() reads a big-endian 32-bit integer
 		final int hdr = (f.read() << 16) | (f.read() << 8) | f.read();
 		if (hdr != 0x00494433) //ID3
-			return null;
+			return;
 		f.skip(1);
 		final int hdrRev = f.read();
 		final int flags = f.read();
@@ -215,7 +221,6 @@ public final class MetadataExtractor {
 			//http://id3.org/id3v2.3.0
 			//http://id3.org/id3v2.4.0-structure
 			//http://id3.org/id3v2.4.0-frames
-			final String[] fields = new String[FIELD_COUNT];
 			int found = 0;
 			while (size > 0 && found != ALL_B) {
 				//struct _ID3v2FrameHdr {
@@ -233,8 +238,7 @@ public final class MetadataExtractor {
 				switch (frameId) {
 				case 0x54495432: //title - TIT2
 					if ((found & TITLE_B) == 0) {
-						fields[TITLE] = readV2Frame(f, frameSize, tmpPtr);
-						if (fields[TITLE] != null)
+						if ((title = readV2Frame(f, frameSize)) != null)
 							found |= TITLE_B;
 					} else {
 						f.skip(frameSize);
@@ -242,8 +246,7 @@ public final class MetadataExtractor {
 					break;
 				case 0x54504531: //artist - TPE1
 					if ((found & ARTIST_B) == 0) {
-						fields[ARTIST] = readV2Frame(f, frameSize, tmpPtr);
-						if (fields[ARTIST] != null)
+						if ((artist = readV2Frame(f, frameSize)) != null)
 							found |= ARTIST_B;
 					} else {
 						f.skip(frameSize);
@@ -251,8 +254,7 @@ public final class MetadataExtractor {
 					break;
 				case 0x54414c42: //album - TALB
 					if ((found & ALBUM_B) == 0) {
-						fields[ALBUM] = readV2Frame(f, frameSize, tmpPtr);
-						if (fields[ALBUM] != null)
+						if ((album = readV2Frame(f, frameSize)) != null)
 							found |= ALBUM_B;
 					} else {
 						f.skip(frameSize);
@@ -260,8 +262,7 @@ public final class MetadataExtractor {
 					break;
 				case 0x5452434b: //track - TRCK
 					if ((found & TRACK_B) == 0) {
-						fields[TRACK] = readV2Frame(f, frameSize, tmpPtr);
-						if (fields[TRACK] != null)
+						if ((track = readV2Frame(f, frameSize)) != null)
 							found |= TRACK_B;
 					} else {
 						f.skip(frameSize);
@@ -269,8 +270,7 @@ public final class MetadataExtractor {
 					break;
 				case 0x54594552: //year - TYER
 					if ((found & YEAR_B) == 0) {
-						fields[YEAR] = readV2Frame(f, frameSize, tmpPtr);
-						if (fields[YEAR] != null)
+						if ((year = readV2Frame(f, frameSize)) != null)
 							found |= YEAR_B;
 					} else {
 						f.skip(frameSize);
@@ -278,10 +278,9 @@ public final class MetadataExtractor {
 					break;
 				case 0x54445243: //Recording time - TDRC
 					if ((found & YEAR_B) == 0) {
-						fields[YEAR] = readV2Frame(f, frameSize, tmpPtr);
-						if (fields[YEAR] != null) {
-							if (fields[YEAR].length() > 4)
-								fields[YEAR] = fields[YEAR].substring(0, 4);
+						if ((year = readV2Frame(f, frameSize)) != null) {
+							if (year.length() > 4)
+								year = year.substring(0, 4);
 							found |= YEAR_B;
 						}
 					} else {
@@ -290,8 +289,7 @@ public final class MetadataExtractor {
 					break;
 				case 0x544c454e: //length - TLEN
 					if ((found & LENGTH_B) == 0) {
-						fields[LENGTH] = readV2Frame(f, frameSize, tmpPtr);
-						if (fields[LENGTH] != null)
+						if ((length = readV2Frame(f, frameSize)) != null)
 							found |= LENGTH_B;
 					} else {
 						f.skip(frameSize);
@@ -304,23 +302,32 @@ public final class MetadataExtractor {
 				size -= (10 + frameSize);
 			}
 			//try to extract ID3v1 only if there are any blank fields
-			return (((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B) ? extractID3v1(fileInputStream, found, fields, tmpPtr[0]) : fields);
+			hasData = (found != 0);
+			if ((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B && fileInputStream != null)
+				extractID3v1(fileInputStream, found, tmpPtr[0]);
 		}
-		return null;
 	}
 	
-	public static String[] extract(FileSt file, byte[][] tmpPtr) {
+	public void extract(FileSt file) {
+		hasData = false;
+		title = null;
+		artist = null;
+		album = null;
+		track = null;
+		year = null;
+		length = null;
 		//the only two formats supported for now... I hope to add ogg soon ;)
 		if (!file.path.regionMatches(true, file.path.length() - 4, ".mp3", 0, 4) &&
 			!file.path.regionMatches(true, file.path.length() - 4, ".aac", 0, 4))
-			return null;
+			return;
 		FileInputStream fileInputStream = null;
 		BufferedInputStream bufferedInputStream = null;
 		try {
 			fileInputStream = ((file.file != null) ? new FileInputStream(file.file) : new FileInputStream(file.path));
 			bufferedInputStream = new BufferedInputStream(fileInputStream, 32768);
-			return extractID3v2Andv1(bufferedInputStream, fileInputStream, tmpPtr);
+			extractID3v2Andv1(bufferedInputStream, fileInputStream);
 		} catch (Throwable ex) {
+			hasData = false;
 			ex.printStackTrace();
 		} finally {
 			if (bufferedInputStream != null) {
@@ -338,6 +345,39 @@ public final class MetadataExtractor {
 				}
 			}
 		}
-		return null;
+	}
+
+	public void extract(InputStream inputStream) {
+		hasData = false;
+		title = null;
+		artist = null;
+		album = null;
+		track = null;
+		year = null;
+		length = null;
+		BufferedInputStream bufferedInputStream = null;
+		try {
+			bufferedInputStream = new BufferedInputStream(inputStream, 32768);
+			extractID3v2Andv1(bufferedInputStream, null);
+		} catch (Throwable ex) {
+			hasData = false;
+			ex.printStackTrace();
+		} finally {
+			if (bufferedInputStream != null) {
+				try {
+					bufferedInputStream.close();
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+	}
+
+	public void destroy() {
+		if (tmpPtr != null) {
+			if (tmpPtr.length > 0)
+				tmpPtr[0] = null;
+			tmpPtr = null;
+		}
 	}
 }

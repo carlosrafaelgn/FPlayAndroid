@@ -37,10 +37,86 @@ import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
+import android.os.SystemClock;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 public abstract class HttpStreamExtractor {
+	private static final int MAX_READ_LENGTH = 2048;
+
+	private static final class MetadataInputStream extends InputStream {
+		private CircularIOBuffer buffer;
+		private final int size;
+		private int readSoFar;
+
+		MetadataInputStream(CircularIOBuffer buffer, int size) {
+			this.buffer = buffer;
+			this.size = size;
+		}
+
+		@Override
+		public int read() {
+			if (readSoFar >= size || buffer.waitUntilCanRead(1) <= 0)
+				return -1;
+			buffer.peek(0);
+			buffer.skip(1);
+			return 0;
+		}
+
+		@SuppressWarnings("ConstantConditions")
+		@Override
+		public int read(byte b[], int off, int len) {
+			if (b == null)
+				throw new NullPointerException();
+			else if (off < 0 || len < 0 || len > b.length - off)
+				throw new IndexOutOfBoundsException();
+			else if (len == 0)
+				return 0;
+
+			final int available = size - readSoFar;
+			int s = ((len >= available) ? available : len);
+			final int actualLen = s;
+			while (s > 0) {
+				if ((len = buffer.waitUntilCanRead((s >= MAX_READ_LENGTH) ? MAX_READ_LENGTH : s)) <= 0)
+					return actualLen - s;
+				s -= len;
+				readSoFar += len;
+				buffer.read(b, off, len);
+				off += len;
+			}
+			return actualLen;
+		}
+
+		@Override
+		public long skip(long n) {
+			final int available = size - readSoFar;
+			int s = ((n >= available) ? available : (int)n);
+			n = (long)s;
+			while (s > 0) {
+				int len;
+				if ((len = buffer.waitUntilCanRead((s >= MAX_READ_LENGTH) ? MAX_READ_LENGTH : s)) <= 0)
+					return n - s;
+				s -= len;
+				readSoFar += len;
+				buffer.skip(len);
+			}
+			return n;
+		}
+
+		@Override
+		public int available() {
+			return size - readSoFar;
+		}
+
+		@Override
+		public void close() {
+			buffer = null;
+		}
+	}
+
 	private final String srcType;
 	private String dstType;
 	private int channelCount, sampleRate, samplesPerFrame, bitRate;
@@ -117,5 +193,76 @@ public abstract class HttpStreamExtractor {
 		mediaCodec.configure(format, null, null, 0);
 		mediaCodec.start();
 		return mediaCodec;
+	}
+
+	protected final int processID3v2(CircularIOBuffer buffer, int peekOffset, Handler handler, int metadataMsg, int arg1) {
+		int len;
+		if (buffer.peek(peekOffset + 1) == 0x44 && buffer.peek(peekOffset + 2) == 0x33) {
+			if ((len = buffer.waitUntilCanRead(peekOffset + 10)) < (peekOffset + 10))
+				return (len < 0 ? -1 : 0);
+
+			//refer to MetadataExtractor.java -> extractID3v2Andv1()
+			final int flags = buffer.peek(peekOffset + 5);
+			final int sizeBytes0 = buffer.peek(peekOffset + 6);
+			final int sizeBytes1 = buffer.peek(peekOffset + 7);
+			final int sizeBytes2 = buffer.peek(peekOffset + 8);
+			final int sizeBytes3 = buffer.peek(peekOffset + 9);
+			int size = ((flags & 0x10) != 0 ? 10 : 0) + //footer presence flag
+				(
+					(sizeBytes3 & 0x7f) |
+					((sizeBytes2 & 0x7f) << 7) |
+					((sizeBytes1 & 0x7f) << 14) |
+					((sizeBytes0 & 0x7f) << 21)
+				) + 10; //the first 10 bytes
+
+			//consume only if we are not peeking ahead...
+			if (peekOffset > 0)
+				return size;
+
+			final MetadataInputStream inputStream = new MetadataInputStream(buffer, size);
+			final MetadataExtractor metadataExtractor = new MetadataExtractor();
+			metadataExtractor.extract(inputStream);
+			//make sure we consume the entire header
+			if ((len = inputStream.available()) > 0) {
+				if ((int)inputStream.skip(len) < len)
+					return -1;
+			}
+			inputStream.close();
+			//it is safe to destroy metadataExtractor here, because
+			//all its useful data will remain untouched after destroy()
+			metadataExtractor.destroy();
+			if (handler != null)
+				handler.sendMessageAtTime(Message.obtain(handler, metadataMsg, arg1, 0, metadataExtractor), SystemClock.uptimeMillis());
+
+			//proceed as if none of this had happened
+			if ((len = buffer.waitUntilCanRead(4)) < 4)
+				return (len < 0 ? -1 : 0);
+			return Integer.MAX_VALUE;
+		}
+
+		return -1;
+	}
+
+	protected final int processID3v1(CircularIOBuffer buffer, int offset) {
+		int len;
+		if (buffer.peek(offset + 1) == 0x41 && buffer.peek(offset + 2) == 0x47) {
+			//final TAG header? (this should be the last chunk of data in a file...)
+
+			//skip only if we are not peeking ahead...
+			if (offset > 0)
+				return 128;
+
+			if ((len = buffer.waitUntilCanRead(128)) < 128)
+				return (len < 0 ? -1 : 0);
+
+			buffer.skip(len);
+
+			//proceed as if none of this had happened
+			if ((len = buffer.waitUntilCanRead(4)) < 4)
+				return (len < 0 ? -1 : 0);
+			return Integer.MAX_VALUE;
+		}
+
+		return -1;
 	}
 }

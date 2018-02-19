@@ -55,6 +55,7 @@ import java.util.Random;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.SongView;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
@@ -493,11 +494,11 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					}
 				}
 			} else {
-				final byte[][] tmpPtr = new byte[][] { new byte[256] };
+				final MetadataExtractor metadataExtractor = new MetadataExtractor();
 				if (files != null) {
 					for (int i = 0; i < count; i++) {
 						if (!files[i].isDirectory) {
-							c.songs[f] = new Song(files[i], tmpPtr);
+							c.songs[f] = new Song(files[i], metadataExtractor);
 							f++;
 							if ((f & 3) == 1) {
 								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)
@@ -510,7 +511,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					while (iterator.hasNext()) {
 						final FileSt file = iterator.next();
 						if (!file.isDirectory) {
-							c.songs[f] = new Song(file, tmpPtr);
+							c.songs[f] = new Song(file, metadataExtractor);
 							f++;
 							if ((f & 3) == 1) {
 								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)
@@ -520,6 +521,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 						}
 					}
 				}
+				metadataExtractor.destroy();
 			}
 			if (Player.state < Player.STATE_TERMINATING)
 				MainHandler.sendMessage(c, MSG_FINISHED_ADDING, f, 0);

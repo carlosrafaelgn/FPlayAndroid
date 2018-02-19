@@ -187,7 +187,7 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 				mediaCodec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
 				break;
 			}
-			httpStreamReceiver.readArray(inputBuffers[index], 0, inputFrameSize);
+			httpStreamReceiver.read(inputBuffers[index], 0, inputFrameSize);
 			mediaCodec.queueInputBuffer(index, 0, inputFrameSize, 0, 0);
 		}
 		return true;

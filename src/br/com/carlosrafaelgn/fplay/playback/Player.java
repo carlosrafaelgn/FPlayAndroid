@@ -1727,12 +1727,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				break;
 			case MediaPlayerBase.INFO_METADATA_UPDATE:
 				//this message must be handled from the main thread
-				if (MainHandler.isOnMainThread()) {
-					if (extraObject instanceof HttpStreamReceiver.Metadata)
-						httpStreamReceiverMetadataUpdate((HttpStreamReceiver.Metadata)extraObject);
-				} else if (localHandler != null) {
+				if (MainHandler.isOnMainThread())
+					httpStreamReceiverMetadataUpdate(extraObject);
+				else if (localHandler != null)
 					localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_HTTP_STREAM_RECEIVER_METADATA_UPDATE, extra, 0, extraObject), SystemClock.uptimeMillis());
-				}
 				break;
 			case MediaPlayerBase.INFO_URL_UPDATE:
 				if (state == STATE_ALIVE && song != null)
@@ -1942,41 +1940,60 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		httpOptions = (httpOptions & ~0xF0) | ((msBeforePlayingIndex & 0x0F) << 4);
 	}
 
-	private static void httpStreamReceiverMetadataUpdate(HttpStreamReceiver.Metadata metadata) {
+	private static void httpStreamReceiverMetadataUpdate(Object extraObject) {
 		if (state != STATE_ALIVE || localSong == null || localPlayer == null || thePlayer == null)
 			return;
-		String title = metadata.streamTitle;
-		int i;
-		if ((i = title.indexOf("StreamTitle")) < 0)
-			return;
-		if ((i = title.indexOf('=', i + 11)) < 0)
-			return;
-		if ((i = title.indexOf('\'', i + 1)) < 0)
-			return;
-		final int firstChar = i + 1;
-		int loopCount = 0;
-		do {
-			loopCount++;
+		if (extraObject instanceof HttpStreamReceiver.Metadata) {
+			final HttpStreamReceiver.Metadata metadata = (HttpStreamReceiver.Metadata)extraObject;
+			String title = metadata.streamTitle;
+			int i;
+			if ((i = title.indexOf("StreamTitle")) < 0)
+				return;
+			if ((i = title.indexOf('=', i + 11)) < 0)
+				return;
 			if ((i = title.indexOf('\'', i + 1)) < 0)
 				return;
-		} while (title.charAt(i - 1) == '\\');
-		title = title.substring(firstChar, i).trim();
-		if (loopCount > 1)
-			title = title.replace("\\'", "\'");
-		if (title.length() > 0) {
-			//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
-			if (metadata.icyName != null && metadata.icyName.length() > 0) {
-				localSong.artist = metadata.icyName;
-				localSong.extraInfo = metadata.icyName;
+			final int firstChar = i + 1;
+			int loopCount = 0;
+			do {
+				loopCount++;
+				if ((i = title.indexOf('\'', i + 1)) < 0)
+					return;
+			} while (title.charAt(i - 1) == '\\');
+			title = title.substring(firstChar, i).trim();
+			if (loopCount > 1)
+				title = title.replace("\\'", "\'");
+			if (title.length() > 0) {
+				//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
+				if (metadata.icyName != null && metadata.icyName.length() > 0) {
+					localSong.artist = metadata.icyName;
+					localSong.extraInfo = metadata.icyName;
+				}
+				if (metadata.icyUrl != null && metadata.icyUrl.length() > 0)
+					localSong.album = metadata.icyUrl;
+				localSong.title = title;
+				broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
+				//this will force a serialization when closing the app (saving this update)
+				songs.markAsChanged();
+				if (observer != null)
+					observer.onPlayerMetadataChanged(localSong);
 			}
-			if (metadata.icyUrl != null && metadata.icyUrl.length() > 0)
-				localSong.album = metadata.icyUrl;
-			localSong.title = title;
-			broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
-			//this will force a serialization when closing the app (saving this update)
-			songs.markAsChanged();
-			if (observer != null)
-				observer.onPlayerMetadataChanged(localSong);
+		} else if (extraObject instanceof MetadataExtractor) {
+			final MetadataExtractor metadata = (MetadataExtractor)extraObject;
+			if (metadata.hasData) {
+				//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
+				if (metadata.artist != null && metadata.artist.length() > 0) {
+					localSong.artist = metadata.artist;
+					localSong.extraInfo = metadata.artist;
+				}
+				localSong.album = "-";
+				localSong.title = metadata.title;
+				broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
+				//this will force a serialization when closing the app (saving this update)
+				songs.markAsChanged();
+				if (observer != null)
+					observer.onPlayerMetadataChanged(localSong);
+			}
 		}
 	}
 

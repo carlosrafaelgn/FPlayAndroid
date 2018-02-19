@@ -102,9 +102,7 @@ public final class CircularIOBuffer {
 		return length;
 	}
 
-	public void commitRead(int length) {
-		if (length < 0)
-			length = 0;
+	private void commitRead(int length) {
 		synchronized (sync) {
 			if (filledSize < length)
 				throw new IllegalArgumentException("filledSize < length");
@@ -113,21 +111,13 @@ public final class CircularIOBuffer {
 		}
 	}
 
-	public void advanceBufferAndCommitReadOneByteWithoutNotification() {
-		readBuffer.position(readBuffer.position() + 1);
-		synchronized (sync) {
-			if (filledSize < 1)
-				throw new ArrayIndexOutOfBoundsException("filledSize < 1");
-			filledSize--;
-		}
-	}
-
-	public int peekReadArray(int offsetFromPosition) {
-		offsetFromPosition += readBuffer.position();
-		return ((int)array[(offsetFromPosition >= capacity) ? (offsetFromPosition - capacity) : offsetFromPosition] & 0xFF);
+	public int peek(int peekOffset) {
+		peekOffset += readBuffer.position();
+		return ((int)array[(peekOffset >= capacity) ? (peekOffset - capacity) : peekOffset] & 0xFF);
 	}
 
 	public void skip(int length) {
+		final int originalLength = length;
 		final int readPosition = readBuffer.position();
 		final int bytesAvailableBeforeEndOfBuffer = capacity - readPosition;
 		if (bytesAvailableBeforeEndOfBuffer >= length) {
@@ -138,9 +128,11 @@ public final class CircularIOBuffer {
 			length -= bytesAvailableBeforeEndOfBuffer;
 			readBuffer.position(length);
 		}
+		commitRead(originalLength);
 	}
 
-	public void readArray(ByteBuffer dst, int dstOffset, int length) {
+	public void read(ByteBuffer dst, int dstOffset, int length) {
+		final int originalLength = length;
 		final int readPosition = readBuffer.position();
 		final int bytesAvailableBeforeEndOfBuffer = capacity - readPosition;
 		dst.limit(dstOffset + length);
@@ -157,6 +149,25 @@ public final class CircularIOBuffer {
 			readBuffer.position(length);
 		}
 		dst.position(dstOffset);
+		commitRead(originalLength);
+	}
+
+	public void read(byte[] dst, int dstOffset, int length) {
+		final int originalLength = length;
+		final int readPosition = readBuffer.position();
+		final int bytesAvailableBeforeEndOfBuffer = capacity - readPosition;
+		if (bytesAvailableBeforeEndOfBuffer >= length) {
+			//one copy will do it
+			System.arraycopy(array, readPosition, dst, dstOffset, length);
+			readBuffer.position(readPosition + length);
+		} else {
+			//two copies are required
+			System.arraycopy(array, readPosition, dst, dstOffset, bytesAvailableBeforeEndOfBuffer);
+			length -= bytesAvailableBeforeEndOfBuffer;
+			System.arraycopy(array, 0, dst, dstOffset + bytesAvailableBeforeEndOfBuffer, length);
+			readBuffer.position(length);
+		}
+		commitRead(originalLength);
 	}
 
 	public int waitUntilCanWrite(int length) {

@@ -88,7 +88,7 @@ public final class Song extends BaseItem {
 		validateFields(null);
 	}
 	
-	public Song(FileSt fileSt, byte[][] tmpPtr) {
+	public Song(FileSt fileSt, MetadataExtractor metadataExtractor) {
 		this.path = fileSt.path;
 		this.isHttp = false;
 		
@@ -96,35 +96,35 @@ public final class Song extends BaseItem {
 		//on several devices, even though the file has the metadata... :(
 		//So, trust our MetadataExtractor, and only call MediaMetadataRetriever for unsupported file types
 
-		final String[] fields = MetadataExtractor.extract(fileSt, tmpPtr);
+		metadataExtractor.extract(fileSt);
 
-		if (fields != null) {
-			this.title = fields[MetadataExtractor.TITLE];
-			this.artist = fields[MetadataExtractor.ARTIST];
-			this.album = fields[MetadataExtractor.ALBUM];
-			if (fields[MetadataExtractor.TRACK] != null) {
+		if (metadataExtractor.hasData) {
+			this.title = metadataExtractor.title;
+			this.artist = metadataExtractor.artist;
+			this.album = metadataExtractor.album;
+			if (metadataExtractor.track != null) {
 				try {
-					this.track = Integer.parseInt(fields[MetadataExtractor.TRACK]);
+					this.track = Integer.parseInt(metadataExtractor.track);
 				} catch (Throwable ex) {
 					this.track = 0;
 				}
 			}
-			if (fields[MetadataExtractor.YEAR] != null) {
+			if (metadataExtractor.year != null) {
 				try {
-					this.year = Integer.parseInt(fields[MetadataExtractor.YEAR]);
+					this.year = Integer.parseInt(metadataExtractor.year);
 				} catch (Throwable ex) {
 					this.year = 0;
 				}
 			}
-			if (fields[MetadataExtractor.LENGTH] != null) {
+			if (metadataExtractor.length != null) {
 				try {
-					this.lengthMS = Integer.parseInt(fields[MetadataExtractor.LENGTH]);
+					this.lengthMS = Integer.parseInt(metadataExtractor.length);
 				} catch (Throwable ex) {
 					this.lengthMS = 0;
 				}
 			}
 		}
-		int mode = ((fields == null) ? STORE_FAIL : ((this.lengthMS > 0) ? STORE_OK : STORE_MISSING_DURATION));
+		int mode = (!metadataExtractor.hasData ? STORE_FAIL : ((this.lengthMS > 0) ? STORE_OK : STORE_MISSING_DURATION));
 		if (mode != STORE_OK && (mode = fetchMetadataFromMediaStore(mode == STORE_MISSING_DURATION)) != STORE_OK) {
 			//Use MediaMetadataRetriever only as a last resource, since it is
 			//very slow on a few devices. Yet, this is necessary as (as amazing
