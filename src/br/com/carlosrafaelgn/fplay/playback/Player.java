@@ -43,6 +43,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
@@ -3443,6 +3444,24 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 			audioSink = _checkAudioSinkViaRoute();
+		try {
+			if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				final AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+				if (devices != null) {
+					for (int i = devices.length - 1; i >= 0; i--) {
+						switch (devices[i].getType()) {
+						case AudioDeviceInfo.TYPE_BLUETOOTH_SCO:
+						case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+							//another creepy assumption...
+							audioSink = AUDIO_SINK_BT;
+							break;
+						}
+					}
+				}
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
 		if (audioSink == 0)
 			audioSink = AUDIO_SINK_DEVICE;
 		else if (audioSink == AUDIO_SINK_WIRE && (wiredHeadsetHasMicrophone || _checkAudioSinkMicrophone()))
