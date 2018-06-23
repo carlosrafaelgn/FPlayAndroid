@@ -35,6 +35,8 @@ package br.com.carlosrafaelgn.fplay.playback;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationChannelGroup;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -225,6 +227,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
+
+	public static final String CHANNEL_GROUP_ID = "fplayg";
+	public static final String CHANNEL_ID = "fplay";
 
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
@@ -524,6 +529,33 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return null;
 	}
 
+	@TargetApi(Build.VERSION_CODES.O)
+	private static void createNotificationChannel() {
+		final String appName = theApplication.getText(R.string.app_name).toString();
+		notificationManager.createNotificationChannelGroup(new NotificationChannelGroup(CHANNEL_GROUP_ID, appName));
+		final NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, appName, NotificationManager.IMPORTANCE_LOW);
+		notificationChannel.setGroup(CHANNEL_GROUP_ID);
+		notificationChannel.enableLights(false);
+		notificationChannel.enableVibration(false);
+		notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+		notificationChannel.setShowBadge(false);
+		notificationManager.createNotificationChannel(notificationChannel);
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static void destroyNotificationChannel() {
+		try {
+			notificationManager.deleteNotificationChannel(CHANNEL_ID);
+		} catch (Throwable ex) {
+			//just ignore
+		}
+		try {
+			notificationManager.deleteNotificationChannelGroup(CHANNEL_GROUP_ID);
+		} catch (Throwable ex) {
+			//just ignore
+		}
+	}
+
 	public static boolean startService() {
 		final boolean stateNew = (state == STATE_NEW);
 		if (stateNew) {
@@ -534,6 +566,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			theMainHandler = MainHandler.initialize();
 			localHandler = new CoreLocalHandler();
 			notificationManager = (NotificationManager)theApplication.getSystemService(NOTIFICATION_SERVICE);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				createNotificationChannel();
 			audioManager = (AudioManager)theApplication.getSystemService(AUDIO_SERVICE);
 			telephonyManager = (TelephonyManager)theApplication.getSystemService(TELEPHONY_SERVICE);
 			destroyedObservers = new TypedRawArrayList<>(PlayerDestroyedObserver.class, 4);
@@ -660,6 +694,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 
 		updateState(~0xA7, new Object[] { null, null, null });
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null)
+			destroyNotificationChannel();
 
 		/*if (restart && intentActivityHost != null) {
 			//http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
@@ -2580,12 +2617,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return views;
 	}
 
+	@TargetApi(Build.VERSION_CODES.O)
+	private static Notification createNotificationWithChannel() {
+		return new Notification.Builder(theApplication, CHANNEL_ID)
+			.setSmallIcon(R.drawable.ic_notification)
+			.build();
+	}
+
 	@SuppressWarnings("deprecation")
 	private static Notification getNotification() {
 		boolean firstTime = false;
 		if (notification == null) {
 			firstTime = true;
-			notification = new Notification();
+			notification = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? createNotificationWithChannel() :  new Notification());
 			notification.icon = R.drawable.ic_notification;
 			notification.when = 0;
 			notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
