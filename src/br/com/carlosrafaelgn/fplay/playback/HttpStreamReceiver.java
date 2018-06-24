@@ -105,7 +105,8 @@ public final class HttpStreamReceiver implements Runnable {
 	private ByteBuffer tempChunkBuffer;
 	private Handler handler;
 	private Thread clientThread, serverThread;
-	private SocketChannel clientSocket, playerSocket;
+	private SocketWrapper clientSocket;
+	private SocketChannel playerSocket;
 	private ServerSocketChannel serverSocket;
 	private AudioTrack audioTrack;
 	public long bytesReceivedSoFar;
@@ -805,15 +806,15 @@ public final class HttpStreamReceiver implements Runnable {
 			//this allows pingServer() to be called multiple times
 			synchronized (sync) {
 				if (clientSocket != null) {
-					closeSocket(clientSocket);
+					clientSocket.destroy();
 					clientSocket = null;
 				}
 			}
 		}
-		final SocketChannel localSocket = SocketChannel.open(new InetSocketAddress(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort()));
+		final SocketWrapper localSocket = new SocketWrapper(url);
 		synchronized (sync) {
 			if (!alive) {
-				closeSocket(localSocket);
+				localSocket.destroy();
 				return -1;
 			}
 			clientSocket = localSocket;
@@ -875,8 +876,10 @@ public final class HttpStreamReceiver implements Runnable {
 								synchronized (sync) {
 									if (!alive)
 										return -1;
-									closeSocket(clientSocket);
-									clientSocket = null;
+									if (clientSocket != null) {
+										clientSocket.destroy();
+										clientSocket = null;
+									}
 								}
 								url = normalizeIcyUrl(contentType);
 								return sendRequestAndParseResponse(redirectCount + 1);
@@ -946,8 +949,12 @@ public final class HttpStreamReceiver implements Runnable {
 							if (shouldRedirectOnCompletion)
 								contentType = line.substring(lineLen + 1).trim();
 						} else if (line.regionMatches(true, 0, "content-type", 0, 12)) {
-							if (!shouldRedirectOnCompletion)
+							if (!shouldRedirectOnCompletion) {
 								contentType = line.substring(lineLen + 1).trim().toLowerCase(Locale.US);
+								//it's a wild world out there...
+								if (contentType.equals("audio/mp3"))
+									contentType = "audio/mpeg";
+							}
 						} else if (line.regionMatches(true, 0, "content-length", 0, 14)) {
 							if (!shouldRedirectOnCompletion) {
 								try {
@@ -1023,8 +1030,10 @@ public final class HttpStreamReceiver implements Runnable {
 			return -1;
 
 		synchronized (sync) {
-			closeSocket(clientSocket);
-			clientSocket = null;
+			if (clientSocket != null) {
+				clientSocket.destroy();
+				clientSocket = null;
+			}
 		}
 
 		final String[] parts = RadioStation.splitPath(path);
@@ -1325,8 +1334,10 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 		} finally {
 			synchronized (sync) {
-				closeSocket(clientSocket);
-				clientSocket = null;
+				if (clientSocket != null) {
+					clientSocket.destroy();
+					clientSocket = null;
+				}
 			}
 		}
 	}
@@ -1430,8 +1441,10 @@ public final class HttpStreamReceiver implements Runnable {
 			serverThread.interrupt();
 		if (clientThread != null)
 			clientThread.interrupt();
-		closeSocket(clientSocket);
-		clientSocket = null;
+		if (clientSocket != null) {
+			clientSocket.destroy();
+			clientSocket = null;
+		}
 		closeSocket(playerSocket);
 		playerSocket = null;
 		closeSocket(serverSocket);
