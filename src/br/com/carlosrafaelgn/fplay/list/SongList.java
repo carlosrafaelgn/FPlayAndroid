@@ -497,8 +497,11 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 				final MetadataExtractor metadataExtractor = new MetadataExtractor();
 				if (files != null) {
 					for (int i = 0; i < count; i++) {
-						if (!files[i].isDirectory) {
-							c.songs[f] = new Song(files[i], metadataExtractor);
+						final FileSt file = files[i];
+						if (!file.isDirectory) {
+							c.songs[f] = ((file.songInfo == null) ?
+								new Song(file, metadataExtractor) :
+								new Song(file.songInfo.path, file.songInfo.title, file.songInfo.artist, file.songInfo.album, file.songInfo.track, file.songInfo.lengthMS, file.songInfo.year));
 							f++;
 							if ((f & 3) == 1) {
 								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)
@@ -511,7 +514,9 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 					while (iterator.hasNext()) {
 						final FileSt file = iterator.next();
 						if (!file.isDirectory) {
-							c.songs[f] = new Song(file, metadataExtractor);
+							c.songs[f] = ((file.songInfo == null) ?
+								new Song(file, metadataExtractor) :
+								new Song(file.songInfo.path, file.songInfo.title, file.songInfo.artist, file.songInfo.album, file.songInfo.track, file.songInfo.lengthMS, file.songInfo.year));
 							f++;
 							if ((f & 3) == 1) {
 								if (Player.state >= Player.STATE_TERMINATING || SongList.this.count >= MAX_COUNT)

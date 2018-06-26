@@ -67,6 +67,7 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.telephony.TelephonyManager;
 import android.text.format.Formatter;
+import android.util.Base64;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
 
@@ -75,8 +76,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.HashSet;
 
 import br.com.carlosrafaelgn.fplay.BuildConfig;
@@ -2123,6 +2122,28 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	public static String encodeAddressPort(int address, int port) {
+		return Base64.encodeToString(new byte[] {
+			(byte)address,
+			(byte)(address >> 8),
+			(byte)(address >> 16),
+			(byte)(address >> 24),
+			(byte)port,
+			(byte)(port >> 8)
+		}, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE).replace('-', '@');
+	}
+
+	public static byte[] decodeAddressPort(String encodedAddressPort) {
+		if (encodedAddressPort == null || encodedAddressPort.length() != 8)
+			return null;
+		try {
+			final byte[] b = Base64.decode(encodedAddressPort.replace('@', '-'), Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
+			return ((b == null || b.length != 6) ? null : b);
+		} catch (Throwable ex) {
+			return null;
+		}
+	}
+
 	//these options were deprecated on version 74 in favor of their bit equivalents
 	private static final int OPT_VOLUME = 0x0000;
 	//private static final int OPT_CONTROLMODE = 0x0001;
@@ -2754,18 +2775,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				play(forcePlayIdx);
 			break;
 		}
-	}
-
-	public static HttpURLConnection createConnection(String url) throws Throwable {
-		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(url)).openConnection();
-		urlConnection.setInstanceFollowRedirects(false);
-		urlConnection.setConnectTimeout(30000);
-		urlConnection.setDoInput(true);
-		urlConnection.setDoOutput(false);
-		urlConnection.setReadTimeout(30000);
-		urlConnection.setRequestMethod("GET");
-		urlConnection.setUseCaches(false);
-		return urlConnection;
 	}
 
 	public static boolean deviceHasTelephonyRadio() {

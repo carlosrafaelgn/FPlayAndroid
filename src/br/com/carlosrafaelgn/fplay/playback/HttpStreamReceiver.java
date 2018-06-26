@@ -67,7 +67,7 @@ import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class HttpStreamReceiver implements Runnable {
-	private static final int TIMEOUT = 5000;
+	private static final int TIMEOUT = 30000;
 	private static final int MAX_TIMEOUT_COUNT = 5;
 	private static final int MAX_METADATA_LENGTH = (0xFF * 16);
 	private static final int MAX_HEADER_PACKET_LENGTH = 512; //an average response header has ~360 bytes (for a request header, even less than that)

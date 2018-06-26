@@ -364,6 +364,6 @@
     <string name="transmit">Передавать&#8230;</string>
     <string name="transmission_inactive">Передача неактивна</string>
     <string name="listen_online">Слушайте онлайн</string>
-    <string name="transmission_details">Передача по адресу: %1$s\\nПоделиться кодом: %2$s (коснитесь, чтобы скопировать)</string>
+    <string name="transmission_details">Передача по адресу: %1$s\\n\\nПоделиться кодом: %2$s (коснитесь, чтобы скопировать)</string>
 
 </resources>

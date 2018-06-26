@@ -34,7 +34,6 @@ package br.com.carlosrafaelgn.fplay.plugin.httptransmitter;
 
 import android.content.Context;
 import android.os.SystemClock;
-import android.util.Base64;
 
 import org.nanohttpd.webserver.FileSystemWebServer;
 
@@ -210,8 +209,6 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 
 			baseTag = Long.toString(System.currentTimeMillis()) + Long.toString(SystemClock.elapsedRealtime());
 
-			refreshList(true);
-
 			try {
 				final int addr = fplay.getWiFiIpAddress();
 				final String addrStr = fplay.getWiFiIpAddressStr();
@@ -225,17 +222,13 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 
 				final int port = socketAddress.getPort();
 				localAddress = addrStr + ":" + port;
-				encodedLocalAddress = Base64.encodeToString(new byte[] {
-					(byte)addr,
-					(byte)(addr >> 8),
-					(byte)(addr >> 16),
-					(byte)(addr >> 24),
-					(byte)port,
-					(byte)(port >> 8)
-				}, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE).replace('-', '@');
+				encodedLocalAddress = fplay.encodeAddressPort(addr, port);
 			} catch (IOException ex) {
 				throw new RuntimeException(ex);
 			}
+
+			refreshList(true);
+
 			return 1;
 		case PLUGIN_MSG_GET_ADDRESS:
 			if (obj instanceof String[] && (address = (String[])obj).length > 0)
@@ -251,10 +244,6 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 		}
 
 		return 0;
-	}
-
-	private static void serializeString(StringBuilder builder, String str) {
-		builder.append(str == null ? "null" : str.replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n"));
 	}
 
 	private void refreshList(boolean force) {
@@ -277,19 +266,21 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 			list[i] = info;
 			fplay.getPlaylistSongInfo(i, info);
 
-			builder.append("{\"path\":\"");
+			builder.append("{\"path\":\"http://");
+			builder.append(localAddress);
+			builder.append('/');
 			builder.append(version);
-			builder.append("/");
+			builder.append('/');
 			builder.append(i);
 			final int ext = info.path.lastIndexOf('.');
 			if (ext >= 0)
-				serializeString(builder, info.path.substring(ext));
+				fplay.adjustJsonString(builder, info.path.substring(ext));
 			builder.append("\",\"title\":\"");
-			serializeString(builder, info.title);
+			fplay.adjustJsonString(builder, info.title);
 			builder.append("\",\"artist\":\"");
-			serializeString(builder, info.artist);
+			fplay.adjustJsonString(builder, info.artist);
 			builder.append("\",\"album\":\"");
-			serializeString(builder, info.album);
+			fplay.adjustJsonString(builder, info.album);
 			builder.append("\",\"track\":");
 			builder.append(info.track);
 			builder.append(",\"lengthMS\":");
@@ -297,8 +288,8 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 			builder.append(",\"year\":");
 			builder.append(info.year);
 			builder.append(",\"length\":\"");
-			serializeString(builder, info.length);
-			builder.append("\"}");
+			fplay.adjustJsonString(builder, info.length);
+			builder.append("\",\"isHttp\":true}");
 		}
 		builder.append("]}");
 

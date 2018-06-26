@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -50,7 +51,9 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
+import br.com.carlosrafaelgn.fplay.util.Request;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 //
@@ -84,6 +87,10 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return fs_specLC.equals(o);
 			return fs_specLC.equals(((RootItem)o).fs_specLC);
 		}
+	}
+
+	private static final class RemoteList {
+		public ArrayList<SongInfo> list;
 	}
 
 	private static final int LIST_DELTA = 32;
@@ -164,8 +171,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	
 	private FileFetcher(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean isInTouchMode, boolean createSections) {
 		if (path == null || path.length() == 0) {
-			this.files = Player.getFavoriteFolders(16);
-			this.count = this.files.length - 16;
+			this.files = Player.getFavoriteFolders(32);
+			this.count = this.files.length - 32;
 		} else {
 			this.files = new FileSt[LIST_DELTA];
 			this.count = 0;
@@ -280,6 +287,9 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		count++;
 
 		files[count] = new FileSt("", "Icecast", null, FileSt.TYPE_ICECAST);
+		count++;
+
+		files[count] = new FileSt("", Player.theApplication.getText(R.string.remote_list).toString(), null, FileSt.TYPE_FPLAY_REMOTE_LIST);
 		count++;
 
 		File f;
@@ -734,6 +744,27 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		ArraySorter.sort(this.files, 0, c, this);
 	}
 
+	private void fetchRemoteList(byte[] addressPort) throws Throwable {
+		final int port = (addressPort[4] & 0xFF) | ((addressPort[5] & 0xFF) << 8);
+		final String baseAddress = "http://" + (addressPort[0] & 0xFF) + "." + (addressPort[1] & 0xFF) + "." + (addressPort[2] & 0xFF) + "." + (addressPort[3] & 0xFF) + ":" + port + "/";
+		final Object obj = Request.getJson(baseAddress + "list.json", RemoteList.class);
+		if (obj instanceof Throwable)
+			throw (Throwable)obj;
+		if (!(obj instanceof RemoteList))
+			return;
+		final RemoteList list = (RemoteList)obj;
+		if (list.list == null || list.list.size() == 0)
+			return;
+		count = 0;
+		files = new FileSt[list.list.size()];
+		for (int i = 0; i < files.length; i++) {
+			final SongInfo songInfo = list.list.get(i);
+			if (songInfo == null)
+				continue;
+			files[count++] = new FileSt(songInfo);
+		}
+	}
+
 	@SuppressWarnings("StringEquality")
 	public void computeSections() {
 		if (!createSections || count < 1) {
@@ -898,6 +929,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				} else {
 					fetchTracks(path);
 				}
+			} else if (path.charAt(0) == FileSt.FPLAY_REMOTE_LIST_ROOT_CHAR) {
+				final int i = path.lastIndexOf(FileSt.FAKE_PATH_SEPARATOR_CHAR);
+				final byte[] code;
+				if (i > 0 && (code = Player.decodeAddressPort(path.substring(i + 1))) != null)
+					fetchRemoteList(code);
 			} else {
 				fetchFiles(path, true);
 				computeSections();

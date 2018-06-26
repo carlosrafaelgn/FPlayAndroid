@@ -39,6 +39,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Message;
 
+import com.google.gson.Gson;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
@@ -650,5 +652,58 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	@Override
 	public void getPlaylistSongInfo(int index, SongInfo info) {
 		Player.songs.getItem(index).info(info);
+	}
+
+	@Override
+	public String encodeAddressPort(int address, int port) {
+		return Player.encodeAddressPort(address, port);
+	}
+
+	@Override
+	public byte[] decodeAddressPort(String encodedAddressPort) {
+		return Player.decodeAddressPort(encodedAddressPort);
+	}
+
+	@Override
+	public void adjustJsonString(StringBuilder builder, String str) {
+		if (str != null) {
+			final int len = str.length();
+			for (int i = 0; i < len; i++) {
+				final char c = str.charAt(i);
+				switch (c) {
+				case '\\':
+					builder.append("\\\\");
+					break;
+				case '\"':
+					builder.append("\\\"");
+					break;
+				case '\r':
+					builder.append("\\r");
+					break;
+				case '\n':
+					builder.append("\\n");
+					break;
+				case '\t':
+					builder.append("\\t");
+					break;
+				case '\0':
+					builder.append(' ');
+					break;
+				default:
+					builder.append(c);
+					break;
+				}
+			}
+		}
+	}
+
+	@Override
+	public String toJson(Object src) {
+		return (new Gson()).toJson(src);
+	}
+
+	@Override
+	public <T> T fromJson(String json, Class<T> clazz) throws Exception {
+		return (new Gson()).fromJson(json, clazz);
 	}
 }

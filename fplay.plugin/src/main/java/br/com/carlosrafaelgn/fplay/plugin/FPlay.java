@@ -95,4 +95,11 @@ public interface FPlay {
 	int getPlaylistVersion();
 	int getPlaylistCount();
 	void getPlaylistSongInfo(int index, SongInfo info);
+
+	String encodeAddressPort(int address, int port);
+	byte[] decodeAddressPort(String encodedAddressPort);
+
+	void adjustJsonString(StringBuilder builder, String str);
+	String toJson(Object src);
+	<T> T fromJson(String json, Class<T> clazz) throws Exception;
 }

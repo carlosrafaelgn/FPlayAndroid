@@ -41,6 +41,7 @@ import br.com.carlosrafaelgn.fplay.list.IcecastRadioStationList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
+import br.com.carlosrafaelgn.fplay.util.Request;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class RadioStationResolver {
@@ -65,7 +66,7 @@ public final class RadioStationResolver {
 		BufferedReader br = null;
 		HttpURLConnection urlConnection = null;
 		try {
-			urlConnection = Player.createConnection(m3uUrl);
+			urlConnection = Request.createConnection(m3uUrl);
 			err = urlConnection.getResponseCode();
 			if (err == 200) {
 				is = urlConnection.getInputStream();

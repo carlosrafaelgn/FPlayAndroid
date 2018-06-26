@@ -330,6 +330,9 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				if (getContext() != null)
 					secondaryTextWidth = UI.controlSmallMargin + UI.measureText(secondaryText = getContext().getText(R.string.radio_directory).toString(), UI._14sp);
 				break;
+			case FileSt.TYPE_FPLAY_REMOTE_LIST:
+				icon = UI.ICON_SHARE;
+				break;
 			case FileSt.TYPE_INTERNAL_STORAGE:
 				icon = UI.ICON_SCREEN;
 				break;
@@ -374,6 +377,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		} else {
 			icon = null;
 			leftPadding = leftMargin + UI.controlMargin;
+			if (file.songInfo != null && file.songInfo.artist != null)
+				secondaryTextWidth = UI.defaultControlSize + UI.controlSmallMargin + UI.measureText(secondaryText = file.songInfo.artist, UI._14sp);
 		}
 		processEllipsis();
 	}

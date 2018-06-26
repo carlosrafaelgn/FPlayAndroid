@@ -48,7 +48,7 @@ public abstract class HttpStreamExtractor {
 	private static final int MAX_READ_LENGTH = 2048;
 
 	private static final class MetadataInputStream extends InputStream {
-		private CircularIOBuffer buffer;
+		private final CircularIOBuffer buffer;
 		private final int size;
 		private int readSoFar;
 
@@ -113,7 +113,10 @@ public abstract class HttpStreamExtractor {
 
 		@Override
 		public void close() {
-			buffer = null;
+			//we must not set buffer to null, because MetadataExtractor.extract()
+			//closes this stream at the end, but we need to access the stream
+			//after MetadataExtractor.extract() returns
+			//buffer = null;
 		}
 	}
 

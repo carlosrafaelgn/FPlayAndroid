@@ -391,6 +391,19 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				fileList.setSelection(position, position, false, true);
 				startActivity(new ActivityBrowserRadio(true), 1, list.getViewForPosition(position), true);
 				return;
+			case FileSt.TYPE_FPLAY_REMOTE_LIST:
+				if (!Player.isConnectedToTheInternet()) {
+					UI.toast(getText(R.string.error_connection));
+					return;
+				}
+
+				//if (!Player.isInternetConnectedViaWiFi()) {
+				//	UI.toast(getText(R.string.error_wifi));
+				//	return;
+				//}
+
+				navigateTo(FileSt.FPLAY_REMOTE_LIST_PREFIX + getText(R.string.remote_list) + FileSt.FAKE_PATH_SEPARATOR + "wKgBBTOZ", null, false);
+				return;
 			}
 			if (file.isDirectory && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
 				navigateTo(file.path, null, false);
@@ -557,7 +570,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			UI.animationAddViewToHide(chkAlbumArt);
 			UI.animationAddViewToShow(btnHome);
 		} else if (others) {
-			final boolean albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));// (to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.ARTIST_ALBUM_PREFIX));
+			final boolean albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));
 			UI.animationAddViewToHide(btnURL);
 			if (albumArtArea) {
 				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);
@@ -592,7 +605,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ?
 				to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) :
 				to));
-		animSectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
+		animSectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.FPLAY_REMOTE_LIST_PREFIX)));
 		animTo = to;
 		animFrom = from;
 		if (!onlyUpdateButtons) {

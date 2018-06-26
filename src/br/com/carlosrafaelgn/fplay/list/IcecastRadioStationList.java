@@ -44,6 +44,7 @@ import java.net.URLEncoder;
 
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.util.Request;
 
 public final class IcecastRadioStationList extends RadioStationList {
 	//icecast returns up to MAX_PAGE_RESULTS results per page and up to MAX_PAGE_COUNT pages
@@ -316,7 +317,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 				final String url = ((genre != null) ?
 					("http://dir.xiph.org/by_genre/" + genre.name.replace(" ", "%20") + "?page=") :
 					("http://dir.xiph.org/search?search=" + URLEncoder.encode(searchTerm, "UTF-8") + "&page="));
-				urlConnection = Player.createConnection(url + pageNumber);
+				urlConnection = Request.createConnection(url + pageNumber);
 				if (myVersion != version)
 					return;
 				err = urlConnection.getResponseCode();

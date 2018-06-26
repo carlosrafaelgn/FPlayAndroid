@@ -34,16 +34,21 @@ package br.com.carlosrafaelgn.fplay.list;
 
 import java.io.File;
 
+import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
+
 public final class FileSt extends BaseItem {
 	public static final String ARTIST_ROOT = "@";
 	public static final char ARTIST_ROOT_CHAR = '@';
 	public static final String ALBUM_ROOT = "!";
 	public static final char ALBUM_ROOT_CHAR = '!';
+	public static final String FPLAY_REMOTE_LIST_ROOT = "f";
+	public static final char FPLAY_REMOTE_LIST_ROOT_CHAR = 'f';
 	public static final String FAKE_PATH_ROOT = "*";
 	public static final char FAKE_PATH_ROOT_CHAR = '*';
 	public static final String FAKE_PATH_SEPARATOR = "\u001A"; //Substitute!!! Old school techniques :D
 	public static final String ARTIST_PREFIX = ARTIST_ROOT + FAKE_PATH_ROOT;
 	public static final String ALBUM_PREFIX = ALBUM_ROOT + FAKE_PATH_ROOT;
+	public static final String FPLAY_REMOTE_LIST_PREFIX = FPLAY_REMOTE_LIST_ROOT + FAKE_PATH_ROOT;
 	public static final char FAKE_PATH_SEPARATOR_CHAR = '\u001A';
 	public static final char PRIVATE_FILETYPE_ID = '#';
 	public static final String FILETYPE_PLAYLIST = "#lst";
@@ -62,6 +67,7 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_EXTERNAL_STORAGE_USB = 12;
 	public static final int TYPE_ICECAST = 13;
 	public static final int TYPE_SHOUTCAST = 14;
+	public static final int TYPE_FPLAY_REMOTE_LIST = 15;
 	public final boolean isDirectory;
 	public final String path, name;
 	public String albumArt;
@@ -69,7 +75,8 @@ public final class FileSt extends BaseItem {
 	public long artistIdForAlbumArt; //when dealing with playlists, artistIdForAlbumArt stores the playlist id
 	public File file;
 	public boolean isChecked;
-	
+	public SongInfo songInfo;
+
 	public FileSt(File file) {
 		this.isDirectory = file.isDirectory();
 		this.path = file.getAbsolutePath();
@@ -85,7 +92,16 @@ public final class FileSt extends BaseItem {
 		this.file = file; //keep this here for MetadataExtractor...
 		this.albumArt = null;
 	}
-	
+
+	public FileSt(SongInfo songInfo) {
+		this.isDirectory = false;
+		this.path = songInfo.path;
+		this.name = songInfo.title;
+		this.albumArt = null;
+		this.specialType = 0;
+		this.songInfo = songInfo;
+	}
+
 	public FileSt(String absolutePath, String name, String albumArt, int specialType) {
 		this.isDirectory = (specialType != 0);
 		this.path = absolutePath;
@@ -93,7 +109,7 @@ public final class FileSt extends BaseItem {
 		this.albumArt = (((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
 		this.specialType = specialType;
 	}
-	
+
 	public FileSt(String absolutePath, String name, int specialType) {
 		this.isDirectory = false;
 		this.path = absolutePath;
@@ -101,7 +117,7 @@ public final class FileSt extends BaseItem {
 		this.albumArt = null;
 		this.specialType = specialType;
 	}
-	
+
 	@Override
 	public String toString() {
 		return name;
