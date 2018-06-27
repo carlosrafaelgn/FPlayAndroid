@@ -367,17 +367,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			final Song song = Player.songs.getItem(p);
 			if (song == null)
 				return;
-			Intent shareIntent = new Intent(Intent.ACTION_SEND);
-			if (song.isHttp) {
-				shareIntent.setType("text/plain");
-				shareIntent.putExtra(Intent.EXTRA_TEXT, song.getHumanReadablePath());
-			} else {
-				shareIntent.setType(FileFetcher.mimeType(song.path));
-				shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(song.path)));
-			}
-			shareIntent = Intent.createChooser(shareIntent, getText(R.string.share));
-			if (shareIntent != null)
-				getHostActivity().startActivity(shareIntent);
+			if (song.isHttp)
+				UI.shareText(song.getHumanReadablePath());
+			else
+				UI.shareFile(song.path);
 		} catch (Throwable ex) {
 			UI.toast(R.string.error_gen);
 		}

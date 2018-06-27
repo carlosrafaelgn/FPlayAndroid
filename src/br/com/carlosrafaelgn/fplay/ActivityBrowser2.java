@@ -50,6 +50,7 @@ import android.widget.TextView;
 import java.io.File;
 import java.util.Locale;
 
+import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
@@ -372,6 +373,22 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		}
 	}
 
+	private void showRemoteListDialog() {
+		final ActivityHost ctx = getHostActivity();
+
+		final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
+
+		txtURL = UI.createDialogEditText(ctx, 0, "", getText(R.string.access_code), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		l.addView(txtURL, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		txtTitle = null;
+
+		final BgDialog dialog = new BgDialog(ctx, l, this);
+		dialog.setTitle(R.string.remote_list);
+		dialog.setPositiveButton(R.string.ok);
+		dialog.setNegativeButton(R.string.cancel);
+		dialog.show();
+	}
+
 	@Override
 	public void onItemClicked(int position) {
 		//somehow, Google Play indicates a NullPointerException, either here or
@@ -402,7 +419,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				//	return;
 				//}
 
-				navigateTo(FileSt.FPLAY_REMOTE_LIST_PREFIX + getText(R.string.remote_list) + FileSt.FAKE_PATH_SEPARATOR + "wKgBBTOZ", null, false);
+				showRemoteListDialog();
+
 				return;
 			}
 			if (file.isDirectory && file.specialType != FileSt.TYPE_ALBUM_ITEM) {
@@ -755,25 +773,38 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 	public void onClick(DialogInterface dialog, int which) {
 		if (!isLayoutCreated())
 			return;
-		if (which == AlertDialog.BUTTON_POSITIVE && txtURL != null && txtTitle != null) {
+		if (which == AlertDialog.BUTTON_POSITIVE && txtURL != null) {
 			String url = txtURL.getText().toString().trim();
-			if (url.length() >= 4) {
-				int s = 7;
-				final String urlLC = url.toLowerCase(Locale.US);
-				if (urlLC.startsWith("http://")) {
-					url = "http://" + url.substring(7);
-				} else if (urlLC.startsWith("https://")) {
-					url = "https://" + url.substring(8);
-					s = 8;
+
+			if (txtTitle == null) {
+				final int i = url.toLowerCase(Locale.US).indexOf("fplay://");
+				if (i >= 0)
+					url = url.substring(i + 8);
+				if (url.length() != 8 || Player.decodeAddressPort(url) == null) {
+					UI.toast(R.string.invalid_access_code);
+					return;
 				} else {
-					url = "http://" + url;
+					navigateTo(FileSt.FPLAY_REMOTE_LIST_PREFIX + getText(R.string.remote_list) + FileSt.FAKE_PATH_SEPARATOR + url, null, false);
 				}
-				String title = txtTitle.getText().toString().trim();
-				if (title.length() == 0)
-					title = url.substring(s);
-				final int p = Player.songs.getCount();
-				Player.songs.add(new Song(url, title), -1);
-				Player.setSelectionAfterAdding(p);
+			} else {
+				if (url.length() >= 4) {
+					int s = 7;
+					final String urlLC = url.toLowerCase(Locale.US);
+					if (urlLC.startsWith("http://")) {
+						url = "http://" + url.substring(7);
+					} else if (urlLC.startsWith("https://")) {
+						url = "https://" + url.substring(8);
+						s = 8;
+					} else {
+						url = "http://" + url;
+					}
+					String title = txtTitle.getText().toString().trim();
+					if (title.length() == 0)
+						title = url.substring(s);
+					final int p = Player.songs.getCount();
+					Player.songs.add(new Song(url, title), -1);
+					Player.setSelectionAfterAdding(p);
+				}
 			}
 		}
 		txtURL = null;

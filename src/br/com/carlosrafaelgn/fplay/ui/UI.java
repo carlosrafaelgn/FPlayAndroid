@@ -38,6 +38,7 @@ import android.app.Dialog;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -52,6 +53,7 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.text.InputType;
 import android.text.TextPaint;
@@ -80,6 +82,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.DecimalFormatSymbols;
@@ -88,6 +91,7 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
+import br.com.carlosrafaelgn.fplay.list.FileFetcher;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BgShadowDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
@@ -1926,6 +1930,24 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		view.setPadding(p, topPadding, p, bottomPadding);
 	}
 
+	public static void shareText(String text) {
+		Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+		sharingIntent.setType("text/plain");
+		sharingIntent.putExtra(Intent.EXTRA_TEXT, text);
+		sharingIntent = Intent.createChooser(sharingIntent, Player.theApplication.getText(R.string.share));
+		if (sharingIntent != null)
+			Player.theApplication.startActivity(sharingIntent);
+	}
+
+	public static void shareFile(String path) {
+		Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+		sharingIntent.setType(FileFetcher.mimeType(path));
+		sharingIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(path)));
+		sharingIntent = Intent.createChooser(sharingIntent, Player.theApplication.getText(R.string.share));
+		if (sharingIntent != null)
+			Player.theApplication.startActivity(sharingIntent);
+	}
+
 	public static String emoji(CharSequence text) {
 		//check out strings.xml to understand why we need this...
 		if (text == null)
@@ -1951,7 +1973,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public static void prepareNotificationViewColors(TextView view) {
+	private static void prepareNotificationViewColors(TextView view) {
 		view.setTextColor(colorState_text_highlight_static);
 		view.setBackgroundDrawable(hasBorders ? new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_highlight));
 	}

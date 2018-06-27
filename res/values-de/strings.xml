@@ -364,6 +364,9 @@
     <string name="transmit">Übertragen&#8230;</string>
     <string name="transmission_inactive">Übertragung inaktiv</string>
     <string name="listen_online">Hören Sie online</string>
-    <string name="transmission_details">Übertragen bei: %1$s\\n\\nShare code: %2$s (berühren, um zu kopieren)</string>
+    <string name="transmission_details">Übertragen bei: %1$s\\n\\nZugangscode: %2$s (berühren, um zu aktie)</string>
+    <string name="remote_list">Freigegebene Liste (FPlay)</string>
+    <string name="access_code">Zugangscode</string>
+    <string name="invalid_access_code">Ungültiger Zugangscode :(</string>
 
 </resources>

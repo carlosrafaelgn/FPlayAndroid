@@ -364,6 +364,9 @@
     <string name="transmit">Передавать&#8230;</string>
     <string name="transmission_inactive">Передача неактивна</string>
     <string name="listen_online">Слушайте онлайн</string>
-    <string name="transmission_details">Передача по адресу: %1$s\\n\\nПоделиться кодом: %2$s (коснитесь, чтобы скопировать)</string>
+    <string name="transmission_details">Передача по адресу: %1$s\\n\\nКод доступа: %2$s (коснитесь, чтобы поделиться)</string>
+    <string name="remote_list">Общий список (FPlay)</string>
+    <string name="access_code">Код доступа</string>
+    <string name="invalid_access_code">Неверный код доступа :(</string>
 
 </resources>

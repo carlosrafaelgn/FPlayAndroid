@@ -38,6 +38,10 @@
     public *;
 }
 
+# How to keep an entire package
+#-keep interface com.google.gson.** { *; }
+#-keep class com.google.gson.** { *; }
+
 # **********************************************************************************************************
 # Common area
 # **********************************************************************************************************
@@ -87,6 +91,11 @@
 
 -keep class br.com.carlosrafaelgn.fplay.plugin.SongInfo
 -keepclassmembers class br.com.carlosrafaelgn.fplay.plugin.SongInfo {
+    public *;
+}
+
+-keep class br.com.carlosrafaelgn.fplay.plugin.SongList
+-keepclassmembers class br.com.carlosrafaelgn.fplay.plugin.SongList {
     public *;
 }
 

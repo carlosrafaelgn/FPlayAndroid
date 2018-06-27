@@ -378,7 +378,9 @@
     <string name="transmit">Transmit&#8230;</string>
     <string name="transmission_inactive">Transmission inactive</string>
     <string name="listen_online">Listen online</string>
-    <string name="transmission_details">Transmitting at: %1$s\n\nShare code: %2$s (touch to copy)</string>
-    <string translatable="false" name="remote_list">Remote list (FPlay)</string>
+    <string name="transmission_details">Transmitting at: %1$s\n\nAccess code: %2$s (touch to share)</string>
+    <string name="remote_list">Shared list (FPlay)</string>
+    <string name="access_code">Access code</string>
+    <string name="invalid_access_code">Invalid access code :(</string>
 
 </resources>

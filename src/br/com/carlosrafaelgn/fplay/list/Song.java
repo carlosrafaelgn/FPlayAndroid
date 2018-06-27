@@ -79,6 +79,25 @@ public final class Song extends BaseItem {
 		this.year = year;
 		validateFields(null);
 	}
+
+	public Song(SongInfo songInfo) {
+		this.path = songInfo.path;
+		this.isHttp = isPathHttp(path);
+		this.title = songInfo.title;
+		this.artist = songInfo.artist;
+		if (isHttp) {
+			this.album = songInfo.path;
+			this.track = -1;
+			this.lengthMS = -1;
+			this.year = -1;
+		} else {
+			this.album = songInfo.album;
+			this.track = songInfo.track;
+			this.lengthMS = songInfo.lengthMS;
+			this.year = songInfo.year;
+		}
+		validateFields(null);
+	}
 	
 	public Song(String url, String title) {
 		this.path = url.trim();

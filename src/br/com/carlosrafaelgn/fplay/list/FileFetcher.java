@@ -43,7 +43,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -87,10 +86,6 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return fs_specLC.equals(o);
 			return fs_specLC.equals(((RootItem)o).fs_specLC);
 		}
-	}
-
-	private static final class RemoteList {
-		public ArrayList<SongInfo> list;
 	}
 
 	private static final int LIST_DELTA = 32;
@@ -747,18 +742,17 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private void fetchRemoteList(byte[] addressPort) throws Throwable {
 		final int port = (addressPort[4] & 0xFF) | ((addressPort[5] & 0xFF) << 8);
 		final String baseAddress = "http://" + (addressPort[0] & 0xFF) + "." + (addressPort[1] & 0xFF) + "." + (addressPort[2] & 0xFF) + "." + (addressPort[3] & 0xFF) + ":" + port + "/";
-		final Object obj = Request.getJson(baseAddress + "list.json", RemoteList.class);
+		final Object obj = Request.getJson(baseAddress + "list.json", br.com.carlosrafaelgn.fplay.plugin.SongList.class);
 		if (obj instanceof Throwable)
 			throw (Throwable)obj;
-		if (!(obj instanceof RemoteList))
+		if (!(obj instanceof br.com.carlosrafaelgn.fplay.plugin.SongList))
 			return;
-		final RemoteList list = (RemoteList)obj;
-		if (list.list == null || list.list.size() == 0)
+		final br.com.carlosrafaelgn.fplay.plugin.SongList list = (br.com.carlosrafaelgn.fplay.plugin.SongList)obj;
+		if (list.list == null || list.list.length == 0)
 			return;
 		count = 0;
-		files = new FileSt[list.list.size()];
-		for (int i = 0; i < files.length; i++) {
-			final SongInfo songInfo = list.list.get(i);
+		files = new FileSt[list.list.length];
+		for (SongInfo songInfo : list.list) {
 			if (songInfo == null)
 				continue;
 			files[count++] = new FileSt(songInfo);

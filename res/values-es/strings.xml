@@ -364,6 +364,9 @@
     <string name="transmit">Transmitir&#8230;</string>
     <string name="transmission_inactive">Transmisión inactiva</string>
     <string name="listen_online">Escuche en línea</string>
-    <string name="transmission_details">Transmitiendo a: %1$s\\n\\nCódigo compartido: %2$s (toque para copiar)</string>
+    <string name="transmission_details">Transmitiendo a: %1$s\\n\\nCódigo de acceso: %2$s (toque para compartir)</string>
+    <string name="remote_list">Lista compartida (FPlay)</string>
+    <string name="access_code">Código de acceso</string>
+    <string name="invalid_access_code">Código de acceso inválido :(</string>
 
 </resources>

@@ -2023,7 +2023,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					localSong.artist = metadata.artist;
 					localSong.extraInfo = metadata.artist;
 				}
-				localSong.album = "-";
+				//Do not touch the album, as it might already contain the track's icy url
+				//localSong.album = "-";
 				localSong.title = metadata.title;
 				broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
 				//this will force a serialization when closing the app (saving this update)

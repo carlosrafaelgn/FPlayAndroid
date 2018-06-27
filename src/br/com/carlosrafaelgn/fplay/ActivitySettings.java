@@ -114,7 +114,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
 		optLargeTextIs22sp, optDisplaySongNumberAndCount, optAllowLockScreen, lastMenuView;
-	private String btErrorMessage, httpShareCode;
+	private String btErrorMessage, httpAccessCode;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btConnectText, btStartText, optBtSizeLastSize;
 	private TextView[] headers;
@@ -1081,10 +1081,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				btMessageText = Integer.MAX_VALUE - 1;
 				optBtMessage.setText(UI.format(R.string.transmission_details,
 					((HttpTransmitter)Player.httpTransmitter).getAddress(),
-					httpShareCode = ((HttpTransmitter)Player.httpTransmitter).getEncodedAddress()));
+					httpAccessCode = ((HttpTransmitter)Player.httpTransmitter).getEncodedAddress()));
 			}
 		} else {
-			httpShareCode = null;
+			httpAccessCode = null;
 			if (btErrorMessage != null) {
 				if (btMessageText != Integer.MAX_VALUE) {
 					btMessageText = Integer.MAX_VALUE;
@@ -1609,21 +1609,22 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				//	ex.printStackTrace();
 				//}
 			} else if (view == optBtMessage) {
-				if (Player.httpTransmitter != null && httpShareCode != null) {
-					try {
-						final ActivityHost activityHost = getHostActivity();
-						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-							//noinspection deprecation
-							final android.text.ClipboardManager clipboard = (android.text.ClipboardManager)activityHost.getSystemService(ActivityHost.CLIPBOARD_SERVICE);
-							clipboard.setText(httpShareCode);
-						} else {
-							final android.content.ClipboardManager clipboard = (android.content.ClipboardManager)activityHost.getSystemService(ActivityHost.CLIPBOARD_SERVICE);
-							clipboard.setPrimaryClip(android.content.ClipData.newPlainText(httpShareCode, httpShareCode));
-						}
-						UI.toast(UI.emoji(getText(R.string.success)));
-					} catch (Throwable ex) {
-						UI.toast(UI.emoji(getText(R.string.error_gen)));
-					}
+				if (Player.httpTransmitter != null && httpAccessCode != null) {
+					UI.shareText(getText(R.string.access_code) + UI.collon() + "fplay://" + httpAccessCode);
+					//try {
+					//	final ActivityHost activityHost = getHostActivity();
+					//	if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+					//		//noinspection deprecation
+					//		final android.text.ClipboardManager clipboard = (android.text.ClipboardManager)activityHost.getSystemService(ActivityHost.CLIPBOARD_SERVICE);
+					//		clipboard.setText(httpAccessCode);
+					//	} else {
+					//		final android.content.ClipboardManager clipboard = (android.content.ClipboardManager)activityHost.getSystemService(ActivityHost.CLIPBOARD_SERVICE);
+					//		clipboard.setPrimaryClip(android.content.ClipData.newPlainText(httpAccessCode, httpAccessCode));
+					//	}
+					//	UI.toast(getText(R.string.success));
+					//} catch (Throwable ex) {
+					//	UI.toast(getText(R.string.error_gen));
+					//}
 				}
 			} else if (view == optBtConnect) {
 				if (Player.httpTransmitter == null) {
