@@ -455,7 +455,9 @@ public final class Plugin implements FPlayPlugin, Visualizer, BluetoothConnectio
 			if (observer != null)
 				observer.message(PLUGIN_MSG_OBSERVER_STATE_CHANGED, PLUGIN_MSG_OBSERVER_STATE_CHANGED_CONNECTED, 0, null);
 			generateAndSendState();
-			(new Thread(this, "Bluetooth RX Thread")).start();
+			final Thread thread = new Thread(this, "Bluetooth RX Thread");
+			thread.setDaemon(true);
+			thread.start();
 			visualizerService = fplay.createVisualizerService(this, this);
 			if (startTransmissionOnConnection) {
 				startTransmissionOnConnection = false;

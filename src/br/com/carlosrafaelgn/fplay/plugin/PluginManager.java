@@ -190,7 +190,11 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 			isPluginLoading = true;
 		}
 
-		Thread thread = (new Thread("Plugin Loader Thread") {
+		final Thread thread = (new Thread("Plugin Loader Thread") {
+			{
+				setDaemon(true);
+			}
+
 			@Override
 			public void run() {
 				try {
@@ -222,7 +226,6 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 		});
 
 		try {
-			thread.setDaemon(true);
 			thread.start();
 		} catch (Throwable ex) {
 			isPluginLoading = false;

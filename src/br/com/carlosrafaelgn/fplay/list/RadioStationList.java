@@ -340,13 +340,14 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			return false;
 		this.reset = reset;
 		loadingProcessChanged(true);
-		final Thread t = new Thread(this, "Radio Station Fetcher Thread");
 		isSavingFavorites = false;
 		genreToFetch = genre;
 		searchTermToFetch = searchTerm;
 		readyToFetch = false;
+		final Thread thread = new Thread(this, "Radio Station Fetcher Thread");
 		try {
-			t.start();
+			thread.setDaemon(true);
+			thread.start();
 			return true;
 		} catch (Throwable ex) {
 			readyToFetch = true;
@@ -361,14 +362,15 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		cancel();
 		clear();
 		loadingProcessChanged(true);
-		final Thread t = new Thread(this, "Icecast Favorite Stations Fetcher Thread");
 		containsFavorites = true;
 		isSavingFavorites = false;
 		genreToFetch = null;
 		searchTermToFetch = null;
 		readyToFetch = false;
+		final Thread thread = new Thread(this, "Icecast Favorite Stations Fetcher Thread");
 		try {
-			t.start();
+			thread.setDaemon(true);
+			thread.start();
 		} catch (Throwable ex) {
 			readyToFetch = true;
 			loadingProcessChanged(false);
@@ -382,13 +384,14 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			if (!favoritesLoaded || !favoritesChanged)
 				return;
 		}
-		final Thread t = new Thread(this, "Icecast Favorite Stations Storer Thread");
 		isSavingFavorites = true;
 		genreToFetch = null;
 		searchTermToFetch = null;
 		readyToFetch = false;
+		final Thread thread = new Thread(this, "Icecast Favorite Stations Storer Thread");
 		try {
-			t.start();
+			thread.setDaemon(true);
+			thread.start();
 		} catch (Throwable ex) {
 			readyToFetch = true;
 		}

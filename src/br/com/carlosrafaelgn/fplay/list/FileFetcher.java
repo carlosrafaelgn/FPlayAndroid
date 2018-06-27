@@ -190,7 +190,9 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 	
 	private void fetch() {
-		(new Thread(this, "File Fetcher Thread")).start();
+		final Thread thread = new Thread(this, "File Fetcher Thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 	
 	public Throwable getThrownException() {

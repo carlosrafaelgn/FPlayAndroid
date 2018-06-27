@@ -384,7 +384,9 @@ public final class BluetoothConnectionManager extends BroadcastReceiver implemen
 			cancelled = false;
 			finished = false;
 			connecting = true;
-			(new Thread(BluetoothConnectionManager.this, "Bluetooth Manager Thread")).start();
+			final Thread thread = new Thread(BluetoothConnectionManager.this, "Bluetooth Manager Thread");
+			thread.setDaemon(true);
+			thread.start();
 		}
 	}
 }

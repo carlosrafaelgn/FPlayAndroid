@@ -231,6 +231,10 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				}
 			}
 			(new Thread("Checked File Adder Thread") {
+				{
+					setDaemon(true);
+				}
+
 				@Override
 				public void run() {
 					boolean addingFolder = false;
@@ -623,7 +627,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			(((to.length() > 0) && (to.charAt(0) != File.separatorChar)) ?
 				to.substring(to.indexOf(FileSt.FAKE_PATH_ROOT_CHAR) + 1).replace(FileSt.FAKE_PATH_SEPARATOR_CHAR, File.separatorChar) :
 				to));
-		animSectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX) || to.startsWith(FileSt.FPLAY_REMOTE_LIST_PREFIX)));
+		animSectionsEnabled = ((to.length() > 0) && (to.startsWith(FileSt.ARTIST_PREFIX) || to.startsWith(FileSt.ALBUM_PREFIX)));
 		animTo = to;
 		animFrom = from;
 		if (!onlyUpdateButtons) {

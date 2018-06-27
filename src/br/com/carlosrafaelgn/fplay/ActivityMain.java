@@ -319,6 +319,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				UI.toast(R.string.ringtone_error);
 			} else {
 				(new Thread("Ringtone Thread") {
+					{
+						setDaemon(true);
+					}
+
 					@Override
 					public void run() {
 						if (Player.state != Player.STATE_ALIVE)

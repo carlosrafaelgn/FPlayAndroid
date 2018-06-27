@@ -317,6 +317,10 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		try {
 			addingStarted();
 			(new Thread("List Deserializer Thread") {
+				{
+					setDaemon(true);
+				}
+
 				private boolean done;
 				private int[] current = new int[] { -1 };
 				private Song[] songs;
@@ -360,6 +364,10 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			final int current = this.current;
 			System.arraycopy(items, 0, songs, 0, count);
 			(new Thread("List Serializer Thread") {
+				{
+					setDaemon(true);
+				}
+
 				@Override
 				public void run() {
 					try {
@@ -535,6 +543,10 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		addingStarted();
 		try {
 			(new Thread("Path Adder Thread") {
+				{
+					setDaemon(true);
+				}
+
 				@Override
 				public void run() {
 					try {

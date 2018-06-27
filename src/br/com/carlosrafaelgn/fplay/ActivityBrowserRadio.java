@@ -144,6 +144,10 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		Player.songs.addingStarted();
 		try {
 			(new Thread("Checked Radio Station Adder Thread") {
+				{
+					setDaemon(true);
+				}
+
 				@Override
 				public void run() {
 					try {

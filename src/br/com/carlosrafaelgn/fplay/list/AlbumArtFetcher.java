@@ -104,7 +104,9 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		paint.setDither(false);
 		srcR = new Rect();
 		dstR = new Rect();
-		(new Thread(this, "Album Art Fetcher Thread")).start();
+		final Thread thread = new Thread(this, "Album Art Fetcher Thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 	
 	//Runs on a SECONDARY thread
