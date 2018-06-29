@@ -39,93 +39,85 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 public final class SocketWrapper {
-	private SocketChannel socketChannel;
-	private SSLSocket sslSocket;
-	private InputStream sslSocketInputStream;
-	private OutputStream sslSocketOutputStream;
+	private Socket socket;
+	private InputStream inputStream;
+	private OutputStream outputStream;
 
-	public SocketWrapper(URL url) throws IOException {
+	public SocketWrapper(URL url, int receiveBufferSize, int sendBufferSize, int timeout, int connectionTimeout) throws IOException {
 		if (!"https".equalsIgnoreCase(url.getProtocol())) {
-			socketChannel = SocketChannel.open(new InetSocketAddress(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort()));
+			//I decided to stop using SocketChannel because I could not find a way
+			//to configure its connection timeout, which is really important!
+			socket = new Socket();
+			socket.setReceiveBufferSize(receiveBufferSize);
+			socket.setSendBufferSize(sendBufferSize);
+			socket.setSoTimeout(timeout);
+			socket.setTcpNoDelay(true);
+			socket.connect(new InetSocketAddress(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort()), connectionTimeout);
 		} else {
 			final SocketFactory sf = SSLSocketFactory.getDefault();
-			sslSocket = (SSLSocket)sf.createSocket(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort());
+			boolean connected = false;
+			SSLSocket sslSocket;
+			try {
+				sslSocket = (SSLSocket)sf.createSocket();
+			} catch (Throwable ex) {
+				//Should not happen, but...
+				sslSocket = (SSLSocket)sf.createSocket(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort());
+				connected = true;
+			}
+			sslSocket.setReceiveBufferSize(receiveBufferSize);
+			sslSocket.setSendBufferSize(sendBufferSize);
+			sslSocket.setSoTimeout(timeout);
+			sslSocket.setTcpNoDelay(true);
 			sslSocket.setUseClientMode(true);
 			sslSocket.setEnableSessionCreation(true);
 			sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
 			sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
-			sslSocketInputStream = sslSocket.getInputStream();
-			sslSocketOutputStream = sslSocket.getOutputStream();
+			if (!connected)
+				sslSocket.connect(new InetSocketAddress(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort()), connectionTimeout);
+			socket = sslSocket;
 		}
+		inputStream = socket.getInputStream();
+		outputStream = socket.getOutputStream();
 	}
 
 	public void write(ByteBuffer buffer) throws IOException {
-		if (socketChannel != null) {
-			socketChannel.write(buffer);
-		} else {
-			final int pos = buffer.position();
-			final int len = buffer.remaining();
-			sslSocketOutputStream.write(buffer.array(), pos, len);
-			buffer.position(pos + len);
-		}
+		final int pos = buffer.position();
+		final int len = buffer.remaining();
+		outputStream.write(buffer.array(), pos, len);
+		buffer.position(pos + len);
 	}
 
 	public int read(ByteBuffer buffer) throws IOException {
-		if (socketChannel != null) {
-			return socketChannel.read(buffer);
-		} else {
-			final int pos = buffer.position();
-			final int r = sslSocketInputStream.read(buffer.array(), pos, buffer.remaining());
-			buffer.position(pos + r);
-			return r;
-		}
-	}
-
-	public Socket socket() {
-		return (socketChannel != null ? socketChannel.socket() : sslSocket);
+		final int pos = buffer.position();
+		final int r = inputStream.read(buffer.array(), pos, buffer.remaining());
+		buffer.position(pos + r);
+		return r;
 	}
 
 	public void destroy() {
-		if (socketChannel != null) {
+		if (socket != null) {
 			try {
-				final Socket s = socketChannel.socket();
-				if (!s.isClosed()) {
-					s.shutdownInput();
-					s.shutdownOutput();
+				if (!socket.isClosed()) {
+					socket.shutdownInput();
+					socket.shutdownOutput();
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
 			try {
-				socketChannel.close();
+				socket.close();
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
-			socketChannel = null;
-		} else if (sslSocket != null) {
-			try {
-				if (!sslSocket.isClosed()) {
-					sslSocket.shutdownInput();
-					sslSocket.shutdownOutput();
-				}
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			try {
-				sslSocket.close();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			sslSocket = null;
-			sslSocketInputStream = null;
-			sslSocketOutputStream = null;
+			socket = null;
+			outputStream = null;
+			inputStream = null;
 		}
 	}
 }

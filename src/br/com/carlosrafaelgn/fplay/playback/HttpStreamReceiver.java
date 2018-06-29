@@ -67,6 +67,7 @@ import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
 public final class HttpStreamReceiver implements Runnable {
+	private static final int CONNECTION_TIMEOUT = 10000;
 	private static final int TIMEOUT = 30000;
 	private static final int MAX_TIMEOUT_COUNT = 5;
 	private static final int MAX_METADATA_LENGTH = (0xFF * 16);
@@ -811,7 +812,7 @@ public final class HttpStreamReceiver implements Runnable {
 				}
 			}
 		}
-		final SocketWrapper localSocket = new SocketWrapper(url);
+		final SocketWrapper localSocket = new SocketWrapper(url, EXTERNAL_BUFFER_LENGTH, MAX_HEADER_PACKET_LENGTH, TIMEOUT, CONNECTION_TIMEOUT);
 		synchronized (sync) {
 			if (!alive) {
 				localSocket.destroy();
@@ -819,11 +820,6 @@ public final class HttpStreamReceiver implements Runnable {
 			}
 			clientSocket = localSocket;
 		}
-		final Socket s = localSocket.socket();
-		s.setReceiveBufferSize(EXTERNAL_BUFFER_LENGTH);
-		s.setSendBufferSize(MAX_HEADER_PACKET_LENGTH);
-		s.setSoTimeout(TIMEOUT);
-		s.setTcpNoDelay(true);
 		final byte[] httpCommand = ("GET " + url.getFile() + " HTTP/1.1\r\nHost:" +
 			url.getHost() +
 			"\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nAccept-Encoding: identity;q=1, *;q=0\r\nUser-Agent: FPlay/" +
