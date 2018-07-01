@@ -1610,7 +1610,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				//}
 			} else if (view == optBtMessage) {
 				if (Player.httpTransmitter != null && httpAccessCode != null) {
-					UI.shareText(getText(R.string.access_code) + UI.collon() + "fplay://" + httpAccessCode);
+					//Since fplay:// links are not properly rendered in most apps, let's just share
+					//the access code itself
+					UI.shareText(httpAccessCode);
+					//UI.shareText(getText(R.string.access_code) + UI.collon() + "fplay://" + httpAccessCode);
 					//try {
 					//	final ActivityHost activityHost = getHostActivity();
 					//	if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {

@@ -369,6 +369,7 @@
     <string name="icy">Icy</string>
     <string name="allow_lock_screen">Allow the app to stay above the lock screen</string>
     <string name="share">Share</string>
+    <string name="share_el">Share&#8230;</string>
     <string name="file_prefetch_size">Bytes to store into memory when playing local files:</string>
     <string name="download">Download</string>
     <string name="download_confirmation">This feature requires the external extension \"%s\". Would you like to download it now?</string>

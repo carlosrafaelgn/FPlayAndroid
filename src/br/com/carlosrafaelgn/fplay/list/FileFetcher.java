@@ -100,6 +100,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private Listener listener;
 	private boolean recursive;
 	private final boolean notifyFromMain, recursiveIfFirstEmpty;
+	private Request.CloseToken closeToken;
+	private Thread thread;
 	private volatile boolean cancelled;
 
 	static {
@@ -154,12 +156,16 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 
 	public static FileFetcher fetchFiles(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean isInTouchMode, boolean createSections) {
 		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, false, false, isInTouchMode, createSections);
+		if (path != null && path.length() > 0 && path.charAt(0) == FileSt.FPLAY_REMOTE_LIST_ROOT_CHAR)
+			f.closeToken = new Request.CloseToken();
 		f.fetch();
 		return f;
 	}
 
 	public static FileFetcher fetchFilesInThisThread(String path, Listener listener, boolean notifyFromMain, boolean recursive, boolean recursiveIfFirstEmpty, boolean playAfterFetching, boolean createSections) {
 		FileFetcher f = new FileFetcher(path, listener, notifyFromMain, recursive, recursiveIfFirstEmpty, playAfterFetching, false, createSections);
+		if (path != null && path.length() > 0 && path.charAt(0) == FileSt.FPLAY_REMOTE_LIST_ROOT_CHAR)
+			f.closeToken = new Request.CloseToken();
 		f.run();
 		return f;
 	}
@@ -190,7 +196,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 	
 	private void fetch() {
-		final Thread thread = new Thread(this, "File Fetcher Thread");
+		thread = new Thread(this, "File Fetcher Thread");
 		thread.setDaemon(true);
 		thread.start();
 	}
@@ -744,7 +750,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	private void fetchRemoteList(byte[] addressPort) throws Throwable {
 		final int port = (addressPort[4] & 0xFF) | ((addressPort[5] & 0xFF) << 8);
 		final String baseAddress = "http://" + (addressPort[0] & 0xFF) + "." + (addressPort[1] & 0xFF) + "." + (addressPort[2] & 0xFF) + "." + (addressPort[3] & 0xFF) + ":" + port + "/";
-		final Object obj = Request.getJson(baseAddress + "list.json", br.com.carlosrafaelgn.fplay.plugin.SongList.class);
+		final Object obj = Request.getJson(baseAddress + "list.json", br.com.carlosrafaelgn.fplay.plugin.SongList.class, closeToken);
 		if (obj instanceof Throwable)
 			throw (Throwable)obj;
 		if (!(obj instanceof br.com.carlosrafaelgn.fplay.plugin.SongList))
@@ -852,11 +858,21 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	
 	public void cancel() {
 		cancelled = true;
+		if (closeToken != null)
+			closeToken.close();
+		if (thread != null && thread.isAlive()) {
+			try {
+				thread.interrupt();
+			} catch (Throwable ex) {
+				//just ignore
+			}
+		}
 	}
 	
 	@Override
 	public void run() {
 		if (MainHandler.isOnMainThread()) {
+			thread = null;
 			if (listener != null && !cancelled && Player.state < Player.STATE_TERMINATING)
 				listener.onFilesFetched(this, notifyE);
 			listener = null;

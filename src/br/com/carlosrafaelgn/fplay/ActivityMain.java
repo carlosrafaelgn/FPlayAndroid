@@ -64,13 +64,11 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import java.io.File;
 import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
-import br.com.carlosrafaelgn.fplay.list.FileFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
@@ -749,7 +747,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_MOVE24));
 		UI.separator(s, 0, 7);
-		s.add(0, MNU_HTTP_TRANSMITTER, 8, R.string.transmit)
+		s.add(0, MNU_HTTP_TRANSMITTER, 8, R.string.share_el)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_SHARE24));
 		UI.separator(menu, 1, 1);

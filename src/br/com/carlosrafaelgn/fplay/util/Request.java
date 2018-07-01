@@ -48,19 +48,97 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 		void onRequestFinished(int status, String reply, Throwable ex);
 	}
 
-	// Apparently, Android already uses OkHttp internally...
-	// https://stackoverflow.com/questions/26000027/does-android-use-okhttp-internally
+	public static class CloseToken {
+		private final Object token = new Object();
+		private boolean closed;
+		private HttpURLConnection urlConnection;
+
+		private boolean setUrlConnection(HttpURLConnection urlConnection) {
+			synchronized (token) {
+				if (!closed) {
+					this.urlConnection = urlConnection;
+					return true;
+				}
+				return false;
+			}
+		}
+
+		private void clearUrlConnection() {
+			synchronized (token) {
+				closed = true;
+				urlConnection = null;
+			}
+		}
+
+		public void close() {
+			synchronized (token) {
+				closed = true;
+				if (urlConnection != null) {
+					//Apparently, Android already uses OkHttp internally...
+					//https://stackoverflow.com/questions/26000027/does-android-use-okhttp-internally
+					try {
+						urlConnection.disconnect();
+					} catch (Throwable ex) {
+						//just ignore
+					}
+
+					//On old API's, disconnect() does not abort ongoing connection attempts,
+					//it just aborts ongoing reads or writes...
+
+					//Since connection timeout has been reduced to 10 seconds, let's just leave
+					//the calling thread wait for the connection to timeout naturally, instead of
+					//force closing it (although the following code works, and has been tested,
+					//I'd rather not use it, unless it proves really necessary someday)
+
+					////https://android.googlesource.com/platform/external/okhttp/+/2946265382960fbd8e2bd765e40e3bc7016e960e/src/main/java/com/squareup/okhttp/internal/http/HttpURLConnectionImpl.java
+					////https://android.googlesource.com/platform/external/okhttp/+/2946265382960fbd8e2bd765e40e3bc7016e960e/src/main/java/com/squareup/okhttp/internal/http/HttpEngine.java
+					////https://android.googlesource.com/platform/external/okhttp/+/2946265382960fbd8e2bd765e40e3bc7016e960e/src/main/java/com/squareup/okhttp/Connection.java
+					//
+					////https://android.googlesource.com/platform/external/okhttp/+/master/okhttp/src/main/java/com/squareup/okhttp/OkHttpClient.java
+					////https://android.googlesource.com/platform/external/okhttp/+/master/okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpEngine.java
+					////https://android.googlesource.com/platform/external/okhttp/+/master/okhttp/src/main/java/com/squareup/okhttp/Connection.java
+					//
+					////This is not pretty, I know... But this is an attempt to (try to) quickly abort
+					////ongoing connection attempts
+					//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+					//	try {
+					//		//protected HttpEngine httpEngine
+					//		Field field = urlConnection.getClass().getDeclaredField("httpEngine");
+					//		field.setAccessible(true);
+					//		Object httpEngine = field.get(urlConnection);
+					//		if (httpEngine != null) {
+					//			//public Connection getConnection()
+					//			Method method = httpEngine.getClass().getDeclaredMethod("getConnection");
+					//			method.setAccessible(true);
+					//			Object connection = method.invoke(httpEngine);
+					//			if (connection != null) {
+					//				//public void close()
+					//				method.setAccessible(true);
+					//				method = connection.getClass().getDeclaredMethod("close");
+					//				method.invoke(connection);
+					//			}
+					//		}
+					//	} catch (Throwable ex) {
+					//		//just ignore
+					//	}
+					//}
+
+					urlConnection = null;
+				}
+			}
+		}
+	}
 
 	public static HttpURLConnection createConnection(String url, int startByteRange) throws Throwable {
 		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(url)).openConnection();
 		urlConnection.setInstanceFollowRedirects(true);
-		urlConnection.setConnectTimeout(30000);
+		urlConnection.setConnectTimeout(10000);
 		urlConnection.setDoInput(true);
 		urlConnection.setDoOutput(false);
-		urlConnection.setReadTimeout(30000);
+		urlConnection.setReadTimeout(20000);
 		urlConnection.setRequestMethod("GET");
 		urlConnection.setUseCaches(false);
-		// Apparently, adding this line causes a few spurious "unexpected end of stream" exceptions...
+		//Apparently, adding this line causes a few spurious "unexpected end of stream" exceptions...
 		//urlConnection.setRequestProperty("Connection", "close");
 		if (startByteRange > 0)
 			urlConnection.setRequestProperty("Range", "bytes=" + startByteRange + "-");
@@ -74,13 +152,13 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 	public static HttpURLConnection createJsonConnection(String method, String url, boolean hasBody) throws Throwable {
 		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(url)).openConnection();
 		urlConnection.setInstanceFollowRedirects(true);
-		urlConnection.setConnectTimeout(30000);
+		urlConnection.setConnectTimeout(10000);
 		urlConnection.setDoInput(true);
 		urlConnection.setDoOutput(hasBody);
-		urlConnection.setReadTimeout(30000);
+		urlConnection.setReadTimeout(20000);
 		urlConnection.setRequestMethod(method);
 		urlConnection.setUseCaches(false);
-		// Apparently, adding this line causes a few spurious "unexpected end of stream" exceptions...
+		//Apparently, adding this line causes a few spurious "unexpected end of stream" exceptions...
 		//urlConnection.setRequestProperty("Connection", "close");
 		urlConnection.setRequestProperty("Accept", "application/json");
 		urlConnection.setRequestProperty("Accept-Charset", "utf-8");
@@ -107,51 +185,51 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 					sb.append(URLEncoder.encode(nameValuePairs[i + 1] == null ? "null" : nameValuePairs[i + 1], "UTF-8"));
 				}
 			}
-		} catch (Throwable igth) {
-			// Just ignore...
+		} catch (Throwable ex) {
+			//just ignore
 		}
 		return sb.toString();
 	}
 
-	public static Object get(String url) {
-		return send(null, url, "GET", null, 0, false, false);
+	public static Object get(String url, CloseToken closeToken) {
+		return send(null, url, "GET", null, 0, false, false, closeToken);
 	}
 
-	public static void get(Callback callback, String url) {
-		send(callback, url, "GET", null, 0, false, false);
+	public static void get(Callback callback, String url, CloseToken closeToken) {
+		send(callback, url, "GET", null, 0, false, false, closeToken);
 	}
 
-	public static Object getRawByteArrayInputStream(String url) {
-		return send(null, url, "GET", null, 0, false, true);
+	public static Object getRawByteArrayInputStream(String url, CloseToken closeToken) {
+		return send(null, url, "GET", null, 0, false, true, closeToken);
 	}
 
-	public static Object post(String url, String body) {
-		return send(null, url, "POST", body, 0, false, false);
+	public static Object post(String url, String body, CloseToken closeToken) {
+		return send(null, url, "POST", body, 0, false, false, closeToken);
 	}
 
-	public static Object post(String url, byte[] body, int length) {
-		return send(null, url, "POST", body, length, false, false);
+	public static Object post(String url, byte[] body, int length, CloseToken closeToken) {
+		return send(null, url, "POST", body, length, false, false, closeToken);
 	}
 
-	public static void post(Callback callback, String url, String body) {
-		send(callback, url, "POST", body, 0, false, false);
+	public static void post(Callback callback, String url, String body, CloseToken closeToken) {
+		send(callback, url, "POST", body, 0, false, false, closeToken);
 	}
 
-	public static Object postJson(String url, Object jsonObject) {
-		return send(null, url, "POST", jsonObject, 0, true, false);
+	public static Object postJson(String url, Object jsonObject, CloseToken closeToken) {
+		return send(null, url, "POST", jsonObject, 0, true, false, closeToken);
 	}
 
-	public static void postJson(Callback callback, String url, Object jsonObject) {
-		send(callback, url, "POST", jsonObject, 0, true, false);
+	public static void postJson(Callback callback, String url, Object jsonObject, CloseToken closeToken) {
+		send(callback, url, "POST", jsonObject, 0, true, false, closeToken);
 	}
 
-	public static Object getJson(String url, @NonNull Class<?> clazz) {
-		final Object result = get(url);
+	public static Object getJson(String url, @NonNull Class<?> clazz, CloseToken closeToken) {
+		final Object result = get(url, closeToken);
 		if (result instanceof String) {
 			Object json;
 			try {
 				json = (new Gson()).fromJson(result.toString(), clazz);
-			} catch (Throwable igth) {
+			} catch (Throwable ex) {
 				json = null;
 			}
 			return json;
@@ -159,21 +237,28 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 		return result;
 	}
 
-	private static Object send(String url, String method, byte[] body, int bodyLength, boolean bodyIsJson, boolean returnRawInputStream) {
+	private static Object send(String url, String method, byte[] body, int bodyLength, boolean bodyIsJson, boolean returnRawInputStream, CloseToken closeToken) {
 		InputStream inputStream = null;
 		RawByteArrayOutputStream outputStream = null;
 		HttpURLConnection urlConnection = null;
 		try {
 			urlConnection = createJsonConnection(method, url, body != null && bodyLength > 0);
+			if (closeToken != null && !closeToken.setUrlConnection(urlConnection))
+				return -1;
 			if (body != null && bodyLength > 0) {
 				if (bodyIsJson)
 					urlConnection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+				urlConnection.setFixedLengthStreamingMode(bodyLength);
 				urlConnection.getOutputStream().write(body, 0, bodyLength);
 			}
 			int status = urlConnection.getResponseCode();
-			if (status == 200) {
-				// We must use urlConnection.getErrorStream() in order to process the data
-				// sent by the server, when status != 2xx
+			if ((status >= 100 && status < 200) || status == 204) {
+				try {
+					inputStream = urlConnection.getInputStream();
+				} catch (Throwable ex) {
+					//just ignore
+				}
+			} else if (status >= 200 && status <= 299) {
 				inputStream = urlConnection.getInputStream();
 				int maxLength = urlConnection.getContentLength();
 				if (maxLength <= 0)
@@ -190,34 +275,47 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 				buffer = outputStream.rawBuffer();
 				len = ((buffer[0] == (byte)0xEF && buffer[1] == (byte)0xBB && buffer[2] == (byte)0xBF) ? 3 : 0);
 				return new String(outputStream.rawBuffer(), len, outputStream.size() - len);
+			} else {
+				//We must use urlConnection.getErrorStream() in order to process the data
+				//sent by the server, in the presence of errors
+				try {
+					inputStream = urlConnection.getErrorStream();
+				} catch (Throwable ex) {
+					//just ignore
+				}
 			}
 			return status;
-		} catch (Throwable igth) {
-			return igth;
+		} catch (Throwable ex) {
+			return ex;
 		} finally {
+			//We cannot use CloseToken.close() here because disconnect() does not
+			//abort ongoing connection attempts. Therefore, even if close() had been
+			//called, a connection could have been estabilished afterwards...
+			if (closeToken != null)
+				closeToken.clearUrlConnection();
 			try {
 				if (urlConnection != null)
 					urlConnection.disconnect();
-			} catch (Throwable igth) {
-				// Just ignore...
+			} catch (Throwable ex) {
+				//just ignore
 			}
 			try {
 				if (outputStream != null)
 					outputStream.close();
-			} catch (Throwable igth) {
-				// Just ignore...
+			} catch (Throwable ex) {
+				//just ignore
 			}
 			try {
 				if (inputStream != null)
 					inputStream.close();
-			} catch (Throwable igth) {
-				// Just ignore...
+			} catch (Throwable ex) {
+				//just ignore
 			}
 			System.gc();
 		}
 	}
 
-	private static Object send(Callback callback, String url, String method, Object body, int bodyLengthWhenByteArray, boolean bodyIsJson, boolean returnRawInputStream) {
+	private static Object send(Callback callback, String url, String method, Object body, int bodyLengthWhenByteArray, boolean bodyIsJson, boolean returnRawInputStream, CloseToken closeToken) {
 		try {
 			if (body != null) {
 				if (method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("DELETE"))
@@ -238,13 +336,13 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 			}
 
 			if (callback == null)
-				return send(url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream);
+				return send(url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream, closeToken);
 
-			(new Request(callback)).execute(url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream);
+			(new Request(callback)).execute(url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream, closeToken);
 
 			return null;
-		} catch (Throwable igth) {
-			return igth;
+		} catch (Throwable ex) {
+			return ex;
 		}
 	}
 
@@ -267,6 +365,6 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 
 	@Override
 	protected Object doInBackground(Object... objects) {
-		return send(objects[0].toString(), objects[1].toString(), (byte[])objects[2], (int)objects[3], (boolean)objects[4], (boolean)objects[5]);
+		return send(objects[0].toString(), objects[1].toString(), (byte[])objects[2], (int)objects[3], (boolean)objects[4], (boolean)objects[5], (CloseToken)objects[6]);
 	}
 }
