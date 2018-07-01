@@ -1228,7 +1228,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (mode == MODE_HTTP) {
 			optBtMessage = new SettingView(ctx, UI.ICON_INFORMATION, "", null, false, false, false);
 			optBtConnect = new SettingView(ctx, Player.httpTransmitter != null ? UI.ICON_PAUSE : UI.ICON_PLAY, "", null, false, false, false);
-			optBtStart = new SettingView(ctx, UI.ICON_LIST24, getText(R.string.refresh_list).toString(), null, false, false, false);
+			optBtStart = new SettingView(ctx, UI.ICON_REPEAT24, getText(R.string.refresh_list).toString(), null, false, false, false);
 			refreshHttpStatus(true, true);
 
 			headers = new TextView[2];

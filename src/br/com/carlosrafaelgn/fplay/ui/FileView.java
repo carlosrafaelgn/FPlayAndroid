@@ -61,7 +61,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
 	private BgButton btnCheckbox;
-	private String icon, ellipsizedName, secondaryText, albumStr, albumsStr, trackStr, tracksStr;
+	private String icon, ellipsizedName, secondaryText, ellipsizedSecondaryText, albumStr, albumsStr, trackStr, tracksStr;
 	private boolean pendingAlbumArtRequest, checkBoxVisible;
 	private final boolean hasCheckbox, force2D;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth, scrollBarType, leftMargin, rightMargin, rightMarginForDrawing;
@@ -141,6 +141,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	private void processEllipsis() {
 		ellipsizedName = UI.ellipsizeText(file.name, UI._Largesp, width - leftPadding - (checkBoxVisible ? UI.defaultControlSize : 0) - UI.controlMargin - rightMargin, true);
+		if (secondaryText != null) {
+			final int w = (checkBoxVisible ? (UI.defaultControlSize + UI.controlSmallMargin) : UI.controlMargin);
+			ellipsizedSecondaryText = UI.ellipsizeText(secondaryText, UI._14sp, width - leftPadding - ((icon == null) ? 0 : UI.defaultControlContentsSize) - w - rightMargin, true);
+			secondaryTextWidth = w + UI.measureText(ellipsizedSecondaryText, UI._14sp);
+		}
 	}
 
 	private void updateHorizontalMargins() {
@@ -270,6 +275,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				handler = new Handler(Looper.getMainLooper(), this);
 		}
 		secondaryText = null;
+		ellipsizedSecondaryText = null;
 		this.file = file;
 		if (checkBoxVisible != showCheckbox) {
 			checkBoxVisible = showCheckbox;
@@ -293,7 +299,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				albumCount = file.albums;
 				trackCount = file.tracks;
 				if (albumCount >= 1 && trackCount >= 1)
-					secondaryTextWidth = UI.defaultControlSize + UI.controlSmallMargin + UI.measureText((secondaryText = ((albumCount == 1) ? albumStr : (Integer.toString(albumCount) + albumsStr)) + " / " + ((trackCount == 1) ? trackStr : (Integer.toString(trackCount) + tracksStr))), UI._14sp);
+					secondaryText = ((albumCount == 1) ? albumStr : (Integer.toString(albumCount) + albumsStr)) + " / " + ((trackCount == 1) ? trackStr : (Integer.toString(trackCount) + tracksStr));
 				icon = UI.ICON_MIC;
 				newAlbumArt = null;
 				if (UI.albumArt && albumArtFetcher != null) {
@@ -310,7 +316,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			case FileSt.TYPE_ALBUM:
 				trackCount = file.tracks;
 				if (trackCount >= 1)
-					secondaryTextWidth = UI.defaultControlSize + UI.controlSmallMargin + UI.measureText((secondaryText = ((trackCount == 1) ? trackStr : (Integer.toString(trackCount) + tracksStr))), UI._14sp);
+					secondaryText = ((trackCount == 1) ? trackStr : (Integer.toString(trackCount) + tracksStr));
 			case FileSt.TYPE_ALBUM_ITEM:
 				icon = UI.ICON_ALBUMART;
 				newAlbumArt = null;
@@ -323,12 +329,12 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			case FileSt.TYPE_ICECAST:
 				icon = UI.ICON_ICECAST;
 				if (getContext() != null)
-					secondaryTextWidth = UI.controlSmallMargin + UI.measureText(secondaryText = getContext().getText(R.string.radio_directory).toString(), UI._14sp);
+					secondaryText = getContext().getText(R.string.radio_directory).toString();
 				break;
 			case FileSt.TYPE_SHOUTCAST:
 				icon = UI.ICON_SHOUTCAST;
 				if (getContext() != null)
-					secondaryTextWidth = UI.controlSmallMargin + UI.measureText(secondaryText = getContext().getText(R.string.radio_directory).toString(), UI._14sp);
+					secondaryText = getContext().getText(R.string.radio_directory).toString();
 				break;
 			case FileSt.TYPE_FPLAY_REMOTE_LIST:
 				icon = UI.ICON_SHARE;
@@ -378,7 +384,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			icon = null;
 			leftPadding = leftMargin + UI.controlMargin;
 			if (file.songInfo != null && file.songInfo.artist != null)
-				secondaryTextWidth = UI.defaultControlSize + UI.controlSmallMargin + UI.measureText(secondaryText = file.songInfo.artist, UI._14sp);
+				secondaryText = file.songInfo.artist;
 		}
 		processEllipsis();
 	}
@@ -478,17 +484,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((usableHeight - albumArt.height) >> 1), null);
 		else if (icon != null)
 			TextIconDrawable.drawIcon(canvas, icon, bitmapLeftPadding, iconY, UI.defaultControlContentsSize, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary);
-		if (secondaryText == null) {
+		if (ellipsizedSecondaryText == null) {
 			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._Largesp, leftPadding, nameYNoSecondary);
-			//switch (specialType) {
-			//case FileSt.TYPE_ICECAST:
-			//case FileSt.TYPE_SHOUTCAST:
-			//	UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, leftPadding, topMargin + usableHeight - UI._14spBox + UI._14spYinBox);
-			//	break;
-			//}
 		} else {
 			UI.drawText(canvas, ellipsizedName, (st != 0) ? UI.color_text_selected : UI.color_text_listitem, UI._Largesp, leftPadding, nameY);
-			UI.drawText(canvas, secondaryText, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth - rightMargin, secondaryY);
+			UI.drawText(canvas, ellipsizedSecondaryText, (st != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary, UI._14sp, width - secondaryTextWidth - rightMargin, secondaryY);
 		}
 		super.dispatchDraw(canvas);
 	}
@@ -508,6 +508,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		file = null;
 		btnCheckbox = null;
 		ellipsizedName = null;
+		secondaryText = null;
+		ellipsizedSecondaryText = null;
 		baseList = null;
 		super.onDetachedFromWindow();
 	}
