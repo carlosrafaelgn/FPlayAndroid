@@ -72,6 +72,7 @@ import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 public final class ActivityBrowser2 extends ClientActivity implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener, FileList.ItemClickListener, FileList.ActionListener, BgListView.OnBgListViewKeyDownObserver, FastAnimator.Observer {
 	private static final int MNU_REMOVEFAVORITE = 100;
+	private static String lastAccessCode;
 	private FileSt lastClickedFavorite;
 	private TextView lblPath, sep, sep2, lblLoading;
 	private BgListView list;
@@ -257,9 +258,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 								if (thrownException == null) {
 									if (ff.count <= 0)
 										continue;
-									filesToAdd.ensureCapacity(filesToAdd.size() + ff.count);
-									for (int j = 0; j < ff.count; j++)
-										filesToAdd.add(ff.files[j]);
+									filesToAdd.addAll(ff.files, ff.count);
 								} else {
 									if (firstException == null)
 										firstException = thrownException;
@@ -382,7 +381,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 
 		final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 
-		txtURL = UI.createDialogEditText(ctx, 0, "", getText(R.string.access_code), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		txtURL = UI.createDialogEditText(ctx, 0, lastAccessCode == null ? "" : lastAccessCode, getText(R.string.access_code), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
 		l.addView(txtURL, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 		txtTitle = null;
 
@@ -592,7 +591,15 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			UI.animationAddViewToHide(chkAlbumArt);
 			UI.animationAddViewToShow(btnHome);
 		} else if (others) {
-			final boolean albumArtArea = ((to.length() > 0) && ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR)));
+			final boolean albumArtArea;
+			if (to.charAt(0) == FileSt.FPLAY_REMOTE_LIST_ROOT_CHAR) {
+				albumArtArea = false;
+				final int i = to.lastIndexOf(FileSt.FAKE_PATH_SEPARATOR_CHAR);
+				if (i > 0)
+					lastAccessCode = to.substring(i + 1);
+			} else {
+				albumArtArea = ((to.charAt(0) == FileSt.ALBUM_ROOT_CHAR) || (to.charAt(0) == FileSt.ARTIST_ROOT_CHAR));
+			}
 			UI.animationAddViewToHide(btnURL);
 			if (albumArtArea) {
 				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);

@@ -107,9 +107,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with AndroidManifest.xml
-	public static final int VERSION_CODE = 106;
+	public static final int VERSION_CODE = 107;
 	//VERSION_NAME must be kept in sync with AndroidManifest.xml
-	public static final String VERSION_NAME = "v1.72";
+	public static final String VERSION_NAME = "v1.73";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -828,7 +828,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				//just ignore
 			}
 			try {
-				hasTouch = Player.theApplication.getPackageManager().hasSystemFeature("android.hardware.touchscreen");
+				hasTouch = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) || Player.theApplication.getPackageManager().hasSystemFeature("android.hardware.touchscreen"));
 			} catch (Throwable ex) {
 				hasTouch = true;
 				ex.printStackTrace();
@@ -1489,8 +1489,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 				activityHost.updateSystemColors(true);
 		//}
+
 		if (notFullscreen)
 			activityHost.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		else
+			activityHost.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 	}
 
 	public static int getAndroidThemeColor(int style, int attribute) {

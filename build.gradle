@@ -25,6 +25,17 @@ android {
     compileSdkVersion 26
     buildToolsVersion "20.0.0"
 
+	//https://developer.android.com/studio/build/configure-apk-splits
+	//https://gist.github.com/ph0b/69586260bc20c58136ef
+	splits {
+		abi {
+			enable true
+			reset()
+			include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+			universalApk false //do not generate an additional APK that contains all the ABIs
+		}
+	}
+
 	productFlavors {
 		traditional {
 			applicationId "br.com.carlosrafaelgn.fplay"

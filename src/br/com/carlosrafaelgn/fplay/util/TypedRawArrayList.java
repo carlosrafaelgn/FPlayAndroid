@@ -117,28 +117,6 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		array = (E[])Array.newInstance(clazz, MIN_CAPACITY_INCREMENT);
 	}
 
-	/**
-	 * Constructs a new instance of {@code TypedRawArrayList} containing the elements of
-	 * the specified collection.
-	 *
-	 * @param collection
-	 *            the collection of elements to add.
-	 */
-	@SuppressWarnings("unchecked")
-	public TypedRawArrayList(Class<E> clazz, Collection<? extends E> collection) {
-		if (collection == null)
-			throw new NullPointerException("collection == null");
-
-		this.clazz = clazz;
-		array = collection.toArray((E[])Array.newInstance(clazz, collection.size()));
-		size = array.length;
-	}
-
-	/**
-	 * Adds the specified object at the end of this {@code TypedRawArrayList}.
-	 *
-	 * @return always true
-	 */
 	@NonNull
 	public E[] getRawArray() {
 		return array;
@@ -152,11 +130,12 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * @return always true
 	 */
 	@SuppressWarnings("unchecked")
-	@Override public boolean add(E object) {
+	@Override
+	public boolean add(E object) {
 		E[] a = array;
 		final int s = size;
 		if (s == a.length) {
-			E[] newArray = (E[])Array.newInstance(clazz, s +
+			final E[] newArray = (E[])Array.newInstance(clazz, s +
 				(s < (MIN_CAPACITY_INCREMENT / 2) ?
 					MIN_CAPACITY_INCREMENT : s >> 1));
 			System.arraycopy(a, 0, newArray, 0, s);
@@ -191,7 +170,9 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 			System.arraycopy(a, index, a, index + 1, s - index);
 		} else {
 			// assert s == a.length;
-			final E[] newArray = (E[])Array.newInstance(clazz, newCapacity(s));
+			final E[] newArray = (E[])Array.newInstance(clazz, s +
+				(s < (MIN_CAPACITY_INCREMENT / 2) ?
+					MIN_CAPACITY_INCREMENT : s >> 1));
 			System.arraycopy(a, 0, newArray, 0, index);
 			System.arraycopy(a, index, newArray, index + 1, s - index);
 			array = a = newArray;
@@ -201,7 +182,7 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		modCount++;
 	}
 
-	/**
+	/*
 	 * This method controls the growth of TypedRawArrayList capacities.  It represents
 	 * a time-space tradeoff: we don't want to grow lists too frequently
 	 * (which wastes time and fragments storage), but we don't want to waste
@@ -210,10 +191,41 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * NOTE: This method is inlined into {@link #add(Object)} for performance.
 	 * If you change the method, change it there too!
 	 */
-	private static int newCapacity(int currentCapacity) {
-		int increment = (currentCapacity < (MIN_CAPACITY_INCREMENT / 2) ?
-			MIN_CAPACITY_INCREMENT : currentCapacity >> 1);
-		return currentCapacity + increment;
+	//private static int newCapacity(int currentCapacity) {
+	//	int increment = (currentCapacity < (MIN_CAPACITY_INCREMENT / 2) ?
+	//		MIN_CAPACITY_INCREMENT : currentCapacity >> 1);
+	//	return currentCapacity + increment;
+	//}
+
+	/**
+	 * Adds the objects in the specified array to this {@code TypedRawArrayList}.
+	 *
+	 * @param objects
+	 *            the array of objects.
+	 * @param length
+	 *            the number of objects to copy.
+	 * @return {@code true} if this {@code TypedRawArrayList} is modified, {@code false}
+	 *         otherwise.
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean addAll(E[] objects, int length) {
+		if (objects == null || length == 0)
+			return false;
+		E[] a = array;
+		final int s = size;
+		final int newSize = s + length; // If add overflows, arraycopy will fail
+		if (newSize > a.length) {
+			final int currentCapacity = newSize - 1;
+			final E[] newArray = (E[])Array.newInstance(clazz, currentCapacity +
+				(currentCapacity < (MIN_CAPACITY_INCREMENT / 2) ?
+					MIN_CAPACITY_INCREMENT : currentCapacity >> 1)); // ~33% growth room
+			System.arraycopy(a, 0, newArray, 0, s);
+			array = a = newArray;
+		}
+		System.arraycopy(objects, 0, a, s, length);
+		size = newSize;
+		modCount++;
+		return true;
 	}
 
 	/**
@@ -226,24 +238,7 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 */
 	@SuppressWarnings("unchecked")
 	public boolean addAll(E[] objects) {
-		if (objects == null)
-			return false;
-		final int newPartSize = objects.length;
-		if (newPartSize == 0)
-			return false;
-		E[] a = array;
-		final int s = size;
-		final int newSize = s + newPartSize; // If add overflows, arraycopy will fail
-		if (newSize > a.length) {
-			final int newCapacity = newCapacity(newSize - 1);  // ~33% growth room
-			final E[] newArray = (E[])Array.newInstance(clazz, newCapacity);
-			System.arraycopy(a, 0, newArray, 0, s);
-			array = a = newArray;
-		}
-		System.arraycopy(objects, 0, a, s, newPartSize);
-		size = newSize;
-		modCount++;
-		return true;
+		return (objects != null && addAll(objects, objects.length));
 	}
 
 	/**
@@ -255,7 +250,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 *         otherwise.
 	 */
 	@SuppressWarnings("unchecked")
-	@Override public boolean addAll(Collection<? extends E> collection) {
+	@Override
+	public boolean addAll(Collection<? extends E> collection) {
 		return addAll(collection.toArray((E[])Array.newInstance(clazz, collection.size())));
 	}
 
@@ -288,8 +284,10 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		if (newSize <= a.length) {
 			System.arraycopy(a, index, a, index + newPartSize, s - index);
 		} else {
-			final int newCapacity = newCapacity(newSize - 1);  // ~33% growth room
-			final E[] newArray = (E[])Array.newInstance(clazz, newCapacity);
+			final int currentCapacity = newSize - 1;
+			final E[] newArray = (E[])Array.newInstance(clazz, currentCapacity +
+				(currentCapacity < (MIN_CAPACITY_INCREMENT / 2) ?
+					MIN_CAPACITY_INCREMENT : currentCapacity >> 1)); // ~33% growth room
 			System.arraycopy(a, 0, newArray, 0, index);
 			System.arraycopy(a, index, newArray, index + newPartSize, s-index);
 			array = a = newArray;
@@ -314,7 +312,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * @see #isEmpty
 	 * @see #size
 	 */
-	@Override public void clear() {
+	@Override
+	public void clear() {
 		if (size != 0) {
 			Arrays.fill(array, 0, size, null);
 			size = 0;
@@ -330,7 +329,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * @see java.lang.Cloneable
 	 */
 	@SuppressWarnings("unchecked")
-	@Override public Object clone() {
+	@Override
+	public Object clone() {
 		try {
 			final TypedRawArrayList<E> result = (TypedRawArrayList<E>)super.clone();
 			result.array = array.clone();
@@ -357,7 +357,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		}
 	}
 
-	@Override public E get(int index) {
+	@Override
+	public E get(int index) {
 		if (index >= size)
 			throwIndexOutOfBoundsException(index, size);
 		return array[index];
@@ -368,11 +369,13 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 *
 	 * @return the number of elements in this {@code TypedRawArrayList}.
 	 */
-	@Override public int size() {
+	@Override
+	public int size() {
 		return size;
 	}
 
-	@Override public boolean isEmpty() {
+	@Override
+	public boolean isEmpty() {
 		return size == 0;
 	}
 
@@ -384,7 +387,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * @return {@code true} if {@code object} is an element of this
 	 *         {@code TypedRawArrayList}, {@code false} otherwise
 	 */
-	@Override public boolean contains(Object object) {
+	@Override
+	public boolean contains(Object object) {
 		final E[] a = array;
 		final int s = size;
 		if (object != null) {
@@ -401,7 +405,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		return false;
 	}
 
-	@Override public int indexOf(Object object) {
+	@Override
+	public int indexOf(Object object) {
 		final E[] a = array;
 		final int s = size;
 		if (object != null) {
@@ -418,7 +423,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		return -1;
 	}
 
-	@Override public int lastIndexOf(Object object) {
+	@Override
+	public int lastIndexOf(Object object) {
 		final E[] a = array;
 		if (object != null) {
 			for (int i = size - 1; i >= 0; i--) {
@@ -443,7 +449,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * @throws IndexOutOfBoundsException
 	 *             when {@code location < 0 || location >= size()}
 	 */
-	@Override public E remove(int index) {
+	@Override
+	public E remove(int index) {
 		final E[] a = array;
 		int s = size;
 		if (index >= s)
@@ -456,7 +463,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		return result;
 	}
 
-	@Override public boolean remove(Object object) {
+	@Override
+	public boolean remove(Object object) {
 		final E[] a = array;
 		int s = size;
 		if (object != null) {
@@ -483,7 +491,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		return false;
 	}
 
-	@Override protected void removeRange(int fromIndex, int toIndex) {
+	@Override
+	protected void removeRange(int fromIndex, int toIndex) {
 		if (fromIndex == toIndex)
 			return;
 		final E[] a = array;
@@ -514,7 +523,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * @throws IndexOutOfBoundsException
 	 *             when {@code location < 0 || location >= size()}
 	 */
-	@Override public E set(int index, E object) {
+	@Override
+	public E set(int index, E object) {
 		final E[] a = array;
 		if (index >= size)
 			throwIndexOutOfBoundsException(index, size);
@@ -531,7 +541,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 */
 	@SuppressWarnings("unchecked")
 	@NonNull
-	@Override public E[] toArray() {
+	@Override
+	public E[] toArray() {
 		final int s = size;
 		E[] result = (E[])Array.newInstance(clazz, s);
 		System.arraycopy(array, 0, result, 0, s);
@@ -555,7 +566,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 */
 	@SuppressWarnings({"unchecked", "SuspiciousSystemArraycopy"})
 	@NonNull
-	@Override public <T> T[] toArray(@NonNull T[] contents) {
+	@Override
+	public <T> T[] toArray(@NonNull T[] contents) {
 		final int s = size;
 		if (contents.length < s)
 			contents = (T[])Array.newInstance(contents.getClass().getComponentType(), s);
@@ -587,7 +599,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	}
 
 	@NonNull
-	@Override public Iterator<E> iterator() {
+	@Override
+	public Iterator<E> iterator() {
 		return new ArrayListIterator();
 	}
 
@@ -630,7 +643,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		}
 	}
 
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		final E[] a = array;
 		int hashCode = 1;
 		for (int i = 0, s = size; i < s; i++) {
@@ -640,7 +654,8 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		return hashCode;
 	}
 
-	@Override public boolean equals(Object o) {
+	@Override
+	public boolean equals(Object o) {
 		if (o == this)
 			return true;
 		if (!(o instanceof List))

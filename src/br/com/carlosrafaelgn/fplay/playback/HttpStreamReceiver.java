@@ -600,13 +600,19 @@ public final class HttpStreamReceiver implements Runnable {
 
 				//now playerSocket will only be used for output and we will just ignore any bytes received hereafter
 
-				//@@@ this must be fixed!!!
 				while (alive) {
 					//if we limit the amount to be written to MAX_PACKET_LENGTH bytes we won't block
 					//playerSocket.write for long periods
-					buffer.waitUntilCanRead(MAX_PACKET_LENGTH);
+					if (buffer.waitUntilCanRead(MAX_PACKET_LENGTH) <= 0) {
+						if (buffer.canFinish()) {
+							break;
+						} else {
+							Thread.sleep(5);
+							continue;
+						}
+					}
 					try {
-						buffer.skip(playerSocket.write(buffer.readBuffer));
+						buffer.readIntoChannel(playerSocket);
 						timeoutCount = 0;
 					} catch (SocketTimeoutException ex) {
 						timeoutCount++;
@@ -755,7 +761,7 @@ public final class HttpStreamReceiver implements Runnable {
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
 		//when isPerformingFullPlayback is true, we will need to use the data inside this buffer from Java very often!
 		//when isPerformingFullPlayback is false, and we will be just acting as a man-in-the-middle, then create a very small buffer
-		buffer = new CircularIOBuffer(!isPerformingFullPlayback ? MIN_BUFFER_LENGTH : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH, !isPerformingFullPlayback);
+		buffer = new CircularIOBuffer(!isPerformingFullPlayback ? MIN_BUFFER_LENGTH : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH);
 		this.handler = handler;
 		this.errorMsg = errorMsg;
 		this.preparedMsg = preparedMsg;
@@ -1241,6 +1247,7 @@ public final class HttpStreamReceiver implements Runnable {
 			final ByteBuffer metaByteBuffer = ((icyMetaInterval > 0) ? ByteBuffer.wrap(new byte[MAX_METADATA_LENGTH]) : null);
 
 			boolean buffering = true;
+			boolean pendingBufferingMessage = true;
 			synchronized (sync) {
 				if (handler != null)
 					handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 1), SystemClock.uptimeMillis());
@@ -1284,9 +1291,13 @@ public final class HttpStreamReceiver implements Runnable {
 						//(as if we had just started playing for the first time)
 						buffering = true;
 						bufferingCounter = buffer.getFilledSize();
-						synchronized (sync) {
-							if (handler != null)
-								handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 1), SystemClock.uptimeMillis());
+						//on API's 10..15, we are just acting as a server for MediaPlayer class...
+						//and it consumes data REALLY fast, emptying the buffer too often!!!
+						if ((pendingBufferingMessage = isPerformingFullPlayback)) {
+							synchronized (sync) {
+								if (handler != null)
+									handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 1), SystemClock.uptimeMillis());
+							}
 						}
 					}
 
@@ -1303,9 +1314,12 @@ public final class HttpStreamReceiver implements Runnable {
 						if (bufferingCounter >= initialNetworkBufferLengthInBytes) {
 							if (buffering) {
 								buffering = false;
-								synchronized (sync) {
-									if (handler != null)
-										handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 0), SystemClock.uptimeMillis());
+								if (pendingBufferingMessage) {
+									pendingBufferingMessage = false;
+									synchronized (sync) {
+										if (handler != null)
+											handler.sendMessageAtTime(Message.obtain(handler, bufferingMsg, arg1, 0), SystemClock.uptimeMillis());
+									}
 								}
 							}
 							buffer.commitWritten(bufferingCounter);

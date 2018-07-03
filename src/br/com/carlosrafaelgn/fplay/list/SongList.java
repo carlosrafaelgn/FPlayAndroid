@@ -49,7 +49,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
+import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -782,10 +782,15 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	private void setShuffledCapacity(int capacity) {
 		//synchronized (currentAndCountMutex) {
 			if (capacity >= count) {
-				if (shuffledList == null)
-					shuffledList = new Song[capacity + LIST_DELTA];
-				else if (capacity > shuffledList.length || capacity <= (shuffledList.length - (2 * LIST_DELTA)))
-					shuffledList = Arrays.copyOf(shuffledList, capacity + LIST_DELTA);
+				if (capacity <= 0) capacity = MIN_CAPACITY_INCREMENT;
+				final Song[] array = shuffledList;
+				if (array == null) {
+					shuffledList = new Song[capacity + (capacity >> 1)];
+				} else if (capacity > array.length || capacity <= (array.length >> 2)) {
+					final Song[] newArray = (Song[])Array.newInstance(Song.class, capacity + (capacity >> 1));
+					System.arraycopy(array, 0, newArray, 0, count);
+					shuffledList = newArray;
+				}
 			}
 		//}
 	}

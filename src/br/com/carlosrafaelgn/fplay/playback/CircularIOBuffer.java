@@ -32,29 +32,30 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import android.os.SystemClock;
+
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 
 public final class CircularIOBuffer {
 	private volatile boolean alive, finished;
 	private volatile int filledSize;
 	private final Object sync;
+	private long lastWriteTime;
 	public final int capacity;
 	public final byte[] array;
 	public final ByteBuffer writeBuffer, readBuffer;
 
-	public CircularIOBuffer(int capacity, boolean direct) {
+	public CircularIOBuffer(int capacity) {
 		alive = true;
 		sync = new Object();
 		this.capacity = capacity;
-		if (direct) {
-			array = null;
-			writeBuffer = ByteBuffer.allocateDirect(capacity);
-		} else {
-			array = new byte[capacity];
-			writeBuffer = ByteBuffer.wrap(array);
-		}
+		array = new byte[capacity];
+		writeBuffer = ByteBuffer.wrap(array);
 		readBuffer = writeBuffer.asReadOnlyBuffer();
 		readBuffer.limit(readBuffer.capacity());
+		lastWriteTime = SystemClock.elapsedRealtime();
 	}
 
 	public void reset() {
@@ -74,6 +75,19 @@ public final class CircularIOBuffer {
 		}
 	}
 
+	private int canReadInternal(int length) {
+		if (!alive)
+			return -1;
+		if (filledSize < length) {
+			if (!finished)
+				return -1;
+			length = filledSize;
+		}
+		if (readBuffer.position() >= capacity)
+			readBuffer.position(0);
+		return length;
+	}
+
 	public int waitUntilCanRead(int length) {
 		synchronized (sync) {
 			while (alive && !finished && filledSize < length) {
@@ -83,23 +97,20 @@ public final class CircularIOBuffer {
 					//ignore the interruptions
 				}
 			}
+			return canReadInternal(length);
 		}
-		return canRead(length);
+	}
+
+	public boolean canFinish() {
+		synchronized (sync) {
+			return (!alive || (finished && filledSize <= 0));
+		}
 	}
 
 	public int canRead(int length) {
 		synchronized (sync) {
-			if (!alive)
-				return -1;
-			if (filledSize < length) {
-				if (!finished)
-					return -1;
-				length = filledSize;
-			}
+			return canReadInternal(length);
 		}
-		if (readBuffer.position() >= capacity)
-			readBuffer.position(0);
-		return length;
 	}
 
 	private void commitRead(int length) {
@@ -117,7 +128,6 @@ public final class CircularIOBuffer {
 	}
 
 	public void skip(int length) {
-		final int originalLength = length;
 		final int readPosition = readBuffer.position();
 		final int bytesAvailableBeforeEndOfBuffer = capacity - readPosition;
 		if (bytesAvailableBeforeEndOfBuffer >= length) {
@@ -125,10 +135,9 @@ public final class CircularIOBuffer {
 			readBuffer.position(readPosition + length);
 		} else {
 			//two copies would be required
-			length -= bytesAvailableBeforeEndOfBuffer;
-			readBuffer.position(length);
+			readBuffer.position(length - bytesAvailableBeforeEndOfBuffer);
 		}
-		commitRead(originalLength);
+		commitRead(length);
 	}
 
 	public void read(ByteBuffer dst, int dstOffset, int length) {
@@ -143,8 +152,10 @@ public final class CircularIOBuffer {
 			readBuffer.position(readPosition + length);
 		} else {
 			//two copies are required
-			dst.put(array, readPosition, bytesAvailableBeforeEndOfBuffer);
-			length -= bytesAvailableBeforeEndOfBuffer;
+			if (bytesAvailableBeforeEndOfBuffer > 0) {
+				dst.put(array, readPosition, bytesAvailableBeforeEndOfBuffer);
+				length -= bytesAvailableBeforeEndOfBuffer;
+			}
 			dst.put(array, 0, length);
 			readBuffer.position(length);
 		}
@@ -162,12 +173,71 @@ public final class CircularIOBuffer {
 			readBuffer.position(readPosition + length);
 		} else {
 			//two copies are required
-			System.arraycopy(array, readPosition, dst, dstOffset, bytesAvailableBeforeEndOfBuffer);
-			length -= bytesAvailableBeforeEndOfBuffer;
+			if (bytesAvailableBeforeEndOfBuffer > 0) {
+				System.arraycopy(array, readPosition, dst, dstOffset, bytesAvailableBeforeEndOfBuffer);
+				length -= bytesAvailableBeforeEndOfBuffer;
+			}
 			System.arraycopy(array, 0, dst, dstOffset + bytesAvailableBeforeEndOfBuffer, length);
 			readBuffer.position(length);
 		}
 		commitRead(originalLength);
+	}
+
+	private static void throttleChannel(int writtenBytes) throws InterruptedException {
+		if (writtenBytes <= 1280) {
+			Thread.sleep(10);
+		} else {
+			writtenBytes >>= 6;
+			Thread.sleep((writtenBytes >= 200) ? 200 : writtenBytes);
+		}
+	}
+
+	public void readIntoChannel(WritableByteChannel channel) throws IOException, InterruptedException {
+		//all the Thread.sleep() in here are necessary, because old Androids consume data
+		//much, much faster than it is produced, even on a fast network!!!
+		if (channel == null)
+			return;
+		int length = filledSize;
+		final int readPosition = readBuffer.position();
+		final int bytesAvailableBeforeEndOfBuffer = capacity - readPosition;
+		int written;
+		if (bytesAvailableBeforeEndOfBuffer >= length) {
+			//one copy will do it
+			readBuffer.limit(readPosition + length);
+			if ((written = channel.write(readBuffer)) > 0) {
+				commitRead(written);
+				throttleChannel(written);
+			} else {
+				throttleChannel(0);
+			}
+		} else {
+			//two copies are required
+			if (bytesAvailableBeforeEndOfBuffer > 0) {
+				readBuffer.limit(capacity);
+				if ((written = channel.write(readBuffer)) > 0) {
+					if (written != bytesAvailableBeforeEndOfBuffer) {
+						//the channel did not consume all of our bytes, so it is needless to continue
+						commitRead(written);
+						throttleChannel(written);
+						return;
+					}
+					length -= written;
+				} else {
+					throttleChannel(0);
+					return;
+				}
+			}
+			readBuffer.position(0);
+			readBuffer.limit(length);
+			if ((written = channel.write(readBuffer)) > 0) {
+				written += bytesAvailableBeforeEndOfBuffer;
+				commitRead(written);
+				throttleChannel(written);
+			} else {
+				commitRead(bytesAvailableBeforeEndOfBuffer);
+				throttleChannel(bytesAvailableBeforeEndOfBuffer);
+			}
+		}
 	}
 
 	public int waitUntilCanWrite(int length) {

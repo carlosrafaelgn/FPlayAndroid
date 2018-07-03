@@ -6,7 +6,7 @@
 		AppBaseTheme from BOTH res/values/styles.xml and res/values-v11/styles.xml 
 		on API 13+ devices.
     -->
-    <style name="AppBaseTheme" parent="@android:style/Theme.Holo.Light.NoActionBar.Fullscreen">
+    <style name="AppBaseTheme" parent="@android:style/Theme.Holo.Light.NoActionBar">
         <!-- API 13 theme customizations can go here. -->
     </style>
 

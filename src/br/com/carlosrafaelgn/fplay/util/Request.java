@@ -32,7 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.util;
 
-import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 
 import com.google.gson.Gson;
@@ -42,8 +41,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+
+//As impressive as it might sound, a few old devices produce this Exception
+//when trying to initialize the class android.os.AsyncTask!!!!!!!!!!!!!!!!
+//Exception Ljava/lang/RuntimeException; thrown while initializing Landroid/os/AsyncTask;
 @SuppressWarnings({"unused", "WeakerAccess"})
-public final class Request extends AsyncTask<Object, Object, Object> {
+//public final class Request extends AsyncTask<Object, Object, Object> {
+public final class Request implements Runnable {
 	public interface Callback {
 		void onRequestFinished(int status, String reply, Throwable ex);
 	}
@@ -338,7 +343,11 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 			if (callback == null)
 				return send(url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream, closeToken);
 
-			(new Request(callback)).execute(url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream, closeToken);
+			final Request request = new Request(callback, new Object[] { url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream, closeToken });
+			final Thread thread = new Thread(request, "Request Async Task");
+			thread.setDaemon(true);
+			thread.start();
+			//(new Request(callback)).execute(url, method, bbody, bodyLengthWhenByteArray, bodyIsJson, returnRawInputStream, closeToken);
 
 			return null;
 		} catch (Throwable ex) {
@@ -347,24 +356,34 @@ public final class Request extends AsyncTask<Object, Object, Object> {
 	}
 
 	private Callback callback;
+	private volatile Object transfer;
 
-	private Request(Callback callback) {
+	private Request(Callback callback, Object transfer) {
 		this.callback = callback;
+		this.transfer = transfer;
 	}
 
 	@Override
-	protected void onPostExecute(Object o) {
-		if (o instanceof Throwable)
-			callback.onRequestFinished(0, null, (Throwable)o);
-		else if (o instanceof String)
-			callback.onRequestFinished(200, o.toString(), null);
-		else
-			callback.onRequestFinished((Integer)o, null, null);
-		callback = null;
-	}
+	public void run() {
+		final Object o = transfer;
+		transfer = null;
 
-	@Override
-	protected Object doInBackground(Object... objects) {
-		return send(objects[0].toString(), objects[1].toString(), (byte[])objects[2], (int)objects[3], (boolean)objects[4], (boolean)objects[5], (CloseToken)objects[6]);
+		if (MainHandler.isOnMainThread()) {
+			//onPostExecute()
+			final Callback c = callback;
+			callback = null;
+			if (o instanceof Throwable)
+				c.onRequestFinished(0, null, (Throwable)o);
+			else if (o instanceof String)
+				c.onRequestFinished(200, o.toString(), null);
+			else
+				c.onRequestFinished((Integer)o, null, null);
+			return;
+		}
+
+		//doInBackground()
+		final Object[] objects = (Object[])o;
+		transfer = send(objects[0].toString(), objects[1].toString(), (byte[])objects[2], (int)objects[3], (boolean)objects[4], (boolean)objects[5], (CloseToken)objects[6]);
+		MainHandler.postToMainThread(this);
 	}
 }

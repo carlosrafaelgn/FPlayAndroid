@@ -140,7 +140,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		case MODE_BLUETOOTH:
 			return "Bluetooth + Arduino";
 		case MODE_HTTP:
-			return getText(R.string.settings);
+			return getText(R.string.share);
 		default:
 			return getText(R.string.settings);
 		}

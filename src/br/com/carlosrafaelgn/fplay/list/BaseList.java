@@ -36,7 +36,6 @@ import android.database.DataSetObserver;
 import android.widget.BaseAdapter;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
 
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -62,7 +61,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		void onSelectionChanged(BaseList<E> list);
 	}
 
-	protected static final int LIST_DELTA = 32;
+	protected static final int MIN_CAPACITY_INCREMENT = 12;
 
 	protected static final int SELECTION_CHANGED = 0;
 	protected static final int LIST_CLEARED = 1;
@@ -77,14 +76,16 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 	private ActionListener actionListener;
 	protected final Object currentAndCountMutex;
 	private final int maxCount;
+	private final Class<E> clazz;
 	protected E[] items;
 	protected int count, current, firstSel, lastSel, originalSel, indexOfPreviouslyDeletedCurrentItem, modificationVersion;
 
 	@SuppressWarnings("unchecked")
-	public BaseList(Class<E> c, int maxCount) {
+	public BaseList(Class<E> clazz, int maxCount) {
 		this.currentAndCountMutex = new Object();
 		this.maxCount = maxCount;
-		this.items = (E[])Array.newInstance(c, LIST_DELTA);
+		this.clazz = clazz;
+		this.items = (E[])Array.newInstance(clazz, MIN_CAPACITY_INCREMENT);
 		this.current = -1;
 		this.firstSel = -1;
 		this.lastSel = -1;
@@ -98,9 +99,15 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 
 	protected void clearingItems() { }
 
+	@SuppressWarnings("unchecked")
 	protected void setCapacity(int capacity) {
-		if (capacity >= count && (capacity > items.length || capacity <= (items.length - (2 * LIST_DELTA))))
-			items = Arrays.copyOf(items, capacity + LIST_DELTA);
+		final E[] array;
+		if (capacity >= count && (capacity > (array = items).length || capacity <= (array.length >> 2))) {
+			if (capacity <= 0) capacity = MIN_CAPACITY_INCREMENT;
+			final E[] newArray = (E[])Array.newInstance(clazz, capacity + (capacity >> 1));
+			System.arraycopy(array, 0, newArray, 0, count);
+			items = newArray;
+		}
 	}
 
 	public final int getModificationVersion() {
