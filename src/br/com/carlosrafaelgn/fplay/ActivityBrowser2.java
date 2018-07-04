@@ -417,10 +417,10 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 					return;
 				}
 
-				//if (!Player.isInternetConnectedViaWiFi()) {
-				//	UI.toast(getText(R.string.error_wifi));
-				//	return;
-				//}
+				if (!Player.isInternetConnectedViaWiFi()) {
+					UI.toast(getText(R.string.error_wifi));
+					return;
+				}
 
 				showRemoteListDialog();
 
@@ -456,9 +456,12 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			addPlayCheckedItems(true);
 			if (forceHideButtons) {
 				//hide all the buttons to prevent flickering
-				btnAdd.setVisibility(View.GONE);
-				sep2.setVisibility(View.GONE);
-				btnPlay.setVisibility(View.GONE);
+				if (btnAdd != null)
+					btnAdd.setVisibility(View.GONE);
+				if (sep2 != null)
+					sep2.setVisibility(View.GONE);
+				if (btnPlay != null)
+					btnPlay.setVisibility(View.GONE);
 			}
 			return;
 		}

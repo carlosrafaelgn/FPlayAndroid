@@ -106,9 +106,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 //
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
-	//VERSION_CODE must be kept in sync with AndroidManifest.xml
+	//VERSION_CODE must be kept in sync with build.gradle
 	public static final int VERSION_CODE = 107;
-	//VERSION_NAME must be kept in sync with AndroidManifest.xml
+	//VERSION_NAME must be kept in sync with build.gradle
 	public static final String VERSION_NAME = "v1.73";
 
 	public static final int STATE_PRESSED = 1;

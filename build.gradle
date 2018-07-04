@@ -25,6 +25,13 @@ android {
     compileSdkVersion 26
     buildToolsVersion "20.0.0"
 
+	// versionCode must be kept in sync with UI.VERSION_CODE
+	// versionName must be kept in sync with UI.VERSION_NAME
+	defaultConfig {
+		versionCode 107
+		versionName "1.73"
+	}
+
 	//https://developer.android.com/studio/build/configure-apk-splits
 	//https://gist.github.com/ph0b/69586260bc20c58136ef
 	splits {
@@ -33,6 +40,16 @@ android {
 			reset()
 			include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
 			universalApk false //do not generate an additional APK that contains all the ABIs
+		}
+	}
+
+	//we must generate different version codes for different APK's, or else
+	//Play Console will not accept the upload
+	project.ext.versionCodes = ['armeabi-v7a': 0, 'arm64-v8a': 1, 'x86': 2, 'x86_64': 3]
+
+	android.applicationVariants.all { variant ->
+		variant.outputs.each {
+			output -> output.versionCodeOverride = (project.ext.versionCodes.get(output.getFilter(com.android.build.OutputFile.ABI), 0) * 1000000) + android.defaultConfig.versionCode
 		}
 	}
 

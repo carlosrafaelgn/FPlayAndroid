@@ -3627,7 +3627,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@SuppressWarnings("deprecation")
 	private static void broadcastStateChange(String title, boolean preparing, boolean titleOrSongHaveChanged) {
-		notificationManager.notify(1, getNotification());
+		try {
+			notificationManager.notify(1, getNotification());
+		} catch (Throwable ex) {
+			//why the *rare* android.os.TransactionTooLargeException?
+			//what to do?!?!
+		}
 		WidgetMain.updateWidgets();
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?
