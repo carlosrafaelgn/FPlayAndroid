@@ -1772,7 +1772,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (barSeek != null && !barSeek.isTracking()) {
 				if (s.isHttp) {
 					final long m = Player.getHttpPosition();
-					barSeek.setText((m < 0) ? getText(R.string.connecting).toString() : ((Player.getHttpPosition() >>> 10) + " KiB " + getText(R.string.loading)));
+					barSeek.setText((m < 0) ? getText(R.string.connecting).toString() : ((m >>> 10) + " KiB " + getText(R.string.loading)));
 				} else {
 					barSeek.setText(R.string.loading);
 				}
@@ -1782,7 +1782,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		} else if (s != null && s.isHttp) {
 			if (barSeek != null) {
 				final long m = Player.getHttpPosition();
-				barSeek.setText((m < 0) ? "-" : ((m >>> 10) + " KiB"));
+				barSeek.setText((m < 0) ? ((Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) ? getText(R.string.receiving).toString() : "-") : ((m >>> 10) + " KiB"));
 				barSeek.setValue(0);
 			}
 			return;

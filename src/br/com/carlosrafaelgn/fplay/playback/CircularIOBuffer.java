@@ -32,8 +32,6 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
-import android.os.SystemClock;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
@@ -42,7 +40,6 @@ public final class CircularIOBuffer {
 	private volatile boolean alive, finished;
 	private volatile int filledSize;
 	private final Object sync;
-	private long lastWriteTime;
 	public final int capacity;
 	public final byte[] array;
 	public final ByteBuffer writeBuffer, readBuffer;
@@ -55,7 +52,6 @@ public final class CircularIOBuffer {
 		writeBuffer = ByteBuffer.wrap(array);
 		readBuffer = writeBuffer.asReadOnlyBuffer();
 		readBuffer.limit(readBuffer.capacity());
-		lastWriteTime = SystemClock.elapsedRealtime();
 	}
 
 	public void reset() {
@@ -193,7 +189,7 @@ public final class CircularIOBuffer {
 	}
 
 	public void readIntoChannel(WritableByteChannel channel) throws IOException, InterruptedException {
-		//all the Thread.sleep() in here are necessary, because old Androids consume data
+		//all calls to throttleChannel() in here are necessary, because old Androids consume data
 		//much, much faster than it is produced, even on a fast network!!!
 		if (channel == null)
 			return;

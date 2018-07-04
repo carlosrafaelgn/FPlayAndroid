@@ -339,6 +339,7 @@
     <string name="all_kinds">All kinds</string>
     <string name="listeners">Listeners</string>
     <string name="connecting">Connecting&#8230;</string>
+    <string name="receiving">Receiving&#8230;</string>
     <string name="bytes_before_decoding">Bytes to download before starting to decode:</string>
     <string name="seconds_before_playback">Seconds to decode before starting the playback:</string>
     <string name="playback_buffer_length">Size of the playback buffer (a large value brings more stability but causes a delay when changing the effects):</string>

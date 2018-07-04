@@ -761,7 +761,9 @@ public final class HttpStreamReceiver implements Runnable {
 		isPerformingFullPlayback = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN);
 		//when isPerformingFullPlayback is true, we will need to use the data inside this buffer from Java very often!
 		//when isPerformingFullPlayback is false, and we will be just acting as a man-in-the-middle, then create a very small buffer
-		buffer = new CircularIOBuffer(!isPerformingFullPlayback ? MIN_BUFFER_LENGTH : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH);
+		//API 10..15 fix
+		buffer = new CircularIOBuffer(!isPerformingFullPlayback ? 4 : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH);
+		//buffer = new CircularIOBuffer(!isPerformingFullPlayback ? MIN_BUFFER_LENGTH : EXTERNAL_BUFFER_LENGTH + MIN_BUFFER_LENGTH);
 		this.handler = handler;
 		this.errorMsg = errorMsg;
 		this.preparedMsg = preparedMsg;
@@ -1353,6 +1355,10 @@ public final class HttpStreamReceiver implements Runnable {
 	}
 
 	public boolean start(int bytesBeforeDecoding) {
+		//API 10..15 fix
+		if (!isPerformingFullPlayback)
+			return true;
+
 		if (alive || released)
 			return false;
 
@@ -1485,7 +1491,9 @@ public final class HttpStreamReceiver implements Runnable {
 
 	@SuppressWarnings("unused")
 	public String getLocalURL() {
-		return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
+		//API 10..15 fix
+		//return ((serverPortReady <= 0) ? null : ("http://127.0.0.1:" + serverPortReady + "/"));
+		return url.toString();
 	}
 
 	public int getFilledBufferSize() {

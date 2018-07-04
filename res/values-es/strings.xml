@@ -325,6 +325,7 @@
     <string name="all_kinds">Todos los tipos</string>
     <string name="listeners">Oyentes</string>
     <string name="connecting">Conectando&#8230;</string>
+    <string name="receiving">Recibiendo&#8230;</string>
     <string name="bytes_before_decoding">Bytes para descargar antes de comenzar a decodificar:</string>
     <string name="seconds_before_playback">Segundos para decodificar antes de iniciar la reproducción:</string>
     <string name="playback_buffer_length">Tamaño del buffer de reproducción (un valor grande trae más estabilidad, pero provoca un retraso al cambiar los efectos):</string>
