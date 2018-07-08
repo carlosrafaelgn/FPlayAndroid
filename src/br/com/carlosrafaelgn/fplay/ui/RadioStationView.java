@@ -41,6 +41,7 @@ import android.support.annotation.NonNull;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.view.Gravity;
+import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.accessibility.AccessibilityEvent;
@@ -117,6 +118,8 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		super.setDrawingCacheEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 	}
 
 	private void processEllipsis() {
@@ -256,7 +259,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
-		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
 		if ((state == 0) != old && btnFavorite != null)
 			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 	}

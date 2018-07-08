@@ -38,6 +38,7 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.accessibility.AccessibilityEvent;
@@ -104,6 +105,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		super.setDrawingCacheEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 	}
 
 	private void processEllipsis() {
@@ -194,7 +197,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
 	}
 
 	@Override

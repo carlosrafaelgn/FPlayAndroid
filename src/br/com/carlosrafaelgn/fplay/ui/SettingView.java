@@ -41,6 +41,7 @@ import android.support.annotation.NonNull;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.view.KeyEvent;
+import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.accessibility.AccessibilityEvent;
@@ -82,6 +83,8 @@ public final class SettingView extends View {
 		super.setDrawingCacheEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 	}
 
 	@Override
@@ -325,7 +328,7 @@ public final class SettingView extends View {
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = UI.handleStateChanges(state, isPressed(), isFocused(), this);
+		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
 	}
 
 	@Override
