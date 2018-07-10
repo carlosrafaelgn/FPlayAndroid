@@ -54,6 +54,7 @@ import android.media.RemoteControlClient;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.ConnectivityManager;
+import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -291,7 +292,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int localVolumeDB;
 	public static boolean localPlaying, localPlayerBuffering;
 	public static Song localSong;
-	public static MediaPlayerBase localPlayer;
+	private static MediaPlayerBase localPlayer;
 
 	private static class CoreHandler extends Handler {
 		@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
@@ -2808,14 +2809,29 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return false;
 	}
 
-	@SuppressWarnings({"deprecation", "unused"})
+	@SuppressWarnings({"deprecation"})
 	public static boolean isInternetConnectedViaWiFi() {
 		if (thePlayer != null) {
 			try {
 				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
-				final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-				final NetworkInfo info = mngr.getActiveNetworkInfo();
-				return (infoMob != null && info != null && !infoMob.isConnected() && info.isConnected());
+				//final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+				//final NetworkInfo info = mngr.getActiveNetworkInfo();
+				//return (infoMob != null && info != null && !infoMob.isConnected() && info.isConnected());
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+					try {
+						final Network[] networks = mngr.getAllNetworks();
+						for (int i = networks.length - 1; i >= 0; i--) {
+							final NetworkInfo info = mngr.getNetworkInfo(networks[i]);
+							if (info.getType() == ConnectivityManager.TYPE_WIFI &&
+								info.isConnected())
+								return true;
+						}
+					} catch (Throwable igth) {
+						//just ignore and try the old method
+					}
+				}
+				final NetworkInfo networkInfo = mngr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+				return networkInfo.isConnected();
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
