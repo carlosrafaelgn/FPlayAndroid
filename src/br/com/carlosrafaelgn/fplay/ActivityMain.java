@@ -854,9 +854,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-		if (Player.state == Player.STATE_ALIVE && grantResults != null && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+		if (Player.state == Player.STATE_ALIVE && grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 			if (requestCode > 100 && requestCode < 200) {
-				openVisualizer(requestCode);
+				if (Player.state == Player.STATE_ALIVE)
+					openVisualizer(requestCode);
 			} else if (requestCode == 2 && pendingListCommand != 0) {
 				if (Player.state == Player.STATE_ALIVE)
 					selectPlaylist(pendingListCommand);

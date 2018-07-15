@@ -779,18 +779,16 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		return (shuffledList != null);
 	}
 
-	private void setShuffledCapacity(int capacity) {
+	private void setShuffledCapacity() {
 		//synchronized (currentAndCountMutex) {
-			if (capacity >= count) {
-				if (capacity <= 0) capacity = MIN_CAPACITY_INCREMENT;
-				final Song[] array = shuffledList;
-				if (array == null) {
-					shuffledList = new Song[capacity + (capacity >> 1)];
-				} else if (capacity > array.length || capacity <= (array.length >> 2)) {
-					final Song[] newArray = (Song[])Array.newInstance(Song.class, capacity + (capacity >> 1));
-					System.arraycopy(array, 0, newArray, 0, count);
-					shuffledList = newArray;
-				}
+			final int capacity = ((count <= 0) ? MIN_CAPACITY_INCREMENT : count);
+			final Song[] array;
+			if ((array = shuffledList) == null) {
+				shuffledList = new Song[capacity + (capacity >> 1)];
+			} else if (capacity > array.length || capacity <= (array.length >> 2)) {
+				final Song[] newArray = (Song[])Array.newInstance(Song.class, capacity + (capacity >> 1));
+				System.arraycopy(array, 0, newArray, 0, (count <= array.length) ? count : array.length);
+				shuffledList = newArray;
 			}
 		//}
 	}
@@ -806,7 +804,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			shuffledList = null;
 		} else {
 			repeatMode = REPEAT_ALL;
-			setShuffledCapacity(count);
+			setShuffledCapacity();
 			for (i = count - 1; i >= 0; i--) {
 				final Song s = items[i];
 				s.alreadyPlayed = false;
@@ -898,7 +896,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	protected void addingItems(int position, int count) {
 		if (shuffledList == null)
 			return;
-		setShuffledCapacity(this.count);
+		setShuffledCapacity();
 		final int initial = this.count - count;
 		System.arraycopy(items, position, shuffledList, initial, count);
 		final Random r = new Random();
