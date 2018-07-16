@@ -746,10 +746,12 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		s.add(0, MNU_SORT_BY_ALBUM, 6, R.string.sort_by_album)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_MOVE24));
-		UI.separator(s, 0, 7);
-		s.add(0, MNU_HTTP_TRANSMITTER, 8, R.string.share_el)
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_SHARE24));
+		if (Player.REMOTE_LIST_ENABLED) {
+			UI.separator(s, 0, 7);
+			s.add(0, MNU_HTTP_TRANSMITTER, 8, R.string.share_el)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_SHARE24));
+		}
 		UI.separator(menu, 1, 1);
 		menu.add(2, MNU_TOGGLECONTROLMODE, 0, R.string.control_mode)
 			.setOnMenuItemClickListener(this)

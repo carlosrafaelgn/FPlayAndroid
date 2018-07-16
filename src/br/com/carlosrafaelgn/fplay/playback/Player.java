@@ -231,6 +231,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final String CHANNEL_GROUP_ID = "fplayg";
 	public static final String CHANNEL_ID = "fplay";
 
+	public static final boolean REMOTE_LIST_ENABLED = false;
+
 	public static final String ACTION_PREVIOUS = "br.com.carlosrafaelgn.FPlay.PREVIOUS";
 	public static final String ACTION_PLAY_PAUSE = "br.com.carlosrafaelgn.FPlay.PLAY_PAUSE";
 	public static final String ACTION_NEXT = "br.com.carlosrafaelgn.FPlay.NEXT";
