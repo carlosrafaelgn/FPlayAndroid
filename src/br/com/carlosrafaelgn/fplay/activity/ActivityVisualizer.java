@@ -302,9 +302,9 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 		if (configuration == null)
 			configuration = getResources().getConfiguration();
 		if (configuration != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-			info.getInfo(UI.dpToPxI(configuration.screenWidthDp), UI.dpToPxI(configuration.screenHeightDp));
+			info.getInfo(this, UI.dpToPxI(configuration.screenWidthDp), UI.dpToPxI(configuration.screenHeightDp));
 		else
-			info.getInfo(0, 0);
+			info.getInfo(this, 0, 0);
 	}
 
 	//replace onKeyDown with dispatchKeyEvent + event.getAction() + event.getKeyCode()?!?!?!

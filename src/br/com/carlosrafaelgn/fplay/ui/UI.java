@@ -389,8 +389,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			screenHeight = outDisplayMetrics.heightPixels;
 		}
 
-		public void getInfo(int newUsableScreenWidth, int newUsableScreenHeight) {
-			final Display display = ((WindowManager)Player.theApplication.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		public void getInfo(Activity activityContext, int newUsableScreenWidth, int newUsableScreenHeight) {
+			//calling getMetrics() from a display obtained through an activity handles multiwindow correctly
+			//https://developer.android.com/reference/android/view/Display.html#getMetrics(android.util.DisplayMetrics)
+			final Display display = ((activityContext != null) ? activityContext.getWindowManager() :
+				((WindowManager)Player.theApplication.getSystemService(Context.WINDOW_SERVICE))).getDefaultDisplay();
 			displayMetrics = new DisplayMetrics();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
 				initializeScreenDimensions17(display, displayMetrics);
@@ -836,7 +839,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			fullyInitialized = true;
 		}
 		final DisplayInfo info = new DisplayInfo();
-		info.getInfo(newUsableScreenWidth, newUsableScreenHeight);
+		info.getInfo(activityContext, newUsableScreenWidth, newUsableScreenHeight);
 		density = info.displayMetrics.density;
 		densityDpi = info.displayMetrics.densityDpi;
 		scaledDensity = info.displayMetrics.scaledDensity;

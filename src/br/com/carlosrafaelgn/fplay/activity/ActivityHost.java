@@ -747,7 +747,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 		UI.initialize(this, w, h);
 
-		if ((usableScreenWidth != UI.usableScreenWidth || usableScreenHeight != UI.usableScreenHeight) && top != null) {
+		if ((usableScreenWidth != UI.usableScreenWidth || usableScreenHeight != UI.usableScreenHeight) && top != null && !top.finished) {
 			ignoreFadeNextTime = true;
 			top.onOrientationChanged();
 			ignoreFadeNextTime = false;
