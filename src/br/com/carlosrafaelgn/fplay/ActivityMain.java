@@ -57,6 +57,7 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -1230,6 +1231,11 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnVolume = findViewById(R.id.btnVolume);
 			btnVolume.setIconNoChanges(UI.ICON_VOLUME0);
 			btnVolume.setEnabled(false);
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				lblTitle.setPointerIcon(PointerIcon.getSystemIcon(getHostActivity(), PointerIcon.TYPE_HAND));
+				btnVolume.setPointerIcon(null);
+			}
 			
 			Player.songs.selecting = false;
 			Player.songs.moving = false;
