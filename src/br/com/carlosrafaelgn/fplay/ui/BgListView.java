@@ -837,6 +837,9 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	
 	/*@Override
 	protected void dispatchDraw(Canvas canvas) {
+		//Apparently, a few devices actually call dispatchDraw() with a null canvas...?!?!
+		if (canvas == null)
+			return;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			super.dispatchDraw(canvas);
 		} else {
@@ -911,7 +914,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 
 	@Override
-	protected void dispatchDraw(@NonNull Canvas canvas) {
+	protected void dispatchDraw(Canvas canvas) {
+		//Apparently, a few devices actually call dispatchDraw() with a null canvas...?!?!
+		if (canvas == null)
+			return;
 		super.dispatchDraw(canvas);
 		if (itemCount == 0) {
 			if (emptyLayout != null) {

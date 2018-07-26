@@ -41,7 +41,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.view.Gravity;
 import android.view.PointerIcon;
 import android.view.View;
@@ -468,8 +467,9 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	//Android Custom Layout - onDraw() never gets called
 	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
-	protected void dispatchDraw(@NonNull Canvas canvas) {
-		if (ellipsizedName == null)
+	protected void dispatchDraw(Canvas canvas) {
+		//Apparently, a few devices actually call dispatchDraw() with a null canvas...?!?!
+		if (canvas == null || ellipsizedName == null)
 			return;
 		getDrawingRect(UI.rect);
 		UI.rect.left += leftMargin;

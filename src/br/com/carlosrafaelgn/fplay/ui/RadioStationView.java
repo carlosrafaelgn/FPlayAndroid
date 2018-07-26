@@ -37,7 +37,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.view.Gravity;
@@ -292,8 +291,9 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	//Android Custom Layout - onDraw() never gets called
 	//http://stackoverflow.com/questions/13056331/android-custom-layout-ondraw-never-gets-called
 	@Override
-	protected void dispatchDraw(@NonNull Canvas canvas) {
-		if (ellipsizedTitle == null)
+	protected void dispatchDraw(Canvas canvas) {
+		//Apparently, a few devices actually call dispatchDraw() with a null canvas...?!?!
+		if (canvas == null || ellipsizedTitle == null)
 			return;
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColor2 = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);

@@ -91,6 +91,9 @@ public final class BgFrameLayout extends FrameLayout {
 
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
+		//Apparently, a few devices actually call dispatchDraw() with a null canvas...?!?!
+		if (canvas == null)
+			return;
 		super.dispatchDraw(canvas);
 
 		if (message == null)
