@@ -107,16 +107,18 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
-	public static final int VERSION_CODE = 110;
+	public static final int VERSION_CODE = 112;
 	//VERSION_NAME must be kept in sync with build.gradle
-	public static final String VERSION_NAME = "v1.76";
+	public static final String VERSION_NAME = "v1.78";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
 	public static final int STATE_CURRENT = 4;
 	public static final int STATE_SELECTED = 8;
 	public static final int STATE_MULTISELECTED = 16;
-	
+	public static final int STATE_HOVERED = 32;
+	public static final int STATE_FOCUSED_OR_HOVERED = STATE_FOCUSED | STATE_HOVERED;
+
 	public static final int LOCALE_NONE = 0;
 	public static final int LOCALE_US = 1;
 	public static final int LOCALE_PTBR = 2;
@@ -1698,7 +1700,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static int getBorderColor(int state) {
 		if ((state & STATE_PRESSED) != 0)
 			return (((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border);
-		if ((state & STATE_FOCUSED) != 0)
+		if ((state & STATE_FOCUSED_OR_HOVERED) != 0)
 			return color_focused_border;
 		if ((state & STATE_SELECTED) != 0)
 			return color_selected_border;
@@ -1709,11 +1711,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
-			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED_OR_HOVERED)) != 0) {
 				if (isFlat) {
-					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					fillPaint.setColor(((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused : color_selected);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - rect.top));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED_OR_HOVERED) != 0, false, rect.bottom - rect.top));
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 					fillPaint.setShader(null);
 					return;
@@ -1730,12 +1732,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
-			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED_OR_HOVERED)) != 0) {
 				if (isFlat) {
-					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					fillPaint.setColor(((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused : color_selected);
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED_OR_HOVERED) != 0, false, rect.bottom));
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 					fillPaint.setShader(null);
 				}
@@ -1759,11 +1761,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
-			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED_OR_HOVERED)) != 0) {
 				if (isFlat) {
-					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					fillPaint.setColor(((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused : color_selected);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - strokeSize - rect.top));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED_OR_HOVERED) != 0, false, rect.bottom - strokeSize - rect.top));
 					canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
 					fillPaint.setShader(null);
 					return;
@@ -1785,12 +1787,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
-			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED_OR_HOVERED)) != 0) {
 				if (isFlat) {
-					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					fillPaint.setColor(((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused : color_selected);
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED_OR_HOVERED) != 0, false, rect.bottom));
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 					fillPaint.setShader(null);
 				}
@@ -1818,11 +1820,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
-			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED_OR_HOVERED)) != 0) {
 				if (isFlat) {
-					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					fillPaint.setColor(((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused : color_selected);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - strokeSize - rect.top));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED_OR_HOVERED) != 0, false, rect.bottom - strokeSize - rect.top));
 					canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
 					fillPaint.setShader(null);
 					return;
@@ -1842,16 +1844,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
-			} else if ((state & (STATE_SELECTED | STATE_FOCUSED)) != 0) {
+			} else if ((state & (STATE_SELECTED | STATE_FOCUSED_OR_HOVERED)) != 0) {
 				if (isFlat) {
-					fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused : color_selected);
+					fillPaint.setColor(((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused : color_selected);
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 				} else {
-					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED) != 0, false, rect.bottom - rect.top));
+					fillPaint.setShader(Gradient.getGradient((state & STATE_FOCUSED_OR_HOVERED) != 0, false, rect.bottom - rect.top));
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 					fillPaint.setShader(null);
 				}
-				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_border : color_selected_border, strokeSize);
+				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused_border : color_selected_border, strokeSize);
 			} else { //if ((state & STATE_MULTISELECTED) != 0) {
 				fillPaint.setColor(color_selected_multi);
 				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
@@ -1880,7 +1882,49 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			view.invalidate();
 		return state;
 	}
-	
+
+	public static int handleStateChanges(int state, View view) {
+		//even using getDrawableState(), views inside scrollable parents
+		//will "blink" briefly when mouse clicked, because Android treats
+		//the mouse like browsers treat ontouchxxx (it only produces the
+		//pressed state after some time, when it detects the mouse is
+		//actually clicking and not scrolling...)
+		boolean r = false;
+		final int op = (state & STATE_PRESSED), of = (state & STATE_FOCUSED), oh = (state & STATE_HOVERED);
+		final int[] states = view.getDrawableState();
+		int pressed = 0, focused = 0, hovered = 0;
+		if (states != null) {
+			for (int i = states.length - 1; i >= 0; i--) {
+				switch (states[i]) {
+				case android.R.attr.state_pressed:
+					pressed = STATE_PRESSED;
+					break;
+				case android.R.attr.state_focused:
+					focused = STATE_FOCUSED;
+					break;
+				case android.R.attr.state_hovered:
+					hovered = STATE_HOVERED;
+					break;
+				}
+			}
+		}
+		if (op != pressed) {
+			state = (state & ~STATE_PRESSED) | pressed;
+			r = true;
+		}
+		if (of != focused) {
+			state = (state & ~STATE_FOCUSED) | focused;
+			r = true;
+		}
+		if (oh != hovered) {
+			state = (state & ~STATE_HOVERED) | hovered;
+			r = true;
+		}
+		if (r)
+			view.invalidate();
+		return state;
+	}
+
 	public static void smallText(TextView view) {
 		view.setTextSize(TypedValue.COMPLEX_UNIT_PX, _14sp);
 		view.setTypeface(defaultTypeface);

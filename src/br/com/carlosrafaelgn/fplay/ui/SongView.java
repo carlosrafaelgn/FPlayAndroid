@@ -197,7 +197,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
+		state = UI.handleStateChanges(state, this);
 	}
 
 	@Override

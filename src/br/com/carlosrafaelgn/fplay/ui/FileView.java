@@ -434,7 +434,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
-		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
+		state = UI.handleStateChanges(state, this);
 		if ((state == 0) != old && btnCheckbox != null)
 			btnCheckbox.setTextColor(((state != 0) || ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM))) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 	}

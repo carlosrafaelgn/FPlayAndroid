@@ -261,7 +261,7 @@ public final class BgEditText extends EditText {
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = (UI.STATE_FOCUSED & UI.handleStateChanges(state, isPressed(), isFocused(), this));
+		state = (UI.STATE_FOCUSED & UI.handleStateChanges(state, this));
 	}
 
 	private int countLines(int width) {

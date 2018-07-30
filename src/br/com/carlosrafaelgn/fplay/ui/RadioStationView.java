@@ -258,7 +258,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
-		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
+		state = UI.handleStateChanges(state, this);
 		if ((state == 0) != old && btnFavorite != null)
 			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 	}

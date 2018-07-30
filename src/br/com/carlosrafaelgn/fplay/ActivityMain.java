@@ -1791,7 +1791,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		} else if (s != null && s.isHttp) {
 			if (barSeek != null) {
 				final long m = Player.getHttpPosition();
-				barSeek.setText((m < 0) ? ((Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) ? getText(R.string.receiving).toString() : "-") : ((m >>> 10) + " KiB"));
+				barSeek.setText((m < 0) ? ((Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && (Player.localPlaying || Player.localPlayerBuffering)) ? getText(R.string.receiving).toString() : "-") : ((m >>> 10) + " KiB"));
 				barSeek.setValue(0);
 			}
 			return;

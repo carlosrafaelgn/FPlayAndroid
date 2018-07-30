@@ -28,8 +28,8 @@ android {
 	// versionCode must be kept in sync with UI.VERSION_CODE
 	// versionName must be kept in sync with UI.VERSION_NAME
 	defaultConfig {
-		versionCode 110
-		versionName "1.76"
+		versionCode 112
+		versionName "1.78"
 	}
 
 	//https://developer.android.com/studio/build/configure-apk-splits

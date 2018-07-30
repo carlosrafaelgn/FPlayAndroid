@@ -270,7 +270,7 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
+		state = UI.handleStateChanges(state, this);
 	}
 
 	@Override

@@ -406,7 +406,10 @@ public final class BgButton extends Button {
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final int old = (state & UI.STATE_PRESSED);
-		state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
+		//Apparently, using isPressed(), isFocused() and isHovered() produces results different from
+		//the expected ones in a few keyboard-enabled devices and chromebooks
+		//state = UI.handleStateChanges(state, isPressed(), isFocused() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && isHovered()), this);
+		state = UI.handleStateChanges(state, this);
 		if (pressingChangeListener != null && (state & UI.STATE_PRESSED) != old)
 			pressingChangeListener.onPressingChanged(this, old == 0);
 	}
