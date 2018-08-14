@@ -107,9 +107,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
-	public static final int VERSION_CODE = 112;
+	public static final int VERSION_CODE = 113;
 	//VERSION_NAME must be kept in sync with build.gradle
-	public static final String VERSION_NAME = "v1.78";
+	public static final String VERSION_NAME = "v1.79";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -2448,9 +2448,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		return (input * input * (3.0f - (2.0f * input)));
 	}
 
-	public static Animation animationCreateAlpha(float fromAlpha, float toAlpha) {
+	public static Animation animationCreateAlpha(float fromAlpha, float toAlpha, int duration) {
 		final Animation animation = new AlphaAnimation(fromAlpha, toAlpha);
-		animation.setDuration(TRANSITION_DURATION_FOR_VIEWS);
+		animation.setDuration(duration <= 0 ? TRANSITION_DURATION_FOR_VIEWS : duration);
 		animation.setInterpolator(Player.theUI);
 		animation.setRepeatCount(0);
 		animation.setFillAfter(false);
@@ -2620,9 +2620,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		//	animationCommit11(focusView);
 		} else {
 			if (animationShowFirst == null) {
-				(animationShowFirst = animationCreateAlpha(0.0f, 1.0f)).setAnimationListener(Player.theUI);
-				(animationHide = animationCreateAlpha(1.0f, 0.0f)).setAnimationListener(Player.theUI);
-				(animationShow = animationCreateAlpha(0.0f, 1.0f)).setAnimationListener(Player.theUI);
+				(animationShowFirst = animationCreateAlpha(0.0f, 1.0f, 0)).setAnimationListener(Player.theUI);
+				(animationHide = animationCreateAlpha(1.0f, 0.0f, 0)).setAnimationListener(Player.theUI);
+				(animationShow = animationCreateAlpha(0.0f, 1.0f, 0)).setAnimationListener(Player.theUI);
 			} else {
 				animationShowFirst.reset();
 				animationHide.reset();

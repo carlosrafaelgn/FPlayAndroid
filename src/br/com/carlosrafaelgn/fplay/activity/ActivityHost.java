@@ -413,8 +413,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 						anim.setFillAfter(false);
 					} else if (transition == UI.TRANSITION_FADE) {
 						animator = ((useFadeOutNextTime || forceFadeOut) ?
-							new FastAnimator(oldView, true, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES) :
-							new FastAnimator(view, false, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES));
+							new FastAnimator(oldView, true, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW) :
+							new FastAnimator(view, false, this, UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW));
 					} else {
 						final AnimationSet animationSet = new AnimationSet(true);
 						anim = animationSet;

@@ -57,7 +57,7 @@ public final class FastAnimator implements Animation.AnimationListener, Runnable
 		this.viewToFade = viewToFade;
 		this.fadeOut = fadeOut;
 		//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-			this.animation = UI.animationCreateAlpha(fadeOut ? 1.0f : 0.0f, fadeOut ? 0.0f : 1.0f);
+			this.animation = UI.animationCreateAlpha(fadeOut ? 1.0f : 0.0f, fadeOut ? 0.0f : 1.0f, duration);
 			if (endObserver != null)
 				this.animation.setAnimationListener(this);
 		//}
