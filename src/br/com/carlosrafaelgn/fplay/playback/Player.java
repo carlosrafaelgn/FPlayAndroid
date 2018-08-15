@@ -1060,7 +1060,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			}
 			silenceMode = SILENCE_NONE;
 		}
-		player.setVolume(multiplier, multiplier);
+		if (player != null)
+			player.setVolume(multiplier, multiplier);
 	}
 
 	private static void _startPlayer() {
@@ -2353,8 +2354,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (idleTurnOffTimerSelectedMinutes < 0)
 			idleTurnOffTimerSelectedMinutes = 0;
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS);
-		UI.is3D = ((UI.lastVersionCode < 106) || opts.getBit(OPTBIT_3D, true));
-		UI.setTheme(null, (UI.lastVersionCode < 106) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
+		UI.is3D = ((UI.lastVersionCode < 113) || opts.getBit(OPTBIT_3D, true));
+		UI.setTheme(null, (UI.lastVersionCode < 113) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
@@ -2403,9 +2404,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.keepScreenOn = opts.getBit(OPTBIT_KEEPSCREENON);
 		UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 		UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
-		UI.setFlat((UI.lastVersionCode < 87) || opts.getBit(OPTBIT_FLAT, true));
-		UI.hasBorders = ((UI.lastVersionCode >= 87) && opts.getBit(OPTBIT_BORDERS, false));
-		UI.animationEnabled = ((UI.lastVersionCode < 76 && UI.deviceSupportsAnimations) || opts.getBit(OPTBIT_ANIMATIONS, UI.deviceSupportsAnimations));
+		UI.setFlat((UI.lastVersionCode < 113) || opts.getBit(OPTBIT_FLAT, true));
+		UI.hasBorders = ((UI.lastVersionCode >= 113) && opts.getBit(OPTBIT_BORDERS, false));
+		UI.animationEnabled = ((UI.lastVersionCode < 113 && UI.deviceSupportsAnimations) || opts.getBit(OPTBIT_ANIMATIONS, UI.deviceSupportsAnimations));
 		UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
 		UI.blockBackKey = opts.getBit(OPTBIT_BLOCKBACKKEY, UI.isChromebook);
 		UI.isDividerVisible = opts.getBit(OPTBIT_ISDIVIDERVISIBLE, true);
@@ -2912,7 +2913,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static void processIdleTurnOffTimer() {
-		if (state > STATE_ALIVE)
+		if (state > STATE_ALIVE || localHandler == null)
 			return;
 		if (idleTurnOffTimerSelectedMinutes <= 0) {
 			idleTurnOffTimerSent = false;

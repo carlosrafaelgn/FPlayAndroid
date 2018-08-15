@@ -142,6 +142,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int THEME_FPLAY = 3;
 	public static final int THEME_FPLAY_ICY = 8;
 	public static final int THEME_FPLAY_DARK = 9;
+	public static final int THEME_FPLAY_2017 = 10;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -1183,10 +1184,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_list_original = color_list;
 		if (ColorUtils.relativeLuminance(color_list_original) >= 0.6) {
 			color_list = color_list_original;
-			color_list_bg = (is3D ? ColorUtils.blend(color_list_original, 0xff000000, 0.9286f) : color_list_original);
-			color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.77777777f);
+			color_list_bg = (is3D ? ColorUtils.blend(color_list_original, 0xff000000, (theme == THEME_FPLAY) ? 0.85f : 0.9286f) : color_list_original);
+			color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, (theme == THEME_FPLAY) ? 0.7f : 0.77777777f);
 			if (generateDivider)
-				color_divider = ColorUtils.blend(color_list_bg, 0xff000000, 0.7f);
+				color_divider = ColorUtils.blend(color_list_bg, 0xff000000, (theme == THEME_FPLAY) ? 0.6f : 0.7f);
 		} else {
 			if (is3D)
 				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
@@ -1324,6 +1325,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return Player.theApplication.getText(R.string.creamy).toString();
 		case THEME_FPLAY_2016:
 			return "FPlay (2016)";
+		case THEME_FPLAY_2017:
+			return "FPlay (2017)";
 		case THEME_FPLAY_ICY:
 			return "FPlay " + Player.theApplication.getText(R.string.icy).toString();
 		case THEME_FPLAY_DARK:
@@ -1451,7 +1454,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				color_text_menu = 0xffd6d8ff;
 				color_text_listitem_secondary = 0xff3a40a8;
 			} else {
-				UI.theme = THEME_FPLAY;
+				if (theme != THEME_FPLAY_2017)
+					UI.theme = THEME_FPLAY;
 				color_window = 0xff3344bb;
 				color_menu = 0xff222244;
 				color_menu_icon = 0xffffbb33;
@@ -1460,7 +1464,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			}
 			color_control_mode = 0xff000000;
 			color_visualizer = 0xff000000;
-			color_list = 0xffcccccc;
+			color_list = (theme == THEME_FPLAY ? 0xffd4d4d4 : 0xffcccccc);
 			color_highlight = 0xffffcc66;
 			color_text_highlight = 0xff000000;
 			color_text = 0xffffffff;
