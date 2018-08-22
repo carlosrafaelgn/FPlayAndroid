@@ -61,6 +61,7 @@ import android.widget.TextView;
 import java.lang.reflect.Constructor;
 
 import br.com.carlosrafaelgn.fplay.R;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BgShadowDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
@@ -478,6 +479,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			scroll.addView(list);
 			menu = new BgDialog(context, scroll, null);
 			menu.setEmptyBackground();
+			menu.setShadowType(BgShadowDrawable.SHADOW_MENU);
 			menu.setTitle(R.string.menu, false);
 			menu.setOnCancelListener(this);
 			menu.setOnDismissListener(this);

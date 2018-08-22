@@ -3,6 +3,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -99,20 +100,21 @@ public final class BgFrameLayout extends FrameLayout {
 		if (message == null)
 			return;
 
-		getDrawingRect(UI.rect);
-		UI.rect.top = UI.rect.bottom - UI._14spBox - (UI.controlSmallMargin << 1);
-		UI.rect.right = UI.rect.left + messageWidth + (UI.controlSmallMargin << 1);
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
+		rect.top = rect.bottom - UI._14spBox - (UI.controlSmallMargin << 1);
+		rect.right = rect.left + messageWidth + (UI.controlSmallMargin << 1);
 		if (UI.hasBorders) {
-			UI.strokeRect(canvas, borderColor, UI.strokeSize);
-			UI.rect.left += UI.strokeSize;
-			UI.rect.top += UI.strokeSize;
-			UI.rect.right -= UI.strokeSize;
-			UI.rect.bottom -= UI.strokeSize;
-			UI.fillRect(canvas, UI.color_highlight);
-			UI.drawText(canvas, message, UI.color_text_highlight, UI._14sp, UI.rect.left + UI.controlSmallMargin - UI.strokeSize, UI.rect.top + UI.controlSmallMargin + UI._14spYinBox - UI.strokeSize);
+			UI.strokeRect(rect, canvas, borderColor, UI.strokeSize);
+			rect.left += UI.strokeSize;
+			rect.top += UI.strokeSize;
+			rect.right -= UI.strokeSize;
+			rect.bottom -= UI.strokeSize;
+			UI.fillRect(rect, canvas, UI.color_highlight);
+			UI.drawText(canvas, message, UI.color_text_highlight, UI._14sp, rect.left + UI.controlSmallMargin - UI.strokeSize, rect.top + UI.controlSmallMargin + UI._14spYinBox - UI.strokeSize);
 		} else {
-			UI.fillRect(canvas, UI.color_highlight);
-			UI.drawText(canvas, message, UI.color_text_highlight, UI._14sp, UI.rect.left + UI.controlSmallMargin, UI.rect.top + UI.controlSmallMargin + UI._14spYinBox);
+			UI.fillRect(rect, canvas, UI.color_highlight);
+			UI.drawText(canvas, message, UI.color_text_highlight, UI._14sp, rect.left + UI.controlSmallMargin, rect.top + UI.controlSmallMargin + UI._14spYinBox);
 		}
 	}
 }

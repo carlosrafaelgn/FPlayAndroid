@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.MotionEvent;
@@ -233,11 +234,12 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (ellipsizedTitle == null)
 			return;
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
-		getDrawingRect(UI.rect);
-		UI.rect.left += leftMargin;
-		UI.rect.top += topMargin;
-		UI.rect.right -= rightMarginForDrawing;
-		UI.drawBgListItem(canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
+		rect.left += leftMargin;
+		rect.top += topMargin;
+		rect.right -= rightMarginForDrawing;
+		UI.drawBgListItem(rect, canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		else if (numberAndCount != null)

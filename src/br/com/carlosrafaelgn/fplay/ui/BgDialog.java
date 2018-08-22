@@ -59,11 +59,11 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 	private CharSequence title;
 	private boolean titleVisible, emptyBackground, scanChildren, titleBorder, neutralIcon, hideSoftInput;
 	private Drawable backgroundDrawable;
-	private int backgroundId;
+	private int backgroundId, shadowType;
 	private DialogInterface.OnClickListener clickListener;
 
 	public BgDialog(Context context, View contentView, DialogInterface.OnClickListener clickListener) {
-		super(context, R.style.BgDialog);
+		super(context, UI.dimBackground ? R.style.BgDialog : R.style.BgDialogNoDimming);
 		setCancelable(true);
 		setCanceledOnTouchOutside(true);
 		title = "";
@@ -151,6 +151,10 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		emptyBackground = true;
 		backgroundDrawable = null;
 		backgroundId = 0;
+	}
+
+	public void setShadowType(int shadowType) {
+		this.shadowType = shadowType;
 	}
 
 	public void setBackground(Drawable background) {
@@ -328,7 +332,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 			//if the user configured the device in such way (whereas touching the original background
 			//does not produce any feedback)
 			parent.setOnTouchListener(this);
-			parent.setBackgroundDrawable(new BgShadowDrawable(true));
+			parent.setBackgroundDrawable(new BgShadowDrawable(context, shadowType));
 		}
 	}
 }

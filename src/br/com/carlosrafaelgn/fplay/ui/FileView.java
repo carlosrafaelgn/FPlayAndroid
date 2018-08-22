@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
@@ -471,18 +472,19 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		//Apparently, a few devices actually call dispatchDraw() with a null canvas...?!?!
 		if (canvas == null || ellipsizedName == null)
 			return;
-		getDrawingRect(UI.rect);
-		UI.rect.left += leftMargin;
-		UI.rect.top += topMargin;
-		UI.rect.right -= rightMarginForDrawing;
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
+		rect.left += leftMargin;
+		rect.top += topMargin;
+		rect.right -= rightMarginForDrawing;
 		final int specialType = ((file == null) ? 0 : file.specialType);
 		int st = state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2);
 		if (specialType == FileSt.TYPE_ALBUM_ITEM)
 			st |= UI.STATE_SELECTED;
 		if (force2D)
-			UI.drawBgListItem2D(canvas, st);
+			UI.drawBgListItem2D(rect, canvas, st);
 		else
-			UI.drawBgListItem(canvas, st);
+			UI.drawBgListItem(rect, canvas, st);
 		if (albumArt != null && albumArt.bitmap != null)
 			canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((usableHeight - albumArt.height) >> 1), null);
 		else if (icon != null)

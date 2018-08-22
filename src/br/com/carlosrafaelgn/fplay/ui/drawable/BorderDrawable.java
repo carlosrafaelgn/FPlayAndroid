@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.ui.drawable;
 
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -72,18 +73,19 @@ public final class BorderDrawable extends Drawable {
 	@Override
 	public void draw(Canvas canvas) {
 		final Rect rect = getBounds();
-		UI.fillPaint.setColor(strokeColor);
+		final Paint fillPaint = UI.fillPaint;
+		fillPaint.setColor(strokeColor);
 		final int l = rect.left, t = rect.top, r = rect.right, b = rect.bottom;
 		if (topSize != 0)
-			canvas.drawRect(l, t, r, t + topSize, UI.fillPaint);
+			canvas.drawRect(l, t, r, t + topSize, fillPaint);
 		if (bottomSize != 0)
-			canvas.drawRect(l, b - bottomSize, r, b, UI.fillPaint);
+			canvas.drawRect(l, b - bottomSize, r, b, fillPaint);
 		if (leftSize != 0)
-			canvas.drawRect(l, t + topSize, l + leftSize, b - bottomSize, UI.fillPaint);
+			canvas.drawRect(l, t + topSize, l + leftSize, b - bottomSize, fillPaint);
 		if (rightSize != 0)
-			canvas.drawRect(r - rightSize, t + topSize, r, b - bottomSize, UI.fillPaint);
-		UI.fillPaint.setColor(fillColor);
-		canvas.drawRect(l + leftSize, t + topSize, r - rightSize, b - bottomSize, UI.fillPaint);
+			canvas.drawRect(r - rightSize, t + topSize, r, b - bottomSize, fillPaint);
+		fillPaint.setColor(fillColor);
+		canvas.drawRect(l + leftSize, t + topSize, r - rightSize, b - bottomSize, fillPaint);
 	}
 
 	@Override

@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.SystemClock;
@@ -180,7 +181,8 @@ public final class BgProgressBar extends View {
 		if (!attached || !visible || virtualViewWidth <= 0 || width <= 0)
 			return;
 
-		getDrawingRect(UI.rect);
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
 
 		final int position;
 		if (virtualViewWidth <= (UI.defaultControlContentsSize * 3))
@@ -189,19 +191,19 @@ public final class BgProgressBar extends View {
 			position = ((((int)SystemClock.uptimeMillis() % 2000) * virtualViewWidth) / 2000) - width;
 
 		if (position > 0) {
-			UI.rect.left = 0;
-			UI.rect.right = position;
-			UI.fillRect(canvas, secondaryBgColorBlended);
+			rect.left = 0;
+			rect.right = position;
+			UI.fillRect(rect, canvas, secondaryBgColorBlended);
 		}
 
-		UI.rect.left = position;
-		UI.rect.right = position + width;
-		UI.fillRect(canvas, color);
+		rect.left = position;
+		rect.right = position + width;
+		UI.fillRect(rect, canvas, color);
 
-		if (UI.rect.right < virtualViewWidth) {
-			UI.rect.left = UI.rect.right;
-			UI.rect.right = virtualViewWidth;
-			UI.fillRect(canvas, secondaryBgColorBlended);
+		if (rect.right < virtualViewWidth) {
+			rect.left = rect.right;
+			rect.right = virtualViewWidth;
+			UI.fillRect(rect, canvas, secondaryBgColorBlended);
 		}
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)

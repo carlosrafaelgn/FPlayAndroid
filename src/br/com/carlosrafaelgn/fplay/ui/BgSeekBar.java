@@ -580,44 +580,45 @@ public final class BgSeekBar extends View {
 	protected void onDraw(Canvas canvas) {
 		if (text == null)
 			return;
-		getDrawingRect(UI.rect);
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
 		if (vertical) {
 			canvas.save();
 			canvas.translate(0, height);
 			canvas.rotate(-90);
-			final int tmp = UI.rect.right;
-			UI.rect.right = UI.rect.bottom;
-			UI.rect.bottom = tmp;
+			final int tmp = rect.right;
+			rect.right = rect.bottom;
+			rect.bottom = tmp;
 		}
 		if (drawListener != null) {
-			drawListener.onDraw(canvas, this, UI.rect, filledSize);
+			drawListener.onDraw(canvas, this, rect, filledSize);
 		} else {
 			final int state = (insideList ? ((this.state & UI.STATE_PRESSED) != 0 ? (this.state | UI.STATE_FOCUSED) : ((this.state & UI.STATE_FOCUSED_OR_HOVERED) != 0 ? UI.STATE_SELECTED : (UI.STATE_SELECTED | UI.STATE_FOCUSED))) : this.state);
-			final int right = UI.rect.right;
-			final int bottom = UI.rect.bottom;
+			final int right = rect.right;
+			final int bottom = rect.bottom;
 			final int color = UI.getBorderColor(state);
-			UI.rect.top = thumbMargin;
-			UI.rect.bottom -= thumbMargin;
+			rect.top = thumbMargin;
+			rect.bottom -= thumbMargin;
 			if (UI.hasBorders) {
-				UI.strokeRect(canvas, color, UI.strokeSize);
-				UI.rect.top += UI.strokeSize;
-				UI.rect.bottom -= UI.strokeSize;
-				UI.rect.left = filledSize + thumbWidth;
-				UI.rect.right = right - UI.strokeSize;
-				UI.fillRect(canvas, secondaryBgColorBlended);
-				UI.rect.left = UI.strokeSize;
+				UI.strokeRect(rect, canvas, color, UI.strokeSize);
+				rect.top += UI.strokeSize;
+				rect.bottom -= UI.strokeSize;
+				rect.left = filledSize + thumbWidth;
+				rect.right = right - UI.strokeSize;
+				UI.fillRect(rect, canvas, secondaryBgColorBlended);
+				rect.left = UI.strokeSize;
 			} else {
-				UI.rect.left = filledSize + thumbWidth;
-				UI.rect.right = right;
-				UI.fillRect(canvas, secondaryBgColorBlended);
-				UI.rect.left = 0;
+				rect.left = filledSize + thumbWidth;
+				rect.right = right;
+				UI.fillRect(rect, canvas, secondaryBgColorBlended);
+				rect.left = 0;
 			}
-			UI.rect.right = filledSize;
-			UI.drawBgBorderless(canvas, state);
+			rect.right = filledSize;
+			UI.drawBgBorderless(rect, canvas, state);
 			if (icon == null) {
 				UI.drawText(canvas, text, textColor, textSize, textX, textY);
 			} else {
-				TextIconDrawable.drawIcon(canvas, icon, textX, (UI.rect.bottom + UI.rect.top - textSize) >> 1, textSize, textColor);
+				TextIconDrawable.drawIcon(canvas, icon, textX, (rect.bottom + rect.top - textSize) >> 1, textSize, textColor);
 				UI.drawText(canvas, text, textColor, textSize, textX + textSize + UI.controlSmallMargin, textY);
 			}
 			if (sliderMode) {
@@ -625,25 +626,25 @@ public final class BgSeekBar extends View {
 				TextIconDrawable.drawIcon(canvas, UI.ICON_SLIDERBOTTOM, filledSize + (thumbWidth >> 1) - UI.controlMargin, bottom - UI.controlMargin, UI.controlLargeMargin, color);
 			} else {
 				if (UI.hasBorders) {
-					UI.rect.top = 0;
-					UI.rect.bottom = bottom;
-					UI.rect.left = filledSize;
-					UI.rect.right = filledSize + thumbWidth;
-					UI.strokeRect(canvas, color, UI.strokeSize);
-					UI.rect.left += UI.strokeSize;
-					UI.rect.top += UI.strokeSize;
-					UI.rect.right -= UI.strokeSize;
-					UI.rect.bottom -= UI.strokeSize;
+					rect.top = 0;
+					rect.bottom = bottom;
+					rect.left = filledSize;
+					rect.right = filledSize + thumbWidth;
+					UI.strokeRect(rect, canvas, color, UI.strokeSize);
+					rect.left += UI.strokeSize;
+					rect.top += UI.strokeSize;
+					rect.right -= UI.strokeSize;
+					rect.bottom -= UI.strokeSize;
 				} else {
-					UI.rect.left = filledSize - UI.strokeSize;
-					UI.rect.right = filledSize;
-					UI.fillRect(canvas, color);
-					UI.rect.top = 0;
-					UI.rect.bottom = bottom;
-					UI.rect.left = filledSize;
-					UI.rect.right = filledSize + thumbWidth;
+					rect.left = filledSize - UI.strokeSize;
+					rect.right = filledSize;
+					UI.fillRect(rect, canvas, color);
+					rect.top = 0;
+					rect.bottom = bottom;
+					rect.left = filledSize;
+					rect.right = filledSize + thumbWidth;
 				}
-				UI.drawBgBorderless(canvas, state);
+				UI.drawBgBorderless(rect, canvas, state);
 				//thumbWidth -> (UI.defaultControlContentsSize * 3) >> 2
 				//thumbWidth -> 0.75 * UI.defaultControlContentsSize
 				//0.125 * UI.defaultControlContentsSize / thumbWidth / 0.125 * UI.defaultControlContentsSize

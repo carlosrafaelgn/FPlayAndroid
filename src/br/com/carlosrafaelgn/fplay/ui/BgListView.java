@@ -846,10 +846,11 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			//LAME!!!!! There is a bug in API 10 and the padding
 			//IS NOT properly accounted for and the children are not clipped!!!
 			canvas.save();
-			getDrawingRect(UI.rect);
-			UI.rect.top += getPaddingTop();
-			UI.rect.bottom -= getPaddingBottom();
-			canvas.clipRect(UI.rect);
+			final Rect rect = UI.rect;
+			getDrawingRect(rect);
+			rect.top += getPaddingTop();
+			rect.bottom -= getPaddingBottom();
+			canvas.clipRect(rect);
 			super.dispatchDraw(canvas);
 			canvas.restore();
 		}
@@ -930,6 +931,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				canvas.translate(-x, -y);
 			}
 		} else {
+			final Rect rect = UI.rect;
 			switch (scrollBarType) {
 			case SCROLLBAR_INDEXED:
 				if (sections != null) {
@@ -939,52 +941,52 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					final float l;
 					if (tracking) {
 						if (UI.scrollBarToTheLeft) {
-							UI.rect.left = scrollBarLeft;
-							l = (float)(UI.rect.left + UI.defaultControlContentsSize + (UI.defaultControlContentsSize >> 1) + (scrollBarWidth >> 1));
+							rect.left = scrollBarLeft;
+							l = (float)(rect.left + UI.defaultControlContentsSize + (UI.defaultControlContentsSize >> 1) + (scrollBarWidth >> 1));
 						} else {
-							UI.rect.left = scrollBarLeft - UI.defaultControlContentsSize - (UI.defaultControlContentsSize >> 1);
-							l = (float)(UI.rect.left + (scrollBarWidth >> 1));
+							rect.left = scrollBarLeft - UI.defaultControlContentsSize - (UI.defaultControlContentsSize >> 1);
+							l = (float)(rect.left + (scrollBarWidth >> 1));
 						}
-						UI.rect.right = UI.rect.left + UI.defaultControlContentsSize + (UI.defaultControlContentsSize >> 1) + scrollBarWidth;
+						rect.right = rect.left + UI.defaultControlContentsSize + (UI.defaultControlContentsSize >> 1) + scrollBarWidth;
 					} else {
-						UI.rect.left = scrollBarLeft;
-						UI.rect.right = scrollBarLeft + scrollBarWidth;
+						rect.left = scrollBarLeft;
+						rect.right = scrollBarLeft + scrollBarWidth;
 						l = (float)(scrollBarLeft + (scrollBarWidth >> 1));
 					}
-					UI.rect.top = scrollBarTop;
-					UI.rect.bottom = scrollBarBottom;
-					UI.fillRect(canvas, UI.color_highlight);
+					rect.top = scrollBarTop;
+					rect.bottom = scrollBarBottom;
+					UI.fillRect(rect, canvas, UI.color_highlight);
 					int i;
 					for (i = 0; i < scrollBarThumbTop; i++) {
-						canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-						UI.rect.top += scrollBarThumbHeight;
+						canvas.drawText(sections[i], l, (float)(rect.top + scrollBarThumbOffset), UI.textPaint);
+						rect.top += scrollBarThumbHeight;
 					}
-					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
+					rect.bottom = rect.top + scrollBarThumbHeight;
 					UI.textPaint.setColor(UI.color_text_listitem);
-					UI.fillRect(canvas, backgroundColor);
-					canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
+					UI.fillRect(rect, canvas, backgroundColor);
+					canvas.drawText(sections[i], l, (float)(rect.top + scrollBarThumbOffset), UI.textPaint);
 					UI.textPaint.setColor(UI.color_text_highlight);
-					UI.rect.top = UI.rect.bottom;
+					rect.top = rect.bottom;
 					i++;
 					for (; i < sections.length; i++) {
-						canvas.drawText(sections[i], l, (float)(UI.rect.top + scrollBarThumbOffset), UI.textPaint);
-						UI.rect.top += scrollBarThumbHeight;
+						canvas.drawText(sections[i], l, (float)(rect.top + scrollBarThumbOffset), UI.textPaint);
+						rect.top += scrollBarThumbHeight;
 					}
 					UI.textPaint.setTextAlign(Paint.Align.LEFT);
 				}
 				break;
 			case SCROLLBAR_LARGE:
-				UI.rect.left = scrollBarLeft + ((scrollBarWidth - UI.strokeSize) >> 1);
-				UI.rect.right = UI.rect.left + UI.strokeSize;
-				UI.rect.top = scrollBarTop + UI.controlSmallMargin;
-				UI.rect.bottom = scrollBarBottom - UI.controlSmallMargin;
-				UI.fillRect(canvas, UI.color_divider);
+				rect.left = scrollBarLeft + ((scrollBarWidth - UI.strokeSize) >> 1);
+				rect.right = rect.left + UI.strokeSize;
+				rect.top = scrollBarTop + UI.controlSmallMargin;
+				rect.bottom = scrollBarBottom - UI.controlSmallMargin;
+				UI.fillRect(rect, canvas, UI.color_divider);
 				if (scrollBarThumbHeight > 0) {
-					UI.rect.left = scrollBarLeft + UI.controlSmallMargin;
-					UI.rect.top = scrollBarThumbTop;
-					UI.rect.right = scrollBarLeft + scrollBarWidth - UI.controlSmallMargin;
-					UI.rect.bottom = UI.rect.top + scrollBarThumbHeight;
-					UI.fillRect(canvas, tracking ? UI.color_divider_pressed : UI.color_divider);
+					rect.left = scrollBarLeft + UI.controlSmallMargin;
+					rect.top = scrollBarThumbTop;
+					rect.right = scrollBarLeft + scrollBarWidth - UI.controlSmallMargin;
+					rect.bottom = rect.top + scrollBarThumbHeight;
+					UI.fillRect(rect, canvas, tracking ? UI.color_divider_pressed : UI.color_divider);
 				}
 				break;
 			}

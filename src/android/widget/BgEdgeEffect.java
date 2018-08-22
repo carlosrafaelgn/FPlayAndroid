@@ -53,6 +53,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.Build;
 import android.os.SystemClock;
 
@@ -150,12 +151,13 @@ public class BgEdgeEffect extends EdgeEffect {
 	 * Returns the bounds of the edge effect.
 	 */
 	public Rect getBounds(boolean reverse) {
+		final Rect rect = UI.rect;
 		final int dy = mY - (reverse ? (mMaxHeight + mOffsetY) : 0);
-		UI.rect.left = mX;
-		UI.rect.top = dy;
-		UI.rect.right = mX + mWidth;
-		UI.rect.bottom = dy + mMaxHeight + mOffsetY;
-		return UI.rect;
+		rect.left = mX;
+		rect.top = dy;
+		rect.right = mX + mWidth;
+		rect.bottom = dy + mMaxHeight + mOffsetY;
+		return rect;
 	}
 
 	/**
@@ -386,19 +388,21 @@ public class BgEdgeEffect extends EdgeEffect {
 			}
 		}
 
+		final Rect rect = UI.rect;
+		final RectF rectF = UI.rectF;
 		canvas.save();
 		UI.fillPaint.setAntiAlias(true);
 		UI.fillPaint.setColor(((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mColor);
-		UI.rect.left = mX;
-		UI.rect.top = mOffsetY;
-		UI.rect.right = mX + mWidth;
-		UI.rect.bottom = mMaxHeight + mOffsetY;
-		canvas.clipRect(UI.rect);
-		UI.rectF.left = (float)(mX - UI._18sp);
-		UI.rectF.right = (float)(mX + mWidth + UI._18sp);
-		UI.rectF.bottom = (mScaleY * (float)(mMaxHeight + mOffsetY));
-		UI.rectF.top = -UI.rectF.bottom + (float)mOffsetY;
-		canvas.drawOval(UI.rectF, UI.fillPaint);
+		rect.left = mX;
+		rect.top = mOffsetY;
+		rect.right = mX + mWidth;
+		rect.bottom = mMaxHeight + mOffsetY;
+		canvas.clipRect(rect);
+		rectF.left = (float)(mX - UI._18sp);
+		rectF.right = (float)(mX + mWidth + UI._18sp);
+		rectF.bottom = (mScaleY * (float)(mMaxHeight + mOffsetY));
+		rectF.top = -rectF.bottom + (float)mOffsetY;
+		canvas.drawOval(rectF, UI.fillPaint);
 		UI.fillPaint.setAntiAlias(false);
 		canvas.restore();
 

@@ -36,6 +36,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -53,6 +54,7 @@ import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.ui.drawable.BgShadowDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public class BgSpinner<E> extends TextView implements View.OnClickListener, BaseList.ItemClickListener, BgListView.OnBgListViewKeyDownObserver, DialogInterface.OnDismissListener {
@@ -275,11 +277,12 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 
 	@Override
 	protected void onDraw(@NonNull Canvas canvas) {
-		getDrawingRect(UI.rect);
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
 		final int color = ((state == 0) ? UI.color_dialog_detail : UI.color_dialog_detail_highlight);
-		UI.rect.top = UI.rect.bottom - (state == 0 ? UI.strokeSize : UI.thickDividerSize);
-		UI.fillRect(canvas, color);
-		TextIconDrawable.drawIcon(canvas, UI.ICON_SPINNERARROW, UI.rect.right - UI.controlLargeMargin, UI.rect.bottom - UI.controlLargeMargin, UI.controlLargeMargin, color);
+		rect.top = rect.bottom - (state == 0 ? UI.strokeSize : UI.thickDividerSize);
+		UI.fillRect(rect, canvas, color);
+		TextIconDrawable.drawIcon(canvas, UI.ICON_SPINNERARROW, rect.right - UI.controlLargeMargin, rect.bottom - UI.controlLargeMargin, UI.controlLargeMargin, color);
 		super.onDraw(canvas);
 	}
 
@@ -310,6 +313,7 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 		spinnerList.setSelection(selectedPosition, false);
 
 		dialog = new BgDialog(getContext(), listView, null);
+		dialog.setShadowType(BgShadowDrawable.SHADOW_SPINNER);
 		dialog.setOnDismissListener(this);
 		dialog.show();
 	}

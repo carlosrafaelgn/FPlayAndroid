@@ -71,12 +71,10 @@ public final class BgListItem3DDrawable extends Drawable {
 
 	@Override
 	public void draw(Canvas canvas) {
-		if (!hasBounds) {
+		if (!hasBounds)
 			canvas.drawColor(UI.color_list);
-		} else {
-			copyBounds(UI.rect);
-			UI.drawBgListItem(canvas, 0);
-		}
+		else
+			UI.drawBgListItem(getBounds(), canvas, 0);
 	}
 
 	@Override

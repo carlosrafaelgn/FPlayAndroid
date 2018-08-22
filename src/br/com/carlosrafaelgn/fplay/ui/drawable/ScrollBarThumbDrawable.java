@@ -34,6 +34,7 @@ package br.com.carlosrafaelgn.fplay.ui.drawable;
 
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -89,25 +90,27 @@ public final class ScrollBarThumbDrawable extends Drawable {
 		if (!hasBounds) {
 			canvas.drawColor(color);
 		} else {
+			final Rect rect = UI.rect;
+			final Paint fillPaint = UI.fillPaint;
 			final Rect r = getBounds();
-			UI.fillPaint.setColor(color);
+			fillPaint.setColor(color);
 			//try to leave a border around the drawable
 			if (r.width() > (UI._1dp * 7)) {
 				final int delta = UI._1dp * 3;
-				UI.rect.left = r.left + delta;
-				UI.rect.top = r.top + delta;
-				UI.rect.right = r.right - delta;
-				UI.rect.bottom = r.bottom - delta;
-				canvas.drawRect(UI.rect.left, UI.rect.top, UI.rect.right, UI.rect.bottom, UI.fillPaint);
+				rect.left = r.left + delta;
+				rect.top = r.top + delta;
+				rect.right = r.right - delta;
+				rect.bottom = r.bottom - delta;
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 			} else if (r.width() > (UI._1dp * 5)) {
 				final int delta = UI._1dp << 1;
-				UI.rect.left = r.left + delta;
-				UI.rect.top = r.top + delta;
-				UI.rect.right = r.right - delta;
-				UI.rect.bottom = r.bottom - delta;
-				canvas.drawRect(UI.rect.left, UI.rect.top, UI.rect.right, UI.rect.bottom, UI.fillPaint);
+				rect.left = r.left + delta;
+				rect.top = r.top + delta;
+				rect.right = r.right - delta;
+				rect.bottom = r.bottom - delta;
+				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 			} else {
-				canvas.drawRect(r.left, r.top, r.right, r.bottom, UI.fillPaint);
+				canvas.drawRect(r.left, r.top, r.right, r.bottom, fillPaint);
 			}
 		}
 	}

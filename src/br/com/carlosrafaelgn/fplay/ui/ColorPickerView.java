@@ -36,6 +36,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.InputType;
@@ -220,26 +221,27 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		@Override
 		public void draw(Canvas canvas) {
 			super.draw(canvas);
+			final Rect rect = UI.rect;
 			final int size = margin + squareSize;
-			UI.rect.top = margin;
-			UI.rect.bottom = size;
+			rect.top = margin;
+			rect.bottom = size;
 			int i = 0;
 			for (int y = 0; y < 31; y++) {
-				UI.rect.left = contentsLeft + margin;
-				UI.rect.right = UI.rect.left + squareSize;
+				rect.left = contentsLeft + margin;
+				rect.right = rect.left + squareSize;
 				for (int x = 0; x < 5; x++, i++) {
-					UI.fillRect(canvas, colors[i]);
+					UI.fillRect(rect, canvas, colors[i]);
 					if (i == currentColor) {
-						UI.strokeRect(canvas, 0xff000000, UI.strokeSize);
-						UI.rect.inset(UI.strokeSize, UI.strokeSize);
-						UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
-						UI.rect.inset(-UI.strokeSize, -UI.strokeSize);
+						UI.strokeRect(rect, canvas, 0xff000000, UI.strokeSize);
+						rect.inset(UI.strokeSize, UI.strokeSize);
+						UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
+						rect.inset(-UI.strokeSize, -UI.strokeSize);
 					}
-					UI.rect.left += size;
-					UI.rect.right += size;
+					rect.left += size;
+					rect.right += size;
 				}
-				UI.rect.top += size;
-				UI.rect.bottom += size;
+				rect.top += size;
+				rect.bottom += size;
 			}
 		}
 
@@ -385,38 +387,39 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			super.draw(canvas);
 			if (bitmap == null)
 				return;
-			getDrawingRect(UI.rect);
+			final Rect rect = UI.rect;
+			getDrawingRect(rect);
 			canvas.drawColor(backgroundColor);
 			canvas.drawBitmap(bitmap, 0.0f, 0.0f, null);
-			UI.rect.left = valuePosition - UI.strokeSize;
-			UI.rect.right = valuePosition;
-			UI.fillRect(canvas, 0xffffffff);
-			UI.rect.left += UI.strokeSize;
-			UI.rect.right += UI.strokeSize;
-			UI.fillRect(canvas, 0xff000000);
-			UI.rect.left += UI.strokeSize;
-			UI.rect.right += UI.strokeSize;
-			UI.fillRect(canvas, 0xffffffff);
+			rect.left = valuePosition - UI.strokeSize;
+			rect.right = valuePosition;
+			UI.fillRect(rect, canvas, 0xffffffff);
+			rect.left += UI.strokeSize;
+			rect.right += UI.strokeSize;
+			UI.fillRect(rect, canvas, 0xff000000);
+			rect.left += UI.strokeSize;
+			rect.right += UI.strokeSize;
+			UI.fillRect(rect, canvas, 0xffffffff);
 
-			UI.rect.left = 0;
-			UI.rect.right = viewWidth;
+			rect.left = 0;
+			rect.right = viewWidth;
 
-			UI.rect.top = saturationPosition - UI.strokeSize;
-			UI.rect.bottom = saturationPosition;
-			UI.fillRect(canvas, 0xffffffff);
-			UI.rect.top += UI.strokeSize;
-			UI.rect.bottom += UI.strokeSize;
-			UI.fillRect(canvas, 0xff000000);
-			UI.rect.top += UI.strokeSize;
-			UI.rect.bottom += UI.strokeSize;
-			UI.fillRect(canvas, 0xffffffff);
+			rect.top = saturationPosition - UI.strokeSize;
+			rect.bottom = saturationPosition;
+			UI.fillRect(rect, canvas, 0xffffffff);
+			rect.top += UI.strokeSize;
+			rect.bottom += UI.strokeSize;
+			UI.fillRect(rect, canvas, 0xff000000);
+			rect.top += UI.strokeSize;
+			rect.bottom += UI.strokeSize;
+			UI.fillRect(rect, canvas, 0xffffffff);
 
 			// ;)
-			UI.rect.left = valuePosition;
-			UI.rect.top = saturationPosition - UI.strokeSize;
-			UI.rect.right = valuePosition + UI.strokeSize;
-			UI.rect.bottom = saturationPosition + (UI.strokeSize << 1);
-			UI.fillRect(canvas, 0xff000000);
+			rect.left = valuePosition;
+			rect.top = saturationPosition - UI.strokeSize;
+			rect.right = valuePosition + UI.strokeSize;
+			rect.bottom = saturationPosition + (UI.strokeSize << 1);
+			UI.fillRect(rect, canvas, 0xff000000);
 		}
 
 		@Override
@@ -553,31 +556,32 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			super.draw(canvas);
 			if (bitmap == null)
 				return;
-			getDrawingRect(UI.rect);
+			final Rect rect = UI.rect;
+			getDrawingRect(rect);
 			if (vertical) {
-				for (int i = UI.rect.left; i < UI.rect.right; i++)
+				for (int i = rect.left; i < rect.right; i++)
 					canvas.drawBitmap(bitmap, (float)i, 0.0f, null);
-				UI.rect.top += huePosition - UI.strokeSize;
-				UI.rect.bottom = huePosition;
-				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
-				UI.rect.top += UI.strokeSize;
-				UI.rect.bottom += UI.strokeSize;
-				UI.strokeRect(canvas, 0xff000000, UI.strokeSize);
-				UI.rect.top += UI.strokeSize;
-				UI.rect.bottom += UI.strokeSize;
-				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
+				rect.top += huePosition - UI.strokeSize;
+				rect.bottom = huePosition;
+				UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
+				rect.top += UI.strokeSize;
+				rect.bottom += UI.strokeSize;
+				UI.strokeRect(rect, canvas, 0xff000000, UI.strokeSize);
+				rect.top += UI.strokeSize;
+				rect.bottom += UI.strokeSize;
+				UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
 			} else {
-				for (int i = UI.rect.top; i < UI.rect.bottom; i++)
+				for (int i = rect.top; i < rect.bottom; i++)
 					canvas.drawBitmap(bitmap, 0.0f, (float)i, null);
-				UI.rect.left = huePosition - UI.strokeSize;
-				UI.rect.right = huePosition;
-				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
-				UI.rect.left += UI.strokeSize;
-				UI.rect.right += UI.strokeSize;
-				UI.strokeRect(canvas, 0xff000000, UI.strokeSize);
-				UI.rect.left += UI.strokeSize;
-				UI.rect.right += UI.strokeSize;
-				UI.strokeRect(canvas, 0xffffffff, UI.strokeSize);
+				rect.left = huePosition - UI.strokeSize;
+				rect.right = huePosition;
+				UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
+				rect.left += UI.strokeSize;
+				rect.right += UI.strokeSize;
+				UI.strokeRect(rect, canvas, 0xff000000, UI.strokeSize);
+				rect.left += UI.strokeSize;
+				rect.right += UI.strokeSize;
+				UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
 			}
 		}
 

@@ -117,7 +117,7 @@ public final class BgTextView extends TextView {
 	@Override
 	protected void onDraw(@NonNull Canvas canvas) {
 		getDrawingRect(UI.rect);
-		UI.drawBg(canvas, state);
+		UI.drawBg(UI.rect, canvas, state);
 		super.onDraw(canvas);
 	}
 }

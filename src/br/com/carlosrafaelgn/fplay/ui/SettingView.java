@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -355,19 +356,20 @@ public final class SettingView extends View {
 	protected void onDraw(Canvas canvas) {
 		if (textLines == null)
 			return;
-		getDrawingRect(UI.rect);
-		UI.rect.left += extraBorders;
-		UI.rect.top += extraBorders;
-		UI.rect.right -= extraBorders;
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
+		rect.left += extraBorders;
+		rect.top += extraBorders;
+		rect.right -= extraBorders;
 		final int txtColor = ((state == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final int txtColorSecondary = ((state == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		int x = UI.controlMargin + extraBorders;
 		if (icon != null)
 			x += (UI.defaultControlContentsSize + UI.menuMargin);
 		if (UI.is3D)
-			UI.drawBgListItemWithDivider(canvas, state, !hidingSeparator, UI.controlSmallMargin, UI.controlSmallMargin);
+			UI.drawBgListItemWithDivider(rect, canvas, state, !hidingSeparator, UI.controlSmallMargin, UI.controlSmallMargin);
 		else
-			UI.drawBgListItemWithDivider(canvas, state, !hidingSeparator, x, UI.controlMargin);
+			UI.drawBgListItemWithDivider(rect, canvas, state, !hidingSeparator, x, UI.controlMargin);
 		if (icon != null)
 			TextIconDrawable.drawIcon(canvas, icon, UI.controlMargin + extraBorders, extraBorders + ((height - extraBorders - UI.defaultControlContentsSize) >> 1), UI.defaultControlContentsSize, txtColorSecondary);
 		if (textLines != null) {
@@ -381,14 +383,14 @@ public final class SettingView extends View {
 		if (secondaryText != null) {
 			UI.drawText(canvas, secondaryText, txtColorSecondary, UI._18sp, width - secondaryTextWidth - UI.controlMargin - extraBorders, height - UI.verticalMargin - UI._18spBox + UI._18spYinBox);
 		} else if (color != 0 || checkable) {
-			UI.rect.left = width - UI.controlMargin - UI.defaultCheckIconSize - extraBorders;
-			UI.rect.top = (height + extraBorders - UI.defaultCheckIconSize) >> 1;
+			rect.left = width - UI.controlMargin - UI.defaultCheckIconSize - extraBorders;
+			rect.top = (height + extraBorders - UI.defaultCheckIconSize) >> 1;
 			if (color != 0) {
-				UI.rect.right = UI.rect.left + UI.defaultCheckIconSize;
-				UI.rect.bottom = UI.rect.top + UI.defaultCheckIconSize;
-				UI.fillRect(canvas, color);
+				rect.right = rect.left + UI.defaultCheckIconSize;
+				rect.bottom = rect.top + UI.defaultCheckIconSize;
+				UI.fillRect(rect, canvas, color);
 			}
-			TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK24 : UI.ICON_OPTUNCHK24, UI.rect.left, UI.rect.top, UI.defaultCheckIconSize, txtColor);
+			TextIconDrawable.drawIcon(canvas, checked ? UI.ICON_OPTCHK24 : UI.ICON_OPTUNCHK24, rect.left, rect.top, UI.defaultCheckIconSize, txtColor);
 		}
 	}
 

@@ -36,6 +36,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.PorterDuff;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Layout;
@@ -319,23 +320,24 @@ public final class BgEditText extends EditText {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		getDrawingRect(UI.rect);
+		final Rect rect = UI.rect;
+		getDrawingRect(rect);
 
 		if (extraTopPaddingForLastWidth > 0) {
-			UI.rect.top += textY;
+			rect.top += textY;
 			if (contentDescriptionLineEndings != null) {
-				UI.drawText(canvas, contentDescription, 0, contentDescriptionLineEndings[0], colorFocused, textSize, UI.rect.left, UI.rect.top);
+				UI.drawText(canvas, contentDescription, 0, contentDescriptionLineEndings[0], colorFocused, textSize, rect.left, rect.top);
 				for (int i = 1; i < contentDescriptionLineEndings.length; i++) {
-					UI.rect.top += textBox;
-					UI.drawText(canvas, contentDescription, contentDescriptionLineEndings[i - 1], contentDescriptionLineEndings[i], colorFocused, textSize, UI.rect.left, UI.rect.top);
+					rect.top += textBox;
+					UI.drawText(canvas, contentDescription, contentDescriptionLineEndings[i - 1], contentDescriptionLineEndings[i], colorFocused, textSize, rect.left, rect.top);
 				}
 			} else if (contentDescription != null) {
-				UI.drawText(canvas, contentDescription, colorFocused, textSize, UI.rect.left, UI.rect.top);
+				UI.drawText(canvas, contentDescription, colorFocused, textSize, rect.left, rect.top);
 			}
 		}
 
-		UI.rect.top = UI.rect.bottom - (state == 0 ? UI.strokeSize : UI.thickDividerSize);
-		UI.fillRect(canvas, state == 0 ? colorNormal : colorFocused);
+		rect.top = rect.bottom - (state == 0 ? UI.strokeSize : UI.thickDividerSize);
+		UI.fillRect(rect, canvas, state == 0 ? colorNormal : colorFocused);
 
 		super.onDraw(canvas);
 	}

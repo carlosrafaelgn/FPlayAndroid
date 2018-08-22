@@ -151,8 +151,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int TRANSITION_SLIDE_SMOOTH = 5;
 	public static final int TRANSITION_ZOOM_FADE = 6;
 	public static final int TRANSITION_DURATION_FOR_ACTIVITIES_SLOW = 300;
-	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 200; //used to be 300
-	public static final int TRANSITION_DURATION_FOR_VIEWS = 200; //used to be 300
+	public static final int TRANSITION_DURATION_FOR_ACTIVITIES = 300; //200; //used to be 300
+	public static final int TRANSITION_DURATION_FOR_VIEWS = 300; //200; //used to be 300
 
 	public static final int MSG_ADD = 0x0001;
 	public static final int MSG_PLAY = 0x0002;
@@ -472,7 +472,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isScreenWidthLarge, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible,
 		isVerticalMarginLarge, keepScreenOn, doubleClickMode, marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList,
 		extraSpacing, albumArt, visualizerPortrait, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress,
-		isChromebook, largeTextIs22sp, displaySongNumberAndCount, allowPlayerAboveLockScreen;
+		isChromebook, largeTextIs22sp, displaySongNumberAndCount, allowPlayerAboveLockScreen, dimBackground;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _Largesp, _LargespBox, _LargespYinBox,
 		_Headingsp, _HeadingspBox, _HeadingspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogMargin, dialogDropDownVerticalMargin, verticalMargin,
 		menuMargin, strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation,
@@ -1188,8 +1188,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if (generateDivider)
 				color_divider = ColorUtils.blend(color_list_bg, 0xff000000, 0.7f);
 			if (theme == THEME_FPLAY && is3D) {
-				color_list = 0xffd7d7d7;
-				color_list_original = 0xffd7d7d7;
+				color_list = 0xffd9d9d9;
+				color_list_original = 0xffd9d9d9;
 			}
 		} else {
 			if (is3D)
@@ -1457,9 +1457,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			} else {
 				UI.theme = THEME_FPLAY;
 				color_window = 0xff3344bb;
-				color_menu = 0xff222244;
+				//light up the menu a bit to make it look better without the dimmed background
+				color_menu = 0xff223377; //0xff222244;
 				color_menu_icon = 0xffffbb33;
-				color_text_menu = 0xffaaccff;
+				color_text_menu = 0xffbbddff; //0xffaaccff;
 				color_text_listitem_secondary = 0xff0033cc;
 			}
 			color_control_mode = 0xff000000;
@@ -1681,18 +1682,18 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		canvas.drawText(text, start, end, x, y, textPaint);
 	}
 
-	public static void fillRect(Canvas canvas, int fillColor) {
+	public static void fillRect(Rect rect, Canvas canvas, int fillColor) {
 		fillPaint.setColor(fillColor);
 		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 	}
 
-	public static void fillRect(Canvas canvas, Shader shader) {
+	public static void fillRect(Rect rect, Canvas canvas, Shader shader) {
 		fillPaint.setShader(shader);
 		canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 		fillPaint.setShader(null);
 	}
 
-	public static void strokeRect(Canvas canvas, int strokeColor, int thickness) {
+	public static void strokeRect(Rect rect, Canvas canvas, int strokeColor, int thickness) {
 		fillPaint.setColor(strokeColor);
 		final int l = rect.left, t = rect.top, r = rect.right, b = rect.bottom;
 		canvas.drawRect(l, t, r, t + thickness, fillPaint);
@@ -1711,7 +1712,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		return 0;
 	}
 	
-	public static void drawBgBorderless(Canvas canvas, int state) {
+	public static void drawBgBorderless(Rect rect,  Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
@@ -1731,7 +1732,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	public static void drawBgListItem2D(Canvas canvas, int state) {
+	public static void drawBgListItem2D(Rect rect, Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
@@ -1752,9 +1753,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	public static void drawBgListItem(Canvas canvas, int state) {
+	public static void drawBgListItem(Rect rect,  Canvas canvas, int state) {
 		if (!is3D) {
-			drawBgListItem2D(canvas, state);
+			drawBgListItem2D(rect, canvas, state);
 			return;
 		}
 		fillPaint.setColor(color_list_shadow);
@@ -1783,7 +1784,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
 	}
 
-	public static void drawBgListItem2DWithDivider(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
+	public static void drawBgListItem2DWithDivider(Rect rect, Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
 		dividerAllowed &= isDividerVisible;
 		if (dividerAllowed)
 			rect.bottom -= strokeSize;
@@ -1811,9 +1812,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	public static void drawBgListItemWithDivider(Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
+	public static void drawBgListItemWithDivider(Rect rect, Canvas canvas, int state, boolean dividerAllowed, int dividerMarginLeft, int dividerMarginRight) {
 		if (!is3D) {
-			drawBgListItem2DWithDivider(canvas, state, dividerAllowed, dividerMarginLeft, dividerMarginRight);
+			drawBgListItem2DWithDivider(rect, canvas, state, dividerAllowed, dividerMarginLeft, dividerMarginRight);
 			return;
 		}
 		fillPaint.setColor(color_list_shadow);
@@ -1842,12 +1843,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		canvas.drawRect(rect.left, rect.top, rect.right - strokeSize, rect.bottom - strokeSize, fillPaint);
 	}
 
-	public static void drawBg(Canvas canvas, int state) {
+	public static void drawBg(Rect rect, Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {
 				fillPaint.setColor(((state & STATE_FOCUSED) != 0) ? color_focused_pressed : color_selected_pressed);
 				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
-				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
+				if (hasBorders) strokeRect(rect, canvas, ((state & STATE_FOCUSED) != 0) ? color_focused_pressed_border : color_selected_pressed_border, strokeSize);
 			} else if ((state & (STATE_SELECTED | STATE_FOCUSED_OR_HOVERED)) != 0) {
 				if (isFlat) {
 					fillPaint.setColor(((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused : color_selected);
@@ -1857,7 +1858,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
 					fillPaint.setShader(null);
 				}
-				if (hasBorders) strokeRect(canvas, ((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused_border : color_selected_border, strokeSize);
+				if (hasBorders) strokeRect(rect, canvas, ((state & STATE_FOCUSED_OR_HOVERED) != 0) ? color_focused_border : color_selected_border, strokeSize);
 			} else { //if ((state & STATE_MULTISELECTED) != 0) {
 				fillPaint.setColor(color_selected_multi);
 				canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, fillPaint);
@@ -2065,7 +2066,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final LinearLayout linearLayout = new LinearLayout(Player.theApplication);
 		linearLayout.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 		linearLayout.setOrientation(LinearLayout.VERTICAL);
-		linearLayout.setBackgroundDrawable(new BgShadowDrawable(false));
+		linearLayout.setBackgroundDrawable(new BgShadowDrawable(Player.theApplication, BgShadowDrawable.SHADOW_TOAST));
 		linearLayout.addView(v);
 		t.setView(linearLayout);
 		t.setDuration(descriptionPopupOwner != null ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
