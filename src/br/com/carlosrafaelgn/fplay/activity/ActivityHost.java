@@ -42,6 +42,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -78,12 +79,12 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //<activity> (all attributes, including android:configChanges)
 //http://developer.android.com/guide/topics/manifest/activity-element.html
 //
-public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Player.PlayerBackgroundMonitor, Animation.AnimationListener, FastAnimator.Observer, Interpolator, Timer.TimerHandler {
+public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Player.PlayerBackgroundMonitor, Animation.AnimationListener, FastAnimator.Observer, Interpolator, Timer.TimerHandler, Runnable {
 	private ClientActivity top;
 	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate, isCreatingLayout, pendingOrientationChanges;
 	private BgFrameLayout baseParent;
 	private FrameLayout parent;
-	private View oldView, newView;
+	private View oldView, newView, pendingTransitionView;
 	private Animation anim;
 	private FastAnimator animator; //used only with UI.TRANSITION_FADE
 	private int systemBgColor, backgroundMonitorLastMsg;
@@ -465,24 +466,24 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				animator = null;
 				parent = null;
 			}
-			if (animator != null) {
-				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-				((useFadeOutNextTime || forceFadeOut) ? oldView : view).bringToFront();
-				animator.start();
-				isFading = true;
-				createLayoutCausedAnimation = true;
-			} else if (anim != null) {
-				anim.setAnimationListener(this);
+			//we need to delay the start of the animation in order to allow it to run smooth
+			//from the very start, because we might have alread done a lot of work in this frame,
+			//creating and adding the new views, and cleaning up the previous activity
+			if (animator != null || anim != null) {
+				if (anim != null)
+					anim.setAnimationListener(this);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 				if (useFadeOutNextTime || forceFadeOut) {
 					oldView.bringToFront();
-					oldView.startAnimation(anim);
+					pendingTransitionView = oldView;
 				} else {
 					view.bringToFront();
-					view.startAnimation(anim);
+					view.setVisibility(View.INVISIBLE);
+					pendingTransitionView = view;
 				}
 				isFading = true;
 				createLayoutCausedAnimation = true;
+				MainHandler.postToMainThreadAtTime(this, SystemClock.uptimeMillis() + 10);
 			}
 		}
 		if (parent == null) {
@@ -494,7 +495,19 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 		useFadeOutNextTime = false;
 	}
-	
+
+	@Override
+	public void run() {
+		if (pendingTransitionView == null)
+			return;
+		pendingTransitionView.setVisibility(View.VISIBLE);
+		if (animator != null)
+			animator.start();
+		else if (anim != null)
+			pendingTransitionView.startAnimation(anim);
+		pendingTransitionView = null;
+	}
+
 	private void startActivityInternal(ClientActivity activity, boolean announce) {
 		activity.finished = false;
 		activity.activity = this;
@@ -760,6 +773,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//changed from onPaused() to onStop()
 		//https://developer.android.com/guide/topics/ui/multi-window.html#lifecycle
 		//In multi-window mode, an app can be in the paused state and still be visible to the user.
+		if (pendingTransitionView != null)
+			run();
 		if (animator != null)
 			animator.end();
 		else if (anim != null)
