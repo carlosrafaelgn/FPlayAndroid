@@ -203,20 +203,23 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private void disableTopView() {
 		final FrameLayout parent = baseParent;
 		final View view;
-		if (parent != null && (view = parent.getChildAt(0)) != null) {
-			view.setEnabled(false);
-			if (view instanceof ViewGroup)
-				disableGroup((ViewGroup)view);
-		}
+		if (parent != null && (view = parent.getChildAt(0)) != null)
+			setViewEnabled(view, false);
 	}
 
-	private void disableGroup(ViewGroup viewGroup) {
+	private void setViewEnabled(View view, boolean enabled) {
+		view.setEnabled(enabled);
+		if (view instanceof ViewGroup)
+			setGroupEnabled((ViewGroup)view, enabled);
+	}
+
+	private void setGroupEnabled(ViewGroup viewGroup, boolean enabled) {
 		for (int i = viewGroup.getChildCount() - 1; i >= 0; i--) {
 			final View view;
 			if ((view = viewGroup.getChildAt(i)) != null) {
-				view.setEnabled(false);
+				view.setEnabled(enabled);
 				if (view instanceof ViewGroup)
-					disableGroup((ViewGroup)view);
+					setGroupEnabled((ViewGroup)view, enabled);
 			}
 		}
 	}
@@ -284,6 +287,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				if (newView != null) {
 					if (setNull)
 						newView.setAnimation(null);
+					setViewEnabled(newView, true);
 					newView = null;
 				}
 				parent = null;
@@ -473,6 +477,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 				if (anim != null)
 					anim.setAnimationListener(this);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+				setViewEnabled(view, false);
 				if (useFadeOutNextTime || forceFadeOut) {
 					oldView.bringToFront();
 					pendingTransitionView = oldView;
