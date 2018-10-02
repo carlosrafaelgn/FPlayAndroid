@@ -116,7 +116,10 @@ import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
 public final class ActivityMain extends ClientActivity implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, SongList.ItemClickListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener, UI.AnimationPreShowViewHandler, DialogInterface.OnDismissListener {
-	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106, MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEAT_ONE = 115, MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124, MNU_VISUALIZER_LIQUID_POWER_SAVER = 125, MNU_HTTP_TRANSMITTER = 126;
+	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106,
+		MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEAT_ONE = 115,
+		MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122,
+		MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124, MNU_VISUALIZER_LIQUID_POWER_SAVER = 125, MNU_HTTP_TRANSMITTER = 126, MNU_VISUALIZER_COLOR_WAVES = 127;
 	private static final int REQUEST_WRITE_SETTINGS = 123;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbumStatic, lblAlbum, lblLength, lblMsgSelMove;
@@ -809,23 +812,26 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		s2 = s.addSubMenu(2, 0, 3, getText(R.string.visualizer) + "\u2026")
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		UI.prepare(s2);
-		s2.add(0, MNU_VISUALIZER_SPECTRUM, 0, "Spectrum")
+		s2.add(0, MNU_VISUALIZER_COLOR_WAVES, 0, "Color Waves")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
-		s2.add(0, MNU_VISUALIZER_SPECTRUM2, 1, "Spectrum 2")
+		s2.add(0, MNU_VISUALIZER_SPECTRUM, 1, "Spectrum")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
-		s2.add(0, MNU_VISUALIZER_SPIN, 2, "Spinning Rainbow")
+		s2.add(0, MNU_VISUALIZER_SPECTRUM2, 2, "Spectrum 2")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
-		s2.add(0, MNU_VISUALIZER_PARTICLE, 3, "Sound Particles")
+		s2.add(0, MNU_VISUALIZER_SPIN, 3, "Spinning Rainbow")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
-		s2.add(0, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 4, "Into the Particles")
+		s2.add(0, MNU_VISUALIZER_PARTICLE, 4, "Sound Particles")
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
+		s2.add(0, MNU_VISUALIZER_IMMERSIVE_PARTICLE, 5, "Into the Particles")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			s2.add(0, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR, 5, "Into the Particles (VR)")
+			s2.add(0, MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR, 6, "Into the Particles (VR)")
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(UI.ICON_3DPAN));
 		UI.separator(s2, 1, 0);
@@ -906,6 +912,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			break;
 		case MNU_VISUALIZER_LIQUID_POWER_SAVER:
 			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_LIQUID_POWER_SAVER));
+			break;
+		case MNU_VISUALIZER_COLOR_WAVES:
+			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_COLOR_WAVES));
 			break;
 		case MNU_VISUALIZER_SPIN:
 			getHostActivity().startActivity((new Intent(Player.theApplication, ActivityVisualizer.class)).putExtra(Visualizer.EXTRA_VISUALIZER_CLASS_NAME, OpenGLVisualizerJni.class.getName()).putExtra(OpenGLVisualizerJni.EXTRA_VISUALIZER_TYPE, OpenGLVisualizerJni.TYPE_SPIN));
@@ -1019,6 +1028,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		case MNU_VISUALIZER_LIQUID:
 		case MNU_VISUALIZER_LIQUID_POWER_SAVER:
 		case MNU_VISUALIZER_SPIN:
+		case MNU_VISUALIZER_COLOR_WAVES:
 		case MNU_VISUALIZER_PARTICLE:
 		case MNU_VISUALIZER_IMMERSIVE_PARTICLE:
 		case MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR:

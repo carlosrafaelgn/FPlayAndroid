@@ -2,10 +2,11 @@ apply plugin: 'com.android.application'
 
 buildscript {
 	repositories {
-		mavenCentral()
+		jcenter()
+		google()
 	}
 	dependencies {
-		classpath 'com.android.tools.build:gradle:1.2.3'
+		classpath 'com.android.tools.build:gradle:3.1.4'
 
 		// NOTE: Do not place your application dependencies here; they belong
 		// in the individual module build.gradle files
@@ -14,7 +15,8 @@ buildscript {
 
 allprojects {
 	repositories {
-		mavenCentral()
+		jcenter()
+		google()
 		flatDir {
 			dirs 'libs'
 		}
@@ -22,8 +24,8 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "20.0.0"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.2"
 
 	// versionCode must be kept in sync with UI.VERSION_CODE
 	// versionName must be kept in sync with UI.VERSION_NAME
@@ -53,18 +55,22 @@ android {
 		}
 	}
 
+	flavorDimensions "mode"
+
 	productFlavors {
 		traditional {
+			dimension "mode"
 			applicationId "br.com.carlosrafaelgn.fplay"
 			minSdkVersion 10
-			targetSdkVersion 26
+			targetSdkVersion 28
 			buildConfigField 'boolean', 'X', 'false'
 		}
 
 		x {
+			dimension "mode"
 			applicationId "br.com.carlosrafaelgn.fplay.x"
 			minSdkVersion 16
-			targetSdkVersion 26
+			targetSdkVersion 28
 			buildConfigField 'boolean', 'X', 'true'
 		}
 	}
@@ -94,9 +100,6 @@ android {
 			jniLibs.srcDirs = ['libs', 'libs-x']
 		}
 
-		// Move the tests to tests/java, tests/res, etc...
-		instrumentTest.setRoot('tests')
-
 		// Move the build types to build-types/<type>
 		// For instance, build-types/debug/java, build-types/debug/AndroidManifest.xml, ...
 		// This moves them out of them default location under src/<type>/... which would
@@ -116,7 +119,7 @@ android {
 }
 
 dependencies {
-	compile fileTree(include: '*.jar', dir: 'libs')
-	compile 'com.google.code.gson:gson:2.8.2'
-	compile project(':fplay.plugin')
+	implementation fileTree(include: '*.jar', dir: 'libs')
+	implementation 'com.google.code.gson:gson:2.8.2'
+	implementation project(':fplay.plugin')
 }

@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-	compileSdkVersion 26
-	buildToolsVersion "20.0.0"
+	compileSdkVersion 28
+	buildToolsVersion "28.0.2"
 
 	defaultConfig {
 		applicationId "br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer"
 		minSdkVersion 10
-		targetSdkVersion 26
+		targetSdkVersion 28
 	}
 	buildTypes {
 		release {
@@ -18,7 +18,7 @@ android {
 }
 
 dependencies {
-	compile fileTree(include: ['*.jar'], dir: 'libs')
-	provided project(':fplay.plugin')
-	compile(name: 'IoTDCP', ext: 'aar')
+	implementation fileTree(include: ['*.jar'], dir: 'libs')
+	compileOnly project(':fplay.plugin')
+	implementation(name: 'IoTDCP', ext: 'aar')
 }

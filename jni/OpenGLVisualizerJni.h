@@ -57,6 +57,7 @@
 #define TYPE_IMMERSIVE_PARTICLE_VR 5
 #define TYPE_SPECTRUM2 6
 #define TYPE_LIQUID_POWER_SAVER 7
+#define TYPE_COLOR_WAVES 8
 
 #define left -1.0f
 #define top 1.0f
@@ -88,14 +89,28 @@ static const float glTexCoordsRect[] = {
 #undef topTex
 #undef rightTex
 #undef bottomTex
+#define leftTex -1.0f
+#define topTex -1.0f
+#define rightTex 1.0f
+#define bottomTex 1.0f
+static const float glTexCoordsFullRangeRect[] = {
+	leftTex, bottomTex,
+	rightTex, bottomTex,
+	leftTex, topTex,
+	rightTex, topTex
+};
+#undef leftTex
+#undef topTex
+#undef rightTex
+#undef bottomTex
 
 typedef void (*DRAWPROC)();
 
-static const char* const rectangleVShader = "attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }";
+static const char* const rectangleVShader = "precision mediump float; attribute vec4 inPosition; attribute vec2 inTexCoord; varying vec2 vTexCoord; void main() { gl_Position = inPosition; vTexCoord = inTexCoord; }";
 static const char* const textureFShader = "precision mediump float; varying vec2 vTexCoord; uniform sampler2D texColor; void main() { gl_FragColor = texture2D(texColor, vTexCoord); }";
 static const char* const textureFShaderOES = "#extension GL_OES_EGL_image_external : require\nprecision mediump float; varying vec2 vTexCoord; uniform samplerExternalOES texColorOES; void main() { gl_FragColor = texture2D(texColorOES, vTexCoord); }";
 
-static const char* const immersiveParticleVShader = "attribute vec2 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; uniform mat4 mvpMat; void main() {" \
+static const char* const immersiveParticleVShader = "precision mediump float; attribute vec2 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float diffusion; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; uniform mat4 mvpMat; void main() {" \
 "int idx = int(inIndex);" \
 "vec2 pos = posArr[idx];" \
 /*start with the original computation*/ \
@@ -141,13 +156,35 @@ static const char* const immersiveParticleVShader = "attribute vec2 inPosition; 
 "}";
 
 static const char* const particleFShader = "precision mediump float; varying vec2 vTexCoord; varying vec3 vColor; uniform sampler2D texColor; void main() {" \
-"float a = texture2D(texColor, vTexCoord).a;"
+"float a = texture2D(texColor, vTexCoord).a;" \
 "gl_FragColor = vec4(vColor.r * a, vColor.g * a, vColor.b * a, 1.0);" \
+"}";
+
+// Based on: http://glslsandbox.com/e#48534.0
+// Modified version :) !!!
+static const char* const colorWavesFShader = "precision mediump float; varying vec2 vTexCoord; uniform float thickness0; uniform float thickness1; uniform float thickness2; uniform float thickness3; uniform float phase0; uniform float phase1; uniform float phase2; uniform float phase3; uniform float amplitude0; uniform float amplitude1; uniform float amplitude2; uniform float amplitude3;" \
+"const vec3 rColor = vec3(0.9, 0.0, 0.3);" \
+"const vec3 gColor = vec3(0.0, 0.9, 0.3);" \
+"const vec3 bColor = vec3(0.0, 0.3, 0.9);" \
+"const vec3 yColor = vec3(0.5, 0.5, 0.0);" \
+/*"float fastSin(float a) {"*/ \
+/*	"float x = mod(a, 6.28318531);"*/ \
+/*	"if (x > 3.14159265) x -= 6.28318531;"*/ \
+/*	"return (1.27323954 * x) + (((x < 0.0) ? 0.405284735 : -0.405284735) * x * x);"*/ \
+/*"}"*/ \
+"void main(void) {" \
+	"float px = vTexCoord.x * 5.0;" \
+	"float r = thickness0 / abs(vTexCoord.y + (sin(px + phase0) * amplitude0));" \
+	"float b = thickness1 / abs(vTexCoord.y + (sin(px + phase1) * amplitude1));" \
+	"float g = thickness2 / abs(vTexCoord.y + (sin(px + phase2) * amplitude2));" \
+	"float y = thickness3 / abs(vTexCoord.y + (sin(px + phase3) * amplitude3));" \
+	"vec3 destColor = (rColor * r) + (gColor * g) + (bColor * b) + (yColor * y);" \
+	"gl_FragColor = vec4(destColor, 1.0);" \
 "}";
 
 static DRAWPROC glDrawProc;
 static uint32_t glProgram, glProgram2, glType, glBuf[5];
-static int32_t glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix, glPos, glColor, glBaseX, glTheta, glOESTexture, glUpDown;
+static int32_t glTime, glAmplitude, glVerticesPerRow, glRows, glMatrix, glPos, glColor, glBaseX, glTheta, glOESTexture, glUpDown, glExtra[12];
 
 #define glResetState() glDrawProc = glDrawNothing; \
 glProgram = 0; \
@@ -167,7 +204,19 @@ glColor = 0; \
 glBaseX = 0; \
 glTheta = 0; \
 glUpDown = 0; \
-glOESTexture = 0
+glOESTexture = 0; \
+glExtra[0] = 0; \
+glExtra[1] = 0; \
+glExtra[2] = 0; \
+glExtra[3] = 0; \
+glExtra[4] = 0; \
+glExtra[5] = 0; \
+glExtra[6] = 0; \
+glExtra[7] = 0; \
+glExtra[8] = 0; \
+glExtra[9] = 0; \
+glExtra[10] = 0; \
+glExtra[11] = 0
 
 float glSmoothStep(float edge0, float edge1, float x) {
 	float t = (x - edge0) / (edge1 - edge0);
@@ -436,6 +485,60 @@ void glDrawSpin() {
 	}
 }
 
+void glDrawColorWaves() {
+	int32_t phase, i, avg;
+	uint8_t *processedData = _processedData;
+	float favg;
+
+	//FFT_SIZE = 1024
+	//QUARTER_FFT_SIZE = 256 = sizeof(_processedData)
+
+	//for color waves, commonTime ranges from 0 to 62832 (10 * 2 * pi * 1000)
+	//(we are computing mod() here, instead of in the shader, because as the numbers
+	//become larger, the precision drops along with the fps in several devices!)
+	phase = commonTime * 5;
+	while (phase >= 62832)
+		phase -= 62832;
+	avg = (int32_t)processedData[0];
+	for (i = 1; i < 6; i++)
+		avg += (int32_t)processedData[i];
+	favg = (float)(avg / 6);
+	//instead of dividing by 255, we are dividing by 256 (* 0.00390625f)
+	//since the difference is visually unnoticeable
+	//(0.00013671875f = 0.035f / 256, where 0.035f if the maximum extra thickness added to a line)
+	glUniform1f(glExtra[0], 0.04f + (favg * 0.00013671875f)); //thickness
+	glUniform1f(glExtra[1], (float)phase * 0.0001f); //phase
+	glUniform1f(glExtra[2], 0.5f - (favg * (0.5f * 0.00390625f))); //amplitude
+
+	phase = commonTime * 11;
+	while (phase >= 62832)
+		phase -= 62832;
+	glUniform1f(glExtra[9], 0.01f + (favg * 0.00013671875f)); //thickness
+	glUniform1f(glExtra[10], (float)phase * 0.0001f); //phase
+	glUniform1f(glExtra[11], 0.2f + (favg * (0.3f * 0.00390625f))); //amplitude
+
+	phase = commonTime * 7;
+	while (phase >= 62832)
+		phase -= 62832;
+	avg = (int32_t)processedData[129];
+	for (i = 130; i < 256; i++)
+		avg += (int32_t)processedData[i];
+	avg >>= 6; //divide by 64 instead of 127 to multiply the average by 2, giving it a gain
+	favg = ((avg >= 255) ? 255.0f : (float)avg);
+	glUniform1f(glExtra[3], 0.025f + (favg * 0.00013671875f)); //thickness
+	glUniform1f(glExtra[4], (float)phase * 0.0001f); //phase
+	glUniform1f(glExtra[5], 0.33f - (favg * (0.33f * 0.00390625f))); //amplitude
+
+	phase = commonTime * 9;
+	while (phase >= 62832)
+		phase -= 62832;
+	glUniform1f(glExtra[6], 0.01f + (favg * 0.00013671875f)); //thickness
+	glUniform1f(glExtra[7], (float)phase * 0.0001f); //phase
+	glUniform1f(glExtra[8], 0.25f + (favg * (0.3f * 0.00390625f))); //amplitude
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
 void glDrawParticle() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -531,6 +634,7 @@ int32_t glCreateLiquid(uint32_t powerSaver) {
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
+		"precision highp float;" \
 		"attribute float inPosition; attribute float inTexCoord; varying vec2 vTexCoord; varying float vAmpl; uniform float amplitude[33]; void main() {" \
 		"vec2 coord = vec2((inPosition + 1.0) * 0.5, 0.0);" \
 		"float absy;" \
@@ -718,6 +822,7 @@ int32_t glCreateSpin(int32_t estimatedWidth, int32_t estimatedHeight, int32_t dp
 		//vertex shader
 		//inPosition stores the distance of the vertex to the origin in the z component
 		//inTexCoord stores the angle of the vertex in the z component
+		"precision mediump float;" \
 		"attribute vec3 inPosition; attribute vec3 inTexCoord; varying vec2 vTexCoord; varying vec3 vColor; varying float dist; uniform float amplitude[33]; uniform float time; void main() {" \
 		"gl_Position = vec4(inPosition.x, inPosition.y, 0.0, 1.0);" \
 		"float d = inPosition.z;" \
@@ -813,6 +918,67 @@ int32_t glCreateSpin(int32_t estimatedWidth, int32_t estimatedHeight, int32_t dp
 	return 0;
 }
 
+int32_t glCreateColorWaves() {
+	commonTimeLimit = 62832; //10 * 2 * pi * 1000
+
+	int32_t l;
+
+	if ((l = glCreateProgramAndShaders(
+		//vertex shader
+		rectangleVShader
+		,
+
+		//fragment shader
+		colorWavesFShader
+		,
+
+		&glProgram)))
+		return l;
+
+	glBindAttribLocation(glProgram, 0, "inPosition");
+	if (glGetError()) return -100;
+	glBindAttribLocation(glProgram, 1, "inTexCoord");
+	if (glGetError()) return -101;
+	glLinkProgram(glProgram);
+	if (glGetError()) return -102;
+
+	glGenBuffers(2, glBuf);
+	if (glGetError() || !glBuf[0] || !glBuf[1]) return -103;
+
+	glUseProgram(glProgram);
+	if (glGetError()) return -107;
+
+	glExtra[0] = glGetUniformLocation(glProgram, "thickness0");
+	glExtra[1] = glGetUniformLocation(glProgram, "phase0");
+	glExtra[2] = glGetUniformLocation(glProgram, "amplitude0");
+	glExtra[3] = glGetUniformLocation(glProgram, "thickness1");
+	glExtra[4] = glGetUniformLocation(glProgram, "phase1");
+	glExtra[5] = glGetUniformLocation(glProgram, "amplitude1");
+	glExtra[6] = glGetUniformLocation(glProgram, "thickness2");
+	glExtra[7] = glGetUniformLocation(glProgram, "phase2");
+	glExtra[8] = glGetUniformLocation(glProgram, "amplitude2");
+	glExtra[9] = glGetUniformLocation(glProgram, "thickness3");
+	glExtra[10] = glGetUniformLocation(glProgram, "phase3");
+	glExtra[11] = glGetUniformLocation(glProgram, "amplitude3");
+	if (glGetError()) return -108;
+
+	//create a rectangle that occupies the entire screen
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, glBuf[0]);
+	glBufferData(GL_ARRAY_BUFFER, (4 * 4) * sizeof(float), glVerticesRect, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
+
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, glBuf[1]);
+	glBufferData(GL_ARRAY_BUFFER, (4 * 2) * sizeof(float), glTexCoordsFullRangeRect, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+	if (glGetError()) return -109;
+
+	glDrawProc = glDrawColorWaves;
+
+	return 0;
+}
+
 int32_t glCreateParticle(int32_t hasGyro) {
 	commonTimeLimit = 0xffffffff;
 
@@ -820,6 +986,7 @@ int32_t glCreateParticle(int32_t hasGyro) {
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
+		"precision mediump float;" \
 		"attribute vec4 inPosition; attribute vec2 inTexCoord; attribute float inIndex; varying vec2 vTexCoord; varying vec3 vColor; uniform float amplitude; uniform float baseX; uniform vec2 posArr[16]; uniform vec2 aspect; uniform vec3 colorArr[16]; uniform float thetaArr[16]; void main() {" \
 		"int idx = int(inIndex);" \
 		"vec2 pos = posArr[idx];" \
@@ -1003,7 +1170,7 @@ int32_t glCreateSpectrum2() {
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
-		spectrumUsesTexture ? "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; uniform float upDown; void main() {" \
+		spectrumUsesTexture ? "precision mediump float; attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; uniform float upDown; void main() {" \
 			"float absx = abs(inPosition);" \
 			"if (inPosition > 0.0) {" \
 				/*top/bottom points*/ \
@@ -1023,7 +1190,7 @@ int32_t glCreateSpectrum2() {
 		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
 		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
 		//https://www.khronos.org/registry/gles/specs/2.0/GLSL_ES_Specification_1.0.17.pdf page 111-113
-		"attribute float inPosition; varying float vAmpl; varying float vColorAdd; uniform float amplitude[128]; uniform float upDown; void main() {" \
+		"precision mediump float; attribute float inPosition; varying float vAmpl; varying float vColorAdd; uniform float amplitude[128]; uniform float upDown; void main() {" \
 			"float absx = abs(inPosition);" \
 			"float ampl;" \
 			/*mirror effect has to be simulated by hand*/ \
@@ -1172,7 +1339,7 @@ int32_t glCreateSpectrum() {
 
 	if ((l = glCreateProgramAndShaders(
 		//vertex shader
-		spectrumUsesTexture ? "attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
+		spectrumUsesTexture ? "precision mediump float; attribute float inPosition; varying vec4 vColor; uniform sampler2D texAmplitude; uniform sampler2D texColor; void main() {" \
 			"float absx = abs(inPosition);" \
 			"vec4 ampl = texture2D(texAmplitude, vec2(0.5 * (absx - 1.0), 0.0));" \
 			"gl_Position = vec4(absx - 2.0, sign(inPosition) * ampl.a, 0.0, 1.0);" \
@@ -1183,7 +1350,7 @@ int32_t glCreateSpectrum() {
 		//http://stackoverflow.com/questions/11398114/vertex-shader-doesnt-run-on-galaxy-tab10-tegra-2
 		//http://developer.download.nvidia.com/assets/mobile/files/tegra_gles2_development.pdf
 		//https://www.khronos.org/registry/gles/specs/2.0/GLSL_ES_Specification_1.0.17.pdf page 111-113
-		"attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
+		"precision mediump float; attribute float inPosition; varying float vAmpl; uniform float amplitude[128]; void main() {" \
 			"float absx = abs(inPosition);" \
 			"float ampl = amplitude[int(floor(63.5 * (absx - 1.0)))];" \
 			"gl_Position = vec4(absx - 2.0, sign(inPosition) * ampl, 0.0, 1.0);" \
@@ -1335,6 +1502,9 @@ int32_t JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int32_t bgColor, i
 		break;
 	case TYPE_LIQUID_POWER_SAVER:
 		ret = glCreateLiquid(true);
+		break;
+	case TYPE_COLOR_WAVES:
+		ret = glCreateColorWaves();
 		break;
 	case TYPE_SPIN:
 		ret = glCreateSpin(estimatedWidth, estimatedHeight, dp1OrLess);

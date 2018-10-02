@@ -6,6 +6,8 @@ build/
 obj/
 gen/
 proguard/
+traditional/
+x/
 ic_launcher-web.png
 local.properties
 # Intellij project files

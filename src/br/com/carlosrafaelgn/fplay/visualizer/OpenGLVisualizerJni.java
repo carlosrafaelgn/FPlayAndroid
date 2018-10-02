@@ -102,6 +102,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public static final int TYPE_IMMERSIVE_PARTICLE_VR = 5;
 	public static final int TYPE_SPECTRUM2 = 6;
 	public static final int TYPE_LIQUID_POWER_SAVER = 7;
+	public static final int TYPE_COLOR_WAVES = 8;
 
 	private final int type;
 	private volatile boolean supported, alerted, okToRender;
@@ -127,12 +128,12 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public OpenGLVisualizerJni(Activity activity, boolean landscape, Intent extras) {
 		super(activity);
 		final int t = extras.getIntExtra(EXTRA_VISUALIZER_TYPE, TYPE_SPECTRUM);
-		type = ((t < TYPE_LIQUID || t > TYPE_LIQUID_POWER_SAVER) ? TYPE_SPECTRUM : t);
+		type = ((t < TYPE_LIQUID || t > TYPE_COLOR_WAVES) ? TYPE_SPECTRUM : t);
 		setClickable(true);
 		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_LIQUID || type == TYPE_LIQUID_POWER_SAVER) ? 0 : 2);
+		speed = ((type == TYPE_LIQUID || type == TYPE_LIQUID_POWER_SAVER || type == TYPE_COLOR_WAVES) ? 0 : 2);
 		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 2);
 		ignoreInput = 0;
@@ -898,6 +899,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			break;
 		case TYPE_SPIN:
 		case TYPE_PARTICLE:
+		case TYPE_COLOR_WAVES:
 			break;
 		case TYPE_IMMERSIVE_PARTICLE:
 		case TYPE_IMMERSIVE_PARTICLE_VR:
