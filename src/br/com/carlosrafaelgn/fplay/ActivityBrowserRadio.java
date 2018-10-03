@@ -380,7 +380,9 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	public void onClick(View view) {
-		if (!isLayoutCreated())
+		if (!isLayoutCreated() ||
+			(animatorFadeOut != null && animatorFadeOut.isRunning()) ||
+			(animatorFadeIn != null && animatorFadeIn.isRunning()))
 			return;
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
@@ -395,14 +397,21 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 				finish(0, view, true);
 			}
 		} else if (view == btnFavorite) {
+			if (isAtFavorites)
+				return;
 			final int selection = radioStationList.getSelection();
 			isAtFavorites = true;
-			radioStationList.cancel();
-			if (animatorFadeOut != null) {
-				lblLoading.setVisibility(View.VISIBLE);
-				animatorFadeOut.start();
+			if (animatorFadeOut != null &&
+				radioStationList.isLoading()) {
+				radioStationList.cancel();
 			} else {
-				radioStationList.fetchFavorites();
+				radioStationList.cancel();
+				if (animatorFadeOut != null) {
+					lblLoading.setVisibility(View.VISIBLE);
+					animatorFadeOut.start();
+				} else {
+					radioStationList.fetchFavorites();
+				}
 			}
 			//do not call updateButtons() if onSelectionChanged() got called before!
 			if (selection < 0)
