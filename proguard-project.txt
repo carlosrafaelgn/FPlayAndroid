@@ -27,7 +27,7 @@
 # http://proguard.sourceforge.net/index.html#manual/examples.html
 #
 
--printmapping build/outputs/mapping/mapping.txt
+-printmapping mapping.txt
 -optimizations code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
 -optimizationpasses 9
 -useuniqueclassmembernames
