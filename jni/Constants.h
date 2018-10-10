@@ -41,6 +41,7 @@
 #define COEF_SPEED_0 (0.0625f / 16.0f) //0.0625f @ 60fps (~16ms)
 #define COEF_SPEED_1 (0.09375f / 16.0f) //0.09375 @ 60fps (~16ms)
 #define COEF_SPEED_2 (0.140625f / 16.0f) //0.140625f @ 60fps (~16ms)
+#define COEF_SPEED_FASTEST 1.0f //this setting ignores old values, effectively not applying any filters
 #define COEF_SPEED_DEF COEF_SPEED_2
 
 //used during Bluetooth processing

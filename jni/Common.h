@@ -105,6 +105,9 @@ void JNICALL commonSetSpeed(JNIEnv* env, jclass clazz, int32_t speed) {
 	case 2:
 		commonCoefNew = COEF_SPEED_2;
 		break;
+	case 99:
+		commonCoefNew = COEF_SPEED_FASTEST;
+		break;
 	default:
 		commonCoefNew = COEF_SPEED_0;
 		break;

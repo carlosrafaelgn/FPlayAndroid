@@ -85,7 +85,11 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 
 public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfaceView.Renderer, GLSurfaceView.EGLContextFactory, GLSurfaceView.EGLWindowSurfaceFactory, Visualizer, MenuItem.OnMenuItemClickListener, MainHandler.Callback {
-	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3, MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5, MNU_DIFFUSION0 = MNU_VISUALIZER + 6, MNU_DIFFUSION1 = MNU_VISUALIZER + 7, MNU_DIFFUSION2 = MNU_VISUALIZER + 8, MNU_DIFFUSION3 = MNU_VISUALIZER + 9, MNU_RISESPEED0 = MNU_VISUALIZER + 10, MNU_RISESPEED1 = MNU_VISUALIZER + 11, MNU_RISESPEED2 = MNU_VISUALIZER + 12, MNU_RISESPEED3 = MNU_VISUALIZER + 13;
+	private static final int MNU_COLOR = MNU_VISUALIZER + 1, MNU_SPEED0 = MNU_VISUALIZER + 2, MNU_SPEED1 = MNU_VISUALIZER + 3,
+		MNU_SPEED2 = MNU_VISUALIZER + 4, MNU_CHOOSE_IMAGE = MNU_VISUALIZER + 5, MNU_DIFFUSION0 = MNU_VISUALIZER + 6,
+		MNU_DIFFUSION1 = MNU_VISUALIZER + 7, MNU_DIFFUSION2 = MNU_VISUALIZER + 8, MNU_DIFFUSION3 = MNU_VISUALIZER + 9,
+		MNU_RISESPEED0 = MNU_VISUALIZER + 10, MNU_RISESPEED1 = MNU_VISUALIZER + 11, MNU_RISESPEED2 = MNU_VISUALIZER + 12,
+		MNU_RISESPEED3 = MNU_VISUALIZER + 13, MNU_SPEED_FASTEST = MNU_VISUALIZER + 14;
 
 	private static final int MSG_OPENGL_ERROR = 0x0600;
 	private static final int MSG_CHOOSE_IMAGE = 0x0601;
@@ -133,7 +137,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		setFocusableInTouchMode(false);
 		setFocusable(false);
 		colorIndex = 0;
-		speed = ((type == TYPE_LIQUID || type == TYPE_LIQUID_POWER_SAVER || type == TYPE_COLOR_WAVES) ? 0 : 2);
+		speed = ((type == TYPE_COLOR_WAVES) ? 99 : ((type == TYPE_LIQUID || type == TYPE_LIQUID_POWER_SAVER) ? 0 : 2));
 		diffusion = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 1);
 		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 2);
 		ignoreInput = 0;
@@ -836,6 +840,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			speed = id - MNU_SPEED0;
 			SimpleVisualizerJni.commonSetSpeed(speed);
 			break;
+		case MNU_SPEED_FASTEST:
+			speed = 99;
+			SimpleVisualizerJni.commonSetSpeed(speed);
+			break;
 		case MNU_DIFFUSION0:
 		case MNU_DIFFUSION1:
 		case MNU_DIFFUSION2:
@@ -946,13 +954,16 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			UI.separator(menu, 2, 0);
 		menu.add(2, MNU_SPEED0, 1, Player.theApplication.getText(R.string.sustain) + " 3")
 			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable((speed != 1 && speed != 2) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			.setIcon(new TextIconDrawable((speed != 1 && speed != 2 && speed != 99) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		menu.add(2, MNU_SPEED1, 2, Player.theApplication.getText(R.string.sustain) + " 2")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 1) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		menu.add(2, MNU_SPEED2, 3, Player.theApplication.getText(R.string.sustain) + " 1")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable((speed == 2) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+		menu.add(2, MNU_SPEED_FASTEST, 3, Player.theApplication.getText(R.string.sustain) + " " + Player.theApplication.getText(R.string.none))
+			.setOnMenuItemClickListener(this)
+			.setIcon(new TextIconDrawable((speed == 99) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 	}
 	
 	//Runs on the MAIN thread
@@ -1025,7 +1036,10 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 			if (ignoreInput == 0 && !playing)
 				Arrays.fill(waveform, (byte)0x80);
 			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | DATA_FFT);
-			ignoreInput ^= IGNORE_INPUT;
+			if (speed == 99)
+				ignoreInput = 0;
+			else
+				ignoreInput ^= IGNORE_INPUT;
 			//requestRender();
 		}
 	}
