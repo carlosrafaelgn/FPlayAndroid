@@ -14,7 +14,7 @@
         android:contentDescription="@string/app_name"
         android:padding="2dp"
         android:scaleType="centerInside"
-        android:src="@mipmap/ic_launcher"/>
+        android:src="@mipmap/ic_launcher_fg"/>
 
     <TextView
         android:id="@+id/lblTitle"

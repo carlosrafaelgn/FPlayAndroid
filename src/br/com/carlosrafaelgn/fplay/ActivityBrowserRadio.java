@@ -84,7 +84,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	private BgSpinner<RadioStationGenre> btnType, btnGenre, btnGenreSecondary;
 	private EditText txtTerm;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
-	private boolean loading, isAtFavorites, isHidingLoadingPanel, animateListBox;
+	private boolean loading, isAtFavorites, isHidingLoadingPanel, animateListBox, pendingFavorites;
 	private FastAnimator animatorFadeIn, animatorFadeOut, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
 	private CharSequence msgNoFavorites, msgNoStations, msgLoading;
 
@@ -214,6 +214,13 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 				loadingPanelAnimatorHide.end();
 				loadingPanelAnimatorShow.end();
 				panelLoading.setVisibility(View.VISIBLE);
+				if (isAtFavorites && pendingFavorites) {
+					if (!started)
+						radioStationList.fetchFavorites();
+					else
+						pendingFavorites = false;
+					return;
+				}
 				(started ? loadingPanelAnimatorShow : loadingPanelAnimatorHide).start();
 				isHidingLoadingPanel = !started;
 			} else {
@@ -384,6 +391,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			(animatorFadeOut != null && animatorFadeOut.isRunning()) ||
 			(animatorFadeIn != null && animatorFadeIn.isRunning()))
 			return;
+		pendingFavorites = false;
 		if (view == btnGoBack) {
 			if (isAtFavorites) {
 				isAtFavorites = false;
@@ -403,6 +411,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			isAtFavorites = true;
 			if (animatorFadeOut != null &&
 				radioStationList.isLoading()) {
+				pendingFavorites = true;
 				radioStationList.cancel();
 			} else {
 				radioStationList.cancel();

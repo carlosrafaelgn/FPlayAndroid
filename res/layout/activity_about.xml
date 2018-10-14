@@ -37,7 +37,7 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
             android:contentDescription="@string/about"
-            android:src="@mipmap/ic_launcher"/>
+            android:src="@mipmap/ic_launcher_fg"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
