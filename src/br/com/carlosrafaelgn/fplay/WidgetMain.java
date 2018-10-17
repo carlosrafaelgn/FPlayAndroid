@@ -50,8 +50,11 @@ public final class WidgetMain extends AppWidgetProvider {
 	}
 	
 	public static void updateWidgets() {
-		if (appWidgetManager == null)
+		if (appWidgetManager == null) {
 			appWidgetManager = AppWidgetManager.getInstance(Player.theApplication);
+			if (appWidgetManager == null)
+				return;
+		}
 		if (widgetComponent == null)
 			widgetComponent = new ComponentName(Player.theApplication, WidgetMain.class);
 		final int[] appWidgetIds = appWidgetManager.getAppWidgetIds(widgetComponent);
