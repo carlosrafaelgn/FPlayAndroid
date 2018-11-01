@@ -471,7 +471,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isScreenWidthLarge, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible,
 		isVerticalMarginLarge, keepScreenOn, doubleClickMode, marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList,
-		extraSpacing, albumArt, visualizerPortrait, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, playWithLongPress,
+		extraSpacing, albumArt, visualizerPortrait, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, placeControlsAtTheBottom, playWithLongPress,
 		isChromebook, largeTextIs22sp, displaySongNumberAndCount, allowPlayerAboveLockScreen, dimBackground;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _Largesp, _LargespBox, _LargespYinBox,
 		_Headingsp, _HeadingspBox, _HeadingspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogMargin, dialogDropDownVerticalMargin, verticalMargin,

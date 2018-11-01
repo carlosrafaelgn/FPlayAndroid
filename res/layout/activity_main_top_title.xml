@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".ActivityHost">
+
+    <TextView
+        android:id="@+id/lblTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:nextFocusDown="@+id/btnPrev"
+        android:nextFocusForward="@+id/btnPrev"
+        android:nextFocusLeft="@+id/list"
+        android:nextFocusRight="@+id/btnPrev"
+        android:nextFocusUp="@+id/list"
+        android:paddingBottom="4dp"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingTop="2dp"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:text="@string/nothing_playing"/>
+
+    <TextView
+        android:id="@+id/lblMsgSelMove"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:paddingBottom="4dp"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingTop="2dp"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:text="@string/msg_sel"
+        android:visibility="gone"/>
+
+</merge>

@@ -1,26 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<LinearLayout
+<RelativeLayout
     android:id="@+id/panelInfo"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:baselineAligned="false"
-    android:orientation="vertical"
     android:splitMotionEvents="false"
     tools:context=".ActivityHost">
 
     <LinearLayout
-        android:id="@+id/panelTop"
+        android:id="@+id/panelTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:baselineAligned="false"
-        android:orientation="vertical"
-        android:splitMotionEvents="false">
+        android:orientation="vertical">
 
         <include layout="@layout/activity_main_top_title"/>
-
-        <include layout="@layout/activity_main_top_controls"/>
 
     </LinearLayout>
 
@@ -28,9 +23,24 @@
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@+id/panelTop"
+        android:layout_below="@+id/panelTitle"
         android:nextFocusForward="@+id/btnAdd">
 
         <requestFocus/>
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
-</LinearLayout>
+    <LinearLayout
+        android:id="@+id/panelTop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:baselineAligned="false"
+        android:orientation="vertical"
+        android:splitMotionEvents="false">
+
+        <include layout="@layout/activity_main_top_controls"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

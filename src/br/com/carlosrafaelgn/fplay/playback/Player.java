@@ -2303,6 +2303,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_ALLOW_LOCK_SCREEN = 64;
 	private static final int OPTBIT_FILE_PREFETCH_SIZE0 = 65;
 	private static final int OPTBIT_FILE_PREFETCH_SIZE1 = 66;
+	private static final int OPTBIT_PLACE_CONTROLS_AT_THE_BOTTOM = 67;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2437,6 +2438,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		followCurrentSong = opts.getBit(OPTBIT_FOLLOW_CURRENT_SONG, true);
 		announceCurrentSong = opts.getBit(OPTBIT_ANNOUNCE_CURRENT_SONG);
 		UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
+		UI.placeControlsAtTheBottom = opts.getBit(OPTBIT_PLACE_CONTROLS_AT_THE_BOTTOM);
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
 		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
@@ -2546,6 +2548,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_FOLLOW_CURRENT_SONG, followCurrentSong);
 		opts.putBit(OPTBIT_ANNOUNCE_CURRENT_SONG, announceCurrentSong);
 		opts.putBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM, UI.placeTitleAtTheBottom);
+		opts.putBit(OPTBIT_PLACE_CONTROLS_AT_THE_BOTTOM, UI.placeControlsAtTheBottom);
 		opts.putBit(OPTBIT_PLAY_WITH_LONG_PRESS, UI.playWithLongPress);
 		opts.putBit(OPTBIT_AUTOMATIC_EFFECTS_GAIN, MediaContext.isAutomaticEffectsGainEnabled() != 0);
 		opts.putBit(OPTBIT_USE_OPENSL_ENGINE, MediaContext.useOpenSLEngine);

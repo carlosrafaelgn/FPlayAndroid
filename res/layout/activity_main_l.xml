@@ -15,6 +15,7 @@
         android:baselineAligned="false"
         android:orientation="horizontal"
         android:splitMotionEvents="false">
+
         <TextView
             android:id="@+id/lblTitle"
             android:layout_width="match_parent"
@@ -59,6 +60,7 @@
             android:baselineAligned="false"
             android:orientation="horizontal"
             android:splitMotionEvents="false">
+
             <RelativeLayout
                 android:id="@+id/panelControls"
                 android:layout_width="wrap_content"
@@ -190,8 +192,8 @@
                     android:id="@+id/btnCancelSel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentTop="true"
                     android:layout_alignParentLeft="true"
+                    android:layout_alignParentTop="true"
                     android:layout_marginRight="8dp"
                     android:contentDescription="@string/go_back"
                     android:nextFocusDown="@+id/btnShare"
@@ -205,7 +207,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_above="@+id/btnSetRingtone"
-                    android:layout_toRightOf="@+id/btnCancelSel"
+                    android:layout_alignParentRight="true"
                     android:layout_marginBottom="8dp"
                     android:contentDescription="@string/share"
                     android:nextFocusDown="@+id/btnSetRingtone"
@@ -219,7 +221,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_above="@+id/btnMoreInfo"
-                    android:layout_toRightOf="@+id/btnCancelSel"
+                    android:layout_alignParentRight="true"
                     android:layout_marginBottom="8dp"
                     android:contentDescription="@string/ringtone"
                     android:nextFocusDown="@+id/btnMoreInfo"
@@ -233,7 +235,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_above="@+id/btnMoveSel"
-                    android:layout_toRightOf="@+id/btnCancelSel"
+                    android:layout_alignParentRight="true"
                     android:layout_marginBottom="8dp"
                     android:contentDescription="@string/information"
                     android:nextFocusDown="@+id/btnMoveSel"
@@ -247,7 +249,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_above="@+id/btnRemoveSel"
-                    android:layout_toRightOf="@+id/btnCancelSel"
+                    android:layout_alignParentRight="true"
                     android:layout_marginBottom="8dp"
                     android:contentDescription="@string/move"
                     android:nextFocusDown="@+id/btnRemoveSel"
@@ -261,7 +263,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentBottom="true"
-                    android:layout_toRightOf="@+id/btnCancelSel"
+                    android:layout_alignParentRight="true"
                     android:contentDescription="@string/remove"
                     android:nextFocusDown="@+id/list"
                     android:nextFocusForward="@+id/list"
