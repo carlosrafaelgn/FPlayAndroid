@@ -65,7 +65,6 @@
                 android:id="@+id/panelControls"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:paddingRight="8dp"
                 android:splitMotionEvents="false">
 
                 <br.com.carlosrafaelgn.fplay.ui.BgButton
@@ -152,7 +151,7 @@
                     android:contentDescription="@string/volume"
                     android:nextFocusDown="@+id/list"
                     android:nextFocusForward="@+id/list"
-                    android:nextFocusLeft="@+id/btnPrev"
+                    android:nextFocusLeft="@+id/btnAdd"
                     android:nextFocusRight="@+id/list"
                     android:nextFocusUp="@+id/btnMenu"
                     android:visibility="gone"/>

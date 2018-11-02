@@ -393,6 +393,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				layoutParams.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
 			}
 			btnCancelSel.setLayoutParams(layoutParams);
+			if (!UI.extraSpacing && (UI.isLandscape || (!UI.isLandscape && !UI.placeTitleAtTheBottom && !UI.placeControlsAtTheBottom)))
+				panelSelection.setPadding(0, 0, 0, 0);
 		}
 		btnCancelSel.setIcon(UI.ICON_OK);
 		btnCancelSel.setContentDescription(getText(R.string.done));
@@ -442,9 +444,15 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 				layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 				layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-				if (UI.extraSpacing)
+				if (UI.extraSpacing || !UI.isLowDpiScreen)
 					layoutParams.bottomMargin = UI.controlMargin;
 				btnCancelSel.setLayoutParams(layoutParams);
+				if (!UI.extraSpacing) {
+					if (UI.isLandscape)
+						panelSelection.setPadding(0, 0, UI.controlMargin, 0);
+					else if (!UI.placeTitleAtTheBottom && !UI.placeControlsAtTheBottom)
+						panelSelection.setPadding(0, 0, 0, UI.controlMargin);
+				}
 			}
 			btnCancelSel.setIcon(UI.ICON_GOBACK);
 			btnCancelSel.setContentDescription(getText(R.string.go_back));
@@ -1486,57 +1494,64 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 			if (UI.isLargeScreen) {
 				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0));
-			} else {
-				if (UI.isLandscape) {
-					//we need these two panels (panelAnimationBg and panelAnimationBg2)
-					//because ugly artifacts appear when an animation is going on
-					findViewById(R.id.panelAnimationBg).setBackgroundDrawable(new ColorDrawable(UI.color_window));
-					findViewById(R.id.panelAnimationBg2).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
-					list.setTopBorder();
-					panelSecondary.setPadding(0, 0, UI.controlMargin + UI.thickDividerSize, UI.controlLargeMargin);
+			} else if (UI.isLandscape) {
+				//we need these two panels (panelAnimationBg and panelAnimationBg2)
+				//because ugly artifacts appear when an animation is going on
+				findViewById(R.id.panelAnimationBg).setBackgroundDrawable(new ColorDrawable(UI.color_window));
+				final LinearLayout panelAnimationBg2 = findViewById(R.id.panelAnimationBg2);
+				if (UI.extraSpacing) {
+					panelAnimationBg2.setPadding(UI.controlMargin, 0, UI.controlMargin + UI.thickDividerSize,  UI.controlMargin);
+					panelSecondary.setPadding(0, 0, 0, UI.controlMargin);
 				} else {
-					final LinearLayout panelTop = findViewById(R.id.panelTop);
-					if (UI.placeControlsAtTheBottom) {
-						final LinearLayout panelTitle = findViewById(R.id.panelTitle);
-						panelTitle.setPadding(0, 0, 0, UI.thickDividerSize);
-						panelTitle.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize));
+					panelAnimationBg2.setPadding(0, 0, UI.thickDividerSize,  0);
+					panelSecondary.setPadding(0, 0, UI.controlMargin, UI.controlLargeMargin);
+					panelSelection.setPadding(0, 0, UI.controlMargin, 0);
+				}
+				panelControls.setPadding(0, 0, UI.controlMargin, 0);
+				panelAnimationBg2.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
+				list.setTopBorder();
+			} else {
+				final LinearLayout panelTop = findViewById(R.id.panelTop);
+				if (UI.placeControlsAtTheBottom) {
+					final LinearLayout panelTitle = findViewById(R.id.panelTitle);
+					panelTitle.setPadding(0, 0, 0, UI.thickDividerSize);
+					panelTitle.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize));
 
-						panelTop.setPadding(0, (UI.extraSpacing ? UI.controlMargin : 0) + UI.thickDividerSize, 0, 0);
-						panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, UI.thickDividerSize, 0, 0));
-					} else {
-						if (UI.placeTitleAtTheBottom) {
-							panelTop.removeView(lblTitle);
-							panelTop.removeView(lblMsgSelMove);
-							panelTop.addView(lblTitle);
-							panelTop.addView(lblMsgSelMove);
+					panelTop.setPadding(0, UI.controlMargin + UI.thickDividerSize, 0, UI.controlMargin);
+					if (UI.extraSpacing)
+						panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
+					panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, UI.thickDividerSize, 0, 0));
+				} else {
+					if (UI.placeTitleAtTheBottom) {
+						panelTop.removeView(lblTitle);
+						panelTop.removeView(lblMsgSelMove);
+						panelTop.addView(lblTitle);
+						panelTop.addView(lblMsgSelMove);
+						if (UI.extraSpacing) {
+							lblTitle.setPadding(UI.controlSmallMargin, 0, UI.controlSmallMargin, 0);
+							lblMsgSelMove.setPadding(UI.controlSmallMargin, 0, UI.controlSmallMargin, 0);
+							panelTop.setPadding(0, UI.controlMargin, 0, UI.controlMargin + UI.thickDividerSize);
+							panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
+						} else {
 							lblTitle.setPadding(UI.controlSmallMargin, 0, UI.controlSmallMargin, UI.controlMargin);
 							lblMsgSelMove.setPadding(UI.controlSmallMargin, 0, UI.controlSmallMargin, UI.controlMargin);
-							if (UI.extraSpacing)
-								panelTop.setPadding(0, UI.controlMargin, 0, 0);
+							panelTop.setPadding(0, 0, 0, UI.thickDividerSize);
 						}
-						panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize));
+					} else {
+						panelTop.setPadding(0, 0, 0, UI.thickDividerSize);
+						panelSecondary.setPadding(0, 0, 0, UI.controlMargin);
+						if (UI.extraSpacing)
+							panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin);
+						else
+							panelSelection.setPadding(0, 0, 0, UI.controlMargin);
 					}
-					panelSecondary.setPadding(0, 0, 0, UI.controlMargin);
+					panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize));
 				}
-				if (UI.extraSpacing) {
+				if (UI.extraSpacing)
 					panelControls.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin);
-					if (UI.isLandscape)
-						panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin + UI.thickDividerSize, UI.controlMargin);
-					else if (UI.placeControlsAtTheBottom)
-						panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin);
-					else
-						panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin + UI.thickDividerSize);
-				} else {
-					if (!UI.isLandscape)
-						panelControls.setPadding(0, 0, 0, UI.isLowDpiScreen ? 0 : UI.controlMargin);
-					if (UI.isLandscape)
-						panelSelection.setPadding(0, 0, UI.controlMargin + UI.thickDividerSize, 0);
-					else if (UI.placeControlsAtTheBottom)
-						panelSelection.setPadding(0, 0, 0, UI.controlMargin);
-					else
-						panelSelection.setPadding(0, 0, 0, UI.controlMargin + UI.thickDividerSize);
-				}
-				if (!UI.isLandscape && (UI.extraSpacing || !UI.isLowDpiScreen)) {
+				else
+					panelControls.setPadding(0, 0, 0, UI.isLowDpiScreen ? 0 : UI.controlMargin);
+				if (UI.extraSpacing || !UI.isLowDpiScreen) {
 					final ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams)btnCancelSel.getLayoutParams();
 					marginLayoutParams.bottomMargin = UI.controlMargin;
 					btnCancelSel.setLayoutParams(marginLayoutParams);

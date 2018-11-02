@@ -45,6 +45,9 @@
     <!-- For exporting playlists -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
+    <!-- For Android 28 https://developer.android.com/about/versions/pie/android-9.0-migration#tya -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <!--
     Just to make Google Play show the App even to phones without Bluetooth,
     despite the uses-permission above!

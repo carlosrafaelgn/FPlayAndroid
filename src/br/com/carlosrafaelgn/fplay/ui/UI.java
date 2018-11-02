@@ -1588,12 +1588,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void showNextStartupMsg(Context context) {
-		if (msgStartup >= 34) {
-			msgStartup = 34;
+		if (msgStartup >= 35) {
+			msgStartup = 35;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 34;
+		msgStartup = 35;
 		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.startup_message).toString();
@@ -1611,12 +1611,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			"\n- 3D\n\n" +
 			context.getText(R.string.radio_directory) + punctuationSpace(":\n- SHOUTcast\n- Icecast\n\n") +
 			context.getText(R.string.check_it_out).toString();*/
-		final String content = "- " + context.getText(R.string.ringtone) +
-			"\n\n" +
+		final String content = //"- " + context.getText(R.string.ringtone) +
+			//"\n\n" +
 			context.getText(R.string.there_are_new_features) +
-			"\n\n- " + context.getText(R.string.color_theme) + punctuationSpace(": ") + "FPlay " + context.getText(R.string.icy) +
-			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.display_song_number_and_count) +
-			"\n\n- " + context.getText(R.string.hdr_playback) + punctuationSpace(": ") + context.getText(R.string.previous_resets_after_the_beginning) +
+			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.place_controls_at_the_bottom) +
 			"\n\n" +
 			context.getText(R.string.check_it_out).toString();
 		final BgDialog dialog = new BgDialog(context, createDialogView(context, content), null);

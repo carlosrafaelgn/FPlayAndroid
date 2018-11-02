@@ -102,7 +102,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface,
 		optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat,
 		optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume,
-		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom,
+		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optPlaceControlsAtTheBottom,
 		optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList,
 		optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor,
 		optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optExternalFx,
@@ -1257,8 +1257,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optIsDividerVisible = new SettingView(ctx, UI.ICON_DIVIDER, getText(R.string.opt_is_divider_visible).toString(), null, true, UI.isDividerVisible, false);
 			optIsVerticalMarginLarge = new SettingView(ctx, UI.ICON_SPACELIST, getText(R.string.opt_is_vertical_margin_large).toString(), null, true, UI.isVerticalMarginLarge, false);
 			optExtraSpacing = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.opt_extra_spacing).toString(), null, true, UI.extraSpacing, false);
-			if (!UI.isLargeScreen)
+			if (!UI.isLargeScreen) {
 				optPlaceTitleAtTheBottom = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.place_title_at_the_bottom).toString(), null, true, UI.placeTitleAtTheBottom, false);
+				optPlaceControlsAtTheBottom = new SettingView(ctx, UI.ICON_SPACEHEADER, getText(R.string.place_controls_at_the_bottom).toString(), null, true, UI.placeControlsAtTheBottom, false);
+			}
 			optForcedLocale = new SettingView(ctx, UI.ICON_LANGUAGE, getText(R.string.opt_language).toString(), UI.getLocaleDescriptionFromCode(UI.forcedLocale), false, false, false);
 			optLargeTextIs22sp = new SettingView(ctx, UI.ICON_LARGETEXTIS22SP, getText(R.string.larger_text_size).toString(), null, true, UI.largeTextIs22sp, false);
 			if (UI.isLargeScreen)
@@ -1348,8 +1350,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addOption(optNotFullscreen);
 			addOption(optIsVerticalMarginLarge);
 			addOption(optExtraSpacing);
-			if (!UI.isLargeScreen)
+			if (!UI.isLargeScreen) {
 				addOption(optPlaceTitleAtTheBottom);
+				addOption(optPlaceControlsAtTheBottom);
+			}
 			if (!UI.dyslexiaFontSupportsCurrentLocale())
 				addOption(optUseAlternateTypeface);
 			addOption(optForcedLocale);
@@ -1472,6 +1476,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optIsVerticalMarginLarge = null;
 		optExtraSpacing = null;
 		optPlaceTitleAtTheBottom = null;
+		optPlaceControlsAtTheBottom = null;
 		optForcedLocale = null;
 		optLargeTextIs22sp = null;
 		optPlacePlaylistToTheRight = null;
@@ -1719,6 +1724,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			System.gc();
 		} else if (view == optPlaceTitleAtTheBottom) {
 			UI.placeTitleAtTheBottom = optPlaceTitleAtTheBottom.isChecked();
+		} else if (view == optPlaceControlsAtTheBottom) {
+			UI.placeControlsAtTheBottom = optPlaceControlsAtTheBottom.isChecked();
+			if (UI.placeControlsAtTheBottom) {
+				optPlaceTitleAtTheBottom.setChecked(false);
+				UI.placeTitleAtTheBottom = false;
+			}
 		} else if (view == optFlat) {
 			UI.setFlat(optFlat.isChecked());
 			//onCleanupLayout();

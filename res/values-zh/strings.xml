@@ -321,6 +321,7 @@
 	<string name="follow_current_song">跟随当前歌曲</string>
 	<string name="announce_current_song">在播放下一首歌曲时提示</string>
 	<string name="place_title_at_the_bottom">将标题栏放在底部</string>
+    <string name="place_controls_at_the_bottom">将控件放在底部</string>
 	<string name="headset_hook_1">单击耳机按钮：</string>
 	<string name="headset_hook_2">双击耳机按钮：</string>
 	<string name="headset_hook_3">三击耳机按钮：</string>
