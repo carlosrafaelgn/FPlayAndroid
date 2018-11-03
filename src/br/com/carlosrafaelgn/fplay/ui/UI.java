@@ -55,6 +55,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.StrictMode;
 import android.text.InputType;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -107,9 +108,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings("unused")
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
-	public static final int VERSION_CODE = 115;
+	public static final int VERSION_CODE = 116;
 	//VERSION_NAME must be kept in sync with build.gradle
-	public static final String VERSION_NAME = "v1.81";
+	public static final String VERSION_NAME = "v1.82";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -1997,8 +1998,22 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		sharingIntent.setType(FileFetcher.mimeType(path));
 		sharingIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(path)));
 		sharingIntent = Intent.createChooser(sharingIntent, Player.theApplication.getText(R.string.share));
-		if (sharingIntent != null)
+		if (sharingIntent != null) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				// Let's try to avoid creating a FileProvider, given that
+				// we are not "leaking the private file URI", since it is
+				// already a public/external URI anyway!!!
+				// https://stackoverflow.com/a/42437379/3569421
+				try {
+					@SuppressWarnings("JavaReflectionMemberAccess")
+					final Method m = StrictMode.class.getMethod("disableDeathOnFileUriExposure");
+					m.invoke(null);
+				} catch(Throwable ex){
+					// Just ignore...
+				}
+			}
 			Player.theApplication.startActivity(sharingIntent);
+		}
 	}
 
 	public static String emoji(CharSequence text) {
