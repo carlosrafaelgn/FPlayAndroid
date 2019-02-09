@@ -105,6 +105,7 @@ public final class BgSeekBar extends View {
 			super.setDefaultFocusHighlightEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
 			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
+		updateContentDescription();
 	}
 
 	private void updateSecondaryBgColorBlended() {
@@ -199,8 +200,9 @@ public final class BgSeekBar extends View {
 		updateTextWidth();
 	}
 
-	@Override
-	public CharSequence getContentDescription() {
+	private void updateContentDescription() {
+		if (!UI.isAccessibilityManagerEnabled)
+			return;
 		String d = "";
 		if (additionalContentDescription != null)
 			d = additionalContentDescription;
@@ -209,17 +211,12 @@ public final class BgSeekBar extends View {
 				d += ": ";
 			d += text;
 		}
-		return d;
-	}
-
-	@Override
-	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
-		super.onInitializeAccessibilityEvent(event);
-		event.setContentDescription(getContentDescription());
+		setContentDescription(d);
 	}
 
 	public void setAdditionalContentDescription(String additionalContentDescription) {
 		this.additionalContentDescription = additionalContentDescription;
+		updateContentDescription();
 	}
 
 	public String getIcon() {
@@ -237,12 +234,14 @@ public final class BgSeekBar extends View {
 	
 	public void setText(String text) {
 		this.text = ((text == null) ? "" : text);
+		updateContentDescription();
 		updateTextWidth();
 	}
 	
 	public void setText(int resId) {
 		final CharSequence text = getContext().getText(resId);
 		this.text = ((text == null) ? "" : text.toString());
+		updateContentDescription();
 		updateTextWidth();
 	}
 	

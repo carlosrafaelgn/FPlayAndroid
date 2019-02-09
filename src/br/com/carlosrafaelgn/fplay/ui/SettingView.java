@@ -45,7 +45,6 @@ import android.view.KeyEvent;
 import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
-import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -79,6 +78,7 @@ public final class SettingView extends View {
 
 		secondaryTextWidth = ((secondaryText != null) ? UI.measureText(secondaryText, UI._18sp) : 0);
 
+		updateContentDescription();
 		updateLayout();
 
 		super.setDrawingCacheEnabled(false);
@@ -88,21 +88,15 @@ public final class SettingView extends View {
 			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 	}
 
-	@Override
-	public CharSequence getContentDescription() {
+	private void updateContentDescription() {
+		if (!UI.isAccessibilityManagerEnabled)
+			return;
 		if (secondaryText != null)
-			return text + UI.collon() + secondaryText;
+			setContentDescription(text + UI.collon() + secondaryText);
 		else if (checkable)
-			return text + UI.collon() + getContext().getText(checked ? R.string.yes : R.string.no);
+			setContentDescription(text + UI.collon() + getContext().getText(checked ? R.string.yes : R.string.no));
 		else if (color != 0)
-			return text;
-		return super.getContentDescription();
-	}
-
-	@Override
-	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
-		super.onInitializeAccessibilityEvent(event);
-		event.setContentDescription(getContentDescription());
+			setContentDescription(text);
 	}
 
 	private void updateLayout() {
@@ -168,6 +162,7 @@ public final class SettingView extends View {
 
 	public void setText(String text) {
 		this.text = text;
+		updateContentDescription();
 		updateLayout();
 		invalidate();
 		requestLayout();
@@ -176,6 +171,7 @@ public final class SettingView extends View {
 	public void setSecondaryText(String secondaryText) {
 		if (this.secondaryText != null && secondaryText != null) {
 			this.secondaryText = secondaryText;
+			updateContentDescription();
 			secondaryTextWidth = UI.measureText(secondaryText, UI._18sp);
 			invalidate();
 		}
@@ -188,6 +184,7 @@ public final class SettingView extends View {
 	public void setChecked(boolean checked) {
 		if (checkable) {
 			this.checked = checked;
+			updateContentDescription();
 			invalidate();
 		}
 	}
@@ -234,8 +231,10 @@ public final class SettingView extends View {
 
 	@Override
 	public boolean performClick() {
-		if (checkable)
+		if (checkable) {
 			checked = !checked;
+			updateContentDescription();
+		}
 		return super.performClick();
 	}
 

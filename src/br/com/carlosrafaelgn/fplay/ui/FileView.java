@@ -46,7 +46,6 @@ import android.view.Gravity;
 import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
-import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -218,19 +217,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		return initial + " " + file.name + UI.collon() + ctx.getText(file.isChecked ? R.string.selected : R.string.unselected);
 	}
 
-	@Override
-	public CharSequence getContentDescription() {
-		if (file != null)
-			return makeContextDescription(hasCheckbox, getContext(), file);
-		return super.getContentDescription();
-	}
-
-	@Override
-	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
-		super.onInitializeAccessibilityEvent(event);
-		event.setContentDescription(getContentDescription());
-	}
-
 	public void setItemState(FileSt file, int position, int state, BaseList<?> baseList, AlbumArtFetcher albumArtFetcher, int scrollBarType) {
 		if (file == null)
 			return;
@@ -280,6 +266,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		secondaryText = null;
 		ellipsizedSecondaryText = null;
 		this.file = file;
+		if (UI.isAccessibilityManagerEnabled)
+			setContentDescription(makeContextDescription(hasCheckbox, getContext(), file));
 		if (checkBoxVisible != showCheckbox) {
 			checkBoxVisible = showCheckbox;
 			if (btnCheckbox != null)
@@ -526,6 +514,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			file.isChecked = btnCheckbox.isChecked();
 			if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
 				itemClickListener.onItemCheckboxClicked(position);
+			if (UI.isAccessibilityManagerEnabled)
+				setContentDescription(makeContextDescription(hasCheckbox, getContext(), file));
 		} else {
 			if (baseList != null && (itemClickListener = baseList.getItemClickListener()) != null)
 				itemClickListener.onItemClicked(position);

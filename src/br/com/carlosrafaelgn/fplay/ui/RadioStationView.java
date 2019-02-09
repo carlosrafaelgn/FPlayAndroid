@@ -44,7 +44,6 @@ import android.view.Gravity;
 import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
-import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -180,19 +179,6 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 			btnFavorite.setChecked(station.isFavorite);
 	}
 
-	@Override
-	public CharSequence getContentDescription() {
-		if (station != null)
-			return station.title;
-		return super.getContentDescription();
-	}
-
-	@Override
-	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
-		super.onInitializeAccessibilityEvent(event);
-		event.setContentDescription(getContentDescription());
-	}
-
 	public void setItemState(RadioStation station, int position, int state, BaseList<RadioStation> baseList) {
 		this.position = position;
 		//refer to the comment inside processEllipsis()
@@ -211,6 +197,8 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		if (this.station == station)
 			return;
 		this.station = station;
+		if (UI.isAccessibilityManagerEnabled)
+			setContentDescription(station.title);
 		if (btnFavorite != null)
 			btnFavorite.setChecked(station.isFavorite);
 		processEllipsis();

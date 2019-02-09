@@ -310,7 +310,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				fileList.setObserver(started ? null : list);
 				final int count = fileList.getCount();
 				if (!started) {
-					if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled())
+					if (UI.isAccessibilityManagerEnabled)
 						UI.announceAccessibilityText(count == 0 ? msgEmptyList : FileView.makeContextDescription(true, getHostActivity(), fileList.getItem(0)));
 					if (count > 0 && !list.isInTouchMode()) {
 						fileList.setSelection(0, true);

@@ -49,7 +49,6 @@ import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
-import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.AbsListView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -171,21 +170,28 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		return true;
 	}
 
-	@Override
-	public CharSequence getContentDescription() {
-		return null;
-	}
+	//apparently there have been changes to Android, and it is forbidden to override getContentDescription() now...
+	//@Override
+	//public CharSequence getContentDescription() {
+	//	return null;
+	//}
 
-	@Override
-	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	public void onInitializeAccessibilityNodeInfo(@NonNull AccessibilityNodeInfo info) {
-		super.onInitializeAccessibilityNodeInfo(info);
-		info.setClassName("br.com.carlosrafaelgn.fplay.activity.ActivityHost");
-		if (itemCount == 0) {
-			info.setText(emptyLayout == null ? "" : emptyLayout.getText());
-		} else {
-			info.setText("");
-		}
+	//@Override
+	//@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	//public void onInitializeAccessibilityNodeInfo(@NonNull AccessibilityNodeInfo info) {
+	//	super.onInitializeAccessibilityNodeInfo(info);
+	//	info.setClassName("br.com.carlosrafaelgn.fplay.activity.ActivityHost");
+	//	if (itemCount == 0) {
+	//		info.setText(emptyLayout == null ? "" : emptyLayout.getText());
+	//	} else {
+	//		info.setText("");
+	//	}
+	//}
+
+	private void updateContentDescription() {
+		if (!UI.isAccessibilityManagerEnabled)
+			return;
+		setContentDescription((itemCount == 0 && emptyLayout != null) ? emptyLayout.getText() : null);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -277,9 +283,9 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	public boolean changingCurrentWouldScareUser() {
 		return (
 				(!isInTouchMode()) ||
-				(UI.accessibilityManager != null && UI.accessibilityManager.isEnabled()) ||
 				touching ||
-				(scrollState != SCROLL_STATE_IDLE)
+				(scrollState != SCROLL_STATE_IDLE) ||
+				(UI.isAccessibilityManagerEnabled)
 		);
 	}
 
@@ -863,6 +869,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		itemHeight = ((adapter == null) ? UI.defaultControlSize : this.adapter.getViewHeight());
 		cancelTracking();
 		itemCount = ((adapter == null) ? 0 : adapter.getCount());
+		updateContentDescription();
 		switch (scrollBarType) {
 		case SCROLLBAR_LARGE:
 			updateScrollBarThumb();
@@ -880,6 +887,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		itemCount = ((adapter == null) ? 0 : adapter.getCount());
 		if (itemCount == 0 || last > itemCount)
 			cancelTracking();
+		if (last == 0 || itemCount == 0)
+			updateContentDescription();
 		switch (scrollBarType) {
 		case SCROLLBAR_LARGE:
 			updateScrollBarThumb();

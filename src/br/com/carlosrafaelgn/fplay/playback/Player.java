@@ -3725,7 +3725,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (bluetoothVisualizer != null)
 			updateBluetoothVisualizer(songHasChanged);
 		Throwable ex = null;
-		if (songHasChanged && announceCurrentSong && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && state == STATE_ALIVE)
+		if (songHasChanged && announceCurrentSong && UI.isAccessibilityManagerEnabled && state == STATE_ALIVE)
 			UI.announceAccessibilityText(title);
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];

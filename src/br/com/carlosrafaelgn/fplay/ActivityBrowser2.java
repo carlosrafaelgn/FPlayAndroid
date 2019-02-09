@@ -505,7 +505,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			} else {
 				list.setCustomEmptyText(started ? msgLoading : msgEmptyList);
 			}
-			if (!started && UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && fileList != null) {
+			if (!started && UI.isAccessibilityManagerEnabled && fileList != null) {
 				if (fileList.getCount() == 0) {
 					UI.announceAccessibilityText(msgEmptyList);
 				} else {
@@ -704,7 +704,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			}
 			if (Player.path.length() != 0) {
 				//does not work well... the focused item is always the first (but the selected item may vary)
-				//if (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled() && list != null)
+				//if (UI.isAccessibilityManagerEnabled && list != null)
 				//	list.requestFocusFromTouch();
 				if (Player.path.length() == 1 || Player.path.equals(Player.originalPath)) {
 					navigateTo("", Player.path, false);

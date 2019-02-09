@@ -64,7 +64,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	private Rect srcRect, dstRect;
 	private AlbumArtFetcher albumArtFetcher;
 	private ReleasableBitmapWrapper bmp;
-	private SongInfo currentSong;
+	private long currentSongInfoId;
 	private volatile int version;
 	private volatile String nextPath;
 	private volatile ReleasableBitmapWrapper nextBmp;
@@ -88,6 +88,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		albumArtFetcher = new AlbumArtFetcher();
 		color1 = UI.colorState_text_visualizer_static.getDefaultColor();
 		color2 = ColorUtils.blend(color1, UI.color_visualizer565, 0.5f);
+		currentSongInfoId = -1;
 	}
 	
 	@Override
@@ -122,10 +123,10 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	public void onClick() {
 	}
 
-	private void releaseBitmapsAndSetCurrentSong(SongInfo song) {
+	private void releaseBitmapsAndSetCurrentSong(SongInfo songInfo) {
 		synchronized (sync) {
 			version++;
-			currentSong = song;
+			currentSongInfoId = (songInfo == null ? -1 : songInfo.id);
 			if (bmp != null) {
 				bmp.release();
 				bmp = null;
@@ -147,13 +148,13 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	 */
 	@Override
 	public void onPlayerChanged(SongInfo currentSongInfo, boolean songHasChanged, Throwable ex) {
-		if (currentSong == null) {
+		if (currentSongInfo == null) {
 			releaseBitmapsAndSetCurrentSong(null);
 			updateRects();
-		} else if (this.currentSong.id != currentSongInfo.id && albumArtFetcher != null) {
-			releaseBitmapsAndSetCurrentSong(currentSong);
+		} else if ((currentSongInfoId == -1 || currentSongInfoId != currentSongInfo.id) && albumArtFetcher != null) {
+			releaseBitmapsAndSetCurrentSong(currentSongInfo);
 			updateRects(); //force the album icon to be displayed
-			nextPath = currentSong.path;
+			nextPath = currentSongInfo.path;
 			albumArtFetcher.getAlbumArtForFile(0, version, this);
 		}
 		invalidate();

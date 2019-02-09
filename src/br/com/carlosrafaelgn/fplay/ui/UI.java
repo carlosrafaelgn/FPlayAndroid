@@ -482,7 +482,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static Bitmap icPrev, icPlay, icPause, icNext, icPrevNotif, icPlayNotif, icPauseNotif, icNextNotif, icExitNotif;
 	public static byte[] customColors;
 	public static AccessibilityManager accessibilityManager;
-	
+	public static boolean isAccessibilityManagerEnabled;
+
 	private static int currentLocale, createdWidgetIconColor;
 	private static boolean alternateTypefaceActive, fullyInitialized;
 	//private static Toast internalToast;
@@ -818,12 +819,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		widgetTextColor = opts.getInt(0x0023, 0xff000000);
 		widgetIconColor = opts.getInt(0x0024, 0xff000000);
 	}
-	
+
 	public static void initialize(Activity activityContext, int newUsableScreenWidth, int newUsableScreenHeight) {
 		final Resources resources = (activityContext != null ? activityContext.getResources() : Player.theApplication.getResources());
 		final Configuration configuration = resources.getConfiguration();
 
 		accessibilityManager = (AccessibilityManager)Player.theApplication.getSystemService(Context.ACCESSIBILITY_SERVICE);
+		isAccessibilityManagerEnabled = (accessibilityManager != null && accessibilityManager.isEnabled());
 		if (iconsTypeface == null)
 			iconsTypeface = Typeface.createFromAsset(Player.theApplication.getAssets(), "fonts/icons.ttf");
 		if (!fullyInitialized) {
@@ -2423,7 +2425,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void announceAccessibilityText(CharSequence text) {
-		if (accessibilityManager != null && accessibilityManager.isEnabled()) {
+		if (isAccessibilityManagerEnabled) {
 			final AccessibilityEvent e = AccessibilityEvent.obtain();
 			//I couldn't make AccessibilityEvent.TYPE_ANNOUNCEMENT work... even on Android 16+
 			e.setEventType(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);

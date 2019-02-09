@@ -800,6 +800,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			finish();
 			return;
 		}
+		UI.isAccessibilityManagerEnabled = (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled());
 		Player.backgroundMonitor = this;
 		Player.setAppNotInForeground(false);
 		if (UI.forcedLocale != UI.LOCALE_NONE)

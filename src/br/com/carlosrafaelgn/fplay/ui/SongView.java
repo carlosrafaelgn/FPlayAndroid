@@ -42,7 +42,6 @@ import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
-import android.view.accessibility.AccessibilityEvent;
 
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.Song;
@@ -123,27 +122,32 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		}
 	}
 
-	@Override
-	public CharSequence getContentDescription() {
-		if (song != null)
-			return song.title;
-		return super.getContentDescription();
-	}
+	//apparently there have been changes to Android, and it is forbidden to override getContentDescription() now...
+	//@Override
+	//public CharSequence getContentDescription() {
+	//	if (song != null)
+	//		return song.title;
+	//	return super.getContentDescription();
+	//}
 
-	@Override
-	public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
-		super.onInitializeAccessibilityEvent(event);
-		event.setContentDescription(getContentDescription());
-	}
+	//@Override
+	//public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+	//	super.onInitializeAccessibilityEvent(event);
+	//	event.setContentDescription(getContentDescription());
+	//}
 
 	public void setItemState(Song song, int position, int state, BaseList<Song> baseList) {
 		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.position = position;
 		this.baseList = baseList;
 		//watch out, DO NOT use equals() in favor of speed!
-		if (this.song == song && !UI.displaySongNumberAndCount)
+		if (this.song != song) {
+			this.song = song;
+			if (UI.isAccessibilityManagerEnabled)
+				setContentDescription(song.title);
+		} else if (!UI.displaySongNumberAndCount) {
 			return;
-		this.song = song;
+		}
 		lengthWidth = (song.isHttp ? UI._14spBox : UI.measureText(song.length, UI._14sp));
 		lengthX = width - lengthWidth - UI.controlMargin - rightMargin;
 		if (!UI.displaySongNumberAndCount || ((state & UI.STATE_CURRENT) != 0)) {
