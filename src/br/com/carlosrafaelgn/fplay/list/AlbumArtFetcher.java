@@ -57,7 +57,7 @@ import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	public interface AlbumArtFetcherListener {
 		//Runs on a SECONDARY thread
-		void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId);
+		void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId, String bitmapUri);
 		
 		//Runs on a SECONDARY thread
 		FileSt fileForRequestId(int requestId);
@@ -75,6 +75,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	private Rect srcR, dstR;
 	private Handler handler;
 	private Looper looper;
+	private int nextRequestId;
 
 	/**
 	 * Setup LRU cache, canvas for bitmap
@@ -166,7 +167,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 						if (uri != null) {
 							synchronized (sync) {
 								if (cache != null && (w = cache.get(uri)) != null) {
-									listener.albumArtFetched(w, msg.what);
+									listener.albumArtFetched(w, msg.what, uri);
 									return true;
 								}
 							}
@@ -195,7 +196,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				file.albumArt = uri;
 				synchronized (sync) {
 					if (cache != null && (w = cache.get(uri)) != null) {
-						listener.albumArtFetched(w, msg.what);
+						listener.albumArtFetched(w, msg.what, uri);
 						return true;
 					}
 				}
@@ -261,7 +262,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 			synchronized (sync) {
 				if (cache != null) {
 					cache.put(uri, w);
-					listener.albumArtFetched(w, msg.what);
+					listener.albumArtFetched(w, msg.what, uri);
 				}
 			}
 		} catch (Throwable ex) {
@@ -277,7 +278,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 			} catch (Throwable ex2) {
 				ex2.printStackTrace();
 			}
-			listener.albumArtFetched(null, msg.what);
+			listener.albumArtFetched(null, msg.what, null);
 			ex.printStackTrace();
 			return true;
 		}
@@ -343,5 +344,15 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 			looper.quit();
 			looper = null;
 		}
+	}
+
+	//Runs on the MAIN thread
+
+	/**
+	 * Generates a suggested requestId to be used
+	 * with getAlbumArt()
+	 */
+	public int getNextRequestId() {
+		return ++nextRequestId;
 	}
 }

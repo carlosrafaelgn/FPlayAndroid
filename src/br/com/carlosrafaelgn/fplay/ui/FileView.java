@@ -56,7 +56,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class FileView extends LinearLayout implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
-	private volatile AlbumArtFetcher albumArtFetcher;
+	private AlbumArtFetcher albumArtFetcher;
 	private Handler handler;
 	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
@@ -273,11 +273,13 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			if (btnCheckbox != null)
 				btnCheckbox.setVisibility(showCheckbox ? View.VISIBLE : View.GONE);
 		}
-		if (pendingAlbumArtRequest && albumArtFetcher != null) {
-			pendingAlbumArtRequest = false;
-			albumArtFetcher.cancelRequest(requestId, this);
+		if (albumArtFetcher != null) {
+			if (pendingAlbumArtRequest) {
+				pendingAlbumArtRequest = false;
+				albumArtFetcher.cancelRequest(requestId, this);
+			}
+			requestId = albumArtFetcher.getNextRequestId();
 		}
-		requestId++;
 		if (albumArt != null) {
 			albumArt.release();
 			albumArt = null;
@@ -532,7 +534,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	//Runs on a SECONDARY thread
 	@Override
-	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
+	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId, String bitmapUri) {
 		//check if we have already been removed from the window
 		final Handler h = handler;
 		if (requestId != this.requestId || h == null)

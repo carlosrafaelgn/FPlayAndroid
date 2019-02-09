@@ -339,7 +339,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	 * @param requestId requestId for the bitmap
 	 */
 	@Override
-	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
+	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId, String bitmapUri) {
 		if (bitmap == null)
 			return;
 		synchronized (sync) {
