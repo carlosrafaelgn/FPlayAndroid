@@ -93,6 +93,7 @@
     <application
         android:allowBackup="true"
         android:allowClearUserData="true"
+        android:usesCleartextTraffic="true"
         android:killAfterRestore="true"
         android:restoreAnyVersion="false"
         android:description="@string/app_description"
