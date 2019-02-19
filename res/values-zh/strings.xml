@@ -366,7 +366,7 @@
 	<string name="file_prefetch_size">播放本地文件时，暂存到内存中的字节数：</string>
 	<string name="download">下载</string>
 	<string name="download_confirmation">此功能需要外部扩展“%s”。 您要现在下载吗？</string>
-    <string name="error_wifi">抱歉! 有效的Wifi连接是必需的 :(</string>
+    <string name="error_wifi">抱歉! 有效的Wi-Fi连接是必需的 :(</string>
     <string name="transmission_error">传输错误！</string>
     <string name="transmission_active">传输活动&#8230;</string>
     <string name="transmit">发送&#8230;</string>

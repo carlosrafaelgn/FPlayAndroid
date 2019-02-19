@@ -59,10 +59,11 @@ public final class Song extends BaseItem {
 	private static final int STORE_OK = 2;
 	public String path; //the only thread/method allowed to change the path is Player._httpStreamReceiverUrlUpdated()
 	public boolean isHttp;
-	public String title, artist, album, extraInfo;
+	public String title, artist, album, extraInfo, albumArtUri;
 	public int track, lengthMS, year;
 	public String length;
 	public boolean alreadyPlayed, selected;
+	public Long albumId;
 
 	public static boolean isPathHttp(String path) {
 		return (path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:"));

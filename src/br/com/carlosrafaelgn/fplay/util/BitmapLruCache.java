@@ -60,18 +60,18 @@ import java.util.Map;
 public final class BitmapLruCache {
 	private volatile int size;
 	private final int maxSize;
-	private final LinkedHashMap<String, ReleasableBitmapWrapper> map;
+	private final LinkedHashMap<Long, ReleasableBitmapWrapper> map;
 	
 	public BitmapLruCache(int maxSize) {
 		this.maxSize = maxSize;
 		this.map = new LinkedHashMap<>(0, 0.75f, true);
 	}
 	
-	public ReleasableBitmapWrapper get(String key) {
+	public ReleasableBitmapWrapper get(Long key) {
 		return map.get(key);
 	}
 	
-	public ReleasableBitmapWrapper put(String key, ReleasableBitmapWrapper value) {
+	public ReleasableBitmapWrapper put(Long key, ReleasableBitmapWrapper value) {
 		ReleasableBitmapWrapper previous;
 		
 		size += value.size;
@@ -90,7 +90,7 @@ public final class BitmapLruCache {
 	
 	public void trimToSize(int maxSize) {
 		while (size > maxSize && size > 0 && !map.isEmpty()) {
-			//Map.Entry<String, Bitmap> toEvict = map.eldest();
+			//Map.Entry<Long, Bitmap> toEvict = map.eldest();
 			
 			//According to this source file: http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/6-b27/java/util/LinkedHashMap.java
 			//the eldest entry is header.after
@@ -100,12 +100,12 @@ public final class BitmapLruCache {
 			//If they do so, then the eldest entry (header.after) is the first entry returned by
 			//LinkedHashIterator.nextEntry() (which, in turn, is the value returned by EntryIterator.next())
 			
-			Map.Entry<String, ReleasableBitmapWrapper> toEvict = map.entrySet().iterator().next();
+			Map.Entry<Long, ReleasableBitmapWrapper> toEvict = map.entrySet().iterator().next();
 			
 			if (toEvict == null)
 				break;
 			
-			final String key = toEvict.getKey();
+			final Long key = toEvict.getKey();
 			final ReleasableBitmapWrapper value = toEvict.getValue();
 			map.remove(key);
 			if (value != null) {
@@ -115,7 +115,7 @@ public final class BitmapLruCache {
 		}
 	}
 	
-	public ReleasableBitmapWrapper remove(String key) {
+	public ReleasableBitmapWrapper remove(Long key) {
 		ReleasableBitmapWrapper previous;
 		previous = map.remove(key);
 		if (previous != null) {

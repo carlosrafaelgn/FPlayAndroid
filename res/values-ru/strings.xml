@@ -361,7 +361,7 @@
     <string name="file_prefetch_size">Байты для хранения в памяти при воспроизведении локальных файлов:</string>
     <string name="download">Загрузка</string>
     <string name="download_confirmation">Для этой функции требуется внешнее расширение \"%s\". Вы хотите скачать его сейчас?</string>
-    <string name="error_wifi">Извините! Требуется активное Wifi-соединение :(</string>
+    <string name="error_wifi">Извините! Требуется активное Wi-Fi-соединение :(</string>
     <string name="transmission_error">Ошибка передачи!</string>
     <string name="transmission_active">Передача активна&#8230;</string>
     <string name="transmit">Передавать&#8230;</string>

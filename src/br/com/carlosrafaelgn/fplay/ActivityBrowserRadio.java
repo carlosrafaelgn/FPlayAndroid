@@ -160,7 +160,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 						if (streamUrl == null)
 							MainHandler.toast(((resultCode[0] >= 300 && resultCode[0] < 500) || resultCode[0] == 0) ? R.string.error_file_not_found : (resultCode[0] < 0 ? R.string.error_io : R.string.error_gen));
 						else
-							Player.songs.addFiles(new FileSt[]{new FileSt(radioStation.buildFullPath(streamUrl), radioStation.title, null, 0)}, null, 1, play, false, true, false);
+							Player.songs.addFiles(new FileSt[]{new FileSt(radioStation.buildFullPath(streamUrl), radioStation.title)}, null, 1, play, false, true, false);
 					} finally {
 						Player.songs.addingEnded();
 					}

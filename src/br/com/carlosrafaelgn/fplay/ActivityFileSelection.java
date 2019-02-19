@@ -459,7 +459,7 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				}
 				finish(0, null, false);
 				if (listener != null)
-					listener.onFileSelected(ActivityFileSelection.this.id, new FileSt(n + fileType, n, 0));
+					listener.onFileSelected(ActivityFileSelection.this.id, new FileSt(n + fileType, n));
 			} else {
 				if (confirmDeleteIndex >= 0) {
 					try {

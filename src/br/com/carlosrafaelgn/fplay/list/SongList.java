@@ -58,6 +58,7 @@ import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.SongView;
+import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
@@ -86,6 +87,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	public boolean selecting, moving, okToTurnOffAfterReachingTheEnd;
 	private Song[] shuffledList;
 	public Song possibleNextSong;
+	public AlbumArtFetcher albumArtFetcher;
 	private static final SongList theSongList = new SongList();
 	
 	private SongList() {
@@ -97,7 +99,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	public static SongList getInstance() {
 		return theSongList;
 	}
-	
+
 	//--------------------------------------------------------------------------------------------
 	//These fifteen methods are the only ones that can be called from any thread (all the others must be called from the main thread)
 
@@ -408,13 +410,13 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		if (Player.backgroundMonitor != null)
 			Player.backgroundMonitor.backgroundMonitorStart();
 	}
-	
+
 	public void addingEnded() {
 		synchronized (currentAndCountMutex) {
 			adding = ((adding <= 1) ? 0 : (adding - 1));
 		}
 	}
-	
+
 	public boolean isAdding() {
 		return (adding > 0);
 	}
@@ -828,7 +830,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			setRandomModeInternal(randomMode);
 		//}
 	}
-	
+
 	public void updateExtraInfo() {
 		//synchronized (currentAndCountMutex) {
 			//don't mess up with modificationVersion as it is not affected by this operation
@@ -838,7 +840,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		//}
 		notifyCheckedChanged();
 	}
-	
+
 	public void sort(int mode) {
 		//synchronized (currentAndCountMutex) {
 			sortMode = mode;
@@ -864,7 +866,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		//}
 		notifyDataSetChanged(current, CONTENT_MOVED);
 	}
-	
+
 	@Override
 	public int compare(Song a, Song b) {
 		int r;
@@ -891,7 +893,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			return a.track - b.track;
 		return r;
 	}
-	
+
 	@Override
 	protected void addingItems(int position, int count) {
 		if (shuffledList == null)
@@ -908,7 +910,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			shuffledList[b] = s;
 		}
 	}
-	
+
 	@Override
 	protected void removingItems(int position, int count) {
 		if (shuffledList == null)
@@ -946,7 +948,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			position++;
 		}
 	}
-	
+
 	@Override
 	protected void clearingItems() {
 		if (shuffledList == null)
@@ -957,7 +959,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		shuffledItemsAlreadyPlayed = 0;
 		indexOfPreviouslyDeletedCurrentShuffledItem = -1;
 	}
-	
+
 	@Override
 	protected void notifyDataSetChanged(int gotoPosition, int whatHappened) {
 		super.notifyDataSetChanged(gotoPosition, whatHappened);
@@ -971,16 +973,32 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 				Player.nextMayHaveChanged(items[n]);
 		}
 	}
-	
+
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		final SongView view = ((convertView != null) ? (SongView)convertView : new SongView(Player.theApplication));
 		view.setItemState(items[position], position, getItemState(position), this);
 		return view;
 	}
-	
+
 	@Override
 	public int getViewHeight() {
 		return SongView.getViewHeight();
+	}
+
+	public void syncAlbumArtFetcher() {
+		if (UI.albumArtSongList) {
+			if (albumArtFetcher == null)
+				albumArtFetcher = new AlbumArtFetcher();
+		} else {
+			destroyAlbumArtFetcher();
+		}
+	}
+
+	public void destroyAlbumArtFetcher() {
+		if (albumArtFetcher != null) {
+			albumArtFetcher.stopAndCleanup();
+			albumArtFetcher = null;
+		}
 	}
 }

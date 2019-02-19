@@ -331,6 +331,8 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		return true;
 	}
 
+	//Runs on a SECONDARY thread
+
 	/**
 	 * Update next bitmap when the bitmap is available and send a message to
 	 * the MainHandler.
@@ -339,7 +341,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	 * @param requestId requestId for the bitmap
 	 */
 	@Override
-	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId, String bitmapUri) {
+	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
 		if (bitmap == null)
 			return;
 		synchronized (sync) {
@@ -353,10 +355,29 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		}
 	}
 
+	//Runs on a SECONDARY thread
 	@Override
-	public FileSt fileForRequestId(int requestId) {
+	public String albumArtUriForRequestId(int requestId) {
+		return null;
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public Long albumIdForRequestId(int requestId) {
+		return null;
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public String fileUriForRequestId(int requestId) {
 		synchronized (sync) {
-			return ((version == requestId) && (nextPath != null) ? new FileSt(nextPath, "", null, 0) : null);
+			return ((version == requestId) ? nextPath : null);
 		}
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public long artistIdForRequestId(int requestId) {
+		return 0;
 	}
 }

@@ -375,7 +375,7 @@
     <string name="file_prefetch_size">Bytes to store into memory when playing local files:</string>
     <string name="download">Download</string>
     <string name="download_confirmation">This feature requires the external extension \"%s\". Would you like to download it now?</string>
-    <string name="error_wifi">Sorry! An active Wifi connection is required :(</string>
+    <string name="error_wifi">Sorry! An active Wi-Fi connection is required :(</string>
     <string name="transmission_error">Transmission error!</string>
     <string name="transmission_active">Transmission active&#8230;</string>
     <string name="transmit">Transmit&#8230;</string>

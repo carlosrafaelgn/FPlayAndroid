@@ -70,7 +70,8 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_FPLAY_REMOTE_LIST = 15;
 	public final boolean isDirectory;
 	public final String path, name;
-	public String albumArt;
+	public Long albumId;
+	public String albumArtUri;
 	public int specialType, tracks, albums;
 	public long artistIdForAlbumArt; //when dealing with playlists, artistIdForAlbumArt stores the playlist id
 	public File file;
@@ -88,34 +89,36 @@ public final class FileSt extends BaseItem {
 		//}
 		//this.title = t;
 		this.name = file.getName();
-		this.specialType = 0;
 		this.file = file; //keep this here for MetadataExtractor...
-		this.albumArt = null;
 	}
 
 	public FileSt(SongInfo songInfo) {
 		this.isDirectory = false;
 		this.path = songInfo.path;
 		this.name = songInfo.title;
-		this.albumArt = null;
-		this.specialType = 0;
 		this.songInfo = songInfo;
 	}
 
-	public FileSt(String absolutePath, String name, String albumArt, int specialType) {
-		this.isDirectory = (specialType != 0);
+	public FileSt(String absolutePath, String name, Long albumId, String albumArtUri) {
+		this.isDirectory = true;
 		this.path = absolutePath;
 		this.name = ((name.length() == 0) ? " " : name);
-		this.albumArt = (((albumArt == null) || (albumArt.length() == 0)) ? null : albumArt);
-		this.specialType = specialType;
+		this.albumId = albumId;
+		this.albumArtUri = albumArtUri;
+		this.specialType = FileSt.TYPE_ALBUM;
 	}
 
 	public FileSt(String absolutePath, String name, int specialType) {
+		this.isDirectory = (specialType != 0);
+		this.path = absolutePath;
+		this.name = ((name.length() == 0) ? " " : name);
+		this.specialType = specialType;
+	}
+
+	public FileSt(String absolutePath, String name) {
 		this.isDirectory = false;
 		this.path = absolutePath;
 		this.name = ((name.length() == 0) ? " " : name);
-		this.albumArt = null;
-		this.specialType = specialType;
 	}
 
 	@Override

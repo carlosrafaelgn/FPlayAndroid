@@ -1229,6 +1229,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		btnMenu = findViewById(R.id.btnMenu);
 		btnMenu.setOnClickListener(this);
 		if (Player.controlMode) {
+			Player.songs.destroyAlbumArtFetcher();
 			final ViewGroup panelControls = findViewById(R.id.panelControls);
 			panelControls.setBackgroundDrawable(new ColorDrawable(UI.color_control_mode));
 			final int panelControlsPadding = (UI.isLowDpiScreen ? UI.controlMargin : UI.controlLargeMargin);
@@ -1321,6 +1322,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			btnPrev.setIconStretchable(true);
 			btnNext.setIconStretchable(true);
 		} else {
+			Player.songs.syncAlbumArtFetcher();
 			UI.headingText(lblTitle);
 			btnPrev.setIcon(UI.ICON_PREV);
 			btnNext.setIcon(UI.ICON_NEXT);

@@ -472,7 +472,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static char decimalSeparator;
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isScreenWidthLarge, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible,
 		isVerticalMarginLarge, keepScreenOn, doubleClickMode, marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList,
-		extraSpacing, albumArt, visualizerPortrait, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, placeControlsAtTheBottom, playWithLongPress,
+		extraSpacing, albumArt, albumArtSongList, visualizerPortrait, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, placeControlsAtTheBottom, playWithLongPress,
 		isChromebook, largeTextIs22sp, displaySongNumberAndCount, allowPlayerAboveLockScreen, dimBackground;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _Largesp, _LargespBox, _LargespYinBox,
 		_Headingsp, _HeadingspBox, _HeadingspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogMargin, dialogDropDownVerticalMargin, verticalMargin,
@@ -1591,12 +1591,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void showNextStartupMsg(Context context) {
-		if (msgStartup >= 35) {
-			msgStartup = 35;
+		if (msgStartup >= 36) {
+			msgStartup = 36;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 35;
+		msgStartup = 36;
 		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.startup_message).toString();
@@ -1617,6 +1617,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final String content = //"- " + context.getText(R.string.ringtone) +
 			//"\n\n" +
 			context.getText(R.string.there_are_new_features) +
+			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.album_art) +
 			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.place_controls_at_the_bottom) +
 			"\n\n" +
 			context.getText(R.string.check_it_out).toString();

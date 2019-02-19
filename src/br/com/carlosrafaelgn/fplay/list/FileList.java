@@ -193,4 +193,16 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 	public int[] getSectionPositions() {
 		return sectionPositions;
 	}
+
+	public void syncAlbumArtFetcher() {
+		if (albumArtFetcher == null)
+			albumArtFetcher = new AlbumArtFetcher();
+	}
+
+	public void destroyAlbumArtFetcher() {
+		if (albumArtFetcher != null) {
+			albumArtFetcher.stopAndCleanup();
+			albumArtFetcher = null;
+		}
+	}
 }

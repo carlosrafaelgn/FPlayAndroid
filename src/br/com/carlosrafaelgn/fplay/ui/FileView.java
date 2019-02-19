@@ -296,8 +296,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				icon = UI.ICON_MIC;
 				newAlbumArt = null;
 				if (UI.albumArt && albumArtFetcher != null) {
-					if (file.albumArt != null || file.artistIdForAlbumArt != 0) {
-						newAlbumArt = albumArtFetcher.getAlbumArt(file, usableHeight, requestId, this);
+					if (file.albumId != null || file.artistIdForAlbumArt != 0) {
+						newAlbumArt = albumArtFetcher.getAlbumArt(file.albumId, usableHeight, requestId, this);
 						pendingAlbumArtRequest = (newAlbumArt == null);
 					}
 				}
@@ -313,8 +313,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			case FileSt.TYPE_ALBUM_ITEM:
 				icon = UI.ICON_ALBUMART;
 				newAlbumArt = null;
-				if (UI.albumArt && albumArtFetcher != null && file.albumArt != null) {
-					newAlbumArt = albumArtFetcher.getAlbumArt(file, usableHeight, requestId, this);
+				if (UI.albumArt && albumArtFetcher != null && file.albumId != null) {
+					newAlbumArt = albumArtFetcher.getAlbumArt(file.albumId, usableHeight, requestId, this);
 					pendingAlbumArtRequest = (newAlbumArt == null);
 				}
 				albumArt = newAlbumArt;
@@ -494,7 +494,9 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	@Override
 	protected void onDetachedFromWindow() {
-		albumArtFetcher = null;
+		//just to invalidate a possible response from albumArtFetcher
+		pendingAlbumArtRequest = false;
+		requestId++;
 		handler = null;
 		if (albumArt != null) {
 			albumArt.release();
@@ -534,7 +536,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	//Runs on a SECONDARY thread
 	@Override
-	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId, String bitmapUri) {
+	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
 		//check if we have already been removed from the window
 		final Handler h = handler;
 		if (requestId != this.requestId || h == null)
@@ -546,8 +548,29 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	//Runs on a SECONDARY thread
 	@Override
-	public FileSt fileForRequestId(int requestId) {
-		return ((requestId == this.requestId) ? file : null);
+	public String albumArtUriForRequestId(int requestId) {
+		final FileSt file = this.file;
+		return ((requestId == this.requestId && file != null) ? file.albumArtUri : null);
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public Long albumIdForRequestId(int requestId) {
+		final FileSt file = this.file;
+		return ((requestId == this.requestId && file != null) ? file.albumId : null);
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public String fileUriForRequestId(int requestId) {
+		return null;
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public long artistIdForRequestId(int requestId) {
+		final FileSt file = this.file;
+		return ((requestId == this.requestId && file != null) ? file.artistIdForAlbumArt : 0);
 	}
 
 	//Runs on the MAIN thread
@@ -556,17 +579,23 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		final ReleasableBitmapWrapper bitmap = (ReleasableBitmapWrapper)msg.obj;
 		msg.obj = null;
 		//check if we have already been removed from the window
-		if (msg.what != requestId || albumArtFetcher == null || bitmap == null) {
+		if (msg.what != requestId || handler == null || bitmap == null || file == null) {
 			if (msg.what == requestId)
 				pendingAlbumArtRequest = false;
 			if (bitmap != null)
 				bitmap.release();
+			if (albumArt != null) {
+				albumArt.release();
+				albumArt = null;
+			}
 			return true;
 		}
 		pendingAlbumArtRequest = false;
 		if (albumArt != null)
 			albumArt.release();
 		albumArt = bitmap;
+		file.albumId = bitmap.albumId;
+		file.albumArtUri = bitmap.albumArtUri;
 		bitmapLeftPadding = leftMargin + ((usableHeight - bitmap.width) >> 1);
 		invalidate();
 		return true;

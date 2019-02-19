@@ -53,7 +53,6 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
-import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
@@ -236,6 +235,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 					setDaemon(true);
 				}
 
+				@SuppressWarnings("ConstantConditions")
 				@Override
 				public void run() {
 					boolean addingFolder = false;
@@ -608,6 +608,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				btnGoBack.setNextFocusRightId(R.id.chkAlbumArt);
 				UI.setNextFocusForwardId(btnGoBack, R.id.chkAlbumArt);
 				btnHome.setNextFocusLeftId(R.id.chkAlbumArt);
+				if (UI.albumArt)
+					Player.songs.destroyAlbumArtFetcher();
 			} else {
 				btnGoBack.setNextFocusRightId(R.id.btnHome);
 				UI.setNextFocusForwardId(btnGoBack, R.id.btnHome);
@@ -756,6 +758,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				Player.removeFavoriteFolder(Player.path);
 		} else if (view == chkAlbumArt) {
 			UI.albumArt = chkAlbumArt.isChecked();
+			if (UI.albumArt)
+				Player.songs.destroyAlbumArtFetcher();
 			for (int i = list.getChildCount() - 1; i >= 0; i--) {
 				final View v = list.getChildAt(i);
 				if (v instanceof FileView)
@@ -854,7 +858,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			Player.originalPath = "";
 		isAtHome = (Player.path.length() == 0);
 		fileList = new FileList();
-		fileList.albumArtFetcher = new AlbumArtFetcher();
+		fileList.syncAlbumArtFetcher();
 		fileList.setItemClickListener(this);
 		fileList.setActionListener(this);
 		//We cannot use getDrawable() here, as sometimes the bitmap used by the drawable
@@ -1053,10 +1057,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			fileList.setItemClickListener(null);
 			fileList.setActionListener(null);
 			fileList.cancel();
-			if (fileList.albumArtFetcher != null) {
-				fileList.albumArtFetcher.stopAndCleanup();
-				fileList.albumArtFetcher = null;
-			}
+			fileList.destroyAlbumArtFetcher();
 			fileList = null;
 		}
 	}

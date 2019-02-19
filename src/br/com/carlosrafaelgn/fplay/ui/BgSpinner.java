@@ -76,7 +76,7 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 				clear();
 				setCapacity(items.length);
 				for (E i : items)
-					add(new FileSt("", i.toString(), 0), -1);
+					add(new FileSt("", i.toString()), -1);
 			}
 		}
 

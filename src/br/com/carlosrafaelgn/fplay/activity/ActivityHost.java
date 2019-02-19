@@ -716,6 +716,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.startService();
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
+		Player.songs.syncAlbumArtFetcher();
 		super.setContentView(baseParent = new BgFrameLayout(this));
 		pendingOrientationChanges = false;
 		top = new ActivityMain();
@@ -848,6 +849,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		baseParent = null;
 		backgroundMonitorStop();
 		backgroundMonitorTimer = null;
+		Player.songs.destroyAlbumArtFetcher();
 	}
 	
 	@Override

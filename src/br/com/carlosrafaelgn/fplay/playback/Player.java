@@ -558,13 +558,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	public static boolean startService() {
-		final boolean stateNew = (state == STATE_NEW);
-		if (stateNew) {
+	public static void startService() {
+		if (state == STATE_NEW) {
 			MainHandler.initialize();
 			positionToCenter = -1;
 			state = STATE_INITIALIZING;
-			theApplication.startService(new Intent(theApplication, Player.class));
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				theApplication.startForegroundService(new Intent(theApplication, Player.class));
+			else
+				theApplication.startService(new Intent(theApplication, Player.class));
 			theMainHandler = MainHandler.initialize();
 			localHandler = new CoreLocalHandler();
 			notificationManager = (NotificationManager)theApplication.getSystemService(NOTIFICATION_SERVICE);
@@ -619,8 +621,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				@Override
 				public void run() {
 					Looper.prepare();
-					looper = Looper.myLooper();
-					handler = new CoreHandler();
+					synchronized (theUI) {
+						looper = Looper.myLooper();
+						handler = new CoreHandler();
+						theUI.notifyAll();
+					}
 					_initializePlayers();
 					Equalizer._checkSupport();
 					BassBoost._checkSupport();
@@ -648,12 +653,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			};
 			thread.start();
 
-			while (handler == null)
-				Thread.yield();
+			synchronized (theUI) {
+				while (handler == null) {
+					try {
+						theUI.wait();
+					} catch (Throwable ex) {
+						//just ignore
+					}
+				}
+			}
 
 			songs.startDeserializingOrImportingFrom(null, true, false, false);
 		}
-		return stateNew;
 	}
 
 	public static void stopService() {
@@ -2304,6 +2315,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_FILE_PREFETCH_SIZE0 = 65;
 	private static final int OPTBIT_FILE_PREFETCH_SIZE1 = 66;
 	private static final int OPTBIT_PLACE_CONTROLS_AT_THE_BOTTOM = 67;
+	private static final int OPTBIT_ALBUMART_SONG_LIST = 68;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2448,6 +2460,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.lastVersionCode < 92);
 		UI.allowPlayerAboveLockScreen = opts.getBit(OPTBIT_ALLOW_LOCK_SCREEN, true);
+		UI.albumArtSongList = opts.getBit(OPTBIT_ALBUMART_SONG_LIST, Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
 		filePrefetchSize = getFilePrefetchSizeFromOptions((opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE1, 0) << 1) | opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE0, 0));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
@@ -2558,6 +2571,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.largeTextIs22sp);
 		opts.putBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.displaySongNumberAndCount);
 		opts.putBit(OPTBIT_ALLOW_LOCK_SCREEN, UI.allowPlayerAboveLockScreen);
+		opts.putBit(OPTBIT_ALBUMART_SONG_LIST, UI.albumArtSongList);
 		final int filePrefetchSizeOption = getOptionsFromFilePrefetchSize(filePrefetchSize);
 		opts.putBit(OPTBIT_FILE_PREFETCH_SIZE0, (filePrefetchSizeOption & 1) != 0);
 		opts.putBit(OPTBIT_FILE_PREFETCH_SIZE1, (filePrefetchSizeOption & 2) != 0);
@@ -2720,7 +2734,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		int i = 0;
 		for (String f : favoriteFolders) {
 			final int idx = f.lastIndexOf('/');
-			ffs[i] = new FileSt(f, (idx >= 0 && idx < (f.length() - 1)) ? f.substring(idx + 1) : f, null, FileSt.TYPE_FAVORITE);
+			ffs[i] = new FileSt(f, (idx >= 0 && idx < (f.length() - 1)) ? f.substring(idx + 1) : f, FileSt.TYPE_FAVORITE);
 			i++;
 		}
 		ArraySorter.sort(ffs, 0, ffs.length - extra, thePlayer);

@@ -256,7 +256,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		if (isExternal) {
 			if (canonicalPathLC.contains("usb")) {
 				c = usbCount[0] + 1;
-				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE_USB);
+				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), FileSt.TYPE_EXTERNAL_STORAGE_USB);
 				usbCount[0] = c;
 			} else {
 				//try to avoid duplication of internal sdcard on a few phones... 
@@ -267,11 +267,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 					return;
 				}
 				c = externalCount[0] + 1;
-				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), null, FileSt.TYPE_EXTERNAL_STORAGE);
+				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), FileSt.TYPE_EXTERNAL_STORAGE);
 				externalCount[0] = c;
 			}
 		} else {
-			files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.internal_storage).toString(), null, FileSt.TYPE_INTERNAL_STORAGE);
+			files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.internal_storage).toString(), FileSt.TYPE_INTERNAL_STORAGE);
 			internalCount[0]++;
 		}
 		count++;
@@ -279,21 +279,21 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	
 	private void fetchRoot() {
 		String desc = Player.theApplication.getText(R.string.artists).toString();
-		files[count] = new FileSt(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ARTIST_ROOT);
+		files[count] = new FileSt(FileSt.ARTIST_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, FileSt.TYPE_ARTIST_ROOT);
 		count++;
 		
 		desc = Player.theApplication.getText(R.string.albums).toString();
-		files[count] = new FileSt(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, null, FileSt.TYPE_ALBUM_ROOT);
+		files[count] = new FileSt(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, FileSt.TYPE_ALBUM_ROOT);
 		count++;
 
-		files[count] = new FileSt("", "SHOUTcast", null, FileSt.TYPE_SHOUTCAST);
+		files[count] = new FileSt("", "SHOUTcast", FileSt.TYPE_SHOUTCAST);
 		count++;
 
-		files[count] = new FileSt("", "Icecast", null, FileSt.TYPE_ICECAST);
+		files[count] = new FileSt("", "Icecast", FileSt.TYPE_ICECAST);
 		count++;
 
 		if (Player.REMOTE_LIST_ENABLED) {
-			files[count] = new FileSt("", Player.theApplication.getText(R.string.remote_list).toString(), null, FileSt.TYPE_FPLAY_REMOTE_LIST);
+			files[count] = new FileSt("", Player.theApplication.getText(R.string.remote_list).toString(), FileSt.TYPE_FPLAY_REMOTE_LIST);
 			count++;
 		}
 
@@ -301,7 +301,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
 			if (f.exists() && f.isDirectory()) {
-				files[count] = new FileSt(f.getAbsolutePath(), Player.theApplication.getText(R.string.music).toString(), null, FileSt.TYPE_MUSIC);
+				files[count] = new FileSt(f.getAbsolutePath(), Player.theApplication.getText(R.string.music).toString(), FileSt.TYPE_MUSIC);
 				count++;
 			}
 		} catch (Throwable ex) {
@@ -310,7 +310,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		try {
 			f = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 			if (f.exists() && f.isDirectory()) {
-				files[count] = new FileSt(f.getAbsolutePath(), Player.theApplication.getText(R.string.downloads).toString(), null, FileSt.TYPE_DOWNLOADS);
+				files[count] = new FileSt(f.getAbsolutePath(), Player.theApplication.getText(R.string.downloads).toString(), FileSt.TYPE_DOWNLOADS);
 				count++;
 			}
 		} catch (Throwable ex) {
@@ -452,7 +452,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			fetchRoot19(internalCount, externalCount, usbCount, addedCount, addedPaths);
 
 		if (count < files.length) {
-			files[count] = new FileSt(File.separator, Player.theApplication.getText(R.string.all_files).toString(), null, FileSt.TYPE_ALL_FILES);
+			files[count] = new FileSt(File.separator, Player.theApplication.getText(R.string.all_files).toString(), FileSt.TYPE_ALL_FILES);
 			count++;
 		}
 	}
@@ -505,7 +505,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			if (name == null || name.equals("<unknown>"))
 				name = unknownArtist;
 			final long id = c.getLong(0);
-			final FileSt f = new FileSt(root + id + fakeRoot + name, name, null, FileSt.TYPE_ARTIST);
+			final FileSt f = new FileSt(root + id + fakeRoot + name, name, FileSt.TYPE_ARTIST);
 			f.artistIdForAlbumArt = id;
 			f.albums = c.getInt(2);
 			f.tracks = c.getInt(3);
@@ -566,7 +566,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				return;
 			}
 			final String name = c.getString(1);
-			final FileSt f = new FileSt(root + c.getLong(0) + fakeRoot + name, name, c.getString(2), FileSt.TYPE_ALBUM);
+			final long id = c.getLong(0);
+			final FileSt f = new FileSt(root + id + fakeRoot + name, name, id, c.getString(2));
 			f.tracks = c.getInt(3);
 			tmp.add(f);
 		}
@@ -616,8 +617,10 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				c.close();
 				return;
 			}
-			//temporarily use specialType as the song's track number ;)
-			tmp.add(new FileSt(c.getString(0), c.getString(1), c.getInt(2)));
+			//temporarily use tracks as the song's track number ;)
+			final FileSt file = new FileSt(c.getString(0), c.getString(1), 0);
+			file.tracks = c.getInt(2);
+			tmp.add(file);
 		}
 		c.close();
 
@@ -626,13 +629,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		ArraySorter.sort(files, 0, count, new ArraySorter.Comparer<FileSt>() {
 			@Override
 			public int compare(FileSt a, FileSt b) {
-				if (a.specialType != b.specialType)
-					return a.specialType - b.specialType;
+				if (a.tracks != b.tracks)
+					return a.tracks - b.tracks;
 				return a.name.compareToIgnoreCase(b.name);
 			}
 		});
-		for (int i = count - 1; i >= 0; i--)
-			files[i].specialType = 0;
 	}
 
 	@SuppressWarnings("UnusedAssignment")
@@ -691,7 +692,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				c.close();
 				return null;
 			}
-			final FileSt f = new FileSt(null, c.getString(1), 0);
+			final FileSt f = new FileSt(null, c.getString(1));
 			f.artistIdForAlbumArt = c.getLong(0); //reuse the field to save a couple of parses
 			tmp.add(f);
 		}
@@ -735,7 +736,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			}
 			final String f = files[i];
 			if (f.endsWith(fileType)) {
-				final FileSt fileSt = new FileSt(f, f.substring(0, f.length() - l), 0);
+				final FileSt fileSt = new FileSt(f, f.substring(0, f.length() - l));
 				if (playlists == null)
 					this.files[c] = fileSt;
 				else
@@ -770,7 +771,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 	}
 
 	@SuppressWarnings("StringEquality")
-	public void computeSections() {
+	private void computeSections() {
 		if (!createSections || count < 1) {
 			sections = null;
 			sectionPositions = null;

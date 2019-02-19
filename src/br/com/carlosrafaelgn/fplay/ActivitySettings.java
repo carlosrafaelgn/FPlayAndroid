@@ -102,7 +102,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface,
 		optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat,
 		optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume,
-		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom, optPlaceControlsAtTheBottom,
+		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom,
 		optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList,
 		optScrollBarBrowser, optWidgetTransparentBg, optWidgetTextColor, optWidgetIconColor,
 		optHandleCallKey, optHeadsetHook1, optHeadsetHook2, optHeadsetHook3, optExternalFx,
@@ -113,7 +113,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optFadeInOther, optBtMessage, optBtConnect, optBtStart, optBtFramesToSkip, optBtSize, optBtVUMeter,
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
-		optLargeTextIs22sp, optDisplaySongNumberAndCount, optAllowLockScreen, lastMenuView;
+		optLargeTextIs22sp, optDisplaySongNumberAndCount, optAllowLockScreen, optPlaceControlsAtTheBottom,
+		optAlbumArtSongList, lastMenuView;
 	private String btErrorMessage, httpAccessCode;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btConnectText, btStartText, optBtSizeLastSize;
@@ -786,7 +787,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 	}
 
-	private SettingView addOption(SettingView view) {
+	private void addOption(SettingView view) {
 		if (firstViewAdded == null)
 			firstViewAdded = view;
 		lastViewAdded = view;
@@ -794,7 +795,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		view.setOnClickListener(this);
 		view.setNextFocusLeftId(R.id.btnAbout);
 		view.setNextFocusRightId(R.id.btnGoBack);
-		return view;
 	}
 
 	private boolean cancelGoBack() {
@@ -1249,6 +1249,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(UI.theme), false, false, false);
 			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);
+			optAlbumArtSongList = new SettingView(ctx, UI.ICON_ALBUMART, getText(R.string.album_art).toString(), null, true, UI.albumArtSongList, false);
 			optPlayWithLongPress = new SettingView(ctx, UI.ICON_PLAY, getText(R.string.play_with_long_press).toString(), null, true, UI.playWithLongPress, false);
 			optExpandSeekBar = new SettingView(ctx, UI.ICON_SEEKBAR, getText(R.string.expand_seek_bar).toString(), null, true, UI.expandSeekBar, false);
 			optVolumeControlType = new SettingView(ctx, UI.ICON_VOLUME4, getText(R.string.opt_volume_control_type).toString(), getVolumeString(), false, false, false);
@@ -1338,6 +1339,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optBorders);
 			if (!UI.is3D)
 				addOption(optIsDividerVisible);
+			addOption(optAlbumArtSongList);
 			addOption(optExtraInfoMode);
 			addOption(optDisplaySongNumberAndCount);
 			addOption(optAllowLockScreen);
@@ -1467,6 +1469,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optTheme = null;
 		optFlat = null;
 		optBorders = null;
+		optAlbumArtSongList = null;
 		optPlayWithLongPress = null;
 		optExpandSeekBar = null;
 		optVolumeControlType = null;
@@ -1737,6 +1740,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			System.gc();
 		} else if (view == optBorders) {
 			UI.hasBorders = optBorders.isChecked();
+		} else if (view == optAlbumArtSongList) {
+			UI.albumArtSongList = optAlbumArtSongList.isChecked();
+			if (UI.albumArtSongList)
+				Player.songs.syncAlbumArtFetcher();
+			else
+				Player.songs.destroyAlbumArtFetcher();
 		} else if (view == optHandleCallKey) {
 			Player.handleCallKey = optHandleCallKey.isChecked();
 		} else if (view == optExternalFx) {

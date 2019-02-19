@@ -397,7 +397,7 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 			private final E item;
 
 			Local(E item) {
-				super(new FileSt("", (item == null) ? "" : item.toString(), 0));
+				super(new FileSt("", (item == null) ? "" : item.toString()));
 				this.dialog = null;
 				this.item = item;
 			}

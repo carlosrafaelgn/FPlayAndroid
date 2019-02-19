@@ -39,11 +39,15 @@ import android.os.Build;
 public final class ReleasableBitmapWrapper {
 	private volatile int ref;
 	public volatile Bitmap bitmap;
+	public final Long albumId;
+	public final String albumArtUri;
 	public final int width, height, size;
-	
-	public ReleasableBitmapWrapper(Bitmap bitmap) {
+
+	public ReleasableBitmapWrapper(Bitmap bitmap, Long albumId, String albumArtUri) {
 		this.ref = 1;
 		this.bitmap = bitmap;
+		this.albumId = albumId;
+		this.albumArtUri = albumArtUri;
 		this.width = bitmap.getWidth();
 		this.height = bitmap.getHeight();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
@@ -53,7 +57,7 @@ public final class ReleasableBitmapWrapper {
 		else
 			size = bitmap.getRowBytes() * bitmap.getHeight();
 	}
-	
+
 	@TargetApi(Build.VERSION_CODES.KITKAT)
 	private int sizeOf19(Bitmap bitmap) {
 		return bitmap.getAllocationByteCount();
