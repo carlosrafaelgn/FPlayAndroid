@@ -98,7 +98,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			bottomMargin = 0;
 		}
 		final int titlespBox, titlespYinBox;
-		if (UI.albumArtSongList && !UI.isLargeScreen) {
+		if (UI.albumArtSongList && !UI.isLargeScreen && !UI.largeTextIs22sp) {
 			titlesp = UI._18sp;
 			titlespBox = UI._18spBox;
 			titlespYinBox = UI._18spYinBox;

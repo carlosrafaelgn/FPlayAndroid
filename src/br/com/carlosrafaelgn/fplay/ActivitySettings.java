@@ -1760,6 +1760,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.setUsingAlternateTypeface(UI.isUsingAlternateTypeface);
 			onCleanupLayout();
 			onCreateLayout(false);
+			Player.songs.destroyAlbumArtFetcher();
+			if (UI.albumArtSongList)
+				Player.songs.syncAlbumArtFetcher();
 			System.gc();
 		} else if (view == optPlacePlaylistToTheRight) {
 			UI.controlsToTheLeft = optPlacePlaylistToTheRight.isChecked();
