@@ -292,9 +292,10 @@ public abstract class NanoHTTPD {
     public static String getMimeTypeForFile(String uri) {
         int dot = uri.lastIndexOf('.');
         String mime = null;
-        if (dot >= 0) {
+        if (dot >= 0)
             mime = mimeTypes().get(uri.substring(dot + 1).toLowerCase());
-        }
+        else if (uri.equals("/"))
+        	return "text/html; charset=utf-8";
         return mime == null ? "application/octet-stream" : mime;
     }
 

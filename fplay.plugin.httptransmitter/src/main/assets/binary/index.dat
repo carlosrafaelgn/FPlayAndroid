@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" dir="ltr">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>FPlay</title>
+	<style type="text/css">
+		* {
+			-webkit-box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			box-sizing: border-box;
+		}
+		html {
+			height: 100%;
+		}
+		body {
+			margin: 0;
+			padding: 0;
+			background: #444;
+			color: #000;
+			height: 100%;
+		}
+		body, input, select, button, textarea, h1, h2, h3 {
+			font: normal 14px "Open Sans","Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+			font-style: normal;
+		}
+		h1, h2, h3 {
+			font-size: 20px;
+		}
+		input, select, button, textarea,
+		input:focus, select:focus, button:focus, textarea:focus {
+			outline: 0 none transparent;
+		}
+		main {
+			display: block;
+			margin: 0;
+			padding: 0;
+			position: relative;
+			height: 100%;
+		}
+		h1 {
+			height: 48px; /* 8 30 8 2 */
+			line-height: 30px;
+		}
+		.list {
+			background: #bdbdbd;
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			overflow-x: none;
+			overflow-y: auto;
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 48px;
+			bottom: 122px;
+		}
+		.list-item {
+			background: #d9d9d9;
+			margin: 4px 4px 0;
+			padding: 8px;
+			border-width: 0 1px 1px 0;
+			border-style: solid;
+			border-color: #9e9e9e;
+			cursor: pointer;
+		}
+		footer {
+			height: 122px; /* 2 8 48 8 48 8 */
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 0;
+		}
+		.window {
+			background: #444abf;
+			color: #fff;
+			margin: 0;
+			padding: 8px;
+		}
+		.color-icon {
+			color: #fb3;
+		}
+		.color-highlight {
+			color: #fc6;
+		}
+		.color-window {
+			color: #fff;
+		}
+		.border-top, .border-bottom {
+			border-color: #fc6;
+		}
+		.border-top {
+			border-top-style: solid;
+			border-top-width: 2px;
+		}
+		.border-bottom {
+			border-bottom-style: solid;
+			border-bottom-width: 2px;
+		}
+
+		@media (min-width: 550px) {
+			main {
+				width: 550px;
+				margin: 0 auto;
+			}
+		}
+	</style>
+</head>
+<body>
+	<main>
+		<h1 class="window border-bottom color-highlight">
+			<marquee>
+				Nothing Playing
+			</marquee>
+		</h1>
+		<ul class="list">
+			<li class="list-item">Song 1</li>
+			<li class="list-item">Song 2</li>
+			<li class="list-item">Song 3</li>
+			<li class="list-item">Song 4</li>
+			<li class="list-item">Song 5</li>
+			<li class="list-item">Song 6</li>
+			<li class="list-item">Song 7</li>
+			<li class="list-item">Song 8</li>
+			<li class="list-item">Song 9</li>
+			<li class="list-item">Song 10</li>
+			<li class="list-item">Song 11</li>
+			<li class="list-item">Song 12</li>
+			<li class="list-item">Song 13</li>
+			<li class="list-item">Song 14</li>
+			<li class="list-item">Song 15</li>
+			<li class="list-item">Song 16</li>
+		</ul>
+		<footer class="window border-top">
+			Footer
+		</footer>
+	</main>
+	<script type="text/javascript">
+		//<![CDATA[
+		"use strict";
+		
+		//]]>
+	</script>
+</body>
+</html>

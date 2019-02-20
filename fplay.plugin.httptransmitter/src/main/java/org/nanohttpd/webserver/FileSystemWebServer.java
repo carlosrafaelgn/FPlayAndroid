@@ -124,6 +124,7 @@ public final class FileSystemWebServer extends NanoHTTPD {
 		MIME_TYPES.put("jpg", "image/jpeg");
 		MIME_TYPES.put("jpeg", "image/jpeg");
 		MIME_TYPES.put("png", "image/png");
+		MIME_TYPES.put("ico", "image/x-icon");
 		MIME_TYPES.put("css", "text/css; charset=utf-8");
 		MIME_TYPES.put("js", "text/javascript; charset=utf-8");
 		MIME_TYPES.put("htm", "text/html; charset=utf-8");
@@ -329,6 +330,8 @@ public final class FileSystemWebServer extends NanoHTTPD {
 
 			res = getForbiddenResponse("Reading file failed.");
 		}
+
+		res.addHeader("Cache-Control", "private, no-store");
 
 		return res;
 	}

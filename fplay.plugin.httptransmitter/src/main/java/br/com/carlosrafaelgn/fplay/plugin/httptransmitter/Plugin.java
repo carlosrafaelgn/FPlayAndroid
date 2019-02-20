@@ -38,6 +38,7 @@ import android.os.SystemClock;
 import org.nanohttpd.webserver.FileSystemWebServer;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -58,13 +59,15 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 
 	private static final class Playlist {
 		final int listVersion;
-		final byte[] listJson, listVersionBytes;
+		final byte[] listJson, listVersionBytes, indexHtmlBytes, faviconBytes;
 		final SongInfo[] list;
 		final String tag;
 
-		Playlist(int listVersion, byte[] listJson, SongInfo[] list, String tag) {
+		Playlist(int listVersion, byte[] listJson, byte[] indexHtmlBytes, byte[] faviconBytes, SongInfo[] list, String tag) {
 			this.listVersion = listVersion;
 			this.listJson = listJson;
+			this.indexHtmlBytes = indexHtmlBytes;
+			this.faviconBytes = faviconBytes;
 			this.listVersionBytes = Integer.toString(listVersion).getBytes();
 			this.list = list;
 			this.tag = tag;
@@ -79,6 +82,14 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 		FileHandler(String uri, Playlist playlist) {
 			tag = playlist.tag;
 			switch (uri) {
+			case "/":
+				file = null;
+				contents = playlist.indexHtmlBytes;
+				break;
+			case "/favicon.ico":
+				file = null;
+				contents = playlist.faviconBytes;
+				break;
 			case "/list.json":
 				file = null;
 				contents = playlist.listJson;
@@ -246,6 +257,37 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 		return 0;
 	}
 
+	private byte[] loadAsset(String fileName) {
+		InputStream inputStream = null;
+		ByteArrayOutputStream outputStream = null;
+		try {
+			inputStream = pluginContext.getAssets().open(fileName);
+			outputStream = new ByteArrayOutputStream(32 * 1024);
+			final byte[] tmp = new byte[1024];
+			int total;
+			while ((total = inputStream.read(tmp)) > 0)
+				outputStream.write(tmp, 0, total);
+			return outputStream.toByteArray();
+		} catch (Throwable ex) {
+			return null;
+		} finally {
+			if (inputStream != null) {
+				try {
+					inputStream.close();
+				} catch (Throwable ex) {
+					//just ignore...
+				}
+			}
+			if (outputStream != null) {
+				try {
+					outputStream.close();
+				} catch (Throwable ex) {
+					//just ignore...
+				}
+			}
+		}
+	}
+
 	private void refreshList(boolean force) {
 		if (fplay == null)
 			return;
@@ -293,7 +335,12 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 		}
 		builder.append("]}");
 
-		playlist = new Playlist(version, builder.toString().getBytes(), list, baseTag + version);
+		final byte[] indexHtmlBytes = loadAsset("binary/index.dat");
+		final byte[] faviconBytes = loadAsset("binary/favicon.dat");
+
+		playlist = new Playlist(version, builder.toString().getBytes(), indexHtmlBytes, faviconBytes, list, baseTag + version);
+
+		System.gc();
 	}
 
 	@Override
