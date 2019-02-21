@@ -5,12 +5,9 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title>FPlay</title>
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600" rel="stylesheet" type="text/css" />
+	<link href="/style.css" rel="stylesheet" type="text/css" />
 	<style type="text/css">
-		* {
-			-webkit-box-sizing: border-box;
-			-moz-box-sizing: border-box;
-			box-sizing: border-box;
-		}
 		html {
 			height: 100%;
 		}
@@ -136,11 +133,130 @@
 			Footer
 		</footer>
 	</main>
-	<script type="text/javascript">
-		//<![CDATA[
-		"use strict";
-		
-		//]]>
-	</script>
+<script type="text/javascript">
+//<![CDATA[
+"use strict";
+window.Notification = {
+	div: null,
+	span: null,
+	btn: null,
+	version: 0,
+	timeout: 0,
+	timeoutVisible: 0,
+	timeoutGone: 0,
+	lastClass: "",
+	isVisible: false,
+	wait: function (msg) {
+		var div = document.createElement("div");
+		div.innerHTML = "<img alt=\"Wait\" src=\"/loading-grey-t.gif\"> " + (msg || "Please, wait...");
+		return Notification.show(div, "default", -1);
+	},
+	success: function (message, important) {
+		return Notification.show(message, "success", important ? 5000 : 2500, true);
+	},
+	error: function (message, important) {
+		return Notification.show(message, "danger", important ? 5000 : 2500, true);
+	},
+	show: function (message, type, timeout, closeable) {
+		if (!Notification.div) {
+			Notification.div = document.createElement("div");
+			Notification.div.setAttribute("role", "alert");
+			Notification.div.className = "alert alert-notification";
+			Notification.span = document.createElement("span");
+			Notification.btn = document.createElement("button");
+			Notification.btn.setAttribute("aria-label", "Fechar");
+			Notification.btn.innerHTML = "&times;";
+			Notification.btn.onclick = Notification.hide;
+			Notification.div.appendChild(Notification.span);
+			Notification.div.appendChild(Notification.btn);
+			document.body.appendChild(Notification.div);
+		}
+
+		Notification.isVisible = true;
+		Notification.version++;
+
+		var version = Notification.version;
+
+		if (Notification.timeout) {
+			clearTimeout(Notification.timeout);
+			Notification.timeout = 0;
+		}
+
+		if (Notification.timeoutVisible) {
+			clearTimeout(Notification.timeoutVisible);
+			Notification.timeoutVisible = 0;
+		}
+
+		if (Notification.timeoutGone) {
+			clearTimeout(Notification.timeoutGone);
+			Notification.timeoutGone = 0;
+		}
+
+		if (timeout !== -1) {
+			if (isNaN(timeout) || timeout <= 0)
+				closeable = true;
+			else
+				Notification.timeout = setTimeout(function () {
+					if (Notification.version !== version)
+						return;
+					Notification.hide();
+				}, timeout + 30);
+		}
+
+		if (type !== "success" && type !== "info" && type !== "danger" && type !== "warning")
+			type = "default";
+
+		Notification.btn.className = (closeable ? "close" : "close hidden");
+		Notification.lastClass = "alert alert-notification alert-" + type + (closeable ? " alert-dismissible" : "");
+		Notification.div.className = Notification.lastClass;
+		Notification.timeoutVisible = setTimeout(function () {
+			if (Notification.version !== version)
+				return;
+
+			if ((typeof message) === "string") {
+				Notification.span.textContent = message;
+			} else {
+				while (Notification.span.firstChild)
+					Notification.span.removeChild(Notification.span.firstChild);
+				Notification.span.appendChild(message);
+			}
+
+			Notification.div.className = Notification.lastClass + " alert-notification-shown";
+		}, 30);
+	},
+	hide: function () {
+		if (!Notification.div || !Notification.isVisible)
+			return;
+
+		Notification.isVisible = false;
+		Notification.version++;
+
+		var version = Notification.version;
+
+		if (Notification.timeout) {
+			clearTimeout(Notification.timeout);
+			Notification.timeout = 0;
+		}
+
+		if (Notification.timeoutVisible) {
+			clearTimeout(Notification.timeoutVisible);
+			Notification.timeoutVisible = 0;
+		}
+
+		if (Notification.timeoutGone) {
+			clearTimeout(Notification.timeoutGone);
+			Notification.timeoutGone = 0;
+		}
+
+		Notification.div.className = Notification.lastClass;
+		Notification.timeoutGone = setTimeout(function () {
+			if (Notification.version !== version)
+				return;
+			Notification.div.className = Notification.lastClass + " alert-notification-gone";
+		}, 600);
+	}
+};
+//]]>
+</script>
 </body>
 </html>
