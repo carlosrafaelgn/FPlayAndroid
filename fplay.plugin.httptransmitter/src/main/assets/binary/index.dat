@@ -1,138 +1,182 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" dir="ltr">
 <head>
-	<meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>FPlay</title>
-	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600" rel="stylesheet" type="text/css" />
-	<link href="/style.css" rel="stylesheet" type="text/css" />
-	<style type="text/css">
-		html {
-			height: 100%;
-		}
-		body {
-			margin: 0;
-			padding: 0;
-			background: #444;
-			color: #000;
-			height: 100%;
-		}
-		body, input, select, button, textarea, h1, h2, h3 {
-			font: normal 14px "Open Sans","Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
-			font-style: normal;
-		}
-		h1, h2, h3 {
-			font-size: 20px;
-		}
-		input, select, button, textarea,
-		input:focus, select:focus, button:focus, textarea:focus {
-			outline: 0 none transparent;
-		}
-		main {
-			display: block;
-			margin: 0;
-			padding: 0;
-			position: relative;
-			height: 100%;
-		}
-		h1 {
-			height: 48px; /* 8 30 8 2 */
-			line-height: 30px;
-		}
-		.list {
-			background: #bdbdbd;
-			margin: 0;
-			padding: 0;
-			list-style: none;
-			overflow-x: none;
-			overflow-y: auto;
-			position: absolute;
-			left: 0;
-			right: 0;
-			top: 48px;
-			bottom: 122px;
-		}
-		.list-item {
-			background: #d9d9d9;
-			margin: 4px 4px 0;
-			padding: 8px;
-			border-width: 0 1px 1px 0;
-			border-style: solid;
-			border-color: #9e9e9e;
-			cursor: pointer;
-		}
-		footer {
-			height: 122px; /* 2 8 48 8 48 8 */
-			position: absolute;
-			left: 0;
-			right: 0;
-			bottom: 0;
-		}
-		.window {
-			background: #444abf;
-			color: #fff;
-			margin: 0;
-			padding: 8px;
-		}
-		.color-icon {
-			color: #fb3;
-		}
-		.color-highlight {
-			color: #fc6;
-		}
-		.color-window {
-			color: #fff;
-		}
-		.border-top, .border-bottom {
-			border-color: #fc6;
-		}
-		.border-top {
-			border-top-style: solid;
-			border-top-width: 2px;
-		}
-		.border-bottom {
-			border-bottom-style: solid;
-			border-bottom-width: 2px;
-		}
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FPlay</title>
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600" rel="stylesheet" type="text/css" />
+<link href="/style.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+html {
+	height: 100%;
+}
 
-		@media (min-width: 550px) {
-			main {
-				width: 550px;
-				margin: 0 auto;
-			}
-		}
-	</style>
+body {
+	background: #444;
+	color: #000;
+	height: 100%;
+}
+
+h1, h2, h3 {
+	font-size: 20px;
+}
+
+input, select, button, textarea,
+input:focus, select:focus, button:focus, textarea:focus {
+	outline: 0 none transparent;
+}
+
+main {
+	margin: 0;
+	padding: 0;
+	position: relative;
+	height: 100%;
+}
+
+h1 {
+	height: 48px; /* 8 30 8 2 */
+	line-height: 30px;
+}
+
+.list {
+	background: #bdbdbd;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	overflow-x: hidden;
+	overflow-y: auto;
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 48px;
+	bottom: 122px;
+}
+
+.list-item {
+	background: #d9d9d9;
+	margin: 4px 4px 0;
+	padding: 8px;
+	border-width: 0 1px 1px 0;
+	border-style: solid;
+	border-color: #9e9e9e;
+	cursor: pointer;
+	text-align: left;
+}
+
+.list-item-length, .list-item-primary, .list-item-secondary, .list-item-index {
+	white-space: nowrap;
+}
+
+.list-item-primary, .list-item-secondary {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.list-item-length, .list-item-primary {
+	line-height: 30px;
+}
+
+.list-item-secondary, .list-item-index {
+	line-height: 20px;
+}
+
+.list-item-length, .list-item-index {
+	float: right;
+}
+
+.list-item-primary {
+	font-size: 18px;
+	margin-bottom: 4px;
+}
+
+.list-item-secondary {
+	color: #333;
+	padding-right: 4px;
+}
+
+.list-item-index {
+	color: #555;
+}
+
+.list-item:hover {
+	background: #999eff;
+}
+
+.list-item:active {
+	background: #e5e6ff;
+}
+
+.list-item.current, .list-item.current:hover {
+	background: #ffcc66;
+}
+
+.list-item.current:active {
+	background: #ffe5b5;
+}
+
+footer {
+	height: 122px; /* 2 8 48 8 48 8 */
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+.window {
+	background: #444abf;
+	color: #fff;
+	margin: 0;
+	padding: 8px;
+}
+
+.color-icon {
+	color: #fb3;
+}
+
+.color-highlight {
+	color: #fc6;
+}
+
+.color-window {
+	color: #fff;
+}
+
+.border-top, .border-bottom {
+	border-color: #fc6;
+}
+
+.border-top {
+	border-top-style: solid;
+	border-top-width: 2px;
+}
+
+.border-bottom {
+	border-bottom-style: solid;
+	border-bottom-width: 2px;
+}
+
+@media (min-width: 550px) {
+	main {
+		width: 550px;
+		margin: 0 auto;
+	}
+}
+</style>
 </head>
 <body>
-	<main>
-		<h1 class="window border-bottom color-highlight">
-			<marquee>
-				Nothing Playing
-			</marquee>
-		</h1>
-		<ul class="list">
-			<li class="list-item">Song 1</li>
-			<li class="list-item">Song 2</li>
-			<li class="list-item">Song 3</li>
-			<li class="list-item">Song 4</li>
-			<li class="list-item">Song 5</li>
-			<li class="list-item">Song 6</li>
-			<li class="list-item">Song 7</li>
-			<li class="list-item">Song 8</li>
-			<li class="list-item">Song 9</li>
-			<li class="list-item">Song 10</li>
-			<li class="list-item">Song 11</li>
-			<li class="list-item">Song 12</li>
-			<li class="list-item">Song 13</li>
-			<li class="list-item">Song 14</li>
-			<li class="list-item">Song 15</li>
-			<li class="list-item">Song 16</li>
-		</ul>
-		<footer class="window border-top">
-			Footer
-		</footer>
-	</main>
+<main>
+	<h1 class="window border-bottom color-highlight">
+		<marquee id="lblTitle"></marquee>
+	</h1>
+	<ul class="list" id="ulList"></ul>
+	<footer class="window border-top">
+		<button type="button" onclick="previous()">Previous</button>
+		<button type="button" onclick="resume()" id="btnPlay">Play</button>
+		<button type="button" onclick="pause()" id="btnPause" style="display: none">Pause</button>
+		<button type="button" onclick="next()">Next</button>
+	</footer>
+</main>
 <script type="text/javascript">
 //<![CDATA[
 "use strict";
@@ -256,6 +300,197 @@ window.Notification = {
 		}, 600);
 	}
 };
+
+var lblTitle = document.getElementById("lblTitle"),
+	ulList = document.getElementById("ulList"),
+	btnPlay = document.getElementById("btnPlay"),
+	btnPause = document.getElementById("btnPause"),
+	list = [],
+	current = -1,
+	loaded = false,
+	loading = false,
+	paused = true,
+	audioPlayer = new Audio(),
+	happy = "\uD83D\uDE04",
+	sad = "\uD83D\uDE22",
+	msgNothingPlaying = "Nothing Playing",
+	msgLoading = "Loading...",
+	msgPlaybackError = "A playback error has occurred " + sad,
+	msgNetworkError = "A network error has occurred " + sad,
+	msgInvalidList = "The playlist had an invalid format " + sad;
+
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
+audioPlayer.autoplay = true;
+audioPlayer.onended = function () {
+	play(current + 1);
+};
+audioPlayer.onerror = function () {
+	stop();
+	Notification.error(msgPlaybackError);
+};
+audioPlayer.onplay = function () {
+	loaded = true;
+	loading = false;
+	paused = false;
+	updateUI();
+};
+audioPlayer.onpause = function () {
+	if (!loaded)
+		return;
+	paused = true;
+	updateUI();
+};
+
+function updateUI() {
+	var playVisible = (!loaded || paused);
+	lblTitle.textContent = (loading ? msgLoading : ((current < 0 || current >= list.length) ? msgNothingPlaying : (list[current].title || "-")));
+	btnPlay.style.display = (playVisible ? "" : "none");
+	btnPause.style.display = (playVisible ? "none" : "");
+}
+
+function previous() {
+	play(current - 1);
+}
+
+function next() {
+	play(current + 1);
+}
+
+function resume() {
+	if (loading)
+		return;
+	if (!loaded) {
+		play(current < 0 ? 0 : current);
+	} else {
+		audioPlayer.play();
+		updateUI();
+	}
+}
+
+function pause() {
+	if (!loaded || loading)
+		return;
+	if (paused) {
+		resume();
+	} else {
+		paused = true;
+		audioPlayer.pause();
+		updateUI();
+	}
+}
+
+function stop() {
+	loaded = false;
+	loading = false;
+	paused = true;
+	try {
+		audioPlayer.pause();
+	} catch (ex) {
+	}
+	updateUI();
+}
+
+function play(i) {
+	stop();
+	if (i < 0)
+		i = list.length - 1;
+	else if (i >= list.length)
+		i = 0;
+	if (i < 0 || i >= list.length) {
+		current = -1;
+		return;
+	}
+	try {
+		loading = true;
+		if (current >= 0 && current < ulList.childNodes.length)
+			ulList.childNodes[current].className = "list-item";
+		current = i;
+		var listItem = ulList.childNodes[current];
+		listItem.className = "list-item current";
+		if (listItem.scrollIntoView)
+			listItem.scrollIntoView({ block: "nearest" });
+		else
+			ulList.scrollTop = listItem.offsetTop - 4;
+		try {
+			audioPlayer.pause();
+		} catch (ex) {
+		}
+		lblTitle.textContent = msgLoading;
+		audioPlayer.autoplay = true;
+		audioPlayer.src = list[i].path;
+		updateUI();
+	} catch (ex) {
+		stop();
+		Notification.error(ex.message || ex.toString());
+	}
+}
+
+function listItem_click() {
+	var i = parseInt(this.getAttribute("data-idx"));
+	if (isNaN(i) || i < 0 || i >= list.length)
+		return;
+	play(i);
+}
+
+function loadList() {
+	var xhr = new XMLHttpRequest(), done = false;
+	try {
+		Notification.wait();
+		xhr.open("GET", "/list.txt", true);
+		xhr.onreadystatechange = function () {
+			if (done || xhr.readyState !== 4)
+				return;
+			done = true;
+			if (xhr.status !== 200) {
+				Notification.error(msgNetworkError, true);
+			} else {
+				try {
+					list = JSON.parse(xhr.responseText);
+					list = list.list;
+					if (!list)
+						list = [];
+					Notification.hide();
+				} catch (ex) {
+					list = [];
+					Notification.error(msgInvalidList, true);
+				}
+				while (ulList.firstChild)
+					ulList.removeChild(ulList.firstChild);
+				var i, listItem, txt;
+				for (i = 0; i < list.length; i++) {
+					listItem = document.createElement("li");
+					listItem.className = "list-item";
+					listItem.setAttribute("data-idx", i);
+					listItem.onclick = listItem_click;
+					txt = document.createElement("span");
+					txt.className = "list-item-length";
+					txt.textContent = (list[i].length || "-");
+					listItem.appendChild(txt);
+					txt = document.createElement("div");
+					txt.className = "list-item-primary";
+					txt.textContent = (list[i].title || "-");
+					listItem.appendChild(txt);
+					txt = document.createElement("span");
+					txt.className = "list-item-index";
+					txt.textContent = (i + 1) + " / " + list.length;
+					listItem.appendChild(txt);
+					txt = document.createElement("div");
+					txt.className = "list-item-secondary";
+					txt.textContent = (list[i].artist || "-");
+					listItem.appendChild(txt);
+					ulList.appendChild(listItem);
+				}
+			}
+		};
+		xhr.send();
+	} catch (ex) {
+		Notification.error(ex.message || ex.toString(), true);
+	}
+}
+
+updateUI();
+loadList();
 //]]>
 </script>
 </body>
