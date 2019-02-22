@@ -437,7 +437,7 @@ function loadList() {
 	var xhr = new XMLHttpRequest(), done = false;
 	try {
 		Notification.wait();
-		xhr.open("GET", "/list.txt", true);
+		xhr.open("GET", "/list.json", true);
 		xhr.onreadystatechange = function () {
 			if (done || xhr.readyState !== 4)
 				return;
