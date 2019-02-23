@@ -8,6 +8,13 @@
 <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600" rel="stylesheet" type="text/css" />
 <link href="/style.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
+@font-face {
+	font-family: 'FPlayIcons';
+	src: url('/icons.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
 html {
 	height: 100%;
 }
@@ -37,6 +44,30 @@ main {
 h1 {
 	height: 48px; /* 8 30 8 2 */
 	line-height: 30px;
+}
+
+.icon-btn, .icon-btn:hover, .icon-btn:focus, .icon-btn:active {
+	outline: 0;
+}
+
+.icon-btn {
+	background: transparent;
+	border-radius: 0;
+	border: 0px none transparent;
+	line-height: 48px;
+	font: 400 32px 'FPlayIcons';
+	width: 48px;
+	height: 48px;
+	text-align: center;
+	color: #fff;
+	margin: 0 8px 0 0;
+	text-rendering: optimizeSpeed;
+	-webkit-font-smoothing: none;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.icon-btn:hover, .icon-btn:focus, .icon-btn:active {
+	color: #000;
 }
 
 .list {
@@ -99,11 +130,11 @@ h1 {
 	color: #555;
 }
 
-.list-item:hover {
+.list-item:hover, .icon-btn:hover, .icon-btn:focus {
 	background: #999eff;
 }
 
-.list-item:active {
+.list-item:active, .icon-btn:active {
 	background: #e5e6ff;
 }
 
@@ -113,6 +144,27 @@ h1 {
 
 .list-item.current:active {
 	background: #ffe5b5;
+}
+
+.icon-btn, .icon-btn:hover, .icon-btn:focus, .icon-btn:active {
+	outline: 0;
+}
+
+.lbl-time {
+	line-height: 48px;
+	display: inline-block;
+	font-size: 20px;
+	height: 48px;
+	vertical-align: top;
+	position: absolute;
+	left: 176px;
+	right: 8px;
+	text-align: center;
+}
+
+.control-row-1 {
+	position: relative;
+	margin: 28px 14px;
 }
 
 footer {
@@ -171,10 +223,10 @@ footer {
 	</h1>
 	<ul class="list" id="ulList"></ul>
 	<footer class="window border-top">
-		<button type="button" onclick="previous()">Previous</button>
-		<button type="button" onclick="resume()" id="btnPlay">Play</button>
-		<button type="button" onclick="pause()" id="btnPause" style="display: none">Pause</button>
-		<button type="button" onclick="next()">Next</button>
+		<div class="control-row-1">
+			<button type="button" class="icon-btn" onclick="previous()" title="Previous">&lt;</button><button type="button" class="icon-btn" onclick="resume()" id="btnPlay" title="Play">P</button><button type="button" class="icon-btn" onclick="pause()" id="btnPause" title="Pause" style="display: none">|</button><button type="button" class="icon-btn" onclick="next()" title="Next">&gt;</button>
+			<span class="lbl-time" id="lblTime">-</span>
+		</div>
 	</footer>
 </main>
 <script type="text/javascript">
@@ -305,11 +357,13 @@ var lblTitle = document.getElementById("lblTitle"),
 	ulList = document.getElementById("ulList"),
 	btnPlay = document.getElementById("btnPlay"),
 	btnPause = document.getElementById("btnPause"),
+	lblTime = document.getElementById("lblTime"),
 	list = [],
 	current = -1,
 	loaded = false,
 	loading = false,
 	paused = true,
+	timerId = null,
 	audioPlayer = new Audio(),
 	happy = "\uD83D\uDE04",
 	sad = "\uD83D\uDE22",
@@ -322,6 +376,7 @@ var lblTitle = document.getElementById("lblTitle"),
 // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
 // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
 audioPlayer.autoplay = true;
+audioPlayer.volume = 1;
 audioPlayer.onended = function () {
 	play(current + 1);
 };
@@ -333,6 +388,7 @@ audioPlayer.onplay = function () {
 	loaded = true;
 	loading = false;
 	paused = false;
+	timerId = setInterval(updateTime, 250);
 	updateUI();
 };
 audioPlayer.onpause = function () {
@@ -340,7 +396,30 @@ audioPlayer.onpause = function () {
 		return;
 	paused = true;
 	updateUI();
+	stopUpdatingTime();
 };
+
+function stopUpdatingTime(resetLabel) {
+	if (timerId === null)
+		return;
+	clearInterval(timerId);
+	timerId = null;
+	if (resetLabel)
+		lblTime.textContent = "-";
+}
+
+function format2(x) {
+	return (x < 10 ? "0" + x : x.toString());
+}
+
+function updateTime() {
+	var t = audioPlayer.currentTime;
+	if (t < 0) {
+		lblTime.textContent = "-";
+		return;
+	}
+	lblTime.textContent = format2((t / 60) | 0) + ":" + format2((t | 0) % 60);
+}
 
 function updateUI() {
 	var playVisible = (!loaded || paused);
@@ -377,6 +456,7 @@ function pause() {
 		paused = true;
 		audioPlayer.pause();
 		updateUI();
+		stopUpdatingTime();
 	}
 }
 
@@ -389,6 +469,7 @@ function stop() {
 	} catch (ex) {
 	}
 	updateUI();
+	stopUpdatingTime(true);
 }
 
 function play(i) {
@@ -419,6 +500,7 @@ function play(i) {
 		lblTitle.textContent = msgLoading;
 		audioPlayer.autoplay = true;
 		audioPlayer.src = list[i].path;
+		audioPlayer.volume = 1;
 		updateUI();
 	} catch (ex) {
 		stop();

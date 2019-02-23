@@ -56,7 +56,7 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 	private static final int PLUGIN_MSG_GET_ENCODED_ADDRESS = 0x0004;
 	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0005;
 
-	private static long indexLength, faviconLength, styleLength, loadingLength;
+	private static long indexLength, faviconLength, styleLength, loadingLength, iconsLength;
 
 	private static final class Playlist {
 		final int listVersion;
@@ -113,6 +113,14 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 				if (loadingLength <= 0)
 					loadingLength = computeAssetLength(asset);
 				assetLength = loadingLength;
+				break;
+			case "/icons.ttf":
+				file = null;
+				contents = null;
+				asset = "#fonts/icons.ttf";
+				if (iconsLength <= 0)
+					iconsLength = computeAssetLength(asset);
+				assetLength = iconsLength;
 				break;
 			case "/list.json":
 				file = null;
@@ -290,7 +298,10 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 	private long computeAssetLength(String fileName) {
 		InputStream inputStream = null;
 		try {
-			inputStream = pluginContext.getAssets().open(fileName);
+			if (fileName.charAt(0) == '#')
+				inputStream = ((Context)fplay.getApplicationContext()).getAssets().open(fileName.substring(1));
+			else
+				inputStream = pluginContext.getAssets().open(fileName);
 			return (long)inputStream.available();
 		} catch (Throwable ex) {
 			return 0;
@@ -307,7 +318,10 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 
 	private InputStream loadAsset(String fileName) {
 		try {
-			return pluginContext.getAssets().open(fileName);
+			if (fileName.charAt(0) == '#')
+				return ((Context)fplay.getApplicationContext()).getAssets().open(fileName.substring(1));
+			else
+				return pluginContext.getAssets().open(fileName);
 		} catch (Throwable ex) {
 			return null;
 		}
