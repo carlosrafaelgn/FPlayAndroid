@@ -56,7 +56,7 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 	private static final int PLUGIN_MSG_GET_ENCODED_ADDRESS = 0x0004;
 	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0005;
 
-	private static long indexLength, faviconLength, styleLength, loadingLength, iconsLength;
+	private static long indexLength, faviconLength, favicon192Length, styleLength, loadingLength, iconsLength;
 
 	private static final class Playlist {
 		final int listVersion;
@@ -97,6 +97,14 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 				if (faviconLength <= 0)
 					faviconLength = computeAssetLength(asset);
 				assetLength = faviconLength;
+				break;
+			case "/favicon.png":
+				file = null;
+				contents = null;
+				asset = "binary/favicon192.dat";
+				if (favicon192Length <= 0)
+					favicon192Length = computeAssetLength(asset);
+				assetLength = favicon192Length;
 				break;
 			case "/style.css":
 				file = null;
