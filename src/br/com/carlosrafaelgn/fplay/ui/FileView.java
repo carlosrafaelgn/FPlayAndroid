@@ -296,7 +296,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				icon = UI.ICON_MIC;
 				newAlbumArt = null;
 				if (UI.albumArt && albumArtFetcher != null) {
-					if (file.albumId != null || file.artistIdForAlbumArt != 0) {
+					if ((file.albumId != null && file.albumId != 0L) || (file.albumId == null && file.artistIdForAlbumArt != 0)) {
 						newAlbumArt = albumArtFetcher.getAlbumArt(file.albumId, usableHeight, requestId, this);
 						pendingAlbumArtRequest = (newAlbumArt == null);
 					}
@@ -313,7 +313,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			case FileSt.TYPE_ALBUM_ITEM:
 				icon = UI.ICON_ALBUMART;
 				newAlbumArt = null;
-				if (UI.albumArt && albumArtFetcher != null && file.albumId != null) {
+				if (UI.albumArt && albumArtFetcher != null && file.albumId != null && file.albumId != 0L) {
 					newAlbumArt = albumArtFetcher.getAlbumArt(file.albumId, usableHeight, requestId, this);
 					pendingAlbumArtRequest = (newAlbumArt == null);
 				}
@@ -580,13 +580,18 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		msg.obj = null;
 		//check if we have already been removed from the window
 		if (msg.what != requestId || handler == null || bitmap == null || file == null) {
-			if (msg.what == requestId)
-				pendingAlbumArtRequest = false;
 			if (bitmap != null)
 				bitmap.release();
 			if (albumArt != null) {
 				albumArt.release();
 				albumArt = null;
+			}
+			if (msg.what == requestId) {
+				pendingAlbumArtRequest = false;
+				if (handler != null && file != null) {
+					file.albumId = AlbumArtFetcher.zeroAlbumId;
+					invalidate();
+				}
 			}
 			return true;
 		}

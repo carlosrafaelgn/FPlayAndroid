@@ -72,6 +72,8 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		long artistIdForRequestId(int requestId);
 	}
 
+	public static final Long zeroAlbumId = 0L;
+
 	private final Object sync;
 	private final BitmapFactory.Options opts;
 	private final ContentResolver contentResolver;
@@ -98,8 +100,11 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		audioDataSelection = MediaStore.Audio.AudioColumns.DATA + "=?";
 		albumIdSelection = MediaStore.Audio.Albums._ID + "=?";
 		albumArtProjection = new String[] { MediaStore.Audio.Albums.ALBUM_ART };
-		artistAlbumArtProjection = new String[] { MediaStore.Audio.AudioColumns.ALBUM_ID, MediaStore.Audio.Albums.ALBUM_ART };
-		audioAlbumIdProjection = new String[] { MediaStore.Audio.AudioColumns.ALBUM_ID };
+		//ALBUM_ID can only be used when not accessing albums directly, because when we are
+		//accessing albums, either general albums or the albums of a specific artist, _ID
+		//MUST be used!!!
+		artistAlbumArtProjection = new String[] { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART };
+		audioAlbumIdProjection = new String[] { MediaStore.Audio.Albums.ALBUM_ID };
 		tempSelection = new String[1];
 		long max = Runtime.getRuntime().maxMemory();
 		max >>= 4; //1/16

@@ -56,7 +56,6 @@ import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
-	private static final Long zeroAlbumId = 0L;
 	private Song song;
 	private String ellipsizedTitle, ellipsizedExtraInfo, numberAndCount;
 	private int state, width, lengthX, lengthWidth, numberAndCountX, numberAndCountWidth, position, requestId, bitmapLeftPadding;
@@ -415,7 +414,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			if (msg.what == requestId) {
 				pendingAlbumArtRequest = false;
 				if (handler != null && song != null) {
-					song.albumId = zeroAlbumId;
+					song.albumId = AlbumArtFetcher.zeroAlbumId;
 					invalidate();
 				}
 			}
