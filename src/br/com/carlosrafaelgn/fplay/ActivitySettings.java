@@ -1683,6 +1683,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else {
 				onCleanupLayout();
 				onCreateLayout(false);
+				Player.songs.destroyAlbumArtFetcher();
+				if (UI.albumArtSongList)
+					Player.songs.syncAlbumArtFetcher();
 				System.gc();
 			}
 		} else if (view == optKeepScreenOn) {

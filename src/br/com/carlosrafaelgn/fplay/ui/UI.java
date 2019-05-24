@@ -184,6 +184,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_VOLUME2 = "2";
 	public static final String ICON_VOLUME3 = "3";
 	public static final String ICON_VOLUME4 = "4";
+	public static final String ICON_VOLUMEHEADSET0 = "\ue904";
+	public static final String ICON_VOLUMEHEADSET1 = "\ue900";
+	public static final String ICON_VOLUMEHEADSET2 = "\ue901";
+	public static final String ICON_VOLUMEHEADSET3 = "\ue902";
+	public static final String ICON_VOLUMEHEADSET4 = "\ue903";
+	public static final String ICON_VOLUMEBLUETOOTH0 = "\ue90b";
+	public static final String ICON_VOLUMEBLUETOOTH1 = "\ue907";
+	public static final String ICON_VOLUMEBLUETOOTH2 = "\ue908";
+	public static final String ICON_VOLUMEBLUETOOTH3 = "\ue909";
+	public static final String ICON_VOLUMEBLUETOOTH4 = "\ue90a";
 	public static final String ICON_DECREASE_VOLUME = "-";
 	public static final String ICON_INCREASE_VOLUME = "+";
 	public static final String ICON_SEARCH = "F";
@@ -236,6 +246,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_HEADSETHOOK1 = "i";
 	public static final String ICON_HEADSETHOOK2 = "j";
 	public static final String ICON_HEADSETHOOK3 = "k";
+	public static final String ICON_VOLUMEEARPHONE0 = "\ue906";
+	public static final String ICON_VOLUMEEARPHONE1 = "\ue905";
+	public static final String ICON_VOLUMEEARPHONE2 = ICON_HEADSETHOOK1;
+	public static final String ICON_VOLUMEEARPHONE3 = ICON_HEADSETHOOK2;
+	public static final String ICON_VOLUMEEARPHONE4 = ICON_HEADSETHOOK3;
 	public static final String ICON_ICECAST = "K";
 	public static final String ICON_ICECASTTEXT = "O"; //height = 3.587 / 16
 	public static final String ICON_SHOUTCAST = "J";

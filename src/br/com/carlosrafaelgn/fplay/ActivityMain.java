@@ -187,11 +187,36 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				btnVolume.setText(UI.ICON_VOLUME4);
 			return;
 		}
-		icon = ((volume == max) ? UI.ICON_VOLUME4 :
-					((volume == 0) ? UI.ICON_VOLUME0 :
-						((volume > ((max + 1) >> 1)) ? UI.ICON_VOLUME3 :
-							((volume > (max >> 2)) ? UI.ICON_VOLUME2 :
-								UI.ICON_VOLUME1))));
+		switch (Player.localAudioSinkUsedInEffects) {
+		case Player.AUDIO_SINK_WIRE:
+			icon = ((volume == max) ? UI.ICON_VOLUMEEARPHONE4 :
+				((volume == 0) ? UI.ICON_VOLUMEEARPHONE0 :
+					((volume > ((max + 1) >> 1)) ? UI.ICON_VOLUMEEARPHONE3 :
+						((volume > (max >> 2)) ? UI.ICON_VOLUMEEARPHONE2 :
+							UI.ICON_VOLUMEEARPHONE1))));
+			break;
+		case Player.AUDIO_SINK_WIRE_MIC:
+			icon = ((volume == max) ? UI.ICON_VOLUMEHEADSET4 :
+				((volume == 0) ? UI.ICON_VOLUMEHEADSET0 :
+					((volume > ((max + 1) >> 1)) ? UI.ICON_VOLUMEHEADSET3 :
+						((volume > (max >> 2)) ? UI.ICON_VOLUMEHEADSET2 :
+							UI.ICON_VOLUMEHEADSET1))));
+			break;
+		case Player.AUDIO_SINK_BT:
+			icon = ((volume == max) ? UI.ICON_VOLUMEBLUETOOTH4 :
+				((volume == 0) ? UI.ICON_VOLUMEBLUETOOTH0 :
+					((volume > ((max + 1) >> 1)) ? UI.ICON_VOLUMEBLUETOOTH3 :
+						((volume > (max >> 2)) ? UI.ICON_VOLUMEBLUETOOTH2 :
+							UI.ICON_VOLUMEBLUETOOTH1))));
+			break;
+		default:
+			icon = ((volume == max) ? UI.ICON_VOLUME4 :
+				((volume == 0) ? UI.ICON_VOLUME0 :
+					((volume > ((max + 1) >> 1)) ? UI.ICON_VOLUME3 :
+						((volume > (max >> 2)) ? UI.ICON_VOLUME2 :
+							UI.ICON_VOLUME1))));
+			break;
+		}
 		if (btnVolume != null)
 			btnVolume.setText(icon);
 		else if (barVolume != null)
