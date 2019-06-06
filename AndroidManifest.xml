@@ -114,10 +114,13 @@
         <!-- https://developer.android.com/guide/practices/screens_support.html#MaxAspectRatio -->
         <meta-data android:name="android.max_aspect" android:value="100.0" />
 
+        <!-- https://developer.android.com/training/tv/start/start.html -->
+        <!-- https://developer.android.com/distribute/best-practices/launch/distribute-tv -->
+        <!-- https://developer.android.com/training/tv/start/controllers -->
         <activity
             android:name="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
             android:clearTaskOnLaunch="true"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:multiprocess="false"
