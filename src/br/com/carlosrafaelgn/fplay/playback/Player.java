@@ -201,6 +201,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_ENABLE_AUTOMATIC_EFFECTS_GAIN = 0x011E;
 	private static final int MSG_ENABLE_RESAMPLING = 0x011F;
 	private static final int MSG_RESUME = 0x0120;
+	private static final int MSG_AUDIO_SINK_DOUBLE_CHECK_BT = 0x0121;
+	private static final int MSG_AUDIO_SINK_DOUBLE_CHECK_BT_2 = 0x0122;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -310,13 +312,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//this cleanup must be done, as sometimes, when changing between two output types,
 				//the effects are lost...
 				_fullCleanup();
-				_checkAudioSink(false, false, false, true);
+				_checkAudioSink(false, false, false, true, 0);
 				break;
 			case MSG_FADE_IN_VOLUME_TIMER:
 				_processFadeInVolumeTimer(msg.arg1);
 				break;
 			case MSG_AUDIO_SINK_CHANGED:
-				_checkAudioSink(msg.arg1 != 0, msg.arg2 != 0, true, true);
+				_checkAudioSink(msg.arg1 != 0, msg.arg2 != 0, true, true, 0);
+				break;
+			case MSG_AUDIO_SINK_DOUBLE_CHECK_BT:
+				_checkAudioSink(false, false, true, true, 1);
+				break;
+			case MSG_AUDIO_SINK_DOUBLE_CHECK_BT_2:
+				_checkAudioSink(false, false, true, true, 2);
 				break;
 			case MSG_PAUSE:
 				if (playing)
@@ -632,7 +640,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Virtualizer._checkSupport();
 					if (!BuildConfig.X)
 						ExternalFx._checkSupport();
-					_checkAudioSink(false, false, false, false);
+					_checkAudioSink(false, false, false, false, 2);
 					audioSinkUsedInEffects = audioSink;
 					_reinitializeEffects();
 					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
@@ -3488,7 +3496,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@SuppressWarnings("deprecation")
-	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone, boolean triggerNoisy, boolean reinitializeEffects) {
+	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone, boolean triggerNoisy, boolean reinitializeEffects, int tripleCheckBT) {
 		if (audioManager == null)
 			return;
 		final int oldAudioSink = audioSink;
@@ -3514,27 +3522,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			ex.printStackTrace();
 		}
 		try {
-			//this whole A2dp thing is still not enough, as isA2dpPlaying()
-			//will return false if there is nothing playing, even in scenarios
-			//where A2dp will certainly be used for playback later...
-			/*if (audioManager.isBluetoothA2dpOn()) {
-				//the device being on is not enough! we must be sure
-				//if it is actually being used for transmission...
-				if (thePlayer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-					if (audioSink == 0)
-						audioSink = AUDIO_SINK_BT;
-				} else {
-					if (audioSink == 0 || isA2dpPlaying())
-						audioSink = AUDIO_SINK_BT;
+			if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				final MediaRouter mr = (MediaRouter)theApplication.getSystemService(MEDIA_ROUTER_SERVICE);
+				if (mr != null) {
+					MediaRouter.RouteInfo routeInfo = mr.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
+					if (routeInfo != null) {
+						switch (routeInfo.getDeviceType()) {
+						case MediaRouter.RouteInfo.DEVICE_TYPE_BLUETOOTH:
+							audioSink = AUDIO_SINK_BT;
+							break;
+						case MediaRouter.RouteInfo.DEVICE_TYPE_SPEAKER:
+							audioSink = AUDIO_SINK_DEVICE;
+							break;
+						}
+					}
 				}
-			}*/
-			if (audioSink == 0 && audioManager.isBluetoothA2dpOn())
-				audioSink = AUDIO_SINK_BT;
+			}
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-			audioSink = _checkAudioSinkViaRoute();
 		try {
 			if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 				final AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
@@ -3550,6 +3556,28 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					}
 				}
 			}
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+			audioSink = _checkAudioSinkViaRoute();
+		try {
+			//this whole A2dp thing is still not enough, as isA2dpPlaying()
+			//will return false if there is nothing playing, even in scenarios
+			//where A2dp will certainly be used for playback later...
+			/*if (audioManager.isBluetoothA2dpOn()) {
+				//the device being on is not enough! we must be sure
+				//if it is actually being used for transmission...
+				if (thePlayer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+					if (audioSink == 0)
+						audioSink = AUDIO_SINK_BT;
+				} else {
+					if (audioSink == 0 || isA2dpPlaying())
+						audioSink = AUDIO_SINK_BT;
+				}
+			}*/
+			if (audioSink == 0 && Build.VERSION.SDK_INT < Build.VERSION_CODES.O && audioManager.isBluetoothA2dpOn())
+				audioSink = AUDIO_SINK_BT;
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -3592,6 +3620,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			_reinitializeEffects();
 		//I am calling the observer even if no changes have been detected, because
 		//I myself don't trust this code will correctly work as expected on every device....
+		//Also, thanks to a delay caused by Bluetooth (dis)connection, we must call this
+		//method again later...
+		if (handler != null && tripleCheckBT < 2) {
+			handler.removeMessages(MSG_AUDIO_SINK_DOUBLE_CHECK_BT);
+			handler.removeMessages(MSG_AUDIO_SINK_DOUBLE_CHECK_BT_2);
+			handler.sendMessageAtTime(Message.obtain(handler, tripleCheckBT == 0 ? MSG_AUDIO_SINK_DOUBLE_CHECK_BT : MSG_AUDIO_SINK_DOUBLE_CHECK_BT_2), SystemClock.uptimeMillis() + 500);
+		}
 		if (localHandler != null)
 			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_AUDIO_SINK_CHANGED, audioSink, 0), SystemClock.uptimeMillis());
 	}
