@@ -237,7 +237,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	}
 
 	private void updateRects() {
-		if (width <= 0 || height <= 0)
+		if (width <= 0 || height <= 0 || srcRect == null || dstRect == null)
 			return;
 
 		if (bmp == null) {
@@ -294,6 +294,8 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	@Override
 	protected void onDraw(Canvas canvas) {
+		if (srcRect == null || dstRect == null)
+			return;
 		if (bmp != null) {
 			canvas.drawBitmap(bmp.bitmap, srcRect, dstRect, null);
 		} else {
