@@ -232,6 +232,25 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 
 	@Override
+	protected void drawableStateChanged() {
+		extraState = 0;
+
+		if (!isInTouchMode()) {
+			final int[] states = getDrawableState();
+			if (states != null) {
+				for (int i = states.length - 1; i >= 0; i--) {
+					if (states[i] == android.R.attr.state_focused) {
+						extraState = UI.STATE_SELECTED;
+						break;
+					}
+				}
+			}
+		}
+
+		super.drawableStateChanged();
+	}
+
+	@Override
 	protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
 		//massive workaround!!!
 		//
@@ -245,7 +264,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		//http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.3_r1/android/widget/ListView.java
 		//if previouslyFocusedRect is null and the control is in touch mode,
 		//nothing is done, and therefore, the scroll does not happen ;)
-		extraState = (gainFocus ? UI.STATE_SELECTED : 0);
 		ignoreTouchMode = true;
 		super.onFocusChanged(gainFocus, direction, gainFocus ? null : previouslyFocusedRect);
 		int s;

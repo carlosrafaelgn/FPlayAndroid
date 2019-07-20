@@ -65,7 +65,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private boolean pendingAlbumArtRequest;
 
 	private static int albumArtHeight, height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin,
-		rightMargin, rightMarginForDrawing, numberAndCountColor, numberAndCountColorSelected, iconLeftPadding,
+		rightMargin, rightMarginForDrawing, numberAndCountColor, numberAndCountColorSelected, numberAndCountColorFocusedOrHovered, iconLeftPadding,
 		titlesp;
 
 	public static int getViewHeight() {
@@ -125,6 +125,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		getViewHeight();
 		numberAndCountColor = ColorUtils.blend(UI.color_text_listitem, UI.color_list, 0.5f);
 		numberAndCountColorSelected = ColorUtils.blend(UI.color_text_selected, UI.color_selected, 0.5f);
+		numberAndCountColorFocusedOrHovered = ColorUtils.blend(UI.color_text_selected, UI.color_focused, 0.5f);
 		super.setDrawingCacheEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
@@ -301,7 +302,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		else if (numberAndCount != null)
-			UI.drawText(canvas, numberAndCount, ((state & ~UI.STATE_CURRENT) == 0) ? numberAndCountColor : numberAndCountColorSelected, UI._14sp, numberAndCountX, extraY);
+			UI.drawText(canvas, numberAndCount, ((state & ~UI.STATE_CURRENT) == 0) ? numberAndCountColor : (((state & UI.STATE_FOCUSED_OR_HOVERED) != 0) ? numberAndCountColorFocusedOrHovered : numberAndCountColorSelected), UI._14sp, numberAndCountX, extraY);
 		UI.drawText(canvas, ellipsizedTitle, txtColor, titlesp, textX, titleY);
 		if (song.isHttp)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);
