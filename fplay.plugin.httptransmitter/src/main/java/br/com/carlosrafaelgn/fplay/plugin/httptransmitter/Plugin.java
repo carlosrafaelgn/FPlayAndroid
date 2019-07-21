@@ -56,7 +56,8 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 	private static final int PLUGIN_MSG_GET_ENCODED_ADDRESS = 0x0004;
 	private static final int PLUGIN_MSG_REFRESH_LIST = 0x0005;
 
-	private static long indexLength, faviconLength, favicon192Length, styleLength, loadingLength, iconsLength;
+	private static long indexLength, faviconLength, favicon192Length, favicon512Length, manifestLength,
+		browserconfigLength, styleLength, loadingLength, iconsLength;
 
 	private static final class Playlist {
 		final int listVersion;
@@ -105,6 +106,30 @@ public final class Plugin implements FPlayPlugin, FileSystemWebServer.FileHandle
 				if (favicon192Length <= 0)
 					favicon192Length = computeAssetLength(asset);
 				assetLength = favicon192Length;
+				break;
+			case "/favicon512.png":
+				file = null;
+				contents = null;
+				asset = "binary/favicon512.dat";
+				if (favicon512Length <= 0)
+					favicon512Length = computeAssetLength(asset);
+				assetLength = favicon512Length;
+				break;
+			case "/manifest.json":
+				file = null;
+				contents = null;
+				asset = "binary/manifest.dat";
+				if (manifestLength <= 0)
+					manifestLength = computeAssetLength(asset);
+				assetLength = manifestLength;
+				break;
+			case "/browserconfig.xml":
+				file = null;
+				contents = null;
+				asset = "binary/browserconfig.dat";
+				if (browserconfigLength <= 0)
+					browserconfigLength = computeAssetLength(asset);
+				assetLength = browserconfigLength;
 				break;
 			case "/style.css":
 				file = null;

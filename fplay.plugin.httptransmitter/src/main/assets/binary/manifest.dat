@@ -1,0 +1,26 @@
+{
+	"name": "FPlay",
+	"short_name": "FPlay",
+	"start_url": "/",
+	"dir": "ltr",
+	"lang": "en-US",
+	"orientation": "portrait-primary",
+	"display": "standalone",
+	"background_color": "#444444",
+	"theme_color": "#283796",
+	"description": "FPlay",
+	"icons": [
+		{
+			"src": "/favicon.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable any"
+		},
+		{
+			"src": "/favicon512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable any"
+		}
+	]
+}
