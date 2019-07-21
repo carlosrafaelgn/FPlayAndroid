@@ -30,7 +30,12 @@
         android:layout_height="match_parent"
         android:nextFocusForward="@+id/btnAdd">
 
-        <requestFocus/>
+        <!--
+            When this tag is present, and the device is being
+            controlled by a mouse, the control gains the focus
+            and only loses it when a keyboard key is pressed!
+        -->
+        <!--<requestFocus/>-->
     </br.com.carlosrafaelgn.fplay.ui.BgListView>
 
 </LinearLayout>

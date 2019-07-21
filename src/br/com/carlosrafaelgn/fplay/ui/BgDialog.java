@@ -212,6 +212,8 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
+		if (v == contentView)
+			return true;
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN:
 			dismiss(); //dismiss the dialog if the user touches the shadow
@@ -319,10 +321,13 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 			contentView = panel;
 		}
 
-		//we must make this view clickable or else the click will fall
-		//through to the parent, dismissing the dialog
-		contentView.setClickable(true);
-		contentView.setLongClickable(true);
+		//we must set this listener and always return true
+		//to prevent the touch from falling through to the
+		//parent, dismissing the dialog (setting contentView
+		//as clickable also prevents the click from falling
+		//through, but also causes undesired effects when
+		//using mouse and keyboard)
+		contentView.setOnTouchListener(this);
 
 		setContentView(contentView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 		final ViewParent viewParent = contentView.getParent();

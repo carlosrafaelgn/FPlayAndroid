@@ -58,7 +58,12 @@
             android:nextFocusRight="@+id/btnPrev"
             android:nextFocusUp="@+id/btnNext">
 
-            <requestFocus/>
+            <!--
+                When this tag is present, and the device is being
+                controlled by a mouse, the control gains the focus
+                and only loses it when a keyboard key is pressed!
+            -->
+            <!--<requestFocus/>-->
         </br.com.carlosrafaelgn.fplay.ui.BgButton>
     </RelativeLayout>
 

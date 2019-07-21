@@ -253,7 +253,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			this.scrollBarType = scrollBarType;
 			updateHorizontalMargins();
 		}
-		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
+		this.state = state; //(this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.file == file && checkBoxVisible == showCheckbox)
 			return;

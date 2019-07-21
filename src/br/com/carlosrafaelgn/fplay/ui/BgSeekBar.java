@@ -109,7 +109,13 @@ public final class BgSeekBar extends View {
 	}
 
 	private void updateSecondaryBgColorBlended() {
-		final int state = (insideList ? ((this.state & UI.STATE_PRESSED) != 0 ? (this.state | UI.STATE_FOCUSED) : ((this.state & UI.STATE_FOCUSED_OR_HOVERED) != 0 ? UI.STATE_SELECTED : (UI.STATE_SELECTED | UI.STATE_FOCUSED))) : this.state);
+		final int state = (insideList ? (
+			(this.state & UI.STATE_PRESSED) != 0 ?
+				(((this.state & UI.STATE_FOCUSED) != 0 && (this.state & UI.STATE_HOVERED) == 0) ? (UI.STATE_SELECTED | UI.STATE_PRESSED) :
+					(UI.STATE_FOCUSED | UI.STATE_PRESSED)) :
+				(((this.state & UI.STATE_FOCUSED) != 0 && (this.state & UI.STATE_HOVERED) == 0) ? UI.STATE_SELECTED :
+					(UI.STATE_SELECTED | UI.STATE_FOCUSED))
+		) : this.state);
 		final boolean blendWithBorder = (((state & UI.STATE_FOCUSED) != 0) ?
 			ColorUtils.contrastRatio(UI.color_focused_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_focused, secondaryBgColor) :
 			ColorUtils.contrastRatio(UI.color_selected_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_selected, secondaryBgColor));
@@ -592,7 +598,13 @@ public final class BgSeekBar extends View {
 		if (drawListener != null) {
 			drawListener.onDraw(canvas, this, rect, filledSize);
 		} else {
-			final int state = (insideList ? ((this.state & UI.STATE_PRESSED) != 0 ? (this.state | UI.STATE_FOCUSED) : ((this.state & UI.STATE_FOCUSED_OR_HOVERED) != 0 ? UI.STATE_SELECTED : (UI.STATE_SELECTED | UI.STATE_FOCUSED))) : this.state);
+			final int state = (insideList ? (
+				(this.state & UI.STATE_PRESSED) != 0 ?
+					(((this.state & UI.STATE_FOCUSED) != 0 && (this.state & UI.STATE_HOVERED) == 0) ? (UI.STATE_SELECTED | UI.STATE_PRESSED) :
+						(UI.STATE_FOCUSED | UI.STATE_PRESSED)) :
+					(((this.state & UI.STATE_FOCUSED) != 0 && (this.state & UI.STATE_HOVERED) == 0) ? UI.STATE_SELECTED :
+						(UI.STATE_SELECTED | UI.STATE_FOCUSED))
+			) : this.state);
 			final int right = rect.right;
 			final int bottom = rect.bottom;
 			final int color = UI.getBorderColor(state);

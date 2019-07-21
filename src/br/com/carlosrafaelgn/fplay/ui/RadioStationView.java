@@ -191,7 +191,7 @@ public final class RadioStationView extends LinearLayout implements View.OnClick
 		} else if (btnFavorite != null && (this.state & UI.STATE_SELECTED) != (state & UI.STATE_SELECTED)) {
 			btnFavorite.setTextColor((state != 0) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
 		}
-		this.state = (this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
+		this.state = state; //(this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.baseList = baseList;
 		//watch out, DO NOT use equals() in favor of speed!
 		if (this.station == station)
