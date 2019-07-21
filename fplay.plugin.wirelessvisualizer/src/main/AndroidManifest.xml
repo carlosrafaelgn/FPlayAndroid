@@ -1,8 +1,8 @@
 <manifest package="br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer"
           xmlns:android="http://schemas.android.com/apk/res/android"
           android:installLocation="auto"
-          android:versionCode="1"
-          android:versionName="1.00">
+          android:versionCode="2"
+          android:versionName="1.01">
 
     <!-- http://developer.android.com/guide/topics/manifest/supports-screens-element.html -->
     <supports-screens
