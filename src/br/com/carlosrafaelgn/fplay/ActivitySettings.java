@@ -81,6 +81,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
+@SuppressWarnings("WeakerAccess")
 public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable, MainHandler.Callback, PluginManager.Observer {
 	public static final int MODE_NORMAL = 0;
 	public static final int MODE_COLOR = 1;
@@ -91,7 +92,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private static final int MSG_REFRESH_HTTP = 0x0902;
 	private static final double MIN_THRESHOLD = 1.5; //waaaaaaaaaayyyyyyyy below W3C recommendations, so no one should complain about the app being "boring"
 	private final int mode;
-	private boolean changed, checkingReturn, configsChanged, lblTitleOk, startTransmissionOnConnection, tryingToEnableExternalFx;
+	private boolean changed, checkingReturn, configsChanged, lblTitleOk, startTransmissionOnConnection, tryingToEnableExternalFx, openHttpTransmitterOnConnection;
 	private BgButton btnGoBack, btnBluetooth, btnAbout;
 	private EditText txtCustomMinutes;
 	private ObservableScrollView list;
@@ -1066,6 +1067,16 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 	}
 
+	private void openHttpTransmitter() {
+		if (Player.httpTransmitter != null && httpAccessCode != null) {
+			try {
+				getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://fplay.com.br?" + httpAccessCode)));
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
 	private void refreshHttpStatus(boolean postAgain, boolean ignoreLayoutStatus) {
 		if ((!ignoreLayoutStatus && !isLayoutCreated()) || optBtMessage == null)
 			return;
@@ -1082,6 +1093,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				optBtMessage.setText(UI.format(R.string.transmission_details,
 					((HttpTransmitter)Player.httpTransmitter).getAddress(),
 					httpAccessCode = ((HttpTransmitter)Player.httpTransmitter).getEncodedAddress()));
+				if (openHttpTransmitterOnConnection) {
+					openHttpTransmitterOnConnection = false;
+					openHttpTransmitter();
+				}
 			}
 		} else {
 			httpAccessCode = null;
@@ -1610,17 +1625,17 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			return;
 		} else if (mode == MODE_HTTP) {
 			if (view == btnAbout) {
-				UI.toast(R.string.coming_soon);
-				//try {
-				//	getHostActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/carlosrafaelgn/FPlayAndroid")));
-				//} catch (Throwable ex) {
-				//	ex.printStackTrace();
-				//}
+				if (Player.httpTransmitter != null && httpAccessCode != null) {
+					openHttpTransmitter();
+				} else {
+					openHttpTransmitterOnConnection = true;
+					startHttpTransmitter();
+				}
 			} else if (view == optBtMessage) {
 				if (Player.httpTransmitter != null && httpAccessCode != null) {
 					//Since fplay:// links are not properly rendered in most apps, let's just share
 					//the access code itself
-					UI.shareText(httpAccessCode);
+					UI.shareText("https://fplay.com.br?" + httpAccessCode);
 					//UI.shareText(getText(R.string.access_code) + UI.collon() + "fplay://" + httpAccessCode);
 					//try {
 					//	final ActivityHost activityHost = getHostActivity();

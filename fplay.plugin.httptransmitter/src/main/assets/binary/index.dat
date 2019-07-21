@@ -134,15 +134,15 @@ h1 {
 }
 
 .list-item:hover, .icon-btn:hover, .icon-btn:focus {
-	background: #999eff;
+	background: #fc6; /*#999eff;*/
 }
 
 .list-item:active, .icon-btn:active {
-	background: #e5e6ff;
+	background: #ffe5b5; /*#e5e6ff;*/
 }
 
 .list-item.current, .list-item.current:hover {
-	background: #ffcc66;
+	background: #fc6;
 }
 
 .list-item.current:active {

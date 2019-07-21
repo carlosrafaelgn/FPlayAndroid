@@ -795,9 +795,9 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			String url = txtURL.getText().toString().trim();
 
 			if (txtTitle == null) {
-				final int i = url.toLowerCase(Locale.US).indexOf("fplay://");
+				final int i = url.toLowerCase(Locale.US).indexOf("?");
 				if (i >= 0)
-					url = url.substring(i + 8);
+					url = url.substring(i + 1);
 				if (url.length() != 8 || Player.decodeAddressPort(url) == null) {
 					UI.toast(R.string.invalid_access_code);
 					return;
