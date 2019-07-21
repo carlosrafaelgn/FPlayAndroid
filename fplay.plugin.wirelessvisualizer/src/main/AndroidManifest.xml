@@ -30,6 +30,7 @@
         android:description="@string/app_name"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:killAfterRestore="true"
         android:label="@string/app_name"
         android:restoreAnyVersion="false"
