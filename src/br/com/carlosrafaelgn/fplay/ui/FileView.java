@@ -46,6 +46,7 @@ import android.view.Gravity;
 import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.ViewParent;
 import android.widget.LinearLayout;
 
 import br.com.carlosrafaelgn.fplay.R;
@@ -425,9 +426,19 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		final boolean old = (state == 0);
-		state = UI.handleStateChanges(state, this);
+		state = UI.handleStateChanges(state, this) & (~UI.STATE_FOCUSED);
 		if ((state == 0) != old && btnCheckbox != null)
 			btnCheckbox.setTextColor(((state != 0) || ((file != null) && (file.specialType == FileSt.TYPE_ALBUM_ITEM))) ? UI.colorState_text_selected_static : UI.colorState_text_listitem_reactive);
+	}
+
+	@Override
+	protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+		super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+		if (gainFocus) {
+			final ViewParent parent = getParent();
+			if (parent instanceof View)
+				((View)parent).requestFocus();
+		}
 	}
 
 	@Override

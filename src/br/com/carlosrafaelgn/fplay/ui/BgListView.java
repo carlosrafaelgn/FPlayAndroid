@@ -231,23 +231,50 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		return true;
 	}
 
+	private void invalidateItem(int position) {
+		if (position >= 0 && (position >= getFirstVisiblePosition() && position <= getLastVisiblePosition())) {
+			final int c = position - getFirstVisiblePosition();
+			if (c >= 0 && c < getChildCount())
+				getChildAt(c).invalidate();
+		}
+	}
+
+	private void invalidateSelectedItem() {
+		if (adapter != null)
+			invalidateItem(adapter.getCurrentPosition());
+	}
+
 	@Override
 	protected void drawableStateChanged() {
-		extraState = 0;
+		int state = 0;
 
 		if (!isInTouchMode()) {
 			final int[] states = getDrawableState();
 			if (states != null) {
 				for (int i = states.length - 1; i >= 0; i--) {
 					if (states[i] == android.R.attr.state_focused) {
-						extraState = UI.STATE_SELECTED;
+						state = UI.STATE_SELECTED;
 						break;
 					}
 				}
 			}
 		}
 
+		if (extraState != state) {
+			extraState = state;
+			invalidateSelectedItem();
+		}
+
 		super.drawableStateChanged();
+	}
+
+	@Override
+	public void onTouchModeChanged(boolean isInTouchMode) {
+		super.onTouchModeChanged(isInTouchMode);
+
+		extraState = ((isInTouchMode || !isFocused()) ? 0 : UI.STATE_SELECTED);
+
+		invalidateSelectedItem();
 	}
 
 	@Override
@@ -283,11 +310,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					}
 				}
 			}
-			if (s >= 0 && (s >= getFirstVisiblePosition() && s <= getLastVisiblePosition())) {
-				final int c = s - getFirstVisiblePosition();
-				if (c >= 0 && c < getChildCount())
-					getChildAt(c).invalidate();
-			}
+			invalidateItem(s);
 		}
 		ignoreTouchMode = false;
 	}
@@ -800,6 +823,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			switch (keyCode) {
 			case UI.KEY_UP:
 			case UI.KEY_DOWN:
+				if (extraState == 0) {
+					extraState = UI.STATE_SELECTED;
+					invalidateSelectedItem();
+				}
 				if (skipUpDownTranslation)
 					break;
 				//change the key to make sure the focus goes
@@ -817,6 +844,8 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 					}
 				}
 				break;
+			case KeyEvent.KEYCODE_TAB:
+				keyCode = UI.KEY_RIGHT;
 			case UI.KEY_LEFT:
 			case UI.KEY_RIGHT:
 			case UI.KEY_DEL:
@@ -825,6 +854,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			case UI.KEY_END:
 			case UI.KEY_PAGE_UP:
 			case UI.KEY_PAGE_DOWN:
+				if (extraState == 0) {
+					extraState = UI.STATE_SELECTED;
+					invalidateSelectedItem();
+				}
 				break;
 			case KeyEvent.KEYCODE_DPAD_CENTER:
 			case KeyEvent.KEYCODE_ENTER:

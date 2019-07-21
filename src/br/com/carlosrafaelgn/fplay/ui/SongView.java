@@ -46,6 +46,7 @@ import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
+import android.view.ViewParent;
 
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
@@ -249,7 +250,17 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	@Override
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
-		state = UI.handleStateChanges(state, this);
+		state = UI.handleStateChanges(state, this) & (~UI.STATE_FOCUSED);
+	}
+
+	@Override
+	protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+		super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+		if (gainFocus) {
+			final ViewParent parent = getParent();
+			if (parent instanceof View)
+				((View)parent).requestFocus();
+		}
 	}
 
 	@Override
@@ -284,13 +295,14 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	protected void onDraw(Canvas canvas) {
 		if (ellipsizedTitle == null)
 			return;
+		final int state = this.state | ((this.state & UI.STATE_SELECTED & BgListView.extraState) >>> 2);
 		final int txtColor = (((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem : UI.color_text_selected);
 		final Rect rect = UI.rect;
 		getDrawingRect(rect);
 		rect.left += leftMargin;
 		rect.top += topMargin;
 		rect.right -= rightMarginForDrawing;
-		UI.drawBgListItem(rect, canvas, state | ((state & UI.STATE_SELECTED & BgListView.extraState) >>> 2));
+		UI.drawBgListItem(rect, canvas, state);
 		if (UI.albumArtSongList) {
 			if (albumArt != null && albumArt.bitmap != null)
 				canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((albumArtHeight - albumArt.height) >> 1), null);
