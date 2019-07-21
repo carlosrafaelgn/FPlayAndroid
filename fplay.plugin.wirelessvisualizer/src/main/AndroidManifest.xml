@@ -22,6 +22,9 @@
     <uses-feature
         android:name="android.hardware.faketouch"
         android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false"/>
 
     <application
         android:allowBackup="true"
