@@ -358,8 +358,13 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 
 		songInfo = new SongInfo();
 
-		buttonColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.color_text_selected);
-		lblColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.colorState_text_visualizer_reactive.getDefaultColor());
+		if (UI.colorState_text_visualizer_reactive == null) {
+			buttonColor = new BgColorStateList(0xffffffff, UI.color_text_selected);
+			lblColor = new BgColorStateList(0xffffffff, 0xffffffff);
+		} else {
+			buttonColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.color_text_selected);
+			lblColor = new BgColorStateList(UI.colorState_text_visualizer_reactive.getDefaultColor(), UI.colorState_text_visualizer_reactive.getDefaultColor());
+		}
 
 		isWindowFocused = true;
 
