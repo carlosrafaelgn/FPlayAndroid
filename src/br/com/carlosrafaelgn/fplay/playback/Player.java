@@ -2982,6 +2982,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				sendMessage = true;
 			}
 		}
+		if (state > STATE_ALIVE || localHandler == null)
+			return;
 		if (sendMessage) {
 			if (!idleTurnOffTimerSent) {
 				idleTurnOffTimerSent = true;
@@ -2996,7 +2998,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static void setIdleTurnOffTimer(int minutes) {
-		if (state > STATE_ALIVE)
+		if (state > STATE_ALIVE || localHandler == null)
 			return;
 		idleTurnOffTimerOrigin = 0;
 		idleTurnOffTimerSent = false;
