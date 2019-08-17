@@ -845,9 +845,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		s2 = s.addSubMenu(2, 0, 3, getText(R.string.visualizer) + "\u2026")
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		UI.prepare(s2);
-		s2.add(0, MNU_VISUALIZER_COLOR_WAVES, 0, "Color Waves")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
+		//s2.add(0, MNU_VISUALIZER_COLOR_WAVES, 0, "Color Waves")
+		//	.setOnMenuItemClickListener(this)
+		//	.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
 		s2.add(0, MNU_VISUALIZER_SPECTRUM, 1, "Spectrum")
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_VISUALIZER24));
