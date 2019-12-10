@@ -423,14 +423,22 @@ uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 }
 
 extern uint32_t visualizerWriteOffsetInFrames, visualizerBufferSizeInFrames;
-extern uint8_t* visualizerBuffer;
-static const int8_t visualizerx80[8] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+//*** visualizerBufferUINT8
+//extern uint8_t* visualizerBuffer;
+//static const int8_t visualizerx80[8] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+// 1/512 = 1/256 (to decrease the amplitude from -32767/32768 to -128/127) /2 (average -> stereo to mono)
+static const float visualizerx80[4] __attribute__((aligned(16))) = { 1.0f/512.0f, 1.0f/512.0f, 1.0f/512.0f, 1.0f/512.0f };
+extern float* visualizerBuffer;
 
 void visualizerWriteNeon(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) {
 	const uint32_t frameCountAtTheEnd = visualizerBufferSizeInFrames - visualizerWriteOffsetInFrames;
-	uint8_t* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
+	//*** visualizerBufferUINT8
+	//uint8_t* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
+	float* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
 	uint32_t count = ((bufferSizeInFrames <= frameCountAtTheEnd) ? bufferSizeInFrames : frameCountAtTheEnd);
-	const int8x8_t x80 = vld1_s8(visualizerx80);
+	//*** visualizerBufferUINT8
+	//const int8x8_t x80 = vld1_s8(visualizerx80);
+	const float32x4_t x80 = vld1q_f32(visualizerx80);
 	do {
 		uint32_t i = count;
 		while (i >= 8) {
@@ -449,18 +457,24 @@ void visualizerWriteNeon(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) 
 			left32_0 = vaddq_s32(left32_0, right32_0);
 			left32_1 = vaddq_s32(left32_1, right32_1);
 
-			left32_0 = vshrq_n_s32(left32_0, 9);
-			left32_1 = vshrq_n_s32(left32_1, 9);
-			
-			int8x8_t left8 = vqmovn_s16(vcombine_s16(vqmovn_s32(left32_0), vqmovn_s32(left32_1)));
-			
-			vst1_s8((int8_t*)dstBuffer, veor_s8(left8, x80));			
+			//*** visualizerBufferUINT8
+			//left32_0 = vshrq_n_s32(left32_0, 9);
+			//left32_1 = vshrq_n_s32(left32_1, 9);
+			//
+			//int8x8_t left8 = vqmovn_s16(vcombine_s16(vqmovn_s32(left32_0), vqmovn_s32(left32_1)));
+			//
+			//vst1_s8((int8_t*)dstBuffer, veor_s8(left8, x80));
+			vst1q_f32(dstBuffer, vmulq_f32(vcvtq_f32_s32(left32_0), x80));
+			vst1q_f32(dstBuffer + 4, vmulq_f32(vcvtq_f32_s32(left32_1), x80));
+
 			dstBuffer += 8;
 			srcBuffer += 16;
 			i -= 8;
 		}
 		while (i--) {
-			*dstBuffer++ = (uint8_t)((((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) >> 9) ^ 0x80); // >> 9 = 1 (average) + 8 (remove lower byte)
+			//*** visualizerBufferUINT8
+			//*dstBuffer++ = (uint8_t)((((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) >> 9) ^ 0x80); // >> 9 = 1 (average) + 8 (remove lower byte)
+			*dstBuffer++ = (float)((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) * (1.0f/512.0f);
 			srcBuffer += 2;
 		}
 		bufferSizeInFrames -= count;

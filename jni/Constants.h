@@ -36,7 +36,12 @@
 #define MAX_FFT_SIZE 1024
 
 #define FFT_SIZE 1024 //FFT_SIZE must be a power of 2 <= 65536
+#define FFT_SIZE_HQ 1024
 #define QUARTER_FFT_SIZE (FFT_SIZE / 4)
+
+#define LOG_TABLE_MIN 1
+#define LOG_TABLE_MAX 128
+#define LOG_TABLE_SIZE 2048
 
 #define COEF_SPEED_0 (0.0625f / 16.0f) //0.0625f @ 60fps (~16ms)
 #define COEF_SPEED_1 (0.09375f / 16.0f) //0.09375 @ 60fps (~16ms)
@@ -58,6 +63,8 @@
 #define DATA_FFT             0x0100
 #define DATA_VUMETER         0x0200
 #define IGNORE_INPUT         0x0400
+#define DATA_FFT_HQ          0x0800
+#define DATA_FFT_FLOAT_INPUT 0x1000
 
 #define BEAT_DETECTION_1     0x1000
 #define BEAT_DETECTION_2     0x2000

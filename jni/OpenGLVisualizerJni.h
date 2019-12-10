@@ -1526,7 +1526,7 @@ int32_t JNICALL glOnSurfaceCreated(JNIEnv* env, jclass clazz, int32_t bgColor, i
 		break;
 	}
 
-	commonUpdateMultiplier(env, clazz, 0, 0);
+	commonUpdateMultiplier(env, clazz, 0);
 
 	glReleaseShaderCompiler();
 

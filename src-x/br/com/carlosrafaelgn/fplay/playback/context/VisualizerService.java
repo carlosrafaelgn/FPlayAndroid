@@ -41,7 +41,7 @@ public final class VisualizerService implements br.com.carlosrafaelgn.fplay.plug
 	private Visualizer visualizer;
 	private Observer observer;
 	private volatile boolean alive, reset, created, playing, failed, visualizerReady;
-	private byte[] waveform;
+	private float[] waveform;
 	private Timer timer;
 
 	public VisualizerService(Visualizer visualizer, Observer observer) {
@@ -50,7 +50,7 @@ public final class VisualizerService implements br.com.carlosrafaelgn.fplay.plug
 		alive = true;
 		reset = true;
 		playing = Player.localPlaying;
-		waveform = new byte[Visualizer.CAPTURE_SIZE];
+		waveform = new float[Visualizer.CAPTURE_SIZE];
 		timer = new Timer(this, "Visualizer Thread", false, false, true);
 		timer.start(16);
 	}

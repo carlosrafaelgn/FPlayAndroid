@@ -37,6 +37,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.os.Build;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.Surface;
@@ -46,6 +47,7 @@ import android.view.ViewDebug.ExportedProperty;
 
 import java.util.Arrays;
 
+import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
 import br.com.carlosrafaelgn.fplay.plugin.Visualizer;
@@ -62,15 +64,21 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 
 	public static native void commonSetSpeed(int speed);
 	public static native void commonSetColorIndex(int colorIndex);
-	public static native void commonUpdateMultiplier(boolean isVoice, boolean hq);
+	public static native void commonSetMultiplierHq(boolean hq);
+	public static native void commonUpdateMultiplier(boolean isVoice);
 	public static native int commonProcess(byte[] waveform, int opt);
+	public static native int commonProcess(float[] waveform, int opt);
+	public static native float[] commonCastByteToFloat(byte[] buffer);
+	public static native byte[] commonCastFloatToByte(float[] buffer);
 
 	private static native void setLerp(boolean lerp);
 	private static native void init(int bgColor);
 	private static native void terminate();
 	private static native int prepareSurface(Surface surface);
 	private static native void process(byte[] waveform, Surface surface, int opt);
+	private static native void process(float[] waveform, Surface surface, int opt);
 	private static native void processVoice(byte[] waveform, Surface surface, int opt);
+	private static native void processVoice(float[] waveform, Surface surface, int opt);
 
 	static native int glGetOESTexture();
 	static native int glOnSurfaceCreated(int bgColor, int type, int estimatedWidth, int estimatedHeight, int dp1OrLess, int hasGyro);
@@ -92,6 +100,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 	public SimpleVisualizerJni(Context context) {
 		super(context);
 		lock = null;
+		commonSetMultiplierHq(BuildConfig.X);
 	}
 
 	public SimpleVisualizerJni(Activity activity, boolean landscape, Intent extras) {
@@ -109,7 +118,8 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 		ignoreInput = 0;
 		lerp = false;
 		voice = false;
-		commonUpdateMultiplier(false, false);
+		commonSetMultiplierHq(BuildConfig.X);
+		commonUpdateMultiplier(false);
 		setLerp(false);
 		commonSetColorIndex(0);
 	}
@@ -143,7 +153,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			break;
 		}
 		if (item.getItemId() != MNU_COLOR)
-			commonUpdateMultiplier(voice, false);
+			commonUpdateMultiplier(voice);
 		setLerp(lerp);
 		commonSetColorIndex(colorIndex);
 		return true;
@@ -203,7 +213,7 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			state = 0;
 			break;
 		}
-		commonUpdateMultiplier(voice, false);
+		commonUpdateMultiplier(voice);
 		setLerp(lerp);
 		commonSetColorIndex(colorIndex);
 	}
@@ -281,21 +291,37 @@ public final class SimpleVisualizerJni extends SurfaceView implements SurfaceHol
 			return;
 		try {
 			if (surface != null) {
-				//We use ignoreInput because taking 1024 samples, 60 times a seconds,
-				//is useless, as there are only 44100 or 48000 samples in one second
-				if (ignoreInput == 0 && !playing)
+				if (!playing)
 					Arrays.fill(waveform, (byte)0x80);
 				if (!voice)
-					process(waveform, surface, ignoreInput | DATA_FFT);
+					process(waveform, surface, DATA_FFT);
 				else
-					processVoice(waveform, surface, ignoreInput | DATA_FFT);
-				ignoreInput ^= IGNORE_INPUT;
+					processVoice(waveform, surface, DATA_FFT);
 			}
 		} finally {
 			lock.releaseLowPriority();
 		}
 	}
-	
+
+	//Runs on a SECONDARY thread
+	@Override
+	public void processFrame(boolean playing, float[] waveform) {
+		if (!lock.lockLowPriority())
+			return;
+		try {
+			if (surface != null) {
+				if (!playing)
+					Arrays.fill(waveform, 0);
+				if (!voice)
+					process(waveform, surface, DATA_FFT | DATA_FFT_FLOAT_INPUT);
+				else
+					processVoice(waveform, surface, DATA_FFT | DATA_FFT_FLOAT_INPUT);
+			}
+		} finally {
+			lock.releaseLowPriority();
+		}
+	}
+
 	//Runs on a SECONDARY thread
 	@Override
 	public void release() {

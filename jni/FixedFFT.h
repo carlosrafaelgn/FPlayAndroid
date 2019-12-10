@@ -106,11 +106,95 @@ static inline int32_t half(int32_t a) {
 #endif
 }
 
+//void doFftHq(int16_t* workspace, uint8_t* inWaveform, uint8_t* outFft) {
+//	// Visualizer.getWaveForm() returns a waveform filled only with
+//	// positive values by adding 128 to all values. For example, a
+//	// sine wave with an amplitude of 100 ranges from -100 to 100,
+//	// but inside inWaveform it will range from 28 to 228.
+//	//
+//	// Therefore, in order to use fix_fftr() we must first subtract
+//	// 128 from all samples. Since fix_fftr() can work with 16-bit
+//	// values, we can additionally multiply all samples by 256 in
+//	// order to increase precision, further reducing the noise.
+//	//
+//	// Also, fix_fftr() expects all even samples in the first half
+//	// of the array and all odd samples in the second half.
+//	for (int32_t i = 0; i < CAPTURE_SIZE; i++)
+//		workspace[((i & 1) ? (i + CAPTURE_SIZE) : i) >> 1] = (int16_t)((int8_t)(inWaveform[i] - 128)) << 8;
+//
+//	fix_fftr(workspace, LOG_FFT_SIZE);
+//
+//	// fix_fftr() returns all real components in the first half of
+//	// the array, followed by all imaginary components in the second
+//	// half. Both Visualizer.getFft() and outFft expect the data
+//	// in an interleaved form:
+//	//index  0   1    2  3  4  5  ..... n-2        n-1
+//	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
+//	//
+//	// Just as mentioned in the comment below, we do not need to process
+//	// the last half of the output, as commonProcess() will not use it! ;)
+//	//
+//	// N real samples (time domain) produce N complex bins, but since they
+//	// are mirrored, we usually consider only the first N/2 complex bins.
+//	// Here, we want only the first N/4 complex bins, because commonProcess()
+//	// does not use the second half.
+//	for (int32_t i = 0; i < (CAPTURE_SIZE >> 2); i++) {
+//		const int16_t re = workspace[i];
+//		const int16_t im = workspace[i + (CAPTURE_SIZE >> 1)];
+//
+//		// abs() because commonProcess() treats outFft as unsigned values
+//		//outFft[(i << 1)] = abs(re) >> 8;
+//		//outFft[(i << 1) + 1] = abs(im) >> 8;
+//
+//		// Since doFft() returns values somewhat larger than they actually
+//		// are, in favor of better visualization, we must also do that here...
+//		int16_t tmp = abs(re) >> 5;
+//		outFft[(i << 1)] = ((tmp >= 255) ? 255 : tmp);
+//		tmp = abs(im) >> 5;
+//		outFft[(i << 1) + 1] = ((tmp >= 255) ? 255 : tmp);
+//	}
+//}
+
+void doFftHq(uint8_t* inWaveform, int32_t opt) {
+	float* const fftData = _fftData;
+	const float* const fftWindow = _fftWindow;
+
+	if ((opt & DATA_FFT_FLOAT_INPUT)) {
+		const float* const inWaveformFloat = (float*)inWaveform;
+		for (int32_t i = 0; i < CAPTURE_SIZE; i++)
+			fftData[i] = inWaveformFloat[i] * fftWindow[i];
+	} else {
+		// Visualizer.getWaveForm() returns a waveform filled only with
+		// positive values by adding 128 to all values. For example, a
+		// sine wave with an amplitude of 100 ranges from -100 to 100,
+		// but inside inWaveform it will range from 28 to 228.
+		//
+		// Therefore, in order to use rdft() we must first subtract
+		// 128 from all samples.
+		for (int32_t i = 0; i < CAPTURE_SIZE; i++)
+			fftData[i] = (float)((int32_t)((int8_t)(inWaveform[i] ^ 0x80))) * fftWindow[i];
+	}
+	#if FFT_SIZE_HQ > CAPTURE_SIZE
+	memset(fftData + CAPTURE_SIZE, 0, (FFT_SIZE_HQ - CAPTURE_SIZE) * sizeof(float));
+	#endif
+
+	rdft(FFT_SIZE_HQ, 1, fftData, _rdft_ip, _rdft_w);
+
+	// There is nothing else to be done, since rdft() returns the data
+	// in the same order Visualizer.getFft() does, which is also the
+	// order outFft expects:
+	//index  0   1    2  3  4  5  ..... n-2        n-1
+	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
+}
+
 int32_t doFft(uint8_t *inWaveform, uint8_t *outFft, int32_t opt) {
 	int32_t i, squareAccum = 0;
 	int32_t workspace[CAPTURE_SIZE >> 1] __attribute__((aligned(16)));
 
-	if ((opt & DATA_VUMETER)) {
+	if ((opt & (DATA_FFT_HQ | DATA_FFT_FLOAT_INPUT))) {
+		doFftHq(inWaveform, opt);
+		return 0;
+	} else if ((opt & DATA_VUMETER)) {
 		for (i = 0; i < CAPTURE_SIZE; i += 2) {
 			const int32_t x0 = (int32_t)((int8_t)inWaveform[i] ^ 0x80);
 			squareAccum += (x0 * x0);

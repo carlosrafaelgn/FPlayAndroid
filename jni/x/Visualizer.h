@@ -32,11 +32,16 @@
 //
 
 uint32_t visualizerWriteOffsetInFrames, visualizerBufferSizeInFrames;
-uint8_t* visualizerBuffer;
+//*** visualizerBufferUINT8
+//uint8_t* visualizerBuffer;
+float* visualizerBuffer;
 static uint32_t visualizerCreatedBufferSizeInFrames;
 #ifdef FPLAY_X86
 static const int8_t visualizerShuffleIndices[16] __attribute__((aligned(16))) = { 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15 };
-static const int8_t visualizerx80[16] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0, 0, 0, 0, 0, 0, 0, 0 };
+//*** visualizerBufferUINT8
+//static const int8_t visualizerx80[16] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0, 0, 0, 0, 0, 0, 0, 0 };
+// 1/512 = 1/256 (to decrease the amplitude from -32767/32768 to -128/127) /2 (average -> stereo to mono)
+static const float visualizerx80[4] __attribute__((aligned(16))) = { 1.0f/512.0f, 1.0f/512.0f, 1.0f/512.0f, 1.0f/512.0f };
 #define visualizerWriteProc visualizerWrite
 #else
 typedef void (*VISUALIZERPROC)(const int16_t* srcBuffer, uint32_t bufferSizeInFrames);
@@ -49,10 +54,14 @@ static VISUALIZERPROC visualizerWriteProc;
 
 void visualizerWrite(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) {
 	const uint32_t frameCountAtTheEnd = visualizerBufferSizeInFrames - visualizerWriteOffsetInFrames;
-	uint8_t* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
+	//*** visualizerBufferUINT8
+	//uint8_t* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
+	float* dstBuffer = visualizerBuffer + visualizerWriteOffsetInFrames;
 	uint32_t count = ((bufferSizeInFrames <= frameCountAtTheEnd) ? bufferSizeInFrames : frameCountAtTheEnd);
 #ifdef FPLAY_X86
-	const __m128i x80 = _mm_load_si128((const __m128i*)visualizerx80);
+	//*** visualizerBufferUINT8
+	//const __m128i x80 = _mm_load_si128((const __m128i*)visualizerx80);
+	const __m128 x80 = _mm_load_ps(visualizerx80);
 	const __m128i indices = _mm_load_si128((const __m128i*)visualizerShuffleIndices);
 #endif
 	do {
@@ -82,22 +91,28 @@ void visualizerWrite(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) {
 			left32_0 = _mm_add_epi32(left32_0, right32_0);
 			left32_1 = _mm_add_epi32(left32_1, right32_1);
 
-			left32_0 = _mm_srai_epi32(left32_0, 9);
-			left32_1 = _mm_srai_epi32(left32_1, 9);
+			//*** visualizerBufferUINT8
+			//left32_0 = _mm_srai_epi32(left32_0, 9);
+			//left32_1 = _mm_srai_epi32(left32_1, 9);
+			//
+			//left32_0 = _mm_packs_epi32(left32_0, left32_1);
+			//left32_0 = _mm_packs_epi16(left32_0, left32_0);
+			//
+			//left32_0 = _mm_xor_si128(left32_0, x80);
+			//
+			//_mm_store_sd((double*)dstBuffer, _mm_castsi128_pd(left32_0));
+			_mm_storeu_ps(dstBuffer, _mm_mul_ps(_mm_cvtepi32_ps(left32_0), x80));
+			_mm_storeu_ps(dstBuffer + 4, _mm_mul_ps(_mm_cvtepi32_ps(left32_1), x80));
 
-			left32_0 = _mm_packs_epi32(left32_0, left32_1);
-			left32_0 = _mm_packs_epi16(left32_0, left32_0);
-
-			left32_0 = _mm_xor_si128(left32_0, x80);
-
-			_mm_store_sd((double*)dstBuffer, _mm_castsi128_pd(left32_0));
 			dstBuffer += 8;
 			srcBuffer += 16;
 			i -= 8;
 		}
 #endif
 		while (i--) {
-			*dstBuffer++ = (uint8_t)((((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) >> 9) ^ 0x80); // >> 9 = 1 (average) + 8 (remove lower byte)
+			//*** visualizerBufferUINT8
+			//*dstBuffer++ = (uint8_t)((((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) >> 9) ^ 0x80); // >> 9 = 1 (average) + 8 (remove lower byte)
+			*dstBuffer++ = (float)((int32_t)srcBuffer[0] + (int32_t)srcBuffer[1]) * (1.0f/512.0f);
 			srcBuffer += 2;
 		}
 		bufferSizeInFrames -= count;
@@ -109,7 +124,7 @@ void visualizerWrite(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) {
 int32_t JNICALL visualizerStart(JNIEnv* env, jclass clazz, uint32_t bufferSizeInFrames, uint32_t createIfNotCreated) {
 	if (!createIfNotCreated) {
 		visualizerWriteOffsetInFrames = 0;
-		visualizerBufferSizeInFrames = bufferSizeInFrames;
+		visualizerBufferSizeInFrames = (bufferSizeInFrames <= CAPTURE_SIZE ? CAPTURE_SIZE : bufferSizeInFrames);
 	}
 
 	if ((!createIfNotCreated && !visualizerBuffer) || (visualizerBuffer && visualizerCreatedBufferSizeInFrames == visualizerBufferSizeInFrames))
@@ -117,20 +132,24 @@ int32_t JNICALL visualizerStart(JNIEnv* env, jclass clazz, uint32_t bufferSizeIn
 
 	if (visualizerBuffer)
 		delete visualizerBuffer;
-	visualizerBuffer = new uint8_t[visualizerBufferSizeInFrames];
+	//*** visualizerBufferUINT8
+	//visualizerBuffer = new uint8_t[visualizerBufferSizeInFrames];
+	visualizerBuffer = new float[visualizerBufferSizeInFrames];
 
 	if (visualizerBuffer) {
-		uint32_t* buffer = (uint32_t*)visualizerBuffer;
-		bufferSizeInFrames = visualizerBufferSizeInFrames;
-		while (bufferSizeInFrames >= 4) {
-			*buffer++ = 0x80808080;
-			bufferSizeInFrames -= 4;
-		}
-		while (bufferSizeInFrames) {
-			*((uint8_t*)buffer) = 0x80;
-			buffer = (uint32_t*)((uint8_t*)buffer + 1);
-			bufferSizeInFrames--;
-		}
+		//*** visualizerBufferUINT8
+		//uint32_t* buffer = (uint32_t*)visualizerBuffer;
+		//bufferSizeInFrames = visualizerBufferSizeInFrames;
+		//while (bufferSizeInFrames >= 4) {
+		//	*buffer++ = 0x80808080;
+		//	bufferSizeInFrames -= 4;
+		//}
+		//while (bufferSizeInFrames) {
+		//	*((uint8_t*)buffer) = 0x80;
+		//	buffer = (uint32_t*)((uint8_t*)buffer + 1);
+		//	bufferSizeInFrames--;
+		//}
+		memset(visualizerBuffer, 0, visualizerBufferSizeInFrames * sizeof(float));
 		visualizerCreatedBufferSizeInFrames = visualizerBufferSizeInFrames;
 		return 0;
 	}
@@ -149,25 +168,27 @@ void JNICALL visualizerStop(JNIEnv* env, jclass clazz) {
 
 void JNICALL visualizerZeroOut(JNIEnv* env, jclass clazz) {
 	if (visualizerBuffer) {
-		uint32_t* buffer = (uint32_t*)visualizerBuffer;
-		uint32_t bufferSizeInFrames = visualizerBufferSizeInFrames;
-		while (bufferSizeInFrames >= 4) {
-			*buffer++ = 0x80808080;
-			bufferSizeInFrames -= 4;
-		}
-		while (bufferSizeInFrames) {
-			*((uint8_t*)buffer) = 0x80;
-			buffer = (uint32_t*)((uint8_t*)buffer + 1);
-			bufferSizeInFrames--;
-		}
+		//*** visualizerBufferUINT8
+		//uint32_t* buffer = (uint32_t*)visualizerBuffer;
+		//uint32_t bufferSizeInFrames = visualizerBufferSizeInFrames;
+		//while (bufferSizeInFrames >= 4) {
+		//	*buffer++ = 0x80808080;
+		//	bufferSizeInFrames -= 4;
+		//}
+		//while (bufferSizeInFrames) {
+		//	*((uint8_t*)buffer) = 0x80;
+		//	buffer = (uint32_t*)((uint8_t*)buffer + 1);
+		//	bufferSizeInFrames--;
+		//}
+		memset(visualizerBuffer, 0, visualizerBufferSizeInFrames * sizeof(float));
 	}
 }
 
-void JNICALL visualizerGetWaveform(JNIEnv* env, jclass clazz, jbyteArray jwaveform, uint32_t headPositionInFrames) {
+void JNICALL visualizerGetWaveform(JNIEnv* env, jclass clazz, jfloatArray jwaveform, uint32_t headPositionInFrames) {
 	if (!visualizerBuffer || !visualizerBufferSizeInFrames || !jwaveform)
 		return;
 
-	uint8_t* const waveform = (uint8_t*)env->GetPrimitiveArrayCritical(jwaveform, 0);
+	float* const waveform = (float*)env->GetPrimitiveArrayCritical(jwaveform, 0);
 	if (!waveform)
 		return;
 
@@ -175,11 +196,11 @@ void JNICALL visualizerGetWaveform(JNIEnv* env, jclass clazz, jbyteArray jwavefo
 
 	//visualizerBuffer must be treated as a circular buffer
 	const uint32_t frameCountAtTheEnd = visualizerBufferSizeInFrames - headPositionInFrames;
-	if (frameCountAtTheEnd >= 1024) {
-		memcpy(waveform, visualizerBuffer + headPositionInFrames, 1024);
+	if (frameCountAtTheEnd >= CAPTURE_SIZE) {
+		memcpy(waveform, visualizerBuffer + headPositionInFrames, CAPTURE_SIZE * sizeof(visualizerBuffer[0]));
 	} else {
-		memcpy(waveform, visualizerBuffer + headPositionInFrames, frameCountAtTheEnd);
-		memcpy(waveform + frameCountAtTheEnd, visualizerBuffer, 1024 - frameCountAtTheEnd);
+		memcpy(waveform, visualizerBuffer + headPositionInFrames, frameCountAtTheEnd * sizeof(visualizerBuffer[0]));
+		memcpy(waveform + frameCountAtTheEnd, visualizerBuffer, (CAPTURE_SIZE - frameCountAtTheEnd) * sizeof(visualizerBuffer[0]));
 	}
 
 	env->ReleasePrimitiveArrayCritical(jwaveform, waveform, 0);

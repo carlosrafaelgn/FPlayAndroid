@@ -74,6 +74,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
+import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -127,6 +128,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	public OpenGLVisualizerJni(Context context) {
 		super(context);
 		type = 0;
+		SimpleVisualizerJni.commonSetMultiplierHq(BuildConfig.X);
 	}
 
 	public OpenGLVisualizerJni(Activity activity, boolean landscape, Intent extras) {
@@ -142,6 +144,7 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 		riseSpeed = ((type == TYPE_IMMERSIVE_PARTICLE_VR) ? 3 : 2);
 		ignoreInput = 0;
 		this.activity = activity;
+		SimpleVisualizerJni.commonSetMultiplierHq(BuildConfig.X);
 
 		//initialize these with default values to be used in
 		if (landscape) {
@@ -1031,19 +1034,24 @@ public final class OpenGLVisualizerJni extends GLSurfaceView implements GLSurfac
 	@Override
 	public void processFrame(boolean playing, byte[] waveform) {
 		if (okToRender) {
-			//We use ignoreInput because taking 1024 samples, 60 times a seconds,
-			//is useless, as there are only 44100 or 48000 samples in one second
-			if (ignoreInput == 0 && !playing)
+			if (!playing)
 				Arrays.fill(waveform, (byte)0x80);
-			SimpleVisualizerJni.commonProcess(waveform, ignoreInput | DATA_FFT);
-			if (speed == 99)
-				ignoreInput = 0;
-			else
-				ignoreInput ^= IGNORE_INPUT;
+			SimpleVisualizerJni.commonProcess(waveform, DATA_FFT);
 			//requestRender();
 		}
 	}
-	
+
+	//Runs on a SECONDARY thread (B)
+	@Override
+	public void processFrame(boolean playing, float[] waveform) {
+		if (okToRender) {
+			if (!playing)
+				Arrays.fill(waveform, 0);
+			SimpleVisualizerJni.commonProcess(waveform, DATA_FFT | DATA_FFT_FLOAT_INPUT);
+			//requestRender();
+		}
+	}
+
 	//Runs on a SECONDARY thread (B)
 	@Override
 	public void release() {

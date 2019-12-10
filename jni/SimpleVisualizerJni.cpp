@@ -66,7 +66,8 @@ void JNICALL init(JNIEnv* env, jclass clazz, int32_t jbgColor) {
 	const uint32_t g = ((jbgColor >> 8) & 0xff) >> 2;
 	const uint32_t b = (jbgColor & 0xff) >> 3;
 	bgColor = (uint16_t)((r << 11) | (g << 5) | b);
-	commonUpdateMultiplier(env, clazz, 0, 0);
+	commonSetMultiplierHq(env, clazz, 0);
+	commonUpdateMultiplier(env, clazz, 0);
 }
 
 void JNICALL terminate(JNIEnv* env, jclass clazz) {
@@ -125,6 +126,8 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jwaveform, jobject su
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	uint8_t* fftI;
+	float* fftData;
+	const float* const logTable = _logTable;
 	if (!(opt & IGNORE_INPUT)) {
 		uint8_t* const waveform = (uint8_t*)env->GetPrimitiveArrayCritical(jwaveform, 0);
 		if (!waveform) {
@@ -134,13 +137,16 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jwaveform, jobject su
 		}
 
 		fftI = _fftI;
-		doFft(waveform, fftI, DATA_FFT);
+		fftData = _fftData;
+		doFft(waveform, fftI, opt);
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		fftI[1] = 0;
+		fftData[1] = 0;
 
 		env->ReleasePrimitiveArrayCritical(jwaveform, waveform, JNI_ABORT);
 	} else {
 		fftI = 0;
+		fftData = 0;
 	}
 
 	float* const fft = _fft;
@@ -152,15 +158,45 @@ void JNICALL process(JNIEnv* env, jclass clazz, jbyteArray jwaveform, jobject su
 		coefNew = 1.0f;
 	const float coefOld = 1.0f - coefNew;
 
+	#if FFT_SIZE_HQ == 2048
+	int32_t fi = 0;
+	#endif
 	float previous = 0;
 	for (int32_t i = 0; i < barBins; i++) {
 		float m;
 		if (fftI) {
-			//fftI[i] stores values from 0 to 255 (inclusive)
-			const int32_t re = (uint32_t)fftI[i << 1];
-			const int32_t im = (uint32_t)fftI[(i << 1) + 1];
-			const int32_t amplSq = (re * re) + (im * im);
-			m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+			if ((opt & (DATA_FFT_HQ | DATA_FFT_FLOAT_INPUT))) {
+				#if FFT_SIZE_HQ == 2048
+				const float re = fftData[fi << 1];
+				const float im = fftData[(fi << 1) + 1];
+				fi++;
+				float ampl = (re * re) + (im * im);
+				if (i >= (QUARTER_FFT_SIZE / 2)) {
+					const float re1 = fftData[fi << 1];
+					const float im1 = fftData[(fi << 1) + 1];
+					fi++;
+					const float re2 = fftData[fi << 1];
+					const float im2 = fftData[(fi << 1) + 1];
+					fi++;
+					const float ampl1 = (re1 * re1) + (im1 * im1);
+					const float ampl2 = (re2 * re2) + (im2 * im2);
+					if (ampl < ampl1) ampl = ampl1;
+					if (ampl < ampl2) ampl = ampl2;
+				}
+				#else
+				const float re = fftData[i << 1];
+				const float im = fftData[(i << 1) + 1];
+				float ampl = (re * re) + (im * im);
+				#endif
+				ampl = sqrtf(ampl) * (2.0f / FFT_SIZE_HQ);
+				m = ((ampl <= LOG_TABLE_MIN) ? 0.0f : multiplier[i] * (ampl >= LOG_TABLE_MAX ? logTable[LOG_TABLE_SIZE - 1] : logTable[(int32_t)((ampl - LOG_TABLE_MIN) * ((float)(LOG_TABLE_SIZE - 1) / (float)(LOG_TABLE_MAX - LOG_TABLE_MIN)))]));
+			} else {
+				//fftI[i] stores values from 0 to 255 (inclusive)
+				const int32_t re = (uint32_t)fftI[i << 1];
+				const int32_t im = (uint32_t)fftI[(i << 1) + 1];
+				const int32_t amplSq = (re * re) + (im * im);
+				m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+			}
 			previousM[i] = m;
 		} else {
 			m = previousM[i];
@@ -362,6 +398,8 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jwaveform, jobje
 	//index  0   1    2  3  4  5  ..... n-2        n-1
 	//       Rdc Rnyq R1 I1 R2 I2       R(n-1)/2  I(n-1)/2
 	uint8_t* fftI;
+	float* fftData;
+	const float* const logTable = _logTable;
 	if (!(opt & IGNORE_INPUT)) {
 		uint8_t* const waveform = (uint8_t*)env->GetPrimitiveArrayCritical(jwaveform, 0);
 		if (!waveform) {
@@ -371,25 +409,59 @@ void JNICALL processVoice(JNIEnv* env, jclass clazz, jbyteArray jwaveform, jobje
 		}
 
 		fftI = _fftI;
-		doFft(waveform, fftI, DATA_FFT);
+		fftData = _fftData;
+		doFft(waveform, fftI, opt);
 		//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 		fftI[1] = 0;
+		fftData[1] = 0;
 
 		env->ReleasePrimitiveArrayCritical(jwaveform, waveform, JNI_ABORT);
 	} else {
 		fftI = 0;
+		fftData = 0;
 	}
 
 	float previous = 0;
 	
+	#if FFT_SIZE_HQ == 2048
+	int32_t fi = 0;
+	#endif
 	for (int32_t i = 0; i < barBins; i++) {
 		//fftI[i] stores values from 0 to 255 (inclusive)
 		float m;
 		if (fftI) {
-			const int32_t re = (uint32_t)fftI[i << 1];
-			const int32_t im = (uint32_t)fftI[(i << 1) + 1];
-			const int32_t amplSq = (re * re) + (im * im);
-			m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+			if ((opt & (DATA_FFT_HQ | DATA_FFT_FLOAT_INPUT))) {
+				#if FFT_SIZE_HQ == 2048
+				const float re = fftData[fi << 1];
+				const float im = fftData[(fi << 1) + 1];
+				fi++;
+				float ampl = (re * re) + (im * im);
+				if (i >= (QUARTER_FFT_SIZE / 2)) {
+					const float re1 = fftData[fi << 1];
+					const float im1 = fftData[(fi << 1) + 1];
+					fi++;
+					const float re2 = fftData[fi << 1];
+					const float im2 = fftData[(fi << 1) + 1];
+					fi++;
+					const float ampl1 = (re1 * re1) + (im1 * im1);
+					const float ampl2 = (re2 * re2) + (im2 * im2);
+					if (ampl < ampl1) ampl = ampl1;
+					if (ampl < ampl2) ampl = ampl2;
+				}
+				#else
+				const float re = fftData[i << 1];
+				const float im = fftData[(i << 1) + 1];
+				float ampl = (re * re) + (im * im);
+				#endif
+				ampl = sqrtf(ampl) * (2.0f / FFT_SIZE_HQ);
+				m = ((ampl <= LOG_TABLE_MIN) ? 0.0f : multiplier[i] * (ampl >= LOG_TABLE_MAX ? logTable[LOG_TABLE_SIZE - 1] : logTable[(int32_t)((ampl - LOG_TABLE_MIN) * ((float)(LOG_TABLE_SIZE - 1) / (float)(LOG_TABLE_MAX - LOG_TABLE_MIN)))]));
+			} else {
+				//fftI[i] stores values from 0 to 255 (inclusive)
+				const int32_t re = (uint32_t)fftI[i << 1];
+				const int32_t im = (uint32_t)fftI[(i << 1) + 1];
+				const int32_t amplSq = (re * re) + (im * im);
+				m = ((amplSq < 8) ? 0.0f : (multiplier[i] * sqrtf((float)(amplSq))));
+			}
 			previousM[i] = m;
 		} else {
 			m = previousM[i];
@@ -474,6 +546,18 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	commonColorIndex = 0;
 	commonColorIndexApplied = 0;
 	commonCoefNew = 0.0f;
+	_rdft_ip[0] = 0;
+	memset(_fftData, 0, _fftDataFloatElements * sizeof(float));
+    rdft(CAPTURE_SIZE, 1, _fftData, _rdft_ip, _rdft_w);
+	float* const fftWindow = _fftWindow;
+	// Hamming window = (0.54 - (0.46 * cos(2.0 * 3.1415926535897932384626433832795 * (double)i / (double)(CAPTURE_SIZE - 1))))
+	// The additional 4.0 is to increase the amplitude a little, as the FFT used by the traditional
+	// algorithm outputs values greater than -128/127.
+	for (int32_t i = 0; i < CAPTURE_SIZE; i++)
+		fftWindow[i] = (float)(4.0 * (0.54 - (0.46 * cos(2.0 * 3.1415926535897932384626433832795 * (double)i / (double)(CAPTURE_SIZE - 1)))));
+	float* const logTable = _logTable;
+	for (int i = 0; i < LOG_TABLE_SIZE; i++)
+		logTable[i] = (float)log10((double)LOG_TABLE_MIN + ( ((double)i / (LOG_TABLE_SIZE - 1)) * (double)(LOG_TABLE_MAX - LOG_TABLE_MIN) ) );
 	rootMeanSquare = 0.0f;
 	vuMeter = 0.0f;
 	vuMeterUnfiltered = 0.f;
@@ -493,15 +577,21 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNINativeMethod methodTable[] = {
 		{"commonSetSpeed", "(I)V", (void*)commonSetSpeed},
 		{"commonSetColorIndex", "(I)V", (void*)commonSetColorIndex},
-		{"commonUpdateMultiplier", "(ZZ)V", (void*)commonUpdateMultiplier},
+		{"commonSetMultiplierHq", "(Z)V", (void*)commonSetMultiplierHq},
+		{"commonUpdateMultiplier", "(Z)V", (void*)commonUpdateMultiplier},
 		{"commonProcess", "([BI)I", (void*)commonProcess},
+		{"commonProcess", "([FI)I", (void*)commonProcess},
+		{"commonCastByteToFloat", "([B)[F", (void*)commonCastBuffer},
+		{"commonCastFloatToByte", "([F)[B", (void*)commonCastBuffer},
 
 		{"setLerp", "(Z)V", (void*)setLerp},
 		{"init", "(I)V", (void*)init},
 		{"terminate", "()V", (void*)terminate},
 		{"prepareSurface", "(Landroid/view/Surface;)I", (void*)prepareSurface},
 		{"process", "([BLandroid/view/Surface;I)V", (void*)process},
+		{"process", "([FLandroid/view/Surface;I)V", (void*)process},
 		{"processVoice", "([BLandroid/view/Surface;I)V", (void*)processVoice},
+		{"processVoice", "([FLandroid/view/Surface;I)V", (void*)processVoice},
 
 		{"glGetOESTexture", "()I", (void*)glGetOESTexture},
 		{"glOnSurfaceCreated", "(IIIIII)I", (void*)glOnSurfaceCreated},

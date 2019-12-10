@@ -74,6 +74,9 @@ public interface FPlay {
 	void visualizerSetColorIndex(int colorIndex);
 	void visualizerUpdateMultiplier(boolean isVoice, boolean hq);
 	int visualizerProcess(byte[] waveform, int opt);
+	int visualizerProcess(float[] waveform, int opt);
+	float[] visualizerCastByteToFloat(byte[] buffer);
+	byte[] visualizerCastFloatToByte(float[] buffer);
 
 	void previous();
 	void pause();

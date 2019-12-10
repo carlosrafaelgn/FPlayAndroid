@@ -349,7 +349,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"visualizerStart", "(II)I", (void*)visualizerStart},
 		{"visualizerStop", "()V", (void*)visualizerStop},
 		{"visualizerZeroOut", "()V", (void*)visualizerZeroOut},
-		{"visualizerGetWaveform", "([BI)V", (void*)visualizerGetWaveform}
+		{"visualizerGetWaveform", "([FI)V", (void*)visualizerGetWaveform}
 	};
 	JNIEnv* env;
 	if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK)

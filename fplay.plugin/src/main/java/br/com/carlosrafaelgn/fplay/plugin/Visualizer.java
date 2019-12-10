@@ -44,6 +44,8 @@ public interface Visualizer {
 	int DATA_FFT = 0x0100;
 	int DATA_VUMETER = 0x0200;
 	int IGNORE_INPUT = 0x0400;
+	int DATA_FFT_HQ = 0x0800;
+	int DATA_FFT_FLOAT_INPUT = 0x1000;
 
 	int BEAT_DETECTION_1 = 0x1000;
 	int BEAT_DETECTION_2 = 0x2000;
@@ -105,7 +107,10 @@ public interface Visualizer {
 	
 	//Runs on a SECONDARY thread
 	void processFrame(boolean playing, byte[] waveform);
-	
+
+	//Runs on a SECONDARY thread
+	void processFrame(boolean playing, float[] waveform);
+
 	//Runs on a SECONDARY thread
 	void release();
 

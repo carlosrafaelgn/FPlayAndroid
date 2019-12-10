@@ -89,7 +89,7 @@ void commonProcessNeon(int32_t deltaMillis, int32_t opt) {
 	const float *multiplier = _multiplier;
 	float *previousM = _previousM;
 	uint8_t *processedData = _processedData;
-	uint8_t *fftI = _fftI;
+	uint8_t *fftI = ((opt & (DATA_FFT_HQ | DATA_FFT_FLOAT_INPUT)) ? (uint8_t*)_fftData : _fftI);
 
 	float tmpCoefNew = commonCoefNew * (float)deltaMillis;
 	if (tmpCoefNew > 1.0f)
@@ -210,23 +210,41 @@ void commonProcessNeon(int32_t deltaMillis, int32_t opt) {
 		for (int32_t i = 0; i < QUARTER_FFT_SIZE; i += 8) {
 			//all this initial code is just to compute m
 
-			//fftI[i] stores values from 0 to 255 (inclusive)
-			//[0] = re re re re re re re re
-			//[1] = im im im im im im im im
-			const uint8x8x2_t re_im = vld2_u8(fftI);
-			fftI += 16;
+			float32x4_t amplSq0;
+            float32x4_t amplSq1;
+			if ((opt & (DATA_FFT_HQ | DATA_FFT_FLOAT_INPUT))) {
+				//in order to preserve registers, fftI stores fftData
+				//when the either DATA_FFT_HQ or DATA_FFT_FLOAT_INPUT options are set
+				//[0] = re re re re
+				//[1] = im im im im
+				const float32x4x2_t re_im0 = vld2q_f32((const float*)fftI);
+				fftI += 32;
+				//[0] = re re re re
+				//[1] = im im im im
+				const float32x4x2_t re_im1 = vld2q_f32((const float*)fftI);
+				fftI += 32;
+				//amplSq = (re * re) + (im * im)
+				amplSq0 = vmlaq_f32(vmulq_f32(re_im0.val[0], re_im0.val[0]), re_im0.val[1], re_im0.val[1]);
+				amplSq1 = vmlaq_f32(vmulq_f32(re_im1.val[0], re_im1.val[0]), re_im1.val[1], re_im1.val[1]);
+			} else {
+				//fftI[i] stores values from 0 to 255 (inclusive)
+				//[0] = re re re re re re re re
+				//[1] = im im im im im im im im
+				const uint8x8x2_t re_im = vld2_u8(fftI);
+				fftI += 16;
 
-			const uint16x8_t re16 = vmovl_u8(re_im.val[0]);
-			const uint16x8_t im16 = vmovl_u8(re_im.val[1]);
+				const uint16x8_t re16 = vmovl_u8(re_im.val[0]);
+				const uint16x8_t im16 = vmovl_u8(re_im.val[1]);
 
-			const int32x4_t re0 = vreinterpretq_s32_u32(vmovl_u16(vget_low_u16(re16)));
-			const int32x4_t re1 = vreinterpretq_s32_u32(vmovl_u16(vget_high_u16(re16)));
-			const int32x4_t im0 = vreinterpretq_s32_u32(vmovl_u16(vget_low_u16(im16)));
-			const int32x4_t im1 = vreinterpretq_s32_u32(vmovl_u16(vget_high_u16(im16)));
+				const int32x4_t re0 = vreinterpretq_s32_u32(vmovl_u16(vget_low_u16(re16)));
+				const int32x4_t re1 = vreinterpretq_s32_u32(vmovl_u16(vget_high_u16(re16)));
+				const int32x4_t im0 = vreinterpretq_s32_u32(vmovl_u16(vget_low_u16(im16)));
+				const int32x4_t im1 = vreinterpretq_s32_u32(vmovl_u16(vget_high_u16(im16)));
 
-			//amplSq = (re * re) + (im * im)
-			const float32x4_t amplSq0 = vcvtq_f32_s32(vmlaq_s32(vmulq_s32(re0, re0), im0, im0));
-			const float32x4_t amplSq1 = vcvtq_f32_s32(vmlaq_s32(vmulq_s32(re1, re1), im1, im1));
+				//amplSq = (re * re) + (im * im)
+				amplSq0 = vcvtq_f32_s32(vmlaq_s32(vmulq_s32(re0, re0), im0, im0));
+				amplSq1 = vcvtq_f32_s32(vmlaq_s32(vmulq_s32(re1, re1), im1, im1));
+			}
 
 			const uint32x4_t gt0 = vcgtq_f32(amplSq0, eight); //gt = (amplSq > 8)
 			const uint32x4_t gt1 = vcgtq_f32(amplSq1, eight);

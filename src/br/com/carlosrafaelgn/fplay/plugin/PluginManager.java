@@ -45,6 +45,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 
+import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
@@ -550,12 +551,28 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 
 	@Override
 	public void visualizerUpdateMultiplier(boolean isVoice, boolean hq) {
-		SimpleVisualizerJni.commonUpdateMultiplier(isVoice, hq);
+		SimpleVisualizerJni.commonSetMultiplierHq(hq || BuildConfig.X);
+		SimpleVisualizerJni.commonUpdateMultiplier(isVoice);
 	}
 
 	@Override
 	public int visualizerProcess(byte[] waveform, int opt) {
 		return SimpleVisualizerJni.commonProcess(waveform, opt);
+	}
+
+	@Override
+	public int visualizerProcess(float[] waveform, int opt) {
+		return SimpleVisualizerJni.commonProcess(waveform, opt | Visualizer.DATA_FFT_FLOAT_INPUT);
+	}
+
+	@Override
+	public float[] visualizerCastByteToFloat(byte[] buffer) {
+		return SimpleVisualizerJni.commonCastByteToFloat(buffer);
+	}
+
+	@Override
+	public byte[] visualizerCastFloatToByte(float[] buffer) {
+		return SimpleVisualizerJni.commonCastFloatToByte(buffer);
 	}
 
 	@Override

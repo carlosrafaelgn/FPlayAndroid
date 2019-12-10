@@ -216,7 +216,12 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 	@Override
 	public void processFrame(boolean playing, byte[] waveform) {
 	}
-	
+
+	//Runs on a SECONDARY thread
+	@Override
+	public void processFrame(boolean playing, float[] waveform) {
+	}
+
 	//Runs on a SECONDARY thread
 	@Override
 	public void release() {

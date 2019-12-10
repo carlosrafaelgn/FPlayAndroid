@@ -172,7 +172,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native int visualizerStart(int bufferSizeInFrames, int createIfNotCreated);
 	private static native void visualizerStop();
 	private static native void visualizerZeroOut();
-	private static native void visualizerGetWaveform(byte[] waveform, int headPositionInFrames);
+	private static native void visualizerGetWaveform(float[] waveform, int headPositionInFrames);
 
 	private static abstract class Engine {
 		@SuppressWarnings("deprecation")
@@ -215,7 +215,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		public abstract int getSingleBufferSizeInFrames();
 		public abstract int getHeadPositionInFrames();
 		public abstract int getFillThresholdInFrames();
-		public abstract void getVisualizerWaveform(byte[] waveform);
+		public abstract void getVisualizerWaveform(float[] waveform);
 		public abstract int commitFinalFrames(int emptyFrames);
 		public abstract int write(MediaCodecPlayer.OutputBuffer buffer, int emptyFrames);
 	}
@@ -431,9 +431,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public void getVisualizerWaveform(byte[] waveform) {
+		public void getVisualizerWaveform(float[] waveform) {
 			if (audioTrack == null)
-				Arrays.fill(waveform, (byte)0x80);
+				Arrays.fill(waveform, 0);
 			else
 				visualizerGetWaveform(waveform, audioTrack.getPlaybackHeadPosition());
 		}
@@ -676,7 +676,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 
 		@Override
-		public void getVisualizerWaveform(byte[] waveform) {
+		public void getVisualizerWaveform(float[] waveform) {
 			visualizerGetWaveform(waveform, openSLGetHeadPositionInFrames());
 		}
 
@@ -1765,12 +1765,12 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		}
 	}
 
-	static void getVisualizerWaveform(byte[] waveform) {
+	static void getVisualizerWaveform(float[] waveform) {
 		synchronized (engineSync) {
 			if (alive && engine != null)
 				engine.getVisualizerWaveform(waveform);
 			else
-				Arrays.fill(waveform, (byte)0x80);
+				Arrays.fill(waveform, 0);
 		}
 	}
 

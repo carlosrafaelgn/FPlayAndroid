@@ -70,6 +70,21 @@
 //2 * (QUARTER_FFT_SIZE 8-bit elements) = 2 * (QUARTER_FFT_SIZE / 4 float elements)
 #define _fftIFloatElements (2 * (QUARTER_FFT_SIZE / 4))
 #define _fftI ((uint8_t*)(floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements)))
+//2 + sqrt(FFT_SIZE_HQ / 2) int elements = 47,25 = 64
+#define _rdft_ipFloatElements 64
+#define _rdft_ip ((int32_t*)(floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements + _fftIFloatElements)))
+//FFT_SIZE_HQ / 2 float elements
+#define _rdft_wFloatElements (FFT_SIZE_HQ / 2)
+#define _rdft_w (floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements + _fftIFloatElements + _rdft_ipFloatElements))
+//CAPTURE_SIZE float elements
+#define _fftWindowFloatElements CAPTURE_SIZE
+#define _fftWindow (floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements + _fftIFloatElements + _rdft_ipFloatElements + _rdft_wFloatElements))
+//FFT_SIZE_HQ float elements
+#define _fftDataFloatElements FFT_SIZE_HQ
+#define _fftData (floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements + _fftIFloatElements + _rdft_ipFloatElements + _rdft_wFloatElements + _fftWindowFloatElements))
+//LOG_TABLE_COUNT float elements
+#define _logTableFloatElements LOG_TABLE_SIZE
+#define _logTable (floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements + _fftIFloatElements + _rdft_ipFloatElements + _rdft_wFloatElements + _fftWindowFloatElements + _fftDataFloatElements))
 
 extern float floatBuffer[] __attribute__((aligned(16)));
 extern float commonCoefNew;

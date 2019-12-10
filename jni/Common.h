@@ -36,6 +36,8 @@
 #ifdef FPLAY_ARM
 static uint32_t neonMode;
 #endif
+//#include "FixFFT.h"
+#include "fft4g.h"
 #include "FixedFFT.h"
 //#include "FFTNR.h"
 #include <time.h>
@@ -43,7 +45,7 @@ static uint32_t neonMode;
 //for the alignment:
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
 
-float floatBuffer[_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements + _fftIFloatElements] __attribute__((aligned(16)));
+float floatBuffer[_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements + _fftIFloatElements + _rdft_ipFloatElements + _rdft_wFloatElements + _rdft_wFloatElements + _fftWindowFloatElements + _fftDataFloatElements + _logTableFloatElements] __attribute__((aligned(16)));
 float commonCoefNew;
 
 //to make the math easier COLORS has 257 int's (from 0 to 256) for each different color
@@ -52,7 +54,7 @@ static const uint16_t COLORS[] __attribute__((aligned(16))) = { /*Blue */ 0x0000
 //vuMeter ranges from 0 to 1, and should be mapped to (-40dB to 6.5dB)
 //vuMeterUnfiltered ranges from 0 to over 1, and should be mapped to (-40dB to over 6.5dB)
 static float rootMeanSquare, vuMeter, vuMeterUnfiltered, vuMeterFilterState[4];
-static uint32_t commonColorIndex, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
+static uint32_t commonColorIndex, commonMultiplierHq, commonColorIndexApplied, commonTime, commonTimeLimit, commonLastTime;
 
 //Beat detection
 #define BEAT_STATE_VALLEY 0
@@ -117,7 +119,11 @@ void JNICALL commonSetColorIndex(JNIEnv* env, jclass clazz, int32_t jcolorIndex)
 	commonColorIndex = jcolorIndex;
 }
 
-void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice, jboolean hq) {
+void JNICALL commonSetMultiplierHq(JNIEnv* env, jclass clazz, jboolean hq) {
+	commonMultiplierHq = hq;
+}
+
+void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice) {
 	float* const fft = _fft;
 	float* const multiplier = _multiplier;
 	float* const previousM = _previousM;
@@ -142,33 +148,38 @@ void JNICALL commonUpdateMultiplier(JNIEnv* env, jclass clazz, jboolean isVoice,
 			fft[i] = 0;
 			processedData[i] = 0;
 			previousM[i] = 0;
-			//const double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
-			//multiplier[i] = ((d <= 1.5) ? 1.5f : (float)(d / 111.0));
-			const double d = 5.0 * (400.0 - exp(1.0 / (((double)i / 3700.0) + 0.165)));
-			multiplier[i] = ((d <= 256.0) ? 256.0f : (float)d) / (114.0f * 2.0f);
-			//multiplier[i] = 2.0f * expf((float)i / 128.0f);
+			if (commonMultiplierHq) {
+				// The additional 75 is used to increase the output value a little, because it will
+				// later be right-shifted by 7 (making the value compatible with the multiplier used
+				// by the traditional algorithm below)
+				multiplier[i] = (float)(75.0 * 145.0 * ( ((((double)QUARTER_FFT_SIZE / 256.0) * i) / (double)(QUARTER_FFT_SIZE - 1)) + 1.0 ))
+					/ (74.0f * 2.0f);
+			} else {
+				//const double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
+				//multiplier[i] = ((d <= 1.5) ? 1.5f : (float)(d / 111.0));
+				const double d = 5.0 * (400.0 - exp(1.0 / (((double)i / 3700.0) + 0.165)));
+				multiplier[i] = ((d <= 256.0) ? 256.0f : (float)d)
+					/ (114.0f * 2.0f);
+				//multiplier[i] = 2.0f * expf((float)i / 128.0f);
+			}
 		}
 	} else {
 		for (int32_t i = 0; i < QUARTER_FFT_SIZE; i++) {
 			fft[i] = 0;
 			processedData[i] = 0;
 			previousM[i] = 0;
-			//const double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
-			//multiplier[i] = ((d <= 1.5) ? 1.5f : (float)d);
-			const double d = 5.0 * (400.0 - exp(1.0 / (((double)i / 3700.0) + 0.165)));
-			multiplier[i] = ((d <= 256.0) ? 256.0f : (float)d) * 0.5f;
-			//multiplier[i] = 256.0f * expf((float)i / 128.0f);
-			
-			if (hq)
-				multiplier[i] *= (1.0f / (float)(FFT_SIZE / 2));
-		}
-		if (hq) {
-			multiplier[0] *= 0.5f;
-
-			//FFTNR::Initialize();
-			//Hamming window
-			//for (int32_t i = 0; i < FFT_SIZE; i++)
-			//	fftWindow[i] = (float)(0.54 - (0.46 * cos(2.0 * 3.1415926535897932384626433832795 * (double)i / (double)(FFT_SIZE - 1))));
+			if (commonMultiplierHq) {
+				// The additional 75 is used to increase the output value a little, because it will
+				// later be right-shifted by 7 (making the value compatible with the multiplier used
+				// by the traditional algorithm below)
+				multiplier[i] = (float)(75.0 * 145.0 * ( ((((double)QUARTER_FFT_SIZE / 256.0) * i) / (double)(QUARTER_FFT_SIZE - 1)) + 1.0 ));
+			} else {
+				//const double d = 180.0 - exp(1.0 / (((double)i / 10000.0) + 0.187));
+				//multiplier[i] = ((d <= 1.5) ? 1.5f : (float)d);
+				const double d = 5.0 * (400.0 - exp(1.0 / (((double)i / 3700.0) + 0.165)));
+				multiplier[i] = ((d <= 256.0) ? 256.0f : (float)d) * 0.5f;
+				//multiplier[i] = 256.0f * expf((float)i / 128.0f);
+			}
 		}
 	}
 }
@@ -189,6 +200,7 @@ int32_t JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, i
 	uint8_t* waveform;
 	if (!(opt & IGNORE_INPUT) || (opt & BLUETOOTH_PROCESSING)) {
 		uint8_t* const fftI = _fftI;
+		float* const fftData = _fftData;
 		waveform = (uint8_t*)env->GetPrimitiveArrayCritical(jwaveform, 0);
 		if (!waveform)
 			return 0;
@@ -198,6 +210,7 @@ int32_t JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, i
 				rootMeanSquare = sqrtf((float)doFft(waveform, fftI, opt) * (1.0f / (float)(CAPTURE_SIZE)));
 				//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 				fftI[1] = 0;
+				fftData[1] = 0;
 			} else if ((opt & DATA_FFT)) {
 				/*if ((opt & DATA_FFT_HQ)) {
 					for (int32_t i = 0; i < FFT_SIZE; i++)
@@ -206,9 +219,10 @@ int32_t JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, i
 					//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 					fftData[1] = 0.0f;
 				} else {*/
-					doFft(waveform, fftI, DATA_FFT);
+					doFft(waveform, fftI, opt & (DATA_FFT | DATA_FFT_HQ | DATA_FFT_FLOAT_INPUT));
 					//*** we are not drawing/analyzing the last bin (Nyquist) ;) ***
 					fftI[1] = 0;
+					fftData[1] = 0;
 				//}
 			}
 		}
@@ -244,8 +258,57 @@ int32_t JNICALL commonProcess(JNIEnv* env, jclass clazz, jbyteArray jwaveform, i
 
 	uint8_t* const processedData = _processedData;
 
+if ((opt & (DATA_FFT_HQ | DATA_FFT_FLOAT_INPUT))) {
+	float* const fft = _fft;
+	const float* const multiplier = _multiplier;
+	float* const previousM = _previousM;
+	const float* const fftData = _fftData;
+	const float* const logTable = _logTable;
+
+	float coefNew = commonCoefNew * (float)deltaMillis;
+	if (coefNew > 1.0f)
+		coefNew = 1.0f;
+	const float coefOld = 1.0f - coefNew;
+
+	#if FFT_SIZE_HQ == 2048
+	int32_t fi = 0;
+	#endif
+	for (i = 0; i < QUARTER_FFT_SIZE; i++) {
+		#if FFT_SIZE_HQ == 2048
+		const float re = fftData[fi << 1];
+		const float im = fftData[(fi << 1) + 1];
+		fi++;
+		float ampl = (re * re) + (im * im);
+		if (i >= (QUARTER_FFT_SIZE / 2)) {
+			const float re1 = fftData[fi << 1];
+			const float im1 = fftData[(fi << 1) + 1];
+			fi++;
+			const float re2 = fftData[fi << 1];
+			const float im2 = fftData[(fi << 1) + 1];
+			fi++;
+			const float ampl1 = (re1 * re1) + (im1 * im1);
+			const float ampl2 = (re2 * re2) + (im2 * im2);
+			if (ampl < ampl1) ampl = ampl1;
+			if (ampl < ampl2) ampl = ampl2;
+		}
+		#else
+		const float re = fftData[i << 1];
+		const float im = fftData[(i << 1) + 1];
+		float ampl = (re * re) + (im * im);
+		#endif
+		ampl = sqrtf(ampl) * (2.0f / FFT_SIZE_HQ);
+		float m = ((ampl <= LOG_TABLE_MIN) ? 0.0f : multiplier[i] * (ampl >= LOG_TABLE_MAX ? logTable[LOG_TABLE_SIZE - 1] : logTable[(int32_t)((ampl - LOG_TABLE_MIN) * ((float)(LOG_TABLE_SIZE - 1) / (float)(LOG_TABLE_MAX - LOG_TABLE_MIN)))]));
+		previousM[i] = m;
+		const float old = fft[i];
+		if (m < old)
+			m = (coefNew * m) + (coefOld * old);
+		fft[i] = m;
+		//m goes from 0 to 32768+ (inclusive)
+		const uint32_t v = ((uint32_t)m) >> 7;
+		processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
+	}
 #ifdef FPLAY_ARM
-if (!neonMode) {
+} else if (!neonMode) {
 	float* const fft = _fft;
 	const float* const multiplier = _multiplier;
 	float* const previousM = _previousM;
@@ -266,22 +329,6 @@ if (!neonMode) {
 			const uint32_t v = ((uint32_t)m) >> 7;
 			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
 		}
-	/*} else if ((opt & DATA_FFT_HQ)) {
-		for (i = 0; i < QUARTER_FFT_SIZE; i++) {
-			//fftData[i] stores values from 0 to -128/127 (inclusive)
-			const float re = fftData[i << 1];
-			const float im = fftData[(i << 1) + 1];
-			const float amplSq = (re * re) + (im * im);
-			float m = ((amplSq <= 8.0f) ? 0.0f : (multiplier[i] * sqrtf(amplSq)));
-			previousM[i] = m;
-			const float old = fft[i];
-			if (m < old)
-				m = (coefNew * m) + (coefOld * old);
-			fft[i] = m;
-			//m goes from 0 to 32768+ (inclusive)
-			const uint32_t v = ((uint32_t)m) >> 7;
-			processedData[i] = ((v >= 255) ? 255 : (uint8_t)v);
-		}*/
 	} else {
 		uint8_t* const fftI = _fftI;
 		for (i = 0; i < QUARTER_FFT_SIZE; i++) {
@@ -304,8 +351,10 @@ if (!neonMode) {
 	commonProcessNeon(deltaMillis, opt);
 }
 #else
+} else {
 	// x86 also uses this file
 	commonProcessNeon(deltaMillis, opt);
+}
 #endif
 
 	if ((opt & BEAT_DETECTION)) {
@@ -564,4 +613,8 @@ if (!neonMode) {
 	*packet = 4; //EOT - End of Transmission
 	env->ReleasePrimitiveArrayCritical(jwaveform, waveform, 0);
 	return len + 5;
+}
+
+void* JNICALL commonCastBuffer(JNIEnv* env, jclass clazz, void* buffer) {
+	return buffer;
 }
