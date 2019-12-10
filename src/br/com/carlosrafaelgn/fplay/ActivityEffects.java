@@ -875,7 +875,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	}
 
 	@Override
-	public void onPlayerAudioSinkChanged() {
+	public void onPlayerAudioSinkChanged(boolean firstNotification) {
 		audioSink = Player.localAudioSinkUsedInEffects;
 		storedAudioSink = audioSink;
 		updateEffects();

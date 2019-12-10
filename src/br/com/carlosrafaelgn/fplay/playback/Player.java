@@ -146,7 +146,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		void onPlayerMetadataChanged(Song currentSong);
 		void onPlayerControlModeChanged(boolean controlMode);
 		void onPlayerGlobalVolumeChanged(int volume);
-		void onPlayerAudioSinkChanged();
+		void onPlayerAudioSinkChanged(boolean firstNotification);
 		void onPlayerMediaButtonPrevious();
 		void onPlayerMediaButtonNext();
 	}
@@ -275,7 +275,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static int audioSink, audioSinkBeforeFocusLoss;
 	static int audioSinkUsedInEffects;
 	public static int localAudioSinkUsedInEffects;
-	private static boolean audioSinkMicrophoneCheckDone;
+	private static boolean audioSinkMicrophoneCheckDone, localAudioSinkFirstNotification;
 	private static Method audioSinkMicrophoneCheckMethod;
 
 	//These are only written/read from Core thread (except the volatile ones that are accessed from the main thread)
@@ -436,7 +436,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case MSG_AUDIO_SINK_CHANGED:
 				localAudioSinkUsedInEffects = audioSink;
 				if (observer != null)
-					observer.onPlayerAudioSinkChanged();
+					observer.onPlayerAudioSinkChanged(localAudioSinkFirstNotification);
+				localAudioSinkFirstNotification = false;
 				break;
 			case MSG_UPDATE_STATE:
 				updateState(msg.arg1, (Object[])msg.obj);
@@ -569,6 +570,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static void startService() {
 		if (state == STATE_NEW) {
 			MainHandler.initialize();
+			localAudioSinkFirstNotification = true;
 			positionToCenter = -1;
 			state = STATE_INITIALIZING;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)

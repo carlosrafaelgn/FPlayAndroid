@@ -55,11 +55,21 @@
 //for the alignment:
 //https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
 
+//QUARTER_FFT_SIZE float elements
+#define _fftFloatElements QUARTER_FFT_SIZE
 #define _fft floatBuffer
-#define _multiplier (floatBuffer + QUARTER_FFT_SIZE)
-#define _previousM (floatBuffer + (QUARTER_FFT_SIZE * 2))
-#define _processedData (uint8_t*)(floatBuffer + (QUARTER_FFT_SIZE * 3))
-#define _fftI (uint8_t*)(floatBuffer + (QUARTER_FFT_SIZE * 3) + (QUARTER_FFT_SIZE / 4))
+//QUARTER_FFT_SIZE float elements
+#define _multiplierFloatElements QUARTER_FFT_SIZE
+#define _multiplier (floatBuffer + _fftFloatElements)
+//QUARTER_FFT_SIZE float elements
+#define _previousMFloatElements QUARTER_FFT_SIZE
+#define _previousM (floatBuffer + (_fftFloatElements + _multiplierFloatElements))
+//QUARTER_FFT_SIZE 8-bit elements = QUARTER_FFT_SIZE / 4 float elements
+#define _processedDataFloatElements (QUARTER_FFT_SIZE / 4)
+#define _processedData ((uint8_t*)(floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements)))
+//2 * (QUARTER_FFT_SIZE 8-bit elements) = 2 * (QUARTER_FFT_SIZE / 4 float elements)
+#define _fftIFloatElements (2 * (QUARTER_FFT_SIZE / 4))
+#define _fftI ((uint8_t*)(floatBuffer + (_fftFloatElements + _multiplierFloatElements + _previousMFloatElements + _processedDataFloatElements)))
 
 extern float floatBuffer[] __attribute__((aligned(16)));
 extern float commonCoefNew;

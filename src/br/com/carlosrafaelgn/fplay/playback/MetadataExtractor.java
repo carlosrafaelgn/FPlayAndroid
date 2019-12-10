@@ -72,6 +72,45 @@ public final class MetadataExtractor {
 			tmpPtr[0] = tmp;
 		}
 		frameSize = f.read(tmp, 0, frameSize);
+		int offsetStart = 0, offsetEnd = frameSize - 1;
+		TrimStart:
+		while (frameSize > 0) {
+			switch (tmp[offsetStart]) {
+			case 0x00:
+			case 0x09:
+			case 0x0A:
+			case 0x0B:
+			case 0x0C:
+			case 0x0D:
+			case 0x20:
+			case (byte)0x85:
+			case (byte)0xA0:
+				frameSize--;
+				offsetStart++;
+				break;
+			default:
+				break TrimStart;
+			}
+		}
+		TrimEnd:
+		while (frameSize > 0) {
+			switch (tmp[offsetEnd]) {
+			case 0x00:
+			case 0x09:
+			case 0x0A:
+			case 0x0B:
+			case 0x0C:
+			case 0x0D:
+			case 0x20:
+			case (byte)0x85:
+			case (byte)0xA0:
+				frameSize--;
+				offsetEnd--;
+				break;
+			default:
+				break TrimEnd;
+			}
+		}
 		//according to http://developer.android.com/reference/java/nio/charset/Charset.html
 		//the following charsets are ALWAYS available:
 		//ISO-8859-1
@@ -83,17 +122,20 @@ public final class MetadataExtractor {
 		String ret = null;
 		switch (encoding) {
 		case 0: //ISO-8859-1
-			ret = new String(tmp, 0, frameSize, "ISO-8859-1");
+			ret = new String(tmp, offsetStart, frameSize, "ISO-8859-1");
 			break;
 		case 1: //UCS-2 (UTF-16 encoded Unicode with BOM), in ID3v2.2 and ID3v2.3
 		case 2: //UTF-16BE encoded Unicode without BOM, in ID3v2.4
-			ret = new String(tmp, 0, frameSize, "UTF-16");
+			//restore the extra 0 removed from the end
+			if ((frameSize & 1) != 0 && (offsetStart + frameSize) < tmp.length)
+				frameSize++;
+			ret = new String(tmp, offsetStart, frameSize, "UTF-16");
 			break;
 		case 3: //UTF-8 encoded Unicode, in ID3v2.4
 			//BOM
 			ret = ((tmp[0] == (byte)0xef && tmp[1] == (byte)0xbb && tmp[2] == (byte)0xbf) ?
-					new String(tmp, 3, frameSize - 3, "UTF-8") :
-					new String(tmp, 0, frameSize, "UTF-8"));
+					new String(tmp, offsetStart + 3, frameSize - 3, "UTF-8") :
+					new String(tmp, offsetStart, frameSize, "UTF-8"));
 			break;
 		}
 		return ((ret != null && ret.length() == 0) ? null : ret);
@@ -200,11 +242,11 @@ public final class MetadataExtractor {
 		//} tagV2Hdr;
 		
 		//readInt() reads a big-endian 32-bit integer
-		final int hdr = (f.read() << 16) | (f.read() << 8) | f.read();
+		int hdr = (f.read() << 16) | (f.read() << 8) | f.read();
 		if (hdr != 0x00494433) //ID3
 			return;
-		f.skip(1);
-		final int hdrRev = f.read();
+		final int hdrRevLo = f.read();
+		final int hdrRevHi = f.read();
 		final int flags = f.read();
 		final int sizeBytes0 = f.read();
 		final int sizeBytes1 = f.read();
@@ -217,7 +259,7 @@ public final class MetadataExtractor {
 			((sizeBytes1 & 0x7f) << 14) |
 			((sizeBytes0 & 0x7f) << 21)
 		);
-		if ((hdr & 0xff) > 2 || hdrRev != 0) { //only rev 3 or greater supported
+		if ((hdrRevLo & 0xff) > 2 || hdrRevHi != 0) { //only rev 3 or greater supported
 			//http://id3.org/id3v2.3.0
 			//http://id3.org/id3v2.4.0-structure
 			//http://id3.org/id3v2.4.0-frames

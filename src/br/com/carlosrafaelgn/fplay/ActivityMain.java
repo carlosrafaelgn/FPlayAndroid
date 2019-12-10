@@ -121,6 +121,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122,
 		MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124, MNU_VISUALIZER_LIQUID_POWER_SAVER = 125, MNU_HTTP_TRANSMITTER = 126, MNU_VISUALIZER_COLOR_WAVES = 127;
 	private static final int REQUEST_WRITE_SETTINGS = 123;
+	private static final int VOLUME_UPDATE_COUNT = 5;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbumStatic, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -129,8 +130,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume, btnSetRingtone, btnShare;
 	private BgListView list;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume, tmrMoreInfo;
-	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand, idForRingtoneContent;
-	private boolean skipToDestruction, forceFadeOut, isCreatingLayout;//, ignoreAnnouncement;
+	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand, idForRingtoneContent, volumeUpdateCount;
+	private boolean skipToDestruction, forceFadeOut, isCreatingLayout, volumeAlreadyUpdatedAfterSinkChange;//, ignoreAnnouncement;
 	private StringBuilder timeBuilder, volumeBuilder;
 	public static boolean localeHasBeenChanged;
 
@@ -689,6 +690,11 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		} else {
 			tmrSong.stop();
 		}
+		if (!volumeAlreadyUpdatedAfterSinkChange && Player.localPlaying) {
+			volumeAlreadyUpdatedAfterSinkChange = true;
+			volumeUpdateCount = 0;
+			tmrUpdateVolumeDisplay.start(500);
+		}
 		lastTime = -2;
 		handleTimer(tmrSong, null);
 	}
@@ -723,12 +729,14 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	}
 	
 	@Override
-	public void onPlayerAudioSinkChanged() {
+	public void onPlayerAudioSinkChanged(boolean firstNotification) {
 		//when changing the output, the global volume usually changes
 		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
 			updateVolumeDisplay(Integer.MIN_VALUE);
 			if (barVolume != null)
 				barVolume.setMax(Player.volumeStreamMax);
+			volumeAlreadyUpdatedAfterSinkChange = false;
+			volumeUpdateCount = (firstNotification ? VOLUME_UPDATE_COUNT - 1 : 0);
 			tmrUpdateVolumeDisplay.start(750);
 		}
 	}
@@ -1226,9 +1234,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		timeBuilder = new StringBuilder(16);
 		volumeBuilder = new StringBuilder(16);
 		tmrSong = new Timer(this, "Song Timer", false, true, true);
-		tmrUpdateVolumeDisplay = new Timer(this, "Update Volume Display Timer", true, true, false);
+		tmrUpdateVolumeDisplay = new Timer(this, "Update Volume Display Timer", false, true, false);
 		tmrVolume = new Timer(this, "Volume Timer", false, true, true);
 		pendingListCommand = 0;
+		volumeAlreadyUpdatedAfterSinkChange = true;
 	}
 
 	@SuppressWarnings("deprecation")
@@ -1835,6 +1844,8 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			return;
 		} else if (timer == tmrUpdateVolumeDisplay) {
 			updateVolumeDisplay(Integer.MIN_VALUE);
+			if (++volumeUpdateCount >= VOLUME_UPDATE_COUNT)
+				tmrUpdateVolumeDisplay.stop();
 			return;
 		} else if (timer == tmrMoreInfo) {
 			final Object[] params;

@@ -660,7 +660,7 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 	}
 	
 	@Override
-	public void onPlayerAudioSinkChanged() {
+	public void onPlayerAudioSinkChanged(boolean firstNotification) {
 		if (visualizerService != null)
 			visualizerService.resetAndResume();
 	}

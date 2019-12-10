@@ -38,8 +38,7 @@
 #include <byteswap.h>
 #include <time.h>
 
-#define FFT_SIZE 1024 //FFT_SIZE must be a power of 2 <= 65536
-#define QUARTER_FFT_SIZE (FFT_SIZE / 4)
+#include "../Constants.h"
 
 #define FEATURE_PROCESSOR_ARM 0x0001
 #define FEATURE_PROCESSOR_NEON 0x0002
