@@ -46,6 +46,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -216,7 +217,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		//we cannot consume the touch event if the view is a ScrollView,
 		//otherwise the user will not be able to scroll the view...
 		if (v == contentView)
-			return !(v instanceof ScrollView);
+			return !(v instanceof ScrollView) && !(v instanceof ListView);
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN:
 			dismiss(); //dismiss the dialog if the user touches the shadow

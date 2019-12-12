@@ -465,6 +465,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			final File[] fs = Player.theApplication.getExternalFilesDirs(null);
 			if (fs != null) {
 				for (File f : fs) {
+					if (f == null)
+						continue;
 					final String p = f.getAbsolutePath();
 					final int a = p.indexOf("Android");
 					if (a <= 0)
