@@ -3743,9 +3743,16 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//stickyBroadcast.putExtra("position", (long)0);
 			stickyBroadcast.putExtra("playing", localPlaying);
 		}
-		//thePlayer.sendBroadcast(stickyBroadcast);
-		//maybe check if api >= 23, and if so, use sendBroadcast instead.....???
-		thePlayer.sendStickyBroadcast(stickyBroadcast);
+		// maybe check if api >= 21, and if so, use sendBroadcast instead.....???
+		// https://developer.android.com/reference/android/content/Context#sendStickyBroadcast(android.content.Intent)
+		try {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+				thePlayer.sendBroadcast(stickyBroadcast);
+			else
+				thePlayer.sendStickyBroadcast(stickyBroadcast);
+		} catch (RuntimeException ex) {
+			//just ignore because most apps actually use RemoteControlClient on newer Androids
+		}
 		if (remoteControlClient != null)
 			broadcastStateChangeToRemoteControl(title, preparing, titleOrSongHaveChanged);
 		if (mediaSession != null)
