@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.playback;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -203,6 +204,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int MSG_RESUME = 0x0120;
 	private static final int MSG_AUDIO_SINK_DOUBLE_CHECK_BT = 0x0121;
 	private static final int MSG_AUDIO_SINK_DOUBLE_CHECK_BT_2 = 0x0122;
+	private static final int MSG_BROADCAST_STATE_CHANGE = 0x0123;
 
 	public static final int STATE_NEW = 0;
 	public static final int STATE_INITIALIZING = 1;
@@ -477,6 +479,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				if (msg.obj != null)
 					thePlayer.onInfo(localPlayer, MediaPlayerBase.INFO_METADATA_UPDATE, 0, msg.obj);
 				break;
+			case MSG_BROADCAST_STATE_CHANGE:
+				broadcastStateChange(msg.obj == null ? null : msg.obj.toString(), (msg.arg1 & 0x01) != 0, (msg.arg1 & 0x02) != 0);
+				break;
 			}
 		}
 	}
@@ -486,6 +491,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		thePlayer = this;
 		theApplication = getApplicationContext();
 		startService();
+		notificationLastUpdateTime = 0;
+		notificationBroadcastPending = false;
 		startForeground(1, getNotification());
 		super.onCreate();
 	}
@@ -573,10 +580,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			localAudioSinkFirstNotification = true;
 			positionToCenter = -1;
 			state = STATE_INITIALIZING;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				theApplication.startForegroundService(new Intent(theApplication, Player.class));
-			else
-				theApplication.startService(new Intent(theApplication, Player.class));
+			if (thePlayer == null) {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+					theApplication.startForegroundService(new Intent(theApplication, Player.class));
+				else
+					theApplication.startService(new Intent(theApplication, Player.class));
+			}
 			theMainHandler = MainHandler.initialize();
 			localHandler = new CoreLocalHandler();
 			notificationManager = (NotificationManager)theApplication.getSystemService(NOTIFICATION_SERVICE);
@@ -716,6 +725,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			saveConfig(true);
 		}
 
+		notificationLastUpdateTime = 1;
+		notificationBroadcastPending = true;
 		updateState(~0xA7, new Object[] { null, null, null });
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null)
@@ -734,7 +745,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		handler = null;
 		localHandler = null;
 		notification = null;
-		notificationRemoteViews = null;
 		notificationManager = null;
 		audioManager = null;
 		telephonyManager = null;
@@ -2330,9 +2340,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
 	private static Notification notification;
-	private static RemoteViews notificationRemoteViews;
-	private static boolean appNotInForeground, idleTurnOffTimerSent;
-	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin;
+	private static boolean appNotInForeground, idleTurnOffTimerSent, notificationBroadcastPending;
+	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, notificationLastUpdateTime;
 	private static HashSet<String> favoriteFolders;
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	private static int headsetHookActions, headsetHookPressCount, telephonyFeatureState;
@@ -2466,7 +2475,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
 		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED));
 		previousResetsAfterTheBeginning = opts.getBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING);
-		UI.largeTextIs22sp = opts.getBit(OPTBIT_LARGE_TEXT_IS_22SP, UI.isLargeScreen && (UI.scaledDensity > UI.density));
+		UI.largeTextIs22sp = opts.getBit(OPTBIT_LARGE_TEXT_IS_22SP, false); //UI.isLargeScreen && (UI.scaledDensity > UI.density));
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.lastVersionCode < 92);
 		UI.allowPlayerAboveLockScreen = opts.getBit(OPTBIT_ALLOW_LOCK_SCREEN, true);
@@ -2613,16 +2622,28 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			intentActivityHost = PendingIntent.getActivity(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_PREVIOUS);
-			intentPrevious = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				intentPrevious = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			else
+				intentPrevious = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_PLAY_PAUSE);
-			intentPlayPause = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				intentPlayPause = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			else
+				intentPlayPause = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_NEXT);
-			intentNext = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				intentNext = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			else
+				intentNext = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_EXIT);
-			intentExit = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				intentExit = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			else
+				intentExit = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		}
 	}
 
@@ -2688,8 +2709,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			notification.when = 0;
 			notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
 			notification.contentIntent = intentActivityHost;
-			notificationRemoteViews = new RemoteViews(theApplication.getPackageName(), (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? R.layout.notification : R.layout.notification_simple);
-			notification.contentView = notificationRemoteViews;
+			notification.contentView = new RemoteViews(theApplication.getPackageName(), (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? R.layout.notification : R.layout.notification_simple);
 		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			//any need for this technique???
@@ -2702,7 +2722,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
 			}
 		}
-		prepareRemoteViews(notificationRemoteViews, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
+		prepareRemoteViews(notification.contentView, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
 		return notification;
 	}
 
@@ -2830,6 +2850,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (thePlayer != null) {
 			try {
 				final ConnectivityManager mngr = (ConnectivityManager)theApplication.getSystemService(Context.CONNECTIVITY_SERVICE);
+				if (mngr == null)
+					return false;
 				final NetworkInfo info = mngr.getActiveNetworkInfo();
 				return (info != null && info.isConnected());
 			} catch (Throwable ex) {
@@ -2844,6 +2866,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (thePlayer != null) {
 			try {
 				final ConnectivityManager mngr = (ConnectivityManager)thePlayer.getSystemService(Context.CONNECTIVITY_SERVICE);
+				if (mngr == null)
+					return false;
 				//final NetworkInfo infoMob = mngr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
 				//final NetworkInfo info = mngr.getActiveNetworkInfo();
 				//return (infoMob != null && info != null && !infoMob.isConnected() && info.isConnected());
@@ -2871,8 +2895,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static int getWiFiIpAddress() {
 		try {
-			WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
-			return wm.getConnectionInfo().getIpAddress();
+			final WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
+			return ((wm == null) ? 0 : wm.getConnectionInfo().getIpAddress());
 		} catch (Throwable ex) {
 			return 0;
 		}
@@ -2881,8 +2905,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	@SuppressWarnings("deprecation")
 	public static String getWiFiIpAddressStr() {
 		try {
-			WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
-			return Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+			final WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
+			return ((wm == null) ? null : Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress()));
 		} catch (Throwable ex) {
 			return null;
 		}
@@ -3418,6 +3442,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			destroyedObservers.remove(observer);
 	}
 
+	@SuppressLint("PrivateApi")
 	private static boolean _checkAudioSinkMicrophone() {
 		//AudioSystem.getDeviceConnectionState(DEVICE_OUT_WIRED_HEADSET,"") != AudioSystem.DEVICE_STATE_UNAVAILABLE
 		//DEVICE_OUT_WIRED_HEADSET = 0x4
@@ -3448,10 +3473,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return false;
 	}
 
+	@SuppressLint("PrivateApi")
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private static int _checkAudioSinkViaRoute() {
 		try {
 			final MediaRouter router = (MediaRouter)theApplication.getSystemService(Context.MEDIA_ROUTER_SERVICE);
+			if (router == null)
+				return 0;
 			final MediaRouter.RouteInfo info = router.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
 			final String name = info.getName(theApplication).toString();
 
@@ -3536,7 +3564,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 							audioSink = AUDIO_SINK_BT;
 							break;
 						case MediaRouter.RouteInfo.DEVICE_TYPE_SPEAKER:
+						case MediaRouter.RouteInfo.DEVICE_TYPE_TV:
 							audioSink = AUDIO_SINK_DEVICE;
+							break;
+						case MediaRouter.RouteInfo.DEVICE_TYPE_UNKNOWN:
+							//try to figure out the audio sink in another way
 							break;
 						}
 					}
@@ -3702,6 +3734,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@SuppressWarnings("deprecation")
 	private static void broadcastStateChange(String title, boolean preparing, boolean titleOrSongHaveChanged) {
+		if (notificationBroadcastPending) {
+			localHandler.removeMessages(MSG_BROADCAST_STATE_CHANGE);
+			notificationBroadcastPending = false;
+		}
+		final long now = SystemClock.uptimeMillis();
+		final long delta = now - notificationLastUpdateTime;
+		if (delta < 100 || notificationLastUpdateTime == 0) {
+			notificationBroadcastPending = true;
+			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE, (preparing ? 0x01 : 0) | (titleOrSongHaveChanged ? 0x02 : 0), 0, title), (notificationLastUpdateTime == 0 ? ((notificationLastUpdateTime = now) + 2000) : (notificationLastUpdateTime + 110 - delta)));
+			return;
+		}
+		notificationLastUpdateTime = now;
 		try {
 			notificationManager.notify(1, getNotification());
 		} catch (Throwable ex) {

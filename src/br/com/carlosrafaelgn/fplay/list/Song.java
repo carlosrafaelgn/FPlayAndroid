@@ -62,7 +62,7 @@ public final class Song extends BaseItem {
 	public String title, artist, album, extraInfo, albumArtUri;
 	public int track, lengthMS, year;
 	public String length;
-	public boolean alreadyPlayed, selected;
+	public boolean alreadyPlayed, selected, validAlbumArt;
 	public Long albumId;
 
 	public static boolean isPathHttp(String path) {
@@ -257,11 +257,16 @@ public final class Song extends BaseItem {
 		}
 		if (album == null) {
 			album = "-";
+			validAlbumArt = false;
 		} else {
 			if (fileName != null)
 				album = album.trim();
-			if (album.length() == 0)
+			if (album.length() == 0) {
 				album = "-";
+				validAlbumArt = false;
+			} else {
+				validAlbumArt = (!isHttp && (album.length() > 1 || album.charAt(0) != '-'));
+			}
 		}
 		updateExtraInfo();
 		if (track <= 0)

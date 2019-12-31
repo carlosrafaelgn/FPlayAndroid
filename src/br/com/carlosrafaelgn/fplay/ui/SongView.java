@@ -52,6 +52,7 @@ import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
+import br.com.carlosrafaelgn.fplay.ui.drawable.CoverDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
@@ -66,7 +67,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private boolean pendingAlbumArtRequest;
 
 	private static int albumArtHeight, height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin,
-		rightMargin, rightMarginForDrawing, numberAndCountColor, numberAndCountColorSelected, numberAndCountColorFocused, iconLeftPadding,
+		rightMargin, rightMarginForDrawing, numberAndCountColor, numberAndCountColorSelected, numberAndCountColorFocused,// iconLeftPadding,
 		titlesp;
 
 	public static int getViewHeight() {
@@ -113,7 +114,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		titleY = UI.verticalMargin + titlespYinBox + topMargin;
 		extraY = UI.verticalMargin + UI._1dp + titlespBox + UI._14spYinBox + topMargin;
 		currentY = height - UI.defaultControlContentsSize - UI.controlXtraSmallMargin - bottomMargin;
-		iconLeftPadding = leftMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1);
+		//iconLeftPadding = leftMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1);
 		return height;
 	}
 
@@ -186,7 +187,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 					albumArt.release();
 					albumArt = null;
 				}
-				if (!song.isHttp && (song.albumId == null || song.albumId != 0L)) {
+				if (song.validAlbumArt && (song.albumId == null || song.albumId != 0L)) {
 					requestId = albumArtFetcher.getNextRequestId();
 					albumArt = albumArtFetcher.getAlbumArt(song.albumId, albumArtHeight, requestId, this);
 					if (!(pendingAlbumArtRequest = (albumArt == null)))
@@ -306,10 +307,10 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (UI.albumArtSongList) {
 			if (albumArt != null && albumArt.bitmap != null)
 				canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((albumArtHeight - albumArt.height) >> 1), null);
-			else if (song.isHttp)
-				TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, iconLeftPadding, topMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1), UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary);
+			//else if (song.isHttp)
+			//	TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, iconLeftPadding, topMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1), UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary);
 			else if (!pendingAlbumArtRequest)
-				TextIconDrawable.drawIcon(canvas, UI.ICON_ALBUMART, iconLeftPadding, topMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1), UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary);
+				CoverDrawable.drawCover(canvas, song.album == null || song.album.length() <= 1 ? song.title : song.album, leftMargin, topMargin, albumArtHeight);
 		}
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);

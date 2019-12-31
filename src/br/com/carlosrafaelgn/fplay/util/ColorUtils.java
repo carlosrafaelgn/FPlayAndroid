@@ -224,4 +224,36 @@ public final class ColorUtils {
 		final String s = "00000" + Integer.toHexString(rgb);
 		return "#" + s.substring(s.length() - 6);
 	}
+
+	public static int[] generateWebPalette31() {
+		final ColorUtils.HSV hsv = new ColorUtils.HSV();
+		final int[] colors = new int[31 * 5];
+		hsv.h = 0.0;
+		hsv.s = 0.0;
+		hsv.v = 4.0 / 4.0;
+		colors[0] = hsv.toRGBWeb(false);
+		hsv.v = 3.0 / 4.0;
+		colors[1] = hsv.toRGBWeb(false);
+		hsv.v = 2.0 / 4.0;
+		colors[2] = hsv.toRGBWeb(false);
+		hsv.v = 1.0 / 4.0;
+		colors[3] = hsv.toRGBWeb(false);
+		hsv.v = 0.0 / 4.0;
+		colors[4] = hsv.toRGBWeb(false);
+		for (int i = 0; i < (30 * 5); i += 5) {
+			hsv.h = (double)(i * 12) / (5.0 * 360.0);
+			hsv.v = 1.0;
+			hsv.s = 1.0 / 3.0;
+			colors[i + 5] = hsv.toRGBWeb(false);
+			hsv.s = 2.0 / 3.0;
+			colors[i + 6] = hsv.toRGBWeb(false);
+			hsv.s = 1.0;
+			colors[i + 7] = hsv.toRGBWeb(false);
+			hsv.v = 2.0 / 3.0;
+			colors[i + 8] = hsv.toRGBWeb(false);
+			hsv.v = 1.0 / 3.0;
+			colors[i + 9] = hsv.toRGBWeb(false);
+		}
+		return colors;
+	}
 }
