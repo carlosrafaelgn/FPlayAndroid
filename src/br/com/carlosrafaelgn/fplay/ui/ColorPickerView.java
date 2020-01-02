@@ -54,7 +54,7 @@ import android.widget.RelativeLayout;
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
-public final class ColorPickerView extends RelativeLayout implements DialogInterface.OnClickListener, TextWatcher {
+public final class ColorPickerView extends LinearLayout implements DialogInterface.OnClickListener, TextWatcher {
 	public interface OnColorPickerViewListener {
 		void onColorPicked(ColorPickerView picker, View parentView, int color);
 	}
@@ -236,8 +236,9 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		private final ColorUtils.HSV hsv;
 		private int saturation, saturationPosition, value, valuePosition, viewWidth, viewHeight, backgroundColor;
 		private boolean tracking;
+		private final boolean limitHeight;
 
-		public ColorView(Context context) {
+		public ColorView(Context context, boolean limitHeight) {
 			super(context);
 
 			super.setBackgroundResource(0);
@@ -245,6 +246,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 
 			hsv = new ColorUtils.HSV(0.0, 1.0, 1.0);
 			backgroundColor = 0xffff0000;
+			this.limitHeight = limitHeight;
 			final int _100dp = UI.dpToPxI(100.0f);
 			setMinimumWidth(_100dp);
 			setMinimumHeight(_100dp);
@@ -285,6 +287,13 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		@Override
 		public boolean hasOverlappingRendering() {
 			return true;
+		}
+
+		@Override
+		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+			final int requestedWidth = MeasureSpec.getSize(widthMeasureSpec);
+			final int requestedHeight = MeasureSpec.getSize(heightMeasureSpec);
+			super.onMeasure(MeasureSpec.makeMeasureSpec(requestedWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec((limitHeight && requestedWidth <= requestedHeight) ? requestedWidth : requestedHeight, MeasureSpec.EXACTLY));
 		}
 
 		@Override
@@ -448,9 +457,10 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		@Override
 		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 			if (vertical)
-				setMeasuredDimension((UI.defaultControlSize * 3) >> 2, getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
+				widthMeasureSpec = MeasureSpec.makeMeasureSpec((UI.defaultControlSize * 3) >> 2, MeasureSpec.EXACTLY);
 			else
-				setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec), (UI.defaultControlSize * 3) >> 2);
+				heightMeasureSpec = MeasureSpec.makeMeasureSpec((UI.defaultControlSize * 3) >> 2, MeasureSpec.EXACTLY);
+			super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 		}
 
 		private int[] computeColors(int size) {
@@ -569,6 +579,7 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 	}
 
 	private ObservableScrollView scrollView;
+	private RelativeLayout landscapeContainer;
 	private ColorSwatchView colorSwatchView;
 	private ColorView colorView;
 	private HueView hueView;
@@ -602,6 +613,8 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 	public ColorPickerView(Context context, View parentView, boolean oneShot) {
 		super(context);
 
+		setOrientation(VERTICAL);
+
 		RelativeLayout.LayoutParams rp;
 		LinearLayout.LayoutParams lp;
 
@@ -627,6 +640,10 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 		final int id = 0;
 
 		if (UI.isLandscape || UI.isLargeScreen) {
+			landscapeContainer = new RelativeLayout(context);
+			landscapeContainer.setVisibility(GONE);
+			addView(landscapeContainer, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+
 			controlPanel = new LinearLayout(context);
 			controlPanel.setOrientation(LinearLayout.VERTICAL);
 			controlPanel.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
@@ -667,30 +684,30 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			lp.topMargin = margin;
 			controlPanel.addView(txtHTML, lp);
 
-			rp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
-			rp.addRule(ALIGN_PARENT_RIGHT);
-			controlPanel.setVisibility(GONE);
-			addView(controlPanel, rp);
+			rp = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			rp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+			landscapeContainer.addView(controlPanel, rp);
 
 			hueView = new HueView(context, true);
 			hueView.setId(id + 2);
-			rp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+			rp = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 			rp.rightMargin = internalMargin;
-			rp.addRule(LEFT_OF, 1);
-			hueView.setVisibility(GONE);
-			addView(hueView, rp);
+			rp.addRule(RelativeLayout.LEFT_OF, 1);
+			rp.addRule(RelativeLayout.ALIGN_TOP, 1);
+			rp.addRule(RelativeLayout.ALIGN_BOTTOM, 1);
+			landscapeContainer.addView(hueView, rp);
 
-			colorView = new ColorView(context);
+			colorView = new ColorView(context, false);
 			colorView.setId(id + 3);
-			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+			rp = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 			rp.rightMargin = internalMargin;
-			rp.addRule(ALIGN_PARENT_LEFT);
-			rp.addRule(ALIGN_PARENT_TOP);
-			rp.addRule(ALIGN_PARENT_BOTTOM);
-			rp.addRule(LEFT_OF, 2);
-			colorView.setVisibility(GONE);
-			addView(colorView, rp);
+			rp.addRule(RelativeLayout.LEFT_OF, 2);
+			rp.addRule(RelativeLayout.ALIGN_TOP, 1);
+			rp.addRule(RelativeLayout.ALIGN_BOTTOM, 1);
+			landscapeContainer.addView(colorView, rp);
 		} else {
+			landscapeContainer = null;
+
 			controlPanel = new LinearLayout(context);
 			controlPanel.setOrientation(LinearLayout.HORIZONTAL);
 			controlPanel.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -731,29 +748,25 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			lp.leftMargin = margin;
 			controlPanel.addView(txtHTML, lp);
 
-			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-			rp.topMargin = internalMargin;
-			rp.addRule(ALIGN_PARENT_BOTTOM);
-			controlPanel.setVisibility(GONE);
-			addView(controlPanel, rp);
+			setWeightSum(1.0f);
+
+			colorView = new ColorView(context, true);
+			colorView.setId(id + 3);
+			lp = new LayoutParams(LayoutParams.MATCH_PARENT, 0);
+			lp.weight = 1.0f;
+			lp.bottomMargin = internalMargin;
+			colorView.setVisibility(GONE);
+			addView(colorView, lp);
 
 			hueView = new HueView(context, false);
 			hueView.setId(id + 2);
-			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-			rp.topMargin = internalMargin;
-			rp.addRule(ABOVE, 1);
+			lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+			lp.bottomMargin = internalMargin;
 			hueView.setVisibility(GONE);
-			addView(hueView, rp);
+			addView(hueView, lp);
 
-			colorView = new ColorView(context);
-			colorView.setId(id + 3);
-			rp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-			rp.addRule(ALIGN_PARENT_TOP);
-			rp.addRule(ALIGN_PARENT_LEFT);
-			rp.addRule(ALIGN_PARENT_RIGHT);
-			rp.addRule(ABOVE, 2);
-			colorView.setVisibility(GONE);
-			addView(colorView, rp);
+			controlPanel.setVisibility(GONE);
+			addView(controlPanel, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		}
 	}
 
@@ -763,9 +776,13 @@ public final class ColorPickerView extends RelativeLayout implements DialogInter
 			scrollView.setVisibility(colorSwatchMode ? VISIBLE : GONE);
 			if (colorSwatchMode)
 				colorSwatchView.bringCurrentIntoView();
-			colorView.setVisibility(colorSwatchMode ? GONE : VISIBLE);
-			hueView.setVisibility(colorSwatchMode ? GONE : VISIBLE);
-			controlPanel.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+			if (landscapeContainer == null) {
+				colorView.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+				hueView.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+				controlPanel.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+			} else {
+				landscapeContainer.setVisibility(colorSwatchMode ? GONE : VISIBLE);
+			}
 		}
 	}
 
