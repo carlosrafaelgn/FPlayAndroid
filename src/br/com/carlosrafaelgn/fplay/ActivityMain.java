@@ -400,9 +400,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			if (song == null)
 				return;
 			if (song.isHttp)
-				UI.shareText(song.getHumanReadablePath());
+				UI.shareText(getHostActivity(), song.getHumanReadablePath());
 			else
-				UI.shareFile(song.path);
+				UI.shareFile(getHostActivity(), song.path);
 		} catch (Throwable ex) {
 			UI.toast(R.string.error_gen);
 		}

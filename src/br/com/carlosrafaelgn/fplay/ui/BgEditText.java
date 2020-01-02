@@ -103,8 +103,22 @@ public final class BgEditText extends EditText {
 		}
 	}
 
+	@SuppressWarnings({"deprecation", "JavaReflectionMemberAccess"})
 	private void setHandleColor(int color) {
 		try {
+			//https://developer.android.com/about/versions/10/non-sdk-q
+			if (Build.VERSION.SDK_INT >= 29) {
+				Drawable drawable = getTextSelectHandleLeft();
+				if (drawable != null)
+					drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+				drawable = getTextSelectHandle();
+				if (drawable != null)
+					drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+				drawable = getTextSelectHandleRight();
+				if (drawable != null)
+					drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+				return;
+			}
 			final Object editor;
 			final Class<?> clazz;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -150,9 +164,16 @@ public final class BgEditText extends EditText {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "JavaReflectionMemberAccess"})
 	private void setCursorColor(int color) {
 		try {
+			//https://developer.android.com/about/versions/10/non-sdk-q
+			if (Build.VERSION.SDK_INT >= 29) {
+				final Drawable drawable = getTextCursorDrawable();
+				if (drawable != null)
+					drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+				return;
+			}
 			//http://stackoverflow.com/a/26543290/3569421
 			final Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
 			fCursorDrawableRes.setAccessible(true);

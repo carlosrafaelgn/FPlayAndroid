@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
@@ -78,6 +79,7 @@ import android.view.animation.Animation;
 import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.BgEdgeEffect;
+import android.widget.EdgeEffect;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -108,9 +110,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
-	public static final int VERSION_CODE = 123;
+	public static final int VERSION_CODE = 124;
 	//VERSION_NAME must be kept in sync with build.gradle
-	public static final String VERSION_NAME = "v1.89";
+	public static final String VERSION_NAME = "v1.90";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -2009,16 +2011,18 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		view.setPadding(p, topPadding, p, bottomPadding);
 	}
 
-	public static void shareText(String text) {
+	public static void shareText(Activity activity, String text) {
 		Intent sharingIntent = new Intent(Intent.ACTION_SEND);
 		sharingIntent.setType("text/plain");
 		sharingIntent.putExtra(Intent.EXTRA_TEXT, text);
 		sharingIntent = Intent.createChooser(sharingIntent, Player.theApplication.getText(R.string.share));
-		if (sharingIntent != null)
-			Player.theApplication.startActivity(sharingIntent);
+		if (sharingIntent != null) {
+			//API 29+ (28+?) requires an activity to be started from another activity!!!
+			activity.startActivity(sharingIntent);
+		}
 	}
 
-	public static void shareFile(String path) {
+	public static void shareFile(Activity activity, String path) {
 		Intent sharingIntent = new Intent(Intent.ACTION_SEND);
 		sharingIntent.setType(FileFetcher.mimeType(path));
 		sharingIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(path)));
@@ -2037,7 +2041,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					// Just ignore...
 				}
 			}
-			Player.theApplication.startActivity(sharingIntent);
+			//API 29+ (28+?) requires an activity to be started from another activity!!!
+			activity.startActivity(sharingIntent);
 		}
 	}
 
@@ -2248,6 +2253,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
+	@SuppressWarnings("JavaReflectionMemberAccess")
+	@SuppressLint("PrivateApi")
 	public static void removeInternalPaddingForEdgeEffect(AbsListView view) {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 			return;
@@ -2263,26 +2270,45 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffect(ViewGroup view, int placement) {
 		final int color = (placement == PLACEMENT_MENU ? color_menu_icon : color_glow);
-		final Resources resources = view.getContext().getResources();
+		if (Build.VERSION.SDK_INT >= 29) {
+			//https://developer.android.com/about/versions/10/non-sdk-q
+			try {
+				if (view instanceof ScrollView) {
+					final ScrollView scrollView = (ScrollView)view;
+					scrollView.setTopEdgeEffectColor(color);
+					scrollView.setBottomEdgeEffectColor(color);
+				} else {
+					final AbsListView listView = (AbsListView)view;
+					listView.setTopEdgeEffectColor(color);
+					listView.setBottomEdgeEffectColor(color);
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+			return;
+		}
+
+		final Context context = view.getContext();
+		final Resources resources = context.getResources();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 			try {
 				if (glowFilter == null) {
 					final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 					Field mEdgeGlow;
-					//EdgeEffect edgeEffect;
+					EdgeEffect edgeEffect;
 					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
 					boolean ok = false;
 					if (mEdgeGlow != null) {
 						ok = true;
 						mEdgeGlow.setAccessible(true);
-						/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
 							if (edgeEffect == null) {
 								edgeEffect = new EdgeEffect(context);
 								mEdgeGlow.set(view, edgeEffect);
 							}
 							edgeEffect.setColor(color);
-						} else*/ {
+						} else {
 							mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
 						}
 					}
@@ -2290,14 +2316,14 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					if (mEdgeGlow != null) {
 						ok = true;
 						mEdgeGlow.setAccessible(true);
-						/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
 							if (edgeEffect == null) {
 								edgeEffect = new EdgeEffect(context);
 								mEdgeGlow.set(view, edgeEffect);
 							}
 							edgeEffect.setColor(color);
-						} else*/ {
+						} else {
 							mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
 						}
 					}
@@ -2337,7 +2363,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	@SuppressWarnings("deprecation")
 	public static void offsetTopEdgeEffect(View view) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			try {
 				if (glowFilter == null) {
 					final Field mEdgeGlow = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class).getDeclaredField("mEdgeGlowTop");
@@ -2420,10 +2446,16 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			view.setPadding(0, t, 0, b);
 	}
 
+	@SuppressWarnings("JavaReflectionMemberAccess")
 	public static void tryToChangeScrollBarThumb(View view, int color) {
 		//this is not a simple workaround... it could be the mother of all workarounds out there! :)
 		//http://stackoverflow.com/questions/21806852/change-the-color-of-scrollview-programmatically
 		try {
+			if (Build.VERSION.SDK_INT >= 29) {
+				//https://developer.android.com/about/versions/10/non-sdk-q
+				view.setVerticalScrollbarThumbDrawable(new ScrollBarThumbDrawable(color));
+				return;
+			}
 			final Field mScrollCacheField = View.class.getDeclaredField("mScrollCache");
 			mScrollCacheField.setAccessible(true);
 			final Object mScrollCache = mScrollCacheField.get(view);

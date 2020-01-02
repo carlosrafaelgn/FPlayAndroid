@@ -79,6 +79,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashSet;
+import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.BuildConfig;
 import br.com.carlosrafaelgn.fplay.ExternalReceiver;
@@ -3482,6 +3483,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				return 0;
 			final MediaRouter.RouteInfo info = router.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
 			final String name = info.getName(theApplication).toString();
+
+			if (name.toLowerCase(Locale.US).contains("bluetooth"))
+				return AUDIO_SINK_BT;
+
+			//https://developer.android.com/about/versions/10/non-sdk-q
+			if (Build.VERSION.SDK_INT >= 29)
+				return 0;
 
 			//com.android.internal.R.string.default_audio_route_name_headphones = "Headphones"
 			//com.android.internal.R.string.bluetooth_a2dp_audio_route_name = "Bluetooth audio"

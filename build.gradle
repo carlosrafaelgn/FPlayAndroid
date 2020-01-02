@@ -24,14 +24,14 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion "28.0.2"
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
 
 	// versionCode must be kept in sync with UI.VERSION_CODE
 	// versionName must be kept in sync with UI.VERSION_NAME
 	defaultConfig {
-		versionCode 123
-		versionName "1.89"
+		versionCode 124
+		versionName "1.90"
 	}
 
 	//https://developer.android.com/studio/build/configure-apk-splits
@@ -62,7 +62,7 @@ android {
 			dimension "mode"
 			applicationId "br.com.carlosrafaelgn.fplay"
 			minSdkVersion 10
-			targetSdkVersion 28
+			targetSdkVersion 29
 			buildConfigField 'boolean', 'X', 'false'
 		}
 
@@ -70,7 +70,7 @@ android {
 			dimension "mode"
 			applicationId "br.com.carlosrafaelgn.fplay.x"
 			minSdkVersion 16
-			targetSdkVersion 28
+			targetSdkVersion 29
 			buildConfigField 'boolean', 'X', 'true'
 		}
 	}

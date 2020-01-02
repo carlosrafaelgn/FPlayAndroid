@@ -1635,7 +1635,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				if (Player.httpTransmitter != null && httpAccessCode != null) {
 					//Since fplay:// links are not properly rendered in most apps, let's just share
 					//the access code itself
-					UI.shareText("https://fplay.com.br?" + httpAccessCode);
+					UI.shareText(getHostActivity(), "https://fplay.com.br?" + httpAccessCode);
 					//UI.shareText(getText(R.string.access_code) + UI.collon() + "fplay://" + httpAccessCode);
 					//try {
 					//	final ActivityHost activityHost = getHostActivity();

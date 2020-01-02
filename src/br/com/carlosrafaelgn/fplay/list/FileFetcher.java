@@ -547,7 +547,10 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			root = realPath + File.separator;
 		}
 		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
-		final String[] proj = { "_id", "album", "album_art", "numsongs" };
+		final String[] proj = {
+			//WHY, Android???? WHY?!?!?!?!?!?!?!
+			(artist != null && Build.VERSION.SDK_INT >= 29) ? "album_id" : "_id",
+			"album", "album_art", "numsongs" };
 		final Cursor c = Player.theApplication.getContentResolver().query(Uri.parse((artist == null) ?
 				"content://media/external/audio/albums" :
 				"content://media/external/audio/artists/" + artist + "/albums"), proj, null, null, null);
