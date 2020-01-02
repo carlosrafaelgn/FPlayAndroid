@@ -79,7 +79,6 @@ import android.view.animation.Animation;
 import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.BgEdgeEffect;
-import android.widget.EdgeEffect;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -2295,37 +2294,18 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 				if (glowFilter == null) {
 					final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 					Field mEdgeGlow;
-					EdgeEffect edgeEffect;
 					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
 					boolean ok = false;
 					if (mEdgeGlow != null) {
 						ok = true;
 						mEdgeGlow.setAccessible(true);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
-							if (edgeEffect == null) {
-								edgeEffect = new EdgeEffect(context);
-								mEdgeGlow.set(view, edgeEffect);
-							}
-							edgeEffect.setColor(color);
-						} else {
-							mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
-						}
+						mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
 					}
 					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
 					if (mEdgeGlow != null) {
 						ok = true;
 						mEdgeGlow.setAccessible(true);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-							edgeEffect = (EdgeEffect)mEdgeGlow.get(view);
-							if (edgeEffect == null) {
-								edgeEffect = new EdgeEffect(context);
-								mEdgeGlow.set(view, edgeEffect);
-							}
-							edgeEffect.setColor(color);
-						} else {
-							mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
-						}
+						mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
 					}
 					if (ok || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
 						return;
