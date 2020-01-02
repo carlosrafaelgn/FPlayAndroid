@@ -46,6 +46,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
@@ -76,7 +77,6 @@ import android.widget.RemoteViews;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Locale;
@@ -3474,7 +3474,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return false;
 	}
 
-	@SuppressLint("PrivateApi")
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private static int _checkAudioSinkViaRoute() {
 		try {
@@ -3488,29 +3487,33 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				return AUDIO_SINK_BT;
 
 			//https://developer.android.com/about/versions/10/non-sdk-q
-			if (Build.VERSION.SDK_INT >= 29)
-				return 0;
+
+			final Resources systemResources = Resources.getSystem();
 
 			//com.android.internal.R.string.default_audio_route_name_headphones = "Headphones"
 			//com.android.internal.R.string.bluetooth_a2dp_audio_route_name = "Bluetooth audio"
 			int id;
 			String original;
 
-			final Class<?> clazz = Class.forName("com.android.internal.R$string");
+			//final Class<?> clazz = Class.forName("com.android.internal.R$string");
 
-			Field field = clazz.getDeclaredField("bluetooth_a2dp_audio_route_name");
-			field.setAccessible(true);
-			id = (int)field.get(null);
-			original = theApplication.getText(id).toString();
-			if (name.equalsIgnoreCase(original))
-				return AUDIO_SINK_BT;
+			//Field field = clazz.getDeclaredField("bluetooth_a2dp_audio_route_name");
+			//field.setAccessible(true);
+			id = systemResources.getIdentifier("bluetooth_a2dp_audio_route_name", "string", "android"); //(int)field.get(null);
+			if (id != 0) {
+				original = theApplication.getText(id).toString();
+				if (name.equalsIgnoreCase(original))
+					return AUDIO_SINK_BT;
+			}
 
-			field = clazz.getDeclaredField("default_audio_route_name_headphones");
-			field.setAccessible(true);
-			id = (int)field.get(null);
-			original = theApplication.getText(id).toString();
-			if (name.equalsIgnoreCase(original))
-				return AUDIO_SINK_WIRE;
+			//field = clazz.getDeclaredField("default_audio_route_name_headphones");
+			//field.setAccessible(true);
+			id = systemResources.getIdentifier("default_audio_route_name_headphones", "string", "android"); //(int)field.get(null);
+			if (id != 0) {
+				original = theApplication.getText(id).toString();
+				if (name.equalsIgnoreCase(original))
+					return AUDIO_SINK_WIRE;
+			}
 
 			//Another possible hack (but fails sometimes)
 			//Class<?> audioSystem = Class.forName("android.media.AudioSystem");
