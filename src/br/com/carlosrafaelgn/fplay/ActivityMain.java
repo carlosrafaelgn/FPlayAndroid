@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -121,7 +122,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122,
 		MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124, MNU_VISUALIZER_LIQUID_POWER_SAVER = 125, MNU_HTTP_TRANSMITTER = 126, MNU_VISUALIZER_COLOR_WAVES = 127;
 	private static final int REQUEST_WRITE_SETTINGS = 123;
-	private static final int VOLUME_UPDATE_COUNT = 5;
+	private static final int VOLUME_UPDATE_COUNT = 4;
 	private View vwVolume;
 	private TextView lblTitle, lblArtist, lblTrack, lblAlbumStatic, lblAlbum, lblLength, lblMsgSelMove;
 	private TextIconDrawable lblTitleIcon;
@@ -737,7 +738,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 				barVolume.setMax(Player.volumeStreamMax);
 			volumeAlreadyUpdatedAfterSinkChange = false;
 			volumeUpdateCount = (firstNotification ? VOLUME_UPDATE_COUNT - 1 : 0);
-			tmrUpdateVolumeDisplay.start(750);
+			tmrUpdateVolumeDisplay.start(500);
 		}
 	}
 	
@@ -1821,6 +1822,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		volumeBuilder = null;
 	}
 	
+	@SuppressLint("SetTextI18n")
 	@Override
 	public void handleTimer(Timer timer, Object param) {
 		if (timer == tmrVolume) {

@@ -315,19 +315,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//this cleanup must be done, as sometimes, when changing between two output types,
 				//the effects are lost...
 				_fullCleanup();
-				_checkAudioSink(false, false, false, true, 0);
+				_checkAudioSink(0, false, true, 0);
 				break;
 			case MSG_FADE_IN_VOLUME_TIMER:
 				_processFadeInVolumeTimer(msg.arg1);
 				break;
 			case MSG_AUDIO_SINK_CHANGED:
-				_checkAudioSink(msg.arg1 != 0, msg.arg2 != 0, true, true, 0);
+				_checkAudioSink(msg.arg1, true, true, 0);
 				break;
 			case MSG_AUDIO_SINK_DOUBLE_CHECK_BT:
-				_checkAudioSink(false, false, true, true, 1);
+				_checkAudioSink(0, true, true, 1);
 				break;
 			case MSG_AUDIO_SINK_DOUBLE_CHECK_BT_2:
-				_checkAudioSink(false, false, true, true, 2);
+				_checkAudioSink(0, true, true, 2);
 				break;
 			case MSG_PAUSE:
 				if (playing)
@@ -652,7 +652,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Virtualizer._checkSupport();
 					if (!BuildConfig.X)
 						ExternalFx._checkSupport();
-					_checkAudioSink(false, false, false, false, 2);
+					_checkAudioSink(0, false, false, 2);
 					audioSinkUsedInEffects = audioSink;
 					_reinitializeEffects();
 					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
@@ -940,7 +940,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static int getSystemStreamVolume() {
 		try {
 			if (audioManager != null)
-				return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+				return (localVolumeStream = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -1471,16 +1471,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static void _syncVolume() {
 		if (state != STATE_ALIVE)
 			return;
-		if (volumeControlType == VOLUME_CONTROL_STREAM) {
-			final int volumeStream = localVolumeStream;
-			try {
-				if (audioManager != null)
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((volumeStream <= 0) ? 0 : ((volumeStream >= volumeStreamMax) ? volumeStreamMax : volumeStream)), 0);
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-			return;
-		}
+		//_syncVolume() is not necessary when volumeControlType == VOLUME_CONTROL_STREAM
 		if (volumeDB == localVolumeDB)
 			return;
 		volumeDB = localVolumeDB;
@@ -3075,8 +3066,24 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		final MediaRouter mr = (MediaRouter)theApplication.getSystemService(MEDIA_ROUTER_SERVICE);
 		if (mr != null) {
 			mediaRouterCallback = new MediaRouter.Callback() {
+				private void checkVolume(MediaRouter.RouteInfo info) {
+					volumeStreamMax = info.getVolumeMax();
+					if (volumeStreamMax < 1)
+						volumeStreamMax = 1;
+					if (volumeControlType == VOLUME_CONTROL_STREAM) {
+						final int volume = getSystemStreamVolume();
+						if (observer != null)
+							observer.onPlayerGlobalVolumeChanged(volume);
+					}
+				}
+				@TargetApi(Build.VERSION_CODES.N)
+				private void checkDeviceType(MediaRouter.RouteInfo info) {
+					audioSinkChanged(false, false, info.getDeviceType() == MediaRouter.RouteInfo.DEVICE_TYPE_BLUETOOTH);
+				}
 				@Override
 				public void onRouteVolumeChanged(MediaRouter router, MediaRouter.RouteInfo info) {
+					if (info.getPlaybackStream() == AudioManager.STREAM_MUSIC)
+						checkVolume(info);
 				}
 				@Override
 				public void onRouteUnselected(MediaRouter router, int type, MediaRouter.RouteInfo info) {
@@ -3086,6 +3093,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				}
 				@Override
 				public void onRouteSelected(MediaRouter router, int type, MediaRouter.RouteInfo info) {
+					if (info.getPlaybackStream() == AudioManager.STREAM_MUSIC) {
+						checkVolume(info);
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+							checkDeviceType(info);
+						else
+							audioSinkChanged(false, false, false);
+					}
 				}
 				@Override
 				public void onRouteRemoved(MediaRouter router, MediaRouter.RouteInfo info) {
@@ -3096,12 +3110,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				@Override
 				public void onRouteChanged(MediaRouter router, MediaRouter.RouteInfo info) {
 					if (info.getPlaybackStream() == AudioManager.STREAM_MUSIC) {
-						//this actually works... nonetheless, I was not able to detected
-						//which is the audio sink used by this route.... :(
-						volumeStreamMax = info.getVolumeMax();
-						if (volumeStreamMax < 1)
-							volumeStreamMax = 1;
-						audioSinkChanged(false, false);
+						checkVolume(info);
+						audioSinkChanged(false, false, false);
 					}
 				}
 				@Override
@@ -3289,9 +3299,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			handler.sendEmptyMessageAtTime(MSG_BECOMING_NOISY, SystemClock.uptimeMillis());
 	}
 
-	public static void audioSinkChanged(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone) {
+	public static void audioSinkChanged(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone, boolean bluetooh) {
 		if (handler != null)
-			handler.sendMessageAtTime(Message.obtain(handler, MSG_AUDIO_SINK_CHANGED, wiredHeadsetJustPlugged ? 1 : 0, wiredHeadsetHasMicrophone ? 1 : 0), SystemClock.uptimeMillis());
+			handler.sendMessageAtTime(Message.obtain(handler, MSG_AUDIO_SINK_CHANGED, (wiredHeadsetJustPlugged ? 1 : 0) | (wiredHeadsetHasMicrophone ? 2 : 0) | (bluetooh ? 4 : 0), 0), SystemClock.uptimeMillis());
 	}
 
 	public static void setHeadsetHookAction(int pressCount, int action) {
@@ -3539,9 +3549,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@SuppressWarnings("deprecation")
-	private static void _checkAudioSink(boolean wiredHeadsetJustPlugged, boolean wiredHeadsetHasMicrophone, boolean triggerNoisy, boolean reinitializeEffects, int tripleCheckBT) {
+	private static void _checkAudioSink(int flags, boolean triggerNoisy, boolean reinitializeEffects, int tripleCheckBT) {
 		if (audioManager == null)
 			return;
+		final boolean wiredHeadsetJustPlugged = ((flags & 1) != 0);
+		final boolean wiredHeadsetHasMicrophone = ((flags & 2) != 0);
+		final boolean bluetooh = ((flags & 4) != 0);
 		final int oldAudioSink = audioSink;
 		//let the guessing begin!!! really, it is NOT possible to rely solely on
 		//these AudioManager.isXXX() methods, neither on MediaRouter...
@@ -3564,6 +3577,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
+		if (bluetooh && audioSink == 0)
+			audioSink = AUDIO_SINK_BT;
 		try {
 			if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 				final MediaRouter mr = (MediaRouter)theApplication.getSystemService(MEDIA_ROUTER_SERVICE);
