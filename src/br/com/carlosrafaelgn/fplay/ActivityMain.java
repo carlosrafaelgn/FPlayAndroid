@@ -219,10 +219,13 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 							UI.ICON_VOLUME1))));
 			break;
 		}
-		if (btnVolume != null)
-			btnVolume.setText(icon);
-		else if (barVolume != null)
-			barVolume.setIcon(icon);
+		if (btnVolume != null) {
+			if (!icon.contentEquals(btnVolume.getText()))
+				btnVolume.setText(icon);
+		} else if (barVolume != null) {
+			if (!icon.equals(barVolume.getIcon()))
+				barVolume.setIcon(icon);
+		}
 	}
 	
 	private void updateVolumeDisplay(int volume) {
@@ -239,7 +242,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 					((volume - Player.VOLUME_MIN_DB) / (-Player.VOLUME_MIN_DB / 100)));
 		}
 		setVolumeIcon(volume);
-		if (barVolume != null) {
+		if (barVolume != null && barVolume.getValue() != value) {
 			barVolume.setValue(value);
 			barVolume.setText(volumeToString(volume));
 		}

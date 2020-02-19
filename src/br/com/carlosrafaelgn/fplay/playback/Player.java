@@ -3412,7 +3412,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 			if (volumeControlType == VOLUME_CONTROL_STREAM) {
 				keyCode = decreaseVolume();
-				if (observer != null)
+				//Let MediaRouter.Callback call onPlayerGlobalVolumeChanged()
+				//when Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN
+				if (observer != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN)
 					observer.onPlayerGlobalVolumeChanged(keyCode);
 				break;
 			}
@@ -3420,7 +3422,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		case KeyEvent.KEYCODE_VOLUME_UP:
 			if (volumeControlType == VOLUME_CONTROL_STREAM) {
 				keyCode = increaseVolume();
-				if (observer != null)
+				//Let MediaRouter.Callback call onPlayerGlobalVolumeChanged()
+				//when Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN
+				if (observer != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN)
 					observer.onPlayerGlobalVolumeChanged(keyCode);
 				break;
 			}
