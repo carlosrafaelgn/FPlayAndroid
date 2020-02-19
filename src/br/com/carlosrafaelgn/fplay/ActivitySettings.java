@@ -1338,6 +1338,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (BuildConfig.X) {
 				addHeader(ctx, R.string.performance, optAutoTurnOffPlaylist, hIdx++);
 				addOption(optPlaybackEngine);
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+					addOption(optFileBufferSize);
 				addOption(optBufferSize);
 				if (MediaContext.useOpenSLEngine)
 					addOption(optFillThreshold);
@@ -1397,7 +1399,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.hdr_playback, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? (BuildConfig.X ? optBytesBeforeDecoding : optMSBeforePlayback) : optWidgetIconColor, hIdx++);
 			if (ExternalFx.isSupported())
 				addOption(optExternalFx);
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+			if (!BuildConfig.X && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
 				addOption(optFileBufferSize);
 			addOption(optPlayWhenHeadsetPlugged);
 			addOption(optPreviousResetsAfterTheBeginning);
