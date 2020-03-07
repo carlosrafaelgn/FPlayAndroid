@@ -186,7 +186,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			break;
 		default:
 			if (btnVolume != null)
-				btnVolume.setText(UI.ICON_VOLUME4);
+				btnVolume.setText(Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_WIRE ?
+					UI.ICON_VOLUMEEARPHONE1 : (Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_WIRE_MIC ?
+						UI.ICON_VOLUMEHEADSET1 : (Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_BT ?
+							UI.ICON_VOLUMEBLUETOOTH1 : UI.ICON_VOLUME3)));
 			return;
 		}
 		switch (Player.localAudioSinkUsedInEffects) {
@@ -735,13 +738,18 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	@Override
 	public void onPlayerAudioSinkChanged(boolean firstNotification) {
 		//when changing the output, the global volume usually changes
-		if (Player.volumeControlType == Player.VOLUME_CONTROL_STREAM) {
+		switch (Player.volumeControlType) {
+		case Player.VOLUME_CONTROL_STREAM:
 			updateVolumeDisplay(Integer.MIN_VALUE);
 			if (barVolume != null)
 				barVolume.setMax(Player.volumeStreamMax);
 			volumeAlreadyUpdatedAfterSinkChange = false;
 			volumeUpdateCount = (firstNotification ? VOLUME_UPDATE_COUNT - 1 : 0);
 			tmrUpdateVolumeDisplay.start(500);
+			break;
+		case Player.VOLUME_CONTROL_NONE:
+			updateVolumeDisplay(Integer.MIN_VALUE);
+			break;
 		}
 	}
 	
