@@ -1297,7 +1297,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (ExternalFx.isSupported())
 				optExternalFx = new SettingView(ctx, UI.ICON_EQUALIZER, getText(R.string.enable_external_fx) + " " + getText(R.string.external_fx_warning), null, true, ExternalFx.isEnabled(), false);
 			optFileBufferSize = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.file_prefetch_size).toString(), getFileBufferSizeString(Player.filePrefetchSize), false, false, false);
-			optPlayWhenHeadsetPlugged = new SettingView(ctx, UI.ICON_HEADSET, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
+			optPlayWhenHeadsetPlugged = new SettingView(ctx, UI.ICON_EARPHONE, getText(R.string.opt_play_when_headset_plugged).toString(), null, true, Player.playWhenHeadsetPlugged, false);
 			optBlockBackKey = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_block_back_key).toString(), null, true, UI.blockBackKey, false);
 			optBackKeyAlwaysReturnsToPlayerWhenBrowsing = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_back_key_always_returns_to_player_when_browsing).toString(), null, true, UI.backKeyAlwaysReturnsToPlayerWhenBrowsing, false);
 			optWrapAroundList = new SettingView(ctx, UI.ICON_SETTINGS, getText(R.string.opt_wrap_around_list).toString(), null, true, UI.wrapAroundList, false);

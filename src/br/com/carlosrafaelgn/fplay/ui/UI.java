@@ -215,7 +215,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_RIGHT = "6";
 	public static final String ICON_FADE = ";";
 	public static final String ICON_DIAL = ":";
-	public static final String ICON_HEADSET = "{";
+	public static final String ICON_EARPHONE = "{";
+	public static final String ICON_HEADSET = "\ue90c";
 	public static final String ICON_TRANSPARENT = "}";
 	public static final String ICON_FLAT = "/";
 	public static final String ICON_PALETTE = "[";

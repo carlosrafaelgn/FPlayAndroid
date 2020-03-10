@@ -187,9 +187,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		default:
 			if (btnVolume != null)
 				btnVolume.setText(Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_WIRE ?
-					UI.ICON_VOLUMEEARPHONE1 : (Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_WIRE_MIC ?
-						UI.ICON_VOLUMEHEADSET1 : (Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_BT ?
-							UI.ICON_VOLUMEBLUETOOTH1 : UI.ICON_VOLUME3)));
+					UI.ICON_EARPHONE : (Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_WIRE_MIC ?
+						UI.ICON_HEADSET : (Player.localAudioSinkUsedInEffects == Player.AUDIO_SINK_BT ?
+							UI.ICON_BLUETOOTH : UI.ICON_VOLUME3)));
 			return;
 		}
 		switch (Player.localAudioSinkUsedInEffects) {
