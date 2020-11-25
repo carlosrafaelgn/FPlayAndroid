@@ -37,6 +37,7 @@ import android.os.SystemClock;
 
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 
+@SuppressWarnings("NonAtomicOperationOnVolatileField")
 public final class Timer implements MainHandler.Callback {
 	public interface TimerHandler {
 		void handleTimer(Timer timer, Object param);
@@ -246,7 +247,7 @@ public final class Timer implements MainHandler.Callback {
 				if (alive) {
 					if (compensatingForDelays) {
 						final long now = SystemClock.uptimeMillis(), next = nextTime + interval;
-						nextTime = ((next < now) ? now : next);
+						nextTime = Math.max(next, now);
 						MainHandler.sendMessageAtTime(this, MSG_INTERVAL, version, 0, nextTime);
 					} else {
 						MainHandler.sendMessageAtTime(this, MSG_INTERVAL, version, 0, SystemClock.uptimeMillis() + interval);
@@ -263,6 +264,7 @@ public final class Timer implements MainHandler.Callback {
 		return true;
 	}
 
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isAlive() {
 		return alive;
 	}

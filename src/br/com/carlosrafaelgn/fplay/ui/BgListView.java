@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -108,7 +109,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		init(force2D);
 	}
 
-	@SuppressWarnings("deprecation")
 	private void init(boolean force2D) {
 		//to make the first execution of setScrollBarType() always run
 		scrollBarType = SCROLLBAR_INVALID;
@@ -194,7 +194,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		setContentDescription((itemCount == 0 && emptyLayout != null) ? emptyLayout.getText() : null);
 	}
 
-	@SuppressWarnings("deprecation")
 	public void setTopBorder() {
 		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, backgroundColor, 0, UI.thickDividerSize, 0, 0));
 		setPadding(0, UI.thickDividerSize, 0, 0);
@@ -206,7 +205,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	public void setBackground(Drawable background) {
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -447,6 +445,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		}
 	}
 	
+	@SuppressWarnings("DuplicateExpressions")
 	public int getNewPosition(int position, int keyCode, boolean allowWrap) {
 		int p;
 		final int l = itemCount - 1;
@@ -466,13 +465,13 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				return l;
 			p = getLastVisiblePosition() - getFirstVisiblePosition();
 			p = ((p > 1) ? (position - (p - 1)) : (position - 1));
-			return ((p <= 0) ? 0 : p);
+			return Math.max(p, 0);
 		case UI.KEY_PAGE_DOWN:
 			if ((allowWrap && position == l) || position > l || position < 0)
 				return 0;
 			p = getLastVisiblePosition() - getFirstVisiblePosition();
 			p = ((p > 1) ? (position + p - 1) : (position + 1));
-			return ((p >= l) ? l : p);
+			return Math.min(p, l);
 		case UI.KEY_HOME:
 			return 0;
 		case UI.KEY_END:
@@ -549,6 +548,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			setSelectionAtTheTop(y);
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		switch (event.getAction()) {
@@ -913,7 +913,6 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		}
 	}*/
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public void setAdapter(ListAdapter adapter) {
 		this.adapter = (BaseList<? extends BaseItem>)adapter;

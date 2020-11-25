@@ -38,6 +38,7 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 import android.text.TextPaint;
 
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -148,13 +149,14 @@ public final class TextIconDrawable extends Drawable {
 		canvas.drawText(icon, rect.left, rect.top + ((rect.bottom - rect.top + height) >> 1), paint);
 	}
 
+	@NonNull
 	@Override
 	public int[] getState() {
 		return stateSet;
 	}
 
 	@Override
-	public boolean setState(int[] stateSet) {
+	public boolean setState(@NonNull int[] stateSet) {
 		this.stateSet = stateSet;
 		int newState = 0;
 		if (stateSet != null) {

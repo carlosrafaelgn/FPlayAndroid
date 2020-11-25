@@ -75,7 +75,6 @@ public final class BgTextView extends TextView {
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

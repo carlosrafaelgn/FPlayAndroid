@@ -62,7 +62,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	private ReleasableBitmapWrapper albumArt;
 	private FileSt file;
 	private BgButton btnCheckbox;
-	private String icon, ellipsizedName, secondaryText, ellipsizedSecondaryText, albumStr, albumsStr, trackStr, tracksStr;
+	private String icon, ellipsizedName, secondaryText, ellipsizedSecondaryText;
+	private final String albumStr, albumsStr, trackStr, tracksStr;
 	private boolean pendingAlbumArtRequest, checkBoxVisible;
 	private final boolean hasCheckbox, force2D;
 	private int state, width, position, requestId, bitmapLeftPadding, leftPadding, secondaryTextWidth, scrollBarType, leftMargin, rightMargin, rightMarginForDrawing;
@@ -131,10 +132,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			p.bottomMargin = bottomMargin;
 			btnCheckbox.setLayoutParams(p);
 			addView(btnCheckbox);
-			btnCheckbox = null; //let setItemState() format the button...
-		} else {
-			btnCheckbox = null;
 		}
+		btnCheckbox = null; //let setItemState() format the button...
 		super.setDrawingCacheEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			super.setDefaultFocusHighlightEnabled(false);
@@ -293,7 +292,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				albumCount = file.albums;
 				trackCount = file.tracks;
 				if (albumCount >= 1 && trackCount >= 1)
-					secondaryText = ((albumCount == 1) ? albumStr : (Integer.toString(albumCount) + albumsStr)) + " / " + ((trackCount == 1) ? trackStr : (Integer.toString(trackCount) + tracksStr));
+					secondaryText = ((albumCount == 1) ? albumStr : (albumCount + albumsStr)) + " / " + ((trackCount == 1) ? trackStr : (trackCount + tracksStr));
 				icon = UI.ICON_MIC;
 				newAlbumArt = null;
 				if (UI.albumArt && albumArtFetcher != null) {
@@ -310,7 +309,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			case FileSt.TYPE_ALBUM:
 				trackCount = file.tracks;
 				if (trackCount >= 1)
-					secondaryText = ((trackCount == 1) ? trackStr : (Integer.toString(trackCount) + tracksStr));
+					secondaryText = ((trackCount == 1) ? trackStr : (trackCount + tracksStr));
 			case FileSt.TYPE_ALBUM_ITEM:
 				icon = UI.ICON_ALBUMART;
 				newAlbumArt = null;
@@ -389,7 +388,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -559,13 +557,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 
 	//Runs on a SECONDARY thread
 	@Override
-	public String albumArtUriForRequestId(int requestId) {
-		final FileSt file = this.file;
-		return ((requestId == this.requestId && file != null) ? file.albumArtUri : null);
-	}
-
-	//Runs on a SECONDARY thread
-	@Override
 	public Long albumIdForRequestId(int requestId) {
 		final FileSt file = this.file;
 		return ((requestId == this.requestId && file != null) ? file.albumId : null);
@@ -611,7 +602,6 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			albumArt.release();
 		albumArt = bitmap;
 		file.albumId = bitmap.albumId;
-		file.albumArtUri = bitmap.albumArtUri;
 		bitmapLeftPadding = leftMargin + ((usableHeight - bitmap.width) >> 1);
 		invalidate();
 		return true;

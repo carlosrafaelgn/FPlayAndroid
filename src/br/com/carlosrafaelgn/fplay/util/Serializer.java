@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+@SuppressWarnings("unused")
 public final class Serializer {
 	public static void serializeInt(OutputStream os, int value) throws IOException {
 		os.write(value);

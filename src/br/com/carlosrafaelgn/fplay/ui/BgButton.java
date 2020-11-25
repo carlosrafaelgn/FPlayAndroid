@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -261,6 +262,7 @@ public final class BgButton extends Button {
 		}
 	}
 
+	@SuppressLint("WrongConstant")
 	@Override
 	public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
 		if (forceDescription) {
@@ -302,7 +304,6 @@ public final class BgButton extends Button {
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -383,6 +384,7 @@ public final class BgButton extends Button {
 		return super.onKeyUp(keyCode, event);
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		switch (event.getAction()) {

@@ -77,6 +77,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
  * The edge effect may then be drawn on top of the view's content using the
  * {@link #draw(Canvas)} method.</p>
  */
+@SuppressWarnings("unused")
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class BgEdgeEffect extends EdgeEffect {
 	private static final int STATE_IDLE = 0;
@@ -227,9 +228,7 @@ public class BgEdgeEffect extends EdgeEffect {
 		else
 			mPullDistance += deltaDistance;
 
-		float d = mPullDistance * 5.0f;
-		d = ((d <= 0.0f) ? 0.0f : ((d >= 1.0f) ? 1.0f : d));
-		mTargetPullScaleY = d; //mScaleY = (d * d * (3.0f - (2.0f * d)));
+		mTargetPullScaleY = Math.max(0.0f, Math.min(mPullDistance * 5.0f, 1.0f)); //mScaleY = (d * d * (3.0f - (2.0f * d)));
 		//mAlpha = mScaleY * MAX_ALPHA;
 		//mAlphaStart = mAlpha;
 		//mAlphaFinish = mAlpha;
@@ -272,7 +271,7 @@ public class BgEdgeEffect extends EdgeEffect {
 	public void onAbsorb(int velocity) {
 		if (velocity < 0)
 			velocity = -velocity;
-		final float fvel = (float)((velocity <= MIN_VELOCITY) ? MIN_VELOCITY : ((velocity >= MAX_VELOCITY) ? MAX_VELOCITY : velocity));
+		final float fvel = (float)Math.max(MIN_VELOCITY, Math.min(velocity, MAX_VELOCITY));
 
 		mPullDistance = 0.0f;
 
@@ -392,7 +391,7 @@ public class BgEdgeEffect extends EdgeEffect {
 		final RectF rectF = UI.rectF;
 		canvas.save();
 		UI.fillPaint.setAntiAlias(true);
-		UI.fillPaint.setColor(((int)(255.0f * ((mAlpha >= 1.0f) ? 1.0f : mAlpha)) << 24) | mColor);
+		UI.fillPaint.setColor(((int)(255.0f * Math.min(mAlpha, 1.0f)) << 24) | mColor);
 		rect.left = mX;
 		rect.top = mOffsetY;
 		rect.right = mX + mWidth;

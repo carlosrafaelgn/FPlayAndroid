@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.list;
 
+import android.support.annotation.NonNull;
+
 import java.io.File;
 
 import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
@@ -71,7 +73,6 @@ public final class FileSt extends BaseItem {
 	public final boolean isDirectory;
 	public final String path, name;
 	public Long albumId;
-	public String albumArtUri;
 	public int specialType, tracks, albums;
 	public long artistIdForAlbumArt; //when dealing with playlists, artistIdForAlbumArt stores the playlist id
 	public File file;
@@ -99,12 +100,11 @@ public final class FileSt extends BaseItem {
 		this.songInfo = songInfo;
 	}
 
-	public FileSt(String absolutePath, String name, Long albumId, String albumArtUri) {
+	public FileSt(String absolutePath, String name, Long albumId) {
 		this.isDirectory = true;
 		this.path = absolutePath;
 		this.name = ((name.length() == 0) ? " " : name);
 		this.albumId = albumId;
-		this.albumArtUri = albumArtUri;
 		this.specialType = FileSt.TYPE_ALBUM;
 	}
 
@@ -121,6 +121,7 @@ public final class FileSt extends BaseItem {
 		this.name = ((name.length() == 0) ? " " : name);
 	}
 
+	@NonNull
 	@Override
 	public String toString() {
 		return name;

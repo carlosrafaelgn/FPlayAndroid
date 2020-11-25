@@ -92,7 +92,6 @@ public final class BgFlexLayout extends ViewGroup {
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

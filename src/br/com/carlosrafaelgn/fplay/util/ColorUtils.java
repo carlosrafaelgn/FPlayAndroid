@@ -210,6 +210,7 @@ public final class ColorUtils {
 		return ColorUtils.contrastRatioL(ColorUtils.relativeLuminance(rgb1), ColorUtils.relativeLuminance(rgb2));
 	}
 	
+	@SuppressWarnings("unused")
 	public static int parseHexColor(String color) {
 		try {
 			if (color.charAt(0) == '#')

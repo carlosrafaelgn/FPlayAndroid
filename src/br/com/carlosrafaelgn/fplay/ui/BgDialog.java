@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -62,7 +63,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 	private boolean titleVisible, emptyBackground, scanChildren, titleBorder, neutralIcon, hideSoftInput;
 	private Drawable backgroundDrawable;
 	private int backgroundId, shadowType;
-	private DialogInterface.OnClickListener clickListener;
+	private final DialogInterface.OnClickListener clickListener;
 
 	public BgDialog(Context context, View contentView, DialogInterface.OnClickListener clickListener) {
 		super(context, UI.dimBackground ? R.style.BgDialog : R.style.BgDialogNoDimming);
@@ -98,6 +99,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		super.setTitle(this.title);
 	}
 
+	@SuppressWarnings("unused")
 	public void setNeutralButton(int resId) {
 		neutralIcon = false;
 		if (resId == 0) {
@@ -141,6 +143,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public void setScanChildren() {
 		scanChildren = true;
 	}
@@ -212,6 +215,7 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 			clickListener.onClick(this, DialogInterface.BUTTON_POSITIVE);
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		//we cannot consume the touch event if the view is a ScrollView,
@@ -239,7 +243,6 @@ public final class BgDialog extends Dialog implements View.OnClickListener, View
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

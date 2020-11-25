@@ -111,7 +111,7 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	/**
 	 * Constructs a new {@code TypedRawArrayList} instance with zero initial capacity.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "unused"})
 	public TypedRawArrayList(Class<E> clazz) {
 		this.clazz = clazz;
 		array = (E[])Array.newInstance(clazz, MIN_CAPACITY_INCREMENT);
@@ -236,7 +236,6 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 * @return {@code true} if this {@code TypedRawArrayList} is modified, {@code false}
 	 *         otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public boolean addAll(E[] objects) {
 		return (objects != null && addAll(objects, objects.length));
 	}
@@ -271,7 +270,7 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public boolean addAll(int index, Collection<? extends E> collection) {
+	public boolean addAll(int index, @NonNull Collection<? extends E> collection) {
 		final int s = size;
 		if (index > s || index < 0)
 			throwIndexOutOfBoundsException(index, s);
@@ -654,6 +653,7 @@ public final class TypedRawArrayList<E> extends AbstractList<E> implements Clone
 		return hashCode;
 	}
 
+	@SuppressWarnings("EqualsReplaceableByObjectsCall")
 	@Override
 	public boolean equals(Object o) {
 		if (o == this)

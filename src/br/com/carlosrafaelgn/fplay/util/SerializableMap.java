@@ -297,14 +297,14 @@ public final class SerializableMap {
 
 	public int getInt(int key) {
 		final Object o = dict.get(key);
-		if (o == null || !(o instanceof Integer))
+		if (!(o instanceof Integer))
 			return 0;
 		return (Integer)o;
 	}
 
 	public int getInt(int key, int defaultValue) {
 		final Object o = dict.get(key);
-		if (o == null || !(o instanceof Integer))
+		if (!(o instanceof Integer))
 			return defaultValue;
 		return (Integer)o;
 	}
@@ -353,7 +353,7 @@ public final class SerializableMap {
 
 	public String getString(int key) {
 		final Object o = dict.get(key);
-		if (o == null || !(o instanceof String))
+		if (!(o instanceof String))
 			return null;
 		return o.toString();
 	}
@@ -367,7 +367,7 @@ public final class SerializableMap {
 
 	public byte[] getBuffer(int key) {
 		final Object o = dict.get(key);
-		if (o == null || !(o instanceof byte[]))
+		if (!(o instanceof byte[]))
 			return null;
 		return (byte[])o;
 	}

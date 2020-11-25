@@ -104,6 +104,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	}
 	
 	public final void cancel() {
+		//noinspection NonAtomicOperationOnVolatileField
 		version++; //this is enough to cancel the other thread
 		if (version <= 0) //we wrapped around (protection to ensure -version will always work properly)
 			version = 1;
@@ -115,7 +116,6 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		sb.delete(0, sb.length());
 		switch (parser.getEventType()) {
 		case XmlPullParser.COMMENT:
-			break;
 		case XmlPullParser.ENTITY_REF:
 			break;
 		case XmlPullParser.IGNORABLE_WHITESPACE:
@@ -134,7 +134,6 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		for (; ; ) {
 			switch (parser.nextToken()) {
 			case XmlPullParser.COMMENT:
-				break;
 			case XmlPullParser.ENTITY_REF:
 				break;
 			case XmlPullParser.IGNORABLE_WHITESPACE:
@@ -327,6 +326,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 
 	protected abstract void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages);
 
+	@SuppressWarnings("UnusedReturnValue")
 	public final boolean fetchStations(RadioStationGenre genre, String searchTerm, boolean reset) {
 		while (!readyToFetch)
 			Thread.yield();
@@ -426,6 +426,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 
 	public final RadioStation tryToFetchRadioStationAgain(String title) {
 		try {
+			//noinspection NonAtomicOperationOnVolatileField
 			version++;
 			loading = false;
 			fetchStationsInternal(version, null, title, true, false);

@@ -56,7 +56,7 @@ public final class RadioStationCache {
 	}
 
 	public static RadioStationCache getIfNotExpired(Object cache) {
-		if (cache != null && cache instanceof RadioStationCache) {
+		if (cache instanceof RadioStationCache) {
 			final RadioStationCache radioStationCache = (RadioStationCache)cache;
 			if (radioStationCache.timestamp <= (SystemClock.elapsedRealtime() + EXPIRATION_TIME_MS))
 				return radioStationCache;

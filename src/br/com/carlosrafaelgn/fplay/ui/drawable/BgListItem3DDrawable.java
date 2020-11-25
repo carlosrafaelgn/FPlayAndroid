@@ -37,6 +37,7 @@ import android.graphics.ColorFilter;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
@@ -54,7 +55,7 @@ public final class BgListItem3DDrawable extends Drawable {
 	}
 
 	@Override
-	public void setBounds(Rect bounds) {
+	public void setBounds(@NonNull Rect bounds) {
 		if (bounds != null) {
 			hasBounds = true;
 			super.setBounds(bounds);
@@ -70,7 +71,7 @@ public final class BgListItem3DDrawable extends Drawable {
 	}
 
 	@Override
-	public void draw(Canvas canvas) {
+	public void draw(@NonNull Canvas canvas) {
 		if (!hasBounds)
 			canvas.drawColor(UI.color_list);
 		else

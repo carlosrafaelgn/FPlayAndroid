@@ -86,7 +86,6 @@ public final class BgProgressBar extends View {
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -175,7 +174,6 @@ public final class BgProgressBar extends View {
 		virtualViewWidth = w + width;
 	}
 
-	@SuppressWarnings("SuspiciousNameCombination")
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if (!attached || !visible || virtualViewWidth <= 0 || width <= 0)

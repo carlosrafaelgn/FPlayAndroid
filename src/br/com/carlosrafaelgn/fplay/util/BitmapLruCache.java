@@ -57,6 +57,8 @@ package br.com.carlosrafaelgn.fplay.util;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+// This class is not thread safe and its uses must be synchronized
+@SuppressWarnings("NonAtomicOperationOnVolatileField")
 public final class BitmapLruCache {
 	private volatile int size;
 	private final int maxSize;

@@ -44,10 +44,10 @@ public final class ArraySorter {
 			if (n < 8) {
 				//use insertion sort only for small arrays
 				for (int x = i; x < endB; x++) {
-					int y = x;
-					while (y > i && comparer.compare(eA = elements[y - 1], eB = elements[y]) > 0) {
-						elements[y - 1] = eB;
-						elements[y--] = eA;
+					int j = x;
+					while (j > i && comparer.compare(eA = elements[j - 1], eB = elements[j]) > 0) {
+						elements[j - 1] = eB;
+						elements[j--] = eA;
 					}
 				}
 				return;

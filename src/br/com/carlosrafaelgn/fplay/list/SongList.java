@@ -38,6 +38,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -290,7 +291,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 		}
 	}
 
-	public static Song[] importFrom(long publicPlaylistId) throws Throwable {
+	public static Song[] importFrom(long publicPlaylistId) {
 		final String[] proj = { "_data", "title", "artist", "album", "track", "duration", "year" };
 		final Cursor c = Player.theApplication.getContentResolver().query(Uri.parse("content://media/external/audio/playlists/" + publicPlaylistId + "/members"), proj, null, null, "play_order ASC");
 		final TypedRawArrayList<Song> songs = new TypedRawArrayList<>(Song.class, 64);
@@ -441,7 +442,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 				this.forceScrollIntoView = forceScrollIntoView;
 			}
 			@Override
-			public boolean handleMessage(Message msg) {
+			public boolean handleMessage(@NonNull Message msg) {
 				if (Player.state >= Player.STATE_TERMINATING)
 					return true;
 				if (firstTime) {
@@ -789,7 +790,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 				shuffledList = new Song[capacity + (capacity >> 1)];
 			} else if (capacity > array.length || capacity <= (array.length >> 2)) {
 				final Song[] newArray = (Song[])Array.newInstance(Song.class, capacity + (capacity >> 1));
-				System.arraycopy(array, 0, newArray, 0, (count <= array.length) ? count : array.length);
+				System.arraycopy(array, 0, newArray, 0, Math.min(count, array.length));
 				shuffledList = newArray;
 			}
 		//}

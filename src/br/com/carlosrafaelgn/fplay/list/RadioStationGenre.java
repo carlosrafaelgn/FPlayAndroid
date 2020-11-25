@@ -33,9 +33,12 @@
 package br.com.carlosrafaelgn.fplay.list;
 
 import android.content.Context;
+import android.os.Build;
+import android.support.annotation.NonNull;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import br.com.carlosrafaelgn.fplay.R;
 
@@ -60,9 +63,14 @@ public final class RadioStationGenre {
 		final int len = dataInputStream.readUnsignedShort();
 		if (len > temp.length || len != dataInputStream.read(temp, 0, len))
 			throw new IllegalArgumentException();
-		name = new String(temp, 0, len, "UTF-8");
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+			name = new String(temp, 0, len, StandardCharsets.UTF_8);
+		else
+			//noinspection CharsetObjectCanBeUsed
+			name = new String(temp, 0, len, "UTF-8");
 	}
 
+	@NonNull
 	@Override
 	public String toString() {
 		return name;

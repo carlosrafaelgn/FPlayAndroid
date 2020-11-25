@@ -40,7 +40,8 @@ import android.support.annotation.NonNull;
 public final class BgColorStateList extends ColorStateList {
 	private static final int[][] states = new int[][] { new int[] {} };
 	private static final int[] colors = new int[] { 0 };
-	private int normalColor, alteredColor;
+	private int normalColor;
+	private final int alteredColor;
 	
 	public BgColorStateList(int color) {
 		super(states, colors);

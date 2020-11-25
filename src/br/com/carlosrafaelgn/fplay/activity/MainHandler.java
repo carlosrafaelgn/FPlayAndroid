@@ -101,8 +101,7 @@ public final class MainHandler extends Handler {
 	
 	@Override
 	public void dispatchMessage(@NonNull Message msg) {
-		switch (msg.what) {
-		case MSG_HANDLER_TOAST:
+		if (msg.what == MSG_HANDLER_TOAST) {
 			try {
 				if (Player.state >= Player.STATE_TERMINATING)
 					return;

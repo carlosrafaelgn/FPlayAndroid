@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.list;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +60,7 @@ public final class Song extends BaseItem {
 	private static final int STORE_OK = 2;
 	public String path; //the only thread/method allowed to change the path is Player._httpStreamReceiverUrlUpdated()
 	public boolean isHttp;
-	public String title, artist, album, extraInfo, albumArtUri;
+	public String title, artist, album, extraInfo;
 	public int track, lengthMS, year;
 	public String length;
 	public boolean alreadyPlayed, selected, validAlbumArt;
@@ -202,6 +203,7 @@ public final class Song extends BaseItem {
 
 	private int fetchMetadataFromMediaStore(boolean lengthOnly) {
 		Cursor c = null;
+		//noinspection TryFinallyCanBeTryWithResources
 		try {
 			c = Player.theApplication.getContentResolver().query(
 				Uri.parse("content://media/external/audio/media"),
@@ -293,6 +295,7 @@ public final class Song extends BaseItem {
 		return info;
 	}
 
+	@NonNull
 	@Override
 	public String toString() {
 		return title;

@@ -54,7 +54,7 @@ public final class BufferedMediaDataSource extends MediaDataSource {
 	}
 
 	@Override
-	public long getSize() throws IOException {
+	public long getSize() {
 		return fileLength;
 	}
 

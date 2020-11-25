@@ -140,7 +140,6 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
 	}
 
-	@SuppressWarnings("unchecked")
 	public void setItems(E[] items) {
 		this.items = items;
 		spinnerList.importItems(items);
@@ -188,7 +187,6 @@ public class BgSpinner<E> extends TextView implements View.OnClickListener, Base
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

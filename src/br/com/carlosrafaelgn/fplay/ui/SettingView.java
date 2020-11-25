@@ -53,8 +53,10 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 public final class SettingView extends View {
 	private String icon, text, secondaryText;
 	private int[] textLines;
-	private boolean checkable, checked, hidingSeparator;
-	private int state, color, secondaryTextWidth, width, height, textY, extraBorders;
+	private boolean checked, hidingSeparator;
+	private final boolean checkable;
+	private int state, color, secondaryTextWidth, width, height, textY;
+	private final int extraBorders;
 
 	public SettingView(Context context) {
 		this(context, "", "", "", false, false, false);
@@ -204,7 +206,7 @@ public final class SettingView extends View {
 		}
 	}
 
-	public void showErrorView(boolean show) {
+	public void showErrorView(@SuppressWarnings("unused") boolean show) {
 		/*if (show) {
 			if (errorView != null)
 				return;
@@ -244,7 +246,6 @@ public final class SettingView extends View {
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

@@ -36,6 +36,7 @@ import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 
 public final class NullDrawable extends Drawable {
 	private static final class NullConstantState extends ConstantState {
@@ -67,7 +68,7 @@ public final class NullDrawable extends Drawable {
 	}
 
 	@Override
-	public void draw(Canvas canvas) {
+	public void draw(@NonNull Canvas canvas) {
 	}
 
 	@Override

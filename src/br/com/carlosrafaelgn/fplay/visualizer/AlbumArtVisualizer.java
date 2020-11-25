@@ -359,12 +359,6 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 
 	//Runs on a SECONDARY thread
 	@Override
-	public String albumArtUriForRequestId(int requestId) {
-		return null;
-	}
-
-	//Runs on a SECONDARY thread
-	@Override
 	public Long albumIdForRequestId(int requestId) {
 		return null;
 	}

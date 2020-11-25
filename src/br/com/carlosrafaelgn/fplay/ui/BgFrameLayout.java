@@ -49,7 +49,6 @@ public final class BgFrameLayout extends FrameLayout {
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {

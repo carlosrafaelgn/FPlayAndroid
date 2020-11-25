@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -130,6 +131,7 @@ public final class BgSeekBar extends View {
 						secondaryBgColor, 0.35f));
 	}
 
+	@SuppressWarnings("unused")
 	public void setSliderMode(boolean sliderMode) {
 		this.sliderMode = sliderMode;
 		this.thumbWidth = (sliderMode ? (UI.strokeSize << 1) : ((UI.defaultControlContentsSize * 3) >> 2));
@@ -149,6 +151,7 @@ public final class BgSeekBar extends View {
 		this.listener = listener;
 	}
 
+	@SuppressWarnings("unused")
 	public void setOnBgSeekBarDrawListener(OnBgSeekBarDrawListener listener) {
 		this.drawListener = listener;
 	}
@@ -272,6 +275,7 @@ public final class BgSeekBar extends View {
 		invalidate();
 	}
 	
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isTracking() {
 		return (trackingOffset != Integer.MIN_VALUE);
 	}
@@ -311,6 +315,7 @@ public final class BgSeekBar extends View {
 		setValue(value, false, false);
 	}
 
+	@SuppressLint("WrongConstant")
 	@Override
 	public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
 		if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED)
@@ -353,7 +358,6 @@ public final class BgSeekBar extends View {
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -463,6 +467,7 @@ public final class BgSeekBar extends View {
 		setValue((int)((((float)max * (float)position) / (float)total) + 0.5f), true, false);
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		if (!isEnabled())

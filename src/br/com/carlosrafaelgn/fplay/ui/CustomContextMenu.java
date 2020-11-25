@@ -66,6 +66,7 @@ import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter.Comparer;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
+@SuppressWarnings("unused")
 public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, Comparer<CustomContextMenu.Item>, View.OnClickListener, DialogInterface.OnCancelListener, DialogInterface.OnDismissListener {
 	static final class Item implements MenuItem {
 		Context context;
@@ -244,7 +245,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			return this;
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
 		public MenuItem setIcon(int iconRes) {
 			this.icon = context.getResources().getDrawable(iconRes);
@@ -369,7 +369,6 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		return a.groupId - b.groupId;
 	}
 	
-	@SuppressWarnings("deprecation")
 	@Override
 	public void run() {
 		closed = false;
@@ -457,9 +456,9 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 				//weird... I know... but at least lint stops complaining!
 				final int id = 0;
 				items[first].actionView.setId(id + 1);
-				items[first].actionView.setNextFocusUpId(2);
+				items[first].actionView.setNextFocusUpId(id + 2);
 				items[last].actionView.setId(id + 2);
-				items[last].actionView.setNextFocusDownId(1);
+				items[last].actionView.setNextFocusDownId(id + 1);
 			}
 			scroll = new ObservableScrollView(context, UI.PLACEMENT_MENU);
 			final FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -489,7 +488,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 			final Item[] items = this.items.getRawArray();
 			for (int i = this.items.size() - 1; i >= 0; i--) {
 				final Item it = items[i];
-				if (it.icon != null && it.actionView != null && (it.actionView instanceof TextView))
+				if (it.icon != null && (it.actionView instanceof TextView))
 					((TextView)it.actionView).setCompoundDrawables(it.icon, null, null, null);
 			}
 		}
@@ -536,6 +535,7 @@ public final class CustomContextMenu implements SubMenu, ContextMenu, Runnable, 
 		if (!closed) close();
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public View addSeparator(int groupId, int order, int color, int height, int marginLeft, int marginTop, int marginRight, int marginBottom) {
 		final TextView t = new TextView(context);
 		final LayoutParams p = new LayoutParams(LayoutParams.MATCH_PARENT, height);

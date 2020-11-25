@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -187,7 +188,11 @@ public final class ShoutcastRadioStationList extends RadioStationList {
 				//Sorry, everyone!!!
 				//As a part of the process of getting a DevID, they ask you not to make it publicly available :(
 				//But.... you can get your own DevID for FREE here: http://www.shoutcast.com/Partners :)
-				baseUrl = new String(tmp, 0, 67, "UTF-8");
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+					baseUrl = new String(tmp, 0, 67, StandardCharsets.UTF_8);
+				else
+					//noinspection CharsetObjectCanBeUsed
+					baseUrl = new String(tmp, 0, 67, "UTF-8");
 			}
 			//https://developer.android.com/guide/appendix/media-formats.html
 			//ADTS raw AAC (.aac, decode in Android 3.1+)

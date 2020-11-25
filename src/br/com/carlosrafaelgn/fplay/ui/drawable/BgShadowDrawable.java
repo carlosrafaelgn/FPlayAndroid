@@ -49,8 +49,8 @@ import java.lang.ref.WeakReference;
 
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
-@SuppressWarnings("unused")
 public final class BgShadowDrawable extends Drawable {
+	@SuppressWarnings("unused")
 	public static final int SHADOW_DIALOG = 0;
 	public static final int SHADOW_MENU = 1;
 	public static final int SHADOW_TOAST = 2;
@@ -79,7 +79,6 @@ public final class BgShadowDrawable extends Drawable {
 		this.bitmapSize = bitmapSize;
 		this.shadowType = shadowType;
 
-		//noinspection SynchronizationOnLocalVariableOrMethodParameter
 		synchronized (sync) {
 			final WeakReference<Bitmap> cache = (shadowType == SHADOW_TOAST ? cacheToast : cacheOthers);
 			Bitmap bmp;
@@ -111,7 +110,6 @@ public final class BgShadowDrawable extends Drawable {
 					final int y2 = yGauss * yGauss;
 					final int oppositeYOffsetInImage = (bitmapSize - y - 1) * bitmapSize;
 					final int yOffsetInImage = y * bitmapSize;
-					int lastX = 0;
 					for (int x = 0; x <= s; x++) {
 						final int xGauss = x - s;
 						//optimization!
@@ -134,6 +132,7 @@ public final class BgShadowDrawable extends Drawable {
 				}
 				bmp = Bitmap.createBitmap(shadow, bitmapSize, bitmapSize, Bitmap.Config.ARGB_8888);
 				OutputStream outputStream = null;
+				//noinspection TryFinallyCanBeTryWithResources
 				try {
 					outputStream = context.openFileOutput(fileName, 0);
 					bmp.compress(Bitmap.CompressFormat.PNG, 0, outputStream);

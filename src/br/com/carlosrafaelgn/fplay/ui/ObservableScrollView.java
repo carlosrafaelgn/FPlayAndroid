@@ -67,7 +67,6 @@ public final class ObservableScrollView extends ScrollView {
 		init(UI.PLACEMENT_WINDOW);
 	}
 
-	@SuppressWarnings("deprecation")
 	private void init(int placement) {
 		this.placement = placement;
 		super.setHorizontalFadingEdgeEnabled(false);

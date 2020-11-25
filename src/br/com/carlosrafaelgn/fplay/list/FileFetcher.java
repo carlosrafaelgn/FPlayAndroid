@@ -256,7 +256,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		if (isExternal) {
 			if (canonicalPathLC.contains("usb")) {
 				c = usbCount[0] + 1;
-				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), FileSt.TYPE_EXTERNAL_STORAGE_USB);
+				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.usb_storage).toString() + ((c <= 1) ? "" : (" " + c)), FileSt.TYPE_EXTERNAL_STORAGE_USB);
 				usbCount[0] = c;
 			} else {
 				//try to avoid duplication of internal sdcard on a few phones... 
@@ -267,7 +267,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 					return;
 				}
 				c = externalCount[0] + 1;
-				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + Integer.toString(c))), FileSt.TYPE_EXTERNAL_STORAGE);
+				files[count] = new FileSt(canonicalPath, Player.theApplication.getText(R.string.external_storage).toString() + ((c <= 1) ? "" : (" " + c)), FileSt.TYPE_EXTERNAL_STORAGE);
 				externalCount[0] = c;
 			}
 		} else {
@@ -334,7 +334,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		//the following is an improved version based on these ideas:
 		//http://sapienmobile.com/?p=204
 		//http://stackoverflow.com/questions/11281010/how-can-i-get-external-sd-card-path-for-android-4-0
-		
+
 		/*try {
 			path = System.getenv("SECONDARY_STORAGE");
 			if (path != null && path.length() > 0) {
@@ -549,8 +549,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		//apparently a few devices don't like these members, so I converted them to the hardcoded version!
 		final String[] proj = {
 			//WHY, Android???? WHY?!?!?!?!?!?!?!
-			(artist != null && Build.VERSION.SDK_INT >= 29) ? "album_id" : "_id",
-			"album", "album_art", "numsongs" };
+			(artist != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ? "album_id" : "_id",
+			"album", "numsongs" };
 		final Cursor c = Player.theApplication.getContentResolver().query(Uri.parse((artist == null) ?
 				"content://media/external/audio/albums" :
 				"content://media/external/audio/artists/" + artist + "/albums"), proj, null, null, null);
@@ -572,8 +572,8 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			}
 			final String name = c.getString(1);
 			final long id = c.getLong(0);
-			final FileSt f = new FileSt(root + id + fakeRoot + name, name, id, c.getString(2));
-			f.tracks = c.getInt(3);
+			final FileSt f = new FileSt(root + id + fakeRoot + name, name, id);
+			f.tracks = c.getInt(2);
 			tmp.add(f);
 		}
 		c.close();

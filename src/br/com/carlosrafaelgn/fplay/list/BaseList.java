@@ -200,6 +200,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 			listener.onSelectionChanged(this);
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public final boolean removeSelection() {
 		int position = firstSel, count = lastSel - firstSel + 1;
 		if (position < 0 || position >= this.count || count <= 0)

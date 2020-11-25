@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
@@ -156,6 +157,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 			bringCurrentIntoView();
 		}
 
+		@SuppressLint("ClickableViewAccessibility")
 		@Override
 		public boolean onTouchEvent(@NonNull MotionEvent event) {
 			if (isEnabled() && event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -260,7 +262,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 
 		public void setSaturation(int saturation, boolean notifyChanges) {
 			if (this.saturation != saturation) {
-				this.saturation = (saturation <= 0 ? 0 : (saturation >= 100 ? 100 : saturation));
+				this.saturation = (saturation <= 0 ? 0 : (Math.min(saturation, 100)));
 				saturationPosition = (((100 - this.saturation) * (viewHeight - UI.strokeSize)) / 100);
 				invalidate();
 				if (notifyChanges)
@@ -270,7 +272,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 
 		public void setValue(int value, boolean notifyChanges) {
 			if (this.value != value) {
-				this.value = (value <= 0 ? 0 : (value >= 100 ? 100 : value));
+				this.value = (value <= 0 ? 0 : (Math.min(value, 100)));
 				valuePosition = ((this.value * (viewWidth - UI.strokeSize)) / 100);
 				invalidate();
 				if (notifyChanges)
@@ -330,6 +332,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 			setValue((100 * x) / (viewWidth - UI.strokeSize), true);
 		}
 
+		@SuppressLint("ClickableViewAccessibility")
 		@Override
 		public boolean onTouchEvent(@NonNull MotionEvent event) {
 			if (!isEnabled())
@@ -433,7 +436,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 
 		public void setHue(int hue, boolean notifyChanges) {
 			if (this.hue != hue) {
-				this.hue = (hue <= 0 ? 0 : (hue >= 360 ? 360 : hue));
+				this.hue = (hue <= 0 ? 0 : (Math.min(hue, 360)));
 				huePosition = ((this.hue * (viewSize - UI.strokeSize)) / 360);
 				invalidate();
 				if (colorView != null)
@@ -500,6 +503,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 			setHue((360 * position) / (viewSize - UI.strokeSize), true);
 		}
 
+		@SuppressLint("ClickableViewAccessibility")
 		@Override
 		public boolean onTouchEvent(@NonNull MotionEvent event) {
 			if (!isEnabled())
@@ -552,7 +556,6 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 				UI.strokeRect(rect, canvas, 0xff000000, UI.strokeSize);
 				rect.top += UI.strokeSize;
 				rect.bottom += UI.strokeSize;
-				UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
 			} else {
 				for (int i = rect.top; i < rect.bottom; i++)
 					canvas.drawBitmap(bitmap, 0.0f, (float)i, null);
@@ -564,8 +567,8 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 				UI.strokeRect(rect, canvas, 0xff000000, UI.strokeSize);
 				rect.left += UI.strokeSize;
 				rect.right += UI.strokeSize;
-				UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
 			}
+			UI.strokeRect(rect, canvas, 0xffffffff, UI.strokeSize);
 		}
 
 		@Override
@@ -579,7 +582,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 	}
 
 	private ObservableScrollView scrollView;
-	private RelativeLayout landscapeContainer;
+	private final RelativeLayout landscapeContainer;
 	private ColorSwatchView colorSwatchView;
 	private ColorView colorView;
 	private HueView hueView;
@@ -587,9 +590,10 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 	private BgEditText txtH, txtS, txtV, txtHTML;
 	private final ColorUtils.HSV hsv = new ColorUtils.HSV();
 	private int h, s, v, rgb;
-	private boolean ignoreChanges, oneShot, colorSwatchMode;
+	private boolean ignoreChanges, colorSwatchMode;
+	private final boolean oneShot;
 	private OnColorPickerViewListener listener;
-	private View parentView;
+	private final View parentView;
 
 	public static void showDialog(Context context, int initialColor, View parentView, boolean oneShot, OnColorPickerViewListener listener) {
 		ColorPickerView view = new ColorPickerView(context, parentView, oneShot);
@@ -790,6 +794,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 		setColor(color, true);
 	}
 
+	@SuppressLint("SetTextI18n")
 	private void setColor(int color, boolean updateHTML) {
 		ignoreChanges = !updateHTML;
 		setRGB(color);
@@ -930,6 +935,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 		}
 	}
 
+	@SuppressLint("SetTextI18n")
 	private void onHueChanged(int h) {
 		if (txtH != null) {
 			this.h = h;
@@ -941,6 +947,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 		}
 	}
 
+	@SuppressLint("SetTextI18n")
 	private void onSaturationChanged(int s) {
 		if (txtS != null) {
 			this.s = s;
@@ -952,6 +959,7 @@ public final class ColorPickerView extends LinearLayout implements DialogInterfa
 		}
 	}
 
+	@SuppressLint("SetTextI18n")
 	private void onValueChanged(int v) {
 		if (txtV != null) {
 			this.v = v;

@@ -73,8 +73,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	public static int getViewHeight() {
 		final int bottomMargin;
 		if (UI.is3D) {
-			switch (UI.songListScrollBarType) {
-			case BgListView.SCROLLBAR_LARGE:
+			if (UI.songListScrollBarType == BgListView.SCROLLBAR_LARGE) {
 				if (UI.scrollBarToTheLeft) {
 					leftMargin = 0;
 					rightMarginForDrawing = UI.controlSmallMargin;
@@ -82,11 +81,9 @@ public final class SongView extends View implements View.OnClickListener, View.O
 					leftMargin = UI.controlSmallMargin;
 					rightMarginForDrawing = 0;
 				}
-				break;
-			default:
+			} else {
 				leftMargin = UI.controlSmallMargin;
 				rightMarginForDrawing = UI.controlSmallMargin;
-				break;
 			}
 			topMargin = UI.controlSmallMargin;
 			rightMargin = rightMarginForDrawing + UI.strokeSize;
@@ -215,7 +212,6 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		super.setBackground(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	@Deprecated
 	public void setBackgroundDrawable(Drawable background) {
@@ -387,13 +383,6 @@ public final class SongView extends View implements View.OnClickListener, View.O
 
 	//Runs on a SECONDARY thread
 	@Override
-	public String albumArtUriForRequestId(int requestId) {
-		final Song song = this.song;
-		return ((requestId == this.requestId && song != null) ? song.albumArtUri : null);
-	}
-
-	//Runs on a SECONDARY thread
-	@Override
 	public Long albumIdForRequestId(int requestId) {
 		final Song song = this.song;
 		return ((requestId == this.requestId && song != null) ? song.albumId : null);
@@ -439,7 +428,6 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			albumArt.release();
 		albumArt = bitmap;
 		song.albumId = bitmap.albumId;
-		song.albumArtUri = bitmap.albumArtUri;
 		bitmapLeftPadding = leftMargin + ((albumArtHeight - bitmap.width) >> 1);
 		invalidate();
 		return true;

@@ -54,7 +54,7 @@ public final class SafeURLSpan extends URLSpan {
 	}
 
 	@Override
-	public void updateDrawState(TextPaint ds) {
+	public void updateDrawState(@NonNull TextPaint ds) {
 		super.updateDrawState(ds);
 		if (color != 0)
 			ds.setColor(color);
@@ -76,12 +76,10 @@ public final class SafeURLSpan extends URLSpan {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	public static CharSequence parseSafeHtml(CharSequence html) {
 		return replaceURLSpans(Html.fromHtml(html.toString()), 0, true);
 	}
 
-	@SuppressWarnings("deprecation")
 	public static CharSequence parseSafeHtml(CharSequence html, int color, boolean underlineText) {
 		return replaceURLSpans(Html.fromHtml(html.toString()), color, underlineText);
 	}

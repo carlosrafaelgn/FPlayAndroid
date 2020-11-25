@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay.ui;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -61,6 +62,7 @@ public final class ItemSelectorDialog<E extends ItemSelectorDialog.Item> impleme
 			this.fileSt = fileSt;
 		}
 
+		@NonNull
 		@Override
 		public String toString() {
 			return fileSt.name;
