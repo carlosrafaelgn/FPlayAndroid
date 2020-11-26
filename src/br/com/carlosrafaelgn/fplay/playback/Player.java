@@ -257,16 +257,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static final SongList songs = SongList.getInstance();
 
 	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
-	//Virtualizer and ExternalFx classes from being garbage collected...
+	//Virtualizer and ExternalFx classes from being garbage collected... (that behavior
+	//should be tested across several Android devices/versions to make sure Android's
+	//garbage collector would actually garbage collect the entire class...)
 	public static MainHandler theMainHandler;
 	public static final UI theUI = new UI();
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "InstantiationOfUtilityClass"})
 	public static final Equalizer theEqualizer = new Equalizer();
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "InstantiationOfUtilityClass"})
 	public static final BassBoost theBassBoost = new BassBoost();
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "InstantiationOfUtilityClass"})
 	public static final Virtualizer theVirtualizer = new Virtualizer();
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "InstantiationOfUtilityClass"})
 	public static final ExternalFx theExternalFx = new ExternalFx();
 
 	public static boolean hasFocus, previousResetsAfterTheBeginning;
@@ -302,7 +304,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static MediaPlayerBase localPlayer;
 
 	private static class CoreHandler extends Handler {
-		@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
 			switch (msg.what) {
@@ -575,6 +576,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	@SuppressLint("ObsoleteSdkInt")
 	public static void startService() {
 		if (state == STATE_NEW) {
 			MainHandler.initialize();
@@ -637,7 +639,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				registerMediaRouter();
 
 			thread = new Thread("Player Core Thread") {
-				@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 				@Override
 				public void run() {
 					Looper.prepare();
@@ -666,7 +667,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_fullCleanup();
 					hasFocus = false;
 					if (audioManager != null && thePlayer != null)
-						//noinspection deprecation
 						audioManager.abandonAudioFocus(thePlayer);
 					MediaContext._release();
 				}
@@ -1171,7 +1171,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		resetHeadsetHook();
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _fullCleanup() {
 		_partialCleanup();
 		silenceMode = SILENCE_NORMAL;
@@ -1203,7 +1202,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static boolean _requestFocus() {
-		//noinspection deprecation
 		if (thePlayer == null || audioManager == null || audioManager.requestAudioFocus(thePlayer, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 			hasFocus = false;
 			return false;
@@ -1270,7 +1268,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _postPlay(int how, Song[] songArray) {
 		if (state != STATE_ALIVE)
 			return;
@@ -1536,7 +1533,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
+	@SuppressWarnings("ConstantConditions")
 	private static void _enableEffects(int enabledFlags, int audioSink, Runnable callback) {
 		audioSinkUsedInEffects = Player.audioSink;
 		if (audioSinkUsedInEffects != audioSink) {
@@ -1621,7 +1618,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			MainHandler.postToMainThread(callback);
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _reinitializeEffects() {
 		audioSinkUsedInEffects = audioSink;
 		//don't even ask.......
@@ -2026,7 +2022,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			} while (title.charAt(i - 1) == '\\');
 			title = title.substring(firstChar, i).trim();
 			if (loopCount > 1)
-				title = title.replace("\\'", "\'");
+				title = title.replace("\\'", "'");
 			if (title.length() > 0) {
 				//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
 				if (metadata.icyName != null && metadata.icyName.length() > 0) {
@@ -2093,11 +2089,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static int getBluetoothVisualizerSize() {
 		final int size = (bluetoothVisualizerConfig & 7);
-		return ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
+		return Math.max(0, Math.min(size, 6));
 	}
 
 	public static void setBluetoothVisualizerSize(int size) {
-		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~7)) | ((size <= 0) ? 0 : ((size >= 6) ? 6 : size));
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~7)) | Math.max(0, Math.min(size, 6));
 	}
 
 	public static int getBluetoothVisualizerSpeed() {
@@ -2122,11 +2118,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static int getBluetoothVisualizerFramesToSkipIndex() {
 		final int framesToSkipIndex = ((bluetoothVisualizerConfig >> 5) & 15);
-		return ((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex));
+		return Math.max(0, Math.min(framesToSkipIndex, 11));
 	}
 
 	public static void setBluetoothVisualizerFramesToSkipIndex(int framesToSkipIndex) {
-		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (((framesToSkipIndex <= 0) ? 0 : ((framesToSkipIndex >= 11) ? 11 : framesToSkipIndex)) << 5);
+		bluetoothVisualizerConfig = (bluetoothVisualizerConfig & (~(15 << 5))) | (Math.max(0, Math.min(framesToSkipIndex, 11)) << 5);
 	}
 
 	public static boolean isBluetoothUsingVUMeter() {
@@ -2347,7 +2343,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return ((opts == null) ? new SerializableMap() : opts);
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void loadConfig() {
 		final SerializableMap opts = loadConfigFromFile();
 		UI.lastVersionCode = opts.getInt(OPT_LASTVERSIONCODE, 0);
@@ -2496,7 +2491,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			ExternalFx.loadConfig(opts);
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	public static void saveConfig(boolean saveSongs) {
 		final SerializableMap opts = new SerializableMap(96);
 		opts.put(OPT_LASTVERSIONCODE, UI.VERSION_CODE);
@@ -2691,7 +2685,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			.build();
 	}
 
-	@SuppressWarnings("deprecation")
 	private static Notification getNotification() {
 		boolean firstTime = false;
 		if (notification == null) {
@@ -2853,7 +2846,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return false;
 	}
 
-	@SuppressWarnings({"deprecation"})
 	public static boolean isInternetConnectedViaWiFi() {
 		if (thePlayer != null) {
 			try {
@@ -2868,7 +2860,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						final Network[] networks = mngr.getAllNetworks();
 						for (int i = networks.length - 1; i >= 0; i--) {
 							final NetworkInfo info = mngr.getNetworkInfo(networks[i]);
-							if (info.getType() == ConnectivityManager.TYPE_WIFI &&
+							if (info != null &&
+								info.getType() == ConnectivityManager.TYPE_WIFI &&
 								info.isConnected())
 								return true;
 						}
@@ -2877,7 +2870,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					}
 				}
 				final NetworkInfo networkInfo = mngr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-				return networkInfo.isConnected();
+				return (networkInfo != null && networkInfo.isConnected());
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
@@ -2894,7 +2887,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	public static String getWiFiIpAddressStr() {
 		try {
 			final WifiManager wm = (WifiManager)theApplication.getApplicationContext().getSystemService(WIFI_SERVICE);
@@ -3050,7 +3043,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static Intent stickyBroadcast;
 	private static ExternalReceiver externalReceiver;
 	private static ComponentName mediaButtonEventReceiver;
-	@SuppressWarnings("deprecation")
 	private static RemoteControlClient remoteControlClient;
 	private static MediaSession mediaSession;
 	private static MediaMetadata.Builder mediaSessionMetadataBuilder;
@@ -3130,7 +3122,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		mediaRouterCallback = null;
 	}
 
-	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 	private static void registerRemoteControlClientCallbacks() {
 		remoteControlClient.setOnGetPlaybackPositionListener(new RemoteControlClient.OnGetPlaybackPositionListener() {
@@ -3153,7 +3144,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		remoteControlClient.setPlaybackPositionUpdateListener(null);
 	}
 
-	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static void registerRemoteControlClient() {
 		try {
@@ -3172,7 +3162,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static void unregisterRemoteControlClient() {
 		try {
@@ -3199,7 +3188,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					@Override
 					public boolean onMediaButtonEvent(@NonNull Intent mediaButtonIntent) {
 						final Object o = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-						if (o == null || !(o instanceof KeyEvent))
+						if (!(o instanceof KeyEvent))
 							return false;
 						final KeyEvent e = (KeyEvent)o;
 						if (e.getAction() == KeyEvent.ACTION_DOWN)
@@ -3238,7 +3227,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					}
 				});
 				mediaSession.setSessionActivity(intentActivityHost);
-				//noinspection deprecation
 				mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			}
@@ -3265,7 +3253,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressLint("ObsoleteSdkInt")
 	public static void registerMediaButtonEventReceiver() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			registerMediaSession();
@@ -3280,7 +3268,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressLint("ObsoleteSdkInt")
 	public static void unregisterMediaButtonEventReceiver() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			unregisterMediaSession();
@@ -3359,13 +3347,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		case KeyEvent.KEYCODE_MEDIA_NEXT:
 		case KeyEvent.KEYCODE_MEDIA_REWIND:
 		case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+			return true;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
 		case KeyEvent.KEYCODE_VOLUME_UP:
-			return true;
+			return (volumeControlType == VOLUME_CONTROL_STREAM);
 		}
 		return false;
 	}
 
+	@SuppressLint("ObsoleteSdkInt")
 	public static boolean handleMediaButton(int keyCode) {
 		switch (keyCode) {
 		//There are a few weird bluetooth headsets that despite having only one physical
@@ -3418,7 +3408,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					observer.onPlayerGlobalVolumeChanged(keyCode);
 				break;
 			}
-			break;
+			return false;
 		case KeyEvent.KEYCODE_VOLUME_UP:
 			if (volumeControlType == VOLUME_CONTROL_STREAM) {
 				keyCode = increaseVolume();
@@ -3428,7 +3418,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					observer.onPlayerGlobalVolumeChanged(keyCode);
 				break;
 			}
-			break;
+			return false;
 		default:
 			return false;
 		}
@@ -3466,11 +3456,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			audioSinkMicrophoneCheckDone = true;
 			audioSinkMicrophoneCheckMethod = null;
 			try {
-				for (Method method : Player.class.getClassLoader().loadClass("android.media.AudioSystem").getMethods()) {
-					//public static native int getDeviceConnectionState(int device, String device_address);
-					if (method.getName().equals("getDeviceConnectionState")) {
-						audioSinkMicrophoneCheckMethod = method;
-						break;
+				final ClassLoader classLoader = Player.class.getClassLoader();
+				if (classLoader != null) {
+					final Class<?> clazz = classLoader.loadClass("android.media.AudioSystem");
+					if (clazz != null) {
+						for (Method method : clazz.getMethods()) {
+							//public static native int getDeviceConnectionState(int device, String device_address);
+							if (method.getName().equals("getDeviceConnectionState")) {
+								audioSinkMicrophoneCheckMethod = method;
+								break;
+							}
+						}
 					}
 				}
 			} catch (Throwable ex) {
@@ -3481,7 +3477,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (audioSinkMicrophoneCheckMethod == null)
 			return false;
 		try {
-			return ((int)audioSinkMicrophoneCheckMethod.invoke(null, 4, "") != 0);
+			final Object r = audioSinkMicrophoneCheckMethod.invoke(null, 4, "");
+			return (r instanceof Integer) && ((int)r != 0);
 		} catch (Throwable ex) {
 			audioSinkMicrophoneCheckMethod = null;
 		}
@@ -3552,7 +3549,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return 0;
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	private static void _checkAudioSink(int flags, boolean triggerNoisy, boolean reinitializeEffects, int tripleCheckBT) {
 		if (audioManager == null)
 			return;
@@ -3712,7 +3709,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static Song stateLastSong;
 	private static boolean stateLastPlaying, stateLastPreparing, stateLastBuffering;
 
-	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private static void broadcastStateChangeToRemoteControl(String title, boolean preparing, boolean titleOrSongHaveChanged) {
 		try {
@@ -3864,7 +3860,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (objs[2] != null) {
 			ex = (Throwable)objs[2];
 			objs[2] = null;
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof MediaPlayerBase.PermissionDeniedException) && observer != null && (observer instanceof ClientActivity))
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (ex instanceof MediaPlayerBase.PermissionDeniedException) && (observer instanceof ClientActivity))
 				((ClientActivity)observer).getHostActivity().requestReadStoragePermission();
 			final String msg = ex.getMessage();
 			if (ex instanceof IllegalStateException) {
@@ -3911,7 +3907,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			observer.onPlayerChanged(localSong, songHasChanged, preparingHasChanged, ex);
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private static void _updateState(boolean metaHasChanged, Throwable ex) {
 		if (localHandler != null) {
 			final boolean songHasChanged = (metaHasChanged || (stateLastSong != song));
