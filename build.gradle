@@ -6,7 +6,7 @@ buildscript {
 		google()
 	}
 	dependencies {
-		classpath 'com.android.tools.build:gradle:3.1.4'
+		classpath 'com.android.tools.build:gradle:4.1.3'
 
 		// NOTE: Do not place your application dependencies here; they belong
 		// in the individual module build.gradle files
@@ -24,8 +24,8 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
 
 	// versionCode must be kept in sync with UI.VERSION_CODE
 	// versionName must be kept in sync with UI.VERSION_NAME
@@ -62,7 +62,7 @@ android {
 			dimension "mode"
 			applicationId "br.com.carlosrafaelgn.fplay"
 			minSdkVersion 10
-			targetSdkVersion 29
+			targetSdkVersion 30
 			buildConfigField 'boolean', 'X', 'false'
 		}
 
@@ -70,7 +70,7 @@ android {
 			dimension "mode"
 			applicationId "br.com.carlosrafaelgn.fplay.x"
 			minSdkVersion 16
-			targetSdkVersion 29
+			targetSdkVersion 30
 			buildConfigField 'boolean', 'X', 'true'
 		}
 	}

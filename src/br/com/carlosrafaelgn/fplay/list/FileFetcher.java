@@ -316,7 +316,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		
+
 		if (cancelled)
 			return;
 		
@@ -451,7 +451,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
 			fetchRoot19(internalCount, externalCount, usbCount, addedCount, addedPaths);
 
-		if (count < files.length) {
+		if (count < files.length && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			files[count] = new FileSt(File.separator, Player.theApplication.getText(R.string.all_files).toString(), FileSt.TYPE_ALL_FILES);
 			count++;
 		}
@@ -570,7 +570,9 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 				c.close();
 				return;
 			}
-			final String name = c.getString(1);
+			String name = c.getString(1);
+			if (name == null || name.equals("<unknown>"))
+				name = unknownArtist;
 			final long id = c.getLong(0);
 			final FileSt f = new FileSt(root + id + fakeRoot + name, name, id);
 			f.tracks = c.getInt(2);
@@ -907,7 +909,7 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 						//we actually need to fetch all tracks from all this artist's albums...
 						final FileSt[] albums = files;
 						final TypedRawArrayList<FileSt> tracks = new TypedRawArrayList<>(FileSt.class, albums.length * 11);
-						for (int i = 0; i < albums.length; i++) {
+						for (int i = 0; i < albums.length && albums[i] != null; i++) {
 							if (cancelled || Player.state >= Player.STATE_TERMINATING) {
 								count = 0;
 								tracks.clear();

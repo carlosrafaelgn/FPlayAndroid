@@ -34,7 +34,8 @@
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <!-- Apparently, a few devices require this.... (not only to make android.media.audiofx.PresetReverb work, but to control volume and other settings)  -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <!-- Several years ago (today is 2021) android.permission.WRITE_SETTINGS was required by a few weird devices to make volume/mute control work. Thankfully those devices disappeared from market a long time ago, so this permission no longer makes sense! -->
+    <!-- <uses-permission android:name="android.permission.WRITE_SETTINGS" /> -->
 
     <!-- These three permissions are not classified as PROTECTION_NORMAL in Android M API 23
      https://developer.android.com/guide/topics/security/permissions.html#normal-dangerous -->
