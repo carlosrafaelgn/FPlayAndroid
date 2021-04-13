@@ -113,6 +113,7 @@ android {
 	buildTypes {
 		release {
 			minifyEnabled true
+			shrinkResources true
 			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt'
 		}
 	}
@@ -120,6 +121,6 @@ android {
 
 dependencies {
 	implementation fileTree(include: '*.jar', dir: 'libs')
-	implementation 'com.google.code.gson:gson:2.8.2'
+	implementation 'com.google.code.gson:gson:2.8.5'
 	implementation project(':fplay.plugin')
 }
