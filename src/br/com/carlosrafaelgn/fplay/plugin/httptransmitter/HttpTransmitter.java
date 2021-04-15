@@ -30,11 +30,12 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.plugin;
+package br.com.carlosrafaelgn.fplay.plugin.httptransmitter;
 
 import br.com.carlosrafaelgn.fplay.R;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin;
 
 public final class HttpTransmitter implements FPlayPlugin.Observer {
 	private static final int PLUGIN_MSG_START = 0x0001;

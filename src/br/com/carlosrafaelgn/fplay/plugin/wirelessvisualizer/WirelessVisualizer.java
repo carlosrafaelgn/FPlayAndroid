@@ -30,11 +30,12 @@
 //
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
-package br.com.carlosrafaelgn.fplay.plugin;
+package br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer;
 
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
-import br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer.Plugin;
+import br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin;
+import br.com.carlosrafaelgn.fplay.plugin.PluginManager;
 
 @SuppressWarnings("unused")
 public final class WirelessVisualizer implements FPlayPlugin.Observer {
