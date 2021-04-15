@@ -1,7 +1,7 @@
 //
 // FPlayAndroid is distributed under the FreeBSD License
 //
-// Copyright (c) 2013-2014-2014, Carlos Rafael Gimenes das Neves
+// Copyright (c) 2013-2014, Carlos Rafael Gimenes das Neves
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,6 @@ import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 
 public final class HttpTransmitter implements FPlayPlugin.Observer {
-	public static final String PLUGIN_CLASS = "br.com.carlosrafaelgn.fplay.plugin.httptransmitter.Plugin";
-	public static final String PLUGIN_PACKAGE = "br.com.carlosrafaelgn.fplay.plugin.httptransmitter";
-	public static final String PLUGIN_NAME = "FPlay Plugin - Http Transmitter";
-
 	private static final int PLUGIN_MSG_START = 0x0001;
 	private static final int PLUGIN_MSG_ERROR_MESSAGE = 0x0002;
 	private static final int PLUGIN_MSG_GET_ADDRESS = 0x0003;
@@ -90,11 +86,8 @@ public final class HttpTransmitter implements FPlayPlugin.Observer {
 		if (plugin == null)
 			return 0;
 
-		switch (message) {
-		case PLUGIN_MSG_ERROR_MESSAGE:
+		if (message == PLUGIN_MSG_ERROR_MESSAGE)
 			Player.httpTransmitterLastErrorMessage = (obj == null ? null : obj.toString());
-			break;
-		}
 
 		return 0;
 	}

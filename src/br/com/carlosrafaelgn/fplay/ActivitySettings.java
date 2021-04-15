@@ -1,7 +1,7 @@
 //
 // FPlayAndroid is distributed under the FreeBSD License
 //
-// Copyright (c) 2013-2014-2014, Carlos Rafael Gimenes das Neves
+// Copyright (c) 2013-2014, Carlos Rafael Gimenes das Neves
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -67,8 +67,6 @@ import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaContext;
 import br.com.carlosrafaelgn.fplay.plugin.HttpTransmitter;
 import br.com.carlosrafaelgn.fplay.plugin.WirelessVisualizer;
-import br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin;
-import br.com.carlosrafaelgn.fplay.plugin.PluginManager;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgDialog;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
@@ -82,7 +80,7 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 @SuppressWarnings("WeakerAccess")
-public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable, MainHandler.Callback, PluginManager.Observer {
+public final class ActivitySettings extends ClientActivity implements Player.PlayerTurnOffTimerObserver, View.OnClickListener, DialogInterface.OnClickListener, ColorPickerView.OnColorPickerViewListener, ObservableScrollView.OnScrollListener, Runnable, MainHandler.Callback {
 	public static final int MODE_NORMAL = 0;
 	public static final int MODE_COLOR = 1;
 	public static final int MODE_BLUETOOTH = 2;
@@ -757,7 +755,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		return ((fileBufferSize == 0) ? getText(R.string.noneM).toString() : (fileBufferSize >>> 10) + " KiB");
 	}
 
-	@SuppressWarnings("deprecation")
 	private void prepareHeader(TextView hdr) {
 		hdr.setMaxLines(2);
 		hdr.setEllipsize(TruncateAt.END);
@@ -941,31 +938,10 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 	}
 
-	@Override
-	public void onPluginCreated(int id, FPlayPlugin plugin) {
-		if (plugin == null || !isLayoutCreated() || Player.state != Player.STATE_ALIVE)
-			return;
-
-		switch (mode) {
-		case MODE_BLUETOOTH:
-			if (id != 1)
-				break;
-			WirelessVisualizer.create(plugin, getHostActivity(), startTransmissionOnConnection);
-			refreshBluetoothStatus(false, false);
-			break;
-		case MODE_HTTP:
-			if (id != 2)
-				break;
-			if (!HttpTransmitter.create(plugin, getHostActivity()) && Player.httpTransmitterLastErrorMessage == null)
-				Player.httpTransmitterLastErrorMessage = getText(R.string.transmission_error).toString();
-			refreshHttpStatus(false, false);
-			break;
-		}
-	}
-
 	private void startBluetoothVisualizer(boolean startTransmissionOnConnection) {
 		this.startTransmissionOnConnection = startTransmissionOnConnection;
-		PluginManager.createPlugin(getHostActivity(), WirelessVisualizer.PLUGIN_CLASS, WirelessVisualizer.PLUGIN_PACKAGE, WirelessVisualizer.PLUGIN_NAME, 1, this);
+		WirelessVisualizer.create(getHostActivity(), startTransmissionOnConnection);
+		refreshBluetoothStatus(false, false);
 	}
 
 	private void refreshBluetoothStatus(boolean postAgain, boolean ignoreLayoutStatus) {
@@ -1056,7 +1032,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		}
 
 		try {
-			PluginManager.createPlugin(getHostActivity(), HttpTransmitter.PLUGIN_CLASS, HttpTransmitter.PLUGIN_PACKAGE, HttpTransmitter.PLUGIN_NAME, 2, this);
+			if (!HttpTransmitter.create(null, getHostActivity()) && Player.httpTransmitterLastErrorMessage == null)
+				Player.httpTransmitterLastErrorMessage = getText(R.string.transmission_error).toString();
+			refreshHttpStatus(false, false);
 		} catch (Throwable ex) {
 			Player.httpTransmitterLastErrorMessage = getText(!Player.isInternetConnectedViaWiFi() ?
 				R.string.error_wifi :
@@ -1137,7 +1115,6 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			onClick(startTransmissionOnConnection ? optBtStart : optBtConnect);
 	}
 
-	@SuppressWarnings({ "deprecation", "PointlessBooleanExpression", "ConstantConditions" })
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_settings);
@@ -1179,16 +1156,19 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			btnAbout.setCompoundDrawables(new TextIconDrawable(UI.ICON_INFORMATION, UI.color_text), null, null, null);
 		}
 
-		btnGoBack.setNextFocusDownId(2);
-		btnBluetooth.setNextFocusDownId(2);
-		btnAbout.setNextFocusDownId(2);
-		btnAbout.setNextFocusRightId(2);
+		//weird... I know... but at least lint stops complaining!
+		int id = 2;
+		btnGoBack.setNextFocusDownId(id);
+		btnBluetooth.setNextFocusDownId(id);
+		btnAbout.setNextFocusDownId(id);
+		btnAbout.setNextFocusRightId(id);
 		UI.setNextFocusForwardId(btnAbout, 2);
 
-		btnGoBack.setNextFocusUpId(3);
-		btnBluetooth.setNextFocusUpId(3);
-		btnAbout.setNextFocusUpId(3);
-		btnGoBack.setNextFocusLeftId(3);
+		id = 3;
+		btnGoBack.setNextFocusUpId(id);
+		btnBluetooth.setNextFocusUpId(id);
+		btnAbout.setNextFocusUpId(id);
+		btnGoBack.setNextFocusLeftId(id);
 
 		if (!showBluetooth) {
 			UI.setNextFocusForwardId(btnGoBack, R.id.btnAbout);
@@ -1428,11 +1408,12 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			currentHeader = -1;
 		}
 		//weird... I know... but at least lint stops complaining!
-		final int id = 0;
-		firstViewAdded.setId(id + 2);
+		id = 2;
+		firstViewAdded.setId(id);
 		firstViewAdded.setNextFocusUpId(R.id.btnAbout);
 		firstViewAdded = null;
-		lastViewAdded.setId(id + 3);
+		id = 3;
+		lastViewAdded.setId(id);
 		lastViewAdded.setNextFocusDownId(R.id.btnGoBack);
 		lastViewAdded = null;
 
@@ -1728,7 +1709,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			if (!UI.is3D) {
 				for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
 					final View v = panelSettings.getChildAt(i);
-					if (v != null && (v instanceof SettingView))
+					if (v instanceof SettingView)
 						v.invalidate();
 				}
 			}
@@ -1737,7 +1718,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.setVerticalMarginLarge(optIsVerticalMarginLarge.isChecked());
 			for (int i = panelSettings.getChildCount() - 1; i >= 0; i--) {
 				final View v = panelSettings.getChildAt(i);
-				if (v != null && (v instanceof SettingView))
+				if (v instanceof SettingView)
 					((SettingView)v).updateVerticalMargin(oldVerticalMargin);
 			}
 		} else if (view == optExtraSpacing) {
@@ -1835,10 +1816,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (view == optAllowLockScreen) {
 			UI.allowPlayerAboveLockScreen = optAllowLockScreen.isChecked();
 			if (UI.allowPlayerAboveLockScreen)
-				//noinspection deprecation
 				addWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 			else
-				//noinspection deprecation
 				clearWindowFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 		} else if (view == optAutoTurnOff || view == optAutoIdleTurnOff || view == optTheme ||
 			view == optForcedLocale || view == optVolumeControlType || view == optExtraInfoMode ||

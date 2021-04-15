@@ -1,1 +1,0 @@
-include ':fplay.plugin', ':fplay.plugin.wirelessvisualizer', ':fplay.plugin.httptransmitter'

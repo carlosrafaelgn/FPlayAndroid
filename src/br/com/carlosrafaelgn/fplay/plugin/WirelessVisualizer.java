@@ -1,7 +1,7 @@
 //
 // FPlayAndroid is distributed under the FreeBSD License
 //
-// Copyright (c) 2013-2014-2014, Carlos Rafael Gimenes das Neves
+// Copyright (c) 2013-2014, Carlos Rafael Gimenes das Neves
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,12 +34,10 @@ package br.com.carlosrafaelgn.fplay.plugin;
 
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.playback.Player;
+import br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer.Plugin;
 
+@SuppressWarnings("unused")
 public final class WirelessVisualizer implements FPlayPlugin.Observer {
-	public static final String PLUGIN_CLASS = "br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer.Plugin";
-	public static final String PLUGIN_PACKAGE = "br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer";
-	public static final String PLUGIN_NAME = "FPlay Plugin - Wireless Visualizer";
-
 	public static final int REQUEST_ENABLE = 0x1000;
 
 	private static final int PLUGIN_MSG_START = 0x0001;
@@ -64,10 +62,9 @@ public final class WirelessVisualizer implements FPlayPlugin.Observer {
 
 	private FPlayPlugin plugin;
 
-	public static void create(FPlayPlugin plugin, ActivityHost activityHost, boolean startTransmissionOnConnection) {
-		if (plugin == null)
-			return;
-
+	public static void create(ActivityHost activityHost, boolean startTransmissionOnConnection) {
+		final FPlayPlugin plugin = new Plugin();
+		plugin.init(activityHost, PluginManager.getFPlay());
 		final WirelessVisualizer wirelessVisualizer;
 
 		Player.stopAllBackgroundPlugins();

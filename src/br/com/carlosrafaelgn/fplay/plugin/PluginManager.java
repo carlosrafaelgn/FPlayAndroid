@@ -34,264 +34,26 @@ package br.com.carlosrafaelgn.fplay.plugin;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Message;
 
 import com.google.gson.Gson;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Locale;
+import com.google.gson.JsonSyntaxException;
 
 import br.com.carlosrafaelgn.fplay.R;
-import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
-import dalvik.system.DexClassLoader;
 
-public final class PluginManager implements MainHandler.Callback, DialogInterface.OnClickListener, DialogInterface.OnDismissListener, FPlay {
-	private static final int MSG_ERROR_GEN = 0x0A00;
-	private static final int MSG_INSTALL_PLUGIN = 0x0A01;
-
-	private static final HashMap<String, Class<?>> pluginClasses = new HashMap<>();
-	private static final HashMap<String, Object> pluginContexts = new HashMap<>();
-	private static volatile boolean isPluginLoading;
+public final class PluginManager implements FPlay {
 	private static final PluginManager pluginManager = new PluginManager();
-
-	public interface Observer {
-		void onPluginCreated(int id, FPlayPlugin plugin);
-	}
 
 	public static FPlay getFPlay() {
 		return pluginManager;
 	}
 
-	private volatile ActivityHost activity;
-	private volatile String pluginName, packageName;
-
 	private PluginManager() {
-	}
-
-	private static boolean tryToCreatePluginFromCache(ActivityHost activity, String className, int pluginId, Observer observer) {
-		try {
-			synchronized (pluginClasses) {
-				final Class<?> clazz;
-				if ((clazz = pluginClasses.get(className)) != null) {
-					final FPlayPlugin plugin = (FPlayPlugin)clazz.newInstance();
-					if (plugin != null) {
-						plugin.init(pluginContexts.get(className), pluginManager);
-						observer.onPluginCreated(pluginId, plugin);
-						return true;
-					}
-				}
-			}
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-			pluginManager.showMessage(activity, MSG_ERROR_GEN, null, null);
-			return true;
-		}
-		return false;
-	}
-
-	private static boolean tryToCreatePluginFromPackage(Runnable runnable, ActivityHost activity, String className, String packageName) {
-		try {
-			//the plugin has already been downloaded, now we just need to load it
-
-			//unfortunatelly, although getCodeCacheDir() is read/writable,
-			//we cannot list its contents on a few devices... :(
-			final File codeCacheDir = activity.getFilesDir();
-			//final ApplicationInfo appInfo = activity.getApplicationInfo();
-			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			//	codeCacheDir = activity.getCodeCacheDir();
-			//} else {
-			//	codeCacheDir = new File(appInfo.dataDir, "code_cache");
-			//	if (!codeCacheDir.exists()) {
-			//		if (!codeCacheDir.mkdirs()) {
-			//			if (!codeCacheDir.exists())
-			//				codeCacheDir = activity.getFilesDir();
-			//		}
-			//	}
-			//}
-
-			final Context context = activity.createPackageContext(packageName, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
-
-			if (context == null)
-				return false;
-
-			final String apkFilePath = context.getPackageCodePath();
-
-			//delete old cached dex files in order to make sure they are
-			//always up-to-date with their apk files (which might have changed)
-			for (File file : codeCacheDir.listFiles()) {
-				if (file.getName().toLowerCase(Locale.US).startsWith(packageName)) {
-					try {
-						if (file.delete())
-							break;
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
-				}
-			}
-			/*final int apk = apkFilePath.lastIndexOf(packageName);
-			if (apk > 0) {
-				//could be a.b.c[-XXX]/YYY.apk or a.b.c[-XXX].apk
-				int end = apkFilePath.indexOf(File.separatorChar, apk);
-				if (end < apk)
-					end = apkFilePath.lastIndexOf(".apk");
-				if (end > apk) {
-					final File oldDex = new File(codeCacheDir, apkFilePath.substring(apk, end) + ".dex");
-					try {
-						if (oldDex.exists()) {
-							oldDex.delete();
-						}
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
-				}
-			}*/
-
-			final Class<?> clazz;
-			final ClassLoader classLoader = activity.getClassLoader();
-			classLoader.loadClass("br.com.carlosrafaelgn.fplay.plugin.FPlay");
-			classLoader.loadClass("br.com.carlosrafaelgn.fplay.plugin.FPlayPlugin");
-			final DexClassLoader dexClassLoader = new DexClassLoader(apkFilePath, codeCacheDir.getAbsolutePath(), null, classLoader);
-			clazz = dexClassLoader.loadClass(className);
-
-			if (clazz != null) {
-				synchronized (pluginClasses) {
-					if (!pluginClasses.containsKey(className))
-						pluginClasses.put(className, clazz);
-					if (!pluginContexts.containsKey(className))
-						pluginContexts.put(className, context);
-				}
-				MainHandler.postToMainThread(runnable);
-				return true;
-			}
-		} catch (Throwable ex) {
-			//there isn't much we can do...
-			ex.printStackTrace();
-		}
-		return false;
-	}
-
-	public static void createPlugin(final ActivityHost activity, final String className, final String packageName, final String pluginName, final int pluginId, final Observer observer) {
-		if (tryToCreatePluginFromCache(activity, className, pluginId, observer))
-			return;
-
-		synchronized (pluginClasses) {
-			if (isPluginLoading)
-				return;
-			isPluginLoading = true;
-		}
-
-		final Thread thread = (new Thread("Plugin Loader Thread") {
-			{
-				setDaemon(true);
-			}
-
-			@Override
-			public void run() {
-				try {
-					if (MainHandler.isOnMainThread()) {
-						//the plugin class has been successfully loaded
-						tryToCreatePluginFromCache(activity, className, pluginId, observer);
-						return;
-					}
-
-					boolean mustDownload;
-
-					try {
-						mustDownload = (activity.getPackageManager().getPackageInfo(packageName, 0) == null);
-					} catch (Throwable ex) {
-						mustDownload = true;
-					}
-
-					if (mustDownload) {
-						pluginManager.showMessage(activity, MSG_INSTALL_PLUGIN, pluginName, packageName);
-						return;
-					}
-
-					if (!tryToCreatePluginFromPackage(this, activity, className, packageName))
-						pluginManager.showMessage(activity, MSG_ERROR_GEN, null, null);
-				} finally {
-					isPluginLoading = false;
-				}
-			}
-		});
-
-		try {
-			thread.start();
-		} catch (Throwable ex) {
-			isPluginLoading = false;
-			ex.printStackTrace();
-		}
-	}
-
-	private void showMessage(ActivityHost activity, int message, String pluginName, String packageName) {
-		synchronized (pluginClasses) {
-			this.activity = activity;
-			this.pluginName = pluginName;
-			this.packageName = packageName;
-			MainHandler.sendMessage(this, message);
-		}
-	}
-
-	@Override
-	public boolean handleMessage(Message message) {
-		switch (message.what) {
-		case MSG_ERROR_GEN:
-			//something went wrong with the plugin
-			synchronized (pluginClasses) {
-				if (activity != null) {
-					UI.showDialogMessage(activity, activity.getText(R.string.oops), activity.getText(R.string.error_gen), R.string.cancel);
-					activity = null;
-				}
-			}
-			break;
-		case MSG_INSTALL_PLUGIN:
-			synchronized (pluginClasses) {
-				//replace %s... faster than format() ;)
-				if (activity != null && pluginName != null && packageName != null)
-					UI.showDialogMessage(activity, activity.getText(R.string.download), activity.getText(R.string.download_confirmation).toString().replace("%s", pluginName), R.string.download, R.string.no, this, this);
-			}
-			break;
-		}
-		return false;
-	}
-
-	@Override
-	public void onClick(DialogInterface dialog, int which) {
-		synchronized (pluginClasses) {
-			if (activity != null && pluginName != null && packageName != null && which == DialogInterface.BUTTON_POSITIVE) {
-				try {
-					final Intent intent = new Intent(Intent.ACTION_VIEW);
-					intent.setData(Uri.parse("market://details?id=" + packageName));
-					activity.startActivity(intent);
-				} catch (Throwable ex) {
-					showMessage(activity, MSG_ERROR_GEN, null, null);
-					return;
-				}
-			}
-			activity = null;
-			pluginName = null;
-			packageName = null;
-		}
-		dialog.dismiss();
-	}
-
-	@Override
-	public void onDismiss(DialogInterface dialogInterface) {
-		synchronized (pluginClasses) {
-			activity = null;
-			pluginName = null;
-			packageName = null;
-		}
 	}
 
 	@Override
@@ -500,11 +262,7 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 
 	@Override
 	public String getString(int str) {
-		switch (str) {
-		case STR_VISUALIZER_NOT_SUPPORTED:
-			return UI.emoji(Player.theApplication.getText(R.string.visualizer_not_supported));
-		}
-		return "";
+		return (str == STR_VISUALIZER_NOT_SUPPORTED ? UI.emoji(Player.theApplication.getText(R.string.visualizer_not_supported)) : "");
 	}
 
 	@Override
@@ -706,7 +464,7 @@ public final class PluginManager implements MainHandler.Callback, DialogInterfac
 	}
 
 	@Override
-	public <T> T fromJson(String json, Class<T> clazz) throws Exception {
+	public <T> T fromJson(String json, Class<T> clazz) throws JsonSyntaxException {
 		return (new Gson()).fromJson(json, clazz);
 	}
 }

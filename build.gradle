@@ -121,6 +121,5 @@ android {
 
 dependencies {
 	implementation fileTree(include: '*.jar', dir: 'libs')
-	implementation 'com.google.code.gson:gson:2.8.5'
-	implementation project(':fplay.plugin')
+	implementation 'com.google.code.gson:gson:2.8.6'
 }
