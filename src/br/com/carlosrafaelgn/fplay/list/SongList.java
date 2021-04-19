@@ -924,9 +924,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 				if (shuffledList[i] == s) {
 					shuffledCount--;
 					if (indexOfPreviouslyDeletedCurrentShuffledItem >= 0) {
-						if (indexOfPreviouslyDeletedCurrentShuffledItem == i)
-							indexOfPreviouslyDeletedCurrentShuffledItem = i;
-						else if (indexOfPreviouslyDeletedCurrentShuffledItem > i)
+						if (indexOfPreviouslyDeletedCurrentShuffledItem > i)
 							indexOfPreviouslyDeletedCurrentShuffledItem--;
 						if (indexOfPreviouslyDeletedCurrentShuffledItem >= shuffledCount)
 							indexOfPreviouslyDeletedCurrentShuffledItem = -1;
@@ -968,10 +966,9 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			Player.listCleared();
 		} else if (whatHappened != SELECTION_CHANGED && shuffledList == null && current >= 0 && current < count) {
 			int n = current + 1;
-			if (n < 0 || n >= count)
+			if (n >= count)
 				n = 0;
-			if (n < count)
-				Player.nextMayHaveChanged(items[n]);
+			Player.nextMayHaveChanged(items[n]);
 		}
 	}
 

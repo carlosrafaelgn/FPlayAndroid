@@ -304,6 +304,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static MediaPlayerBase localPlayer;
 
 	private static class CoreHandler extends Handler {
+		public CoreHandler() {
+			super(looper);
+		}
+
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
 			switch (msg.what) {
@@ -429,6 +433,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	private static class CoreLocalHandler extends Handler {
+		public CoreLocalHandler() {
+			super(Looper.getMainLooper());
+		}
+
 		@Override
 		public void dispatchMessage(@NonNull Message msg) {
 			if (thePlayer == null || state > STATE_ALIVE)
@@ -576,7 +584,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressLint("ObsoleteSdkInt")
 	public static void startService() {
 		if (state == STATE_NEW) {
 			MainHandler.initialize();
@@ -1533,7 +1540,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressWarnings("ConstantConditions")
 	private static void _enableEffects(int enabledFlags, int audioSink, Runnable callback) {
 		audioSinkUsedInEffects = Player.audioSink;
 		if (audioSinkUsedInEffects != audioSink) {
@@ -2324,6 +2330,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_FILE_PREFETCH_SIZE1 = 66;
 	private static final int OPTBIT_PLACE_CONTROLS_AT_THE_BOTTOM = 67;
 	private static final int OPTBIT_ALBUMART_SONG_LIST = 68;
+	private static final int OPTBIT_AUTO_NIGHT_MODE = 69;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2374,6 +2381,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			idleTurnOffTimerSelectedMinutes = 0;
 		UI.customColors = opts.getBuffer(OPT_CUSTOMCOLORS);
 		UI.is3D = ((UI.lastVersionCode < 113) || opts.getBit(OPTBIT_3D, true));
+		UI.autoNightMode = opts.getBit(OPTBIT_AUTO_NIGHT_MODE, true);
 		UI.setTheme(null, (UI.lastVersionCode < 113) ? UI.THEME_FPLAY : opts.getInt(OPT_THEME, UI.THEME_FPLAY));
 		UI.msgs = opts.getInt(OPT_MSGS, 0);
 		UI.msgStartup = opts.getInt(OPT_MSGSTARTUP, 0);
@@ -2507,6 +2515,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_IDLETURNOFFTIMERCUSTOMMINUTES, idleTurnOffTimerCustomMinutes);
 		opts.put(OPT_IDLETURNOFFTIMERSELECTEDMINUTES, idleTurnOffTimerSelectedMinutes);
 		opts.put(OPT_CUSTOMCOLORS, UI.customColors);
+		opts.putBit(OPTBIT_AUTO_NIGHT_MODE, UI.autoNightMode);
 		opts.put(OPT_THEME, UI.theme);
 		opts.put(OPT_FORCEDLOCALE, UI.forcedLocale);
 		opts.put(OPT_MSGS, UI.msgs);
@@ -3253,7 +3262,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressLint("ObsoleteSdkInt")
 	public static void registerMediaButtonEventReceiver() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			registerMediaSession();
@@ -3268,7 +3276,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
-	@SuppressLint("ObsoleteSdkInt")
 	public static void unregisterMediaButtonEventReceiver() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			unregisterMediaSession();
@@ -3355,7 +3362,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return false;
 	}
 
-	@SuppressLint("ObsoleteSdkInt")
 	public static boolean handleMediaButton(int keyCode) {
 		switch (keyCode) {
 		//There are a few weird bluetooth headsets that despite having only one physical
@@ -3758,6 +3764,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	public static void refreshNotification() {
+		try {
+			notificationManager.notify(1, getNotification());
+		} catch (Throwable ex) {
+			//why the *rare* android.os.TransactionTooLargeException?
+			//what to do?!?!
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	private static void broadcastStateChange(String title, boolean preparing, boolean titleOrSongHaveChanged) {
 		if (notificationBroadcastPending) {
@@ -3772,12 +3787,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			return;
 		}
 		notificationLastUpdateTime = now;
-		try {
-			notificationManager.notify(1, getNotification());
-		} catch (Throwable ex) {
-			//why the *rare* android.os.TransactionTooLargeException?
-			//what to do?!?!
-		}
+		refreshNotification();
 		WidgetMain.updateWidgets();
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?

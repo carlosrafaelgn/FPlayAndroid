@@ -2,6 +2,8 @@
 <resources>
 
 	<!--
+		Always use Simplified Chinese when translating!!!
+
 		I do not speak Chinese, so I keep these here as a lesson/reminder :)
 		、 - IDEOGRAPHIC COMMA (U+3001) - in Chinese, delimits items in a list or series
 		， - FULLWIDTH COMMA (U+FF0C) - in Chinese, indicates a pause
@@ -376,5 +378,7 @@
 	<string name="remote_list">共享列表（FPlay）</string>
 	<string name="access_code">访问代码</string>
 	<string name="invalid_access_code">无效的访问代码 :(</string>
+    <string name="night_mode">夜间模式</string>
+    <string name="opt_auto_night_mode">根据系统设置自动切换到主题“夜间模式”</string>
 
 </resources>

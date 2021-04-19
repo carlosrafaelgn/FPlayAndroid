@@ -46,6 +46,7 @@ import android.view.View.OnCreateContextMenuListener;
 
 import br.com.carlosrafaelgn.fplay.ui.UI;
 
+@SuppressWarnings("unused")
 public abstract class ClientActivity implements MenuItem.OnMenuItemClickListener, OnCreateContextMenuListener {
 	ActivityHost activity;
 	ClientActivity previousActivity;

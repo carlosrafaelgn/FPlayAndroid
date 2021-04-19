@@ -99,7 +99,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	private int samsungSMultiWindowWidth, samsungSMultiWindowHeight;
 	private class SamsungStateChangeListener implements java.lang.reflect.InvocationHandler {
 		@Override
-		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		public Object invoke(Object proxy, Method method, Object[] args) {
 			try {
 				/*
 				public interface StateChangeListener
@@ -193,6 +193,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	static {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
 			try {
+				//noinspection JavaReflectionMemberAccess
 				samsungWindowGetMultiPhoneWindowEvent = Window.class.getMethod("getMultiPhoneWindowEvent");
 			} catch (Throwable ex) {
 				samsungWindowGetMultiPhoneWindowEvent = null;
@@ -351,6 +352,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			updateSystemColors(false);
 	}
 
+	@SuppressWarnings("SameParameterValue")
 	void setContentViewWithTransition(View view, boolean fadeAllowed, boolean forceFadeOut) {
 		final int transition = UI.transitions & 0xFF;
 		parent = ((fadeAllowed && !ignoreFadeNextTime && transition != UI.TRANSITION_NONE) ? baseParent : null);
@@ -371,16 +373,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 							tmp.setInterpolator(this);
 							animationSet.addAnimation(tmp);
 							tmp = new AlphaAnimation(1.0f, 0.0f);
-							tmp.setInterpolator(Player.theUI);
-							animationSet.addAnimation(tmp);
 						} else {
 							tmp = new ScaleAnimation(1.1f, 1.0f, 1.1f, 1.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
 							tmp.setInterpolator(this);
 							animationSet.addAnimation(tmp);
 							tmp = new AlphaAnimation(0.0f, 1.0f);
-							tmp.setInterpolator(Player.theUI);
-							animationSet.addAnimation(tmp);
 						}
+						tmp.setInterpolator(Player.theUI);
+						animationSet.addAnimation(tmp);
 						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
 						anim.setRepeatCount(0);
 						anim.setFillAfter(false);
@@ -394,16 +394,14 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 							tmp.setInterpolator(this);
 							animationSet.addAnimation(tmp);
 							tmp = new AlphaAnimation(1.0f, 0.0f);
-							tmp.setInterpolator(Player.theUI);
-							animationSet.addAnimation(tmp);
 						} else {
 							tmp = new TranslateAnimation(Animation.ABSOLUTE, 0.0f, Animation.ABSOLUTE, 0.0f, Animation.ABSOLUTE, UI.defaultControlSize << 1, Animation.ABSOLUTE, 0.0f);
 							tmp.setInterpolator(this);
 							animationSet.addAnimation(tmp);
 							tmp = new AlphaAnimation(0.0f, 1.0f);
-							tmp.setInterpolator(Player.theUI);
-							animationSet.addAnimation(tmp);
 						}
+						tmp.setInterpolator(Player.theUI);
+						animationSet.addAnimation(tmp);
 						anim.setDuration(UI.TRANSITION_DURATION_FOR_ACTIVITIES_SLOW);
 						anim.setRepeatCount(0);
 						anim.setFillAfter(false);
@@ -473,7 +471,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			//we need to delay the start of the animation in order to allow it to run smooth
 			//from the very start, because we might have alread done a lot of work in this frame,
 			//creating and adding the new views, and cleaning up the previous activity
-			if (animator != null || anim != null) {
+			if (parent != null && (animator != null || anim != null)) {
 				if (anim != null)
 					anim.setAnimationListener(this);
 				parent.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -713,7 +711,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		if (samsungWindowGetMultiPhoneWindowEvent != null)
 			preprareSamsungMultiWindowListener();
 		UI.initialize(this, samsungSMultiWindowWidth, samsungSMultiWindowHeight);
-		Player.startService();
+		if (Player.state == Player.STATE_ALIVE) {
+			UI.checkNightModeTheme(this);
+			UI.checkCreatedNotificationIconColor();
+		} else {
+			Player.startService();
+		}
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
 		Player.songs.syncAlbumArtFetcher();
@@ -748,9 +751,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		super.onSaveInstanceState(outState);
 		outState.clear(); //see the comments in the method above
 	}
-	
+
 	@Override
-	public void onConfigurationChanged(Configuration newConfig) {
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		final int usableScreenWidth = UI.usableScreenWidth, usableScreenHeight = UI.usableScreenHeight;
 		ActivityMain.localeHasBeenChanged = false;
@@ -917,7 +920,6 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 								0))))));
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public void backgroundMonitorStart() {
 		final int msg = backgroundMonitorCurrentMessage();

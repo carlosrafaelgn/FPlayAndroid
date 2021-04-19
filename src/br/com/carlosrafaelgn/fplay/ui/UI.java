@@ -144,6 +144,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int THEME_FPLAY = 3;
 	public static final int THEME_FPLAY_ICY = 8;
 	public static final int THEME_FPLAY_DARK = 9;
+	public static final int THEME_NIGHT_MODE = 10;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -211,7 +212,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final String ICON_GRIP = "G";
 	public static final String ICON_FPLAY = "7";
 	public static final String ICON_SLIDERTOP = "\"";
-	public static final String ICON_SLIDERBOTTOM = "\'";
+	public static final String ICON_SLIDERBOTTOM = "'";
 	public static final String ICON_RIGHT = "6";
 	public static final String ICON_FADE = ";";
 	public static final String ICON_DIAL = ":";
@@ -385,6 +386,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			usableScreenHeight = screenHeight;
 		}
 		
+		@SuppressWarnings({"JavaReflectionMemberAccess"})
 		@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 		private void initializeScreenDimensions14(Display display, DisplayMetrics outDisplayMetrics) {
 			try {
@@ -490,7 +492,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static boolean hasTouch, isLandscape, isTV, isLargeScreen, isScreenWidthLarge, isLowDpiScreen, deviceSupportsAnimations, is3D, isDividerVisible,
 		isVerticalMarginLarge, keepScreenOn, doubleClickMode, marqueeTitle, blockBackKey, widgetTransparentBg, backKeyAlwaysReturnsToPlayerWhenBrowsing, wrapAroundList,
 		extraSpacing, albumArt, albumArtSongList, visualizerPortrait, scrollBarToTheLeft, expandSeekBar, notFullscreen, controlsToTheLeft, hasBorders, placeTitleAtTheBottom, placeControlsAtTheBottom, playWithLongPress,
-		isChromebook, largeTextIs22sp, displaySongNumberAndCount, allowPlayerAboveLockScreen, dimBackground;
+		isChromebook, largeTextIs22sp, displaySongNumberAndCount, allowPlayerAboveLockScreen, dimBackground, autoNightMode, deviceIsInNightMode, nightModeActive;
 	public static int _1dp, _4dp, _22sp, _18sp, _14sp, _22spBox, defaultCheckIconSize, _18spBox, _14spBox, _22spYinBox, _18spYinBox, _14spYinBox, _Largesp, _LargespBox, _LargespYinBox,
 		_Headingsp, _HeadingspBox, _HeadingspYinBox, controlLargeMargin, controlMargin, controlSmallMargin, controlXtraSmallMargin, dialogMargin, dialogDropDownVerticalMargin, verticalMargin,
 		menuMargin, strokeSize, thickDividerSize, defaultControlContentsSize, defaultControlSize, usableScreenWidth, usableScreenHeight, screenWidth, screenHeight, densityDpi, forcedOrientation,
@@ -501,9 +503,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static AccessibilityManager accessibilityManager;
 	public static boolean isAccessibilityManagerEnabled;
 
-	private static int currentLocale, createdWidgetIconColor;
+	private static int currentLocale, createdNotificationIconColor, createdWidgetIconColor;
 	private static boolean alternateTypefaceActive, fullyInitialized;
-	//private static Toast internalToast;
 
 	//These guys used to be private, but I decided to make them public, even though they still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
@@ -560,7 +561,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return Integer.toString(number);
 		if (dec < 0)
 			dec = -dec;
-		return Integer.toString(number) + decimalSeparator + ((useTwoDecimalPlaces && (dec < 10)) ? ("0" + Integer.toString(dec)) : Integer.toString(dec));
+		return Integer.toString(number) + decimalSeparator + ((useTwoDecimalPlaces && (dec < 10)) ? ("0" + dec) : Integer.toString(dec));
 	}
 	
 	public static void formatIntAsFloat(StringBuilder sb, int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
@@ -727,7 +728,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		return Player.theApplication.getText(R.string.standard_language).toString();
 	}
 	
-	@SuppressWarnings("deprecation")
 	public static int getCurrentLocale() {
 		try {
 			final String l = Player.theApplication.getResources().getConfiguration().locale.getLanguage().toLowerCase(Locale.US);
@@ -776,7 +776,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	private static void setForcedLocaleOnContexts(Context context, Activity activityContext, int localeCode) {
 		final Locale l = getLocaleFromCode(localeCode);
 		final Resources res = context.getResources();
@@ -909,6 +908,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		if (!setForcedLocale(activityContext, forcedLocale))
 			setUsingAlternateTypeface(isUsingAlternateTypeface);
 		setVerticalMarginLarge(isVerticalMarginLarge);
+
+		deviceIsInNightMode = ((configuration.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES);
 	}
 	
 	public static void prepareWidgetPlaybackIcons() {
@@ -956,15 +957,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		textPaint.setColor(color_text);
 		textPaint.measureText("FPlay");
 	}
-	
-	public static void prepareNotificationPlaybackIcons() {
-		if (icPrevNotif != null)
-			return;
-		if (iconsTypeface == null)
-			initialize(null, 0, 0);
-		final Canvas c = new Canvas();
-		textPaint.setTypeface(iconsTypeface);
-		//instead of guessing the color, try to fetch the actual one first
+
+	private static int getNotificationIconColor() {
 		int color = 0;
 		try {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
@@ -976,6 +970,34 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 		if ((color & 0xff000000) == 0)
 			color = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? 0xff999999 : 0xffffffff);
+		return color;
+	}
+
+	public static void checkCreatedNotificationIconColor() {
+		if (getNotificationIconColor() != createdNotificationIconColor) {
+			//we must not recycle these bitmaps, because it causes the
+			//notification to stop working, even if they are recycled
+			//after Player.refreshNotification()
+			icPrevNotif = null;
+			icPlayNotif = null;
+			icPauseNotif = null;
+			icNextNotif = null;
+			icExitNotif = null;
+			prepareNotificationPlaybackIcons();
+			Player.refreshNotification();
+		}
+	}
+
+	public static void prepareNotificationPlaybackIcons() {
+		if (icPrevNotif != null)
+			return;
+		if (iconsTypeface == null)
+			initialize(null, 0, 0);
+		final Canvas c = new Canvas();
+		textPaint.setTypeface(iconsTypeface);
+		//instead of guessing the color, try to fetch the actual one first
+		final int color = getNotificationIconColor();
+		createdNotificationIconColor = color;
 		textPaint.setColor(color);
 		textPaint.setTextSize(defaultControlContentsSize);
 		icPrevNotif = Bitmap.createBitmap(defaultControlContentsSize, defaultControlContentsSize, Bitmap.Config.ARGB_8888);
@@ -1126,8 +1148,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		color_window = deserializeThemeColor(colors, 3 * IDX_COLOR_WINDOW);
 		color_control_mode = deserializeThemeColor(colors, 3 * IDX_COLOR_CONTROL_MODE);
 		color_visualizer = deserializeThemeColor(colors, 3 * IDX_COLOR_VISUALIZER);
-		color_list_original = deserializeThemeColor(colors, 3 * IDX_COLOR_LIST);
-		color_list = color_list_original;
+		color_list = deserializeThemeColor(colors, 3 * IDX_COLOR_LIST);
 		color_menu = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU);
 		color_menu_icon = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU_ICON);
 		color_menu_border = deserializeThemeColor(colors, 3 * IDX_COLOR_MENU_BORDER);
@@ -1201,7 +1222,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 
 		color_list_original = color_list;
-		if (ColorUtils.relativeLuminance(color_list_original) >= 0.6) {
+		final double relativeLuminance = ColorUtils.relativeLuminance(color_list_original);
+		if (relativeLuminance >= 0.5) {
 			color_list = color_list_original;
 			color_list_bg = (is3D ? ColorUtils.blend(color_list_original, 0xff000000, 0.9286f) : color_list_original);
 			color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.77777777f);
@@ -1215,7 +1237,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			if (is3D)
 				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
 			color_list_bg = color_list_original;
-			color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.77777777f);
+			if (relativeLuminance > 0.01)
+				color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.1f);
+			else
+				color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.85f);
 			if (generateDivider)
 				color_divider = ColorUtils.blend(color_list_bg, 0xffffffff, 0.7f);
 		}
@@ -1233,13 +1258,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		//the color is treated as SRC, and the bitmap is treated as DST
 		glowFilter = ((Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) ? new PorterDuffColorFilter(color_glow, PorterDuff.Mode.SRC_IN) : null);
 	}
-	
-	private static boolean loadCustomTheme(ActivityHost activityHost) {
-		if (!deserializeThemeFromArray(customColors)) {
-			customColors = null;
-			setTheme(activityHost, THEME_FPLAY);
-			return false;
-		}
+
+	private static void finishLoadingCustomTheme() {
 		finishLoadingTheme(true, false);
 
 		//check which color to use for the buttons in the main screen (when in control mode) and in the visualizer screen
@@ -1290,7 +1310,15 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			color_text_title = color_text;
 			colorState_text_title_static = colorState_text_static;
 		}
-		return true;
+	}
+
+	private static void loadCustomTheme(ActivityHost activityHost) {
+		if (!deserializeThemeFromArray(customColors)) {
+			customColors = null;
+			setTheme(activityHost, THEME_FPLAY);
+			return;
+		}
+		finishLoadingCustomTheme();
 	}
 	
 	private static void loadCommonColors(boolean invertSelectedAndFocus) {
@@ -1352,6 +1380,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return "FPlay " + Player.theApplication.getText(R.string.icy).toString();
 		case THEME_FPLAY_DARK:
 			return "FPlay " + Player.theApplication.getText(R.string.dark).toString();
+		case THEME_NIGHT_MODE:
+			return Player.theApplication.getText(R.string.night_mode).toString();
 		default:
 			return "FPlay";
 		}
@@ -1359,8 +1389,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static void setTheme(ActivityHost activityHost, int theme) {
 		UI.theme = theme;
+		if (autoNightMode && deviceIsInNightMode) {
+			nightModeActive = true;
+			theme = THEME_NIGHT_MODE;
+		} else {
+			nightModeActive = false;
+		}
 		Gradient.purgeAll();
-		//internalToast = null;
 		switch (theme) {
 		case THEME_CUSTOM:
 			loadCustomTheme(activityHost);
@@ -1467,6 +1502,33 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			finishLoadingTheme(false, true);
 			color_menu_border = 0xff5599ff;
 			break;
+		case THEME_NIGHT_MODE:
+			color_window = 0xff303030;
+			color_control_mode = 0xff000000;
+			color_visualizer = 0xff000000;
+			color_list = 0xff222222;
+			color_menu = 0xff303030;
+			color_menu_icon = 0xfffdbb4a;
+			color_menu_border = 0xff3366ff;
+			color_divider = 0xff525252;
+			color_highlight = 0xff0044ff;
+			color_text_highlight = 0xffffffff;
+			color_text = 0xffb8b8b8;
+			color_text_listitem_disabled = 0xff707070;
+			color_text_listitem = 0xffa8a8a8;
+			color_text_listitem_secondary = 0xfffdbb4a;
+			color_text_selected = 0xff000000;
+			color_text_menu = 0xffb8b8b8;
+			color_selected_grad_lt = 0xffadadad;
+			color_selected_grad_dk = 0xff858585;
+			color_selected_border = 0xff000000;
+			color_selected_pressed = 0xff888888;
+			color_focused_grad_lt = 0xffc7bd56;
+			color_focused_grad_dk = 0xffcc973b;
+			color_focused_border = 0xff8c7534;
+			color_focused_pressed = 0xffccbea9;
+			finishLoadingCustomTheme();
+			break;
 		default:
 			if (theme == THEME_FPLAY_DARK) {
 				color_window = 0xff3d3d5b;
@@ -1506,6 +1568,19 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 		if (activityHost != null)
 			setAndroidThemeAccordingly(activityHost);
+	}
+
+	public static boolean checkNightModeTheme(ActivityHost activityHost) {
+		if (autoNightMode) {
+			if (nightModeActive != deviceIsInNightMode) {
+				setTheme(activityHost, theme);
+				return true;
+			}
+		} else if (nightModeActive) {
+			setTheme(activityHost, theme);
+			return true;
+		}
+		return false;
 	}
 
 	//public static boolean isAndroidThemeLight() {
@@ -2002,7 +2077,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static int getViewPaddingBasedOnScreenWidth(int defaultHorizontalPadding) {
 		final int padding = (isScreenWidthLarge ? (usableScreenWidth / 7) : defaultHorizontalPadding);
-		return ((padding > defaultHorizontalPadding) ? padding : defaultHorizontalPadding);
+		return Math.max(padding, defaultHorizontalPadding);
 	}
 	
 	public static void prepareViewPaddingBasedOnScreenWidth(ViewGroup view, int defaultHorizontalPadding, int topPadding, int bottomPadding) {
@@ -2069,21 +2144,19 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static void toast(int resId) {
 		toast(Player.theApplication.getText(resId), null);
 	}
-	
-	@SuppressWarnings("deprecation")
+
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	private static void prepareNotificationViewColors(TextView view) {
 		view.setTextColor(colorState_text_highlight_static);
 		view.setBackgroundDrawable(hasBorders ? new BorderDrawable(ColorUtils.blend(color_highlight, 0, 0.5f), color_highlight, strokeSize, strokeSize, strokeSize, strokeSize) : new ColorDrawable(color_highlight));
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void toast(CharSequence text) {
 		toast(text, null);
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	public static void toast(CharSequence text, View descriptionPopupOwner) {
-		//if (internalToast == null) {
 		final Toast t = new Toast(Player.theApplication);
 		final TextView v = new TextView(Player.theApplication);
 		if (descriptionPopupOwner != null) {
@@ -2106,6 +2179,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		v.setGravity(Gravity.CENTER);
 		v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 		v.setPadding(controlMargin, controlMargin, controlMargin, controlMargin);
+		v.setText(emoji(text));
 		final LinearLayout linearLayout = new LinearLayout(Player.theApplication);
 		linearLayout.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 		linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -2113,13 +2187,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		linearLayout.addView(v);
 		t.setView(linearLayout);
 		t.setDuration(descriptionPopupOwner != null ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG);
-		//	internalToast = t;
-		//}
-		((TextView)((ViewGroup)t.getView()).getChildAt(0)).setText(emoji(text));
 		t.show();
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	public static void customToast(CharSequence text, boolean longDuration, int textSize, int textColor, Drawable background) {
 		final Toast t = new Toast(Player.theApplication);
 		final TextView v = new TextView(Player.theApplication);
@@ -2260,14 +2331,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return;
 		try {
 			final Method setOverScrollEffectPadding = AbsListView.class.getDeclaredMethod("setOverScrollEffectPadding", int.class, int.class);
-			if (setOverScrollEffectPadding != null)
-				setOverScrollEffectPadding.invoke(view, -view.getPaddingLeft(), -view.getPaddingRight());
+			setOverScrollEffectPadding.invoke(view, -view.getPaddingLeft(), -view.getPaddingRight());
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void prepareEdgeEffect(ViewGroup view, int placement) {
 		final int color = (placement == PLACEMENT_MENU ? color_menu_icon : color_glow);
 		if (Build.VERSION.SDK_INT >= 29) {
@@ -2296,20 +2365,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 					final Class<?> clazz = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class);
 					Field mEdgeGlow;
 					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowTop");
-					boolean ok = false;
-					if (mEdgeGlow != null) {
-						ok = true;
-						mEdgeGlow.setAccessible(true);
-						mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
-					}
+					mEdgeGlow.setAccessible(true);
+					mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
 					mEdgeGlow = clazz.getDeclaredField("mEdgeGlowBottom");
-					if (mEdgeGlow != null) {
-						ok = true;
-						mEdgeGlow.setAccessible(true);
-						mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
-					}
-					if (ok || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-						return;
+					mEdgeGlow.setAccessible(true);
+					mEdgeGlow.set(view, new BgEdgeEffect(Player.theApplication, color));
+					return;
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
@@ -2342,18 +2403,15 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void offsetTopEdgeEffect(View view) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			try {
 				if (glowFilter == null) {
 					final Field mEdgeGlow = ((view instanceof ScrollView) ? ScrollView.class : AbsListView.class).getDeclaredField("mEdgeGlowTop");
-					if (mEdgeGlow != null) {
-						mEdgeGlow.setAccessible(true);
-						final BgEdgeEffect edgeEffect = (BgEdgeEffect)mEdgeGlow.get(view);
-						if (edgeEffect != null)
-							edgeEffect.mOffsetY = thickDividerSize;
-					}
+					mEdgeGlow.setAccessible(true);
+					final BgEdgeEffect edgeEffect = (BgEdgeEffect)mEdgeGlow.get(view);
+					if (edgeEffect != null)
+						edgeEffect.mOffsetY = thickDividerSize;
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
@@ -2361,7 +2419,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void disableEdgeEffect(Context context) {
 		if (glowFilter == null)
 			return;
@@ -2379,7 +2436,6 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void reenableEdgeEffect(Context context) {
 		if (glowFilter == null)
 			return;
@@ -2397,7 +2453,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder, int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
@@ -2405,7 +2461,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		view.setPadding(leftPadding, topPadding + t, rightPadding, bottomPadding + b);
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
@@ -2416,7 +2472,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			view.setPadding(0, t, 0, b);
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	public static void prepareControlContainerWithoutRightPadding(View view, boolean topBorder, boolean bottomBorder) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
@@ -2441,9 +2497,15 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			mScrollCacheField.setAccessible(true);
 			final Object mScrollCache = mScrollCacheField.get(view);
 
+			if (mScrollCache == null)
+				return;
+
 			final Field scrollBarField = mScrollCache.getClass().getDeclaredField("scrollBar");
 			scrollBarField.setAccessible(true);
 			final Object scrollBar = scrollBarField.get(mScrollCache);
+
+			if (scrollBar == null)
+				return;
 
 			final Method method = scrollBar.getClass().getDeclaredMethod("setVerticalThumbDrawable", Drawable.class);
 			method.setAccessible(true);
@@ -2481,8 +2543,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	private static final int ANIMATION_STATE_SHOWING = 2;
 
 	public static boolean animationEnabled;
+	@SuppressLint("StaticFieldLeak")
 	private static View animationFocusView;
 	private static int animationHideCount, animationShowCount, animationState;
+	@SuppressLint("StaticFieldLeak")
 	private static View animationViewToShowFirst;
 	private static View[] animationViewsToHideAndShow;
 	//private static FastAnimator animationAnimatorShowFirst, animationAnimatorHide, animationAnimatorShow;

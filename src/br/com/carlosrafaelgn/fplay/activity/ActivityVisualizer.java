@@ -348,7 +348,6 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 	}
 
 	@SuppressLint("InlinedApi")
-	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(null);
@@ -385,13 +384,11 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 		if (name != null) {
 			try {
 				final Class<?> clazz = Class.forName(name);
-				if (clazz != null) {
-					try {
-						updateInfoWithConfiguration(null);
-						visualizer = (Visualizer)clazz.getConstructor(Activity.class, boolean.class, Intent.class).newInstance(this, info.isLandscape, si);
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
+				try {
+					updateInfoWithConfiguration(null);
+					visualizer = (Visualizer)clazz.getConstructor(Activity.class, boolean.class, Intent.class).newInstance(this, info.isLandscape, si);
+				} catch (Throwable ex) {
+					ex.printStackTrace();
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
@@ -511,7 +508,7 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 	}
 	
 	@Override
-	public void onConfigurationChanged(Configuration newConfig) {
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		if (info == null)
 			return;
@@ -707,11 +704,9 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 	public boolean onMenuItemClick(MenuItem item) {
 		if (info == null)
 			return true;
-		switch (item.getItemId()) {
-		case MNU_ORIENTATION:
+		if (item.getItemId() == MNU_ORIENTATION) {
 			UI.visualizerPortrait = !UI.visualizerPortrait;
 			setRequestedOrientation(UI.visualizerPortrait ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-			break;
 		}
 		return true;
 	}
@@ -745,6 +740,7 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 		super.onWindowFocusChanged(hasFocus);
 	}
 	
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		switch (event.getActionMasked()) {
@@ -787,18 +783,14 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 			if (panelTop.getVisibility() != View.VISIBLE)
 				panelTop.setVisibility(View.VISIBLE);
 			panelTopHiding = 1;
-			if (!uiAnimTimer.isAlive()) {
-				panelTopLastTime = (int)SystemClock.uptimeMillis();
-				uiAnimTimer.start(16);
-			}
 		} else {
 			if (panelTop.getVisibility() == View.GONE)
 				return;
 			panelTopHiding = -1;
-			if (!uiAnimTimer.isAlive()) {
-				panelTopLastTime = (int)SystemClock.uptimeMillis();
-				uiAnimTimer.start(16);
-			}
+		}
+		if (!uiAnimTimer.isAlive()) {
+			panelTopLastTime = (int)SystemClock.uptimeMillis();
+			uiAnimTimer.start(16);
 		}
 	}
 	

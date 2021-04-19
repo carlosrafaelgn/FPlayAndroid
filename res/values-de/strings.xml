@@ -371,5 +371,7 @@
     <string name="remote_list">Freigegebene Liste (FPlay)</string>
     <string name="access_code">Zugangscode</string>
     <string name="invalid_access_code">Ungültiger Zugangscode :(</string>
+    <string name="night_mode">Nacht-Modus</string>
+    <string name="opt_auto_night_mode">Wechseln Sie gemäß den Systemeinstellungen automatisch zum Thema \"Nacht-Modus\"</string>
 
 </resources>

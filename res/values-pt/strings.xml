@@ -371,5 +371,7 @@
     <string name="remote_list">Lista compartilhada (FPlay)</string>
     <string name="access_code">Código de acesso</string>
     <string name="invalid_access_code">Código de acesso inválido :(</string>
+    <string name="night_mode">Modo noturno</string>
+    <string name="opt_auto_night_mode">Mudar automaticamente para o tema \"Modo noturno\" de acordo com as configurações do sistema</string>
 
 </resources>

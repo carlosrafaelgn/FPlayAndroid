@@ -113,7 +113,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optBtSpeed, optAnnounceCurrentSong, optFollowCurrentSong, optBytesBeforeDecoding, optMSBeforePlayback,
 		optBufferSize, optFillThreshold, optPlaybackEngine, optResampling, optPreviousResetsAfterTheBeginning,
 		optLargeTextIs22sp, optDisplaySongNumberAndCount, optAllowLockScreen, optPlaceControlsAtTheBottom,
-		optAlbumArtSongList, lastMenuView;
+		optAlbumArtSongList, optAutoNightMode, lastMenuView;
 	private String btErrorMessage, httpAccessCode;
 	private SettingView[] colorViews;
 	private int lastColorView, currentHeader, btMessageText, btConnectText, btStartText, optBtSizeLastSize;
@@ -217,6 +217,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.THEME_FPLAY, 0, UI.getThemeString(UI.THEME_FPLAY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(1, UI.THEME_NIGHT_MODE, 0, UI.getThemeString(UI.THEME_NIGHT_MODE))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.THEME_NIGHT_MODE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_FPLAY_ICY, 1, UI.getThemeString(UI.THEME_FPLAY_ICY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY_ICY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
@@ -1241,6 +1244,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
 			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
+			optAutoNightMode = new SettingView(ctx, UI.ICON_THEME, getText(R.string.opt_auto_night_mode).toString(), null, true, UI.autoNightMode, false);
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(UI.theme), false, false, false);
 			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);
@@ -1330,6 +1334,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 			if (!UI.isChromebook)
 				addOption(optKeepScreenOn);
+			addOption(optAutoNightMode);
 			addOption(optTheme);
 			addOption(opt3D);
 			addOption(optFlat);
@@ -1464,6 +1469,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optAutoIdleTurnOff = null;
 		optAutoTurnOffPlaylist = null;
 		optKeepScreenOn = null;
+		optAutoNightMode = null;
 		optTheme = null;
 		optFlat = null;
 		optBorders = null;
@@ -1692,6 +1698,13 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 			else
 				clearWindowFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		} else if (view == optAutoNightMode) {
+			UI.autoNightMode = optAutoNightMode.isChecked();
+			if (UI.checkNightModeTheme(getHostActivity())) {
+				onCleanupLayout();
+				onCreateLayout(false);
+				System.gc();
+			}
 		} else if (view == optNotFullscreen) {
 			UI.notFullscreen = !optNotFullscreen.isChecked();
 			if (UI.notFullscreen)

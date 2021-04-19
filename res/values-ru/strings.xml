@@ -371,5 +371,7 @@
     <string name="remote_list">Общий список (FPlay)</string>
     <string name="access_code">Код доступа</string>
     <string name="invalid_access_code">Неверный код доступа :(</string>
+    <string name="night_mode">Ночной режим</string>
+    <string name="opt_auto_night_mode">Автоматически переключаться на тему \"Ночной режим\" согласно настройкам системы</string>
 
 </resources>

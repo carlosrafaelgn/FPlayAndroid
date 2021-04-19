@@ -252,7 +252,7 @@
         </activity>
         <activity
             android:name="br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:hardwareAccelerated="true"
             android:label="@string/visualizer"
             android:multiprocess="false"

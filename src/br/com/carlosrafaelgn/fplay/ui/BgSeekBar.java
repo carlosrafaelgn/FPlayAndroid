@@ -275,7 +275,6 @@ public final class BgSeekBar extends View {
 		invalidate();
 	}
 	
-	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isTracking() {
 		return (trackingOffset != Integer.MIN_VALUE);
 	}

@@ -208,9 +208,7 @@ public abstract class BaseList<E extends BaseItem> extends BaseAdapter {
 		
 		if ((position + count) > this.count)
 			count = this.count - position;
-		if (count <= 0)
-			return false;
-		
+
 		//synchronized (currentAndCountMutex) {
 			final int previousOriginalSel = originalSel;
 			if (firstSel != lastSel)
