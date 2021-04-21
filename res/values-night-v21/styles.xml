@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+
+    <!--
+         Base application theme for API 21+. This theme completely replaces
+		AppBaseTheme from BOTH res/values/styles.xml, res/values-v11/styles.xml and res/values-v13/styles.xml
+		on API 21+ devices.
+    -->
+    <style name="AppBaseTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <!-- API 21 theme customizations can go here. -->
+        <item name="android:colorPrimary">#ff3344bb</item> <!-- #ff444abf -->
+        <item name="android:colorAccent">#ff3344bb</item> <!-- #ff444abf -->
+        <item name="android:colorControlNormal">#ff6d6d6d</item>
+        <item name="android:navigationBarColor">#303030</item>
+        <item name="android:statusBarColor">#303030</item>
+    </style>
+
+</resources>
