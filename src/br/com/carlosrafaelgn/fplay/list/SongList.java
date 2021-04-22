@@ -374,24 +374,25 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 				@Override
 				public void run() {
 					try {
-						boolean forcePrivatePlaylist = false;
-						for (int i = songs.length - 1; i >= 0; i--) {
-							if (songs[i].isHttp) {
-								forcePrivatePlaylist = true;
-								break;
-							}
-						}
+						//we are no longer saving playlists to the external storage
+						//boolean forcePrivatePlaylist = false;
+						//for (int i = songs.length - 1; i >= 0; i--) {
+						//	if (songs[i].isHttp) {
+						//		forcePrivatePlaylist = true;
+						//		break;
+						//	}
+						//}
 						final String path = (file.isPrivatePlaylist() ? file.path : (file.name + FileSt.FILETYPE_PLAYLIST));
-						if (!forcePrivatePlaylist) {
-							delete(path);
-							exportTo(songs, count, file.artistIdForAlbumArt, file.name, path);
-						} else {
+						//if (!forcePrivatePlaylist) {
+						//	delete(path);
+						//	exportTo(songs, count, file.artistIdForAlbumArt, file.name, path);
+						//} else {
 							if (file.artistIdForAlbumArt == 0)
 								file.artistIdForAlbumArt = getPlaylistId(file.name);
 							if (file.artistIdForAlbumArt != 0)
 								delete(file.artistIdForAlbumArt);
 							serialize(current, songs, count, path);
-						}
+						//}
 					} catch (Throwable ex) {
 						MainHandler.toast((ex instanceof FileNotFoundException) ? R.string.error_file_not_found : R.string.error_gen);
 					} finally {

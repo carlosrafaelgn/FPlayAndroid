@@ -1026,23 +1026,25 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			Player.songs.clear();
 			break;
 		case MNU_LOADLIST:
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-				if (!getHostActivity().isWriteStoragePermissionGranted()) {
-					pendingListCommand = 1;
-					getHostActivity().requestWriteStoragePermission();
-					break;
-				}
-			}
+			//we are no longer saving playlists to the external storage
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+			//	if (!getHostActivity().isWriteStoragePermissionGranted()) {
+			//		pendingListCommand = 1;
+			//		getHostActivity().requestWriteStoragePermission();
+			//		break;
+			//	}
+			//}
 			selectPlaylist(1);
 			break;
 		case MNU_SAVELIST:
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-				if (!getHostActivity().isWriteStoragePermissionGranted()) {
-					pendingListCommand = 2;
-					getHostActivity().requestWriteStoragePermission();
-					break;
-				}
-			}
+			//we are no longer saving playlists to the external storage
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+			//	if (!getHostActivity().isWriteStoragePermissionGranted()) {
+			//		pendingListCommand = 2;
+			//		getHostActivity().requestWriteStoragePermission();
+			//		break;
+			//	}
+			//}
 			selectPlaylist(2);
 			break;
 		case MNU_SORT_BY_TITLE:

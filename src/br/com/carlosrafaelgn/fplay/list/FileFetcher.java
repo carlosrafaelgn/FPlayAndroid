@@ -714,7 +714,9 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 			return;
 		}
 
-		final TypedRawArrayList<FileSt> playlists = (FileSt.FILETYPE_PLAYLIST.equals(fileType) ? fetchPublicPlaylists() : null);
+		//we are no longer saving playlists to the external storage
+		//final TypedRawArrayList<FileSt> playlists = (FileSt.FILETYPE_PLAYLIST.equals(fileType) ? fetchPublicPlaylists() : null);
+		final TypedRawArrayList<FileSt> playlists = null;
 		final String[] files = Player.theApplication.fileList();
 		if (files == null || files.length == 0) {
 			if (playlists != null) {

@@ -34,8 +34,11 @@
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <!-- Apparently, a few devices require this.... (not only to make android.media.audiofx.PresetReverb work, but to control volume and other settings)  -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <!-- Several years ago (today is 2021) android.permission.WRITE_SETTINGS was required by a few weird devices to make volume/mute control work. Thankfully those devices disappeared from market a long time ago, so this permission no longer makes sense! -->
-    <!-- <uses-permission android:name="android.permission.WRITE_SETTINGS" /> -->
+    <!--
+        Several years ago (today is 2021) android.permission.WRITE_SETTINGS was required by a few weird devices to make volume/mute control work.
+        Thankfully those devices disappeared from market a long time ago. Unfortunately, we still need this permission to set the ringtone!
+    -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
 
     <!-- These three permissions are not classified as PROTECTION_NORMAL in Android M API 23
      https://developer.android.com/guide/topics/security/permissions.html#normal-dangerous -->
@@ -43,8 +46,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <!-- For exporting playlists -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- For exporting playlists (but we are no longer saving playlists to the external storage) -->
+    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
 
     <!-- For Android 28 https://developer.android.com/about/versions/pie/android-9.0-migration#tya -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -105,7 +108,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:fullBackupContent="@xml/backup_rules"
-        android:requestLegacyExternalStorage="true"
         android:theme="@style/AppTheme" >
 
         <!-- http://stackoverflow.com/a/14185426/3569421 -->
