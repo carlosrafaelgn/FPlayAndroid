@@ -104,6 +104,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		//ALBUM_ID can only be used when not accessing albums directly, because when we are
 		//accessing albums, either general albums or the albums of a specific artist, _ID
 		//MUST be used!!!
+		//ALBUM_ART (or "album_art") column always returns null on API 29+
 		artistAlbumArtProjection = new String[] { (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ? "album_id" : "_id" }; //MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART };
 		audioAlbumIdProjection = new String[] { "album_id" }; //MediaStore.Audio.Albums.ALBUM_ID };
 		tempSelection = new String[1];
@@ -132,6 +133,7 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 	public void run() {
 		Looper.prepare();
 		looper = Looper.myLooper();
+		//noinspection ConstantConditions
 		handler = new Handler(looper, this);
 		Looper.loop();
 	}
@@ -197,8 +199,14 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				//final Cursor cursor = contentResolver.query(MediaStore.Audio.Artists.Albums.getContentUri("external", artistId), artistAlbumArtProjection, null, null, null);
 				final Cursor cursor = contentResolver.query(Uri.parse("content://media/external/audio/artists/" + artistId + "/albums"), artistAlbumArtProjection, null, null, null);
 				if (cursor != null) {
-					while (albumId == null && !opts.mCancel && cursor.moveToNext())
-						albumId = cursor.getLong(0);
+					while (!opts.mCancel && cursor.moveToNext()) {
+						try {
+							albumId = cursor.getLong(0);
+							break;
+						} catch (Throwable ex) {
+							//try next album
+						}
+					}
 					cursor.close();
 				}
 
@@ -229,6 +237,10 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 			final Uri albumArtUri = Uri.parse("content://media/external/audio/albumart/" + albumId);
 
 			inputStream = contentResolver.openInputStream(albumArtUri);
+			if (inputStream == null) {
+				listener.albumArtFetched(null, msg.what);
+				return true;
+			}
 			BitmapFactory.decodeStream(inputStream, null, opts);
 			try {
 				inputStream.close();
@@ -259,7 +271,15 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				return true;
 
 			inputStream = contentResolver.openInputStream(albumArtUri);
+			if (inputStream == null) {
+				listener.albumArtFetched(null, msg.what);
+				return true;
+			}
 			bitmap = BitmapFactory.decodeStream(inputStream, null, opts);
+			if (bitmap == null) {
+				listener.albumArtFetched(null, msg.what);
+				return true;
+			}
 			try {
 				inputStream.close();
 			} catch (Throwable ex) {
@@ -317,7 +337,8 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 				ex2.printStackTrace();
 			}
 			try {
-				inputStream.close();
+				if (inputStream != null)
+					inputStream.close();
 			} catch (Throwable ex2) {
 				ex2.printStackTrace();
 			}
