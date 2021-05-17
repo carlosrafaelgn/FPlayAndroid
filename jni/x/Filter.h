@@ -82,11 +82,15 @@ void computeFilter(uint32_t band) {
 	//by Robert Bristow-Johnson  <rbj@audioimagination.com>
 	//
 	//Links:
+	//https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+	//https://webaudio.github.io/Audio-EQ-Cookbook/Audio-EQ-Cookbook.txt
+	//http://www.earlevel.com/main/2010/12/20/biquad-calculator/
+	//
+	//These are the original/old links, but they all appear to be gone now!
 	//http://www.musicdsp.org/archive.php?classid=3#197
 	//http://www.musicdsp.org/archive.php?classid=3#198
 	//http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 	//http://www.musicdsp.org/files/EQ-Coefficients.pdf
-	//http://www.earlevel.com/main/2010/12/20/biquad-calculator/
 	//
 
 #define PI 3.1415926535897932384626433832795
