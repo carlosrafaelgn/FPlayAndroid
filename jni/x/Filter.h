@@ -92,18 +92,55 @@ void computeFilter(uint32_t band) {
 	//http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 	//http://www.musicdsp.org/files/EQ-Coefficients.pdf
 	//
+	//
+	//Begin with these user defined parameters:
+	//
+	//Fs (the sampling frequency)
+	//
+	//f0 ("wherever it's happenin', man."  Center Frequency or
+	//	Corner Frequency, or shelf midpoint frequency, depending
+	//	on which filter type.  The "significant frequency".)
+	//
+	//dBgain (used only for peaking and shelving filters)
+	//
+	//Q or BW or S (only one must be chosen)
+	//Q (the EE kind of definition, except for peakingEQ in which A*Q is
+	//	the classic EE Q.  That adjustment in definition was made so that
+	//	a boost of N dB followed by a cut of N dB for identical Q and
+	//	f0/Fs results in a precisely flat unity gain filter or "wire".)
+	//
+	//BW, the bandwidth in octaves (between -3 dB frequencies for BPF
+	//	and notch or between midpoint (dBgain/2) gain frequencies for
+	//	peaking EQ)
+	//
+	//S, a "shelf slope" parameter (for shelving EQ only).  When S = 1,
+	//	the shelf slope is as steep as it can be and remain monotonically
+	//	increasing or decreasing gain with frequency.  The shelf slope, in
+	//	dB/octave, remains proportional to S for all other values for a
+	//	fixed f0/Fs and dBgain.
+	//
+	//Then compute a few intermediate variables:
+	//
+	//A  = sqrt( 10^(dBgain/20) )
+	//   =	   10^(dBgain/40)	 (for peaking and shelving EQ filters only)
+	//
+	//w0 = 2*pi*f0/Fs
+	//
+	//cos(w0)
+	//sin(w0)
+	//
+	//alpha = sin(w0)/(2*Q)                             (case: Q)
+	//	  = sin(w0)*sinh( ln(2)/2 * BW * w0/sin(w0) )   (case: BW)
+	//	  = sin(w0)/2 * sqrt( (A + 1/A)*(1/S - 1) + 2 ) (case: S)
 
-#define PI 3.1415926535897932384626433832795
-
-	const double A = pow(10.0, (double)equalizerActuallyUsedGainInMillibels[band] / 4000.0);
 	const double Fs = (double)dstSampleRate;
-	double f0; //f0 = shelf midpoint frequency = frequency where the gain is (gain * 1/sqrt(2))
+	double f0;
 	switch (band) {
 	case 1: //31.25 Hz / 62.5 Hz
 		f0 = 92.75;
 		break;
 	case 2: //125 Hz
-		f0 = 187.5f;
+		f0 = 187.5;
 		break;
 	case 3: //250 Hz
 		f0 = 375.0;
@@ -115,20 +152,20 @@ void computeFilter(uint32_t band) {
 		f0 = 6000.0;
 		break;
 	}
+	const double PI = 3.1415926535897932384626433832795;
+	const double S = 2.0;
+	const double A = pow(10.0, (double)equalizerActuallyUsedGainInMillibels[band] / 4000.0);
 	const double w0 = 2.0 * PI * f0 / Fs;
 	const double cosw0 = cos(w0);
 	const double sinw0 = sin(w0);
-
-	//S = a "shelf slope" parameter (for shelving EQ only).  When S = 1,
-	//the shelf slope is as steep as it can be and remain monotonically
-	//increasing or decreasing gain with frequency.  The shelf slope, in
-	//dB/octave, remains proportional to S for all other values for a
-	//fixed f0/Fs and dBgain.
-
 	//alpha = sin(w0)/2 * sqrt( (A + 1/A)*(1/S - 1) + 2 )
-	//since we will use S = 1:
-	//const double alpha = sinw0 * 0.5 * sqrt(2.0);
-	const double alpha = sinw0 * 0.70710678118654752440084436210485;
+	//S used to be assumed as 1, resulting in
+	//alpha = sin(w0)/2 * sqrt( (A + 1/A)*(1/1 - 1) + 2 )
+	//alpha = sin(w0)/2 * sqrt(2)
+	//alpha = sin(w0) * 0.70710678118654752440084436210485
+	//but that yielded a very subtle slope... therefore, we are now
+	//using S = 2, making the slope more aggressive
+	const double alpha = sinw0 * 0.5 * sqrt((A + (1.0 / A)) * ((1.0 / S) - 1.0) + 2.0);
 
 	const double two_sqrtA_alpha = 2.0 * sqrt(A) * alpha;
 
@@ -149,5 +186,4 @@ void computeFilter(uint32_t band) {
 	equalizerCoef->b2R = equalizerCoef->b2L;
 	equalizerCoef->_a2L = -a2 / a0;
 	equalizerCoef->_a2R = equalizerCoef->_a2L;
-#undef PI
 }
