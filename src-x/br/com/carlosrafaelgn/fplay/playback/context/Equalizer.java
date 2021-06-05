@@ -77,6 +77,10 @@ public final class Equalizer {
 		return 0;
 	}
 
+	public static void getFrequencyResponse(int bassBoostStrength, short[] levels, double[] frequencies, double[] gains) {
+		MediaContext._getEqualizerFrequencyResponse(bassBoostStrength, levels, frequencies, gains);
+	}
+
 	public boolean getEnabled() {
 		return (MediaContext.isEqualizerEnabled() != 0);
 	}

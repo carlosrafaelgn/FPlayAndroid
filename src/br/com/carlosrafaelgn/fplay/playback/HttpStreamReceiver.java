@@ -223,7 +223,7 @@ public final class HttpStreamReceiver implements Runnable {
 
 			try {
 				if (!BuildConfig.X) {
-					wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
+					wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "fplay:MediaContext WakeLock");
 					wakeLock.setReferenceCounted(false);
 					wakeLock.acquire();
 				}

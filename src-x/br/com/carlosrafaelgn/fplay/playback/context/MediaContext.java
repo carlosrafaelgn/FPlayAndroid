@@ -32,6 +32,7 @@
 //
 package br.com.carlosrafaelgn.fplay.playback.context;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioAttributes;
@@ -44,6 +45,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -133,6 +135,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	static native int isEqualizerEnabled();
 	private static native void setEqualizerBandLevel(int band, int level);
 	private static native void setEqualizerBandLevels(short[] levels);
+	private static native void getEqualizerFrequencyResponse(int bassBoostStrength, short[] levels, int frequencyCount, double[] frequencies, double[] gains);
 
 	private static native void enableBassBoost(int enabled);
 	static native int isBassBoostEnabled();
@@ -175,7 +178,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	private static native void visualizerGetWaveform(byte[] waveform, int headPositionInFrames);
 
 	private static abstract class Engine {
-		@SuppressWarnings("deprecation")
 		static int getFramesPerBuffer(int dstSampleRate) {
 			int framesPerBuffer = 0;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -228,11 +230,9 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			}
 
 			public QueryableAudioTrack(int streamType, int sampleRateInHz, int channelConfig, int audioFormat, int bufferSizeInBytes, int mode) {
-				//noinspection deprecation
 				super(streamType, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes, mode);
 			}
 
-			@SuppressWarnings("deprecation")
 			public int getActualBufferSizeInFrames() {
 				return getNativeFrameCount();
 			}
@@ -302,7 +302,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			//round, but keep roundedBufferSizeInFrames not too above bufferSizeInFrames
 			//(also, make sure we have at least 2 buffers)
 			final int bufferCount = bufferSizeInFrames / singleBufferSizeInFrames;
-			final int roundedBufferSizeInFrames = ((bufferCount <= 2) ? 2 : bufferCount) * singleBufferSizeInFrames;
+			final int roundedBufferSizeInFrames = Math.max(bufferCount, 2) * singleBufferSizeInFrames;
 			bufferSizeInFrames = ((roundedBufferSizeInFrames >= bufferSizeInFrames) ?
 				roundedBufferSizeInFrames :
 				(((bufferSizeInFrames + (MAXIMUM_BUFFER_SIZE_IN_FRAMES_FOR_PROCESSING * 4)) / singleBufferSizeInFrames) * singleBufferSizeInFrames));
@@ -391,7 +391,6 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			tempDstBuffer = null;
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
 		public void setVolume() {
 			if (audioTrack != null)
@@ -799,8 +798,8 @@ public final class MediaContext implements Runnable, Handler.Callback {
 		effectsMessage = null;
 	}
 
+	@SuppressLint("WakelockTimeout")
 	@Override
-	@SuppressWarnings("ConstantConditions")
 	public void run() {
 		/*try {
 			final int tid = Process.myTid();
@@ -836,7 +835,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			return;
 		}
 
-		final PowerManager.WakeLock wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MediaContext WakeLock");
+		final PowerManager.WakeLock wakeLock = ((PowerManager)Player.theApplication.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "fplayx:MediaContext WakeLock");
 		wakeLock.setReferenceCounted(false);
 
 		requestedAction = ACTION_NONE;
@@ -1404,7 +1403,7 @@ public final class MediaContext implements Runnable, Handler.Callback {
 	}
 
 	@Override
-	public boolean handleMessage(Message msg) {
+	public boolean handleMessage(@NonNull Message msg) {
 		if (!alive)
 			return true;
 		switch (msg.what) {
@@ -1691,6 +1690,10 @@ public final class MediaContext implements Runnable, Handler.Callback {
 			setEqualizerBandLevels(levels);
 		else
 			sendEffectsMessage(Message.obtain(handler, MSG_EQUALIZER_BAND_LEVELS, levels));
+	}
+
+	static void _getEqualizerFrequencyResponse(int bassBoostStrength, short[] levels, double[] frequencies, double[] gains) {
+		getEqualizerFrequencyResponse(bassBoostStrength, levels, frequencies.length, frequencies, gains);
 	}
 
 	static void _enableBassBoost(int enabled) {

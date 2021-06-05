@@ -51,7 +51,6 @@ import android.view.ViewDebug.ExportedProperty;
 import android.view.accessibility.AccessibilityEvent;
 
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
-import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 
 public final class BgSeekBar extends View {
 	public interface OnBgSeekBarChangeListener {
@@ -68,7 +67,7 @@ public final class BgSeekBar extends View {
 	private String additionalContentDescription, text, icon;
 	private boolean insideList, vertical, sliderMode, recursingSetValue;
 	private int state, thumbWidth, width, height, filledSize, value, max, textWidth, textX, textY, textColor,
-		textSize, keyIncrement, size, thumbMargin, trackingOffset, secondaryBgColor, secondaryBgColorBlended;
+		textSize, keyIncrement, size, thumbMargin, trackingOffset, secondaryBgColorBlended;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
 	
@@ -109,28 +108,6 @@ public final class BgSeekBar extends View {
 		updateContentDescription();
 	}
 
-	private void updateSecondaryBgColorBlended() {
-		final int state = (insideList ? (
-			(this.state & UI.STATE_PRESSED) != 0 ?
-				(((this.state & UI.STATE_FOCUSED) != 0 && (this.state & UI.STATE_HOVERED) == 0) ? (UI.STATE_SELECTED | UI.STATE_PRESSED) :
-					(UI.STATE_FOCUSED | UI.STATE_PRESSED)) :
-				(((this.state & UI.STATE_FOCUSED) != 0 && (this.state & UI.STATE_HOVERED) == 0) ? UI.STATE_SELECTED :
-					(UI.STATE_SELECTED | UI.STATE_FOCUSED))
-		) : this.state);
-		final boolean blendWithBorder = (((state & UI.STATE_FOCUSED) != 0) ?
-			ColorUtils.contrastRatio(UI.color_focused_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_focused, secondaryBgColor) :
-			ColorUtils.contrastRatio(UI.color_selected_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_selected, secondaryBgColor));
-		secondaryBgColorBlended = (blendWithBorder ?
-			ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
-				(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed_border : UI.color_selected_pressed_border) :
-					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_border : UI.color_selected_border),
-						secondaryBgColor, 0.15f) :
-			ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
-				(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed : UI.color_selected_pressed) :
-					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused : UI.color_selected),
-						secondaryBgColor, 0.35f));
-	}
-
 	@SuppressWarnings("unused")
 	public void setSliderMode(boolean sliderMode) {
 		this.sliderMode = sliderMode;
@@ -141,8 +118,7 @@ public final class BgSeekBar extends View {
 	
 	public void setInsideList(boolean insideList) {
 		this.insideList = insideList;
-		secondaryBgColor = (insideList ? UI.color_list_bg : UI.color_window);
-		updateSecondaryBgColorBlended();
+		secondaryBgColorBlended = UI.getSecondaryBgColorBlended(insideList, state);
 		updateTextX();
 		invalidate();
 	}
@@ -158,6 +134,10 @@ public final class BgSeekBar extends View {
 
 	public void setKeyIncrement(int keyIncrement) {
 		this.keyIncrement = keyIncrement;
+	}
+
+	public int getTextSize() {
+		return textSize;
 	}
 
 	public void setTextSizeIndex(int index) {
@@ -393,7 +373,7 @@ public final class BgSeekBar extends View {
 	protected void drawableStateChanged() {
 		super.drawableStateChanged();
 		state = UI.handleStateChanges(state, this);
-		updateSecondaryBgColorBlended();
+		secondaryBgColorBlended = UI.getSecondaryBgColorBlended(insideList, state);
 	}
 	
 	@Override

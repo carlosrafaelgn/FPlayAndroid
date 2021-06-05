@@ -108,7 +108,7 @@ void updateEqualizerGains(int32_t bandToReset) {
 		equalizerActuallyUsedGainInMillibels[0] = 0;
 		for (int32_t i = 1; i < equalizerMaxBandCount; i++) {
 			equalizerActuallyUsedGainInMillibels[i] = ((i == 2) ? bassBoostStrength : 0);
-			computeFilter(i);
+			computeFilter(i, equalizerActuallyUsedGainInMillibels, equalizerLastBandGain, equalizerCoefs);
 		}
 	} else {
 		const int32_t lastBand = equalizerMaxBandCount - 1;
@@ -119,12 +119,12 @@ void updateEqualizerGains(int32_t bandToReset) {
 			equalizerActuallyUsedGainInMillibels[i] = ((i == 2 && (effectsEnabled & BASSBOOST_ENABLED)) ?
 														(bassBoostStrength + equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]) :
 														(equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]));
-			computeFilter(i);
+			computeFilter(i, equalizerActuallyUsedGainInMillibels, equalizerLastBandGain, equalizerCoefs);
 		}
 
 		//pre amp (band 0) is accounted for in the last band
 		equalizerActuallyUsedGainInMillibels[lastBand] = equalizerGainInMillibels[lastBand] + equalizerGainInMillibels[0];
-		computeFilter(lastBand);
+		computeFilter(lastBand, equalizerActuallyUsedGainInMillibels, equalizerLastBandGain, equalizerCoefs);
 	}
 
 	//Apparently, resetting only a few bands puts the entire equalizer in an
@@ -390,6 +390,84 @@ void JNICALL setEqualizerBandLevels(JNIEnv* env, jclass clazz, jshortArray jleve
 
 	if ((effectsEnabled & EQUALIZER_ENABLED))
 		updateEqualizerGains(-1);
+}
+
+void JNICALL getEqualizerFrequencyResponse(JNIEnv* env, jclass clazz, int32_t bassBoostStrength, jshortArray jlevels, int32_t frequencyCount, jdoubleArray jfrequencies, jdoubleArray jgains) {
+	int16_t* const levels = (int16_t*)env->GetPrimitiveArrayCritical(jlevels, 0);
+	if (!levels)
+		return;
+
+	int32_t equalizerGainInMillibels[BAND_COUNT], equalizerActuallyUsedGainInMillibels[BAND_COUNT];
+	float equalizerLastBandGain[4];
+	EqualizerCoefs equalizerCoefs[BAND_COUNT - 2];
+
+	bassBoostStrength = ((bassBoostStrength <= 0) ? 0 : ((bassBoostStrength >= 1000) ? 1000 : bassBoostStrength));
+
+	for (int32_t i = 0; i < BAND_COUNT; i++)
+		equalizerGainInMillibels[i] = ((levels[i] <= -DB_RANGE) ? -DB_RANGE : ((levels[i] >= DB_RANGE) ? DB_RANGE : levels[i]));
+
+	env->ReleasePrimitiveArrayCritical(jlevels, levels, JNI_ABORT);
+
+	const int32_t lastBand = equalizerMaxBandCount - 1;
+	//band 0 = pre
+	equalizerActuallyUsedGainInMillibels[0] = 0;
+	for (int32_t i = 1; i < lastBand; i++) {
+		//when enabled, add the bass boost to band 2 (0 - 125 Hz)
+		equalizerActuallyUsedGainInMillibels[i] = ((i == 2) ?
+													(bassBoostStrength + equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]) :
+													(equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]));
+		computeFilter(i, equalizerActuallyUsedGainInMillibels, equalizerLastBandGain, equalizerCoefs);
+	}
+
+	//pre amp (band 0) is accounted for in the last band
+	equalizerActuallyUsedGainInMillibels[lastBand] = equalizerGainInMillibels[lastBand] + equalizerGainInMillibels[0];
+	computeFilter(lastBand, equalizerActuallyUsedGainInMillibels, equalizerLastBandGain, equalizerCoefs);
+
+	double* const frequencies = (double*)env->GetPrimitiveArrayCritical(jfrequencies, 0);
+	double* const gains = (double*)env->GetPrimitiveArrayCritical(jgains, 0);
+	if (!frequencies || !gains) {
+		if (frequencies)
+			env->ReleasePrimitiveArrayCritical(jfrequencies, frequencies, JNI_ABORT);
+		if (gains)
+			env->ReleasePrimitiveArrayCritical(jgains, gains, JNI_ABORT);
+		return;
+	}
+
+	const double initialGain = (double)equalizerLastBandGain[0];
+	for (int32_t f = frequencyCount - 1; f >= 0; f--)
+		gains[f] = initialGain;
+
+	const double PI = 3.1415926535897932384626433832795;
+	const double Fs = (double)dstSampleRate;
+
+	for (int32_t f = frequencyCount - 1; f >= 0; f--) {
+		const double w0 = 2.0 * PI * frequencies[f] / Fs;
+		const double cosw0 = cos(w0);
+		const double cos2w0 = cos(2.0 * w0);
+		const double sinw0 = sin(w0);
+		const double sin2w0 = sin(2.0 * w0);
+
+		for (int32_t band = 1; band < lastBand; band++) {
+			const EqualizerCoefs* const equalizerCoef = &(equalizerCoefs[band - 1]);
+			const double b0 = equalizerCoef->b0L;
+			const double b1 = equalizerCoef->b1L;
+			const double b2 = equalizerCoef->b2L;
+			const double a1 = -equalizerCoef->_a1L;
+			const double a2 = -equalizerCoef->_a2L;
+			const double t0 = b0 + (b1 * cosw0) + (b2 * cos2w0);
+			const double t1 = -((b1 * sinw0) + (b2 * sin2w0));
+			const double t2 = 1.0 + (a1 * cosw0) + (a2 * cos2w0);
+			const double t3 = -((a1 * sinw0) + (a2 * sin2w0));
+			gains[f] *= sqrt(((t0 * t0) + (t1 * t1)) / ((t2 * t2) + (t3 * t3)));
+		}
+	}
+
+	env->ReleasePrimitiveArrayCritical(jfrequencies, frequencies, JNI_ABORT);
+
+	for (int32_t f = frequencyCount - 1; f >= 0; f--)
+		gains[f] = 20.0 * log10(gains[f]);
+
+	env->ReleasePrimitiveArrayCritical(jgains, gains, 0);
 }
 
 void JNICALL enableBassBoost(JNIEnv* env, jclass clazz, uint32_t enabled) {

@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay;
 
 import android.content.Context;
+import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -53,6 +54,7 @@ import br.com.carlosrafaelgn.fplay.playback.Virtualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgButton;
 import br.com.carlosrafaelgn.fplay.ui.BgSeekBar;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
+import br.com.carlosrafaelgn.fplay.ui.FrequencyResponseView;
 import br.com.carlosrafaelgn.fplay.ui.ObservableLinearLayout;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.ui.drawable.BgListItem3DDrawable;
@@ -65,7 +67,8 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	private static final int LevelThreshold = 100, MNU_ZEROPRESET = 100, MNU_LOADPRESET = 101, MNU_SAVEPRESET = 102, MNU_AUDIOSINK_DEVICE = 103, MNU_AUDIOSINK_WIRE = 104, MNU_AUDIOSINK_BT = 105, MNU_AUDIOSINK_WIRE_MIC = 106;
 	private static final int ACG_UPDATE_INTERVAL = 500;
 	private LinearLayout panelControls, panelEqualizer;
-	private ObservableLinearLayout panelBars;
+	private ObservableLinearLayout panelLabels, panelBars;
+	private FrequencyResponseView frequencyResponseView;
 	private ViewGroup panelSecondary;
 	private BgButton chkEqualizer, chkBass, chkVirtualizer, chkAGC;
 	private TextView txtAGC;
@@ -73,7 +76,9 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	private BgButton btnGoBack, btnAudioSink, btnMenu, btnChangeEffect;
 	private int min, max, audioSink, storedAudioSink;
 	private int[] frequencies;
+	private double[] desiredFrequencies, desiredFrequencyGainsDB;
 	private boolean enablingEffect, screenConsideredLarge, resizingEq;
+	private TextView[] labels;
 	private BgSeekBar[] bars;
 	private BgSeekBar barBass, barVirtualizer;
 	private StringBuilder txtBuilder;
@@ -83,48 +88,63 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		return getText(R.string.audio_effects);
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
-	private String formatEqualizer(int frequencyIndex, int level) {
-		if (txtBuilder == null)
-			return "";
-		txtBuilder.delete(0, txtBuilder.length());
+	private String formatEqualizerDescription(int frequencyIndex) {
 		if (BuildConfig.X) {
 			switch (frequencyIndex) {
 			case 0:
-				txtBuilder.append("Pre  ");
-				break;
+				return "Pre";
 			case 1:
-				txtBuilder.append("31 / 62 Hz  ");
-				break;
+				return "31 / 62 Hz";
 			case 2:
-				txtBuilder.append("125 Hz  ");
-				break;
+				return "125 Hz";
 			case 3:
-				txtBuilder.append("250 Hz  ");
-				break;
+				return "250 Hz";
 			case 4:
-				txtBuilder.append("500 / 1k Hz  ");
-				break;
+				return "500 / 1k Hz";
 			case 5:
-				txtBuilder.append("2k / 4k Hz  ");
-				break;
+				return "2k / 4k Hz";
 			default:
-				txtBuilder.append("8k / 16k Hz  ");
-				break;
+				return "8k / 16k Hz";
 			}
 		} else {
 			final int frequency = frequencies[frequencyIndex];
 			if (frequency < 1000)
-				txtBuilder.append(frequency);
+				return frequency + " Hz";
 			else
-				UI.formatIntAsFloat(txtBuilder, frequency / 100, false, true);
-			txtBuilder.append((frequency < 1000) ? " Hz  " : " kHz  ");
+				return UI.formatIntAsFloat(frequency / 100, false, true) + "k Hz";
 		}
-		if (level >= 0)
-			txtBuilder.append('+');
-		UI.formatIntAsFloat(txtBuilder, level / 10, false, false);
-		txtBuilder.append(" dB");
-		return txtBuilder.toString();
+	}
+
+	private String formatEqualizerLabel(int frequencyIndex) {
+		if (BuildConfig.X) {
+			switch (frequencyIndex) {
+			case 0:
+				return "Pre";
+			case 1:
+				return "31\n62";
+			case 2:
+				return "125";
+			case 3:
+				return "250";
+			case 4:
+				return "500\n1k";
+			case 5:
+				return "2k\n4k";
+			default:
+				return "8k\n16k";
+			}
+		} else {
+			final int frequency = frequencies[frequencyIndex];
+			return ((frequency < 1000) ?
+				Integer.toString(frequency) :
+				UI.formatIntAsFloat(frequency / 100, false, true) + "k");
+		}
+	}
+
+	private String formatEqualizerLevel(int level) {
+		return ((level >= 0) ?
+			("+" + UI.formatIntAsFloat(level / 10, false, false) ) :
+			UI.formatIntAsFloat(level / 10, false, false)) + " dB";
 	}
 
 	private String formatBassBoost(int strength) {
@@ -325,7 +345,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 
 			final int bandCount = Equalizer.getBandCount();
 
-			if (panelBars == null || bars == null || bars.length < bandCount)
+			if (panelLabels == null || labels == null || panelBars == null || bars == null || bars.length < bandCount)
 				return;
 
 			final int availableWidth = panelBars.getWidth();
@@ -345,11 +365,19 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 
 			for (int i = 0; i < bandCount; i++) {
 				final BgSeekBar bar = bars[i];
-				final LinearLayout.LayoutParams p = (LinearLayout.LayoutParams)bar.getLayoutParams();
+				LinearLayout.LayoutParams p = (LinearLayout.LayoutParams)bar.getLayoutParams();
 				if (i > 0)
 					p.leftMargin = hMargin;
-				bar.setSize(size, UI.isLandscape && !screenConsideredLarge);
+				bar.setSize(size, true);
 				bar.setLayoutParams(p);
+
+				final TextView label = labels[i];
+				p = (LinearLayout.LayoutParams)label.getLayoutParams();
+				if (i > 0)
+					p.leftMargin = hMargin;
+				p.width = size;
+				label.setTextSize(TypedValue.COMPLEX_UNIT_PX, Math.min(UI._14sp, bar.getTextSize()));
+				label.setLayoutParams(p);
 			}
 		}
 
@@ -374,6 +402,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		min = Equalizer.getMinBandLevel();
 		max = Equalizer.getMaxBandLevel();
 		frequencies = new int[bandCount];
+		labels = new TextView[bandCount];
 		bars = new BgSeekBar[bandCount];
 		for (int i = bandCount - 1; i >= 0; i--)
 			frequencies[i] = Equalizer.getBandFrequency(i);
@@ -381,6 +410,11 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	
 	private void clearBarsAndFrequencies() {
 		frequencies = null;
+		if (labels != null) {
+			for (int i = labels.length - 1; i >= 0; i--)
+				labels[i] = null;
+			labels = null;
+		}
 		if (bars != null) {
 			for (int i = bars.length - 1; i >= 0; i--)
 				bars[i] = null;
@@ -388,12 +422,10 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		}
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private int barToActualBassBoost(int barValue) {
 		return (BuildConfig.X ? (barValue * 50) : (barValue * 10));
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions" })
 	private int actualToBarBassBoost(int actualValue) {
 		return (BuildConfig.X ? (actualValue / 50) : (actualValue / 10));
 	}
@@ -424,8 +456,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	protected void onCreate() {
 		txtBuilder = new StringBuilder(32);
 	}
-	
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions", "deprecation" })
+
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		final boolean addLargeEmptySpaces;
@@ -514,6 +545,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			Player.bassBoostMode = false;
 		}
 		barBass = findViewById(R.id.barBass);
+		barBass.setTextSizeIndex(0);
 		barBass.setMax(actualToBarBassBoost(BassBoost.getMaxStrength()));
 		barBass.setValue(actualToBarBassBoost(BassBoost.getStrength(audioSink)));
 		barBass.setKeyIncrement(1);
@@ -521,6 +553,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		barBass.setInsideList(true);
 		barBass.setAdditionalContentDescription(getText(R.string.bass_boost).toString());
 		barVirtualizer = findViewById(R.id.barVirtualizer);
+		barVirtualizer.setTextSizeIndex(0);
 		barVirtualizer.setMax(actualToBarVirtualizer(Virtualizer.getMaxStrength()));
 		barVirtualizer.setValue(actualToBarVirtualizer(Virtualizer.getStrength(audioSink)));
 		barVirtualizer.setKeyIncrement(1);
@@ -623,7 +656,9 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		panelControls = null;
 		panelEqualizer = null;
 		panelSecondary = null;
+		panelLabels = null;
 		panelBars = null;
+		frequencyResponseView = null;
 		chkEqualizer = null;
 		chkBass = null;
 		chkVirtualizer = null;
@@ -636,10 +671,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		btnGoBack = null;
 		btnMenu = null;
 		btnChangeEffect = null;
-		if (bars != null) {
-			for (int i = bars.length - 1; i >= 0; i--)
-				bars[i] = null;
-		}
+		clearBarsAndFrequencies();
 	}
 	
 	@Override
@@ -665,7 +697,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 						seekBar.setValue(-min / 50);
 					}
 					Equalizer.setBandLevel(i, level, audioSink);
-					seekBar.setText(formatEqualizer(i, Equalizer.getBandLevel(i, audioSink)));
+					seekBar.setText(formatEqualizerLevel(Equalizer.getBandLevel(i, audioSink)));
 					return;
 				}
 			}
@@ -683,12 +715,15 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			return;
 		if (seekBar == barBass) {
 			Player.commitBassBoost(audioSink);
+			updateFrequencyResponse();
 		} else if (seekBar == barVirtualizer) {
 			Player.commitVirtualizer(audioSink);
+			updateFrequencyResponse();
 		} else if (bars != null) {
 			for (int i = bars.length - 1; i >= 0; i--) {
 				if (seekBar == bars[i]) {
 					Player.commitEqualizer(i, audioSink);
+					updateFrequencyResponse();
 					return;
 				}
 			}
@@ -703,7 +738,7 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				final BgSeekBar bar = bars[i];
 				if (bar != null) {
 					final int level = Equalizer.getBandLevel(i, audioSink);
-					bars[i].setText(formatEqualizer(i, level));
+					bars[i].setText(formatEqualizerLevel(level));
 					bars[i].setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 				}
 			}
@@ -724,6 +759,34 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 		}
 		if (btnAudioSink != null)
 			btnAudioSink.setText(getAudioSinkDescription(audioSink, true));
+		updateFrequencyResponse();
+	}
+
+	private void updateFrequencyResponse() {
+		if (BuildConfig.X) {
+			if (desiredFrequencies == null || desiredFrequencyGainsDB == null) {
+				//31.25 x x x 62.5 x x x 125 x x x 250 ... 8000 x x x 16000
+				//the frequency should double every 4 samples (each step increases by 2 ^ (1/4))
+				desiredFrequencies = new double[37];
+				desiredFrequencyGainsDB = new double[37];
+				desiredFrequencies[0] = 31.25;
+				for (int i = 1; i < desiredFrequencies.length; i++)
+					desiredFrequencies[i] = desiredFrequencies[i - 1] * 1.189207115002721;
+				//fix round errors for all known frequencies :)
+				desiredFrequencies[20] = 1000;
+				for (int i = 16; i >= 0; i -= 4)
+					desiredFrequencies[i] = Math.floor(desiredFrequencies[i + 4] * 0.5);
+				for (int i = 24; i < desiredFrequencies.length; i += 4)
+					desiredFrequencies[i] = desiredFrequencies[i - 4] * 2;
+			}
+		} else {
+			return;
+		}
+
+		if (frequencyResponseView != null) {
+			Equalizer.getRequencyResponse(audioSink, BassBoost.isEnabled(audioSink) ? BassBoost.getStrength(audioSink) : 0, desiredFrequencies, desiredFrequencyGainsDB);
+			frequencyResponseView.setValues(desiredFrequencies, desiredFrequencyGainsDB);
+		}
 	}
 
 	@Override
@@ -763,11 +826,27 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 			chkEqualizer.setChecked(Equalizer.isEnabled(audioSink));
 			
 			final int bandCount = Equalizer.getBandCount();
-			if (bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
+			if (labels == null || bars == null || frequencies == null || bars.length < bandCount || frequencies.length < bandCount)
 				initBarsAndFrequencies(bandCount);
 
-			if (panelBars == null) {
+			final boolean frequencyResponseViewVisible = (BuildConfig.X && (!UI.isLandscape || screenConsideredLarge));
+
+			if (panelLabels == null) {
 				final Context ctx = getHostActivity();
+
+				final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				layoutParams.bottomMargin = UI.controlMargin;
+				frequencyResponseView = new FrequencyResponseView(getHostActivity());
+				frequencyResponseView.setLayoutParams(layoutParams);
+				frequencyResponseView.setVisibility(frequencyResponseViewVisible ? View.VISIBLE : View.GONE);
+				panelEqualizer.addView(frequencyResponseView);
+				updateFrequencyResponse();
+
+				panelLabels = new ObservableLinearLayout(ctx);
+				panelLabels.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+				panelLabels.setGravity(Gravity.CENTER);
+				panelLabels.setOrientation(LinearLayout.HORIZONTAL);
+
 				panelBars = new ObservableLinearLayout(ctx);
 				panelBars.setOnSizeChangeListener(this);
 				panelBars.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -775,14 +854,24 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				panelBars.setOrientation(LinearLayout.HORIZONTAL);
 
 				for (int i = 0; i < bandCount; i++) {
+					final TextView label = new TextView(ctx);
+					labels[i] = label;
+					label.setLayoutParams(new LinearLayout.LayoutParams(UI.defaultControlContentsSize, ViewGroup.LayoutParams.WRAP_CONTENT));
+					UI.smallText(label);
+					label.setTextColor(UI.colorState_text_listitem_static);
+					label.setGravity(Gravity.CENTER_HORIZONTAL);
+					label.setText(formatEqualizerLabel(i));
+
+					panelLabels.addView(label);
+
 					final int level = Equalizer.getBandLevel(i, audioSink);
 					final BgSeekBar bar = new BgSeekBar(ctx);
 					bars[i] = bar;
 					bar.setVertical(true);
-					final LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
-					bar.setLayoutParams(p);
+					bar.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
 					bar.setMax((max - min) / 50);
-					bar.setText(formatEqualizer(i, level));
+					bar.setAdditionalContentDescription(formatEqualizerDescription(i));
+					bar.setText(formatEqualizerLevel(level));
 					bar.setKeyIncrement(1);
 					bar.setValue(((level < LevelThreshold) && (level > -LevelThreshold)) ? (-min / 50) : ((level - min) / 50));
 					bar.setOnBgSeekBarChangeListener(this);
@@ -798,8 +887,12 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				}
 				if (bars != null && bars.length > 0)
 					bars[0].setNextFocusLeftId(R.id.chkEqualizer);
+				panelEqualizer.addView(panelLabels);
 				panelEqualizer.addView(panelBars);
+			} else if (frequencyResponseView != null) {
+				frequencyResponseView.setVisibility(frequencyResponseViewVisible ? View.VISIBLE : View.GONE);
 			}
+
 			if (btnChangeEffect != null) {
 				if (bars != null && bars.length > 0) {
 					bars[bandCount - 1].setNextFocusRightId(R.id.btnChangeEffect);
@@ -819,8 +912,9 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				}
 				chkBass.setNextFocusLeftId(bandCount);
 			}
-			chkEqualizer.setNextFocusRightId(1);
-			chkEqualizer.setNextFocusDownId(1);
+			final int id = 1;
+			chkEqualizer.setNextFocusRightId(id);
+			chkEqualizer.setNextFocusDownId(id);
 			UI.setNextFocusForwardId(chkEqualizer, 1);
 		}
 	}

@@ -71,6 +71,9 @@ public final class Equalizer {
 		return equalizer.setEnabled(enabled);
 	}
 
+	public static void getFrequencyResponse(int bassBoostStrength, short[] levels, double[] frequencies, double[] gains) {
+	}
+
 	public boolean getEnabled() {
 		return equalizer.getEnabled();
 	}

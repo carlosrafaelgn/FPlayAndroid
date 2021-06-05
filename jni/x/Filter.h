@@ -31,7 +31,7 @@
 // https://github.com/carlosrafaelgn/FPlayAndroid
 //
 
-void computeFilter(uint32_t band) {
+void computeFilter(uint32_t band, const int32_t* equalizerActuallyUsedGainInMillibels, float* equalizerLastBandGain, EqualizerCoefs* equalizerCoefs) {
 	if (!band || band >= equalizerMaxBandCount) {
 		//nothing to be done in this band...
 		//(band 0 is the pre amp, which is accounted for in the last band)

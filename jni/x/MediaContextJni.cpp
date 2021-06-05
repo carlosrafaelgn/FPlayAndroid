@@ -316,6 +316,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
 		{"isEqualizerEnabled", "()I", (void*)isEqualizerEnabled},
 		{"setEqualizerBandLevel", "(II)V", (void*)setEqualizerBandLevel},
 		{"setEqualizerBandLevels", "([S)V", (void*)setEqualizerBandLevels},
+		{"getEqualizerFrequencyResponse", "(I[SI[D[D)V", (void*)getEqualizerFrequencyResponse},
 		{"enableBassBoost", "(I)V", (void*)enableBassBoost},
 		{"isBassBoostEnabled", "()I", (void*)isBassBoostEnabled},
 		{"setBassBoostStrength", "(I)V", (void*)setBassBoostStrength},

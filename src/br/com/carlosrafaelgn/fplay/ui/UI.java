@@ -1806,7 +1806,40 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return color_selected_border;
 		return 0;
 	}
-	
+
+	public static int getSecondaryBgTextColor(boolean insideList) {
+		return (insideList ? UI.color_focused : UI.color_selected);
+	}
+
+	public static int getSecondaryBgColor(boolean insideList) {
+		return (insideList ? UI.color_list_bg : UI.color_window);
+	}
+
+	public static int getSecondaryBgColorBlended(boolean insideList, int state) {
+		final int secondaryBgColor = getSecondaryBgColor(insideList);
+
+		if (insideList)
+			state = ((state & UI.STATE_PRESSED) != 0 ?
+				(((state & UI.STATE_FOCUSED) != 0 && (state & UI.STATE_HOVERED) == 0) ? (UI.STATE_SELECTED | UI.STATE_PRESSED) :
+					(UI.STATE_FOCUSED | UI.STATE_PRESSED)) :
+				(((state & UI.STATE_FOCUSED) != 0 && (state & UI.STATE_HOVERED) == 0) ? UI.STATE_SELECTED :
+					(UI.STATE_SELECTED | UI.STATE_FOCUSED)));
+
+		final boolean blendWithBorder = (((state & UI.STATE_FOCUSED) != 0) ?
+			ColorUtils.contrastRatio(UI.color_focused_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_focused, secondaryBgColor) :
+			ColorUtils.contrastRatio(UI.color_selected_border, secondaryBgColor) > ColorUtils.contrastRatio(UI.color_selected, secondaryBgColor));
+
+		return (blendWithBorder ?
+			ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
+					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed_border : UI.color_selected_pressed_border) :
+					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_border : UI.color_selected_border),
+				secondaryBgColor, 0.15f) :
+			ColorUtils.blend(((state & UI.STATE_PRESSED) != 0) ?
+					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused_pressed : UI.color_selected_pressed) :
+					(((state & UI.STATE_FOCUSED) != 0) ? UI.color_focused : UI.color_selected),
+				secondaryBgColor, 0.35f));
+	}
+
 	public static void drawBgBorderless(Rect rect,  Canvas canvas, int state) {
 		if ((state & ~STATE_CURRENT) != 0) {
 			if ((state & STATE_PRESSED) != 0) {

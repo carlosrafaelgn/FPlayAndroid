@@ -75,8 +75,8 @@ public final class BgProgressBar extends View {
 	}
 
 	public void setInsideList(boolean insideList) {
-		color = (insideList ? UI.color_focused : UI.color_selected);
-		secondaryBgColorBlended = ColorUtils.blend(color, insideList ? UI.color_list_bg : UI.color_window, 0.35f);
+		color = UI.getSecondaryBgTextColor(insideList);
+		secondaryBgColorBlended = UI.getSecondaryBgColorBlended(insideList, 0);
 		invalidate();
 	}
 
