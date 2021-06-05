@@ -76,7 +76,6 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	private BgButton btnGoBack, btnAudioSink, btnMenu, btnChangeEffect;
 	private int min, max, audioSink, storedAudioSink;
 	private int[] frequencies;
-	private double[] desiredFrequencies, desiredFrequencyGainsDB;
 	private boolean enablingEffect, screenConsideredLarge, resizingEq;
 	private TextView[] labels;
 	private BgSeekBar[] bars;
@@ -103,8 +102,10 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				return "500 / 1k Hz";
 			case 5:
 				return "2k / 4k Hz";
+			case 6:
+				return "8k Hz";
 			default:
-				return "8k / 16k Hz";
+				return "16k Hz";
 			}
 		} else {
 			final int frequency = frequencies[frequencyIndex];
@@ -130,8 +131,10 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 				return "500\n1k";
 			case 5:
 				return "2k\n4k";
+			case 6:
+				return "8k";
 			default:
-				return "8k\n16k";
+				return "16k";
 			}
 		} else {
 			final int frequency = frequencies[frequencyIndex];
@@ -698,10 +701,12 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 					}
 					Equalizer.setBandLevel(i, level, audioSink);
 					seekBar.setText(formatEqualizerLevel(Equalizer.getBandLevel(i, audioSink)));
-					return;
+					break;
 				}
 			}
 		}
+		if (usingKeys)
+			onStopTrackingTouch(seekBar, false);
 	}
 	
 	@Override
@@ -763,29 +768,12 @@ public final class ActivityEffects extends ClientActivity implements Timer.Timer
 	}
 
 	private void updateFrequencyResponse() {
-		if (BuildConfig.X) {
-			if (desiredFrequencies == null || desiredFrequencyGainsDB == null) {
-				//31.25 x x x 62.5 x x x 125 x x x 250 ... 8000 x x x 16000
-				//the frequency should double every 4 samples (each step increases by 2 ^ (1/4))
-				desiredFrequencies = new double[37];
-				desiredFrequencyGainsDB = new double[37];
-				desiredFrequencies[0] = 31.25;
-				for (int i = 1; i < desiredFrequencies.length; i++)
-					desiredFrequencies[i] = desiredFrequencies[i - 1] * 1.189207115002721;
-				//fix round errors for all known frequencies :)
-				desiredFrequencies[20] = 1000;
-				for (int i = 16; i >= 0; i -= 4)
-					desiredFrequencies[i] = Math.floor(desiredFrequencies[i + 4] * 0.5);
-				for (int i = 24; i < desiredFrequencies.length; i += 4)
-					desiredFrequencies[i] = desiredFrequencies[i - 4] * 2;
-			}
-		} else {
+		if (!BuildConfig.X)
 			return;
-		}
 
 		if (frequencyResponseView != null) {
-			Equalizer.getRequencyResponse(audioSink, BassBoost.isEnabled(audioSink) ? BassBoost.getStrength(audioSink) : 0, desiredFrequencies, desiredFrequencyGainsDB);
-			frequencyResponseView.setValues(desiredFrequencies, desiredFrequencyGainsDB);
+			Equalizer.getRequencyResponse(audioSink, BassBoost.isEnabled(audioSink) ? BassBoost.getStrength(audioSink) : 0, frequencyResponseView.frequencies, frequencyResponseView.gainsDB);
+			frequencyResponseView.invalidate();
 		}
 	}
 

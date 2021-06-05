@@ -53,13 +53,15 @@ public final class Equalizer {
 			return (500000 + 1000000) >> 1;
 		case 5:
 			return (2000000 + 4000000) >> 1;
+		case 6:
+			return 8000000;
 		default:
-			return (8000000 + 16000000) >> 1;
+			return 16000000;
 		}
 	}
 
 	public short getNumberOfBands() {
-		return 7;
+		return 8;
 	}
 
 	public void setBandLevel(short band, short level) {
@@ -67,7 +69,7 @@ public final class Equalizer {
 	}
 
 	public void setProperties(short numBands, short[] bandLevels) {
-		if (numBands != 7 || bandLevels == null || bandLevels.length < 7)
+		if (numBands != 8 || bandLevels == null || bandLevels.length < 8)
 			return;
 		MediaContext._setEqualizerBandLevels(bandLevels);
 	}

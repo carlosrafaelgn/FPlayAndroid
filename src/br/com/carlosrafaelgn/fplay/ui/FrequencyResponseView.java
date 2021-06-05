@@ -40,15 +40,34 @@ import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 
 public final class FrequencyResponseView extends View {
-	private double[] gainsDB;
-	private int[] divisions, divisionLabelOffsets;
-	private String[] divisionLabels;
-	private float gainStep;
+	private static final int DIVISION_COUNT = 10;
+	private static final int COMMON_RESOLUTION_DIVISION_COUNT = DIVISION_COUNT - 3;
+	private static final int COMMON_RESOLUTION_COUNT = (COMMON_RESOLUTION_DIVISION_COUNT * 8);
+	public final double[] frequencies = new double[COMMON_RESOLUTION_COUNT + 16 + 33];
+	public final double[] gainsDB = new double[COMMON_RESOLUTION_COUNT + 16 + 33];
+	private final int[] divisions = new int[] {
+		31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000
+	}, divisionLabelOffsets = new int[10];
+	private final String[] divisionLabels = new String[] {
+		"31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"
+	};
+	private final double[] gainStep = new double[3];
 	private int viewWidth, usableHeight, y0, textSize, textBox, textYInBox, divisionWidth;
 	private final Paint paint;
 
 	public FrequencyResponseView(Context context) {
 		super(context);
+
+		//31.25 x x x 62.5 x x x 125 x x x 250 ... 8000 x x x 16000
+		//the frequency should double every 8 samples for the first 8 divisions (then 16, and finally 32 samples)
+		frequencies[0] = 31.25;
+		int i;
+		for (i = 1; i <= COMMON_RESOLUTION_COUNT; i++)
+			frequencies[i] = frequencies[i - 1] * 1.0905077326652576592070106557607; //2 ^ (1/8)
+		for (; i <= (COMMON_RESOLUTION_COUNT + 16); i++)
+			frequencies[i] = frequencies[i - 1] * 1.0442737824274138403219664787399; //2 ^ (1/16)
+		for (; i < frequencies.length; i++)
+			frequencies[i] = frequencies[i - 1] * 1.0218971486541166782344801347833; //2 ^ (1/32)
 
 		paint = new Paint();
 		paint.setColor(UI.color_text_listitem);
@@ -63,43 +82,6 @@ public final class FrequencyResponseView extends View {
 
 		setMinimumWidth(UI.defaultControlSize);
 		setMinimumHeight(UI.defaultControlSize << 1);
-	}
-
-	public void setValues(double[] frequencies, double[] gainsDB) {
-		this.gainsDB = gainsDB;
-
-		if (frequencies != null) {
-			if (((frequencies.length - 1) & 3) != 0)
-				throw new IllegalArgumentException("(frequencies.length - 1) must be divisible by 4");
-			if (frequencies.length != gainsDB.length)
-				throw new IllegalArgumentException("frequencies.length must be equal to gainsDB.length");
-
-			gainStep = (float)viewWidth / (float)gainsDB.length;
-
-			final int divisionCount = ((frequencies.length - 1) >> 2) + 1;
-			if (divisionCount > 1)
-				divisionWidth = viewWidth / (divisionCount - 1);
-
-			if (divisions == null || divisions.length != divisionCount) {
-				divisions = new int[divisionCount];
-				divisionLabelOffsets = new int[divisionCount];
-				divisionLabels = new String[divisionCount];
-
-				for (int i = 0; i < divisionCount; i++) {
-					final int f = (int)frequencies[i << 2];
-					divisionLabels[i] = ((f < 1000) ? Integer.toString(f) : ((f / 1000) + "k"));
-				}
-
-				if (textSize > 0) {
-					final int lastDivision = divisionLabels.length - 1;
-					divisionLabelOffsets[0] = -UI.strokeSize;
-					for (int i = 1; i < lastDivision; i++)
-						divisionLabelOffsets[i] = UI.measureText(divisionLabels[i], textSize) >> 1;
-					divisionLabelOffsets[lastDivision] = UI.measureText(divisionLabels[lastDivision], textSize) + UI.strokeSize;
-				}
-			}
-		}
-		invalidate();
 	}
 
 	@Override
@@ -138,18 +120,17 @@ public final class FrequencyResponseView extends View {
 
 		y0 = (usableHeight - UI.strokeSize) >> 1;
 
-		if (divisions != null && divisions.length > 1)
-			divisionWidth = viewWidth / (divisions.length - 1);
+		divisionWidth = viewWidth / (divisions.length - 1);
 
-		if (divisionLabels != null) {
-			gainStep = (float)w / (float)gainsDB.length;
+		gainStep[0] = (double)divisionWidth * 0.125; //1/8
+		gainStep[1] = (double)divisionWidth * 0.0625; //1/16
+		gainStep[2] = (double)(viewWidth - (divisionWidth * (COMMON_RESOLUTION_DIVISION_COUNT + 1))) * 0.03125; //1/32
 
-			final int lastDivision = divisionLabels.length - 1;
-			divisionLabelOffsets[0] = -UI.strokeSize;
-			for (int i = 1; i < lastDivision; i++)
-				divisionLabelOffsets[i] = UI.measureText(divisionLabels[i], textSize) >> 1;
-			divisionLabelOffsets[lastDivision] = UI.measureText(divisionLabels[lastDivision], textSize) + UI.strokeSize;
-		}
+		final int lastDivision = divisionLabels.length - 1;
+		divisionLabelOffsets[0] = -UI.strokeSize;
+		for (int i = 1; i < lastDivision; i++)
+			divisionLabelOffsets[i] = UI.measureText(divisionLabels[i], textSize) >> 1;
+		divisionLabelOffsets[lastDivision] = UI.measureText(divisionLabels[lastDivision], textSize) + UI.strokeSize;
 	}
 
 	@Override
@@ -181,9 +162,6 @@ public final class FrequencyResponseView extends View {
 		UI.drawText(canvas, "+0", UI.color_text_listitem, textSize, UI.controlSmallMargin, y0 + UI.strokeSize + textYInBox);
 		UI.drawText(canvas, "-15", UI.color_text_listitem, textSize, UI.controlSmallMargin, usableHeight - UI.strokeSize - textBox + textYInBox);
 
-		if (divisions == null)
-			return;
-
 		final int lastDivision = divisions.length - 1;
 
 		rect.left = 0;
@@ -199,20 +177,19 @@ public final class FrequencyResponseView extends View {
 		}
 		UI.drawText(canvas, divisionLabels[lastDivision], UI.color_text_listitem, textSize, viewWidth - divisionLabelOffsets[lastDivision], rect.bottom + textYInBox);
 
-		if (gainsDB != null) {
-			final int lastGain = gainsDB.length - 1;
-			final double multiplier = (double)y0 / -15;
-			float usableHeightf = (float)usableHeight,
-				lastX = 0.0f,
-				lastY = Math.max(0.0f, Math.min(usableHeightf, (float)(y0 + (gainsDB[0] * multiplier))));
-			for (int i = 1; i < lastGain; i++) {
-				final float x = i * gainStep,
-					y = Math.max(0.0f, Math.min(usableHeightf, (float)(y0 + (gainsDB[i] * multiplier))));
-				canvas.drawLine(lastX, lastY, x, y, paint);
-				lastX = x;
-				lastY = y;
-			}
-			canvas.drawLine(lastX, lastY, (float)viewWidth, Math.max(0.0f, Math.min(usableHeightf, (float)(y0 + (gainsDB[lastGain] * multiplier)))), paint);
+		final int lastGain = gainsDB.length - 1,
+			gainStep1Count = COMMON_RESOLUTION_COUNT + 16;
+		final double multiplier = (double)y0 / -15.0;
+		double usableHeightd = (double)usableHeight,
+			lastX = 0.0,
+			lastY = Math.max(0.0, Math.min(usableHeightd, (double)y0 + (gainsDB[0] * multiplier)));
+		for (int i = 1; i < lastGain; i++) {
+			final double x = lastX + gainStep[(i < COMMON_RESOLUTION_COUNT) ? 0 : ((i < gainStep1Count) ? 1 : 2)],
+				y = Math.max(0.0, Math.min(usableHeightd, (double)y0 + (gainsDB[i] * multiplier)));
+			canvas.drawLine((float)lastX, (float)lastY, (float)x, (float)y, paint);
+			lastX = x;
+			lastY = y;
 		}
+		canvas.drawLine((float)lastX, (float)lastY, (float)viewWidth, (float)Math.max(0.0, Math.min(usableHeightd, (double)y0 + (gainsDB[lastGain] * multiplier))), paint);
 	}
 }

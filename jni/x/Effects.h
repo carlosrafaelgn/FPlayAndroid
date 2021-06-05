@@ -112,13 +112,25 @@ void updateEqualizerGains(int32_t bandToReset) {
 		}
 	} else {
 		const int32_t lastBand = equalizerMaxBandCount - 1;
+		int32_t leftover = 0;
 		//band 0 = pre
 		equalizerActuallyUsedGainInMillibels[0] = 0;
-		for (int32_t i = 1; i < lastBand; i++) {
+		for (int32_t i = lastBand - 1; i >= 1; i--) {
 			//when enabled, add the bass boost to band 2 (0 - 125 Hz)
-			equalizerActuallyUsedGainInMillibels[i] = ((i == 2 && (effectsEnabled & BASSBOOST_ENABLED)) ?
+			equalizerActuallyUsedGainInMillibels[i] = leftover + ((i == 2 && (effectsEnabled & BASSBOOST_ENABLED)) ?
 														(bassBoostStrength + equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]) :
 														(equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]));
+
+			if (equalizerActuallyUsedGainInMillibels[i] < -DB_MAX_DELTA) {
+				leftover = equalizerActuallyUsedGainInMillibels[i] + DB_MAX_DELTA;
+				equalizerActuallyUsedGainInMillibels[i] = -DB_MAX_DELTA;
+			} else if (equalizerActuallyUsedGainInMillibels[i] > DB_MAX_DELTA) {
+				leftover = equalizerActuallyUsedGainInMillibels[i] - DB_MAX_DELTA;
+				equalizerActuallyUsedGainInMillibels[i] = DB_MAX_DELTA;
+			} else {
+				leftover = 0;
+			}
+
 			computeFilter(i, equalizerActuallyUsedGainInMillibels, equalizerLastBandGain, equalizerCoefs);
 		}
 
@@ -151,10 +163,12 @@ void resetVirtualizer() {
 void equalizerConfigChanged() {
 	//this only happens in two moments: upon initialization and when the sample rate changes (even when the equalizer is not enabled!)
 
-	if (dstSampleRate > (2 * 6000))
+	if (dstSampleRate > (2 * 12000))
 		equalizerMaxBandCount = BAND_COUNT;
+	else if (dstSampleRate > (2 * 6000))
+		equalizerMaxBandCount = BAND_COUNT - 1;
 	else
-		equalizerMaxBandCount = BAND_COUNT - 1; //Android's minimum allowed sample rate is 4000 Hz
+		equalizerMaxBandCount = BAND_COUNT - 2; //Android's minimum allowed sample rate is 4000 Hz
 
 	effectsGainReductionPerFrame[0] = (float)pow(10.0, GAIN_REDUCTION_PER_SECOND_DB / (double)(dstSampleRate * 20));
 	effectsGainReductionPerFrame[1] = effectsGainReductionPerFrame[0];
@@ -409,13 +423,25 @@ void JNICALL getEqualizerFrequencyResponse(JNIEnv* env, jclass clazz, int32_t ba
 	env->ReleasePrimitiveArrayCritical(jlevels, levels, JNI_ABORT);
 
 	const int32_t lastBand = equalizerMaxBandCount - 1;
+	int32_t leftover = 0;
 	//band 0 = pre
 	equalizerActuallyUsedGainInMillibels[0] = 0;
-	for (int32_t i = 1; i < lastBand; i++) {
+	for (int32_t i = lastBand - 1; i >= 1; i--) {
 		//when enabled, add the bass boost to band 2 (0 - 125 Hz)
-		equalizerActuallyUsedGainInMillibels[i] = ((i == 2) ?
+		equalizerActuallyUsedGainInMillibels[i] = leftover + ((i == 2 && (effectsEnabled & BASSBOOST_ENABLED)) ?
 													(bassBoostStrength + equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]) :
 													(equalizerGainInMillibels[i] - equalizerGainInMillibels[i + 1]));
+
+		if (equalizerActuallyUsedGainInMillibels[i] < -DB_MAX_DELTA) {
+			leftover = equalizerActuallyUsedGainInMillibels[i] + DB_MAX_DELTA;
+			equalizerActuallyUsedGainInMillibels[i] = -DB_MAX_DELTA;
+		} else if (equalizerActuallyUsedGainInMillibels[i] > DB_MAX_DELTA) {
+			leftover = equalizerActuallyUsedGainInMillibels[i] - DB_MAX_DELTA;
+			equalizerActuallyUsedGainInMillibels[i] = DB_MAX_DELTA;
+		} else {
+			leftover = 0;
+		}
+
 		computeFilter(i, equalizerActuallyUsedGainInMillibels, equalizerLastBandGain, equalizerCoefs);
 	}
 

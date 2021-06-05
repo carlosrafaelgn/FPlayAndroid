@@ -148,8 +148,11 @@ void computeFilter(uint32_t band, const int32_t* equalizerActuallyUsedGainInMill
 	case 4: //500 Hz / 1000 Hz
 		f0 = 1500.0;
 		break;
-	default: //2000 Hz / 4000 Hz
+	case 5: //2000 Hz / 4000 Hz
 		f0 = 6000.0;
+		break;
+	default: //8000 Hz
+		f0 = 12000.0;
 		break;
 	}
 	const double PI = 3.1415926535897932384626433832795;

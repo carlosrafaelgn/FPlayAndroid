@@ -549,6 +549,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static String formatIntAsFloat(int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
+		final boolean neg = (number < 0);
 		int dec;
 		if (useTwoDecimalPlaces) {
 			dec = number % 100;
@@ -561,7 +562,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return Integer.toString(number);
 		if (dec < 0)
 			dec = -dec;
-		return Integer.toString(number) + decimalSeparator + ((useTwoDecimalPlaces && (dec < 10)) ? ("0" + dec) : Integer.toString(dec));
+		return ((neg && number == 0) ? "-0" : Integer.toString(number)) + decimalSeparator + ((useTwoDecimalPlaces && (dec < 10)) ? ("0" + dec) : Integer.toString(dec));
 	}
 	
 	public static void formatIntAsFloat(StringBuilder sb, int number, boolean useTwoDecimalPlaces, boolean removeDecimalPlacesIfExact) {
