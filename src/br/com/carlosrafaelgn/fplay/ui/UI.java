@@ -847,8 +847,9 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			iconsTypeface = Typeface.createFromAsset(Player.theApplication.getAssets(), "fonts/icons.ttf");
 		if (!fullyInitialized) {
 			try {
+				// A few devices report UI_MODE_TYPE_TELEVISION, but are not a TV...
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2)
-					isTV = ((((UiModeManager)Player.theApplication.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
+					isTV = false; //((((UiModeManager)Player.theApplication.getSystemService(Context.UI_MODE_SERVICE)).getCurrentModeType() & Configuration.UI_MODE_TYPE_TELEVISION) != 0);
 			} catch (Throwable ex) {
 				//just ignore
 			}

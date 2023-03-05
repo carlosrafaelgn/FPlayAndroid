@@ -48,6 +48,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- For exporting playlists (but we are no longer saving playlists to the external storage) -->
     <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
     <!-- For Android 28 https://developer.android.com/about/versions/pie/android-9.0-migration#tya -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -134,6 +135,7 @@
             android:screenOrientation="unspecified"
             android:resizeableActivity="true"
             android:stateNotNeeded="true"
+            android:exported="true"
             android:theme="@style/AppTheme" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -278,6 +280,7 @@
 
         <receiver
             android:name="br.com.carlosrafaelgn.fplay.WidgetMain"
+            android:exported="true"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -287,7 +290,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/main_widget_info" />
         </receiver>
-        <receiver android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver" >
+        <receiver
+            android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver"
+            android:exported="true" >
             <intent-filter>
 
                 <!--
@@ -295,6 +300,7 @@
                     before API 26!!!!
                 -->
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="br.com.carlosrafaelgn.FPlay.EXIT" />
             </intent-filter>
         </receiver>
     </application>

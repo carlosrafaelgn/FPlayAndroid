@@ -81,6 +81,9 @@ public final class ExternalReceiver extends BroadcastReceiver {
 				Player.registerMediaButtonEventReceiver();
 			Player.audioSinkChanged(false, false, false);
 			break;
+		case "br.com.carlosrafaelgn.FPlay.EXIT":
+			Player.stopService();
+			break;
 		}
 		if (isOrderedBroadcast())
 			abortBroadcast();

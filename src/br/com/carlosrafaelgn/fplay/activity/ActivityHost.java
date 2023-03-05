@@ -873,12 +873,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 
 	@TargetApi(Build.VERSION_CODES.M)
 	public boolean isReadStoragePermissionGranted() {
-		return (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+		return (checkSelfPermission(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ? Manifest.permission.READ_MEDIA_AUDIO : Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
 	public void requestReadStoragePermission() {
-		requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+		requestPermissions(new String[]{(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ? Manifest.permission.READ_MEDIA_AUDIO : Manifest.permission.READ_EXTERNAL_STORAGE)}, 1);
 	}
 
 	//we are no longer saving playlists to the external storage

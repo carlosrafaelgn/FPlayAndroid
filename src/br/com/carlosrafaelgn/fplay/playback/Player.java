@@ -1259,7 +1259,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (checkForPermission) {
 			checkForPermission = false;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-				if (thePlayer.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+				if (thePlayer.checkSelfPermission(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ? Manifest.permission.READ_MEDIA_AUDIO : Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
 					checkForPermission = true;
 			}
 		}
@@ -2038,7 +2038,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				if (metadata.icyUrl != null && metadata.icyUrl.length() > 0)
 					localSong.album = metadata.icyUrl;
 				localSong.title = title;
-				broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
+				// No longer use "Loading..." for notification, media session and so on...
+				broadcastStateChange(getCurrentTitle(false), isPreparing(), true);
 				//this will force a serialization when closing the app (saving this update)
 				songs.markAsChanged();
 				if (observer != null)
@@ -2055,7 +2056,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//Do not touch the album, as it might already contain the track's icy url
 				//localSong.album = "-";
 				localSong.title = metadata.title;
-				broadcastStateChange(getCurrentTitle(isPreparing()), isPreparing(), true);
+				// No longer use "Loading..." for notification, media session and so on...
+				broadcastStateChange(getCurrentTitle(false), isPreparing(), true);
 				//this will force a serialization when closing the app (saving this update)
 				songs.markAsChanged();
 				if (observer != null)
@@ -2614,38 +2616,42 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (intentActivityHost == null) {
 			Intent intent = new Intent(theApplication, ActivityHost.class);
 			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			intentActivityHost = PendingIntent.getActivity(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			intentActivityHost = PendingIntent.getActivity(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_PREVIOUS);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				intentPrevious = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+				intentPrevious = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 			else
-				intentPrevious = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+				intentPrevious = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_PLAY_PAUSE);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				intentPlayPause = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+				intentPlayPause = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 			else
-				intentPlayPause = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+				intentPlayPause = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
 			intent.setAction(Player.ACTION_NEXT);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				intentNext = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+				intentNext = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 			else
-				intentNext = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			intent = new Intent(theApplication, Player.class);
-			intent.setAction(Player.ACTION_EXIT);
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				intentExit = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			else
-				intentExit = PendingIntent.getService(theApplication, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+				intentNext = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				intent = new Intent(theApplication, ExternalReceiver.class);
+				intent.setAction(Player.ACTION_EXIT);
+				intentExit = PendingIntent.getBroadcast(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+			} else {
+				intent = new Intent(theApplication, Player.class);
+				intent.setAction(Player.ACTION_EXIT);
+				intentExit = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
+			}
 		}
 	}
 
 	public static RemoteViews prepareRemoteViews(RemoteViews views, boolean prepareButtons, boolean notification, boolean notificationFirstTime) {
 		createIntents();
 
-		views.setTextViewText(R.id.lblTitle, getCurrentTitle(isPreparing()));
+		// No longer use "Loading..." for notification, media session and so on...
+		views.setTextViewText(R.id.lblTitle, getCurrentTitle(false));
 
 		if (prepareButtons) {
 			if (notification) {
@@ -2688,35 +2694,60 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@TargetApi(Build.VERSION_CODES.O)
-	private static Notification createNotificationWithChannel() {
-		return new Notification.Builder(theApplication, CHANNEL_ID)
+	private static void createMediaStyleNotificationWithChannel() {
+		Notification.MediaStyle mediaStyle = new Notification.MediaStyle();
+		if (mediaSession != null)
+			mediaStyle.setMediaSession(mediaSession.getSessionToken());
+		mediaStyle.setShowActionsInCompactView();
+
+		Notification.Builder builder = new Notification.Builder(theApplication, CHANNEL_ID)
 			.setSmallIcon(R.drawable.ic_notification)
-			.build();
+			.setWhen(0)
+			.setStyle(mediaStyle)
+			// No longer use "Loading..." for notification, media session and so on...
+			.setContentTitle(getCurrentTitle(false))
+			.setSubText((localSong == null) ? "-" : localSong.extraInfo)
+			.setColorized(false)
+			// Apparently, the ongoing flag shoudl be set to false for the delete intent to the send
+			// https://stackoverflow.com/q/74808095/3569421
+			.setOngoing(false)
+			.setContentIntent(intentActivityHost)
+			.setDeleteIntent(intentExit);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+			builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
+
+		notification = builder.build();
+		notification.flags |= Notification.FLAG_FOREGROUND_SERVICE;
 	}
 
 	private static Notification getNotification() {
-		boolean firstTime = false;
-		if (notification == null) {
-			firstTime = true;
-			notification = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? createNotificationWithChannel() :  new Notification());
-			notification.icon = R.drawable.ic_notification;
-			notification.when = 0;
-			notification.flags = Notification.FLAG_FOREGROUND_SERVICE;
-			notification.contentIntent = intentActivityHost;
-			notification.contentView = new RemoteViews(theApplication.getPackageName(), (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? R.layout.notification : R.layout.notification_simple);
-		}
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			//any need for this technique???
-			//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
-			//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
-			notification.visibility = Notification.VISIBILITY_PUBLIC;
-			if (mediaSession != null) {
-				if (notification.extras == null)
-					notification.extras = new Bundle();
-				notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+			boolean firstTime = false;
+			if (notification == null) {
+				firstTime = true;
+				notification = new Notification();
+				notification.icon = R.drawable.ic_notification;
+				notification.when = 0;
+				notification.flags = Notification.FLAG_FOREGROUND_SERVICE | Notification.FLAG_ONGOING_EVENT;
+				notification.contentIntent = intentActivityHost;
+				notification.contentView = new RemoteViews(theApplication.getPackageName(), (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) ? R.layout.notification : R.layout.notification_simple);
 			}
+			prepareRemoteViews(notification.contentView, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				//any need for this technique???
+				//https://developer.android.com/about/versions/android-5.0-changes.html#BehaviorMediaControl
+				//https://developer.android.com/reference/android/app/Notification.MediaStyle.html
+				notification.visibility = Notification.VISIBILITY_PUBLIC;
+				if (mediaSession != null) {
+					if (notification.extras == null)
+						notification.extras = new Bundle();
+					notification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, mediaSession.getSessionToken());
+				}
+			}
+		} else {
+			createMediaStyleNotificationWithChannel();
 		}
-		prepareRemoteViews(notification.contentView, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN, true, firstTime);
 		return notification;
 	}
 
@@ -3159,7 +3190,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (remoteControlClient == null) {
 				final Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
 				mediaButtonIntent.setComponent(mediaButtonEventReceiver);
-				final PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(thePlayer, 0, mediaButtonIntent, 0);
+				final PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(thePlayer, 0, mediaButtonIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
 				remoteControlClient = new RemoteControlClient(mediaPendingIntent);
 				remoteControlClient.setTransportControlFlags(RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS | RemoteControlClient.FLAG_KEY_MEDIA_NEXT | RemoteControlClient.FLAG_KEY_MEDIA_PLAY | RemoteControlClient.FLAG_KEY_MEDIA_PAUSE | RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE | RemoteControlClient.FLAG_KEY_MEDIA_STOP);
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -3858,7 +3889,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		final boolean preparing = ((arg1 & 0x20) != 0);
 		final boolean preparingHasChanged = ((arg1 & 0x40) != 0);
 		//final boolean bufferingHasChanged = ((arg1 & 0x100) != 0);
-		final String title = ((localSong == null) ? null : getCurrentTitle(preparing));
+		// No longer use "Loading..." for notification, media session and so on...
+		final String title = ((localSong == null) ? null : getCurrentTitle(false));
 		broadcastStateChange(title, preparing, songHasChanged | preparingHasChanged);
 		if (idleTurnOffTimerSelectedMinutes > 0)
 			processIdleTurnOffTimer();

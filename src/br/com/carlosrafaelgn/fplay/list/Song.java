@@ -196,7 +196,11 @@ public final class Song extends BaseItem {
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
-			retr.release();
+			try {
+				retr.release();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 		}
 		validateFields(fileSt.name);
 	}
