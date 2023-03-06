@@ -2717,6 +2717,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
 			builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
 
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+			builder
+				.addAction(new Notification.Action(R.drawable.ic_prev, Player.theApplication.getText(R.string.previous), intentPrevious))
+				.addAction(localPlaying ?
+					new Notification.Action(R.drawable.ic_pause, Player.theApplication.getText(R.string.pause), intentPlayPause) :
+					new Notification.Action(R.drawable.ic_play, Player.theApplication.getText(R.string.play), intentPlayPause))
+				.addAction(new Notification.Action(R.drawable.ic_next, Player.theApplication.getText(R.string.next), intentNext));
+
+			mediaStyle.setShowActionsInCompactView(0, 1, 2);
+		}
+
 		notification = builder.build();
 		notification.flags |= Notification.FLAG_FOREGROUND_SERVICE;
 	}
