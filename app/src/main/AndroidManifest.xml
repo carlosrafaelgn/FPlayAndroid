@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="br.com.carlosrafaelgn.fplay"
+    android:installLocation="auto" >
+    <!-- In favor of gradle -->
+    <!-- android:versionCode="107"
+    android:versionName="1.73" > -->
+
+    <!-- In favor of gradle -->
+	<!-- <uses-sdk
+        android:minSdkVersion="10"
+        android:targetSdkVersion="23" /> -->
+
+    <!-- http://developer.android.com/guide/topics/manifest/supports-screens-element.html -->
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:smallScreens="true"
+        android:xlargeScreens="true" />
+
+    <!-- For Google Drive -->
+    <!-- uses-permission android:name="android.permission.GET_ACCOUNTS" -->
+    <!-- For http playback -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- To check the connection state -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- See this: http://developer.android.com/reference/android/bluetooth/BluetoothHeadset.html#ACTION_AUDIO_STATE_CHANGED -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <!-- For scanning bluetooth devices -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+    <!-- Apparently, a few devices require this.... (not only to make android.media.audiofx.PresetReverb work, but to control volume and other settings)  -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!--
+        Several years ago (today is 2021) android.permission.WRITE_SETTINGS was required by a few weird devices to make volume/mute control work.
+        Thankfully those devices disappeared from market a long time ago. Unfortunately, we still need this permission to set the ringtone!
+    -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
+    <!-- These three permissions are not classified as PROTECTION_NORMAL in Android M API 23
+     https://developer.android.com/guide/topics/security/permissions.html#normal-dangerous -->
+    <!-- For the immersive visualizer -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- http://developer.android.com/reference/android/Manifest.permission.html#READ_EXTERNAL_STORAGE -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- For exporting playlists (but we are no longer saving playlists to the external storage) -->
+    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <!-- For Android 28 https://developer.android.com/about/versions/pie/android-9.0-migration#tya -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!--
+    Just to make Google Play show the App even to phones without Bluetooth,
+    despite the uses-permission above!
+    -->
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <!--
+    Just to make Google Play show the App even to phones without a camera,
+    despite the uses-permission above!
+    -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <!--
+    Support for devices without touch, devices without microphone and TVs
+    as described in http://developer.android.com/guide/topics/manifest/uses-feature-element.html
+    -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.faketouch"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+
+    <!--
+    Support for Chromebook and other PC-like devices with mouse and keyboard
+    -->
+    <uses-feature
+        android:name="android.hardware.type.pc"
+        android:required="false" />
+
+    <!-- http://developer.android.com/intl/pt-br/reference/android/app/backup/BackupManager.html -->
+    <!-- https://developer.android.com/training/data-storage/compatibility -->
+    <application
+        android:allowBackup="true"
+        android:allowClearUserData="true"
+        android:usesCleartextTraffic="true"
+        android:killAfterRestore="true"
+        android:restoreAnyVersion="false"
+        android:description="@string/app_description"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:banner="@drawable/ic_banner"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:requestLegacyExternalStorage="true"
+        android:theme="@style/AppTheme" >
+
+        <!-- http://stackoverflow.com/a/14185426/3569421 -->
+        <uses-library android:required="false" android:name="com.sec.android.app.multiwindow" />
+        <meta-data android:name="com.sec.android.support.multiwindow" android:value="true" />
+        <meta-data android:name="com.sec.android.multiwindow.DEFAULT_SIZE_W" android:value="320dp" />
+        <meta-data android:name="com.sec.android.multiwindow.DEFAULT_SIZE_H" android:value="320dp" />
+        <meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_W" android:value="320dp" />
+        <meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_H" android:value="320dp" />
+        <!-- https://developer.android.com/guide/practices/screens_support.html#MaxAspectRatio -->
+        <meta-data android:name="android.max_aspect" android:value="100.0" />
+
+        <!-- https://developer.android.com/training/tv/start/start.html -->
+        <!-- https://developer.android.com/distribute/best-practices/launch/distribute-tv -->
+        <!-- https://developer.android.com/training/tv/start/controllers -->
+        <activity
+            android:name="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
+            android:clearTaskOnLaunch="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:multiprocess="false"
+            android:screenOrientation="unspecified"
+            android:resizeableActivity="true"
+            android:stateNotNeeded="true"
+            android:exported="true"
+            android:theme="@style/AppTheme" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+
+            <!-- Handling fplay:// links -->
+            <!--
+                I gave up on the idea because most apps don't render fplay://XXXXXXXX as a link,
+                except for browsers, with tags like <a href="fplay://XXXXXXXX">
+            -->
+            <!--<intent-filter
+                android:icon="@mipmap/ic_launcher"
+                android:label="@string/app_name">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="fplay" android:host="*" />
+            </intent-filter>-->
+
+            <!-- External file support
+             http://developer.android.com/guide/components/intents-filters.html
+             http://developer.android.com/guide/topics/manifest/data-element.html
+             http://stackoverflow.com/questions/3760276/android-intent-filter-associate-app-with-file-extension
+             -->
+            <intent-filter
+                android:icon="@mipmap/ic_launcher"
+                android:label="@string/app_name"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@mipmap/ic_launcher"
+                android:label="@string/app_name"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="application/ogg" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@mipmap/ic_launcher"
+                android:label="@string/app_name"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="application/x-ogg" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@mipmap/ic_launcher"
+                android:label="@string/app_name"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="application/itunes" />
+            </intent-filter>
+            <!-- beware: .*\\.EXT matches name.EXT but does match name.something.EXT!!! :( -->
+            <!-- do not include hardcoded 3GP and MP4 extensions, as they are widely used for videos -->
+            <intent-filter
+                android:icon="@mipmap/ic_launcher"
+                android:label="@string/app_name"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3ga" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3gpa" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.m4a" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.aac" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mp3" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mid" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.rmi" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.xmf" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mxmf" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.rtttl" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.rtx" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.ota" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.imy" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.ogg" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.oga" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.imy" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.wav" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mka" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.mkv" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.flac" android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter
+                android:icon="@mipmap/ic_launcher"
+                android:label="@string/app_name"
+                android:priority="1">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3GA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.3GPA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.M4A" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.AAC" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MP3" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MID" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.RMI" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.XMF" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MXMF" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.RTTTL" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.RTX" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.OTA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.IMY" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.OGG" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.OGA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.IMY" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.WAV" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MKA" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.MKV" android:mimeType="*/*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.FLAC" android:mimeType="*/*" />
+            </intent-filter>
+            <!-- TV support! -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:hardwareAccelerated="true"
+            android:label="@string/visualizer"
+            android:multiprocess="false"
+            android:parentActivityName="br.com.carlosrafaelgn.fplay.activity.ActivityHost"
+            android:screenOrientation="unspecified"
+            android:resizeableActivity="true"
+            android:stateNotNeeded="true"
+            android:theme="@style/AppTheme" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="br.com.carlosrafaelgn.fplay.activity.ActivityHost" />
+        </activity>
+
+        <service
+            android:name="br.com.carlosrafaelgn.fplay.playback.Player"
+            android:enabled="true"
+            android:exported="false"
+            android:label="Player"
+            android:stopWithTask="false" />
+
+        <receiver
+            android:name="br.com.carlosrafaelgn.fplay.WidgetMain"
+            android:exported="true"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/main_widget_info" />
+        </receiver>
+        <receiver
+            android:name="br.com.carlosrafaelgn.fplay.ExternalReceiver"
+            android:exported="true" >
+            <intent-filter>
+
+                <!--
+                    MEDIA_BUTTON broadcast action MUST be declared in the application manifest,
+                    before API 26!!!!
+                -->
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="br.com.carlosrafaelgn.FPlay.EXIT" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

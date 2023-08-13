@@ -1,0 +1,32 @@
+plugins {
+	id 'com.android.application'
+}
+
+android {
+	namespace 'br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer'
+	compileSdk 33
+
+	defaultConfig {
+		applicationId "br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer"
+		minSdk 10
+		targetSdk 33
+		versionCode 1
+		versionName "1.0"
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled false
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+		}
+	}
+
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_1_8
+		targetCompatibility JavaVersion.VERSION_1_8
+	}
+}
+
+dependencies {
+	compileOnly project(path: ':plugin')
+}

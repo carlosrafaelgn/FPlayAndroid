@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout android:id="@+id/panelControls"
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:baselineAligned="false"
+              android:orientation="vertical"
+              android:splitMotionEvents="false"
+              tools:context=".ActivityHost">
+
+    <RelativeLayout
+        android:id="@+id/panelTop"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:splitMotionEvents="false">
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnDecreaseVolume"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentLeft="true"
+            android:contentDescription="@string/decrease_volume"
+            android:nextFocusDown="@+id/lblTitle"
+            android:nextFocusForward="@+id/btnIncreaseVolume"
+            android:nextFocusLeft="@+id/btnNext"
+            android:nextFocusRight="@+id/btnIncreaseVolume"
+            android:nextFocusUp="@+id/btnPrev"/>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnVolume"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@+id/btnDecreaseVolume"
+            android:contentDescription="@string/volume"/>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnIncreaseVolume"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@+id/btnVolume"
+            android:contentDescription="@string/increase_volume"
+            android:nextFocusDown="@+id/lblTitle"
+            android:nextFocusForward="@+id/btnMenu"
+            android:nextFocusLeft="@+id/btnDecreaseVolume"
+            android:nextFocusRight="@+id/btnMenu"
+            android:nextFocusUp="@+id/btnPrev"/>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnMenu"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:contentDescription="@string/menu"
+            android:nextFocusDown="@+id/lblTitle"
+            android:nextFocusForward="@+id/lblTitle"
+            android:nextFocusLeft="@+id/btnIncreaseVolume"
+            android:nextFocusRight="@+id/lblTitle"
+            android:nextFocusUp="@+id/btnNext">
+
+            <!--
+                When this tag is present, and the device is being
+                controlled by a mouse, the control gains the focus
+                and only loses it when a keyboard key is pressed!
+            -->
+            <!--<requestFocus/>-->
+        </br.com.carlosrafaelgn.fplay.ui.BgButton>
+    </RelativeLayout>
+
+    <br.com.carlosrafaelgn.fplay.ui.BgTextView
+        android:id="@+id/lblTitle"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:clickable="true"
+        android:ellipsize="end"
+        android:focusable="true"
+        android:gravity="center"
+        android:maxLines="5"
+        android:nextFocusDown="@+id/btnPrev"
+        android:nextFocusForward="@+id/btnPrev"
+        android:nextFocusLeft="@+id/btnMenu"
+        android:nextFocusRight="@+id/btnPrev"
+        android:nextFocusUp="@+id/btnMenu"
+        android:padding="2dp"
+        android:text="@string/nothing_playing"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:splitMotionEvents="false"
+        android:weightSum="2">
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnPrev"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginRight="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/previous"
+            android:nextFocusDown="@+id/btnDecreaseVolume"
+            android:nextFocusForward="@+id/btnNext"
+            android:nextFocusLeft="@+id/lblTitle"
+            android:nextFocusRight="@+id/btnNext"
+            android:nextFocusUp="@+id/lblTitle"/>
+
+        <br.com.carlosrafaelgn.fplay.ui.BgButton
+            android:id="@+id/btnNext"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/next"
+            android:nextFocusDown="@+id/btnMenu"
+            android:nextFocusForward="@+id/btnDecreaseVolume"
+            android:nextFocusLeft="@+id/btnPrev"
+            android:nextFocusRight="@+id/btnDecreaseVolume"
+            android:nextFocusUp="@+id/lblTitle"/>
+    </LinearLayout>
+
+</LinearLayout>

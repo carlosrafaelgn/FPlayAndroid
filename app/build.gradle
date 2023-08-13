@@ -1,0 +1,73 @@
+plugins {
+	id 'com.android.application'
+}
+
+android {
+	namespace 'br.com.carlosrafaelgn.fplay'
+	compileSdk 33
+
+	defaultConfig {
+		applicationId "br.com.carlosrafaelgn.fplay"
+		minSdk 10
+		targetSdk 33
+		versionCode 129
+		versionName "1.95"
+	}
+
+	//https://developer.android.com/studio/build/configure-apk-splits
+	//https://gist.github.com/ph0b/69586260bc20c58136ef
+	splits {
+		abi {
+			enable true
+			reset()
+			include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+			universalApk false //do not generate an additional APK that contains all the ABIs
+		}
+	}
+
+	//we must generate different version codes for different APK's, or else
+	//Play Console will not accept the upload
+	project.ext.versionCodes = ['armeabi-v7a': 0, 'arm64-v8a': 1, 'x86': 2, 'x86_64': 3]
+
+	android.applicationVariants.all { variant ->
+		variant.outputs.each {
+			output -> output.versionCodeOverride = (project.ext.versionCodes.get(output.getFilter(com.android.build.OutputFile.ABI), 0) * 1000000) + android.defaultConfig.versionCode
+		}
+	}
+
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_1_8
+		targetCompatibility JavaVersion.VERSION_1_8
+	}
+
+	flavorDimensions 'mode'
+
+	productFlavors {
+		traditional {
+			dimension 'mode'
+			applicationId 'br.com.carlosrafaelgn.fplay'
+			targetSdk 33
+			minSdk 10
+			buildConfigField 'boolean', 'X', 'false'
+		}
+		x {
+			dimension 'mode'
+			applicationId 'br.com.carlosrafaelgn.fplay.x'
+			targetSdk 33
+			minSdk 16
+			buildConfigField 'boolean', 'X', 'true'
+		}
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled true
+			shrinkResources true
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+		}
+	}
+}
+
+dependencies {
+	implementation 'com.google.code.gson:gson:2.8.6'
+}
