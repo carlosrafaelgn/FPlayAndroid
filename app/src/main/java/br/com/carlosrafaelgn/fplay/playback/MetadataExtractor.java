@@ -32,13 +32,14 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
-import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 
 import br.com.carlosrafaelgn.fplay.list.FileSt;
+import br.com.carlosrafaelgn.fplay.util.OggPrimitiveBufferedInputStream;
+import br.com.carlosrafaelgn.fplay.util.PrimitiveBufferedInputStream;
 
 public final class MetadataExtractor {
 	private static final int ALL_B = 0x3f;
@@ -54,24 +55,256 @@ public final class MetadataExtractor {
 	public String title, artist, album, track, year, length;
 	private byte[][] tmpPtr = new byte[][] { new byte[256] };
 
+	private String readInfoStr(PrimitiveBufferedInputStream f, int actualStrLen) throws IOException {
+		actualStrLen = f.read(tmpPtr[0], 0, actualStrLen);
+		return finishReadingV2Frame(0, actualStrLen);
+	}
+
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private String readV2Frame(BufferedInputStream f, int frameSize) throws IOException {
-		if (frameSize < 2) {
-			f.skip(frameSize);
-			return null;
+	private boolean extractRIFF(PrimitiveBufferedInputStream f) throws IOException {
+		// When entering extractRIFF() the first four bytes have already been consumed
+		if (f.totalLength < 44)
+			return false;
+
+		final int riffLength = f.readUInt32LE();
+		if (riffLength == -1 || f.totalLength < (8 + riffLength))
+			return false;
+
+		int bytesLeftInFile = riffLength, id3Position = 0, dataLength = 0, avgBytesPerSec = 0;
+		boolean fmtOk = false, dataOk = false;
+
+		_mainLoop:
+		while (bytesLeftInFile > 0) {
+			boolean isWave = false;
+			int bytesLeftInChunk = 0, tmpChunkLength;
+
+			switch (f.readUInt32BE()) {
+			case -1:
+				break _mainLoop;
+
+			case 0x57415645: // WAVE
+				isWave = true;
+				bytesLeftInFile -= 4;
+				break;
+
+			case 0x4c495354: // LIST
+				tmpChunkLength = f.readUInt32LE();
+				if (tmpChunkLength == -1)
+					break _mainLoop;
+
+				bytesLeftInFile -= 8;
+				bytesLeftInChunk = tmpChunkLength;
+
+				if (bytesLeftInChunk < 0 || bytesLeftInChunk > bytesLeftInFile)
+					break _mainLoop;
+				break;
+
+			case 0x69643320: // id3
+				tmpChunkLength = f.readUInt32LE();
+				if (tmpChunkLength == -1)
+					break _mainLoop;
+
+				bytesLeftInFile -= 8;
+
+				if (tmpChunkLength < 0 || tmpChunkLength > bytesLeftInFile)
+					break _mainLoop;
+
+				if (tmpChunkLength > 4) {
+					final int b0 = f.read(),
+						b1 = f.read(),
+						b2 = f.read();
+
+					if (b0 == -1 || b1 == -1 || b2 == -1)
+						break _mainLoop;
+
+					bytesLeftInFile -= 3;
+					tmpChunkLength -= 3;
+
+					if (b0 == 0x49 || b1 == 0x44 || b2 == 0x33) {
+						id3Position = f.totalLength - bytesLeftInFile;
+						if (fmtOk && dataOk) {
+							id3Position = -1;
+							break _mainLoop;
+						}
+					}
+				}
+
+				f.skip(tmpChunkLength);
+
+				continue;
+
+			default:
+				tmpChunkLength = f.readUInt32LE();
+				if (tmpChunkLength == -1)
+					break _mainLoop;
+
+				bytesLeftInFile -= 8;
+
+				if (tmpChunkLength < 0 || tmpChunkLength > bytesLeftInFile)
+					break _mainLoop;
+
+				f.skip(tmpChunkLength);
+
+				continue;
+			}
+
+			while ((isWave && (!fmtOk || !dataOk)) || bytesLeftInChunk > 0) {
+				final int subChunk = f.readUInt32BE();
+				int subChunkLength = 0;
+
+				if (subChunk == -1)
+					break _mainLoop;
+
+				bytesLeftInFile -= 4;
+				bytesLeftInChunk -= 4;
+
+				if (subChunk != 0x494e464f) { // INFO
+					subChunkLength = f.readUInt32LE();
+
+					if (subChunkLength < 0 ||
+						subChunkLength > bytesLeftInFile ||
+						(!isWave && subChunkLength > bytesLeftInChunk))
+						break _mainLoop;
+
+					bytesLeftInFile -= 4;
+					bytesLeftInChunk -= 4;
+				}
+
+				switch (subChunk) {
+				case 0x666d7420: // fmt
+					if (!isWave)
+						break;
+
+					// https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-waveformatex
+					// https://docs.microsoft.com/en-us/windows/win32/directshow/audio-subtypes
+					final int wFormatTag = f.readUInt16LE(),
+						nChannels = f.readUInt16LE(),
+						nSamplesPerSec = f.readUInt32LE(),
+						nAvgBytesPerSec = f.readUInt32LE(),
+						nBlockAlign = f.readUInt16LE(),
+						wBitsPerSample = f.readUInt16LE();
+
+					subChunkLength -= 16;
+					bytesLeftInFile -= 16;
+					bytesLeftInChunk -= 16;
+
+					if (wFormatTag == -1 ||
+						nChannels == -1 ||
+						nSamplesPerSec == -1 ||
+						nAvgBytesPerSec == -1 ||
+						nBlockAlign == -1 ||
+						wBitsPerSample == -1)
+						break _mainLoop;
+
+					// We are ignoring compressed files...
+					if (wFormatTag != 1 && // WAVE_FORMAT_PCM
+						wFormatTag != 3) // WAVE_FORMAT_IEEE_FLOAT
+						break;
+
+					fmtOk = true;
+
+					if (avgBytesPerSec == 0)
+						avgBytesPerSec = nAvgBytesPerSec;
+					break;
+
+				case 0x64617461: // data
+					if (isWave) {
+						dataOk = true;
+
+						if (dataLength == 0)
+							dataLength = subChunkLength;
+					}
+					break;
+
+				case 0x494e464f: // INFO
+					// https://www.robotplanet.dk/audio/wav_meta_data/
+					// https://www.robotplanet.dk/audio/wav_meta_data/riff_mci.pdf
+					while (bytesLeftInChunk > 0) {
+						if (bytesLeftInChunk < 4) {
+							f.skip(bytesLeftInChunk);
+							break;
+						}
+
+						final int metadataId = f.readUInt32BE();
+						bytesLeftInFile -= 4;
+						bytesLeftInChunk -= 4;
+
+						if (metadataId == -1)
+							break _mainLoop;
+
+						int nullTerminatedStrLen = f.readUInt32LE();
+						bytesLeftInFile -= 4;
+						bytesLeftInChunk -= 4;
+
+						if (nullTerminatedStrLen < 0 || nullTerminatedStrLen > bytesLeftInChunk) {
+							f.skip(bytesLeftInChunk);
+							bytesLeftInFile -= bytesLeftInChunk;
+							bytesLeftInChunk = 0;
+							continue;
+						}
+
+						if (nullTerminatedStrLen <= 1) {
+							f.skip(nullTerminatedStrLen);
+							bytesLeftInFile -= nullTerminatedStrLen;
+							bytesLeftInChunk -= nullTerminatedStrLen;
+							continue;
+						}
+
+						int actualStrLen = Math.min(257, nullTerminatedStrLen) - 1;
+
+						switch (metadataId) {
+						case 0x494e414d: // INAM
+							hasData = true;
+							title = readInfoStr(f, actualStrLen);
+							break;
+						case 0x49505244: // IPRD
+							hasData = true;
+							album = readInfoStr(f, actualStrLen);
+							break;
+						case 0x49415254: // IART
+							hasData = true;
+							artist = readInfoStr(f, actualStrLen);
+							break;
+						case 0x49435244: // ICRD
+							hasData = true;
+							year = readInfoStr(f, actualStrLen);
+							break;
+						case 0x4954524b: // ITRK
+							hasData = true;
+							track = readInfoStr(f, actualStrLen);
+							break;
+						default:
+							actualStrLen = 0;
+							break;
+						}
+
+						f.skip(nullTerminatedStrLen - actualStrLen);
+						bytesLeftInFile -= nullTerminatedStrLen;
+						bytesLeftInChunk -= nullTerminatedStrLen;
+					}
+					break;
+				}
+
+				if (subChunkLength > 0) {
+					f.skip(subChunkLength);
+					bytesLeftInFile -= subChunkLength;
+					bytesLeftInChunk -= subChunkLength;
+				}
+			}
 		}
-		final int encoding = f.read();
-		frameSize--; //discount the encoding
-		if (encoding < 0 || encoding > 3) {
-			f.skip(frameSize);
-			return null;
+
+		if (fmtOk && dataOk) {
+			if (id3Position > 0)
+				f.seekTo(id3Position);
+			length = Integer.toString((int)Math.floor(dataLength * 1000.0 / avgBytesPerSec));
+			return (id3Position != 0);
 		}
+
+		return false;
+	}
+
+	private String finishReadingV2Frame(int encoding, int frameSize) throws IOException {
 		byte[] tmp = tmpPtr[0];
-		if (frameSize > tmp.length) {
-			tmp = new byte[frameSize + 16];
-			tmpPtr[0] = tmp;
-		}
-		frameSize = f.read(tmp, 0, frameSize);
 		int offsetStart = 0, offsetEnd = frameSize - 1;
 		TrimStart:
 		while (frameSize > 0) {
@@ -129,20 +362,42 @@ public final class MetadataExtractor {
 			//restore the extra 0 removed from the end
 			if ((frameSize & 1) != 0 && (offsetStart + frameSize) < tmp.length)
 				frameSize++;
-			ret = new String(tmp, offsetStart, frameSize, "UTF-16");
+			ret = new String(tmp, offsetStart, frameSize, (encoding == 1 ? "UTF-16" : "UTF-16BE"));
 			break;
 		case 3: //UTF-8 encoded Unicode, in ID3v2.4
 			//BOM
 			ret = ((tmp[0] == (byte)0xef && tmp[1] == (byte)0xbb && tmp[2] == (byte)0xbf) ?
-					new String(tmp, offsetStart + 3, frameSize - 3, "UTF-8") :
-					new String(tmp, offsetStart, frameSize, "UTF-8"));
+				new String(tmp, offsetStart + 3, frameSize - 3, "UTF-8") :
+				new String(tmp, offsetStart, frameSize, "UTF-8"));
 			break;
 		}
 		return ((ret != null && ret.length() == 0) ? null : ret);
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void extractID3v1(FileInputStream fileInputStream, int found, byte[] tmp) {
+	private String readV2Frame(PrimitiveBufferedInputStream f, int frameSize) throws IOException {
+		if (frameSize < 2) {
+			f.skip(frameSize);
+			return null;
+		}
+		final int encoding = f.read();
+		frameSize--; //discount the encoding
+		if (encoding < 0 || encoding > 3) {
+			f.skip(frameSize);
+			return null;
+		}
+		byte[] tmp = tmpPtr[0];
+		if (frameSize > tmp.length) {
+			tmp = new byte[frameSize + 16];
+			tmpPtr[0] = tmp;
+		}
+		frameSize = f.read(tmp, 0, frameSize);
+		return finishReadingV2Frame(encoding, frameSize);
+	}
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private void extractID3v1(FileInputStream fileInputStream, int found) {
+		byte[] tmp = tmpPtr[0];
 		FileChannel fileChannel = null;
 		try {
 			fileChannel = fileInputStream.getChannel();
@@ -232,7 +487,7 @@ public final class MetadataExtractor {
 	}
 	
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void extractID3v2Andv1(BufferedInputStream f, FileInputStream fileInputStream) throws IOException  {
+	private void extractID3v2Andv1(PrimitiveBufferedInputStream f, FileInputStream fileInputStream) throws IOException  {
 		//struct _ID3v2TagHdr {
 		//public:
 		//	unsigned int hdr;
@@ -240,11 +495,22 @@ public final class MetadataExtractor {
 		//	unsigned char flags;
 		//	unsigned char sizeBytes[4];
 		//} tagV2Hdr;
-		
-		//readInt() reads a big-endian 32-bit integer
-		int hdr = (f.read() << 16) | (f.read() << 8) | f.read();
-		if (hdr != 0x00494433) //ID3
-			return;
+
+		int found = 0;
+		int hdr = (f.read() << 24) | (f.read() << 16) | (f.read() << 8);
+		if (hdr != 0x49443300) { //ID3x
+			hdr |= f.read();
+			if (hdr == 0x52494646) { // RIFF
+				// When extractRIFF == true, f points to a possible ID3 tag, with the first 3 bytes already consumed
+				if (!extractRIFF(f))
+					return;
+				if (length != null && length.length() > 0)
+					found |= LENGTH_B;
+			} else {
+				extractID3v1(fileInputStream, 0);
+				return;
+			}
+		}
 		final int hdrRevLo = f.read();
 		final int hdrRevHi = f.read();
 		final int flags = f.read();
@@ -263,7 +529,6 @@ public final class MetadataExtractor {
 			//http://id3.org/id3v2.3.0
 			//http://id3.org/id3v2.4.0-structure
 			//http://id3.org/id3v2.4.0-frames
-			int found = 0;
 			while (size > 0 && found != ALL_B) {
 				//struct _ID3v2FrameHdr {
 				//public:
@@ -271,8 +536,8 @@ public final class MetadataExtractor {
 				//	unsigned int size;
 				//	unsigned short flags;
 				//} frame;
-				final int frameId = (f.read() << 24) | (f.read() << 16) | (f.read() << 8) | f.read();
-				final int frameSize = (f.read() << 24) | (f.read() << 16) | (f.read() << 8) | f.read();
+				final int frameId = f.readUInt32BE();
+				final int frameSize = f.readUInt32BE();
 				//skip the flags
 				f.skip(2);
 				if (frameId == 0 || frameSize <= 0 || frameSize > size)
@@ -344,9 +609,9 @@ public final class MetadataExtractor {
 				size -= (10 + frameSize);
 			}
 			//try to extract ID3v1 only if there are any blank fields
-			hasData = (found != 0);
+			hasData |= (found != 0);
 			if ((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B && fileInputStream != null)
-				extractID3v1(fileInputStream, found, tmpPtr[0]);
+				extractID3v1(fileInputStream, found);
 		}
 	}
 	
@@ -358,16 +623,25 @@ public final class MetadataExtractor {
 		track = null;
 		year = null;
 		length = null;
-		//the only two formats supported for now... I hope to add ogg soon ;)
+		//the only formats supported for now...
+		boolean flac = false, ogg = false;
 		if (!file.path.regionMatches(true, file.path.length() - 4, ".mp3", 0, 4) &&
-			!file.path.regionMatches(true, file.path.length() - 4, ".aac", 0, 4))
+			!file.path.regionMatches(true, file.path.length() - 4, ".aac", 0, 4) &&
+			!file.path.regionMatches(true, file.path.length() - 4, ".wav", 0, 4) &&
+			!(flac = file.path.regionMatches(true, file.path.length() - 5, ".flac", 0, 5)) &&
+			!(ogg = file.path.regionMatches(true, file.path.length() - 4, ".ogg", 0, 4)))
 			return;
 		FileInputStream fileInputStream = null;
-		BufferedInputStream bufferedInputStream = null;
+		PrimitiveBufferedInputStream bufferedInputStream = null;
 		try {
 			fileInputStream = ((file.file != null) ? new FileInputStream(file.file) : new FileInputStream(file.path));
-			bufferedInputStream = new BufferedInputStream(fileInputStream, 32768);
-			extractID3v2Andv1(bufferedInputStream, fileInputStream);
+			bufferedInputStream = (ogg ? new OggPrimitiveBufferedInputStream(fileInputStream, 32768, fileInputStream.available()) : new PrimitiveBufferedInputStream(fileInputStream, 32768, fileInputStream.available()));
+			if (flac)
+				FLACMetadataExtractor.extract(this, bufferedInputStream, tmpPtr);
+			else if (ogg)
+				OggMetadataExtractor.extract(this, (OggPrimitiveBufferedInputStream)bufferedInputStream, tmpPtr);
+			else
+				extractID3v2Andv1(bufferedInputStream, fileInputStream);
 		} catch (Throwable ex) {
 			hasData = false;
 			ex.printStackTrace();
@@ -389,7 +663,7 @@ public final class MetadataExtractor {
 		}
 	}
 
-	public void extract(InputStream inputStream) {
+	public void extract(InputStream inputStream, int totalLength) {
 		hasData = false;
 		title = null;
 		artist = null;
@@ -397,9 +671,9 @@ public final class MetadataExtractor {
 		track = null;
 		year = null;
 		length = null;
-		BufferedInputStream bufferedInputStream = null;
+		PrimitiveBufferedInputStream bufferedInputStream = null;
 		try {
-			bufferedInputStream = new BufferedInputStream(inputStream, 32768);
+			bufferedInputStream = new PrimitiveBufferedInputStream(inputStream, 32768, totalLength);
 			extractID3v2Andv1(bufferedInputStream, null);
 		} catch (Throwable ex) {
 			hasData = false;
@@ -416,10 +690,6 @@ public final class MetadataExtractor {
 	}
 
 	public void destroy() {
-		if (tmpPtr != null) {
-			if (tmpPtr.length > 0)
-				tmpPtr[0] = null;
-			tmpPtr = null;
-		}
+		tmpPtr = null;
 	}
 }

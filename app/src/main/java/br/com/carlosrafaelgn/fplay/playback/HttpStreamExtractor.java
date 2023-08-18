@@ -224,7 +224,7 @@ public abstract class HttpStreamExtractor {
 
 			final MetadataInputStream inputStream = new MetadataInputStream(buffer, size);
 			final MetadataExtractor metadataExtractor = new MetadataExtractor();
-			metadataExtractor.extract(inputStream);
+			metadataExtractor.extract(inputStream, size);
 			//make sure we consume the entire header
 			if ((len = inputStream.available()) > 0) {
 				if ((int)inputStream.skip(len) < len)
