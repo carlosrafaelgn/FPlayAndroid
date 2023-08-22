@@ -38,7 +38,7 @@ import br.com.carlosrafaelgn.fplay.util.OggPrimitiveBufferedInputStream;
 
 final class OggMetadataExtractor extends VorbisCommentExtractor {
 	public static void extract(MetadataExtractor metadata, OggPrimitiveBufferedInputStream f, byte[][] tmpPtr) throws IOException {
-		if (!f.findInitialVorbisCommentPage())
+		if (!f.findInitialVorbisCommentPage(metadata))
 			return;
 
 		metadata.hasData = VorbisCommentExtractor.extractVorbisComment(f.totalLength - (int)f.readPosition(), metadata, f, tmpPtr);

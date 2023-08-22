@@ -53,6 +53,7 @@ public final class MetadataExtractor {
 
 	public boolean hasData;
 	public String title, artist, album, track, year, length;
+	public int sampleRate, channels;
 	private byte[][] tmpPtr = new byte[][] { new byte[256] };
 
 	private String readInfoStr(PrimitiveBufferedInputStream f, int actualStrLen) throws IOException {
@@ -205,6 +206,9 @@ public final class MetadataExtractor {
 
 					if (avgBytesPerSec == 0)
 						avgBytesPerSec = nAvgBytesPerSec;
+
+					sampleRate = nSamplesPerSec;
+					channels = nChannels;
 					break;
 
 				case 0x64617461: // data
@@ -485,9 +489,186 @@ public final class MetadataExtractor {
 			}
 		}
 	}
-	
+
+	private void extractSampleRateAndChannels(PrimitiveBufferedInputStream f, int firstFramePosition, boolean aac) {
+		try {
+			f.seekTo(firstFramePosition);
+
+			final int hdr = f.readUInt32BE();
+
+			if (aac) {
+				// https://wiki.multimedia.cx/index.php?title=ADTS
+				//
+				// AAAAAAAA AAAABCCD EEFFFFGH HHIJKLMM MMMMMMMM MMMOOOOO OOOOOOPP (QQQQQQQQ QQQQQQQQ)
+				//
+				// Header consists of 7 or 9 bytes (without or with CRC).
+				//
+				// A = Syncword, all bits must be set to 1.
+				// B = MPEG Version, set to 0 for MPEG-4 and 1 for MPEG-2.
+				// C = Layer, always set to 0.
+				// D = Protection absence, set to 1 if there is no CRC and 0 if there is CRC.
+				// E = Profile, the MPEG-4 Audio Object Type minus 1.
+				// F = MPEG-4 Sampling Frequency Index (15 is forbidden).
+				// G = Private bit, guaranteed never to be used by MPEG, set to 0 when encoding, ignore when decoding.
+				// H = MPEG-4 Channel Configuration (in the case of 0, the channel configuration is sent via an inband PCE (Program Config Element)).
+
+				if (hdr == -1 || ((hdr >> 20) & 0xfff) != 0xfff)
+					return;
+
+				// https://wiki.multimedia.cx/index.php?title=MPEG-4_Audio
+				final int frequencyIndex = (hdr >> 10) & 15;
+				if (frequencyIndex >= 13)
+					return;
+
+				switch (frequencyIndex) {
+				case 0:
+					sampleRate = 96000;
+					break;
+				case 1:
+					sampleRate = 88200;
+					break;
+				case 2:
+					sampleRate = 64000;
+					break;
+				case 3:
+					sampleRate = 48000;
+					break;
+				case 4:
+					sampleRate = 44100;
+					break;
+				case 5:
+					sampleRate = 32000;
+					break;
+				case 6:
+					sampleRate = 24000;
+					break;
+				case 7:
+					sampleRate = 22050;
+					break;
+				case 8:
+					sampleRate = 16000;
+					break;
+				case 9:
+					sampleRate = 12000;
+					break;
+				case 10:
+					sampleRate = 11025;
+					break;
+				case 11:
+					sampleRate = 8000;
+					break;
+				default:
+					sampleRate = 7350;
+					break;
+				}
+
+				final int channelIndex = (hdr >> 6) & 7;
+
+				switch (channelIndex) {
+				case 0:
+					channels = 2; // Assumed :)
+					break;
+				case 7:
+					channels = 8;
+					break;
+				default:
+					channels = channelIndex;
+					break;
+				}
+			} else {
+				// http://www.mp3-tech.org/programmer/frame_header.html
+				//
+				// AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
+				//
+				// A = Frame sync (all bits must be set)
+				// B = MPEG Audio version ID
+				//     00 - MPEG Version 2.5 (later extension of MPEG 2)
+				//     01 - reserved
+				//     10 - MPEG Version 2 (ISO/IEC 13818-3)
+				//     11 - MPEG Version 1 (ISO/IEC 11172-3)
+				// C = Layer description
+				//     00 - reserved
+				//     01 - Layer III
+				//     10 - Layer II
+				//     11 - Layer I
+				// D = Protection bit
+				// E = Bitrate index
+				// F = Sampling rate frequency index
+				//     bits	MPEG1    MPEG2    MPEG2.5
+				//     00   44100 Hz 22050 Hz 11025 Hz
+				//     01   48000 Hz 24000 Hz 12000 Hz
+				//     10   32000 Hz 16000 Hz 8000 Hz
+				//     11   reserv.  reserv.  reserv.
+				// G = Padding bit
+				// H = Private bit
+				// I = Channel Mode
+				//     00 - Stereo
+				//     01 - Joint stereo (Stereo)
+				//     10 - Dual channel (2 mono channels)
+				//     11 - Single channel (Mono)
+
+				if (hdr == -1 || ((hdr >> 21) & 0x7ff) != 0x7ff)
+					return;
+
+				final int version = (hdr >> 19) & 3;
+				if (version == 1)
+					return;
+
+				final int frequencyIndex = (hdr >> 10) & 3;
+				if (frequencyIndex == 3)
+					return;
+
+				switch (version) {
+				case 0: // MPEG Version 2.5 (later extension of MPEG 2)
+					switch (frequencyIndex) {
+					case 0:
+						sampleRate = 11025;
+						break;
+					case 1:
+						sampleRate = 12000;
+						break;
+					case 2:
+						sampleRate = 8000;
+						break;
+					}
+					break;
+				case 2: // MPEG Version 2 (ISO/IEC 13818-3)
+					switch (frequencyIndex) {
+					case 0:
+						sampleRate = 22050;
+						break;
+					case 1:
+						sampleRate = 24000;
+						break;
+					case 2:
+						sampleRate = 16000;
+						break;
+					}
+					break;
+				case 3: // MPEG Version 1 (ISO/IEC 11172-3)
+					switch (frequencyIndex) {
+					case 0:
+						sampleRate = 44100;
+						break;
+					case 1:
+						sampleRate = 48000;
+						break;
+					case 2:
+						sampleRate = 32000;
+						break;
+					}
+					break;
+				}
+
+				channels = ((((hdr >> 6) & 3) == 3) ? 1 : 2);
+			}
+		} catch (Throwable ex) {
+			// Just ignore, in favor of everything that has been extracted so far
+		}
+	}
+
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void extractID3v2Andv1(PrimitiveBufferedInputStream f, FileInputStream fileInputStream) throws IOException  {
+	private void extractID3v2Andv1(PrimitiveBufferedInputStream f, FileInputStream fileInputStream, boolean aac, boolean fetchSampleRateAndChannels) throws IOException  {
 		//struct _ID3v2TagHdr {
 		//public:
 		//	unsigned int hdr;
@@ -501,12 +682,15 @@ public final class MetadataExtractor {
 		if (hdr != 0x49443300) { //ID3x
 			hdr |= f.read();
 			if (hdr == 0x52494646) { // RIFF
+				fetchSampleRateAndChannels = false;
 				// When extractRIFF == true, f points to a possible ID3 tag, with the first 3 bytes already consumed
 				if (!extractRIFF(f))
 					return;
 				if (length != null && length.length() > 0)
 					found |= LENGTH_B;
 			} else {
+				if (fetchSampleRateAndChannels)
+					extractSampleRateAndChannels(f, 0, aac);
 				extractID3v1(fileInputStream, 0);
 				return;
 			}
@@ -525,6 +709,9 @@ public final class MetadataExtractor {
 			((sizeBytes1 & 0x7f) << 14) |
 			((sizeBytes0 & 0x7f) << 21)
 		);
+
+		final int id3TotalLength = 10 + size;
+
 		if ((hdrRevLo & 0xff) > 2 || hdrRevHi != 0) { //only rev 3 or greater supported
 			//http://id3.org/id3v2.3.0
 			//http://id3.org/id3v2.4.0-structure
@@ -610,6 +797,10 @@ public final class MetadataExtractor {
 			}
 			//try to extract ID3v1 only if there are any blank fields
 			hasData |= (found != 0);
+
+			if (fetchSampleRateAndChannels)
+				extractSampleRateAndChannels(f, id3TotalLength, aac);
+
 			if ((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B && fileInputStream != null)
 				extractID3v1(fileInputStream, found);
 		}
@@ -623,10 +814,12 @@ public final class MetadataExtractor {
 		track = null;
 		year = null;
 		length = null;
+		sampleRate = 0;
+		channels = 0;
 		//the only formats supported for now...
-		boolean flac = false, ogg = false;
+		boolean aac = false, flac = false, ogg = false;
 		if (!file.path.regionMatches(true, file.path.length() - 4, ".mp3", 0, 4) &&
-			!file.path.regionMatches(true, file.path.length() - 4, ".aac", 0, 4) &&
+			!(aac = file.path.regionMatches(true, file.path.length() - 4, ".aac", 0, 4)) &&
 			!file.path.regionMatches(true, file.path.length() - 4, ".wav", 0, 4) &&
 			!(flac = file.path.regionMatches(true, file.path.length() - 5, ".flac", 0, 5)) &&
 			!(ogg = file.path.regionMatches(true, file.path.length() - 4, ".ogg", 0, 4)))
@@ -641,7 +834,7 @@ public final class MetadataExtractor {
 			else if (ogg)
 				OggMetadataExtractor.extract(this, (OggPrimitiveBufferedInputStream)bufferedInputStream, tmpPtr);
 			else
-				extractID3v2Andv1(bufferedInputStream, fileInputStream);
+				extractID3v2Andv1(bufferedInputStream, fileInputStream, aac, true);
 		} catch (Throwable ex) {
 			hasData = false;
 			ex.printStackTrace();
@@ -674,7 +867,7 @@ public final class MetadataExtractor {
 		PrimitiveBufferedInputStream bufferedInputStream = null;
 		try {
 			bufferedInputStream = new PrimitiveBufferedInputStream(inputStream, 32768, totalLength);
-			extractID3v2Andv1(bufferedInputStream, null);
+			extractID3v2Andv1(bufferedInputStream, null, false, false);
 		} catch (Throwable ex) {
 			hasData = false;
 			ex.printStackTrace();

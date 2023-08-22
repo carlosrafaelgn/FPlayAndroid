@@ -299,7 +299,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			if (c == null)
 				return null;
 			while (c.moveToNext())
-				songs.add(new Song(c.getString(0), c.getString(1), c.getString(2), c.getString(3), c.getInt(4) % 1000, (int)c.getLong(5), c.getInt(6)));
+				songs.add(new Song(c.getString(0), c.getString(1), c.getString(2), c.getString(3), c.getInt(4) % 1000, (int)c.getLong(5), c.getInt(6), 0, 0));
 			songs.trimToSize();
 			return songs.getRawArray();
 		} catch (Throwable ex) {

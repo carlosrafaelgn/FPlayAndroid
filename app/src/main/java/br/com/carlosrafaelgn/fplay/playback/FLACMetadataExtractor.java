@@ -66,10 +66,12 @@ final class FLACMetadataExtractor extends VorbisCommentExtractor {
 		f.skip(16); // MD5 signature of the unencoded audio data (128 bits)
 
 		// d0
+		// MSB
 		// sample rate in Hz (20 bits)
 		// number of channels - 1 (3 bits)
 		// bits per sample - 1 (5 bits)
 		// MSB total samples in stream (4 bits)
+		// LSB
 
 		totalSamples += (long)(d0 & 0x0f) << 32; // Not using << because this number is larger than 0xffffffff
 		d0 >>>= 4;
@@ -77,7 +79,7 @@ final class FLACMetadataExtractor extends VorbisCommentExtractor {
 		final int bitsPerSample = (d0 & 0x1f) + 1;
 		d0 >>>= 5;
 
-		//final int numberOfChannels = (d0 & 0x07) + 1;
+		final int numberOfChannels = (d0 & 0x07) + 1;
 		d0 >>>= 3;
 
 		// d0 is the sample rate now
@@ -86,6 +88,9 @@ final class FLACMetadataExtractor extends VorbisCommentExtractor {
 
 		if (totalSamples != 0)
 			metadata.length = Integer.toString((int)Math.floor(totalSamples * 1000.0 / d0));
+
+		metadata.sampleRate = d0;
+		metadata.channels = numberOfChannels;
 
 		return ((lastBlock != 0) ? -1 : 1);
 	}

@@ -35,6 +35,8 @@ package br.com.carlosrafaelgn.fplay.util;
 import java.io.IOException;
 import java.io.InputStream;
 
+import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
+
 public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStream {
 	// https://en.wikipedia.org/wiki/Ogg#Page_structure
 	// https://wiki.xiph.org/OggVorbis
@@ -81,7 +83,7 @@ public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStrea
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	public boolean findInitialVorbisCommentPage() throws IOException {
+	public boolean findInitialVorbisCommentPage(MetadataExtractor metadata) throws IOException {
 		for (; ; ) {
 			// Read one Ogg page + enough data to try to figure out its vorbis type
 
@@ -93,9 +95,60 @@ public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStrea
 				continue;
 
 			if (pageLength > VORBIS_IDENTIFIER_LENGTH) {
-				if (super.read() == 0x03) {
-					final int signature1 = super.readUInt32BE();
-					final int signature2 = super.readUInt16BE();
+				final int packtype = super.read();
+				if (packtype < 0)
+					return false;
+
+				int signature1;
+				int signature2;
+
+				// https://xiph.org/vorbis/doc/Vorbis_I_spec.html
+				// A.2. Encapsulation
+				// Ogg encapsulation of a Vorbis packet stream is straightforward.
+				// The first Vorbis packet (the identification header), which uniquely identifies a stream as Vorbis audio,
+				// is placed alone in the first page of the logical Ogg stream. This results in a first Ogg page of exactly
+				// 58 bytes at the very beginning of the logical stream.
+				//
+				// Therefore the first page should be of type 1, and it should contain the sample rate and number of channels.
+				switch (packtype) {
+				case 1:
+					signature1 = super.readUInt32BE();
+					signature2 = super.readUInt16BE();
+					if (signature1 == 0x766f7262 && // vorb
+						signature2 == 0x6973) { // is
+
+						// https://wiki.xiph.org/OggVorbis
+						// packtype (1 byte)
+						// identifier char[6]: 'vorbis'
+						// version (4 bytes)
+						// channels (1 byte)
+						// rate (4 bytes)
+
+						currentPageLength = pageLength - 7;
+
+						super.skip(4); // version
+
+						final int channels = super.read();
+						final int sampleRate = super.readUInt32LE();
+						if (channels < 0 || sampleRate <= 0)
+							return false;
+
+						metadata.channels = channels;
+						metadata.sampleRate = sampleRate;
+
+						currentPageLength = pageLength - 16;
+
+						super.skip(pageLength - 16);
+						continue;
+					}
+
+					// Not a valid page, just skip it
+					super.skip(pageLength - 7);
+					break;
+
+				case 3:
+					signature1 = super.readUInt32BE();
+					signature2 = super.readUInt16BE();
 					if (signature1 == 0x766f7262 && // vorb
 						signature2 == 0x6973) { // is
 
@@ -106,9 +159,12 @@ public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStrea
 
 					// Not a comment page, just skip it
 					super.skip(pageLength - 7);
-				} else {
+					break;
+
+				default:
 					// Not a comment page, just skip it
 					super.skip(pageLength - 1);
+					break;
 				}
 			} else {
 				// Not a comment page, just skip it

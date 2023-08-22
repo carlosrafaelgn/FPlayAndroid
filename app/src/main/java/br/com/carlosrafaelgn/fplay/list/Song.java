@@ -61,7 +61,7 @@ public final class Song extends BaseItem {
 	public String path; //the only thread/method allowed to change the path is Player._httpStreamReceiverUrlUpdated()
 	public boolean isHttp;
 	public String title, artist, album, extraInfo;
-	public int track, lengthMS, year;
+	public int track, lengthMS, year, sampleRate, channels;
 	public String length;
 	public boolean alreadyPlayed, selected, validAlbumArt;
 	public Long albumId;
@@ -70,7 +70,7 @@ public final class Song extends BaseItem {
 		return (path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:"));
 	}
 
-	public Song(String path, String title, String artist, String album, int track, int lengthMS, int year) {
+	public Song(String path, String title, String artist, String album, int track, int lengthMS, int year, int sampleRate, int channels) {
 		this.path = path;
 		this.isHttp = isPathHttp(path);
 		this.title = title;
@@ -79,6 +79,8 @@ public final class Song extends BaseItem {
 		this.track = track;
 		this.lengthMS = lengthMS;
 		this.year = year;
+		this.sampleRate = sampleRate;
+		this.channels = channels;
 		validateFields(null);
 	}
 
@@ -98,6 +100,8 @@ public final class Song extends BaseItem {
 			this.lengthMS = songInfo.lengthMS;
 			this.year = songInfo.year;
 		}
+		this.sampleRate = songInfo.sampleRate;
+		this.channels = songInfo.channels;
 		validateFields(null);
 	}
 	
@@ -145,6 +149,8 @@ public final class Song extends BaseItem {
 				}
 			}
 		}
+		this.sampleRate = metadataExtractor.sampleRate;
+		this.channels = metadataExtractor.channels;
 		int mode = (!metadataExtractor.hasData ? STORE_FAIL : ((this.lengthMS > 0) ? STORE_OK : STORE_MISSING_DURATION));
 		if (mode != STORE_OK && (mode = fetchMetadataFromMediaStore(mode == STORE_MISSING_DURATION)) != STORE_OK) {
 			//Use MediaMetadataRetriever only as a last resource, since it is
@@ -281,6 +287,10 @@ public final class Song extends BaseItem {
 			lengthMS = -1;
 		if (year <= 0)
 			year = -1;
+		if (sampleRate < 0 || sampleRate > 0x000fffff)
+			sampleRate = 0;
+		if (channels < 0 || channels > 15)
+			channels = 0;
 		length = (isHttp ? "" : formatTime(lengthMS));
 	}
 
@@ -295,6 +305,8 @@ public final class Song extends BaseItem {
 		info.track = track;
 		info.lengthMS = lengthMS;
 		info.year = year;
+		info.sampleRate = sampleRate;
+		info.channels = channels;
 		info.length = length;
 		return info;
 	}
@@ -345,12 +357,12 @@ public final class Song extends BaseItem {
 		Serializer.serializeInt(os, track);
 		Serializer.serializeInt(os, lengthMS);
 		Serializer.serializeInt(os, year);
-		Serializer.serializeInt(os, 0); //flags
+		Serializer.serializeInt(os, sampleRate | ((channels & 0x0f) << 20)); //flags
 	}
 	
 	public static Song deserialize(InputStream is) throws IOException {
 		String path, title, artist, album;
-		int track, lengthMS, year;
+		int track, lengthMS, year, flags;
 		//NEVER change this order! (changing will destroy existing lists)
 		path = Serializer.deserializeString(is);
 		title = Serializer.deserializeString(is);
@@ -359,8 +371,8 @@ public final class Song extends BaseItem {
 		track = Serializer.deserializeInt(is);
 		lengthMS = Serializer.deserializeInt(is);
 		year = Serializer.deserializeInt(is);
-		Serializer.deserializeInt(is); //flags
-		return new Song(path, title, artist, album, track, lengthMS, year);
+		flags = Serializer.deserializeInt(is);
+		return new Song(path, title, artist, album, track, lengthMS, year, flags & 0x000fffff, (flags >>> 20) & 0x0f);
 	}
 	
 	public static String formatTime(int timeMS) {

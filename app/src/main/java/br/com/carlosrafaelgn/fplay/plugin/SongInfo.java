@@ -38,6 +38,6 @@ public class SongInfo {
 	public String path;
 	public boolean isHttp;
 	public String title, artist, album, extraInfo;
-	public int track, lengthMS, year;
+	public int track, lengthMS, year, sampleRate, channels;
 	public String length;
 }

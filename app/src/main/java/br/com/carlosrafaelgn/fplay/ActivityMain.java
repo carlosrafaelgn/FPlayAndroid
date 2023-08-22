@@ -264,6 +264,22 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		stringBuilder.append('\n');
 		stringBuilder.append(song.getHumanReadablePath());
 
+		if (song.sampleRate > 0 || song.channels > 0) {
+			stringBuilder.append("\n\n");
+			if (song.sampleRate > 0 && song.channels > 0) {
+				stringBuilder.append(song.sampleRate);
+				stringBuilder.append(" Hz / ");
+				stringBuilder.append(song.channels);
+				stringBuilder.append(" Ch");
+			} else if (song.sampleRate > 0) {
+				stringBuilder.append(song.sampleRate);
+				stringBuilder.append(" Hz");
+			} else {
+				stringBuilder.append(song.channels);
+				stringBuilder.append(" Ch");
+			}
+		}
+
 		stringBuilder.append("\n\n");
 		stringBuilder.append(getText(R.string.title));
 		stringBuilder.append('\n');
