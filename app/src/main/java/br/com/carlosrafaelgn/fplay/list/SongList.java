@@ -78,7 +78,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	public static final int REPEAT_ONE = 1;
 	public static final int REPEAT_NONE = 2;
 
-	private static final int MAX_COUNT = 2048;
+	private static final int MAX_COUNT = 4096;
 
 	private static final int MSG_ADD_SONGS = 0x0700;
 	private static final int MSG_FINISHED_ADDING = 0x0701;
