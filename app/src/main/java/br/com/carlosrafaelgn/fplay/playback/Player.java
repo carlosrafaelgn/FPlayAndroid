@@ -41,6 +41,8 @@ import android.app.NotificationChannelGroup;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -320,19 +322,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				//this cleanup must be done, as sometimes, when changing between two output types,
 				//the effects are lost...
 				_fullCleanup();
-				_checkAudioSink(0, false, true, 0);
+				_checkAudioSink(0, false, true, 0, false);
 				break;
 			case MSG_FADE_IN_VOLUME_TIMER:
 				_processFadeInVolumeTimer(msg.arg1);
 				break;
 			case MSG_AUDIO_SINK_CHANGED:
-				_checkAudioSink(msg.arg1, true, true, 0);
+				_checkAudioSink(msg.arg1, true, true, 0, false);
 				break;
 			case MSG_AUDIO_SINK_DOUBLE_CHECK_BT:
-				_checkAudioSink(0, true, true, 1);
+				_checkAudioSink(0, true, true, 1, false);
 				break;
 			case MSG_AUDIO_SINK_DOUBLE_CHECK_BT_2:
-				_checkAudioSink(0, true, true, 2);
+				_checkAudioSink(0, true, true, 2, false);
 				break;
 			case MSG_PAUSE:
 				if (playing)
@@ -660,7 +662,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					Virtualizer._checkSupport();
 					if (!BuildConfig.X)
 						ExternalFx._checkSupport();
-					_checkAudioSink(0, false, false, 2);
+					_checkAudioSink(0, false, false, 2, false);
 					audioSinkUsedInEffects = audioSink;
 					_reinitializeEffects();
 					localHandler.sendEmptyMessageAtTime(MSG_INITIALIZATION_STEP, SystemClock.uptimeMillis());
@@ -3534,15 +3536,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private static int _checkAudioSinkViaRoute() {
+	private static int _checkAudioSinkViaRoute(boolean forceIgnoreBluetooth) {
 		try {
 			final MediaRouter router = (MediaRouter)theApplication.getSystemService(Context.MEDIA_ROUTER_SERVICE);
 			if (router == null)
 				return 0;
 			final MediaRouter.RouteInfo info = router.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
 			final String name = info.getName(theApplication).toString();
+			final CharSequence descriptionChar = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) ? info.getDescription() : null);
+			final String description = ((descriptionChar != null) ? descriptionChar.toString() : null);
 
-			if (name.toLowerCase(Locale.US).contains("bluetooth"))
+			if (!forceIgnoreBluetooth && name.toLowerCase(Locale.US).contains("bluetooth"))
+				return AUDIO_SINK_BT;
+			if (!forceIgnoreBluetooth && description != null && description.toLowerCase(Locale.US).contains("bluetooth"))
 				return AUDIO_SINK_BT;
 
 			//https://developer.android.com/about/versions/10/non-sdk-q
@@ -3561,7 +3567,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			id = systemResources.getIdentifier("bluetooth_a2dp_audio_route_name", "string", "android"); //(int)field.get(null);
 			if (id != 0) {
 				original = theApplication.getText(id).toString();
-				if (name.equalsIgnoreCase(original))
+				if (!forceIgnoreBluetooth && name.equalsIgnoreCase(original))
+					return AUDIO_SINK_BT;
+				if (!forceIgnoreBluetooth && description != null && description.equalsIgnoreCase(original))
 					return AUDIO_SINK_BT;
 			}
 
@@ -3571,6 +3579,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (id != 0) {
 				original = theApplication.getText(id).toString();
 				if (name.equalsIgnoreCase(original))
+					return AUDIO_SINK_WIRE;
+				if (description != null && description.equalsIgnoreCase(original))
 					return AUDIO_SINK_WIRE;
 			}
 
@@ -3598,7 +3608,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@SuppressWarnings({"deprecation", "RedundantSuppression"})
-	private static void _checkAudioSink(int flags, boolean triggerNoisy, boolean reinitializeEffects, int tripleCheckBT) {
+	private static void _checkAudioSink(int flags, boolean triggerNoisy, boolean reinitializeEffects, int tripleCheckBT, boolean forceIgnoreBluetooth) {
+		//perhaps we could also try something from this question???
+		//https://stackoverflow.com/q/61184099/3569421
 		if (audioManager == null)
 			return;
 		final boolean wiredHeadsetJustPlugged = ((flags & 1) != 0);
@@ -3626,7 +3638,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		if (bluetooh && audioSink == 0)
+		if (!forceIgnoreBluetooth && bluetooh && audioSink == 0)
 			audioSink = AUDIO_SINK_BT;
 		try {
 			if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -3636,7 +3648,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					if (routeInfo != null) {
 						switch (routeInfo.getDeviceType()) {
 						case MediaRouter.RouteInfo.DEVICE_TYPE_BLUETOOTH:
-							audioSink = AUDIO_SINK_BT;
+							//after disconnecting from Android Auto, a few devices keep returning it
+							//as the selected route... :(
+							if (!forceIgnoreBluetooth)
+								audioSink = AUDIO_SINK_BT;
 							break;
 						case MediaRouter.RouteInfo.DEVICE_TYPE_SPEAKER:
 						case MediaRouter.RouteInfo.DEVICE_TYPE_TV:
@@ -3671,12 +3686,12 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			ex.printStackTrace();
 		}
 		if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-			audioSink = _checkAudioSinkViaRoute();
+			audioSink = _checkAudioSinkViaRoute(forceIgnoreBluetooth);
 		try {
 			//this whole A2dp thing is still not enough, as isA2dpPlaying()
 			//will return false if there is nothing playing, even in scenarios
 			//where A2dp will certainly be used for playback later...
-			/*if (audioManager.isBluetoothA2dpOn()) {
+			/*if (audioManager.isBluetoothA2dpOn() && !forceIgnoreBluetooth) {
 				//the device being on is not enough! we must be sure
 				//if it is actually being used for transmission...
 				if (thePlayer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
@@ -3687,7 +3702,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 						audioSink = AUDIO_SINK_BT;
 				}
 			}*/
-			if (audioSink == 0 && Build.VERSION.SDK_INT < Build.VERSION_CODES.O && audioManager.isBluetoothA2dpOn())
+			if (!forceIgnoreBluetooth && audioSink == 0 && Build.VERSION.SDK_INT < Build.VERSION_CODES.O && audioManager.isBluetoothA2dpOn())
 				audioSink = AUDIO_SINK_BT;
 		} catch (Throwable ex) {
 			ex.printStackTrace();
@@ -3725,6 +3740,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					_fullCleanup();
 				}
 				break;
+			}
+		}
+		if (audioSink == AUDIO_SINK_BT) {
+			//this is a simple sanity check! current audio sink could not be AUDIO_SINK_BT if the
+			//bluetooth itself is not enabled!
+			try {
+				final BluetoothAdapter bluetoothAdapter = ((Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1) ? ((BluetoothManager)theApplication.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter() : BluetoothAdapter.getDefaultAdapter());
+				if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+					_checkAudioSink(flags, triggerNoisy, reinitializeEffects, tripleCheckBT, true);
+					return;
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
 			}
 		}
 		if (reinitializeEffects && audioSinkUsedInEffects != audioSink && player != null)
