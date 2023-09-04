@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
+import android.content.Context;
+import android.media.MediaRouter;
 import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
@@ -68,7 +70,7 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		return getText(R.string.about);
 	}
 
-	@SuppressWarnings({ "PointlessBooleanExpression", "ConstantConditions", "deprecation" })
+	@SuppressWarnings({ "ConstantConditions" })
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_about);
@@ -106,6 +108,35 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		final int features = Player.getFeatures();
 		sb.delete(0, sb.length());
 		sb.append(getText(R.string.system_info));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+			try {
+				final MediaRouter mr = (MediaRouter)Player.theApplication.getSystemService(Context.MEDIA_ROUTER_SERVICE);
+				if (mr != null) {
+					MediaRouter.RouteInfo routeInfo = null;
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
+						routeInfo = mr.getDefaultRoute();
+					if (routeInfo == null) {
+						routeInfo = mr.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
+						if (routeInfo != null)
+							sb.append("\nSelected audio route: ");
+					} else {
+						sb.append("\nDefault audio route: ");
+					}
+					if (routeInfo != null) {
+						final String name = routeInfo.getName(Player.theApplication).toString();
+						final CharSequence descriptionChar = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) ? routeInfo.getDescription() : null);
+						sb.append(name == null ? "null" : name);
+						if (descriptionChar != null) {
+							sb.append(" (");
+							sb.append(descriptionChar);
+							sb.append(')');
+						}
+					}
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
 		sb.append("\nABI");
 		sb.append(UI.collon());
 		sb.append(Build.CPU_ABI);
@@ -150,37 +181,37 @@ public final class ActivityAbout extends ClientActivity implements View.OnClickL
 		if (UI.isLowDpiScreen)
 			sb.append("\nLDPI");
 		if (UI.isLargeScreen)
-			sb.append("\nLarge Screen");
+			sb.append("\nLarge screen");
 		if (UI.isChromebook)
 			sb.append("\nChromebook");
 		if ((features & Player.FEATURE_DECODING_NATIVE) != 0)
-			sb.append("\nNative Decoding");
+			sb.append("\nNative decoding");
 		else if ((features & Player.FEATURE_DECODING_DIRECT) != 0)
-			sb.append("\nDirect Decoding");
+			sb.append("\nDirect decoding");
 		final int[] playbackInfo = Player.getCurrentPlaybackInfo();
 		if (playbackInfo != null && playbackInfo.length >= 6) {
 			if (playbackInfo[0] > 0) {
-				sb.append("\nNative Sample Rate (Device)");
+				sb.append("\nNative sample rate (Device)");
 				sb.append(UI.collon());
 				sb.append(playbackInfo[0]);
 				sb.append(" Hz");
 			}
 			if (playbackInfo[1] > 0) {
-				sb.append("\nInput Sample Rate (Track)");
+				sb.append("\nInput sample rate (Track)");
 				sb.append(UI.collon());
 				sb.append(playbackInfo[1]);
 				sb.append(" Hz");
 
-				sb.append("\nOutput Sample Rate (Playback)");
+				sb.append("\nOutput sample rate (Playback)");
 				sb.append(UI.collon());
 				sb.append(playbackInfo[2]);
 				sb.append(" Hz");
 
-				sb.append("\nFrames per Buffer (Device)");
+				sb.append("\nFrames per buffer (Device)");
 				sb.append(UI.collon());
 				sb.append(playbackInfo[3]);
 
-				sb.append("\nFrames per Buffer (Actually Used)");
+				sb.append("\nFrames per buffer (Actually Used)");
 				sb.append(UI.collon());
 				sb.append(playbackInfo[4]);
 			}

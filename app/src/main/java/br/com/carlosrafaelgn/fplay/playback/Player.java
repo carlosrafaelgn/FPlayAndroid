@@ -2472,14 +2472,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
 		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
-		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED));
+		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED, true));
 		previousResetsAfterTheBeginning = opts.getBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING);
 		UI.largeTextIs22sp = opts.getBit(OPTBIT_LARGE_TEXT_IS_22SP, false); //UI.isLargeScreen && (UI.scaledDensity > UI.density));
 		UI.setUsingAlternateTypefaceAndForcedLocale(opts.getBit(OPTBIT_USEALTERNATETYPEFACE), opts.getInt(OPT_FORCEDLOCALE, UI.LOCALE_NONE));
 		UI.displaySongNumberAndCount = opts.getBit(OPTBIT_DISPLAY_SONG_NUMBER_AND_COUNT, UI.lastVersionCode < 92);
 		UI.allowPlayerAboveLockScreen = opts.getBit(OPTBIT_ALLOW_LOCK_SCREEN, true);
 		UI.albumArtSongList = opts.getBit(OPTBIT_ALBUMART_SONG_LIST, Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
-		filePrefetchSize = getFilePrefetchSizeFromOptions((opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE1, 0) << 1) | opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE0, 0));
+		filePrefetchSize = getFilePrefetchSizeFromOptions((opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE1, 1) << 1) | opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE0, 1));
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -3644,7 +3644,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (audioSink == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 				final MediaRouter mr = (MediaRouter)theApplication.getSystemService(MEDIA_ROUTER_SERVICE);
 				if (mr != null) {
-					MediaRouter.RouteInfo routeInfo = mr.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
+					MediaRouter.RouteInfo routeInfo = mr.getDefaultRoute();
+					if (routeInfo == null)
+						routeInfo = mr.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO);
 					if (routeInfo != null) {
 						switch (routeInfo.getDeviceType()) {
 						case MediaRouter.RouteInfo.DEVICE_TYPE_BLUETOOTH:
