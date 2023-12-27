@@ -2620,30 +2620,30 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 			intentActivityHost = PendingIntent.getActivity(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
-			intent.setAction(Player.ACTION_PREVIOUS);
+			intent.setAction(ACTION_PREVIOUS);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				intentPrevious = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 			else
 				intentPrevious = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
-			intent.setAction(Player.ACTION_PLAY_PAUSE);
+			intent.setAction(ACTION_PLAY_PAUSE);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				intentPlayPause = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 			else
 				intentPlayPause = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			intent = new Intent(theApplication, Player.class);
-			intent.setAction(Player.ACTION_NEXT);
+			intent.setAction(ACTION_NEXT);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				intentNext = PendingIntent.getForegroundService(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 			else
 				intentNext = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				intent = new Intent(theApplication, ExternalReceiver.class);
-				intent.setAction(Player.ACTION_EXIT);
+				intent.setAction(ACTION_EXIT);
 				intentExit = PendingIntent.getBroadcast(theApplication, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 			} else {
 				intent = new Intent(theApplication, Player.class);
-				intent.setAction(Player.ACTION_EXIT);
+				intent.setAction(ACTION_EXIT);
 				intentExit = PendingIntent.getService(theApplication, 0, intent, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0) | PendingIntent.FLAG_UPDATE_CURRENT);
 			}
 		}
@@ -2697,6 +2697,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@TargetApi(Build.VERSION_CODES.O)
 	private static void createMediaStyleNotificationWithChannel() {
+		// https://developer.android.com/reference/android/app/Notification.MediaStyle
 		Notification.MediaStyle mediaStyle = new Notification.MediaStyle();
 		if (mediaSession != null)
 			mediaStyle.setMediaSession(mediaSession.getSessionToken());
@@ -2710,7 +2711,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			.setContentTitle(getCurrentTitle(false))
 			.setSubText((localSong == null) ? "-" : localSong.extraInfo)
 			.setColorized(false)
-			// Apparently, the ongoing flag shoudl be set to false for the delete intent to the send
+			// Apparently, the ongoing flag should be set to false for the delete intent to the send
 			// https://stackoverflow.com/q/74808095/3569421
 			.setOngoing(false)
 			.setContentIntent(intentActivityHost)
@@ -2720,12 +2721,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
 
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+			// https://developer.android.com/media/implement/surfaces/mobile
 			builder
 				.addAction(new Notification.Action(R.drawable.ic_prev, Player.theApplication.getText(R.string.previous), intentPrevious))
 				.addAction(localPlaying ?
 					new Notification.Action(R.drawable.ic_pause, Player.theApplication.getText(R.string.pause), intentPlayPause) :
 					new Notification.Action(R.drawable.ic_play, Player.theApplication.getText(R.string.play), intentPlayPause))
-				.addAction(new Notification.Action(R.drawable.ic_next, Player.theApplication.getText(R.string.next), intentNext));
+				.addAction(new Notification.Action(R.drawable.ic_next, Player.theApplication.getText(R.string.next), intentNext))
+				.addAction(new Notification.Action(R.drawable.ic_exit, Player.theApplication.getText(R.string.exit), intentExit));
 
 			mediaStyle.setShowActionsInCompactView(0, 1, 2);
 		}
@@ -3099,7 +3102,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static RemoteControlClient remoteControlClient;
 	private static MediaSession mediaSession;
 	private static MediaMetadata.Builder mediaSessionMetadataBuilder;
-	private static PlaybackState.Builder mediaSessionPlaybackStateBuilder;
 	private static Object mediaRouterCallback;
 
 	private static TypedRawArrayList<PlayerDestroyedObserver> destroyedObservers;
@@ -3230,12 +3232,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	private static PlaybackState.Builder getPlaybackStateBuilder() {
+		final PlaybackState.Builder playbackStateBuilder = new PlaybackState.Builder()
+			.setActions(PlaybackState.ACTION_SKIP_TO_PREVIOUS | PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_PLAY_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_STOP | PlaybackState.ACTION_SEEK_TO);
+
+		// https://developer.android.com/media/implement/surfaces/mobile#adding-custom-actions
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+			playbackStateBuilder.addCustomAction(ACTION_EXIT, theApplication.getString(R.string.exit), R.drawable.ic_exit);
+
+		return playbackStateBuilder;
+	}
+
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	private static void registerMediaSession() {
 		try {
 			if (mediaSession == null && thePlayer != null) {
 				mediaSessionMetadataBuilder = new MediaMetadata.Builder();
-				mediaSessionPlaybackStateBuilder = new PlaybackState.Builder();
-				mediaSessionPlaybackStateBuilder.setActions(PlaybackState.ACTION_SKIP_TO_PREVIOUS | PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_PLAY_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_STOP | PlaybackState.ACTION_SEEK_TO);
 				mediaSession = new MediaSession(thePlayer, "FPlay");
 				mediaSession.setCallback(new MediaSession.Callback() {
 					@Override
@@ -3278,10 +3290,17 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					public void onSeekTo(long pos) {
 						seekTo((int)pos);
 					}
+
+					@Override
+					public void onCustomAction(@NonNull String action, Bundle extras) {
+						// https://developer.android.com/media/implement/surfaces/mobile#responding_to_playbackstate_actions
+						if (action.equals(ACTION_EXIT))
+							stopService();
+					}
 				});
 				mediaSession.setSessionActivity(intentActivityHost);
 				mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
-				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
+				mediaSession.setPlaybackState(getPlaybackStateBuilder().setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			}
 			if (mediaSession != null)
 				mediaSession.setActive(true);
@@ -3300,7 +3319,6 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				mediaSession = null;
 			}
 			mediaSessionMetadataBuilder = null;
-			mediaSessionPlaybackStateBuilder = null;
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -3818,9 +3836,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static void broadcastStateChangeToMediaSession(String title, boolean preparing, boolean titleOrSongHaveChanged) {
 		try {
 			if (localSong == null) {
-				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
+				mediaSession.setPlaybackState(getPlaybackStateBuilder().setState(PlaybackState.STATE_STOPPED, 0, 1, SystemClock.elapsedRealtime()).build());
 			} else {
-				mediaSession.setPlaybackState(mediaSessionPlaybackStateBuilder.setState(preparing ? PlaybackState.STATE_BUFFERING : (localPlaying ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
+				mediaSession.setPlaybackState(getPlaybackStateBuilder().setState(preparing ? PlaybackState.STATE_BUFFERING : (localPlaying ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED), getPosition(), 1, SystemClock.elapsedRealtime()).build());
 				if (titleOrSongHaveChanged) {
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, title);
 					mediaSessionMetadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, localSong.artist);
