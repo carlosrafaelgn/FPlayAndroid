@@ -494,7 +494,27 @@ public final class MetadataExtractor {
 		try {
 			f.seekTo(firstFramePosition);
 
-			final int hdr = f.readUInt32BE();
+			// Sometimes, there are a few zeroed bytes after the ID3
+			int paddingBytes = 4092;
+			int hdr = 0;
+
+			while (paddingBytes > 0) {
+				final int firstHeaderByte = f.read();
+				if (firstHeaderByte < 0)
+					break;
+
+				if (firstHeaderByte > 0) {
+					if (firstHeaderByte == 0xFF) {
+						hdr = ((firstHeaderByte << 24) |
+							(f.read() << 16) |
+							(f.read() << 8) |
+							f.read());
+					}
+					break;
+				}
+
+				paddingBytes--;
+			}
 
 			if (aac) {
 				// https://wiki.multimedia.cx/index.php?title=ADTS
