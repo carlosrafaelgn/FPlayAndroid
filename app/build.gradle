@@ -46,14 +46,14 @@ android {
 		traditional {
 			dimension 'mode'
 			applicationId 'br.com.carlosrafaelgn.fplay'
-			targetSdk 33
+			targetSdk 35
 			minSdk 10
 			buildConfigField 'boolean', 'X', 'false'
 		}
 		x {
 			dimension 'mode'
 			applicationId 'br.com.carlosrafaelgn.fplay.x'
-			targetSdk 33
+			targetSdk 35
 			minSdk 16
 			buildConfigField 'boolean', 'X', 'true'
 		}
