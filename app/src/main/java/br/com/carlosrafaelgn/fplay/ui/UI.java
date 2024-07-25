@@ -109,9 +109,9 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
-	public static final int VERSION_CODE = 131;
+	public static final int VERSION_CODE = 132;
 	//VERSION_NAME must be kept in sync with build.gradle
-	public static final String VERSION_NAME = "v1.97";
+	public static final String VERSION_NAME = "v1.98";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;

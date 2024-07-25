@@ -586,6 +586,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	@SuppressLint("UnspecifiedRegisterReceiverFlag")
 	public static void startService() {
 		if (state == STATE_NEW) {
 			MainHandler.initialize();
@@ -641,7 +642,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M
 			filter.addAction("android.bluetooth.intent.action.HEADSET_STATE_CHANGED");
 			externalReceiver = new ExternalReceiver();
-			thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+				thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter, Context.RECEIVER_EXPORTED);
+			else
+				thePlayer.getApplicationContext().registerReceiver(externalReceiver, filter);
 
 			registerMediaButtonEventReceiver();
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)

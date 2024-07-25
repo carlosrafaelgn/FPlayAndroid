@@ -4,14 +4,14 @@ plugins {
 
 android {
 	namespace 'br.com.carlosrafaelgn.fplay'
-	compileSdk 33
+	compileSdk 35
 
 	defaultConfig {
 		applicationId "br.com.carlosrafaelgn.fplay"
 		minSdk 10
-		targetSdk 33
-		versionCode 131
-		versionName "1.97"
+		targetSdk 35
+		versionCode 132
+		versionName "1.98"
 	}
 
 	//https://developer.android.com/studio/build/configure-apk-splits

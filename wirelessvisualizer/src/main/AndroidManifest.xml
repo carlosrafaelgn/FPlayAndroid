@@ -1,5 +1,4 @@
-<manifest package="br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer"
-          xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
           android:installLocation="auto"
           android:versionCode="2"
           android:versionName="1.01">
