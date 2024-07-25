@@ -10,7 +10,7 @@ android {
 		applicationId "br.com.carlosrafaelgn.fplay"
 		minSdk 10
 		targetSdk 35
-		versionCode 132
+		versionCode 3000134
 		versionName "1.98"
 	}
 
@@ -27,13 +27,13 @@ android {
 
 	//we must generate different version codes for different APK's, or else
 	//Play Console will not accept the upload
-	project.ext.versionCodes = ['armeabi-v7a': 0, 'arm64-v8a': 1, 'x86': 2, 'x86_64': 3]
+	//project.ext.versionCodes = ['armeabi-v7a': 0, 'arm64-v8a': 1, 'x86': 2, 'x86_64': 3]
 
-	android.applicationVariants.all { variant ->
-		variant.outputs.each {
-			output -> output.versionCodeOverride = (project.ext.versionCodes.get(output.getFilter(com.android.build.OutputFile.ABI), 0) * 1000000) + android.defaultConfig.versionCode
-		}
-	}
+	//android.applicationVariants.all { variant ->
+	//	variant.outputs.each {
+	//		output -> output.versionCodeOverride = (project.ext.versionCodes.get(output.getFilter(com.android.build.OutputFile.ABI), 0) * 1000000) + android.defaultConfig.versionCode
+	//	}
+	//}
 
 	compileOptions {
 		sourceCompatibility JavaVersion.VERSION_1_8
