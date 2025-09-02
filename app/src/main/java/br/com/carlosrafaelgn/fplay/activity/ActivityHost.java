@@ -38,6 +38,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Insets;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
@@ -50,6 +51,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
@@ -68,6 +70,7 @@ import br.com.carlosrafaelgn.fplay.ui.BgFrameLayout;
 import br.com.carlosrafaelgn.fplay.ui.CustomContextMenu;
 import br.com.carlosrafaelgn.fplay.ui.FastAnimator;
 import br.com.carlosrafaelgn.fplay.ui.UI;
+import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.NullDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
 import br.com.carlosrafaelgn.fplay.util.Timer;
@@ -677,10 +680,12 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			return;
 		systemBgColor = bgColor;
 		int turns = 0;
-		do {
+		while (ColorUtils.contrastRatio(bgColor, 0xffffffff) < 5 && turns < 5) {
 			bgColor = ColorUtils.blend(bgColor, 0xff000000, 0.8f);
 			turns++;
-		} while (ColorUtils.contrastRatio(bgColor, 0xffffffff) < 5 && turns < 5);
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+			getWindow().setBackgroundDrawable(new ColorDrawable(bgColor));
 		getWindow().setNavigationBarColor(bgColor);
 		getWindow().setStatusBarColor(bgColor);
 	}
@@ -720,7 +725,25 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		UI.setAndroidThemeAccordingly(this);
 		UI.storeViewCenterLocationForFade(null);
 		Player.songs.syncAlbumArtFetcher();
-		super.setContentView(baseParent = new BgFrameLayout(this));
+
+		baseParent = new BgFrameLayout(this);
+
+		// No solution available yet: https://stackoverflow.com/q/79406826/3569421
+		if (Build.VERSION.SDK_INT >= 35) {
+			baseParent.setOnApplyWindowInsetsListener((v, windowInsets) -> {
+				final Insets insets = windowInsets.getInsets(WindowInsets.Type.systemBars());
+				final FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+				layoutParams.leftMargin = insets.left;
+				layoutParams.topMargin = insets.top;
+				layoutParams.rightMargin = insets.right;
+				layoutParams.bottomMargin = insets.bottom;
+				v.setLayoutParams(layoutParams);
+				return WindowInsets.CONSUMED;
+			});
+		}
+
+		super.setContentView(baseParent);
+
 		pendingOrientationChanges = false;
 		top = new ActivityMain();
 		top.finished = false;
@@ -730,7 +753,8 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		//application is still loading... (ActivityMain will change its
 		//title when the player finishes loading)
 		setTitle(Player.state == Player.STATE_ALIVE ? top.getTitle() : "\u00A0");
-		getWindow().setBackgroundDrawable(new NullDrawable());
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM)
+			getWindow().setBackgroundDrawable(new NullDrawable());
 		top.paused = true;
 		top.onCreate();
 		if (top != null && !top.finished) {

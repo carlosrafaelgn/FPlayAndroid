@@ -12,6 +12,8 @@
         <item name="android:colorAccent">#ff3344bb</item> <!-- #ff444abf -->
         <item name="android:colorControlNormal">#ff6d6d6d</item>
         <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 
 </resources>

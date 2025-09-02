@@ -38,6 +38,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.Insets;
 import android.graphics.Point;
 import android.media.AudioManager;
 import android.os.Build;
@@ -53,7 +54,10 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnCreateContextMenuListener;
+import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -432,6 +436,7 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 			//else
 			//	getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		}
+		getWindow().setNavigationBarColor(UI.color_visualizer565);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
@@ -439,6 +444,21 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 		setContentView(R.layout.activity_visualizer);
 		
 		panelControls = findViewById(R.id.panelControls);
+
+		// No solution available yet: https://stackoverflow.com/q/79406826/3569421
+		if (!visualizerRequiresHiddenControls && Build.VERSION.SDK_INT >= 35) {
+			panelControls.setOnApplyWindowInsetsListener((v, windowInsets) -> {
+				final Insets insets = windowInsets.getInsets(WindowInsets.Type.systemBars());
+				final FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+				layoutParams.leftMargin = insets.left;
+				layoutParams.topMargin = insets.top;
+				layoutParams.rightMargin = insets.right;
+				layoutParams.bottomMargin = insets.bottom;
+				v.setLayoutParams(layoutParams);
+				return WindowInsets.CONSUMED;
+			});
+		}
+
 		panelControls.setOnClickListener(this);
 		panelControls.setInterceptedTouchEventListener(this);
 		panelTop = findViewById(R.id.panelTop);

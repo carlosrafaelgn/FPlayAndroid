@@ -37,6 +37,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -140,8 +141,14 @@ public final class OpenGLVisualizerSensorManager extends Thread implements Handl
 			//provides an awesome refresh rate, but SENSOR_DELAY_FASTEST is the fastest!
 			//...different algorithms, different refresh rates!
 			if (gyro != null) {
-				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST, handler);
-				sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_FASTEST, handler);
+				// https://developer.android.com/develop/sensors-and-location/sensors/sensors_overview#sensors-rate-limiting
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+					sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME, handler);
+					sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_GAME, handler);
+				} else {
+					sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST, handler);
+					sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_FASTEST, handler);
+				}
 			} else {
 				sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME, handler);
 				sensorManager.registerListener(this, mag, SensorManager.SENSOR_DELAY_GAME, handler);

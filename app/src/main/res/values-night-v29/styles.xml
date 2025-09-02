@@ -14,6 +14,8 @@
         <item name="android:navigationBarColor">#303030</item>
         <item name="android:statusBarColor">#303030</item>
         <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 
 </resources>
