@@ -196,7 +196,7 @@ extern int32_t resampleYINT[] __attribute__((aligned(16)));
 
 /*uint32_t resampleLagrangeNeon(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
-	register uint32_t usedSrc = 0, usedDst = 0;
+	uint32_t usedSrc = 0, usedDst = 0;
 
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
@@ -314,7 +314,7 @@ extern int32_t resampleYINT[] __attribute__((aligned(16)));
 
 uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
-	register uint32_t usedSrc = 0, usedDst = 0;
+	uint32_t usedSrc = 0, usedDst = 0;
 
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
@@ -424,7 +424,7 @@ uint32_t resampleLagrangeNeonINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, i
 
 extern uint32_t visualizerWriteOffsetInFrames, visualizerBufferSizeInFrames;
 extern uint8_t* visualizerBuffer;
-static const int8_t visualizerx80[8] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+static const int8_t visualizerx80[8] __attribute__((aligned(16))) = { -128, -128, -128, -128, -128, -128, -128, -128 };
 
 void visualizerWriteNeon(const int16_t* srcBuffer, uint32_t bufferSizeInFrames) {
 	const uint32_t frameCountAtTheEnd = visualizerBufferSizeInFrames - visualizerWriteOffsetInFrames;
