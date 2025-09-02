@@ -4,7 +4,9 @@
 Considering that, currently, 16 KB pages are only supported on arm64 targets with 16 KB kernels, only the `.so` files listed below have been recompiled using r28c NDK. All other `.so` files have remained in their original versions (compiled with the r10e NDK).
 
 - app/src/main/jniLibs/arm64-v8a/libSimpleVisualizerJni.so
+- app/src/main/jniLibs/x86_64/libSimpleVisualizerJni.so
 - app/src/x/jniLibs/arm64-v8a/libMediaContextJni.so
+- app/src/x/jniLibs/x86_64/libMediaContextJni.so
 
 References
 ----------

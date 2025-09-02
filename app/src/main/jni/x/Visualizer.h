@@ -36,7 +36,7 @@ uint8_t* visualizerBuffer;
 static uint32_t visualizerCreatedBufferSizeInFrames;
 #ifdef FPLAY_X86
 static const int8_t visualizerShuffleIndices[16] __attribute__((aligned(16))) = { 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15 };
-static const int8_t visualizerx80[16] __attribute__((aligned(16))) = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0, 0, 0, 0, 0, 0, 0, 0 };
+static const int8_t visualizerx80[16] __attribute__((aligned(16))) = { -128, -128, -128, -128, -128, -128, -128, -128, 0, 0, 0, 0, 0, 0, 0, 0 };
 #define visualizerWriteProc visualizerWrite
 #else
 typedef void (*VISUALIZERPROC)(const int16_t* srcBuffer, uint32_t bufferSizeInFrames);

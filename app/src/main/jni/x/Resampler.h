@@ -122,11 +122,7 @@ uint32_t resampleNullMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t*
 #ifdef FPLAY_X86
 uint32_t resampleLagrange(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
-	#ifdef FPLAY_ARM
 	uint32_t usedSrc = 0, usedDst = 0;
-	#else
-	register uint32_t usedSrc = 0, usedDst = 0;
-	#endif
 
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
@@ -215,11 +211,7 @@ uint32_t resampleLagrange(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t*
 #else
 uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
-	#ifdef FPLAY_ARM
 	uint32_t usedSrc = 0, usedDst = 0;
-	#else
-	register uint32_t usedSrc = 0, usedDst = 0;
-	#endif
 
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
@@ -317,11 +309,7 @@ uint32_t resampleLagrangeINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16
 #ifdef FPLAY_X86
 uint32_t resampleLagrangeMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
-	#ifdef FPLAY_ARM
 	uint32_t usedSrc = 0, usedDst = 0;
-	#else
-	register uint32_t usedSrc = 0, usedDst = 0;
-	#endif
 
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
@@ -388,11 +376,7 @@ uint32_t resampleLagrangeMono(int16_t* srcBuffer, uint32_t srcSizeInFrames, int1
 #else
 uint32_t resampleLagrangeMonoINT(int16_t* srcBuffer, uint32_t srcSizeInFrames, int16_t* dstBuffer, uint32_t dstSizeInFrames, uint32_t& srcFramesUsed) {
 	//both ARM (32/64) and x86 (64) have lots of registers!
-	#ifdef FPLAY_ARM
 	uint32_t usedSrc = 0, usedDst = 0;
-	#else
-	register uint32_t usedSrc = 0, usedDst = 0;
-	#endif
 
 	while (resamplePendingAdvances) {
 		resamplePendingAdvances--;
