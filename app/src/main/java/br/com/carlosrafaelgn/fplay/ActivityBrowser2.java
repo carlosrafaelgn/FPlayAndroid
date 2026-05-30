@@ -94,7 +94,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		if (list == null)
 			return;
 		final RelativeLayout.LayoutParams rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-		rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+		rp.addRule(RelativeLayout.BELOW, R.id.panelPath);
 		if (isAtHome)
 			rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 		else
@@ -113,7 +113,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				//do not change lblLoading's layout, as it covers the background behind panelSecondary
 				/*if (lblLoading != null) {
 					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-					rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+					rp.addRule(RelativeLayout.BELOW, R.id.panelPath);
 					rp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 					lblLoading.setLayoutParams(rp);
 				}*/
@@ -140,7 +140,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				//do not change lblLoading's layout, as it covers the background behind panelSecondary
 				/*if (lblLoading != null) {
 					rp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-					rp.addRule(RelativeLayout.BELOW, R.id.lblPath);
+					rp.addRule(RelativeLayout.BELOW, R.id.panelPath);
 					rp.addRule(RelativeLayout.ABOVE, R.id.panelSecondary);
 					lblLoading.setLayoutParams(rp);
 				}*/
@@ -870,17 +870,29 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		//} catch (Throwable ex) {
 		//}
 	}
-	
+
+	private void setListPadding() {
+		if (list != null)
+			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
+		if (lblPath != null) {
+			final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)lblPath.getLayoutParams();
+			lp.leftMargin = UI.getViewPaddingBasedOnScreenWidth(0);
+			lp.rightMargin = lp.leftMargin;
+			lblPath.setLayoutParams(lp);
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreateLayout(boolean firstCreation) {
 		setContentView(R.layout.activity_browser2);
+		final RelativeLayout panelPath = findViewById(R.id.panelPath);
+		panelPath.setBackgroundDrawable(new ColorDrawable(UI.color_list_bg));
 		lblPath = findViewById(R.id.lblPath);
 		lblPath.setTextColor(UI.colorState_text_highlight_static);
 		UI.largeText(lblPath);
 		lblPath.setBackgroundDrawable(new ColorDrawable(UI.color_highlight));
-		final int m = (UI.isLargeScreen ? UI.controlSmallMargin : (UI.controlSmallMargin >> 1));
-		lblPath.setPadding(m, m, m, m);
+		lblPath.setPadding(UI.controlMargin, UI.controlMargin, UI.controlMargin, UI.controlMargin);
 		msgEmptyList = getText(R.string.empty_list);
 		msgLoading = getText(R.string.loading);
 		list = findViewById(R.id.list);
@@ -961,7 +973,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		btnPlay.setIcon(UI.ICON_PLAY);
 		if (UI.browserScrollBarType == BgListView.SCROLLBAR_INDEXED ||
 			UI.browserScrollBarType == BgListView.SCROLLBAR_LARGE) {
-			UI.prepareControlContainer(findViewById(R.id.panelControls), false, false);
+			UI.prepareControlContainer(findViewById(R.id.panelControls), false, true);
 		} else {
 			if (UI.extraSpacing) {
 				final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, UI.defaultControlSize);
@@ -969,10 +981,10 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 				lp.rightMargin = UI.controlMargin;
 				btnURL.setLayoutParams(lp);
 			}
-			UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, false);
+			UI.prepareControlContainerWithoutRightPadding(findViewById(R.id.panelControls), false, true);
 		}
 		UI.prepareControlContainer(panelSecondary, true, false);
-		UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
+		setListPadding();
 		//this is the opposite as in updateButtons(), to force updateOverallLayout()
 		//to be called at least once
 		if (!isAtHome == (chkAll.getVisibility() == View.VISIBLE)) {
@@ -1010,11 +1022,10 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		if (loading != fileList.isLoading())
 			onLoadingProcessChanged(fileList.isLoading());
 	}
-	
+
 	@Override
 	protected void onOrientationChanged() {
-		if (list != null)
-			UI.prepareViewPaddingBasedOnScreenWidth(list, 0, 0, 0);
+		setListPadding();
 	}
 	
 	@Override

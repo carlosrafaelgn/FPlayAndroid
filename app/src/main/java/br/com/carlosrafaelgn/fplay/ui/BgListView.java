@@ -195,7 +195,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	}
 
 	public void setTopBorder() {
-		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, backgroundColor, 0, UI.thickDividerSize, 0, 0));
+		super.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, backgroundColor, 0, UI.thickDividerSize, 0, 0, UI.isRGB));
 		setPadding(0, UI.thickDividerSize, 0, 0);
 		UI.offsetTopEdgeEffect(this);
 	}
@@ -776,10 +776,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		ignorePadding = true;
 		if (UI.scrollBarToTheLeft) {
 			scrollBarLeft = 0;//leftPadding;
-			super.setPadding(leftPadding + scrollBarWidth, topPadding, rightPadding, bottomPadding);
+			super.setPadding(Math.max(leftPadding, scrollBarWidth), topPadding, rightPadding, bottomPadding);
 		} else {
 			scrollBarLeft = viewWidth - scrollBarWidth;//(viewWidth - (rightPadding + scrollBarWidth));
-			super.setPadding(leftPadding, topPadding, rightPadding + scrollBarWidth, bottomPadding);
+			super.setPadding(leftPadding, topPadding, Math.max(rightPadding, scrollBarWidth), bottomPadding);
 		}
 		ignorePadding = false;
 		UI.removeInternalPaddingForEdgeEffect(this);
@@ -798,10 +798,10 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 			return;
 		if (UI.scrollBarToTheLeft) {
 			scrollBarLeft = 0;
-			super.setPadding((leftPadding = left) + scrollBarWidth, (topPadding = top), (rightPadding = right), (bottomPadding = bottom));
+			super.setPadding(Math.max(leftPadding = left, scrollBarWidth), (topPadding = top), (rightPadding = right), (bottomPadding = bottom));
 		} else {
 			scrollBarLeft = viewWidth - scrollBarWidth;
-			super.setPadding((leftPadding = left), (topPadding = top), (rightPadding = right) + scrollBarWidth, (bottomPadding = bottom));
+			super.setPadding((leftPadding = left), (topPadding = top), Math.max(rightPadding = right, scrollBarWidth), (bottomPadding = bottom));
 		}
 		UI.removeInternalPaddingForEdgeEffect(this);
 	}

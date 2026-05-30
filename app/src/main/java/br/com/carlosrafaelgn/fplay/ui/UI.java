@@ -44,6 +44,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
@@ -109,7 +110,7 @@ import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
-	public static final int VERSION_CODE = 3000137;
+	public static final int VERSION_CODE = 3000138;
 	//VERSION_NAME must be kept in sync with build.gradle
 	public static final String VERSION_NAME = "v1.991";
 
@@ -509,7 +510,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	//These guys used to be private, but I decided to make them public, even though they still have
 	//their setters, after I found out ProGuard does not inline static setters (or at least I have
 	//not been able to figure out a way to do so....)
-	public static boolean isUsingAlternateTypeface, isFlat;
+	public static boolean isUsingAlternateTypeface, isFlat, isRGB;
 	public static int forcedLocale, theme, transitions;
 	
 	public static float density, scaledDensity, xdpi_1_72;
@@ -519,7 +520,11 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	private static int glowFilterColor;
 	private static PorterDuffColorFilter glowFilter;
 	//private static final PorterDuffColorFilter edgeFilter;
-	
+	public static Bitmap rgbBitmap;
+	public static Rect rgbRect;
+	public static Bitmap rgbVBitmap;
+	public static Rect rgbVRect;
+
 	static {
 		fillPaint = new Paint();
 		fillPaint.setDither(false);
@@ -1615,6 +1620,37 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		Gradient.purgeAll();
 	}
 
+	public static void setRGB(boolean rgb) {
+		isRGB = rgb;
+		if (rgb) {
+			final BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inMutable = false;
+			options.inScaled = false;
+
+			if (rgbBitmap == null) {
+				rgbBitmap = BitmapFactory.decodeResource(Player.theApplication.getResources(), R.drawable.rgb, options);
+				rgbRect = new Rect(0, 0, rgbBitmap.getWidth(), rgbBitmap.getHeight());
+			}
+
+			if (rgbVBitmap == null) {
+				rgbVBitmap = BitmapFactory.decodeResource(Player.theApplication.getResources(), R.drawable.rgb_vertical, options);
+				rgbVRect = new Rect(0, 0, rgbVBitmap.getWidth(), rgbVBitmap.getHeight());
+			}
+		} else {
+			if (rgbBitmap != null) {
+				rgbBitmap.recycle();
+				rgbBitmap = null;
+				rgbRect = null;
+			}
+
+			if (rgbVBitmap != null) {
+				rgbVBitmap.recycle();
+				rgbVBitmap = null;
+				rgbVRect = null;
+			}
+		}
+	}
+
 	public static void setTransitions(int transitions) {
 		setTransition(transitions & 0xFF);
 		setPopupTransition(transitions >>> 8);
@@ -1685,12 +1721,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void showNextStartupMsg(Context context) {
-		if (msgStartup >= 37) {
-			msgStartup = 37;
+		if (msgStartup >= 38) {
+			msgStartup = 38;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 37;
+		msgStartup = 38;
 		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.startup_message).toString();
@@ -1711,6 +1747,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final String content = //"- " + context.getText(R.string.ringtone) +
 			//"\n\n" +
 			context.getText(R.string.there_are_new_features) +
+			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + "RGB" +
 			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.night_mode) +
 			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.album_art) +
 			//"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.place_controls_at_the_bottom) +
@@ -2493,7 +2530,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder, int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
-		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b));
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, UI.isRGB));
 		view.setPadding(leftPadding, topPadding + t, rightPadding, bottomPadding + b);
 	}
 
@@ -2501,7 +2538,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static void prepareControlContainer(View view, boolean topBorder, boolean bottomBorder) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
-		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b));
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, UI.isRGB));
 		if (extraSpacing)
 			view.setPadding(controlMargin, controlMargin + t, controlMargin, controlMargin + b);
 		else
@@ -2512,7 +2549,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static void prepareControlContainerWithoutRightPadding(View view, boolean topBorder, boolean bottomBorder) {
 		final int t = (topBorder ? thickDividerSize : 0);
 		final int b = (bottomBorder ? thickDividerSize : 0);
-		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b));
+		view.setBackgroundDrawable(new BorderDrawable(color_highlight, color_window, 0, t, 0, b, UI.isRGB));
 		if (extraSpacing)
 			view.setPadding(controlMargin, controlMargin + t, 0, controlMargin + b);
 		else

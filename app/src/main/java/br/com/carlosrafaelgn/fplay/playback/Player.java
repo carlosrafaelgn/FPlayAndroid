@@ -2339,6 +2339,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPTBIT_PLACE_CONTROLS_AT_THE_BOTTOM = 67;
 	private static final int OPTBIT_ALBUMART_SONG_LIST = 68;
 	private static final int OPTBIT_AUTO_NIGHT_MODE = 69;
+	private static final int OPTBIT_RGB = 70;
 
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
@@ -2396,7 +2397,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.widgetTextColor = opts.getInt(OPT_WIDGETTEXTCOLOR, 0xff000000);
 		UI.widgetIconColor = opts.getInt(OPT_WIDGETICONCOLOR, 0xff000000);
 		bluetoothVisualizerConfig = opts.getInt(OPT_BLUETOOTHVISUALIZERCONFIG, 2 | (2 << 3) | (3 << 5));
-		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_ARTIST);
+		Song.extraInfoMode = opts.getInt(OPT_SONGEXTRAINFOMODE, Song.EXTRA_TRACK_ARTIST_ALBUM);
+		if (UI.lastVersionCode < 3000138)
+			Song.extraInfoMode = Song.EXTRA_TRACK_ARTIST_ALBUM;
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
@@ -2440,6 +2443,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.doubleClickMode = opts.getBit(OPTBIT_DOUBLECLICKMODE);
 		UI.marqueeTitle = opts.getBit(OPTBIT_MARQUEETITLE, true);
 		UI.setFlat((UI.lastVersionCode < 113) || opts.getBit(OPTBIT_FLAT, true));
+		UI.setRGB(opts.getBit(OPTBIT_RGB, false));
 		UI.hasBorders = ((UI.lastVersionCode >= 113) && opts.getBit(OPTBIT_BORDERS, false));
 		UI.animationEnabled = ((UI.lastVersionCode < 113 && UI.deviceSupportsAnimations) || opts.getBit(OPTBIT_ANIMATIONS, UI.deviceSupportsAnimations));
 		UI.albumArt = opts.getBit(OPTBIT_ALBUMART, true);
@@ -2549,6 +2553,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.putBit(OPTBIT_DOUBLECLICKMODE, UI.doubleClickMode);
 		opts.putBit(OPTBIT_MARQUEETITLE, UI.marqueeTitle);
 		opts.putBit(OPTBIT_FLAT, UI.isFlat);
+		opts.putBit(OPTBIT_RGB, UI.isRGB);
 		opts.putBit(OPTBIT_BORDERS, UI.hasBorders);
 		opts.putBit(OPTBIT_ANIMATIONS, UI.animationEnabled);
 		opts.putBit(OPTBIT_ALBUMART, UI.albumArt);

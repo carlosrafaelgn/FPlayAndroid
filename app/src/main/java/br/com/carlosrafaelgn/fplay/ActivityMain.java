@@ -1559,7 +1559,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			}
 
 			if (UI.isLargeScreen) {
-				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0));
+				findViewById(R.id.panelInfo).setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, ((UI.isLandscape && !UI.controlsToTheLeft) ? UI.thickDividerSize : 0), (!UI.isLandscape ? UI.thickDividerSize : 0), ((UI.isLandscape && UI.controlsToTheLeft) ? UI.thickDividerSize : 0), 0, UI.isRGB));
 			} else if (UI.isLandscape) {
 				//we need these two panels (panelAnimationBg and panelAnimationBg2)
 				//because ugly artifacts appear when an animation is going on
@@ -1574,19 +1574,19 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 					panelSelection.setPadding(0, 0, UI.controlMargin, 0);
 				}
 				panelControls.setPadding(0, 0, UI.controlMargin, 0);
-				panelAnimationBg2.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0));
+				panelAnimationBg2.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, UI.thickDividerSize, 0, UI.isRGB));
 				list.setTopBorder();
 			} else {
 				final LinearLayout panelTop = findViewById(R.id.panelTop);
 				if (UI.placeControlsAtTheBottom) {
 					final LinearLayout panelTitle = findViewById(R.id.panelTitle);
 					panelTitle.setPadding(0, 0, 0, UI.thickDividerSize);
-					panelTitle.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize));
+					panelTitle.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, UI.isRGB));
 
 					panelTop.setPadding(0, UI.controlMargin + UI.thickDividerSize, 0, UI.controlMargin);
 					if (UI.extraSpacing)
 						panelSelection.setPadding(UI.controlMargin, 0, UI.controlMargin, 0);
-					panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, UI.thickDividerSize, 0, 0));
+					panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, UI.thickDividerSize, 0, 0, UI.isRGB));
 				} else {
 					if (UI.placeTitleAtTheBottom) {
 						panelTop.removeView(lblTitle);
@@ -1611,7 +1611,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 						else
 							panelSelection.setPadding(0, 0, 0, UI.controlMargin);
 					}
-					panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize));
+					panelTop.setBackgroundDrawable(new BorderDrawable(UI.color_highlight, UI.color_window, 0, 0, 0, UI.thickDividerSize, UI.isRGB));
 				}
 				if (UI.extraSpacing)
 					panelControls.setPadding(UI.controlMargin, 0, UI.controlMargin, UI.controlMargin);

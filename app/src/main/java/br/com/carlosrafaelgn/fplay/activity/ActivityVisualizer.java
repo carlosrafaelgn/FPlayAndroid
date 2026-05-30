@@ -448,7 +448,11 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 		// No solution available yet: https://stackoverflow.com/q/79406826/3569421
 		if (!visualizerRequiresHiddenControls && Build.VERSION.SDK_INT >= 35) {
 			panelControls.setOnApplyWindowInsetsListener((v, windowInsets) -> {
-				final Insets insets = windowInsets.getInsets(WindowInsets.Type.systemBars());
+				final Insets insets = windowInsets.getInsets(
+					WindowInsets.Type.systemBars() |
+					WindowInsets.Type.mandatorySystemGestures() |
+					WindowInsets.Type.displayCutout()
+				);
 				final FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
 				layoutParams.leftMargin = insets.left;
 				layoutParams.topMargin = insets.top;

@@ -336,11 +336,12 @@ public final class Song extends BaseItem {
 				extraInfo = ((track > 0) ? (track + " / " + artist) : artist);
 				break;
 			case EXTRA_TRACK_ALBUM:
+			case EXTRA_TRACK_ARTIST_ALBUM:
 				extraInfo = ((track > 0) ? (track + " / " + album) : album);
 				break;
-			case EXTRA_TRACK_ARTIST_ALBUM:
-				extraInfo = ((track > 0) ? (track + " / " + artist + " / " + album) : (artist + " / " + album));
-				break;
+			//case EXTRA_TRACK_ARTIST_ALBUM:
+			//	extraInfo = ((track > 0) ? (track + " / " + artist + " / " + album) : (artist + " / " + album));
+			//	break;
 			default:
 				extraInfo = artist + " / " + album;
 				break;

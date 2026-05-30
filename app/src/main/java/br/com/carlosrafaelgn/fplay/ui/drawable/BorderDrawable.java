@@ -45,6 +45,7 @@ import br.com.carlosrafaelgn.fplay.ui.UI;
 public final class BorderDrawable extends Drawable {
 	private int strokeColor, fillColor, opacity;
 	private final int leftSize, topSize, rightSize, bottomSize;
+	private final boolean rgb;
 
 	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize) {
 		changeColors(strokeColor, fillColor);
@@ -52,6 +53,16 @@ public final class BorderDrawable extends Drawable {
 		this.topSize = topSize;
 		this.rightSize = rightSize;
 		this.bottomSize = bottomSize;
+		this.rgb = false;
+	}
+
+	public BorderDrawable(int strokeColor, int fillColor, int leftSize, int topSize, int rightSize, int bottomSize, boolean rgb) {
+		changeColors(strokeColor, fillColor);
+		this.leftSize = leftSize;
+		this.topSize = topSize;
+		this.rightSize = rightSize;
+		this.bottomSize = bottomSize;
+		this.rgb = rgb;
 	}
 
 	@Override
@@ -77,14 +88,50 @@ public final class BorderDrawable extends Drawable {
 		final Paint fillPaint = UI.fillPaint;
 		fillPaint.setColor(strokeColor);
 		final int l = rect.left, t = rect.top, r = rect.right, b = rect.bottom;
-		if (topSize != 0)
-			canvas.drawRect(l, t, r, t + topSize, fillPaint);
-		if (bottomSize != 0)
-			canvas.drawRect(l, b - bottomSize, r, b, fillPaint);
-		if (leftSize != 0)
-			canvas.drawRect(l, t + topSize, l + leftSize, b - bottomSize, fillPaint);
-		if (rightSize != 0)
-			canvas.drawRect(r - rightSize, t + topSize, r, b - bottomSize, fillPaint);
+		if (topSize != 0) {
+			if (rgb && UI.rgbBitmap != null) {
+				rect.bottom = t + topSize;
+				canvas.drawBitmap(UI.rgbBitmap, UI.rgbRect, rect, fillPaint);
+				rect.bottom = b;
+			} else {
+				canvas.drawRect(l, t, r, t + topSize, fillPaint);
+			}
+		}
+		if (bottomSize != 0) {
+			if (rgb && UI.rgbBitmap != null) {
+				rect.top = b - bottomSize;
+				canvas.drawBitmap(UI.rgbBitmap, UI.rgbRect, rect, fillPaint);
+				rect.top = t;
+			} else {
+				canvas.drawRect(l, b - bottomSize, r, b, fillPaint);
+			}
+		}
+		if (leftSize != 0) {
+			if (rgb && UI.rgbVBitmap != null) {
+				rect.top = t + topSize;
+				rect.right = l + leftSize;
+				rect.bottom = b - bottomSize;
+				canvas.drawBitmap(UI.rgbVBitmap, UI.rgbVRect, rect, fillPaint);
+				rect.top = t;
+				rect.right = r;
+				rect.bottom = b;
+			} else {
+				canvas.drawRect(l, t + topSize, l + leftSize, b - bottomSize, fillPaint);
+			}
+		}
+		if (rightSize != 0) {
+			if (rgb && UI.rgbVBitmap != null) {
+				rect.left = r - rightSize;
+				rect.top = t + topSize;
+				rect.bottom = b - bottomSize;
+				canvas.drawBitmap(UI.rgbVBitmap, UI.rgbVRect, rect, fillPaint);
+				rect.left = l;
+				rect.top = t;
+				rect.bottom = b;
+			} else {
+				canvas.drawRect(r - rightSize, t + topSize, r, b - bottomSize, fillPaint);
+			}
+		}
 		fillPaint.setColor(fillColor);
 		canvas.drawRect(l + leftSize, t + topSize, r - rightSize, b - bottomSize, fillPaint);
 	}

@@ -99,7 +99,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private LinearLayout panelSettings;
 	private ViewGroup viewForPadding;
 	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface,
-		optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat,
+		optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optRGB,
 		optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume,
 		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom,
 		optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList,
@@ -541,10 +541,18 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			Player.setVolumeControlType(item.getItemId());
 			optVolumeControlType.setSecondaryText(getVolumeString());
 		} else if (lastMenuView == optExtraInfoMode) {
+			final boolean oldLargeHeight = (Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM);
 			Song.extraInfoMode = item.getItemId();
+			final boolean newLargeHeight = (Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM);
 			optExtraInfoMode.setSecondaryText(getExtraInfoModeString(Song.extraInfoMode));
 			Player.songs.updateExtraInfo();
 			WidgetMain.updateWidgets();
+			if (oldLargeHeight != newLargeHeight) {
+				Player.songs.destroyAlbumArtFetcher();
+				if (UI.albumArtSongList)
+					Player.songs.syncAlbumArtFetcher();
+				System.gc();
+			}
 		} else if (lastMenuView == optForceOrientation) {
 			UI.forcedOrientation = item.getItemId();
 			getHostActivity().setRequestedOrientation((UI.forcedOrientation == 0) ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED : ((UI.forcedOrientation < 0) ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
@@ -1247,6 +1255,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoNightMode = new SettingView(ctx, UI.ICON_THEME, getText(R.string.opt_auto_night_mode).toString(), null, true, UI.autoNightMode, false);
 			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(UI.theme), false, false, false);
 			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
+			optRGB = new SettingView(ctx, UI.ICON_PALETTE, "RGB", null, true, UI.isRGB, false);
 			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);
 			optAlbumArtSongList = new SettingView(ctx, UI.ICON_ALBUMART, getText(R.string.album_art).toString(), null, true, UI.albumArtSongList, false);
 			optPlayWithLongPress = new SettingView(ctx, UI.ICON_PLAY, getText(R.string.play_with_long_press).toString(), null, true, UI.playWithLongPress, false);
@@ -1338,6 +1347,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optTheme);
 			addOption(opt3D);
 			addOption(optFlat);
+			addOption(optRGB);
 			addOption(optBorders);
 			if (!UI.is3D)
 				addOption(optIsDividerVisible);
@@ -1472,6 +1482,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optAutoNightMode = null;
 		optTheme = null;
 		optFlat = null;
+		optRGB = null;
 		optBorders = null;
 		optAlbumArtSongList = null;
 		optPlayWithLongPress = null;
@@ -1751,6 +1762,11 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.setFlat(optFlat.isChecked());
 			//onCleanupLayout();
 			//onCreateLayout(false);
+			System.gc();
+		} else if (view == optRGB) {
+			UI.setRGB(optRGB.isChecked());
+			onCleanupLayout();
+			onCreateLayout(false);
 			System.gc();
 		} else if (view == optBorders) {
 			UI.hasBorders = optBorders.isChecked();

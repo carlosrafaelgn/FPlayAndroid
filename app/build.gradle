@@ -10,8 +10,8 @@ android {
 		applicationId "br.com.carlosrafaelgn.fplay"
 		minSdk 10
 		targetSdk 35
-		versionCode 3000137
-		versionName "1.991"
+		versionCode 3000138
+		versionName "1.992"
 	}
 
 	//https://developer.android.com/studio/build/configure-apk-splits

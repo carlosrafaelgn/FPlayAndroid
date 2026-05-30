@@ -59,14 +59,14 @@ import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 
 public final class SongView extends View implements View.OnClickListener, View.OnLongClickListener, AlbumArtFetcher.AlbumArtFetcherListener, Handler.Callback {
 	private Song song;
-	private String ellipsizedTitle, ellipsizedExtraInfo, numberAndCount;
+	private String ellipsizedTitle, ellipsizedArtist3, ellipsizedExtraInfo, numberAndCount;
 	private int state, width, lengthX, lengthWidth, numberAndCountX, numberAndCountWidth, position, requestId, bitmapLeftPadding;
 	private SongList baseList;
 	private Handler handler;
 	private ReleasableBitmapWrapper albumArt;
 	private boolean pendingAlbumArtRequest;
 
-	private static int albumArtHeight, height, textX, titleY, extraY, currentX, currentY, leftMargin, topMargin,
+	private static int albumArtHeight, height, textX, titleY, lengthY, artistY,  extraY, currentX, currentY, leftMargin, topMargin,
 		rightMargin, rightMarginForDrawing, numberAndCountColor, numberAndCountColorSelected, numberAndCountColorFocused,// iconLeftPadding,
 		titlesp;
 
@@ -105,12 +105,39 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			titlespBox = UI._HeadingspBox;
 			titlespYinBox = UI._HeadingspYinBox;
 		}
-		albumArtHeight = (UI._1dp << 1) + (UI.verticalMargin << 1) + titlespBox + UI._14spBox;
+		albumArtHeight = (UI._1dp << 1) + (UI.verticalMargin << 1) + titlespBox + UI._14spBox + ((Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) ? (UI._14spBox >> 2) : 0);
 		height = albumArtHeight + topMargin + bottomMargin;
-		textX = leftMargin + UI.controlMargin + (UI.albumArtSongList ? height : 0);
+		textX = leftMargin + UI.controlMargin + (UI.albumArtSongList ? (height - ((Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) ? (UI._4dp >> 1) : 0)) : 0);
 		titleY = UI.verticalMargin + titlespYinBox + topMargin;
+		lengthY = UI.verticalMargin + UI._14spYinBox + topMargin;
 		extraY = UI.verticalMargin + UI._1dp + titlespBox + UI._14spYinBox + topMargin;
 		currentY = height - UI.defaultControlContentsSize - UI.controlXtraSmallMargin - bottomMargin;
+
+		if (Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) {
+			// Used with Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM
+			int space3 = UI._4dp >> 1;
+			int usedHeight3 = titlespBox + space3 + UI._14spYinBox + space3 + UI._14spYinBox;
+			if (usedHeight3 >= height) {
+				space3 = UI._1dp;
+				usedHeight3 = titlespBox + space3 + UI._14spYinBox + space3 + UI._14spYinBox;
+				if (usedHeight3 >= height) {
+					space3 = 0;
+					usedHeight3 = titlespBox + space3 + UI._14spYinBox + space3 + UI._14spYinBox;
+				}
+			}
+
+			int top3 = ((usedHeight3 >= height) ? 0 : ((height - usedHeight3) >> 1));
+
+			// This is just to make the text look better... the math was right without it... :)
+			if (top3 >= UI._4dp)
+				top3 -= (UI._4dp >> 1);
+
+			titleY = top3 + titlespYinBox;
+			lengthY = titleY;
+			artistY = top3 + titlespBox + space3 + UI._14spYinBox;
+			extraY = top3 + titlespBox + space3 + UI._14spBox + space3 + UI._14spYinBox;
+		}
+
 		//iconLeftPadding = leftMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1);
 		return height;
 	}
@@ -135,6 +162,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private void processEllipsis() {
 		final int w = lengthX - textX - UI.controlMargin;
 		ellipsizedTitle = UI.ellipsizeText(song.title, titlesp, w, false);
+		ellipsizedArtist3 = ((Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) ? UI.ellipsizeText(song.artist, UI._14sp, (numberAndCount == null) ? w : (numberAndCountX - textX - UI.controlMargin), false) : null);
 		ellipsizedExtraInfo = UI.ellipsizeText(song.extraInfo, UI._14sp, (numberAndCount == null) ? w : (numberAndCountX - textX - UI.controlMargin), false);
 	}
 
@@ -316,7 +344,9 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (song.isHttp)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);
 		else
-			UI.drawText(canvas, song.length, txtColor, UI._14sp, lengthX, UI.verticalMargin + UI._14spYinBox + topMargin);
+			UI.drawText(canvas, song.length, txtColor, UI._14sp, lengthX, lengthY);
+		if (ellipsizedArtist3 != null)
+			UI.drawText(canvas, ellipsizedArtist3, txtColor, UI._14sp, textX, artistY);
 		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, textX, extraY);
 	}
 

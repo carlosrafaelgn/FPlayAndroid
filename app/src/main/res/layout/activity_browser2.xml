@@ -98,21 +98,28 @@
             android:visibility="gone"/>
     </RelativeLayout>
 
-    <TextView
-        android:id="@+id/lblPath"
+    <RelativeLayout
+        android:id="@+id/panelPath"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/panelControls"
-        android:ellipsize="middle"
-        android:singleLine="true"
-        android:text="@string/home"/>
+        android:splitMotionEvents="false">
+
+        <TextView
+            android:id="@+id/lblPath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="middle"
+            android:maxLines="2"
+            android:text="@string/home"/>
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/lblLoading"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
-        android:layout_below="@+id/lblPath"
+        android:layout_below="@+id/panelPath"
         android:gravity="center"
         android:maxLines="1"
         android:text="@string/loading"
@@ -123,7 +130,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
-        android:layout_below="@+id/lblPath"
+        android:layout_below="@+id/panelPath"
         android:nextFocusForward="@+id/btnGoBack"
         android:splitMotionEvents="false">
 
