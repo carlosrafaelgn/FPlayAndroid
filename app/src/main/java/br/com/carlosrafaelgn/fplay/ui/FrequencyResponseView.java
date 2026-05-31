@@ -142,13 +142,13 @@ public final class FrequencyResponseView extends View {
 		rect.top = 0;
 		rect.right = viewWidth - UI.strokeSize;
 		rect.bottom = UI.strokeSize;
-		UI.fillRect(rect, canvas, UI.color_focused);
+		UI.fillRect(rect, canvas, UI.color_text_listitem_secondary);
 		rect.top = usableHeight - UI.strokeSize;
 		rect.bottom = usableHeight;
-		UI.fillRect(rect, canvas, UI.color_focused);
+		UI.fillRect(rect, canvas, UI.color_text_listitem_secondary);
 		rect.top = y0;
 		rect.bottom = y0 + UI.strokeSize;
-		UI.fillRect(rect, canvas, UI.color_focused);
+		UI.fillRect(rect, canvas, UI.color_text_listitem_secondary);
 		rect.left = viewWidth - UI.strokeSize;
 		rect.top = 0;
 		rect.right = viewWidth;

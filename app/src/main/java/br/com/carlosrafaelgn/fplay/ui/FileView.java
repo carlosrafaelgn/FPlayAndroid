@@ -151,8 +151,11 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 	}
 
 	private void updateHorizontalMargins() {
+		final int scrollBarWidth = (UI.defaultControlSize >> 1);
+		final int horizontalPadding = UI.getViewPaddingBasedOnScreenWidth(0);
+		final boolean horizontalPaddingSmallerThanScrollBar = (horizontalPadding <= scrollBarWidth);
 		final int extraLeftMargin, extraRightMargin;
-		if (scrollBarType == BgListView.SCROLLBAR_INDEXED) {
+		if (horizontalPaddingSmallerThanScrollBar && scrollBarType == BgListView.SCROLLBAR_INDEXED) {
 			if (UI.scrollBarToTheLeft) {
 				extraLeftMargin = UI.controlSmallMargin;
 				extraRightMargin = 0;
@@ -165,21 +168,18 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			extraRightMargin = 0;
 		}
 		if (!force2D && UI.is3D) {
-			switch (scrollBarType) {
-			case BgListView.SCROLLBAR_INDEXED:
-			case BgListView.SCROLLBAR_LARGE:
-				if (UI.scrollBarToTheLeft) {
-					leftMargin = extraLeftMargin;
-					rightMarginForDrawing = UI.controlSmallMargin + extraRightMargin;
-				} else {
-					leftMargin = UI.controlSmallMargin + extraLeftMargin;
-					rightMarginForDrawing = extraRightMargin;
+			leftMargin = UI.controlSmallMargin + extraLeftMargin;
+			rightMarginForDrawing = UI.controlSmallMargin + extraRightMargin;
+			if (horizontalPaddingSmallerThanScrollBar) {
+				switch (scrollBarType) {
+				case BgListView.SCROLLBAR_INDEXED:
+				case BgListView.SCROLLBAR_LARGE:
+					if (UI.scrollBarToTheLeft)
+						leftMargin = extraLeftMargin;
+					else
+						rightMarginForDrawing = extraRightMargin;
+					break;
 				}
-				break;
-			default:
-				leftMargin = UI.controlSmallMargin + extraLeftMargin;
-				rightMarginForDrawing = UI.controlSmallMargin + extraRightMargin;
-				break;
 			}
 			rightMargin = rightMarginForDrawing + UI.strokeSize;
 		} else {
@@ -460,6 +460,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (width != w) {
 			width = w;
+			updateHorizontalMargins();
 			processEllipsis();
 		}
 	}

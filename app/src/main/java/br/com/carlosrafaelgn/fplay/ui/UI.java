@@ -112,7 +112,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
 	public static final int VERSION_CODE = 3000138;
 	//VERSION_NAME must be kept in sync with build.gradle
-	public static final String VERSION_NAME = "v1.991";
+	public static final String VERSION_NAME = "v1.992";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -146,6 +146,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	public static final int THEME_FPLAY_ICY = 8;
 	public static final int THEME_FPLAY_DARK = 9;
 	public static final int THEME_NIGHT_MODE = 10;
+	public static final int THEME_NIGHT_MODE_2021 = 11;
 
 	public static final int TRANSITION_NONE = 0;
 	public static final int TRANSITION_FADE = 1;
@@ -1242,12 +1243,13 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			}
 		} else {
 			if (is3D)
-				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
+				//color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.9286f);
+				color_list = ColorUtils.blend(color_list_original, 0xffffffff, 0.885f);
 			color_list_bg = color_list_original;
-			if (relativeLuminance > 0.01)
+			//if (relativeLuminance > 0.01)
 				color_list_shadow = ColorUtils.blend(color_list_original, 0xff000000, 0.1f);
-			else
-				color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.85f);
+			//else
+			//	color_list_shadow = ColorUtils.blend(color_list_original, 0xffffffff, 0.85f);
 			if (generateDivider)
 				color_divider = ColorUtils.blend(color_list_bg, 0xffffffff, 0.7f);
 		}
@@ -1389,6 +1391,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return "FPlay " + Player.theApplication.getText(R.string.dark).toString();
 		case THEME_NIGHT_MODE:
 			return Player.theApplication.getText(R.string.night_mode).toString();
+		case THEME_NIGHT_MODE_2021:
+			return Player.theApplication.getText(R.string.night_mode) + " (2021)";
 		default:
 			return "FPlay";
 		}
@@ -1509,7 +1513,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			finishLoadingTheme(false, true);
 			color_menu_border = 0xff5599ff;
 			break;
-		case THEME_NIGHT_MODE:
+		case THEME_NIGHT_MODE_2021:
 			color_window = 0xff303030;
 			color_control_mode = 0xff000000;
 			color_visualizer = 0xff000000;
@@ -1534,6 +1538,35 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			color_focused_grad_dk = 0xffcc973b;
 			color_focused_border = 0xff8c7534;
 			color_focused_pressed = 0xffccbea9;
+			finishLoadingCustomTheme();
+			break;
+		case THEME_NIGHT_MODE:
+			color_window = 0xff1c1c1c;
+			color_control_mode = 0xff000000;
+			color_visualizer = 0xff000000;
+			color_list = 0xff1c1c1c;
+			color_menu = 0xff303030;
+			color_menu_icon = 0xffff9900;
+			color_menu_border = 0xff0066ff;
+			color_divider = 0xff525252;
+			color_highlight = 0xff0066ff;
+			color_text_highlight = 0xffffffff;
+			color_text = 0xffb8b8b8;
+			color_text_listitem_disabled = 0xff707070;
+			color_text_listitem = 0xffa8a8a8;
+			color_text_listitem_secondary = 0xffff9900;
+			color_text_selected = 0xffffffff;
+			color_text_menu = 0xffb8b8b8;
+			// #0e418e = rgba(0, 102, 255, 0.5) on top of #1c1c1c
+			color_selected_grad_lt = 0xff0e418e + 0x000e0e0e;
+			color_selected_grad_dk = 0xff0e418e - 0x000e0e0e;
+			color_selected_border = 0xff0e418e - 0x000e2020;
+			color_selected_pressed = 0xff0e418e + 0x00181818;
+			// #1f538e = rgba(34, 136, 255, 0.5) on top of #1c1c1c
+			color_focused_grad_lt = 0xff1f538e + 0x000e0e0e;
+			color_focused_grad_dk = 0xff1f538e - 0x000e0e0e;
+			color_focused_border = 0xff1f538e - 0x001f2020;
+			color_focused_pressed = 0xff1f538e + 0x00181818;
 			finishLoadingCustomTheme();
 			break;
 		default:

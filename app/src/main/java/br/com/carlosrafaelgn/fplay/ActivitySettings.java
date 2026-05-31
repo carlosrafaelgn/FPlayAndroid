@@ -220,6 +220,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			menu.add(1, UI.THEME_NIGHT_MODE, 0, UI.getThemeString(UI.THEME_NIGHT_MODE))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_NIGHT_MODE) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(1, UI.THEME_NIGHT_MODE_2021, 0, UI.getThemeString(UI.THEME_NIGHT_MODE_2021))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable((o == UI.THEME_NIGHT_MODE_2021) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			menu.add(1, UI.THEME_FPLAY_ICY, 1, UI.getThemeString(UI.THEME_FPLAY_ICY))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable((o == UI.THEME_FPLAY_ICY) ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
@@ -846,7 +849,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		//and only warnings are generated when they are violated
 		final double crHighlight = ColorUtils.contrastRatio(color_highlight, color_text_highlight);
 		final double crListSecondary = ColorUtils.contrastRatio(color_list, color_text_listitem_secondary);
-		if (crHighlight < 5 || crListSecondary < 5)
+		if (crHighlight < 4.5 || crListSecondary < 4.5)
 			return -1;
 		return 0;
 	}

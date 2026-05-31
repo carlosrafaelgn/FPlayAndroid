@@ -85,7 +85,7 @@ public final class ObservableScrollView extends ScrollView {
 			setVerticalScrollBarEnabled(true);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 				setVerticalScrollbarPosition(UI.scrollBarToTheLeft ? View.SCROLLBAR_POSITION_LEFT : View.SCROLLBAR_POSITION_RIGHT);
-			UI.tryToChangeScrollBarThumb(this, placement == UI.PLACEMENT_MENU ? UI.color_menu_icon : UI.color_divider);
+			UI.tryToChangeScrollBarThumb(this, placement == UI.PLACEMENT_MENU ? UI.color_text_menu : UI.color_divider);
 		} else {
 			setVerticalScrollBarEnabled(false);
 		}
