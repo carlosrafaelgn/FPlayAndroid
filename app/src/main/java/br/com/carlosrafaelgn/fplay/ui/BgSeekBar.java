@@ -50,6 +50,8 @@ import android.view.View;
 import android.view.ViewDebug.ExportedProperty;
 import android.view.accessibility.AccessibilityEvent;
 
+import java.util.ArrayList;
+
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 
 public final class BgSeekBar extends View {
@@ -63,14 +65,17 @@ public final class BgSeekBar extends View {
 		void onSizeChanged(BgSeekBar seekBar, int width, int height);
 		void onDraw(Canvas canvas, BgSeekBar seekBar, Rect rect, int filledSize);
 	}
-	
+
+	private final Rect exclusionRect = new Rect();
+	private final ArrayList<Rect> gestureExclusionRects = new ArrayList<>();
+
 	private String additionalContentDescription, text, icon;
 	private boolean insideList, vertical, sliderMode, recursingSetValue;
 	private int state, thumbWidth, width, height, filledSize, value, max, textWidth, textX, textY, textColor,
 		textSize, keyIncrement, size, thumbMargin, trackingOffset, secondaryBgColorBlended;
 	private OnBgSeekBarChangeListener listener;
 	private OnBgSeekBarDrawListener drawListener;
-	
+
 	public BgSeekBar(Context context) {
 		super(context);
 		init();
@@ -434,7 +439,21 @@ public final class BgSeekBar extends View {
 		if (drawListener != null)
 			drawListener.onSizeChanged(this, w, h);
 	}
-	
+
+	@Override
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		super.onLayout(changed, left, top, right, bottom);
+
+		// https://developer.android.com/develop/ui/views/touch-and-input/gestures/gesturenav
+		// https://developer.android.com/reference/android/view/View#setSystemGestureExclusionRects(java.util.List%3Candroid.graphics.Rect%3E)
+		if (changed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+			exclusionRect.set(0, 0, getWidth(), getHeight());
+			gestureExclusionRects.clear();
+			gestureExclusionRects.add(exclusionRect);
+			setSystemGestureExclusionRects(gestureExclusionRects);
+		}
+	}
+
 	private void trackTouchEvent(int position) {
 		final int total = (vertical ? height : width) - 1 - thumbWidth;
 		if (total <= 0)
