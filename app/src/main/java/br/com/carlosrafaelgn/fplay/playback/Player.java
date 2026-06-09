@@ -555,6 +555,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	@Override
+	public void onTaskRemoved(Intent rootIntent) {
+		super.onTaskRemoved(rootIntent);
+
+		if (!localPlaying || localPlayerBuffering || localPlayerState != PLAYER_STATE_LOADED)
+			stopService();
+	}
+
+	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
 	}
