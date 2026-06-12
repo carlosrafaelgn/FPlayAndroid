@@ -2486,7 +2486,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.placeTitleAtTheBottom = opts.getBit(OPTBIT_PLACE_TITLE_AT_THE_BOTTOM);
 		UI.placeControlsAtTheBottom = (UI.lastVersionCode <= 0 || opts.getBit(OPTBIT_PLACE_CONTROLS_AT_THE_BOTTOM));
 		UI.playWithLongPress = opts.getBit(OPTBIT_PLAY_WITH_LONG_PRESS, true);
-		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 1));
+		MediaContext._enableAutomaticEffectsGain(opts.getBitI(OPTBIT_AUTOMATIC_EFFECTS_GAIN, 0));
 		MediaContext.useOpenSLEngine = opts.getBit(OPTBIT_USE_OPENSL_ENGINE);
 		MediaContext._enableResampling(opts.getBit(OPTBIT_RESAMPLING_ENABLED, true));
 		previousResetsAfterTheBeginning = opts.getBit(OPTBIT_PREVIOUS_RESETS_AFTER_THE_BEGINNING);
