@@ -36,7 +36,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -593,7 +592,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static void setUsingAlternateTypeface(boolean useAlternateTypeface) {
 		isUsingAlternateTypeface = useAlternateTypeface;
-		if (useAlternateTypeface && !dyslexiaFontSupportsCurrentLocale()) {
+		if (useAlternateTypeface && dyslexiaFontSupportsCurrentLocale()) {
 			if (defaultTypeface == null || !alternateTypefaceActive) {
 				alternateTypefaceActive = true;
 				try {
@@ -770,7 +769,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 	
 	public static boolean dyslexiaFontSupportsCurrentLocale() {
-		return ((currentLocale == LOCALE_RU) || (currentLocale == LOCALE_UK) || (currentLocale == LOCALE_ZH));
+		return ((currentLocale != LOCALE_RU) && (currentLocale != LOCALE_UK) && (currentLocale != LOCALE_ZH));
 	}
 
 	private static void updateDecimalSeparator() {

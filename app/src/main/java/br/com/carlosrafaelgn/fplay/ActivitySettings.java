@@ -1250,9 +1250,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addOption(optBtStart);
 			currentHeader = -1;
 		} else {
-			if (!UI.dyslexiaFontSupportsCurrentLocale()) {
+			if (UI.dyslexiaFontSupportsCurrentLocale())
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
-			}
 			optAutoTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
 			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
 			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
@@ -1373,7 +1372,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				addOption(optPlaceTitleAtTheBottom);
 				addOption(optPlaceControlsAtTheBottom);
 			}
-			if (!UI.dyslexiaFontSupportsCurrentLocale())
+			if (UI.dyslexiaFontSupportsCurrentLocale())
 				addOption(optUseAlternateTypeface);
 			addOption(optForcedLocale);
 			addHeader(ctx, R.string.accessibility, optForcedLocale, hIdx++);
@@ -1695,7 +1694,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			} else {
 				startActivity(new ActivityAbout(), 0, view, true);
 			}
-		} else if (!UI.dyslexiaFontSupportsCurrentLocale() && view == optUseAlternateTypeface) {
+		} else if (UI.dyslexiaFontSupportsCurrentLocale() && view == optUseAlternateTypeface) {
 			final boolean desired = optUseAlternateTypeface.isChecked();
 			UI.setUsingAlternateTypeface(desired);
 			if (UI.isUsingAlternateTypeface != desired) {
